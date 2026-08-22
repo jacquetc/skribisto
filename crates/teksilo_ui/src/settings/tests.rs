@@ -424,3 +424,217 @@ fn an_extension_page_labels_itself_and_degrades_visibly() {
     .expect("register");
     assert_eq!(pane.label().resolve_now(), "Structure");
 }
+
+/// **A contributed page gets the window's own frame**, mounted in the window's
+/// own geometry.
+///
+/// ## The bug this exists for
+///
+/// A registered page used to be pushed into the content `Switcher` **raw** — no
+/// breadcrumb, no rule, and, the part that showed, no `ScrollArea` and no
+/// insets. A page longer than the card was cut off at the bottom with nothing on
+/// screen to say there was more, and a page with a paragraph in it ran off the
+/// right-hand edge of the window.
+///
+/// The width half is the one worth spelling out, because it is invisible by
+/// inspection. `SettingsPanel::build` places the content pane inside a
+/// **height-only** `FixedSize`, which forwards `width: None`; wrap-mode text
+/// measured with no width offered lays out **on one line**, however long the
+/// sentence, and `VStack` reports `max(offered, natural)` on its cross axis so
+/// that over-constraint stays visible rather than being swallowed. So one
+/// over-wide child inflates the whole page. `pane_frame`'s `ScrollArea` is what
+/// re-proposes the real viewport width when the page is *placed*, and a page
+/// without one keeps the width it was measured at.
+///
+/// Every built-in page survived only because its content is naturally narrow —
+/// `FormLayout` rows, short labels, 300 px controls — which is exactly why
+/// nothing here caught it. So the body below is deliberately the shape that
+/// breaks: long wrap-mode paragraphs, and enough of them to overflow the card.
+#[test]
+fn a_contributed_page_is_framed_like_a_built_in_one() {
+    use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::widgets::{Divider, FixedSize, HStack, Spacer, Switcher, TextWidget};
+
+    // `SettingsPanel`'s own constants. Private to that file, and repeated rather
+    // than exported: what this test needs is the arrangement, and a shared
+    // constant would not stop the arrangement itself from changing.
+    const CARD_W: f32 = 920.0;
+    const TREE_W: f32 = 262.0;
+    const BODY_H: f32 = 620.0 - 44.0 - 1.0;
+    const PANE_W: f32 = CARD_W - TREE_W - 1.0;
+    const EPS: f32 = 0.5;
+
+    let paragraph = "A contributed page may carry prose, and prose is the one thing this \
+                     window measured with no width offered, so it laid out on a single line \
+                     and ran off the right-hand edge of the card without anything reporting a \
+                     problem at all.";
+    let mut body = VStack::new().spacing(12.0);
+    for _ in 0..12 {
+        body = body.child(TextWidget::new(lit!(paragraph.to_string())));
+    }
+
+    let page = super::content::extension_pane(
+        lit!("Extensions".to_string()),
+        lit!("A contributed page".to_string()),
+        Box::new(body),
+    );
+
+    // ⚠ **A real text backend, or this asserts nothing.** With none,
+    // `TextWidget` falls back to a single-line 8 px-per-character measure in
+    // *every* mode: wrap text never wraps, every paragraph reports one 16 px
+    // line, and a page that overflows in both directions measures as if it
+    // fitted.
+    let mut tree = WidgetTree::new().with_text_backend(std::rc::Rc::new(std::cell::RefCell::new(
+        teksilo::canvas::MockTextBackend::new(),
+    )));
+    let root = tree.add(
+        FixedSize::new().width(CARD_W).height(BODY_H).child(
+            HStack::new()
+                .spacing(0.0)
+                .child(
+                    FixedSize::new()
+                        .width(TREE_W)
+                        .height(BODY_H)
+                        .child(Spacer::new()),
+                )
+                .child(FixedSize::new().height(BODY_H).child(Divider::vertical()))
+                .child(
+                    Expand::horizontal().child(
+                        FixedSize::new()
+                            .height(BODY_H)
+                            // The same `Switcher` the window switches with: it
+                            // measures its child at the incoming proposal and
+                            // places it at the bounds, and those are two
+                            // different sizes here.
+                            .child(Switcher::new(Signal::new(0usize)).child(page)),
+                    ),
+                ),
+        ),
+    );
+    tree.layout(SizeProposal::exact(CARD_W, BODY_H));
+
+    let hstack = tree.children(root)[0];
+    let pane = tree.bounds(tree.children(hstack)[2]);
+    assert!(
+        (pane.width - PANE_W).abs() < EPS,
+        "the reproduction is wrong: the pane came out {} wide, not {PANE_W}",
+        pane.width
+    );
+
+    // The frame: breadcrumb row · rule · scrolling body.
+    let framed = tree.children(tree.children(hstack)[2]);
+    let page_root = descend(&tree, framed[0], &[0, 0]);
+    let parts = tree.children(page_root);
+    assert_eq!(
+        parts.len(),
+        3,
+        "a contributed page is not sitting in `pane_frame` — it should be a breadcrumb row, \
+         a rule and a scrolling body"
+    );
+    assert!(
+        (tree.bounds(parts[0]).height - 46.0).abs() < EPS,
+        "no breadcrumb header above a contributed page"
+    );
+
+    // Nothing crosses the pane's edge.
+    let mut ids = Vec::new();
+    subtree(&tree, page_root, &mut ids);
+    let (left, right) = (pane.x, pane.x + pane.width);
+    for id in &ids {
+        let b = tree.bounds(*id);
+        if b.width <= 0.0 {
+            continue;
+        }
+        assert!(
+            b.x >= left - EPS && b.x + b.width <= right + EPS,
+            "a widget spans {:.1}..{:.1}, outside the pane's {left:.1}..{right:.1}",
+            b.x,
+            b.x + b.width
+        );
+    }
+
+    // …and the page fills its slot exactly, with content taller than it. Both
+    // halves: a page with no scroll area also "fills the slot", and a page whose
+    // content fits also "does not overflow it".
+    let root_bounds = tree.bounds(page_root);
+    assert!(
+        (root_bounds.height - pane.height).abs() < EPS,
+        "the page is {:.1} tall in a {:.1} slot",
+        root_bounds.height,
+        pane.height
+    );
+    assert!(
+        ids.iter().any(|id| tree.bounds(*id).height > pane.height),
+        "nothing in the page is taller than the slot, so this asserts nothing about scrolling"
+    );
+}
+
+/// Walk one child index at a time, panicking with the depth reached rather than
+/// asserting about the wrong widget.
+fn descend(
+    tree: &teksilo::core::widget_tree::WidgetTree,
+    from: WidgetId,
+    path: &[usize],
+) -> WidgetId {
+    let mut id = from;
+    for (depth, &i) in path.iter().enumerate() {
+        let children = tree.children(id);
+        id = *children
+            .get(i)
+            .unwrap_or_else(|| panic!("no child {i} at depth {depth} of {path:?}"));
+    }
+    id
+}
+
+/// Every widget in a subtree, root included.
+fn subtree(tree: &teksilo::core::widget_tree::WidgetTree, id: WidgetId, out: &mut Vec<WidgetId>) {
+    out.push(id);
+    for child in tree.children(id) {
+        subtree(tree, child, out);
+    }
+}
+
+/// **A contributed page is findable by name.**
+///
+/// It was the one page in the window the search could not reach, and it is the
+/// page that most needs to be reachable that way: the Extensions section is
+/// last, the tree mounts a window of rows rather than all of them, and on a
+/// fresh install its rows are below that window. Searching is how a writer gets
+/// to a page they cannot see.
+#[test]
+fn a_contributed_page_is_searchable() {
+    let _h = crate::settings_ext::register_page(
+        "test.settings.search",
+        crate::settings_ext::SettingsPage {
+            id: "t.search.page",
+            label: Rc::new(|| lit!("Record & check-in".to_string())),
+            build: Rc::new(|_| Box::new(teksilo::widgets::Spacer::new())),
+        },
+    )
+    .expect("register");
+
+    let spec = tree_spec(true, &["t.search.page"]);
+    let index = super::tree::search_index(&spec, "Starforgers");
+
+    let found = index
+        .iter()
+        .find(|(_, pane)| *pane == Pane::Extension("t.search.page"));
+    let (label, _) = found.expect(
+        "a contributed page is missing from the search index, so the only way to it is finding \
+         its row in a tree that does not scroll to it",
+    );
+    assert_eq!(
+        label.resolve_now(),
+        "Record & check-in",
+        "the index must carry the page's registered label, not its id"
+    );
+
+    // The section above it is findable too — a writer who types the section name
+    // lands on its overview page, which links to every page under it.
+    assert!(
+        index
+            .iter()
+            .any(|(_, pane)| *pane == Pane::Section(Sec::Extensions)),
+        "the Extensions section itself is not searchable either"
+    );
+}

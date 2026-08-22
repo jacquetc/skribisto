@@ -152,15 +152,22 @@ pub(crate) fn build_tree(
     (tree, selection, nodes)
 }
 
-/// The "Search settings" field, offering suggestions across every page and
-/// setting; selecting a suggestion jumps to (and highlights) its page.
+/// Everything the search field can find: a searchable label, and the page it
+/// lives on.
 ///
-/// `spec` contributes the parents: a section and the Typography group are
-/// pages like any other now, and a search that could not reach them would be
-/// the one place in the window still treating them as mere branches.
-pub(crate) fn search_field(spec: &[Root], work_title: &str, nav: Navigator) -> impl Widget {
-    // (searchable label, the page it lives on). Resolved per-keystroke so it
-    // follows a locale change.
+/// Separate from the widget below so it can be asserted on. What is in this list
+/// *is* what a writer can reach without hunting through the tree, and the entry
+/// that was missing from it — a contributed page — was the one page in the
+/// window they had no other way to get to.
+///
+/// `spec` contributes the parents and the contributed pages: a section and the
+/// Typography group are pages like any other now, and a search that could not
+/// reach them would be the one place in the window still treating them as mere
+/// branches.
+///
+/// Labels are `LocalizedString`s, resolved per keystroke, so the whole index
+/// follows a runtime locale change.
+pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedString, Pane)> {
     let mut idx: Vec<(LocalizedString, Pane)> = vec![
         (tr!(settings_page_user()), Pane::User),
         // Both fields by name too: someone hunting for this is far likelier to
@@ -258,13 +265,38 @@ pub(crate) fn search_field(spec: &[Root], work_title: &str, nav: Navigator) -> i
         if let Root::Section(sec, branches) = root {
             idx.push((section_title(*sec, work_title), Pane::Section(*sec)));
             for branch in branches {
-                if let Branch::Group(group, _) = branch {
-                    idx.push((group.label(), Pane::Group(*group)));
+                match branch {
+                    Branch::Group(group, _) => idx.push((group.label(), Pane::Group(*group))),
+                    // ⚠ **A contributed page is the one leaf this list cannot
+                    // hardcode**, because its label lives in the registry and
+                    // not in this file — so it was the one page in the window
+                    // the search could not reach. That mattered more than it
+                    // sounds: the Extensions section is last, the tree mounts a
+                    // window of rows rather than all of them, and on a fresh
+                    // install its rows are below that window. Searching is how a
+                    // writer gets to a page they cannot see, and for exactly one
+                    // kind of page it did nothing.
+                    //
+                    // `Pane::label()` resolves through the registry per
+                    // keystroke, like the tree row's own label, so a runtime
+                    // locale switch reaches this too.
+                    Branch::Page(page @ Pane::Extension(_)) => idx.push((page.label(), *page)),
+                    // Every other leaf is already named above, most of them
+                    // twice — once as a page and once per field that should
+                    // find it. Adding them here would only make the suggestion
+                    // list repeat itself.
+                    Branch::Page(_) => {}
                 }
             }
         }
     }
-    let index: Rc<Vec<(LocalizedString, Pane)>> = Rc::new(idx);
+    idx
+}
+
+/// The "Search settings" field, offering suggestions across every page and
+/// setting; selecting a suggestion jumps to (and highlights) its page.
+pub(crate) fn search_field(spec: &[Root], work_title: &str, nav: Navigator) -> impl Widget {
+    let index: Rc<Vec<(LocalizedString, Pane)>> = Rc::new(search_index(spec, work_title));
 
     let for_suggest = index.clone();
     let for_select = index.clone();

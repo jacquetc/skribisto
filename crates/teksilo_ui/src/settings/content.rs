@@ -23,6 +23,7 @@
 
 use std::rc::Rc;
 
+use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::res;
 use teksilo::widgets::{Expand, Padding, Switcher, VStack};
@@ -34,6 +35,26 @@ use crate::sessions::WorkSession;
 use crate::settings::{SettingsViewModel, WorkSettingsViewModel};
 use crate::singles::SingleWork;
 use crate::writing_session::WritingGamesViewModel;
+
+/// The frame a contributed page is mounted in: the same [`pane_frame`] every
+/// built-in page sits in, breadcrumbed under the Extensions section.
+///
+/// A function of its own rather than four lines inside the loop, because it is
+/// the only thing standing between an extension and a page with no scroll bar,
+/// no insets and no header — and a promise that shape is what
+/// `a_contributed_page_is_framed_like_a_built_in_one` mounts and measures.
+///
+/// `tabs::Boxed` rather than a second adapter of the same three lines:
+/// [`pane_frame`] takes an `impl Widget` and a registered page hands over a
+/// `Box<dyn Widget>`, which is the one thing that is not one. Its path is `pub`
+/// and depended on downstream, so it does not move.
+pub(super) fn extension_pane(
+    section: LocalizedString,
+    label: LocalizedString,
+    body: Box<dyn Widget>,
+) -> impl Widget {
+    pane_frame(crumb(Some(section), label), crate::tabs::Boxed::new(body))
+}
 
 /// Builds the left rail and the content `Switcher`, for [`super::SettingsPanel::build`]
 /// to wrap in its header/footer chrome.
@@ -473,11 +494,34 @@ pub(super) fn build(
     //
     // Built here, with the real `BuildContext`, so a contributed page reaches
     // `ctx.settings()` and binds its own keys exactly as a built-in pane does.
+    //
+    // ⚠ **And wrapped in `pane_frame`, exactly like a built-in one.** It was
+    // pushed in raw until a contributed page shipped that was cut off at the
+    // bottom of the window with no scroll bar to say there was more — because
+    // `pane_frame` is where the `ScrollArea`, the 20/24 insets, the breadcrumb
+    // and the rule under it all live, and nothing else supplies them. An
+    // extension could build its own, and one did; what it cannot do is build one
+    // that stays in step with this file, and every extension rebuilding the
+    // window's chrome is the shape a seam exists to prevent.
+    //
+    // There is a second, quieter reason it belongs here rather than there: the
+    // content pane is measured with **no width offered** (`settings.rs` places
+    // it in a height-only `FixedSize`), and `pane_frame`'s `ScrollArea` is what
+    // re-proposes the real viewport width to the content when it is placed. A
+    // page without one is measured unbounded and placed unbounded, so wrap-mode
+    // text lays out on a single line and runs off the right-hand edge.
     let mut panes = panes;
     for page in crate::settings_ext::registered_pages() {
         let body = crate::settings_ext::build_page(page.id, ctx)
             .unwrap_or_else(|| Box::new(teksilo::widgets::Spacer::new()));
-        panes.push((Pane::Extension(page.id), body));
+        panes.push((
+            Pane::Extension(page.id),
+            Box::new(extension_pane(
+                section_title(Sec::Extensions, &work_title),
+                (page.label)(),
+                body,
+            )),
+        ));
     }
     // Every parent's own page, off the same spec the tree was built from — so
     // a section added there arrives with its page already written, and a page
