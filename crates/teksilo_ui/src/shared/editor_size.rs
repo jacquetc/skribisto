@@ -149,10 +149,10 @@ pub fn announce(ctx: &mut EventContext, typo: &EditorTypography) {
     let window = ctx.window().map(|w| w.id());
     let mut toast = Toast::info(readout(typo.size_range.kind, percent))
         .auto_dismiss_after(SIZE_TOAST_DISMISS)
-    // Without this every notch of a spin lands in the notification archive
-    // behind the status bar's bell, burying whatever the writer actually
-    // wanted to keep under a hundred size readouts.
-    .archive(false);
+        // Without this every notch of a spin lands in the notification archive
+        // behind the status bar's bell, burying whatever the writer actually
+        // wanted to keep under a hundred size readouts.
+        .archive(false);
     if let Some(window) = window {
         toast = toast.id(format!("{SIZE_TOAST_ID}.{window:?}"));
     }
