@@ -62,6 +62,13 @@ replys = "replys"
 entrys = "entrys"
 datas = "datas"
 
+# ── A dependency's own spelling, which is not ours to correct. `text2num` 2.8.0
+#    renamed `Language::portuguese()` to `Language::portugese()`, one `u`, under
+#    a minor version bump. `document_ingest` has to spell it the way the crate
+#    does or it does not compile, so the allowance is for that call and the test
+#    beside it; the word is wrong everywhere else and stays flagged there.
+portugese = "portugese"
+
 # ── Real English the dictionary does not carry. "afterwords" is the plural of
 #    *afterword* and belongs in a book app; "unparseable" and "invokable" are
 #    the standard variants in this codebase; "mis" is only ever a hyphenated

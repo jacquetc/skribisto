@@ -61,9 +61,10 @@ pub struct ExtractedOrdinal {
 
 /// A language whose number words [`text2num`] can read.
 ///
-/// Only the seven it supports are here. A keyword in a language it does not cover
-/// carries an empty list and still works for digits and roman numerals — see the
-/// coverage note in the module doc.
+/// Six of the eight it supports; Dutch and Danish are left out on purpose (see
+/// [`ALL_WORD_LANGS`]). A keyword in a language it does not cover carries an
+/// empty list and still works for digits and roman numerals — see the coverage
+/// note in the module doc.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum WordLang {
     En,
@@ -82,16 +83,24 @@ impl WordLang {
             WordLang::De => text2num::Language::german(),
             WordLang::Es => text2num::Language::spanish(),
             WordLang::It => text2num::Language::italian(),
-            WordLang::Pt => text2num::Language::portuguese(),
+            // ⚠ **`portugese`, one `u`, is upstream's own spelling.** It was
+            // `portuguese` until `text2num` 2.8.0 renamed it under a *minor*
+            // bump, so this line is the whole of what a version bump there
+            // breaks — and it breaks it in a build, not at run time, which is
+            // the one mercy in it. `.github/typos.toml` allows the word for
+            // this call and this call only.
+            WordLang::Pt => text2num::Language::portugese(),
         }
     }
 }
 
 /// Every language with a word table, for the no-keyword case.
 ///
-/// Dutch is deliberately absent even though `text2num` supports it: nothing here
-/// carries a Dutch structural keyword, so including it would only widen what a bare
-/// heading can be mistaken for, with nothing asking for it.
+/// Dutch and Danish are deliberately absent even though `text2num` supports both:
+/// nothing here carries a structural keyword in either, so including them would
+/// only widen what a bare heading can be mistaken for, with nothing asking for it.
+/// Danish arrived with `text2num` 2.8.0 and is left out for the same reason Dutch
+/// always was, rather than because it was not noticed.
 const ALL_WORD_LANGS: &[WordLang] = &[
     WordLang::En,
     WordLang::Fr,
@@ -571,7 +580,7 @@ mod tests {
             (Language::german(), "erste", 1),
             (Language::spanish(), "primero", 1),
             (Language::italian(), "primo", 1),
-            (Language::portuguese(), "primeiro", 1),
+            (Language::portugese(), "primeiro", 1),
         ];
 
         for (lang, word, expected) in cases {

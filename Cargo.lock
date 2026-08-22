@@ -6532,9 +6532,9 @@ dependencies = [
 
 [[package]]
 name = "text2num"
-version = "2.7.0"
+version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bec0876234c49d7d4a475bc91c7c6bf9d28711b352e974ca2a9243bfc02f5bd5"
+checksum = "372f8f5b672792938479cc6b13774c0f13a23fcc925511d82ddd4462f6f6ebd7"
 dependencies = [
  "bitflags 1.3.2",
  "daachorse",

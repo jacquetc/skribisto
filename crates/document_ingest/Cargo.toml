@@ -98,25 +98,25 @@ roxmltree = { version = "0.21.1", optional = true }
 docx-rs = { version = "=0.4.22", optional = true }
 # Spelled-out ordinals in headings — "Chapter Three", "Chapitre premier". A
 # per-language number-word table is the whole job, and this one already carries
-# seven of them (en/fr/de/es/it/pt/nl), compound forms included
+# eight of them (en/fr/de/es/it/pt/nl/da), compound forms included
 # (`quatre-vingt-dix-neuf`, `einundzwanzig`) and ordinals as well as cardinals.
 # Hand-writing that table for even the six Latin-script languages `title.rs`
 # already names keywords for would be several hundred lines of vocabulary this
 # project has no way to review in every one of them.
 #
-# ⚠ **Pinned to the 2.7 line, and the tilde is load-bearing.** `2.8.0` renamed
-# `Language::portuguese()` to `Language::portugese()` — a typo introduced under a
-# *minor* bump, so a caret requirement resolves straight into a build failure in
-# `title.rs`. Nothing here notices, because `Cargo.lock` holds this workspace at
-# `2.7.0`: the break only appears where a lock file does not, which is a fresh
-# clone, a fresh worktree and CI. It cost a working day of a downstream build
-# once, diagnosed as a broken checkout.
+# ⚠ **Pinned to one minor line, and the tilde is load-bearing.** `2.8.0` renamed
+# `Language::portuguese()` to `Language::portugese()` — a rename under a *minor*
+# bump, so a caret requirement resolves straight into a build failure in
+# `title.rs`. Nothing notices where a lock file already holds the old version:
+# the break appears only in a fresh clone, a fresh worktree and CI, which is
+# exactly where it reads as a broken checkout rather than as a resolve that had
+# quietly moved.
 #
-# `~2.7` accepts `2.7.x` and refuses `2.8`. To move past it, change the call in
-# `title.rs::WordLang::interpreter` to whichever spelling that release ships and
-# check every other `Language::*` constructor named there in the same pass —
-# upstream has now demonstrated it will rename one without saying so.
-text2num = "~2.7"
+# `~2.8` accepts `2.8.x` and refuses `2.9`. To move past it, check every
+# `Language::*` constructor named in `title.rs::WordLang::interpreter` against
+# that release before bumping — upstream has now demonstrated it will rename one
+# without saying so, and `portugese` (one `u`) is the shape that demonstrates it.
+text2num = "~2.8"
 
 [dev-dependencies]
 # M-T2a round trip: `text-document` now has an ODT *writer* (`TextDocument::to_odt_with_options`)
