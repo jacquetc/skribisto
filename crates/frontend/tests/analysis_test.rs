@@ -565,3 +565,81 @@ fn the_bundled_example_opens_and_analyses() {
         "the example ships a synopsis per chapter; found {with_synopsis}"
     );
 }
+
+/// The dialogue share reported for one scene, or `None` when it was not measurable.
+fn dialogue_of(dto: &BookAnalysisResultDto, scene: EntityId) -> Option<f64> {
+    match &dto.scenes {
+        SceneAnalyses::Measured(rows) => rows.iter().find_map(|r| match r {
+            SceneAnalysis::Measured {
+                item_id, dialogue, ..
+            } if *item_id == scene => Some(*dialogue),
+            _ => None,
+        })?,
+        SceneAnalyses::Empty => None,
+    }
+}
+
+/// **The project's house quote style reaches the measurement.**
+///
+/// The bug this pins: `markers_for` read the locale row and never the
+/// per-project `QuoteStyle` override, while the editor's typography engine did.
+/// A project set to guillemets therefore had `« »` inserted and `" "` looked
+/// for, so every paragraph measured as zero spoken words while reading as
+/// dialogue on the page. Nothing errored; the number was quietly wrong.
+///
+/// `skribisto_model`'s own tests pin the resolver. This one pins the *wiring* —
+/// that `analyze_book` really does read the row and hand it down, which no unit
+/// test can see.
+#[test]
+fn the_projects_quote_style_reaches_the_dialogue_measurement() {
+    use frontend::commands::smart_punctuation_commands;
+    use frontend::common::entities::QuoteStyle;
+    use frontend::direct_access::UpdateSmartPunctuationDto;
+
+    let fx = fixture();
+
+    // Speech marked with guillemets, in an en-US work whose locale default is
+    // curly quotes.
+    content_commands::create_content_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role: ContentRole::SceneText,
+            data: "\u{ab}Come inside,\u{bb} she said.".to_string(),
+        }],
+        fx.scene_a,
+        -1,
+    )
+    .expect("write guillemetted prose");
+
+    assert_eq!(
+        dialogue_of(&analyze(&fx), fx.scene_a),
+        Some(0.0),
+        "under the locale default (curly quotes) guillemetted speech reads as narration"
+    );
+
+    // Now say the project's house style is guillemets.
+    let sp = smart_punctuation_commands::get_all_smart_punctuation(&fx.ctx)
+        .expect("smart punctuation rows")
+        .pop()
+        .expect("the work has one");
+    smart_punctuation_commands::update_smart_punctuation(
+        &fx.ctx,
+        Some(fx.setup),
+        &UpdateSmartPunctuationDto {
+            quote_style: QuoteStyle::Guillemets,
+            ..sp.into()
+        },
+    )
+    .expect("set the house style");
+
+    let after = dialogue_of(&analyze(&fx), fx.scene_a);
+    assert!(
+        after.is_some_and(|d| d > 0.0),
+        "the same words must now measure as speech, got {after:?}"
+    );
+}

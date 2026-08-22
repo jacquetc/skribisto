@@ -52,8 +52,6 @@ use super::{
     ELLIPSIS, EM_DASH, EN_DASH, LAQUO, LEFT_DOUBLE, LEFT_SINGLE, LOW_DOUBLE, LSAQUO, NNBSP, RAQUO,
     RIGHT_SINGLE,
 };
-// The named quote pairs a per-project house-style override selects between.
-use super::{PAIR_CURLY, PAIR_GUILLEMET, PAIR_LOW_HIGH, PAIR_SINGLE_CURLY};
 
 /// Which substitutions a project wants, read from its `SmartPunctuation` row.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -254,13 +252,9 @@ impl TypographyEngine {
     /// Compile the rules for a document written in `locale`.
     pub fn new(locale: &str, flags: SmartPunctuationFlags) -> Self {
         let ruleset = ruleset_for(locale);
-        let quotes = match flags.quote_style {
-            QuoteStyle::LocaleDefault => ruleset.primary_quotes,
-            QuoteStyle::CurlyDouble => PAIR_CURLY,
-            QuoteStyle::CurlySingle => PAIR_SINGLE_CURLY,
-            QuoteStyle::Guillemets => PAIR_GUILLEMET,
-            QuoteStyle::LowHigh => PAIR_LOW_HIGH,
-        };
+        // Resolved through the shared `quotes_for`, not inline, so insertion and
+        // measurement cannot drift apart. See its doc for the bug that caused.
+        let quotes = crate::typography::quotes_for(locale, flags.quote_style.clone());
         Self {
             ruleset,
             mirrored: mirrored_for(locale),
@@ -274,6 +268,17 @@ impl TypographyEngine {
     /// The locale row in force, for tests and diagnostics.
     pub fn ruleset(&self) -> &'static TypographyRuleset {
         self.ruleset
+    }
+
+    /// The quotation glyphs this engine *inserts*, after any house-style
+    /// override.
+    ///
+    /// Exposed so a test can assert that what the editor inserts and what
+    /// [`markers_for`](crate::analysis::prose_stats::markers_for) recognises are
+    /// the same glyphs. Without it that agreement is unobservable from outside,
+    /// which is why it went wrong unnoticed.
+    pub fn quotes(&self) -> QuoteSystem {
+        self.quotes
     }
 
     /// How many characters of trailing context [`check`](Self::check) needs.
@@ -621,6 +626,7 @@ mod tests {
     use super::*;
     // Only the tests assert on this one directly.
     use crate::typography::RIGHT_DOUBLE;
+    use crate::typography::{PAIR_GUILLEMET, PAIR_LOW_HIGH};
 
     fn en() -> TypographyEngine {
         TypographyEngine::new("en-US", SmartPunctuationFlags::default())

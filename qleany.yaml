@@ -1439,6 +1439,12 @@ features:
     - BinderItem
     - BinderTag
     - Content
+    # The project's house quote style decides which glyphs count as speech when
+    # dialogue is measured. Read as an entity rather than passed down the DTO:
+    # the row hangs off Work by a plain id, and a DTO field would generate a
+    # second QuoteStyle enum in this crate, distinct from the entity one every
+    # other consumer uses.
+    - SmartPunctuation
     undoable: false
     read_only: true
     long_operation: true

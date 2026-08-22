@@ -38,7 +38,9 @@ use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{Binder, BinderItem, BinderTag, Content, ContentRole, Work};
+use common::entities::{
+    Binder, BinderItem, BinderTag, Content, ContentRole, QuoteStyle, SmartPunctuation, Work,
+};
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use skrib_format::{TreeReader, gather};
@@ -65,6 +67,7 @@ pub trait AnalyzeBookUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO")]
+#[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
 pub trait AnalyzeBookUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
     fn publish_analyze_book_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -204,6 +207,15 @@ fn run_analysis(
     let g = gather(uow, dto.work_id as EntityId, progress, cancel)?;
     let work_id = g.work.id;
 
+    // The project's house quote style. Resolved once, here, and threaded into every scene's
+    // dialogue markers below. A missing row means "never configured", which is exactly what
+    // `LocaleDefault` says — so the absence needs no special case, and measurement falls back
+    // to the locale table just as insertion does.
+    let quote_style: QuoteStyle = uow
+        .get_smart_punctuation(&g.work.smart_punctuation)?
+        .map(|sp: SmartPunctuation| sp.quote_style)
+        .unwrap_or_default();
+
     let metas = skribisto_compiler::item_metas(&g);
     let scope_id = dto.scope_item_id as EntityId;
 
@@ -309,7 +321,11 @@ fn run_analysis(
         if cancel.load(Ordering::Relaxed) {
             return Err(anyhow!("Operation was cancelled"));
         }
-        let markers = prose_stats::markers_for(s.locale.as_deref().unwrap_or(""));
+        // The house quote style is per project, not per scene, so it is resolved once above
+        // the loop and handed to every scene's markers. A scene's *locale* still varies —
+        // a manuscript is not monolingual — which is why the two are separate arguments.
+        let markers =
+            prose_stats::markers_for(s.locale.as_deref().unwrap_or(""), quote_style.clone());
         let stats = prose_stats::measure(&s.prose, s.locale.as_deref(), markers);
         total_words += stats.words as u64;
 

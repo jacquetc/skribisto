@@ -10,7 +10,7 @@ use anyhow::{Ok, Result};
 use common::database::QueryUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, BinderTag, Content, Work};
+use common::entities::{Binder, BinderItem, BinderTag, Content, SmartPunctuation, Work};
 use common::event::AnalysisManagementEvent::AnalyzeBook;
 use common::event::{Event, EventHub, Origin};
 use common::long_operation::lock_or_recover;
@@ -79,6 +79,11 @@ impl QueryUnitOfWork for AnalyzeBookUnitOfWork {
 )]
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO", thread_safe = true)]
+// The project's house quote style, which decides which glyphs count as speech when
+// measuring dialogue. Read here rather than threaded down through the DTO: the row hangs
+// off `Work` by a plain id, and a use case that is already inside the store has no reason
+// to be handed what it can look up.
+#[macros::uow_action(entity = "SmartPunctuation", action = "GetRO", thread_safe = true)]
 impl AnalyzeBookUnitOfWorkTrait for AnalyzeBookUnitOfWork {
     fn publish_analyze_book_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

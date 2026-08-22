@@ -18,6 +18,7 @@
 //! [`ProseStats::dialogue`] of `None` — not a zero, which would read as "no dialogue here"
 //! rather than "not measurable in this language".
 
+use common::entities::QuoteStyle;
 use text_document::sentences;
 
 use super::stats;
@@ -47,26 +48,64 @@ impl DialogueMarkers {
     }
 }
 
-/// How this language marks speech, from the app's one typography table.
+/// How this language marks speech, under a project's house style.
 ///
-/// Reads [`crate::typography::ruleset_for`] — the same rows and the same tag resolution the
-/// editor uses to *insert* these glyphs as the writer types, so recognising dialogue and
-/// producing it can no longer disagree.
+/// Resolves through [`crate::typography::quotes_for`] — **the same function**
+/// [`TypographyEngine::new`](crate::typography::engine::TypographyEngine::new) uses to decide which
+/// glyphs to *insert* as the writer types. Sharing the resolver, rather than reading the
+/// locale table twice, is what keeps recognising dialogue and producing it in agreement.
+///
+/// `quote_style` is the project's own override. It is a required argument rather than an
+/// `Option` with a default precisely because the default is what went wrong before: this
+/// function used to read the locale row directly and never saw the override, so a project
+/// set to guillemets under an `en-US` locale had `« »` inserted and `" "` looked for, and
+/// every paragraph measured as zero spoken words. Passing [`QuoteStyle::LocaleDefault`] is
+/// still available and still correct — it just has to be *said*.
 ///
 /// A tag with no curated row resolves to the default English-ish ruleset, which is right for
 /// *inserting* punctuation (better than nothing) and wrong for *measuring* it (a guess is not
 /// a measurement) — so that case returns [`DialogueMarkers::none`] and everything downstream
 /// reports dialogue as not measurable rather than as zero.
-pub fn markers_for(tag: &str) -> DialogueMarkers {
+pub fn markers_for(tag: &str, quote_style: QuoteStyle) -> DialogueMarkers {
     let row = crate::typography::ruleset_for(tag);
-    if row.tag.is_empty() {
+
+    // Unmeasurable means "we would be guessing", and an explicit house style is
+    // not a guess. A locale with no curated row falls back to a default ruleset
+    // that is fine for *inserting* punctuation and wrong for *measuring* it — but
+    // that reasoning only applies when the quotes came from the locale. A writer
+    // in an uncurated language who set the project to guillemets gets guillemets
+    // inserted, so recognising them is exactly as well-founded as it is for a
+    // curated language, and reporting "not measurable" there would hide dialogue
+    // the editor itself is producing.
+    if row.tag.is_empty() && quote_style == QuoteStyle::LocaleDefault {
         return DialogueMarkers::none();
     }
+
+    let quotes = crate::typography::quotes_for(tag, quote_style);
     DialogueMarkers {
-        open_quote: Some(row.primary_quotes.open()),
-        close_quote: Some(row.primary_quotes.close()),
+        open_quote: Some(quotes.open()),
+        close_quote: Some(quotes.close()),
+        // No override exists for the dialogue dash, so an uncurated row
+        // legitimately contributes none.
         dash: row.dialogue_dash,
     }
+}
+
+/// One paragraph's contribution, in the order the paragraphs appear.
+///
+/// The per-paragraph half of what [`measure`] already computed and used to discard: the
+/// aggregate `dialogue` share is the sum of `spoken` over the sum of `words`. Kept because a
+/// reader hears dialogue as a *shape* down the page — a ladder of speech against a wall of
+/// narration — and a single ratio for the whole scene cannot show that.
+///
+/// `spoken` is `0` for a language with no curated convention, which the caller must read
+/// alongside [`ProseStats::dialogue`] being `None` rather than as "no dialogue here".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct ParagraphStats {
+    /// Words in the paragraph. Never `0` — empty paragraphs are not reported.
+    pub words: usize,
+    /// How many of those words sit inside speech.
+    pub spoken: usize,
 }
 
 /// The measured shape of one scene's prose.
@@ -77,6 +116,9 @@ pub struct ProseStats {
     pub sentence_words: Vec<usize>,
     /// Word counts of each paragraph, in order.
     pub paragraph_words: Vec<usize>,
+    /// Per-paragraph words and spoken words, in the same order as
+    /// [`paragraph_words`](Self::paragraph_words) and index-aligned with it.
+    pub paragraphs: Vec<ParagraphStats>,
     /// Sentence-ending and clause-separating marks per 1,000 words.
     pub punctuation_per_1k: f64,
     /// Share of words inside speech, `0.0..=1.0` — `None` when the language has no curated
@@ -116,10 +158,32 @@ const PUNCTUATION: &[char] = &[
 /// `locale` is the BCP-47 tag the sentence splitter tailors to (`None` falls back to plain
 /// UAX #29, which is a real fallback and not a stub — see `text_document`'s sentence module).
 pub fn measure(text: &str, locale: Option<&str>, markers: DialogueMarkers) -> ProseStats {
-    let paragraph_words: Vec<usize> = paragraphs(text)
-        .map(|p| tokenize(p).len())
-        .filter(|&n| n > 0)
+    // One pass. This used to be two: `paragraph_words` tokenized every paragraph, and then
+    // `dialogue_share` walked the same paragraphs and tokenized them all over again to reach
+    // the same counts. Both halves are computed here, once, and the aggregate share is
+    // derived from them rather than measured separately — so the total and the per-paragraph
+    // breakdown are arithmetically the same number and cannot disagree.
+    let measurable = markers.is_measurable();
+    let per_paragraph: Vec<ParagraphStats> = paragraphs(text)
+        .filter_map(|para| {
+            let words = tokenize(para).len();
+            if words == 0 {
+                return None;
+            }
+            let spoken = if !measurable {
+                0
+            } else if markers.dash.is_some_and(|d| para.starts_with(d)) {
+                // The dash convention is per *paragraph*: there is no closing dash to look
+                // for, so an opening one makes the whole paragraph speech.
+                words
+            } else {
+                quoted_words(para, markers)
+            };
+            Some(ParagraphStats { words, spoken })
+        })
         .collect();
+
+    let paragraph_words: Vec<usize> = per_paragraph.iter().map(|p| p.words).collect();
 
     // Sentence splitting is block-scoped by design, so it is applied per paragraph rather
     // than to the whole scene — handing it the joined text would let one paragraph's last
@@ -142,15 +206,18 @@ pub fn measure(text: &str, locale: Option<&str>, markers: DialogueMarkers) -> Pr
         marks as f64 * 1000.0 / words as f64
     };
 
+    let spoken: usize = per_paragraph.iter().map(|p| p.spoken).sum();
+
     ProseStats {
         words,
         sentence_words,
         paragraph_words,
+        paragraphs: per_paragraph,
         punctuation_per_1k,
         // Both conditions matter. No convention means "not measurable in this language";
         // no words means "nothing to measure" — and a `Some(0.0)` for either would draw a
         // real 0% bar, which this module's own docs say must never stand in for absence.
-        dialogue: (markers.is_measurable() && words > 0).then(|| dialogue_share(text, markers)),
+        dialogue: (measurable && words > 0).then(|| spoken as f64 / words as f64),
     }
 }
 
@@ -161,37 +228,6 @@ pub fn measure(text: &str, locale: Option<&str>, markers: DialogueMarkers) -> Pr
 /// scene as one paragraph.
 fn paragraphs(text: &str) -> impl Iterator<Item = &str> {
     text.lines().map(str::trim).filter(|l| !l.is_empty())
-}
-
-/// Share of words that sit inside speech.
-///
-/// Two conventions, because European languages use both and some use both at once: a quoted
-/// span counts as speech, and — where the language marks dialogue with a dash — so does a
-/// paragraph that opens with one. The dash rule is per *paragraph* because that is what the
-/// convention means; there is no closing dash to look for.
-fn dialogue_share(text: &str, markers: DialogueMarkers) -> f64 {
-    let mut spoken = 0usize;
-    let mut total = 0usize;
-
-    for para in paragraphs(text) {
-        let words_here = tokenize(para).len();
-        if words_here == 0 {
-            continue;
-        }
-        total += words_here;
-
-        if markers.dash.is_some_and(|d| para.starts_with(d)) {
-            spoken += words_here;
-            continue;
-        }
-        spoken += quoted_words(para, markers);
-    }
-
-    if total == 0 {
-        0.0
-    } else {
-        spoken as f64 / total as f64
-    }
 }
 
 /// Words inside quotation marks in one paragraph.
@@ -404,8 +440,165 @@ mod tests {
             "en", "fr", "de", "de-CH", "es", "ca", "it", "pt", "pt-BR", "nl", "pl", "ru", "sv",
             "tr", "ar",
         ] {
-            assert!(markers_for(tag).is_measurable(), "{tag} must be measurable");
+            assert!(
+                markers_for(tag, QuoteStyle::LocaleDefault).is_measurable(),
+                "{tag} must be measurable"
+            );
         }
+    }
+
+    /// An explicit house style is not a guess, so it must be measurable even
+    /// where the locale itself carries no curated row.
+    ///
+    /// The editor inserts the override's glyphs for any language; reporting
+    /// "not measurable" for those same glyphs would hide dialogue the app is
+    /// itself producing.
+    #[test]
+    fn an_override_is_measurable_even_for_an_uncurated_language() {
+        for tag in ["ja", "fi", "cs", "he", "zxx"] {
+            assert!(
+                !markers_for(tag, QuoteStyle::LocaleDefault).is_measurable(),
+                "{tag} has no curated row, so the locale default is a guess"
+            );
+            for style in [
+                QuoteStyle::CurlyDouble,
+                QuoteStyle::Guillemets,
+                QuoteStyle::LowHigh,
+            ] {
+                let markers = markers_for(tag, style.clone());
+                assert!(
+                    markers.is_measurable(),
+                    "{tag} / {style:?}: the editor inserts these glyphs, so they must be recognised"
+                );
+                let engine = crate::typography::engine::TypographyEngine::new(
+                    tag,
+                    crate::typography::engine::SmartPunctuationFlags {
+                        quote_style: style.clone(),
+                        ..Default::default()
+                    },
+                );
+                assert_eq!(markers.open_quote, Some(engine.quotes().open()));
+                assert_eq!(markers.close_quote, Some(engine.quotes().close()));
+            }
+        }
+    }
+
+    /// The per-paragraph breakdown is the point of the single-pass rewrite, and
+    /// it must be arithmetically the same measurement as the aggregate — not a
+    /// second, separately-derived one that can drift.
+    #[test]
+    fn the_paragraph_breakdown_sums_to_the_aggregate() {
+        let text = "\u{201c}Come inside,\u{201d} she said.\n\
+                    The door stood open on a cold hallway.\n\
+                    \u{201c}I would rather not.\u{201d}";
+        let stats = measure(
+            text,
+            Some("en"),
+            markers_for("en", QuoteStyle::LocaleDefault),
+        );
+
+        assert_eq!(
+            stats.paragraphs.len(),
+            3,
+            "one entry per non-empty paragraph"
+        );
+        assert_eq!(
+            stats.paragraphs.iter().map(|p| p.words).collect::<Vec<_>>(),
+            stats.paragraph_words,
+            "the breakdown and paragraph_words must agree, index for index"
+        );
+        assert_eq!(
+            stats.paragraphs.iter().map(|p| p.words).sum::<usize>(),
+            stats.words
+        );
+
+        let spoken: usize = stats.paragraphs.iter().map(|p| p.spoken).sum();
+        let expected = spoken as f64 / stats.words as f64;
+        assert!(
+            (stats.dialogue.unwrap() - expected).abs() < f64::EPSILON,
+            "the aggregate share must be the breakdown's own sum"
+        );
+
+        // The middle paragraph is narration; the outer two are speech.
+        assert_eq!(stats.paragraphs[1].spoken, 0);
+        assert!(stats.paragraphs[0].spoken > 0);
+        assert!(stats.paragraphs[2].spoken > 0);
+    }
+
+    /// **The bug this module shipped, pinned.**
+    ///
+    /// `markers_for` used to read the locale row directly and never saw the project's house
+    /// quote style, while the editor's `TypographyEngine` did. A project set to guillemets
+    /// under an `en-US` locale therefore had `« »` inserted and `" "` looked for, so every
+    /// paragraph measured as zero spoken words while reading as dialogue on the page.
+    /// Nothing errored; the number was quietly wrong.
+    ///
+    /// Crossing every curated locale with every override is what makes that unrepresentable,
+    /// and it fails loudly if the two ever resolve separately again.
+    #[test]
+    fn measurement_and_insertion_agree_on_every_locale_and_override() {
+        use crate::typography::engine::{SmartPunctuationFlags, TypographyEngine};
+
+        for tag in [
+            "en", "fr", "de", "de-CH", "es", "ca", "it", "pt", "pt-BR", "nl", "pl", "ru", "sv",
+            "tr", "ar",
+        ] {
+            for style in [
+                QuoteStyle::LocaleDefault,
+                QuoteStyle::CurlyDouble,
+                QuoteStyle::Guillemets,
+                QuoteStyle::LowHigh,
+            ] {
+                let flags = SmartPunctuationFlags {
+                    quote_style: style.clone(),
+                    ..SmartPunctuationFlags::default()
+                };
+                let inserts = TypographyEngine::new(tag, flags).quotes();
+                let recognises = markers_for(tag, style.clone());
+
+                assert_eq!(
+                    recognises.open_quote,
+                    Some(inserts.open()),
+                    "{tag} / {style:?}: the editor inserts {:?} to open a quotation but \
+                     dialogue measurement looks for {:?}",
+                    inserts.open(),
+                    recognises.open_quote,
+                );
+                assert_eq!(
+                    recognises.close_quote,
+                    Some(inserts.close()),
+                    "{tag} / {style:?}: insertion and measurement disagree on the closing glyph",
+                );
+            }
+        }
+    }
+
+    /// A house style that is not the locale's own must actually change what counts as speech.
+    ///
+    /// The agreement test above would still pass if `quotes_for` ignored the override in
+    /// *both* halves, so this pins the other half: an English scene written in guillemets
+    /// measures as dialogue only when the project says guillemets.
+    #[test]
+    fn a_house_style_override_changes_what_measures_as_speech() {
+        let text = "\u{ab}Come inside,\u{bb} she said.";
+
+        let under_default = measure(
+            text,
+            Some("en"),
+            markers_for("en", QuoteStyle::LocaleDefault),
+        );
+        let under_guillemets = measure(text, Some("en"), markers_for("en", QuoteStyle::Guillemets));
+
+        assert_eq!(
+            under_default.dialogue,
+            Some(0.0),
+            "curly quotes are what en expects, so guillemetted speech reads as narration"
+        );
+        assert!(
+            under_guillemets.dialogue.is_some_and(|d| d > 0.0),
+            "with the project set to guillemets the same words must measure as speech, got {:?}",
+            under_guillemets.dialogue
+        );
     }
 
     /// `language::primary` hands over the writer's tag as written (e.g. `en-US`), so a
@@ -416,43 +609,76 @@ mod tests {
             "en-US", "en_US", "EN-us", " en-GB ", "fr-CA", "fr_FR", "pt-PT",
         ] {
             assert!(
-                markers_for(tag).is_measurable(),
+                markers_for(tag, QuoteStyle::LocaleDefault).is_measurable(),
                 "{tag} must resolve to its language's convention"
             );
         }
-        assert_eq!(markers_for("en-US"), markers_for("en"));
-        assert_eq!(markers_for("fr-CA"), markers_for("fr"));
+        assert_eq!(
+            markers_for("en-US", QuoteStyle::LocaleDefault),
+            markers_for("en", QuoteStyle::LocaleDefault)
+        );
+        assert_eq!(
+            markers_for("fr-CA", QuoteStyle::LocaleDefault),
+            markers_for("fr", QuoteStyle::LocaleDefault)
+        );
     }
 
     /// A region with its own row must win over its base language, in both directions.
     #[test]
     fn a_region_with_its_own_row_beats_its_base_language() {
-        assert_eq!(markers_for("de-CH"), markers_for("de-ch"));
-        assert_ne!(markers_for("de-CH"), markers_for("de"));
-        assert_ne!(markers_for("pt-BR"), markers_for("pt"));
+        assert_eq!(
+            markers_for("de-CH", QuoteStyle::LocaleDefault),
+            markers_for("de-ch", QuoteStyle::LocaleDefault)
+        );
+        assert_ne!(
+            markers_for("de-CH", QuoteStyle::LocaleDefault),
+            markers_for("de", QuoteStyle::LocaleDefault)
+        );
+        assert_ne!(
+            markers_for("pt-BR", QuoteStyle::LocaleDefault),
+            markers_for("pt", QuoteStyle::LocaleDefault)
+        );
         // ...while a region with no row of its own inherits.
-        assert_eq!(markers_for("de-AT"), markers_for("de"));
+        assert_eq!(
+            markers_for("de-AT", QuoteStyle::LocaleDefault),
+            markers_for("de", QuoteStyle::LocaleDefault)
+        );
     }
 
     /// The mistake the Polish row exists to prevent: it opens low like German but closes
     /// with a *right* double, and conflating them would mis-measure every Polish scene.
     #[test]
     fn polish_is_not_german() {
-        assert_ne!(markers_for("pl"), markers_for("de"));
-        assert_eq!(markers_for("pl").close_quote, Some('\u{201D}'));
-        assert_eq!(markers_for("de").close_quote, Some('\u{201C}'));
+        assert_ne!(
+            markers_for("pl", QuoteStyle::LocaleDefault),
+            markers_for("de", QuoteStyle::LocaleDefault)
+        );
+        assert_eq!(
+            markers_for("pl", QuoteStyle::LocaleDefault).close_quote,
+            Some('\u{201D}')
+        );
+        assert_eq!(
+            markers_for("de", QuoteStyle::LocaleDefault).close_quote,
+            Some('\u{201C}')
+        );
     }
 
     #[test]
     fn a_region_that_diverges_from_its_base_language_gets_its_own_row() {
-        assert_ne!(markers_for("de"), markers_for("de-CH"));
-        assert_ne!(markers_for("pt"), markers_for("pt-BR"));
+        assert_ne!(
+            markers_for("de", QuoteStyle::LocaleDefault),
+            markers_for("de-CH", QuoteStyle::LocaleDefault)
+        );
+        assert_ne!(
+            markers_for("pt", QuoteStyle::LocaleDefault),
+            markers_for("pt-BR", QuoteStyle::LocaleDefault)
+        );
     }
 
     #[test]
     fn an_uncurated_language_is_honestly_unmeasurable() {
         for tag in ["ja", "zh", "he", "fi", "cs", ""] {
-            let m = markers_for(tag);
+            let m = markers_for(tag, QuoteStyle::LocaleDefault);
             assert!(
                 !m.is_measurable(),
                 "{tag} has no curated convention and must say so"

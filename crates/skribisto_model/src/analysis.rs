@@ -50,5 +50,5 @@ pub mod prose_stats;
 pub mod stats;
 pub mod tokens;
 
-pub use prose_stats::{DialogueMarkers, ProseStats};
+pub use prose_stats::{DialogueMarkers, ParagraphStats, ProseStats};
 pub use tokens::{Token, Vocabulary, WordId};

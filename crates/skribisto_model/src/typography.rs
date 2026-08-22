@@ -22,6 +22,7 @@
 pub mod engine;
 
 use crate::language;
+use common::entities::QuoteStyle;
 
 /// How a locale opens and closes a quotation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -290,6 +291,30 @@ const RULESETS: &[TypographyRuleset] = &[
     // ── Arabic: the punctuation-mirroring row ────────────────────────────────
     ruleset("ar", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH)),
 ];
+
+/// The quotation glyphs in force for `tag` under a project's house style.
+///
+/// **The one place a [`QuoteStyle`] override is resolved.** Both halves of the
+/// app go through it: [`TypographyEngine`](crate::typography::engine::TypographyEngine)
+/// to *insert* quotes as the writer types, and
+/// [`markers_for`](crate::analysis::prose_stats::markers_for) to *recognise*
+/// them when measuring dialogue.
+///
+/// It exists because the two used to resolve separately and only one of them
+/// honoured the override: a project set to guillemets in an `en-US` locale had
+/// `« »` inserted and `" "` looked for, so every paragraph measured as zero
+/// spoken words while reading as dialogue on the page. Nothing failed; the
+/// number was simply wrong. One function is what makes that unrepresentable —
+/// a second copy of this match is the bug.
+pub fn quotes_for(tag: &str, quote_style: QuoteStyle) -> QuoteSystem {
+    match quote_style {
+        QuoteStyle::LocaleDefault => ruleset_for(tag).primary_quotes,
+        QuoteStyle::CurlyDouble => PAIR_CURLY,
+        QuoteStyle::CurlySingle => PAIR_SINGLE_CURLY,
+        QuoteStyle::Guillemets => PAIR_GUILLEMET,
+        QuoteStyle::LowHigh => PAIR_LOW_HIGH,
+    }
+}
 
 /// The ruleset for `tag`, most-specific match first, never failing.
 ///
