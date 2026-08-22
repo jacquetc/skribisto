@@ -542,9 +542,22 @@ pub fn synopsis_column(
     // must respect the trash has to check it itself; see the
     // `the_gate_stops_typing_and_not_the_programmatic_api` test.
     read_only: bool,
+    // This tab's view-state ports, and the caret it opens at, for the combinations
+    // whose **main** widget is their synopsis: a Part, a BookBegin, and the own page
+    // of a Part, a Book or a plain folder. Those have no prose column to publish a
+    // handle or to put the remembered caret back, so this does it instead.
+    //
+    // `None` everywhere else, and deliberately so. A scene's compact synopsis box
+    // must not claim the slot its prose editor owns, a stream shows one synopsis per
+    // row so there is no single "the" caret to remember, and an epigraph is a field
+    // on a page rather than the page itself.
+    view_state: Option<crate::shared::ViewStateBinding>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
-    CenterColumnFlowing::new(teksu!(
+    // Read back below, once the editor has been constructed. Cloned first because
+    // the sink itself is moved into the builder.
+    let sink_probe = view_state.as_ref().and(handle_sink.clone());
+    let column = CenterColumnFlowing::new(teksu!(
         MaxSize::width(synopsis_width.get()) {
             max_width: synopsis_width.clone()
             Expand::horizontal {
@@ -567,5 +580,20 @@ pub fn synopsis_column(
                 )
             }
         }
-    ))
+    ));
+    // `synopsis_editor` fills `handle_sink` as it constructs the editor, so the
+    // handle is already in it by the time the builder above has returned. The same
+    // construction-time contract `writing_column` relies on for the prose handle,
+    // and the reason this can be done here rather than from a `build`.
+    if let Some(vs) = &view_state
+        && let Some(handle) = sink_probe.and_then(|s| s.borrow().clone())
+    {
+        *vs.page_editor.borrow_mut() = Some(handle.clone());
+        // Unclamped, for the reason `writing_column` gives: the cursor's own
+        // `set_position` clamps to the maximum cursor position, and
+        // `character_count` is a smaller number that does not count block
+        // separators.
+        handle.select_range(vs.initial.caret, vs.initial.caret);
+    }
+    column
 }

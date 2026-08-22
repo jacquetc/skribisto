@@ -79,7 +79,7 @@ use crate::models::{
 use crate::note_templates::NoteTemplatesViewModel;
 use crate::save::SaveStateViewModel;
 use crate::settings::{TextReplacementRulesViewModel, TreeExpansionViewModel};
-use crate::shared::ProgressRecorder;
+use crate::shared::{ItemViewStates, ProgressRecorder};
 use crate::singles::{SingleDictWord, SingleSmartPunctuation, SingleWork, SingleWorkInfo};
 use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::UserDictionaryViewModel;
@@ -122,6 +122,14 @@ pub struct WorkSession {
     /// move" section.
     pub backup_scheduler: BackupSchedulerViewModel,
     pub workspace_layout: WorkspaceLayoutViewModel,
+    /// Where the writer was in each item of this project, whether or not a tab is
+    /// currently open on it.
+    ///
+    /// Tier 2 for the same reason `workspace_layout` is: two windows on one `Work`
+    /// share one desk, and they must not disagree about where a scene was left. It
+    /// is the fallback the per-pane record cannot be, because that one only ever
+    /// knows about tabs that are open.
+    pub item_view_states: ItemViewStates,
     pub tree_expansion: TreeExpansionViewModel,
     pub open_docs: OpenDocsStore,
     /// Is this project playing the **Always forward** writing game right now?
@@ -214,6 +222,10 @@ impl WorkSession {
         let single_work = SingleWork::new(app_ctx.clone());
         let single_work_info = SingleWorkInfo::new(app_ctx.clone());
 
+        // Fresh per Work: one project's remembered positions must never be read
+        // for another's, and the uid space they key on is per project anyway.
+        let item_view_states = ItemViewStates::new();
+
         let open_docs = OpenDocsStore::new(app_ctx.clone());
         open_docs.set_spellcheck(spellcheck);
 
@@ -254,6 +266,7 @@ impl WorkSession {
             ids.clone(),
             backup_mode.clone(),
             tree_expansion.clone(),
+            item_view_states.clone(),
         );
 
         let backup_scheduler = BackupSchedulerViewModel::new(
@@ -281,6 +294,7 @@ impl WorkSession {
             progress_recorder,
             backup_scheduler,
             workspace_layout,
+            item_view_states,
             tree_expansion,
             open_docs,
             always_forward,

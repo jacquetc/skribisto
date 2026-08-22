@@ -195,7 +195,7 @@ impl DistractionFreeSurfaceViewModel {
         self.item.set_id(Some(item_id));
         self.synopsis_capable.set(tab.renders_prose());
         if let Some(state) = editors.view_state_of(item_id) {
-            tab.seed_view_state(state);
+            tab.seed_remembered_view_state(state);
         }
         Some((tab, self.ids.stack_id.get()))
     }

@@ -549,6 +549,193 @@ mod captions {
             );
         }
     }
+
+    /// The per-item **roster** ([`crate::shared::ItemViewStates`]) seeding a
+    /// freshly opened tab, and the writer's own close writing back into it.
+    /// Gated off `mocks` for the same reason `captions` is: `uid_of` reads a
+    /// real `BinderItem` through `binder_ops::item_dto`, which answers for no
+    /// id a mock fixture did not seed.
+    #[cfg(not(feature = "mocks"))]
+    mod item_memory {
+        use super::*;
+
+        /// **The whole point of the roster.** `open_in`'s fresh-open branch must
+        /// seed the new tab from whatever the project remembered for this item's
+        /// durable uid, otherwise closing a tab and reopening it (or restarting
+        /// the app) would always come back to the top of the document.
+        #[test]
+        fn open_in_seeds_a_freshly_opened_tab_from_the_per_item_roster() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let id = seed_item(&vm, binder, "One", BinderItemSubRole::Scene, -1);
+            let uid = vm.uid_of(id).expect("a real item has a durable uid");
+
+            let states = crate::shared::ItemViewStates::new();
+            states.record(TabViewState {
+                uid,
+                caret: 77,
+                scroll: 12.0,
+                ..Default::default()
+            });
+            vm.set_item_view_states(states);
+
+            vm.open_in(Side::Primary, id, "One");
+
+            let captured = vm
+                .with_tab(Side::Primary, id, |t| t.capture_view_state())
+                .expect("just opened");
+            assert_eq!(
+                captured,
+                crate::shared::ViewState {
+                    caret: 77,
+                    scroll: 12.0
+                },
+                "a freshly opened tab must start from the roster's remembered position"
+            );
+
+            let ports = vm
+                .with_tab(Side::Primary, id, |t| t.view_state_ports())
+                .unwrap();
+            assert!(
+                ports.take_reveal(),
+                "a position that came from memory must arm the reveal one-shot, since a \
+                 remembered scroll offset can have gone stale since it was recorded"
+            );
+        }
+
+        /// The other half of the same seam: a tab opened with nothing remembered
+        /// (a project that has never recorded anything, or an item visited for
+        /// the first time) must not arm the reveal, there is no stale position
+        /// to correct, and arming it anyway would be indistinguishable from a
+        /// real restore to a writer who never asked for one.
+        #[test]
+        fn open_in_does_not_arm_the_reveal_when_nothing_was_remembered() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let id = seed_item(&vm, binder, "Two", BinderItemSubRole::Scene, -1);
+            vm.set_item_view_states(crate::shared::ItemViewStates::new());
+
+            vm.open_in(Side::Primary, id, "Two");
+
+            let ports = vm
+                .with_tab(Side::Primary, id, |t| t.view_state_ports())
+                .expect("just opened");
+            assert!(
+                !ports.wants_after_mount(),
+                "nothing was remembered for this item, so nothing should be armed"
+            );
+        }
+
+        /// The writer's own close ([`EditorsViewModel::close_in`], which always
+        /// flushes) must write the tab's live position into the roster, so
+        /// reopening the same item comes back to it.
+        #[test]
+        fn closing_the_writers_way_records_the_position() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let states = crate::shared::ItemViewStates::new();
+            vm.set_item_view_states(states.clone());
+
+            let id = seed_item(&vm, binder, "One", BinderItemSubRole::Scene, -1);
+            vm.open_in(Side::Primary, id, "One");
+            vm.apply_view_state(
+                id,
+                crate::shared::ViewState {
+                    caret: 55,
+                    scroll: 9.0,
+                },
+            );
+            let tab_id = vm.find_open(Side::Primary, id).expect("just opened above");
+            vm.close_in(Side::Primary, tab_id);
+
+            vm.open_in(Side::Primary, id, "One");
+            let captured = vm
+                .with_tab(Side::Primary, id, |t| t.capture_view_state())
+                .expect("reopened");
+            assert_eq!(
+                captured,
+                crate::shared::ViewState {
+                    caret: 55,
+                    scroll: 9.0
+                },
+                "the writer's own close must remember where they left off"
+            );
+        }
+
+        /// **Collapsing the split is a close too.** `set_split(false)` tears the side
+        /// pane down through `drain_pane`, a separate path from `close_tab`: it
+        /// clears the tab list and releases the documents without ever going through
+        /// the per-tab close. Recording only in `close_tab` therefore left one whole
+        /// gesture silently losing the position, and not an obscure one. The side
+        /// pane's own tab bar carries a "close split view" button, so a writer who
+        /// opens a scene to the side, works in it, and collapses the split rather
+        /// than closing the tab first got nothing written down at all. Capture cannot
+        /// rescue it either: by the time it runs, `tab_item_ids(Secondary)` is empty.
+        #[test]
+        fn collapsing_the_split_records_the_side_tabs_position() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let states = crate::shared::ItemViewStates::new();
+            vm.set_item_view_states(states.clone());
+
+            let id = seed_item(&vm, binder, "Aside", BinderItemSubRole::Scene, -1);
+            vm.set_split(true);
+            vm.open_in(Side::Secondary, id, "Aside");
+            vm.apply_view_state(
+                id,
+                crate::shared::ViewState {
+                    caret: 42,
+                    scroll: 7.0,
+                },
+            );
+
+            vm.set_split(false);
+
+            let uid = vm.uid_of(id).expect("a seeded item has a uid");
+            let remembered = states
+                .get(uid)
+                .expect("collapsing the split must record the side pane's position");
+            assert_eq!(
+                (remembered.caret, remembered.scroll),
+                (42, 7.0),
+                "the position recorded on collapse must be the one the writer left"
+            );
+        }
+
+        /// **The other direction must stay silent.** A hard removal (Delete
+        /// Forever / Empty Trash of an item that was open) reaches the same
+        /// `close_tab` through [`EditorsViewModel::items_removed`], but with
+        /// `flush: false`, and recording a position is gated on that same flag.
+        /// The item still resolves a real uid here (nothing is actually deleted
+        /// from the backend), which is what makes this a test of the `flush`
+        /// guard itself, not merely of `uid_of` returning `None` for a vanished
+        /// entity.
+        #[test]
+        fn hard_removing_an_item_never_records_its_position() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let states = crate::shared::ItemViewStates::new();
+            vm.set_item_view_states(states.clone());
+
+            let id = seed_item(&vm, binder, "Two", BinderItemSubRole::Scene, -1);
+            let uid = vm.uid_of(id).expect("a real item has a durable uid");
+            vm.open_in(Side::Primary, id, "Two");
+            vm.apply_view_state(
+                id,
+                crate::shared::ViewState {
+                    caret: 30,
+                    scroll: 4.0,
+                },
+            );
+
+            vm.items_removed(&[id]);
+
+            assert!(
+                states.get(uid).is_none(),
+                "a hard-removed item's position must never be written down"
+            );
+        }
+    }
 }
 
 /// [`EditorsViewModel::release_own_open_docs`] is the on_removed-driven
@@ -670,6 +857,80 @@ fn open_or_focus_dedupes_within_the_primary_pane() {
     vm.open_or_focus(42, "Scene"); // already open → focuses, no backend hit
     assert_eq!(vm.tabs(Side::Primary).len(), 1);
     assert_eq!(vm.selected(Side::Primary).get(), Some(id));
+}
+
+/// Drive `f` with a real `&mut EventContext`, the same way a click in the outline
+/// or an Overview row reaches `activate`/`activate_to_side` in production, never a
+/// bypassing direct call. Neither method subscribes to backend events, so a bare
+/// `WidgetTree` (no event source registered) is enough to host the trigger.
+fn with_event_context(f: impl Fn(&mut EventContext) + 'static) {
+    use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::widgets::Button;
+
+    let mut tree = WidgetTree::new();
+    let trigger = tree.add(Button::new(lit!("go")).on_activate_fn(f));
+    tree.layout(SizeProposal::exact(200.0, 60.0));
+    crate::test_support::click(&mut tree, trigger);
+}
+
+/// **The writer asked to go here.** `activate` on a tab that is already open but
+/// whose pane was never mounted (no live `EditorHandle` published through
+/// `ViewStatePorts`) must park a focus request rather than silently doing
+/// nothing, `focus_main_editor`'s whole reason for parking instead of just
+/// giving up. Without it, a click in the outline on an item sitting in a pane
+/// that has not built yet would open/raise the tab and leave the keyboard
+/// wherever it already was.
+#[test]
+fn activate_parks_a_focus_request_when_the_pane_has_never_been_built() {
+    let vm = editors();
+    push_tab(&vm, Side::Primary, 42);
+    let ports = vm
+        .with_tab(Side::Primary, 42, |t| t.view_state_ports())
+        .expect("the pushed tab is open");
+    assert!(
+        !ports.wants_after_mount(),
+        "a freshly pushed tab starts with no request armed"
+    );
+
+    let vm2 = vm.clone();
+    with_event_context(move |ctx| vm2.activate(42, "Scene", ctx));
+
+    assert!(
+        ports.take_focus(),
+        "activate must park a focus request when no live editor handle exists yet"
+    );
+    assert!(
+        !ports.take_reveal(),
+        "an already-open tab is not seeded from memory, so nothing should ask to be revealed"
+    );
+}
+
+/// `activate` must not duplicate a tab already open in the pane, the same
+/// dedupe [`open_or_focus_dedupes_within_the_primary_pane`] proves for
+/// `open_or_focus`, and the focus half must still run against that *existing*
+/// tab, not only against a freshly opened one.
+#[test]
+fn activate_dedupes_an_already_open_tab_and_still_asks_for_focus() {
+    let vm = editors();
+    let id = push_tab(&vm, Side::Primary, 42);
+    assert_eq!(vm.tabs(Side::Primary).len(), 1);
+    let ports = vm
+        .with_tab(Side::Primary, 42, |t| t.view_state_ports())
+        .unwrap();
+
+    let vm2 = vm.clone();
+    with_event_context(move |ctx| vm2.activate(42, "Scene", ctx));
+
+    assert_eq!(
+        vm.tabs(Side::Primary).len(),
+        1,
+        "activate must raise the existing tab, not open a second one"
+    );
+    assert_eq!(vm.selected(Side::Primary).get(), Some(id));
+    assert!(
+        ports.take_focus(),
+        "the focus half must ride along even on the dedupe path"
+    );
 }
 
 /// The segment signal of the open tab for `item_id` in `side`, if any.
@@ -906,6 +1167,107 @@ fn select_item_reselects_the_tab_for_an_item() {
     // An item with no open tab is a no-op (selection unchanged).
     vm.select_item(Side::Primary, 12345);
     assert_eq!(vm.selected_item(Side::Primary), Some(20));
+}
+
+/// A Scene tab has no segmented bar at all, nothing ever writes its
+/// `segment_shown` sink, so `segment_of` must answer the empty string, not
+/// `None`. `None` means "no tab open here"; reporting it for an open tab of a
+/// segment-less type would be indistinguishable from the item never having been
+/// opened, and the workspace capture would have no way to tell "nothing to
+/// remember" from "not open".
+#[test]
+fn segment_of_is_the_empty_string_for_a_tab_with_no_segmented_bar() {
+    let vm = editors();
+    push_tab(&vm, Side::Primary, 5);
+    assert_eq!(vm.segment_of(5), Some(String::new()));
+    // And the ordinary "never opened" case still answers `None`.
+    assert_eq!(vm.segment_of(999), None);
+}
+
+/// [`EditorsViewModel::seed_segment`] is the workspace-restore door for a
+/// **not-yet-built** tab: it must land on the very `ContentTab` the pane just
+/// took ownership of, so `RememberSegment::wrap` can consume it the one time
+/// that tab's segmented bar actually builds.
+#[test]
+fn seed_segment_on_a_not_yet_built_tab_is_picked_up_by_the_tab() {
+    let vm = editors();
+    push_tab(&vm, Side::Primary, 5);
+    vm.seed_segment(Side::Primary, 5, "pace");
+    let seeded = vm
+        .with_tab(Side::Primary, 5, |t| t.take_segment_seed())
+        .expect("the tab is open");
+    assert_eq!(seeded.as_deref(), Some("pace"));
+    // A one-shot: the seed is gone once taken, just as `RememberSegment` leaves it.
+    let taken_again = vm
+        .with_tab(Side::Primary, 5, |t| t.take_segment_seed())
+        .expect("the tab is still open");
+    assert_eq!(taken_again, None);
+}
+
+/// **Split panes keep independent positions.** The same item open in both
+/// panes is two `ContentTab`s (two carets on what may even be two different
+/// documents), so writing a position into one must never leak into the
+/// other's, and [`EditorsViewModel::view_state_of`] must keep preferring
+/// whichever side is *focused*, not simply the first side it happens to scan.
+/// This is the behaviour `seed_from_memory`/`remember_position` build on; a
+/// regression here would silently cross the writer's two carets.
+#[test]
+fn split_panes_keep_independent_positions_and_view_state_of_prefers_the_focused_side() {
+    let vm = editors();
+    vm.set_split(true);
+    push_tab(&vm, Side::Primary, 5);
+    push_tab(&vm, Side::Secondary, 5);
+
+    vm.with_tab(Side::Primary, 5, |t| {
+        t.apply_view_state(crate::shared::ViewState {
+            caret: 10,
+            scroll: 1.0,
+        })
+    });
+    vm.with_tab(Side::Secondary, 5, |t| {
+        t.apply_view_state(crate::shared::ViewState {
+            caret: 20,
+            scroll: 2.0,
+        })
+    });
+
+    vm.set_focused(Side::Primary);
+    assert_eq!(
+        vm.view_state_of(5),
+        Some(crate::shared::ViewState {
+            caret: 10,
+            scroll: 1.0
+        }),
+        "the focused pane's own position must win"
+    );
+
+    vm.set_focused(Side::Secondary);
+    assert_eq!(
+        vm.view_state_of(5),
+        Some(crate::shared::ViewState {
+            caret: 20,
+            scroll: 2.0
+        }),
+        "switching focus must read the OTHER pane's independent position, not a \
+             position the first write clobbered"
+    );
+
+    // Neither write disturbed the other pane's own value, checked directly,
+    // not only through the "focused wins" lens above.
+    assert_eq!(
+        vm.with_tab(Side::Primary, 5, |t| t.capture_view_state()),
+        Some(crate::shared::ViewState {
+            caret: 10,
+            scroll: 1.0
+        })
+    );
+    assert_eq!(
+        vm.with_tab(Side::Secondary, 5, |t| t.capture_view_state()),
+        Some(crate::shared::ViewState {
+            caret: 20,
+            scroll: 2.0
+        })
+    );
 }
 
 #[test]

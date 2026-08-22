@@ -260,6 +260,10 @@ pub(crate) struct PageScrollPort {
     ports: Rc<crate::shared::ViewStatePorts>,
     offset: Signal<f32>,
     max: Signal<f32>,
+    /// This page's main editor handle, staged by the column that built it. Promoted
+    /// into `ports` beside the scroll, and gated the same way, so the caret the tab
+    /// captures and the editor a click focuses both belong to the page on screen.
+    page_editor: Rc<RefCell<Option<EditorHandle>>>,
 }
 
 impl PageScrollPort {
@@ -267,8 +271,14 @@ impl PageScrollPort {
         ports: Rc<crate::shared::ViewStatePorts>,
         offset: Signal<f32>,
         max: Signal<f32>,
+        page_editor: Rc<RefCell<Option<EditorHandle>>>,
     ) -> Self {
-        Self { ports, offset, max }
+        Self {
+            ports,
+            offset,
+            max,
+            page_editor,
+        }
     }
 }
 
@@ -285,16 +295,35 @@ impl Widget for PageScrollPort {
             let ports = self.ports.clone();
             let offset = self.offset.clone();
             let max = self.max.clone();
+            let page_editor = self.page_editor.clone();
             let active = active.clone();
             Rc::new(move || {
                 if active.get() {
                     ports.attach_page_scroll(offset.clone(), max.clone());
+                    if let Some(handle) = page_editor.borrow().clone() {
+                        ports.attach_editor(handle);
+                    }
                 }
             })
         };
         attach();
         let f = attach.clone();
         ctx.effect(&active, move |_| f());
+        // The after-mount half of a restore, enqueued from here because this is the
+        // one widget every writing page mounts and the only one on the page with a
+        // `BuildContext`. It needs a laid-out editor (a caret with no geometry cannot
+        // be revealed) and `run_after_mount` is drained after the redraw pass that
+        // lays the tree out. A no-op unless something armed one of the one-shots,
+        // which a tab the writer is simply typing in never does.
+        //
+        // Guarded on activation for the same reason the attach above is: a page that
+        // is not the one on screen must not act on a request meant for the page that
+        // is, and `ports.editor()` would answer with whichever handle was attached
+        // last. Today only the mounted page builds, so this is a belt on top of
+        // braces rather than a live bug being fixed.
+        if active.get() {
+            self.ports.finish_restore_after_mount(ctx);
+        }
         Vec::new()
     }
 

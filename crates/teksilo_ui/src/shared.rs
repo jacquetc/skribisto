@@ -34,6 +34,7 @@ pub mod external_link;
 mod focus_vm;
 mod fullscreen_vm;
 pub mod images;
+mod item_view_states;
 pub mod list_naming;
 /// Shared `Origin::LongOperation` event-parsing + Work-capture helpers, used
 /// by every long-operation view-model in the crate — `pub(crate)` (not just
@@ -52,6 +53,7 @@ pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
 pub use caret_highlight::{CaretBand, CaretHighlightSettings, HighlightScope};
 pub use focus_vm::FocusViewModel;
 pub use fullscreen_vm::FullscreenViewModel;
+pub use item_view_states::ItemViewStates;
 pub use progress_recorder::ProgressRecorder;
 pub use synopsis_placement::SynopsisPlacement;
 pub use typewriter::{TypewriterAnchor, TypewriterSettings};

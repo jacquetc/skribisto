@@ -195,32 +195,16 @@ impl Widget for DistractionFreeSurface {
         if let Some(m) = &self.mounted {
             manuscript = Some(tab_pane(&m.tab));
 
-            // Two things that can only happen once the pane below has actually
-            // built, and so cannot be done inline here.
+            // The page's scroll needs nothing here any more: `writing_page_scroll`
+            // seeds its `ScrollArea` with `restore_scroll_y`, which lands the
+            // remembered offset during the first layout that gives the area a real
+            // range. This surface used to wait on that maximum by hand, which was
+            // the only way before the framework had the one-shot, and which paid for
+            // it with a frame at the top of the document before the jump.
             let ports = m.tab.view_state_ports();
 
-            // 1. Restore the page scroll. `ScrollArea` clamps any offset to its
-            //    maximum, and that maximum is 0 until the content has been laid
-            //    out — so a scroll written at build time is silently dropped.
-            //    Waiting on the maximum instead is the only way to land it.
-            //    One-shot: `pending` is cleared on the first application, so a
-            //    later reflow (a wider window, an edit) never yanks the writer
-            //    back to where they came in.
-            let pending = m.tab.view_state().get();
-            if pending.scroll > 0.0
-                && let Some(max) = ports.max_scroll()
-            {
-                let ports_for_scroll = ports.clone();
-                let done = std::cell::Cell::new(false);
-                ctx.effect(&max, move |m: &f32| {
-                    if !done.get() && *m > 0.0 {
-                        done.set(true);
-                        ports_for_scroll.apply_scroll(pending.scroll);
-                    }
-                });
-            }
-
-            // 2. Take keyboard focus, so the writer can just carry on typing.
+            // What still cannot be done inline: take keyboard focus, so the writer
+            // can just carry on typing.
             //    Also what re-points the Format menu and dock: their target is a
             //    sticky latch keyed by `WidgetId`, released only on a real
             //    `Drop`, so the pane's editor — dormant, not destroyed — would

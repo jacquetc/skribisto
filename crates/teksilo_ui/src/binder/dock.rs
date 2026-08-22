@@ -38,7 +38,11 @@ use crate::models::{BinderTreeKey, TreeNode};
 
 /// Callback App supplies to the binder tree to open (or focus) an item's editor
 /// tab on activation — keeps the tree decoupled from `EditorsViewModel`.
-pub type OpenItemFn = Rc<dyn Fn(u64, String)>;
+///
+/// Takes the activation's own `EventContext`, because opening is only half of what
+/// a click on a row means: the writer wants to be typing in that scene, and moving
+/// keyboard focus is something only a live context can do.
+pub type OpenItemFn = Rc<dyn Fn(u64, String, &mut teksilo::prelude::EventContext)>;
 
 /// Id of the outline's **scoped** "Open to the Side" shortcut (Ctrl+Enter). Scoped
 /// (not global) so it never shadows `RichTextEditor`'s own Ctrl+Enter (insert
@@ -254,11 +258,11 @@ fn binder_tree(
     // Single-click to open (the outliner convention) — arrow-key navigation only
     // moves the highlight, so stepping through the binder never spawns tabs.
     .activate_on(ActivateOn::SingleClick)
-    .on_activate(move |idx, _ctx| {
+    .on_activate(move |idx, ctx| {
         if let Some(key) = activate_model.key_at(idx) {
             // Binder rows have `item_id == None` and don't open an editor.
             if let Some((Some(item_id), title)) = activate_model.node_of(&key) {
-                on_open(item_id, title);
+                on_open(item_id, title, ctx);
             }
         }
     });

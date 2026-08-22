@@ -35,6 +35,7 @@
 //! captures/restores its own at close/load), so — unlike `search.toml` — this
 //! file is not registered as a `Reloadable`.
 
+use std::collections::HashSet;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -105,6 +106,18 @@ pub struct TabViewState {
     /// (the query is a `String`); nothing depended on that.
     #[serde(default)]
     pub corkboard: CorkboardTabState,
+    /// The segment (Overview / Corkboard / Stream / …) this tab was last showing,
+    /// as its stable **string** id. `""` means none recorded: a segment-less item
+    /// type, or a tab captured before this field existed.
+    ///
+    /// Persisted as the string, never the derived numeric `SegmentId`:
+    /// `segments::segment_id` mints that number from the string by a one-way
+    /// FNV-1a hash, so a stored number could never be resolved back to a segment
+    /// after a restart; the string is the only form a later launch can look up
+    /// again. Same reason `RememberSegment` (`tabs::shared::panes::remember`)
+    /// persists the string half of its own `(string id, SegmentId)` table.
+    #[serde(default)]
+    pub segment: String,
 }
 
 /// One tab's remembered Corkboard navigation.
@@ -144,6 +157,39 @@ impl PaneLayout {
     pub fn is_empty(&self) -> bool {
         self.tabs.is_empty()
     }
+}
+
+/// Cap on [`PerProjectLayout::item_view_states`], the same kind of backstop as
+/// [`MAX_PROJECTS`]: a project can have more distinct items ever opened than
+/// anyone keeps a caret position worth restoring for. Newest kept (the front of
+/// the roster, see [`touch`]), oldest evicted.
+const MAX_ITEM_VIEW_STATES: usize = 256;
+
+/// Upsert `state` into `roster` by [`TabViewState::uid`], moving it to the
+/// **front** (newest first), then truncate to [`MAX_ITEM_VIEW_STATES`] so the
+/// oldest entries fall off.
+///
+/// Moving to the front rather than leaving it in place is what makes the
+/// eviction axis "longest since visited" instead of "first ever opened": a
+/// plain push-and-truncate would evict by insertion order, which for an item
+/// the writer keeps coming back to is exactly the wrong one, since the entry
+/// with the oldest insertion could be the item open right now.
+pub fn touch(roster: &mut Vec<TabViewState>, state: TabViewState) {
+    roster.retain(|s| s.uid != state.uid);
+    roster.insert(0, state);
+    roster.truncate(MAX_ITEM_VIEW_STATES);
+}
+
+/// Drop every entry whose uid is not in `live`: an item trashed or deleted
+/// since it was last recorded.
+///
+/// No cascade reaches this roster the way trashing sweeps a plan's bindings
+/// elsewhere: it lives beside the binder, not inside it, so without an explicit
+/// prune a project's item history would only ever grow, quietly pushing
+/// genuinely-live entries out past [`MAX_ITEM_VIEW_STATES`] ahead of the dead
+/// ones that no longer mean anything.
+pub fn prune(roster: &mut Vec<TabViewState>, live: &HashSet<Uuid>) {
+    roster.retain(|s| live.contains(&s.uid));
 }
 
 /// One project's complete workspace layout.
@@ -192,6 +238,20 @@ pub struct PerProjectLayout {
     /// at all.
     #[serde(default)]
     pub known_docks: Vec<u64>,
+    /// The **per-`BinderItem`** roster: where the writer was in an item, whether
+    /// or not a tab on it is open right now. Newest-first (see [`touch`]).
+    ///
+    /// Distinct from [`PaneLayout::view_states`], which only ever knows about a
+    /// pane's *currently open* tabs and stays authoritative for restoring one:
+    /// the same item open in both split panes legitimately has two carets, and
+    /// only the per-pane roster can tell them apart. This roster is what lets
+    /// reopening an item the writer had **closed**, this session or a later one,
+    /// come back to where they left it; a closed tab is in no pane, so no
+    /// per-pane list can ever remember it. Capped at [`MAX_ITEM_VIEW_STATES`] and
+    /// swept of dead uids by [`prune`], since nothing else ever removes an entry
+    /// on this item's behalf.
+    #[serde(default)]
+    pub item_view_states: Vec<TabViewState>,
 }
 
 /// Deserialize the embedded [`DockLayoutState`] **tolerantly**: on any error, drop
@@ -275,7 +335,15 @@ impl Versioned for WorkspaceLayoutFile {
     /// v4's `view_states`: a v5 document already deserializes correctly, and the
     /// step exists only to stamp the version so an older build is *refused* by the
     /// `Migrator` rather than silently rewriting the file and dropping the field.
-    const CURRENT_VERSION: u32 = 6;
+    ///
+    /// **v7** adds the per-`BinderItem` roster
+    /// ([`PerProjectLayout::item_view_states`]) and each tab's last segment
+    /// ([`TabViewState::segment`]). Additive, with serde defaults, exactly like
+    /// v4's `view_states` and v6's `corkboard`: a v6 document already deserializes
+    /// correctly, and the step exists only to stamp the version so an older build
+    /// is *refused* by the `Migrator` rather than silently rewriting the file and
+    /// dropping the roster.
+    const CURRENT_VERSION: u32 = 7;
     fn version(&self) -> u32 {
         self.version
     }
@@ -399,6 +467,14 @@ fn migrator() -> Migrator<WorkspaceLayoutFile> {
         // `Migrator` rather than silently rewriting it and dropping every board's
         // remembered navigation.
         .step(5, Ok)
+        // **v6 → v7 is the identity**, for the same reason v3 → v4 and v5 → v6
+        // were: `PerProjectLayout::item_view_states` and `TabViewState::segment`
+        // are both brand-new fields with serde defaults, so a v6 document already
+        // deserializes correctly under v7 and there is nothing to transform. The
+        // step stamps the version, which is what makes a *downgrade* safe: an
+        // older build meeting a v7 file is refused by the `Migrator` rather than
+        // silently rewriting it and dropping the per-item roster.
+        .step(6, Ok)
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the

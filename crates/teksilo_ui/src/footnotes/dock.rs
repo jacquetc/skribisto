@@ -224,7 +224,7 @@ impl Widget for FootnotesList {
             .on_activate({
                 let model = model.clone();
                 let vm = self.vm.clone();
-                move |idx, _ctx| {
+                move |idx, ctx| {
                     let Some(row) = model.with_item(idx, |r| r.clone()) else {
                         return;
                     };
@@ -239,7 +239,7 @@ impl Widget for FootnotesList {
                     if let Some(content_id) = row.content_id {
                         vm.request_seek(content_id, &row.label);
                     }
-                    on_open(item_id, row.item_title.clone());
+                    on_open(item_id, row.item_title.clone(), ctx);
                 }
             })
         };
@@ -526,7 +526,7 @@ mod tests {
     #[test]
     fn the_dock_builds_and_lays_out() {
         let ctx = std::rc::Rc::new(frontend::AppContext::new());
-        let on_open: OpenItemFn = std::rc::Rc::new(|_id, _title| {});
+        let on_open: OpenItemFn = std::rc::Rc::new(|_id, _title, _ctx| {});
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(Box::new(footnotes_panel(
             vm(&ctx),

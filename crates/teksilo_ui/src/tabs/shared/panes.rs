@@ -13,6 +13,9 @@
 //! body covers every combination in its group. The manuscript-stream pane the
 //! containers share lives in [`stream`](super::stream).
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use super::segments;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::i18n::LocalizedString;
@@ -81,12 +84,17 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             // statement, not a guard: before this the content beneath it was built
             // by the same editable render path as any other tab.
             tab.open_doc.trashed.get(),
+            // An epigraph is a field on a page, never the page. Whatever else this
+            // tab shows owns its remembered position.
+            Option::None,
         )),
     )
 }
 
-/// The `ScrollArea` every writing surface in the app scrolls inside — the one
-/// door, so the scroll range and the editors' pin can never be configured apart.
+/// The `ScrollArea` every writing surface in the app scrolls inside, and the
+/// zero-size companion that claims this tab's view-state ports while the page is
+/// the one on screen. The **one** door, so the scroll range, the editors' pin and
+/// the position that gets remembered can never be configured apart.
 ///
 /// The editors on these pages are intrinsic-height with their own scroll bars
 /// suppressed ("flowing page" mode), so this is what actually scrolls, and it is
@@ -96,38 +104,77 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
 /// range collapses to zero when typewriter scrolling is off, so a page without
 /// the feature cannot be scrolled past its own end.
 ///
-/// It is also where this tab's **page scroll** is published to its view-state
-/// ports. The scroll a writer wants restored is this area's, not any editor's:
-/// the editors here run with `ScrollPolicy::AlwaysOff` and grow to their
-/// content, so `RichTextEditor::scroll_y()` on a prose column is permanently 0
-/// and persisting it would persist nothing.
-pub(crate) fn writing_page_scroll(tab: &ContentTab) -> ScrollArea {
-    let area = ScrollArea::new().scroll_past_end(tab.typewriter.scroll_past_end_signal());
-    tab.view_state_ports().attach_page_scroll(
-        area.scroll_y_signal().clone(),
-        area.max_scroll_y_signal().clone(),
-    );
-    area
-}
-
-/// As [`writing_page_scroll`], but for a page that is **one of several** a tab can
-/// show — it hands back a zero-size companion that claims the tab's view-state
-/// ports only while this page is the one on screen.
+/// It is also where the writer's remembered position lands, in both directions.
+/// The scroll they want restored is this area's, not any editor's: the editors
+/// here run with `ScrollPolicy::AlwaysOff` and grow to their content, so
+/// `RichTextEditor::scroll_y()` on a prose column is permanently 0 and persisting
+/// it would persist nothing.
 ///
-/// The plain function above attaches immediately, which is right for a body with a
-/// single scrolling page. The dual-pane editor has two (the Top layout's flowing
-/// page, and the Side layout's manuscript column), and the ports hold one slot: an
-/// immediate attach from both would leave the tab restoring, and reporting, the
-/// scroll of whichever happened to be built last. Mount the companion anywhere
-/// inside the same page.
-pub(crate) fn switchable_page_scroll(tab: &ContentTab) -> (ScrollArea, impl Widget) {
-    let area = ScrollArea::new().scroll_past_end(tab.typewriter.scroll_past_end_signal());
+/// **`restore_scroll_y`, not a write after the fact.** `ScrollArea` clamps any
+/// offset to its maximum on every layout pass, and that maximum is 0 until the
+/// content has been measured, so an offset written at build time is silently
+/// dropped. The one-shot lands it during the first layout that gives the area a
+/// real range instead, which is also what stops the page painting at the top for
+/// a frame before jumping. Re-seeded on **every** build on purpose: a rebuild (a
+/// Promote, a settings-driven relayout) mints a fresh `ScrollArea` at offset 0,
+/// and without this it would throw the writer back to the top of the document.
+///
+/// **The companion is why a tab can have several pages.** The ports hold one slot,
+/// so an immediate attach from every page would leave the tab restoring, and
+/// reporting, the scroll of whichever happened to be *constructed* last rather
+/// than the one being looked at. `folder_segmented` builds its own page and both
+/// of its streams in a single pass, so that was not a hypothetical. Attaching on
+/// activation instead makes the answer "the visible one" by construction. Mount
+/// the companion anywhere inside the same page.
+pub(crate) fn writing_page_scroll(
+    tab: &ContentTab,
+    will_show: bool,
+) -> (ScrollArea, impl Widget, crate::shared::ViewStateBinding) {
+    let area = ScrollArea::new()
+        .scroll_past_end(tab.typewriter.scroll_past_end_signal())
+        // Only the page the tab is about to *show* restores the offset. A container
+        // builds every one of its pages in a single pass but mounts one, and a page
+        // mounted later, when the writer switches to it, would otherwise lay out for
+        // the first time at a position measured on a different page entirely.
+        //
+        // Unlike the editor handle below, this cannot be settled on activation: the
+        // offset has to be armed while the `ScrollArea` is being constructed, because
+        // landing it during the first laid-out frame is the whole point of
+        // `restore_scroll_y`. So the page says up front whether it is the one.
+        .restore_scroll_y(if will_show {
+            tab.view_state().get().scroll
+        } else {
+            0.0
+        });
+    let binding = crate::shared::ViewStateBinding {
+        initial: tab.view_state().get(),
+        ports: tab.view_state_ports(),
+        page_editor: Rc::new(RefCell::new(None)),
+    };
     let port = super::editor::PageScrollPort::new(
         tab.view_state_ports(),
         area.scroll_y_signal().clone(),
         area.max_scroll_y_signal().clone(),
+        binding.page_editor.clone(),
     );
-    (area, port)
+    (area, port, binding)
+}
+
+/// Whether the segment `id` is the one this tab is about to show.
+///
+/// Asked against the **seed** first, and only then against the live signal: a
+/// restored tab's own remembered page has not been applied to `tab.segment` yet at
+/// the point its pages are constructed, because `RememberSegment` is what applies
+/// it and it wraps them afterwards. With no seed there is nothing to apply and the
+/// signal already holds what will be shown, which is the app-global remembered view
+/// `ContentTab::new` seeded. A seed naming a segment this build no longer has
+/// matches no page at all, so the tab opens at the top rather than restoring a
+/// position onto a page it was never measured on.
+pub(crate) fn segment_will_show(tab: &ContentTab, id: &str) -> bool {
+    match tab.peek_segment_seed() {
+        Some(seed) => seed == id,
+        None => tab.segment.get() == Some(segments::segment_id(id)),
+    }
 }
 
 /// The container's **own page** — the first segment of every folder container tab.
@@ -144,6 +191,9 @@ pub(crate) fn switchable_page_scroll(tab: &ContentTab) -> (ScrollArea, impl Widg
 /// The synopsis here is a *primary* surface, so it grows with its content (unlike the
 /// compact box that sits above a scene's prose in the dual-pane editor).
 pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
+    // The page before its content: the editors below stage their handle into this
+    // page's binding, and the port that promotes it is mounted at the end.
+    let (area, port, page) = writing_page_scroll(tab, segment_will_show(tab, segments::SEG_OWN));
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(t) = tab.title() {
         col = col.child(centered(
@@ -208,6 +258,10 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 // statement, not a guard: before this the content beneath it was built
                 // by the same editable render path as any other tab.
                 tab.open_doc.trashed.get(),
+                // A **chapter** folder carries its own prose below, and that is this
+                // tab's main widget; a Part or a Book has none, so here the synopsis is
+                // the page and the position worth remembering is its.
+                tab.main().is_none().then(|| page.clone()),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -225,7 +279,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             Some(tab.typewriter.clone()),
             Some(tab.caret_band()),
             Some(tab.writing_games()),
-            Some(tab.view_state_binding()),
+            Some(page.clone()),
             tab.open_doc.comment_binding_main(),
             tab.open_doc.footnote_binding_main(),
             tab.open_doc.images(),
@@ -238,7 +292,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
     // whole thing rather than each editor scrolling inside its own box.
-    writing_page_scroll(tab).child(col.child(vspace(28.0)))
+    area.child(col.child(vspace(28.0)).child(port))
 }
 
 /// The dual-pane writing editor (Skribisto's signature): an optional title, a
@@ -307,6 +361,9 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
 /// synopsis). The fields present are decided by `tab_for` from the constraint matrix,
 /// so one body covers both.
 pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
+    // One page, always the one shown. Built first so the synopsis below can stage
+    // its handle into it.
+    let (area, port, page) = writing_page_scroll(tab, true);
     let mut col = VStack::new().spacing(8.0).child(vspace(20.0));
 
     if let Some(t) = tab.title() {
@@ -369,11 +426,14 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 // statement, not a guard: before this the content beneath it was built
                 // by the same editable render path as any other tab.
                 tab.open_doc.trashed.get(),
+                // On a heading tab the synopsis is the page, so it is this tab's main
+                // widget and what its remembered caret belongs to.
+                Some(page.clone()),
             ));
     }
     tab_backdrop(
         tab.backdrop_role(),
-        writing_page_scroll(tab).child(col.child(vspace(28.0))),
+        area.child(col.child(vspace(28.0)).child(port)),
     )
 }
 
@@ -403,13 +463,14 @@ pub fn placeholder(tab: &ContentTab) -> Box<dyn Widget> {
 /// A **notes** folder used to share this body; it now gets
 /// [`folder_synopsis_with_overview`] instead, because it does have a subtree to tabulate.
 pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
-    tab_backdrop(tab.backdrop_role(), folder_synopsis_body(tab))
+    tab_backdrop(tab.backdrop_role(), folder_synopsis_body(tab, true))
 }
 
 /// The synopsis page itself, without the tab backdrop — so it can be either a whole tab
 /// body ([`folder_synopsis_only`]) or one segment of one
 /// ([`folder_synopsis_with_overview`]), which owns the backdrop for the pair.
-fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
+fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
+    let (area, port, page) = writing_page_scroll(tab, will_show);
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(s) = tab.synopsis() {
         col = col
@@ -437,9 +498,11 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 // statement, not a guard: before this the content beneath it was built
                 // by the same editable render path as any other tab.
                 tab.open_doc.trashed.get(),
+                // The synopsis *is* this page, so it is the tab's main widget.
+                Some(page.clone()),
             ));
     }
-    writing_page_scroll(tab).child(col.child(vspace(28.0)))
+    area.child(col.child(vspace(28.0)).child(port))
 }
 
 /// A **notes folder**'s body: its own synopsis page, plus an Overview of what it holds.
@@ -457,7 +520,10 @@ pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
         (
             segments::SEG_NOTES,
             tr!(segment_notes()),
-            Box::new(folder_synopsis_body(tab)) as Box<dyn Widget>,
+            Box::new(folder_synopsis_body(
+                tab,
+                segment_will_show(tab, segments::SEG_NOTES),
+            )) as Box<dyn Widget>,
         ),
         (
             segments::SEG_OVERVIEW,

@@ -242,6 +242,18 @@ impl App {
             .role
             .owns_desk()
             .then(|| session.workspace_layout.clone());
+        // The other direction of the same Tier-2/Tier-3 seam: the layout view-model
+        // writes the project's remembered positions, and the editors read them when
+        // they open a tab the writer closed earlier.
+        //
+        // Outside the `owns_desk` gate above, deliberately. That gate is about which
+        // window's desk arrangement is the one persisted; the roster is not a desk,
+        // it is where the writer was in each item, and every window on this `Work`
+        // shares one. An attached window (Work then New Window) left inside the gate
+        // opens every tab at the top of the document and records nothing when the
+        // writer closes one, which is the feature silently absent in exactly the
+        // second window.
+        editors.set_item_view_states(session.item_view_states.clone());
         if let Some(layout) = &workspace_layout {
             layout.set_editors(editors.clone());
             // Same idempotent re-point, for `capture_tree_expansion`'s own use of

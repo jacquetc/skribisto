@@ -20,6 +20,14 @@ pub(super) fn manuscript_page(
     tab: &ContentTab,
     compact_synopsis: Option<Signal<bool>>,
 ) -> impl Widget {
+    // Both layouts arm the remembered offset, and deliberately so. Unlike a
+    // container's segments, which are different pages of different heights, Top and
+    // Side show the *same* prose at the same position: whichever the window's width
+    // resolves to wants the offset the writer left. Which of them is on screen is
+    // not knowable here anyway, because `WidthProbe` treats Side as a preference and
+    // vetoes it when the column would be too narrow to write in, so a decision taken
+    // from the setting alone would disarm the page that actually shows.
+    let (area, port, page) = writing_page_scroll(tab, true);
     let mut col = VStack::new().spacing(5.0).child(vspace(10.0));
 
     // ChapterScene opens a chapter — show its title field above the prose.
@@ -106,7 +114,7 @@ pub(super) fn manuscript_page(
             Some(tab.typewriter.clone()),
             Some(tab.caret_band()),
             Some(tab.writing_games()),
-            Some(tab.view_state_binding()),
+            Some(page.clone()),
             tab.open_doc.comment_binding_main(),
             tab.open_doc.footnote_binding_main(),
             tab.open_doc.images(),
@@ -118,9 +126,10 @@ pub(super) fn manuscript_page(
         ));
     }
 
-    // This page owns the tab's scroll only while it is the page on screen — the two
-    // layouts each have one, and the tab remembers a single scroll position.
-    let (area, port) = switchable_page_scroll(tab);
+    // This page owns the tab's scroll and its editor handle only while it is the page
+    // on screen: the two layouts each build one, and the tab holds a single caret and
+    // a single scroll position. The port mounted at the end of the column is what
+    // settles that on activation.
     let page = area.child(col.child(port));
     let body: Box<dyn Widget> = match find {
         Some(find) => Box::new(crate::tabs::shared::editor::find_banner_over(find, page)),

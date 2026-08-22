@@ -25,6 +25,7 @@ fn test_scheduler() -> BackupSchedulerViewModel {
             ids.clone(),
             crate::models::TreeExpansionService::in_memory_default(),
         ),
+        crate::shared::ItemViewStates::new(),
     );
     BackupSchedulerViewModel::new(
         app_ctx,

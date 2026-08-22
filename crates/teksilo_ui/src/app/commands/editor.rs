@@ -48,20 +48,23 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     {
         let editors = deps.editors.clone();
-        ctx.register_action_global(Action::new("editor.open_item").on_invoke(move |i, _c| {
+        ctx.register_action_global(Action::new("editor.open_item").on_invoke(move |i, c| {
             if let Some(AppIntent::OpenItem { item_id, title }) = AppIntent::from_intent(i) {
-                editors.open_or_focus(*item_id, title);
+                // The Overview table's double-click / Enter, and every other
+                // deliberate "take me to this item" route. Focus follows, for the
+                // same reason it does from the outline.
+                editors.activate(*item_id, title, c);
             }
         }));
     }
     {
         let editors = deps.editors.clone();
         ctx.register_action_global(Action::new("editor.open_item_to_side").on_invoke(
-            move |i, _c| {
+            move |i, c| {
                 if let Some(AppIntent::OpenItemToSide { item_id, title }) =
                     AppIntent::from_intent(i)
                 {
-                    editors.open_to_side(*item_id, title);
+                    editors.activate_to_side(*item_id, title, c);
                 }
             },
         ));

@@ -62,6 +62,11 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 pub struct WorkspaceLayoutViewModel {
     app_ctx: Rc<AppContext>,
     service: WorkspaceLayoutService,
+    /// Where the writer was in each item, whether or not a tab is open on it. The
+    /// per-pane `view_states` below can only ever speak for tabs that *are* open,
+    /// so this is what lets a closed item be reopened where it was left. Tier 2,
+    /// shared with `EditorsViewModel` rather than owned by either.
+    item_view_states: crate::shared::ItemViewStates,
     docking: DockingModel,
     single_work: SingleWork,
     single_work_info: SingleWorkInfo,
@@ -103,10 +108,12 @@ impl WorkspaceLayoutViewModel {
         ids: AppIds,
         backup_mode: Signal<bool>,
         tree_expansion: TreeExpansionViewModel,
+        item_view_states: crate::shared::ItemViewStates,
     ) -> Self {
         Self {
             app_ctx,
             service,
+            item_view_states,
             docking,
             single_work,
             single_work_info,
@@ -204,11 +211,39 @@ impl WorkspaceLayoutViewModel {
                         caret: s.caret,
                         scroll: s.scroll,
                         corkboard,
+                        // Which page a container tab was showing. Without it a
+                        // restored Book comes back on whichever page the last Book
+                        // of the session was left on, and the scroll offset beside
+                        // it was measured on a different page entirely.
+                        segment: editors.segment_of(id).unwrap_or_default(),
                     })
                 })
                 .collect(),
         };
         let split_active = editors.split_active().get();
+
+        // Fold every open tab into the per-item roster, then drop the rows whose
+        // item is no longer in the project. This is the one place that already has
+        // the live uid set in hand, and nothing else prunes: no cascade reaches a
+        // side table like this, so a scene deleted three sessions ago would sit in
+        // it forever, holding a slot a live item needs.
+        for side in [Side::Primary, Side::Secondary] {
+            for id in editors.tab_item_ids(side) {
+                let (Some(&uid), Some(s)) = (uid_of.get(&id), editors.view_state_of(id)) else {
+                    continue;
+                };
+                self.item_view_states.record(TabViewState {
+                    uid,
+                    caret: s.caret,
+                    scroll: s.scroll,
+                    // Per pane, and only there: see `EditorsViewModel::remember_position`.
+                    corkboard: CorkboardTabState::default(),
+                    segment: editors.segment_of(id).unwrap_or_default(),
+                });
+            }
+        }
+        self.item_view_states
+            .prune(&order.iter().map(|r| r.uid).collect());
 
         let record = PerProjectLayout {
             work_uid: uid,
@@ -223,6 +258,7 @@ impl WorkspaceLayoutViewModel {
             // whole roster, not the currently-open subset: a closed dock is exactly
             // what has to stay distinguishable from a not-yet-invented one.
             known_docks: crate::docks::app_dock_ids(),
+            item_view_states: self.item_view_states.snapshot(),
         };
         if let Err(e) = self.service.set(record) {
             eprintln!("skribisto: workspace layout capture failed: {e}");
@@ -321,7 +357,11 @@ impl WorkspaceLayoutViewModel {
             return;
         };
         let Some(rec) = saved else {
-            return; // no saved layout: default docks (above) + the empty desk close_all left
+            // No saved layout: default docks (above) plus the empty desk `close_all`
+            // left. Clear the roster too, or a project opened after another one in
+            // the same session would seed its tabs from that one's positions.
+            self.item_view_states.clear();
+            return;
         };
 
         // uid → (item id, title) in the freshly-loaded project. Resolve BOTH panes up
@@ -329,6 +369,12 @@ impl WorkspaceLayoutViewModel {
         // capture and this load), and the split / focus decisions below must key off what
         // actually resolved, not the persisted list length, or an all-stale side pane
         // would show up empty.
+        // Before a single tab is opened: `open_in` consults this to seed a tab it
+        // creates, and the explicit per-pane seeding further down then overrides it
+        // for the tabs that were actually open. Loading it later would leave the
+        // first pass reading an empty roster.
+        self.item_view_states.load(rec.item_view_states.clone());
+
         let order = self.ordered_items();
         let primary_tabs = resolve_uids(&order, &rec.primary.tabs);
         let secondary_tabs = resolve_uids(&order, &rec.secondary.tabs);
@@ -366,6 +412,9 @@ impl WorkspaceLayoutViewModel {
                             scroll: s.scroll,
                         },
                     );
+                    // And the page it was showing. Empty for every combination with
+                    // no segmented bar, which `seed_segment` ignores.
+                    editors.seed_segment(side, *id, &s.segment);
                     // And the Corkboard's own navigation. `map_while` stops at the
                     // first crumb whose uid no longer names a live item: everything
                     // deeper described a path through a container that is gone, and
@@ -553,6 +602,10 @@ mod tests {
     use teksilo::prelude::*;
     use teksilo::widgets::{DockWidget, DockWidgetId, DockingLayout, RectWidget};
 
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole, GoalUnit};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
     /// The roster a build that could write a `workspace.toml` **v4** knew — the six
     /// docks that predate comments. The same list the v4 → v5 migration stamps.
     const V4_ROSTER: [u64; 6] = [
@@ -594,6 +647,7 @@ mod tests {
                 ids,
                 crate::models::TreeExpansionService::in_memory_default(),
             ),
+            crate::shared::ItemViewStates::new(),
         )
     }
 
@@ -801,6 +855,7 @@ mod tests {
                 ids,
                 crate::models::TreeExpansionService::in_memory_default(),
             ),
+            crate::shared::ItemViewStates::new(),
         );
         // Neither `set_editors` nor `set_outline` has been called yet.
         layout.capture_tree_expansion();
@@ -891,5 +946,563 @@ mod tests {
         // Side has tabs → show it; focus it only when it was the focused pane.
         assert_eq!(split_and_focus(2, true), (true, Side::Secondary));
         assert_eq!(split_and_focus(2, false), (true, Side::Primary));
+    }
+
+    // ── Live-store fixtures ──────────────────────────────────────────────────
+    //
+    // The precedence between `PaneLayout::view_states` and the per-item roster,
+    // the roster load-before-open ordering, the fold-and-prune in `capture`, the
+    // segment round trip, and the backup guards are all properties of `capture`
+    // and `restore` *themselves*, not of the pure helpers above, so they need a
+    // real seeded `Work` (for `ordered_binder_items` to resolve real uids) and a
+    // real `EditorsViewModel` (for `open_in`/`seed_view_state`/`segment_of` to do
+    // anything). `--features mocks` answers `ordered_binder_items` with an empty
+    // stream (see that function's own doc), which would make `restore` a no-op
+    // for tabs, so this crate's default (non-mocks) test run is what exercises
+    // them; there is no lighter fixture that could.
+
+    fn test_typography() -> crate::settings::EditorTypographySet {
+        let bundle = |family: &str| crate::settings::EditorTypography {
+            font_family: Signal::new(family.to_string()),
+            size: Signal::new(1.0),
+            line_height: Signal::new(1.5),
+            first_line_indent: Signal::new(0.0),
+            para_spacing_before: Signal::new(0.0),
+            para_spacing_after: Signal::new(0.0),
+            size_range: crate::settings::TypographySizeRange::default(),
+        };
+        crate::settings::EditorTypographySet {
+            scene: bundle("Literata"),
+            synopsis: bundle("Literata"),
+            notes: bundle("Inter"),
+            corkboard: bundle("Literata"),
+            distraction_free: bundle("Literata"),
+        }
+    }
+
+    /// One window's `(WorkspaceLayoutViewModel, EditorsViewModel)` pair over an
+    /// already-seeded Work, sharing `service` and wired exactly as `App::build`
+    /// wires them (editors and the roster injected after construction, mirroring
+    /// `WorkspaceLayoutViewModel::set_editors` / `EditorsViewModel::set_item_view_states`).
+    ///
+    /// Factored out from [`live_project`] so a capture → restore round trip can
+    /// build a **second**, independent window over the same backend Work rather
+    /// than reusing the one that captured, which would already hold every tab
+    /// open, proving nothing about whether `restore` can open one from scratch.
+    fn wire_window(
+        app_ctx: Rc<AppContext>,
+        work_id: u64,
+        service: WorkspaceLayoutService,
+    ) -> (
+        WorkspaceLayoutViewModel,
+        EditorsViewModel,
+        crate::shared::ItemViewStates,
+        SingleWork,
+        Signal<bool>,
+    ) {
+        let ids = AppIds::new();
+        ids.work_id.set(Some(work_id));
+
+        let item_view_states = crate::shared::ItemViewStates::new();
+        let docs = crate::models::OpenDocsStore::new(app_ctx.clone());
+        let save_state = crate::save::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
+        let tree_expansion = TreeExpansionViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        );
+        let editors = EditorsViewModel::new(
+            app_ctx.clone(),
+            Signal::new(700.0),
+            Signal::new(true),
+            Signal::new(crate::shared::SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+            test_typography(),
+            crate::shared::TypewriterSettings::off(),
+            crate::shared::CaretHighlightSettings::off(),
+            crate::settings::EditorViewMemory::detached(false),
+            crate::settings::CorkboardDefaults::detached(),
+            ids.clone(),
+            docs,
+            Signal::new(false),
+            save_state,
+            Signal::new(false),
+            tree_expansion.clone(),
+            Signal::new(false),
+            Signal::new(620.0),
+            crate::go::GoAvailability::new(),
+            crate::format::FormatViewModel::detached(),
+            crate::writing_session::WritingGamesViewModel::detached(),
+            Signal::new(GoalUnit::default()),
+        );
+        editors.set_item_view_states(item_view_states.clone());
+
+        let single_work = SingleWork::new(app_ctx.clone());
+        let single_work_info = SingleWorkInfo::new(app_ctx.clone());
+        let backup_mode = Signal::new(false);
+
+        let vm = WorkspaceLayoutViewModel::new(
+            app_ctx,
+            service,
+            DockingModel::new(),
+            single_work.clone(),
+            single_work_info,
+            ids,
+            backup_mode.clone(),
+            tree_expansion,
+            item_view_states.clone(),
+        );
+        vm.set_editors(editors.clone());
+
+        (vm, editors, item_view_states, single_work, backup_mode)
+    }
+
+    /// A live fixture: a real Work with one Binder holding `n` Scene items (so
+    /// [`ordered_binder_items`] resolves real, restorable uids), plus one window
+    /// wired onto it via [`wire_window`].
+    struct LiveProject {
+        app_ctx: Rc<AppContext>,
+        work_id: u64,
+        vm: WorkspaceLayoutViewModel,
+        editors: EditorsViewModel,
+        item_view_states: crate::shared::ItemViewStates,
+        service: WorkspaceLayoutService,
+        single_work: SingleWork,
+        backup_mode: Signal<bool>,
+        items: Vec<BinderItemRef>,
+    }
+
+    fn live_project(n: usize) -> LiveProject {
+        let app_ctx = Rc::new(AppContext::new());
+        let work = work_commands::create_orphan_work(&app_ctx, None, &CreateWorkDto::default())
+            .expect("seed a Work");
+        let binder = binder_commands::create_binder(
+            &app_ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("seed a Binder");
+        for i in 0..n {
+            binder_item_commands::create_binder_item(
+                &app_ctx,
+                None,
+                &CreateBinderItemDto {
+                    title: format!("Scene {i}"),
+                    role: BinderItemRole::Item,
+                    sub_role: BinderItemSubRole::Scene,
+                    activated: true,
+                    is_exportable: true,
+                    indent: 0,
+                    ..Default::default()
+                },
+                binder.id,
+                i as i32,
+            )
+            .expect("seed a BinderItem");
+        }
+        let items = ordered_binder_items(&app_ctx, work.id);
+        assert_eq!(items.len(), n, "every seeded item must resolve back");
+
+        let service = WorkspaceLayoutService::in_memory_default();
+        let (vm, editors, item_view_states, single_work, backup_mode) =
+            wire_window(app_ctx.clone(), work.id, service.clone());
+
+        LiveProject {
+            app_ctx,
+            work_id: work.id,
+            vm,
+            editors,
+            item_view_states,
+            service,
+            single_work,
+            backup_mode,
+            items,
+        }
+    }
+
+    /// A tab's live `view_state` seed. Never `None` for a tab that is actually
+    /// open: `ContentTab::capture_view_state` falls back to this seed on an
+    /// unmounted pane (there is no headless widget tree anywhere in this file's
+    /// fixtures), so it is exactly what `restore`/`capture` themselves read and
+    /// write.
+    fn tab_view_state(
+        editors: &EditorsViewModel,
+        side: Side,
+        item_id: u64,
+    ) -> Option<crate::shared::ViewState> {
+        let tabs = editors.tabs(side);
+        (0..tabs.len()).find_map(|i| {
+            tabs.with_item(i, |h| {
+                h.payload
+                    .downcast_ref::<crate::tabs::ContentTab>()
+                    .filter(|t| t.item_id() == item_id)
+                    .map(|t| t.view_state().get())
+            })
+            .flatten()
+        })
+    }
+
+    /// The segment a tab is currently seeded to open on, what `restore`'s
+    /// `seed_segment` call leaves waiting, before any page exists to consume it.
+    fn tab_segment_seed(editors: &EditorsViewModel, side: Side, item_id: u64) -> Option<String> {
+        let tabs = editors.tabs(side);
+        (0..tabs.len()).find_map(|i| {
+            tabs.with_item(i, |h| {
+                h.payload
+                    .downcast_ref::<crate::tabs::ContentTab>()
+                    .filter(|t| t.item_id() == item_id)
+                    .and_then(|t| t.peek_segment_seed())
+            })
+            .flatten()
+        })
+    }
+
+    /// Write directly into a tab's "segment on screen" slot, what `RememberSegment`
+    /// does once a page actually mounts. Setting it here bypasses the whole
+    /// container-page machinery, which is out of scope for this view-model's own
+    /// tests; the sink is `pub(crate)` for exactly this reason (its own doc names
+    /// "a capture to read" as the purpose).
+    fn set_tab_segment_shown(editors: &EditorsViewModel, side: Side, item_id: u64, segment: &str) {
+        let tabs = editors.tabs(side);
+        for i in 0..tabs.len() {
+            tabs.with_item(i, |h| {
+                if let Some(t) = h.payload.downcast_ref::<crate::tabs::ContentTab>()
+                    && t.item_id() == item_id
+                {
+                    *t.segment_shown_sink().borrow_mut() = segment.to_string();
+                }
+            });
+        }
+    }
+
+    /// **Precedence.** A uid remembered in both the per-pane record and the
+    /// per-item roster, at two different positions, must restore from the
+    /// **pane** record. This is what keeps two split panes on the same item from
+    /// collapsing onto one caret: only the pane list can tell them apart, and it
+    /// only wins if it is applied *after* whatever the roster seeded, which is
+    /// exactly the order `restore` uses (`open_in`'s internal roster seed, then
+    /// `restore`'s own explicit per-pane seed).
+    #[test]
+    fn a_restored_tab_prefers_its_own_panes_view_state_over_the_roster() {
+        let p = live_project(1);
+        let uid = p.items[0].uid;
+        let id = p.items[0].id;
+
+        p.single_work.unique_id().set("precedence".to_string());
+        p.service
+            .set(PerProjectLayout {
+                work_uid: "precedence".to_string(),
+                primary: PaneLayout {
+                    tabs: vec![uid],
+                    selected: Some(uid),
+                    view_states: vec![TabViewState {
+                        uid,
+                        caret: 42,
+                        scroll: 4.2,
+                        ..Default::default()
+                    }],
+                },
+                // Disagrees with the pane record on purpose: a stale roster
+                // position that must lose once a more specific one exists.
+                item_view_states: vec![TabViewState {
+                    uid,
+                    caret: 999,
+                    scroll: 99.0,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            })
+            .unwrap();
+
+        p.vm.restore(false);
+
+        assert_eq!(
+            tab_view_state(&p.editors, Side::Primary, id),
+            Some(crate::shared::ViewState {
+                caret: 42,
+                scroll: 4.2,
+            }),
+            "the pane's own recorded position must win over the roster's disagreeing one"
+        );
+    }
+
+    /// **Load-before-open.** With nothing in the per-pane record for this tab (no
+    /// entry in `primary.view_states` at all), the position it restores to can
+    /// only have come from the roster via `open_in`'s internal seed, which is
+    /// only possible if `restore` loaded the roster *before* opening the tab.
+    /// Without that ordering `seed_from_memory` would find an empty roster and
+    /// the tab would open at the top of the document instead.
+    #[test]
+    fn restore_loads_the_roster_before_opening_any_tab_so_open_in_can_seed_from_it() {
+        let p = live_project(1);
+        let uid = p.items[0].uid;
+        let id = p.items[0].id;
+
+        p.single_work.unique_id().set("roster-seed".to_string());
+        p.service
+            .set(PerProjectLayout {
+                work_uid: "roster-seed".to_string(),
+                primary: PaneLayout {
+                    tabs: vec![uid],
+                    selected: Some(uid),
+                    view_states: vec![],
+                },
+                item_view_states: vec![TabViewState {
+                    uid,
+                    caret: 55,
+                    scroll: 5.5,
+                    segment: "roster-seg".to_string(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            })
+            .unwrap();
+
+        p.vm.restore(false);
+
+        assert_eq!(
+            tab_view_state(&p.editors, Side::Primary, id),
+            Some(crate::shared::ViewState {
+                caret: 55,
+                scroll: 5.5,
+            }),
+            "with no per-pane record to apply, this position can only have come \
+             from the roster, which open_in can only see if restore loaded it first"
+        );
+        assert_eq!(
+            tab_segment_seed(&p.editors, Side::Primary, id),
+            Some("roster-seg".to_string()),
+            "same proof, on the segment half"
+        );
+    }
+
+    /// **No inherited roster.** A project with no saved desk must clear the
+    /// roster rather than keep whatever a previously open project in the same
+    /// session left in it, or a freshly opened, never-before-seen project would
+    /// seed its tabs from an unrelated one's remembered positions.
+    #[test]
+    fn restore_with_no_saved_desk_clears_the_roster_rather_than_keeping_a_previous_projects() {
+        let p = live_project(1);
+        p.item_view_states.load(vec![TabViewState {
+            uid: u(9999),
+            caret: 1,
+            ..Default::default()
+        }]);
+        p.single_work.unique_id().set("never-saved".to_string());
+        // Nothing written to `p.service` for "never-saved".
+
+        p.vm.restore(false);
+
+        assert!(
+            p.item_view_states.snapshot().is_empty(),
+            "a project with no saved desk must not inherit the previous project's roster"
+        );
+    }
+
+    /// **Fold and prune.** `capture` folds every open tab's live position into
+    /// the roster, and prunes any roster entry whose uid the live item stream no
+    /// longer has, an item trashed or deleted since it was last recorded, which
+    /// otherwise would sit in the roster forever, taking up a slot a live item
+    /// needs (the roster is capped).
+    #[test]
+    fn capture_folds_open_tabs_into_the_roster_and_prunes_a_uid_that_left_the_binder() {
+        let p = live_project(2);
+        let uid_p = p.items[0].uid;
+        let id_p = p.items[0].id;
+        let uid_q = p.items[1].uid;
+        let gone = u(0xDEAD);
+
+        p.item_view_states.load(vec![
+            TabViewState {
+                uid: gone,
+                caret: 1,
+                ..Default::default()
+            },
+            TabViewState {
+                uid: uid_q,
+                caret: 2,
+                ..Default::default()
+            },
+        ]);
+
+        p.editors.open_in(Side::Primary, id_p, "P");
+        p.editors.seed_view_state(
+            Side::Primary,
+            id_p,
+            crate::shared::ViewState {
+                caret: 99,
+                scroll: 9.9,
+            },
+        );
+        set_tab_segment_shown(&p.editors, Side::Primary, id_p, "streamseg");
+
+        p.single_work.unique_id().set("prune".to_string());
+        p.vm.capture();
+
+        let snapshot = p.item_view_states.snapshot();
+        assert!(
+            !snapshot.iter().any(|s| s.uid == gone),
+            "a uid no longer in the binder must be pruned from the roster"
+        );
+        let q = snapshot
+            .iter()
+            .find(|s| s.uid == uid_q)
+            .expect("an item that is still live, but not open right now, must survive capture");
+        assert_eq!(q.caret, 2, "…untouched, since its tab was never open");
+
+        let folded = snapshot
+            .iter()
+            .find(|s| s.uid == uid_p)
+            .expect("the open tab's live position must be folded into the roster");
+        assert_eq!(folded.caret, 99);
+        assert_eq!(folded.scroll, 9.9);
+        assert_eq!(folded.segment, "streamseg");
+    }
+
+    /// **The segment round trip.** `capture` writes the segment a tab was
+    /// showing into both the per-pane record and the roster; `restore` seeds it
+    /// back onto a freshly opened tab in a second window over the same project ,
+    /// proving the string travels through `PerProjectLayout`, not just through
+    /// the live `EditorsViewModel` the capturing window already held open.
+    #[test]
+    fn capture_writes_a_tabs_segment_and_restore_seeds_it_back_onto_a_fresh_tab() {
+        let p = live_project(1);
+        let uid = p.items[0].uid;
+        let id = p.items[0].id;
+
+        p.single_work
+            .unique_id()
+            .set("segment-roundtrip".to_string());
+        p.editors.open_in(Side::Primary, id, "S");
+        set_tab_segment_shown(&p.editors, Side::Primary, id, "corkboard");
+
+        p.vm.capture();
+
+        let saved = p
+            .service
+            .get("segment-roundtrip")
+            .expect("capture must have written a row");
+        assert_eq!(
+            saved
+                .primary
+                .view_states
+                .iter()
+                .find(|s| s.uid == uid)
+                .map(|s| s.segment.as_str()),
+            Some("corkboard"),
+            "the pane record must carry the segment the tab was showing"
+        );
+        assert_eq!(
+            saved
+                .item_view_states
+                .iter()
+                .find(|s| s.uid == uid)
+                .map(|s| s.segment.as_str()),
+            Some("corkboard"),
+            "so must the per-item roster"
+        );
+
+        // A second window on the same project, reopening from scratch.
+        let (vm2, editors2, _states2, single_work2, _backup2) =
+            wire_window(p.app_ctx.clone(), p.work_id, p.service.clone());
+        single_work2
+            .unique_id()
+            .set("segment-roundtrip".to_string());
+        vm2.restore(false);
+
+        assert_eq!(
+            tab_segment_seed(&editors2, Side::Primary, id),
+            Some("corkboard".to_string()),
+            "restore must seed the freshly opened tab with the segment capture recorded"
+        );
+    }
+
+    /// **Backup mode, the capture half.** A window viewing a backup file must
+    /// never overwrite the real project's saved desk, neither the on-disk row
+    /// nor the live roster, which `capture` must return before ever touching.
+    #[test]
+    fn capture_is_a_no_op_in_backup_mode() {
+        let p = live_project(1);
+        let uid = p.items[0].uid;
+        let id = p.items[0].id;
+
+        p.single_work.unique_id().set("backup-capture".to_string());
+        p.editors.open_in(Side::Primary, id, "S");
+        p.item_view_states.record(TabViewState {
+            uid,
+            caret: 3,
+            ..Default::default()
+        });
+        p.backup_mode.set(true);
+
+        p.vm.capture();
+
+        assert!(
+            p.service.get("backup-capture").is_none(),
+            "a window viewing a backup must never write the real project's saved desk"
+        );
+        let snapshot = p.item_view_states.snapshot();
+        assert_eq!(
+            snapshot.len(),
+            1,
+            "the live roster itself must also be untouched by a capture in backup mode"
+        );
+        assert_eq!(
+            snapshot[0].caret, 3,
+            "…not just the same length by coincidence"
+        );
+    }
+
+    /// **Backup mode, the restore half.** A backup shares its source project's
+    /// `unique_id` (retention correlates on it), so a saved desk can genuinely
+    /// exist under the same uid a backup viewer opens with. `restore(true)` must
+    /// not apply it: no tab reopens, and the roster is not populated from the
+    /// source project's, a backup starts from nothing, symmetric with `capture`
+    /// being inert in the same mode.
+    #[test]
+    fn restore_is_inert_for_a_backup_even_though_the_source_projects_desk_is_saved_under_the_same_uid()
+     {
+        let p = live_project(1);
+        let uid = p.items[0].uid;
+
+        p.single_work.unique_id().set("shared-uid".to_string());
+        p.service
+            .set(PerProjectLayout {
+                work_uid: "shared-uid".to_string(),
+                primary: PaneLayout {
+                    tabs: vec![uid],
+                    selected: Some(uid),
+                    view_states: vec![TabViewState {
+                        uid,
+                        caret: 10,
+                        ..Default::default()
+                    }],
+                },
+                item_view_states: vec![TabViewState {
+                    uid,
+                    caret: 10,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            })
+            .unwrap();
+
+        // A backup viewer for the same source project.
+        p.vm.restore(true);
+
+        assert!(
+            p.editors.tab_item_ids(Side::Primary).is_empty(),
+            "a backup must never reopen the source project's tabs"
+        );
+        assert!(
+            p.item_view_states.snapshot().is_empty(),
+            "and must not inherit the source project's per-item roster either"
+        );
     }
 }

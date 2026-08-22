@@ -2527,7 +2527,7 @@ fn all_max_size_widths(tree: &WidgetTree, root: WidgetId) -> Vec<f32> {
 /// and return both. A long document is what gives the page `ScrollArea` a
 /// non-zero maximum, without which a restored scroll offset is clamped
 /// straight back to 0 and the test would prove nothing.
-fn mounted_scene(paragraphs: usize) -> (ContentTab, WidgetTree) {
+fn mounted_scene(paragraphs: usize) -> (ContentTab, WidgetTree, WidgetId) {
     use BinderItemRole::*;
     use BinderItemSubRole::*;
     let ctx = Rc::new(AppContext::new());
@@ -2557,9 +2557,9 @@ fn mounted_scene(paragraphs: usize) -> (ContentTab, WidgetTree) {
     let mut tree = WidgetTree::new().with_text_backend(std::rc::Rc::new(std::cell::RefCell::new(
         teksilo::canvas::MockTextBackend::new(),
     )));
-    tree.add_boxed(tab_pane(&tab));
+    let root = tree.add_boxed(tab_pane(&tab));
     tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 300.0));
-    (tab, tree)
+    (tab, tree, root)
 }
 
 /// A mounted prose pane must publish **both** ports. They come from two
@@ -2570,12 +2570,533 @@ fn mounted_scene(paragraphs: usize) -> (ContentTab, WidgetTree) {
 /// quietly return the seed forever and nothing would ever be persisted.
 #[test]
 fn a_mounted_prose_pane_publishes_both_view_state_ports() {
-    let (tab, _tree) = mounted_scene(4);
+    let (tab, _tree, _root) = mounted_scene(4);
     let ports = tab.view_state_ports();
     assert!(ports.editor().is_some(), "the editor handle port is empty");
     assert!(
         ports.max_scroll().is_some(),
         "the page scroll port is empty — writing_page_scroll did not publish it"
+    );
+}
+
+/// **The editor port must name the page on screen, not merely the last one built.**
+///
+/// A prose tab constructs *both* of its layouts in one pass: the Top flowing page,
+/// and the Side splitter that `WidthProbe` shows instead when the writer asked for
+/// it and the window is wide enough. Only one is ever mounted. While each column
+/// attached its handle to the tab as it was constructed, the Side layout, built
+/// second, won the slot on every prose tab in the app, whether or not anything ever
+/// showed it.
+///
+/// Nothing caught that, because both layouts edit the same document, so every
+/// assertion about a caret held either way. What does tell them apart is layout: an
+/// editor that was constructed but never mounted has no typeset geometry, so it can
+/// answer no question about where a character sits. That is also precisely why the
+/// bug mattered rather than being cosmetic, since `EditorHandle::focus` on an
+/// unmounted editor is a silent no-op and the click that was supposed to put the
+/// caret in the prose did nothing at all.
+/// **A page that is built but never shown must not claim the tab's editor.**
+///
+/// A prose tab constructs *both* of its layouts in one pass: the Top flowing page,
+/// and the Side splitter `WidthProbe` shows instead when the writer asked for it and
+/// the window is wide enough. Only one is ever mounted. While each column attached
+/// its handle to the tab as it was *constructed*, the Side layout, built second, won
+/// the slot on every prose tab in the app whether or not anything ever showed it.
+///
+/// Nothing caught that, because both layouts edit the same document, so every
+/// assertion about a caret held either way. It mattered all the same: the caret the
+/// tab captured belonged to a widget nobody was looking at, and
+/// `EditorHandle::focus` on an editor that never built is a silent no-op, so the
+/// click that was supposed to put the caret in the prose did nothing at all.
+///
+/// Asserted at construction rather than through the mounted widget deliberately.
+/// This is the exact moment the old code published, and it needs no layout, no text
+/// backend and no synthesised input to be decisive.
+#[test]
+fn building_a_tabs_pages_publishes_no_editor_until_one_is_mounted() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &Item,
+        &Scene,
+        &[],
+        Signal::new(700.0),
+        Signal::new(false),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+
+    let _body = tab_pane(&tab);
+    assert!(
+        tab.view_state_ports().editor().is_none(),
+        "building a tab's pages published an editor handle before any of them was \
+         mounted, so the tab holds whichever page happened to be constructed last"
+    );
+
+    let (mounted, _tree, _root) = mounted_scene(4);
+    assert!(
+        mounted.view_state_ports().editor().is_some(),
+        "and mounting one must publish it, or nothing is ever captured"
+    );
+}
+
+/// A heading tab (Item/Part, Item/BookBegin) publishes an **editor** port off
+/// its synopsis, the field that *is* the page there, since neither
+/// combination has a prose column at all. Before `synopsis_column` grew its
+/// `view_state` parameter nothing on this tab ever called `attach_editor`, so
+/// `view_state_ports().editor()` was permanently `None` and a restored caret
+/// had nothing to land on: the synopsis always opened at 0, whatever
+/// `seed_view_state` said.
+#[test]
+fn a_heading_tabs_editor_port_is_its_synopsis() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    for sub_role in [Part, BookBegin] {
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &sub_role,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::settings::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.synopsis()
+            .expect("a heading tab has a synopsis")
+            .doc
+            .cursor_at(0)
+            .insert_text("A heading's own synopsis, long enough to hold a caret.")
+            .unwrap();
+        // Seeded BEFORE the pane exists, exactly like the workspace-restore path.
+        tab.seed_view_state(crate::shared::ViewState {
+            caret: 12,
+            scroll: 0.0,
+        });
+
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(tab_pane(&tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 600.0));
+
+        let handle = tab
+            .view_state_ports()
+            .editor()
+            .unwrap_or_else(|| panic!("Item/{sub_role:?} published no editor port at all"));
+        assert_eq!(
+            handle.cursor_position(),
+            12,
+            "Item/{sub_role:?}'s synopsis did not open at the seeded caret, \
+                 nothing attached its handle to the tab's view-state ports"
+        );
+    }
+}
+
+/// A synopsis-only folder (Folder/None, and Folder/Note's own "Notes" page)
+/// likewise publishes an editor port off its synopsis, the same reasoning as
+/// the heading tabs above, for the two container combinations whose own page
+/// has nothing else to write in.
+#[test]
+fn a_synopsis_only_folders_editor_port_is_its_synopsis() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    for sub_role in [None, Note] {
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Folder,
+            &sub_role,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::settings::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.synopsis()
+            .expect("a synopsis-only folder has a synopsis")
+            .doc
+            .cursor_at(0)
+            .insert_text("A folder's synopsis, long enough to hold a caret position.")
+            .unwrap();
+        tab.seed_view_state(crate::shared::ViewState {
+            caret: 15,
+            scroll: 0.0,
+        });
+
+        // Folder/Note opens on its "Notes" segment by default, the same own
+        // page `folder_synopsis_body` builds for a plain Folder/None, so no
+        // event source is needed for either: nothing on this page subscribes
+        // to backend events (unlike the Overview segment beside it).
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(tab_pane(&tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 600.0));
+
+        let handle = tab
+            .view_state_ports()
+            .editor()
+            .unwrap_or_else(|| panic!("Folder/{sub_role:?} published no editor port at all"));
+        assert_eq!(
+            handle.cursor_position(),
+            15,
+            "Folder/{sub_role:?}'s synopsis did not open at the seeded caret, \
+                 nothing attached its handle to the tab's view-state ports"
+        );
+    }
+}
+
+/// A Scene tab's editor port is its **prose** editor, never the compact
+/// synopsis box that sits above it.
+///
+/// Proved by identity of behaviour, not by hoping: the two documents are
+/// deliberately different lengths, and the seeded caret is valid in the prose
+/// (80 characters) but past the end of the synopsis (5). `writing_column`
+/// clamps a seeded caret to *its own* document's length before opening the
+/// editor there, so if the compact synopsis box ever held this port instead
+/// (a regression that would compile cleanly, since both are `ProseField`s over
+/// a `TextDocument`), the reported caret would clamp down to 5 rather than
+/// land on 50.
+#[test]
+fn a_scene_tabs_editor_port_is_its_prose_not_its_synopsis_box() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &Item,
+        &Scene,
+        &[],
+        // Synopsis shown, so the compact box actually mounts rather than
+        // sitting dormant behind `VisibleWhen`, the port it must NOT hold
+        // has to exist for this to prove anything.
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    tab.main()
+        .unwrap()
+        .doc
+        .cursor_at(0)
+        .insert_text(&"x".repeat(80))
+        .unwrap();
+    tab.synopsis()
+        .unwrap()
+        .doc
+        .cursor_at(0)
+        .insert_text("short")
+        .unwrap();
+    tab.seed_view_state(crate::shared::ViewState {
+        caret: 50,
+        scroll: 0.0,
+    });
+
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 600.0));
+
+    let handle = tab
+        .view_state_ports()
+        .editor()
+        .expect("a Scene publishes an editor port");
+    assert_eq!(
+        handle.cursor_position(),
+        50,
+        "the editor port reported a caret clamped to the synopsis box's 5 \
+             characters instead of 50, it is wired to the compact synopsis, \
+             not the prose editor"
+    );
+}
+
+/// A **chapter folder**'s own page (Folder/ChapterScene, on its "Chapter"
+/// segment) uses its own prose for the editor port too, for the same reason
+/// as the Scene tab above: a chapter folder carries `SceneText` exactly like
+/// the flat chapter it promotes to, and `folder_own_pane` gives the view-state
+/// binding to its main editor whenever one exists, never to the synopsis
+/// beside it.
+#[test]
+fn a_chapter_folders_editor_port_is_its_own_prose_not_its_synopsis() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &Folder,
+        &ChapterScene,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    tab.main()
+        .expect("a chapter folder carries its own prose")
+        .doc
+        .cursor_at(0)
+        .insert_text(&"x".repeat(80))
+        .unwrap();
+    tab.synopsis()
+        .unwrap()
+        .doc
+        .cursor_at(0)
+        .insert_text("short")
+        .unwrap();
+    tab.seed_view_state(crate::shared::ViewState {
+        caret: 50,
+        scroll: 0.0,
+    });
+
+    // The default "Chapter" (own) segment, no event source needed, exactly
+    // as `segmented_containers_lay_out_their_bar` establishes for this body.
+    let mut tree = WidgetTree::new();
+    tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 600.0));
+
+    let handle = tab
+        .view_state_ports()
+        .editor()
+        .expect("a chapter folder's own page publishes an editor port");
+    assert_eq!(
+        handle.cursor_position(),
+        50,
+        "the editor port reported a caret clamped to the synopsis's 5 \
+             characters instead of 50, the chapter folder's own page is \
+             remembering its synopsis instead of its own prose"
+    );
+}
+
+/// Item/Text and Item/BookEnd, the two contentless placeholders, publish no
+/// editor port at all, so nothing can arm a focus request that no page could
+/// ever honour: `placeholder` has no writing surface, and never calls
+/// `writing_page_scroll` either.
+#[test]
+fn placeholder_tabs_publish_no_editor_port() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    for sub_role in [Text, BookEnd] {
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &sub_role,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::settings::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(tab_pane(&tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 600.0));
+        assert!(
+            tab.view_state_ports().editor().is_none(),
+            "Item/{sub_role:?} must publish no editor port, there is no page \
+                 here for a focus request to land on"
+        );
+    }
+}
+
+/// Every node at/under `root` whose type name *ends with* `suffix`, like
+/// [`first_of_type`], but returns every match instead of only the first.
+/// Needed wherever more than one instance of a widget kind can be mounted at
+/// once, which a container tab's `Switcher` guarantees the moment a second
+/// segment has ever been selected (it keeps every page it has built).
+fn all_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str, out: &mut Vec<WidgetId>) {
+    if tree
+        .widget_type_name(root)
+        .is_some_and(|n| n.ends_with(suffix))
+    {
+        out.push(root);
+    }
+    for c in tree.children(root) {
+        all_of_type(tree, c, suffix, out);
+    }
+}
+
+/// **The container-tab regression.** A `Folder/Book` tab builds its own page,
+/// its manuscript stream and its Full Synopsis stream from one
+/// `folder_segmented` call, and each of the three owns a `PageScrollPort`.
+/// Before that port re-attached on activation, each one published to the
+/// tab's view-state ports the moment it was *constructed* rather than the
+/// moment it was *shown*, so a container tab reported, and restored, the
+/// scroll of whichever segment `folder_segmented` happened to build last
+/// (Full Synopsis), whatever the writer actually had on screen.
+///
+/// This mounts the Book on its own page, switches to Full Synopsis and back,
+/// and at each stop writes a distinguishing offset through the tab-level port
+/// (`apply_view_state`) and confirms it landed on *that segment's own*
+/// `ScrollArea` and nowhere else, proving the port always names the page
+/// actually on screen, not merely some page.
+#[test]
+fn a_container_tabs_page_scroll_port_follows_the_visible_segment() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    use teksilo::widgets::ScrollArea;
+
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &Folder,
+        &Book,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    tab.segment
+        .set(Some(crate::tabs::shared::segments::segment_id(
+            crate::tabs::shared::segments::SEG_OWN,
+        )));
+    // Enough synopsis text to overflow a small viewport on BOTH the container's
+    // own page and the Full Synopsis stream (which shows this very same field
+    // as its own content), without this every offset below clamps to 0 on
+    // both pages, and the assertions would pass whichever page the port
+    // actually named.
+    tab.synopsis()
+        .expect("a Book has a synopsis")
+        .doc
+        .cursor_at(0)
+        .insert_text(&"A paragraph of synopsis text, long enough to wrap. ".repeat(20))
+        .unwrap();
+
+    // `tree_with_events`: the Full Synopsis stream's wiring child subscribes to
+    // backend events. A real text backend: the no-backend fallback does not
+    // give the synopsis a faithful height, and this test rests entirely on the
+    // page actually needing to scroll.
+    let mut tree = crate::test_support::tree_with_events(&ctx).with_text_backend(std::rc::Rc::new(
+        std::cell::RefCell::new(teksilo::canvas::MockTextBackend::new()),
+    ));
+    let root = tree.add_boxed(tab_pane(&tab));
+    let small = teksilo::prelude::SizeProposal::exact(600.0, 120.0);
+    tree.layout(small);
+
+    // The `Switcher` behind `RememberSegment` is lazy, so only the default
+    // segment (the own page) has ever been mounted, exactly one `ScrollArea`
+    // exists in the whole tree at this point.
+    let mut areas = Vec::new();
+    all_of_type(&tree, root, "ScrollArea", &mut areas);
+    assert_eq!(
+        areas.len(),
+        1,
+        "the own page is the only segment selected so far, so only its \
+             ScrollArea should exist yet, got {areas:?}"
+    );
+    let own_area = areas[0];
+
+    let offset = |tree: &WidgetTree, id: WidgetId| -> f32 {
+        tree.widget_as_any(id)
+            .and_then(|a| a.downcast_ref::<ScrollArea>())
+            .expect("ScrollArea opts into as_any")
+            .scroll_y_signal()
+            .get()
+    };
+    let max = |tree: &WidgetTree, id: WidgetId| -> f32 {
+        tree.widget_as_any(id)
+            .and_then(|a| a.downcast_ref::<ScrollArea>())
+            .expect("ScrollArea opts into as_any")
+            .max_scroll_y_signal()
+            .get()
+    };
+    assert!(
+        max(&tree, own_area) > 0.0,
+        "the own page must actually be scrollable, or the offsets below prove \
+             nothing"
+    );
+
+    tab.apply_view_state(crate::shared::ViewState {
+        caret: 0,
+        scroll: 40.0,
+    });
+    assert_eq!(
+        offset(&tree, own_area),
+        40.0,
+        "the port's write did not land on the own page's ScrollArea"
+    );
+
+    // Switch to Full Synopsis and give the tree a layout pass to mount it:
+    // `segment.set` alone only fires `RememberSegment`'s persist effect, the
+    // same reason `switching_a_container_view_persists_and_a_new_tab_inherits`
+    // has to drive an actual page swap through a layout pass rather than the
+    // signal write alone.
+    tab.segment
+        .set(Some(crate::tabs::shared::segments::segment_id(
+            crate::tabs::shared::segments::SEG_SYNOPSIS,
+        )));
+    tree.layout(small);
+
+    areas.clear();
+    all_of_type(&tree, root, "ScrollArea", &mut areas);
+    assert_eq!(
+        areas.len(),
+        2,
+        "Full Synopsis must have mounted its own ScrollArea alongside the own \
+             page's (lazily, on first selection), got {areas:?}"
+    );
+    let synopsis_area = *areas
+        .iter()
+        .find(|&&id| id != own_area)
+        .expect("a second, distinct ScrollArea for Full Synopsis");
+    assert!(
+        max(&tree, synopsis_area) > 0.0,
+        "Full Synopsis must be scrollable too, for the same reason as above"
+    );
+
+    tab.apply_view_state(crate::shared::ViewState {
+        caret: 0,
+        scroll: 25.0,
+    });
+    assert_eq!(
+        offset(&tree, synopsis_area),
+        25.0,
+        "the port's write must land on the NOW-visible Full Synopsis page"
+    );
+    assert_eq!(
+        offset(&tree, own_area),
+        40.0,
+        "...and must not disturb the page that just left the screen"
+    );
+
+    // Back to the own page. No third `ScrollArea` appears, the `Switcher`
+    // keeps every page it has ever mounted; only visibility changes.
+    tab.segment
+        .set(Some(crate::tabs::shared::segments::segment_id(
+            crate::tabs::shared::segments::SEG_OWN,
+        )));
+    tree.layout(small);
+    areas.clear();
+    all_of_type(&tree, root, "ScrollArea", &mut areas);
+    assert_eq!(areas.len(), 2, "switching back mounts no new page");
+
+    tab.apply_view_state(crate::shared::ViewState {
+        caret: 0,
+        scroll: 10.0,
+    });
+    assert_eq!(
+        offset(&tree, own_area),
+        10.0,
+        "the port must reattach to the own page on the way back, this is \
+             exactly the case `PageScrollPort`'s activation effect exists for"
+    );
+    assert_eq!(
+        offset(&tree, synopsis_area),
+        25.0,
+        "...and the page just switched away from keeps whatever it was left at"
     );
 }
 
@@ -2634,7 +3155,7 @@ fn a_seeded_caret_reaches_the_editor_and_the_live_one_comes_back() {
 /// on the same project makes that an ordinary thing to do, not a corner case.
 #[test]
 fn a_stale_caret_past_the_end_is_clamped_to_the_document() {
-    let (tab, _tree) = mounted_scene(2);
+    let (tab, _tree, _root) = mounted_scene(2);
     let len = tab.main().unwrap().doc.character_count();
     tab.apply_view_state(crate::shared::ViewState {
         caret: len + 5_000,

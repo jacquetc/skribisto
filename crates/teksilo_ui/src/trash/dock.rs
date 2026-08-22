@@ -111,12 +111,12 @@ fn trash_tree(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {
     .scroll_bar_style(ScrollBarMode::Overlay)
     .row_click_expands(false)
     .activate_on(ActivateOn::SingleClick)
-    .on_activate(move |idx, _ctx| {
+    .on_activate(move |idx, ctx| {
         if let Some(key) = activate_model.key_at(idx)
             && let Some(item_id) = activate_model.item_id_of(key)
         {
             let title = activate_model.title_of(key).unwrap_or_default();
-            on_open(item_id, title);
+            on_open(item_id, title, ctx);
         }
     })
 }

@@ -31,6 +31,7 @@ fn sample(uid: &str) -> PerProjectLayout {
         editor_splitter: None,
         docks: Some(DockLayoutState::default()),
         known_docks: vec![1, 2, 3],
+        item_view_states: Vec::new(),
     }
 }
 
@@ -166,6 +167,7 @@ fn corkboard_board_state_round_trips_through_disk() {
             trail: vec![u(1), u(2), u(3)],
             query: "ferry".into(),
         },
+        segment: String::new(),
     }];
     {
         let s = svc(d.path());
@@ -265,6 +267,7 @@ fn view_states_round_trip_through_disk() {
             trail: vec![u(9), u(10)],
             query: "keep".into(),
         },
+        segment: String::new(),
     }];
     {
         let s = svc(d.path());
@@ -282,6 +285,7 @@ fn view_states_round_trip_through_disk() {
                 trail: vec![u(9), u(10)],
                 query: "keep".into(),
             },
+            segment: String::new(),
         }]
     );
 }
@@ -479,4 +483,198 @@ fn missing_optional_fields_default_cleanly() {
     assert!(!got.focus_secondary);
     assert!(got.docks.is_none());
     assert!(got.secondary.is_empty());
+}
+
+/// **v6 → v7 is additive and keeps every tab and caret.** Same shape as v4 and
+/// v6: `PerProjectLayout::item_view_states` and `TabViewState::segment` are both
+/// brand-new fields with serde defaults, so a v6 document loads whole and merely
+/// gains an empty per-item roster and an empty segment on each remembered tab.
+/// The step exists so an *older* build meeting a v7 file is refused rather than
+/// silently rewriting it and dropping the roster.
+#[test]
+fn the_v7_migration_is_additive_and_keeps_every_tab_and_caret() {
+    let d = tempdir().unwrap();
+    let path = d.path().join("workspace.toml");
+    std::fs::write(
+        &path,
+        r#"version = 6
+[[projects]]
+work_uid = "uid-A"
+last_path = "/x/a.skrib"
+known_docks = [13631489]
+[projects.primary]
+tabs = ["00000000-0000-0000-0000-000000000003"]
+selected = "00000000-0000-0000-0000-000000000003"
+[[projects.primary.view_states]]
+uid = "00000000-0000-0000-0000-000000000003"
+caret = 412
+scroll = 96.5
+[projects.secondary]
+tabs = []
+"#,
+    )
+    .unwrap();
+
+    let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+    let got = s.get("uid-A").expect("the row survived the migration");
+    assert_eq!(got.primary.tabs.len(), 1, "a v6 file keeps its tabs");
+    assert_eq!(got.last_path, "/x/a.skrib");
+    assert_eq!(got.known_docks, vec![13631489], "and its dock roster");
+    let vs = got.primary.view_states.first().expect("the caret survived");
+    assert_eq!(vs.caret, 412);
+    assert_eq!(vs.scroll, 96.5);
+    assert_eq!(
+        vs.segment, "",
+        "no segment remembered yet, but the field must exist rather than fail the load"
+    );
+    assert!(
+        got.item_view_states.is_empty(),
+        "no per-item roster yet, but the field must exist rather than fail the load"
+    );
+}
+
+/// A tab's remembered segment, and the project's own per-item roster, both
+/// survive a real write and re-read: the half of the round trip the in-memory
+/// `touch`/`prune` unit tests below cannot cover.
+#[test]
+fn segment_and_item_view_states_round_trip_through_disk() {
+    let d = tempdir().unwrap();
+    let mut rec = sample("uid-A");
+    rec.primary.view_states = vec![TabViewState {
+        uid: u(3),
+        caret: 10,
+        scroll: 5.0,
+        corkboard: CorkboardTabState::default(),
+        segment: "corkboard".into(),
+    }];
+    rec.item_view_states = vec![
+        TabViewState {
+            uid: u(7),
+            caret: 20,
+            scroll: 15.0,
+            corkboard: CorkboardTabState::default(),
+            segment: "overview".into(),
+        },
+        TabViewState {
+            uid: u(1),
+            caret: 0,
+            scroll: 0.0,
+            corkboard: CorkboardTabState::default(),
+            segment: String::new(),
+        },
+    ];
+    {
+        let s = svc(d.path());
+        s.set(rec).unwrap();
+    }
+    let s = svc(d.path());
+    let got = s.get("uid-A").expect("row");
+    assert_eq!(got.primary.view_states[0].segment, "corkboard");
+    assert_eq!(got.item_view_states.len(), 2, "both entries survived");
+    assert_eq!(got.item_view_states[0].uid, u(7));
+    assert_eq!(got.item_view_states[0].segment, "overview");
+    assert_eq!(got.item_view_states[1].uid, u(1));
+    assert_eq!(got.item_view_states[1].segment, "");
+}
+
+/// `touch` upserts by uid (a re-touched item does not appear twice) and always
+/// moves the touched entry to the front, so the roster reads newest-first.
+#[test]
+fn touch_upserts_by_uid_and_moves_the_entry_to_the_front() {
+    let mut roster = vec![
+        TabViewState {
+            uid: u(1),
+            ..Default::default()
+        },
+        TabViewState {
+            uid: u(2),
+            ..Default::default()
+        },
+        TabViewState {
+            uid: u(3),
+            ..Default::default()
+        },
+    ];
+    touch(
+        &mut roster,
+        TabViewState {
+            uid: u(2),
+            caret: 99,
+            ..Default::default()
+        },
+    );
+    assert_eq!(roster.len(), 3, "no duplicate row for the re-touched uid");
+    assert_eq!(roster[0].uid, u(2), "the touched entry moved to the front");
+    assert_eq!(
+        roster[0].caret, 99,
+        "carrying the new state, not the stale one"
+    );
+    assert_eq!(
+        roster.iter().map(|s| s.uid).collect::<Vec<_>>(),
+        vec![u(2), u(1), u(3)],
+        "the untouched pair keep their relative order behind it"
+    );
+}
+
+/// Touching past [`MAX_ITEM_VIEW_STATES`] evicts the entry that has gone longest
+/// without being touched again, not the one first ever inserted: the axis
+/// [`touch`]'s move-to-front exists to establish.
+#[test]
+fn touch_evicts_the_oldest_past_the_cap() {
+    let mut roster = Vec::new();
+    for i in 0..MAX_ITEM_VIEW_STATES {
+        touch(
+            &mut roster,
+            TabViewState {
+                uid: u(i as u128),
+                ..Default::default()
+            },
+        );
+    }
+    assert_eq!(roster.len(), MAX_ITEM_VIEW_STATES);
+
+    touch(
+        &mut roster,
+        TabViewState {
+            uid: u(MAX_ITEM_VIEW_STATES as u128),
+            ..Default::default()
+        },
+    );
+    assert_eq!(roster.len(), MAX_ITEM_VIEW_STATES, "still capped");
+    assert!(
+        roster.iter().all(|s| s.uid != u(0)),
+        "the least-recently-touched entry fell off"
+    );
+    assert_eq!(
+        roster[0].uid,
+        u(MAX_ITEM_VIEW_STATES as u128),
+        "the newest touch is at the front"
+    );
+}
+
+/// `prune` drops exactly the entries whose uid is no longer live (an item
+/// trashed or deleted since it was recorded) and keeps the rest untouched.
+#[test]
+fn prune_drops_dead_uids_and_keeps_live_ones() {
+    let mut roster = vec![
+        TabViewState {
+            uid: u(1),
+            ..Default::default()
+        },
+        TabViewState {
+            uid: u(2),
+            ..Default::default()
+        },
+        TabViewState {
+            uid: u(3),
+            ..Default::default()
+        },
+    ];
+    let live: HashSet<Uuid> = [u(1), u(3)].into_iter().collect();
+    prune(&mut roster, &live);
+    assert_eq!(
+        roster.iter().map(|s| s.uid).collect::<Vec<_>>(),
+        vec![u(1), u(3)],
+        "the uid missing from `live` is dropped, the rest keep their order"
+    );
 }

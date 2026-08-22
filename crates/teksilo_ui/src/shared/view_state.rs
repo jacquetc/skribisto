@@ -27,10 +27,10 @@
 //! nothing. The caret comes from the editor handle, the scroll from the page.
 //! [`ViewStatePorts`] is where the two meet.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use teksilo::prelude::Signal;
+use teksilo::prelude::{BuildContext, Signal};
 use teksilo::widgets::rich_text::EditorHandle;
 
 /// Where the writer was in one document: the caret's character offset, and the
@@ -67,6 +67,21 @@ struct PageScroll {
 pub struct ViewStatePorts {
     editor: RefCell<Option<EditorHandle>>,
     page_scroll: RefCell<Option<PageScroll>>,
+    /// One-shot: once this pane is mounted, scroll the restored caret into view
+    /// if it is not already there.
+    ///
+    /// Armed only when the position did **not** come from the writer's own live
+    /// page: a workspace restore, the per-item memory seeding a freshly opened
+    /// tab, or an activation. Deliberately not armed by the rebuild carry-over in
+    /// `tabs::tab_pane`, because a writer who scrolled away from their caret and
+    /// then changed a setting must not be yanked back to it.
+    reveal: Cell<bool>,
+    /// One-shot: once this pane is mounted, take keyboard focus.
+    ///
+    /// Armed only by a deliberate activation (a click in the outline, a
+    /// double-click in an Overview table). A project opening must never take the
+    /// focus away from wherever the writer left it.
+    focus: Cell<bool>,
 }
 
 impl ViewStatePorts {
@@ -87,10 +102,87 @@ impl ViewStatePorts {
         self.editor.borrow().clone()
     }
 
-    /// The page's maximum scroll offset — what a deferred restore waits on. A
-    /// scroll written before the content has been laid out is clamped to 0 by
-    /// `ScrollArea` (`clamp_and_set_scroll`), so restoring one means waiting for
-    /// this to become non-zero rather than writing it at build time.
+    /// Ask this pane, once it is mounted, to scroll its caret into view.
+    pub fn request_reveal(&self) {
+        self.reveal.set(true);
+    }
+
+    /// Ask this pane, once it is mounted, to take keyboard focus.
+    pub fn request_focus(&self) {
+        self.focus.set(true);
+    }
+
+    /// Whether either one-shot is still armed. Read before enqueuing a mount
+    /// action so a pane nobody asked anything of enqueues nothing at all.
+    pub fn wants_after_mount(&self) -> bool {
+        self.reveal.get() || self.focus.get()
+    }
+
+    /// Take the reveal one-shot, disarming it.
+    pub fn take_reveal(&self) -> bool {
+        self.reveal.replace(false)
+    }
+
+    /// Take the focus one-shot, disarming it.
+    pub fn take_focus(&self) -> bool {
+        self.focus.replace(false)
+    }
+
+    /// Finish a restore once the pane is actually mounted: scroll the caret into view,
+    /// then take focus.
+    ///
+    /// **Order matters, and this is the half that cannot be done at build time.** The
+    /// page's scroll is already in place by now, because `ScrollArea::restore_scroll_y`
+    /// lands it during the first layout that gives the area a real range. What is left
+    /// is the correction: if the remembered offset has gone stale (the document was
+    /// edited in another window, a narrower window reflowed the prose) the caret can be
+    /// off screen, and only a laid-out editor can say so. `reveal_range` is a minimal
+    /// reveal, so it does nothing at all when the caret is already visible.
+    ///
+    /// Focus goes last, for the same reason: it is what the writer asked for when they
+    /// clicked, and it must land on a page already showing the right part of the
+    /// document.
+    ///
+    /// Reads the caret **live** off the editor rather than taking it as an argument, so
+    /// a comment or footnote seek that outranked the restored position (see
+    /// `tabs::shared::editor::writing_column`) is what gets revealed.
+    ///
+    /// Under **typewriter** scrolling the reveal is not minimal: a pin re-asserts
+    /// itself unconditionally, so it pulls the caret to the anchor rather than
+    /// leaving a restored offset alone. That is the right answer rather than a
+    /// conflict, because with a pin on, where the caret sits *is* the scroll
+    /// position; the remembered offset simply has nothing left to say.
+    ///
+    /// Enqueues nothing when neither one-shot is armed, which is the common case: a tab
+    /// the writer is simply typing in asks for none of this.
+    pub fn finish_restore_after_mount(self: &Rc<Self>, ctx: &mut BuildContext) {
+        if !self.wants_after_mount() {
+            return;
+        }
+        let ports = Rc::clone(self);
+        ctx.run_after_mount(move |ctx| {
+            let Some(handle) = ports.editor() else {
+                return;
+            };
+            if ports.take_reveal() {
+                let caret = handle.cursor_position();
+                handle.reveal_range(ctx, caret, caret);
+            }
+            if ports.take_focus() {
+                handle.focus(ctx);
+            }
+        });
+    }
+
+    /// The page's maximum scroll offset, `content_height - viewport_height`, and 0
+    /// until the content has been laid out.
+    ///
+    /// Restoring a position does **not** go through this: `ScrollArea` clamps any
+    /// offset to this maximum on every layout pass, so an offset written before the
+    /// content is measured is silently dropped, and `ScrollArea::restore_scroll_y`
+    /// exists to land one during the first layout that has a real range instead.
+    /// What is left here is answering "is this page published at all", which is what
+    /// the mounted-pane test asks.
     pub fn max_scroll(&self) -> Option<Signal<f32>> {
         self.page_scroll.borrow().as_ref().map(|p| p.max.clone())
     }
@@ -123,34 +215,20 @@ impl ViewStatePorts {
     /// Push `state` onto the mounted pane: collapse the selection to the caret,
     /// and scroll the page.
     ///
-    /// `max_caret` is the document's character count; the caret is clamped to it
-    /// because a document can have been edited in another window (or another
-    /// pane) between capture and restore, and a stale offset past the end would
-    /// otherwise land somewhere arbitrary.
+    /// The caret is **not** clamped here. A document can have been edited in
+    /// another window between capture and restore, so a stale offset past the end
+    /// has to land somewhere sensible, and `TextCursor::set_position` already puts
+    /// it at the document's own maximum cursor position. Clamping here as well
+    /// meant clamping against `character_count`, which does not count the separator
+    /// between blocks, so the caret was walked back one character per paragraph.
     ///
-    /// The scroll is clamped to the page's current maximum for the same reason
-    /// *and* a structural one: while the content is still unlaid-out that maximum
-    /// is 0, so an unclamped write would be silently reset by `ScrollArea` and
-    /// the caller would have no way to tell it had been dropped. Callers
-    /// restoring into a freshly-built pane should wait on [`Self::max_scroll`]
-    /// instead of applying immediately.
-    /// Scroll the page only, clamped to its current maximum.
-    ///
-    /// Split out from [`Self::apply`] for the deferred restore: a scroll written
-    /// before the content has laid out is clamped to 0 and lost, so the caller
-    /// waits on [`Self::max_scroll`] and then applies just this half — the caret
-    /// went in at build time and must not be re-applied over a writer who has
-    /// since moved it.
-    pub fn apply_scroll(&self, scroll: f32) {
-        if let Some(page) = self.page_scroll.borrow().as_ref() {
-            page.offset.set(scroll.clamp(0.0, page.max.get()));
-        }
-    }
-
-    pub fn apply(&self, state: ViewState, max_caret: usize) {
+    /// The scroll is clamped to the page's live maximum for the same reason. This
+    /// is the **mounted** path (the distraction-free surface handing a document
+    /// back), so that maximum is real; a not-yet-built pane is seeded instead, and
+    /// its scroll is landed by `ScrollArea::restore_scroll_y` during layout.
+    pub fn apply(&self, state: ViewState) {
         if let Some(handle) = self.editor.borrow().as_ref() {
-            let caret = state.caret.min(max_caret);
-            handle.select_range(caret, caret);
+            handle.select_range(state.caret, state.caret);
         }
         if let Some(page) = self.page_scroll.borrow().as_ref() {
             page.offset.set(state.scroll.clamp(0.0, page.max.get()));
@@ -168,6 +246,19 @@ impl ViewStatePorts {
 pub struct ViewStateBinding {
     pub initial: ViewState,
     pub ports: Rc<ViewStatePorts>,
+    /// Where **this page's** main editor puts its handle, for the page's own
+    /// `PageScrollPort` to promote into [`ViewStatePorts`] while the page is the one
+    /// on screen.
+    ///
+    /// A staging slot rather than a direct attach, because a tab builds more pages
+    /// than it shows. A prose tab constructs both its Top and its Side layout in one
+    /// pass and mounts whichever the window's width resolves to; a container
+    /// constructs every segment and mounts one. An unconditional attach is therefore
+    /// last-write-wins over pages that were merely *built*, and the tab ends up
+    /// holding a handle to an editor nobody is looking at: its caret is what gets
+    /// captured, and `EditorHandle::focus` on it does nothing at all, because an
+    /// unmounted editor has no widget id to focus.
+    pub page_editor: Rc<RefCell<Option<EditorHandle>>>,
 }
 
 #[cfg(test)]
@@ -193,13 +284,10 @@ mod tests {
         // Seeding a tab before its pane exists is the normal restore path; it
         // must not panic on the empty slots.
         let ports = ViewStatePorts::default();
-        ports.apply(
-            ViewState {
-                caret: 10,
-                scroll: 20.0,
-            },
-            100,
-        );
+        ports.apply(ViewState {
+            caret: 10,
+            scroll: 20.0,
+        });
         assert!(ports.editor().is_none());
     }
 
@@ -228,13 +316,10 @@ mod tests {
     #[test]
     fn scroll_round_trips_through_the_page_port() {
         let (ports, _offset) = ports_with_scroll(500.0);
-        ports.apply(
-            ViewState {
-                caret: 0,
-                scroll: 120.0,
-            },
-            0,
-        );
+        ports.apply(ViewState {
+            caret: 0,
+            scroll: 120.0,
+        });
         assert_eq!(ports.capture(ViewState::default()).scroll, 120.0);
     }
 
@@ -245,30 +330,45 @@ mod tests {
         // into fewer lines. `ScrollArea` would clamp this itself; doing it here
         // too keeps `capture` immediately after `apply` honest.
         let (ports, _offset) = ports_with_scroll(80.0);
-        ports.apply(
-            ViewState {
-                caret: 0,
-                scroll: 400.0,
-            },
-            0,
-        );
+        ports.apply(ViewState {
+            caret: 0,
+            scroll: 400.0,
+        });
         assert_eq!(ports.capture(ViewState::default()).scroll, 80.0);
     }
 
     #[test]
     fn a_scroll_written_before_layout_is_clamped_to_zero_not_kept() {
-        // The trap this whole port exists to make visible: until the page has
+        // The trap that decided where a restore actually happens: until the page has
         // been laid out its maximum is 0, so an offset written at build time is
-        // dropped. A restore has to wait on `max_scroll` instead — see
-        // `ViewStatePorts::apply`.
+        // dropped. This is why a remembered position is handed to
+        // `ScrollArea::restore_scroll_y` at construction, to be landed during the
+        // first layout with a real range, rather than written through here.
         let (ports, _offset) = ports_with_scroll(0.0);
-        ports.apply(
-            ViewState {
-                caret: 0,
-                scroll: 250.0,
-            },
-            0,
-        );
+        ports.apply(ViewState {
+            caret: 0,
+            scroll: 250.0,
+        });
         assert_eq!(ports.capture(ViewState::default()).scroll, 0.0);
+    }
+
+    #[test]
+    fn the_one_shots_start_disarmed_and_are_taken_once() {
+        // Nothing asks a pane for anything unless a *remembered* position or a
+        // deliberate activation put it there, and each request is honoured exactly
+        // once. A second build must not re-steal the focus.
+        let ports = ViewStatePorts::default();
+        assert!(!ports.wants_after_mount());
+        assert!(!ports.take_reveal());
+        assert!(!ports.take_focus());
+
+        ports.request_reveal();
+        ports.request_focus();
+        assert!(ports.wants_after_mount());
+        assert!(ports.take_reveal());
+        assert!(!ports.take_reveal());
+        assert!(ports.take_focus());
+        assert!(!ports.take_focus());
+        assert!(!ports.wants_after_mount());
     }
 }

@@ -274,7 +274,7 @@ pub fn writing_column(
     // at the position the tab was first opened at.
     if let Some(vs) = &view_state {
         let handle = editor.handle();
-        vs.ports.attach_editor(handle.clone());
+        *vs.page_editor.borrow_mut() = Some(handle.clone());
         // A comment dock's "jump to this thread" parks a seek that only this
         // editor can perform, because only it exists once the tab is built. It
         // wins over the restored caret: the writer just asked to go somewhere
@@ -306,8 +306,15 @@ pub fn writing_column(
                         handle.select_range(pos.min(last), (pos + 1).min(last));
                     }
                     None => {
-                        let caret = vs.initial.caret.min(doc.character_count());
-                        handle.select_range(caret, caret);
+                        // Not clamped here. `TextCursor::set_position` clamps to the
+                        // document's own maximum cursor position, which counts the
+                        // separator between every pair of blocks; `character_count`
+                        // does not count them. Clamping against the smaller of the
+                        // two silently walks the caret back one character per
+                        // paragraph, so restoring the end of a 90 block chapter put
+                        // the writer 90 characters short of where they left off, and
+                        // the further into a document they were the worse it got.
+                        handle.select_range(vs.initial.caret, vs.initial.caret);
                     }
                 }
             }

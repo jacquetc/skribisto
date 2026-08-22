@@ -111,12 +111,21 @@ pub(in crate::app) fn install(
 
     // App mediates the two peer view-models: *activating* a binder item
     // (click or Enter — NOT arrow navigation, which only moves the selection)
-    // opens (or focuses) its editor tab. The tree fires this via
+    // opens its editor tab and puts the caret in it. The tree fires this via
     // `TreeView::on_activate`; App supplies the open callback so neither
     // view-model imports the other.
+    //
+    // `activate`, not `open_or_focus`: a click on a row is the writer saying they
+    // want to be writing there. Arrow keys are untouched, because they move the
+    // highlight without ever activating, which is what keeps stepping through the
+    // binder from throwing the focus into an editor on every step.
     let on_open: crate::binder::dock::OpenItemFn = {
         let editors = deps.editors.clone();
-        Rc::new(move |item_id, title| editors.open_or_focus(item_id, &title))
+        Rc::new(
+            move |item_id, title, ctx: &mut teksilo::prelude::EventContext| {
+                editors.activate(item_id, &title, ctx)
+            },
+        )
     };
 
     // Keep the "open document" id in sync with each pane's active tab (open,

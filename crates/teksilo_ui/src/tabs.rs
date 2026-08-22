@@ -187,6 +187,20 @@ pub struct ContentTab {
     /// See [`crate::shared::ViewState`].
     view_state: Signal<crate::shared::ViewState>,
     view_state_ports: Rc<crate::shared::ViewStatePorts>,
+    /// The segment this tab should open on, remembered per **tab** rather than per
+    /// item type, and consumed by `RememberSegment::wrap` the once.
+    ///
+    /// Held as the segment's stable **string** id, because `segments::segment_id`
+    /// derives the numeric one from it one way only. `wrap` is also the only place
+    /// that can tell whether the string still names a segment this container has,
+    /// which is why the seed is validated there rather than applied here: an
+    /// extension unregistered since the position was written down must fall back to
+    /// the app-global remembered view, not select a page at random.
+    segment_seed: RefCell<Option<String>>,
+    /// The segment currently on screen, as its string id, mirrored out of
+    /// `RememberSegment` so a capture can write it down. Empty until this tab has
+    /// built a segmented body at all, which is every non-container combination.
+    segment_shown: Rc<RefCell<String>>,
     /// Selected segment for the folder container's `SegmentedControl` — per-tab
     /// (each pane keeps its own segment).
     /// Which segment the container's bar has selected, **keyed** rather than positional.
@@ -733,6 +747,8 @@ impl ContentTab {
             synopsis_handle: Rc::new(RefCell::new(None)),
             view_state: Signal::new(crate::shared::ViewState::default()),
             view_state_ports: Rc::new(crate::shared::ViewStatePorts::default()),
+            segment_seed: RefCell::new(None),
+            segment_shown: Rc::new(RefCell::new(String::new())),
             segment,
             column_width,
             epigraph_expanded: Signal::new(open_doc_epigraph_seed),
@@ -799,15 +815,6 @@ impl ContentTab {
         self.view_state.clone()
     }
 
-    /// What a freshly-built pane is handed: the position to start at, and the
-    /// ports to publish itself into.
-    pub fn view_state_binding(&self) -> crate::shared::ViewStateBinding {
-        crate::shared::ViewStateBinding {
-            initial: self.view_state.get(),
-            ports: self.view_state_ports.clone(),
-        }
-    }
-
     /// Snapshot the **live** caret and page scroll off the mounted pane, falling
     /// back to whatever was last seeded for a tab that has never been built (a
     /// restored tab the writer has not clicked into yet).
@@ -827,11 +834,7 @@ impl ContentTab {
     /// same place rather than from where it was first opened.
     pub fn apply_view_state(&self, state: crate::shared::ViewState) {
         self.view_state.set(state);
-        let max_caret = self
-            .main()
-            .map(|m| m.doc.character_count())
-            .unwrap_or(usize::MAX);
-        self.view_state_ports.apply(state, max_caret);
+        self.view_state_ports.apply(state);
     }
 
     /// Set the position a **not-yet-built** pane will start from — the workspace
@@ -839,6 +842,64 @@ impl ContentTab {
     /// pane exists. Read once by `writing_column`/`writing_page_scroll`.
     pub fn seed_view_state(&self, state: crate::shared::ViewState) {
         self.view_state.set(state);
+    }
+
+    /// As [`Self::seed_view_state`], for a position that came from a **remembered**
+    /// one rather than from this tab's own live pane: a workspace restore, the
+    /// per-item memory seeding a freshly opened tab, the distraction-free surface
+    /// taking a document over.
+    ///
+    /// The difference is the reveal: a remembered scroll offset can have gone stale
+    /// (the document was edited in another window, a narrower window reflowed the
+    /// prose), and only a laid-out editor can say whether the caret still falls
+    /// inside it. `tab_pane`'s rebuild carry-over deliberately does **not** come
+    /// through here: a writer who scrolled away from their caret and then changed a
+    /// setting must not be yanked back to it.
+    pub fn seed_remembered_view_state(&self, state: crate::shared::ViewState) {
+        self.view_state.set(state);
+        self.view_state_ports.request_reveal();
+    }
+
+    /// Ask this tab's main editor to take keyboard focus once its pane is mounted.
+    ///
+    /// For a tab whose pane is **already** built there is nothing to wait for and
+    /// the caller focuses the live handle itself; this is the other half, for a tab
+    /// that has just been opened or was restored and never selected.
+    pub fn request_focus(&self) {
+        self.view_state_ports.request_focus();
+    }
+
+    /// Set the segment this tab should open on, as its stable string id. Consumed
+    /// once, by `RememberSegment::wrap`, which is the only place that knows whether
+    /// the string still names a segment this container has.
+    pub fn seed_segment(&self, id: &str) {
+        if !id.is_empty() {
+            *self.segment_seed.borrow_mut() = Some(id.to_string());
+        }
+    }
+
+    /// Take the seeded segment, if one is still waiting.
+    pub(crate) fn take_segment_seed(&self) -> Option<String> {
+        self.segment_seed.borrow_mut().take()
+    }
+
+    /// The seeded segment without consuming it: what a page asks to find out
+    /// whether it is the one about to be shown.
+    pub(crate) fn peek_segment_seed(&self) -> Option<String> {
+        self.segment_seed.borrow().clone()
+    }
+
+    /// The slot `RememberSegment` writes the segment on screen into. It is the one
+    /// place that can resolve a `SegmentId` back to the string it was derived from,
+    /// and it outlives no tab, so it takes a handle rather than the tab itself.
+    pub(crate) fn segment_shown_sink(&self) -> Rc<RefCell<String>> {
+        self.segment_shown.clone()
+    }
+
+    /// The segment on screen, as its string id. Empty for every combination that
+    /// has no segmented bar at all, which is what gets written down for them.
+    pub fn segment_shown(&self) -> String {
+        self.segment_shown.borrow().clone()
     }
 
     /// This tab's Corkboard navigation, as store ids + the live filter — `None`

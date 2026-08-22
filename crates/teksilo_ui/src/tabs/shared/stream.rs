@@ -199,6 +199,9 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.open_doc.images(),
                     // The container's own prose, read-only while it is in the trash.
                     tab.open_doc.trashed.get(),
+                    // One synopsis per stream row, so there is no single "the"
+                    // caret for the tab to remember. Same reason as the absent sink.
+                    Option::None,
                 )),
             };
             col = col.child(vspace(6.0));
@@ -210,7 +213,18 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             .child(centered(add_button(&vm), &header_cw))
             .child(vspace(28.0));
     }
-    crate::tabs::shared::panes::writing_page_scroll(tab).child(col)
+    // Two of a container's segments come through here, and they are different
+    // pages of different heights: only the one about to be shown restores the
+    // remembered offset.
+    let segment = match flavour {
+        SplitFlavour::Prose => crate::tabs::shared::segments::SEG_MANUSCRIPT,
+        SplitFlavour::Synopsis => crate::tabs::shared::segments::SEG_SYNOPSIS,
+    };
+    let (area, port, _page) = crate::tabs::shared::panes::writing_page_scroll(
+        tab,
+        crate::tabs::shared::panes::segment_will_show(tab, segment),
+    );
+    area.child(col.child(port))
 }
 
 /// The gutter this page reserves: the margin's full column once anything on the
@@ -475,6 +489,9 @@ fn stream_row(
                         // Each row answers for itself: a stream shows many items, and only the
                         // ones actually in the trash are locked.
                         doc.trashed.get(),
+                        // One synopsis per stream row, so there is no single "the"
+                        // caret for the tab to remember. Same reason as the absent sink.
+                        Option::None,
                     ));
                 }
             }

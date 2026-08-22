@@ -285,7 +285,7 @@ fn thread_list(
     .on_activate({
         let model = model.clone();
         let vm = vm.clone();
-        move |idx, _ctx| {
+        move |idx, ctx| {
             if let Some(row) = model.with_item(idx, |r| r.clone())
                 && let Some(item_id) = row.item_id
             {
@@ -296,7 +296,7 @@ fn thread_list(
                 if let Some((content_id, start, end)) = seek_target(&row) {
                     vm.request_seek(content_id, start, end);
                 }
-                on_open(item_id, row.item_title.clone());
+                on_open(item_id, row.item_title.clone(), ctx);
             }
         }
     })
@@ -531,7 +531,7 @@ mod tests {
                 ctx.clone(),
                 Signal::new(None),
             );
-            let on_open: OpenItemFn = std::rc::Rc::new(|_id, _title| {});
+            let on_open: OpenItemFn = std::rc::Rc::new(|_id, _title, _ctx| {});
             let mut tree = crate::test_support::tree_with_events(&ctx);
             let id = tree.add_boxed(Box::new(comments_panel(
                 vm,

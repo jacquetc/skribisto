@@ -10,7 +10,10 @@
 //! in the store, so opening the same item in both panes yields two tabs over one
 //! live document.
 
+use std::cell::RefCell;
 use std::rc::Rc;
+
+use uuid::Uuid;
 
 use skribisto_model::SubRoleExt;
 use skribisto_model::scene_break::{self, SceneBreakTier};
@@ -25,7 +28,7 @@ use frontend::direct_access::BinderItemDto;
 use frontend::common::event::{Event, Origin};
 
 use crate::app_ids::AppIds;
-use crate::models::{OpenDoc, OpenDocsStore};
+use crate::models::{OpenDoc, OpenDocsStore, TabViewState};
 use crate::singles::SingleBinderItem;
 use crate::tabs::ContentTab;
 
@@ -75,6 +78,12 @@ const PANE_MIN_WIDTH: f32 = 320.0;
 #[derive(Clone)]
 pub struct EditorsViewModel {
     app_ctx: Rc<AppContext>,
+    /// Where the writer was in each item of this project, whether or not a tab is
+    /// open on it. Injected after construction (`set_item_view_states`) rather than
+    /// taken as a constructor argument, the same shape `WorkspaceLayoutViewModel`
+    /// takes this view-model by: it is Tier 2 and this is Tier 3, so the handle is
+    /// created first and pointed at afterwards.
+    item_view_states: Rc<RefCell<Option<crate::shared::ItemViewStates>>>,
     primary: Pane,
     secondary: Pane,
     /// `true` when the side pane is shown. Drives the split button visual, the
@@ -209,6 +218,7 @@ impl EditorsViewModel {
         );
         Self {
             app_ctx,
+            item_view_states: Rc::new(RefCell::new(None)),
             primary: Pane::new(),
             secondary: Pane::new(),
             split_active: Signal::new(false),
@@ -667,6 +677,11 @@ impl EditorsViewModel {
         ));
         self.pane(side).selected.set(Some(id));
         self.set_focused(side);
+        // Where the writer was in this item last time, if this project remembers.
+        // After the push, because the seed is written onto the `ContentTab` the pane
+        // has just taken ownership of; before the pane builds, because that is when
+        // the seed is read.
+        self.seed_from_memory(side, item_id);
     }
 
     /// This window's own synopsis-visibility signal — what a **pane** tab is
@@ -774,7 +789,7 @@ impl EditorsViewModel {
     /// pushes a `TabHandle`, so the pane widget has not built yet and the seed
     /// is read once when it does.
     pub fn seed_view_state(&self, side: Side, item_id: u64, state: crate::shared::ViewState) {
-        self.with_tab(side, item_id, |t| t.seed_view_state(state));
+        self.with_tab(side, item_id, |t| t.seed_remembered_view_state(state));
     }
 
     /// The live caret + page scroll of whichever open tab shows `item_id`.
@@ -786,6 +801,15 @@ impl EditorsViewModel {
         let focused = self.focused_side.get();
         self.with_tab(focused, item_id, |t| t.capture_view_state())
             .or_else(|| self.with_tab(focused.other(), item_id, |t| t.capture_view_state()))
+    }
+
+    /// The segment whichever open tab shows `item_id` is on, as its string id, or
+    /// an empty string for a tab with no segmented bar. Focused side first, for the
+    /// same reason [`Self::view_state_of`] asks it first.
+    pub fn segment_of(&self, item_id: u64) -> Option<String> {
+        let focused = self.focused_side.get();
+        self.with_tab(focused, item_id, |t| t.segment_shown())
+            .or_else(|| self.with_tab(focused.other(), item_id, |t| t.segment_shown()))
     }
 
     /// The Corkboard navigation of whichever open tab shows `item_id` — focused
@@ -852,6 +876,133 @@ impl EditorsViewModel {
     pub fn open_to_side(&self, item_id: u64, title: &str) {
         self.set_split(true);
         self.open_in(Side::Secondary, item_id, title);
+    }
+
+    /// Point this view-model at the project's remembered positions. Called once,
+    /// beside `WorkspaceLayoutViewModel::set_editors`, for the reason given on the
+    /// field.
+    pub fn set_item_view_states(&self, states: crate::shared::ItemViewStates) {
+        *self.item_view_states.borrow_mut() = Some(states);
+    }
+
+    /// The **writer** asked to go to `item_id`: open or raise its tab, and put the
+    /// caret in it.
+    ///
+    /// The plain [`Self::open_or_focus`] deliberately does not do this. Opening a
+    /// project restores tabs without ever taking the keyboard away from where the
+    /// writer left it, and so do the several places that open a tab as a side
+    /// effect of something else. This is the one door for a deliberate gesture: a
+    /// click in the outline, a double-click or Enter on an Overview row.
+    ///
+    /// Two routes, because a tab that is already open is **not** rebuilt when it is
+    /// raised: a `TabWidget` keeps its built pages, so a request parked for the next
+    /// build would never be consumed. When the pane is already built its editor
+    /// handle is live and is focused here and now; when it is not, the request is
+    /// parked and the page takes it as it mounts.
+    pub fn activate(&self, item_id: u64, title: &str, ctx: &mut teksilo::prelude::EventContext) {
+        self.open_in(Side::Primary, item_id, title);
+        self.focus_main_editor(Side::Primary, item_id, ctx);
+    }
+
+    /// [`Self::activate`], into the side pane: Ctrl+Enter, a middle-click, and both
+    /// "Open to the Side" context-menu rows.
+    pub fn activate_to_side(
+        &self,
+        item_id: u64,
+        title: &str,
+        ctx: &mut teksilo::prelude::EventContext,
+    ) {
+        self.set_split(true);
+        self.open_in(Side::Secondary, item_id, title);
+        self.focus_main_editor(Side::Secondary, item_id, ctx);
+    }
+
+    /// Focus now if the pane is built, park the request if it is not.
+    ///
+    /// A tab with no editor at all (a placeholder combination, a container sitting
+    /// on its Corkboard or Overview) parks a request no page there can honour. That
+    /// is deliberate and bounded: `RememberSegment` stands the request down the
+    /// moment the writer chooses a different segment, so it can only ever be taken
+    /// by the page they were heading for.
+    fn focus_main_editor(
+        &self,
+        side: Side,
+        item_id: u64,
+        ctx: &mut teksilo::prelude::EventContext,
+    ) {
+        // Resolved before focusing, not inside the closure: `with_tab` takes a
+        // `Fn(&ContentTab)` and `EditorHandle::focus` needs `&mut EventContext`.
+        let handle = self
+            .with_tab(side, item_id, |t| match t.view_state_ports().editor() {
+                Some(handle) => Some(handle),
+                None => {
+                    t.request_focus();
+                    None
+                }
+            })
+            .flatten();
+        if let Some(handle) = handle {
+            handle.focus(ctx);
+        }
+    }
+
+    /// The durable uid of an item, by a single-entity read rather than a walk of
+    /// the whole binder. It is the same read `sync_active_item` already pays on
+    /// every focus change.
+    fn uid_of(&self, item_id: u64) -> Option<Uuid> {
+        binder_ops::item_dto(&self.app_ctx, item_id).map(|dto| dto.uid)
+    }
+
+    /// Seed a freshly opened tab from the project's remembered positions.
+    ///
+    /// A no-op during a workspace restore in the sense that matters: `restore`
+    /// seeds each tab explicitly straight afterwards, from the **per-pane** record,
+    /// which is the more specific of the two and so wins by simply landing second.
+    fn seed_from_memory(&self, side: Side, item_id: u64) {
+        let Some(states) = self.item_view_states.borrow().clone() else {
+            return;
+        };
+        let Some(uid) = self.uid_of(item_id) else {
+            return;
+        };
+        let Some(remembered) = states.get(uid) else {
+            return;
+        };
+        self.with_tab(side, item_id, |t| {
+            t.seed_remembered_view_state(crate::shared::ViewState {
+                caret: remembered.caret,
+                scroll: remembered.scroll,
+            });
+            t.seed_segment(&remembered.segment);
+        });
+    }
+
+    /// Write a tab's live position into the project's remembered positions.
+    fn remember_position(&self, tab: &ContentTab) {
+        let Some(states) = self.item_view_states.borrow().clone() else {
+            return;
+        };
+        let Some(uid) = self.uid_of(tab.item_id()) else {
+            return;
+        };
+        let live = tab.capture_view_state();
+        states.record(TabViewState {
+            uid,
+            caret: live.caret,
+            scroll: live.scroll,
+            // The Corkboard's own navigation stays per pane, in `PaneLayout`: its
+            // trail is a list of store ids that only mean anything against the tab
+            // that walked it, and translating one here would need the whole item
+            // stream for a piece of state a reopened tab is happy to start fresh on.
+            corkboard: Default::default(),
+            segment: tab.segment_shown(),
+        });
+    }
+
+    /// Set the segment a **not-yet-built** tab will open on, by its string id. The
+    /// workspace restore's counterpart of [`Self::seed_view_state`].
+    pub fn seed_segment(&self, side: Side, item_id: u64, segment: &str) {
+        self.with_tab(side, item_id, |t| t.seed_segment(segment));
     }
 
     // ── Session snapshot / restore ────────────────────────────────────────────
@@ -927,7 +1078,16 @@ impl EditorsViewModel {
             .filter_map(|i| {
                 pane.tabs
                     .with_item(i, |h| {
-                        h.payload.downcast_ref::<ContentTab>().map(|t| t.item_id())
+                        h.payload.downcast_ref::<ContentTab>().map(|t| {
+                            // Where the writer was, before the tab goes. Collapsing the
+                            // split is a close the writer performed, exactly as clicking
+                            // a tab's cross is, so it has to write the position down the
+                            // same way `close_tab` does. It is a separate teardown path
+                            // and the `ContentTab` is unreachable after `tabs.clear()`,
+                            // so this cannot simply defer to that one.
+                            self.remember_position(t);
+                            t.item_id()
+                        })
                     })
                     .flatten()
             })
@@ -984,6 +1144,14 @@ impl EditorsViewModel {
                             // gone, so saving would error or resurrect an orphan.
                             if flush {
                                 let _ = t.flush(stack);
+                                // And write down where the writer was, so reopening
+                                // this item comes back to it. Gated on the same flag
+                                // for the same reason: a hard-removed item has no
+                                // position worth keeping, and the uid this would key
+                                // on no longer resolves. `close_all` never reaches
+                                // here at all, which is what keeps a project switch
+                                // from recording against a half-torn-down store.
+                                self.remember_position(t);
                             }
                             t.item_id()
                         })
