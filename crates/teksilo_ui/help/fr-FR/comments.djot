@@ -1,4 +1,4 @@
-Les commentaires sont des notes en marge du texte d'une scène : une remarque attachée à
+Les commentaires sont des notes en marge du texte d’une scène : une remarque attachée à
 une expression, une phrase ou tout un paragraphe, qui reste en place pendant que vous
 continuez à écrire.
 
@@ -6,66 +6,66 @@ continuez à écrire.
 
 Sélectionnez le texte à commenter et appuyez sur `Ctrl+Alt+M`, ou utilisez *Format ▸
 Ajouter un commentaire*. Pour commenter tout un paragraphe sans rien sélectionner, placez
-le curseur dedans et appuyez sur `Ctrl+Alt+Shift+M`, ou utilisez *Format ▸ Commenter ce
-paragraphe*. Ces deux commandes ne sont actives que lorsqu'une scène est active dans l'éditeur.
+le curseur dedans et appuyez sur `Ctrl+Alt+Maj+M`, ou utilisez *Format ▸ Commenter ce
+paragraphe*. Ces deux commandes ne sont actives que lorsqu’une scène est active dans l’éditeur.
 
-Un nouveau commentaire s'ouvre avec une zone de texte vide dans la marge. Il s'enregistre
-au fur et à mesure que vous tapez, il n'y a donc pas de bouton d'enregistrement. Si vous
-n'avez pas encore défini de nom pour vous-même, une notification vous renvoie vers
+Un nouveau commentaire s’ouvre avec une zone de texte vide dans la marge. Il s’enregistre
+au fur et à mesure que vous tapez, il n’y a donc pas de bouton d’enregistrement. Si vous
+n’avez pas encore défini de nom pour vous-même, une notification vous renvoie vers
 *Paramètres ▸ Utilisateur* afin que le commentaire puisse être signé.
 
 ## Répondre et résoudre
 
-N'importe qui peut ajouter une réponse à un fil de commentaire : cliquez sur *Répondre*
-sous la note d'origine et tapez votre texte. Les réponses forment une liste à plat sous
-le commentaire d'origine, dans leur ordre d'écriture ; il n'y a pas d'imbrication.
+N’importe qui peut ajouter une réponse à un fil de commentaire : cliquez sur *Répondre*
+sous la note d’origine et tapez votre texte. Les réponses forment une liste à plat sous
+le commentaire d’origine, dans leur ordre d’écriture ; il n’y a pas d’imbrication.
 
-Une fois qu'un commentaire a été traité, marquez-le comme *Résoudre*. Un fil résolu reste
+Une fois qu’un commentaire a été traité, marquez-le comme *Résoudre*. Un fil résolu reste
 visible (filtré séparément, voir ci-dessous), et vous pouvez le *Rouvrir* plus tard si le
-problème n'était pas réellement réglé. *Supprimer* efface un commentaire ; une réponse a
-son propre bouton *Supprimer la réponse* à côté d'elle.
+problème n’était pas réellement réglé. *Supprimer* efface un commentaire ; une réponse a
+son propre bouton *Supprimer la réponse* à côté d’elle.
 
 ## Où retrouver les commentaires
 
 Les mêmes fils apparaissent à trois endroits, qui lisent tous les mêmes données :
 
-- La *marge de l'éditeur*, à côté de la scène que vous écrivez, qui n'affiche que les
-  commentaires ancrés à ce qui est visible à l'écran.
+- La *marge de l’éditeur*, à côté de la scène que vous écrivez, qui n’affiche que les
+  commentaires ancrés à ce qui est visible à l’écran.
 - Le panneau *Commentaires* (à gauche de la fenêtre), qui liste tous les commentaires
   du projet entier.
 - Le panneau *Ce document* (à droite), qui ne liste que les commentaires du document
   actuellement ouvert.
 
 Les deux panneaux filtrent par Tous, Ouverts, Résolus ou Orphelins, et trient par ordre
-du document ou du plus récent au plus ancien. *Outils ▸ Commentaires* n'affiche ou ne
-masque que les repères en marge et leur présentation dans l'éditeur : cela ne touche à
+du document ou du plus récent au plus ancien. *Outils ▸ Commentaires* n’affiche ou ne
+masque que les repères en marge et leur présentation dans l’éditeur : cela ne touche à
 aucun des deux panneaux, qui continuent de lister tous les fils sans exception.
 
 ## Comment un commentaire garde sa position
 
 Un commentaire ne mémorise pas une position brute dans le texte. Il mémorise plutôt les
 mots auxquels il était attaché, un peu du texte qui les entoure de chaque côté, et une
-indication approximative de l'endroit où cela se trouvait. Rouvrir le projet, ou modifier
-le texte autour d'un commentaire, fait que Skribisto recherche à nouveau ce passage cité
+indication approximative de l’endroit où cela se trouvait. Rouvrir le projet, ou modifier
+le texte autour d’un commentaire, fait que Skribisto recherche à nouveau ce passage cité
 plutôt que de faire confiance à un chiffre que la modification aurait rendu sans
-signification. C'est aussi pour cela qu'un commentaire survit à un enregistrement puis un
-rechargement : rien d'autre dans le texte (identifiants de blocs, mises en forme,
-identifiants d'entités) n'est garanti de revenir de la même façon la prochaine fois ; seul
+signification. C’est aussi pour cela qu’un commentaire survit à un enregistrement puis un
+rechargement : rien d’autre dans le texte (identifiants de blocs, mises en forme,
+identifiants d’entités) n’est garanti de revenir de la même façon la prochaine fois ; seul
 le texte lui-même le fait de manière fiable.
 
-Il arrive qu'un commentaire perde son ancrage. Si les mots exacts auxquels il était
-attaché sont supprimés ou réécrits au point d'être méconnaissables, Skribisto le marque
-*Texte introuvable* plutôt que de l'attacher en silence à la mauvaise phrase. Un
-commentaire arrivé par un format d'import sans véritable position dans le texte (un
-titre, par exemple) s'affiche à la place comme *Aucune position dans le texte*. Dans les
-deux cas, le commentaire n'est jamais supprimé : utilisez le filtre *Orphelins* dans l'un
-ou l'autre panneau pour le retrouver.
+Il arrive qu’un commentaire perde son ancrage. Si les mots exacts auxquels il était
+attaché sont supprimés ou réécrits au point d’être méconnaissables, Skribisto le marque
+*Texte introuvable* plutôt que de l’attacher en silence à la mauvaise phrase. Un
+commentaire arrivé par un format d’import sans véritable position dans le texte (un
+titre, par exemple) s’affiche à la place comme *Aucune position dans le texte*. Dans les
+deux cas, le commentaire n’est jamais supprimé : utilisez le filtre *Orphelins* dans l’un
+ou l’autre panneau pour le retrouver.
 
 ## Les commentaires en DOCX et ODT
 
-Les commentaires voyagent avec votre manuscrit lorsque vous l'envoyez pour une relecture
-extérieure puis récupérez le fichier. Un style d'export peut choisir d'*Inclure les
-commentaires*, associé aux *marqueurs d'aller-retour* pour qu'un fichier de retour mette
-à jour ce projet au lieu d'arriver comme une copie séparée. Voir [l'aller-retour](:help-round-trip)
-pour savoir comment l'envoi d'une scène puis sa réimportation fonctionnent, y compris ce
-qu'il advient des commentaires et des réponses en chemin.
+Les commentaires voyagent avec votre manuscrit lorsque vous l’envoyez pour une relecture
+extérieure puis récupérez le fichier. Un style d’export peut choisir d’*Inclure les
+commentaires*, associé aux *marqueurs d’aller-retour* pour qu’un fichier de retour mette
+à jour ce projet au lieu d’arriver comme une copie séparée. Voir [l’aller-retour](:help-round-trip)
+pour savoir comment l’envoi d’une scène puis sa réimportation fonctionnent, y compris ce
+qu’il advient des commentaires et des réponses en chemin.

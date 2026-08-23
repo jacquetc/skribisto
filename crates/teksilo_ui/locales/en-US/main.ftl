@@ -35,7 +35,7 @@ menu-quit = &Quit
 menu-view = &View
 menu-outline = &Outline
 menu-search = &Search in Project
-menu-timeline = &Timeline
+menu-timeline = Ti&meline
 menu-search-preview = Search &Preview
 menu-fullscreen = &Fullscreen
 menu-focus-mode = &Distraction-free Mode
@@ -112,7 +112,7 @@ ctx-promote = &Convert to
 promote-chapter-folder = Chapter folder
 promote-flat-chapter = Flat chapter
 promote-lossy-title = Nowhere to keep the text
-promote-lossy-text = A { $target } has nowhere to keep: { $kinds }. Move or clear that text first, then convert.
+promote-lossy-text = A { $target } has nowhere to keep these: { $kinds }. Move or clear that text first, then convert.
 # Content-role names, for explaining what a conversion cannot carry over.
 content-scene-text = Scene text
 content-note-text = Note text
@@ -123,7 +123,10 @@ content-chapter-title = Chapter title
 content-epigraph-text = Epigraph
 content-paratext-text = Paratext
 promote-blocked-title = Chapter not empty
-promote-blocked-text = This chapter still holds { $count } item(s). Move or trash them before converting it to a flat chapter.
+promote-blocked-text = { $count ->
+    [one] This chapter still holds { $count } item. Move or trash it before converting it to a flat chapter.
+   *[other] This chapter still holds { $count } items. Move or trash them before converting it to a flat chapter.
+}
 
 ## Inspector (trailing dock) + status-bar dock toggles
 inspector = Inspector
@@ -200,7 +203,7 @@ settings-empty-title = No settings here yet
 settings-empty-hint = This section will gain options in a future update.
 
 ## Settings window: categories
-settings-sec-appearance-behaviour = Appearance & Behaviour
+settings-sec-appearance-behaviour = Appearance & Behavior
 settings-sec-editor = Editor
 settings-sec-spelling = Spelling
 settings-sec-backup = Backup & Sync
@@ -271,7 +274,7 @@ settings-desc-structure = Whether this project's chapters are folders or single 
 settings-desc-language = The language this project's prose is checked against.
 settings-desc-work-backup = This project's own backup policy, or the general one.
 settings-desc-personal-dictionary = The words this project treats as correctly spelled.
-settings-desc-tags = The colour-coded labels this project marks its items with.
+settings-desc-tags = The color-coded labels this project marks its items with.
 settings-desc-templates = The note templates you can insert while writing in this project.
 settings-desc-text-replacements = Shortcuts that expand as you type in this project.
 settings-desc-work-punctuation = The quotes, dashes and spacing this project's prose follows.
@@ -302,7 +305,7 @@ editor-size-changed-corkboard-expanded = Expanded editor text size: { $percent }
 editor-size-changed-distraction-free = Distraction-free text size: { $percent }
 
 menu-text-size-increase = &Increase text size
-menu-text-size-decrease = &Decrease text size
+menu-text-size-decrease = De&crease text size
 menu-text-size-reset = &Reset text size
 settings-field-line-height = Line height
 settings-field-first-line-indent = First-line indent
@@ -370,7 +373,7 @@ tidy-titles-lead = { $count ->
        *[other] { $count } chapters and parts are titled with nothing but their own number.
     }
 tidy-titles-explain = Clearing those titles leaves each one named by the number the book already knows — the same number the export prints. Nothing else changes, and one undo puts them all back.
-menu-document-tidy-titles = Tidy chapter titles…
+menu-document-tidy-titles = Tid&y chapter titles…
 settings-group-numbering = Numbering
 settings-number-chapters = Number chapters and parts
 settings-number-chapters-tip = Chapters and parts carry a number worked out from where they sit in the book — shown beside their title here, and printed by the export.
@@ -463,7 +466,7 @@ welcome-empty-recents = No recent works yet.
 welcome-no-matches = No recent work matches your search.
 welcome-learn-soon = Guides and tips are coming soon.
 welcome-about-blurb = Skribisto, a Rust + Teksilo rewrite of the writing app.
-# The *…* is inline markup, not decoration: it italicises the line (the widget
+# The *…* is inline markup, not decoration: it italicizes the line (the widget
 # renders it in a serif italic). Keep the asterisks when translating.
 welcome-tagline = *A quiet place to write long things.*
 # Tooltip and screen-reader name of the two icon links under the sidebar nav.
@@ -625,7 +628,10 @@ pace-chart-words-per-day = Words per day
 pace-series-actual = Actual
 pace-series-target = Target
 pace-series-words-per-day = Words/day
-pace-daily-target-line = Even pace: { $count } words/day
+pace-daily-target-line = Even pace: { $count ->
+    [one] { $count } word/day
+   *[other] { $count } words/day
+}
 pace-section-holidays = Holidays
 pace-section-milestones = Milestones
 pace-holidays-none = No holidays. Every scheduled day counts.
@@ -679,7 +685,10 @@ open-here = Open here
 binder-all = All Binders
 binder-show-all = Show all binders
 binder-new = New binder…
-binder-item-count = { $count } items
+binder-item-count = { $count ->
+    [one] { $count } item
+   *[other] { $count } items
+}
 binder-search-placeholder = Filter the outline…
 binder-search-scope = Search all binders
 binder-trash-confirm-title = Move binder to trash?
@@ -734,7 +743,10 @@ backing-up = Backing up…
 backup-nothing-open = No project is open to back up.
 backup-already-running = A backup is already in progress.
 backup-complete = Backup complete ({ $ok } saved, { $skipped } already current)
-backup-partial = Backup finished: { $ok } saved, { $failed } destination(s) failed
+backup-partial = Backup finished: { $ok } saved, { $failed ->
+    [one] { $failed } destination failed
+   *[other] { $failed } destinations failed
+}
 backup-no-destination-title = No backup location available
 backup-no-destination-text = None of the configured backup destinations can be reached (for example, an external drive may be unplugged). Plug it in and retry, or exit without backing up.
 backup-failed-close-title = The backup could not be saved
@@ -879,7 +891,7 @@ new-work-template-notebook-count = free-form notes
 # ChapterScene toggle (novel templates)
 new-work-chapter-scene = Flat chapters
 new-work-chapter-scene-tip = Each chapter is a single row you write straight into, with no scenes under it. Leave this off for the classic layout, where a chapter is a folder: you write straight into that too, but it can hold scenes as well.
-new-work-chapter-scene-tip-more = You write into a chapter either way. The only difference is whether it can *contain* scenes. Skribisto's binder tree is organisational only, so both layouts compile to the same book, you can mix them freely, and Promote converts a chapter between the two without losing a word.
+new-work-chapter-scene-tip-more = You write into a chapter either way. The only difference is whether it can *contain* scenes. Skribisto's binder tree is organizational only, so both layouts compile to the same book, you can mix them freely, and Promote converts a chapter between the two without losing a word.
 # Field validation
 new-work-name-required = Enter a name for the work
 new-work-name-invalid = This name has no usable characters
@@ -933,9 +945,15 @@ import-plume-story-bible-binder = Story Bible
 # Progress toast (the import runs as a long operation)
 import-plume-progress-title = Importing Plume project…
 import-plume-cancel-import = Cancel
-import-plume-cancelled = Import cancelled
+import-plume-cancelled = Import canceled
 # Result
-import-plume-done = Imported { $imported } items. { $skipped } trashed items were not migrated.
+import-plume-done = Imported { $imported ->
+    [one] { $imported } item.
+   *[other] { $imported } items.
+} { $skipped ->
+    [one] { $skipped } trashed item was not migrated.
+   *[other] { $skipped } trashed items were not migrated.
+}
 import-plume-open-now = Open now
 # Shown when the importer could not carry something over verbatim.
 import-plume-warnings = { $count ->
@@ -965,7 +983,7 @@ export-export = Export
 export-save-dialog-title = Export to file
 # Left-pane section headers (normal case) + scope segmented control
 export-section-what = What to export
-export-section-style = Style preset
+export-section-style = Style
 export-section-destination = Destination
 export-custom-selection = Custom selection
 export-selected-count = { $count } selected
@@ -1004,8 +1022,11 @@ export-overwrite-title = Replace existing file?
 export-overwrite-text = “{ $name }” already exists. Replace it?
 # Progress toast (the export runs as a long operation)
 export-progress-title = Exporting…
-export-cancelled = Export cancelled
-export-done = Exported { $count } item(s)
+export-cancelled = Export canceled
+export-done = Exported { $count ->
+    [one] { $count } item
+   *[other] { $count } items
+}
 export-open-file = Open
 export-show-in-folder = Show in folder
 # Error toast: a short reason in the body, the full technical chain behind Details
@@ -1056,7 +1077,7 @@ search-tip-part = Parts: part-level dividers.
 search-tip-chapter = Chapters: chapters, in whichever way the project stores them.
 search-tip-scene = Scenes: the rows that hold your prose.
 search-tip-note = Notes: free-form notes.
-search-tip-folder = Folders: plain organising folders and separators.
+search-tip-folder = Folders: plain organizing folders and separators.
 search-tip-paratext = A text that belongs to the book but not to its story — a preface, a dedication, an afterword. Never counted in the manuscript.
 search-tip-replace = Replace: show the replacement field and Replace All.
 search-error = Search failed: { $message }
@@ -1149,7 +1170,7 @@ dict-download-title = Downloading { $name }…
 dict-download-done = Installed { $name }
 dict-download-failed = Couldn't download { $name }: { $error }
 dict-removed = Removed { $name }
-dict-accept-first = Accept the licence before downloading { $name }
+dict-accept-first = Accept the license before downloading { $name }
 # Settings ▸ Dictionaries pane
 settings-dict-tab-installed = Installed
 settings-dict-tab-get-more = Get more
@@ -1162,16 +1183,19 @@ dict-download-button = Download
 dict-downloading = Downloading…
 dict-installed-label = Installed
 dict-remove = Remove
-dict-view-license = View licence
+dict-view-license = View license
 dict-approx-size = ~{ $size }
 dict-personal-empty = No personal words in this project yet.
 dict-personal-add = Add
 dict-personal-placeholder = Add a word…
 # Missing-dictionary prompt after opening a project
-dict-missing-toast = This project uses { $count } dictionaries you don't have installed
+dict-missing-toast = { $count ->
+    [one] This project uses { $count } dictionary you don't have installed
+   *[other] This project uses { $count } dictionaries you don't have installed
+}
 dict-missing-action = Get dictionaries
-# Licence modal
-dict-license-title = { $name } licence
+# License modal
+dict-license-title = { $name } license
 dict-license-accept = Accept & Download
 dict-license-cancel = Cancel
 dict-license-close = Close
@@ -1201,8 +1225,8 @@ dict-add-failed = Couldn't add the dictionary: { $error }
 # The Inspector's per-item export controls (M3)
 inspector-export = Export
 inspector-exportable = Include in exports
-ctx-number = Number this chapter
-ctx-unnumber = Do not number this chapter
+ctx-number = &Number this chapter
+ctx-unnumber = Do not &number this chapter
 inspector-numbering = Numbering
 inspector-numbered = Numbered
 inspector-numbered-tip = This chapter takes its place in the book's numbering. Switch it off for a prologue, an epilogue or an interlude.
@@ -1246,9 +1270,15 @@ settings-user-dict-import-tip = Add words from a plain text file, one word per l
 settings-user-dict-export-tip = Save the whole list to a plain text file, one word per line.
 settings-user-dict-txt-filter = Text files
 settings-user-dict-duplicate = Already in the dictionary
-settings-user-dict-imported = Imported { $count } words ({ $duplicates } already present).
+settings-user-dict-imported = Imported { $count ->
+    [one] { $count } word
+   *[other] { $count } words
+} ({ $duplicates } already present).
 settings-user-dict-import-failed = Could not read the word list: { $error }
-settings-user-dict-exported = Saved { $count } words.
+settings-user-dict-exported = Saved { $count ->
+    [one] { $count } word.
+   *[other] { $count } words.
+}
 settings-user-dict-export-failed = Could not save the word list: { $error }
 
 ## Settings: Work ▸ Text replacements (per-project custom lexicon)
@@ -1285,7 +1315,10 @@ editor-menu-no-suggestions = No suggestions
 editor-menu-add-to-dictionary = Add “{ $word }” to dictionary
 editor-menu-add-words-to-dictionary = Add selected words to dictionary
 editor-dict-added = Added “{ $word }” to your dictionary.
-editor-dict-added-multi = Added { $count } words to your dictionary.
+editor-dict-added-multi = { $count ->
+    [one] Added { $count } word to your dictionary.
+   *[other] Added { $count } words to your dictionary.
+}
 toast-undo = Undo
 
 ## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
@@ -1312,12 +1345,18 @@ trash-restore-orphaned = This item's original spot is gone — choose where to r
 trash-restore-no-project = No project is open, so there is nothing to restore.
 trash-delete-no-project = No project is open, so there is nothing to delete.
 trash-empty-confirm-title = Empty the trash?
-trash-empty-confirm-text = { $count } trashed entries will be permanently deleted. This can't be undone (a short grace period lets you undo right after).
+trash-empty-confirm-text = { $count ->
+    [one] { $count } trashed entry will be permanently deleted.
+   *[other] { $count } trashed entries will be permanently deleted.
+} This can't be undone (a short grace period lets you undo right after).
 trash-emptied-title = Trash emptied
 trash-emptied-body = Everything in the trash was permanently deleted.
 trash-empty-no-project = No project is open, so there is no trash to empty.
 trash-delete-forever-confirm-title = Delete forever?
-trash-delete-forever-confirm-text = { $count } item(s) will be permanently deleted. This can't be undone (a short grace period lets you undo right after).
+trash-delete-forever-confirm-text = { $count ->
+    [one] { $count } item will be permanently deleted.
+   *[other] { $count } items will be permanently deleted.
+} This can't be undone (a short grace period lets you undo right after).
 trash-deleted-title = Deleted forever
 trash-deleted-body = { $count } permanently deleted.
 trash-undo = Undo
@@ -1388,7 +1427,7 @@ link-dialog-cancel = Cancel
 link-dialog-remove = Remove link
 # Refused because a document could otherwise make a click launch a program.
 link-scheme-refused = Only web and email links can be opened. { $url } was left alone.
-menu-format-link = &Link…
+menu-format-link = Li&nk…
 format-clear = Clear formatting
 format-heading = Heading level
 format-heading-normal = Normal text
@@ -1399,7 +1438,7 @@ format-heading-4 = Heading 4
 format-heading-5 = Heading 5
 format-heading-6 = Heading 6
 format-align-left = Align left
-format-align-center = Centre
+format-align-center = Center
 format-direction-rtl = Right-to-left paragraph
 format-blockquote = Blockquote
 format-list-bullet = Bulleted list
@@ -1433,7 +1472,7 @@ menu-format-heading-5 = Heading &5
 menu-format-heading-6 = Heading &6
 menu-format-alignment = &Alignment
 menu-format-align-left = Align &Left
-menu-format-align-center = &Centre
+menu-format-align-center = &Center
 menu-format-direction = Dir&ection
 menu-format-direction-auto = &Automatic
 menu-format-direction-ltr = &Left to Right
@@ -1456,7 +1495,7 @@ menu-format-table-col-after = Insert Column Af&ter
 menu-format-table-row-delete = &Delete Row
 menu-format-table-col-delete = Delete &Column
 menu-format-table-remove = &Remove Table
-menu-format-undo = U&ndo
+menu-format-undo = Und&o
 menu-format-redo = &Redo
 
 ## About panel
@@ -1511,7 +1550,8 @@ settings-punctuation-ellipsis = Turn ... into an ellipsis
 settings-punctuation-quotes = Curl quotation marks and apostrophes
 settings-quote-style = Quotation marks
 settings-quote-style-locale = Language default
-settings-quote-style-curly = “Curly”
+settings-quote-style-curly = “Double”
+settings-quote-style-curly-single = ‘Single’
 settings-quote-style-guillemets = «Guillemets»
 settings-quote-style-low-high = „Low-high“
 settings-punctuation-spacing = Space before ; : ! ?
@@ -1557,7 +1597,7 @@ settings-themes-field-ink = Text
 settings-themes-field-general = Background
 settings-themes-field-widget-text = Control strip text
 # The shading drawn around the caret — the sentence or paragraph being written,
-# per Editor ▸ "Highlight around the caret". This field is the colour it uses in
+# per Editor ▸ "Highlight around the caret". This field is the color it uses in
 # distraction-free mode.
 settings-themes-field-caret-band = Highlight around the caret
 
@@ -1586,7 +1626,10 @@ comments-orphan-snippet = (the commented text is gone)
 # never had a position to begin with.
 comments-status-unplaced = No text position
 comments-unplaced-snippet = (not anchored to any text)
-comments-reply-count = { $count } replies
+comments-reply-count = { $count ->
+    [one] { $count } reply
+   *[other] { $count } replies
+}
 comments-menu-resolve = Resolve
 comments-menu-reopen = Reopen
 comments-menu-delete = Delete
@@ -1608,7 +1651,10 @@ comments-menu-delete-reply = Delete reply
 comments-menu-delete-all = Delete all comments here
 comments-deleted-toast = Comment deleted
 comments-reply-deleted-toast = Reply deleted
-comments-deleted-all-toast = { $count } comments deleted
+comments-deleted-all-toast = { $count ->
+    [one] { $count } comment deleted
+   *[other] { $count } comments deleted
+}
 comments-undo = Undo
 
 # ── Analysis (Book container segment) ────────────────────────────────────────
@@ -1616,10 +1662,10 @@ comments-undo = Undo
 # "weak", no "should". Every comparison is against the book's own median or its
 # own distribution — never a genre norm, and never a target value.
 analysis-segment = Analysis
-analysis-scope-book = Analysing this book
+analysis-scope-book = Analyzing this book
 analysis-run = Run analysis
 analysis-stale = Changed since this ran
-analysis-not-run = Not analysed yet.
+analysis-not-run = Not analyzed yet.
 analysis-running = Reading the manuscript…
 analysis-failed = The analysis could not finish.
 analysis-no-scenes = No scenes in this book yet.
@@ -1642,14 +1688,23 @@ analysis-arrivals-pasted = Pasted
 analysis-arrivals-dictated = Dictated
 analysis-arrivals-imported = Imported
 analysis-arrivals-programmatic = Inserted for you
-analysis-arrivals-count = { $count } characters
+analysis-arrivals-count = { $count ->
+    [one] { $count } character
+   *[other] { $count } characters
+}
 # Said where a route contributed nothing, so a reader is not left wondering
 # whether it was measured at all.
 analysis-arrivals-none = none
 
 analysis-words-per-scene = Words per scene
-analysis-median-words = This book's median scene runs { $count } words.
-analysis-median-line = Median: { $count } words
+analysis-median-words = This book's median scene runs { $count ->
+    [one] { $count } word.
+   *[other] { $count } words.
+}
+analysis-median-line = Median: { $count ->
+    [one] { $count } word
+   *[other] { $count } words
+}
 analysis-dialogue = Dialogue
 # Said instead of showing 0%, which would read as "there is no dialogue here".
 analysis-dialogue-unsupported = Dialogue is not measured for this language yet.
@@ -1658,7 +1713,10 @@ analysis-footnote-words = Footnote words
 # Kept apart from the manuscript total on purpose — see the module doc on
 # AnalysisViewModel::run for why a footnote is authored prose but must not be folded
 # into how far along the story reads as being.
-analysis-footnote-words-count = { $count } words are in this book's footnotes, kept apart from the manuscript total.
+analysis-footnote-words-count = { $count ->
+    [one] { $count } word is in this book's footnotes, kept apart from the manuscript total.
+   *[other] { $count } words are in this book's footnotes, kept apart from the manuscript total.
+}
 # The figure comes from its own operation and can still be catching up even once the
 # rest of this report is ready — said plainly rather than shown as a misleading 0.
 analysis-footnote-words-pending = Counting the footnotes…
@@ -1693,7 +1751,7 @@ settings-paratext-editor-hint = A name, the pages to create before the manuscrip
 
 ## Images
 
-image-insert = &Insert image…
+image-insert = Insert i&mage…
 image-no-project = Open a project before inserting an image.
 image-choose-title = Choose an image
 image-filter-label = Images
@@ -1709,7 +1767,7 @@ image-large-remember = Do this from now on, don't ask again
 image-not-recorded = The image was saved but could not be recorded in the project.
 image-describe-title = Describe the image
 image-describe-explain = What the picture shows, for a reader who cannot see it. It is not part of the manuscript: it is never counted, searched or exported as prose.
-image-describe-placeholder = a lighthouse against a grey sky
+image-describe-placeholder = a lighthouse against a gray sky
 image-resize-title = Resize the image
 image-resize-explain = A percentage of the size it is shown at now. 100 leaves it as it is.
 image-resize-invalid = Enter a number between 1 and 1000.
@@ -1718,7 +1776,7 @@ image-menu-resize = &Resize the image…
 image-menu-reset-size = Original si&ze
 
 # The book's cover — chosen from the book, not typed into a scene.
-cover-choose = Book &cover…
+cover-choose = Book co&ver…
 cover-clear = &Remove the cover
 cover-choose-title = Choose a cover
 cover-set = The cover is set.
@@ -1755,7 +1813,7 @@ export-orphan-footnotes =
 
 ## Footnotes
 
-menu-footnotes = Foo&tnotes
+menu-footnotes = Foot&notes
 footnotes-title = Footnotes
 footnotes-insert = Insert &footnote
 footnotes-empty = No footnotes yet. Put the cursor in a scene, then use + above — or Ctrl+Alt+F.
@@ -1828,7 +1886,7 @@ import-document-col-source = Source
 import-document-level-rules = Heading levels
 import-document-level-n = Heading { $level }
 import-document-add-top-level = Add top level
-import-document-add-top-level-tooltip = Insert a Book above every analysed row — for chapter files that have no book heading
+import-document-add-top-level-tooltip = Insert a Book above every analyzed row — for chapter files that have no book heading
 import-document-destination = Destination
 import-document-destination-hint = Choose a binder or item — new rows land inside a folder, or after a scene.
 import-document-destination-empty = No binders yet — create one first.
@@ -1885,13 +1943,28 @@ import-diagnostic-image-not-ingested = “{ $path }” refers to the image “{ 
 import-diagnostic-duplicate-title = “{ $title }” appears { $count } times. If you have imported these files before, this will duplicate them.
 import-diagnostic-heading-level-jump = “{ $title }” jumps from heading level { $from } to { $to }; it is placed one level under its parent.
 import-diagnostic-illegal-combination = “{ $title }” carries prose, but a { $kind } cannot hold any. Import is held until you change its type or leave it out — nothing is imported at all otherwise.
-import-diagnostic-tracked-changes-flattened = { $path } was mid-revision: { $count } tracked change(s) were accepted, and deletions dropped. That is the final text — but check it is the version you meant.
-import-diagnostic-text-box-dropped = { $path } holds { $count } text box(es). Their text sits outside the document's flow, so where it belongs in a manuscript cannot be answered — they are not imported.
-import-diagnostic-embedded-object-dropped = { $path } holds { $count } embedded object(s) — a chart, an equation or similar. There is nothing in a manuscript that could hold them.
-import-diagnostic-field-flattened = { $path } holds { $count } field(s) — a page number, a cross-reference, a date. Each keeps the text it was last showing and will not update again.
+import-diagnostic-tracked-changes-flattened = { $path } was mid-revision: { $count ->
+    [one] { $count } tracked change was accepted
+   *[other] { $count } tracked changes were accepted
+}, and deletions dropped. That is the final text — but check it is the version you meant.
+import-diagnostic-text-box-dropped = { $count ->
+    [one] { $path } holds { $count } text box. Its text sits outside the document's flow, so where it belongs in a manuscript cannot be answered — it is not imported.
+   *[other] { $path } holds { $count } text boxes. Their text sits outside the document's flow, so where it belongs in a manuscript cannot be answered — they are not imported.
+}
+import-diagnostic-embedded-object-dropped = { $count ->
+    [one] { $path } holds { $count } embedded object — a chart, an equation or similar. There is nothing in a manuscript that could hold it.
+   *[other] { $path } holds { $count } embedded objects — a chart, an equation or similar. There is nothing in a manuscript that could hold them.
+}
+import-diagnostic-field-flattened = { $count ->
+    [one] { $path } holds { $count } field — a page number, a cross-reference, a date. It keeps the text it was last showing and will not update again.
+   *[other] { $path } holds { $count } fields — a page number, a cross-reference, a date. Each keeps the text it was last showing and will not update again.
+}
 import-diagnostic-unknown-style-level = { $path } uses the style “{ $detail }”, which looks like a heading but names no level. Those paragraphs are imported as prose rather than guessed at a depth.
 import-diagnostic-comment-unanchored = The comment “{ $detail }” in { $path } could not be attached to the words it was about. It is kept on its item, where you can move it.
-import-diagnostic-comment-replies-flattened = { $count } reply/replies in { $path } named a comment that is not in the file, so they arrive as comments of their own.
+import-diagnostic-comment-replies-flattened = { $count ->
+    [one] { $count } reply in { $path } named a comment that is not in the file, so it arrives as a comment of its own.
+   *[other] { $count } replies in { $path } named a comment that is not in the file, so they arrive as comments of their own.
+}
 import-diagnostic-epigraph-not-carried = “{ $title }” is headed by an epigraph, but a { $kind } cannot hold one. The quotation is kept at the top of its text instead.
 import-diagnostic-epigraph-placement-ambiguous = An epigraph sits between “{ $title }” and “{ $below }” and could head either. It was given to “{ $title }”, which is where an epigraph usually goes.
 import-document-diagnostics = { $errors ->

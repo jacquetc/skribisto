@@ -1,34 +1,34 @@
-## Le classeur organise ; le type de l'élément décide de la structure
+## Le classeur organise ; le type de l’élément décide de la structure
 
-Le classeur, sur le côté, sert à ranger les choses de la façon qui vous aide à travailler. Il ne décide pas de l'apparence du livre une fois compilé : ce rôle revient au *type* de chaque élément. Skribisto lit un projet comme une seule liste plate et ordonnée d'éléments typés, et c'est le type de chaque élément qui fait qu'un Livre, une Partie ou un Chapitre en est vraiment un. Imbriquez librement : l'imbrication est faite pour vous, pas pour façonner le livre.
+Le classeur, sur le côté, sert à ranger les choses de la façon qui vous aide à travailler. Il ne décide pas de l’apparence du livre une fois compilé : ce rôle revient au *type* de chaque élément. Skribisto lit un projet comme une seule liste plate et ordonnée d’éléments typés, et c’est le type de chaque élément qui fait qu’un Livre, une Partie ou un Chapitre en est vraiment un. Imbriquez librement : l’imbrication est faite pour vous, pas pour façonner le livre.
 
-Chaque élément d'écriture, quel que soit son type, porte un texte principal et une synopsis côte à côte, pour que vous planifiiez dans un panneau tout en rédigeant dans l'autre.
+Chaque élément d’écriture, quel que soit son type, porte un texte principal et un synopsis côte à côte, pour que vous planifiiez dans un panneau tout en rédigeant dans l’autre.
 
 ## Les types que vous pouvez créer
 
 - *Livre* : aussi simple ou aussi structuré que vous le souhaitez, de quelques scènes à des parties et des chapitres imbriqués.
-- *Partie* : regroupe des chapitres sous un même titre, et se poursuit jusqu'à la partie suivante ou la fin du livre.
-- *Chapitre* : se poursuit jusqu'au chapitre suivant, à la partie suivante, ou à la fin du livre. Deux formes, voir ci-dessous.
-- *Scène* : votre texte, avec sa propre synopsis.
-- *Note* : du texte et une synopsis, pour la recherche, des remarques annexes ou des rappels. Elle peut tout de même figurer dans le livre compilé si vous choisissez d'inclure les notes.
-- *Dossier de notes* : une note qui contient aussi d'autres notes en dessous d'elle, pour les regrouper.
-- *Dossier* : un simple conteneur. Il porte une synopsis mais aucun texte à lui, les éléments qu'il contient portent l'écriture.
+- *Partie* : regroupe des chapitres sous un même titre, et se poursuit jusqu’à la partie suivante ou la fin du livre.
+- *Chapitre* : se poursuit jusqu’au chapitre suivant, à la partie suivante, ou à la fin du livre. Deux formes, voir ci-dessous.
+- *Scène* : votre texte, avec son propre synopsis.
+- *Note* : du texte et un synopsis, pour la recherche, des remarques annexes ou des rappels. Elle peut tout de même figurer dans le livre compilé si vous choisissez d’inclure les notes.
+- *Dossier de notes* : une note qui contient aussi d’autres notes en dessous d’elle, pour les regrouper.
+- *Dossier* : un simple conteneur. Il porte un synopsis mais aucun texte à lui, les éléments qu’il contient portent l’écriture.
 - *Paratexte*, *Dossier de paratextes*, *Fin du livre* : voir ci-dessous.
 
 ## Deux formes de chapitre
 
-Un chapitre existe sous deux formes qui se lisent de façon identique dans le livre fini. Un dossier de chapitre contient des scènes en dessous de lui dans le classeur. Un chapitre à plat est un seul élément dans lequel vous écrivez directement, sans scènes en dessous. Les deux acceptent le texte directement ; la seule différence est que le chapitre puisse ou non contenir aussi des scènes.
+Un chapitre existe sous deux formes qui se lisent de façon identique dans le livre fini. Un dossier de chapitre contient des scènes en dessous de lui dans le classeur. Un chapitre à plat est un seul élément dans lequel vous écrivez directement, sans scènes en dessous. Les deux acceptent le texte directement ; la seule différence est qu’un chapitre peut ou non contenir aussi des scènes.
 
-La forme que prend un *nouveau* chapitre se règle dans Paramètres, sous Œuvre, puis Structure : le réglage *Chapitres à plat*. Activé, cela donne de simples éléments ; désactivé, cela donne des dossiers pouvant aussi contenir des scènes. Les chapitres déjà existants gardent leur forme quel que soit ce réglage.
+La forme que prend un *nouveau* chapitre se règle dans Paramètres, sous Œuvre, puis Structure : le paramètre *Chapitres à plat*. Activé, cela donne de simples éléments ; désactivé, cela donne des dossiers pouvant aussi contenir des scènes. Les chapitres déjà existants gardent leur forme quel que soit ce paramètre.
 
-Pour changer la forme d'un chapitre, ou le type de n'importe quel élément, faites un clic droit dessus (ou ouvrez son inspecteur) et choisissez *Convertir en*. Convertir un dossier de chapitre en chapitre à plat, ou inversement, conserve son titre et son texte ; seul un dossier vide peut devenir un chapitre à plat, puisqu'un chapitre à plat n'a nulle part où placer des éléments enfants. *Convertir en* va plus loin : un simple dossier peut devenir un dossier de chapitre, une partie, un livre ou un dossier de notes, et inversement ; une scène peut devenir une note ou un chapitre à plat, l'un et l'autre pouvant redevenir une scène. Ce qu'une conversion ne peut pas conserver, Skribisto le nomme clairement et refuse la conversion plutôt que de le perdre en silence : un chapitre portant son propre texte ne peut pas devenir une Partie, qui n'a nulle part où garder le texte d'une scène.
+Pour changer la forme d’un chapitre, ou le type de n’importe quel élément, faites un clic droit dessus (ou ouvrez son inspecteur) et choisissez *Convertir en*. Convertir un dossier de chapitre en chapitre à plat, ou inversement, conserve son titre et son texte ; seul un dossier vide peut devenir un chapitre à plat, puisqu’un chapitre à plat n’a nulle part où placer des éléments enfants. *Convertir en* va plus loin : un simple dossier peut devenir un dossier de chapitre, une partie, un livre ou un dossier de notes, et inversement ; une scène peut devenir une note ou un chapitre à plat, l’un et l’autre pouvant redevenir une scène. Ce qu’une conversion ne peut pas conserver, Skribisto le nomme clairement et refuse la conversion plutôt que de le perdre en silence : un chapitre portant son propre texte ne peut pas devenir une Partie, qui n’a nulle part où garder le texte d’une scène.
 
-## Pourquoi un livre a besoin d'un repère de fin
+## Pourquoi un livre a besoin d’un repère de fin
 
-Skribisto garde chaque livre dans une seule liste continue, si bien que la fin d'un livre n'est pas décidée par l'imbrication : un même projet peut contenir plusieurs livres, l'un après l'autre. L'élément *Fin du livre* marque l'endroit où l'un s'arrête ; tout ce qui suit appartient au suivant.
+Skribisto garde chaque livre dans une seule liste continue, si bien que la fin d’un livre n’est pas décidée par l’imbrication : un même projet peut contenir plusieurs livres, l’un après l’autre. L’élément *Fin du livre* marque l’endroit où l’un s’arrête ; tout ce qui suit appartient au suivant.
 
-## Le paratexte : fait partie du livre, pas de l'histoire
+## Le paratexte : fait partie du livre, pas de l’histoire
 
-Un *Paratexte* est un texte qui appartient au livre mais pas à son histoire : une préface, une dédicace, une postface ou un colophon. Il s'exporte à l'endroit où vous le placez, mais n'est jamais compté dans le nombre de mots, car les usages sur son emplacement varient selon les pays et les éditeurs. Un *Dossier de paratextes* est purement organisationnel : il garde les paratextes à l'écart du reste du classeur mais ne contribue rien au livre exporté, pas même son propre nom.
+Un *Paratexte* est un texte qui appartient au livre mais pas à son histoire : une préface, une dédicace, une postface ou un colophon. Il s’exporte à l’endroit où vous le placez, mais n’est jamais compté dans le nombre de mots, car les usages sur son emplacement varient selon les pays et les éditeurs. Un *Dossier de paratextes* est purement organisationnel : il garde les paratextes à l’écart du reste du classeur mais ne contribue rien au livre exporté, pas même son propre nom.
 
 Nouveau sur Skribisto ? [Premiers pas](:help-getting-started) explique comment ouvrir et enregistrer un projet pour commencer.

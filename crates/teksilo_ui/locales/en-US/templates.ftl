@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-# Note templates — the per-project catalogue, its settings pane, the Document menu's
+# Note templates — the per-project catalog, its settings pane, the Document menu's
 # insert submenu, and the built-in presets.
 #
 # Preset NAMES and the section/field labels their bodies are built from are translated

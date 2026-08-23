@@ -1,27 +1,27 @@
-Un projet Skribisto est un simple fichier `.skrib` (ou un dossier, si vous avez choisi cette option lors de sa création) qui contient tout ce que vous écrivez : la structure du manuscrit, le texte et le synopsis de chaque scène, ainsi que les réglages propres au projet. Vous ouvrez un projet depuis le Lanceur, et c'est aussi depuis le Lanceur que vous en commencez un nouveau.
+Un projet Skribisto est un simple fichier `.skrib` (ou un dossier, si vous avez choisi cette option lors de sa création) qui contient tout ce que vous écrivez : la structure du manuscrit, le texte et le synopsis de chaque scène, ainsi que les paramètres propres au projet. Vous ouvrez un projet depuis le Lanceur, et c’est aussi depuis le Lanceur que vous en commencez un nouveau.
 
 ## Le Lanceur
 
-La barre latérale du Lanceur comporte quatre sections : *Œuvres*, *Exemples*, *Apprendre* et *À propos*. C'est dans *Œuvres* que se passent les dix premières minutes.
+La barre latérale du Lanceur comporte quatre sections : *Œuvres*, *Exemples*, *Apprendre* et *À propos*. C’est dans *Œuvres* que se passent les dix premières minutes.
 
-En haut de la section *Œuvres* se trouvent un champ *Rechercher des œuvres*, un bouton *Ouvrir*, un bouton *Depuis des documents…* et un bouton *Nouvelle œuvre*. *Ouvrir* affiche un sélecteur de fichiers natif pour un fichier `.skrib` existant. *Depuis des documents…* démarre un projet à partir d'un dossier de fichiers que vous possédez déjà (voir [l'importation de documents](:help-import-documents)). *Nouvelle œuvre* ouvre la boîte de dialogue Nouvelle œuvre : un nom, un auteur facultatif, l'enregistrement en fichier unique ou en dossier, l'emplacement, une langue par défaut, et un modèle parmi *Aucun*, *Roman vide*, *Roman court*, *Roman* ou *Carnet*, chacun posant une structure de départ différente. *Créer l'œuvre* ouvre aussitôt le résultat.
+En haut de la section *Œuvres* se trouvent un champ *Rechercher des œuvres*, un bouton *Ouvrir*, un bouton *Depuis des documents…* et un bouton *Nouvelle œuvre*. *Ouvrir* affiche un sélecteur de fichiers natif pour un fichier `.skrib` existant. *Depuis des documents…* démarre un projet à partir d’un dossier de fichiers que vous possédez déjà (voir [l’importation de documents](:help-import-documents)). *Nouvelle œuvre* ouvre la boîte de dialogue Nouvelle œuvre : un nom, un auteur facultatif, l’enregistrement en fichier unique ou en dossier, l’emplacement, une langue par défaut, et un modèle parmi *Aucun*, *Roman vide*, *Roman court*, *Roman* ou *Carnet*, chacun posant une structure de départ différente. *Créer l’œuvre* ouvre aussitôt le résultat.
 
-En dessous se trouve *Œuvres récentes* : tous les projets que vous avez déjà ouverts, filtrés en direct à mesure que vous tapez dans le champ de recherche. La liste est vide la première fois que vous lancez Skribisto ; ouvrez ou créez votre premier projet à partir d'ici.
+En dessous se trouve *Œuvres récentes* : tous les projets que vous avez déjà ouverts, filtrés en direct à mesure que vous tapez dans le champ de recherche. La liste est vide la première fois que vous lancez Skribisto ; ouvrez ou créez votre premier projet à partir d’ici.
 
-*Exemples* liste quelques projets d'exemple fournis avec l'application. En ouvrir un vous donne une copie de travail privée : vous pouvez tout regarder, tout modifier, sans jamais abîmer l'original.
+*Exemples* liste quelques projets d’exemple fournis avec l’application. En ouvrir un vous donne une copie de travail privée : vous pouvez tout regarder, tout modifier, sans jamais abîmer l’original.
 
 ## Ce que contient un projet
 
-L'écriture d'un projet vit dans son *Classeur* : une liste ordonnée d'éléments qui peuvent être indentés, tels que des parties, des chapitres, des scènes et des notes. Rien dans cet ordre n'est figé ; vous pouvez ajouter, renommer, indenter et réorganiser les éléments à mesure que le livre prend forme. Ce que chaque élément a le droit d'être, et ce qu'il peut contenir, suit un petit ensemble de règles ; cette page se limite à vous aider à vous repérer.
+L’écriture d’un projet vit dans son *Classeur* : une liste ordonnée d’éléments qui peuvent être indentés, tels que des parties, des chapitres, des scènes et des notes. Rien dans cet ordre n’est figé ; vous pouvez ajouter, renommer, indenter et réorganiser les éléments à mesure que le livre prend forme. Ce que chaque élément a le droit d’être, et ce qu’il peut contenir, suit un petit ensemble de règles ; cette page se limite à vous aider à vous repérer.
 
-## Le panneau Classeur et l'ouverture d'un élément
+## Le panneau Classeur et l’ouverture d’un élément
 
-Le panneau Classeur, sur le côté gauche de la fenêtre, affiche cette liste sous forme d'arborescence. Appuyez sur `F9`, ou utilisez *Affichage ▸ Plan*, pour l'afficher ou le masquer. Cliquer sur un élément (ou appuyer sur `Entrée` lorsqu'un élément est en surbrillance) l'ouvre dans l'éditeur.
+Le panneau Classeur, sur le côté gauche de la fenêtre, affiche cette liste sous forme d’arborescence. Appuyez sur `F9`, ou utilisez *Affichage ▸ Plan*, pour l’afficher ou le masquer. Cliquer sur un élément (ou appuyer sur `Entrée` lorsqu’un élément est en surbrillance) l’ouvre dans l’éditeur.
 
-Chaque élément d'écriture, une scène ou une note, montre deux choses ensemble : son texte principal et son *Synopsis*, un court résumé que vous gardez à côté. Les deux sont visibles par défaut, et c'est à vous de les remplir quand vous le souhaitez ; un synopsis vide ne vous empêche jamais d'écrire la scène elle-même, et inversement.
+Chaque élément d’écriture, une scène ou une note, montre deux choses ensemble : son texte principal et son *Synopsis*, un court résumé que vous gardez à côté. Les deux sont visibles par défaut, et c’est à vous de les remplir quand vous le souhaitez ; un synopsis vide ne vous empêche jamais d’écrire la scène elle-même, et inversement.
 
 ## Ajouter des éléments
 
-L'en-tête du panneau Classeur porte un bouton *＋* suivi du type d'élément actuellement recommandé, par exemple « ＋ Scène » lorsqu'une scène est sélectionnée. Son menu déroulant liste tout ce que vous pourriez ajouter d'autre à cet endroit, chapitres, notes, dossiers et le reste, chacun placé là où cela a du sens compte tenu de ce que vous avez sélectionné. Il n'existe pas de « Nouvel élément » unique ; ce que vous pouvez créer, et où cela atterrit, dépend de l'endroit où vous vous trouvez dans l'arborescence.
+L’en-tête du panneau Classeur porte un bouton *＋* suivi du type d’élément actuellement recommandé, par exemple « ＋ Scène » lorsqu’une scène est sélectionnée. Son menu déroulant liste tout ce que vous pourriez ajouter d’autre à cet endroit, chapitres, notes, dossiers et le reste, chacun placé là où cela a du sens compte tenu de ce que vous avez sélectionné. Il n’existe pas de « Nouvel élément » unique ; ce que vous pouvez créer, et où cela atterrit, dépend de l’endroit où vous vous trouvez dans l’arborescence.
 
-Cela suffit pour commencer à écrire. Pour savoir comment les éléments d'un livre s'articulent entre eux, des chapitres et des scènes jusqu'aux notes et au paratexte, voir [le modèle d'écriture](:help-writing-model).
+Cela suffit pour commencer à écrire. Pour savoir comment les éléments d’un livre s’articulent entre eux, des chapitres et des scènes jusqu’aux notes et au paratexte, voir [le modèle d’écriture](:help-writing-model).

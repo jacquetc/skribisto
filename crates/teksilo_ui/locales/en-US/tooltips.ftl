@@ -18,7 +18,7 @@ wm-note = A note.
 wm-note-more = A note keeps text and a [synopsis](:wm-synopsis), like a [scene](:wm-scene), for research, asides, or reminders. Any item can be part of the compiled book, including a note sitting inside a [chapter](:wm-chapter).
 wm-note-folder = A note that holds other items.
 wm-note-folder-more = A [note](:wm-note) that also contains items beneath it, so you can group related notes together. It keeps its own [synopsis](:wm-synopsis), and the items inside keep their own text.
-wm-folder = An organising folder.
+wm-folder = An organizing folder.
 wm-folder-more = A container for arranging items in the binder however suits you. It carries a [synopsis](:wm-synopsis) but no prose of its own. The items inside hold the writing.
 wm-end-of-book = Marks where a book ends.
 wm-end-of-book-more = Every book shares one continuous list, so a book's end is not decided by nesting. This marker says the [book](:wm-book) stops here. Anything after it belongs to the next book.
@@ -27,7 +27,7 @@ wm-synopsis-more = A summary attached to any writing item, usually a short parag
 
 scene-break-minor = An ordinary scene break: a shift of time, place or viewpoint within a chapter.
 scene-break-minor-more =
-    Marks a break *where you put it*, including in the middle of a [scene](:wm-scene). Splitting prose into two items is an organisational choice, so it never creates a break on its own.
+    Marks a break *where you put it*, including in the middle of a [scene](:wm-scene). Splitting prose into two items is an organizational choice, so it never creates a break on its own.
 
     Typed into the prose as three asterisks separated by spaces. How it prints is decided by the export style, not by what you type: a Shunn manuscript sets it as a single #, a trade paperback as a dinkus, and most French, German, Spanish, Russian and Italian publishing as a bare gap with no mark at all.
 scene-break-major = A stronger division: a large time skip, or a decisive change of viewpoint.
@@ -44,7 +44,7 @@ synopsis-collapse-tooltip = Hide the synopsis column
 wm-paratext = A text that is not part of the story.
 wm-paratext-more = A preface, a dedication, an afterword, a colophon: writing that belongs to the book but not to its body. Exported wherever you put it, and never counted in the manuscript's word count. Where it goes is up to you: conventions differ by country and publisher.
 wm-paratext-folder = A folder for paratexts.
-wm-paratext-folder-more = Somewhere to keep prefaces and afterwords so they do not clutter the binder. Organising only: it carries a [synopsis](:wm-synopsis) but adds nothing to the exported book, not even its own name.
+wm-paratext-folder-more = Somewhere to keep prefaces and afterwords so they do not clutter the binder. Organizing only: it carries a [synopsis](:wm-synopsis) but adds nothing to the exported book, not even its own name.
 
 # ── Word / character targets ──────────────────────────────────────────────────
 # A second cascade web beside the writing-model one. It doubles as the app's only

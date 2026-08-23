@@ -24,7 +24,7 @@ tags-preset-status-finished = statut/terminé
 ## brouillon ET demander des recherches, ils ne font donc pas partie du cycle ci-dessus.
 tags-preset-needs-research = recherches à faire
 tags-preset-continuity-check = vérifier la continuité
-tags-preset-plot-point = point d'intrigue
+tags-preset-plot-point = point d’intrigue
 
 ## Préréglage basique — la taxinomie que l'index des mentions cherche dans le texte.
 tags-preset-character = personnage
@@ -46,7 +46,7 @@ tags-preset-clue = indice
 tags-preset-red-herring = fausse piste
 tags-preset-historical-figure = personnage historique
 tags-preset-source = source
-tags-preset-period-detail = détail d'époque
+tags-preset-period-detail = détail d’époque
 
 ## Le champ d'étiquettes (inspecteur) et son sélecteur « + »
 tags-pill-list = Étiquettes
@@ -54,24 +54,24 @@ tags-pill-add = Ajouter une étiquette
 tags-pill-remove = Retirer { $name }
 tags-pill-filter-placeholder = Filtrer ou nommer une étiquette
 tags-pill-no-match = Aucune étiquette ne correspond
-tags-pill-create = Créer « { $name } »
+tags-pill-create = Créer « { $name } »
 tags-pill-new-discoverable = Étiquette de bible narrative
 tags-pill-new-discoverable-hint = Les éléments portant cette étiquette sont recherchés dans votre texte pour remplir la distribution.
 
 ## Le champ des autres noms
-tags-alias-list = Aussi appelé
+tags-alias-list = Autres noms
 tags-alias-add = Ajouter un autre nom
 tags-alias-remove = Retirer { $name }
 tags-alias-placeholder = Un autre nom, puis Entrée
 tags-alias-hint = Les noms sous lesquels cet élément apparaît dans votre texte, en plus de son titre.
 
-## Réglages ▸ Projet ▸ Étiquettes
+## Paramètres ▸ Projet ▸ Étiquettes
 settings-page-tags = Étiquettes
 settings-tags-desc = Les étiquettes servent à qualifier les éléments du classeur. Une étiquette de bible narrative indique en plus à Skribisto de chercher les noms de cet élément dans votre texte.
 settings-tags-add = Ajouter
 settings-tags-add-placeholder = Nommer une nouvelle étiquette
-settings-tags-added = « { $name } » ajoutée
-settings-tags-duplicate = « { $name } » existe déjà
+settings-tags-added = « { $name } » ajoutée
+settings-tags-duplicate = « { $name } » existe déjà
 settings-tags-filter = Filtrer les étiquettes
 settings-tags-count = { $n ->
     [one] 1 étiquette
@@ -80,14 +80,26 @@ settings-tags-count = { $n ->
 settings-tags-details-placeholder = Ce que signifie cette étiquette
 settings-tags-discoverable = Bible narrative
 settings-tags-delete = Supprimer { $name }
-settings-tags-deleted = « { $name } » supprimée et retirée de tous les éléments
+settings-tags-deleted = « { $name } » supprimée et retirée de tous les éléments
 settings-tags-empty = Aucune étiquette pour le moment.
 settings-tags-apply-preset = Appliquer un préréglage…
-settings-tags-preset-applied = { $added } ajoutée(s), { $skipped } déjà présente(s) ignorée(s)
+settings-tags-preset-applied = { $added ->
+    [one] { $added } ajoutée
+   *[other] { $added } ajoutées
+}, { $skipped ->
+    [one] { $skipped } déjà présente ignorée
+   *[other] { $skipped } déjà présentes ignorées
+}
 settings-tags-csv-filter = Fichiers CSV
 settings-tags-import = Importer…
 settings-tags-export = Exporter…
-settings-tags-imported = { $added } importée(s), { $skipped } ignorée(s)
+settings-tags-imported = { $added ->
+    [one] { $added } importée
+   *[other] { $added } importées
+}, { $skipped ->
+    [one] { $skipped } ignorée
+   *[other] { $skipped } ignorées
+}
 settings-tags-exported = { $n ->
     [one] 1 étiquette exportée
    *[other] { $n } étiquettes exportées
