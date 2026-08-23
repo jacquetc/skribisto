@@ -123,6 +123,16 @@ pub struct VersionRow {
     pub role: BinderItemRole,
     pub sub_role: BinderItemSubRole,
     pub indent: i64,
+    /// Whether the row was included in exports.
+    ///
+    /// Carried for the same reason [`Self::role`] and [`Self::sub_title`] are: it
+    /// is a plain field on `BinderItemFile`, so nothing walking `prose` would
+    /// notice it missing, and a row put back without it comes back silently
+    /// *re-included* — the writer's own decision to leave a draft or a note out
+    /// of the book, undone with nothing on screen to say so.
+    ///
+    /// Defaulted, not recorded, by [`LogVersions`], like the rest of the metadata.
+    pub is_exportable: bool,
     /// `(role, bundle-relative blob path, stamp)` — one per prose content role.
     pub prose: Vec<(ContentRole, String, BlobStamp)>,
 }
@@ -444,6 +454,7 @@ fn row_from(
         role: item.role,
         sub_role: item.sub_role,
         indent: item.indent,
+        is_exportable: item.is_exportable,
         prose,
     })
 }
@@ -581,6 +592,10 @@ fn log_row(uid: uuid::Uuid, prose: Vec<(ContentRole, String, BlobStamp)>) -> Ver
         role: BinderItemRole::default(),
         sub_role: BinderItemSubRole::default(),
         indent: 0,
+        // Inert: a row can only be *recreated* from a backup (see `role`), so no
+        // caller ever reads this one. `true` is what a row carrying no exception
+        // is, matching `CreateBinderItemDto`'s own default.
+        is_exportable: true,
         prose,
     }
 }

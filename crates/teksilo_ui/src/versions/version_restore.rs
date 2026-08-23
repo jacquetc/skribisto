@@ -107,6 +107,15 @@ pub struct RecreateRequest {
     /// [`Self::prose`] would notice it missing — and a Book put back without it
     /// comes back silently untitled underneath.
     pub sub_title: String,
+    /// Whether the row was included in exports when it was recorded.
+    ///
+    /// Restored rather than defaulted: excluding a draft or a note from the book
+    /// is a decision the writer made about *that row*, and a recreate that
+    /// silently re-included it would undo the decision with nothing on screen to
+    /// say so. Contrast [`super::super::app::recreate_row`]'s treatment of the
+    /// recorded indent, which is deliberately dropped because it describes a tree
+    /// that has since moved on.
+    pub is_exportable: bool,
     /// Every recorded text, already read: `(recorded content role, Djot)`.
     pub prose: Vec<(ContentRole, String)>,
     /// When the row last looked like this, for the confirmation and the toast.
@@ -317,6 +326,7 @@ mod tests {
         prose: &[(ContentRole, &str)],
     ) -> RecreateRequest {
         RecreateRequest {
+            is_exportable: true,
             uid: uuid::Uuid::from_u128(1),
             role,
             sub_role,

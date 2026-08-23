@@ -858,6 +858,7 @@ fn deleted_row(change: &RowChange) -> Option<crate::app::DeletedRow> {
         sub_role: g.sub_role,
         title: g.title,
         sub_title: g.sub_title,
+        is_exportable: g.is_exportable,
         taken_at: g.from.taken_at,
         from: g.from,
         blobs: g.prose,
@@ -1627,6 +1628,7 @@ mod tests {
 
     fn a_deleted_row() -> crate::app::DeletedRow {
         crate::app::DeletedRow {
+            is_exportable: true,
             uid: uuid::Uuid::from_u128(1),
             role: common::entities::BinderItemRole::Folder,
             sub_role: common::entities::BinderItemSubRole::ChapterScene,

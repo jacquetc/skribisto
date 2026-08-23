@@ -147,6 +147,11 @@ pub struct GoneRow {
     /// Its depth in the binder as recorded. A hint for the destination, not an
     /// instruction: the tree it was indented against may be long gone.
     pub indent: i64,
+    /// Whether it was included in exports — see
+    /// [`skrib_format::versions::VersionRow::is_exportable`]. Unlike
+    /// [`Self::indent`] this is restored exactly, because it is the writer's own
+    /// decision about the row rather than a fact about a tree that has moved on.
+    pub is_exportable: bool,
     /// Every prose blob the moment recorded, `(role, bundle-relative path)`.
     pub prose: Vec<(ContentRole, String)>,
     /// The bundle those paths are relative to.
@@ -894,6 +899,7 @@ fn gone_row(moment: &Moment, row: &VersionRow) -> GoneRow {
         title: row.title.clone(),
         sub_title: row.sub_title.clone(),
         indent: row.indent,
+        is_exportable: row.is_exportable,
         prose: row
             .prose
             .iter()

@@ -20,6 +20,7 @@ fn live(n: u128, title: &str, order: usize, digest: &str) -> LiveRow {
 
 fn version_row(n: u128, title: &str) -> VersionRow {
     VersionRow {
+        is_exportable: true,
         uid: uid(n),
         title: title.to_string(),
         sub_title: String::new(),
@@ -440,6 +441,7 @@ fn every_prose_role_is_something_this_can_open() {
             continue;
         }
         let row = VersionRow {
+            is_exportable: true,
             uid: uid(1),
             title: "x".into(),
             sub_title: String::new(),
@@ -617,6 +619,27 @@ fn what_a_removed_row_carries_back_is_the_whole_row() {
             .iter()
             .any(|(r, _)| r == &ContentRole::SynopsisText)
     );
+}
+
+/// **An export exclusion is the writer's decision, and survives the round trip.**
+/// Leaving a draft or a note out of the book is a choice made about that row; a
+/// recreate that silently re-included it would undo the choice with nothing on
+/// screen to say so. Unlike `indent` — a fact about a tree that has since moved
+/// on, and deliberately dropped — this one is restored exactly.
+#[test]
+fn a_removed_row_carries_back_its_export_exclusion() {
+    let mut row = version_row(2, "A note kept out of the book");
+    row.is_exportable = false;
+
+    let gone = gone_row(&a_backup_moment(), &row);
+    assert!(
+        !gone.is_exportable,
+        "the exclusion the writer set must come back with the row, not default to included",
+    );
+
+    // And the ordinary case still reads as included.
+    let included = gone_row(&a_backup_moment(), &version_row(3, "An ordinary scene"));
+    assert!(included.is_exportable);
 }
 
 /// **A Book's subtitle is a field, not prose.** Nothing that walks `prose` would

@@ -130,6 +130,9 @@ pub struct DeletedRow {
     pub title: String,
     /// A Book's subtitle, empty for every other kind.
     pub sub_title: String,
+    /// Whether it was included in exports when it was recorded — see
+    /// [`skrib_format::versions::VersionRow::is_exportable`].
+    pub is_exportable: bool,
     /// The bundle its prose is read out of.
     pub from: VersionRef,
     /// Every text it carried, as `(recorded content role, bundle-relative path)`.
@@ -215,6 +218,7 @@ pub fn recreate_row(
             sub_role: row.sub_role.clone(),
             title: row.title.clone(),
             sub_title: row.sub_title.clone(),
+            is_exportable: row.is_exportable,
             prose,
             taken_at: row.taken_at,
         };
@@ -277,7 +281,7 @@ fn commit(
         role: req.role.clone(),
         sub_role: req.sub_role.clone(),
         activated: true,
-        is_exportable: true,
+        is_exportable: req.is_exportable,
         indent,
         ..Default::default()
     };
@@ -352,7 +356,12 @@ fn commit(
 /// The picker speaks `DropPosition`, the binder speaks
 /// [`skribisto_model::Relation`], and the translation is the one the picker's own
 /// docs describe: a binder row means *into this binder*, a container row means
-/// *inside it*, anything else means *after it*.
+/// *inside it*, and `After` means *after it*.
+///
+/// `Before` has no translation and refuses. `Relation` cannot express it —
+/// `Sibling` is by definition *after the anchor's whole subtree* — so the only
+/// honest answers are "refuse" or "add a variant to `Relation`", and refusing is
+/// the one that cannot put a row somewhere the writer did not ask for.
 ///
 /// The row's **recorded indent is deliberately not used**. A depth is only
 /// meaningful against the tree it was measured in, and that tree is exactly what
@@ -373,7 +382,18 @@ fn resolve_place(ctx: &AppContext, destination: &BinderDestination) -> Option<(u
     let anchor_indent = meta.get(&anchor)?.1;
     let relation = match destination.position {
         DropPosition::Into => Relation::Child,
-        _ => Relation::Sibling,
+        DropPosition::After => Relation::Sibling,
+        // Exhaustive on purpose. `Relation` has no "before" — `Sibling` is
+        // defined as *after the anchor's entire subtree* — while
+        // `binder_ordering::resolve_item_target`, which trash-restore and
+        // drag-move both follow for this same enum, puts `Before` at a
+        // genuinely earlier index. A catch-all arm here would silently place
+        // the row on the wrong side of the anchor, and `Before` is
+        // `DropPosition`'s own `#[default]`, so a default-constructed
+        // destination would land in it. The picker only ever emits
+        // `Into`/`After` today; if that changes, this refuses by name rather
+        // than guessing.
+        DropPosition::Before => return None,
     };
     let (index, indent) =
         placement::insertion_point_for_item(&order, &meta, pos, anchor_indent, relation);
