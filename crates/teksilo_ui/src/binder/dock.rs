@@ -747,7 +747,7 @@ mod tests {
     fn hovering_a_row_opens_its_card() {
         let ctx = std::rc::Rc::new(frontend::AppContext::new());
         let outline = OutlineViewModel::new_default(ctx.clone(), crate::app_ids::AppIds::new());
-        let on_open: OpenItemFn = std::rc::Rc::new(|_id, _title| {});
+        let on_open: OpenItemFn = std::rc::Rc::new(|_id, _title, _ctx| {});
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(Box::new(binder_tree(
             outline,
