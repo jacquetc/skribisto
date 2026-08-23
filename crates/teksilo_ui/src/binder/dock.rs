@@ -482,7 +482,7 @@ pub fn promote_with_guard(
     let blocked = outline.demote_blocked_children(key, target);
     if blocked > 0 {
         MessageBox::warning(tr!(promote_blocked_title()))
-            .text(tr!(promote_blocked_text(count = blocked.to_string())))
+            .text(tr!(promote_blocked_text(count = blocked as i64)))
             .buttons(MessageBoxButtons::Ok)
             .present(ctx);
         return;

@@ -180,7 +180,7 @@ fn binder_row(outline: &OutlineViewModel, b: &BinderRow, current: bool) -> impl 
         )
         .child(Spacer::new())
         .child(
-            TextWidget::new(tr!(binder_item_count(count = b.item_count.to_string())))
+            TextWidget::new(tr!(binder_item_count(count = b.item_count as i64)))
                 .style(TextStyleRole::Small)
                 .color(TextRole::Secondary),
         )

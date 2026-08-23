@@ -112,12 +112,19 @@ class Session:
             payload = json.loads(text) if text.strip().startswith("{") else {}
         return result, payload
 
-    def nodes(self):
-        _, p = self.call("snapshot_tree")
+    def nodes(self, window_id=None):
+        args = {"window_id": window_id} if window_id is not None else {}
+        _, p = self.call("snapshot_tree", args)
         return p.get("nodes", [])
 
-    def labels(self):
-        return [n.get("label") or "" for n in self.nodes()]
+    def window_id(self, label):
+        """The id of the window with this label, or None."""
+        _, w = self.call("list_windows")
+        rows = w if isinstance(w, list) else []
+        return next((x["id"] for x in rows if x.get("label") == label), None)
+
+    def labels(self, window_id=None):
+        return [n.get("label") or "" for n in self.nodes(window_id)]
 
     def texts(self):
         """Every label and value in the tree, lowercased, as one string."""
@@ -206,7 +213,13 @@ def main():
         _, wins = s.call("list_windows")
         if not any(w.get("label") == "help" for w in (wins if isinstance(wins, list) else [])):
             fail(f"F1 opened no help window; windows: {wins}", s.app, s.mcp, s.log)
-        rows = [lbl for lbl in s.labels() if lbl]
+        # Read the *help* window's tree explicitly: `snapshot_tree` with no window
+        # answers for one window, and once Help opened as a second one this probe was
+        # quietly asserting against the Launcher's nodes.
+        help_win = s.window_id("help")
+        if help_win is None:
+            fail(f"F1 opened no help window; windows: {wins}", s.app, s.mcp, s.log)
+        rows = [lbl for lbl in s.labels(help_win) if lbl]
         # Every built-in topic must be listed. Asserting on the *titles* rather than the
         # section headings: headings are decorative text with no accessible name, so a
         # test that looked for them would fail while the window worked perfectly.
@@ -218,12 +231,15 @@ def main():
         s.shot(os.path.join(out_dir, "help-window.png"))
 
         # 3. Choosing another topic changes the reading pane.
-        target = s.node_with("Sending your book to a reader")
+        target = next((n for n in s.nodes(help_win)
+                       if (n.get("label") or "") == "Sending your book to a reader"), None)
         if not target:
             fail("the round-trip topic is not listed in the contents", s.app, s.mcp, s.log)
         s.call("invoke_action", {"node": target["id"], "action": "click"})
         time.sleep(1.5)
-        if "docx" not in s.texts() and "word" not in s.texts():
+        body = " | ".join(str(n.get("label") or "") + " " + str(n.get("value") or "")
+                          for n in s.nodes(help_win)).lower()
+        if "docx" not in body and "word" not in body:
             fail("the round-trip topic did not render its body", s.app, s.mcp, s.log)
         print("  ok: choosing a topic renders it")
         s.shot(os.path.join(out_dir, "help-round-trip.png"))

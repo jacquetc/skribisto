@@ -31,12 +31,27 @@ use teksilo::text_document::TextDocument;
 use teksilo::widgets::rich_text::RichTextEditor;
 use teksilo::widgets::tooltip::with_tooltip_registry;
 use teksilo::widgets::{
-    Button, ButtonVariant, Divider, Expand, HStack, MinSize, Padding, ScrollArea, SearchField,
-    Spacer, TextWidget, VStack,
+    Button, ButtonVariant, Divider, Expand, HStack, IconButton, IconWidget, MinSize, Padding,
+    Panel, ScrollArea, SearchField, Spacer, TextWidget, VStack,
 };
 
 use super::help_vm::HelpViewModel;
 use super::{HelpBody, HelpTopicSpec};
+
+/// A flat backdrop of `role` behind `child`.
+///
+/// `corner_radius(0)` and `padding(0)` are the whole point: a bare `Panel` carries the
+/// rounded, bordered, inset chrome of a *card*, and two of those side by side read as
+/// two floating boxes rather than as the two grounds of one window. This is the same
+/// shape `tabs::shared::editor::tab_backdrop` uses for an editor body, for the same
+/// reason.
+fn ground(role: SurfaceRole, child: WidgetId) -> impl Widget + 'static {
+    Panel::new()
+        .background(role)
+        .corner_radius(0.0)
+        .padding(0.0)
+        .child_id(child)
+}
 
 /// Width of the table of contents. Wide enough for the longest topic title in both
 /// shipped locales without wrapping.
@@ -91,12 +106,17 @@ impl Widget for HelpPanel {
         // Plain builders rather than `teksu!`: both halves are built as widget *ids*
         // (the reading pane adds its own document to the tree), and these containers
         // take a child by id only through `child_id`.
+        // The two halves take the main window's own grounds, measured rather than
+        // guessed: a dock panel is transparent over `SurfaceRole::Main`, and an editor
+        // tab's body sits on `SurfaceRole::Content` (`ContentTab::backdrop_role`). This
+        // window read as one flat sheet because the reading pane inherited Main too, so
+        // the prose had no page under it.
         let root = ctx.add(
             HStack::new()
                 .spacing(0.0)
-                .child(MinSize::width(NAV_WIDTH).child_id(nav))
+                .child(MinSize::width(NAV_WIDTH).child(ground(SurfaceRole::Main, nav)))
                 .child(Expand::vertical().child(Divider::vertical()))
-                .child(Expand::horizontal().child_id(content)),
+                .child(Expand::horizontal().child(ground(SurfaceRole::Content, content))),
         );
         self.root_child = Some(root);
         vec![root]
@@ -190,8 +210,12 @@ impl HelpPanel {
         let header = HStack::new()
             .spacing(8.0)
             .child(
-                Button::new(tr!(help_back()))
-                    .variant(ButtonVariant::Ghost)
+                // `tooltip` is not decoration here: `IconButton` uses it as the
+                // accessible name, and a debug assert fires without one. So the same
+                // string that labelled the old text button still names this control to
+                // a screen reader.
+                IconButton::new(IconWidget::chevron_left(16.0))
+                    .tooltip(tr!(help_back()))
                     .enabled(can_go_back)
                     .on_activate_fn(move |_ctx| vm_back.back()),
             )
