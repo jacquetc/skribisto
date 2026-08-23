@@ -135,6 +135,14 @@ impl SettingsPanel {
         Self::opening_at(Pane::User, session)
     }
 
+    /// Open straight to Keymap — the target of the Help ▸ Keyboard shortcuts sheet's
+    /// own "Change shortcuts…" button, which promises that page by name. The sheet
+    /// itself is read-only, so this is where a reader who wanted to *change* a chord
+    /// rather than look one up ends up.
+    pub fn open_to_keymap(session: WorkSession) -> Self {
+        Self::opening_at(Pane::Keymap, session)
+    }
+
     fn opening_at(pane: Pane, session: WorkSession) -> Self {
         Self {
             selected_pane: Signal::new(pane),

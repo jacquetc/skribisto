@@ -1,0 +1,66 @@
+Comments are margin notes on a scene's text: a note attached to a phrase, a sentence,
+or a whole paragraph, that stays put while you keep writing.
+
+## Adding a comment
+
+Select the text you want to comment on and press `Ctrl+Alt+M`, or use *Format ▸ Add
+comment*. To comment on a whole paragraph without selecting anything, place the caret
+in it and press `Ctrl+Alt+Shift+M`, or use *Format ▸ Comment on this paragraph*. Both
+rows are enabled only while a scene is focused.
+
+A new comment opens with an empty text box in the margin. It commits as you type,
+so there is no save button. If you have not set a name for yourself yet, a toast
+points you to *Settings ▸ User* so the comment can be signed.
+
+## Replying and resolving
+
+Anyone can add a reply to a comment thread: click *Reply* under the opening note and
+type. Replies are a flat list under the original comment, in the order they were
+written; there is no nested threading.
+
+Once the point behind a comment is addressed, mark it *Resolve*. A resolved thread
+stays visible (filtered separately, see below), and you can *Reopen* it later if the
+issue was not actually settled. *Delete* removes a comment; a reply has its own
+*Delete reply* next to it.
+
+## Where comments show up
+
+The same threads appear in three places, all reading from the same data:
+
+- The *editor margin*, beside the scene you are writing, showing only the comments
+  anchored to what is on screen.
+- The *Comments* dock (leading side of the window), listing every comment in the
+  whole project.
+- The *This document* dock (trailing side), listing only the comments on the document
+  you currently have open.
+
+Both docks filter by All, Open, Resolved, or Orphaned, and sort by document order or
+newest first. *Tools ▸ Comments* hides or shows the margin marks and the in-editor
+presentation only: it does not touch either dock, which keeps listing every thread
+regardless.
+
+## How a comment keeps its place
+
+A comment does not remember a raw position in the text. Instead it remembers the
+words it was attached to, plus a little of the surrounding text on each side, and a
+hint about roughly where that was. Reopening the project, or editing around a
+comment, makes Skribisto search for that quoted text again rather than trust a
+number editing would have made meaningless. This is also why a comment survives a
+save and reload at all: nothing else about the text (block ids, formatting runs,
+entity ids) is guaranteed to come back the same way next time; the prose itself is
+the only thing that reliably does.
+
+Occasionally a comment loses its anchor. If the exact words it was attached to are
+deleted or rewritten beyond recognition, Skribisto marks it *Lost its text* rather
+than silently attaching it to the wrong sentence. A comment that arrived through an
+import format with no real text position (a heading, say) shows as *No text
+position* instead. Either way, the comment is never deleted: use the *Orphaned*
+filter in either dock to find it.
+
+## Comments in DOCX and ODT
+
+Comments travel with your manuscript when you send it out for an outside edit and
+bring the file back. An export style can choose to *Include comments*, paired with
+*round-trip markers* so a returning file updates this project instead of arriving as
+a separate copy. See [the round trip](:help-round-trip) for how sending a scene out
+and reimporting it works, including what happens to comments and replies along the way.

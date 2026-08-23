@@ -454,7 +454,29 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
         // no `AppIntent` variant — just the global action that
         // `App::build` registers.
         .menu(tr!(menu_help()), |m| {
-            m.item(MenuEntry::new(tr!(menu_about())).intent("app.about"))
+            // Help Topics leads, and carries the F1 accelerator by *reference*: the
+            // chord is declared once on the shortcut and rendered per platform and
+            // locale, so a rebind in Settings reaches this row without an edit here.
+            m.item(
+                MenuEntry::new(tr!(menu_help_topics()))
+                    .intent("help.topics")
+                    .shortcut("help.topics"),
+            )
+            .item(
+                MenuEntry::new(tr!(menu_command_palette()))
+                    .intent("app.command_palette")
+                    .shortcut("app.command_palette"),
+            )
+            .item(
+                MenuEntry::new(tr!(menu_help_shortcuts()))
+                    .intent("help.shortcuts")
+                    .shortcut("help.shortcuts"),
+            )
+            .separator()
+            .item(MenuEntry::new(tr!(menu_help_website())).intent("help.website"))
+            .item(MenuEntry::new(tr!(menu_help_report())).intent("help.report"))
+            .separator()
+            .item(MenuEntry::new(tr!(menu_about())).intent("app.about"))
         })
 }
 

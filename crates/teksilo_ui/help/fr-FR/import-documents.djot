@@ -1,0 +1,60 @@
+Faire entrer dans un projet, pour la première fois, une écriture que vous n'avez pas créée
+dans Skribisto passe par l'assistant *Importer des documents*. Si vous ramenez plutôt un
+fichier que vous avez envoyé hors de Skribisto pour que quelqu'un d'autre l'annote, c'est une
+autre question, à la réponse plus précise : voir [l'aller-retour](:help-round-trip).
+
+## Le lancer
+
+Ouvrez *Œuvre ▸ Importer depuis ▸ Documents (Markdown, Word, ODT)…*. L'assistant lit quatre
+formats : Markdown (`.md`), Word (`.docx`), OpenDocument (`.odt`) et texte brut (`.txt`).
+Déposez-y un ou plusieurs fichiers, ou utilisez *Parcourir…* pour les choisir ; réordonnez-les
+ou retirez-en avant de continuer. Rien n'est écrit dans votre projet avant la dernière étape.
+
+## Quatre étapes
+
+*Fichiers* recueille ce que vous apportez. *Vérifier* est l'étape où l'assistant vous montre
+l'arborescence qu'il construirait, avant qu'aucune ligne n'existe : le type déduit de chaque
+ligne, le fichier d'où elle vient, son nombre de mots, ses coupures de scène, et les
+commentaires qu'elle porte. Retypez une ligne avec sa colonne *Type*, ou décochez sa case
+*Importer* pour la laisser de côté (elle et tout ce qu'elle contient). Un contrôle *Niveaux de
+titre* au-dessus de l'arborescence permet de changer d'un coup ce que signifie toute une
+profondeur de titre, Titre 1 en Livre, Titre 2 en Chapitre, et ainsi de suite, plutôt que de
+retyper ligne par ligne ; si vos fichiers sont un ensemble de chapitres sans aucun titre de
+livre, *Ajouter un niveau supérieur* en insère un au-dessus de tout ce que l'assistant a
+trouvé.
+
+*Destination* indique où arrivent les nouvelles lignes. Choisissez un classeur ou un élément
+dans l'arborescence : l'import se place à l'intérieur de ce que vous avez choisi si c'est un
+dossier, ou juste après si c'est une scène. *Fusion* n'a quelque chose à montrer que lorsqu'une
+ligne du fichier correspond à ce que votre projet contient déjà ; lors d'un premier import
+dans un emplacement vide, elle l'indique en une ligne et il n'y a rien à décider. Terminer
+déclenche le bouton *Importer* lui-même : tout est écrit en une seule fois, puis une
+notification indique combien d'éléments sont arrivés, avec une action *Annuler l'import* qui
+reste affichée quelques secondes (l'entrée d'annulation sous-jacente dure bien plus longtemps,
+et reste accessible ensuite dans l'historique d'annulation ordinaire). Si l'écriture est
+refusée pour une raison quelconque, l'assistant reste ouvert avec votre plan intact, plutôt
+que d'annoncer un import terminé qui n'a jamais eu lieu.
+
+## Comment l'arborescence est construite
+
+L'importateur lit les titres d'un fichier et transforme chacun en une ligne. La profondeur
+d'un titre décide s'il devient un Livre, une Partie, un Chapitre ou une Scène, en descendant
+cette échelle et en s'arrêtant à Scène : rien ne se place à l'intérieur d'une scène, donc rien
+de plus profond que le bas de l'échelle n'invente un niveau fantôme. Voir [le modèle
+d'écriture](:help-writing-model) pour ce que chacun de ces niveaux représente. Une ligne peut
+aussi être retypée en Note ou en Paratexte, en dehors de cette échelle structurelle mais
+toujours disponible pour n'importe quel titre.
+
+Un fichier sans aucun titre devient une seule ligne contenant tout son texte. Ce n'est pas
+traité comme une erreur, seulement signalé pour information : c'est exactement ce à quoi
+ressemble un dossier de manuscrits à une scène par fichier. Si un fichier ne peut pas être lu,
+ou porte une extension que rien ne reconnaît, seul ce fichier est ignoré et signalé ; le reste
+du lot est quand même importé.
+
+## Commentaires
+
+Les commentaires d'un fichier Word ou OpenDocument sont importés eux aussi. Chacun devient un
+véritable commentaire Skribisto, ancré exactement aux mots auxquels il était attaché, portant
+son auteur et (à partir d'un `.docx`) ses initiales, ainsi que toutes les réponses qu'il porte.
+Voir [les commentaires](:help-comments) pour savoir comment ils se comportent une fois qu'ils
+font partie de votre projet.

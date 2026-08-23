@@ -83,7 +83,8 @@ fn query_row(vm: SearchReplaceViewModel) -> impl Widget {
                 .filter(|s| typed.is_empty() || s.to_lowercase().contains(&typed))
                 .collect()
         })
-        .on_submit_fn(move |_ctx| submit.commit_query());
+        .on_submit_fn(move |_ctx| submit.commit_query())
+        .rich_tooltip(crate::tooltip_registry::CONCEPT_SEARCH_REPLACE);
 
     HStack::new()
         .spacing(4.0)

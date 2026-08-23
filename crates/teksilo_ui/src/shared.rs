@@ -42,6 +42,7 @@ pub mod list_naming;
 /// rather than as descendants of this module.
 pub(crate) mod long_op;
 mod progress_recorder;
+pub mod project_links;
 pub mod slug;
 pub mod stamps;
 mod synopsis_placement;

@@ -400,7 +400,10 @@ fn add_policy_rows(
 
     form
         // Triggers
-        .full_width(group(tr!(settings_backup_triggers())))
+        .full_width(crate::widgets::tip::RichTip::new(
+            crate::tooltip_registry::CONCEPT_BACKUP,
+            group(tr!(settings_backup_triggers())),
+        ))
         .full_width(
             Toggle::new(on_close)
                 .label(tr!(settings_backup_on_close()))

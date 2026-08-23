@@ -55,11 +55,12 @@ pub(super) fn section(
             )
         };
         col = col
-            .child(
+            .child(crate::widgets::tip::RichTip::new(
+                crate::tooltip_registry::CONCEPT_TAG,
                 TextWidget::new(tr!(inspector_tags()))
                     .style(TextStyleRole::Tiny)
                     .color(TextRole::Secondary),
-            )
+            ))
             .child(crate::tags::TagPillField::new(
                 tag_value.clone(),
                 set_tags,
@@ -294,11 +295,12 @@ pub(super) fn section(
                         })
                     };
 
-                    col = col.child(
+                    col = col.child(crate::widgets::tip::RichTip::new(
+                        crate::tooltip_registry::CONCEPT_POINT_OF_VIEW,
                         TextWidget::new(tr!(pov_section()))
                             .style(TextStyleRole::Tiny)
                             .color(TextRole::Secondary),
-                    );
+                    ));
 
                     let pov_ids = d.point_of_view.clone();
                     if pov_ids.is_empty() {

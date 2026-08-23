@@ -2155,3 +2155,126 @@ pace-summary-remaining = Il reste { $words }
 pace-summary-open = Ouvrir le plan
 pace-summary-close = Fermer
 pace-summary-dont-show = Ne plus afficher à l'ouverture
+
+# ── Aide ─────────────────────────────────────────────────────────────────────
+# Voir en-US/main.ftl pour le contexte. Les corps des rubriques ne sont pas ici :
+# ce sont des documents Djot dans crates/teksilo_ui/help/<locale>/.
+menu-help-topics = &Rubriques d'aide
+menu-help-shortcuts = Raccourcis c&lavier…
+menu-help-website = Skribisto sur le &Web
+menu-help-report = &Signaler un problème…
+menu-command-palette = Palette de &commandes…
+
+# Les entrées du panneau Apprendre. Clés distinctes de celles du menu Aide : une
+# étiquette de menu porte un mnémonique `&` qu'un bouton afficherait tel quel.
+learn-help-topics = Rubriques d'aide
+learn-shortcuts = Raccourcis clavier
+learn-website = Skribisto sur le Web
+
+help-window-title = Aide
+help-filter-topics = Filtrer les rubriques
+help-no-matching-topic = Aucune rubrique ne correspond.
+help-topic-missing = Cette rubrique n'est plus disponible.
+help-back = Retour
+help-not-translated = Cette page n'est pas encore traduite : elle est affichée en anglais.
+
+help-section-getting-started = Premiers pas
+help-section-writing = Écriture
+help-section-reviewing = Relecture
+help-section-exchanging = Importer et exporter
+help-section-keeping = Protéger votre travail
+help-section-extensions = Extensions
+
+help-topic-getting-started = Votre premier projet
+help-topic-writing-model = Comment un livre est structuré
+help-topic-goals-and-pace = Objectifs et rythme
+help-topic-comments = Commentaires
+help-topic-round-trip = Envoyer votre livre à un lecteur
+help-topic-export = Exporter
+help-topic-import-documents = Importer des documents
+help-topic-backups-and-versions = Sauvegardes et versions
+
+help-shortcuts-title = Raccourcis clavier
+help-shortcuts-filter = Filtrer les raccourcis
+help-shortcuts-no-matches = Aucun raccourci ne correspond.
+help-shortcuts-rebind = Modifier les raccourcis…
+help-shortcuts-close = Fermer
+
+command-palette-placeholder = Saisissez une commande
+
+# ── Shortcut names ───────────────────────────────────────────────────────────
+# Voir en-US/main.ftl pour le contexte. Quand la même commande porte déjà un
+# libellé de menu ci-dessus, ce libellé est repris à l'identique pour que le
+# menu et la liste des raccourcis se répondent.
+shortcut-name-binder-duplicate = Dupliquer
+shortcut-name-comments-add = Ajouter un commentaire
+shortcut-name-comments-add-paragraph = Commenter ce paragraphe
+shortcut-name-spellcheck-toggle = Vérifier l'orthographe
+shortcut-name-editor-save = Enregistrer
+shortcut-name-work-export = Exporter…
+shortcut-name-work-new = Nouvelle œuvre
+shortcut-name-work-open = Ouvrir une œuvre
+shortcut-name-window-new = Nouvelle fenêtre
+shortcut-name-work-close = Fermer l'œuvre
+shortcut-name-app-settings = Paramètres
+shortcut-name-app-quit = Quitter
+shortcut-name-editor-insert-footnote = Insérer une note de bas de page
+shortcut-name-format-scene-break = Insérer un saut de scène
+shortcut-name-format-major-scene-break = Insérer un saut de scène majeur
+shortcut-name-format-link = Lien…
+shortcut-name-go-next = Suivant
+shortcut-name-go-prev = Précédent
+shortcut-name-go-to = Aller à
+shortcut-name-outline-toggle = Plan
+shortcut-name-preview-toggle = Aperçu de recherche
+shortcut-name-view-fullscreen = Plein écran
+shortcut-name-view-focus-mode = Mode sans distraction
+shortcut-name-editor-size-increase = Agrandir le texte
+shortcut-name-editor-size-decrease = Réduire le texte
+shortcut-name-editor-size-reset = Réinitialiser la taille du texte
+shortcut-name-editor-find = Rechercher
+shortcut-name-editor-replace = Remplacer
+shortcut-name-editor-find-next = Résultat suivant
+shortcut-name-editor-find-prev = Résultat précédent
+shortcut-name-search-show = Rechercher dans le projet
+shortcut-name-search-replace = Remplacer dans le projet
+shortcut-name-outline-open-to-side = Ouvrir sur le côté
+shortcut-name-help-topics = Rubriques d'aide
+shortcut-name-help-shortcuts = Raccourcis clavier
+shortcut-name-help-website = Skribisto sur le Web
+shortcut-name-help-report = Signaler un problème
+shortcut-name-command-palette = Palette de commandes
+help-section-reference = Ce que sont les choses
+
+# Titres des entrées du glossaire dont le concept ne correspond à aucun élément
+# créable, faute d'étiquette « ＋ Créer » à réutiliser. Voir help.rs::concept_topics.
+help-concept-scene-break = Saut de scène
+help-concept-major-scene-break = Saut de scène majeur
+help-concept-story-bible = Bible narrative
+help-concept-goal-unit = Mots ou signes
+help-concept-goal-progress = Progression
+help-concept-manuscript-words = Ce qui compte comme manuscrit
+help-concept-exportable = Exclu de l'export
+help-concept-distribute = Répartir un objectif
+help-concept-subtree-total = Total des objectifs internes
+help-concept-milestone = Jalon
+help-concept-pace-plan = Plan de rythme
+
+# Titres du glossaire pour les concepts de fonctionnalités. Voir help.rs::concept_topics.
+help-concept-tag = Étiquette
+help-concept-label = Libellé
+help-concept-point-of-view = Point de vue
+help-concept-epigraph = Épigraphe
+help-concept-footnote = Note de bas de page
+help-concept-chapter-mode = Forme des chapitres
+help-concept-comment = Commentaire
+help-concept-backup = Copie de secours
+help-concept-version = Version
+help-concept-trash = Corbeille
+help-concept-spellcheck = Vérification orthographique
+help-concept-search-replace = Rechercher et remplacer
+help-concept-note-template = Modèle de note
+help-concept-text-replacement = Remplacement de texte
+help-concept-smart-punctuation = Ponctuation automatique
+help-concept-export-style = Style d'export
+help-concept-round-trip-marks = Marqueurs d'aller-retour

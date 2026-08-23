@@ -168,9 +168,12 @@ fn label_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
             with_row_menu(
                 &vm,
                 row,
-                TextWidget::new(lit!(row.label.clone()))
-                    .color(TextRole::Secondary)
-                    .single_line(),
+                crate::widgets::tip::RichTip::new(
+                    crate::tooltip_registry::CONCEPT_LABEL,
+                    TextWidget::new(lit!(row.label.clone()))
+                        .color(TextRole::Secondary)
+                        .single_line(),
+                ),
             )
         },
     )
@@ -269,7 +272,16 @@ fn total_words_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     Column::new(
         COL_TOTAL_WORDS,
         tr!(overview_col_total_words()),
-        move |row, _cx| with_row_menu(&vm, row, word_cell(Some(row.total_words))),
+        move |row, _cx| {
+            with_row_menu(
+                &vm,
+                row,
+                crate::widgets::tip::RichTip::new(
+                    crate::tooltip_registry::GOAL_MANUSCRIPT_WORDS,
+                    word_cell(Some(row.total_words)),
+                ),
+            )
+        },
     )
     .width(ColumnWidth::Fixed(76.0))
     .alignment(TableAlignment::Trailing)

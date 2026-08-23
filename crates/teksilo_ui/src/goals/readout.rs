@@ -79,7 +79,7 @@ pub fn bar(written: i64, goal: i64) -> impl Widget + use<> {
 /// be a progress indicator for a journey with no destination.
 pub fn line(written: usize, goal: i64, unit: &GoalUnit) -> impl Widget + use<> {
     let row = HStack::new().spacing(8.0);
-    if goal > 0 {
+    let content = if goal > 0 {
         row.child(bar(written as i64, goal)).child(
             TextWidget::new(progress_label(written as i64, goal, unit))
                 .style(TextStyleRole::Small)
@@ -93,5 +93,9 @@ pub fn line(written: usize, goal: i64, unit: &GoalUnit) -> impl Widget + use<> {
                 .color(TextRole::Secondary)
                 .single_line(),
         )
-    }
+    };
+    // Registry key rather than inline content: this composite is reused by the
+    // Inspector, a container's own page, the status bar and the Distribute preview,
+    // so the explanation reads identically on all four.
+    crate::widgets::tip::RichTip::new(crate::tooltip_registry::GOAL_PROGRESS, content)
 }

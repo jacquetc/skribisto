@@ -29,7 +29,7 @@ use super::CommandDeps;
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_shortcut_global(
         Shortcut::new("editor.insert_footnote")
-            .name("Insert Footnote")
+            .name(tr!(shortcut_name_editor_insert_footnote()))
             .primary(KeyStroke::new(Key::F, Modifiers::CTRL | Modifiers::ALT))
             .build(),
     );

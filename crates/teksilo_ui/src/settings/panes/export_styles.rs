@@ -112,7 +112,10 @@ pub fn export_styles_pane(ctx: &mut BuildContext, vm: &ExportStylesViewModel) ->
         .spacing(6.0)
         // Shared `group()` so section headers match every other settings pane
         // (SmallBold + Secondary), not a bare unstyled `GroupHeader::new`.
-        .child(group(tr!(settings_styles_builtin())))
+        .child(crate::widgets::tip::RichTip::new(
+            crate::tooltip_registry::CONCEPT_EXPORT_STYLE,
+            group(tr!(settings_styles_builtin())),
+        ))
         // `MaxSize::height`, not `MinSize`: as a *minimum* the list grew to fit
         // its content, and at ten built-in styles it swallowed the whole pane,
         // pushing "My styles" and the editor below it out of the modal. A
@@ -1018,7 +1021,10 @@ impl Widget for StyleEditor {
                 Toggle::new(comments).labelled_externally(),
             )
             .line(
-                field_label(tr!(settings_styles_field_round_trip_marks())),
+                crate::widgets::tip::RichTip::new(
+                    crate::tooltip_registry::CONCEPT_ROUND_TRIP_MARKS,
+                    field_label(tr!(settings_styles_field_round_trip_marks())),
+                ),
                 Toggle::new(round_trip_marks).labelled_externally(),
             )
             .full_width(hint(tr!(settings_styles_round_trip_hint())))

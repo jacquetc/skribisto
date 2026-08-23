@@ -1,0 +1,70 @@
+Envoyez votre manuscrit à quelqu'un d'autre pour qu'il l'annote dans Word ou LibreOffice,
+puis récupérez ses commentaires et ses modifications dans le projet au lieu d'une seconde
+copie déconnectée. Cette page couvre tout le trajet : quoi envoyer, comment l'envoyer, ce
+que fait votre éditeur, et comment lire le résultat à son retour.
+
+## Quoi envoyer
+
+Exportez en Word (`.docx`) ou en OpenDocument Text (`.odt`). Ce sont les deux seuls formats
+qui transportent vos commentaires, et les deux seuls qui transportent les identifiants
+invisibles que Skribisto utilise pour reconnaître ses propres lignes et commentaires au
+retour. Un export en Markdown ou en texte brut ne transporte ni l'un ni l'autre : un
+éditeur peut toujours l'annoter, mais rien n'en revient reconnaissable, et il ne
+transporte aucun commentaire.
+
+## Comment l'envoyer
+
+Chaque style d'export (Paramètres, sous *Compilation et export*, puis *Formats d'export*)
+a un groupe *Envoi à un éditeur* avec deux interrupteurs : *Inclure les commentaires* et
+*Inclure les marqueurs d'aller-retour*. Les deux sont activés par défaut, y compris dans
+les styles intégrés, si bien qu'un premier export DOCX ou ODT est déjà prêt à revenir. Les
+marqueurs sont des signets invisibles, pas de simples attributs personnalisés : un vrai
+fichier ayant fait l'aller-retour par LibreOffice a vu ses attributs personnalisés effacés
+alors que ses signets ont survécu. Les styles intégrés sont en lecture seule ; dupliquez-en
+un d'abord si vous voulez une copie avec l'un des deux interrupteurs désactivé, par exemple
+pour un fichier qui ne reviendra jamais.
+
+## Ce que fait votre éditeur
+
+Rien de particulier. Il ouvre le fichier dans Word ou LibreOffice, ajoute des commentaires
+et modifie le texte comme d'habitude, puis le renvoie. Rien de ce qu'une modification
+ordinaire fait au texte ne perturbe les identifiants qui l'accompagnent.
+
+## Le ramener
+
+*Œuvre ▸ Importer depuis ▸ Documents (Markdown, Word, ODT)…* ouvre un assistant unique :
+*Fichiers*, *Vérifier*, *Destination*, *Fusion*. Voir [Importer des documents](:help-import-documents)
+pour les trois premières étapes. L'aller-retour proprement dit se joue sur la dernière.
+
+## Lire l'étape Fusion
+
+Skribisto associe chaque ligne du fichier aux lignes présentes dans la partie du classeur
+que vous avez choisie comme Destination : d'abord par son marqueur d'aller-retour, s'il en
+a un ; à défaut, par la correspondance du type et d'un titre normalisé. Il n'y a
+délibérément aucun appariement par ressemblance de texte, si bien qu'une ligne non appariée
+s'affiche comme *Nouveau* plutôt que d'être devinée sur le mauvais chapitre.
+
+Avec un marqueur à comparer, l'État d'une ligne appariée dit qui a changé quoi : *Identique*,
+*Modifié par l'éditeur*, *Modifié par vous*, ou *Modifié des deux côtés*. Appariée par le
+seul titre, elle ne peut dire que si les deux textes concordent (*Identique*) ou non
+(*Différent*), jamais qui en est responsable. Une ligne que le fichier a déplacée
+s'affiche plutôt comme *Déplacé*. La colonne Que faire propose *Commentaires seulement*
+(ses remarques, votre texte), *Prendre cette version*, *Garder la mienne*, *Ajouter comme
+nouveau*, ou *Ignorer*, présélectionnée selon ce qui est le plus sûr : prendre l'import
+quand il a modifié la ligne, garder la vôtre sinon. *Comparer* affiche les deux versions
+côte à côte avant que vous ne décidiez. Une ligne que votre projet possède et que le
+fichier ne mentionne plus s'affiche comme *Absent de ce fichier*, avec seulement *Garder
+la mienne* proposé : un chapitre absent n'est pas pour Skribisto un signal de le
+supprimer. S'il n'y a rien à apparier (une destination vide, par exemple), cette étape se
+réduit à une seule phrase plutôt qu'à un tableau.
+
+## Limites à connaître
+
+La reconnaissance dépend des marqueurs que Skribisto a lui-même écrits. Un fichier venu
+d'un autre outil, ou exporté avec les marqueurs désactivés, retombe sur la correspondance
+par titre, qui ne reconnaîtra pas un chapitre renommé. Réimporter deux fois le même
+fichier ne crée aucune ligne ni aucun commentaire en double : l'option sûre est
+présélectionnée dans les deux cas.
+
+Voir [Exporter](:help-export) pour choisir un style et un format, et
+[Commentaires](:help-comments) pour les notes qui rendent tout ce trajet utile.

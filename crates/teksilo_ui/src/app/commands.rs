@@ -57,6 +57,7 @@ mod file;
 mod footnotes;
 mod format;
 mod go;
+mod help;
 mod images;
 mod templates;
 mod trash;
@@ -167,5 +168,6 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     templates::register(ctx, deps);
     binder::register(ctx, deps);
     go::register(ctx, deps);
+    help::register(ctx, deps);
     images::register(ctx, deps);
 }

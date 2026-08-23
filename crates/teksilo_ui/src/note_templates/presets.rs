@@ -12,8 +12,13 @@
 //! in the app, and means the preset is always resolved in the locale the writer is using
 //! *now*.
 //!
-//! Fluent could not hold the bodies whole in any case: a multiline FTL value ends at the
-//! first blank line, and every one of these has blank lines between its sections.
+//! Holding each body whole in one Fluent value would work — an indented multiline FTL value
+//! keeps its blank lines, as `tooltips.ftl`'s two-paragraph `scene-break-minor-more` has
+//! shipped in both locales for as long as that key has existed. It is the *granularity* that
+//! argues against it: one value per template is one translation unit per template, so adding
+//! a field to a preset silently invalidates the whole translated body, and a translator
+//! reviewing the change has to diff prose to find the one new line. Field labels are shared
+//! across presets and translated once each.
 //!
 //! A new project starts with **no** templates; the writer applies a preset if they want
 //! one. Applied rows are ordinary rows thereafter — renamable, starrable, deletable — and

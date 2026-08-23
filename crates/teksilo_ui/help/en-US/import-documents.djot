@@ -1,0 +1,53 @@
+Bringing writing you did not create in Skribisto into a project, for the first time, uses the
+*Import documents* wizard. If instead you are bringing back a file you sent out of Skribisto for
+someone else to mark up, that is a different question with a more exact answer: see
+[the round trip](:help-round-trip).
+
+## Starting it
+
+Open *Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…*. The wizard reads four formats:
+Markdown (`.md`), Word (`.docx`), OpenDocument (`.odt`), and plain text (`.txt`). Drop one or more
+files onto it, or use *Browse…* to pick them; reorder or remove any of them before moving on.
+Nothing is written to your project until the last step.
+
+## Four steps
+
+*Files* collects what you are bringing in. *Review* is where the wizard shows you the tree it
+would build, before any of it exists: each row's inferred type, the file it came from, its word
+count, its scene breaks, and any comments it carries. Retype a row with its *Type* column, or
+untick its *Import* checkbox to leave it (and everything under it) out. A *Heading levels* control
+above the tree lets you change what a whole heading depth means at once, Heading 1 as Book,
+Heading 2 as Chapter, and so on, rather than retyping row by row; if your files are a set of
+chapters with no book heading at all, *Add top level* inserts one above everything the wizard
+found.
+
+*Destination* is where the new rows land. Choose a binder or an item in the live tree: the import
+goes inside what you chose if it is a folder, or right after it if it is a scene. *Merge* only has
+something to show when a row in the file matches what your project already holds; on a first
+import into an empty spot it says so in one line and there is nothing to decide there. Finishing
+runs the *Import* button itself: everything is written as one step, and a toast then says how many
+items arrived, with an *Undo* action that stays up for a few seconds (the underlying undo entry
+lasts far longer, reachable afterward through the ordinary undo history). If the write is refused
+for any reason, the wizard stays open with your plan intact rather than reporting a finished import
+that never happened.
+
+## How the tree is built
+
+The importer reads a file's headings and turns each one into a row. How deep a heading sits
+decides whether it becomes a Book, Part, Chapter, or Scene, stepping down that ladder and stopping
+at Scene: nothing sits inside a scene, so nothing deeper than the ladder's floor invents a phantom
+level. See [the writing model](:help-writing-model) for what each of those is. A row can also be
+retyped to Note or Paratext, off that structural ladder but still an available choice for any
+heading.
+
+A file with no headings at all becomes a single row holding all of its text. This is not treated
+as a mistake, only noted for your information: it is exactly what a folder of one-scene-per-file
+manuscripts looks like. If one file cannot be read, or has an extension nothing recognizes, only
+that file is skipped and reported; the rest of the batch still comes in.
+
+## Comments
+
+A Word or OpenDocument file's comments come in too. Each one becomes a real Skribisto comment,
+anchored to the exact words it was attached to, carrying its author and (from a `.docx`) their
+initials, along with any replies underneath it. See [comments](:help-comments) for how they behave
+once they are part of your project.

@@ -94,7 +94,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     }
     ctx.register_shortcut_global(
         Shortcut::new("binder.duplicate")
-            .name("Duplicate")
+            .name(tr!(shortcut_name_binder_duplicate()))
             .primary(KeyStroke::ctrl(Key::D))
             .build(),
     );

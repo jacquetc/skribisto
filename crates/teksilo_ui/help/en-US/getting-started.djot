@@ -1,0 +1,53 @@
+A Skribisto project is a single `.skrib` file (or, if you chose the bundle format when you
+created it, a folder) holding everything you write: the manuscript's structure, every scene's
+text and synopsis, and the project's own settings. You open one from the Launcher, and the
+Launcher is also where you start a new one.
+
+## The Launcher
+
+The Launcher's sidebar has four sections: *Works*, *Examples*, *Learn*, and *About*. *Works* is
+where the first ten minutes happen.
+
+At the top of *Works* sits a *Search works* field, an *Open* button, a *From documents…* button,
+and *New Work*. *Open* shows a native file picker for an existing `.skrib` file. *From
+documents…* starts a project from a folder of files you already have (see
+[importing documents](:help-import-documents)). *New Work* opens the New Work dialog: a name,
+an optional author, whether to save as a single file or a bundle, where to put it, a default
+language, and a template, *None*, *Empty Novel*, *Light Novel*, *Novel*, or *Notebook*, each
+laying down a different starting structure. *Create Work* opens the result straight away.
+
+Below that is *Recent Works*: every project you have opened before, filtered live as you type
+in the search field. The list is empty the first time you run Skribisto; open or create your
+first project from here.
+
+*Examples* lists a few bundled sample projects. Opening one hands you a private working copy,
+so you can look around, edit anything, and never damage the original.
+
+## What a project contains
+
+A project's writing lives in its *Binder*: an ordered, indentable list of items, such as parts,
+chapters, scenes, and notes. Nothing about that order is fixed; you can add, rename, indent, and
+rearrange items as the book takes shape. What each item is allowed to be, and what it can hold,
+follows a small set of rules; this page is only about finding your way around.
+
+## The Binder panel and opening an item
+
+The Binder panel, on the leading side of the window, shows that list as a tree. Press `F9`, or
+use *View ▸ Outline*, to show or hide it. Clicking an item (or pressing Enter on a highlighted
+one) opens it in the editor.
+
+Every writing item, a scene or a note, shows two things together: its main text and its
+*Synopsis*, a short summary you keep beside it. Both are visible by default, and both are yours
+to fill in whenever you like; an empty synopsis never blocks you from writing the scene itself,
+and the other way around.
+
+## Adding things
+
+The Binder panel's header carries a *＋* button next to the item type it currently recommends,
+for example "＋ Scene" when a scene is selected. Its dropdown lists everything else you could add
+in that spot, chapters, notes, folders, and the rest, each placed where it makes sense given what
+you have selected. There is no single "New Item"; what you can create, and where it lands,
+depends on where you are in the tree.
+
+That is enough to start writing. For how the pieces of a book fit together, from chapters and
+scenes down to notes and paratext, see [the writing model](:help-writing-model).

@@ -70,15 +70,12 @@ pub fn text_replacements_pane(
         ctx.effect(&on, move |v| vm.set_enabled(*v));
     }
 
+    // Bound by registry key (rather than the ad hoc `TooltipContent` this used to carry)
+    // so the explanation cannot drift from the one `concept-text-replacement` gives
+    // everywhere else, and so it cascades to `concept-smart-punctuation`.
     let toggle = Toggle::new(on.clone())
         .label(tr!(settings_text_repl_enable()))
-        .rich_tooltip_content(
-            teksilo::widgets::tooltip::TooltipContent::new(
-                "settings.text_repl",
-                tr!(settings_text_repl_desc()),
-            )
-            .with_more(tr!(settings_text_repl_disabled_hint())),
-        );
+        .rich_tooltip(crate::tooltip_registry::CONCEPT_TEXT_REPLACEMENT);
 
     // Only the active body needs the `BuildContext` for its own effects, but `Switcher`
     // builds both children regardless of which is shown (the same shape every empty-state

@@ -30,7 +30,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // shadow `RichTextEditor`'s bold.
     ctx.register_shortcut_global(
         Shortcut::new("outline.toggle")
-            .name("Toggle Outline")
+            .name(tr!(shortcut_name_outline_toggle()))
             .primary(KeyStroke::new(Key::F9, Modifiers::NONE))
             .build(),
     );
@@ -38,7 +38,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // only relayouts, F10 parks/unparks the bottom content via `visible_when`.
     ctx.register_shortcut_global(
         Shortcut::new("preview.toggle")
-            .name("Toggle Preview Band")
+            .name(tr!(shortcut_name_preview_toggle()))
             .primary(KeyStroke::new(Key::F10, Modifiers::NONE))
             .build(),
     );
@@ -63,7 +63,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // regardless of which widget has focus, same rationale as F9/F10 above.
     ctx.register_shortcut_global(
         Shortcut::new("view.fullscreen")
-            .name("Toggle Fullscreen")
+            .name(tr!(shortcut_name_view_fullscreen()))
             .primary(KeyStroke::new(Key::F11, Modifiers::NONE))
             .build(),
     );
@@ -87,7 +87,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // F11/F9/F10.
     ctx.register_shortcut_global(
         Shortcut::new("view.focus_mode")
-            .name("Toggle Distraction-free Mode")
+            .name(tr!(shortcut_name_view_focus_mode()))
             .primary(KeyStroke::new(Key::F11, Modifiers::SHIFT))
             .build(),
     );
@@ -123,7 +123,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // focused widget sees the key, so `RichTextEditor` cannot eat them.
     ctx.register_shortcut_global(
         Shortcut::new("editor.size.increase")
-            .name("Increase Text Size")
+            .name(tr!(shortcut_name_editor_size_increase()))
             .primary(KeyStroke::ctrl(Key::Character('=')))
             // Ctrl+Plus as an alias, because '+' is Shift+'=' on a US/ISO
             // keyboard and half of users press it that way — the same pair
@@ -133,13 +133,13 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     ctx.register_shortcut_global(
         Shortcut::new("editor.size.decrease")
-            .name("Decrease Text Size")
+            .name(tr!(shortcut_name_editor_size_decrease()))
             .primary(KeyStroke::ctrl(Key::Character('-')))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("editor.size.reset")
-            .name("Reset Text Size")
+            .name(tr!(shortcut_name_editor_size_reset()))
             .primary(KeyStroke::ctrl(Key::Character('0')))
             .build(),
     );
@@ -169,7 +169,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // it targets the right editor even in a split view.
     ctx.register_shortcut_global(
         Shortcut::new("editor.find")
-            .name("Find")
+            .name(tr!(shortcut_name_editor_find()))
             .primary(KeyStroke::ctrl(Key::F))
             .build(),
     );
@@ -183,19 +183,19 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // common find-bar chords, all targeting the focused tab.
     ctx.register_shortcut_global(
         Shortcut::new("editor.replace")
-            .name("Replace")
+            .name(tr!(shortcut_name_editor_replace()))
             .primary(KeyStroke::ctrl(Key::R))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("editor.find_next")
-            .name("Next Match")
+            .name(tr!(shortcut_name_editor_find_next()))
             .primary(KeyStroke::new(Key::F3, Modifiers::NONE))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("editor.find_prev")
-            .name("Previous Match")
+            .name(tr!(shortcut_name_editor_find_prev()))
             .primary(KeyStroke::new(Key::F3, Modifiers::SHIFT))
             .build(),
     );
@@ -225,13 +225,13 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // variant.
     ctx.register_shortcut_global(
         Shortcut::new("search.show")
-            .name("Search in Project")
+            .name(tr!(shortcut_name_search_show()))
             .primary(KeyStroke::new(Key::F, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("search.replace")
-            .name("Replace in Project")
+            .name(tr!(shortcut_name_search_replace()))
             .primary(KeyStroke::new(Key::H, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
     );

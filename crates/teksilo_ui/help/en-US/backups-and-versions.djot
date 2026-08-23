@@ -1,0 +1,57 @@
+A *backup* is a snapshot of the whole project: a complete `.skrib` file. A *version* is the
+recorded past of one [row](:help-writing-model), a scene, note or synopsis. A backup answers
+"what did the whole project look like an hour ago"; version history answers "what did this
+paragraph say yesterday, or before I deleted it". Skribisto keeps both, and neither is the
+other.
+
+## Backups
+
+By default Skribisto backs up on close and every two hours while open (backing up on open is
+also available, off by default), and skips a backup when nothing changed. Copies go to the
+app's own backup location unless you add folders of your own, and old ones thin by *Tiered*
+retention (roughly hourly for a day, daily for a week, weekly for a month, monthly beyond) or,
+switched, a plain *Keep last N*; the newest few are always kept regardless.
+
+This lives in _Settings ▸ Backup & Sync ▸ Backups_, the default for every project. A project
+can override it under _Settings ▸ Work: <project> ▸ Backups_ (*Use the general backup
+settings*, off, to set its own triggers, destinations and retention). That page also shows
+*Last backup: <date>* (or *No backups yet*) and an *Open backups list…* button.
+
+To take one by hand, use *Work ▸ Back up now*. To browse what exists, *Work ▸ Backups…* lists
+every backup found for this project, and lets you Open, Reveal or Delete one.
+
+Opening a backup never touches your live project: it opens as its own window, in a distinct
+read-only mode. A modal states that *"you've opened a backup copy"*, changes can only
+be kept with Save As, and for as long as that window stays open a banner repeats it (*"Backup
+copy: changes can't be saved here"*), with *Restore…* and *Save As…* always in reach: no way
+to mistake it for the real project.
+
+*Restore* is the one action that changes the original: after confirming, it copies your
+*current* project aside as a safety backup, then overwrites the original with the backup's
+content (if open elsewhere, you're asked to close that window first). Nothing is lost either
+way: what was there before is itself now a backup.
+
+**What a backup protects against:** the project file itself being lost, corrupted, or
+overwritten by mistake.
+
+## Version history
+
+Version history tracks one row at a time, not the whole project, from two merged sources: the
+project's own history log, recording a row's text on every save (dense but shallow, thinning
+with age, and living only inside the current project file), and backup files, adding depth
+however old. Each entry says which one, *"from a backup"* or *"from the project's own
+history"*, how much changed, and a diff in text, not just color. A version from a
+backup can be pinned so cleanup never deletes that file; the project's own history has no file
+to pin.
+
+The Versions panel, on the trailing rail beside Comments and Format, shows this for whichever
+row you're editing. *Restore this version* puts that older text back in place, a fresh safety
+backup first and `Ctrl+Z` to undo, but only on a row that still exists.
+
+For a row you deleted outright, there's the Timeline (_View ▸ Timeline_): the project-wide
+history band, and the only place a gone row is reachable. *Bring this back…* recreates it with
+the text it had then, wherever in the binder you choose; undo is the toast's button, not
+`Ctrl+Z`, since this creates a row instead of editing one.
+
+**What version history protects against:** an earlier wording or a deleted row, without
+digging through backup files by hand.

@@ -258,6 +258,7 @@ const APP_INTENT_NAMESPACES: &[&str] = &[
     "footnotes.",
     "format.",
     "go.",
+    "help.",
     "image.",
     "numbering.",
     "outline.",
@@ -291,6 +292,29 @@ fn is_app_intent(intent: &str) -> bool {
 /// Same drift test, same reason.
 fn is_app_shortcut(name: &str) -> bool {
     is_app_intent(name)
+}
+
+/// Every shortcut id the command palette should offer: the application's own, plus
+/// whatever an extension registered.
+///
+/// The palette reads the tree's whole `ShortcutRegistry`, which also carries bindings
+/// the *framework* registers for itself (the debug inspector's `Toggle Picker`,
+/// `Cycle Bounds Overlay`, `Next Tab`, …). Those are development tools, not commands a
+/// writer is looking for by name, and in a debug build they otherwise sort to the top of
+/// an empty query because they carry no category.
+///
+/// An allow-list rather than a block-list, and deliberately built from the same
+/// `APP_INTENT_NAMESPACES` the seam already guards: a block-list of framework ids would
+/// rot the first time teksilo added one, silently and invisibly.
+pub(crate) fn is_palette_command(id: &str) -> bool {
+    if is_app_intent(id) {
+        return true;
+    }
+    EXTENSION_COMMANDS.with(|reg| {
+        reg.borrow().iter().any(|r| {
+            r.command.intent == id || r.command.shortcut.as_ref().is_some_and(|s| s.name == id)
+        })
+    })
 }
 
 /// Register every extension command's action and shortcut onto **`App`'s own**

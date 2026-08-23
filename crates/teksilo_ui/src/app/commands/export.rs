@@ -20,7 +20,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Ctrl+Shift+E → the Export Choose… picker (Ctrl+E is the editor's centre-align).
     ctx.register_shortcut_global(
         Shortcut::new("work.export")
-            .name("Export…")
+            .name(tr!(shortcut_name_work_export()))
             .primary(KeyStroke::new(Key::E, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
     );

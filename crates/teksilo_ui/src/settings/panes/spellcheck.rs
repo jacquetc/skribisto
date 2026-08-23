@@ -19,7 +19,10 @@ pub(in crate::settings) fn spellcheck_pane(vm: &SettingsViewModel) -> impl Widge
         .label(tr!(settings_page_spellcheck()))
         .label_gap(16.0)
         .row_spacing(14.0)
-        .full_width(group(tr!(settings_group_spellcheck())))
+        .full_width(crate::widgets::tip::RichTip::new(
+            crate::tooltip_registry::CONCEPT_SPELLCHECK,
+            group(tr!(settings_group_spellcheck())),
+        ))
         .full_width(
             Toggle::new(vm.spellcheck_enabled())
                 .label(tr!(settings_spellcheck_enabled()))

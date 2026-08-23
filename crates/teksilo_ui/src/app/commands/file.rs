@@ -28,7 +28,7 @@ use super::CommandDeps;
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_shortcut_global(
         Shortcut::new("work.new")
-            .name("New Work")
+            .name(tr!(shortcut_name_work_new()))
             .primary(KeyStroke::ctrl(Key::N))
             .build(),
     );
@@ -70,7 +70,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // unsaved changes.
     ctx.register_shortcut_global(
         Shortcut::new("work.open")
-            .name("Open Work")
+            .name(tr!(shortcut_name_work_open()))
             .primary(KeyStroke::ctrl(Key::O))
             .build(),
     );
@@ -124,7 +124,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // since the thing the user asked for a second view of no longer exists.
     ctx.register_shortcut_global(
         Shortcut::new("window.new")
-            .name("New Window")
+            .name(tr!(shortcut_name_window_new()))
             .primary(KeyStroke::new(Key::N, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
     );
@@ -213,7 +213,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // the unsaved-changes guard with the window close); here we only add its global shortcut.
     ctx.register_shortcut_global(
         Shortcut::new("work.close")
-            .name("Close Work")
+            .name(tr!(shortcut_name_work_close()))
             .primary(KeyStroke::ctrl(Key::W))
             .build(),
     );
@@ -221,7 +221,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Settings (Ctrl+,): present the settings modal.
     ctx.register_shortcut_global(
         Shortcut::new("app.settings")
-            .name("Settings")
+            .name(tr!(shortcut_name_app_settings()))
             .primary(KeyStroke::ctrl(Key::Character(',')))
             .build(),
     );
@@ -272,7 +272,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // closing *a window* and quitting *the app* are different requests.
     ctx.register_shortcut_global(
         Shortcut::new("app.quit")
-            .name("Quit")
+            .name(tr!(shortcut_name_app_quit()))
             .primary(KeyStroke::ctrl(Key::Q))
             .build(),
     );

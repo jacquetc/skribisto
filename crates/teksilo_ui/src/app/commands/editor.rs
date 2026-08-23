@@ -19,7 +19,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // commands.
     ctx.register_shortcut_global(
         Shortcut::new("spellcheck.toggle")
-            .name("Check Spelling")
+            .name(tr!(shortcut_name_spellcheck_toggle()))
             .primary(KeyStroke::new(Key::F7, Modifiers::NONE))
             .build(),
     );
@@ -99,7 +99,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     let can_save = can_save(&deps.unsaved, &deps.backup_mode);
     ctx.register_shortcut_global(
         Shortcut::new("editor.save")
-            .name("Save")
+            .name(tr!(shortcut_name_editor_save()))
             .primary(KeyStroke::ctrl(Key::S))
             .enabled_when(can_save.clone())
             .build(),

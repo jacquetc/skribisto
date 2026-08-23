@@ -1,0 +1,34 @@
+## The binder organizes; item type decides structure
+
+The binder tree on the side is for arranging things the way that helps you work. It does not decide what your book looks like once compiled: that job belongs to each item's *type*. Skribisto reads a project as one flat, ordered list of typed rows, and the type of each row is what a Book, Part, or Chapter actually *is*. Nest freely; nesting is for you, not what shapes the book.
+
+Every writing item, whatever its type, carries a main text and a synopsis side by side, so you plan in one pane while drafting in the other.
+
+## The types you can create
+
+- *Book*: as simple or layered as you like, from a few scenes to nested parts and chapters.
+- *Part*: gathers chapters under one heading, running until the next part or the book's end.
+- *Chapter*: runs until the next chapter, part, or the book's end. Two shapes, below.
+- *Scene*: your writing, with its own synopsis.
+- *Note*: text and a synopsis, for research, asides, or reminders. It can still reach the compiled book if you choose to include notes.
+- *Note folder*: a note that also holds other notes beneath it, for grouping them.
+- *Folder*: a plain container. It carries a synopsis but no prose of its own; the items inside hold the writing.
+- *Paratext*, *Paratext folder*, *End of Book*: below.
+
+## Two shapes of chapter
+
+A chapter has two shapes that read identically in the finished book. A chapter folder holds scenes underneath it in the binder. A flat chapter is a single row you write straight into, with no scenes below it. Both take prose directly; the only difference is whether the chapter can also contain scenes.
+
+Which shape a *new* chapter takes is set in Settings, under Work, then Structure: the *Flat chapters* toggle. On means single rows; off means folders that can also hold scenes. Existing chapters keep their shape regardless.
+
+To change one chapter's shape, or any item's type, right-click it (or open its Inspector) and choose *Convert to*. Converting a chapter folder to a flat chapter, or back, keeps its title and prose; only an empty one can become flat, since a flat chapter has nowhere to put child items. *Convert to* reaches further: a plain folder can become a chapter folder, part, book, or note folder and back; a scene can become a note or a flat chapter, either converting back to a scene. Whatever a conversion cannot carry over, Skribisto names plainly and refuses rather than discarding it quietly: a chapter with its own prose cannot become a Part, which has nowhere to keep scene text.
+
+## Why a book needs an End of Book marker
+
+Skribisto keeps every book in one continuous list, so a book's end is not decided by nesting: one project can hold more than one book, end to end. The *End of Book* row marks where one stops; anything after it belongs to the next.
+
+## Paratext: part of the book, not the story
+
+A *Paratext* is writing that belongs to the book but not to its story: a preface, dedication, afterword, or colophon. It exports wherever you place it, but is never counted in the word count, since conventions for where it goes differ by country and publisher. A *Paratext folder* is purely organizational: it keeps paratexts out of the rest of the binder but contributes nothing to the exported book, not even its own name.
+
+New to Skribisto? [Getting started](:help-getting-started) covers opening and saving a project first.

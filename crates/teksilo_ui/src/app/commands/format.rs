@@ -34,7 +34,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // never swallows these.
     ctx.register_shortcut_global(
         Shortcut::new("format.scene_break")
-            .name("Insert Scene Break")
+            .name(tr!(shortcut_name_format_scene_break()))
             .primary(KeyStroke::new(
                 Key::Enter,
                 Modifiers::CTRL | Modifiers::SHIFT,
@@ -43,7 +43,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     ctx.register_shortcut_global(
         Shortcut::new("format.major_scene_break")
-            .name("Insert Major Scene Break")
+            .name(tr!(shortcut_name_format_major_scene_break()))
             .primary(KeyStroke::new(Key::Enter, Modifiers::CTRL | Modifiers::ALT))
             .build(),
     );
@@ -68,7 +68,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // key handling (whose Ctrl+letter arms are A/C/X/V/B/I/U/Z/Y).
     ctx.register_shortcut_global(
         Shortcut::new("format.link")
-            .name("Insert Link")
+            .name(tr!(shortcut_name_format_link()))
             .primary(KeyStroke::new(Key::K, Modifiers::CTRL))
             .build(),
     );

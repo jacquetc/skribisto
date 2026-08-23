@@ -438,7 +438,8 @@ fn comment_card(
         .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
         .subtitle(lit!(body_line))
         .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
-        .trailing_slot(footer);
+        .trailing_slot(footer)
+        .rich_tooltip(crate::tooltip_registry::CONCEPT_COMMENT);
 
     // The breadcrumb is the project dock's alone: in the per-document dock it
     // would repeat the dock's own scope on every row.

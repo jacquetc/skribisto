@@ -39,7 +39,19 @@ use super::{
     tab_backdrop, title_input, vspace, writing_section,
 };
 
-/// The epigraph disclosure — the quotation set at the head of this book, part or chapter.
+mod manuscript;
+mod remember;
+
+use manuscript::*;
+use remember::*;
+
+/// The epigraph disclosure — the quotation set at the head of this part or chapter.
+///
+/// Not a book: the matrix allows `EpigraphText` on exactly four combinations (part and
+/// chapter, both encodings), and a book's two rows carry only title, subtitle and
+/// synopsis. This comment said "book, part or chapter" for a while, and that wording
+/// reached the feature checklist and from there a help page draft before the matrix was
+/// re-read.
 ///
 /// `None` for the combinations the matrix gives no `EpigraphText`, which is what keeps a
 /// scene or a note from sprouting one even though `prose()` is shared with the chapter
@@ -51,15 +63,10 @@ use super::{
 /// `SegmentedControl` with a `Switcher` **by index**, so a segment added out of order
 /// silently shows the previous view under the new label. This lives inside segment 0 and
 /// touches none of that.
-mod manuscript;
-mod remember;
-
-use manuscript::*;
-use remember::*;
-
 fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
     let field = tab.epigraph()?;
-    Some(
+    Some(crate::widgets::tip::RichTip::new(
+        crate::tooltip_registry::CONCEPT_EPIGRAPH,
         Accordion::new(tr!(epigraph()), tab.epigraph_expanded.clone()).content(synopsis_column(
             &field.doc,
             &tab.column_width,
@@ -88,7 +95,7 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             // tab shows owns its remembered position.
             Option::None,
         )),
-    )
+    ))
 }
 
 /// The `ScrollArea` every writing surface in the app scrolls inside, and the

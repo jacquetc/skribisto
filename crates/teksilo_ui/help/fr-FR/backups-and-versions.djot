@@ -1,0 +1,70 @@
+Une *copie de secours* est un instantané de tout le projet : un fichier `.skrib` complet. Une
+*version* est l'historique conservé d'une seule [ligne](:help-writing-model), une scène, une
+note ou un synopsis. Une copie de secours répond à « à quoi ressemblait tout le projet il y a
+une heure » ; l'historique des versions répond à « qu'est-ce que ce paragraphe disait hier, ou
+avant que je le supprime ». Skribisto conserve les deux, et l'un ne remplace pas l'autre.
+
+## Copies de secours
+
+Par défaut, Skribisto crée une copie de secours à la fermeture et toutes les deux heures
+pendant que le projet est ouvert (la copie de secours à l'ouverture existe aussi, désactivée
+par défaut), et n'en crée pas quand rien n'a changé. Les copies sont déposées dans
+l'emplacement de secours propre à l'application, sauf si vous ajoutez vos propres dossiers ;
+les anciennes s'éclaircissent selon la conservation *Par paliers* (environ toutes les heures
+pendant un jour, tous les jours pendant une semaine, toutes les semaines pendant un mois, tous
+les mois au-delà) ou, si vous basculez, un simple *Garder les N dernières* ; les quelques
+copies les plus récentes sont toujours conservées, quoi qu'il arrive.
+
+Cela se trouve dans _Paramètres ▸ Sauvegarde et synchronisation ▸ Copies de secours_, la
+valeur par défaut pour chaque projet. Un projet peut la remplacer sous _Paramètres ▸ Œuvre:
+<projet> ▸ Copies de secours_ (*Utiliser les réglages généraux*, désactivé, pour définir ses
+propres déclencheurs, destinations et conservation). Cette page affiche aussi *Dernière copie
+de secours : <date>* (ou *Aucune copie de secours pour l'instant*) et un bouton *Ouvrir la
+liste des copies de secours…*.
+
+Pour en créer une manuellement, utilisez *Œuvre ▸ Créer une copie de secours*. Pour parcourir
+celles qui existent, *Œuvre ▸ Liste des copies de secours…* affiche toutes les copies de
+secours trouvées pour ce projet, et permet de les Ouvrir, Afficher ou Supprimer.
+
+Ouvrir une copie de secours ne touche jamais à votre projet actif : elle s'ouvre dans sa
+propre fenêtre, dans un mode lecture seule bien distinct. Une fenêtre modale indique
+« Vous avez ouvert une copie de secours », les changements ne peuvent être conservés qu'avec
+Enregistrer sous, et tant que cette fenêtre reste ouverte, une bannière le répète (« Copie de
+secours : les changements ne peuvent pas être enregistrés ici »), avec *Restaurer…* et
+*Enregistrer sous…* toujours à portée de main : aucun moyen de la confondre avec le vrai
+projet.
+
+*Restaurer* est la seule action qui modifie l'original : après confirmation, votre projet
+*actuel* est d'abord copié à part comme copie de secours de précaution, puis le contenu de la
+copie de secours écrase l'original (s'il est ouvert ailleurs, il vous est demandé de fermer
+d'abord cette fenêtre). Rien n'est perdu dans un cas comme dans l'autre : ce qui existait
+avant devient lui-même une copie de secours.
+
+**Contre quoi une copie de secours protège :** la perte, la corruption ou l'écrasement
+accidentel du fichier de projet lui-même.
+
+## Historique des versions
+
+L'historique des versions suit une seule ligne à la fois, pas le projet entier, à partir de
+deux sources fusionnées : le journal d'historique propre au projet, qui enregistre le texte
+d'une ligne à chaque enregistrement (dense mais peu profond, qui s'éclaircit avec le temps, et
+qui ne vit qu'à l'intérieur du fichier de projet actuel), et les fichiers de copie de secours,
+qui ajoutent de la profondeur aussi ancienne soit-elle. Chaque entrée indique sa provenance,
+« depuis une copie de secours » ou « depuis l'historique du projet », l'ampleur du changement,
+et une différence exprimée en texte, pas seulement en couleur. Une version issue d'une copie
+de secours peut être épinglée pour que le nettoyage ne supprime jamais ce fichier ;
+l'historique propre au projet n'a aucun fichier à épingler.
+
+Le panneau *Versions*, sur le rail latéral droit, à côté des panneaux *Commentaires* et
+*Mise en forme*, affiche cela pour la ligne en cours d'édition. *Restaurer cette version*
+remet cet ancien texte en place, avec une copie de secours de précaution créée d'abord et
+`Ctrl+Z` pour annuler, mais uniquement sur une ligne qui existe encore.
+
+Pour une ligne que vous avez complètement supprimée, il y a la Chronologie (_Affichage ▸
+Chronologie_) : la bande d'historique à l'échelle du projet, et le seul endroit où une ligne
+disparue reste accessible. *Rétablir cet élément…* la recrée avec le texte qu'elle avait à ce
+moment-là, à l'endroit du classeur que vous choisissez ; l'annulation se fait par le bouton du
+message toast, pas par `Ctrl+Z`, puisque cela crée une ligne au lieu d'en modifier une.
+
+**Contre quoi l'historique des versions protège :** une formulation antérieure ou une ligne
+supprimée, sans avoir à fouiller les fichiers de copie de secours à la main.

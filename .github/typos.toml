@@ -25,6 +25,10 @@ extend-exclude = [
     "*.svg",
     # Non-English UI translations (the en-US/ locale stays spell-checked).
     "crates/teksilo_ui/locales/fr-FR/*.ftl",
+    # Non-English help topics, for the same reason and more of it: these are
+    # pages of French prose, not labels. The en-US/ topics stay spell-checked,
+    # which is where a real slip in the help set would be.
+    "crates/teksilo_ui/help/fr-FR/*.djot",
     # Third-party licence texts, shipped verbatim with the bundled
     # dictionaries. Their wording is not ours to correct.
     "crates/teksilo_ui/assets/dictionaries/licenses/*",

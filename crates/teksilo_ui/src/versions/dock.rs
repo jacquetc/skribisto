@@ -550,7 +550,8 @@ fn list(view: &TimelineView, vm: VersionsViewModel) -> impl Widget + use<> {
             .subtitle(lit!(row.subtitle.clone()))
             .selected(selected)
             .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
-            .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing));
+            .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+            .rich_tooltip(crate::tooltip_registry::CONCEPT_VERSION);
         if let Some(m) = row.magnitude {
             item = item.trailing_slot(magnitude_bar(m));
         }

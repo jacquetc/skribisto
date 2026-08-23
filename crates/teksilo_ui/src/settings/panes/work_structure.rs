@@ -75,7 +75,10 @@ pub(in crate::settings) fn work_structure_pane(
         .label(tr!(settings_page_structure()))
         .label_gap(16.0)
         .row_spacing(14.0)
-        .full_width(group(tr!(settings_group_chapters())))
+        .full_width(crate::widgets::tip::RichTip::new(
+            crate::tooltip_registry::CONCEPT_CHAPTER_MODE,
+            group(tr!(settings_group_chapters())),
+        ))
         .full_width(
             Toggle::new(flat)
                 .label(tr!(settings_chapter_flat()))

@@ -238,6 +238,69 @@ impl WelcomePanel {
             .child_id(list_id) // RECENTS_PAGE_LIST
     }
 
+    /// Learn pane: the doors out of the Launcher for someone who does not yet know
+    /// what to do.
+    ///
+    /// The Launcher builds **no menu bar**, so before a project is open this pane is the
+    /// only route to Help that can exist. It replaced a centred "Guides and tips are
+    /// coming soon." placeholder; a row here that led nowhere would be the same promise
+    /// broken twice.
+    fn learn_pane(&self) -> impl Widget + 'static {
+        // Each row is a button rather than a `ListView` selection: these are four
+        // unrelated actions, not a list of like things to pick between, and a selection
+        // highlight would suggest the pane remembers which one you chose.
+        let rows = VStack::new()
+            .spacing(2.0)
+            .child(
+                Button::new(tr!(learn_help_topics()))
+                    .variant(ButtonVariant::Ghost)
+                    .on_activate_fn(|ctx| crate::help::window::open_or_focus_help(ctx, None)),
+            )
+            .child(
+                Button::new(tr!(learn_shortcuts()))
+                    .variant(ButtonVariant::Ghost)
+                    .on_activate_fn(crate::help::shortcuts::present_shortcuts),
+            )
+            .child(
+                Button::new(tr!(learn_website()))
+                    .variant(ButtonVariant::Ghost)
+                    .on_activate_fn(|ctx| {
+                        crate::shared::external_link::open_external_link(
+                            crate::shared::project_links::GITHUB_URL,
+                            ctx,
+                        )
+                    }),
+            )
+            .child(
+                Button::new(tr!(welcome_discord()))
+                    .variant(ButtonVariant::Ghost)
+                    .on_activate_fn(|ctx| {
+                        crate::shared::external_link::open_external_link(
+                            crate::shared::project_links::DISCORD_URL,
+                            ctx,
+                        )
+                    }),
+            );
+
+        teksu!(
+            VStack {
+                spacing: 0.0
+                Padding::symmetric(12.0, 16.0) {
+                    GroupHeader::new(tr!(nav_learn())) {
+                        style: TextStyleRole::SmallBold
+                        color: TextRole::Secondary
+                    }
+                }
+                Padding::symmetric(0.0, 8.0) {
+                    child: rows
+                }
+                Expand::vertical {
+                    Spacer
+                }
+            }
+        )
+    }
+
     /// Examples pane: the bundled example works (one today — Starforgers).
     fn examples_pane(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
         teksu!(
@@ -656,11 +719,32 @@ impl Widget for WelcomePanel {
         // is unreachable from a window that never builds an `App`.
         ctx.register_shortcut_global(
             Shortcut::new("app.quit")
-                .name("Quit")
+                .name(tr!(shortcut_name_app_quit()))
                 .primary(KeyStroke::ctrl(Key::Q))
                 .build(),
         );
         ctx.register_action_global(Action::new("app.quit").on_invoke(|_i, c| c.close_window()));
+
+        // Help, on the Launcher's own registry for the same reason `app.quit` is: each
+        // `WidgetTree` (one per OS window) has its own `global_actions`/
+        // `shortcut_registry`, and this window never builds an `App`, so
+        // `app/commands/help.rs` is unreachable from here.
+        //
+        // It has to reach here. The Launcher builds no menu bar, so before a project is
+        // open F1 and the Learn pane are the *only* two routes to Help that can exist,
+        // and the reader most likely to want one is the one who has not opened a
+        // project yet.
+        ctx.register_shortcut_global(
+            Shortcut::new("help.topics")
+                .name(tr!(shortcut_name_help_topics()))
+                .category("Help")
+                .primary(KeyStroke::new(Key::F1, Modifiers::NONE))
+                .build(),
+        );
+        ctx.register_action_global(
+            Action::new("help.topics")
+                .on_invoke(|_i, c| crate::help::window::open_or_focus_help(c, None)),
+        );
 
         // The lists are reactive `ListView`s bound to Layer-A `ListModel`s, so
         // they refresh themselves on `LoadWork` — no widget rebuild needed here.
@@ -752,7 +836,7 @@ impl Widget for WelcomePanel {
         let content = Switcher::new(switch_index)
             .child(self.works_pane(&vm, ctx))
             .child(self.examples_pane(&vm))
-            .child(placeholder(tr!(welcome_learn_soon())))
+            .child(self.learn_pane())
             .child(placeholder(tr!(welcome_about_blurb())));
 
         // Sidebar: brand block, a Spacer, the bottom-pinned nav + links.

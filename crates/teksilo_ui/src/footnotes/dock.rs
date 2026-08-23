@@ -389,17 +389,20 @@ fn marker_chip(row: &FootnoteRow, here: Signal<bool>) -> impl Widget {
             TextRole::Secondary
         }
     });
-    Panel::new()
-        .background(background)
-        .corner_radius(3.0)
-        .padding(2.0)
-        .child(
-            Padding::symmetric(4.0, 0.0).child(
-                TextWidget::new(lit!(row.marker()))
-                    .style(TextStyleRole::Tiny)
-                    .color(ink),
+    crate::widgets::tip::RichTip::new(
+        crate::tooltip_registry::CONCEPT_FOOTNOTE,
+        Panel::new()
+            .background(background)
+            .corner_radius(3.0)
+            .padding(2.0)
+            .child(
+                Padding::symmetric(4.0, 0.0).child(
+                    TextWidget::new(lit!(row.marker()))
+                        .style(TextStyleRole::Tiny)
+                        .color(ink),
+                ),
             ),
-        )
+    )
 }
 
 /// The note's own words, edited in place and committed on every change.

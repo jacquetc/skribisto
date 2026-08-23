@@ -20,6 +20,7 @@
 //! | [`register_inspector_section`] | the Inspector renders |
 //! | [`register_container_segment`] | a container tab is built |
 //! | [`register_category`] | the Analysis pane is built |
+//! | [`register_topics`] | the Help window is built |
 //! | [`register_command`] | `App::build`, and each window's menu build |
 //! | [`register_settings`] | every `spec`/`dump`/`load_pins` lookup |
 //! | [`register_page`] | the Settings window is built |
@@ -68,6 +69,19 @@ pub use crate::tabs::shared::segments::{
 
 // ── Analysis categories ──────────────────────────────────────────────────────
 pub use crate::analysis::AnalysisViewModel;
+/// Contribute a page to the Help window.
+///
+/// Registered topics land in the fixed **Extensions** section of the table of contents,
+/// for the same reason a registered settings page does: letting a registration address
+/// the app's own sections would make that tree's shape a compatibility promise.
+///
+/// ⚠ Read when the Help window is built, so register before `run()` like every other
+/// slot. A topic whose handle drops while the window is open leaves the reader on a
+/// "no longer available" page rather than a stale one.
+pub use crate::help::{
+    HelpBody, HelpSection, HelpTopicSpec, LocalizedSource, ResolvedBody, TopicsHandle,
+    register_topics,
+};
 pub use crate::tabs::analysis::{AnalysisCategorySpec, CategoryHandle, register_category};
 
 // ── Commands, shortcuts, the Tools row ───────────────────────────────────────

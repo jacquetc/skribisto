@@ -469,7 +469,17 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
         ],
     ),
     ("Tools", &["menu-spellcheck"]),
-    ("Help", &["menu-about"]),
+    (
+        "Help",
+        &[
+            "menu-help-topics",
+            "menu-command-palette",
+            "menu-help-shortcuts",
+            "menu-help-website",
+            "menu-help-report",
+            "menu-about",
+        ],
+    ),
 ];
 
 /// Every locale whose menu labels carry mnemonics, as the `.ftl` source.

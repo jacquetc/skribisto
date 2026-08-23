@@ -112,7 +112,10 @@ pub fn work_templates_pane(ctx: &mut BuildContext, vm: &NoteTemplatesViewModel) 
 
     VStack::new()
         .spacing(16.0)
-        .child(TextWidget::new(tr!(settings_templates_description())).color(TextRole::Secondary))
+        .child(crate::widgets::tip::RichTip::new(
+            crate::tooltip_registry::CONCEPT_NOTE_TEMPLATE,
+            TextWidget::new(tr!(settings_templates_description())).color(TextRole::Secondary),
+        ))
         .child(toolbar_row(vm, query))
         .child(Expand::horizontal().child(list_card))
 }

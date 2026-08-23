@@ -22,13 +22,13 @@ use crate::settings::SettingsViewModel;
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_shortcut_global(
         Shortcut::new("comments.add")
-            .name("Add Comment")
+            .name(tr!(shortcut_name_comments_add()))
             .primary(KeyStroke::new(Key::M, Modifiers::CTRL | Modifiers::ALT))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("comments.add_paragraph")
-            .name("Comment on Paragraph")
+            .name(tr!(shortcut_name_comments_add_paragraph()))
             .primary(KeyStroke::new(
                 Key::M,
                 Modifiers::CTRL | Modifiers::ALT | Modifiers::SHIFT,

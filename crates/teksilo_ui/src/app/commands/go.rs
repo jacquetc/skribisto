@@ -66,13 +66,13 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Alt+Left/Alt+Right, matching the prior-art shape one axis over.
     ctx.register_shortcut_global(
         Shortcut::new("go.next")
-            .name("Next")
+            .name(tr!(shortcut_name_go_next()))
             .primary(KeyStroke::new(Key::ArrowDown, Modifiers::ALT))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("go.prev")
-            .name("Previous")
+            .name(tr!(shortcut_name_go_prev()))
             .primary(KeyStroke::new(Key::ArrowUp, Modifiers::ALT))
             .build(),
     );
@@ -101,7 +101,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // not actually present the overlay.
     ctx.register_shortcut_global(
         Shortcut::new("go.to")
-            .name("Go to")
+            .name(tr!(shortcut_name_go_to()))
             .primary(KeyStroke::ctrl(Key::G))
             .build(),
     );

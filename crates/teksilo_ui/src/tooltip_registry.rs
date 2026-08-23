@@ -123,6 +123,61 @@ pub const WM_KEYS: &[&str] = &[
     PACE_PLAN,
 ];
 
+// ── Feature concepts ─────────────────────────────────────────────────────────
+//
+// A third web beside the writing-model and target ones. These name the things a
+// project *has* rather than the things a book is made of: what a tag is, what a
+// backup protects you from, why a returning DOCX is recognised. They cross-link to
+// each other and to the two webs above, and each is browsable as a glossary entry in
+// the Help window (`crate::help`) as well as hoverable on its own control.
+pub const CONCEPT_TAG: &str = "concept-tag";
+pub const CONCEPT_LABEL: &str = "concept-label";
+pub const CONCEPT_POINT_OF_VIEW: &str = "concept-point-of-view";
+pub const CONCEPT_EPIGRAPH: &str = "concept-epigraph";
+pub const CONCEPT_FOOTNOTE: &str = "concept-footnote";
+pub const CONCEPT_CHAPTER_MODE: &str = "concept-chapter-mode";
+pub const CONCEPT_COMMENT: &str = "concept-comment";
+pub const CONCEPT_BACKUP: &str = "concept-backup";
+pub const CONCEPT_VERSION: &str = "concept-version";
+pub const CONCEPT_TRASH: &str = "concept-trash";
+pub const CONCEPT_SPELLCHECK: &str = "concept-spellcheck";
+pub const CONCEPT_SEARCH_REPLACE: &str = "concept-search-replace";
+pub const CONCEPT_NOTE_TEMPLATE: &str = "concept-note-template";
+pub const CONCEPT_TEXT_REPLACEMENT: &str = "concept-text-replacement";
+pub const CONCEPT_SMART_PUNCTUATION: &str = "concept-smart-punctuation";
+pub const CONCEPT_EXPORT_STYLE: &str = "concept-export-style";
+pub const CONCEPT_ROUND_TRIP_MARKS: &str = "concept-round-trip-marks";
+
+/// Every registered feature-concept key.
+pub const CONCEPT_KEYS: &[&str] = &[
+    CONCEPT_TAG,
+    CONCEPT_LABEL,
+    CONCEPT_POINT_OF_VIEW,
+    CONCEPT_EPIGRAPH,
+    CONCEPT_FOOTNOTE,
+    CONCEPT_CHAPTER_MODE,
+    CONCEPT_COMMENT,
+    CONCEPT_BACKUP,
+    CONCEPT_VERSION,
+    CONCEPT_TRASH,
+    CONCEPT_SPELLCHECK,
+    CONCEPT_SEARCH_REPLACE,
+    CONCEPT_NOTE_TEMPLATE,
+    CONCEPT_TEXT_REPLACEMENT,
+    CONCEPT_SMART_PUNCTUATION,
+    CONCEPT_EXPORT_STYLE,
+    CONCEPT_ROUND_TRIP_MARKS,
+];
+
+/// Every key this module registers, across all three webs.
+///
+/// The drift tests and the Help window's glossary both read this rather than either
+/// array, so a key added to one and forgotten by the other is a build failure rather
+/// than a concept that quietly stops being reachable.
+pub fn all_keys() -> impl Iterator<Item = &'static str> {
+    WM_KEYS.iter().copied().chain(CONCEPT_KEYS.iter().copied())
+}
+
 /// The writing-model rich tooltips, registered once at boot. Each carries a
 /// short `text` (what it is) plus a `more` disclosure (the teaching body, whose
 /// cited types cascade to their own entries here).
@@ -170,12 +225,133 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
         TooltipContent::new(GOAL_MILESTONE, tr!(goal_milestone()))
             .with_more(tr!(goal_milestone_more())),
         TooltipContent::new(PACE_PLAN, tr!(pace_plan())).with_more(tr!(pace_plan_more())),
+        TooltipContent::new(CONCEPT_TAG, tr!(concept_tag())).with_more(tr!(concept_tag_more())),
+        TooltipContent::new(CONCEPT_LABEL, tr!(concept_label()))
+            .with_more(tr!(concept_label_more())),
+        TooltipContent::new(CONCEPT_POINT_OF_VIEW, tr!(concept_point_of_view()))
+            .with_more(tr!(concept_point_of_view_more())),
+        TooltipContent::new(CONCEPT_EPIGRAPH, tr!(concept_epigraph()))
+            .with_more(tr!(concept_epigraph_more())),
+        TooltipContent::new(CONCEPT_FOOTNOTE, tr!(concept_footnote()))
+            .with_more(tr!(concept_footnote_more())),
+        TooltipContent::new(CONCEPT_CHAPTER_MODE, tr!(concept_chapter_mode()))
+            .with_more(tr!(concept_chapter_mode_more())),
+        TooltipContent::new(CONCEPT_COMMENT, tr!(concept_comment()))
+            .with_more(tr!(concept_comment_more())),
+        TooltipContent::new(CONCEPT_BACKUP, tr!(concept_backup()))
+            .with_more(tr!(concept_backup_more())),
+        TooltipContent::new(CONCEPT_VERSION, tr!(concept_version()))
+            .with_more(tr!(concept_version_more())),
+        TooltipContent::new(CONCEPT_TRASH, tr!(concept_trash()))
+            .with_more(tr!(concept_trash_more())),
+        TooltipContent::new(CONCEPT_SPELLCHECK, tr!(concept_spellcheck()))
+            .with_more(tr!(concept_spellcheck_more())),
+        TooltipContent::new(CONCEPT_SEARCH_REPLACE, tr!(concept_search_replace()))
+            .with_more(tr!(concept_search_replace_more())),
+        TooltipContent::new(CONCEPT_NOTE_TEMPLATE, tr!(concept_note_template()))
+            .with_more(tr!(concept_note_template_more())),
+        TooltipContent::new(CONCEPT_TEXT_REPLACEMENT, tr!(concept_text_replacement()))
+            .with_more(tr!(concept_text_replacement_more())),
+        TooltipContent::new(CONCEPT_SMART_PUNCTUATION, tr!(concept_smart_punctuation()))
+            .with_more(tr!(concept_smart_punctuation_more())),
+        TooltipContent::new(CONCEPT_EXPORT_STYLE, tr!(concept_export_style()))
+            .with_more(tr!(concept_export_style_more())),
+        TooltipContent::new(CONCEPT_ROUND_TRIP_MARKS, tr!(concept_round_trip_marks()))
+            .with_more(tr!(concept_round_trip_marks_more())),
     ]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
+
+    /// Keys deliberately not hung on any control, with the reason.
+    ///
+    /// A concept reaches the reader two ways: in place, on the control it describes, and
+    /// cold, as a glossary entry in the Help window. The second is free once registered;
+    /// the first is a decision per concept. This list is where "no control" is *stated*
+    /// rather than left as an absence nobody can tell from an oversight.
+    const BROWSE_ONLY: &[(&str, &str)] = &[(
+        WM_SYNOPSIS,
+        "a concept cited by other entries, not a thing you create; the synopsis box \
+             itself is labelled and needs no explainer",
+    )];
+
+    /// Every `.rich_tooltip(..)` / `RichTip::new(..)` argument appearing anywhere under
+    /// `src/`, as raw source text.
+    ///
+    /// A directory walk rather than a file list, for the reason `settings_keys`' own
+    /// drift test gives: the case worth catching is a call site in a file nobody thought
+    /// to enumerate.
+    fn attachment_sources() -> String {
+        fn walk(dir: &Path, out: &mut String) {
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                return;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                // Three files must not be scanned, or the test passes by construction
+                // and proves nothing. Both of these were live bugs in this very test
+                // before the exclusion was added, which is why they are named here
+                // rather than assumed:
+                //
+                //  * `tooltip_registry.rs` DECLARES every constant, so a key would
+                //    always "appear in sources" via its own `pub const` line;
+                //  * `help.rs` and its module list every key in the glossary table, so
+                //    every concept would look attached the moment it was browsable.
+                let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if name == "help.rs" || name == "help" || name == "tooltip_registry.rs" {
+                    continue;
+                }
+                if path.is_dir() {
+                    walk(&path, out);
+                } else if path.extension().is_some_and(|e| e == "rs")
+                    && let Ok(text) = std::fs::read_to_string(&path)
+                {
+                    out.push_str(&text);
+                }
+            }
+        }
+        let mut out = String::new();
+        walk(&Path::new(env!("CARGO_MANIFEST_DIR")).join("src"), &mut out);
+        out
+    }
+
+    #[test]
+    fn every_registered_concept_is_hung_on_a_control_or_declared_browse_only() {
+        let sources = attachment_sources();
+        let excused: Vec<&str> = BROWSE_ONLY.iter().map(|(k, _)| *k).collect();
+
+        // The constant's *name*, not its value: attachment sites bind by constant
+        // (`.rich_tooltip(WM_SCENE)`), and a literal string would be the drift this test
+        // exists to catch.
+        let missing: Vec<&str> = all_keys()
+            .filter(|key| !excused.contains(key))
+            .filter(|key| {
+                // `wm-scene` -> `WM_SCENE`
+                let ident = key.replace('-', "_").to_uppercase();
+                !sources.contains(&ident)
+            })
+            .collect();
+
+        assert!(
+            missing.is_empty(),
+            "these registered concepts are hung on no control and are not declared \
+             browse-only: {missing:?}\nAttach each with `.rich_tooltip(KEY)` or \
+             `RichTip::new(KEY, ..)`, or add it to BROWSE_ONLY with the reason."
+        );
+    }
+
+    #[test]
+    fn browse_only_names_only_registered_keys() {
+        for (key, _) in BROWSE_ONLY {
+            assert!(
+                all_keys().any(|k| k == *key),
+                "BROWSE_ONLY names '{key}', which is not a registered key"
+            );
+        }
+    }
 
     /// Extract every `(:key)` cascade target from a Fluent source blob,
     /// skipping comment lines (`#` / `##` / `###`) — a comment may carry a
@@ -202,10 +378,14 @@ mod tests {
         let tips = writing_model_tooltips();
         let keys: Vec<&str> = tips.iter().map(|t| t.key.as_str()).collect();
         // Every declared key is registered, and nothing extra is.
-        for k in WM_KEYS {
-            assert!(keys.contains(k), "key {k} declared but not registered");
+        for k in all_keys() {
+            assert!(keys.contains(&k), "key {k} declared but not registered");
         }
-        assert_eq!(keys.len(), WM_KEYS.len(), "registered set != WM_KEYS");
+        assert_eq!(
+            keys.len(),
+            all_keys().count(),
+            "registered set != the declared keys"
+        );
         // Every registered entry teaches (has a `more` disclosure).
         for t in &tips {
             assert!(t.has_more(), "tooltip {} is missing its `more` body", t.key);
@@ -227,9 +407,10 @@ mod tests {
                 !targets.is_empty(),
                 "{locale}: no cascade links found — the wm-* bodies lost their [label](:key) markup"
             );
+            let known: Vec<&str> = all_keys().collect();
             for t in &targets {
                 assert!(
-                    WM_KEYS.contains(&t.as_str()),
+                    known.contains(&t.as_str()),
                     "{locale}: cascade link (:{t}) points at an unregistered key"
                 );
             }

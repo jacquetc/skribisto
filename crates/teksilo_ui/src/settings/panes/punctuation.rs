@@ -70,7 +70,10 @@ pub(in crate::settings) fn punctuation_pane(
         .label(tr!(settings_page_punctuation()))
         .label_gap(16.0)
         .row_spacing(14.0)
-        .full_width(group(tr!(settings_group_punctuation())))
+        .full_width(crate::widgets::tip::RichTip::new(
+            crate::tooltip_registry::CONCEPT_SMART_PUNCTUATION,
+            group(tr!(settings_group_punctuation())),
+        ))
         .full_width(
             Toggle::new(vm.punct_dashes())
                 .label(tr!(settings_punctuation_dashes()))

@@ -114,6 +114,7 @@ pub mod footnotes;
 pub mod format;
 pub mod go;
 pub mod goals;
+pub mod help;
 pub mod icons;
 pub mod identity;
 pub mod import_document;
@@ -601,6 +602,11 @@ pub fn run() {
         .install_async_async_std()
         .event_source(EventHubSource { client })
         .app_state(registry.clone())
+        // Tier 1, and genuinely so: there is one Help window per process and its
+        // content explains the *application*, not any open `Work`. Every entry point
+        // (F1, the Help menu, the Launcher's Learn pane) reads this one instance, which
+        // is what lets a reader who reopens Help find the topic they left it on.
+        .app_state(crate::help::help_vm::HelpViewModel::new())
         // Tier 1, like the registry above: one folder memory per process, correct for
         // every window because it is about the writer's habits and not about any Work.
         .app_state(folder_memory.clone())

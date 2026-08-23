@@ -26,16 +26,16 @@ wm-end-of-book-more = Chaque livre partage une seule liste continue ; sa fin n�
 wm-synopsis = Un résumé d’un élément d’écriture.
 wm-synopsis-more = Un résumé attaché à tout élément d’écriture, en général un court paragraphe mais aussi long que vous voulez. Utilisez-le pour préparer et naviguer avant que le texte n’existe. Il se place à côté du texte principal dans l’éditeur.
 
-scene-break-minor = Un saut de scène ordinaire — un changement de temps, de lieu ou de point de vue au sein d'un chapitre.
+scene-break-minor = Un saut de scène ordinaire : un changement de temps, de lieu ou de point de vue au sein d'un chapitre.
 scene-break-minor-more =
-    Marque une rupture *là où vous la placez*, y compris au milieu d'une [scène](:wm-scene) — découper le texte en deux éléments est un choix d'organisation, cela ne crée jamais de rupture en soi.
+    Marque une rupture *là où vous la placez*, y compris au milieu d'une [scène](:wm-scene). Découper le texte en deux éléments est un choix d'organisation, cela ne crée jamais de rupture en soi.
 
-    Se saisit dans le texte sous la forme `* * *`. Son rendu dépend du style d'export, pas de ce que vous tapez : un manuscrit Shunn l'imprime en `#`, un livre de poche en astérisques, et l'édition française, allemande, espagnole, russe ou italienne le plus souvent par un simple blanc, sans aucun signe.
-scene-break-major = Une rupture plus forte — une grande ellipse, ou un changement de point de vue décisif.
+    Se saisit dans le texte sous la forme de trois astérisques séparées par des espaces. Son rendu dépend du style d'export, pas de ce que vous tapez : un manuscrit Shunn l'imprime avec un seul #, un livre de poche en astérisques, et l'édition française, allemande, espagnole, russe ou italienne le plus souvent par un simple blanc, sans aucun signe.
+scene-break-major = Une rupture plus forte : une grande ellipse, ou un changement de point de vue décisif.
 scene-break-major-more =
     La même idée qu'un saut de scène ordinaire, d'un cran au-dessus. À utiliser quand une rupture simple sous-estimerait le saut.
 
-    Se saisit sous la forme `# # #`, et le style d'export l'imprime différemment du niveau ordinaire — la norme Shunn oppose précisément `#` à `# # #`. Là où une tradition ne connaît pas de marque plus forte, les deux niveaux s'impriment de la même façon.
+    Se saisit sous la forme # # #, et le style d'export l'imprime différemment du niveau ordinaire. La norme Shunn oppose précisément un seul # à # # #. Là où une tradition ne connaît pas de marque plus forte, les deux niveaux s'impriment de la même façon.
 wm-story-bible = Skribisto recherche cet élément dans votre texte.
 wm-story-bible-more = Activez cette option pour les étiquettes qui nomment ce dont vous parlez : personnages, lieux, objets. Tout élément portant une telle étiquette est recherché dans votre texte par son titre et par les autres noms que vous lui donnez, si bien que chaque [scène](:wm-scene) énumère qui et quoi y apparaît sans que vous ayez à créer le moindre lien. Laissez-la désactivée pour les étiquettes qui décrivent un élément au lieu de le nommer, comme un état d’avancement ou un rappel de vérifier la continuité.
 
@@ -43,9 +43,9 @@ tooltip-go-to = Rejoindre n'importe quel élément du classeur (Ctrl+G)
 synopsis-collapse-tooltip = Masquer la colonne du synopsis
 
 wm-paratext = Un texte qui ne fait pas partie du récit.
-wm-paratext-more = Une préface, une dédicace, une postface, un achevé d'imprimer — un écrit qui appartient au livre mais non à son corps. Exporté là où vous le placez, et jamais compté dans le nombre de mots du manuscrit. Sa place vous appartient : les usages varient selon les pays et les éditeurs.
+wm-paratext-more = Une préface, une dédicace, une postface, un achevé d'imprimer : un écrit qui appartient au livre mais non à son corps. Exporté là où vous le placez, et jamais compté dans le nombre de mots du manuscrit. Sa place vous appartient : les usages varient selon les pays et les éditeurs.
 wm-paratext-folder = Un dossier de paratextes.
-wm-paratext-folder-more = De quoi ranger préfaces et postfaces sans encombrer le classeur. Purement organisationnel — il porte un [synopsis](:wm-synopsis) mais n'ajoute rien au livre exporté, pas même son nom.
+wm-paratext-folder-more = De quoi ranger préfaces et postfaces sans encombrer le classeur. Purement organisationnel : il porte un [synopsis](:wm-synopsis) mais n'ajoute rien au livre exporté, pas même son nom.
 
 # ── Objectifs de mots / de caractères ─────────────────────────────────────────
 # Un second réseau d'infobulles à côté de celui du modèle d'écriture. Il tient lieu de la
@@ -68,3 +68,47 @@ goal-milestone = Une date à laquelle atteindre quelque chose.
 goal-milestone-more = Deux sortes. L'une dit que le [livre](:wm-book) devrait faire telle longueur à telle date, un point de passage sur sa propre courbe. L'autre dit qu'un [chapitre](:wm-chapter) ou une [partie](:wm-part) devrait avoir atteint [son propre objectif](:goal-target) d'ici là, et lit ce nombre en direct plutôt que d'en garder une copie : modifier l'objectif met donc le jalon à jour. Les deux figurent sur le [plan de rythme](:pace-plan) du livre.
 pace-plan = Le calendrier d'écriture du livre.
 pace-plan-more = Un [objectif](:goal-target) et une échéance, avec les jours où vous écrivez, traduits en ce qu'il faut écrire par jour. Il lit l'objectif propre du livre : le fixer ici ou le fixer dans l'Inspecteur, c'est le même nombre à deux endroits. Les points de passage en chemin sont les [jalons](:goal-milestone).
+
+# ── Concepts de fonctionnalités ─────────────────────────────────────────────────
+# Un troisième réseau d'infobulles, à côté de celui du modèle d'écriture et de celui
+# des objectifs de mots/caractères ci-dessus. Chaque entrée explique ici une
+# fonctionnalité du projet qui n'a sa page nulle part ailleurs : étiquettes, note de
+# ligne, point de vue, épigraphes, notes de bas de page, mode des chapitres,
+# commentaires, copies de secours, versions, corbeille, orthographe, recherche et
+# remplacement, modèles de note, remplacement de texte, ponctuation intelligente,
+# styles d'export et marqueurs d'aller-retour. Enregistrées comme les deux réseaux
+# ci-dessus, et reliées à eux chaque fois qu'un concept en cite réellement un.
+concept-tag = Une étiquette colorée que vous posez sur n'importe quel élément, réutilisable dans tout le projet.
+concept-tag-more = Étiquetez un élément pour le repérer : un statut, un lieu, un fil que vous suivez. La même étiquette peut se poser sur n'importe quel nombre d'éléments, et un élément peut en porter plusieurs. Activez la [bible narrative](:wm-story-bible) pour une étiquette qui nomme quelque chose dans votre livre, un personnage ou un lieu : Skribisto se met alors à le chercher dans votre texte.
+concept-label = Une courte note que vous écrivez sous le titre d'un élément, pour vous seul.
+concept-label-more = Ce n'est pas une [étiquette](:concept-tag) : elle n'appartient qu'à cet élément, un texte libre sans couleur ni catalogue derrière lui, quelque chose comme « 1er rebondissement » ou « à nommer ». Définissez-la depuis le menu contextuel de la ligne, ou modifiez-la directement dans la colonne Étiquette de l'aperçu ; elle apparaît en petit sous le titre, dans l'arborescence comme dans le flux.
+concept-point-of-view = À travers les yeux de qui une scène est racontée : un ou plusieurs membres de la présence.
+concept-point-of-view-more = Se règle dans l'Inspecteur, à côté de la présence. Choisir quelqu'un qui n'y figure pas encore l'y ajoute du même geste. Porter plusieurs points de vue est un choix légitime, utile pour une scène partagée ou un changement de regard en cours de livre, que Skribisto ne bloque pas. Les candidats sont les éléments que votre [bible narrative](:wm-story-bible) fait rechercher dans le texte.
+concept-epigraph = Une citation placée en tête d'une partie ou d'un chapitre.
+concept-epigraph-more = Un champ à part, distinct du texte propre du [chapitre](:wm-chapter) ou de la [partie](:wm-part) ; une [scène](:wm-scene) ou une [note](:wm-note) n'en porte aucune. Écrivez-en une comme une citation ordinaire ; écrivez-en plusieurs et chacune devient sa propre citation en bloc, imprimée comme sa propre épigraphe. Ses mots ne sont jamais comptés dans le manuscrit.
+concept-footnote = Un appel de note marqué dans le texte, qui s'imprime comme une note numérotée.
+concept-footnote-more = L'appel n'est qu'un caractère au milieu de vos mots : il se déplace et s'efface exactement comme eux. Son numéro n'est jamais enregistré : Skribisto le recalcule à chaque fois, d'après la place de chaque appel dans le manuscrit entier, si bien qu'en insérer un renumérote tous les suivants. Les mots d'une note se comptent à part du manuscrit, jamais dedans.
+concept-chapter-mode = Si un nouveau chapitre est un dossier de scènes ou une seule ligne à plat.
+concept-chapter-mode-more = Se règle dans les Réglages, sous Structure. Vous écrivez dans le [chapitre](:wm-chapter) dans les deux cas ; la seule différence est sa capacité à *contenir* des scènes. Les deux formes produisent le même livre, vous pouvez les mélanger librement, et Promouvoir convertit un chapitre de l'une à l'autre sans perdre un mot.
+concept-comment = Une remarque ancrée sur un passage précis du texte, affichée dans la marge.
+concept-comment-more = Elle retient les mots visés et ce qui les entoure, non une position, ce qui lui permet de survivre à une modification ordinaire et à un rechargement complet. Répondez en dessous pour poursuivre le fil. Si la citation exacte ne se retrouve plus, le commentaire le signale au lieu de glisser en silence vers la mauvaise phrase.
+concept-backup = Une copie de secours de tout le projet, à un instant donné, conservée à côté de lui.
+concept-backup-more = Prise selon le calendrier de votre choix : à l'ouverture, à la fermeture, à intervalles réguliers, ou toute combinaison, les anciennes copies étant élaguées par âge ou par nombre. En ouvrir une l'affiche dans sa propre fenêtre : vous pouvez la consulter et même la modifier, mais seuls « Enregistrer sous » ou « Restaurer » gardent quoi que ce soit. Différente d'une [version](:concept-version), qui suit le passé d'une seule ligne.
+concept-version = Le passé d'une seule ligne : chaque changement de son texte ou de son synopsis.
+concept-version-more = Construite à la fois depuis l'historique propre du projet et ses copies de secours, une entrée par changement plutôt qu'une par fichier. Choisissez une entrée pour voir ce qui a changé et ne restaurer que le texte de cette ligne ; le reste du projet reste intact, et une copie de sécurité est prise d'abord. Différente d'une [copie de secours](:concept-backup), qui couvre tout le projet.
+concept-trash = Un élément mis à la corbeille est caché, non déplacé : il reste exactement où il était.
+concept-trash-more = Mettre à la corbeille se limite à basculer un indicateur : la ligne garde sa place dans le classeur, seulement désactivée. La restaurer la fait réapparaître à cet endroit précis, sans aucun rangement à refaire. Vider la corbeille supprime les éléments pour de bon, et chacune de ces actions est un geste annulable, comme toute autre modification du projet.
+concept-spellcheck = Souligne les mots qu'aucun dictionnaire installé ne reconnaît, selon la langue du projet.
+concept-spellcheck-more = Chaque projet a sa ou ses langues de travail ; un élément peut les remplacer pour une scène écrite dans une autre langue. Ajoutez un mot que Skribisto ne connaît pas depuis le menu contextuel de l'éditeur, dans un dictionnaire personnel qui vaut ensuite pour tous vos projets. Désactiver la vérification l'arrête partout, jusqu'à ce que vous la réactiviez.
+concept-search-replace = Trouve un mot ou une expression dans tout le projet, pas seulement le document ouvert.
+concept-search-replace-more = Parcourt chaque scène, note, titre, synopsis et étiquette, ainsi que les commentaires et les notes de bas de page. Respecter la casse, le mot entier et les accents sont trois interrupteurs distincts. Tout remplacer réécrit chaque résultat vérifié en une seule fois et un seul geste d'annulation : Ctrl+Z reprend tout le lot, jamais seulement le dernier changement.
+concept-note-template = Un morceau de texte réutilisable que vous insérez dans ce que vous écrivez.
+concept-note-template-more = Une fiche de personnage vierge, un profil de lieu, une trame de scène : écrivez-le une fois et déposez-le partout où vous en avez besoin, dans n'importe quel élément, pas seulement une note. Partez d'un modèle fourni, importez un fichier .md ou .djot, ou écrivez quelque chose et choisissez Document ▸ Enregistrer comme modèle. Enregistrés dans le projet, si bien qu'un co-auteur qui l'ouvre dispose du même ensemble.
+concept-text-replacement = Vos propres raccourcis, développés automatiquement pendant que vous écrivez.
+concept-text-replacement-more = Définissez un déclencheur et son remplacement, « stp » pour « s'il te plaît », et il se déploie dès que vous tapez une espace ou une ponctuation après lui. La casse suit ce que vous avez tapé : mettez une majuscule au déclencheur, et le remplacement en prend une aussi. Un Retour arrière saisi aussitôt après un remplacement annule seulement celui-ci. Activé par projet, distinct de la [ponctuation intelligente](:concept-smart-punctuation).
+concept-smart-punctuation = Typographie locale appliquée automatiquement pendant que vous écrivez : guillemets, tirets, points de suspension.
+concept-smart-punctuation-more = Courbe les guillemets droits en guillemets typographiques, transforme -- en tiret demi-cadratin et --- en cadratin, transforme ... en points de suspension, et, si vous l'activez, ouvre un paragraphe saisi « - » par un tiret de dialogue. Se règle par projet, et voyage dans le .skrib pour qu'un co-auteur écrive avec les mêmes règles. Distincte de [vos propres règles](:concept-text-replacement), que vous écrivez vous-même.
+concept-export-style = Un ensemble nommé de choix d'export : titres, espacement, ce qui est inclus.
+concept-export-style-more = Un seul style, réutilisé par tous les exports quel que soit le format choisi. Les styles fournis sont en lecture seule ; dupliquez-en un pour obtenir un point de départ que vous pouvez réellement modifier. Parmi ses réglages, celui d'inclure les [marqueurs d'aller-retour](:concept-round-trip-marks), pour un fichier envoyé à un éditeur puis renvoyé.
+concept-round-trip-marks = Des signets invisibles qui permettent à un DOCX ou un ODT modifié de revenir reconnu.
+concept-round-trip-marks-more = Écrits seulement dans les deux formats qu'un éditeur peut renvoyer, DOCX et ODT ; aucun autre export n'en porte. Un signet, non un attribut personnalisé : LibreOffice supprime les attributs personnalisés à l'enregistrement mais laisse un signet intact. S'active par [style d'export](:concept-export-style), sous « Envoi à un éditeur ».

@@ -2179,3 +2179,132 @@ pace-summary-remaining = { $words } to go
 pace-summary-open = Open the plan
 pace-summary-close = Close
 pace-summary-dont-show = Do not show this when opening
+
+# ── Help ─────────────────────────────────────────────────────────────────────
+# The Help window (crates/teksilo_ui/src/help/), its table of contents and the
+# keyboard-shortcuts sheet. Topic *bodies* are not here: they are Djot documents
+# under crates/teksilo_ui/help/<locale>/, one file per topic per locale.
+menu-help-topics = Help &Topics
+menu-help-shortcuts = &Keyboard Shortcuts…
+menu-help-website = Skribisto on the &Web
+menu-help-report = &Report a Problem…
+menu-command-palette = &Command Palette…
+
+# The Learn pane's rows in the Launcher. Separate keys from the Help menu's rows
+# on purpose: a menu label carries an `&` mnemonic, and a Button renders that
+# ampersand literally ("Help &Topics"), which is what shipped for one build.
+learn-help-topics = Help topics
+learn-shortcuts = Keyboard shortcuts
+learn-website = Skribisto on the web
+
+help-window-title = Help
+help-filter-topics = Filter topics
+help-no-matching-topic = No topic matches.
+help-topic-missing = This topic is no longer available.
+help-back = Back
+help-not-translated = This page has not been translated yet, so it is shown in English.
+
+help-section-getting-started = Getting started
+help-section-writing = Writing
+help-section-reviewing = Reviewing
+help-section-exchanging = Getting words in and out
+help-section-keeping = Keeping your work safe
+help-section-extensions = Extensions
+
+help-topic-getting-started = Your first project
+help-topic-writing-model = How a book is put together
+help-topic-goals-and-pace = Targets and pace
+help-topic-comments = Comments
+help-topic-round-trip = Sending your book to a reader
+help-topic-export = Exporting
+help-topic-import-documents = Importing documents
+help-topic-backups-and-versions = Backups and versions
+
+help-shortcuts-title = Keyboard shortcuts
+help-shortcuts-filter = Filter shortcuts
+help-shortcuts-no-matches = No shortcut matches.
+help-shortcuts-rebind = Change shortcuts…
+help-shortcuts-close = Close
+
+command-palette-placeholder = Type a command
+
+# ── Shortcut names ───────────────────────────────────────────────────────────
+# The user-visible name of every rebindable `Shortcut` (`Shortcut::name`,
+# teksilo-core) — reactive to a locale switch via `LocalizedString`/
+# `Prop<String>`. Read by Settings ▸ Keymap, the Help ▸ Keyboard shortcuts
+# sheet and the command palette. Kept in lockstep with the `Shortcut::new(...)`
+# calls in `app/commands/*.rs`, `binder/dock.rs` and `welcome/panel.rs`. Where
+# the same command already carries a menu label above, that exact wording is
+# reused here so the menu and the shortcut list agree.
+shortcut-name-binder-duplicate = Duplicate
+shortcut-name-comments-add = Add Comment
+shortcut-name-comments-add-paragraph = Comment on Paragraph
+shortcut-name-spellcheck-toggle = Check Spelling
+shortcut-name-editor-save = Save
+shortcut-name-work-export = Export…
+shortcut-name-work-new = New Work
+shortcut-name-work-open = Open Work
+shortcut-name-window-new = New Window
+shortcut-name-work-close = Close Work
+shortcut-name-app-settings = Settings
+shortcut-name-app-quit = Quit
+shortcut-name-editor-insert-footnote = Insert Footnote
+shortcut-name-format-scene-break = Insert Scene Break
+shortcut-name-format-major-scene-break = Insert Major Scene Break
+shortcut-name-format-link = Insert Link
+shortcut-name-go-next = Next
+shortcut-name-go-prev = Previous
+shortcut-name-go-to = Go to
+shortcut-name-outline-toggle = Toggle Outline
+shortcut-name-preview-toggle = Toggle Preview Band
+shortcut-name-view-fullscreen = Toggle Fullscreen
+shortcut-name-view-focus-mode = Toggle Distraction-free Mode
+shortcut-name-editor-size-increase = Increase Text Size
+shortcut-name-editor-size-decrease = Decrease Text Size
+shortcut-name-editor-size-reset = Reset Text Size
+shortcut-name-editor-find = Find
+shortcut-name-editor-replace = Replace
+shortcut-name-editor-find-next = Next Match
+shortcut-name-editor-find-prev = Previous Match
+shortcut-name-search-show = Search in Project
+shortcut-name-search-replace = Replace in Project
+shortcut-name-outline-open-to-side = Open to the Side
+shortcut-name-help-topics = Help Topics
+shortcut-name-help-shortcuts = Keyboard Shortcuts
+shortcut-name-help-website = Skribisto on the Web
+shortcut-name-help-report = Report a Problem
+shortcut-name-command-palette = Command Palette
+help-section-reference = What things are
+
+# Titles for the glossary entries whose concept is not something you can create, so
+# there is no "＋ Create" label to reuse. See help.rs::concept_topics.
+help-concept-scene-break = Scene break
+help-concept-major-scene-break = Major scene break
+help-concept-story-bible = Story bible
+help-concept-goal-unit = Words or characters
+help-concept-goal-progress = Progress
+help-concept-manuscript-words = What counts as the manuscript
+help-concept-exportable = Left out of the export
+help-concept-distribute = Sharing a target out
+help-concept-subtree-total = What the targets inside add up to
+help-concept-milestone = Milestone
+help-concept-pace-plan = Pace plan
+
+# Glossary titles for the feature-concept web. See help.rs::concept_topics.
+help-concept-tag = Tag
+help-concept-label = Label
+help-concept-point-of-view = Point of view
+help-concept-epigraph = Epigraph
+help-concept-footnote = Footnote
+help-concept-chapter-mode = Chapter shape
+help-concept-comment = Comment
+help-concept-backup = Backup
+help-concept-version = Version
+help-concept-trash = Trash
+help-concept-spellcheck = Spell checking
+help-concept-search-replace = Search and replace
+help-concept-note-template = Note template
+help-concept-text-replacement = Text replacement
+help-concept-smart-punctuation = Smart punctuation
+help-concept-export-style = Export style
+help-concept-round-trip-marks = Round-trip markers
