@@ -72,7 +72,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_LOCALES_DIR = "crates/teksilo_ui/locales"
 DEFAULT_BASE_LOCALE = "en-US"
 DEFAULT_RUST_SRC = "crates/teksilo_ui/src"
-DEFAULT_LOADER = "crates/teksilo_ui/src/main.rs"
+DEFAULT_LOADER = "crates/teksilo_ui/src/startup.rs"
 
 # --- Fluent syntax -----------------------------------------------------------
 
