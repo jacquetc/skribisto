@@ -2579,22 +2579,6 @@ fn a_mounted_prose_pane_publishes_both_view_state_ports() {
     );
 }
 
-/// **The editor port must name the page on screen, not merely the last one built.**
-///
-/// A prose tab constructs *both* of its layouts in one pass: the Top flowing page,
-/// and the Side splitter that `WidthProbe` shows instead when the writer asked for
-/// it and the window is wide enough. Only one is ever mounted. While each column
-/// attached its handle to the tab as it was constructed, the Side layout, built
-/// second, won the slot on every prose tab in the app, whether or not anything ever
-/// showed it.
-///
-/// Nothing caught that, because both layouts edit the same document, so every
-/// assertion about a caret held either way. What does tell them apart is layout: an
-/// editor that was constructed but never mounted has no typeset geometry, so it can
-/// answer no question about where a character sits. That is also precisely why the
-/// bug mattered rather than being cosmetic, since `EditorHandle::focus` on an
-/// unmounted editor is a silent no-op and the click that was supposed to put the
-/// caret in the prose did nothing at all.
 /// **A page that is built but never shown must not claim the tab's editor.**
 ///
 /// A prose tab constructs *both* of its layouts in one pass: the Top flowing page,

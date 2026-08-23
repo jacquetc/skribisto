@@ -63,11 +63,8 @@ mod imp {
     use std::collections::HashMap;
 
     use frontend::AppContext;
-    use frontend::commands::{
-        binder_commands, binder_item_commands, content_commands, work_commands,
-    };
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
     use frontend::common::direct_access::binder::BinderRelationshipField;
-    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
     use frontend::common::direct_access::work::WorkRelationshipField;
 
     use super::{LiveRow, digest_of};
@@ -130,16 +127,8 @@ mod imp {
     /// name, and the recorded side stores no blob for it, so including it here
     /// would make every row differ from every version forever.
     fn digest_for_item(ctx: &AppContext, item_id: u64) -> String {
-        let content_ids = binder_item_commands::get_binder_item_relationship(
-            ctx,
-            &item_id,
-            &BinderItemRelationshipField::Contents,
-        )
-        .unwrap_or_default();
-        let roles: Vec<(String, String)> = content_commands::get_content_multi(ctx, &content_ids)
-            .unwrap_or_default()
+        let roles: Vec<(String, String)> = crate::shared::binder_ops::contents_of(ctx, item_id)
             .into_iter()
-            .flatten()
             .filter_map(|c| {
                 skrib_format::slug::prose_kind(&c.role).map(|k| (k.to_string(), c.data))
             })
@@ -168,16 +157,8 @@ mod imp {
             .into_iter()
             .find(|r| r.uid == uid)?
             .id;
-        let content_ids = binder_item_commands::get_binder_item_relationship(
-            ctx,
-            &item_id,
-            &BinderItemRelationshipField::Contents,
-        )
-        .unwrap_or_default();
-        content_commands::get_content_multi(ctx, &content_ids)
-            .unwrap_or_default()
+        crate::shared::binder_ops::contents_of(ctx, item_id)
             .into_iter()
-            .flatten()
             .find(|c| &c.role == role)
             .map(|c| c.data)
     }

@@ -39,6 +39,7 @@ use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use frontend::direct_access::ContentDto;
 use frontend::direct_access::{
     BinderDto, BinderItemDto, CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto,
 };
@@ -230,6 +231,31 @@ pub(crate) fn move_relative(
 // refuses a lossy or illegal conversion on its own. They exist so the refusal arrives as
 // an explanation the writer can act on, instead of a menu item that quietly does nothing.
 
+/// Every `Content` row hanging off `item_id`, or empty when it has none.
+///
+/// The fetch is two round-trips — a relationship read, then a multi-get — and it had
+/// been written out twice, here and in `models::manuscript_digest::live_prose`. The two
+/// want different things *from* the rows (which roles hold text, versus one role's text),
+/// but the way the rows are reached is the same, and a change to that half — an added
+/// filter, different error handling — would otherwise have to reach both or leave them
+/// disagreeing about what a row holds.
+///
+/// Absent and unreadable both come back empty: a row with no content rows is ordinary,
+/// and neither caller can act on the difference.
+pub(crate) fn contents_of(app_ctx: &AppContext, item_id: u64) -> Vec<ContentDto> {
+    let content_ids = binder_item_commands::get_binder_item_relationship(
+        app_ctx,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .unwrap_or_default();
+    content_commands::get_content_multi(app_ctx, &content_ids)
+        .unwrap_or_default()
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
 /// The content roles whose text `item_id` would **lose** by becoming `target` (empty rows
 /// never count). Non-empty means the conversion must be refused: a chapter holding prose
 /// cannot become a Part, which has nowhere to put it.
@@ -239,16 +265,8 @@ pub(crate) fn promote_content_loss(
     target: skribisto_model::PromoteTarget,
 ) -> Vec<ContentRole> {
     let (target_role, target_sub_role) = target.combo();
-    let content_ids = binder_item_commands::get_binder_item_relationship(
-        app_ctx,
-        &item_id,
-        &BinderItemRelationshipField::Contents,
-    )
-    .unwrap_or_default();
-    let non_empty: Vec<ContentRole> = content_commands::get_content_multi(app_ctx, &content_ids)
-        .unwrap_or_default()
+    let non_empty: Vec<ContentRole> = contents_of(app_ctx, item_id)
         .into_iter()
-        .flatten()
         .filter(|c| !c.data.trim().is_empty())
         .map(|c| c.role)
         .collect();

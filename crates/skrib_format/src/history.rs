@@ -316,13 +316,17 @@ pub fn thin(log: &mut HistoryLog, policy: &RetentionPolicy, min_keep: u32, now: 
         // sorts. The reverse stays as the seed so that the stable sort's
         // tie-break is unchanged: a well-ordered log keeps exactly the survivors
         // it always did, and only a scrambled one behaves differently (better).
-        let mut newest_first: Vec<usize> = indices.clone();
-        newest_first.reverse();
-        newest_first.sort_by_key(|&i| std::cmp::Reverse(parse_at(&log.entries[i].at)));
-        let stamps: Vec<DateTime<Utc>> = newest_first
+        // Parsed once and carried alongside the index. Sorting on a key computed
+        // in the comparator would parse every entry again to rebuild `stamps`
+        // from the sorted order — two full passes per key, on a sweep that runs
+        // at every save.
+        let mut newest_first: Vec<(usize, DateTime<Utc>)> = indices
             .iter()
-            .map(|&i| parse_at(&log.entries[i].at))
+            .rev()
+            .map(|&i| (i, parse_at(&log.entries[i].at)))
             .collect();
+        newest_first.sort_by_key(|&(_, at)| std::cmp::Reverse(at));
+        let stamps: Vec<DateTime<Utc>> = newest_first.iter().map(|&(_, at)| at).collect();
         let survivors = policy_keep_indices(&stamps, policy, min_keep, now);
         // Carried forward rather than recomputed: an entry an earlier sweep
         // dropped left no other trace of itself, so the only surviving record of
@@ -338,7 +342,7 @@ pub fn thin(log: &mut HistoryLog, policy: &RetentionPolicy, min_keep: u32, now: 
             carried + indices.len().saturating_sub(survivors.len()) as u32,
         );
         for k in survivors {
-            keep.insert(newest_first[k]);
+            keep.insert(newest_first[k].0);
         }
     }
 
