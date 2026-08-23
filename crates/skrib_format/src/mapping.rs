@@ -38,10 +38,11 @@ fn parse_dt(s: &str) -> Result<DateTime<Utc>> {
 /// earlier one — the worst case degrades to [`quote_style_from_name`]'s fallback
 /// instead of a hard deserialization error, which is the same posture every
 /// other additive field in this crate takes.
-fn quote_style_name(style: &QuoteStyle) -> &'static str {
+pub(crate) fn quote_style_name(style: &QuoteStyle) -> &'static str {
     match style {
         QuoteStyle::LocaleDefault => "locale_default",
         QuoteStyle::CurlyDouble => "curly_double",
+        QuoteStyle::CurlySingle => "curly_single",
         QuoteStyle::Guillemets => "guillemets",
         QuoteStyle::LowHigh => "low_high",
     }
@@ -53,9 +54,10 @@ fn quote_style_name(style: &QuoteStyle) -> &'static str {
 /// this one does not. Falling back to `LocaleDefault` is the honest answer: it
 /// is what the locale would have chosen anyway, so the prose stays typographically
 /// sane rather than silently adopting some other house style.
-fn quote_style_from_name(name: &str) -> QuoteStyle {
+pub(crate) fn quote_style_from_name(name: &str) -> QuoteStyle {
     match name {
         "curly_double" => QuoteStyle::CurlyDouble,
+        "curly_single" => QuoteStyle::CurlySingle,
         "guillemets" => QuoteStyle::Guillemets,
         "low_high" => QuoteStyle::LowHigh,
         // Covers "locale_default", the empty string a `#[serde(default)]` yields

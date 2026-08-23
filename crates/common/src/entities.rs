@@ -244,6 +244,7 @@ pub enum QuoteStyle {
     #[default]
     LocaleDefault,
     CurlyDouble,
+    CurlySingle,
     Guillemets,
     LowHigh,
 }

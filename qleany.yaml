@@ -424,6 +424,7 @@ entities:
     enum_values:
       - LocaleDefault
       - CurlyDouble
+      - CurlySingle
       - Guillemets
       - LowHigh
   - name: pre_punctuation_spacing

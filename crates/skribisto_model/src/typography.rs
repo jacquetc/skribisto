@@ -213,6 +213,12 @@ pub const PAIR_POLISH: QuoteSystem = QuoteSystem::Paired {
 const RULESETS: &[TypographyRuleset] = &[
     // ── English ──────────────────────────────────────────────────────────────
     ruleset("en", PAIR_CURLY, PAIR_SINGLE_CURLY, NO_SPACING, None),
+    // British publishing sets speech in singles and nests doubles inside — the
+    // mirror of the American row above. Most-specific-first lookup means `en-GB`
+    // finds this while `en-US`, `en-CA` and a bare `en` keep the row above; the
+    // Australian and Canadian conventions are their own question, so neither
+    // gets a row here rather than being guessed at.
+    ruleset("en-GB", PAIR_SINGLE_CURLY, PAIR_CURLY, NO_SPACING, None),
     // ── French: the one locale with pre-punctuation spacing ──────────────────
     ruleset(
         "fr",

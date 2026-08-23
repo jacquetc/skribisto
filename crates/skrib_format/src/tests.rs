@@ -1855,6 +1855,31 @@ fn a_work_written_before_smart_punctuation_existed_still_parses() {
     assert!(w.smart_punctuation.is_none());
 }
 
+/// Every `QuoteStyle` survives the name mapping in both directions.
+///
+/// The mapping is two hand-written `match` arms in different functions, so a
+/// variant added to one and forgotten in the other would write a name that reads
+/// back as `LocaleDefault` — silently losing the writer's house style on the next
+/// open, with nothing failing to point at it.
+#[test]
+fn every_quote_style_round_trips_through_its_name() {
+    use common::entities::QuoteStyle;
+    for style in [
+        QuoteStyle::LocaleDefault,
+        QuoteStyle::CurlyDouble,
+        QuoteStyle::CurlySingle,
+        QuoteStyle::Guillemets,
+        QuoteStyle::LowHigh,
+    ] {
+        let name = crate::mapping::quote_style_name(&style);
+        assert_eq!(
+            crate::mapping::quote_style_from_name(name),
+            style,
+            "{style:?} wrote {name:?}, which did not read back as itself"
+        );
+    }
+}
+
 /// An unknown quote style degrades to the locale default rather than failing.
 ///
 /// The style is written as a string precisely so a bundle from a build that knows

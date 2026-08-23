@@ -17,14 +17,20 @@ use super::super::*;
 
 /// The quote systems the override offers, in the order the control shows them.
 ///
-/// Four rather than one per locale: this is a *house style* selector, not a
+/// Five rather than one per locale: this is a *house style* selector, not a
 /// locale table. `LocaleDefault` is the normal answer and comes first — the
-/// other three exist for the books that deliberately depart from their
+/// other four exist for the books that deliberately depart from their
 /// language's convention, which is common enough in Italian (three co-existing
 /// systems) that leaving it to the locale alone would be wrong.
-pub(in crate::settings) const QUOTE_STYLES: [QuoteStyle; 4] = [
+///
+/// `CurlySingle` sits beside `CurlyDouble` because the two are one decision:
+/// British publishing sets speech in singles where American sets it in doubles,
+/// and a writer whose language row picks the other one has no way to say so
+/// without it.
+pub(in crate::settings) const QUOTE_STYLES: [QuoteStyle; 5] = [
     QuoteStyle::LocaleDefault,
     QuoteStyle::CurlyDouble,
+    QuoteStyle::CurlySingle,
     QuoteStyle::Guillemets,
     QuoteStyle::LowHigh,
 ];
@@ -33,6 +39,7 @@ pub(in crate::settings) fn quote_style_label(style: &QuoteStyle) -> teksilo::i18
     match style {
         QuoteStyle::LocaleDefault => tr!(settings_quote_style_locale()),
         QuoteStyle::CurlyDouble => tr!(settings_quote_style_curly()),
+        QuoteStyle::CurlySingle => tr!(settings_quote_style_curly_single()),
         QuoteStyle::Guillemets => tr!(settings_quote_style_guillemets()),
         QuoteStyle::LowHigh => tr!(settings_quote_style_low_high()),
     }
@@ -58,6 +65,10 @@ pub(in crate::settings) fn language_sample(langs: &[String], style: &QuoteStyle)
         QuoteStyle::CurlyDouble => QuoteSystem::Paired {
             open: '\u{201C}',
             close: '\u{201D}',
+        },
+        QuoteStyle::CurlySingle => QuoteSystem::Paired {
+            open: '\u{2018}',
+            close: '\u{2019}',
         },
         QuoteStyle::Guillemets => QuoteSystem::Paired {
             open: '\u{00AB}',

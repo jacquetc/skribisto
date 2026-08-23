@@ -20,7 +20,7 @@
 //!   from the per-Work `SmartPunctuation` entity that travels in the `.skrib`.
 //!
 //! Keeping them apart is what lets a house style ("this book uses guillemets
-//! even though it is in English") be a four-value override rather than a fork of
+//! even though it is in English") be a five-value override rather than a fork of
 //! the locale table.
 //!
 //! ## Why the rules here are stateless
@@ -53,7 +53,7 @@ use super::{
     RIGHT_SINGLE,
 };
 // The named quote pairs a per-project house-style override selects between.
-use super::{PAIR_CURLY, PAIR_GUILLEMET, PAIR_LOW_HIGH};
+use super::{PAIR_CURLY, PAIR_GUILLEMET, PAIR_LOW_HIGH, PAIR_SINGLE_CURLY};
 
 /// Which substitutions a project wants, read from its `SmartPunctuation` row.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -257,6 +257,7 @@ impl TypographyEngine {
         let quotes = match flags.quote_style {
             QuoteStyle::LocaleDefault => ruleset.primary_quotes,
             QuoteStyle::CurlyDouble => PAIR_CURLY,
+            QuoteStyle::CurlySingle => PAIR_SINGLE_CURLY,
             QuoteStyle::Guillemets => PAIR_GUILLEMET,
             QuoteStyle::LowHigh => PAIR_LOW_HIGH,
         };
@@ -485,6 +486,16 @@ impl TypographyEngine {
     /// distinctness (Low-high on French makes the primary's close `“` collide
     /// with the secondary's open `“`); when it does, nesting is declined and the
     /// stateless rule handles `"` with the effective primary, which is safe.
+    ///
+    /// None of the four may be the apostrophe `’`, which
+    /// [`quote_depth`](Self::quote_depth) states as its precondition. Until
+    /// `en-GB` this held only by accident — every double-width-secondary row
+    /// happened to have a non-apostrophe primary — and a row whose *primary*
+    /// closes with `’` (British single-quote speech) satisfies both checks
+    /// above while making the depth counter wrong at every possessive and
+    /// elision. `’` is what `'` produces in running prose, so it cannot be
+    /// counted as a quotation mark; the row falls back to the stateless rule,
+    /// exactly as English already did.
     fn can_nest(&self) -> bool {
         let sec = self.ruleset.secondary_quotes;
         if !nests_with_double_key(sec) {
@@ -492,6 +503,9 @@ impl TypographyEngine {
         }
         let pri = self.quotes;
         let g = [pri.open(), pri.close(), sec.open(), sec.close()];
+        if g.contains(&RIGHT_SINGLE) {
+            return false;
+        }
         g.iter()
             .enumerate()
             .all(|(i, a)| g[i + 1..].iter().all(|b| a != b))
@@ -688,6 +702,89 @@ mod tests {
                 "{tag}'s inner mark is single/symmetric and must NOT nest from `\\\"`"
             );
         }
+    }
+
+    // ── British English ──────────────────────────────────────────────────────
+
+    /// `en-GB` is the mirror of the American row: singles outside, doubles in.
+    #[test]
+    fn british_english_sets_speech_in_single_quotes() {
+        let gb = ruleset_for("en-GB");
+        assert_eq!(gb.tag, "en-GB", "an exact row, not the `en` fallback");
+        assert_eq!(gb.primary_quotes, PAIR_SINGLE_CURLY);
+        assert_eq!(gb.secondary_quotes, PAIR_CURLY);
+        // The regions with no row of their own keep the American convention
+        // rather than inheriting Britain's.
+        for tag in ["en", "en-US", "en-CA", "en-AU"] {
+            assert_eq!(ruleset_for(tag).tag, "en", "{tag} keeps the `en` row");
+        }
+    }
+
+    /// Typing `"` in a British project opens and closes with singles.
+    #[test]
+    fn british_english_curls_the_double_key_to_singles() {
+        let gb = TypographyEngine::new("en-GB", SmartPunctuationFlags::default());
+        assert_eq!(
+            gb.check("he said \"").expect("fires").replacement,
+            "\u{2018}"
+        );
+        assert_eq!(
+            gb.check("\u{2018}Stop\"").expect("fires").replacement,
+            "\u{2019}"
+        );
+    }
+
+    /// The invariant [`TypographyEngine::quote_depth`] rests on, which held only
+    /// by accident before `en-GB`: no row may count `\u{2019}` as a quotation mark,
+    /// because that glyph is what `\'` produces in running prose. Britain's
+    /// primary closes with it, so Britain must not nest — every possessive and
+    /// elision would otherwise drive the depth counter.
+    #[test]
+    fn no_locale_nests_on_the_apostrophe_glyph() {
+        for tag in ["en", "en-GB", "fr", "ru", "de", "sv", "pl", "ar"] {
+            let e = TypographyEngine::new(tag, SmartPunctuationFlags::default());
+            let r = e.ruleset();
+            let glyphs = [
+                r.primary_quotes.open(),
+                r.primary_quotes.close(),
+                r.secondary_quotes.open(),
+                r.secondary_quotes.close(),
+            ];
+            if glyphs.contains(&RIGHT_SINGLE) {
+                assert!(
+                    !e.can_nest(),
+                    "{tag} counts the apostrophe and must not nest"
+                );
+            }
+        }
+        // Stated directly for the row that made the guard necessary.
+        let gb = TypographyEngine::new("en-GB", SmartPunctuationFlags::default());
+        assert!(
+            !gb.can_nest(),
+            "en-GB has a double-width secondary and four distinct glyphs, so only \
+             the apostrophe check keeps it from nesting"
+        );
+    }
+
+    /// The house style is reachable from any locale, not just Britain's.
+    #[test]
+    fn the_single_curly_house_style_overrides_a_double_locale() {
+        let american_in_singles = TypographyEngine::new(
+            "en-US",
+            SmartPunctuationFlags {
+                quote_style: QuoteStyle::CurlySingle,
+                ..SmartPunctuationFlags::default()
+            },
+        );
+        let f = american_in_singles.check("he said \"").expect("fires");
+        assert_eq!(
+            f.replacement, "\u{2018}",
+            "the override wins over en-US curly"
+        );
+        assert!(
+            !american_in_singles.can_nest(),
+            "the override puts the apostrophe in play, so nesting must switch off"
+        );
     }
 
     /// The case that breaks a naive open/close toggle.
