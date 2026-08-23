@@ -3291,3 +3291,77 @@ fn is_stale_distinguishes_a_later_edit_from_flushed_and_quiet() {
              `is_modified()`'s point of view"
     );
 }
+
+// ── The epigraph's attribution line ─────────────────────────────────────────
+//
+// Every writer keys the attribution off `Alignment::Right` inside a
+// `SemanticRole::Epigraph` — DOCX and ODT give it the `EpigraphAttribution` named
+// style, LaTeX and Typst their own slot. Nothing in the application could set that
+// alignment, so the branch was dead in every format. These pin the two halves the
+// application owns: that the alignment can be set at all, and that it survives into the
+// stored prose, which is the only form any writer ever sees.
+
+#[test]
+fn marking_a_line_as_the_source_reaches_the_stored_prose() {
+    use teksilo::text_document::{Alignment, TextDocument};
+    use teksilo::widgets::rich_text::RichTextEditor;
+
+    let doc = TextDocument::new();
+    // Not "M. Ferrand": Djot reads a leading Roman numeral plus a full stop as an
+    // ordered-list marker (M is 1000), so that fixture silently became a list and came
+    // back renumbered as "I. Ferrand". An attribution line is a paragraph.
+    doc.set_djot_sync("Salt is the only honest preservative.\n\nMarguerite Ferrand")
+        .expect("the fixture parses");
+
+    let editor = RichTextEditor::editor(doc.clone());
+    // Put the caret in the second block, the way the writer would before pressing the
+    // control, then mark it.
+    let text = doc.to_plain_text().unwrap_or_default();
+    editor.set_caret_position(text.len());
+    editor.set_alignment(Alignment::Right);
+
+    assert_eq!(
+        editor.get_alignment(),
+        Alignment::Right,
+        "the caret's block must report the alignment that was just set"
+    );
+
+    // The stored form is what every exporter reads. `Content.data` is Djot, so the mark
+    // has to survive `to_djot`; if it does not, the control changes the screen and
+    // nothing else.
+    let djot = doc.to_djot().expect("the document serialises");
+    assert!(
+        djot.contains("alignment=right"),
+        "the attribution mark must reach the stored Djot, or no exporter can see it; got: {djot:?}"
+    );
+}
+
+#[test]
+fn marking_is_a_toggle_that_leaves_the_other_lines_alone() {
+    use teksilo::text_document::{Alignment, TextDocument};
+    use teksilo::widgets::rich_text::RichTextEditor;
+
+    let doc = TextDocument::new();
+    doc.set_djot_sync("The quotation.\n\nThe source")
+        .expect("the fixture parses");
+    let editor = RichTextEditor::editor(doc.clone());
+
+    let text = doc.to_plain_text().unwrap_or_default();
+    editor.set_caret_position(text.len());
+    editor.set_alignment(Alignment::Right);
+    editor.set_alignment(Alignment::Left);
+    assert_eq!(
+        editor.get_alignment(),
+        Alignment::Left,
+        "marking a line already marked must give it back, which is what the control's \
+         toggle depends on"
+    );
+
+    // The quotation above it never carried the mark and must not have gained one.
+    editor.set_caret_position(0);
+    assert_eq!(
+        editor.get_alignment(),
+        Alignment::Left,
+        "the mark is a block-level statement about one line, not the whole epigraph"
+    );
+}

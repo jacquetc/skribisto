@@ -2308,3 +2308,7 @@ help-concept-text-replacement = Text replacement
 help-concept-smart-punctuation = Smart punctuation
 help-concept-export-style = Export style
 help-concept-round-trip-marks = Round-trip markers
+
+# The epigraph's attribution control. See tabs/shared/panes.rs::attribution_control.
+epigraph-mark-attribution = Source line
+epigraph-mark-attribution-tip = Mark the line the caret is in as the quotation's source, so it prints as an attribution

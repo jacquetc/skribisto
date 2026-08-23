@@ -2278,3 +2278,7 @@ help-concept-text-replacement = Remplacement de texte
 help-concept-smart-punctuation = Ponctuation automatique
 help-concept-export-style = Style d'export
 help-concept-round-trip-marks = Marqueurs d'aller-retour
+
+# Le contrôle d'attribution de l'épigraphe. Voir tabs/shared/panes.rs::attribution_control.
+epigraph-mark-attribution = Ligne de source
+epigraph-mark-attribution-tip = Marque la ligne où se trouve le curseur comme la source de la citation, pour qu'elle s'imprime en attribution

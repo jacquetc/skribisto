@@ -16,14 +16,17 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use teksilo::text_document::Alignment;
+use teksilo::widgets::rich_text::EditorHandle;
+
 use super::segments;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Accordion, Center, Expand, GroupHeader, HStack, IconButton, IconButtonSize, Padding,
-    RectWidget, ScrollArea, Segment, SegmentedControl, Spacer, Splitter, Switcher, TextWidget,
-    VStack, ZStack,
+    Accordion, Button, ButtonVariant, Center, Expand, GroupHeader, HStack, IconButton,
+    IconButtonSize, Padding, RectWidget, ScrollArea, Segment, SegmentedControl, Spacer, Splitter,
+    Switcher, TextWidget, VStack, ZStack,
 };
 use teksilo::widgets::{SegmentId, segmented_control};
 
@@ -65,9 +68,14 @@ use remember::*;
 /// touches none of that.
 fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
     let field = tab.epigraph()?;
-    Some(crate::widgets::tip::RichTip::new(
-        crate::tooltip_registry::CONCEPT_EPIGRAPH,
-        Accordion::new(tr!(epigraph()), tab.epigraph_expanded.clone()).content(synopsis_column(
+    // The epigraph editor's own handle, so the attribution control below can act on the
+    // block the caret is in. `synopsis_column` has always taken this sink; the epigraph
+    // passed `None` because until now nothing here needed to reach the editor.
+    let handle: Rc<RefCell<Option<EditorHandle>>> = Rc::new(RefCell::new(None));
+    let body = VStack::new()
+        .spacing(4.0)
+        .child(attribution_control(handle.clone()))
+        .child(synopsis_column(
             &field.doc,
             &tab.column_width,
             // Scene typography, not the synopsis's: an epigraph is finished-book matter
@@ -77,10 +85,10 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             Option::None,
             tab.open_doc.spell_epigraph(),
             tab.open_doc.replacement_epigraph(),
-            // No handle sink and no comment binding: the format dock acts on the
-            // manuscript the caret is in, and a comment anchors to the author's own
-            // prose — see `OpenDoc::build` for why the epigraph gets no comment layer.
-            Option::None,
+            // The sink is live now, for the attribution control. No comment binding
+            // still: a comment anchors to the author's own prose, and an epigraph is
+            // quoted matter — see `OpenDoc::build`.
+            Some(handle.clone()),
             Some(tab.format.clone()),
             Some(tab.typewriter.clone()),
             Some(tab.caret_band()),
@@ -94,8 +102,50 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             // An epigraph is a field on a page, never the page. Whatever else this
             // tab shows owns its remembered position.
             Option::None,
-        )),
+        ));
+    Some(crate::widgets::tip::RichTip::new(
+        crate::tooltip_registry::CONCEPT_EPIGRAPH,
+        Accordion::new(tr!(epigraph()), tab.epigraph_expanded.clone()).content(body),
     ))
+}
+
+/// The control that marks the caret's line as the quotation's source.
+///
+/// **Why this is not "align right".** Every writer already keys the attribution off
+/// `Alignment::Right` inside a `SemanticRole::Epigraph`: DOCX and ODT give it the
+/// `EpigraphAttribution` named style, LaTeX and Typst their own attribution slot. But
+/// the Format dock deliberately does not offer Right at all, and its reason
+/// (`format_vm`'s `ALIGN_OTHER`: "Right has no manuscript use") is still right for the
+/// manuscript at large. So the alignment stays off the general control surface and gets
+/// one scoped affordance here, where it means something: not a typographic choice, but
+/// a statement that this line is the source.
+///
+/// Without it the whole path was dead. Nothing in the application could produce a
+/// right-aligned block, so no export ever took the attribution branch, in any format.
+///
+/// It toggles: a line already marked goes back to `Left`. `set_alignment` acts on the
+/// caret's block, so the writer marks the line their caret is in, exactly as every other
+/// block-level command in the app behaves.
+fn attribution_control(handle: Rc<RefCell<Option<EditorHandle>>>) -> impl Widget + 'static {
+    // No `HStack` + `Spacer` to push this to one side: that pair proposes an unbounded
+    // width, so the spacer takes everything and the button lands off the edge. It did,
+    // and the control was simply absent from the pane until this was reduced to the
+    // button itself.
+    Padding::new(0.0, 0.0, 2.0, 8.0).child(
+        Button::new(tr!(epigraph_mark_attribution()))
+            .variant(ButtonVariant::Plain)
+            .tooltip(tr!(epigraph_mark_attribution_tip()))
+            .on_activate_fn(move |_ctx| {
+                if let Some(editor) = handle.borrow().as_ref() {
+                    let next = if editor.get_alignment() == Alignment::Right {
+                        Alignment::Left
+                    } else {
+                        Alignment::Right
+                    };
+                    editor.set_alignment(next);
+                }
+            }),
+    )
 }
 
 /// The `ScrollArea` every writing surface in the app scrolls inside, and the
