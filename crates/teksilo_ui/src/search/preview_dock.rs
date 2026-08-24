@@ -147,6 +147,12 @@ impl PreviewBody {
                 if let Some(s) = find.borrow_mut().as_mut() {
                     s.set_query(&vm.query_signal().get(), &vm.find_options());
                 }
+                // The same moment tells the margin lane what this search is looking
+                // for, on every surface rather than only this band. This is the
+                // project half of the arbiter the find banner writes the other half
+                // of, and it belongs here because here is where the search is being
+                // *used*, which is what "last one used wins" has to mean.
+                vm.publish_to_lane();
             }
         };
         macro_rules! on_change {
@@ -160,6 +166,11 @@ impl PreviewBody {
         on_change!(self.vm.whole_word_signal());
         on_change!(self.vm.diacritic_sensitive_signal());
 
+        // And once now, for the query that was already typed when this band was
+        // built: the effects above only fire on a *change*, and selecting a result
+        // is not one.
+        self.vm.publish_to_lane();
+
         // Re-derive the matches if an edit (here or in an open tab of the same
         // document) moved the offsets, keeping the highlight boxes aligned.
         let find = self.find.clone();
@@ -172,8 +183,75 @@ impl PreviewBody {
     }
 }
 
+/// The preview band, with the margin lane beside it.
+///
+/// The same shape [`panes::laned`](crate::tabs::shared::panes) uses, and for the
+/// same reasons: the lane is the scroll area's *sibling* because it maps the extent
+/// the area scrolls, `Expand` on the prose side so the strip cannot narrow the
+/// measure, and the content reports where it landed so the lane hears about a
+/// reflow at all.
+///
+/// Not shared with `panes::laned` despite the shape, because that one takes a
+/// `ContentTab` and this band has none: it is a preview of a document, not a tab
+/// open on one.
+fn laned_band(
+    vm: &SearchReplaceViewModel,
+    format: &FormatViewModel,
+    item: u64,
+    doc: teksilo::text_document::TextDocument,
+    kind: crate::format::EditorKind,
+    content: impl Widget + 'static,
+) -> impl Widget {
+    use teksilo::widgets::{Expand, HStack};
+
+    use crate::margin_lane::{LaneInputs, LaneRow, LaneRows, LaneSurface};
+
+    let area = ScrollArea::new();
+    let extents = crate::margin_lane::RowExtents::new();
+    let app_ctx = vm.app_ctx();
+    let row = LaneRow {
+        item,
+        markers: crate::margin_lane::texture::markers_for_item(
+            &app_ctx,
+            vm.ids().work_id.get(),
+            item,
+        ),
+        doc,
+        // **No comment anchors here, and not because the document has none.** The
+        // live offsets belong to an editor's own highlight session, and this band
+        // mounts no comment layer to keep one ticking; the stored offsets are only
+        // rewritten when some editor's comment margin rebuilds, so reading those
+        // instead would put marks a paragraph out on the one surface least able to
+        // notice. A preview shows where the hits are; the tab is where the notes are.
+        comments: None,
+    };
+    let lane = crate::margin_lane::lane_for(
+        &area,
+        LaneInputs {
+            app_ctx,
+            ids: vm.ids().clone(),
+            surface: LaneSurface::SearchPreview,
+            kind,
+            format: format.clone(),
+            rows: LaneRows::Placed {
+                extents: extents.clone(),
+                row: std::rc::Rc::new(move |_| Some(row.clone())),
+            },
+        },
+    );
+    let band =
+        crate::margin_lane::RowExtent::new(item, extents, area.scroll_y_signal().clone(), content);
+    HStack::new()
+        .child(Expand::new().child(area.child(band)))
+        .child(lane)
+}
+
 impl Drop for PreviewBody {
     fn drop(&mut self) {
+        // Take this search's hits off every lane in the window. Only its own: the
+        // writer may have used Ctrl+F since, and clearing unconditionally would wipe
+        // marks nobody asked to lose.
+        crate::margin_lane::clear_active_query_from(crate::margin_lane::LaneQuerySource::Project);
         // Release the document's spell session so a destroyed preview doesn't pin a stale caret
         // exemption for a scene tab still showing the same document.
         if let Some((spell, token)) = self.spell_view.take() {
@@ -317,14 +395,22 @@ impl Widget for PreviewBody {
                     let format = self.format.clone();
                     let self_id = ctx.self_id();
                     format.register(self_id, editor.handle(), kind);
+                    // …and which item it is showing, which is the one thing a margin
+                    // lane needs and focus cannot answer. `TypographyBoundEditor`
+                    // does the same for every other writing surface; this band
+                    // bypasses it, so it says so itself.
+                    format.set_registered_item(self_id, open_doc.item_id);
                     self.format_view = Some((format, self_id));
                 }
-                Box::new(
-                    ScrollArea::new().child(
-                        Padding::symmetric(12.0, 8.0)
-                            .child(crate::tabs::shared::editor::centered(editor, &width)),
-                    ),
-                )
+                Box::new(laned_band(
+                    &self.vm,
+                    &self.format,
+                    open_doc.item_id,
+                    prose.doc.clone(),
+                    kind,
+                    Padding::symmetric(12.0, 8.0)
+                        .child(crate::tabs::shared::editor::centered(editor, &width)),
+                ))
             }
             None => {
                 // Nothing previewed — drop any highlight layer.
@@ -649,6 +735,11 @@ mod tests {
     /// The band's scrolling shell, on the other hand, *must* fill the dock — that is
     /// what turns an over-tall editor into something the writer can scroll rather
     /// than a clipped stub.
+    ///
+    /// Everything but the margin lane's own column, which sits beside the band and
+    /// takes its declared width off the prose side. That is the one deduction, and
+    /// it is asserted rather than tolerated: a strip that took any more than its
+    /// width would be narrowing the previewed prose.
     #[test]
     fn the_band_fills_the_dock_so_a_tall_scene_can_scroll() {
         let (ctx, vm) = vm_previewing(40);
@@ -661,12 +752,69 @@ mod tests {
         tree.layout(SizeProposal::exact(900.0, 400.0));
         let scroll = find(&tree, root, "ScrollArea").expect("the preview band scrolls");
         let bounds = tree.bounds(scroll);
+        let lane = find(&tree, root, "MarginLane").expect("the band carries a lane");
+        let lane_width = tree.bounds(lane).width;
         assert!(
-            (bounds.height - 400.0).abs() < 1.0 && (bounds.width - 900.0).abs() < 1.0,
-            "the ScrollArea must fill the 900x400 dock, got {:.1}x{:.1}",
+            (lane_width - crate::widgets::DEFAULT_LANE_WIDTH).abs() < 0.01,
+            "the lane took {lane_width:.1} px, not its declared width"
+        );
+        assert!(
+            (bounds.height - 400.0).abs() < 1.0
+                && (bounds.width - (900.0 - lane_width)).abs() < 1.0,
+            "the ScrollArea must fill the dock less the lane, got {:.1}x{:.1}",
             bounds.width,
             bounds.height
         );
+    }
+
+    /// **The lane over the band maps the previewed document**, and the query it
+    /// marks is the project search's own — published from here, which is where that
+    /// search is being used.
+    #[test]
+    fn the_bands_lane_marks_what_the_project_search_found() {
+        let (ctx, vm) = vm_previewing(40);
+        let _providers = crate::margin_lane::install_builtin_providers();
+        // A word the fixture's prose actually repeats, once per paragraph.
+        vm.query_signal().set("rain".into());
+
+        let mut tree = crate::test_support::tree_with_settings(&ctx);
+        let root = tree.add(PreviewBody::new(
+            vm.clone(),
+            FormatViewModel::detached(),
+            crate::writing_session::WritingGamesViewModel::detached(),
+        ));
+        // Two frames: `render` runs the editor's own text layout, and until it has
+        // there is no geometry to convert an offset against.
+        tree.layout(SizeProposal::exact(900.0, 400.0));
+        let _ = tree.render();
+        tree.layout(SizeProposal::exact(900.0, 400.0));
+        let _ = tree.render();
+
+        let published = crate::margin_lane::active_query()
+            .get()
+            .expect("the band publishes what the project search is looking for");
+        assert_eq!(published.text, "rain");
+        assert_eq!(
+            published.source,
+            crate::margin_lane::LaneQuerySource::Project
+        );
+        assert!(
+            published.current_in(1).is_none(),
+            "a project search stands in no one document, so it marks no current hit"
+        );
+
+        let lane_id = find(&tree, root, "MarginLane").expect("the band carries a lane");
+        let marks = tree
+            .widget_as_any(lane_id)
+            .and_then(|a| a.downcast_ref::<crate::widgets::MarginLane>())
+            .expect("MarginLane opts into as_any")
+            .resolve_marks(tree.bounds(lane_id));
+        assert!(
+            !marks.is_empty(),
+            "the previewed prose contains the query and the lane found none of it"
+        );
+
+        crate::margin_lane::set_active_query(None);
     }
 
     /// A footnote match — no document (`SearchReplaceViewModel::select_result`

@@ -430,6 +430,7 @@ mod tests {
             Signal::new(false), // autosave_menu
             Signal::new(true),  // spellcheck_menu (default on)
             Signal::new(true),  // comments_menu (default on)
+            Signal::new(true),  // margin_lane_menu (default on)
         )
     }
 

@@ -14,6 +14,7 @@
 //! containers share lives in [`stream`](super::stream).
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use teksilo::text_document::Alignment;
@@ -102,6 +103,14 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             // An epigraph is a field on a page, never the page. Whatever else this
             // tab shows owns its remembered position.
             Option::None,
+            // **Not** this item, deliberately. The registry keys an editor by
+            // `(item, kind)`, and an epigraph is a second `Synopsis`-kind editor on
+            // the same item as the synopsis below it — naming both would make
+            // "this item's synopsis editor" resolve to whichever was built first,
+            // and a lane would then convert its offsets against the wrong text.
+            Option::None,
+            // A tab's editor is on screen and lays out on its first frame.
+            false,
         ));
     Some(crate::widgets::tip::RichTip::new(
         crate::tooltip_registry::CONCEPT_EPIGRAPH,
@@ -146,6 +155,178 @@ fn attribution_control(handle: Rc<RefCell<Option<EditorHandle>>>) -> impl Widget
                 }
             }),
     )
+}
+
+/// **The margin lane beside a writing page**, and the one place a lane is put
+/// there.
+///
+/// Wrapping rather than a parameter on [`writing_page_scroll`] because the lane is
+/// the scroll area's *sibling*, not its content: it maps the extent the area
+/// scrolls, so it has to be outside it and beside it. `Expand` on the prose side
+/// so the lane takes its declared width and the manuscript keeps the rest — the
+/// measure the application centres must not move because a strip appeared.
+///
+/// The lane decides for itself whether to draw anything, so this is unconditional
+/// and a writer's switch does not have to reach five call sites.
+pub(crate) fn laned(
+    tab: &ContentTab,
+    surface: crate::margin_lane::LaneSurface,
+    area: ScrollArea,
+    content: impl Widget + 'static,
+) -> impl Widget {
+    // The page reports where it landed, exactly as a stream row does — and for the
+    // same reason, which is not the geometry but the **signal**. The marks are
+    // resolved in the lane's own layout pass, and a widget nothing dirties is never
+    // laid out again: on the first frame the editor has no text geometry yet and
+    // every mark resolves to nothing, so without something to hear about the reflow
+    // the strip stays empty for the life of the tab.
+    //
+    // With one row the arithmetic is the identity — offset 0, scale 1 — so this
+    // costs a wrapper and changes no position. It also means a tab and a stream go
+    // down exactly one code path, which is what stops them drifting apart about
+    // where a mark belongs.
+    let extents = crate::margin_lane::RowExtents::new();
+    let inputs = lane_inputs(tab, surface, extents.clone());
+    let lane = crate::margin_lane::lane_for(&area, inputs);
+    let page = crate::margin_lane::RowExtent::new(
+        tab.item_id(),
+        extents,
+        area.scroll_y_signal().clone(),
+        content,
+    );
+    HStack::new()
+        .child(Expand::new().child(area.child(page)))
+        .child(lane)
+}
+
+/// **The margin lane over a stream**: one strip mapping many documents.
+///
+/// The rows are taken from what has actually been *placed* rather than from the
+/// stream's row list, and that is a correctness requirement. Resolving a row's
+/// document goes through `StreamViewModel::row_doc`, which on a cache miss opens it
+/// — a full synchronous Djot import, and what once made switching a Book to Full
+/// Book freeze for seconds. A placed row is a built row, so its document is already
+/// open.
+pub(crate) fn laned_stream(
+    tab: &ContentTab,
+    vm: &crate::stream::StreamViewModel,
+    flavour: crate::stream::SplitFlavour,
+    extents: crate::margin_lane::RowExtents,
+    area: ScrollArea,
+    content: impl Widget + 'static,
+) -> impl Widget {
+    use crate::margin_lane::{LaneInputs, LaneRow, LaneRows, LaneSurface};
+    let app_ctx = tab.app_ctx();
+    let work_id = tab.ids().work_id.get();
+    let synopsis = flavour == crate::stream::SplitFlavour::Synopsis;
+    // The container's own field is one more mapped document, and it registers an
+    // extent like any row.
+    let own = if synopsis { tab.synopsis() } else { tab.main() }.map(|f| f.doc.clone());
+    let own_item = tab.item_id();
+    let own_comments = if synopsis {
+        tab.open_doc.comment_binding_synopsis()
+    } else {
+        tab.open_doc.comment_binding_main()
+    };
+    // One backend read per item, kept: a hundred rows would otherwise pay three
+    // reads each on every recompute to learn something that changes only when the
+    // project's language or house quote style does.
+    let markers: Rc<
+        RefCell<HashMap<u64, skribisto_model::analysis::prose_stats::DialogueMarkers>>,
+    > = Rc::new(RefCell::new(HashMap::new()));
+
+    let row = {
+        let vm = vm.clone();
+        let app_ctx = app_ctx.clone();
+        let markers = markers.clone();
+        Rc::new(move |item: u64| -> Option<LaneRow> {
+            let markers_for = |item: u64| {
+                *markers.borrow_mut().entry(item).or_insert_with(|| {
+                    crate::margin_lane::texture::markers_for_item(&app_ctx, work_id, item)
+                })
+            };
+            if item == own_item {
+                return Some(LaneRow {
+                    item,
+                    doc: own.clone()?,
+                    comments: own_comments.clone(),
+                    markers: markers_for(item),
+                });
+            }
+            let doc = vm.row_doc(item)?;
+            let field = if synopsis {
+                doc.synopsis.as_ref()
+            } else {
+                doc.main.as_ref()
+            }?;
+            Some(LaneRow {
+                item,
+                doc: field.doc.clone(),
+                comments: vm.row_comments(item, flavour),
+                markers: markers_for(item),
+            })
+        }) as Rc<dyn Fn(u64) -> Option<LaneRow>>
+    };
+
+    let lane = crate::margin_lane::lane_for(
+        &area,
+        LaneInputs {
+            app_ctx,
+            ids: tab.ids().clone(),
+            surface: LaneSurface::Stream,
+            kind: if synopsis {
+                crate::format::EditorKind::Synopsis
+            } else {
+                crate::format::EditorKind::Prose
+            },
+            format: tab.format.clone(),
+            rows: LaneRows::Placed { extents, row },
+        },
+    );
+    HStack::new()
+        .child(Expand::new().child(area.child(content)))
+        .child(lane)
+}
+
+/// What this tab's lane reads.
+fn lane_inputs(
+    tab: &ContentTab,
+    surface: crate::margin_lane::LaneSurface,
+    extents: crate::margin_lane::RowExtents,
+) -> crate::margin_lane::LaneInputs {
+    let app_ctx = tab.app_ctx();
+    let item = tab.item_id();
+    // A tab's lane maps the **manuscript**. A synopsis is a working note beside it,
+    // a few lines long, and it has no scroll area of its own for a lane to sit
+    // against — see [`LaneSurface::all`](crate::margin_lane::LaneSurface::all).
+    let doc = tab.main().map(|f| f.doc.clone());
+    let comments = tab.open_doc.comment_binding_main();
+    let row = crate::margin_lane::LaneRow {
+        item,
+        // An empty document rather than no lane: a tab whose field the matrix does
+        // not give it still scrolls, and a lane over nothing draws nothing, which is
+        // the correct picture of a page with no prose on it.
+        doc: doc.unwrap_or_default(),
+        comments,
+        // Resolved once, not per frame: it changes only when the project's language
+        // or its house quote style does, and both rebuild these surfaces.
+        markers: crate::margin_lane::texture::markers_for_item(
+            &app_ctx,
+            tab.ids().work_id.get(),
+            item,
+        ),
+    };
+    crate::margin_lane::LaneInputs {
+        app_ctx,
+        ids: tab.ids().clone(),
+        surface,
+        kind: crate::format::EditorKind::Prose,
+        format: tab.format.clone(),
+        rows: crate::margin_lane::LaneRows::Placed {
+            extents,
+            row: Rc::new(move |_| Some(row.clone())),
+        },
+    }
 }
 
 /// The `ScrollArea` every writing surface in the app scrolls inside, and the
@@ -319,6 +500,9 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 // tab's main widget; a Part or a Book has none, so here the synopsis is
                 // the page and the position worth remembering is its.
                 tab.main().is_none().then(|| page.clone()),
+                Some(tab.item_id()),
+                // A tab's editor is on screen and lays out on its first frame.
+                false,
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -345,11 +529,21 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             // statement, not a guard: before this the content beneath it was built
             // by the same editable render path as any other tab.
             tab.open_doc.trashed.get(),
+            // This tab's own item, so the margin lane can reach this editor by
+            // name rather than through focus.
+            Some(tab.item_id()),
+            // A tab's editor is on screen and lays out on its first frame.
+            false,
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
     // whole thing rather than each editor scrolling inside its own box.
-    area.child(col.child(vspace(28.0)).child(port))
+    laned(
+        tab,
+        crate::margin_lane::LaneSurface::Editor,
+        area,
+        col.child(vspace(28.0)).child(port),
+    )
 }
 
 /// The dual-pane writing editor (Skribisto's signature): an optional title, a
@@ -486,11 +680,19 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 // On a heading tab the synopsis is the page, so it is this tab's main
                 // widget and what its remembered caret belongs to.
                 Some(page.clone()),
+                Some(tab.item_id()),
+                // A tab's editor is on screen and lays out on its first frame.
+                false,
             ));
     }
     tab_backdrop(
         tab.backdrop_role(),
-        area.child(col.child(vspace(28.0)).child(port)),
+        laned(
+            tab,
+            crate::margin_lane::LaneSurface::Editor,
+            area,
+            col.child(vspace(28.0)).child(port),
+        ),
     )
 }
 
@@ -557,9 +759,17 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
                 tab.open_doc.trashed.get(),
                 // The synopsis *is* this page, so it is the tab's main widget.
                 Some(page.clone()),
+                Some(tab.item_id()),
+                // A tab's editor is on screen and lays out on its first frame.
+                false,
             ));
     }
-    area.child(col.child(vspace(28.0)).child(port))
+    laned(
+        tab,
+        crate::margin_lane::LaneSurface::Editor,
+        area,
+        col.child(vspace(28.0)).child(port),
+    )
 }
 
 /// A **notes folder**'s body: its own synopsis page, plus an Overview of what it holds.

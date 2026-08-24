@@ -153,6 +153,35 @@ const PUNCTUATION: &[char] = &[
     '.', ',', ';', ':', '!', '?', '—', '–', '…', '(', ')', '«', '»', '"', '\u{201C}', '\u{201D}',
 ];
 
+/// Measure **one paragraph**, already separated from its neighbours.
+///
+/// The unit [`measure`] works in, exposed because a caller that has the text split into
+/// blocks *already* — a document's own paragraphs, rather than a flattened string — must
+/// not have to re-derive the split to get the same numbers. Two things go wrong when it
+/// does. The flattened split is `\n`-delimited, so a fenced code block, which is one live
+/// block whose content legitimately contains blank lines, is shredded into several
+/// paragraphs that were never paragraphs. And a caller that wants each paragraph's
+/// *position* as well as its counts has no way to recover one from the other.
+///
+/// `words == 0` for a paragraph with nothing in it. [`measure`] drops those; a caller
+/// walking real blocks may want to know a block was empty rather than have it vanish, so
+/// the decision is left here rather than taken.
+pub fn measure_paragraph(para: &str, markers: DialogueMarkers) -> ParagraphStats {
+    let para = para.trim();
+    let words = tokenize(para).len();
+    if words == 0 || !markers.is_measurable() {
+        return ParagraphStats { words, spoken: 0 };
+    }
+    let spoken = if markers.dash.is_some_and(|d| para.starts_with(d)) {
+        // The dash convention is per *paragraph*: there is no closing dash to look
+        // for, so an opening one makes the whole paragraph speech.
+        words
+    } else {
+        quoted_words(para, markers)
+    };
+    ParagraphStats { words, spoken }
+}
+
 /// Measure one scene's plain text.
 ///
 /// `locale` is the BCP-47 tag the sentence splitter tailors to (`None` falls back to plain
@@ -163,23 +192,10 @@ pub fn measure(text: &str, locale: Option<&str>, markers: DialogueMarkers) -> Pr
     // the same counts. Both halves are computed here, once, and the aggregate share is
     // derived from them rather than measured separately — so the total and the per-paragraph
     // breakdown are arithmetically the same number and cannot disagree.
-    let measurable = markers.is_measurable();
     let per_paragraph: Vec<ParagraphStats> = paragraphs(text)
         .filter_map(|para| {
-            let words = tokenize(para).len();
-            if words == 0 {
-                return None;
-            }
-            let spoken = if !measurable {
-                0
-            } else if markers.dash.is_some_and(|d| para.starts_with(d)) {
-                // The dash convention is per *paragraph*: there is no closing dash to look
-                // for, so an opening one makes the whole paragraph speech.
-                words
-            } else {
-                quoted_words(para, markers)
-            };
-            Some(ParagraphStats { words, spoken })
+            let stats = measure_paragraph(para, markers);
+            (stats.words > 0).then_some(stats)
         })
         .collect();
 
@@ -198,6 +214,7 @@ pub fn measure(text: &str, locale: Option<&str>, markers: DialogueMarkers) -> Pr
         }
     }
 
+    let measurable = markers.is_measurable();
     let words: usize = paragraph_words.iter().sum();
     let marks = text.chars().filter(|c| PUNCTUATION.contains(c)).count();
     let punctuation_per_1k = if words == 0 {
@@ -486,6 +503,61 @@ mod tests {
     /// The per-paragraph breakdown is the point of the single-pass rewrite, and
     /// it must be arithmetically the same measurement as the aggregate — not a
     /// second, separately-derived one that can drift.
+    /// [`measure_paragraph`] exists so a caller holding real document blocks does not have
+    /// to re-derive the flattened split, and that is only safe if the two agree exactly.
+    /// They share one implementation, so this asserts the sharing rather than the arithmetic
+    /// — the thing that would silently rot if someone re-inlined the loop.
+    #[test]
+    fn measuring_a_paragraph_alone_agrees_with_measuring_it_in_a_scene() {
+        let paras = [
+            "\u{201C}Then go,\u{201D} she said, and did not watch him leave.",
+            "The ferry left before the light did.",
+            "\u{201C}You were never going to,\u{201D} he said. \u{201C}Say it.\u{201D}",
+        ];
+        let scene = paras.join("\n\n");
+        let whole = measure(&scene, Some("en"), EN);
+
+        let alone: Vec<ParagraphStats> = paras.iter().map(|p| measure_paragraph(p, EN)).collect();
+
+        assert_eq!(whole.paragraphs, alone);
+    }
+
+    /// A paragraph with nothing in it is reported as empty rather than dropped: a caller
+    /// walking a document's blocks needs the blank one to stay in the sequence, or every
+    /// position after it is off by one block.
+    #[test]
+    fn an_empty_paragraph_measures_as_empty_rather_than_disappearing() {
+        let stats = measure_paragraph("   ", EN);
+        assert_eq!(
+            stats,
+            ParagraphStats {
+                words: 0,
+                spoken: 0
+            }
+        );
+    }
+
+    /// The split [`measure`] performs cannot see a block boundary, so a fenced code block —
+    /// one live block whose content contains blank lines — is shredded into paragraphs that
+    /// were never paragraphs. Measuring the block directly is the way out, and this records
+    /// that the two genuinely differ rather than that one is a convenience wrapper.
+    #[test]
+    fn a_block_containing_blank_lines_is_one_paragraph_when_measured_as_one() {
+        let block = "fn main() {\n\n    println!(\"two\");\n\n}";
+        let shredded = measure(block, Some("en"), EN);
+        assert!(
+            shredded.paragraphs.len() > 1,
+            "the flattened split cannot see the block boundary: {:?}",
+            shredded.paragraphs
+        );
+
+        let whole = measure_paragraph(block, EN);
+        assert_eq!(
+            whole.words, shredded.words,
+            "and measuring it as one block loses none of the words"
+        );
+    }
+
     #[test]
     fn the_paragraph_breakdown_sums_to_the_aggregate() {
         let text = "\u{201c}Come inside,\u{201d} she said.\n\

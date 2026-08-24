@@ -1252,6 +1252,263 @@ fn first_containing(tree: &WidgetTree, root: WidgetId, needle: &str) -> Option<W
         .find_map(|c| first_containing(tree, c, needle))
 }
 
+// ── the margin lane, mounted ─────────────────────────────────────────────────
+
+/// Build a real Scene tab's page in a tree that has a settings store, and hand
+/// back the tree, its root and the tab.
+///
+/// `tree_with_settings` rather than `tree_with_events`: a lane reads the writer's
+/// switches while building, and with no store to read it correctly draws nothing —
+/// so a test on the plain harness would pass against a lane that never worked.
+fn scene_page_with_settings() -> (WidgetTree, WidgetId, ContentTab) {
+    scene_page_seeded("")
+}
+
+/// As [`scene_page_with_settings`], with prose already in the document.
+///
+/// Written **before** the tree is built, deliberately: an editor's text layout is
+/// driven by the frame loop, and a document filled after the first frame does not
+/// reflow from a bare `tree.layout()` — the page then measures at its `min_lines`
+/// floor and reports no content height at all, which is indistinguishable from a
+/// lane that is broken.
+fn scene_page_seeded(text: &str) -> (WidgetTree, WidgetId, ContentTab) {
+    let ctx = Rc::new(AppContext::new());
+    let open_doc = Rc::new(OpenDoc::build(
+        &ctx,
+        1,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::Scene,
+        &[],
+        Signal::new(0),
+        std::path::Path::new(""),
+    ));
+    if let Some(field) = open_doc.main.as_ref().filter(|_| !text.is_empty()) {
+        field.doc.set_plain_text(text).unwrap();
+    }
+    let tab = ContentTab::new(
+        ctx.clone(),
+        AppIds::new(),
+        OpenDocsStore::new(ctx.clone()),
+        open_doc,
+        Signal::new(700.0),
+        Signal::new(true),
+        Signal::new(SynopsisPlacement::default()),
+        Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        test_typography(),
+        crate::shared::TypewriterSettings::off(),
+        crate::shared::CaretHighlightSettings::off(),
+        crate::settings::EditorViewMemory::detached(false),
+        crate::settings::CorkboardDefaults::detached(),
+        crate::settings::TreeExpansionViewModel::new(
+            ctx.clone(),
+            AppIds::new(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        ),
+        Signal::new(false),
+        Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
+        crate::format::FormatViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
+        crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
+        Signal::new(GoalUnit::default()),
+    );
+    let mut tree = crate::test_support::tree_with_settings(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 400.0));
+    let _ = tree.render();
+    (tree, root, tab)
+}
+
+/// **The lane is actually on the page**, and it did not take the manuscript's
+/// measure to get there.
+///
+/// The second half is the one that matters. A writing surface's column width is a
+/// setting the writer chose and a number the whole application centres text on; a
+/// strip that ate into it would move every line of every book by twelve pixels, and
+/// nothing else in this suite would have noticed.
+#[test]
+fn a_writing_page_carries_a_margin_lane_without_narrowing_the_prose() {
+    let (tree, root, _tab) = scene_page_with_settings();
+
+    let lane = first_of_type(&tree, root, "MarginLane").expect("the page carries a lane");
+    let lane_bounds = tree.bounds(lane);
+    assert!(
+        (lane_bounds.width - crate::widgets::DEFAULT_LANE_WIDTH).abs() < 0.01,
+        "the lane took {} px, not its declared width",
+        lane_bounds.width
+    );
+    assert!(lane_bounds.height > 0.0, "and it has height");
+
+    let scroll = first_of_type(&tree, root, "ScrollArea").expect("the page scrolls");
+    let scroll_bounds = tree.bounds(scroll);
+    assert!(
+        scroll_bounds.width > 900.0,
+        "the prose side kept the page: the scroll area got {} of 1000",
+        scroll_bounds.width
+    );
+    assert!(
+        scroll_bounds.x + scroll_bounds.width <= lane_bounds.x + 0.01,
+        "the lane belongs beside the page, not over it: page ends at {}, lane starts at {}",
+        scroll_bounds.x + scroll_bounds.width,
+        lane_bounds.x
+    );
+}
+
+/// **The marks actually resolve on a tab**, which the test above cannot see: it
+/// asserts the strip is there and the right width, and passes against a lane that
+/// never produces a single mark.
+///
+/// This is where that gap showed. With the geometry left out of the recompute guard
+/// the first frame had no laid-out text, the second was indistinguishable from it,
+/// and the lane stayed empty for the life of the tab — twelve correct pixels of
+/// nothing.
+#[test]
+fn a_tabs_lane_resolves_marks_against_the_prose_on_the_page() {
+    use crate::margin_lane::{LaneQuery, LaneQuerySource, set_active_query};
+
+    let _providers = crate::margin_lane::install_builtin_providers();
+
+    // Paragraphs of very unequal length, with the searched word only in the long
+    // final one: a lane placing marks by character fraction would spread them
+    // further up the strip than the text goes.
+    let mut text = String::new();
+    for i in 0..20 {
+        text.push_str(&format!("Line {i}.\n\n"));
+    }
+    text.push_str(&"the ferry left before the light did ".repeat(40));
+
+    set_active_query(Some(LaneQuery {
+        text: "ferry".into(),
+        case_sensitive: false,
+        whole_word: true,
+        diacritic_sensitive: false,
+        source: LaneQuerySource::Project,
+        current: Option::None,
+    }));
+
+    let (mut tree, root, _tab) = scene_page_seeded(&text);
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 400.0));
+    let _ = tree.render();
+
+    let lane_id = first_of_type(&tree, root, "MarginLane").expect("the page carries a lane");
+    let lane_bounds = tree.bounds(lane_id);
+    let marks = tree
+        .widget_as_any(lane_id)
+        .and_then(|a| a.downcast_ref::<crate::widgets::MarginLane>())
+        .expect("MarginLane opts into as_any")
+        .resolve_marks(lane_bounds);
+
+    // Counted through `merged`, not through the list length: forty hits inside one
+    // paragraph are three pixels apart on a four-hundred-pixel strip, and the lane
+    // folds anything under its minimum mark height into one mark that says how many
+    // it stands for. That folding is the feature working, not a shortfall.
+    let hits: usize = marks.iter().map(|m| m.merged).sum();
+    assert!(
+        hits >= 30,
+        "forty occurrences of 'ferry' resolved to {hits} across {} marks",
+        marks.len()
+    );
+    let highest = marks.iter().map(|m| m.top).fold(f32::INFINITY, f32::min);
+    assert!(
+        highest > lane_bounds.height * 0.3,
+        "the marks belong where the word is, not where its character offsets are: \
+         highest at {highest} of {}",
+        lane_bounds.height
+    );
+
+    set_active_query(Option::None);
+}
+
+/// **A lane that is not drawn does no work**, which is a stronger claim than "draws
+/// nothing" and the one the settings page's own wording makes.
+///
+/// `place_children` runs even for a widget with no children, so a host that only
+/// stopped *building* the strip would go on resolving marks and walking documents
+/// on every keystroke for a column that is not on screen. Asserted by watching the
+/// marks the lane would have published: with the switch off they stay empty however
+/// much the page is laid out.
+#[test]
+fn a_lane_the_writer_turned_off_stops_resolving_as_well_as_drawing() {
+    use crate::margin_lane::{LaneQuery, LaneQuerySource, set_active_query};
+
+    let _providers = crate::margin_lane::install_builtin_providers();
+    let mut text = String::new();
+    for i in 0..20 {
+        text.push_str(&format!("the ferry left before the light did, {i}.\n\n"));
+    }
+    set_active_query(Some(LaneQuery {
+        text: "ferry".into(),
+        case_sensitive: false,
+        whole_word: true,
+        diacritic_sensitive: false,
+        source: LaneQuerySource::Project,
+        current: Option::None,
+    }));
+
+    let (mut tree, root, _tab) = scene_page_seeded(&text);
+    let store = tree
+        .app_context()
+        .app_state::<teksilo::settings::SettingsStore>()
+        .expect("the harness registered a store")
+        .clone();
+
+    // On: the marks are there.
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 400.0));
+    let _ = tree.render();
+    let lane_id = first_of_type(&tree, root, "MarginLane").expect("the page carries a lane");
+    let resolved = |tree: &WidgetTree, id| {
+        tree.widget_as_any(id)
+            .and_then(|a| a.downcast_ref::<crate::widgets::MarginLane>())
+            .map(|l| l.resolve_marks(tree.bounds(id)).len())
+            .unwrap_or(0)
+    };
+    assert!(resolved(&tree, lane_id) > 0, "the marks were there to lose");
+
+    // Off, and then laid out again: the whole column goes, so nothing is left to
+    // resolve against.
+    store
+        .signal(
+            crate::MARGIN_LANE_ENABLED_KEY,
+            crate::MARGIN_LANE_ENABLED_DEFAULT,
+        )
+        .set(false);
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 400.0));
+    let _ = tree.render();
+    assert!(
+        first_of_type(&tree, root, "MarginLane").is_none(),
+        "the strip outlived the switch"
+    );
+
+    set_active_query(Option::None);
+}
+
+/// The View menu's switch is a live preference, not a construction-time decision.
+///
+/// A writer flipping it must see the strip go, without the tab being rebuilt for
+/// some unrelated reason first.
+#[test]
+fn turning_the_lane_off_takes_the_column_off_the_page() {
+    let (mut tree, root, _tab) = scene_page_with_settings();
+    assert!(first_of_type(&tree, root, "MarginLane").is_some());
+
+    let store = tree
+        .app_context()
+        .app_state::<teksilo::settings::SettingsStore>()
+        .expect("the harness registered a store")
+        .clone();
+    store
+        .signal(
+            crate::MARGIN_LANE_ENABLED_KEY,
+            crate::MARGIN_LANE_ENABLED_DEFAULT,
+        )
+        .set(false);
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 400.0));
+
+    assert!(
+        first_of_type(&tree, root, "MarginLane").is_none(),
+        "the strip outlived the switch"
+    );
+}
+
 /// A Scene tab built with the given typewriter setting, laid out, plus the
 /// page `ScrollArea`'s maximum scroll offset.
 ///
@@ -2417,6 +2674,108 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
     distraction_free.set(false);
     assert_eq!(scene.main_typography().font_family.get(), "Literata");
     assert_eq!(scene.main_column_width().get(), 700.0);
+}
+
+/// **The lane over a stream maps every row that is on the page**, each onto its own
+/// slice of one strip.
+///
+/// The hardest thing this feature does, and the one nothing else can stand in for.
+/// A tab's lane maps one document; a Full Chapter's maps as many as the writer has
+/// scrolled to, and it has to know where each of them landed — which nothing in the
+/// row-list layer can say, because typing in row 1 moves row 2 and fires no event
+/// any of those view-models watch.
+///
+/// Asserted through the **boundaries** provider, which needs no text: it puts one
+/// rule at the top of each mapped document. That makes the assertion exactly "did
+/// every row get its own place on the strip", with nothing about the prose in the
+/// way.
+#[cfg(feature = "mocks")]
+#[test]
+fn a_stream_lane_marks_every_row_on_its_own_slice() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+
+    let _providers = crate::margin_lane::install_builtin_providers();
+    let ctx = Rc::new(AppContext::new());
+    let open_doc = Rc::new(OpenDoc::build(
+        &ctx,
+        101,
+        &Folder,
+        &ChapterScene,
+        &[],
+        Signal::new(0),
+        std::path::Path::new(""),
+    ));
+    let tab = ContentTab::new(
+        ctx.clone(),
+        AppIds::new(),
+        OpenDocsStore::new(ctx.clone()),
+        open_doc,
+        Signal::new(700.0),
+        Signal::new(true),
+        Signal::new(SynopsisPlacement::default()),
+        Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        test_typography(),
+        crate::shared::TypewriterSettings::off(),
+        crate::shared::CaretHighlightSettings::off(),
+        crate::settings::EditorViewMemory::detached(false),
+        crate::settings::CorkboardDefaults::detached(),
+        crate::settings::TreeExpansionViewModel::new(
+            ctx.clone(),
+            AppIds::new(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        ),
+        Signal::new(false),
+        Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
+        crate::format::FormatViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
+        crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
+        Signal::new(GoalUnit::default()),
+    );
+    tab.segment
+        .set(Some(crate::tabs::shared::segments::segment_id(
+            crate::tabs::shared::segments::SEG_MANUSCRIPT,
+        )));
+
+    let mut tree = crate::test_support::tree_with_settings(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    // Two full frames, and both halves of each matter. `render` is what runs the
+    // editors' own text layout, and until it has there is no geometry to convert an
+    // offset against — a lane resolved before it correctly reports nothing. And the
+    // second frame is needed because the rows are placed *after* their sibling lane
+    // in the first: that gap is exactly why the host binds the extents' generation
+    // at `Relayout` rather than below it.
+    tree.layout(teksilo::prelude::SizeProposal::exact(1400.0, 900.0));
+    let _ = tree.render();
+    tree.layout(teksilo::prelude::SizeProposal::exact(1400.0, 900.0));
+    let _ = tree.render();
+
+    let lane_id = first_of_type(&tree, root, "MarginLane").expect("the stream carries a lane");
+    let lane_bounds = tree.bounds(lane_id);
+    let marks = tree
+        .widget_as_any(lane_id)
+        .and_then(|a| a.downcast_ref::<crate::widgets::MarginLane>())
+        .expect("MarginLane opts into as_any")
+        .resolve_marks(lane_bounds);
+
+    let rules: Vec<_> = marks
+        .iter()
+        .filter(|m| m.shape == crate::widgets::LaneShape::Rule)
+        .collect();
+    assert!(
+        rules.len() > 1,
+        "a stream of several documents produced {} boundary marks",
+        rules.len()
+    );
+    assert!(
+        rules.windows(2).all(|w| w[0].top <= w[1].top + 0.01),
+        "boundaries must come down the strip in document order: {rules:?}"
+    );
+    assert!(
+        rules.last().unwrap().top - rules[0].top > lane_bounds.height * 0.2,
+        "every row landed in one slice: {:?}",
+        rules.iter().map(|m| m.top).collect::<Vec<_>>()
+    );
 }
 
 /// The manuscript stream honours the tab's **main** typography and column,

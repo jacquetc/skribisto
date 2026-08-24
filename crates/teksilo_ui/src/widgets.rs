@@ -10,10 +10,18 @@
 //! headings, the corkboard, the Inspector and the export scope tree all show a chapter's
 //! ordinal beside its title. And so does [`destination_picker::DestinationPicker`]: both
 //! restoring from the trash and importing a document have to ask where the result should
-//! land, and it is the same question with the same answer shape.
+//! land, and it is the same question with the same answer shape. So does
+//! [`margin_lane::MarginLane`], mounted by the editor, by a stream, and by the search
+//! preview band.
 
 pub mod destination_picker;
 pub mod diff_pane;
+/// The overview strip beside a scroll area. Three surfaces mount one — the text
+/// editor, a stream, and the search preview band — and it lives here rather than
+/// in the toolkit because what it maps is a *manuscript*: the whole reason it
+/// draws marks instead of a shrunken picture is that prose has no silhouette,
+/// which is a fact about this application's content and not about scroll areas.
+pub mod margin_lane;
 /// The word/character target readout. Four surfaces draw it and must not draw it
 /// differently: the Inspector, a container page's header, the status bar, and the
 /// Distribute preview.
@@ -25,5 +33,9 @@ pub mod tip;
 
 pub use destination_picker::DestinationPicker;
 pub(crate) use diff_pane::DiffPane;
+pub use margin_lane::{
+    DEFAULT_LANE_WIDTH, DEFAULT_TEXTURE_WIDTH, LaneBar, LaneColumn, LaneMark, LaneShape, LaneSpan,
+    MIN_MARK_HEIGHT, MarginLane, ResolvedMark,
+};
 pub use pill::{Pill, PillTooltip, attach_labelled_composite_tooltip};
 pub use structure_number::StructureNumber;

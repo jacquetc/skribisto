@@ -191,6 +191,7 @@ fn test_factory(app_ctx: Rc<AppContext>, registry: WorkRegistry) -> ProjectWindo
         Signal::new(false),
         Signal::new(true),
         Signal::new(true),
+        Signal::new(true),
     )
 }
 

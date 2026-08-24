@@ -159,6 +159,12 @@ pub(super) struct TypographyBoundEditor {
     /// highlight the note the writer is standing on. `None` on every surface with
     /// no project behind it, and on every editor that is not a tab's main prose.
     pub(super) footnotes: Option<(crate::footnotes::FootnoteBinding, TextDocument)>,
+    /// The `BinderItem` whose text this editor shows, announced to the formatting
+    /// registry so anything needing *a named item's* editor can find it — the
+    /// margin lane, which converts offsets for every row on screen at once and so
+    /// cannot go through focus. `None` on the surfaces built with no project
+    /// around them.
+    pub(super) item: Option<common::types::EntityId>,
 }
 
 impl TypographyBoundEditor {
@@ -185,7 +191,16 @@ impl TypographyBoundEditor {
             banded: None,
             games: None,
             footnotes: None,
+            item: None,
         }
+    }
+
+    /// Name the `BinderItem` this editor is showing. Opt-in, because the surfaces
+    /// that are not showing one item's text (the search preview band, the widget
+    /// tests) have no id to give.
+    pub(super) fn with_item(mut self, item: common::types::EntityId) -> Self {
+        self.item = Some(item);
+        self
     }
 
     /// Let this editor be frozen by a writing game (currently "Always forward").
@@ -462,6 +477,10 @@ impl Widget for TypographyBoundEditor {
             // so a stream row's own row wins over its container's.
             if let Some((binding, _)) = &self.footnotes {
                 format.set_registered_footnotes(self_id, binding.clone());
+            }
+            // Which item's text this is, for the readers that are not focus-shaped.
+            if let Some(item) = self.item {
+                format.set_registered_item(self_id, item);
             }
             self.format = Some((format, self_id));
         }

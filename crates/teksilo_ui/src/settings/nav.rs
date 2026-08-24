@@ -70,6 +70,7 @@ pub(crate) enum Pane {
     /// Behavior: the switch at the top of it is per-session state, not a
     /// setting, which is a distinction that needs room to be explained.
     Games,
+    MarginLane,
     Corkboard,
     Dictionaries,
     Autosave,
@@ -145,6 +146,7 @@ impl Pane {
             Pane::EditorBehavior => "editor-behavior",
             Pane::Goals => "goals",
             Pane::Games => "games",
+            Pane::MarginLane => "margin_lane",
             Pane::Corkboard => "corkboard",
             Pane::Dictionaries => "dictionaries",
             Pane::Autosave => "autosave",
@@ -188,6 +190,7 @@ impl Pane {
             Pane::EditorBehavior => tr!(settings_page_editor_behavior()),
             Pane::Goals => tr!(settings_page_goals()),
             Pane::Games => tr!(settings_page_games()),
+            Pane::MarginLane => tr!(settings_page_margin_lane()),
             Pane::Corkboard => tr!(settings_page_corkboard()),
             Pane::Dictionaries => tr!(settings_page_dictionaries()),
             Pane::Autosave => tr!(settings_page_autosave()),
@@ -241,6 +244,7 @@ impl Pane {
             Pane::EditorBehavior => tr!(settings_desc_editor_behavior()),
             Pane::Goals => tr!(settings_desc_goals()),
             Pane::Games => tr!(settings_desc_games()),
+            Pane::MarginLane => tr!(settings_desc_margin_lane()),
             Pane::Corkboard => tr!(settings_desc_corkboard()),
             Pane::Dictionaries => tr!(settings_desc_dictionaries()),
             Pane::Autosave => tr!(settings_desc_autosave()),
@@ -463,6 +467,9 @@ pub(crate) fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec
                     ],
                 ),
                 Branch::Page(Pane::EditorBehavior),
+                // Beside Editor Behavior: both are about what the editor does around
+                // the words, rather than about how the page looks.
+                Branch::Page(Pane::MarginLane),
                 // Beside Editor Behavior: the other set of switches that change
                 // what happens as the writer types, rather than how the page looks.
                 Branch::Page(Pane::Punctuation),

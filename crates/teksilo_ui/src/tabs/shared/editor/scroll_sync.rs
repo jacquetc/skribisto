@@ -221,6 +221,10 @@ pub fn side_synopsis_editor(
     images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
+    // Forwarded straight to [`synopsis_editor`] — see its own note.
+    item: Option<common::types::EntityId>,
+    // Forwarded straight to [`synopsis_editor`] — see its own note.
+    estimate_height: bool,
 ) -> impl Widget {
     synopsis_editor(
         doc,
@@ -238,6 +242,8 @@ pub fn side_synopsis_editor(
         comments,
         images,
         read_only,
+        item,
+        estimate_height,
     )
 }
 

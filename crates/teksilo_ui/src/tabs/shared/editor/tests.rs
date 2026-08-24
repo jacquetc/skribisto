@@ -89,6 +89,9 @@ fn synopsis_height(fit: SynopsisFit, pane_height: Option<f32>) -> f32 {
         None,
         None,
         false,
+        // No project, so no item to name either.
+        None,
+        false,
     );
     let mut tree = WidgetTree::new();
     let id = match pane_height {

@@ -304,3 +304,69 @@ impl Widget for FindBanner {
         self.child_id.into_iter().collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use teksilo::core::widget_tree::WidgetTree;
+
+    fn doc(text: &str) -> teksilo::text_document::TextDocument {
+        let d = teksilo::text_document::TextDocument::new();
+        let _ = d.set_plain_text(text);
+        d
+    }
+
+    /// The width the banner reports when it is laid out in `width` pixels.
+    fn reported_width(query: &str, width: f32) -> f32 {
+        let vm = crate::search::FindViewModel::new(doc("the cat and the hat")).for_item(7);
+        vm.open();
+        vm.query_signal().set(query.into());
+        let mut tree = WidgetTree::new();
+        let id = tree.add(FindBanner::new(vm));
+        tree.layout(SizeProposal::exact(width, 600.0));
+        let _ = tree.render();
+        tree.bounds(id).width
+    }
+
+    /// **The banner may not be wider than the space it is given.**
+    ///
+    /// Its own row is a query field, a count, two chevrons, two option toggles and a
+    /// close button, and only the field is width-capped. In a narrow window the rest
+    /// still added up past the tab, and a `VStack` reports the widest child it has:
+    /// the banner then decided how wide the whole editor was, and the margin lane --
+    /// the last thing in the row beneath it -- was pushed off the right-hand edge.
+    ///
+    /// Reported as the lane changing width while a search was typed and vanishing
+    /// when nothing matched. Nothing was wrong with the lane. The count reads "",
+    /// then "1 of 3", then the longest of the three, "No results", so the overhang
+    /// grew as the query was typed and was widest exactly when it found nothing.
+    /// `VisibleWhen`'s own note records this same geometry doing the same thing when
+    /// the banner was closed, which is why that gate is not a `Switcher`.
+    #[test]
+    fn the_banner_never_claims_more_width_than_it_is_given() {
+        for width in [320.0, 400.0, 622.0, 900.0] {
+            for query in ["", "cat", "zzqqxx"] {
+                let got = reported_width(query, width);
+                assert!(
+                    got <= width + 0.5,
+                    "at {width}px with query {query:?} the banner claimed {got}px"
+                );
+            }
+        }
+    }
+
+    /// The three states of the count are the three widths that mattered, so they are
+    /// asserted against each other rather than only against the bound: whatever the
+    /// row does inside, the banner presents one width to its parent.
+    #[test]
+    fn the_count_does_not_change_what_the_banner_claims() {
+        let narrow = 400.0;
+        let empty = reported_width("", narrow);
+        let hits = reported_width("cat", narrow);
+        let none = reported_width("zzqqxx", narrow);
+        assert!(
+            (empty - hits).abs() < 0.5 && (hits - none).abs() < 0.5,
+            "empty={empty} hits={hits} none={none}"
+        );
+    }
+}

@@ -181,6 +181,45 @@ impl SearchReplaceViewModel {
     }
 
     // ── view handles (signals the widgets bind to) ──────────────────────────
+    /// The backend this search runs against. For a surface that needs to read the
+    /// project alongside the results — the preview band's margin lane resolves an
+    /// item's language and house quote style through it.
+    pub fn app_ctx(&self) -> Rc<AppContext> {
+        self.app_ctx.clone()
+    }
+
+    /// The app's entity ids, for the same reason as [`app_ctx`](Self::app_ctx).
+    pub fn ids(&self) -> &AppIds {
+        &self.ids
+    }
+
+    /// Tell the margin lane what this search is looking for.
+    ///
+    /// The other half of the arbiter the per-editor find banner writes to. Project
+    /// search publishes **no current match**, deliberately: it found hits in forty
+    /// scenes and the writer is standing on none of them, so marking one would be
+    /// inventing a position.
+    ///
+    /// Called from the preview band, which is where this search's query and its
+    /// three matching switches are already watched — and where the search is being
+    /// *used*, which is what "last one used wins" has to mean.
+    pub fn publish_to_lane(&self) {
+        use crate::margin_lane::{LaneQuery, LaneQuerySource};
+        let text = self.query_signal().get();
+        if text.is_empty() {
+            crate::margin_lane::clear_active_query_from(LaneQuerySource::Project);
+            return;
+        }
+        crate::margin_lane::set_active_query(Some(LaneQuery {
+            text,
+            case_sensitive: self.case_sensitive_signal().get(),
+            whole_word: self.whole_word_signal().get(),
+            diacritic_sensitive: self.diacritic_sensitive_signal().get(),
+            source: LaneQuerySource::Project,
+            current: None,
+        }));
+    }
+
     pub fn query_signal(&self) -> Signal<String> {
         self.query.clone()
     }

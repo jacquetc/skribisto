@@ -184,6 +184,10 @@ pub struct ProjectWindowFactory {
     /// it. Shared process-wide exactly like `spellcheck_menu`: it mirrors one persisted
     /// app preference, not anything this window owns.
     comments_menu: Signal<bool>,
+    /// Plain mirror of the margin-lane switch, read by View ▸ Margin marks.
+    /// Shared process-wide like `comments_menu` above: one persisted app
+    /// preference, not anything a window owns.
+    margin_lane_menu: Signal<bool>,
     /// The app-global quit sequencer, built **here** rather than per window and
     /// rather than in `main`: a quit spans every window, so two windows each
     /// running their own sequence over the same Works would prompt twice for
@@ -209,6 +213,7 @@ impl ProjectWindowFactory {
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
         comments_menu: Signal<bool>,
+        margin_lane_menu: Signal<bool>,
     ) -> Self {
         Self {
             quit: crate::project::QuitSequencer::new(
@@ -225,6 +230,7 @@ impl ProjectWindowFactory {
             autosave_menu,
             spellcheck_menu,
             comments_menu,
+            margin_lane_menu,
         }
     }
 
@@ -383,6 +389,7 @@ impl ProjectWindowFactory {
         let autosave_menu = self.autosave_menu.clone();
         let spellcheck_menu = self.spellcheck_menu.clone();
         let comments_menu = self.comments_menu.clone();
+        let margin_lane_menu = self.margin_lane_menu.clone();
         // Per WINDOW, not per process: unlike `spellcheck_menu` (a global
         // setting, correctly shared), this tracks which surface *this* window
         // has focused. A process-wide one would let a second project window
@@ -621,6 +628,7 @@ impl ProjectWindowFactory {
                                 autosave_menu: autosave_menu.clone(),
                                 spellcheck_menu: spellcheck_menu.clone(),
                                 comments_menu: comments_menu.clone(),
+                                margin_lane_menu: margin_lane_menu.clone(),
                                 scene_focused: scene_focused.clone(),
                                 binder_has_selection: binder_has_selection.clone(),
                                 templates_submenu_id,
@@ -779,6 +787,7 @@ impl ProjectWindowFactory {
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),
                     comments_menu.clone(),
+                    margin_lane_menu.clone(),
                     scene_focused.clone(),
                     binder_has_selection.clone(),
                     templates_menu,

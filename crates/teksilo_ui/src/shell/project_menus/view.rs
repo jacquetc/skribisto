@@ -50,6 +50,15 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .intent("outline.toggle")
             .shortcut("outline.toggle"),
     )
+    // The margin lane. Reflect-only, like the outline above it: the row shows
+    // the setting and the intent writes it, so the menu and Settings ▸ Editor ▸
+    // Margin marks are the same switch rather than two that can drift.
+    .item(
+        MenuEntry::new(tr!(menu_margin_lane()))
+            .checked(parts.margin_lane_menu.clone())
+            .intent("view.margin_lane")
+            .shortcut("view.margin_lane"),
+    )
     // Reveal the leading search & replace dock. A plain
     // action (not a reflect-only checkbox): the search
     // dock is one of two switchable leading tabs, not a

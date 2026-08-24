@@ -207,6 +207,22 @@ pub fn writing_column(
     // must respect the trash has to check it itself; see the
     // `the_gate_stops_typing_and_not_the_programmatic_api` test.
     read_only: bool,
+    // The `BinderItem` whose text this is, announced to the formatting registry so
+    // anything needing *a named item's* editor can find it without going through
+    // focus — the margin lane, which converts offsets for every row of a stream at
+    // once. `None` on the surfaces built with no project around them, the same
+    // shape as `comments` / `footnotes` / `images` above.
+    item: Option<common::types::EntityId>,
+    // Whether this editor should guess its height from its text before anything has
+    // laid it out.
+    //
+    // `true` for a **stream row**, and only there. A row below the fold never lays
+    // out, so it claims the `min_lines` floor whatever it holds, and the page's
+    // height is the sum of those claims — the scroll extent starts wrong by an order
+    // of magnitude and settles a row at a time as the reader arrives. A tab's editor
+    // is on screen and lays out on its first frame, so the guess would buy it nothing
+    // and every consumer of its first-frame size would pay for it.
+    estimate_height: bool,
 ) -> HStack {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -216,7 +232,8 @@ pub fn writing_column(
         RichTextEditor::read_only(doc.clone())
     } else {
         RichTextEditor::editor(doc.clone())
-    };
+    }
+    .estimate_height_before_layout(estimate_height);
     if let Some(source) = &images {
         let resolve = source.resolver();
         editor = editor.on_image_missing(resolve);
@@ -417,6 +434,9 @@ pub fn writing_column(
     }
     if let Some(tw) = typewriter {
         bound = bound.with_typewriter(tw);
+    }
+    if let Some(id) = item {
+        bound = bound.with_item(id);
     }
     if let Some(band) = caret {
         bound = bound.with_caret_band(band);
@@ -840,6 +860,10 @@ pub fn writing_section(
     arrival_project: Option<String>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
+    // Forwarded straight to [`writing_column`] — see its own note.
+    item: Option<common::types::EntityId>,
+    // Forwarded straight to [`writing_column`] — see its own note.
+    estimate_height: bool,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -868,6 +892,8 @@ pub fn writing_section(
             images,
             arrival_project,
             read_only,
+            item,
+            estimate_height,
         ))
 }
 

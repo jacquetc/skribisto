@@ -83,6 +83,12 @@ pub fn synopsis_editor(
     images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
+    // The `BinderItem` whose synopsis this is, announced to the formatting
+    // registry so a lane can reach this editor by name rather than through focus.
+    // `None` on the surfaces built with no project around them.
+    item: Option<common::types::EntityId>,
+    // Forwarded straight to the editor — see [`writing_column`]'s own note.
+    estimate_height: bool,
 ) -> impl Widget {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -92,7 +98,8 @@ pub fn synopsis_editor(
         RichTextEditor::read_only(doc.clone())
     } else {
         RichTextEditor::editor(doc.clone())
-    };
+    }
+    .estimate_height_before_layout(estimate_height);
     if let Some(source) = &images {
         let resolve = source.resolver();
         editor = editor.on_image_missing(resolve);
@@ -171,6 +178,9 @@ pub fn synopsis_editor(
     );
     if let Some(g) = games {
         bound = bound.with_writing_games(g);
+    }
+    if let Some(id) = item {
+        bound = bound.with_item(id);
     }
     // Only the page-sized synopsis pins. `Compact` is a six-line box with its
     // own scrollbar — holding a line at a fixed height inside it would mean
@@ -443,6 +453,10 @@ pub fn synopsis_section(
     images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
+    // Forwarded straight to [`synopsis_editor`] — see its own note.
+    item: Option<common::types::EntityId>,
+    // Forwarded straight to [`synopsis_editor`] — see its own note.
+    estimate_height: bool,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     teksu!(
@@ -473,6 +487,8 @@ pub fn synopsis_section(
                             comments,
                             images.clone(),
                             read_only,
+                            item,
+                            estimate_height,
                         )
                     }
                 }
@@ -552,6 +568,10 @@ pub fn synopsis_column(
     // row so there is no single "the" caret to remember, and an epigraph is a field
     // on a page rather than the page itself.
     view_state: Option<crate::shared::ViewStateBinding>,
+    // Forwarded straight to [`synopsis_editor`] — see its own note.
+    item: Option<common::types::EntityId>,
+    // Forwarded straight to [`synopsis_editor`] — see its own note.
+    estimate_height: bool,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     // Read back below, once the editor has been constructed. Cloned first because
@@ -577,6 +597,8 @@ pub fn synopsis_column(
                     comments,
                     images.clone(),
                     read_only,
+                    item,
+                    estimate_height,
                 )
             }
         }

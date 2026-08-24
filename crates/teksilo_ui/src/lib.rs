@@ -122,6 +122,7 @@ pub mod import_plume;
 pub mod intents;
 pub mod ipc_serve;
 pub mod locales;
+pub mod margin_lane;
 pub mod media_paths;
 pub mod mentions;
 pub mod models;
@@ -365,6 +366,13 @@ pub fn run() {
         backup_settings,
     } = startup::open_tier1_services(&app_ctx, init_root_id);
 
+    // The margin lane's own mark sources, registered through the same door an
+    // extension uses and held for the life of the process. Before any window, because
+    // a surface reads the registry as a **snapshot** when it is built: a provider
+    // registered afterwards would be missing from every lane already on screen and
+    // from the settings page listing them, with nothing to show that it had happened.
+    let _lane_providers = margin_lane::install_builtin_providers();
+
     // The title-bar menu lives outside `App` (no `ctx.settings()` there), so the
     // autosave setting is mirrored into this plain signal by `App::build` and read
     // by the menu to hide the "Save" item. Seeded from the persisted value.
@@ -379,6 +387,10 @@ pub fn run() {
     // checkmark, which cannot be looked at before `App::build` has already written the
     // stored value into it in the same frame.
     let comments_menu = Signal::new(COMMENTS_VISIBLE_DEFAULT);
+    // Same reasoning as `comments_menu`: seeded from the default, because it
+    // feeds only a menu checkmark, and `App::build` writes the stored value into
+    // it in the same frame — before the menu can be opened.
+    let margin_lane_menu = Signal::new(MARGIN_LANE_ENABLED_DEFAULT);
     // `unsaved` (exit-guard state shared between the window close guard / Close
     // Work menu and `App`) and `pending_exit` (a deferred close/quit awaiting an
     // in-flight save) are **not** constructed here any more (Scope E): both used
@@ -443,6 +455,7 @@ pub fn run() {
         autosave_menu.clone(),
         spellcheck_menu.clone(),
         comments_menu.clone(),
+        margin_lane_menu.clone(),
     );
 
     // ── Decide the initial window: launcher-window model ────────────────

@@ -25,6 +25,11 @@ pub enum AppIntent {
     #[name = "outline.toggle"]
     ToggleOutline,
 
+    /// Toggle the margin lane — the strip beside the scroll bar that maps where
+    /// things are in what the writer is reading.
+    #[name = "view.margin_lane"]
+    ToggleMarginLane,
+
     /// Clear the chapter and part titles that say nothing but their own number.
     ///
     /// Every project this app creates starts with its chapters titled "Chapter 1".."Chapter

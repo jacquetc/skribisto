@@ -45,6 +45,15 @@ fn two_ids() -> (WidgetId, WidgetId) {
     (keys.insert(()), keys.insert(()))
 }
 
+/// `n` distinct ids from **one** slot map.
+///
+/// [`two_ids`] mints a fresh map per call, so two calls hand back the *same* pair —
+/// fine for a test that only needs two, and silently wrong for one that needs three.
+fn ids(n: usize) -> Vec<WidgetId> {
+    let mut keys: slotmap::SlotMap<WidgetId, ()> = slotmap::SlotMap::with_key();
+    (0..n).map(|_| keys.insert(())).collect()
+}
+
 /// A standalone editor over `text`, and its handle.
 ///
 /// Everything is selected up front: `is_bold` and friends probe the format
@@ -62,6 +71,117 @@ fn loose_editor(text: &str) -> (RichTextEditor, EditorHandle) {
     let handle = editor.handle();
     editor.select_all();
     (editor, handle)
+}
+
+/// **Reaching a named item's editor, which is not a focus question.**
+///
+/// Every other read here asks "which editor has focus". A margin lane asks
+/// something the registry could not answer until now: *which editor is showing
+/// this item*, for every row of a stream at once, all but one of which will never
+/// have focus.
+///
+/// Keyed by `(item, kind)` rather than by item alone, because a scene tab shows the
+/// same item twice — its prose column and its synopsis box — and a lane on one must
+/// not convert its offsets against the other.
+#[test]
+fn an_editor_can_be_found_by_the_item_it_shows_without_focus() {
+    let (_a_editor, a_handle) = loose_editor("scene one");
+    let (_b_editor, b_handle) = loose_editor("scene two");
+    let (_syn_editor, syn_handle) = loose_editor("scene one's synopsis");
+    let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::Scene)));
+
+    let w = ids(3);
+    let (a_id, b_id, syn_id) = (w[0], w[1], w[2]);
+    vm.register(a_id, a_handle.clone(), EditorKind::Prose);
+    vm.register(b_id, b_handle.clone(), EditorKind::Prose);
+    vm.register(syn_id, syn_handle.clone(), EditorKind::Synopsis);
+    vm.set_registered_item(a_id, 11);
+    vm.set_registered_item(b_id, 22);
+    vm.set_registered_item(syn_id, 11);
+
+    // Asserted by effect, like the tests below: `EditorHandle` has no identity API,
+    // and "this is the editor holding that item's text" is the property that matters.
+    assert_eq!(
+        vm.handle_for_item(11, EditorKind::Prose)
+            .map(|h| {
+                h.select_all();
+                h.selected_text()
+            })
+            .unwrap(),
+        "scene one"
+    );
+    assert_eq!(
+        vm.handle_for_item(22, EditorKind::Prose)
+            .map(|h| {
+                h.select_all();
+                h.selected_text()
+            })
+            .unwrap(),
+        "scene two"
+    );
+    // Same item, other kind: a different editor, not the prose one again.
+    assert_eq!(
+        vm.handle_for_item(11, EditorKind::Synopsis)
+            .map(|h| {
+                h.select_all();
+                h.selected_text()
+            })
+            .unwrap(),
+        "scene one's synopsis"
+    );
+    assert!(vm.handle_for_item(99, EditorKind::Prose).is_none());
+}
+
+/// A stream lane resolves every row in one call, and has to be able to tell that a
+/// row simply has not been built — the normal state of everything below the fold.
+#[test]
+fn every_registered_editor_of_a_kind_comes_back_with_its_item() {
+    let (_a_editor, a_handle) = loose_editor("row one");
+    let (_b_editor, b_handle) = loose_editor("row two");
+    let (_unnamed_editor, unnamed_handle) = loose_editor("the search preview");
+    let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::Scene)));
+
+    let w = ids(3);
+    let (a_id, b_id, unnamed_id) = (w[0], w[1], w[2]);
+    vm.register(a_id, a_handle, EditorKind::Prose);
+    vm.register(b_id, b_handle, EditorKind::Prose);
+    // Registered for the formatting commands, but showing no one item's text.
+    vm.register(unnamed_id, unnamed_handle, EditorKind::Prose);
+    vm.set_registered_item(a_id, 11);
+    vm.set_registered_item(b_id, 22);
+
+    let mut items: Vec<u64> = vm
+        .handles_by_item(EditorKind::Prose)
+        .into_iter()
+        .map(|(item, _)| item)
+        .collect();
+    items.sort_unstable();
+    assert_eq!(
+        items,
+        vec![11, 22],
+        "a surface showing no single item must not appear as one"
+    );
+    assert!(vm.handles_by_item(EditorKind::Synopsis).is_empty());
+}
+
+/// Unregistering withdraws the item lookup too. This is the whole argument for one
+/// registry rather than two: `TypographyBoundEditor`'s `Drop` is the only thing
+/// keeping any of these entries from pointing at a torn-down widget, and a second
+/// index would have to re-earn that.
+#[test]
+fn a_torn_down_editor_stops_answering_for_its_item() {
+    let (_editor, handle) = loose_editor("a scene");
+    let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::Scene)));
+    let (id, _) = two_ids();
+    vm.register(id, handle, EditorKind::Prose);
+    vm.set_registered_item(id, 11);
+    assert!(vm.handle_for_item(11, EditorKind::Prose).is_some());
+
+    vm.unregister(id);
+    assert!(
+        vm.handle_for_item(11, EditorKind::Prose).is_none(),
+        "a lane must not be able to draw marks through a dead editor"
+    );
 }
 
 /// The registry's whole reason to exist: a corkboard card and a stream row

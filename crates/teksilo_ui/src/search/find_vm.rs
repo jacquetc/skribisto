@@ -27,6 +27,11 @@ use teksilo::widgets::rich_text::{EditorHandle, FindSession};
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct FindViewModel {
+    /// The `BinderItem` this banner searches, for the margin lane's arbiter.
+    ///
+    /// `None` for a surface with no item behind it, and the banner then publishes
+    /// nothing — a lane cannot mark hits it cannot attribute to a document.
+    item: std::cell::Cell<Option<common::types::EntityId>>,
     /// The main prose document this banner searches.
     doc: TextDocument,
     /// The find-highlight layer, created lazily (needs theme colours).
@@ -66,6 +71,7 @@ pub struct FindViewModel {
 impl FindViewModel {
     pub fn new(doc: TextDocument) -> Self {
         Self {
+            item: std::cell::Cell::new(None),
             doc,
             session: Rc::new(RefCell::new(None)),
             handle: Rc::new(RefCell::new(None)),
@@ -84,6 +90,13 @@ impl FindViewModel {
     }
 
     // ── view handles ────────────────────────────────────────────────────────
+    /// Name the item this banner is searching, so its hits can reach the margin
+    /// lane. Set by the tab that builds it; a banner with no item publishes nothing.
+    pub fn for_item(self, item: common::types::EntityId) -> Self {
+        self.item.set(Some(item));
+        self
+    }
+
     pub fn visible_signal(&self) -> Signal<bool> {
         self.visible.clone()
     }
@@ -382,6 +395,44 @@ impl FindViewModel {
         };
         self.count.set(count);
         self.current.set(current);
+        self.publish_to_lane(count);
+    }
+
+    /// Tell the margin lane what the writer is looking for.
+    ///
+    /// Through the arbiter rather than by the lane reading this view-model, because
+    /// a `FindViewModel` lives on the tab that owns it and is reachable only as "the
+    /// focused pane's active tab" — a lane on a stream row or a search preview has
+    /// no route to it at all. Publishing here also makes "last search used wins"
+    /// fall out: whichever of the two searches wrote most recently is what shows.
+    ///
+    /// This is the single funnel, called from [`publish`](Self::publish), so every
+    /// path that changes what is being searched for reaches it: a keystroke in the
+    /// field, a toggle, Next, Prev, the per-frame `tick` after an edit.
+    fn publish_to_lane(&self, count: usize) {
+        use crate::margin_lane::{LaneQuery, LaneQuerySource};
+        let Some(item) = self.item.get() else {
+            return;
+        };
+        let source = LaneQuerySource::Editor(item);
+        let text = self.query.get();
+        if !self.visible.get() || text.is_empty() {
+            crate::margin_lane::clear_active_query_from(source);
+            return;
+        }
+        crate::margin_lane::set_active_query(Some(LaneQuery {
+            text,
+            case_sensitive: self.case_sensitive.get(),
+            whole_word: self.whole_word.get(),
+            // The banner has no folding switch, and leaving it off is what it
+            // already does: `FindViewModel::options` folds too.
+            diacritic_sensitive: false,
+            source,
+            // The ordinal only, and only while there is one: with no matches the
+            // banner shows "0 of 0", and marking a current hit would be inventing a
+            // position for something that is not there.
+            current: (count > 0).then(|| self.current.get().saturating_sub(1)),
+        }));
     }
 }
 
@@ -397,6 +448,69 @@ mod tests {
 
     fn fmt() -> HighlightFormat {
         HighlightFormat::default()
+    }
+
+    /// **The banner's hits reach the margin lane**, which cannot reach the banner.
+    ///
+    /// A `FindViewModel` lives on the tab that owns it and is findable only as "the
+    /// focused pane's active tab"; a lane on a stream row or a preview is not that
+    /// tab. So the query travels the other way, through the arbiter, and every path
+    /// that changes it has to publish — which is why the publication hangs off
+    /// `publish` rather than off `refresh_query` alone.
+    #[test]
+    fn what_the_banner_searches_for_reaches_the_lanes_arbiter() {
+        use crate::margin_lane::{LaneQuerySource, active_query, set_active_query};
+        set_active_query(None);
+
+        let vm = FindViewModel::new(doc("the cat and the hat and the mat")).for_item(7);
+        vm.ensure_session(fmt(), fmt());
+        vm.open();
+        vm.query_signal().set("the".into());
+        vm.refresh_query();
+
+        let q = active_query().get().expect("the lane was told");
+        assert_eq!(q.text, "the");
+        assert_eq!(q.source, LaneQuerySource::Editor(7));
+        assert_eq!(
+            q.current_in(7),
+            Some(0),
+            "the first match is the one the writer is on"
+        );
+
+        // Closing takes its own marks off the strip.
+        vm.close();
+        assert!(
+            active_query().get().is_none(),
+            "a closed banner must not leave its hits on the lane"
+        );
+        set_active_query(None);
+    }
+
+    /// A banner with no item behind it publishes nothing: a lane cannot attribute
+    /// hits to a document that was never named.
+    #[test]
+    fn an_unnamed_banner_publishes_nothing() {
+        use crate::margin_lane::{LaneQuery, LaneQuerySource, active_query, set_active_query};
+        set_active_query(Some(LaneQuery {
+            text: "ferry".into(),
+            case_sensitive: false,
+            whole_word: false,
+            diacritic_sensitive: false,
+            source: LaneQuerySource::Project,
+            current: None,
+        }));
+
+        let vm = FindViewModel::new(doc("the cat"));
+        vm.ensure_session(fmt(), fmt());
+        vm.open();
+        vm.query_signal().set("cat".into());
+        vm.refresh_query();
+
+        assert!(
+            active_query().get().is_some_and(|q| q.text == "ferry"),
+            "an unnamed banner must not overwrite what is on the lane"
+        );
+        set_active_query(None);
     }
 
     #[test]

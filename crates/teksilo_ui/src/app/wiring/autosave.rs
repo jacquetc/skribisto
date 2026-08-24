@@ -27,6 +27,9 @@ use super::super::{mutation_ids_belong_to_work, mutation_origins};
 /// Handles the install function needs from `App::build`.
 pub(in crate::app) struct AutosaveDeps {
     pub comments_menu: Signal<bool>,
+    /// The margin-lane switch's menu mirror, and the persisted signal behind it.
+    pub margin_lane_menu: Signal<bool>,
+    pub margin_lane_enabled: Signal<bool>,
     pub comments_visible: Signal<bool>,
     pub spell_docs: OpenDocsStore,
     pub editors: EditorsViewModel,
@@ -60,6 +63,18 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &AutosaveDeps) {
             docs.set_comments_visible(*on);
         });
     }
+    // ── View ▸ Margin marks ──────────────────────────────────────────────
+    // The persisted key is the single source; the menu row's checkmark is a
+    // mirror of it, pushed one way. The intent writes the key rather than the
+    // mirror, so the menu and Settings ▸ Editor ▸ Margin marks cannot disagree
+    // about whether the lane is on — the same shape the Comments switch above
+    // uses, and for the same reason.
+    {
+        deps.margin_lane_menu.set(deps.margin_lane_enabled.get());
+        let menu = deps.margin_lane_menu.clone();
+        ctx.effect(&deps.margin_lane_enabled, move |on| menu.set(*on));
+    }
+
     // Synopsis spell dormancy is not wired here: a doc can be on screen
     // several times at once (split pane, distraction-free), so "may this
     // session sleep?" is answered by counting the views that actually show

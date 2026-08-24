@@ -21,6 +21,7 @@
 //! | [`register_container_segment`] | a container tab is built |
 //! | [`register_category`] | the Analysis pane is built |
 //! | [`register_topics`] | the Help window is built |
+//! | [`register_lane_provider`] | a text surface's margin lane is built |
 //! | [`register_command`] | `App::build`, and each window's menu build |
 //! | [`register_settings`] | every `spec`/`dump`/`load_pins` lookup |
 //! | [`register_page`] | the Settings window is built |
@@ -68,6 +69,28 @@ pub use crate::tabs::shared::segments::{
 };
 
 // ── Analysis categories ──────────────────────────────────────────────────────
+/// The margin lane's provider seam — a source of positional marks on the strip
+/// beside a text surface's scroll area.
+///
+/// An extension registers what it knows how to find and where in the document it
+/// is; the lane decides how it looks, so a provider cannot paint a red stripe
+/// down the side of a manuscript or ship a mark that fails contrast on a theme
+/// it never saw.
+///
+/// [`active_query`] is here for the same reason [`CommentAnchor`] is on the
+/// context: a provider that wanted to mark what the writer is *looking for* has no
+/// other route to it, and re-deriving one would mean guessing which of the two
+/// searches was used last.
+///
+/// [`active_query`] is here for the same reason [`CommentAnchor`] is on the
+/// context: a provider that wanted to mark what the writer is *looking for* has no
+/// other route to it, and re-deriving one would mean guessing which of the two
+/// searches was used last.
+pub use crate::margin_lane::{
+    CommentAnchor, LaneContext, LaneMarksFn, LaneProviderHandle, LaneProviderSpec, LaneQuery,
+    LaneRefresh, LaneSurface, active_query, register_lane_provider,
+};
+
 pub use crate::analysis::AnalysisViewModel;
 /// Contribute a page to the Help window.
 ///

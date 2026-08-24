@@ -58,6 +58,31 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
 
+    // Ctrl+Shift+M, not a function key: the lane is a writing-surface toggle
+    // rather than a window-chrome one, and the free function keys are spoken
+    // for (F9 outline, F10 preview, F11 fullscreen). M for "marks"; Ctrl+M
+    // alone is a plain Return in several editors, so the Shift is not
+    // decorative.
+    ctx.register_shortcut_global(
+        Shortcut::new("view.margin_lane")
+            .name("Toggle Margin Marks")
+            .primary(KeyStroke::new(Key::M, Modifiers::CTRL | Modifiers::SHIFT))
+            .build(),
+    );
+    {
+        // The setting *is* the state: the menu row reflects this signal and the
+        // action writes it, so the toggle and Settings can never disagree about
+        // whether the lane is on. Same pairing every other reflect-only row in
+        // this menu uses.
+        let enabled = ctx.settings().signal(
+            crate::MARGIN_LANE_ENABLED_KEY,
+            crate::MARGIN_LANE_ENABLED_DEFAULT,
+        );
+        ctx.register_action_global(Action::new("view.margin_lane").on_invoke(move |_i, _c| {
+            enabled.set(!enabled.get());
+        }));
+    }
+
     // F11, the platform convention — free (no other command claims it; see
     // this increment's ground-truth sweep). A Global shortcut so it fires
     // regardless of which widget has focus, same rationale as F9/F10 above.

@@ -342,7 +342,10 @@ enum CreateTarget {
     /// window whose Work is shared with a Work ▸ New Window sibling keeps its
     /// own project and simply gains a neighbour, so it stays.
     NewWindow {
-        factory: ProjectWindowFactory,
+        // Boxed: the factory is by far the largest thing this enum holds, and an
+        // unboxed variant makes every `CreateTarget` — including the small
+        // `InPlace` one — as big as the biggest.
+        factory: Box<ProjectWindowFactory>,
         close_presenting_window: bool,
     },
 }
@@ -443,7 +446,7 @@ impl NewWorkViewModel {
             app_ctx,
             purpose: NewWorkPurpose::Project,
             target: CreateTarget::NewWindow {
-                factory,
+                factory: Box::new(factory),
                 close_presenting_window,
             },
         }

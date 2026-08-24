@@ -338,6 +338,43 @@ pub const TYPEWRITER_ANCHOR_KEY: &str = "editor.typewriter_anchor";
 // French. It inserts an *invisible* character, so a writer who has not asked for
 // it would see their file change in ways they cannot see on screen — and unlike
 // the others it applies to one language only.
+// ── Editor: the margin lane ──────────────────────────────────────────────────
+//
+// ⚠ Every key here is written into the writer's `general.toml`, so all of them
+// are frozen once shipped. The per-provider keys are not listed: they are
+// synthesised from each registration's id (`editor.margin_lane.provider.<id>`),
+// because an extension's providers cannot be known at compile time. See
+// `margin_lane::LaneProviderSpec::settings_key`.
+pub const MARGIN_LANE_ENABLED_KEY: &str = "editor.margin_lane.enabled";
+pub const MARGIN_LANE_ENABLED_DEFAULT: bool = true;
+/// The texture column, off by default — it costs 28 dp and not every writer
+/// wants it. On is the *recommended* state, not the assumed one.
+pub const MARGIN_LANE_TEXTURE_KEY: &str = "editor.margin_lane.texture";
+pub const MARGIN_LANE_TEXTURE_DEFAULT: bool = false;
+
+/// The settings key gating the lane on one surface.
+///
+/// ⚠ `LaneSurface::key` supplies the fragment and is frozen with it.
+pub fn margin_lane_surface_key(surface: crate::margin_lane::LaneSurface) -> String {
+    format!("editor.margin_lane.surface.{}", surface.key())
+}
+
+/// Whether the lane appears on `surface` for a writer who has never said.
+///
+/// **All of them**, and the reason it is still a function is that the answer used
+/// to differ: two surfaces were listed that no lane was ever mounted on, and their
+/// rows were off by default so nobody would notice they did nothing. Both are gone
+/// (see [`LaneSurface::all`](crate::margin_lane::LaneSurface::all)), and what is
+/// left is exactly the set where a position is worth knowing — which is why every
+/// one of them is on.
+///
+/// Kept per-surface rather than folded into the single master switch because the
+/// switches mean different things: the master one is "I do not want this feature",
+/// a surface one is "not while I am reading search results".
+pub fn margin_lane_surface_default(_surface: crate::margin_lane::LaneSurface) -> bool {
+    true
+}
+
 pub const PUNCT_DASHES_KEY: &str = "editor.punctuation.dashes";
 pub const PUNCT_DASHES_DEFAULT: bool = true;
 pub const PUNCT_ELLIPSIS_KEY: &str = "editor.punctuation.ellipsis";
@@ -699,6 +736,21 @@ pub static SETTINGS: &[SettingSpec] = &[
         doc: "How much text around the caret gets an ambient highlight band.",
     },
     // ── Editor: smart punctuation (the app-level tier) ────────────────────────
+    // ── Editor: the margin lane ───────────────────────────────────────────────
+    SettingSpec {
+        key: crate::MARGIN_LANE_ENABLED_KEY,
+        ty: "bool",
+        default: || val(crate::MARGIN_LANE_ENABLED_DEFAULT),
+        check: check::<bool>,
+        doc: "Show the strip beside the scroll bar that maps where things are.",
+    },
+    SettingSpec {
+        key: crate::MARGIN_LANE_TEXTURE_KEY,
+        ty: "bool",
+        default: || val(crate::MARGIN_LANE_TEXTURE_DEFAULT),
+        check: check::<bool>,
+        doc: "Add a column showing each paragraph's length and how much of it is spoken.",
+    },
     SettingSpec {
         key: crate::PUNCT_DASHES_KEY,
         ty: "bool",

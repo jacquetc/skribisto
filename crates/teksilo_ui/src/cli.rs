@@ -15,6 +15,11 @@
 
 use teksilo::prelude::*;
 
+// `self` is only reached from the `debug_assertions` halves below (`dump`,
+// `load_pins`, `merge_into`), which a release build compiles out — so in release it
+// is genuinely unused and the lint is right. Said here rather than dropped, because
+// the module IS used in every build a person runs these flags from.
+#[cfg_attr(not(debug_assertions), allow(unused_imports))]
 use crate::settings_keys::{
     self, AUTOSAVE_KEY, DARK_KEY, LOCALE_KEY, SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT,
     SPELLCHECK_ENABLED_KEY,
@@ -24,6 +29,11 @@ use crate::settings_keys::{
 /// builder's `SettingsBundle` resolve it (`AppPaths` → `config_file("general")`,
 /// which appends `.toml`). `--config` merges into this file and `--dump-config`
 /// reads it, so all four agree on one path by construction.
+/// Dead in a release build for the same reason the import above is: both callers
+/// live in `debug_assertions` halves. Kept rather than gated, because gating the
+/// function would mean gating its doc comment and its one honest definition of where
+/// the file is.
+#[cfg_attr(not(debug_assertions), allow(dead_code))]
 pub(crate) fn general_settings_path() -> Option<std::path::PathBuf> {
     crate::identity::app_paths().map(|paths| paths.config_file("general"))
 }
@@ -38,7 +48,7 @@ pub(crate) fn run_dump_config() {
     {
         eprintln!(
             "skribisto: {} is available in debug builds only",
-            shell::instance::DUMP_CONFIG_FLAG
+            crate::shell::instance::DUMP_CONFIG_FLAG
         );
         std::process::exit(2);
     }
@@ -71,7 +81,7 @@ pub(crate) fn apply_config_pins(path: &str) {
     {
         eprintln!(
             "skribisto: {} is available in debug builds only",
-            shell::instance::CONFIG_FLAG
+            crate::shell::instance::CONFIG_FLAG
         );
         std::process::exit(2);
     }

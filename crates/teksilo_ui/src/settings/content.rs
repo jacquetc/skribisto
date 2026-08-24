@@ -452,6 +452,10 @@ pub(super) fn build(
             Box::new(panes::games::games_pane(ctx, games)),
         ),
         (
+            Pane::MarginLane,
+            Box::new(panes::margin_lane::margin_lane_pane(ctx)),
+        ),
+        (
             Pane::Corkboard,
             Box::new(panes::corkboard::corkboard_pane(ctx, vm)),
         ),

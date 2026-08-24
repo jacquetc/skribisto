@@ -56,6 +56,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use common::types::EntityId;
 use teksilo::prelude::{Signal, WidgetId};
 use teksilo::text_document::{Alignment, TextDirection};
 use teksilo::widgets::rich_text::EditorHandle;
@@ -283,6 +284,26 @@ struct RegisteredEditor {
     /// deliberately bypasses `TypographyBoundEditor` and honours no typography
     /// setting, so there is nothing there for the size commands to move.
     typo: Option<crate::settings::EditorTypography>,
+    /// The `BinderItem` whose text this editor is showing.
+    ///
+    /// Not something the formatting commands ever ask for — they act on the
+    /// editor the caret is in and do not care which item it is. It is here
+    /// because **this registry is the only correct place for it**, and the
+    /// argument is lifetime rather than convenience.
+    ///
+    /// A margin lane has to reach *a named item's* editor to convert an offset
+    /// into a position, which is the one question this registry could not answer:
+    /// its reads are all focus-shaped, though its contents never were. Keeping a
+    /// second index would mean re-earning [`TypographyBoundEditor`]'s `Drop`
+    /// discipline, and the failure mode of getting that wrong is a lane drawing
+    /// marks through a handle whose editor is gone. One registry, one lifetime.
+    ///
+    /// `None` for a surface that is not showing one item's text — the search
+    /// preview band, and the editors the widget tests build with no project
+    /// around them.
+    ///
+    /// [`TypographyBoundEditor`]: crate::tabs::shared::editor
+    item: Option<EntityId>,
 }
 
 /// One gate per control group, for the dock to hang `visible_when` on.
@@ -600,6 +621,7 @@ impl FormatViewModel {
                 kind,
                 footnotes: None,
                 typo: None,
+                item: None,
             }),
         }
         // A rebuild of the editor the menu is sticky on must re-point the latch
@@ -721,6 +743,67 @@ impl FormatViewModel {
         if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
             entry.typo = Some(typo);
         }
+    }
+
+    /// Tell an already-registered editor which `BinderItem`'s text it is showing.
+    ///
+    /// Separate from [`register`](Self::register) for the same reason as the two
+    /// above: not every registered surface is showing one item's text, and the
+    /// search preview band would have to invent an id it does not have.
+    pub fn set_registered_item(&self, id: WidgetId, item: EntityId) {
+        if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
+            entry.item = Some(item);
+        }
+    }
+
+    /// The mounted editor showing `item`'s text, if one is.
+    ///
+    /// **Not focus-shaped**, unlike every other read here, and that is the point:
+    /// a margin lane converts offsets for every row on screen at once, most of
+    /// which do not have focus and never will.
+    ///
+    /// `kind` disambiguates the surfaces that show the same item twice in different
+    /// roles — a scene tab has both a prose column and a synopsis box, and a lane on
+    /// one must not resolve its offsets against the other.
+    ///
+    /// **A laid-out editor wins over one that is merely registered.** One item can
+    /// have two editors of the same kind at once: the dual-pane tab builds its prose
+    /// column for both the Top and the Side layout, and only the arm on screen is
+    /// ever laid out. Both register, so "the first entry" is a coin toss, and losing
+    /// it hands back a handle with no geometry — which for a margin lane is not a
+    /// wrong position but no position at all, silently and for the life of the tab.
+    /// Falls back to the first registration when none has been laid out yet, which
+    /// is every editor on its first frame.
+    pub fn handle_for_item(&self, item: EntityId, kind: EditorKind) -> Option<EditorHandle> {
+        let registry = self.registry.borrow();
+        let mut matching = registry
+            .iter()
+            .filter(|e| e.item == Some(item) && e.kind == kind)
+            .map(|e| &e.handle);
+        let first = matching.next()?;
+        if first.content_height().is_some() {
+            return Some(first.clone());
+        }
+        Some(
+            matching
+                .find(|h| h.content_height().is_some())
+                .unwrap_or(first)
+                .clone(),
+        )
+    }
+
+    /// Every mounted editor of `kind`, by the item it is showing.
+    ///
+    /// What a **stream** lane needs: one call rather than one lookup per row, and
+    /// the only way to discover that a row has not been built yet, which is the
+    /// normal state of every row below the fold.
+    pub fn handles_by_item(&self, kind: EditorKind) -> Vec<(EntityId, EditorHandle)> {
+        self.registry
+            .borrow()
+            .iter()
+            .filter(|e| e.kind == kind)
+            .filter_map(|e| e.item.map(|item| (item, e.handle.clone())))
+            .collect()
     }
 
     /// The typography bundle Ctrl+= / Ctrl+− / Ctrl+0 should resize: the one

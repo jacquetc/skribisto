@@ -74,6 +74,9 @@ fn column_with_document_and(
         None,
         // Editable: this fixture is a normal, untrashed surface.
         false,
+        // No project around this tree, so no item to name.
+        None,
+        false,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);

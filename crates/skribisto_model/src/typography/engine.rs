@@ -626,7 +626,7 @@ mod tests {
     use super::*;
     // Only the tests assert on this one directly.
     use crate::typography::RIGHT_DOUBLE;
-    use crate::typography::{PAIR_GUILLEMET, PAIR_LOW_HIGH};
+    use crate::typography::{PAIR_CURLY, PAIR_GUILLEMET, PAIR_LOW_HIGH, PAIR_SINGLE_CURLY};
 
     fn en() -> TypographyEngine {
         TypographyEngine::new("en-US", SmartPunctuationFlags::default())

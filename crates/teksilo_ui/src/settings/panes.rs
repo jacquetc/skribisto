@@ -33,6 +33,7 @@ pub(super) mod export_styles;
 pub(super) mod games;
 pub(super) mod goals;
 pub(super) mod keymap;
+pub(super) mod margin_lane;
 pub(super) mod notifications;
 pub(super) mod overview;
 pub(super) mod paratext;

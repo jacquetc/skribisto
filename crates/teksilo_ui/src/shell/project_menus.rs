@@ -82,6 +82,11 @@ pub(crate) struct ProjectMenuParts {
     pub spellcheck_menu: Signal<bool>,
     /// Mirror of the persisted Tools ▸ Comments switch, for its checkmark.
     pub comments_menu: Signal<bool>,
+    /// Mirror of the persisted margin-lane switch, for View ▸ Margin marks.
+    ///
+    /// The same signal Settings ▸ Editor ▸ Margin marks binds, so the two
+    /// surfaces are one switch rather than two that can drift apart.
+    pub margin_lane_menu: Signal<bool>,
     pub scene_focused: Signal<bool>,
     /// Whether this window's binder has a selection — the Document menu's per-item rows
     /// grey out without one.
@@ -625,6 +630,7 @@ mod tests {
             autosave_menu: Signal::new(false),
             spellcheck_menu: Signal::new(false),
             comments_menu: Signal::new(true),
+            margin_lane_menu: Signal::new(true),
             scene_focused: Signal::new(false),
             binder_has_selection: Signal::new(false),
             templates_submenu_id: MenuItemId::next(),

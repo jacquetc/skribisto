@@ -62,6 +62,9 @@ fn column_over(typo: &EditorTypography) -> WidgetTree {
         // No project around this tree to tally typing against.
         None,
         false,
+        // No project around this tree, so no item to name.
+        None,
+        false,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);

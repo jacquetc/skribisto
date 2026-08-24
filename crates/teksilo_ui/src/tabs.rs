@@ -690,10 +690,12 @@ impl ContentTab {
             &open_doc.sub_role,
         );
         // A find banner only for a tab with a main prose surface to search.
-        let find = open_doc
-            .main
-            .as_ref()
-            .map(|m| crate::search::FindViewModel::new(m.doc.clone()));
+        let find = open_doc.main.as_ref().map(|m| {
+            // Named with the item it searches, so its hits reach the margin lane
+            // through the arbiter — the lane cannot reach this view-model, which
+            // lives on this tab and is findable only through focus.
+            crate::search::FindViewModel::new(m.doc.clone()).for_item(open_doc.item_id)
+        });
         // Seed the container's view from the per-type memory (own page = 0 when
         // disabled or for a non-segmented type).
         let segment = Signal::new(view_memory.initial(&open_doc.sub_role));

@@ -339,7 +339,7 @@ fn seek_target(row: &CommentRow) -> Option<(u64, usize, usize)> {
 /// the empty `“”` its blank quote would otherwise render: that blank pair of
 /// quotation marks, indistinguishable from a card with nothing wrong at all, is
 /// exactly the "blank in the dock" half of the bug this function fixes.
-fn comment_snippet(row: &CommentRow) -> LocalizedString {
+pub(crate) fn comment_snippet(row: &CommentRow) -> LocalizedString {
     // Shown, not stored: the quote keeps the sentinel so it still matches the
     // prose it was captured from, but a `U+FFFC` in this list would draw as an
     // unrenderable box. `🖼` reads as "there is a picture here", which is what a

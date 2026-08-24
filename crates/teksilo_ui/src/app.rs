@@ -724,6 +724,7 @@ pub struct App {
     /// menu (built outside `App`) for its checkmark. `App::build` mirrors the
     /// store-backed setting into it — the menu row never writes it back.
     comments_menu: Signal<bool>,
+    margin_lane_menu: Signal<bool>,
     /// Live "a scene's prose is the active surface" flag, shared with the
     /// title-bar's Format menu so its entries grey out off a scene. Written by
     /// `EditorsViewModel`, which is the only thing that can compute it.
@@ -858,6 +859,7 @@ impl App {
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
         comments_menu: Signal<bool>,
+        margin_lane_menu: Signal<bool>,
         scene_focused: Signal<bool>,
         binder_has_selection: Signal<bool>,
         templates_menu: Option<(
@@ -901,6 +903,7 @@ impl App {
             autosave_menu,
             spellcheck_menu,
             comments_menu,
+            margin_lane_menu,
             scene_focused,
             binder_has_selection,
             templates_menu,
@@ -1806,6 +1809,11 @@ impl Widget for App {
             ctx,
             &wiring::autosave::AutosaveDeps {
                 comments_menu: self.comments_menu.clone(),
+                margin_lane_menu: self.margin_lane_menu.clone(),
+                margin_lane_enabled: ctx.settings().signal(
+                    crate::MARGIN_LANE_ENABLED_KEY,
+                    crate::MARGIN_LANE_ENABLED_DEFAULT,
+                ),
                 comments_visible: settings.comments_visible(),
                 spell_docs: spell_docs.clone(),
                 editors: editors.clone(),

@@ -25,7 +25,7 @@ use std::rc::Rc;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     Button, Divider, Expand, HStack, IconButton, IconWidget, MenuItem, MenuList, PopoverIconButton,
-    Repeater, Spacer, TextWidget, VStack,
+    Repeater, ScrollArea, Spacer, TextWidget, VStack,
 };
 
 use skribisto_model::{CreateType, SubRoleExt};
@@ -63,6 +63,23 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
     // `tab.typography.scene` directly opts out of it.
     let header_cw = tab.column_width.clone();
     let mut col = VStack::new().spacing(0.0);
+    // Two of a container's segments come through here, and they are different
+    // pages of different heights: only the one about to be shown restores the
+    // remembered offset.
+    let will_show = crate::tabs::shared::panes::segment_will_show(
+        tab,
+        match flavour {
+            SplitFlavour::Prose => crate::tabs::shared::segments::SEG_MANUSCRIPT,
+            SplitFlavour::Synopsis => crate::tabs::shared::segments::SEG_SYNOPSIS,
+        },
+    );
+    // Built inside the `if let` below, because a page with no stream view-model has
+    // no rows to map and needs neither the extents nor the lane.
+    let mut mapped: Option<(
+        crate::stream::StreamViewModel,
+        crate::margin_lane::RowExtents,
+        ScrollArea,
+    )> = None;
 
     if let Some(vm) = tab.stream().cloned() {
         let mark_dirty: Rc<dyn Fn()> = Rc::new(tab.mark_dirty_fn());
@@ -78,6 +95,19 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             SplitFlavour::Synopsis => (tab.column_width.clone(), tab.typography.synopsis.clone()),
         };
         let format = tab.format.clone();
+        // Where every mapped document on this page lands, so the lane can turn one
+        // row's offset into a fraction of the whole stream. Nothing in the row-list
+        // layer can answer this: typing in row 1 pushes row 2 down and fires no
+        // event any of these view-models watch — see `margin_lane::rows`.
+        let extents = crate::margin_lane::RowExtents::new();
+        let (page, port, _binding) =
+            crate::tabs::shared::panes::writing_page_scroll(tab, will_show);
+        let page_scroll = page.scroll_y_signal().clone();
+        // The zero-size companion that claims this tab's view-state ports on
+        // activation. It goes anywhere inside the page, so it goes here rather
+        // than being threaded out through `mapped` alongside the area.
+        col = col.child(port);
+        mapped = Some((vm.clone(), extents.clone(), page));
         // The container's own surface is a commentable editor like any row's.
         let own_comments = match flavour {
             SplitFlavour::Prose => tab.open_doc.comment_binding_main(),
@@ -101,21 +131,29 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             // Resolved once for the page rather than per row: it is one store
             // read, and a stream can be a hundred rows.
             let arrival_project = tab.work_unique_id();
+            let extents = extents.clone();
+            let page_scroll = page_scroll.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
-                Box::new(stream_row(
-                    &vm,
-                    row,
-                    &header_cw,
-                    &editor_cw,
-                    &typo,
-                    flavour,
-                    &md,
-                    &format,
-                    &tw,
-                    &band,
-                    &games,
-                    &gutter,
-                    arrival_project.as_deref(),
+                let item = row.item_id;
+                Box::new(crate::margin_lane::RowExtent::new(
+                    item,
+                    extents.clone(),
+                    page_scroll.clone(),
+                    stream_row(
+                        &vm,
+                        row,
+                        &header_cw,
+                        &editor_cw,
+                        &typo,
+                        flavour,
+                        &md,
+                        &format,
+                        &tw,
+                        &band,
+                        &games,
+                        &gutter,
+                        arrival_project.as_deref(),
+                    ),
                 ))
             }
         };
@@ -140,8 +178,13 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             SplitFlavour::Synopsis => tab.synopsis(),
         };
         if let Some(field) = own {
-            col = match flavour {
-                SplitFlavour::Prose => col.child(writing_column(
+            // The container's own prose is one more mapped document on this page, so
+            // it reports where it landed exactly as a row does. Without this the
+            // lane would resolve it and then skip it for having no extent, and a
+            // chapter folder's own text would be the one thing on the page with no
+            // marks beside it.
+            let own_col: Box<dyn Widget> = match flavour {
+                SplitFlavour::Prose => Box::new(writing_column(
                     &field.doc,
                     &editor_cw,
                     &editor_typo,
@@ -174,8 +217,17 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.work_unique_id(),
                     // The container's own prose, read-only while it is in the trash.
                     tab.open_doc.trashed.get(),
+                    // The container itself: its own prose is one more item's text on
+                    // this page, and a lane must be able to reach it by name like any
+                    // row's.
+                    Some(tab.item_id()),
+                    // Every mapped document on this page guesses its height until it
+                    // has laid out, including the container's own prose: the page's
+                    // height is the sum of these claims, and most of them are below
+                    // the fold.
+                    true,
                 )),
-                SplitFlavour::Synopsis => col.child(synopsis_column(
+                SplitFlavour::Synopsis => Box::new(synopsis_column(
                     &field.doc,
                     &editor_cw,
                     &editor_typo,
@@ -202,9 +254,23 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // One synopsis per stream row, so there is no single "the"
                     // caret for the tab to remember. Same reason as the absent sink.
                     Option::None,
+                    // The container itself, like its prose column above.
+                    Some(tab.item_id()),
+                    // Every mapped document on this page guesses its height until it
+                    // has laid out, including the container's own prose: the page's
+                    // height is the sum of these claims, and most of them are below
+                    // the fold.
+                    true,
                 )),
             };
-            col = col.child(vspace(6.0));
+            col = col
+                .child(crate::margin_lane::RowExtent::boxed(
+                    tab.item_id(),
+                    extents.clone(),
+                    page_scroll.clone(),
+                    own_col,
+                ))
+                .child(vspace(6.0));
         }
 
         col = col
@@ -213,18 +279,18 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             .child(centered(add_button(&vm), &header_cw))
             .child(vspace(28.0));
     }
-    // Two of a container's segments come through here, and they are different
-    // pages of different heights: only the one about to be shown restores the
-    // remembered offset.
-    let segment = match flavour {
-        SplitFlavour::Prose => crate::tabs::shared::segments::SEG_MANUSCRIPT,
-        SplitFlavour::Synopsis => crate::tabs::shared::segments::SEG_SYNOPSIS,
-    };
-    let (area, port, _page) = crate::tabs::shared::panes::writing_page_scroll(
-        tab,
-        crate::tabs::shared::panes::segment_will_show(tab, segment),
-    );
-    area.child(col.child(port))
+    crate::tabs::Boxed::new(match mapped {
+        Some((vm, extents, page)) => Box::new(crate::tabs::shared::panes::laned_stream(
+            tab, &vm, flavour, extents, page, col,
+        )) as Box<dyn Widget>,
+        // No stream view-model, so no rows and nothing to map -- and no page was
+        // built above either, so this one gets its own.
+        None => {
+            let (area, port, _binding) =
+                crate::tabs::shared::panes::writing_page_scroll(tab, will_show);
+            Box::new(area.child(col.child(port))) as Box<dyn Widget>
+        }
+    })
 }
 
 /// The gutter this page reserves: the margin's full column once anything on the
@@ -462,6 +528,12 @@ fn stream_row(
                         // Each row answers for itself: a stream shows many items, and only the
                         // ones actually in the trash are locked.
                         doc.trashed.get(),
+                        // Which row this is. The reason the registry carries it at all:
+                        // a lane maps every row on this page at once, and all but one
+                        // of them will never have focus.
+                        Some(id),
+                        // See the container's own column above.
+                        true,
                     ));
                 }
             }
@@ -492,6 +564,10 @@ fn stream_row(
                         // One synopsis per stream row, so there is no single "the"
                         // caret for the tab to remember. Same reason as the absent sink.
                         Option::None,
+                        // Which row this is — see the prose flavour above.
+                        Some(id),
+                        // See the container's own column above.
+                        true,
                     ));
                 }
             }

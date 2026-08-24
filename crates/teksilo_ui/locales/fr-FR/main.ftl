@@ -2373,3 +2373,32 @@ help-concept-round-trip-marks = Marqueurs d’aller-retour
 # Le contrôle d'attribution de l'épigraphe. Voir tabs/shared/panes.rs::attribution_control.
 epigraph-mark-attribution = Ligne de source
 epigraph-mark-attribution-tip = Marque la ligne où se trouve le curseur comme la source de la citation, pour qu’elle s’imprime en attribution
+pace-summary-dont-show = Ne plus afficher à l'ouverture
+
+## Margin lane — the strip beside the scrollbar that maps a document
+margin-lane-name = Repères de marge
+margin-lane-provider-comments = Commentaires
+margin-lane-provider-comments-hint = Où une note est attachée au texte
+margin-lane-provider-search = Occurrences trouvées
+margin-lane-provider-search-hint = Toutes les occurrences de votre dernière recherche, où qu'elles soient dans le document
+margin-lane-provider-boundaries = Début de chaque document
+margin-lane-provider-boundaries-hint = Un filet en tête de chaque scène d'un flux, pour savoir où vous êtes
+margin-lane-search-hit = { $text }, occurrence { $index } sur { $total }
+margin-lane-search-current = { $text }, occurrence { $index } sur { $total }, celle où vous êtes
+margin-lane-boundary = Début de { $title }
+margin-lane-boundary-untitled = un document sans titre
+settings-page-margin-lane = Repères de marge
+settings-desc-margin-lane = La bande le long de la barre de défilement, et ce qu'elle montre
+settings-margin-lane-enabled = Afficher la marge de repères
+settings-margin-lane-enabled-hint = Le même interrupteur que Affichage ▸ Repères de marge. Elle ne dit jamais que quelque chose ne va pas.
+settings-group-margin-lane-marks = Ce qu'elle signale
+settings-margin-lane-no-providers = Rien ne marque encore la marge.
+settings-group-margin-lane-texture = Texture des dialogues
+settings-margin-lane-texture = Afficher la texture des dialogues
+settings-margin-lane-texture-hint = Une barre par paragraphe : sa longueur, et la part qui est parlée. Ajoute 28 dp. Non mesurée pour les langues sans convention établie.
+settings-group-margin-lane-surfaces = Où elle apparaît
+settings-margin-lane-surface-editor = Éditeur de texte
+settings-margin-lane-surface-stream = Flux
+settings-margin-lane-surface-search-preview = Aperçu de recherche
+settings-margin-lane-surfaces-hint = Un synopsis est rarement assez long pour défiler, et le mode sans distraction existe pour n'avoir rien à côté des mots.
+menu-margin-lane = Repères de &marge

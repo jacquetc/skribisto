@@ -93,6 +93,12 @@ pub(super) fn manuscript_page(
                 // A trashed item's synopsis is read-only for the same reason its prose
                 // is — see `writing_column`.
                 tab.open_doc.trashed.get(),
+                // This tab's item, so a lane on the synopsis surface can reach this
+                // editor by name. The Top layout and the Side layout below are two
+                // renders of the same field, and only one is ever mounted.
+                Some(tab.item_id()),
+                // See the prose column above.
+                false,
             ),
         ));
     }
@@ -123,6 +129,11 @@ pub(super) fn manuscript_page(
             // statement, not a guard: before this the content beneath it was built
             // by the same editable render path as any other tab.
             tab.open_doc.trashed.get(),
+            // This tab's own item, so the margin lane can reach this editor by
+            // name rather than through focus.
+            Some(tab.item_id()),
+            // A tab's editor is on screen and lays out on its first frame.
+            false,
         ));
     }
 
@@ -130,7 +141,16 @@ pub(super) fn manuscript_page(
     // on screen: the two layouts each build one, and the tab holds a single caret and
     // a single scroll position. The port mounted at the end of the column is what
     // settles that on activation.
-    let page = area.child(col.child(port));
+    //
+    // The lane goes **inside** the find banner's wrapper, beside the page it maps:
+    // the banner is a strip above the whole editor, and a lane running past it would
+    // be mapping an extent that starts below its own top.
+    let page = super::laned(
+        tab,
+        crate::margin_lane::LaneSurface::Editor,
+        area,
+        col.child(port),
+    );
     let body: Box<dyn Widget> = match find {
         Some(find) => Box::new(crate::tabs::shared::editor::find_banner_over(find, page)),
         None => Box::new(page),
@@ -188,6 +208,9 @@ pub(super) fn side_synopsis_pane(tab: &ContentTab, sync: SideSync) -> impl Widge
                     // A trashed item's synopsis is read-only for the same reason its prose
                     // is — see `writing_column`.
                     tab.open_doc.trashed.get(),
+                    // See the Top layout's call above.
+                    Some(tab.item_id()),
+                    false,
                 ))),
         ),
         None => Box::new(vspace(0.0)),

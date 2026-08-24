@@ -66,6 +66,7 @@ fn every_built_in_pane() -> Vec<Pane> {
         Pane::EditorBehavior,
         Pane::Goals,
         Pane::Games,
+        Pane::MarginLane,
         Pane::Corkboard,
         Pane::Dictionaries,
         Pane::Autosave,

@@ -90,6 +90,9 @@ fn column_with(
         None,
         None,
         read_only,
+        // No project around this tree, so no item to name.
+        None,
+        false,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);
@@ -188,6 +191,9 @@ fn prose_column_playing(
         None,
         None,
         // No project around this tree to tally typing against.
+        None,
+        false,
+        // No project around this tree, so no item to name.
         None,
         false,
     );
@@ -291,6 +297,9 @@ fn a_game_stops_typing_and_not_the_programmatic_api() {
         None,
         None,
         // No project around this tree to tally typing against.
+        None,
+        false,
+        // No project around this tree, so no item to name.
         None,
         false,
     );
