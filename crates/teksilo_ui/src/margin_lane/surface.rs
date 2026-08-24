@@ -272,6 +272,73 @@ fn row_weight_from_chars(chars: usize) -> f32 {
     chars.max(1) as f32
 }
 
+/// What one square image is worth, in characters.
+///
+/// **An image is one character.** It occupies a single `U+FFFC` in the document,
+/// so a scene that is a line of prose and a full-page plate weighs twenty-two --
+/// and takes twenty-two characters' worth of the strip while taking most of a
+/// screen to scroll past. Its marks crowd into a sliver and, in a stream, every
+/// other scene is handed the room it should have had.
+///
+/// So an image is weighed by what it will occupy instead. Its **aspect ratio** is
+/// stored, exact, and does not move -- which is the same standard the character
+/// count is held to, and the reason the laid-out height is not used here even
+/// though it is the number actually wanted: heights are revised as a reader
+/// arrives, and a map that moves is the bug this module exists to record.
+///
+/// The constant is a nominal manuscript measure rather than a measurement: a
+/// column is set around sixty characters wide, and is about twenty-five lines
+/// tall in its own width -- so a square image is worth about sixty times
+/// twenty-five. A tall image is worth proportionally more, a wide one less. It is
+/// an approximation and says so; what it replaces was not an approximation but a
+/// mistake.
+const CHARS_PER_SQUARE_IMAGE: f32 = 1500.0;
+
+/// Most an image may be worth, in characters.
+///
+/// A very tall thumbnail -- a map, a family tree -- would otherwise take a slice
+/// of the lane larger than a chapter's, and a strip that is mostly one plate has
+/// stopped mapping the book. Ten square images' worth is already an extreme page.
+const MAX_IMAGE_CHARS: f32 = 10.0 * CHARS_PER_SQUARE_IMAGE;
+
+/// What one image is worth, in characters. See [`CHARS_PER_SQUARE_IMAGE`].
+///
+/// Zero for an image with no stored width: the aspect ratio is the whole of what
+/// this reads, and an image that does not say how wide it is has not said
+/// anything. Zero rather than a default, because a guessed shape would put a
+/// scene's marks somewhere specific and wrong.
+fn image_chars(width: u32, height: u32) -> f32 {
+    if width == 0 {
+        return 0.0;
+    }
+    let aspect = height as f32 / width as f32;
+    (aspect * CHARS_PER_SQUARE_IMAGE).min(MAX_IMAGE_CHARS)
+}
+
+/// A row's weight: its characters, plus what its images will occupy.
+///
+/// Walks the same flow snapshot the texture does, and for the same reason -- one
+/// lock and one pass, where `blocks()` would re-lock per block. Nested frames are
+/// not descended, matching [`texture::units`]: a table's cells are not prose and
+/// do not carry the marks this weighs for.
+fn row_weight(doc: &teksilo::text_document::TextDocument) -> f32 {
+    use teksilo::text_document::{FlowElementSnapshot, FragmentContent};
+    let mut chars = 0usize;
+    let mut images = 0.0f32;
+    for element in doc.snapshot_flow().elements {
+        let FlowElementSnapshot::Block(block) = element else {
+            continue;
+        };
+        chars += block.text.chars().count();
+        for fragment in block.fragments {
+            if let FragmentContent::Image { width, height, .. } = fragment {
+                images += image_chars(width, height);
+            }
+        }
+    }
+    row_weight_from_chars(chars) + images
+}
+
 /// One switch a lane's context menu offers: what to call it, and the flag itself.
 ///
 /// A pair rather than a widget so the list can be tested. What has to hold is
@@ -890,7 +957,7 @@ impl LaneHost {
         {
             return weight;
         }
-        let weight = row_weight_from_chars(row.doc.character_count());
+        let weight = row_weight(&row.doc);
         self.weights
             .borrow_mut()
             .insert(row.item, (revision, weight));
@@ -1748,6 +1815,58 @@ mod tests {
             (end.offset + end.scale - 1.0).abs() < 1e-4,
             "the last slice ends at the end of the map"
         );
+    }
+
+    /// **A picture takes room on the strip, because it takes room on the page.**
+    ///
+    /// An image is one `U+FFFC` in the document, so a scene of one line and a
+    /// plate weighed twenty-two characters and was handed twenty-two characters'
+    /// worth of the lane -- while taking most of a screen to scroll past. Its
+    /// marks crowded into a sliver and, in a stream, the scenes around it were
+    /// given the room it should have had.
+    #[test]
+    fn a_scene_that_is_mostly_picture_gets_room_on_the_strip() {
+        let prose = teksilo::text_document::TextDocument::new();
+        prose.set_djot("A line of prose here.").expect("set_djot");
+        let plated = teksilo::text_document::TextDocument::new();
+        plated
+            // With its display size, which is how this application writes an
+            // image reference -- and the whole of what the weight reads.
+            .set_djot("A line of prose here.\n\n![a plate](plate.png){width=600 height=900}\n")
+            .expect("set_djot");
+        // `set_djot` is a long operation, so the fixture is settled before it is
+        // measured -- the same trap the resolve fixtures record.
+        for _ in 0..50 {
+            if plated.block_count() > 1 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        assert!(plated.block_count() > 1, "the plate never arrived");
+
+        let bare = row_weight(&prose);
+        let with_plate = row_weight(&plated);
+        assert!(
+            with_plate > bare * 2.0,
+            "the plate has to be worth more than the one character it occupies: \
+             {bare} vs {with_plate}"
+        );
+    }
+
+    /// And not unboundedly. A very tall plate -- a map, a family tree -- would
+    /// otherwise take more of the lane than a chapter, and a strip that is mostly
+    /// one picture has stopped mapping the book.
+    #[test]
+    fn a_very_tall_picture_is_still_bounded() {
+        assert!(
+            (image_chars(100, 100_000) - MAX_IMAGE_CHARS).abs() < 1.0,
+            "a tower of an image is capped"
+        );
+        assert!(
+            image_chars(1000, 100) < image_chars(100, 1000),
+            "a wide plate is worth less than a tall one"
+        );
+        assert_eq!(image_chars(0, 500), 0.0, "a width of zero says nothing");
     }
 
     /// **The map does not move when the pixel heights are revised.**
