@@ -443,6 +443,38 @@ pub fn registered_for(surface: LaneSurface) -> Vec<LaneProviderSpec> {
     })
 }
 
+/// Every enabled-*capable* provider's [`LaneRefresh::OnSignal`] counter, mixed
+/// into one number.
+///
+/// Separate from [`registered_for`] because of where it is read: the lane's
+/// recompute guard, on **every** layout pass, including the ones the guard then
+/// turns away. `registered_for` clones each spec -- an id `String` and four `Rc`s
+/// apiece -- so asking it this question would allocate once per provider per
+/// frame for the whole of a scroll, to compute a number that usually has not
+/// changed.
+///
+/// The surface filter is the same one the resolve pass applies, so a provider
+/// that could never draw here cannot make this move either. The writer's own
+/// switch is deliberately *not* consulted: reading it would need the store, this
+/// is called from layout, and a counter that ticks while a provider is off costs
+/// one wasted resolve rather than a wrong one.
+pub(crate) fn refresh_generations(surface: LaneSurface) -> u64 {
+    PROVIDERS.with(|reg| {
+        let mut mixed: u64 = 0;
+        for registered in reg.borrow().iter() {
+            if !registered.spec.surfaces.contains(&surface) {
+                continue;
+            }
+            if let LaneRefresh::OnSignal(signal) = &registered.spec.refresh {
+                // Rotate before mixing, so two providers whose counters swap
+                // values are not one unchanged number.
+                mixed = mixed.rotate_left(17) ^ signal.get();
+            }
+        }
+        mixed
+    })
+}
+
 /// How much width a lane will take on `surface`, right now.
 ///
 /// **What a layout has to reserve for it, and could not ask before.** The strip

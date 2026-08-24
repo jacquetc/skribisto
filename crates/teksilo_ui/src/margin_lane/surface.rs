@@ -538,18 +538,19 @@ impl LaneHost {
         h.add(query::active_query().generation());
         h.add(height.to_bits() as u64);
         h.add(self.inputs.rows.extents().generation().get());
-        // Every provider that named a counter to watch. Once per pass rather than
-        // per row: a provider's trigger is a property of the provider, not of the
-        // document it is being asked about.
+        // Every provider that named a counter to watch, as one number. Once per
+        // pass rather than per row: a provider's trigger is a property of the
+        // provider, not of the document it is being asked about.
         //
-        // The binding above is what gets this pass to run; this is what stops the
-        // guard below deciding nothing has changed once it does. Both are needed,
-        // and either alone is silent.
-        for spec in super::registered_for(self.inputs.surface) {
-            if let super::LaneRefresh::OnSignal(signal) = &spec.refresh {
-                h.add(signal.get());
-            }
-        }
+        // The binding in `build` is what gets this pass to run at all; this is
+        // what stops the guard below deciding nothing has changed once it does.
+        // Both are needed, and either alone is silent.
+        //
+        // Through `refresh_generations` rather than `registered_for`, which
+        // clones a spec per provider: this line is above the guard, so it runs on
+        // every layout pass of a scroll, and it must not allocate to say
+        // "nothing moved".
+        h.add(super::refresh_generations(self.inputs.surface));
         for MappedRow { row, .. } in rows {
             h.add(row.item);
             h.add(row.doc.content_revision());
