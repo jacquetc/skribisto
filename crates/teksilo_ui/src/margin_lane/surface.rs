@@ -61,6 +61,11 @@ pub struct LaneRow {
     /// surface has none, and the comments provider then simply contributes
     /// nothing rather than falling back to the stored offsets, which lag.
     pub comments: Option<crate::comments::binding::CommentBinding>,
+    /// This document's live spell session, for the misspelling marks. `None`
+    /// where the surface has none, and the provider then contributes nothing
+    /// rather than re-checking the document itself -- which would flag the word
+    /// the caret is in, the one thing the editor deliberately does not do.
+    pub spell: Option<Rc<crate::spellcheck::SpellSession>>,
     /// How this item marks speech, for the texture. Resolved once: it changes
     /// only when the project's language or house quote style does, and both of
     /// those rebuild the surfaces anyway.
@@ -474,6 +479,13 @@ impl LaneHost {
                     .as_ref()
                     .map_or(0, |c| c.view_model().model().structure_signal().get()),
             );
+            // The spell session's own counter, for the same reason the comments'
+            // is here: the flagged set moves without the document changing --
+            // installing a dictionary, muting a language, or the caret leaving
+            // the word it was exempting. Bound to the document revision alone,
+            // a writer clicking away from a word they had just typed would
+            // watch the page squiggle it and the lane not.
+            h.add(row.spell.as_ref().map_or(0, |s| s.generation()));
             h.add(
                 self.inputs
                     .format
@@ -571,6 +583,9 @@ impl LaneHost {
 
             let locate = locate::locator(handle.clone(), extent);
             let anchors = comment_anchors(row.comments.as_ref());
+            // The pushed set, so the lane marks what the reader can see
+            // underlined and not the word they are still typing.
+            let flagged = row.spell.as_ref().map(|s| s.flagged()).unwrap_or_default();
             let call = LaneCall {
                 app_ctx: &self.inputs.app_ctx,
                 ids: &self.inputs.ids,
@@ -578,6 +593,7 @@ impl LaneHost {
                 doc: &row.doc,
                 item_id: row.item,
                 comment_anchors: &anchors,
+                misspellings: &flagged,
                 locate: &locate,
             };
             #[cfg(feature = "debug-traces")]
@@ -1514,6 +1530,7 @@ mod tests {
                 item,
                 doc: doc.clone(),
                 comments: None,
+                spell: None,
                 markers: DialogueMarkers::none(),
             })
         });
@@ -1649,6 +1666,7 @@ mod tests {
                 item,
                 doc: doc.clone(),
                 comments: None,
+                spell: None,
                 markers: DialogueMarkers::none(),
             })
         });

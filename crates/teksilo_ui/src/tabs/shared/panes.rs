@@ -228,6 +228,11 @@ pub(crate) fn laned_stream(
     } else {
         tab.open_doc.comment_binding_main()
     };
+    let own_spell = if synopsis {
+        tab.open_doc.spell_synopsis()
+    } else {
+        tab.open_doc.spell_main()
+    };
     // One backend read per item, kept: a hundred rows would otherwise pay three
     // reads each on every recompute to learn something that changes only when the
     // project's language or house quote style does.
@@ -250,6 +255,7 @@ pub(crate) fn laned_stream(
                     item,
                     doc: own.clone()?,
                     comments: own_comments.clone(),
+                    spell: own_spell.clone(),
                     markers: markers_for(item),
                 });
             }
@@ -263,6 +269,13 @@ pub(crate) fn laned_stream(
                 item,
                 doc: field.doc.clone(),
                 comments: vm.row_comments(item, flavour),
+                // The row's own session, off the shared store -- the very one its
+                // editor squiggles from, so the lane cannot disagree with the page.
+                spell: if synopsis {
+                    doc.spell_synopsis()
+                } else {
+                    doc.spell_main()
+                },
                 markers: markers_for(item),
             })
         }) as Rc<dyn Fn(u64) -> Option<LaneRow>>
@@ -301,6 +314,7 @@ fn lane_inputs(
     // against — see [`LaneSurface::all`](crate::margin_lane::LaneSurface::all).
     let doc = tab.main().map(|f| f.doc.clone());
     let comments = tab.open_doc.comment_binding_main();
+    let spell = tab.open_doc.spell_main();
     let row = crate::margin_lane::LaneRow {
         item,
         // An empty document rather than no lane: a tab whose field the matrix does
@@ -308,6 +322,7 @@ fn lane_inputs(
         // the correct picture of a page with no prose on it.
         doc: doc.unwrap_or_default(),
         comments,
+        spell,
         // Resolved once, not per frame: it changes only when the project's language
         // or its house quote style does, and both rebuild these surfaces.
         markers: crate::margin_lane::texture::markers_for_item(

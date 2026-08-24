@@ -213,6 +213,18 @@ pub struct LaneContext<'a> {
     /// overwritten. Half of a mark's accessibility node identity, and all of what
     /// may merge with what.
     pub group: u16,
+    /// The misspellings **currently shown** in this document, as
+    /// `(character offset, length)`.
+    ///
+    /// Passed in for the reason the comment anchors are: these are the live set,
+    /// filtered by the caret exemption, so a provider marks exactly what the
+    /// reader can see underlined. A provider re-running the spell check itself
+    /// would flag the word being typed, which the editor deliberately does not.
+    ///
+    /// Empty where the surface has no spell session, and empty for a document
+    /// whose language has no dictionary installed -- which is not the same as
+    /// "no mistakes", and is why a provider must not read anything into it.
+    pub misspellings: &'a [(usize, usize)],
     /// **A document character offset to a fraction of the mapped extent.**
     ///
     /// The host owns this conversion and providers must not reinvent it. It

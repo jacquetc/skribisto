@@ -9,13 +9,26 @@
 //! the enabled check and the draw order one code path for everybody, so a bug that
 //! would only show up for an extension shows up here first.
 //!
-//! | Provider | Column | Shape | Where |
-//! |---|---|---|---|
-//! | Comments | Right | Square | Editor, stream |
-//! | Search hits | Centre, and full width for the one you are on | Bar | Every surface |
-//! | Document boundaries | Left | Rule | Streams only |
+//! | Provider | Column | Shape | Where | Default |
+//! |---|---|---|---|---|
+//! | Comments | Right | Square | Editor, stream | on |
+//! | Search hits | Centre, and full width for the one you are on | Bar | Every surface | on |
+//! | Document boundaries | Left | Rule | Streams only | on |
+//! | Spelling | Left | Dot | Editor, stream | **off** |
 //!
-//! Different columns, so none of them can ever fight another for a pixel.
+//! ## The left column is shared, and that is the first time
+//!
+//! Three providers meant three columns, and none could ever fight another for a
+//! pixel. A fourth cannot have that: there are three columns, and spelling has to
+//! go somewhere. It takes the left, which is the emptiest -- document boundaries
+//! are one mark per document and only on a stream, where spelling is per word and
+//! everywhere.
+//!
+//! What keeps them apart is the thing that was always meant to: the shape. A
+//! hairline rule with a notch is not a dot, and the two are told apart by a reader
+//! who cannot separate their hues. Where they do land on the same pixel -- a
+//! misspelling in the first line of a scene -- the boundary draws over the dot,
+//! because a later group paints last and the division is the more structural fact.
 
 use std::rc::Rc;
 
@@ -44,6 +57,7 @@ pub fn install() -> Vec<LaneProviderHandle> {
         (format!("{NAMESPACE}.comments"), comments()),
         (format!("{NAMESPACE}.search"), search()),
         (format!("{NAMESPACE}.boundaries"), boundaries()),
+        (format!("{NAMESPACE}.spelling"), spelling()),
     ]
     .into_iter()
     .filter_map(
@@ -104,6 +118,103 @@ fn comments() -> LaneProviderSpec {
                 .collect()
         }),
     }
+}
+
+// ── spelling ─────────────────────────────────────────────────────────────────
+
+/// Where the spell checker has flagged a word.
+///
+/// **Off by default**, and the only built-in that is. The others mark things a
+/// writer put there or went looking for; this one marks a machine's opinion of
+/// their prose, and a lane that lights up with it unasked would be a proofreading
+/// tool wearing a manuscript's clothes. A writer who wants it turns it on -- from
+/// Settings, or from the lane's own context menu, where they can see the effect.
+///
+/// Reads [`LaneContext::misspellings`], never the checker: the set handed down is
+/// the one the editor is showing, filtered by the caret exemption, so the lane
+/// cannot flag the word being typed after the page has stopped. Empty where the
+/// surface keeps no spell session, and empty for a language with no dictionary
+/// installed -- which is not "no mistakes", and is why nothing here says so.
+///
+/// A dot per flagged word, at the word rather than spanning it. Spanning is what
+/// a comment does, and it is meaningless here: `locate` answers with the middle of
+/// the *line* an offset sits on, so both ends of a word inside one line give the
+/// same fraction and the span collapses. A point mark is grown to
+/// `MIN_MARK_HEIGHT` around its position, which is the reading that was wanted.
+fn spelling() -> LaneProviderSpec {
+    LaneProviderSpec {
+        id: "spelling".to_string(),
+        label: Rc::new(|| crate::tr!(margin_lane_provider_spelling())),
+        hint: Rc::new(|| crate::tr!(margin_lane_provider_spelling_hint())),
+        column: LaneColumn::Left,
+        // A low-emphasis finding, which is exactly what this is. Not a square:
+        // filled shapes are what a person put there.
+        shape: LaneShape::Dot,
+        palette_slot: 1,
+        surfaces: &[LaneSurface::Editor, LaneSurface::Stream],
+        default_on: false,
+        // Driven by the host's recompute guard, which carries the session's own
+        // generation: the flagged set moves without the document changing --
+        // a dictionary installed, a language muted, the caret leaving the word it
+        // was exempting -- and `OnDocumentChange` would miss every one of those.
+        refresh: LaneRefresh::Manual,
+        marks: Rc::new(|ctx| {
+            // Nothing flagged, nothing to read: the guard is what keeps a
+            // document with no misspellings -- or a language with no dictionary
+            // -- from paying for the text below.
+            if ctx.misspellings.is_empty() {
+                return Vec::new();
+            }
+            // Once per row, not once per mark. The offsets are character indices
+            // and there is no range read on a document, so the alternative is an
+            // O(document) extraction per flagged word.
+            let text: Vec<char> = ctx
+                .doc
+                .to_plain_text()
+                .unwrap_or_default()
+                .chars()
+                .collect();
+            ctx.misspellings
+                .iter()
+                .filter_map(|&(start, length)| {
+                    let at = (ctx.locate)(start)?;
+                    Some(LaneMark {
+                        // The offset, not an ordinal: a mark's id has to hold
+                        // still across repaints or a screen reader is handed a
+                        // tree that renumbers itself, and inserting a word above
+                        // renumbers every ordinal below it.
+                        id: start as u64,
+                        span: LaneSpan::at(at),
+                        column: LaneColumn::Left,
+                        shape: LaneShape::Dot,
+                        color: ctx.color,
+                        label: crate::tr!(margin_lane_spelling(
+                            word = word_at(&text, start, length)
+                        )),
+                        group: ctx.group,
+                    })
+                })
+                .collect()
+        }),
+    }
+}
+
+/// The flagged word itself, for the mark's accessible name.
+///
+/// A screen reader hearing "possible misspelling" fourteen times learns nothing;
+/// hearing the word is the whole content of the mark. Sliced from the document's
+/// own text rather than carried on the range, because the ranges are shifted by
+/// every edit and a word captured when the range was made would be the one that
+/// used to be there.
+///
+/// Clamped rather than trusted: an offset can outlive the text it pointed into by
+/// the width of one frame, and a mark that panics is worse than one that says
+/// nothing.
+fn word_at(text: &[char], start: usize, length: usize) -> String {
+    let end = start.saturating_add(length).min(text.len());
+    text.get(start..end)
+        .map(String::from_iter)
+        .unwrap_or_default()
 }
 
 // ── search hits ──────────────────────────────────────────────────────────────

@@ -405,6 +405,7 @@ fn call<'a>(
         doc,
         item_id: 1,
         comment_anchors: anchors,
+        misspellings: &[],
         locate,
     }
 }
@@ -539,10 +540,12 @@ fn the_comments_provider_spans_the_text_a_thread_is_attached_to() {
 /// entry, so the second would silently unregister the first with no error and
 /// nothing to grep for.
 #[test]
-fn the_three_built_in_providers_all_install_together() {
+fn the_built_in_providers_all_install_together() {
+    const BUILT_IN: [&str; 4] = ["comments", "search", "boundaries", "spelling"];
+
     let _handles = install_builtin_providers();
     let ids: Vec<String> = registered().into_iter().map(|s| s.id).collect();
-    for expected in ["comments", "search", "boundaries"] {
+    for expected in BUILT_IN {
         assert!(
             ids.iter().any(|id| id == expected),
             "'{expected}' is missing; got {ids:?}"
@@ -551,19 +554,38 @@ fn the_three_built_in_providers_all_install_together() {
 
     // Distinct namespaces, which is what the previous assertion depends on and what
     // a shared one would silently break.
-    let namespaces: std::collections::BTreeSet<String> = ["comments", "search", "boundaries"]
-        .into_iter()
-        .filter_map(namespace_of)
-        .collect();
-    assert_eq!(namespaces.len(), 3, "got {namespaces:?}");
+    let namespaces: std::collections::BTreeSet<String> =
+        BUILT_IN.into_iter().filter_map(namespace_of).collect();
+    assert_eq!(namespaces.len(), BUILT_IN.len(), "got {namespaces:?}");
 
-    // And each takes a different column, so none can ever fight another for a pixel.
-    let columns: std::collections::BTreeSet<String> = registered()
+    // Three columns and four providers, so one column is shared and the shape is
+    // what keeps its occupants apart. That is the invariant now: a pair may share
+    // a column, and then it may not share a shape.
+    let mut seen: std::collections::BTreeSet<(String, String)> = Default::default();
+    for spec in registered()
         .into_iter()
-        .filter(|s| ["comments", "search", "boundaries"].contains(&s.id.as_str()))
-        .map(|s| format!("{:?}", s.column))
+        .filter(|s| BUILT_IN.contains(&s.id.as_str()))
+    {
+        let key = (format!("{:?}", spec.column), format!("{:?}", spec.shape));
+        assert!(
+            seen.insert(key.clone()),
+            "two built-ins draw the same shape in the same column: {key:?}"
+        );
+    }
+
+    // Three on, one off. The budget is deliberate: a lane that lights up with
+    // everything is a cockpit, and spelling marks a machine's opinion of the
+    // writer's prose rather than anything they put there.
+    let on: Vec<String> = registered()
+        .into_iter()
+        .filter(|s| BUILT_IN.contains(&s.id.as_str()) && s.default_on)
+        .map(|s| s.id)
         .collect();
-    assert_eq!(columns.len(), 3, "got {columns:?}");
+    assert_eq!(on.len(), 3, "got {on:?}");
+    assert!(
+        !on.contains(&"spelling".to_string()),
+        "spelling must be off"
+    );
 }
 
 /// Boundaries are a stream's business and nothing else's: a tab holds one document,
@@ -585,6 +607,55 @@ fn document_boundaries_appear_in_a_stream_and_nowhere_else() {
             "boundaries must not appear on {surface:?}"
         );
     }
+}
+
+/// **The spelling provider marks what it is handed, and nothing else.**
+///
+/// It reads the set the editor is already showing rather than checking the
+/// document itself, which is the whole reason it cannot flag the word the writer
+/// is mid-way through typing: the caret exemption has already been applied by the
+/// time this sees it. Handed nothing -- no session on this surface, or a language
+/// with no dictionary -- it contributes nothing, and says nothing about why.
+#[test]
+fn spelling_marks_exactly_the_misspellings_it_is_given() {
+    let _handles = install_builtin_providers();
+    let (handle, _tree) = laid_out(SCENE);
+    let locate = teksilo_ui::margin_lane::locator(handle, LaneExtent::WHOLE);
+
+    let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+    let ids = teksilo_ui::app_ids::AppIds::new();
+    let doc = TextDocument::new();
+    doc.set_plain_text(SCENE).expect("set_plain_text");
+    let anchors: Vec<CommentAnchor> = Vec::new();
+
+    // Nothing handed down: no marks, and emphatically not a document scan.
+    let quiet = call(&app_ctx, &ids, &doc, &anchors, &locate, LaneSurface::Editor);
+    assert!(
+        quiet
+            .run(&spec_named("spelling"), Color::from_hex("#009E73"), 3)
+            .is_empty(),
+        "with no session there is nothing to mark"
+    );
+
+    // Two flagged words, two marks, each a point at its word. Not a span: the
+    // locator answers with the middle of the line an offset is on, so both ends
+    // of a word inside one line are the same fraction.
+    let flagged = [(0usize, 5usize), (20, 4)];
+    let mut c = call(&app_ctx, &ids, &doc, &anchors, &locate, LaneSurface::Editor);
+    c.misspellings = &flagged;
+    let marks = c.run(&spec_named("spelling"), Color::from_hex("#009E73"), 3);
+    assert_eq!(marks.len(), 2, "one mark per flagged word");
+    assert!(
+        marks[0].span.start < marks[1].span.start,
+        "a word later in the prose marks lower down: {:?} then {:?}",
+        marks[0].span,
+        marks[1].span
+    );
+    // The offset is the id, so inserting a word above does not renumber every
+    // mark below it -- which would hand a screen reader a tree that will not
+    // hold still.
+    assert_eq!(marks[0].id, 0);
+    assert_eq!(marks[1].id, 20);
 }
 
 /// Each row of a stream maps its own document onto its own slice of one lane, and a
@@ -991,6 +1062,7 @@ fn an_extension_can_build_a_context_of_its_own() {
         doc: &doc,
         item_id: 7,
         comment_anchors: &anchors,
+        misspellings: &[],
         color: Color::from_hex("#009E73"),
         group: 3,
         locate: &locate,

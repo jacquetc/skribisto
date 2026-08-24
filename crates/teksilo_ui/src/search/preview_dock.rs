@@ -217,6 +217,11 @@ fn laned_band(
             item,
         ),
         doc,
+        // No spell session either, and for the reason the comment anchors give
+        // below: this band mounts no highlight layer, so there is nothing keeping
+        // a set of live offsets ticking. A preview is for finding the hit, not
+        // for proofreading.
+        spell: None,
         // **No comment anchors here, and not because the document has none.** The
         // live offsets belong to an editor's own highlight session, and this band
         // mounts no comment layer to keep one ticking; the stored offsets are only

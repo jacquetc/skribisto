@@ -422,6 +422,14 @@ pub struct SpellSession {
     all_ranges: RefCell<Vec<RangeHighlight>>,
     /// The last set pushed, so an unchanged recompute skips the repaint (`RangeHighlight: Eq`).
     last_ranges: RefCell<Vec<RangeHighlight>>,
+    /// Bumped whenever the pushed set actually changes.
+    ///
+    /// A counter rather than the set, so a reader can ask "has this moved?" for
+    /// the price of a load. The margin lane's recompute guard is the caller:
+    /// it runs in a layout pass and asks that question about every mapped row on
+    /// every dirty frame, and comparing the flagged sets there would be a clone
+    /// per row per frame to learn what a `u64` already says.
+    generation: Cell<u64>,
     /// Identity `(start, length)` of the range the caret exempted at the last recompute, or
     /// `None` if it exempted nothing. The caret ticks every time it *moves*, but it stays inside
     /// the same word across a whole burst of keystrokes — and while it does, the exempted range
@@ -472,6 +480,7 @@ impl SpellSession {
             focused: RefCell::new(None),
             all_ranges: RefCell::new(Vec::new()),
             last_ranges: RefCell::new(Vec::new()),
+            generation: Cell::new(0),
             last_exempt: Cell::new(None),
             #[cfg(test)]
             exemption_recomputes: Cell::new(0),
@@ -505,6 +514,28 @@ impl SpellSession {
         if active && !was {
             self.content_dirty.store(true, Ordering::Relaxed);
         }
+    }
+
+    /// How many times the shown set has changed. See [`Self::generation`]'s field.
+    pub(crate) fn generation(&self) -> u64 {
+        self.generation.get()
+    }
+
+    /// Every misspelling **currently shown**, as `(character offset, length)`.
+    ///
+    /// The pushed set, not the cached one: the word the caret sits in is exempt
+    /// from the squiggle while it is being typed, and a margin mark for it would
+    /// be the same interruption arriving by a different route. What this returns
+    /// is exactly what the reader can see underlined.
+    ///
+    /// For the margin lane, which marks them out at the edge of the page so a
+    /// writer can see where the flags cluster without reading for them.
+    pub(crate) fn flagged(&self) -> Vec<(usize, usize)> {
+        self.last_ranges
+            .borrow()
+            .iter()
+            .map(|r| (r.start, r.length))
+            .collect()
     }
 
     /// Whether `word` is currently flagged as a misspelling by this document's
@@ -672,6 +703,7 @@ impl SpellSession {
             .cloned()
             .collect();
         if *self.last_ranges.borrow() != next {
+            self.generation.set(self.generation.get().wrapping_add(1));
             self.doc.set_session_ranges(self.session, next.clone());
             *self.last_ranges.borrow_mut() = next;
         }

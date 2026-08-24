@@ -130,6 +130,7 @@ pub struct LaneCall<'a> {
     pub doc: &'a teksilo::text_document::TextDocument,
     pub item_id: common::types::EntityId,
     pub comment_anchors: &'a [super::CommentAnchor],
+    pub misspellings: &'a [(usize, usize)],
     pub locate: &'a dyn Fn(usize) -> Option<f32>,
 }
 
@@ -148,6 +149,7 @@ impl LaneCall<'_> {
             doc: self.doc,
             item_id: self.item_id,
             comment_anchors: self.comment_anchors,
+            misspellings: self.misspellings,
             color,
             group,
             locate: self.locate,
@@ -169,6 +171,7 @@ mod tests {
         assert_eq!(group_of("search"), 0xa89a);
         assert_eq!(group_of("comments"), 0x8a51);
         assert_eq!(group_of("boundaries"), 0x4782);
+        assert_eq!(group_of("spelling"), 0x4281);
     }
 
     /// Toggling one provider must not renumber the others: the ids are what the
