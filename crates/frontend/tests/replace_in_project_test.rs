@@ -111,6 +111,10 @@ fn a_replace_is_one_undoable_step() {
             replacement: "IPSUM-REPLACED".to_string(),
             preserve_case: false,
             excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
         },
     )
     .expect("replace_in_project");
@@ -176,6 +180,10 @@ fn excluded_rows_are_left_untouched() {
             replacement: "ZZZ".to_string(),
             preserve_case: false,
             excluded_result_ids: vec![excluded],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
         },
     )
     .expect("replace_in_project");
@@ -263,6 +271,10 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
             replacement: "QQQ".to_string(),
             preserve_case: false,
             excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
         },
     )
     .expect("replace_in_project");
@@ -342,6 +354,10 @@ fn preserve_case_keeps_the_case_it_found() {
             replacement: "aurélian".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
         },
     )
     .expect("replace_in_project");
@@ -431,6 +447,10 @@ fn a_rename_spares_the_markup_and_keeps_the_styling() {
             replacement: "Aurélian".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
         },
     )
     .expect("replace_in_project");
@@ -612,6 +632,10 @@ fn a_replace_inside_a_formatted_comment_body_does_not_corrupt_its_djot_markers()
             replacement: "Aurélian".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
         },
     )
     .expect("replace_in_project");
@@ -800,6 +824,10 @@ fn a_rename_across_more_scenes_than_the_old_cap_still_goes_through() {
             replacement: "Aurélian".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
         },
     )
     .expect("replace_in_project");
@@ -830,4 +858,426 @@ fn a_rename_across_more_scenes_than_the_old_cap_still_goes_through() {
         before,
         "one undo must put all {SCENES} scenes back, byte for byte"
     );
+}
+
+// ── replacing ONE occurrence, not one field ────────────────────────────────
+//
+// A result row is one matching *field*, and until the results tree there was no
+// way to say anything finer than "this whole scene's prose". The tree lists the
+// hits inside a row one by one and offers to replace one of them, and the tests
+// below are about the two ways that goes silently wrong.
+
+/// One scene whose prose is `text`, in a throwaway project.
+///
+/// Built rather than loaded because these tests turn on *how many* times the query
+/// occurs in a single field, and the bundled fixture's counts are whatever its
+/// prose happens to say.
+fn one_scene(tag: &str, text: &str) -> (AppContext, u64) {
+    use frontend::commands::{binder_item_commands, work_commands};
+    use frontend::common::direct_access::work::WorkRelationshipField;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+    use frontend::direct_access::{CreateBinderItemDto, CreateContentDto};
+    use work_management::{NewWorkDto, NewWorkTemplate};
+
+    let ctx = AppContext::new();
+    let dir = std::env::temp_dir().join(format!("skrib-one-scene-{tag}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+
+    work_management_commands::new_work(
+        &ctx,
+        &NewWorkDto {
+            goal_unit: Default::default(),
+            file_name: dir.to_string_lossy().to_string(),
+            is_folder: true,
+            template_kind: NewWorkTemplate::EmptyNovel,
+            labels: vec![],
+            language: vec!["fr-FR".to_string()],
+            author_name: String::new(),
+            chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
+        },
+    )
+    .expect("new_work");
+
+    let work = work_commands::get_all_work(&ctx).unwrap().pop().unwrap();
+    let binder =
+        work_commands::get_work_relationship(&ctx, &work.id, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .expect("the new Work must have a binder");
+
+    let now = chrono::Utc::now();
+    let created = binder_item_commands::create_binder_item_multi(
+        &ctx,
+        None,
+        &[CreateBinderItemDto {
+            uid: common::uid::fixture_uid(1),
+            created_at: now,
+            updated_at: now,
+            title: "Scène".to_string(),
+            sub_title: String::new(),
+            role: BinderItemRole::Item,
+            sub_role: BinderItemSubRole::Scene,
+            label: String::new(),
+            activated: true,
+            is_favorite: false,
+            is_exportable: true,
+            exclude_from_numbering: false,
+            indent: 0,
+            word_count_goal: 0,
+            char_count_goal: 0,
+            dict_language: Vec::new(),
+            aliases: Vec::new(),
+            contents: vec![],
+            references: vec![],
+            point_of_view: vec![],
+            tags: vec![],
+        }],
+        binder,
+        -1,
+    )
+    .expect("create_binder_item_multi");
+
+    let content = content_commands::create_content_multi(
+        &ctx,
+        None,
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now,
+            updated_at: now,
+            activated: true,
+            role: ContentRole::SceneText,
+            data: text.to_string(),
+        }],
+        created[0].id,
+        -1,
+    )
+    .expect("create_content_multi")[0]
+        .id;
+
+    let _ = std::fs::remove_dir_all(&dir);
+    (ctx, content)
+}
+
+/// Where every hit of `query` starts in the one result row, as the tree sees them.
+fn offsets(ctx: &AppContext, row: u64) -> Vec<i64> {
+    search_management_commands::occurrences_for_result(
+        ctx,
+        &search_management::OccurrencesForResultDto {
+            work_id: work_id(ctx),
+            result_id: row,
+        },
+    )
+    .expect("occurrences_for_result")
+    .char_starts
+}
+
+/// The scene's prose, verbatim, by the id it was created under.
+///
+/// Named rather than searched for: `get_all_content` is every `Content` in the
+/// store and its order is the store's, so "the first non-empty one" is a coin
+/// toss between this scene and the new project's own seeded rows -- which is a
+/// test that passes alone and fails beside its neighbours.
+fn prose(ctx: &AppContext, content: u64) -> String {
+    content_commands::get_content(ctx, &content)
+        .unwrap()
+        .expect("the scene's content")
+        .data
+}
+
+/// **Replace this one, and only this one.**
+///
+/// The whole point of the results tree's per-hit replace. Before this the DTO
+/// carried the caller's picks and the use case never read them, so "replace this
+/// occurrence" quietly rewrote every occurrence in the field.
+#[test]
+fn only_the_named_occurrence_is_replaced() {
+    let (ctx, content) = one_scene(
+        "only-one",
+        "Anna partit. Anna revint. Anna repartit. Anna resta. Anna dormit.",
+    );
+    let stack = Some(undo_redo_commands::create_new_stack(&ctx));
+
+    search_management_commands::run_search(&ctx, &search(&ctx, "Anna")).expect("run_search");
+    let rows = result_ids(&ctx);
+    assert_eq!(rows.len(), 1, "one scene, one matching field");
+    let row = rows[0];
+    let at = offsets(&ctx, row);
+    assert_eq!(at.len(), 5, "five hits to choose between");
+
+    let out = search_management_commands::replace_in_project(
+        &ctx,
+        stack,
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "Bérénice".to_string(),
+            preserve_case: false,
+            excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![row],
+            only_occurrence_starts: vec![at[2]],
+        },
+    )
+    .expect("replace_in_project");
+
+    assert_eq!(out.occurrences_replaced, 1, "exactly the one named");
+    assert!(out.skipped_stale.is_empty());
+    assert_eq!(
+        prose(&ctx, content),
+        "Anna partit. Anna revint. Bérénice repartit. Anna resta. Anna dormit.",
+        "the third hit, and no other"
+    );
+}
+
+/// **The reason it is `only_*` and not "exclude the others".**
+///
+/// A results tree lists at most `OCCURRENCE_CAP` hits of a field, and a field can
+/// hold more. Turning "replace this one" into "skip the other n-1" is therefore a
+/// list of the hits the caller could *see*, and every hit past the cap is one
+/// nobody named -- so every one of them gets rewritten. That is what "it replaced
+/// far more than the one I clicked" was, and it is invisible until a scene is long
+/// enough, which no small fixture is.
+///
+/// Both halves are asserted: the naming works, and the excluding is what breaks.
+#[test]
+fn naming_one_hit_survives_a_field_with_more_hits_than_a_tree_will_list() {
+    // Comfortably past OCCURRENCE_CAP (500), which is the most a row will list.
+    const HITS: usize = 560;
+    let text = (0..HITS)
+        .map(|i| format!("Anna {i}."))
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    let (ctx, _) = one_scene("past-cap", &text);
+    search_management_commands::run_search(&ctx, &search(&ctx, "Anna")).expect("run_search");
+    let row = result_ids(&ctx)[0];
+
+    // What a caller can actually enumerate: the row stops at the cap, and says so.
+    let listed = offsets(&ctx, row);
+    assert_eq!(
+        listed.len(),
+        500,
+        "the row lists at most OCCURRENCE_CAP hits, which is the whole premise"
+    );
+
+    // Named directly: one hit, whatever the field holds.
+    let named = search_management_commands::replace_in_project(
+        &ctx,
+        Some(undo_redo_commands::create_new_stack(&ctx)),
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "Bérénice".to_string(),
+            preserve_case: false,
+            excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![row],
+            only_occurrence_starts: vec![listed[0]],
+        },
+    )
+    .expect("replace_in_project");
+    assert_eq!(
+        named.occurrences_replaced, 1,
+        "naming the hit is immune to how many the field holds"
+    );
+
+    // And the shape that was wrong, on a fresh copy: the very same intent sent as
+    // "skip the 499 others I can see" rewrites every hit past the cap as well.
+    let (ctx, _) = one_scene("past-cap-excl", &text);
+    search_management_commands::run_search(&ctx, &search(&ctx, "Anna")).expect("run_search");
+    let row = result_ids(&ctx)[0];
+    let listed = offsets(&ctx, row);
+    let others: Vec<i64> = listed.iter().skip(1).copied().collect();
+    let excluded = search_management_commands::replace_in_project(
+        &ctx,
+        Some(undo_redo_commands::create_new_stack(&ctx)),
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "Bérénice".to_string(),
+            preserve_case: false,
+            excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![row; others.len()],
+            excluded_occurrence_starts: others,
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
+        },
+    )
+    .expect("replace_in_project");
+    assert_eq!(
+        excluded.occurrences_replaced,
+        (HITS - 499) as u64,
+        "an exclusion list can only name what it can see, and the rest are replaced \
+         -- which is exactly why the caller must not express this as one"
+    );
+}
+
+/// A dismissed hit stays dismissed: the rest of the field is rewritten around it.
+#[test]
+fn excluded_occurrences_are_left_alone() {
+    let (ctx, content) = one_scene(
+        "excluded",
+        "Anna partit. Anna revint. Anna repartit. Anna resta.",
+    );
+    search_management_commands::run_search(&ctx, &search(&ctx, "Anna")).expect("run_search");
+    let row = result_ids(&ctx)[0];
+    let at = offsets(&ctx, row);
+
+    let out = search_management_commands::replace_in_project(
+        &ctx,
+        Some(undo_redo_commands::create_new_stack(&ctx)),
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "Bérénice".to_string(),
+            preserve_case: false,
+            excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![row, row],
+            excluded_occurrence_starts: vec![at[1], at[3]],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
+        },
+    )
+    .expect("replace_in_project");
+
+    assert_eq!(out.occurrences_replaced, 2);
+    assert_eq!(
+        prose(&ctx, content),
+        "Bérénice partit. Anna revint. Bérénice repartit. Anna resta.",
+        "the two that were refused, and only those, are still there"
+    );
+}
+
+/// **A row that survives its replace is corrected, not thrown away.**
+///
+/// The first version wiped the entire result set on every replace, which is how a
+/// writer who rewrote one hit was handed an empty panel: the surface above cannot
+/// tell "your search found nothing" from "your search was discarded", so the tree
+/// they had open collapsed to nothing and their scroll position went with it.
+#[test]
+fn a_row_with_hits_left_is_restated_and_the_untouched_rows_stay() {
+    let (ctx, _) = one_scene(
+        "restated",
+        "Anna partit. Anna revint. Anna repartit. Anna resta.",
+    );
+    search_management_commands::run_search(&ctx, &search(&ctx, "Anna")).expect("run_search");
+    let row = result_ids(&ctx)[0];
+    let at = offsets(&ctx, row);
+    let before = search_result_commands::get_search_result(&ctx, &row)
+        .unwrap()
+        .unwrap();
+    assert_eq!(before.occurrence_count, 4);
+
+    search_management_commands::replace_in_project(
+        &ctx,
+        Some(undo_redo_commands::create_new_stack(&ctx)),
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "Bérénice".to_string(),
+            preserve_case: false,
+            excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![row],
+            only_occurrence_starts: vec![at[0]],
+        },
+    )
+    .expect("replace_in_project");
+
+    assert_eq!(
+        result_ids(&ctx),
+        vec![row],
+        "the row is still there, with the id the panel is holding"
+    );
+    let after = search_result_commands::get_search_result(&ctx, &row)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        after.occurrence_count, 3,
+        "and it now says how many are actually left"
+    );
+    // The snippet was cut around the FIRST remaining hit, which is no longer the
+    // one it was cut around before.
+    assert!(
+        after.snippet_before.contains("Bérénice"),
+        "the snippet is re-cut from the prose as it now stands, got {:?}",
+        after.snippet_before
+    );
+
+    // The occurrences the tree fetches next agree with the count above.
+    assert_eq!(offsets(&ctx, row).len(), 3);
+}
+
+/// A field with nothing of the query left in it loses its row, and only its row.
+#[test]
+fn a_row_with_nothing_left_is_dropped_while_its_neighbours_stay() {
+    let ctx = loaded_ctx();
+    search_management_commands::run_search(&ctx, &search(&ctx, "ipsum")).expect("run_search");
+    let rows = result_ids(&ctx);
+    assert!(rows.len() >= 2, "need a neighbour to leave alone");
+    let target = rows[0];
+    let neighbours: Vec<u64> = rows.iter().skip(1).copied().collect();
+
+    search_management_commands::replace_in_project(
+        &ctx,
+        Some(undo_redo_commands::create_new_stack(&ctx)),
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "ZZZ".to_string(),
+            preserve_case: false,
+            excluded_result_ids: neighbours.clone(),
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
+        },
+    )
+    .expect("replace_in_project");
+
+    let left = result_ids(&ctx);
+    assert!(
+        !left.contains(&target),
+        "the rewritten field has nothing to review any more"
+    );
+    for id in &neighbours {
+        assert!(
+            left.contains(id),
+            "a row this replace never looked at must survive it untouched"
+        );
+    }
+}
+
+/// An offset that lands on no hit refuses the **whole row** rather than guessing.
+///
+/// The tempting reading is "that hit is gone, so there is nothing to skip" -- and
+/// under it a stale exclusion turns into a replacement of a hit the writer refused.
+/// Nothing distinguishes a hit that vanished from a hit that moved, so the honest
+/// answer is that the list no longer says which hits it meant.
+#[test]
+fn an_offset_naming_no_hit_refuses_the_row() {
+    let (ctx, content) = one_scene("stale-offset", "Anna partit. Anna revint. Anna resta.");
+    search_management_commands::run_search(&ctx, &search(&ctx, "Anna")).expect("run_search");
+    let row = result_ids(&ctx)[0];
+    let before = prose(&ctx, content);
+
+    let out = search_management_commands::replace_in_project(
+        &ctx,
+        Some(undo_redo_commands::create_new_stack(&ctx)),
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "Bérénice".to_string(),
+            preserve_case: false,
+            excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![row],
+            // Between two real hits, on no hit at all.
+            excluded_occurrence_starts: vec![7],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
+        },
+    )
+    .expect("replace_in_project");
+
+    assert_eq!(out.occurrences_replaced, 0);
+    assert_eq!(out.skipped_stale, vec![row], "refused, and said so");
+    assert_eq!(prose(&ctx, content), before, "and wrote nothing");
 }

@@ -151,6 +151,7 @@ pub enum ImportManagementEvent {
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum SearchManagementEvent {
     RunSearch,
+    OccurrencesForResult,
     ReplaceInProject,
 }
 

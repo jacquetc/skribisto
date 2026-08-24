@@ -1062,7 +1062,6 @@ search-query-placeholder = Rechercher…
 search-replace-placeholder = Remplacer par…
 search-replace-toggle = Afficher le remplacement
 search-replace-all = Tout remplacer
-search-preserve-case = Conserver la casse
 search-opt-case = Respecter la casse
 search-opt-whole-word = Mot entier
 search-opt-diacritics = Respecter les accents
@@ -1092,8 +1091,9 @@ search-tip-scene = Scènes : les lignes qui contiennent votre prose.
 search-tip-note = Notes : les notes libres.
 search-tip-folder = Dossiers : les simples dossiers d’organisation et séparateurs.
 search-tip-paratext = Un texte qui appartient au livre mais non à son récit — une préface, une dédicace, une postface. Jamais compté dans le manuscrit.
-search-tip-replace = Remplacer : afficher le champ de remplacement et « Tout remplacer ».
-search-error = Échec de la recherche : { $message }
+search-tip-preserve-case = Conserver la casse : le remplacement reprend la casse trouvée, « ELENA » devient « MARTA » et « Elena » devient « Marta ».
+search-tip-replace = Remplacer : afficher le champ de remplacement et « Tout remplacer ».
+search-error = Échec de la recherche : { $message }
 search-no-matches = Aucun résultat
 search-count =
     { $matches ->
@@ -1111,7 +1111,7 @@ search-count-truncated =
         [one] { $items } document
        *[other] { $items } documents
     } (premiers résultats seulement)
-search-occurrences = ×{ $count }
+search-occurrences = { $count }
 search-field-body = Corps
 search-field-title = Titre
 search-field-synopsis = Synopsis
@@ -1120,7 +1120,11 @@ search-field-epigraph = Épigraphe
 search-field-comment = Commentaire
 search-field-comment-reply = Réponse
 search-field-footnote = Note de bas de page
-search-include-in-replace = Inclure dans « Tout remplacer »
+search-include-in-replace = Inclure dans « Tout remplacer »
+search-collapse-all = Replier tous les résultats
+search-replace-here = Remplacer ceci
+search-dismiss = Retirer des résultats
+search-undo-dismiss = Rétablir le dernier résultat retiré
 search-replace-nothing = (rien)
 search-replace-confirm-title = Remplacer tous les résultats ?
 search-replace-confirm-text =
@@ -1153,6 +1157,15 @@ search-replace-done-skipped =
     } (modifiés depuis la recherche).
 search-replace-undo = Annuler
 search-replace-failed-title = Échec du remplacement
+search-replace-skipped-title = Rien n’a été remplacé
+search-replace-skipped-body =
+    { $fields ->
+        [one] Ce texte a changé
+       *[other] { $fields } de ces textes ont changé
+    } depuis la recherche, { $fields ->
+        [one] il n’a donc pas été modifié
+       *[other] ils n’ont donc pas été modifiés
+    }. Relancez la recherche pour voir où sont les mots.
 search-replace-undo-failed-title = Échec de l’annulation
 search-preview = Aperçu
 search-preview-empty = Sélectionnez un résultat pour l’afficher ici
@@ -2390,15 +2403,16 @@ margin-lane-boundary-untitled = un document sans titre
 settings-page-margin-lane = Repères de marge
 settings-desc-margin-lane = La bande le long de la barre de défilement, et ce qu'elle montre
 settings-margin-lane-enabled = Afficher la marge de repères
-settings-margin-lane-enabled-hint = Le même interrupteur que Affichage ▸ Repères de marge. Elle ne dit jamais que quelque chose ne va pas.
+settings-margin-lane-enabled-hint = Le même interrupteur que Affichage ▸ Repères de marge.
+settings-margin-lane-enabled-more = Elle ne dit jamais que quelque chose ne va pas : elle montre où sont les choses, et vous laisse en juger.
 settings-group-margin-lane-marks = Ce qu'elle signale
 settings-margin-lane-no-providers = Rien ne marque encore la marge.
 settings-group-margin-lane-texture = Texture des dialogues
 settings-margin-lane-texture = Afficher la texture des dialogues
-settings-margin-lane-texture-hint = Une barre par paragraphe : sa longueur, et la part qui est parlée. Ajoute 28 dp. Non mesurée pour les langues sans convention établie.
+settings-margin-lane-texture-hint = Une barre par paragraphe : sa longueur, et la part qui est parlée.
+settings-margin-lane-texture-more = Non mesurée pour les langues sans convention établie, où la barre n'indique que la longueur.
 settings-group-margin-lane-surfaces = Où elle apparaît
 settings-margin-lane-surface-editor = Éditeur de texte
 settings-margin-lane-surface-stream = Flux
 settings-margin-lane-surface-search-preview = Aperçu de recherche
-settings-margin-lane-surfaces-hint = Un synopsis est rarement assez long pour défiler, et le mode sans distraction existe pour n'avoir rien à côté des mots.
 menu-margin-lane = Repères de &marge

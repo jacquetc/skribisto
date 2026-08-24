@@ -8,13 +8,21 @@
 use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use search_management::{
-    ReplaceInProjectDto, ReplaceInProjectResultDto, RunSearchDto, RunSearchResultDto,
-    search_management_controller,
+    OccurrencesForResultDto, OccurrencesForResultResultDto, ReplaceInProjectDto,
+    ReplaceInProjectResultDto, RunSearchDto, RunSearchResultDto, search_management_controller,
 };
 
 pub fn run_search(ctx: &AppContext, dto: &RunSearchDto) -> Result<RunSearchResultDto> {
     search_management_controller::run_search(&ctx.db_context, &ctx.event_hub, dto)
         .context("run_search")
+}
+
+pub fn occurrences_for_result(
+    ctx: &AppContext,
+    dto: &OccurrencesForResultDto,
+) -> Result<OccurrencesForResultResultDto> {
+    search_management_controller::occurrences_for_result(&ctx.db_context, &ctx.event_hub, dto)
+        .context("occurrences_for_result")
 }
 
 pub fn replace_in_project(

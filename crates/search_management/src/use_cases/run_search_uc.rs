@@ -71,7 +71,8 @@
 
 use crate::RunSearchDto;
 use crate::RunSearchResultDto;
-use crate::corpus_cache::{self, Corpus};
+use crate::corpus_cache;
+use crate::field_text::FieldText;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
@@ -86,7 +87,6 @@ use common::entities::{
 use common::types::EntityId;
 use skribisto_model::{SearchFacet, search_facet_of};
 use std::collections::HashMap;
-use std::sync::Arc;
 use text_document::matching::{FoldLocale, MatchOptions};
 
 /// Most rows we will keep for one search. Past this the scan stops and sets `truncated`.
@@ -107,9 +107,6 @@ use text_document::matching::{FoldLocale, MatchOptions};
 /// hold. Bounded work per keystroke, without deciding for the writer that their rename is
 /// too big.
 const RESULT_CAP: usize = 10_000;
-
-/// How much context a result row carries either side of the match.
-const SNIPPET_CONTEXT: usize = 60;
 
 pub trait RunSearchUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn RunSearchUnitOfWorkTrait>;
@@ -178,28 +175,6 @@ struct ContentOwner {
     item_title: String,
     trashed: bool,
     locale: FoldLocale,
-}
-
-/// The two kinds of searchable text, which are not the same kind of thing at all.
-enum FieldText {
-    /// A plain string that lives on the item — a title, a label. A dozen characters, no
-    /// markup, no parser. Folding it costs nothing, so it is folded on the spot and not
-    /// cached: it changes whenever the writer renames anything, and caching it would fill the
-    /// cache with entries nobody looks up twice.
-    Plain(String),
-    /// A scene's **prose**: parsed out of its Djot and folded, once, and kept between
-    /// keystrokes (see [`crate::corpus_cache`]). This is where all the cost was.
-    Prose(Arc<Corpus>),
-}
-
-impl FieldText {
-    /// The text a snippet is cut from — the prose the writer sees, never the markup.
-    fn as_str(&self) -> &str {
-        match self {
-            FieldText::Plain(s) => s,
-            FieldText::Prose(c) => c.source(),
-        }
-    }
 }
 
 impl RunSearchUseCase {
@@ -773,24 +748,20 @@ impl RunSearchUseCase {
                 whole_word: dto.whole_word,
                 locale: field.locale,
             };
-            let hits = match &field.text {
-                // A title or a label: a dozen characters. Folded on the spot.
-                FieldText::Plain(s) => crate::matching::occurrences(s, &dto.query, options),
-                // A scene's prose: already folded, once, and kept between keystrokes. Only the
-                // scan is left — which is the part that actually depends on what was typed.
-                FieldText::Prose(corpus) => corpus
-                    .find_all(&dto.query, options.whole_word)
-                    .into_iter()
-                    .map(|m| (m.char_start, m.char_len))
-                    .collect(),
-            };
+            // A title folds on the spot; a scene's prose was folded once and kept
+            // between keystrokes, so only the scan is left. Which of the two this
+            // field is decides the matcher, and [`FieldText::hits`] is the single
+            // place that decides it — the offsets it returns are the ones the tree
+            // lists and the ones a replace resolves an exclusion against.
+            let hits = field.text.hits(&dto.query, options);
             let Some(&(first, first_len)) = hits.first() else {
                 continue;
             };
             if rows.len() >= RESULT_CAP {
                 return (rows, true);
             }
-            let (before, matched, after) = Self::snippet(field.text.as_str(), first, first_len);
+            let (before, matched, after) =
+                crate::snippet::cut(field.text.as_str(), first, first_len);
             rows.push(SearchResult {
                 binder_item_id: field.item_id,
                 item_title: field.item_title.clone(),
@@ -812,112 +783,5 @@ impl RunSearchUseCase {
             });
         }
         (rows, false)
-    }
-
-    /// `SNIPPET_CONTEXT` chars either side of the match, on char boundaries.
-    ///
-    /// Walks `char_indices` rather than collecting the field into a `Vec<char>`. The
-    /// difference is not cosmetic: this runs for every matching row, up to `RESULT_CAP`, and a
-    /// manuscript of long scenes would otherwise materialise the *whole scene* at four bytes
-    /// per char — tens of megabytes of transient garbage, on the UI thread — to produce a
-    /// snippet of a couple of hundred characters.
-    fn snippet(text: &str, char_start: usize, char_len: usize) -> (String, String, String) {
-        let end = char_start + char_len;
-        let from = char_start.saturating_sub(SNIPPET_CONTEXT);
-        let to = end + SNIPPET_CONTEXT;
-
-        // One pass: the byte offset of each of the four char positions that bound the three
-        // pieces. Any that lies past the end of the text simply never gets set, and falls back
-        // to the end — which is what `.min(len)` did before, without the allocation.
-        let (mut b_from, mut b_start, mut b_end, mut b_to) = (None, None, None, None);
-        for (i, (byte, _)) in text.char_indices().enumerate() {
-            if i == from {
-                b_from = Some(byte);
-            }
-            if i == char_start {
-                b_start = Some(byte);
-            }
-            if i == end {
-                b_end = Some(byte);
-            }
-            if i == to {
-                b_to = Some(byte);
-                break;
-            }
-        }
-        let len = text.len();
-        let (b_from, b_start) = (b_from.unwrap_or(len), b_start.unwrap_or(len));
-        let (b_end, b_to) = (b_end.unwrap_or(len), b_to.unwrap_or(len));
-
-        (
-            text[b_from..b_start].to_string(),
-            text[b_start..b_end].to_string(),
-            text[b_end..b_to].to_string(),
-        )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// The snippet is cut on **char** boundaries, from text that is full of multi-byte chars —
-    /// slicing it by byte would panic in the middle of an `é`.
-    #[test]
-    fn a_snippet_is_cut_on_char_boundaries() {
-        let text = "Aurélien traversa la forêt où l'ombre s'étirait.";
-        let hit = text.chars().collect::<Vec<_>>();
-        let start = 21; // "forêt"
-        assert_eq!(hit[start..start + 5].iter().collect::<String>(), "forêt");
-
-        let (before, matched, after) = RunSearchUseCase::snippet(text, start, 5);
-        assert_eq!(matched, "forêt");
-        assert_eq!(before, "Aurélien traversa la ");
-        assert_eq!(after, " où l'ombre s'étirait.");
-        assert_eq!(
-            format!("{before}{matched}{after}"),
-            text,
-            "the three pieces must reassemble the text they came from"
-        );
-    }
-
-    /// A match at the very start and at the very end — the two places an off-by-one in the
-    /// byte-offset walk would show up as a panic or a truncated snippet.
-    #[test]
-    fn a_snippet_at_either_edge_of_the_text() {
-        let text = "Élena rentra chez ellé";
-
-        let (before, matched, after) = RunSearchUseCase::snippet(text, 0, 5);
-        assert_eq!(before, "");
-        assert_eq!(matched, "Élena");
-        assert_eq!(after, " rentra chez ellé");
-
-        let n = text.chars().count();
-        let (before, matched, after) = RunSearchUseCase::snippet(text, n - 4, 4);
-        assert_eq!(matched, "ellé");
-        assert_eq!(after, "", "nothing follows the last char");
-        assert_eq!(before, "Élena rentra chez ");
-    }
-
-    /// Context is clamped to `SNIPPET_CONTEXT` chars either side, not bytes — so an accented
-    /// scene does not get a shorter snippet than an ASCII one.
-    #[test]
-    fn a_snippet_is_clamped_to_the_context_in_chars() {
-        let text = format!("{}CIBLE{}", "é".repeat(200), "à".repeat(200));
-        let (before, matched, after) = RunSearchUseCase::snippet(&text, 200, 5);
-        assert_eq!(matched, "CIBLE");
-        assert_eq!(before.chars().count(), SNIPPET_CONTEXT);
-        assert_eq!(after.chars().count(), SNIPPET_CONTEXT);
-    }
-
-    /// The whole text is shorter than the context window: take what there is, and do not run
-    /// off the end.
-    #[test]
-    fn a_snippet_of_a_text_shorter_than_its_context() {
-        let (before, matched, after) = RunSearchUseCase::snippet("où", 0, 2);
-        assert_eq!(
-            (before.as_str(), matched.as_str(), after.as_str()),
-            ("", "où", "")
-        );
     }
 }

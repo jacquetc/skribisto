@@ -40,6 +40,17 @@ use frontend::search_management::{ReplaceInProjectDto, ReplaceInProjectResultDto
 
 use skribisto_model::SearchFacet;
 
+/// What one dismissal removed, so it can be given back.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Dismissal {
+    /// A whole item: the result rows it actually took out.
+    Rows(Vec<u64>),
+    /// One occurrence, by the row it is in and where it starts.
+    Occurrence(u64, i64),
+}
+
+use crate::models::SearchTreeModel;
+
 use crate::app_ids::{AppIds, HasWorkId};
 use crate::models::{
     OpenDoc, OpenDocsStore, SearchPrefs, SearchResultsModel, SearchSettingsService,
@@ -97,6 +108,13 @@ pub struct SearchReplaceViewModel {
 
     // ── selection + preview ──
     selected_result: Signal<Option<u64>>,
+    /// Which **occurrence** the writer is standing on, as `(result row, offset)`.
+    ///
+    /// Not the same question as [`selected_result`](Self::selected_result), and a
+    /// row cannot be highlighted from that one: a result row is a whole *field*, so
+    /// every occurrence inside it carries the same id. Keying the highlight on it
+    /// lit up all forty hits of a scene when the writer clicked one.
+    selected_occurrence: Signal<Option<(u64, i64)>>,
     preview: Signal<Option<Rc<OpenDoc>>>,
     preview_field: Signal<Option<MatchField>>,
     /// The item id whose doc the preview currently holds a store ref for — so
@@ -106,6 +124,26 @@ pub struct SearchReplaceViewModel {
     // ── replace review ──
     /// `SearchResult` ids the writer unticked — the fields Replace All will skip.
     excluded: Signal<HashSet<u64>>,
+    /// The results as a tree. Built here rather than in the dock because the dock
+    /// is a switchable tab whose content is torn down and rebuilt, and a tree that
+    /// forgot which items were open every time the writer looked away would be
+    /// worse than no tree.
+    tree: SearchTreeModel,
+    /// What each dismissal took away, newest last, so one can be given back.
+    ///
+    /// VS Code's dismiss cannot be undone, and its issue tracker has carried the
+    /// request since 2019. A dismissal here is a *destructive-looking* gesture on a
+    /// list a writer is about to replace across, so it gets the same courtesy every
+    /// other destructive gesture in this application gets.
+    dismissals: Signal<Vec<Dismissal>>,
+    /// Single occurrences the writer unticked, as `(result row, char offset)`.
+    ///
+    /// Separate from [`excluded`](Self::excluded) rather than folded into it,
+    /// because the two mean different things and only one of them can be complete.
+    /// Unticking a row says "not this field at all", and stays true however many
+    /// hits it holds — including the ones past whatever the tree lists. Unticking
+    /// an occurrence can only ever speak for an occurrence somebody has seen.
+    excluded_occurrences: Signal<HashSet<(u64, i64)>>,
     /// Whether the replace row is disclosed. UI state, but on the shared VM so the
     /// `Ctrl+Shift+H` intent (reveal the dock *and* open replace) can drive it.
     show_replace: Signal<bool>,
@@ -140,6 +178,9 @@ impl SearchReplaceViewModel {
         // Seed the inputs from the general (no-project-yet) preferences; a project
         // load re-seeds them from that project's saved override via `restore_for_project`.
         let p = settings.general();
+        let app_ctx_for_tree = app_ctx.clone();
+        let results_for_tree = results.clone();
+        let work_id_for_tree = ids.work_id.clone();
         Self {
             app_ctx,
             ids,
@@ -168,10 +209,14 @@ impl SearchReplaceViewModel {
             ran: Signal::new(false),
             error: Signal::new(None),
             selected_result: Signal::new(None),
+            selected_occurrence: Signal::new(None),
             preview: Signal::new(None),
             preview_field: Signal::new(None),
             preview_open_id: Rc::new(RefCell::new(None)),
             excluded: Signal::new(HashSet::new()),
+            tree: SearchTreeModel::new(app_ctx_for_tree, results_for_tree, work_id_for_tree),
+            excluded_occurrences: Signal::new(HashSet::new()),
+            dismissals: Signal::new(Vec::new()),
             show_replace: Signal::new(false),
             query_suggestions: Signal::new(Vec::new()),
             replacement_suggestions: Signal::new(Vec::new()),
@@ -471,6 +516,13 @@ impl SearchReplaceViewModel {
         // it — is torn down when the writer flips to the binder tab; see
         // `SearchResultsModel::wire`.
         self.results.reload();
+        // Nothing is standing on an occurrence of a result set that no longer
+        // exists.
+        self.selected_occurrence.set(None);
+        // And the tree over them. Everything it had fetched is dropped with it: a
+        // search re-mints every result row, so occurrences kept against the old ids
+        // would answer a new query with an old query's hits.
+        self.tree.reload();
         // A toggle/scope/facet change arms this same debounce, so a settled search
         // is the moment to persist the preferences — but only if they actually
         // changed, so ordinary query typing does not rewrite `search.toml`.
@@ -585,7 +637,323 @@ impl SearchReplaceViewModel {
         };
         if changed {
             self.excluded.set(set);
+            self.sync_dismissed();
         }
+    }
+
+    /// The results as a tree: an item, and the occurrences inside it.
+    pub fn tree(&self) -> SearchTreeModel {
+        self.tree.clone()
+    }
+
+    /// Which occurrence is highlighted, for the tree's rows.
+    pub fn selected_occurrence_signal(&self) -> Signal<Option<(u64, i64)>> {
+        self.selected_occurrence.clone()
+    }
+
+    /// Select whatever the tree row at `flat_index` points at.
+    ///
+    /// An occurrence selects the field it is in, which is what fills the preview.
+    /// An **item** selects nothing: its chevron is what it is for, and quietly
+    /// choosing the first of its fields would send a writer somewhere they did not
+    /// point at.
+    pub fn activate_tree_row(&self, flat_index: usize) {
+        let Some(node) = self
+            .tree
+            .slice()
+            .with_entry(flat_index, |node, _| node.clone())
+        else {
+            return;
+        };
+        if !node.is_item {
+            self.selected_occurrence
+                .set(Some((node.result_id, node.char_start)));
+            self.select_result(node.result_id);
+        }
+    }
+
+    /// Hand the tree the current dismissals, so the rows leave it.
+    ///
+    /// Pushed rather than pulled: the tree rebuilds from a closure that must not
+    /// reach back into the view model, and a dismissal is rare where a rebuild is
+    /// not.
+    fn sync_dismissed(&self) {
+        self.tree
+            .set_dismissed(self.excluded.get(), self.excluded_occurrences.get());
+    }
+
+    // ── dismissing ──────────────────────────────────────────────────────────
+    //
+    // A dismissal is an exclusion that also leaves the list: the row goes, and
+    // Replace All stops counting it. That is what the panel this is modelled on
+    // does, and it is why the two are one gesture here rather than a tick-box and
+    // a separate filter.
+
+    /// Take one whole item out of the results.
+    ///
+    /// Records only the rows it *actually* removed, so giving it back cannot
+    /// resurrect a row the writer had already dismissed on its own.
+    pub fn dismiss_item(&self, binder_item_id: u64) {
+        let already = self.excluded.get();
+        let mut removed: Vec<u64> = Vec::new();
+        self.results.for_each(|r| {
+            if r.binder_item_id == binder_item_id && !already.contains(&r.id) {
+                removed.push(r.id);
+            }
+        });
+        if removed.is_empty() {
+            return;
+        }
+        for id in &removed {
+            self.set_excluded(*id, true);
+        }
+        self.push_dismissal(Dismissal::Rows(removed));
+    }
+
+    /// Take one occurrence out of the results.
+    pub fn dismiss_occurrence(&self, result_id: u64, char_start: i64) {
+        if self.is_occurrence_excluded(result_id, char_start) {
+            return;
+        }
+        self.set_excluded_occurrence(result_id, char_start, true);
+        self.push_dismissal(Dismissal::Occurrence(result_id, char_start));
+    }
+
+    fn push_dismissal(&self, what: Dismissal) {
+        let mut stack = self.dismissals.get();
+        stack.push(what);
+        self.dismissals.set(stack);
+    }
+
+    /// Give back whatever the last dismissal took.
+    pub fn undo_last_dismiss(&self) {
+        let mut stack = self.dismissals.get();
+        let Some(last) = stack.pop() else {
+            return;
+        };
+        self.dismissals.set(stack);
+        match last {
+            Dismissal::Rows(ids) => {
+                for id in ids {
+                    self.set_excluded(id, false);
+                }
+            }
+            Dismissal::Occurrence(row, at) => {
+                self.set_excluded_occurrence(row, at, false);
+            }
+        }
+    }
+
+    /// Whether anything has been dismissed that could be given back.
+    pub fn can_undo_dismiss_signal(&self) -> Signal<bool> {
+        self.dismissals.map(|s| !s.is_empty())
+    }
+
+    /// Which result rows a scoped replace is about to rewrite, and which items
+    /// they belong to.
+    ///
+    /// Read **before** the replace, because the replace is what makes some of them
+    /// stop existing.
+    pub fn scope_of(&self, target_rows: &[u64], target_items: &[u64]) -> (Vec<u64>, Vec<u64>) {
+        let mut rows: Vec<u64> = target_rows.to_vec();
+        let mut items: Vec<u64> = target_items.to_vec();
+        self.results.for_each(|r| {
+            if target_items.contains(&r.binder_item_id) && !rows.contains(&r.id) {
+                rows.push(r.id);
+            }
+            if target_rows.contains(&r.id) && !items.contains(&r.binder_item_id) {
+                items.push(r.binder_item_id);
+            }
+        });
+        (rows, items)
+    }
+
+    /// Settle the panel after a replace that named its own scope.
+    ///
+    /// **Not a re-search.** A re-search is what Replace All does, and it is right
+    /// there: everything moved, so everything is read again. Here one hit of one
+    /// field was rewritten, and re-running the scan throws away the writer's whole
+    /// position -- which rows they had open, where they had scrolled to, what they
+    /// had dismissed -- to re-derive a result set that differs from the one on
+    /// screen in exactly the rows named here. The backend restates those rows
+    /// itself, so this reads them back and leaves the rest of the tree alone.
+    ///
+    /// The occurrence-level dismissals *inside* the rewritten rows do not survive,
+    /// and cannot: they are keyed by character offset, and replacing a hit shifts
+    /// every offset after it in the field. Keeping them would keep a set of numbers
+    /// that now name different hits -- the row would come back with the wrong ones
+    /// missing. Dismissals of other rows, and of whole rows, are untouched.
+    pub fn settle_after_scoped_replace(&self, rows: &[u64], items: &[u64]) {
+        // An open editor of a scene that was just rewritten is showing the old
+        // prose until this. Replace All does it through `reload_and_rescan`; a row
+        // replace reached the store and never told the editor, so the writer had to
+        // close the tab and reopen it to see their own replacement.
+        self.reload_touched(items);
+
+        let mut occurrences = self.excluded_occurrences.get();
+        occurrences.retain(|(row, _)| !rows.contains(row));
+        self.excluded_occurrences.set(occurrences);
+
+        self.results.reload();
+        self.recount();
+        self.sync_dismissed();
+        self.tree.refresh_rows(items, rows);
+
+        // Nothing is standing on an occurrence whose offset the replace just moved.
+        if let Some((row, _)) = self.selected_occurrence.get()
+            && rows.contains(&row)
+        {
+            self.selected_occurrence.set(None);
+        }
+    }
+
+    /// Re-derive the summary counts from the result set as it now stands.
+    ///
+    /// The search itself reports them, which is right when a search has just run.
+    /// After a scoped replace no search ran, and the rows are the only record of
+    /// what is left -- so they are counted, the same two ways the scan counted
+    /// them: every hit of every field, over however many items those fields are in.
+    fn recount(&self) {
+        let mut matches = 0u64;
+        let mut items: HashSet<u64> = HashSet::new();
+        self.results.for_each(|r| {
+            matches += r.occurrence_count;
+            items.insert(r.binder_item_id);
+        });
+        self.match_count.set(matches);
+        self.item_count.set(items.len() as u64);
+    }
+
+    /// Replace **only** the occurrences of one item, leaving the rest alone.
+    ///
+    /// Expressed as a Replace All over everything *else* excluded, because that is
+    /// what the backend takes and because routing every replacement through one
+    /// call is what keeps a single-row replace undoable in the same way as a
+    /// project-wide one -- one Ctrl+Z, whichever the writer used.
+    pub fn replace_item(&self, binder_item_id: u64) -> anyhow::Result<ReplaceInProjectResultDto> {
+        let keep: Vec<u64> = {
+            let mut out = Vec::new();
+            self.results.for_each(|r| {
+                if r.binder_item_id == binder_item_id {
+                    out.push(r.id);
+                }
+            });
+            out
+        };
+        self.replace_only(&keep, &[])
+    }
+
+    /// Replace one occurrence and nothing else.
+    ///
+    /// Sent as the one occurrence to replace, **not** as an exclusion of the others.
+    /// Excluding the others is only truthful while they can all be named, and they
+    /// cannot: the tree lists at most a few hundred hits of a field that may hold
+    /// thousands, so in a long scene "all the others" was a list missing everything
+    /// past the cap -- and every one of those got replaced. That is what "it
+    /// replaced far more than the one I clicked" was.
+    pub fn replace_occurrence(
+        &self,
+        result_id: u64,
+        char_start: i64,
+    ) -> anyhow::Result<ReplaceInProjectResultDto> {
+        self.replace_only(&[result_id], &[(result_id, char_start)])
+    }
+
+    /// Run the replace with everything but `rows` excluded, and inside those rows
+    /// only the occurrences in `only` (empty: all of them).
+    fn replace_only(
+        &self,
+        rows: &[u64],
+        only: &[(u64, i64)],
+    ) -> anyhow::Result<ReplaceInProjectResultDto> {
+        let keep: HashSet<u64> = rows.iter().copied().collect();
+        let mut excluded_rows: Vec<u64> = Vec::new();
+        self.results.for_each(|r| {
+            if !keep.contains(&r.id) {
+                excluded_rows.push(r.id);
+            }
+        });
+        // The writer's own dismissals still stand inside what is being replaced --
+        // except in a row that already names what to replace, where they would be
+        // saying the same thing a second time and in the weaker of the two ways.
+        let named: HashSet<u64> = only.iter().map(|(row, _)| *row).collect();
+        let mut occurrence_rows: Vec<u64> = Vec::new();
+        let mut occurrence_starts: Vec<i64> = Vec::new();
+        for (row, at) in self.excluded_occurrences.get() {
+            if keep.contains(&row) && !named.contains(&row) {
+                occurrence_rows.push(row);
+                occurrence_starts.push(at);
+            }
+        }
+        for id in self.excluded.get() {
+            if !excluded_rows.contains(&id) {
+                excluded_rows.push(id);
+            }
+        }
+        let (only_rows, only_starts): (Vec<u64>, Vec<i64>) = only.iter().copied().unzip();
+        self.run_replace(
+            excluded_rows,
+            occurrence_rows,
+            occurrence_starts,
+            only_rows,
+            only_starts,
+        )
+    }
+
+    /// Whether one occurrence of `result_id`, at `char_start`, is ticked out.
+    ///
+    /// A row that is excluded whole excludes every occurrence in it, so this
+    /// answers `true` for all of them without their needing to be listed — which
+    /// they may not be, and which is the reason the two sets are kept apart.
+    pub fn is_occurrence_excluded(&self, result_id: u64, char_start: i64) -> bool {
+        self.excluded.get().contains(&result_id)
+            || self
+                .excluded_occurrences
+                .get()
+                .contains(&(result_id, char_start))
+    }
+
+    /// Tick/untick one occurrence for Replace All.
+    pub fn toggle_excluded_occurrence(&self, result_id: u64, char_start: i64) {
+        let excluded = self
+            .excluded_occurrences
+            .get()
+            .contains(&(result_id, char_start));
+        self.set_excluded_occurrence(result_id, char_start, !excluded);
+    }
+
+    /// Set whether one occurrence is excluded from Replace All.
+    ///
+    /// Ticking an occurrence back on inside a row that is excluded whole also
+    /// clears the row: the writer's last gesture wins, and leaving the row's own
+    /// exclusion standing would make the tick they just made do nothing while
+    /// showing that it had.
+    pub fn set_excluded_occurrence(&self, result_id: u64, char_start: i64, excluded: bool) {
+        if !excluded && self.excluded.get().contains(&result_id) {
+            self.set_excluded(result_id, false);
+        }
+        let mut set = self.excluded_occurrences.get();
+        let changed = if excluded {
+            set.insert((result_id, char_start))
+        } else {
+            set.remove(&(result_id, char_start))
+        };
+        if changed {
+            self.excluded_occurrences.set(set);
+            self.sync_dismissed();
+        }
+    }
+
+    /// How many of `result_id`'s listed occurrences are ticked out on their own.
+    ///
+    /// What a parent row's part-ticked state is drawn from, together with the row's
+    /// own `occurrence_count`.
+    pub fn excluded_occurrence_count(&self, result_id: u64) -> usize {
+        self.excluded_occurrences
+            .get()
+            .iter()
+            .filter(|(row, _)| *row == result_id)
+            .count()
     }
 
     /// Whether Replace All may run: a non-empty query produced results, the scan
@@ -676,11 +1044,58 @@ impl SearchReplaceViewModel {
             .work_id
             .get()
             .ok_or_else(|| anyhow::anyhow!("replace_all: no open project"))?;
+        // Occurrences inside a row that is excluded whole are dropped here rather
+        // than sent: the row already says so, and sending both would have the
+        // backend skip the same hit twice and leave the count of what it did
+        // disagreeing with what it did.
+        let whole_rows = self.excluded.get();
+        let (occurrence_rows, occurrence_starts): (Vec<u64>, Vec<i64>) = self
+            .excluded_occurrences
+            .get()
+            .into_iter()
+            .filter(|(row, _)| !whole_rows.contains(row))
+            .unzip();
+        let _ = work_id;
+        // No `only` list: Replace All is defined by what it leaves out.
+        self.run_replace(
+            self.excluded.get().into_iter().collect(),
+            occurrence_rows,
+            occurrence_starts,
+            Vec::new(),
+            Vec::new(),
+        )
+    }
+
+    /// The one call every replacement goes through, whatever its scope.
+    ///
+    /// A whole-project Replace All and a single occurrence differ only in what they
+    /// exclude, and routing both here is what makes the small one undoable in the
+    /// same gesture as the large one -- one Ctrl+Z, and one entry in the
+    /// replacement history whichever the writer used.
+    fn run_replace(
+        &self,
+        excluded_result_ids: Vec<u64>,
+        excluded_occurrence_rows: Vec<u64>,
+        excluded_occurrence_starts: Vec<i64>,
+        only_occurrence_rows: Vec<u64>,
+        only_occurrence_starts: Vec<i64>,
+    ) -> anyhow::Result<ReplaceInProjectResultDto> {
+        let work_id = self
+            .ids
+            .work_id
+            .get()
+            .ok_or_else(|| anyhow::anyhow!("replace: no open project"))?;
         let dto = ReplaceInProjectDto {
             work_id,
             replacement: self.replacement.get(),
             preserve_case: self.preserve_case.get(),
-            excluded_result_ids: self.excluded.get().into_iter().collect(),
+            excluded_result_ids,
+            // Parallel by index, as the DTO's own note records: the manifest's
+            // field types are primitives, so a list of pairs is two lists.
+            excluded_occurrence_rows,
+            excluded_occurrence_starts,
+            only_occurrence_rows,
+            only_occurrence_starts,
         };
         let result = search_management_commands::replace_in_project(
             &self.app_ctx,
@@ -740,6 +1155,8 @@ impl SearchReplaceViewModel {
         // Clear the result list to the new project's (empty) result set — the old
         // project's rows were torn down with its store.
         self.results.reload();
+        self.selected_occurrence.set(None);
+        self.tree.reload();
         self.reload_suggestions(&uid);
     }
 
@@ -938,6 +1355,240 @@ mod tests {
             DockWidgetId::fresh(),
             DockWidgetId::fresh(),
         )
+    }
+
+    /// Two fields of one item, one hit and three, so an item's counts are not the
+    /// same as any single row's.
+    fn seeded() -> SearchReplaceViewModel {
+        let vm = vm();
+        vm.results().list_model().replace_all(vec![
+            SearchResultDto {
+                id: 11,
+                binder_item_id: 5,
+                match_field: MatchField::Body,
+                occurrence_count: 3,
+                ..Default::default()
+            },
+            SearchResultDto {
+                id: 12,
+                binder_item_id: 5,
+                match_field: MatchField::Comment,
+                occurrence_count: 1,
+                ..Default::default()
+            },
+        ]);
+        vm
+    }
+
+    /// A row replace names one field; an item replace names every field of one
+    /// item. Either way both sets have to be known, and known **before** the
+    /// replace: a field that loses its last hit stops existing, and afterwards
+    /// nothing left could name it.
+    #[test]
+    fn the_scope_of_a_row_replace_is_read_in_both_directions() {
+        let vm = seeded();
+
+        let (mut rows, items) = vm.scope_of(&[], &[5]);
+        rows.sort_unstable();
+        assert_eq!(rows, vec![11, 12], "an item is all of its matching fields");
+        assert_eq!(items, vec![5]);
+
+        let (rows, items) = vm.scope_of(&[11], &[]);
+        assert_eq!(
+            rows,
+            vec![11],
+            "and one field is one field -- replacing a hit in the prose must not \
+             invalidate the offsets of the comment row beside it"
+        );
+        assert_eq!(items, vec![5], "but it does name the item it is in");
+    }
+
+    /// **Refreshing after a row replace is not a reload**, and the difference is
+    /// the whole complaint: the writer scrolls down, opens an item, replaces one
+    /// hit, and finds the tree collapsed back at the top.
+    ///
+    /// Asserted against `reload`, which resets both on purpose -- a new result set
+    /// is a new list and the old position means nothing in it.
+    #[test]
+    fn refreshing_a_replaced_row_leaves_the_tree_where_the_writer_left_it() {
+        use crate::models::SearchTreeKey;
+        use teksilo::data::TreeDataSource;
+
+        let vm = seeded();
+        let tree = vm.tree();
+        tree.reload();
+        tree.set_expanded(&SearchTreeKey::Item(5), true);
+        tree.scroll().set(240.0);
+
+        tree.refresh_rows(&[5], &[11]);
+        assert!(
+            tree.is_expanded(&SearchTreeKey::Item(5)),
+            "the item the writer had open stays open"
+        );
+        assert_eq!(
+            tree.scroll().get(),
+            240.0,
+            "and the tree stays where they scrolled it"
+        );
+
+        tree.reload();
+        assert_eq!(
+            tree.scroll().get(),
+            0.0,
+            "where a genuinely new result set does start at the top"
+        );
+    }
+
+    /// **The row actually leaves the tree.** The state being right is not the
+    /// same claim as the row being gone, and the second is what a writer sees.
+    #[test]
+    fn a_dismissed_item_leaves_the_tree() {
+        let vm = seeded();
+        let tree = vm.tree();
+        tree.reload();
+        assert_eq!(
+            tree.slice().visible_count(),
+            1,
+            "one item row, for the two fields of item 5"
+        );
+
+        vm.dismiss_item(5);
+        assert_eq!(
+            tree.slice().visible_count(),
+            0,
+            "dismissing the item takes its row out of the tree, not just out of the count"
+        );
+
+        vm.undo_last_dismiss();
+        assert_eq!(tree.slice().visible_count(), 1, "and undo puts it back");
+    }
+
+    /// One field of an item going does not take the item with it: the row stays,
+    /// carrying what is left.
+    #[test]
+    fn dismissing_one_field_leaves_the_item_behind() {
+        let vm = seeded();
+        let tree = vm.tree();
+        tree.reload();
+
+        vm.set_excluded(11, true);
+        assert_eq!(
+            tree.slice().visible_count(),
+            1,
+            "item 5 still has its comment field"
+        );
+
+        vm.set_excluded(12, true);
+        assert_eq!(
+            tree.slice().visible_count(),
+            0,
+            "and goes when the last of its fields does"
+        );
+    }
+
+    /// **Dismissing an item takes it out of the results**, and one undo puts it
+    /// back — which the panel this is modelled on cannot do, and has had an open
+    /// request to do since 2019.
+    #[test]
+    fn a_dismissed_item_comes_back_with_one_undo() {
+        let vm = seeded();
+        assert!(!vm.can_undo_dismiss_signal().get());
+
+        vm.dismiss_item(5);
+        assert!(vm.is_excluded(11) && vm.is_excluded(12));
+        assert!(vm.can_undo_dismiss_signal().get());
+
+        vm.undo_last_dismiss();
+        assert!(!vm.is_excluded(11) && !vm.is_excluded(12));
+        assert!(
+            !vm.can_undo_dismiss_signal().get(),
+            "and nothing left to give back"
+        );
+    }
+
+    /// Undoing gives back **only what that dismissal took**. A row the writer had
+    /// already dismissed on its own stays dismissed, or one gesture would quietly
+    /// undo two.
+    #[test]
+    fn undo_does_not_resurrect_what_was_already_gone() {
+        let vm = seeded();
+        vm.dismiss_occurrence(11, 40);
+        vm.dismiss_item(5);
+
+        vm.undo_last_dismiss();
+        assert!(!vm.is_excluded(11), "the item came back");
+        assert!(
+            vm.is_occurrence_excluded(11, 40),
+            "the occurrence dismissed before it did not"
+        );
+    }
+
+    /// Dismissals undo in the order they were made, newest first.
+    #[test]
+    fn dismissals_come_back_newest_first() {
+        let vm = seeded();
+        vm.dismiss_occurrence(11, 40);
+        vm.dismiss_occurrence(11, 91);
+
+        vm.undo_last_dismiss();
+        assert!(!vm.is_occurrence_excluded(11, 91));
+        assert!(
+            vm.is_occurrence_excluded(11, 40),
+            "the older one still stands"
+        );
+
+        vm.undo_last_dismiss();
+        assert!(!vm.is_occurrence_excluded(11, 40));
+    }
+
+    /// Dismissing the same thing twice records one dismissal, so one undo is
+    /// enough and a second does not silently give back something else.
+    #[test]
+    fn dismissing_twice_records_once() {
+        let vm = seeded();
+        vm.dismiss_occurrence(11, 40);
+        vm.dismiss_occurrence(11, 40);
+        vm.undo_last_dismiss();
+        assert!(!vm.is_occurrence_excluded(11, 40));
+        assert!(!vm.can_undo_dismiss_signal().get());
+    }
+
+    /// A row refused whole already refuses everything in it. Sending its
+    /// occurrences as well would have the backend skip the same hit twice and
+    /// report having done less than it did.
+    #[test]
+    fn occurrences_inside_a_wholly_refused_row_are_not_sent_as_well() {
+        let vm = seeded();
+        vm.set_excluded_occurrence(11, 40, true);
+        vm.set_excluded_occurrence(12, 7, true);
+        vm.set_excluded(11, true);
+
+        let whole = vm.excluded.get();
+        let sent: Vec<(u64, i64)> = vm
+            .excluded_occurrences
+            .get()
+            .into_iter()
+            .filter(|(row, _)| !whole.contains(row))
+            .collect();
+        assert_eq!(
+            sent,
+            vec![(12, 7)],
+            "only the row that is not refused whole"
+        );
+    }
+
+    /// An occurrence ticked back on inside a row refused whole clears the row too:
+    /// the writer's last gesture wins, and leaving the row refused would make the
+    /// tick they just made do nothing while showing that it had.
+    #[test]
+    fn ticking_an_occurrence_back_on_releases_the_row_it_is_in() {
+        let vm = seeded();
+        vm.set_excluded(11, true);
+        assert!(vm.is_occurrence_excluded(11, 40));
+
+        vm.set_excluded_occurrence(11, 40, false);
+        assert!(!vm.is_excluded(11));
+        assert!(!vm.is_occurrence_excluded(11, 40));
     }
 
     #[test]

@@ -18,8 +18,20 @@
 //! here, in the app's tree where it belongs, and extensions contribute **rows**
 //! rather than a page of their own. The provider list and the settings list are
 //! then the same list, and cannot disagree.
+//!
+//! ## Why the explanations are tooltips and not lines on the page
+//!
+//! This page is a list of switches, and a paragraph under each one buries the
+//! list it is explaining: a writer scanning for the switch they came to flip
+//! reads three sentences to find each of them. So the switches are the page, and
+//! what each one means is on the switch — a plain tooltip where a line is
+//! enough, a rich one where there is a second thing worth saying underneath.
+//!
+//! Nothing is lost to a screen reader by that: a tooltip's text is harvested as
+//! the control's accessible description whether or not it is showing.
 
 use teksilo::prelude::*;
+use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{Center, FixedSize, HStack, RectWidget, VStack};
 
 use crate::margin_lane::{self, LaneSurface};
@@ -67,8 +79,20 @@ pub(in crate::settings) fn margin_lane_pane(ctx: &mut BuildContext) -> impl Widg
         .label(tr!(settings_page_margin_lane()))
         .label_gap(16.0)
         .row_spacing(14.0)
-        .full_width(Toggle::new(enabled.clone()).label(tr!(settings_margin_lane_enabled())))
-        .full_width(hint(tr!(settings_margin_lane_enabled_hint())))
+        .full_width(
+            Toggle::new(enabled.clone())
+                .label(tr!(settings_margin_lane_enabled()))
+                .rich_tooltip_content(
+                    TooltipContent::new(
+                        "settings.margin_lane_enabled",
+                        tr!(settings_margin_lane_enabled_hint()),
+                    )
+                    // The promise, behind the disclosure: it is the reason the
+                    // lane is shaped the way it is, and it is not what someone
+                    // hovering the switch came to find out.
+                    .with_more(tr!(settings_margin_lane_enabled_more())),
+                ),
+        )
         .full_width(group(tr!(settings_group_margin_lane_marks())));
 
     // ── one row per registered provider ──────────────────────────────────────
@@ -82,22 +106,39 @@ pub(in crate::settings) fn margin_lane_pane(ctx: &mut BuildContext) -> impl Widg
     } else {
         for spec in providers {
             let signal = store.signal(&spec.settings_key(), spec.default_on);
-            form = form
-                .full_width(
-                    HStack::new()
-                        .spacing(8.0)
-                        .child(swatch(&colors, spec.palette_slot))
-                        .child(Toggle::new(signal).label((spec.label)())),
-                )
-                .full_width(hint((spec.hint)()));
+            // A provider's hint is one line by construction (it names what the
+            // marks are), so a plain tooltip carries it whole. On the toggle
+            // rather than the row: the label is what a pointer aims at.
+            form = form.full_width(
+                HStack::new()
+                    .spacing(8.0)
+                    .child(swatch(&colors, spec.palette_slot))
+                    .child(
+                        Toggle::new(signal)
+                            .label((spec.label)())
+                            .tooltip((spec.hint)()),
+                    ),
+            );
         }
     }
 
     // ── the texture column ───────────────────────────────────────────────────
     form = form
         .full_width(group(tr!(settings_group_margin_lane_texture())))
-        .full_width(Toggle::new(texture).label(tr!(settings_margin_lane_texture())))
-        .full_width(hint(tr!(settings_margin_lane_texture_hint())));
+        .full_width(
+            Toggle::new(texture)
+                .label(tr!(settings_margin_lane_texture()))
+                .rich_tooltip_content(
+                    TooltipContent::new(
+                        "settings.margin_lane_texture",
+                        tr!(settings_margin_lane_texture_hint()),
+                    )
+                    // The caveat, behind the disclosure: it applies to some
+                    // languages and not others, and it is not the answer to
+                    // "what is this".
+                    .with_more(tr!(settings_margin_lane_texture_more())),
+                ),
+        );
 
     // ── where it appears ─────────────────────────────────────────────────────
     form = form.full_width(group(tr!(settings_group_margin_lane_surfaces())));
@@ -108,7 +149,6 @@ pub(in crate::settings) fn margin_lane_pane(ctx: &mut BuildContext) -> impl Widg
         );
         form = form.full_width(Toggle::new(signal).label(surface_label(surface)));
     }
-    form = form.full_width(hint(tr!(settings_margin_lane_surfaces_hint())));
 
     pane_frame(
         crumb(

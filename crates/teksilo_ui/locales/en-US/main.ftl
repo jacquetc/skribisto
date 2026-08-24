@@ -1049,7 +1049,6 @@ search-query-placeholder = Search…
 search-replace-placeholder = Replace with…
 search-replace-toggle = Toggle replace
 search-replace-all = Replace All
-search-preserve-case = Preserve case
 search-opt-case = Match case
 search-opt-whole-word = Whole word
 search-opt-diacritics = Match accents
@@ -1079,6 +1078,7 @@ search-tip-scene = Scenes: the rows that hold your prose.
 search-tip-note = Notes: free-form notes.
 search-tip-folder = Folders: plain organizing folders and separators.
 search-tip-paratext = A text that belongs to the book but not to its story — a preface, a dedication, an afterword. Never counted in the manuscript.
+search-tip-preserve-case = Preserve case: a replacement takes the case it found, so “ELENA” becomes “MARTA” and “Elena” becomes “Marta”.
 search-tip-replace = Replace: show the replacement field and Replace All.
 search-error = Search failed: { $message }
 search-no-matches = No matches
@@ -1098,7 +1098,7 @@ search-count-truncated =
         [one] { $items } document
        *[other] { $items } documents
     } (first results only)
-search-occurrences = ×{ $count }
+search-occurrences = { $count }
 search-field-body = Body
 search-field-title = Title
 search-field-synopsis = Synopsis
@@ -1108,6 +1108,10 @@ search-field-comment = Comment
 search-field-comment-reply = Reply
 search-field-footnote = Footnote
 search-include-in-replace = Include in Replace All
+search-collapse-all = Collapse all results
+search-replace-here = Replace this
+search-dismiss = Dismiss from the results
+search-undo-dismiss = Bring back the last dismissed result
 search-replace-nothing = (nothing)
 search-replace-confirm-title = Replace all matches?
 search-replace-confirm-text =
@@ -1140,6 +1144,15 @@ search-replace-done-skipped =
     } skipped (changed since the search).
 search-replace-undo = Undo
 search-replace-failed-title = Replace failed
+search-replace-skipped-title = Nothing replaced
+search-replace-skipped-body =
+    { $fields ->
+        [one] This text
+       *[other] { $fields } of these texts
+    } changed since the search, so { $fields ->
+        [one] it was
+       *[other] they were
+    } left alone. Search again to see where the words are now.
 search-replace-undo-failed-title = Undo failed
 search-preview = Preview
 search-preview-empty = Select a result to preview it here
@@ -2400,15 +2413,16 @@ margin-lane-boundary-untitled = an untitled document
 settings-page-margin-lane = Margin marks
 settings-desc-margin-lane = The strip beside the scroll bar, and what it shows
 settings-margin-lane-enabled = Show the margin lane
-settings-margin-lane-enabled-hint = The same switch as View ▸ Margin marks. It never says anything is wrong.
+settings-margin-lane-enabled-hint = The same switch as View ▸ Margin marks.
+settings-margin-lane-enabled-more = It never says anything is wrong: it shows you where things are, and leaves what to make of that to you.
 settings-group-margin-lane-marks = What it marks
 settings-margin-lane-no-providers = Nothing marks the lane yet.
 settings-group-margin-lane-texture = Dialogue texture
 settings-margin-lane-texture = Show the dialogue texture
-settings-margin-lane-texture-hint = One bar per paragraph: how long it is, and how much of it is spoken. Adds 28 dp. Not measured for languages with no curated convention.
+settings-margin-lane-texture-hint = One bar per paragraph: how long it is, and how much of it is spoken.
+settings-margin-lane-texture-more = Not measured for languages with no curated convention, where the bar shows length alone.
 settings-group-margin-lane-surfaces = Where it appears
 settings-margin-lane-surface-editor = Text editor
 settings-margin-lane-surface-stream = Streams
 settings-margin-lane-surface-search-preview = Search preview
-settings-margin-lane-surfaces-hint = A synopsis is rarely long enough to scroll, and distraction-free mode exists to have nothing beside the words.
 menu-margin-lane = &Margin marks

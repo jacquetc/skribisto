@@ -221,6 +221,10 @@ fn one_rename_uppercases_each_scene_under_its_own_rules() {
             replacement: "irene".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
         },
     )
     .expect("replace_in_project");

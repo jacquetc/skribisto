@@ -41,6 +41,25 @@
 //! occurrence count no longer matches what the writer reviewed, it **skips that field
 //! and reports it**. It never guesses: a stale offset applied to a document that moved
 //! underneath rewrites the wrong words, silently.
+//!
+//! The offsets a *caller* names ([`Picked`]) are held to the same standard. They are
+//! resolved back to hits through [`FieldText::hits`] — the very call that produced
+//! them — and an offset that lands on no hit does not mean "nothing to skip there".
+//! It means the list no longer says which hits it meant, so the whole row is skipped
+//! and reported. Replacing the remainder would be replacing hits nobody reviewed.
+//!
+//! ## What the result rows say afterwards
+//!
+//! Every row this use case rewrote is **restated** from the field as it now stands:
+//! nothing matching any more takes the row out, anything left corrects its count and
+//! its snippet. Rows it never looked at — the ones excluded whole — are left exactly
+//! as they were, because nothing about them changed.
+//!
+//! Wiping the whole set instead is what the first version did, and it costs the
+//! surface above it everything it knew: a writer who replaced one hit of one scene
+//! got an empty panel, and the tree they had open collapsed back to nothing. Restating
+//! costs one re-parse of each field that was actually rewritten, which is the same
+//! order as the parse that rewrote it.
 
 use crate::ReplaceInProjectDto;
 use crate::ReplaceInProjectResultDto;
@@ -58,6 +77,9 @@ use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
+
+use crate::corpus_cache;
+use crate::field_text::FieldText;
 use text_document::matching::{FoldLocale, MatchOptions};
 use text_document::{
     BatchDocument, DjotExportOptions, DjotImportOptions, FindOptions, ReplaceFormatPolicy,
@@ -68,11 +90,37 @@ pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn ReplaceInProjectUnitOfWorkTrait>;
 }
 
+/// What the caller said about the individual hits inside **one** row.
+///
+/// The two directions are both needed and neither expresses the other.
+///
+/// A writer dismissing hits one at a time is naming what to leave out of an
+/// otherwise whole-field replace: [`Except`](Self::Except). A writer pressing
+/// "replace this one" is naming the single hit to rewrite, and turning that into
+/// "skip the other n-1" is only truthful while the caller can enumerate the other
+/// n-1 — which it cannot, because a results tree lists at most a few hundred hits
+/// of a field that may hold thousands. Sent as an exclusion, every hit past that
+/// limit is a hit nobody named and every one of them would be rewritten, which is
+/// precisely the shape of "it replaced far more than the one I clicked".
+/// [`Only`](Self::Only) is immune to the count.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Picked {
+    /// The caller said nothing: every hit in the field is replaced.
+    All,
+    /// These offsets, and nothing else in the row.
+    Only(Vec<i64>),
+    /// Every hit except the ones at these offsets.
+    Except(Vec<i64>),
+}
+
 // Exactly the same macros must be set in ../units_of_work/replace_in_project_uow.rs
 #[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 #[macros::uow_action(entity = "Search", action = "Get")]
 #[macros::uow_action(entity = "Search", action = "GetRelationship")]
 #[macros::uow_action(entity = "SearchResult", action = "GetMulti")]
+// A row that survives its own replace has to be corrected, not left describing
+// prose that no longer says that. See `restate`.
+#[macros::uow_action(entity = "SearchResult", action = "Update")]
 #[macros::uow_action(entity = "SearchResult", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "GetAll")]
 #[macros::uow_action(entity = "Work", action = "GetRelationship")]
@@ -170,13 +218,23 @@ impl ReplaceInProjectUseCase {
         // the discipline `empty_trash` follows.
         let snap_before = uow.snapshot_work(&[work.id])?;
 
+        // What the caller said about the individual hits inside each row. Built
+        // once: the lists are parallel-by-index, and re-reading them per row would
+        // be re-deciding per row what they mean.
+        let picks = Self::picks(dto);
+
         let mut occurrences_replaced = 0u64;
         let mut skipped_stale: Vec<u64> = Vec::new();
         // ITEMS, not fields. A scene whose body AND synopsis both match is one item —
         // the confirm dialog says "across N items", and it must not say two.
         let mut touched_items: HashSet<EntityId> = HashSet::new();
+        // Rows whose stored description has stopped being true: nothing of the query
+        // left in the field, or the field moved under the writer. Collected and
+        // removed in one call at the end, once the loop can no longer add to it.
+        let mut spent_rows: Vec<EntityId> = Vec::new();
 
         for row in &rows {
+            let pick = picks.get(&row.id).unwrap_or(&Picked::All);
             // The scene's own language, and it decides two things — both of which a
             // profile-blind rename gets wrong, silently:
             //
@@ -234,6 +292,7 @@ impl ReplaceInProjectUseCase {
                 MatchField::Title | MatchField::Label => {
                     let Some(item) = uow.get_binder_item(&row.binder_item_id)? else {
                         skipped_stale.push(row.id);
+                        spent_rows.push(row.id);
                         continue;
                     };
                     let mut item: BinderItem = item;
@@ -241,21 +300,41 @@ impl ReplaceInProjectUseCase {
                         MatchField::Title => item.title.clone(),
                         _ => item.label.clone(),
                     };
+                    // One matcher for both the count guard and the caller's offsets,
+                    // because a title has only the one text to search: no document,
+                    // no second coordinate system to reconcile.
                     let hits = crate::matching::occurrences(&current, &search.query, opts);
-                    if hits.len() as u64 != row.occurrence_count {
+                    let Some(skip) = Self::skipped_indices(pick, &hits, row.occurrence_count)
+                    else {
                         // The field moved under us since the writer reviewed it.
                         skipped_stale.push(row.id);
+                        spent_rows.push(row.id);
+                        continue;
+                    };
+                    let (rewritten, replaced) =
+                        crate::matching::replace_matches(&current, &search.query, opts, |m, i| {
+                            (!skip.contains(&i)).then(|| case_of(m))
+                        });
+                    if replaced == 0 {
+                        // Every hit in this row was refused. The field is untouched,
+                        // so its row still describes it and stays as it is.
                         continue;
                     }
-                    let rewritten =
-                        crate::matching::replace_all(&current, &search.query, opts, case_of);
                     match row.match_field {
-                        MatchField::Title => item.title = rewritten,
-                        _ => item.label = rewritten,
+                        MatchField::Title => item.title = rewritten.clone(),
+                        _ => item.label = rewritten.clone(),
                     }
                     uow.update_binder_item(&item)?;
                     touched_items.insert(row.binder_item_id);
-                    occurrences_replaced += hits.len() as u64;
+                    occurrences_replaced += replaced as u64;
+                    Self::restate(
+                        &mut uow,
+                        row,
+                        &FieldText::Plain(rewritten),
+                        &search.query,
+                        opts,
+                        &mut spent_rows,
+                    )?;
                 }
                 // A comment's own body, or one reply's. Djot now (M-S4), the same as
                 // a footnote's — so this takes the same splice inside a parsed
@@ -291,26 +370,23 @@ impl ReplaceInProjectUseCase {
                         }
                     };
 
-                    let batch = BatchDocument::new()?;
-                    batch.set_djot(&current, &DjotImportOptions::default())?;
-
-                    let hits = batch.find_all(&search.query, &find_opts)?;
-                    if hits.len() as u64 != row.occurrence_count {
-                        skipped_stale.push(row.id);
-                        continue;
-                    }
-                    if hits.is_empty() {
-                        continue;
-                    }
-
-                    let replaced = batch.find_and_replace(
+                    let Some((rewritten, replaced)) = Self::rewrite_djot(
+                        &current,
                         &search.query,
-                        &ReplaceOptions::new(find_opts.clone())
-                            .with_format_policy(ReplaceFormatPolicy::PreserveIfFullyCovered),
-                        |matched, _| Some(case_of(matched)),
-                    )?;
-
-                    let rewritten = batch.to_djot(&DjotExportOptions::default())?;
+                        &find_opts,
+                        opts,
+                        row.occurrence_count,
+                        pick,
+                        &case_of,
+                    )?
+                    else {
+                        skipped_stale.push(row.id);
+                        spent_rows.push(row.id);
+                        continue;
+                    };
+                    if replaced == 0 {
+                        continue;
+                    }
                     if is_reply {
                         let Some(mut reply): Option<CommentReply> =
                             uow.get_comment_reply(&row.reply_id)?
@@ -318,7 +394,7 @@ impl ReplaceInProjectUseCase {
                             skipped_stale.push(row.id);
                             continue;
                         };
-                        reply.body = rewritten;
+                        reply.body = rewritten.clone();
                         uow.update_comment_reply(&reply)?;
                     } else {
                         let Some(mut comment): Option<Comment> =
@@ -327,13 +403,21 @@ impl ReplaceInProjectUseCase {
                             skipped_stale.push(row.id);
                             continue;
                         };
-                        comment.body = rewritten;
+                        comment.body = rewritten.clone();
                         uow.update_comment(&comment)?;
                     }
                     // Deliberately NOT added to `touched_items`: that set drives the
                     // per-item "this scene changed" reporting, and a comment is not
                     // the scene. An orphaned thread has no item to name at all.
                     occurrences_replaced += replaced as u64;
+                    Self::restate_prose(
+                        &mut uow,
+                        row,
+                        &rewritten,
+                        &search.query,
+                        opts,
+                        &mut spent_rows,
+                    )?;
                 }
                 // A footnote's body. Djot, like a scene's — so it takes the same
                 // splice inside a parsed document, NOT the plain-string rewrite a
@@ -345,80 +429,89 @@ impl ReplaceInProjectUseCase {
                         skipped_stale.push(row.id);
                         continue;
                     };
-                    let batch = BatchDocument::new()?;
-                    batch.set_djot(&footnote.body, &DjotImportOptions::default())?;
-
-                    let hits = batch.find_all(&search.query, &find_opts)?;
-                    if hits.len() as u64 != row.occurrence_count {
-                        skipped_stale.push(row.id);
-                        continue;
-                    }
-                    if hits.is_empty() {
-                        continue;
-                    }
-
-                    let replaced = batch.find_and_replace(
+                    let Some((rewritten, replaced)) = Self::rewrite_djot(
+                        &footnote.body,
                         &search.query,
-                        &ReplaceOptions::new(find_opts.clone())
-                            .with_format_policy(ReplaceFormatPolicy::PreserveIfFullyCovered),
-                        |matched, _| Some(case_of(matched)),
-                    )?;
-
-                    footnote.body = batch.to_djot(&DjotExportOptions::default())?;
+                        &find_opts,
+                        opts,
+                        row.occurrence_count,
+                        pick,
+                        &case_of,
+                    )?
+                    else {
+                        skipped_stale.push(row.id);
+                        spent_rows.push(row.id);
+                        continue;
+                    };
+                    if replaced == 0 {
+                        continue;
+                    }
+                    footnote.body = rewritten.clone();
                     uow.update_footnote(&footnote)?;
                     // Not added to `touched_items`, for the reason comments are not:
                     // that set drives the per-item "this scene changed" reporting, and
                     // a note is not the scene. An orphaned note has no item at all.
                     occurrences_replaced += replaced as u64;
+                    Self::restate_prose(
+                        &mut uow,
+                        row,
+                        &rewritten,
+                        &search.query,
+                        opts,
+                        &mut spent_rows,
+                    )?;
                 }
                 // Prose. Spliced INSIDE the document — never surgery on the markup.
                 MatchField::Body | MatchField::Synopsis | MatchField::Epigraph => {
                     let Some(mut content) = Self::content_of(&mut uow, row)? else {
                         skipped_stale.push(row.id);
+                        spent_rows.push(row.id);
                         continue;
                     };
-                    let batch = BatchDocument::new()?;
-                    batch.set_djot(&content.data, &DjotImportOptions::default())?;
-
-                    // Re-derive the matches inside the document. Never trust a position
-                    // captured at review time — if the count no longer matches what the
-                    // writer reviewed, the scene moved under us and we refuse it.
-                    let hits = batch.find_all(&search.query, &find_opts)?;
-                    if hits.len() as u64 != row.occurrence_count {
-                        skipped_stale.push(row.id);
-                        continue;
-                    }
-                    if hits.is_empty() {
-                        continue;
-                    }
-
-                    // The splice happens in the DOCUMENT, at the offsets the parser itself
-                    // reports (see the module doc for why this isn't a string rewrite), and
-                    // the result is re-serialised by the exporter. `PreserveIfFullyCovered`
-                    // keeps the styling of a name that was wholly styled, falling back to
-                    // the previous behaviour when the range is only partly styled rather
-                    // than guessing.
-                    let replaced = batch.find_and_replace(
+                    let Some((rewritten, replaced)) = Self::rewrite_djot(
+                        &content.data,
                         &search.query,
-                        &ReplaceOptions::new(find_opts.clone())
-                            .with_format_policy(ReplaceFormatPolicy::PreserveIfFullyCovered),
-                        |matched, _| Some(case_of(matched)),
-                    )?;
-
-                    content.data = batch.to_djot(&DjotExportOptions::default())?;
+                        &find_opts,
+                        opts,
+                        row.occurrence_count,
+                        pick,
+                        &case_of,
+                    )?
+                    else {
+                        skipped_stale.push(row.id);
+                        spent_rows.push(row.id);
+                        continue;
+                    };
+                    if replaced == 0 {
+                        continue;
+                    }
+                    content.data = rewritten.clone();
                     uow.update_content(&content)?;
                     touched_items.insert(row.binder_item_id);
                     occurrences_replaced += replaced as u64;
+                    Self::restate_prose(
+                        &mut uow,
+                        row,
+                        &rewritten,
+                        &search.query,
+                        opts,
+                        &mut spent_rows,
+                    )?;
                 }
             }
         }
 
-        // Every row we just rewrote now describes prose that no longer exists — its
-        // snippet and its occurrence count are both lies. Drop the result set rather
-        // than leave the UI listing matches it can no longer find (and rather than let
-        // a second Replace All run against rows that would all read as stale).
-        if !result_ids.is_empty() {
-            uow.remove_search_result_multi(&result_ids)?;
+        // Only what is genuinely spent: a field with nothing of the query left in
+        // it, or one that moved under the writer. Every other row was either
+        // restated above or never looked at, and in both cases it still describes
+        // what it says it describes.
+        //
+        // Wiping `result_ids` wholesale is what this did first, and it is why a
+        // writer who replaced one hit was handed an empty panel — the surface above
+        // has no way to tell "your search found nothing" from "your search was
+        // thrown away".
+        if !spent_rows.is_empty() {
+            uow.remove_search_result_multi(&spent_rows)?;
         }
 
         let snap_after = uow.snapshot_work(&[work.id])?;
@@ -433,6 +526,219 @@ impl ReplaceInProjectUseCase {
             occurrences_replaced,
             skipped_stale,
         })
+    }
+
+    /// What the caller said about each row's individual hits, by row.
+    ///
+    /// The DTO carries two parallel-by-index pairs because its field types are
+    /// primitives, so a list of `(row, offset)` is two lists. A row named in the
+    /// `only_*` pair takes that reading and ignores the exclusions: naming what to
+    /// replace has already said everything about what not to.
+    fn picks(dto: &ReplaceInProjectDto) -> HashMap<EntityId, Picked> {
+        let mut out: HashMap<EntityId, Picked> = HashMap::new();
+        for (row, at) in dto
+            .excluded_occurrence_rows
+            .iter()
+            .zip(&dto.excluded_occurrence_starts)
+        {
+            match out
+                .entry(*row as EntityId)
+                .or_insert_with(|| Picked::Except(Vec::new()))
+            {
+                Picked::Except(list) => list.push(*at),
+                _ => unreachable!("only Except is inserted in this pass"),
+            }
+        }
+        for (row, at) in dto
+            .only_occurrence_rows
+            .iter()
+            .zip(&dto.only_occurrence_starts)
+        {
+            match out
+                .entry(*row as EntityId)
+                .and_modify(|p| {
+                    if !matches!(p, Picked::Only(_)) {
+                        *p = Picked::Only(Vec::new());
+                    }
+                })
+                .or_insert_with(|| Picked::Only(Vec::new()))
+            {
+                Picked::Only(list) => list.push(*at),
+                _ => unreachable!("just forced to Only"),
+            }
+        }
+        out
+    }
+
+    /// Which indices of `hits` to leave alone, from the offsets the caller named.
+    ///
+    /// `None` refuses the row, and it refuses it for either of two reasons that are
+    /// really one: the field is no longer the field that was reviewed. Either the
+    /// hit count has moved off `reviewed`, or an offset the caller named lands on no
+    /// hit at all.
+    ///
+    /// That second one is the case worth being strict about. The tempting reading of
+    /// an offset that matches nothing is "that hit is gone, so there is nothing to
+    /// skip" — and under it a stale exclusion quietly turns into a replacement of a
+    /// hit the writer refused. There is no way to tell a hit that vanished from a
+    /// hit that moved, so the honest answer is that this list no longer says which
+    /// hits it meant.
+    fn skipped_indices(
+        pick: &Picked,
+        hits: &[(usize, usize)],
+        reviewed: u64,
+    ) -> Option<HashSet<usize>> {
+        if hits.len() as u64 != reviewed {
+            return None;
+        }
+        let named = match pick {
+            Picked::All => return Some(HashSet::new()),
+            Picked::Only(at) | Picked::Except(at) => at,
+        };
+        let index_of: HashMap<i64, usize> = hits
+            .iter()
+            .enumerate()
+            .map(|(i, (start, _))| (*start as i64, i))
+            .collect();
+        let mut named_indices: HashSet<usize> = HashSet::new();
+        for at in named {
+            named_indices.insert(*index_of.get(at)?);
+        }
+        Some(match pick {
+            Picked::Only(_) => (0..hits.len())
+                .filter(|i| !named_indices.contains(i))
+                .collect(),
+            _ => named_indices,
+        })
+    }
+
+    /// Rewrite one Djot field, honouring what the caller picked inside it.
+    ///
+    /// `Ok(None)` is the refusal above: the field moved, report it stale and leave
+    /// it alone. `Ok(Some((_, 0)))` is a field every one of whose hits was refused —
+    /// nothing was written, and the caller must not treat it as touched.
+    ///
+    /// Shared by prose, comments, replies and footnotes because all four are Djot on
+    /// a row and differ only in which row. They must not differ in anything else: a
+    /// reviewed rename that honoured the writer's picks in scenes but not in the
+    /// notes about them is the half-done edit this use case exists to prevent.
+    fn rewrite_djot(
+        djot: &str,
+        query: &str,
+        find_opts: &FindOptions,
+        opts: MatchOptions,
+        reviewed: u64,
+        pick: &Picked,
+        case_of: &dyn Fn(&str) -> String,
+    ) -> Result<Option<(String, usize)>> {
+        let batch = BatchDocument::new()?;
+        batch.set_djot(djot, &DjotImportOptions::default())?;
+
+        // Re-derive the matches inside the document. Never trust a position captured
+        // at review time — if the count no longer matches what the writer reviewed,
+        // the field moved under us and we refuse it.
+        let found = batch.find_all(query, find_opts)?;
+        if found.len() as u64 != reviewed {
+            return Ok(None);
+        }
+        if found.is_empty() {
+            return Ok(Some((djot.to_string(), 0)));
+        }
+
+        // The caller names hits by their offset in the field's PLAIN TEXT, because
+        // that is the text `FieldText::hits` searched, the text the tree quoted and
+        // the text the writer was looking at. The splice below happens at the
+        // DOCUMENT's own positions. The bridge between the two coordinate systems is
+        // the ordinal — the nth hit is the nth hit — and it is sound only while both
+        // scans agree on how many there are. So that is checked, rather than
+        // assumed: an ordinal resolved against a list of a different length is an
+        // offset pointing at the wrong word, which this use case would then rewrite
+        // with complete confidence.
+        //
+        // Skipped entirely when nothing was picked, which is the Replace All case:
+        // there is no offset to resolve, so there is no reason to fold the field a
+        // second time to resolve it against.
+        let skip = if matches!(pick, Picked::All) {
+            HashSet::new()
+        } else {
+            let text = FieldText::Prose(corpus_cache::corpus_for(djot, &opts.fold_spec()));
+            let hits = text.hits(query, opts);
+            if hits.len() != found.len() {
+                return Ok(None);
+            }
+            match Self::skipped_indices(pick, &hits, reviewed) {
+                Some(skip) => skip,
+                None => return Ok(None),
+            }
+        };
+
+        // The splice happens in the DOCUMENT, at the offsets the parser itself
+        // reports (see the module doc for why this isn't a string rewrite), and the
+        // result is re-serialised by the exporter. `PreserveIfFullyCovered` keeps the
+        // styling of a name that was wholly styled, falling back to the previous
+        // behaviour when the range is only partly styled rather than guessing.
+        let replaced = batch.find_and_replace(
+            query,
+            &ReplaceOptions::new(find_opts.clone())
+                .with_format_policy(ReplaceFormatPolicy::PreserveIfFullyCovered),
+            |matched, i| (!skip.contains(&i)).then(|| case_of(matched)),
+        )?;
+        if replaced == 0 {
+            return Ok(Some((djot.to_string(), 0)));
+        }
+        Ok(Some((
+            batch.to_djot(&DjotExportOptions::default())?,
+            replaced,
+        )))
+    }
+
+    /// [`Self::restate`] for a field that is Djot, from the Djot it now holds.
+    fn restate_prose(
+        uow: &mut Box<dyn ReplaceInProjectUnitOfWorkTrait>,
+        row: &SearchResult,
+        djot: &str,
+        query: &str,
+        options: MatchOptions,
+        spent: &mut Vec<EntityId>,
+    ) -> Result<()> {
+        let text = FieldText::Prose(corpus_cache::corpus_for(djot, &options.fold_spec()));
+        Self::restate(uow, row, &text, query, options, spent)
+    }
+
+    /// Make the row describe the field as it now stands, or mark it spent.
+    ///
+    /// A row is the writer's record of a field: how many times the query is in it and
+    /// what one of those looks like in context. A replace that leaves some of them
+    /// standing has changed both numbers, and a row still claiming the old ones is
+    /// not stale in the harmless sense — it is the panel telling the writer there
+    /// are nine hits under a row that will open onto seven.
+    ///
+    /// Derived through the same [`FieldText::hits`] and the same `snippet::cut` that
+    /// wrote the row in the first place, so a restated row is indistinguishable from
+    /// one a fresh search would have produced. Anything less and a writer could tell,
+    /// from the wording of a snippet, whether a row had been through a replace.
+    fn restate(
+        uow: &mut Box<dyn ReplaceInProjectUnitOfWorkTrait>,
+        row: &SearchResult,
+        text: &FieldText,
+        query: &str,
+        options: MatchOptions,
+        spent: &mut Vec<EntityId>,
+    ) -> Result<()> {
+        let hits = text.hits(query, options);
+        let Some(&(first, first_len)) = hits.first() else {
+            // Nothing of the query left in the field. The row has nothing to say.
+            spent.push(row.id);
+            return Ok(());
+        };
+        let (before, matched, after) = crate::snippet::cut(text.as_str(), first, first_len);
+        let mut restated = row.clone();
+        restated.occurrence_count = hits.len() as u64;
+        restated.snippet_before = before;
+        restated.snippet_match = matched;
+        restated.snippet_after = after;
+        uow.update_search_result(&restated)?;
+        Ok(())
     }
 
     /// The language tag of every item in the Work, resolved per item (own tag, else the Work).

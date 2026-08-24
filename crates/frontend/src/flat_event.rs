@@ -146,6 +146,7 @@ pub enum FlatEventKind {
     ImportManagementApplyDocumentImport,
 
     SearchManagementRunSearch,
+    SearchManagementOccurrencesForResult,
     SearchManagementReplaceInProject,
 
     // Undo/redo
@@ -435,6 +436,9 @@ impl From<Event> for FlatEvent {
             },
             Origin::SearchManagement(fe) => match fe {
                 SearchManagementEvent::RunSearch => FlatEventKind::SearchManagementRunSearch,
+                SearchManagementEvent::OccurrencesForResult => {
+                    FlatEventKind::SearchManagementOccurrencesForResult
+                }
                 SearchManagementEvent::ReplaceInProject => {
                     FlatEventKind::SearchManagementReplaceInProject
                 }

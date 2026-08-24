@@ -11,7 +11,8 @@ Launches the real backend on a real project, reveals the leading search dock
      search placeholder) — i.e. the leading side really hosts a *second*
      activity dock beside the binder;
   2. after typing, the debounced search runs and produces result rows in the
-     dock's list (nodes carrying an item title + a "×N" occurrence badge);
+     dock's TREE: level-0 nodes carrying an item title + a "×N" occurrence
+     badge, opening onto one level-1 node per occurrence inside that item;
   3. activating a result reveals the bottom preview band with an editable
      RichTextEditor over that item's document (the shared OpenDoc, editable).
 
@@ -186,27 +187,91 @@ if isinstance(res, dict) and res.get("isError"):
 time.sleep(1.5)  # > 300ms debounce + the scan
 ns = nodes()
 shot("/tmp/search-results.png")
-badges = [t for t in texts(ns) if re.match(r"^×\d+", t)]
-if not badges:
-    fail("STEP 2: no ×N occurrence badges — the search produced no result rows "
-         "(a common word over a real manuscript must match)", app, mcp, log)
-print(f"STEP 2 OK: {len(badges)} result row badge(s) — e.g. {badges[:5]}")
+def result_rows(ns):
+    """The tree's rows, in the dock's lower region."""
+    return [n for n in ns if n.get("role") == "TreeItem"
+            and (n.get("bounds") or {}).get("x", 999) < 330
+            and (n.get("bounds") or {}).get("y", 0) > 440]
 
-# ── STEP 3: activate a result → the bottom preview shows an editable editor ────
-# Result rows are `ListBoxOption`s in the leading region below the count line.
-rows = [n for n in ns if n.get("role") == "ListBoxOption"
-        and (n.get("bounds") or {}).get("x", 999) < 330
-        and (n.get("bounds") or {}).get("y", 0) > 440]
+
+# Rows, not badge glyphs. The count is a `Badge` carrying a bare number now, and a
+# probe that matched its punctuation was asserting on the decoration rather than on
+# the thing the step is about — that results appeared at all.
+found = result_rows(ns)
+if not found:
+    fail("STEP 2: no result rows — the search produced none "
+         "(a common word over a real manuscript must match)", app, mcp, log)
+print(f"STEP 2 OK: {len(found)} result row(s) — e.g. "
+      f"{[ (n.get('label') or n.get('name') or '')[:24] for n in found[:3] ]}")
+
+# ── STEP 3: an item row opens onto the occurrences inside it ──────────────────
+# The results are a TREE now, not a list: `TreeItem`, not `ListBoxOption`. Level 0
+# is a BinderItem carrying the ×N badge; level 1 is one row per occurrence, and
+# those do not exist until the item is opened — they are fetched on toggle. So a
+# probe that clicked the first row and expected a preview would be clicking an
+# item, which deliberately previews nothing.
+rows = result_rows(ns)
 if not rows:
-    fail("STEP 3: no result rows to activate", app, mcp, log)
-row = min(rows, key=lambda n: (n.get("bounds") or {}).get("y", 1e9))
-acts = row.get("actions") or []
-if "activate" in acts:
-    call("invoke_action", {"node": row["id"], "action": "activate"})
-elif "click" in acts:
-    call("invoke_action", {"node": row["id"], "action": "click"})
+    fail("STEP 3: no result rows — the tree produced none", app, mcp, log)
+# **Names, not a count.** A `TreeView` is virtualized: only the rows that fit the
+# viewport have widgets, so opening a branch does not add rendered rows, it changes
+# which rows are rendered. Counting them proves nothing either way.
+def row_text(n):
+    for k in ("label", "name", "value"):
+        v = n.get(k)
+        if v:
+            return str(v)
+    return ""
+
+before_names = {row_text(n) for n in rows}
+before = len(rows)
+item = min(rows, key=lambda n: (n.get("bounds") or {}).get("y", 1e9))
+acts = item.get("actions") or []
+if "expand" in acts:
+    call("invoke_action", {"node": item["id"], "action": "expand"})
 else:
-    b = row["bounds"]
+    # No expand action exposed: focus the row and open it with the keyboard, which
+    # is the same gesture and does not depend on hitting the chevron's few pixels.
+    call("focus_node", {"node": item["id"]})
+    time.sleep(0.3)
+    call("inject_key", {"key": "Right"})
+time.sleep(1.2)
+ns = nodes()
+shot("/tmp/search-expanded.png")
+rows = result_rows(ns)
+after_names = {row_text(n) for n in rows}
+revealed = after_names - before_names
+if not revealed:
+    # What the row actually offered, so a failure says which half is broken: a row
+    # with no expand action was never asked to open, where one that opened onto
+    # nothing was asked and had nothing to give.
+    fresh = [n for n in result_rows(nodes())
+             if (n.get("bounds") or {}).get("y", 0) == (item.get("bounds") or {}).get("y", 0)]
+    after_state = fresh[0] if fresh else {}
+    fail(f"STEP 3: opening the first item revealed no occurrences — the visible "
+         f"rows are the same {before} names as before. Either the row declared "
+         "children it does not have, or the fetch-on-toggle never ran.\n"
+         f"        the row offered actions {item.get('actions')}, "
+         f"expanded={item.get('expanded')} before / "
+         f"{after_state.get('expanded')} after",
+         app, mcp, log)
+print(f"STEP 3 OK: opening an item revealed {len(revealed)} new row(s) — "
+      f"e.g. {sorted(revealed)[:2]}")
+
+# ── STEP 4: activating an occurrence previews it ──────────────────────────────
+# The children are the rows that appeared, so take one below the item we opened.
+top_y = (item.get("bounds") or {}).get("y", 0)
+children = [n for n in rows if (n.get("bounds") or {}).get("y", 0) > top_y]
+if not children:
+    fail("STEP 4: no occurrence row under the opened item", app, mcp, log)
+child = min(children, key=lambda n: (n.get("bounds") or {}).get("y", 1e9))
+acts = child.get("actions") or []
+if "activate" in acts:
+    call("invoke_action", {"node": child["id"], "action": "activate"})
+elif "click" in acts:
+    call("invoke_action", {"node": child["id"], "action": "click"})
+else:
+    b = child["bounds"]
     call("inject_pointer", {"x": b["x"] + b["width"] / 2, "y": b["y"] + b["height"] / 2,
                             "kind": "click"})
 time.sleep(1.2)
@@ -217,12 +282,134 @@ editors = [n for n in ns if n.get("role") == "MultilineTextInput"
 # The preview editor is the wide one near the bottom of the window.
 bottom = [e for e in editors if (e.get("bounds") or {}).get("y", 0) > 400]
 if not bottom:
-    fail("STEP 3: activating a result did not reveal an editable preview editor "
-         "in the bottom band", app, mcp, log)
-print(f"STEP 3 OK: single-click previews the result — {len(bottom)} editable editor(s) "
-      "in the bottom band")
+    fail("STEP 4: activating an occurrence did not reveal an editable preview "
+         "editor in the bottom band", app, mcp, log)
+print(f"STEP 4 OK: single-click on an occurrence previews it — {len(bottom)} "
+      "editable editor(s) in the bottom band")
 
-print("\nDONE — see /tmp/search-dock.png, /tmp/search-results.png, /tmp/search-preview.png")
+# ── STEP 5: replacing ONE occurrence replaces one, and the tree stays open ────
+# Driven through the row's CONTEXT MENU (`right_click`), not the hover buttons:
+# those are `access_hidden` on purpose -- a control that only exists under a
+# pointer does not exist for a keyboard or a screen reader -- and the menu is the
+# route that is meant to carry them. So this step is the accessibility claim as
+# much as the replace one.
+#
+# Two things are asserted, and they are the two that were wrong:
+#   * exactly ONE occurrence goes. The item's count is a `Badge` beside the row,
+#     and a replace that rewrote the whole field would empty it entirely.
+#   * the tree stays where it was. Re-running the search over a one-hit replace
+#     collapses every open row, which is what the writer actually saw.
+
+
+def by_label(ns, label, role="TreeItem"):
+    """A row found by what it says, not by its id: the tree rebuilds around a
+    replace and every node id changes with it."""
+    for n in ns:
+        if n.get("role") == role and row_text(n) == label:
+            return n
+    return None
+
+
+def badge_beside(ns, row):
+    """The occurrence count Badge sitting on a row's own band.
+
+    It is a separate `Label` node, not part of the row's accessible name, so it
+    is found by geometry: same y, past the row's text."""
+    y = (row.get("bounds") or {}).get("y")
+    if y is None:
+        return None
+    for n in ns:
+        b = n.get("bounds") or {}
+        if (n.get("role") == "Label" and abs(b.get("y", -1e9) - y) < 16
+                and b.get("x", 0) > 280):
+            v = (n.get("label") or n.get("name") or n.get("value") or "").strip()
+            if v.isdigit():
+                return int(v)
+    return None
+
+
+item_name = row_text(item)
+child_name = row_text(child)
+
+# Disclose the replacement row. The toggle names itself through its rich tooltip.
+toggles = [n for n in ns if str(n.get("label") or n.get("name") or "").startswith("Replace:")]
+if not toggles:
+    fail("STEP 5: no replace toggle in the search dock", app, mcp, log)
+call("invoke_action", {"node": toggles[0]["id"], "action": "click"})
+time.sleep(0.9)
+ns = nodes()
+# The replacement field carries no accessible name or placeholder, so it is taken
+# by position: the dock's second text input, below the query.
+dock_inputs = sorted([n for n in ns if n.get("role") == "TextInput"
+                      and (n.get("bounds") or {}).get("x", 999) < 340],
+                     key=lambda n: n["bounds"]["y"])
+if len(dock_inputs) < 2:
+    fail("STEP 5: the replace toggle disclosed no replacement field", app, mcp, log)
+call("focus_node", {"node": dock_inputs[1]["id"]})
+time.sleep(0.2)
+call("type_text", {"node": dock_inputs[1]["id"], "text": "ZQX"})
+time.sleep(0.6)
+
+# Disclosing the replace row moved everything below it, so the tree is re-read.
+ns = nodes()
+row = by_label(ns, item_name)
+if row is None:
+    fail(f"STEP 5: the item row {item_name!r} left the tree when replace mode opened",
+         app, mcp, log)
+if not row.get("expanded"):
+    call("invoke_action", {"node": row["id"], "action": "expand"})
+    time.sleep(1.0)
+    ns = nodes()
+    row = by_label(ns, item_name)
+before_badge = badge_beside(ns, row)
+if before_badge is None:
+    fail(f"STEP 5: no occurrence count beside {item_name!r} to compare against",
+         app, mcp, log)
+
+target = by_label(ns, child_name)
+if target is None:
+    fail("STEP 5: the occurrence row from STEP 4 is gone before anything replaced it",
+         app, mcp, log)
+res, _ = call("right_click", {"node": target["id"]})
+if isinstance(res, dict) and res.get("isError"):
+    fail("STEP 5: right_click on an occurrence row errored — the hover buttons are "
+         "access_hidden, so the context menu is the only other route to replace "
+         "or dismiss a row", app, mcp, log)
+time.sleep(0.8)
+ns = nodes()
+shot("/tmp/search-rowmenu.png")
+items = [n for n in ns if n.get("role") in ("MenuItem", "MenuListOption")]
+replace_here = [n for n in items
+                if "Replace" in str(n.get("label") or n.get("name") or "")]
+if not replace_here:
+    fail("STEP 5: the row's context menu offers no replace action — "
+         f"it listed {[n.get('label') or n.get('name') for n in items]}",
+         app, mcp, log)
+call("invoke_action", {"node": replace_here[0]["id"], "action": "click"})
+time.sleep(1.6)
+ns = nodes()
+shot("/tmp/search-replaced.png")
+
+row = by_label(ns, item_name)
+if row is None:
+    fail(f"STEP 5: {item_name!r} left the results entirely — replacing ONE of its "
+         f"{before_badge} hits took the whole field with it", app, mcp, log)
+after_badge = badge_beside(ns, row)
+if after_badge != before_badge - 1:
+    fail(f"STEP 5: replacing ONE occurrence took the count from {before_badge} to "
+         f"{after_badge}. One hit was named; anything else means the caller's pick "
+         "never reached the prose.", app, mcp, log)
+if by_label(ns, child_name) is not None:
+    fail("STEP 5: the replaced occurrence is still listed", app, mcp, log)
+if not row.get("expanded"):
+    fail("STEP 5: the item collapsed — the panel re-ran the whole search over a "
+         "one-hit replace and threw away where the writer was", app, mcp, log)
+print(f"STEP 5 OK: one occurrence replaced ({before_badge} → {after_badge}), "
+      "its row is gone, and the item stayed open")
+
+print("\nDONE — see /tmp/search-dock.png, /tmp/search-results.png, "
+      "/tmp/search-expanded.png, /tmp/search-preview.png, /tmp/search-rowmenu.png, "
+      "/tmp/search-replaced.png")
 for p in (app, mcp):
     if p.poll() is None:
         p.terminate()

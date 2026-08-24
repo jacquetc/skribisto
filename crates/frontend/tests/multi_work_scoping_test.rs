@@ -965,6 +965,10 @@ fn replace_in_project_only_replaces_in_the_requested_work() {
                 replacement: "Irene".to_string(),
                 preserve_case: false,
                 excluded_result_ids: vec![],
+                excluded_occurrence_rows: vec![],
+                excluded_occurrence_starts: vec![],
+                only_occurrence_rows: vec![],
+                only_occurrence_starts: vec![],
             },
         )
         .expect("replace_in_project");

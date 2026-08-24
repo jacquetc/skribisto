@@ -2469,6 +2469,78 @@ features:
         type: uinteger
       - name: truncated
         type: boolean
+  # The occurrences inside ONE result row, for the search tree's second level.
+  #
+  # Per ROW rather than per item, and that is what keeps the DTO honest: a row is
+  # one field of one item, so everything the tree needs to *identify* an occurrence
+  # -- which item, which field, which comment or footnote -- is already on the
+  # `SearchResult` the caller is expanding. Only the positions and their snippets
+  # are missing, and those are five parallel lists rather than one list of structs
+  # because the manifest's field types are primitives. Expanding an item is one
+  # call per matching field, which is one to three in practice.
+  #
+  # The query is NOT an input. It is read from the `Search` entity that
+  # `run_search` wrote, so the occurrences cannot disagree with the count in the
+  # badge beside them -- a caller passing its own query is exactly how the second
+  # level would come to contradict the first.
+  #
+  # NOT `read_only`: reaching a scene's prose goes through the same corpus walk
+  # `run_search` uses, and that walk is written against the command unit of work.
+  # Nothing here writes.
+  - name: occurrences_for_result
+    entities:
+    - Work
+    - WorkInfo
+    - Search
+    - SearchResult
+    - Binder
+    - BinderItem
+    - Content
+    - Comment
+    - CommentReply
+    # Listed here, unlike `run_search` above, whose unit of work hand-adds it. A
+    # footnote is a searchable field like any other and its text has to be reached
+    # the same way; leaving it out of the manifest only moves the fact into a
+    # hand-edit that the next regeneration argues with.
+    - Footnote
+    undoable: false
+    dto_in:
+      name: OccurrencesForResultDto
+      fields:
+      - name: work_id
+        type: uinteger
+      # The `SearchResult` row to open. Its field, its item and its comment or
+      # footnote id are all already on that row.
+      - name: result_id
+        type: uinteger
+    dto_out:
+      name: OccurrencesForResultResultDto
+      fields:
+      # Parallel by index: occurrence `i` is `char_starts[i]` long `char_lens[i]`,
+      # shown as `snippets_before[i]` + `snippets_match[i]` + `snippets_after[i]`.
+      # A match's length is not the query's: folding can change it, which is why
+      # the length is carried rather than assumed.
+      - name: char_starts
+        type: integer
+        is_list: true
+      - name: char_lens
+        type: integer
+        is_list: true
+      - name: snippets_before
+        type: string
+        is_list: true
+      - name: snippets_match
+        type: string
+        is_list: true
+      - name: snippets_after
+        type: string
+        is_list: true
+      # Whether the listed occurrences stop short of the row's own
+      # `occurrence_count`. A field can hold thousands of hits of a common word,
+      # and a tree that lists them all is neither readable nor affordable. The
+      # count on the parent row stays the true one.
+      - name: truncated
+        type: boolean
   # SYNCHRONOUS, deliberately — and this is not the obvious choice, so: Qleany
   # silently IGNORES `undoable: true` when `long_operation: true`. Compare the two
   # generated controllers: an undoable command's controller takes an
@@ -2508,9 +2580,57 @@ features:
         type: string
       - name: preserve_case
         type: boolean
-      # SearchResult ids the writer unticked — the fields to leave alone.
+      # SearchResult ids the writer unticked — the whole fields to leave alone.
+      #
+      # Still the coarse switch, and still the one a writer reaches for most: it
+      # says "not this scene's prose at all". It is also the only exclusion that
+      # can be *complete* where a row holds more hits than the tree lists, which is
+      # why unticking a parent row is stored here rather than as an occurrence
+      # apiece.
       - name: excluded_result_ids
         type: uinteger
+        is_list: true
+      # Single occurrences the writer unticked, parallel by index: occurrence
+      # `excluded_occurrence_starts[i]` inside row `excluded_occurrence_rows[i]`.
+      #
+      # A row is one FIELD, so before this the finest thing a writer could refuse
+      # was every hit in a scene's prose at once. The results tree shows them one
+      # by one and lets them be refused one by one, which is what the panel it is
+      # modelled on does.
+      #
+      # Identified by character offset rather than by ordinal because the replace
+      # re-derives the hits itself, through the same matcher, and an offset says
+      # which hit it means without depending on both sides having counted from the
+      # same place. An offset naming no hit does NOT mean "nothing to skip": it
+      # means the field moved under the writer and this list no longer says which
+      # hits it meant, so the whole row is skipped and reported stale. Replacing
+      # the rest of it would be replacing hits nobody reviewed.
+      - name: excluded_occurrence_rows
+        type: uinteger
+        is_list: true
+      - name: excluded_occurrence_starts
+        type: integer
+        is_list: true
+      # The other direction, parallel by index the same way: in row
+      # `only_occurrence_rows[i]`, replace the occurrence at
+      # `only_occurrence_starts[i]` -- and, in that row, NOTHING else.
+      #
+      # Not a convenience over the exclusion list: the two cannot express each
+      # other. "Replace just this one" turned into "skip the other n-1" is only
+      # true while the caller can enumerate the other n-1, and it cannot -- a
+      # results tree lists at most `OCCURRENCE_CAP` hits of a field that may hold
+      # thousands. Sent as an exclusion, the hits past the cap are hits nobody
+      # named and every one of them would be rewritten. Sent this way the count
+      # is irrelevant: one occurrence is named and one is replaced.
+      #
+      # A row named here ignores the exclusion list, which is not a conflict to
+      # resolve but the same statement twice: naming what to do already says
+      # everything about what not to do.
+      - name: only_occurrence_rows
+        type: uinteger
+        is_list: true
+      - name: only_occurrence_starts
+        type: integer
         is_list: true
     dto_out:
       name: ReplaceInProjectResultDto

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Comment reply — one bubble and the arrow that answers it.
+       Not the Comments glyph, which is two bubbles: that one means "a thread",
+       and here the thread is the parent row. This says which end of it the hit
+       is at, and a reply and the remark it answers are two different places to
+       be sent to. -->
+  <path d="M4.6 2.4h8.0a1.3 1.3 0 0 1 1.3 1.3v3.6a1.3 1.3 0 0 1-1.3 1.3H8.2L5.6 10.6V8.6h-1A1.3 1.3 0 0 1 3.3 7.3V3.7A1.3 1.3 0 0 1 4.6 2.4z"/>
+  <path d="M13.6 12.8 H6.2"/>
+  <path d="M8.2 10.8 6.2 12.8 8.2 14.8"/>
+</svg>

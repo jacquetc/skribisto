@@ -49,6 +49,7 @@ mod recent_work_list_model;
 mod row_search;
 mod search_results_model;
 mod search_settings_file;
+mod search_tree_model;
 mod stats_model;
 mod stream_rows_model;
 mod text_replacement_rule_list_model;
@@ -104,6 +105,7 @@ pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsS
 pub use recent_work_list_model::RecentWorkListModel;
 pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
+pub use search_tree_model::{SearchNode, SearchTreeKey, SearchTreeModel};
 pub use stats_model::StatsModel;
 pub use stream_rows_model::{StreamLevel, StreamRow, StreamRowsModel};
 pub use text_replacement_rule_list_model::{
