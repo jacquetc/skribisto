@@ -548,20 +548,6 @@ impl MarginLane {
         self
     }
 
-    /// Called with the fraction of the map the **viewport's top** should move to.
-    ///
-    /// Not the fraction the writer pointed at, and the difference is the whole of
-    /// what a lane is for. A click puts the box's *middle* where the pointer is,
-    /// so the mark someone aimed at ends up on screen rather than on its first
-    /// line with everything they were looking for below the fold. A drag of the
-    /// box keeps the offset it was grabbed at, the way a scroll bar's thumb does.
-    /// What arrives here is the answer to all of that, already clamped so the box
-    /// stays on the strip.
-    ///
-    /// A host maps it back through whatever mapping it laid the marks out with —
-    /// which is the reason this is a fraction of the map and not a pixel: the two
-    /// are only the same number where the content is laid out uniformly, and a
-    /// manuscript is not.
     /// What the strip offers on a right-click.
     ///
     /// The widget knows nothing about what the items mean -- the factory is
@@ -580,6 +566,20 @@ impl MarginLane {
         self
     }
 
+    /// Called with the fraction of the map the **viewport's top** should move to.
+    ///
+    /// Not the fraction the writer pointed at, and the difference is the whole of
+    /// what a lane is for. A click puts the box's *middle* where the pointer is,
+    /// so the mark someone aimed at ends up on screen rather than on its first
+    /// line with everything they were looking for below the fold. A drag of the
+    /// box keeps the offset it was grabbed at, the way a scroll bar's thumb does.
+    /// What arrives here is the answer to all of that, already clamped so the box
+    /// stays on the strip.
+    ///
+    /// A host maps it back through whatever mapping it laid the marks out with —
+    /// which is the reason this is a fraction of the map and not a pixel: the two
+    /// are only the same number where the content is laid out uniformly, and a
+    /// manuscript is not.
     pub fn on_jump(mut self, f: impl Fn(f32) + 'static) -> Self {
         self.on_jump = Some(Rc::new(f));
         self
@@ -708,12 +708,29 @@ impl MarginLane {
     /// together is what makes `LaneMark::id`'s "unique within a provider"
     /// contract sufficient. Same move `teksilo-charts` makes for `(series,
     /// point)`.
+    ///
+    /// FNV-1a, 64-bit, over `group` widened to `u64` then `id` — the same shape
+    /// `margin_lane::providers::mark_id` uses for the other half of a mark's
+    /// identity (its `LaneMark::id`), and the same algorithm
+    /// `margin_lane::resolve::group_of` uses for `group` itself. This used to be
+    /// `std::collections::hash_map::DefaultHasher`, which is exactly what
+    /// `group_of`'s own doc comment warns against: "a named, stable, trivially
+    /// re-implementable hash rather than `DefaultHasher`, whose output std
+    /// explicitly does not promise across releases — and this number reaches an
+    /// accessibility tree that has to hold still." That rule was being kept for
+    /// one half of this identity and broken for the other; this makes both
+    /// halves keep it the same way.
     fn element_id(group: u16, id: u64) -> u64 {
-        use std::hash::{Hash, Hasher};
-        let mut h = std::collections::hash_map::DefaultHasher::new();
-        group.hash(&mut h);
-        id.hash(&mut h);
-        h.finish()
+        let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+        let mut mix = |v: u64| {
+            for byte in v.to_le_bytes() {
+                hash ^= u64::from(byte);
+                hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+            }
+        };
+        mix(u64::from(group));
+        mix(id);
+        hash
     }
 
     /// The x offset and width a mark occupies, given its column.
@@ -726,9 +743,28 @@ impl MarginLane {
         let cw = (col - 1.0).max(1.0);
         match column {
             LaneColumn::Full => (x + 1.0, (w - 2.0).max(1.0)),
-            LaneColumn::Left => (x + 0.5, cw),
+            // `Left` sits against a true edge too, but only sometimes: with the
+            // texture column off, `mark_area` starts at `bounds.x` and the half
+            // pixel in front of the column is inside the *left* `EDGE_RULE`. With
+            // the texture on, `mark_area` starts past the divider and there is no
+            // rule to overlap. One pixel of inset covers both — it is what `Full`
+            // already reserves on this side, and where there is no rule it costs
+            // half a pixel of a column nothing is drawn hard against.
+            LaneColumn::Left => (x + 1.0, (col - 1.5).max(1.0)),
             LaneColumn::Center => (x + col + 0.5, cw),
-            LaneColumn::Right => (x + 2.0 * col + 0.5, cw),
+            // `mark_area`'s width runs to the strip's own right edge --
+            // `x + w == bounds.x + bounds.width` whether or not a texture
+            // column is showing -- so Right is the one column that sits
+            // against a true edge of the widget rather than only against its
+            // neighbours. The shared `cw` put its right edge at
+            // `x + 3.0 * col - 0.5`, which is half a pixel inside
+            // `[x + w - EDGE_RULE, x + w)`, the right `EDGE_RULE`'s own span:
+            // a Right-column Square or Diamond had its rightmost half-pixel
+            // painted under the edge hairline. An extra half pixel off the
+            // width -- the same pixel `Full` already reserves on each side,
+            // for the same reason -- lands the right edge exactly on the
+            // rule's boundary instead of inside it.
+            LaneColumn::Right => (x + 2.0 * col + 0.5, (col - 1.5).max(1.0)),
         }
     }
 }
@@ -742,6 +778,48 @@ pub const TEXTURE_DIVIDER: f32 = 1.0;
 /// The hairline down each edge of the strip, which is what gives it a constant
 /// footprint whether or not it currently holds a mark.
 const EDGE_RULE: f32 = 1.0;
+
+/// The texture column's own left inset and usable bar length, derived from its
+/// width rather than hardcoded.
+///
+/// This used to be a bare `let usable = (tex_w - 6.0).max(1.0);` paired with
+/// every bar painted at `bounds.x + 3.0` -- numbers that assume a texture
+/// column at least 6px wide with a symmetric 3px margin on each side. But
+/// `texture_width` is a public builder that takes any positive value, and the
+/// divider between the texture column and the mark columns is drawn
+/// independently at `bounds.x + tex_w`: `MarginLane::new(..).texture(bars)
+/// .texture_width(2.0)` is a legal call, and under the old numbers every bar
+/// then started 1px to the *right* of the column's own divider, inside the
+/// mark-column area, and grew further into it as the bar lengthened.
+///
+/// The inset is now half of whatever is left after `usable` is reserved --
+/// `(tex_w - usable) / 2.0` -- floored at zero so a column narrower than its
+/// own reservation still draws its bars inside itself (starting at its own
+/// left edge) rather than to the left of it. At the default 28px width this
+/// reproduces the old numbers exactly: `usable` is 22, the leftover is 6, and
+/// half of that is the 3.0 every bar used to hardcode -- a normal lane does
+/// not change.
+fn texture_bar_geometry(tex_w: f32) -> (f32, f32) {
+    let usable = (tex_w - 6.0).max(1.0);
+    let inset = ((tex_w - usable) / 2.0).max(0.0);
+    (inset, usable)
+}
+
+/// Where a texture bar's top edge lands once it is clamped into the strip --
+/// the paint-time twin of the clamp `resolve_marks` applies to a mark's own
+/// top (see the comment there, "so a mark at 0.0 or 1.0 does not hang outside
+/// the lane it belongs to"). Factored out purely so the clamp has something to
+/// assert against directly: the loop it lives in used to paint straight from
+/// `bounds.y + span.start * bounds.height` with no clamp at all, so a bar
+/// whose paragraph spans `{ start: 1.0, end: 1.0 }` -- the very last one in
+/// the document -- landed a whole `bounds.height` below the strip's own top,
+/// and the `.max(1.0)` height floor then gave that position something to
+/// paint: a bar drawn entirely beneath the widget, over whatever sits below
+/// the lane. The two loops (marks and bars) must agree on this clamp or only
+/// one of them keeps its promise to stay inside its own bounds.
+fn clamp_texture_bar_top(raw_top: f32, height: f32, bounds: Rect) -> f32 {
+    raw_top.clamp(bounds.y, (bounds.y + bounds.height - height).max(bounds.y))
+}
 
 impl Widget for MarginLane {
     /// Opt into concrete-type introspection, so a host's tests can read the marks
@@ -1055,23 +1133,35 @@ impl Widget for MarginLane {
 
         // ── the texture column ────────────────────────────────────────────
         if tex_w > 0.0 {
-            let usable = (tex_w - 6.0).max(1.0);
+            let (inset, usable) = texture_bar_geometry(tex_w);
             let ink = colors.text_secondary;
             for bar in self.bars.get() {
                 let span = bar.span.clamped();
-                let top = bounds.y + span.start * bounds.height;
+                let raw_top = bounds.y + span.start * bounds.height;
                 let height = ((span.end - span.start) * bounds.height).max(1.0);
+                // Clamped exactly the way `resolve_marks` clamps a mark's top
+                // (see the comment there): a paragraph spanning the very end
+                // of the document, where `span.start == span.end == 1.0`,
+                // puts `raw_top` at `bounds.y + bounds.height` -- a whole
+                // `bounds.height` below the strip's own top -- and the
+                // `.max(1.0)` height floor then painted a rect that started,
+                // and stayed, entirely below the widget's own bounds, over
+                // whatever sits beneath the lane. The two loops (marks here,
+                // bars there) have to agree on this or the last paragraph in
+                // a manuscript silently draws its texture bar into the
+                // neighbour below the lane instead of onto the lane itself.
+                let top = clamp_texture_bar_top(raw_top, height, bounds);
                 let len = (bar.extent.clamp(0.0, 1.0) * usable).max(1.0);
 
                 // Two passes, unfilled then filled, so the fill reads as a
                 // proportion of the bar rather than as a second bar.
                 canvas.fill_rect(
-                    Rect::new(bounds.x + 3.0, top, len, height),
+                    Rect::new(bounds.x + inset, top, len, height),
                     ink.with_alpha(0.42),
                 );
                 let filled = len * bar.filled.clamp(0.0, 1.0);
                 if filled > 0.0 {
-                    canvas.fill_rect(Rect::new(bounds.x + 3.0, top, filled, height), ink);
+                    canvas.fill_rect(Rect::new(bounds.x + inset, top, filled, height), ink);
                 }
             }
 
@@ -1478,7 +1568,6 @@ mod tests {
         assert!(resolved.iter().all(|m| m.merged == 1));
     }
 
-    /// Paint order is the declared group, not the order marks arrived in.
     /// **Handing the lane bars is what turns the texture column on.**
     ///
     /// It used to take two calls, and forgetting the second was silent: the bars
@@ -1525,6 +1614,79 @@ mod tests {
             }])
             .texture_width(0.0);
         assert_eq!(off.total_width(), lane(Vec::new()).total_width());
+    }
+
+    /// **A texture bar can never cross its own column's divider.**
+    ///
+    /// The old code reserved a hardcoded 6px and inset every bar by a hardcoded
+    /// 3px, which assumed a texture column at least 6px wide with a symmetric
+    /// 3px margin either side. `texture_width` takes any positive value, though,
+    /// and the divider is drawn independently at `bounds.x + tex_w`:
+    /// `MarginLane::new(..).texture(bars).texture_width(2.0)` is legal, and
+    /// under the old numbers every bar started 1px to the right of the
+    /// column's own divider -- inside the mark-column area -- and grew further
+    /// into it as the bar lengthened. `texture_bar_geometry` derives the inset
+    /// from `tex_w` instead, so the longest a bar can ever be (`usable`,
+    /// reached at `extent == 1.0`) plus the inset it starts at must stay
+    /// strictly left of the divider at every width, narrow ones included.
+    #[test]
+    fn a_narrow_texture_column_keeps_every_bar_left_of_its_own_divider() {
+        for tex_w in [2.0_f32, 3.0, 4.0, 6.0, 10.0, DEFAULT_TEXTURE_WIDTH, 60.0] {
+            let (inset, usable) = texture_bar_geometry(tex_w);
+            assert!(
+                inset + usable < tex_w,
+                "tex_w {tex_w}: inset {inset} + longest bar {usable} reaches the divider at {tex_w}"
+            );
+        }
+    }
+
+    /// At the default width, deriving the inset must reproduce the numbers the
+    /// column always drew: a caller who never touches `texture_width` sees no
+    /// change at all.
+    #[test]
+    fn the_default_texture_width_keeps_its_old_geometry() {
+        let (inset, usable) = texture_bar_geometry(DEFAULT_TEXTURE_WIDTH);
+        assert_eq!(inset, 3.0);
+        assert_eq!(usable, 22.0);
+    }
+
+    /// **A texture bar must not paint below the lane it belongs to.**
+    ///
+    /// A paragraph that is the very last thing in a document maps to
+    /// `span = LaneSpan { start: 1.0, end: 1.0 }` -- a zero-length span sitting
+    /// right at the bottom of the map. With no clamp that put `raw_top` at
+    /// `bounds.y + bounds.height`, one whole lane height below the strip's own
+    /// top, and the `.max(1.0)` height floor then gave that position 1px to
+    /// paint: a bar drawn entirely beneath the widget, over whatever sits
+    /// below the lane rather than on the lane itself.
+    #[test]
+    fn a_texture_bar_at_the_very_end_of_the_document_stays_inside_the_lane() {
+        let bounds = BOUNDS;
+        let height = 1.0_f32; // the `.max(1.0)` floor a zero-length span gets
+        let raw_top = bounds.y + bounds.height; // span.start == span.end == 1.0
+        let top = clamp_texture_bar_top(raw_top, height, bounds);
+        assert!(
+            top >= bounds.y,
+            "the bar's top at {top} is above the lane's own top"
+        );
+        assert!(
+            top + height <= bounds.y + bounds.height + 1e-4,
+            "the bar's bottom at {} is past the lane's own bottom at {}",
+            top + height,
+            bounds.y + bounds.height
+        );
+    }
+
+    /// An ordinary, well-inside-the-lane bar must land exactly where its span
+    /// says -- the clamp is only supposed to catch the edges, not nudge every
+    /// bar.
+    #[test]
+    fn a_texture_bar_well_inside_the_lane_is_not_moved_by_the_clamp() {
+        let bounds = BOUNDS;
+        let raw_top = bounds.y + 0.4 * bounds.height;
+        let height = 20.0_f32;
+        let top = clamp_texture_bar_top(raw_top, height, bounds);
+        assert!((top - raw_top).abs() < 1e-4, "an interior bar moved: {top}");
     }
 
     /// **A lane bound to a signal has to redraw when the signal moves.**
@@ -1818,6 +1980,16 @@ mod tests {
         );
     }
 
+    /// Paint order is the declared group, not the order marks arrived in.
+    ///
+    /// `resolve_marks` sorts ascending by `group` before anything is drawn, so a
+    /// later group always paints over an earlier one regardless of which
+    /// provider happened to register first, or which one's marks landed
+    /// earlier in the `Vec` this frame. That has to be true independent of
+    /// registration order: an extension registering a provider must not be
+    /// able to change what paints over what merely by the order its
+    /// registration call happens to run in, or paint order becomes a race
+    /// instead of a property declared on the mark itself.
     #[test]
     fn paint_order_follows_the_group_not_the_input_order() {
         let l = lane(vec![
@@ -1852,6 +2024,66 @@ mod tests {
             centre.0 + centre.1 <= right.0,
             "centre {centre:?} runs into right {right:?}"
         );
+    }
+
+    /// No mark column may paint under either `EDGE_RULE` -- the hairline down
+    /// each side of the strip that gives it a constant footprint whether or
+    /// not it currently holds a mark. `Full` already reserved a pixel on each
+    /// side for exactly this; `Right` did not, and its right edge landed half
+    /// a pixel inside the right rule's own span -- invisible until a Square or
+    /// Diamond mark sat right against it and had its rightmost half-pixel
+    /// painted under the hairline.
+    ///
+    /// Checked against a lane with its texture column on and bounds sized to
+    /// that lane's own `total_width()` -- the shape `paint` actually receives,
+    /// where `mark_area`'s right edge coincides with the widget's own right
+    /// edge regardless of whether the texture column is showing. With no
+    /// texture column at all, `mark_area`'s *left* edge instead coincides with
+    /// the widget's own left edge, and `Left` starts only 0.5px inside that --
+    /// a second, narrower overlap this fix does not touch: the defect was the
+    /// Right column specifically, and Left/Center/Full's geometry was not to
+    /// change.
+    #[test]
+    fn no_column_paints_under_either_edge_rule() {
+        // **Both arrangements.** Which columns sit against a true edge of the widget
+        // depends on the texture: with it on, `mark_area` starts past the divider and
+        // only `Right` touches an edge rule; with it off, `mark_area` starts at
+        // `bounds.x` and `Left` touches the other one. Testing one arrangement is
+        // what let the left-hand half of this stand.
+        for textured in [false, true] {
+            let l = if textured {
+                lane(Vec::new()).texture_width(DEFAULT_TEXTURE_WIDTH)
+            } else {
+                lane(Vec::new())
+            };
+            let bounds = Rect {
+                x: 0.0,
+                y: 0.0,
+                width: l.total_width(),
+                height: 1000.0,
+            };
+            let left_rule_end = bounds.x + EDGE_RULE;
+            let right_rule_start = bounds.x + bounds.width - EDGE_RULE;
+
+            for column in [
+                LaneColumn::Left,
+                LaneColumn::Center,
+                LaneColumn::Right,
+                LaneColumn::Full,
+            ] {
+                let (x, w) = l.column_rect(bounds, column);
+                assert!(
+                    x >= left_rule_end - 1e-4,
+                    "{column:?} at {x} starts inside the left edge rule (textured: {textured})"
+                );
+                assert!(
+                    x + w <= right_rule_start + 1e-4,
+                    "{column:?} ends at {} which reaches into the right edge rule at \
+                     {right_rule_start} (textured: {textured})",
+                    x + w
+                );
+            }
+        }
     }
 
     /// **Emphasis may not come out of the width.**
@@ -2002,8 +2234,6 @@ mod tests {
     }
 
     /// A zero-height lane happens for one frame during teardown and on a
-    /// collapsed pane. It must not divide by it.
-    /// A zero-height lane happens for one frame during teardown and on a
     /// collapsed pane. Every mark must land *at* the lane rather than floating
     /// above it — the clamp is what this asserts, not merely that nothing
     /// divided by zero.
@@ -2076,6 +2306,19 @@ mod tests {
             "the same mark must keep the same node id across walks"
         );
         assert_ne!(MarginLane::element_id(3, 7), MarginLane::element_id(3, 8));
+    }
+
+    /// Pinned against literals -- the same idiom `providers::mark_id` and
+    /// `resolve::group_of` use for their own hashes, and for the same reason:
+    /// two inputs merely differing does not catch the algorithm being quietly
+    /// swapped back to `DefaultHasher`, which would still very likely produce
+    /// different numbers for different inputs. Only the actual numbers pin the
+    /// algorithm itself.
+    #[test]
+    fn element_id_is_the_same_number_on_every_build() {
+        assert_eq!(MarginLane::element_id(0, 1), 0x6925_58b0_5610_1a44);
+        assert_eq!(MarginLane::element_id(1, 1), 0x581c_d0fa_58d9_9645);
+        assert_eq!(MarginLane::element_id(3, 7), 0x3c38_5254_3d68_0a01);
     }
 
     /// The merge must compare a mark against the nearest prior mark **of its own
