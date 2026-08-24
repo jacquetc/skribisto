@@ -538,6 +538,18 @@ impl LaneHost {
         h.add(query::active_query().generation());
         h.add(height.to_bits() as u64);
         h.add(self.inputs.rows.extents().generation().get());
+        // Every provider that named a counter to watch. Once per pass rather than
+        // per row: a provider's trigger is a property of the provider, not of the
+        // document it is being asked about.
+        //
+        // The binding above is what gets this pass to run; this is what stops the
+        // guard below deciding nothing has changed once it does. Both are needed,
+        // and either alone is silent.
+        for spec in super::registered_for(self.inputs.surface) {
+            if let super::LaneRefresh::OnSignal(signal) = &spec.refresh {
+                h.add(signal.get());
+            }
+        }
         for MappedRow { row, .. } in rows {
             h.add(row.item);
             h.add(row.doc.content_revision());
@@ -1129,6 +1141,21 @@ impl Widget for LaneHost {
                 registry,
                 BindingLevel::Rebuild,
             );
+            // **A provider's own recompute trigger**, at `Relayout`: its marks are
+            // resolved in this widget's layout pass, so a counter that dirties
+            // nothing changes nothing. The community edition's four providers all
+            // declare `Manual` and are covered by the fingerprint's own terms
+            // (the query's generation, the comment model's, the spell session's,
+            // the document revision) -- which is exactly how this went unnoticed:
+            // a field every built-in opted out of, that nothing read.
+            //
+            // An extension's provider is backed by an extension's model, and had
+            // no route at all. Binding a beat put a mark on the strip that
+            // appeared at the writer's next keystroke, and looked like a lane
+            // that had not noticed.
+            if let super::LaneRefresh::OnSignal(signal) = &spec.refresh {
+                signal.bind_to(self_id, registry, BindingLevel::Relayout);
+            }
         }
 
         // **What makes the strip re-derive.** Three bindings above `RepaintOnly`, and
@@ -2076,5 +2103,65 @@ mod tests {
             lane_switches(&store, LaneSurface::SearchPreview).len(),
             crate::margin_lane::registered_for(LaneSurface::SearchPreview).len() + 2
         );
+    }
+
+    // ── a provider's own recompute trigger ───────────────────────────────────
+
+    /// **A counter a provider named must reach the guard.**
+    ///
+    /// [`LaneRefresh`](crate::margin_lane::LaneRefresh) was declared, stored and
+    /// printed, and read by nothing. Every provider this crate ships says
+    /// `Manual` and is covered by the fingerprint's own terms -- the query's
+    /// generation, the comment model's, the spell session's, the document
+    /// revision -- so the field being dead cost the community edition nothing
+    /// and showed up nowhere.
+    ///
+    /// It costs an extension everything. A provider backed by a model of its
+    /// own has no other route: its data changes, no document does, and the
+    /// guard reads the same fingerprint and returns. The marks appear on the
+    /// writer's next keystroke, which looks like a lane that has not noticed
+    /// rather than like a bug.
+    #[test]
+    fn a_provider_that_named_a_counter_moves_the_fingerprint_when_it_ticks() {
+        let host = host_over(&[(1, &prose(200), 0.0, 200.0)]);
+        let rows = host.resolve(0.0);
+
+        let tick = Signal::new(7u64);
+        let mut spec = probe_spec();
+        spec.id = "refresh-probe".to_string();
+        spec.refresh = crate::margin_lane::LaneRefresh::OnSignal(tick.clone());
+        let _h = crate::margin_lane::register_lane_provider("test.refresh.signal", spec)
+            .expect("register");
+
+        let before = host.input_fingerprint(&rows, 400.0);
+        assert_eq!(
+            host.input_fingerprint(&rows, 400.0),
+            before,
+            "nothing moved, so the guard must still hold"
+        );
+
+        tick.set(8);
+        assert_ne!(
+            host.input_fingerprint(&rows, 400.0),
+            before,
+            "the provider's counter ticked and the guard did not notice: its \
+             marks would appear at the writer's next keystroke"
+        );
+    }
+
+    /// And a provider that named no counter must not move it, or the guard is
+    /// not a guard: every pass would resolve every mark again.
+    #[test]
+    fn a_manual_provider_does_not_move_the_fingerprint_on_its_own() {
+        let host = host_over(&[(1, &prose(200), 0.0, 200.0)]);
+        let rows = host.resolve(0.0);
+        let mut spec = probe_spec();
+        spec.id = "manual-probe".to_string();
+        let _h = crate::margin_lane::register_lane_provider("test.refresh.manual", spec)
+            .expect("register");
+
+        let a = host.input_fingerprint(&rows, 400.0);
+        let b = host.input_fingerprint(&rows, 400.0);
+        assert_eq!(a, b, "a Manual provider contributes nothing that moves");
     }
 }
