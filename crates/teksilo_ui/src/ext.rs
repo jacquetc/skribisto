@@ -74,6 +74,11 @@ pub use crate::tabs::shared::segments::{
 /// Declared next to the dock seam because that is where it first appeared, and
 /// shared verbatim by the inspector, segment, category and lane specs.
 pub use crate::docks::LabelFn;
+/// Which field of an item a lane is mapping, carried on [`LaneContext::kind`].
+///
+/// A stream is one [`LaneSurface`] with two flavours, a Book's prose and the
+/// same Book's synopsis cards, and this is what tells them apart.
+pub use crate::format::EditorKind;
 /// The margin lane's provider seam — a source of positional marks on the strip
 /// beside a text surface's scroll area.
 ///

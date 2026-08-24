@@ -672,6 +672,9 @@ impl LaneHost {
                 surface: self.inputs.surface,
                 doc: &row.doc,
                 item_id: row.item,
+                // The host has always known which field it is mapping -- it is
+                // how the editor handle above was found. It just never said.
+                kind: self.inputs.kind,
                 comment_anchors: &anchors,
                 misspellings: &flagged,
                 locate: &locate,
@@ -2147,6 +2150,57 @@ mod tests {
             before,
             "the provider's counter ticked and the guard did not notice: its \
              marks would appear at the writer's next keystroke"
+        );
+    }
+
+    /// **The other half: a tick dirties the tree at all.**
+    ///
+    /// The fingerprint decides whether a pass that *runs* does any work. It is
+    /// consulted from `place_children`, so on its own it settles nothing: a
+    /// widget nothing dirties is never laid out again, and the guard is never
+    /// reached to be asked. Binding the provider's counter at `Relayout` in
+    /// `build` is what makes the pass happen, and the two commits together are
+    /// the fix; either alone is silent, in the same way and with the same
+    /// symptom.
+    ///
+    /// ⚠ The binding is taken from a snapshot of the registry at `build` time, so
+    /// a provider registered **after** a lane was built is not bound to that
+    /// lane. That is the seam's existing rule rather than a new hole -- `ext`
+    /// requires every registration before `run()`, on the main thread -- and this
+    /// test registers before building for exactly that reason.
+    #[test]
+    fn a_counter_ticking_is_enough_to_get_the_lane_laid_out_again() {
+        let tick = Signal::new(1u64);
+        let mut spec = probe_spec();
+        spec.id = "relayout-probe".to_string();
+        spec.refresh = crate::margin_lane::LaneRefresh::OnSignal(tick.clone());
+        // Before the build, which is where the binding is taken.
+        let _h = crate::margin_lane::register_lane_provider("test.refresh.relayout", spec)
+            .expect("register");
+
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        tree.add(lane_for(
+            &ScrollArea::new(),
+            inputs_over(&[(1, "prose", 0.0, 100.0)]),
+        ));
+        // Settle: `layout` is what walks a pending signal change into the arena
+        // and closes the gate, so lay out until it stops re-opening. The
+        // assertion below is then about the tick and not about the first frame.
+        for _ in 0..6 {
+            tree.layout(teksilo::canvas::SizeProposal::exact(40.0, 400.0));
+        }
+        assert!(
+            !tree.needs_reconcile(),
+            "the fixture must be settled before it is measured, or the tick \
+             proves nothing"
+        );
+
+        tick.set(2);
+        assert!(
+            tree.needs_reconcile(),
+            "the provider's counter ticked and nothing dirtied the lane; its \
+             marks would wait for whatever the writer did next"
         );
     }
 

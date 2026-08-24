@@ -16,6 +16,12 @@
 //! | Document boundaries | Left | Rule | Streams only | on |
 //! | Spelling | Left | Dot | Editor, stream | **off** |
 //!
+//! Three on and one off, and the split is not a quota: the three mark what a
+//! person put there or went looking for, and are silent on a manuscript nobody
+//! has annotated. The fourth reports a machine's opinion of the prose. See
+//! [`LaneProviderSpec::default_on`](super::LaneProviderSpec::default_on), which
+//! is where an extension reads the rule.
+//!
 //! ## The left column is shared, and that is the first time
 //!
 //! Three providers meant three columns, and none could ever fight another for a

@@ -188,6 +188,23 @@ pub struct LaneContext<'a> {
     pub doc: &'a teksilo::text_document::TextDocument,
     /// The `BinderItem` the document belongs to.
     pub item_id: common::types::EntityId,
+    /// **Which of the item's fields [`doc`](Self::doc) is.**
+    ///
+    /// [`surface`](Self::surface) says *where* the lane is; this says *what it is
+    /// mapping*. A stream is one surface with two flavours -- a Book's prose and
+    /// the same Book's synopsis cards -- and the seam had no way to tell them
+    /// apart, though the host had known all along: the discriminator was already
+    /// on `LaneInputs`, one struct away, and simply never handed down.
+    ///
+    /// Most providers should not branch on it. Comments, spelling and search all
+    /// mark what is in the document in front of the reader, whichever field that
+    /// is, and a provider that reads its position from
+    /// [`locate`](Self::locate) is already correct on both.
+    ///
+    /// It is here for the provider whose marks mean something about the *prose*
+    /// specifically, which has otherwise no way to notice that it is being asked
+    /// about a two-line note instead.
+    pub kind: crate::format::EditorKind,
     /// The comment threads anchored in this document, at the offsets they are at
     /// **right now**.
     ///
@@ -270,8 +287,26 @@ pub struct LaneProviderSpec {
     pub surfaces: &'static [LaneSurface],
     /// Whether it is on for a writer who has never touched the setting.
     ///
-    /// Three on by default is the budget. A lane that lights up with everything
-    /// is a cockpit, and this application is not one.
+    /// A lane that lights up with everything is a cockpit, and this application
+    /// is not one. This used to be stated as a budget of three, which is a rule
+    /// an extension cannot evaluate: registration is open, so nobody knows what
+    /// else is installed, and a count is not a property of the provider being
+    /// written.
+    ///
+    /// The rule the four built-ins actually follow, and the one to apply, is
+    /// about **who put the thing there**:
+    ///
+    /// * A provider may default **on** when it is silent until a person acts.
+    ///   Comments mark what a writer wrote; search marks what they went looking
+    ///   for; boundaries mark a division in the document they assembled. A
+    ///   manuscript nobody has annotated draws none of them.
+    /// * A provider that reports a **machine's finding** about the prose
+    ///   defaults **off**. Spelling is the case: a lane that lights up with it
+    ///   unasked is a proofreading tool wearing a manuscript's clothes, and the
+    ///   writer who wants it can turn it on where they can see the effect.
+    ///
+    /// The count follows from the property rather than bounding it, which is
+    /// what makes it something a provider's own author can check.
     pub default_on: bool,
     /// When its marks need recomputing.
     pub refresh: LaneRefresh,
@@ -400,6 +435,17 @@ fn register(
                 spec.id, other.namespace
             ));
         }
+        if let Some(other) = reg
+            .iter()
+            .find(|r| r.namespace != namespace && dotted_prefix(&r.spec.id, &spec.id))
+        {
+            return Err(format!(
+                "lane provider id '{}' and '{}' (registered by '{}') are dotted \
+                 prefixes of each other, so one's settings key would have to be \
+                 both a value and a table",
+                spec.id, other.spec.id, other.namespace
+            ));
+        }
         reg.retain(|r| r.namespace != namespace);
         reg.push(Registered {
             namespace: namespace.clone(),
@@ -407,6 +453,30 @@ fn register(
         });
         Ok(LaneProviderHandle { namespace })
     })
+}
+
+/// Whether one id is a dotted prefix of the other.
+///
+/// **Why an id's *shape* is a registration concern.** A provider's settings key
+/// is `editor.margin_lane.provider.<id>`, and the settings file is TOML, where a
+/// dotted key is a path into nested tables. So an id of `a.b` and an id of
+/// `a.b.c` ask the store for the same name as a boolean *and* as a table, and it
+/// refuses: "a key cannot be both a value and a parent". It refuses by panicking,
+/// on the first pass that resolves the lane, which is a window opening rather
+/// than a startup.
+///
+/// Nothing had to think about this while every id was a single word. The first
+/// dotted one arrived with an extension, and the ids are frozen the moment one
+/// ships, so the moment to notice is registration: an `Err` here is returned on
+/// the main thread before `run`, next to the extension that chose the id, and
+/// names both of them.
+///
+/// Compared on **segments**, not bytes: `beat` and `beats` share a byte prefix
+/// and nest perfectly well.
+fn dotted_prefix(a: &str, b: &str) -> bool {
+    let (short, long) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+    long.strip_prefix(short)
+        .is_some_and(|rest| rest.starts_with('.'))
 }
 
 /// Unregisters its provider when dropped.

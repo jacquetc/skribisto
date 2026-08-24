@@ -399,6 +399,7 @@ fn call<'a>(
     surface: LaneSurface,
 ) -> LaneCall<'a> {
     LaneCall {
+        kind: teksilo_ui::ext::EditorKind::Prose,
         app_ctx,
         ids,
         surface,
@@ -1056,6 +1057,7 @@ fn an_extension_can_build_a_context_of_its_own() {
     let anchors: Vec<CommentAnchor> = Vec::new();
     let locate = |_: usize| Some(0.25_f32);
     let ctx = LaneContext {
+        kind: teksilo_ui::ext::EditorKind::Prose,
         app_ctx: &app_ctx,
         ids: &ids,
         surface: LaneSurface::Stream,
@@ -1069,4 +1071,96 @@ fn an_extension_can_build_a_context_of_its_own() {
     };
     assert_eq!((ctx.locate)(0), Some(0.25));
     assert!(ctx.comment_anchors.is_empty());
+}
+
+/// **An id that would make its settings key both a value and a table is refused
+/// here, rather than panicking a window open later.**
+///
+/// A provider's key is `editor.margin_lane.provider.<id>` and the settings file
+/// is TOML, where a dotted key is a path into nested tables. `pro.structure` and
+/// `pro.structure.beats` therefore ask the store for one name as a boolean and
+/// as a table, and it refuses by panicking -- on the first pass that resolves a
+/// lane, which is a writer opening a Full book view.
+///
+/// Nothing had to think about it while every id was a single word; the first
+/// dotted one came from an extension. Refusing at registration puts the error on
+/// the main thread, before `run`, beside the extension that chose the id.
+#[test]
+fn an_id_that_would_collide_with_anothers_settings_path_is_refused() {
+    let mut deep = provider("collide.parent.child", &[LaneSurface::Editor]);
+    deep.id = "collide.parent.child".to_string();
+    let _held = register_lane_provider("test.collide.deep", deep).expect("the first one is fine");
+
+    let mut shallow = provider("collide.parent", &[LaneSurface::Editor]);
+    shallow.id = "collide.parent".to_string();
+    let err = register_lane_provider("test.collide.shallow", shallow)
+        .expect_err("a dotted prefix of a registered id must be refused");
+    assert!(
+        err.contains("collide.parent") && err.contains("collide.parent.child"),
+        "the error must name both ids so the author can see the pair: {err}"
+    );
+
+    // A shared *byte* prefix is not a shared path: these two nest perfectly well
+    // and must both be accepted, or the check is a rename ban.
+    let mut sibling = provider("collide.parent.children", &[LaneSurface::Editor]);
+    sibling.id = "collide.parent.children".to_string();
+    let _also = register_lane_provider("test.collide.sibling", sibling)
+        .expect("'child' and 'children' are different segments");
+}
+
+/// **A provider can tell a Book's prose from its synopsis cards.**
+///
+/// A stream is one surface with two flavours: `Full book` maps each scene's
+/// prose, `Full synopsis` maps the same scenes' notes, and both arrive as
+/// `LaneSurface::Stream`. The host knew which -- it is how it finds the editor
+/// handle for a row -- and did not say, so a provider whose marks mean something
+/// about the *prose* had no way to notice it was being asked about a two-line
+/// note instead.
+///
+/// Most providers should not branch on it: a position that came from `locate` is
+/// already right on both. It is here so that marking both can be a decision.
+#[test]
+fn a_provider_is_told_which_field_of_the_item_it_is_mapping() {
+    use std::cell::RefCell;
+
+    let seen: Rc<RefCell<Vec<teksilo_ui::ext::EditorKind>>> = Rc::new(RefCell::new(Vec::new()));
+    let recorder = seen.clone();
+    let mut spec = provider("flavour-probe", &[LaneSurface::Stream]);
+    spec.marks = Rc::new(move |ctx| {
+        recorder.borrow_mut().push(ctx.kind);
+        Vec::new()
+    });
+
+    let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+    let ids = teksilo_ui::app_ids::AppIds::new();
+    let doc = TextDocument::new();
+    let anchors: Vec<CommentAnchor> = Vec::new();
+    let locate = |_: usize| Some(0.5_f32);
+
+    for kind in [
+        teksilo_ui::ext::EditorKind::Prose,
+        teksilo_ui::ext::EditorKind::Synopsis,
+    ] {
+        let call = teksilo_ui::margin_lane::resolve::LaneCall {
+            app_ctx: &app_ctx,
+            ids: &ids,
+            surface: LaneSurface::Stream,
+            doc: &doc,
+            item_id: 7,
+            kind,
+            comment_anchors: &anchors,
+            misspellings: &[],
+            locate: &locate,
+        };
+        let _ = call.run(&spec, Color::from_hex("#009E73"), 3);
+    }
+
+    assert_eq!(
+        *seen.borrow(),
+        vec![
+            teksilo_ui::ext::EditorKind::Prose,
+            teksilo_ui::ext::EditorKind::Synopsis
+        ],
+        "the flavour must reach the provider, and reach it unchanged"
+    );
 }

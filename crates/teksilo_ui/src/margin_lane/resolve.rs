@@ -129,6 +129,8 @@ pub struct LaneCall<'a> {
     pub surface: super::LaneSurface,
     pub doc: &'a teksilo::text_document::TextDocument,
     pub item_id: common::types::EntityId,
+    /// Which field `doc` is -- see [`LaneContext::kind`](super::LaneContext::kind).
+    pub kind: crate::format::EditorKind,
     pub comment_anchors: &'a [super::CommentAnchor],
     pub misspellings: &'a [(usize, usize)],
     pub locate: &'a dyn Fn(usize) -> Option<f32>,
@@ -148,6 +150,7 @@ impl LaneCall<'_> {
             surface: self.surface,
             doc: self.doc,
             item_id: self.item_id,
+            kind: self.kind,
             comment_anchors: self.comment_anchors,
             misspellings: self.misspellings,
             color,
