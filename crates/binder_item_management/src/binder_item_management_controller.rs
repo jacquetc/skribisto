@@ -10,6 +10,8 @@ use crate::DuplicateReturnDto;
 use crate::MergeTwoScenesDto;
 use crate::MoveDto;
 use crate::PromoteDto;
+use crate::SetDescendantsBooksDto;
+use crate::SetDescendantsBooksResultDto;
 use crate::SetDescendantsDictLanguageDto;
 use crate::SetDescendantsDictLanguageResultDto;
 use crate::SetDescendantsExportableDto;
@@ -20,6 +22,7 @@ use crate::units_of_work::duplicate_uow::DuplicateUnitOfWorkFactory;
 use crate::units_of_work::merge_two_scenes_uow::MergeTwoScenesUnitOfWorkFactory;
 use crate::units_of_work::move_items_uow::MoveItemsUnitOfWorkFactory;
 use crate::units_of_work::promote_uow::PromoteUnitOfWorkFactory;
+use crate::units_of_work::set_descendants_books_uow::SetDescendantsBooksUnitOfWorkFactory;
 use crate::units_of_work::set_descendants_dict_language_uow::SetDescendantsDictLanguageUnitOfWorkFactory;
 use crate::units_of_work::set_descendants_exportable_uow::SetDescendantsExportableUnitOfWorkFactory;
 use crate::units_of_work::split_scene_uow::SplitSceneUnitOfWorkFactory;
@@ -28,6 +31,7 @@ use crate::use_cases::duplicate_uc::DuplicateUseCase;
 use crate::use_cases::merge_two_scenes_uc::MergeTwoScenesUseCase;
 use crate::use_cases::move_items_uc::MoveItemsUseCase;
 use crate::use_cases::promote_uc::PromoteUseCase;
+use crate::use_cases::set_descendants_books_uc::SetDescendantsBooksUseCase;
 use crate::use_cases::set_descendants_dict_language_uc::SetDescendantsDictLanguageUseCase;
 use crate::use_cases::set_descendants_exportable_uc::SetDescendantsExportableUseCase;
 use crate::use_cases::split_scene_uc::SplitSceneUseCase;
@@ -130,6 +134,20 @@ pub fn set_descendants_dict_language(
 ) -> Result<SetDescendantsDictLanguageResultDto> {
     let uow_context = SetDescendantsDictLanguageUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = SetDescendantsDictLanguageUseCase::new(Box::new(uow_context));
+    let return_dto = uc.execute(dto)?;
+    undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
+    Ok(return_dto)
+}
+
+pub fn set_descendants_books(
+    db_context: &DbContext,
+    event_hub: &Arc<EventHub>,
+    undo_redo_manager: &mut UndoRedoManager,
+    stack_id: Option<u64>,
+    dto: &SetDescendantsBooksDto,
+) -> Result<SetDescendantsBooksResultDto> {
+    let uow_context = SetDescendantsBooksUnitOfWorkFactory::new(db_context, event_hub);
+    let mut uc = SetDescendantsBooksUseCase::new(Box::new(uow_context));
     let return_dto = uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
     Ok(return_dto)

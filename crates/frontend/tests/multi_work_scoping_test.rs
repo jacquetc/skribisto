@@ -298,6 +298,7 @@ fn seed_mentionable_scene(
         contents: vec![],
         references: vec![],
         point_of_view: vec![],
+        books: vec![],
         tags: vec![],
     };
     let mut character = mk(BinderItemSubRole::Note, &format!("{needle} Sarraute"));
@@ -401,6 +402,7 @@ fn seed_prose_scene(ctx: &AppContext, binder_id: EntityId, words: usize) {
             contents: vec![],
             references: vec![],
             point_of_view: vec![],
+            books: vec![],
             tags: vec![],
         }],
         binder_id,
@@ -458,6 +460,7 @@ fn seed_trashed_item(
             contents: vec![],
             references: vec![],
             point_of_view: vec![],
+            books: vec![],
             tags: vec![],
         }],
         binder_id,
@@ -797,6 +800,7 @@ fn seed_needle_scene(ctx: &AppContext, binder_id: EntityId, title: &str, prose: 
             contents: vec![],
             references: vec![],
             point_of_view: vec![],
+            books: vec![],
             tags: vec![],
         }],
         binder_id,
@@ -1113,6 +1117,7 @@ fn seed_active_item(ctx: &AppContext, binder_id: EntityId, uid_seed: u64) -> Ent
             contents: vec![],
             references: vec![],
             point_of_view: vec![],
+            books: vec![],
             tags: vec![],
         }],
         binder_id,
@@ -1155,6 +1160,7 @@ fn seed_scene_pair(
         contents: vec![],
         references: vec![],
         point_of_view: vec![],
+        books: vec![],
         tags: vec![],
     };
     let created = binder_item_commands::create_binder_item_multi(

@@ -69,6 +69,7 @@ fn item(sub_role: BinderItemSubRole, title: &str) -> CreateBinderItemDto {
         contents: vec![],
         references: vec![],
         point_of_view: vec![],
+        books: vec![],
         tags: vec![],
     }
 }

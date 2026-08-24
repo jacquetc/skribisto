@@ -855,6 +855,29 @@ entities:
     type: entity
     entity: BinderItem
     relationship: many_to_many
+  # Which Book or Books the writer has filed this item under -- a structural twin of
+  # `point_of_view` and `references` above: self-referencing, weak, unordered,
+  # many-to-many. Meaningful only on `Folder/Note` and `Item/Note` rows; every other
+  # row leaves it empty and nothing reads it there.
+  #
+  # A declaration, never an observation. It states what the writer has filed, not
+  # where a row physically sits (that stays `book_containing`/`first_book`, a
+  # positional scan over the ordered binder stream) and not where a name appears in
+  # prose (that stays the mention index). Empty means "not yet filed" and nothing
+  # else -- never "applies to every Book" -- matching how every sibling relationship
+  # on this entity already reads an empty Vec as none. An empty `Vec` was never a
+  # distinguishable "everyone" state and never becomes one: there is no second bit to
+  # add later that would tell the two apart.
+  #
+  # The model cannot enforce that a target actually resolves to a live `Folder/Book`
+  # item, for the same reason `point_of_view` above cannot enforce
+  # POV-restricted-to-discoverable -- Qleany has no primitive for it. Every reader
+  # must silently skip an id that does not currently resolve to one, rather than
+  # render a broken entry.
+  - name: books
+    type: entity
+    entity: BinderItem
+    relationship: many_to_many
   - name: tags
     type: entity
     entity: BinderTag
@@ -2003,6 +2026,41 @@ features:
     dto_out:
       name: SetDescendantsDictLanguageResultDto
       fields:
+      - name: changed_ids
+        type: uinteger
+        is_list: true
+
+  # The same subtree walk again, over the `Books` relationship instead of a
+  # scalar field: push one item's declared filing down onto everything beneath
+  # it, as a single undo step.
+  #
+  # It **overwrites**, exactly like `set_descendants_dict_language` overwrites
+  # `dict_language` -- an empty `book_ids` is a legitimate instruction to push
+  # down (it clears a descendant's own filing), never a missing argument, and a
+  # child that already carried its own value loses it to the parent's current
+  # one. A writer who wants one child to differ edits that child afterward.
+  #
+  # The root is not touched -- the Inspector's own Books section owns that;
+  # this is the "apply to children" affordance beside it.
+  - name: set_descendants_books
+    entities:
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: SetDescendantsBooksDto
+      fields:
+      - name: item_id
+        type: uinteger
+      - name: book_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: SetDescendantsBooksResultDto
+      fields:
+      # The descendants actually written -- those whose filing did not already
+      # match. Empty is a success, not an error: it means the subtree already
+      # agreed.
       - name: changed_ids
         type: uinteger
         is_list: true

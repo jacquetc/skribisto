@@ -67,6 +67,15 @@ pub struct SetDescendantsDictLanguageResultDto {
     pub changed_ids: Vec<u64>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SetDescendantsBooksDto {
+    pub item_id: u64,
+    pub book_ids: Vec<u64>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SetDescendantsBooksResultDto {
+    pub changed_ids: Vec<u64>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ClearTitlesDto {
     pub item_ids: Vec<u64>,
 }

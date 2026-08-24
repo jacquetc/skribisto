@@ -5672,6 +5672,7 @@ dependencies = [
  "skribisto-common",
  "skribisto-direct-access",
  "skribisto-macros",
+ "skribisto-model",
  "uuid",
 ]
 

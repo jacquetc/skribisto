@@ -52,6 +52,10 @@ pub struct LoadedWork {
     pub references: Vec<(u64, u64)>,
     /// (scene file id, story-bible item file id) point-of-view pairs.
     pub point_of_view: Vec<(u64, u64)>,
+    /// (item file id, Book file id) filing pairs -- which Book or Books the writer has
+    /// declared this item filed under. A declaration, never a positional read: see
+    /// `BinderItemFile::book_ids`.
+    pub books: Vec<(u64, u64)>,
     /// Absolute path recorded in `RecentWork` (the opened file/folder).
     pub absolute_path: String,
 }

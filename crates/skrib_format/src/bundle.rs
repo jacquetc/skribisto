@@ -792,6 +792,29 @@ pub struct BinderItemFile {
     /// needed a version bump and a heal step.
     #[serde(default)]
     pub point_of_view_ids: Vec<u64>,
+    /// Which Book or Books the writer has filed this item under, as `file_id`s of
+    /// `Folder/Book` items. A declaration, never an observation: it never replaces the
+    /// positional read of which Book a row physically sits inside, and nothing here
+    /// derives it from where a name appears in prose.
+    ///
+    /// Purely additive, the identical shape as `point_of_view_ids` above: an empty
+    /// vector was never an invalid state, so an existing `items.ron` reads back
+    /// correctly with `default` and `FORMAT_VERSION` does not move. Empty means "not yet
+    /// filed" and nothing else, never "applies to every Book": that matches how
+    /// `reference_ids`, `point_of_view_ids` and `tag_ids` all already read an empty
+    /// vector as none.
+    ///
+    /// The one real cost of skipping a version bump, stated plainly rather than
+    /// discovered later: a build compiled before this field existed opens a bundle
+    /// carrying `book_ids` with no error, because serde silently skips a field it does
+    /// not recognise (no `deny_unknown_fields` anywhere in this crate). If that older
+    /// build then saves, `book_ids` does not survive the write; it is not refused or
+    /// flagged, simply gone, because the older struct never had a slot for it. The same
+    /// failure shape already on record for `BinderTagFile`'s dropped `text_color` above,
+    /// with one difference: `text_color` was a field an old build once had and lost,
+    /// `book_ids` is a field an old build never had to begin with.
+    #[serde(default)]
+    pub book_ids: Vec<u64>,
     /// M2M tag `file_id`s.
     pub tag_ids: Vec<u64>,
 }

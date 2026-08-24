@@ -256,6 +256,7 @@ fn sample_inputs() -> SampleInputs {
             contents: Vec::new(),
             references: Vec::new(),
             point_of_view: Vec::new(),
+            books: Vec::new(),
             tags: vec![10],
         };
         items.push(ItemWithContents { item, contents });
@@ -265,6 +266,10 @@ fn sample_inputs() -> SampleInputs {
     // ...and a point of view on the same pair, which is a different question
     // (who appears here vs. whose eyes this is told through) travelling the same road.
     items[0].item.point_of_view = vec![301];
+    // ...and a Book filing on a *third* item, deliberately a different target than
+    // both relationships above, so a copy-paste slip between any of the three would
+    // show up as cross-contamination rather than passing by coincidence.
+    items[0].item.books = vec![302];
 
     let binders = vec![BinderWithItems {
         binder: Binder {
@@ -664,6 +669,61 @@ fn point_of_view_round_trips_and_stays_distinct_from_references() {
         unassigned.point_of_view_ids.is_empty(),
         "an unassigned scene must stay unassigned; got {:?}",
         unassigned.point_of_view_ids
+    );
+}
+
+/// A Book filing survives a save→load, and stays distinct from both `references`
+/// and `point_of_view`.
+///
+/// A declaration, never an observation: `books` states which Book or Books the
+/// writer has filed this entry under, and travels the same M2M road through the
+/// format as the other two self-relationships without answering either of their
+/// questions. The fixture deliberately points it at a *third* item, so a
+/// copy-paste slip in the mapping layer between any of the three would show up as
+/// cross-contamination rather than passing by coincidence.
+#[test]
+fn books_round_trips_and_stays_distinct_from_point_of_view_and_references() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("BooksNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    let written = &bundle.binders[0].items[0].item;
+    let loaded = &read.binders[0].items[0].item;
+    assert_eq!(
+        written.book_ids,
+        vec![302],
+        "the fixture files the item under a Book to begin with"
+    );
+    assert_eq!(
+        loaded.book_ids, written.book_ids,
+        "the Book filing must survive the round trip"
+    );
+    assert_eq!(
+        loaded.reference_ids, written.reference_ids,
+        "references must survive it independently"
+    );
+    assert_eq!(
+        loaded.point_of_view_ids, written.point_of_view_ids,
+        "point of view must survive it independently"
+    );
+    assert_ne!(
+        loaded.book_ids, loaded.point_of_view_ids,
+        "filing under a Book must never be conflated with point of view"
+    );
+
+    // An item never filed must come back unfiled, not with a Book copied in.
+    let unfiled = read.binders[0]
+        .items
+        .iter()
+        .map(|b| &b.item)
+        .find(|i| i.file_id != written.file_id)
+        .expect("the fixture has more than one item");
+    assert!(
+        unfiled.book_ids.is_empty(),
+        "an unfiled entry must stay unfiled; got {:?}",
+        unfiled.book_ids
     );
 }
 
@@ -1983,6 +2043,9 @@ fn parses_a_bundle_written_before_these_fields_existed() {
     // addition therefore needed both a version bump and a heal step.
     assert!(items[0].aliases.is_empty());
     assert!(items[0].point_of_view_ids.is_empty());
+    // `book_ids` is the identical shape, added later: an empty filing is exactly as
+    // ordinary as an empty POV, so it defaults the same way for the same reason.
+    assert!(items[0].book_ids.is_empty());
     // Same reasoning for the numbering opt-out, and the polarity is the whole point:
     // every row of every project that predates the field was numbered, and `false` — the
     // exception not being taken — is exactly what a bare `#[serde(default)]` yields. Had

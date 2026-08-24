@@ -127,3 +127,15 @@ pov-empty = No point of view set
 pov-add = Set point of view…
 pov-multiple = This scene has two points of view.
 pov-remove = Remove { $name } as point of view
+
+# ── Book filing ──────────────────────────────────────────────────────────────
+# Which Book or Books a note or note folder is declared to belong to. Shown
+# only on story-bible material outside the manuscript flow, since a scene's
+# Book is already given by where it sits in the binder, and only once the
+# project holds two or more Books; a one-Book project has nothing to file
+# against.
+books-section = Filed under
+books-empty = Not filed under a book yet
+books-add = File under a book…
+books-remove = Remove from { $name }
+books-apply-to-children = Apply filing to children

@@ -442,11 +442,12 @@ pub(crate) fn materialize(
                 // dropped on every load once, with nothing on screen to show for it.
                 aliases: i.aliases.clone(),
                 id: 0,
-                // All three are wired afterwards by `set_binder_item_relationship`,
+                // All four are wired afterwards by `set_binder_item_relationship`,
                 // once the contents exist and the file ids have been remapped.
                 contents: Vec::new(),
                 references: Vec::new(),
                 point_of_view: Vec::new(),
+                books: Vec::new(),
                 tags: Vec::new(),
             })?;
 
@@ -510,6 +511,19 @@ pub(crate) fn materialize(
     }
     for (s, dsts) in &pov_by_source {
         uow.set_binder_item_relationship(s, &BinderItemRelationshipField::PointOfView, dsts)?;
+    }
+
+    // Book filing, the same shape again: (item, Book) pairs remapped onto the freshly
+    // minted store ids. A declaration the writer made, not derived from anything else
+    // loaded here, so it travels exactly the same road as the two relationships above.
+    let mut books_by_source: HashMap<EntityId, Vec<EntityId>> = HashMap::new();
+    for (src, dst) in &loaded.books {
+        if let (Some(&s), Some(&d)) = (item_map.get(src), item_map.get(dst)) {
+            books_by_source.entry(s).or_default().push(d);
+        }
+    }
+    for (s, dsts) in &books_by_source {
+        uow.set_binder_item_relationship(s, &BinderItemRelationshipField::Books, dsts)?;
     }
 
     // Trash index (remap origin + trashed targets).
@@ -1156,6 +1170,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     contents: Vec::new(),
                     references: Vec::new(),
                     point_of_view: Vec::new(),
+                    // Legacy projects had no Book-filing concept either.
+                    books: Vec::new(),
                     tags: Vec::new(),
                 },
                 contents,
@@ -1215,6 +1231,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         references,
         // Legacy projects had no point-of-view concept.
         point_of_view: Vec::new(),
+        // Nor a Book-filing concept: nothing here to carry over.
+        books: Vec::new(),
         absolute_path: p.absolute_path.clone(),
     }
 }

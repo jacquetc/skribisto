@@ -132,6 +132,7 @@ pub enum BinderItemManagementEvent {
     Promote,
     SetDescendantsExportable,
     SetDescendantsDictLanguage,
+    SetDescendantsBooks,
     ClearTitles,
 }
 

@@ -8,6 +8,7 @@ pub(crate) mod duplicate_uc;
 pub(crate) mod merge_two_scenes_uc;
 pub(crate) mod move_items_uc;
 pub(crate) mod promote_uc;
+pub(crate) mod set_descendants_books_uc;
 pub(crate) mod set_descendants_dict_language_uc;
 pub(crate) mod set_descendants_exportable_uc;
 pub(crate) mod split_scene_uc;

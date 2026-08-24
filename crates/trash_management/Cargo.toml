@@ -24,6 +24,7 @@ name = "trash_management"
 anyhow = { workspace = true }
 common = { workspace = true }
 macros = { workspace = true }
+skribisto_model = { workspace = true }
 binder_ordering = { workspace = true }
 serde = "1.0"
 serde_json = "1.0"

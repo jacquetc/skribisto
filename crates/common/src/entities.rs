@@ -469,6 +469,7 @@ pub struct BinderItem {
     pub contents: Vec<EntityId>,
     pub references: Vec<EntityId>,
     pub point_of_view: Vec<EntityId>,
+    pub books: Vec<EntityId>,
     pub tags: Vec<EntityId>,
 }
 

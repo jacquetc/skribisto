@@ -14,7 +14,7 @@ use teksilo::core::BindingLevel;
 use frontend::common::entities::BinderItemSubRole;
 use frontend::direct_access::BinderItemDto;
 use teksilo::prelude::*;
-use teksilo::widgets::{TextWidget, VStack};
+use teksilo::widgets::{Button, ButtonVariant, TextWidget, VStack};
 
 use super::Inspector;
 use crate::singles::SingleBinderItem;
@@ -100,6 +100,107 @@ pub(super) fn section(
                         .color(TextRole::Secondary),
                 )
                 .child(crate::tags::AliasPillField::new(alias_value, set_aliases));
+        }
+
+        // Books: which Book or Books this note is declared to belong to. This is
+        // the writer's own filing, never a position or a scan result. Only a Note or
+        // Note folder needs it: a scene's Book is already derivable from where it
+        // sits in the binder, so this is gated through `search_facet_of`, the same
+        // constraint-matrix predicate that already unions `Folder/Note` and
+        // `Item/Note` under one "Note" facet for search, not a hand-rolled
+        // sub_role list.
+        //
+        // Renders nothing at all below two Books in the Work: no control, no empty
+        // picker, no chrome. A one-Book writer has nothing to declare, and a
+        // disabled field would answer a question they never asked. See
+        // `docks::inspector::live_books`'s own doc comment for the reasoning.
+        if matches!(
+            skribisto_model::search_facet_of(&d.role, &d.sub_role),
+            Some(skribisto_model::SearchFacet::Note)
+        ) {
+            let candidates = super::live_books(&panel.app_ctx, &panel.outline.ids());
+            if candidates.len() >= 2 {
+                let stack = panel.outline.ids().stack_id.get();
+                let books_value = Signal::new(d.books.clone());
+                let books_probe = SingleBinderItem::new(panel.app_ctx.clone());
+                books_probe.set_id(Some(d.id));
+
+                let set_book: crate::tags::mention_list::PinReference = {
+                    let mirror = books_value.clone();
+                    let probe = books_probe.clone();
+                    // Only echo the write into the mirror once it actually lands:
+                    // same reasoning as `set_tags` above.
+                    Rc::new(move |target, _c| {
+                        let mut next = probe.dto().map(|x| x.books).unwrap_or_default();
+                        if !next.contains(&target) {
+                            next.push(target);
+                        }
+                        match probe.set_books(&next, stack) {
+                            Ok(()) => mirror.set(next),
+                            Err(e) => eprintln!("inspector: file under book failed: {e}"),
+                        }
+                    })
+                };
+                let clear_book: crate::tags::books::ClearBook = {
+                    let mirror = books_value.clone();
+                    let probe = books_probe.clone();
+                    Rc::new(move |target: u64, _c: &mut EventContext| {
+                        let next: Vec<u64> = probe
+                            .dto()
+                            .map(|x| x.books)
+                            .unwrap_or_default()
+                            .into_iter()
+                            .filter(|&id| id != target)
+                            .collect();
+                        match probe.set_books(&next, stack) {
+                            Ok(()) => mirror.set(next),
+                            Err(e) => eprintln!("inspector: remove book filing failed: {e}"),
+                        }
+                    })
+                };
+
+                col = col.child(
+                    TextWidget::new(tr!(books_section()))
+                        .style(TextStyleRole::Tiny)
+                        .color(TextRole::Secondary),
+                );
+
+                let book_ids = books_value.get();
+                if book_ids.is_empty() {
+                    col = col.child(
+                        TextWidget::new(tr!(books_empty()))
+                            .style(TextStyleRole::Tiny)
+                            .color(TextRole::Secondary),
+                    );
+                } else {
+                    col = col.child(crate::tags::book_chip_row(
+                        crate::tags::book_chips(&candidates, &book_ids),
+                        clear_book,
+                    ));
+                }
+
+                col = col.child(crate::tags::book_add_button(
+                    candidates, book_ids, d.id, set_book,
+                ));
+
+                // "Apply to children": push this item's current filing onto its
+                // whole subtree in one undo step, matching the export toggle and
+                // the language field's own "Apply to children" gate. Shown only
+                // when the item actually has a subtree (always empty for
+                // `Item/Note`, since a leaf is not its own descendant).
+                if !panel.outline.subtree_descendants(d.id).is_empty() {
+                    let outline = panel.outline.clone();
+                    let id = d.id;
+                    let books_value = books_value.clone();
+                    col = col.child(
+                        Button::new(tr!(books_apply_to_children()))
+                            .variant(ButtonVariant::Plain)
+                            .on_activate_fn(move |_c| {
+                                outline.apply_books_to_subtree(id, &books_value.get())
+                            }),
+                    );
+                }
+            }
         }
 
         // Cast / Présence: references-first story-bible pins + scan suggestions.

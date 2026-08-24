@@ -9,7 +9,8 @@ use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use binder_item_management::{
     ClearTitlesDto, ClearTitlesResultDto, DuplicateDto, DuplicateReturnDto, MergeTwoScenesDto,
-    MoveDto, PromoteDto, SetDescendantsDictLanguageDto, SetDescendantsDictLanguageResultDto,
+    MoveDto, PromoteDto, SetDescendantsBooksDto, SetDescendantsBooksResultDto,
+    SetDescendantsDictLanguageDto, SetDescendantsDictLanguageResultDto,
     SetDescendantsExportableDto, SetDescendantsExportableResultDto, SplitSceneDto,
     binder_item_management_controller,
 };
@@ -112,6 +113,22 @@ pub fn set_descendants_dict_language(
         dto,
     )
     .context("set_descendants_dict_language")
+}
+
+pub fn set_descendants_books(
+    ctx: &AppContext,
+    stack_id: Option<u64>,
+    dto: &SetDescendantsBooksDto,
+) -> Result<SetDescendantsBooksResultDto> {
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
+    binder_item_management_controller::set_descendants_books(
+        &ctx.db_context,
+        &ctx.event_hub,
+        &mut undo_redo_manager,
+        stack_id,
+        dto,
+    )
+    .context("set_descendants_books")
 }
 
 pub fn clear_titles(

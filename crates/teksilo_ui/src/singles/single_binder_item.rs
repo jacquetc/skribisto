@@ -421,6 +421,34 @@ mod imp {
             Ok(())
         }
 
+        /// Persist which Book or Books this item is declared to belong to.
+        ///
+        /// A relationship, exactly like [`Self::set_tags`] and for the same reason: it
+        /// must not go through `update_dto`, which deliberately carries no relationship
+        /// vectors so a scalar patch cannot clobber them. No composite is needed:
+        /// unlike [`Self::set_point_of_view`], filing a note under a Book says nothing
+        /// about the cast, so there is only the one write.
+        ///
+        /// **Empty is a legitimate value, not "unset the write":** clearing every Book
+        /// off an item and pushing an empty `item_ids` here is exactly how a writer says
+        /// "not filed anywhere," the same declaration an item starts with.
+        pub fn set_books(&self, item_ids: &[u64], stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            binder_item_commands::set_binder_item_relationship(
+                &self.inner.ctx,
+                stack,
+                &frontend::direct_access::BinderItemRelationshipDto {
+                    id,
+                    field: frontend::common::direct_access::binder_item::BinderItemRelationshipField::Books,
+                    right_ids: item_ids.to_vec(),
+                },
+            )?;
+            self.refresh();
+            Ok(())
+        }
+
         fn write_name(
             &self,
             text: &str,
@@ -715,6 +743,17 @@ mod imp {
         pub fn set_tags(&self, tag_ids: &[u64], _stack: Option<u64>) -> anyhow::Result<()> {
             if let Some(mut d) = self.inner.dto.get() {
                 d.tags = tag_ids.to_vec();
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        /// Mirrors the real writer's effect on `d.books`, same reasoning as `set_tags`
+        /// above: the real one writes a junction, not a DTO field, but a consumer must
+        /// not be able to tell the two halves apart.
+        pub fn set_books(&self, item_ids: &[u64], _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.books = item_ids.to_vec();
                 self.inner.dto.set(Some(d));
             }
             Ok(())

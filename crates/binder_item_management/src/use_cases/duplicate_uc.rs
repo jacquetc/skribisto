@@ -3,8 +3,9 @@
 
 // Custom implementation: deep-copy each selected BinderItem subtree (items +
 // their Content rows + tag links + confirmed references / cast pins + point of
-// view) and insert each new subtree immediately after its source subtree in the
-// binder. Undoable via a scoped snapshot/restore of the source binder subtree.
+// view + Book filing) and insert each new subtree immediately after its source
+// subtree in the binder. Undoable via a scoped snapshot/restore of the source
+// binder subtree.
 use crate::DuplicateDto;
 use crate::DuplicateReturnDto;
 use anyhow::{Result, anyhow};
@@ -222,6 +223,23 @@ impl DuplicateUseCase {
                         &created_item.id,
                         &BinderItemRelationshipField::PointOfView,
                         &pov_ids,
+                    )?;
+                }
+
+                // Copy the Book filing, the same shape and the same risk as the two
+                // relationships above: a declaration, copied by value rather than
+                // re-derived, so a bible entry cloned as a template for a different
+                // Book silently carries the source's old filing until the writer
+                // notices and edits it. Dropping it instead would be the opposite
+                // failure this field exists to avoid -- a fresh copy that reads as
+                // "not yet filed" when the writer very much filed the original.
+                let book_ids =
+                    uow.get_binder_item_relationship(&src.id, &BinderItemRelationshipField::Books)?;
+                if !book_ids.is_empty() {
+                    uow.set_binder_item_relationship(
+                        &created_item.id,
+                        &BinderItemRelationshipField::Books,
+                        &book_ids,
                     )?;
                 }
 

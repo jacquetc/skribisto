@@ -34,7 +34,7 @@ use frontend::AppContext;
 use frontend::commands::{binder_commands, binder_item_commands, work_commands};
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::entities::GoalUnit;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, GoalUnit};
 use frontend::common::event::{BinderItemManagementEvent, Event, Origin};
 
 use skribisto_model::compile::ItemMeta;
@@ -90,6 +90,73 @@ pub(super) fn live_item_metas(ctx: &AppContext, ids: &AppIds) -> Vec<ItemMeta> {
                 is_exportable: it.is_exportable,
                 exclude_from_numbering: it.exclude_from_numbering,
             });
+        }
+    }
+    out
+}
+
+/// Every live `Folder/Book` in the open Work, id and title, across every Binder in
+/// binder order. This is the Books section's own candidate list, and (through its
+/// length) the gate that decides whether that section renders at all: below two Books, a
+/// writer sees no control, no empty picker, no chrome (see `tags::books`'s module
+/// doc for why).
+///
+/// **Trashed excluded.** `activated` gates what a filing target may resolve to,
+/// matching `reconcile_backref_binder_item_books`'s own reasoning for pruning a
+/// *deleted* Book from every list naming it: a merely-trashed one has not been
+/// deleted, but from where a writer is filing a new note it should look exactly as
+/// absent as one that has.
+///
+/// **`Folder/Book` only, deliberately.** A Book also has a legacy flat encoding,
+/// the top-level `Item/BookBegin` marker (see `qleany.yaml`'s own comment on the
+/// `books` field), but `CreateType` no longer offers it as a creatable shape:
+/// every Book a writer can make today is `Folder/Book`. A row still carrying the
+/// legacy marker is not a candidate here and cannot be filed under, the same way
+/// [`crate::tags::books::book_chips`] drops an id that resolves to one: filing is
+/// scoped to the modern encoding, not to every row `SubRoleExt::opens_book()`
+/// would admit. A Work whose Books are all still legacy rows shows no Books
+/// section at all, by the same >=2 gate, until at least two are promoted.
+///
+/// Same shape as [`live_item_metas`]: a fresh walk of the Work's binders, not a
+/// cached signal, because the Inspector already rebuilds on every focus change,
+/// which is the moment this needs to be current.
+pub(super) fn live_books(
+    ctx: &AppContext,
+    ids: &AppIds,
+) -> Vec<crate::tags::cast_add::CastCandidate> {
+    let mut out = Vec::new();
+    let Some(work_id) = ids.work_id.get() else {
+        return out;
+    };
+    let Ok(Some(work)) = work_commands::get_work(ctx, &work_id) else {
+        return out;
+    };
+    let Ok(binder_ids) =
+        work_commands::get_work_relationship(ctx, &work.id, &WorkRelationshipField::Binders)
+    else {
+        return out;
+    };
+    for binder_id in binder_ids {
+        let Ok(item_ids) = binder_commands::get_binder_relationship(
+            ctx,
+            &binder_id,
+            &BinderRelationshipField::BinderItems,
+        ) else {
+            continue;
+        };
+        let Ok(items) = binder_item_commands::get_binder_item_multi(ctx, &item_ids) else {
+            continue;
+        };
+        for it in items.into_iter().flatten() {
+            if it.activated
+                && it.role == BinderItemRole::Folder
+                && it.sub_role == BinderItemSubRole::Book
+            {
+                out.push(crate::tags::cast_add::CastCandidate {
+                    id: it.id,
+                    title: it.title,
+                });
+            }
         }
     }
     out

@@ -1231,3 +1231,183 @@ mod apply_language {
         );
     }
 }
+
+// ── explicit Book-filing propagation ("Apply to children") ──
+//
+// `books` is a **relationship** (a junction table), not a scalar list like
+// `dict_language`, so unlike `apply_language` above this also proves the
+// write actually reaches the junction rather than the entity's own scalar
+// field; see `set_descendants_books_uc`'s own header for why the scalar
+// `GetMulti`/`UpdateMulti` path would silently no-op for this field.
+#[cfg(not(feature = "mocks"))]
+mod apply_books {
+    use super::recommend::{seed, seed_item};
+    use super::*;
+
+    /// Book > Chapter > Scene, plus an outsider after the chapter's subtree.
+    /// Same shape as `apply_language`'s `seed_tree`, plus two more `Folder/
+    /// Book` rows to serve as filing targets. Any live `BinderItem` id is a
+    /// legal target for `books` (nothing in the schema enforces that a
+    /// target actually resolves to a `Folder/Book`; see the field's own doc
+    /// comment), but using real Book rows keeps the fixture honest.
+    fn seed_tree(outline: &OutlineViewModel, binder: u64) -> (u64, u64, u64, u64, u64, u64) {
+        let book = seed_item(
+            outline,
+            binder,
+            BinderItemRole::Folder,
+            BinderItemSubRole::Book,
+            0,
+            0,
+        );
+        let chapter = seed_item(
+            outline,
+            binder,
+            BinderItemRole::Folder,
+            BinderItemSubRole::ChapterScene,
+            1,
+            1,
+        );
+        let scene = seed_item(
+            outline,
+            binder,
+            BinderItemRole::Item,
+            BinderItemSubRole::Scene,
+            2,
+            2,
+        );
+        // A sibling scene back at the Book's level: NOT part of the chapter's subtree.
+        let outsider = seed_item(
+            outline,
+            binder,
+            BinderItemRole::Item,
+            BinderItemSubRole::Scene,
+            1,
+            3,
+        );
+        let book_one = seed_item(
+            outline,
+            binder,
+            BinderItemRole::Folder,
+            BinderItemSubRole::Book,
+            0,
+            4,
+        );
+        let book_two = seed_item(
+            outline,
+            binder,
+            BinderItemRole::Folder,
+            BinderItemSubRole::Book,
+            0,
+            5,
+        );
+        (book, chapter, scene, outsider, book_one, book_two)
+    }
+
+    fn books_of(outline: &OutlineViewModel, id: u64) -> Vec<u64> {
+        outline.item_dto(id).map(|d| d.books).unwrap_or_default()
+    }
+
+    #[test]
+    fn writes_every_descendant_and_leaves_everything_else_alone() {
+        let (outline, binder) = seed();
+        let (book, chapter, scene, outsider, book_one, book_two) = seed_tree(&outline, binder);
+
+        outline.apply_books_to_subtree(chapter, &[book_one, book_two]);
+
+        assert_eq!(
+            books_of(&outline, scene),
+            vec![book_one, book_two],
+            "the descendant is written"
+        );
+        assert!(
+            books_of(&outline, book).is_empty(),
+            "an ancestor is untouched"
+        );
+        assert!(
+            books_of(&outline, outsider).is_empty(),
+            "a non-descendant is untouched"
+        );
+        assert!(
+            books_of(&outline, chapter).is_empty(),
+            "the item itself is untouched: the Inspector's own Books section owns that"
+        );
+    }
+
+    /// The whole point of the composite: an over-broad apply is one Ctrl+Z, not
+    /// one per descendant.
+    #[test]
+    fn is_a_single_undo_step() {
+        let (outline, binder) = seed();
+        outline.init_stack();
+        let (_book, chapter, scene, _outsider, book_one, _book_two) = seed_tree(&outline, binder);
+        let stack = outline.stack();
+
+        outline.apply_books_to_subtree(chapter, &[book_one]);
+        assert_eq!(books_of(&outline, scene), vec![book_one]);
+
+        undo_redo_commands::undo(&outline.app_ctx, stack).unwrap();
+        assert!(
+            books_of(&outline, scene).is_empty(),
+            "one undo reverses the whole apply, not just the last descendant"
+        );
+
+        undo_redo_commands::redo(&outline.app_ctx, stack).unwrap();
+        assert_eq!(
+            books_of(&outline, scene),
+            vec![book_one],
+            "and redo puts it back"
+        );
+    }
+
+    /// An empty list is a legitimate value to push, matching
+    /// `apply_dict_language_to_subtree`'s own documented behaviour: it clears
+    /// the subtree back to "not yet filed," the only way to undo an
+    /// over-broad apply after the fact without visiting every child by hand.
+    #[test]
+    fn an_empty_list_clears_the_subtree() {
+        let (outline, binder) = seed();
+        let (_book, chapter, scene, _outsider, book_one, _book_two) = seed_tree(&outline, binder);
+        outline.apply_books_to_subtree(chapter, &[book_one]);
+        assert_eq!(books_of(&outline, scene), vec![book_one]);
+
+        outline.apply_books_to_subtree(chapter, &[]);
+        assert!(
+            books_of(&outline, scene).is_empty(),
+            "cleared back to not filed"
+        );
+    }
+
+    /// A descendant that already carries its own filing loses it to the
+    /// parent's current value: `apply` overwrites, it does not merge.
+    #[test]
+    fn overwrites_a_descendant_that_already_had_its_own_filing() {
+        let (outline, binder) = seed();
+        let (_book, chapter, scene, _outsider, book_one, book_two) = seed_tree(&outline, binder);
+        outline.apply_books_to_subtree(chapter, &[book_one]);
+        assert_eq!(books_of(&outline, scene), vec![book_one]);
+
+        outline.apply_books_to_subtree(chapter, &[book_two]);
+        assert_eq!(
+            books_of(&outline, scene),
+            vec![book_two],
+            "the parent's current value replaces the child's own, it does not join it"
+        );
+    }
+
+    /// A leaf has no subtree, so the button is never offered. The call is
+    /// inert too, if it somehow fires anyway.
+    #[test]
+    fn a_leaf_has_no_descendants_and_the_call_is_a_noop() {
+        let (outline, binder) = seed();
+        let (_book, _chapter, scene, _outsider, book_one, _book_two) = seed_tree(&outline, binder);
+        assert!(
+            outline.subtree_descendants(scene).is_empty(),
+            "the button's own gate"
+        );
+        outline.apply_books_to_subtree(scene, &[book_one]);
+        assert!(
+            books_of(&outline, scene).is_empty(),
+            "an inert call writes nothing"
+        );
+    }
+}

@@ -337,6 +337,7 @@ pub fn gather<R: TreeReader + ?Sized>(
                 reader.item_rel(&item.id, &BinderItemRelationshipField::References)?;
             item.point_of_view =
                 reader.item_rel(&item.id, &BinderItemRelationshipField::PointOfView)?;
+            item.books = reader.item_rel(&item.id, &BinderItemRelationshipField::Books)?;
             item.tags = reader.item_rel(&item.id, &BinderItemRelationshipField::Tags)?;
             let contents = fetch_multi(&item.contents, |ids| reader.content_multi(ids))?;
             items.push(ItemWithContents { item, contents });

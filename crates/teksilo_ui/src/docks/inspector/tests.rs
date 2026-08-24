@@ -96,6 +96,49 @@ fn focused_sub_role(ctx: &Rc<AppContext>, item_id: u64) -> BinderItemSubRole {
     probe.dto().expect("the focused item resolves").sub_role
 }
 
+/// The full dto the panel will actually build the Books section against for
+/// `item_id`: same "ask the probe, never assume" reasoning as
+/// `focused_sub_role`, but carrying `role` too, since the Books gate is a
+/// `(role, sub_role)` pair (`skribisto_model::search_facet_of`), not a bare
+/// sub-role.
+fn focused_dto(ctx: &Rc<AppContext>, item_id: u64) -> frontend::direct_access::BinderItemDto {
+    let probe = crate::singles::SingleBinderItem::new(ctx.clone());
+    probe.set_id(Some(item_id));
+    probe.dto().expect("the focused item resolves")
+}
+
+/// The Work's one seeded Binder, for adding more rows onto it.
+fn binder_of(ctx: &Rc<AppContext>, work_id: u64) -> u64 {
+    work_commands::get_work_relationship(
+        ctx,
+        &work_id,
+        &frontend::common::direct_access::work::WorkRelationshipField::Binders,
+    )
+    .unwrap()
+    .into_iter()
+    .next()
+    .expect("work_with_item seeded one binder")
+}
+
+/// Append another `Folder/Book` to `binder_id`, returning its id.
+fn add_book(ctx: &Rc<AppContext>, binder_id: u64, title: &str) -> u64 {
+    binder_item_commands::create_binder_item(
+        ctx,
+        None,
+        &CreateBinderItemDto {
+            title: title.into(),
+            role: BinderItemRole::Folder,
+            sub_role: BinderItemSubRole::Book,
+            activated: true,
+            ..Default::default()
+        },
+        binder_id,
+        -1,
+    )
+    .unwrap()
+    .id
+}
+
 /// Build and lay the panel out, and hand back the tree with its root.
 ///
 /// `tree_with_events`, never a bare `WidgetTree`: the panel calls
@@ -264,5 +307,94 @@ fn a_section_that_declines_a_sub_role_is_not_built() {
             .iter()
             .any(|(_, b)| (b.height - TALL).abs() < 0.5),
         "a Scene-only section was built under a focused Note"
+    );
+}
+
+/// The Books section is gated on two independent things at once: the focused
+/// row must be story-bible material outside the manuscript flow (the
+/// constraint-matrix "Note" facet, `Folder/Note` or `Item/Note`) *and* the
+/// Work must hold at least two Books. A one-Book writer must see no control,
+/// no empty picker, no chrome: not a disabled field, which would answer a
+/// question they never asked.
+///
+/// Measured through the section's own effect on the panel's leaf count,
+/// exactly as `an_unfocused_panel_is_the_placeholder` measures the whole
+/// panel: nothing else about the focused Note's rendering depends on how
+/// many Books the Work holds, so a leaf-count change between one Book and
+/// two isolates this section.
+///
+/// The gate is checked against what the probe *itself* reports for this
+/// build (see `focused_dto`'s own note): under the `mocks` feature
+/// `SingleBinderItem` fabricates a row from a fixed id table rather than
+/// reading back what this test created, so the row this test seeds may not
+/// resolve as a Note there, in which case the correct, provable behaviour
+/// is that Book count has *no* effect at all, which the `else` branch below
+/// asserts just as strictly as the `if` branch asserts the opposite for the
+/// row that does resolve as one (the default, non-`mocks` build).
+#[test]
+fn the_books_section_appears_only_once_the_work_holds_two_books() {
+    let ctx = Rc::new(AppContext::new());
+    let (work_id, note_id) = work_with_item(&ctx, BinderItemSubRole::Note);
+    let binder_id = binder_of(&ctx, work_id);
+    let note = focused_dto(&ctx, note_id);
+    let is_note_family = matches!(
+        skribisto_model::search_facet_of(&note.role, &note.sub_role),
+        Some(skribisto_model::SearchFacet::Note)
+    );
+
+    // One Book, the baseline: `work_with_item` seeds no Book at all.
+    add_book(&ctx, binder_id, "Book One");
+    let (one_book_tree, one_book_root) = laid_out(&ctx, work_id, Some(note_id));
+    let with_one_book = leaves(&one_book_tree, one_book_root).len();
+
+    add_book(&ctx, binder_id, "Book Two");
+    let (two_books_tree, two_books_root) = laid_out(&ctx, work_id, Some(note_id));
+    let with_two_books = leaves(&two_books_tree, two_books_root).len();
+
+    if is_note_family {
+        assert!(
+            with_two_books > with_one_book,
+            "a second Book must add the Books section's own leaves (one: \
+             {with_one_book}, two: {with_two_books})"
+        );
+    } else {
+        assert_eq!(
+            with_one_book, with_two_books,
+            "the focused row does not resolve as a Note under this build, so \
+             Book count must have no effect on the panel at all"
+        );
+    }
+}
+
+/// Setting a Book filing writes it through `SingleBinderItem::set_books` and
+/// it reads straight back off the same probe: the write path the Books
+/// section itself uses, exercised without the widget tree so it holds
+/// identically under the real backend and under `mocks` (see `set_books`'s
+/// own mock, which mirrors the real writer's effect on `d.books` exactly as
+/// `set_tags` already does).
+#[test]
+fn setting_a_book_filing_writes_it_and_it_reads_back() {
+    let ctx = Rc::new(AppContext::new());
+    let (work_id, note_id) = work_with_item(&ctx, BinderItemSubRole::Note);
+    let binder_id = binder_of(&ctx, work_id);
+    let book_one = add_book(&ctx, binder_id, "Book One");
+    let book_two = add_book(&ctx, binder_id, "Book Two");
+
+    let probe = crate::singles::SingleBinderItem::new(ctx.clone());
+    probe.set_id(Some(note_id));
+    assert!(
+        probe.dto().unwrap().books.is_empty(),
+        "not yet filed is the starting state"
+    );
+
+    probe
+        .set_books(&[book_one, book_two], None)
+        .expect("set_books");
+    assert_eq!(probe.dto().unwrap().books, vec![book_one, book_two]);
+
+    probe.set_books(&[], None).expect("set_books empty");
+    assert!(
+        probe.dto().unwrap().books.is_empty(),
+        "an empty filing is a legitimate write, not a no-op"
     );
 }

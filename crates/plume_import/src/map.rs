@@ -861,6 +861,9 @@ impl<'a> Builder<'a> {
                     reference_ids,
                     // Plume Creator has no point-of-view concept to carry over.
                     point_of_view_ids: Vec::new(),
+                    // Nor a Book-filing concept: every imported item starts unfiled, the
+                    // same ordinary state as any pre-existing project's own items.
+                    book_ids: Vec::new(),
                     tag_ids: Vec::new(),
                 },
                 prose,

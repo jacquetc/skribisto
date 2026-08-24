@@ -15,8 +15,11 @@
 use std::sync::Arc;
 
 use binder_item_management::binder_item_management_controller as feature;
-use binder_item_management::{SetDescendantsDictLanguageDto, SetDescendantsExportableDto};
+use binder_item_management::{
+    SetDescendantsBooksDto, SetDescendantsDictLanguageDto, SetDescendantsExportableDto,
+};
 use common::database::db_context::DbContext;
+use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::entities::{BinderItemRole, BinderItemSubRole};
 use common::event::EventHub;
 use common::types::EntityId;
@@ -24,7 +27,7 @@ use common::undo_redo::UndoRedoManager;
 use direct_access::binder::binder_controller;
 use direct_access::binder::dtos::CreateBinderDto;
 use direct_access::binder_item::binder_item_controller;
-use direct_access::binder_item::dtos::CreateBinderItemDto;
+use direct_access::binder_item::dtos::{BinderItemRelationshipDto, CreateBinderItemDto};
 use direct_access::root::dtos::CreateRootDto;
 use direct_access::root::root_controller;
 use direct_access::smart_punctuation::dtos::CreateSmartPunctuationDto;
@@ -170,6 +173,48 @@ impl Ctx {
             },
         )
         .expect("set_descendants_exportable")
+        .changed_ids
+    }
+
+    fn books(&self, id: EntityId) -> Vec<EntityId> {
+        binder_item_controller::get(&self.db, &id)
+            .expect("get")
+            .expect("row still present")
+            .books
+    }
+
+    /// Seed a row's `books` directly (stack 0), the way a writer's own
+    /// Inspector pick would land before "apply to children" is ever pressed.
+    /// Any existing `BinderItem` id is a legal target here -- the junction
+    /// only validates that the row exists, not that it is a `Folder/Book`.
+    fn set_books(&mut self, id: EntityId, book_ids: &[EntityId]) {
+        binder_item_controller::set_relationship(
+            &self.db,
+            &self.hub,
+            &mut self.undo,
+            None,
+            &BinderItemRelationshipDto {
+                id,
+                field: BinderItemRelationshipField::Books,
+                right_ids: book_ids.to_vec(),
+            },
+        )
+        .expect("seed books");
+    }
+
+    fn apply_books(&mut self, item_id: EntityId, book_ids: &[EntityId]) -> Vec<EntityId> {
+        let stack = Some(self.stack);
+        feature::set_descendants_books(
+            &self.db,
+            &self.hub,
+            &mut self.undo,
+            stack,
+            &SetDescendantsBooksDto {
+                item_id,
+                book_ids: book_ids.to_vec(),
+            },
+        )
+        .expect("set_descendants_books")
         .changed_ids
     }
 }
@@ -416,4 +461,141 @@ fn language_changed_ids_skips_rows_that_already_agree() {
         ctx.apply_language(t.root, &["tr-TR"]).is_empty(),
         "a second identical apply writes nothing"
     );
+}
+
+// ── set_descendants_books ────────────────────────────────────────────────────
+//
+// The walk is shared with the two writes above (`crate::subtree`), so these
+// do not re-test its boundaries either. `books` is a *relationship* (a
+// junction table), not a scalar field like `dict_language` -- the read/write
+// pair is `get_binder_item_relationship`/`set_binder_item_relationship_multi`,
+// never `GetMulti`/`UpdateMulti` (see the use case's own header for why the
+// scalar path would silently no-op). Otherwise the inverse shape is the same
+// as `dict_language`'s: each row's own former list is kept, because a
+// relationship's prior value cannot be derived from its new one.
+
+#[test]
+fn books_reach_every_descendant_and_not_the_root() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    let book = t.before; // stands in for a `Folder/Book` id -- any live row is a legal target
+
+    ctx.apply_books(t.root, &[book]);
+
+    assert!(
+        ctx.books(t.root).is_empty(),
+        "the Inspector's own Books section owns the root"
+    );
+    assert_eq!(ctx.books(t.child_a), vec![book]);
+    assert_eq!(ctx.books(t.grand), vec![book], "depth is not a boundary");
+    assert_eq!(ctx.books(t.child_b), vec![book]);
+    assert!(ctx.books(t.after).is_empty());
+}
+
+#[test]
+fn books_overwrite_rather_than_merge() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    let book_one = t.before;
+    let book_two = t.after;
+
+    // `child_a` already carries a filing of its own before the sweep.
+    ctx.set_books(t.child_a, &[book_one]);
+
+    ctx.apply_books(t.root, &[book_two]);
+
+    assert_eq!(
+        ctx.books(t.child_a),
+        vec![book_two],
+        "the parent's current value replaces a child's own, it does not join it"
+    );
+}
+
+#[test]
+fn an_empty_book_list_clears_rather_than_being_ignored() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    let book = t.before;
+    ctx.apply_books(t.root, &[book]);
+
+    // Pushing an empty list is a legitimate instruction -- it clears every
+    // descendant's filing back to "not yet filed" -- not a missing argument.
+    let cleared = ctx.apply_books(t.root, &[]);
+
+    assert_eq!(
+        cleared.len(),
+        3,
+        "all three descendants were carrying a filing"
+    );
+    assert!(ctx.books(t.child_a).is_empty());
+    assert!(ctx.books(t.grand).is_empty());
+    assert!(ctx.books(t.child_b).is_empty());
+}
+
+#[test]
+fn books_undo_restores_each_row_to_its_own_previous_list() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    let book_one = t.before;
+    let book_two = t.after;
+
+    // One descendant already carries a filing of its own, so a blanket
+    // restore to any single value would be caught.
+    ctx.set_books(t.grand, &[book_one]);
+
+    ctx.apply_books(t.root, &[book_two]);
+    ctx.undo.undo(Some(ctx.stack)).expect("undo");
+
+    assert!(ctx.books(t.child_a).is_empty());
+    assert_eq!(
+        ctx.books(t.grand),
+        vec![book_one],
+        "restored to what this row held, not to what its siblings held"
+    );
+    assert!(ctx.books(t.child_b).is_empty());
+}
+
+#[test]
+fn books_redo_reapplies() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    let book = t.before;
+    ctx.apply_books(t.root, &[book]);
+    ctx.undo.undo(Some(ctx.stack)).expect("undo");
+
+    ctx.undo.redo(Some(ctx.stack)).expect("redo");
+
+    assert_eq!(ctx.books(t.child_a), vec![book]);
+    assert_eq!(ctx.books(t.grand), vec![book]);
+    assert_eq!(ctx.books(t.child_b), vec![book]);
+}
+
+#[test]
+fn books_changed_ids_skips_rows_that_already_agree() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    let book = t.before;
+
+    assert_eq!(ctx.apply_books(t.root, &[book]).len(), 3);
+    assert!(
+        ctx.apply_books(t.root, &[book]).is_empty(),
+        "a second identical apply writes nothing"
+    );
+}
+
+#[test]
+fn the_whole_sweep_is_one_undo_step() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    let book = t.before;
+
+    ctx.apply_books(t.root, &[book]);
+    assert_eq!(ctx.books(t.child_a), vec![book]);
+    assert_eq!(ctx.books(t.child_b), vec![book]);
+
+    // One `undo` reverts every descendant the sweep touched, not just one.
+    ctx.undo.undo(Some(ctx.stack)).expect("undo");
+    assert!(ctx.books(t.child_a).is_empty());
+    assert!(ctx.books(t.grand).is_empty());
+    assert!(ctx.books(t.child_b).is_empty());
 }

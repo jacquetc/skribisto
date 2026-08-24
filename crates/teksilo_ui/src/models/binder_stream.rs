@@ -8,10 +8,21 @@
 //!
 //! Unlike the reactive collection models, this is a plain query: the
 //! workspace-layout capture/restore needs the *current* order at one moment (to
-//! map an open tab to a stable ordinal, and back), not a live-updating handle. It
-//! follows the models' real/mock seam so a mock build compiles and stays inert.
+//! map an open tab to a stable ordinal, and back), not a live-updating handle.
+//!
+//! **One implementation, both feature sets.** This used to follow the collection
+//! models' real/mock seam, with a `mocks` arm returning an empty stream on the
+//! grounds that there is no backend under mocks and tab persistence is not
+//! meaningful there. That premise is false: `mocks` is a feature of this crate
+//! alone and never reaches `frontend`, so the commands below are the real ones in
+//! either build. The seam was not making a mock build inert, it was making it
+//! answer a question wrongly, and eight `workspace_layout` tests that seed real
+//! items and expect them back failed under `--features mocks` because of it.
+//! [`ordered_all_items`] below makes the identical relationship hops with no arm
+//! at all, which is the shape to match. A build with no project open still gets
+//! an empty stream, because a Work with no binders has no items, which is the
+//! only case the old arm was really covering.
 
-#[cfg(not(feature = "mocks"))]
 mod imp {
     use std::collections::HashMap;
 
@@ -60,19 +71,6 @@ mod imp {
             }
         }
         out
-    }
-}
-
-#[cfg(feature = "mocks")]
-mod imp {
-    use frontend::AppContext;
-
-    use super::BinderItemRef;
-
-    /// No real backend under mocks — tab persistence isn't meaningful there, so the
-    /// stream is empty (restore becomes a no-op).
-    pub fn ordered_binder_items(_ctx: &AppContext, _work_id: u64) -> Vec<BinderItemRef> {
-        Vec::new()
     }
 }
 

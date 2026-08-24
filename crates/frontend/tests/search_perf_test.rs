@@ -99,6 +99,7 @@ fn big_manuscript() -> AppContext {
             contents: vec![],
             references: vec![],
             point_of_view: vec![],
+            books: vec![],
             tags: vec![],
         })
         .collect();

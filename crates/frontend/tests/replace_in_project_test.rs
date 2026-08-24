@@ -751,6 +751,7 @@ fn manuscript_of(scenes: usize) -> AppContext {
             contents: vec![],
             references: vec![],
             point_of_view: vec![],
+            books: vec![],
             tags: vec![],
         })
         .collect();
@@ -932,6 +933,7 @@ fn one_scene(tag: &str, text: &str) -> (AppContext, u64) {
             contents: vec![],
             references: vec![],
             point_of_view: vec![],
+            books: vec![],
             tags: vec![],
         }],
         binder,

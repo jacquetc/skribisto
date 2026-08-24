@@ -97,6 +97,7 @@ fn item(
             contents: Vec::new(),
             references: Vec::new(),
             point_of_view: Vec::new(),
+            books: Vec::new(),
             tags: Vec::new(),
         },
         contents,
@@ -171,6 +172,65 @@ pub(crate) fn sample_bundle() -> WorkBundle {
         word: "Skribisto".into(),
     }];
 
+    let mut manuscript_items = vec![
+        item(
+            300,
+            "The Lighthouse",
+            Folder,
+            Book,
+            vec![
+                content(400, BookTitle, "The Lighthouse"),
+                content(401, BookSubtitle, "A Novel"),
+                content(402, SynopsisText, "A keeper and a storm."),
+            ],
+        ),
+        item(
+            301,
+            "Chapter One",
+            Folder,
+            ChapterScene,
+            vec![
+                content(410, ChapterTitle, "Chapter One"),
+                content(411, SynopsisText, "Arrival."),
+            ],
+        ),
+        item(
+            302,
+            "The ferry",
+            Item,
+            Scene,
+            vec![
+                content(420, SceneText, "The ferry pitched in the swell."),
+                content(421, SynopsisText, "They cross."),
+            ],
+        ),
+        item(
+            303,
+            "Into the Dark",
+            Item,
+            ChapterScene,
+            vec![
+                content(430, ChapterTitle, "Chapter Two"),
+                // Carries a hyperlink. Prose is stored as Djot, so a link is a
+                // character format on the way in and out and plain `[text](url)`
+                // on disk. This is the one place the whole chain is asserted at
+                // once, rather than each half separately.
+                content(
+                    431,
+                    SceneText,
+                    "The light failed at [midnight](https://example.com/logs).",
+                ),
+                content(432, SynopsisText, "The storm hits."),
+            ],
+        ),
+    ];
+    // A declaration, not a position: item 302 ("The ferry") sits inside this very
+    // Book by containment already, but `books` is filed independently of that --
+    // here it is filed under item 300, "The Lighthouse", the fixture's own
+    // `Folder/Book` row. The store round-trip must carry this declaration through
+    // `gather` (`tree_read.rs`) exactly as it already does for `references` and
+    // `point_of_view`.
+    manuscript_items[2].item.books = vec![300];
     let manuscript = BinderWithItems {
         binder: Binder {
             uid: common::uid::fixture_uid(2),
@@ -181,58 +241,7 @@ pub(crate) fn sample_bundle() -> WorkBundle {
             activated: true,
             binder_items: Vec::new(),
         },
-        items: vec![
-            item(
-                300,
-                "The Lighthouse",
-                Folder,
-                Book,
-                vec![
-                    content(400, BookTitle, "The Lighthouse"),
-                    content(401, BookSubtitle, "A Novel"),
-                    content(402, SynopsisText, "A keeper and a storm."),
-                ],
-            ),
-            item(
-                301,
-                "Chapter One",
-                Folder,
-                ChapterScene,
-                vec![
-                    content(410, ChapterTitle, "Chapter One"),
-                    content(411, SynopsisText, "Arrival."),
-                ],
-            ),
-            item(
-                302,
-                "The ferry",
-                Item,
-                Scene,
-                vec![
-                    content(420, SceneText, "The ferry pitched in the swell."),
-                    content(421, SynopsisText, "They cross."),
-                ],
-            ),
-            item(
-                303,
-                "Into the Dark",
-                Item,
-                ChapterScene,
-                vec![
-                    content(430, ChapterTitle, "Chapter Two"),
-                    // Carries a hyperlink. Prose is stored as Djot, so a link is a
-                    // character format on the way in and out and plain `[text](url)`
-                    // on disk — this is the one place the whole chain is asserted at
-                    // once, rather than each half separately.
-                    content(
-                        431,
-                        SceneText,
-                        "The light failed at [midnight](https://example.com/logs).",
-                    ),
-                    content(432, SynopsisText, "The storm hits."),
-                ],
-            ),
-        ],
+        items: manuscript_items,
     };
     let characters = BinderWithItems {
         binder: Binder {
@@ -344,6 +353,7 @@ struct Norm {
     binders: Vec<NormBinder>,
     trash: usize,
     refs: usize,
+    books: usize,
 }
 
 fn norm(b: &WorkBundle) -> Norm {
@@ -421,6 +431,12 @@ fn norm(b: &WorkBundle) -> Norm {
             .flat_map(|bb| &bb.items)
             .map(|bi| bi.item.reference_ids.len())
             .sum(),
+        books: b
+            .binders
+            .iter()
+            .flat_map(|bb| &bb.items)
+            .map(|bi| bi.item.book_ids.len())
+            .sum(),
     }
 }
 
@@ -453,6 +469,15 @@ fn save_load_round_trip_through_store() {
 
     // 4. The resaved project must be structurally identical (ids/paths aside).
     assert_eq!(norm(&original), norm(&resaved));
+    // Not a trivial 0 == 0: the fixture actually files an item under a Book, so this
+    // pins that `books` survives `load_work` and `gather` rather than both losing it
+    // in a way `norm`'s equality check alone would not distinguish from the field
+    // never being read on either side.
+    assert_eq!(
+        norm(&resaved).books,
+        1,
+        "the Book filing must survive the round trip"
+    );
 
     // The stable id survives the save → load → save round-trip through the store.
     assert_eq!(resaved.manifest.work.unique_id, "the-lighthouse-uid");

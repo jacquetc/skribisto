@@ -80,6 +80,34 @@ fn mk_item(
         .id
 }
 
+/// As [`mk_item`], but naming the `sub_role` explicitly: needed only by the
+/// Book-nesting-guard tests, which are the one place in this file that cares
+/// about anything other than `BinderItemSubRole::Text`.
+fn mk_item_sub_role(
+    ctx: &AppContext,
+    stack: u64,
+    title: &str,
+    indent: i64,
+    role: BinderItemRole,
+    sub_role: BinderItemSubRole,
+) -> EntityId {
+    let dto = CreateBinderItemDto {
+        created_at: now(),
+        updated_at: now(),
+        title: title.to_string(),
+        role,
+        sub_role,
+        activated: true,
+        is_exportable: true,
+        exclude_from_numbering: false,
+        indent,
+        ..Default::default()
+    };
+    binder_item_commands::create_orphan_binder_item(ctx, Some(stack), &dto)
+        .expect("create item")
+        .id
+}
+
 fn wire_binder(ctx: &AppContext, stack: u64, binder: EntityId, items: &[EntityId]) {
     binder_commands::set_binder_relationship(
         ctx,
@@ -430,6 +458,315 @@ fn move_into_own_subtree_is_rejected() {
         order(&fx.ctx, fx.binder1),
         vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
     );
+}
+
+// ───────────────────────── the Book-in-Book guard ─────────────────────────
+//
+// `subtree_of` (and every other `binder_ordering` primitive) computes containment
+// from indent alone; nothing about a `Folder/Book` stops it being read as a
+// descendant of another one. Left unguarded, `move_items` would place one Book
+// inside another Book's subtree with no error anywhere, and every book-scoped
+// measurement that folds the flat item stream by its `opens_book`/`closes_book`
+// markers (`skribisto_model::compile`, `progress_management::count_words_uc`)
+// would silently misattribute prose from that point on. This is the fixture and
+// tests for the guard that refuses it.
+
+struct BookFixture {
+    ctx: AppContext,
+    work: EntityId,
+    binder: EntityId,
+    // book_a > part_a > scene_a ; book_b > scene_b: two sibling Books, each
+    // with its own subtree, indents 0/1/2 and 0/1.
+    book_a: EntityId,
+    part_a: EntityId,
+    scene_a: EntityId,
+    book_b: EntityId,
+    scene_b: EntityId,
+}
+
+fn make_book_fixture() -> BookFixture {
+    let ctx = AppContext::new();
+    let setup = undo_redo_commands::create_new_stack(&ctx);
+
+    let system = system_commands::create_orphan_system(
+        &ctx,
+        &CreateSystemDto {
+            created_at: now(),
+            updated_at: now(),
+            ..Default::default()
+        },
+    )
+    .expect("create system")
+    .id;
+
+    let work = work_commands::create_orphan_work(
+        &ctx,
+        Some(setup),
+        &CreateWorkDto {
+            created_at: now(),
+            updated_at: now(),
+            title: "Test".into(),
+            ..Default::default()
+        },
+    )
+    .expect("create work")
+    .id;
+
+    let binder = binder_commands::create_orphan_binder(
+        &ctx,
+        Some(setup),
+        &CreateBinderDto {
+            uid: common::uid::fixture_uid(4),
+            created_at: now(),
+            updated_at: now(),
+            name: "Manuscript".into(),
+            activated: true,
+            binder_items: vec![],
+        },
+    )
+    .expect("create binder")
+    .id;
+
+    let book_a = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Book A",
+        0,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Book,
+    );
+    let part_a = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Part A.1",
+        1,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Part,
+    );
+    let scene_a = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Scene A.1.1",
+        2,
+        BinderItemRole::Item,
+        BinderItemSubRole::Scene,
+    );
+    let book_b = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Book B",
+        0,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Book,
+    );
+    let scene_b = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Scene B.1",
+        1,
+        BinderItemRole::Item,
+        BinderItemSubRole::Scene,
+    );
+
+    wire_binder(
+        &ctx,
+        setup,
+        binder,
+        &[book_a, part_a, scene_a, book_b, scene_b],
+    );
+    work_commands::set_work_relationship(
+        &ctx,
+        Some(setup),
+        &WorkRelationshipDto {
+            id: work,
+            field: WorkRelationshipField::Binders,
+            right_ids: vec![binder],
+        },
+    )
+    .expect("wire work");
+
+    root_commands::create_orphan_root(
+        &ctx,
+        &CreateRootDto {
+            created_at: now(),
+            updated_at: now(),
+            system,
+            works: vec![work],
+        },
+    )
+    .expect("create root");
+
+    BookFixture {
+        ctx,
+        work,
+        binder,
+        book_a,
+        part_a,
+        scene_a,
+        book_b,
+        scene_b,
+    }
+}
+
+/// Dropping one Book directly `Into` another is the most direct way to nest
+/// them, and must be refused.
+#[test]
+fn moving_a_book_into_a_book_is_refused() {
+    let fx = make_book_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let before = order(&fx.ctx, fx.binder);
+
+    let err = binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.book_b],
+            target_id: Some(fx.book_a),
+            target_is_binder: false,
+            move_place: MovePlace::Into,
+        },
+    );
+
+    assert!(err.is_err(), "nesting a Book inside a Book must fail");
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        before,
+        "a refused move must leave the tree exactly as it was"
+    );
+}
+
+/// Dropping a Book `Before`/`After` a row that already sits *inside* another
+/// Book's subtree nests it just as surely as `Into` does: the guard has to
+/// catch this by the resulting ancestor chain, not merely by a literal `Into` a
+/// Book anchor.
+#[test]
+fn moving_a_book_beside_a_row_already_inside_a_book_is_refused() {
+    let fx = make_book_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let before = order(&fx.ctx, fx.binder);
+
+    let err = binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.book_b],
+            target_id: Some(fx.scene_a), // inside book_a's subtree, at indent 2
+            target_is_binder: false,
+            move_place: MovePlace::Before,
+        },
+    );
+
+    assert!(
+        err.is_err(),
+        "landing beside a row already inside a Book still nests the moved Book"
+    );
+    assert_eq!(order(&fx.ctx, fx.binder), before);
+}
+
+/// The guard is about containment, not about Books existing near each other:
+/// two Books staying siblings at the top level must keep working exactly as
+/// any other reorder does.
+#[test]
+fn moving_a_book_to_top_level_still_succeeds() {
+    let fx = make_book_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.book_b],
+            target_id: Some(fx.book_a), // sibling placement, not Into
+            target_is_binder: false,
+            move_place: MovePlace::Before,
+        },
+    )
+    .expect("two top-level Books swapping order is a legal move");
+
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        vec![fx.book_b, fx.scene_b, fx.book_a, fx.part_a, fx.scene_a]
+    );
+    assert_eq!(indent(&fx.ctx, fx.book_b), 0, "still a top-level Book");
+}
+
+/// The guard is scoped to Books: a Scene relocating into a Book is the
+/// ordinary, everyday move and must be entirely unaffected by it.
+#[test]
+fn moving_a_non_book_into_a_book_is_unaffected() {
+    let fx = make_book_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.scene_b],
+            target_id: Some(fx.book_a),
+            target_is_binder: false,
+            move_place: MovePlace::Into,
+        },
+    )
+    .expect("a Scene moving into a Book is an ordinary move");
+
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        vec![fx.book_a, fx.part_a, fx.scene_a, fx.scene_b, fx.book_b]
+    );
+    assert_eq!(
+        indent(&fx.ctx, fx.scene_b),
+        1,
+        "a direct child of Book A now"
+    );
+}
+
+/// The guard must catch the alternate, flat-marker book encoding too: an
+/// `Item/BookBegin` row (what a legacy project's "book-beginning" section maps
+/// to on import, see `load_work_uc::legacy::section_type_to_sub_role`) opens a
+/// book exactly as `Folder/Book` does, per `SubRoleExt::opens_book`. A guard
+/// that only compared against `BinderItemSubRole::Book` literally would let
+/// this row nest inside another Book's subtree with no error at all.
+#[test]
+fn moving_a_book_begin_marker_into_a_book_is_refused() {
+    let fx = make_book_fixture();
+    let setup = undo_redo_commands::create_new_stack(&fx.ctx);
+    let book_begin = mk_item_sub_role(
+        &fx.ctx,
+        setup,
+        "Legacy Book C",
+        0,
+        BinderItemRole::Item,
+        BinderItemSubRole::BookBegin,
+    );
+    wire_binder(
+        &fx.ctx,
+        setup,
+        fx.binder,
+        &[
+            fx.book_a, fx.part_a, fx.scene_a, fx.book_b, fx.scene_b, book_begin,
+        ],
+    );
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let before = order(&fx.ctx, fx.binder);
+
+    let err = binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![book_begin],
+            target_id: Some(fx.scene_a), // inside book_a's subtree, at indent 2
+            target_is_binder: false,
+            move_place: MovePlace::Before,
+        },
+    );
+
+    assert!(
+        err.is_err(),
+        "an Item/BookBegin marker landing inside another Book's subtree must be \
+         refused exactly like a Folder/Book is"
+    );
+    assert_eq!(order(&fx.ctx, fx.binder), before);
 }
 
 // ─────────────────────────────── duplicate ───────────────────────────────
@@ -1543,6 +1880,165 @@ fn duplicate_copies_references() {
     );
 }
 
+fn mk_book(fx: &Fixture, title: &str) -> EntityId {
+    let dto = CreateBinderItemDto {
+        created_at: now(),
+        updated_at: now(),
+        title: title.to_string(),
+        role: BinderItemRole::Folder,
+        sub_role: BinderItemSubRole::Book,
+        activated: true,
+        is_exportable: true,
+        exclude_from_numbering: false,
+        indent: 0,
+        ..Default::default()
+    };
+    binder_item_commands::create_orphan_binder_item(&fx.ctx, Some(fx.setup), &dto)
+        .expect("create book")
+        .id
+}
+
+fn item_books(fx: &Fixture, item_id: EntityId) -> Vec<EntityId> {
+    binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Books,
+    )
+    .expect("books")
+}
+
+/// `duplicate` copies the Book filing (`books`), the same M2M shape as References and
+/// Point of view.
+///
+/// A declaration, not derived: the clone keeps the source's filing until the writer
+/// revisits it, matching how the brainstorm names this exact risk rather than leaving it
+/// to be discovered later -- a bible entry cloned as a template for a different Book
+/// silently carries the source's old filing.
+#[test]
+fn duplicate_copies_books() {
+    let fx = make_fixture();
+    let source = mk_scene(&fx, "Note filed under a Book");
+    let book = mk_book(&fx, "Book One");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source, book]);
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: source,
+            field: BinderItemRelationshipField::Books,
+            right_ids: vec![book],
+        },
+    )
+    .expect("file under book");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    assert_eq!(
+        item_books(&fx, clone),
+        vec![book],
+        "the clone must keep the same Book filing as its source"
+    );
+    assert_eq!(
+        item_books(&fx, source),
+        vec![book],
+        "source filing is untouched"
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &clone)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        item_books(&fx, clone).is_empty(),
+        "no dangling books junction on the removed clone"
+    );
+    assert_eq!(
+        item_books(&fx, source),
+        vec![book],
+        "undo must leave the source's filing untouched"
+    );
+}
+
+/// Deleting a Book that entries are filed under must leave no id without a row behind
+/// it -- `books` is a declaration, and a stale one pointing at a row that no longer
+/// exists is exactly the "broken chip" every reader of this field is required to skip.
+/// The generated `reconcile_backref_binder_item_books` runs in the same real-delete
+/// chain as its `point_of_view`/`references` siblings
+/// (`binder_item_repository.rs:886-935`), so a permanently deleted Book strips the
+/// dangling id from every entry that named it -- falling back to empty, "not filed",
+/// never to "relevant everywhere".
+#[test]
+fn deleting_a_book_in_use_leaves_no_dangling_book_id() {
+    let fx = make_fixture();
+    let doomed = mk_book(&fx, "Book One");
+    let keeper = mk_book(&fx, "Book Two");
+    let a = mk_scene(&fx, "Filed under both");
+    let b = mk_scene(&fx, "Filed only under the doomed one");
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: a,
+            field: BinderItemRelationshipField::Books,
+            right_ids: vec![doomed, keeper],
+        },
+    )
+    .expect("file a under both books");
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: b,
+            field: BinderItemRelationshipField::Books,
+            right_ids: vec![doomed],
+        },
+    )
+    .expect("file b under the doomed book");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_commands::remove_binder_item_multi(&fx.ctx, Some(stack), &[doomed])
+        .expect("remove book");
+
+    assert_eq!(
+        item_books(&fx, a),
+        vec![keeper],
+        "the surviving Book is untouched"
+    );
+    assert!(
+        item_books(&fx, b).is_empty(),
+        "an entry filed only under the deleted Book falls back to not-filed, never to \
+         relevant-everywhere"
+    );
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &doomed)
+            .unwrap()
+            .is_none(),
+        "the Book row itself is gone"
+    );
+    // The real assertion: no item references a Book id with no row behind it.
+    for item in [a, b] {
+        for id in item_books(&fx, item) {
+            assert!(
+                binder_item_commands::get_binder_item(&fx.ctx, &id)
+                    .unwrap()
+                    .is_some(),
+                "item {item} still references deleted book {id}"
+            );
+        }
+    }
+}
+
 /// `split_scene` carries the source's per-item language onto the new half.
 ///
 /// Regression: the new scene is built with `..Default::default()`, so an explicit
@@ -1885,6 +2381,178 @@ fn restore_items_to_marks_orphaned_for_an_already_active_item() {
     assert!(res.orphaned);
     assert!(order(&fx.ctx, fx.binder2).is_empty());
     assert!(activated(&fx.ctx, fx.b));
+}
+
+// ────────── restore_items_to: the Book-in-Book guard's other half ──────────
+//
+// `restore_items_to` resolves its destination through the very same
+// `resolve_item_target`/`base_indent`/`anchor_id` machinery as `move_items`
+// (see the guard's own fixture and comment above), so restoring a trashed
+// Book into another Book's active subtree reaches exactly the same silent
+// per-book word-count corruption unless it is guarded too. Reuses
+// `make_book_fixture`: the invariant under test is identical, only how the
+// Book gets to its destination (a live move vs. a trash-restore relocate)
+// differs.
+
+/// Trash the subtree rooted at `root` inside `fx.binder`, using `fx.work` as
+/// the owning Work. Every test below uses this shared setup to trash
+/// something before restoring it.
+fn trash_book_item(fx: &BookFixture, stack: u64, root: EntityId) {
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(stack),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![root as i64],
+            origin_binder_id: fx.binder as i64,
+        },
+    )
+    .expect("trash");
+}
+
+/// Restoring `book_b` `Before` a row already sitting inside `book_a`'s active
+/// subtree nests it just as surely as the move guard's equivalent case: the
+/// destination ancestor chain, not a literal `Into` a Book anchor, is what the
+/// guard has to catch.
+#[test]
+fn restoring_a_book_into_a_book_is_refused() {
+    let fx = make_book_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_book_item(&fx, s1, fx.book_b); // trashes book_b + scene_b
+
+    let before = order(&fx.ctx, fx.binder);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let err = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.book_b],
+            destination_binder_id: fx.binder,
+            anchor_item_id: Some(fx.scene_a), // inside book_a's subtree, at indent 2
+            drop_position: DropPosition::Before,
+        },
+    );
+
+    assert!(err.is_err(), "restoring a Book inside a Book must fail");
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        before,
+        "a refused restore must leave the tree exactly as it was"
+    );
+    assert!(!activated(&fx.ctx, fx.book_b), "book_b stays in the trash");
+    assert!(!activated(&fx.ctx, fx.scene_b), "and so does its own scene");
+}
+
+/// The guard is about containment, not about Books existing near each other:
+/// restoring a trashed Book back to the top level, as a sibling of another
+/// top-level Book, must keep working exactly as any other restore does.
+#[test]
+fn restoring_a_book_to_top_level_still_succeeds() {
+    let fx = make_book_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_book_item(&fx, s1, fx.book_b);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.book_b],
+            destination_binder_id: fx.binder,
+            anchor_item_id: Some(fx.book_a), // sibling placement, not nested
+            drop_position: DropPosition::Before,
+        },
+    )
+    .expect("a top-level Book restoring beside another top-level Book is legal");
+
+    assert!(activated(&fx.ctx, fx.book_b));
+    assert!(activated(&fx.ctx, fx.scene_b));
+    assert_eq!(indent(&fx.ctx, fx.book_b), 0, "still a top-level Book");
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        vec![fx.book_b, fx.scene_b, fx.book_a, fx.part_a, fx.scene_a]
+    );
+}
+
+/// The guard is scoped to Books: restoring an ordinary Scene into a Book's
+/// subtree is the everyday case and must be entirely unaffected by it.
+#[test]
+fn restoring_an_ordinary_row_into_a_book_is_unaffected() {
+    let fx = make_book_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_book_item(&fx, s1, fx.scene_b); // scene_b alone; book_b stays active
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.scene_b],
+            destination_binder_id: fx.binder,
+            anchor_item_id: Some(fx.scene_a), // lands inside book_a's subtree
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("a Scene restoring into a Book is an ordinary restore");
+
+    assert!(activated(&fx.ctx, fx.scene_b));
+    assert_eq!(indent(&fx.ctx, fx.scene_b), 2, "a sibling of scene_a now");
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        vec![fx.book_a, fx.part_a, fx.scene_a, fx.scene_b, fx.book_b]
+    );
+}
+
+/// The guard must catch the alternate, flat-marker book encoding too: an
+/// `Item/BookBegin` row opens a book exactly as `Folder/Book` does, per
+/// `SubRoleExt::opens_book`. A guard that only compared against
+/// `BinderItemSubRole::Book` literally would let this row restore inside
+/// another Book's subtree with no error at all.
+#[test]
+fn restoring_a_book_begin_marker_into_a_book_is_refused() {
+    let fx = make_book_fixture();
+    let setup = undo_redo_commands::create_new_stack(&fx.ctx);
+    let book_begin = mk_item_sub_role(
+        &fx.ctx,
+        setup,
+        "Legacy Book C",
+        0,
+        BinderItemRole::Item,
+        BinderItemSubRole::BookBegin,
+    );
+    wire_binder(
+        &fx.ctx,
+        setup,
+        fx.binder,
+        &[
+            fx.book_a, fx.part_a, fx.scene_a, fx.book_b, fx.scene_b, book_begin,
+        ],
+    );
+    trash_book_item(&fx, setup, book_begin);
+
+    let before = order(&fx.ctx, fx.binder);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let err = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![book_begin],
+            destination_binder_id: fx.binder,
+            anchor_item_id: Some(fx.scene_a), // inside book_a's subtree
+            drop_position: DropPosition::Before,
+        },
+    );
+
+    assert!(
+        err.is_err(),
+        "an Item/BookBegin marker restoring inside another Book's subtree must be \
+         refused exactly like a Folder/Book is"
+    );
+    assert_eq!(order(&fx.ctx, fx.binder), before);
 }
 
 // ──────────────────── delete_trash_entries (per-entry purge) ────────────────────

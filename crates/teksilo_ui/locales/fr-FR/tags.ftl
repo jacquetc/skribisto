@@ -137,3 +137,15 @@ pov-empty = Aucun point de vue défini
 pov-add = Définir le point de vue…
 pov-multiple = Cette scène a deux points de vue.
 pov-remove = Retirer { $name } comme point de vue
+
+# ── Classement par livre ─────────────────────────────────────────────────────
+# Le ou les livres auxquels une note ou un dossier de notes est rattaché.
+# Affiché uniquement pour la bible narrative, en dehors du fil du manuscrit,
+# car le livre d'une scène se déduit déjà de sa position dans le classeur, et
+# seulement à partir de deux livres dans le projet ; un projet à un seul livre
+# n'a rien à classer.
+books-section = Classé sous
+books-empty = Pas encore classé sous un livre
+books-add = Classer sous un livre…
+books-remove = Retirer de { $name }
+books-apply-to-children = Appliquer le classement aux enfants

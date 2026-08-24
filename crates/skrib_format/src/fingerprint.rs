@@ -344,6 +344,7 @@ mod tests {
                 prose_refs: vec![],
                 reference_ids: vec![],
                 point_of_view_ids: vec![],
+                book_ids: vec![],
                 tag_ids: vec![],
             },
             prose: BTreeMap::new(),

@@ -11,6 +11,7 @@
 mod tags_vm;
 
 pub mod alias_pill_field;
+pub mod books;
 pub mod cast_add;
 pub mod contrast;
 pub mod mention_list;
@@ -21,6 +22,7 @@ pub mod tag_pill_field;
 pub mod tag_tooltip;
 
 pub use alias_pill_field::AliasPillField;
+pub use books::{book_add_button, book_chip_row, book_chips};
 pub use cast_add::{LiveCastOverlay, candidates_from_table, cast_add_button};
 pub use mention_list::MentionList;
 pub use pov::{pov_add_button, pov_chip_row, pov_chips};

@@ -26,8 +26,8 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole}
 use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto};
 
 use frontend::binder_item_management::{
-    ClearTitlesDto, DuplicateDto, MoveDto, MovePlace, SetDescendantsDictLanguageDto,
-    SetDescendantsExportableDto,
+    ClearTitlesDto, DuplicateDto, MoveDto, MovePlace, SetDescendantsBooksDto,
+    SetDescendantsDictLanguageDto, SetDescendantsExportableDto,
 };
 use frontend::trash_management::TrashSelectionDto;
 
@@ -793,6 +793,31 @@ impl OutlineViewModel {
             &SetDescendantsDictLanguageDto {
                 item_id,
                 tags: tags.to_vec(),
+            },
+        );
+        self.reload();
+    }
+
+    /// Write `book_ids` onto every descendant's `books` in **one** undo step --
+    /// the "apply to children" affordance beside the Inspector's Books section.
+    ///
+    /// One backend call, not a composite of per-item writes, for the same
+    /// reason as [`Self::apply_exportable_to_subtree`]: the subtree walk and
+    /// the write both belong to
+    /// [`binder_item_management::set_descendants_books`](frontend::commands::binder_item_management_commands::set_descendants_books).
+    ///
+    /// It **overwrites**: a descendant that already carried its own filing
+    /// loses it to `item_id`'s current value, matching
+    /// `set_descendants_dict_language`'s own documented behaviour. An empty
+    /// `book_ids` is a legitimate instruction -- it clears the subtree back to
+    /// "not yet filed" -- never a no-op guard.
+    pub fn apply_books_to_subtree(&self, item_id: u64, book_ids: &[u64]) {
+        let _ = binder_item_management_commands::set_descendants_books(
+            &self.app_ctx,
+            self.stack(),
+            &SetDescendantsBooksDto {
+                item_id,
+                book_ids: book_ids.to_vec(),
             },
         );
         self.reload();

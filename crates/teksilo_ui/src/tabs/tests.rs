@@ -3602,14 +3602,26 @@ fn a_seeded_caret_reaches_the_editor_and_the_live_one_comes_back() {
 #[test]
 fn a_stale_caret_past_the_end_is_clamped_to_the_document() {
     let (tab, _tree, _root) = mounted_scene(2);
-    let len = tab.main().unwrap().doc.character_count();
+    let doc = &tab.main().unwrap().doc;
+    // The document's own maximum cursor position, which is what the clamp is
+    // measured against and is not the character count. A cursor may sit on the
+    // separator between each pair of blocks, so the two numbers differ by
+    // `block_count() - 1`, and they coincide only in a single-block document.
+    //
+    // Asserting `character_count()` here would be asserting the bug
+    // `tabs::shared::editor` records having fixed: clamping against the smaller
+    // of the two walks the caret back one character per paragraph, so restoring
+    // the end of a ninety block chapter left the writer ninety characters short.
+    let last = doc.character_count() + doc.block_count().saturating_sub(1);
     tab.apply_view_state(crate::shared::ViewState {
-        caret: len + 5_000,
+        caret: last + 5_000,
         scroll: 0.0,
     });
     assert_eq!(
         tab.view_state_ports().editor().unwrap().cursor_position(),
-        len
+        last,
+        "a caret past the end must clamp to the last position a cursor can hold, \
+         not to the character count"
     );
 }
 

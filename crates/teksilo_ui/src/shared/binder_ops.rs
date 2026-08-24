@@ -531,6 +531,7 @@ mod tests {
             contents: vec![41, 42],
             references: vec![43],
             point_of_view: vec![],
+            books: vec![],
             tags: vec![44],
         };
 
