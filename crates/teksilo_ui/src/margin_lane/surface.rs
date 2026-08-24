@@ -1368,4 +1368,225 @@ mod tests {
         assert_eq!(row_weight_from_chars(0), 1.0);
         assert_eq!(row_weight_from_chars(4_000), 4_000.0);
     }
+
+    // ── resolve(), through the real function ─────────────────────────────────
+    //
+    // Everything above tests the conversions `resolve` composes. These test
+    // `resolve` itself, which is where the module's one claim actually lives, and
+    // which nothing reached before: it is private, so the out-of-crate seam test
+    // cannot call it, and the fixtures above build their `RowSpan`s by hand --
+    // holding the extents constant *by construction*, which assumes exactly what
+    // needs proving.
+
+    /// A lane over `rows`, each `(item, prose, top, height)`.
+    ///
+    /// The pixel tops and heights are supplied independently of the prose, because
+    /// the whole point is that they are independent: a row's slice of the map comes
+    /// from its characters and its placement comes from layout, and a test that fed
+    /// one from the other could not tell the two apart.
+    fn host_over(rows: &[(EntityId, &str, f32, f32)]) -> LaneHost {
+        let extents = crate::margin_lane::RowExtents::new();
+        let mut docs: HashMap<EntityId, teksilo::text_document::TextDocument> = HashMap::new();
+        for (item, prose, top, height) in rows {
+            let doc = teksilo::text_document::TextDocument::new();
+            // `set_plain_text`, not `set_djot`: the latter is a *long operation*
+            // whose import lands later, so `character_count` right after it is
+            // whatever happened to have finished. Under a light test filter all
+            // three documents made it; under the full suite one did not, and the
+            // slices came out as if that scene were empty. The weight is a
+            // character count, so plain text is the honest input anyway.
+            doc.set_plain_text(prose).expect("set_plain_text");
+            assert_eq!(
+                doc.character_count(),
+                prose.chars().count(),
+                "the fixture must be settled before it is measured"
+            );
+            docs.insert(*item, doc);
+            extents.report(*item, *top, *height);
+        }
+        let lookup = Rc::new(move |item: EntityId| {
+            docs.get(&item).map(|doc| LaneRow {
+                item,
+                doc: doc.clone(),
+                comments: None,
+                markers: DialogueMarkers::none(),
+            })
+        });
+        LaneHost {
+            scroll: Signal::new(0.0),
+            max_scroll: Signal::new(1000.0),
+            viewport_top: Signal::new(0.0),
+            viewport_span: Signal::new(1.0),
+            map: Rc::new(RefCell::new(Vec::new())),
+            weights: RefCell::new(HashMap::new()),
+            row_units: RefCell::new(HashMap::new()),
+            caret_pulse: Signal::new(0),
+            watched: RefCell::new(HashMap::new()),
+            child: None,
+            marks: Signal::new(Vec::new()),
+            bars: Signal::new(Vec::new()),
+            caret: Signal::new(None),
+            texture_on: Cell::new(false),
+            store: RefCell::new(None),
+            colors: RefCell::new(None),
+            inputs: LaneInputs {
+                app_ctx: Rc::new(frontend::AppContext::new()),
+                ids: crate::app_ids::AppIds::new(),
+                surface: LaneSurface::Editor,
+                kind: EditorKind::Prose,
+                // Detached: no editor is registered, so `handle_for_item` answers
+                // `None` and `text_extent` returns the slice unnarrowed. That is
+                // the pre-layout fallback, and it is what isolates `resolve`'s own
+                // arithmetic from the editor geometry composed onto it.
+                format: crate::format::FormatViewModel::detached(),
+                rows: LaneRows::Placed {
+                    extents: extents.clone(),
+                    row: lookup,
+                },
+            },
+            last_inputs: Cell::new(0),
+            last_output: Cell::new(0),
+            texture_scale: Cell::new(0),
+        }
+    }
+
+    /// `n` characters of prose, as one paragraph.
+    fn prose(n: usize) -> String {
+        "a".repeat(n)
+    }
+
+    /// **A row's slice is its share of the characters**, and emphatically not its
+    /// share of the pixels.
+    ///
+    /// The heights here run the *opposite* way to the prose -- the shortest scene is
+    /// laid out tallest -- so a mapping that had quietly gone back to pixels would
+    /// give the answers in reverse and could not be mistaken for a rounding
+    /// difference.
+    #[test]
+    fn a_rows_slice_is_its_share_of_the_characters() {
+        let host = host_over(&[
+            (1, &prose(100), 0.0, 900.0),
+            (2, &prose(300), 900.0, 100.0),
+            (3, &prose(100), 1000.0, 500.0),
+        ]);
+        let placed = host.resolve(0.0);
+        assert_eq!(placed.len(), 3, "every row is mapped");
+
+        let shares: Vec<(f32, f32)> = placed
+            .iter()
+            .map(|m| (m.extent.offset, m.extent.scale))
+            .collect();
+        let want = [(0.0, 0.2), (0.2, 0.6), (0.8, 0.2)];
+        for (got, expect) in shares.iter().zip(want) {
+            assert!(
+                (got.0 - expect.0).abs() < 1e-4 && (got.1 - expect.1).abs() < 1e-4,
+                "slices follow the characters: got {shares:?}, want {want:?}"
+            );
+        }
+
+        // And the slices tile the strip with no gap and no overlap.
+        let end = placed.last().unwrap().extent;
+        assert!(
+            (end.offset + end.scale - 1.0).abs() < 1e-4,
+            "the last slice ends at the end of the map"
+        );
+    }
+
+    /// **The map does not move when the pixel heights are revised.**
+    ///
+    /// The claim the whole module exists to make, tested through `resolve` rather
+    /// than around it. A stream reports estimated heights for rows nobody has looked
+    /// at and revises them as the reader arrives -- measured on a real Book the
+    /// content height fell from 358 774 px to 190 534 px in the first seconds. Every
+    /// mark is placed as a fraction of the map, so if the map were pixels every mark
+    /// in the book would move, including in chapters nothing had touched.
+    ///
+    /// So: resolve, revise every height by a different factor, resolve again, and
+    /// the slices must be identical to the bit. The pixels must *not* be, or the
+    /// test is passing because nothing happened.
+    #[test]
+    fn the_map_does_not_move_when_pixel_heights_are_revised() {
+        let host = host_over(&[
+            (1, &prose(200), 0.0, 400.0),
+            (2, &prose(500), 400.0, 1000.0),
+            (3, &prose(300), 1400.0, 600.0),
+        ]);
+        let before = host.resolve(0.0);
+        let map_before: Vec<(f32, f32)> = before
+            .iter()
+            .map(|m| (m.extent.offset, m.extent.scale))
+            .collect();
+        let px_before: Vec<(f32, f32)> = before.iter().map(|m| m.pixels).collect();
+
+        // What a stream does as the reader scrolls into it: every estimate replaced
+        // by a real measurement, none of them by the same factor.
+        let extents = host.inputs.rows.extents();
+        extents.report(1, 0.0, 120.0);
+        extents.report(2, 120.0, 2400.0);
+        extents.report(3, 2520.0, 90.0);
+
+        let after = host.resolve(0.0);
+        let map_after: Vec<(f32, f32)> = after
+            .iter()
+            .map(|m| (m.extent.offset, m.extent.scale))
+            .collect();
+        let px_after: Vec<(f32, f32)> = after.iter().map(|m| m.pixels).collect();
+
+        assert_eq!(
+            map_before, map_after,
+            "a revised height moved the map: the marks would have moved with it"
+        );
+        assert_ne!(
+            px_before, px_after,
+            "the heights did not actually change, so this proved nothing"
+        );
+    }
+
+    /// **An empty scene keeps its hairline of the strip.**
+    ///
+    /// `row_weight_from_chars` floors at one character, and the floor is the rule
+    /// rather than a guard against division by zero: a scene with no prose has no
+    /// reading length and deserves none, but it can carry a comment, and a mark with
+    /// nowhere to land is worse than a mark a pixel out of place.
+    ///
+    /// End to end, because the floor is applied in `weight_of` and only `resolve`
+    /// turns it into a slice: without it `LaneExtent::slice` refuses a zero height
+    /// and the row vanishes from the map entirely, taking its marks with it.
+    #[test]
+    fn an_empty_scene_still_holds_a_hairline_of_the_strip() {
+        let host = host_over(&[
+            (1, &prose(500), 0.0, 500.0),
+            (2, "", 500.0, 30.0),
+            (3, &prose(500), 530.0, 500.0),
+        ]);
+        let placed = host.resolve(0.0);
+
+        assert_eq!(
+            placed.len(),
+            3,
+            "the empty scene must still be mapped, or its comments have nowhere to go"
+        );
+        let empty = placed.iter().find(|m| m.row.item == 2).expect("row 2");
+        assert!(
+            empty.extent.scale > 0.0,
+            "an empty scene's slice must be positive, got {}",
+            empty.extent.scale
+        );
+        // A hairline, not a share: one character against a thousand.
+        assert!(
+            empty.extent.scale < 0.01,
+            "and it must stay a hairline, got {}",
+            empty.extent.scale
+        );
+        // The rows around it still tile the whole strip.
+        let last = placed.last().unwrap().extent;
+        assert!(
+            (last.offset + last.scale - 1.0).abs() < 1e-4,
+            "the map still ends at 1.0"
+        );
+        assert!(
+            placed[0].extent.offset.abs() < 1e-6,
+            "and still starts at 0.0"
+        );
+    }
 }
