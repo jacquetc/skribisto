@@ -1086,7 +1086,7 @@ fn an_extension_can_build_a_context_of_its_own() {
 /// dotted one came from an extension. Refusing at registration puts the error on
 /// the main thread, before `run`, beside the extension that chose the id.
 #[test]
-fn an_id_that_would_collide_with_anothers_settings_path_is_refused() {
+fn an_id_that_would_collide_with_another_registrations_settings_path_is_refused() {
     let mut deep = provider("collide.parent.child", &[LaneSurface::Editor]);
     deep.id = "collide.parent.child".to_string();
     let _held = register_lane_provider("test.collide.deep", deep).expect("the first one is fine");
