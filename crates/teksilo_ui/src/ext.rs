@@ -68,7 +68,12 @@ pub use crate::tabs::shared::segments::{
     ContainerSegmentHandle, ContainerSegmentSpec, register_container_segment, segment_id,
 };
 
-// ── Analysis categories ──────────────────────────────────────────────────────
+// ── The margin lane ──────────────────────────────────────────────────────────
+/// The label closure every registration's `label`/`hint` fields are typed as.
+///
+/// Declared next to the dock seam because that is where it first appeared, and
+/// shared verbatim by the inspector, segment, category and lane specs.
+pub use crate::docks::LabelFn;
 /// The margin lane's provider seam — a source of positional marks on the strip
 /// beside a text surface's scroll area.
 ///
@@ -81,16 +86,28 @@ pub use crate::tabs::shared::segments::{
 /// context: a provider that wanted to mark what the writer is *looking for* has no
 /// other route to it, and re-deriving one would mean guessing which of the two
 /// searches was used last.
-///
-/// [`active_query`] is here for the same reason [`CommentAnchor`] is on the
-/// context: a provider that wanted to mark what the writer is *looking for* has no
-/// other route to it, and re-deriving one would mean guessing which of the two
-/// searches was used last.
 pub use crate::margin_lane::{
     CommentAnchor, LaneContext, LaneMarksFn, LaneProviderHandle, LaneProviderSpec, LaneQuery,
     LaneRefresh, LaneSurface, active_query, register_lane_provider,
 };
+/// What a provider actually returns, and the two enums its spec is declared with.
+///
+/// These live in `widgets` because the lane draws them, and every one of them is
+/// in [`register_lane_provider`]'s reachable signature: a spec names a
+/// [`LaneColumn`] and a [`LaneShape`], and its closure returns [`LaneMark`]s
+/// built on [`LaneSpan`]s. Without them here, an edition that took this module's
+/// own advice — *name nothing else* — could register a provider and not write
+/// one.
+///
+/// ⚠ The gap was invisible to `ext`'s drift test, which walks `pub fn register…`
+/// declarations: a **type** carried through a slot's signature is not a
+/// registrar, and the same blind spot is what took `WorkHandle` a release to
+/// find. `library_surface::an_extension_can_build_a_lane_provider_naming_only_ext`
+/// is the check that does see it, because it is compiled from outside the crate
+/// against nothing but this module.
+pub use crate::widgets::{LaneColumn, LaneMark, LaneShape, LaneSpan};
 
+// ── Analysis categories ──────────────────────────────────────────────────────
 pub use crate::analysis::AnalysisViewModel;
 /// Contribute a page to the Help window.
 ///

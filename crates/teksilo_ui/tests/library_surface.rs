@@ -44,3 +44,57 @@ fn the_extension_facing_modules_are_public() {
         settings_keys, shell, singles, statusbar, tabs, tags, widgets,
     };
 }
+
+/// **A whole lane provider, built naming nothing but `ext`.**
+///
+/// `ext`'s own drift test walks `pub fn register…` declarations and asserts each
+/// is re-exported. A **type** carried through one of those signatures is
+/// invisible to it — which is how `WorkHandle` went a release without being
+/// reachable, and how four of the margin lane's own types did: a spec is
+/// declared with a `LaneColumn` and a `LaneShape`, and its closure returns
+/// `LaneMark`s built on `LaneSpan`s. Ten of the lane's fourteen names were
+/// exported and the four that a provider cannot be *written* without were not.
+///
+/// So this is the check the walk cannot be: a downstream edition's registration,
+/// compiled from outside the crate, importing `ext` and nothing else. It asserts
+/// almost nothing at runtime on purpose. If a type leaves `ext`, this file stops
+/// compiling, and the error names it.
+#[test]
+fn an_extension_can_build_a_lane_provider_naming_only_ext() {
+    use std::rc::Rc;
+    use teksilo_ui::ext::{
+        LaneColumn, LaneMark, LaneProviderSpec, LaneRefresh, LaneShape, LaneSpan, LaneSurface,
+        register_lane_provider,
+    };
+
+    let spec = LaneProviderSpec {
+        id: "library-surface-probe".to_string(),
+        label: Rc::new(|| teksilo::prelude::lit!("Probe")),
+        hint: Rc::new(|| teksilo::prelude::lit!("What the probe marks")),
+        column: LaneColumn::Right,
+        shape: LaneShape::Diamond,
+        palette_slot: 2,
+        surfaces: &[LaneSurface::Stream],
+        default_on: false,
+        refresh: LaneRefresh::Manual,
+        marks: Rc::new(|ctx| {
+            let Some(at) = (ctx.locate)(0) else {
+                return Vec::new();
+            };
+            vec![LaneMark {
+                id: ctx.item_id,
+                span: LaneSpan::at(at),
+                column: LaneColumn::Right,
+                shape: LaneShape::Diamond,
+                color: ctx.color,
+                label: teksilo::prelude::lit!("a probe"),
+                group: ctx.group,
+            }]
+        }),
+    };
+
+    let handle = register_lane_provider("test.library.surface", spec).expect("register");
+    // The handle's type is nameable too — an edition has to store it in a struct
+    // field for the life of the process, and one it cannot spell it cannot keep.
+    let _kept: teksilo_ui::ext::LaneProviderHandle = handle;
+}
