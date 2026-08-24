@@ -342,7 +342,13 @@ impl SearchTreeModel {
             .unwrap_or_default()
     }
 
-    /// Whether `TEKSILO_SEARCH_DEBUG` asked for a trace of the fetch.
+    /// Whether `TEKSILO_SEARCH_DEBUG` asked for a trace of the fetch, in a build
+    /// with the `debug-traces` feature.
+    ///
+    /// Behind a feature as well as a variable, and the traces are `#[cfg]` out
+    /// rather than merely switched off: a runtime `false` still leaves every
+    /// format string in the binary. Off, none of this exists.
+    #[cfg(feature = "debug-traces")]
     fn debug() -> bool {
         static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
         *ON.get_or_init(|| std::env::var_os("TEKSILO_SEARCH_DEBUG").is_some())
@@ -351,12 +357,14 @@ impl SearchTreeModel {
     /// Fetch every occurrence of every field of one item, once.
     fn fill(&self, item_id: u64) {
         if self.filling.get() {
+            #[cfg(feature = "debug-traces")]
             if Self::debug() {
                 eprintln!("FILL item={item_id} refused: already filling");
             }
             return;
         }
         let Some(work_id) = self.work_id.get() else {
+            #[cfg(feature = "debug-traces")]
             if Self::debug() {
                 eprintln!("FILL item={item_id} refused: no work id");
             }
@@ -368,6 +376,7 @@ impl SearchTreeModel {
                 wanted.push(r.id);
             }
         });
+        #[cfg(feature = "debug-traces")]
         if Self::debug() {
             eprintln!("FILL item={item_id} work={work_id} rows={wanted:?}");
         }
@@ -382,13 +391,18 @@ impl SearchTreeModel {
             // genuinely gone simply has nothing under it.
             let found = match search_management_commands::occurrences_for_result(&self.ctx, &dto) {
                 Ok(found) => found,
+                // `err` is read only by the trace below, so it is bound only
+                // where the trace exists.
+                #[cfg_attr(not(feature = "debug-traces"), allow(unused_variables))]
                 Err(err) => {
+                    #[cfg(feature = "debug-traces")]
                     if Self::debug() {
                         eprintln!("FILL row={result_id} failed: {err:#}");
                     }
                     continue;
                 }
             };
+            #[cfg(feature = "debug-traces")]
             if Self::debug() {
                 eprintln!(
                     "FILL row={result_id} got={} truncated={}",
@@ -418,6 +432,7 @@ impl SearchTreeModel {
         }
         self.filling.set(false);
         self.slice.reload();
+        #[cfg(feature = "debug-traces")]
         if Self::debug() {
             eprintln!(
                 "FILL item={item_id} rows now {}",
@@ -481,6 +496,7 @@ impl TreeDataSource for SearchTreeModel {
     /// the only place to be sure it cannot happen is the one call every route to
     /// opening a branch passes through.
     fn set_expanded(&self, key: &Self::Key, expanded: bool) {
+        #[cfg(feature = "debug-traces")]
         if Self::debug() {
             eprintln!("SET_EXPANDED key={key:?} expanded={expanded}");
         }
@@ -488,6 +504,7 @@ impl TreeDataSource for SearchTreeModel {
             self.fill(*item_id);
         }
         self.slice.set_expanded(key, expanded);
+        #[cfg(feature = "debug-traces")]
         if Self::debug() {
             eprintln!(
                 "SET_EXPANDED done key={key:?} is_expanded={} visible={}",

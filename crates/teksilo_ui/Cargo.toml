@@ -181,6 +181,14 @@ winresource = "0.1"
 [features]
 # Build-with-mocks: render the UI with fabricated data, no real backend needed.
 mocks = []
+# Diagnostic traces, compiled out unless asked for: the margin lane's per-recompute
+# timing (`TEKSILO_LANE_DEBUG`), the search tree's fetch trace
+# (`TEKSILO_SEARCH_DEBUG`), and the toolkit's height-guess trace
+# (`TEKSILO_HEIGHT_DEBUG`). The feature makes them available; the environment
+# variable makes them loud. Off by default because a shipped build should carry
+# neither the formatting nor the lookup, and both the lane's and the editor's sit
+# on a layout path that runs every dirty frame.
+debug-traces = ["teksilo/debug-traces"]
 # Opt-in PDF export (embedded Typst). OFF by default so the standard build carries no Typst
 # dependency (~34 MB / ~60 s); the shipping/release build turns it on. When off, choosing PDF
 # in the export panel fails with a "PDF support not compiled" error rather than being absent.

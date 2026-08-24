@@ -503,6 +503,7 @@ impl LaneHost {
             return;
         };
         let texture_on = self.texture_on.get();
+        #[cfg(feature = "debug-traces")]
         if lane_debug() {
             eprintln!(
                 "BOUNDS x={:.1} y={:.1} w={:.1} h={:.1} texture_on={texture_on} \
@@ -516,6 +517,7 @@ impl LaneHost {
                 query::active_query().get().map(|q| q.text),
             );
         }
+        #[cfg(feature = "debug-traces")]
         let started = lane_debug().then(std::time::Instant::now);
         let rows = self.resolve(bounds.y);
 
@@ -537,6 +539,7 @@ impl LaneHost {
 
         let fingerprint = self.input_fingerprint(&rows, bounds.height);
         if fingerprint == self.last_inputs.get() {
+            #[cfg(feature = "debug-traces")]
             if let Some(started) = started {
                 eprintln!("LANE guard=hit us={}", started.elapsed().as_micros());
             }
@@ -546,6 +549,7 @@ impl LaneHost {
 
         let mut marks = Vec::new();
         let mut units = Vec::new();
+        #[cfg(feature = "debug-traces")]
         let (mut marks_us, mut units_us) = (0u128, 0u128);
 
         for MappedRow { row, text, .. } in &rows {
@@ -576,6 +580,7 @@ impl LaneHost {
                 comment_anchors: &anchors,
                 locate: &locate,
             };
+            #[cfg(feature = "debug-traces")]
             let t_marks = lane_debug().then(std::time::Instant::now);
             marks.extend(resolve::marks(
                 store,
@@ -583,9 +588,11 @@ impl LaneHost {
                 self.inputs.surface,
                 |spec, color, group| call.run(spec, color, group),
             ));
+            #[cfg(feature = "debug-traces")]
             if let Some(t) = t_marks {
                 marks_us += t.elapsed().as_micros();
             }
+            #[cfg(feature = "debug-traces")]
             let t_units = lane_debug().then(std::time::Instant::now);
             if texture_on {
                 // Remapped, not re-walked. The cache holds each paragraph in the
@@ -605,6 +612,7 @@ impl LaneHost {
                         }),
                 );
             }
+            #[cfg(feature = "debug-traces")]
             if let Some(t) = t_units {
                 units_us += t.elapsed().as_micros();
             }
@@ -615,6 +623,7 @@ impl LaneHost {
         // the book: normalising per scene would draw a two-paragraph note's bars the
         // same length as a chapter's, and the column would stop meaning anything
         // down the page.
+        #[cfg(feature = "debug-traces")]
         let units_len = units.len();
         let bars = if texture_on {
             texture::bars_from(units, bounds.height, &self.texture_scale)
@@ -622,6 +631,7 @@ impl LaneHost {
             Vec::new()
         };
 
+        #[cfg(feature = "debug-traces")]
         if lane_debug() {
             let with_handle = rows
                 .iter()
@@ -781,6 +791,7 @@ impl LaneHost {
         let row_window_top = row_top + origin - scroll;
         let text_top = (first.y - row_window_top).max(0.0);
         let out = narrow(extent, row_height, text_top, text_height);
+        #[cfg(feature = "debug-traces")]
         if lane_debug() {
             eprintln!(
                 "TEXT item={} row_top={row_top:.1} row_h={row_height:.1} first_y={:.1} \
@@ -890,6 +901,7 @@ impl LaneHost {
                 (map_fraction_at(&spans, at + height) - top).clamp(0.0, 1.0),
             )
         };
+        #[cfg(feature = "debug-traces")]
         if lane_debug() {
             let at = self.scroll.get();
             let here = spans
@@ -925,6 +937,7 @@ impl LaneHost {
             }
             let offset = handle.cursor_position();
             let at = locate::locate_offset(&handle, *text, offset);
+            #[cfg(feature = "debug-traces")]
             if lane_debug() {
                 eprintln!(
                     "CARET item={} offset={offset} rect_y={:?} text_h={:?} \
@@ -1224,8 +1237,17 @@ fn comment_anchors(
         .collect()
 }
 
-/// Whether `TEKSILO_LANE_DEBUG` asked for a line per recompute. Cached: this is
-/// read from `place_children`, which runs on every dirty frame.
+/// Whether `TEKSILO_LANE_DEBUG` asked for a line per recompute, in a build with
+/// the `debug-traces` feature. Cached: this is read from `place_children`, which
+/// runs on every dirty frame.
+///
+/// Behind a feature as well as a variable, and the traces themselves are `#[cfg]`
+/// out rather than merely switched off: a runtime `false` still leaves every
+/// format string in the binary, which is measurable -- the literal was still
+/// there when this was tried the other way. Off, none of this exists: not the
+/// lookup, not the `Instant::now` on a path that runs every dirty frame, and not
+/// the text.
+#[cfg(feature = "debug-traces")]
 fn lane_debug() -> bool {
     static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *ON.get_or_init(|| std::env::var_os("TEKSILO_LANE_DEBUG").is_some())
