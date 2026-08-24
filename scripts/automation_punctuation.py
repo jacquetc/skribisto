@@ -147,7 +147,7 @@ class Session:
         b = n.get("bounds") or {}
         if isinstance(b, dict) and "x" in b:
             self.call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                         "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                         "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
             return True
         return self.call("invoke_action", {"node": n["id"], "action": "click"}) is not None
 
@@ -192,7 +192,7 @@ def expand_and_click(section_variants, leaf_variants):
         b = sec.get("bounds") or {}
         if isinstance(b, dict) and "x" in b:  # chevron ~10px in
             s.call("inject_pointer", {"x": b["x"] + 10, "y": b["y"] + b.get("height", 0) / 2,
-                                      "kind": "click"})
+                                      "action": "click"})
             time.sleep(0.5)
     leaf = s.match(leaf_variants, rail_only=True, exact=True) or s.match(leaf_variants, rail_only=True)
     if leaf:
@@ -225,7 +225,7 @@ print("settings opened.")
 # nothing. Searching is also the path a writer actually takes.
 # By coordinate: the field shows placeholder text, which is not an accessible
 # name, so there is no label to match on.
-s.call("inject_pointer", {"x": 325, "y": 190, "kind": "click"})
+s.call("inject_pointer", {"x": 325, "y": 190, "action": "click"})
 time.sleep(0.4)
 for ch in "punctuation":
     s.call("inject_key", {"key": ch})

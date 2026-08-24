@@ -448,7 +448,7 @@ if not bundle_preview() or bundle_preview().lower().endswith(".skrib"):
     if b:
         cx = (b.get("x", 0) + b.get("width", 0) / 2) if isinstance(b, dict) else (b[0] + b[2] / 2)
         cy = (b.get("y", 0) + b.get("height", 0) / 2) if isinstance(b, dict) else (b[1] + b[3] / 2)
-        s.call("inject_pointer", {"x": cx, "y": cy, "kind": "click"})
+        s.call("inject_pointer", {"x": cx, "y": cy, "action": "click"})
         time.sleep(0.4)
 
 bpath = bundle_preview()

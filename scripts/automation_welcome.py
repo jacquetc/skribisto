@@ -277,7 +277,7 @@ print(f"Starforgers row: id={star_row.get('id')} role={star_row.get('role')} act
 b = star_row.get("bounds") or {}
 cx = b.get("x", 0) + b.get("width", 0) / 2
 cy = b.get("y", 0) + b.get("height", 0) / 2
-res, _ = s.call("inject_pointer", {"x": cx, "y": cy, "kind": "click"})
+res, _ = s.call("inject_pointer", {"x": cx, "y": cy, "action": "click"})
 if isinstance(res, dict) and res.get("isError"):
     fail(f"inject_pointer click on the Starforgers row errored: {res}", s.app, s.mcp, s.log)
 

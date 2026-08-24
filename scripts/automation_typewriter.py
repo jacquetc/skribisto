@@ -262,7 +262,7 @@ if "click" in (target.get("actions") or []):
 else:
     b = target.get("bounds") or {}
     call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                            "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                            "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
 settle(4)
 time.sleep(1.5)
 # The binder opens a tab on *selection*; if the row only got focus, press Enter.

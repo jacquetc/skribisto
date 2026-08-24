@@ -163,7 +163,7 @@ def click(s, n):
     b = n.get("bounds") or {}
     if "x" in b:
         s.call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                  "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                  "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
 
 
 print("== launch with a scratch copy of the Starforgers example ==")

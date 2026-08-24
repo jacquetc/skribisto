@@ -219,7 +219,7 @@ class Session:
             return False
         self.call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
                                      "y": b["y"] + b.get("height", 0) / 2,
-                                     "kind": "click"})
+                                     "action": "click"})
         return True
 
     def role(self, role):

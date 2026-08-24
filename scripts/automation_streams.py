@@ -165,7 +165,7 @@ def click(label, what="", minx=None):
         if "x" not in b:
             return False
         call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     settle()
     time.sleep(0.5)
     return True
@@ -216,7 +216,7 @@ if project is None:
     b = row.get("bounds") or {}
     if "x" in b:
         call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     else:
         die("'Mock Project' row has no bounds to click", app, mcp)
     # Poll for the Launcher → project transition (opening the project window

@@ -176,7 +176,7 @@ if not opened and node.get("bounds"):
     else:
         cx, cy = b[0] + b[2] / 2, b[1] + b[3] / 2
     print(f"\n-> inject_pointer click at ({cx:.0f},{cy:.0f})")
-    for args in ({"x": cx, "y": cy, "kind": "click"}, {"x": cx, "y": cy, "button": "left"},
+    for args in ({"x": cx, "y": cy, "action": "click"}, {"x": cx, "y": cy, "button": "left"},
                  {"x": cx, "y": cy}):
         try:
             res, _ = call("inject_pointer", args)

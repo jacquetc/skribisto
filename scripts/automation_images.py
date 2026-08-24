@@ -171,7 +171,7 @@ class Session:
         b = n.get("bounds") or {}
         if isinstance(b, dict) and "x" in b:
             self.call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                         "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                         "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
             return True
         return self.call("invoke_action", {"node": n["id"], "action": "click"}) is not None
 
@@ -262,7 +262,7 @@ def expand_and_click(section_variants, leaf_variants):
         b = sec.get("bounds") or {}
         if isinstance(b, dict) and "x" in b:  # chevron ~10px in
             s.call("inject_pointer", {"x": b["x"] + 10, "y": b["y"] + b.get("height", 0) / 2,
-                                      "kind": "click"})
+                                      "action": "click"})
             time.sleep(0.5)
     leaf = s.match(leaf_variants, rail_only=True, exact=True) or s.match(leaf_variants, rail_only=True)
     if leaf:
@@ -329,7 +329,7 @@ if prose:
     # window and the click silently lands on nothing. A few lines down from the
     # top is inside the viewport whatever the scene's length.
     s.call("inject_pointer", {"x": b["x"] + b["width"] / 2,
-                              "y": b["y"] + min(60, b["height"] / 2), "kind": "click"})
+                              "y": b["y"] + min(60, b["height"] / 2), "action": "click"})
     time.sleep(1.2)
     # The gate below is "a registered editor has (or had) keyboard focus", so a
     # click that lands without focusing fails it for a reason no screenshot of a
@@ -402,7 +402,7 @@ section = settings_row("compile & export", "compilation")
 if section:
     b = section["bounds"]
     s.call("inject_pointer", {"x": b["x"] + 10, "y": b["y"] + b.get("height", 0) / 2,
-                              "kind": "click"})
+                              "action": "click"})
     time.sleep(0.8)
 leaf = settings_row("export formats", "formats d")
 opened = bool(leaf) and s.click_node(leaf)

@@ -174,7 +174,7 @@ def click(label, what="", minx=None):
         if "x" not in b:
             return False
         call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     settle()
     time.sleep(0.5)
     return True
@@ -232,7 +232,7 @@ if project is None:
     if "x" not in b:
         die("'Mock Project' row has no bounds to click", app, mcp)
     call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                            "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                            "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     end = time.time() + 15
     opened = False
     while time.time() < end:
@@ -402,12 +402,12 @@ else:
     # Select two cards, then open the SECOND one's kebab. The menu must now read
     # in its counted form; the labels are rebuilt from the live selection by
     # `CardMenu`, so a stale single-card label here is a real regression.
-    def click_node(n, kind="click"):
+    def click_node(n, action="click"):
         b = n.get("bounds") or {}
         if "x" not in b:
             return False
         call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                "y": b["y"] + b.get("height", 0) / 2, "kind": kind})
+                                "y": b["y"] + b.get("height", 0) / 2, "action": action})
         settle()
         return True
 
@@ -424,7 +424,7 @@ else:
         b = cards[1].get("bounds") or {}
         call("inject_pointer", {"x": b.get("x", 0) + b.get("width", 0) / 2,
                                 "y": b.get("y", 0) + b.get("height", 0) / 2,
-                                "kind": "click", "modifiers": ["ctrl"]})
+                                "action": "click", "ctrl": True})
         settle()
         time.sleep(0.4)
         kebabs = kebab_nodes()
@@ -483,7 +483,7 @@ if open_corkboard("Part One \u2014 Arrival"):
             b = folder_card.get("bounds") or {}
             call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
                                     "y": b["y"] + b.get("height", 0) / 2,
-                                    "kind": "double_click"})
+                                    "action": "double_click"})
         settle()
         time.sleep(0.5)
         # The breadcrumb now carries the container we came from *and* the one we

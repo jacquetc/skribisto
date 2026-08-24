@@ -127,7 +127,7 @@ def select_row(label):
     b = n.get("bounds") or {}
     if "x" in b:
         call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     return True
 
 

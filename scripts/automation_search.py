@@ -273,7 +273,7 @@ elif "click" in acts:
 else:
     b = child["bounds"]
     call("inject_pointer", {"x": b["x"] + b["width"] / 2, "y": b["y"] + b["height"] / 2,
-                            "kind": "click"})
+                            "action": "click"})
 time.sleep(1.2)
 ns = nodes()
 shot("/tmp/search-preview.png")

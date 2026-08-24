@@ -163,7 +163,7 @@ def click(label, what="", minx=None):
         if "x" not in b:
             return False
         call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     settle()
     time.sleep(0.5)
     return True
@@ -221,7 +221,7 @@ if project is None:
     if "x" not in b:
         die("'Mock Project' row has no bounds to click", app, mcp)
     call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                            "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                            "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     end = time.time() + 15
     opened = False
     while time.time() < end:

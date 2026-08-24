@@ -194,7 +194,7 @@ if "click" in (cog.get("actions") or []):
     call("invoke_action", {"node": cog["id"], "action": "click"})
 else:
     call("inject_pointer", {"x": cb["x"] + cb.get("width", 0) / 2,
-                            "y": cb["y"] + cb.get("height", 0) / 2, "kind": "click"})
+                            "y": cb["y"] + cb.get("height", 0) / 2, "action": "click"})
 settle()
 time.sleep(1.2)
 labels = {n.get("label") for n in nodes()}

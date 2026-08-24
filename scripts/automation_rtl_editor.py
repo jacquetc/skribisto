@@ -135,10 +135,10 @@ print(f"opening {str(chapter.get('name') or chapter.get('label'))!r}")
 
 b = chapter.get("bounds") or {}
 call("inject_pointer", {"x": b.get("x", 0) + b.get("width", 10) / 2,
-                        "y": b.get("y", 0) + b.get("height", 10) / 2, "kind": "click"})
+                        "y": b.get("y", 0) + b.get("height", 10) / 2, "action": "click"})
 time.sleep(0.6)
 call("inject_pointer", {"x": b.get("x", 0) + b.get("width", 10) / 2,
-                        "y": b.get("y", 0) + b.get("height", 10) / 2, "kind": "double_click"})
+                        "y": b.get("y", 0) + b.get("height", 10) / 2, "action": "double_click"})
 time.sleep(2.0)
 
 

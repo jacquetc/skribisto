@@ -157,9 +157,9 @@ print(f"overlays before click: {overlay_count()}")
 # a gesture a mouse can actually produce.)
 b = trigger["bounds"]
 cx, cy = b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
-call("inject_pointer", {"x": cx, "y": cy, "kind": "move"})
+call("inject_pointer", {"x": cx, "y": cy, "action": "move"})
 time.sleep(0.3)
-call("inject_pointer", {"x": cx, "y": cy, "kind": "click"})
+call("inject_pointer", {"x": cx, "y": cy, "action": "click"})
 call("settle")
 time.sleep(0.8)
 

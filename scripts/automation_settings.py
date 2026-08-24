@@ -306,7 +306,7 @@ def pointer_click(b, dx=None):
         return False
     cx = b["x"] + (dx if dx is not None else b.get("width", 0) / 2)
     cy = b["y"] + b.get("height", 0) / 2
-    s.call("inject_pointer", {"x": cx, "y": cy, "kind": "click"})
+    s.call("inject_pointer", {"x": cx, "y": cy, "action": "click"})
     return True
 
 

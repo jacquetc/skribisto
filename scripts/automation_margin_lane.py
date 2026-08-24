@@ -212,7 +212,7 @@ if lane(ns) is None:
     if b:
         call("inject_pointer", {"x": b.get("x", 0) + b.get("width", 0) / 2,
                                 "y": b.get("y", 0) + b.get("height", 0) / 2,
-                                "kind": "click"})
+                                "action": "click"})
         time.sleep(1.5)
         ns = nodes()
 
@@ -307,7 +307,7 @@ if lane(ns) is None:
     if b:
         call("inject_pointer", {"x": b.get("x", 0) + b.get("width", 0) / 2,
                                 "y": b.get("y", 0) + b.get("height", 0) / 2,
-                                "kind": "click"})
+                                "action": "click"})
         time.sleep(1.5)
         ns = nodes()
 

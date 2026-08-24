@@ -210,7 +210,7 @@ class Session:
             return False
         cx = b["x"] + (dx if dx is not None else b.get("width", 0) / 2)
         cy = b["y"] + b.get("height", 0) / 2
-        self.call("inject_pointer", {"x": cx, "y": cy, "kind": "click"})
+        self.call("inject_pointer", {"x": cx, "y": cy, "action": "click"})
         return True
 
     def click_node(self, n):

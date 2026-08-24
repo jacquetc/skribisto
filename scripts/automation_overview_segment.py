@@ -170,7 +170,7 @@ def click(label, what="", minx=None):
         if "x" not in b:
             return False
         call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                                "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                                "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     settle()
     time.sleep(0.5)
     return True
@@ -228,7 +228,7 @@ if project is None:
     if "x" not in b:
         die("'Mock Project' row has no bounds to click", app, mcp)
     call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,
-                            "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
+                            "y": b["y"] + b.get("height", 0) / 2, "action": "click"})
     end = time.time() + 15
     opened = False
     while time.time() < end:
@@ -329,7 +329,7 @@ else:
     b = search.get("bounds") or {}
     call("inject_pointer", {"x": b.get("x", 0) + b.get("width", 0) / 2,
                             "y": b.get("y", 0) + b.get("height", 0) / 2,
-                            "kind": "click"})
+                            "action": "click"})
     settle()
     at = next((n for n in nodes() if n.get("role") == "SearchInput"
                and (n.get("bounds") or {}).get("x", 0) >= PANE_X), None)

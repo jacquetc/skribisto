@@ -315,11 +315,13 @@ else:
         if pt is None:
             failures.append("context menu: could not locate the writing column")
         else:
-            # `action` + `button`, not `kind`: `inject_pointer` ignores unknown
-            # fields, so the original `"kind": "right_click"` was serialised away
-            # and injected an ordinary LEFT click. The menu never opened, and the
-            # check below reported the editor as unreachable for the one reason
-            # that had nothing to do with the editor.
+            # `action` + `button`, not `kind`, and not an action named
+            # "right_click" either. `inject_pointer` used to ignore both an
+            # unknown field and an unknown action name, defaulting to a plain
+            # LEFT click: the menu never opened, and the check below reported
+            # the editor as unreachable for the one reason that had nothing to
+            # do with the editor. The bridge now refuses both rather than
+            # guessing, so this can no longer happen quietly anywhere.
             call("inject_pointer",
                  {"x": pt[0], "y": pt[1], "action": "click", "button": "secondary"})
             settle()
