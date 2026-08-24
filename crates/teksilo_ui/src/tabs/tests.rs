@@ -2549,6 +2549,109 @@ fn committing_a_title_reaches_both_of_its_homes() {
     assert_eq!(chapter_title.as_deref(), Some("The Long Road"));
 }
 
+/// A segment registered for `BinderItemSubRole::Note` actually appears on a
+/// `Folder/Note` tab's bar.
+///
+/// `folder_synopsis_with_overview` used to be hardcoded to exactly Notes and
+/// Overview and never read `segments::registered_for` at all.
+/// `register_container_segment`'s `shows_on` gate accepts `BinderItemSubRole::Note`
+/// with no error, so a registration landing there believed it had succeeded and
+/// the segment simply never showed up. This is the regression test: it registers a
+/// segment, points a real `Folder/Note` tab's `SegmentedControl` at it, and insists
+/// the widget that segment's `view` builds is actually the one that gets laid out,
+/// not merely that the registry's own filtered list contains the id, which the
+/// broken code also passed.
+#[test]
+fn a_segment_registered_for_a_note_folder_appears_on_its_bar() {
+    use crate::tabs::shared::segments::{self, ContainerSegmentSpec};
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+    use teksilo::widgets::FixedSize;
+
+    let ctx = Rc::new(AppContext::new());
+    let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default()).unwrap();
+    let binder = binder_commands::create_binder(
+        &ctx,
+        None,
+        &CreateBinderDto {
+            name: "Notes".into(),
+            activated: true,
+            ..Default::default()
+        },
+        work.id,
+        0,
+    )
+    .unwrap();
+    let item = binder_item_commands::create_binder_item(
+        &ctx,
+        None,
+        &CreateBinderItemDto {
+            title: "Research".into(),
+            role: BinderItemRole::Folder,
+            sub_role: BinderItemSubRole::Note,
+            activated: true,
+            is_exportable: true,
+            ..Default::default()
+        },
+        binder.id,
+        -1,
+    )
+    .unwrap();
+
+    // A `FixedSize` at a height nothing else on this tab lays out to, so its
+    // presence in the tree is unambiguous evidence that the registered `view` ran
+    // and was actually mounted, not merely that some segment button exists.
+    const MARKER_HEIGHT: f32 = 444.0;
+    const MARKER_ID: &str = "test.notes-marker";
+    let _handle = segments::register_container_segment(
+        "test.notes_folder_segment",
+        ContainerSegmentSpec {
+            id: MARKER_ID.to_string(),
+            label: Rc::new(|| lit!("Marker".to_string())),
+            view: Rc::new(|_tab| {
+                Box::new(FixedSize::new().width(10.0).height(MARKER_HEIGHT)) as Box<dyn Widget>
+            }),
+            shows_on: Rc::new(|s| matches!(s, BinderItemSubRole::Note)),
+        },
+    )
+    .expect("a free namespace and a free id");
+
+    let tab = tab_for(
+        &ctx,
+        item.id,
+        &BinderItemRole::Folder,
+        &BinderItemSubRole::Note,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    // Selected before the tab is built: `Switcher` mounts only the child whose
+    // index matches at build time, so this is what makes the registered segment
+    // the one that is actually laid out rather than merely present in the list.
+    tab.segment.set(Some(segments::segment_id(MARKER_ID)));
+
+    let mut tree = WidgetTree::new();
+    let root = tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(800.0, 600.0));
+
+    fn any_child_at_height(tree: &WidgetTree, id: WidgetId, height: f32) -> bool {
+        if (tree.bounds(id).height - height).abs() < 0.5 {
+            return true;
+        }
+        tree.children(id)
+            .into_iter()
+            .any(|c| any_child_at_height(tree, c, height))
+    }
+    assert!(
+        any_child_at_height(&tree, root, MARKER_HEIGHT),
+        "a segment registered for BinderItemSubRole::Note did not appear on a \
+         Folder/Note tab's segment bar"
+    );
+}
+
 /// Scene, ChapterScene and Note are no longer collapsed into one prose kind:
 /// `tab_for` tags each, and `main_typography` resolves the right bundle
 /// (Scene → Scene font, Note → Notes font).

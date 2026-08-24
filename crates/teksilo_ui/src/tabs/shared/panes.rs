@@ -826,35 +826,50 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
     )
 }
 
-/// A **notes folder**'s body: its own synopsis page, plus an Overview of what it holds.
+/// A **notes folder**'s body: its own synopsis page, an overview of what it holds, and
+/// whatever else has been registered for it.
 ///
-/// Two segments, not five. A notes folder has no manuscript extent — the compiler never
-/// walks into it — so Full Chapter / Full Part / Full Synopsis and the Corkboard (which
-/// is a view *of* a manuscript stream) would all be empty by construction. What it does
-/// have is a subtree: a research folder with thirty notes in it is exactly the thing you
-/// want tabulated. So it gets the one segment that applies.
+/// Two built-in segments, not five. A notes folder has no manuscript extent: the
+/// compiler never walks into it, so Full Chapter / Full Part / Full Synopsis and the
+/// Corkboard (which is a view *of* a manuscript stream) would all be empty by
+/// construction. What it does have is a subtree: a research folder with thirty notes in
+/// it is exactly the thing you want tabulated. So it gets the one segment that applies.
 ///
 /// This is why [`skribisto_model::overview_capable`] is not
 /// `StreamLevel::for_container` — they disagree here, and only here.
+///
+/// Registered segments (see [`segments::register_container_segment`]) are appended
+/// after Notes and before Overview, the same relative position `folder_segmented` gives
+/// them: after the container's own extras, before the view that closes every bar. A
+/// `BinderItemSubRole::Note` gate is accepted at registration with no error, so a
+/// segment registered for it and never consulted here would fail silently rather than
+/// loudly; this is the other half of that contract.
 pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
-    let items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![
-        (
-            segments::SEG_NOTES,
-            tr!(segment_notes()),
-            Box::new(folder_synopsis_body(
-                tab,
-                segment_will_show(tab, segments::SEG_NOTES),
-            )) as Box<dyn Widget>,
-        ),
-        (
-            segments::SEG_OVERVIEW,
-            tr!(overview()),
-            crate::tabs::overview::overview_pane(tab),
-        ),
-    ];
+    let sub_role = tab.sub_role().clone();
+    let mut items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![(
+        segments::SEG_NOTES,
+        tr!(segment_notes()),
+        Box::new(folder_synopsis_body(
+            tab,
+            segment_will_show(tab, segments::SEG_NOTES),
+        )) as Box<dyn Widget>,
+    )];
+    for spec in segments::registered_for(&sub_role) {
+        // Leaked so the id borrows for the rest of this build: see `folder_segmented`,
+        // which leaks the same way for the same reason: bounded by the number of
+        // distinct registered segment ids in the process, not by how often a tab is
+        // built.
+        let id: &'static str = Box::leak(spec.id.clone().into_boxed_str());
+        items.push((id, (spec.label)(), (spec.view)(tab)));
+    }
+    items.push((
+        segments::SEG_OVERVIEW,
+        tr!(overview()),
+        crate::tabs::overview::overview_pane(tab),
+    ));
     // Remembered per type, exactly like the five-segment containers: reopening a notes
-    // folder returns to whichever of its two views you last used. That claim used to be
-    // false — `EditorViewMemory::stored` had no `Note` arm, so this wrapper was a silent
+    // folder returns to whichever view you last used. That claim used to be false:
+    // `EditorViewMemory::stored` had no `Note` arm, so this wrapper was a silent
     // permanent no-op here. It has one now.
     Box::new(RememberSegment::wrap(tab, items, |bar, content| {
         VStack::new()
