@@ -32,17 +32,27 @@
 //!
 //! ## The editor's text, not its box
 //!
-//! The one place this conversion is deliberately approximate. An editor laid out
-//! taller than its content — a three-line scene in a pane with a ten-line minimum —
-//! reports the *text's* height, so its marks spread across its slot rather than
-//! crowding into the top fifth of it and leaving the rest blank.
+//! `locate_offset` and `locate_span` answer purely against the editor's own
+//! laid-out text height, and know nothing about the box that text sits in — a
+//! three-line scene in a pane with a ten-line minimum, or a stream row whose
+//! heading, epigraph and synopsis editor sit above the prose. Ignoring the box was
+//! once the deliberate choice here, on the theory that closing that gap exactly
+//! would mean threading each editor's content padding and placed box through every
+//! provider call, to move a mark by a few pixels on a strip whose smallest mark is
+//! three.
 //!
-//! For a tab that is invisible: there is nothing else in the extent and nothing to
-//! scroll. For a stream row it means a short row's marks are spread over its slot
-//! rather than aligned to the prose inside it. Aligning them exactly would mean
-//! threading each editor's content padding and placed box through every provider
-//! call, to move a mark by a few pixels on a strip whose smallest mark is three. The
-//! spread is the better trade, and it is a choice rather than an oversight.
+//! That trade was taken back: with the whole row as the extent, a Scene's first
+//! paragraph landed at the top of the strip while the viewport box — which tracks
+//! real pixels — was still down among the epigraph and synopsis furniture above it,
+//! the two disagreeing by exactly the furniture's height. Streams had the same gap
+//! and hid it, their rows being separated by nothing thicker than a heading.
+//!
+//! So the box is accounted for one layer up, not here. Before either function in
+//! this module is ever called, `surface.rs` narrows a row's extent to the slice its
+//! text actually occupies (`MappedRow::text`, built by `narrow`), so what reaches
+//! `locate_offset`/`locate_span` is already the text's own slice of the lane. This
+//! module stays innocent of boxes and furniture on purpose — the narrowing upstream
+//! is what makes that safe rather than approximate.
 
 use crate::widgets::LaneSpan;
 use teksilo::widgets::rich_text::EditorHandle;
@@ -151,8 +161,9 @@ mod tests {
     /// onto their own slice, and the slices tile the lane without overlapping.
     ///
     /// `slice` is arithmetic and does not care what the numbers mean. What they
-    /// mean is decided in [`LaneRows::resolve`](super::super::surface), and it is
-    /// deliberately **not** pixel heights — see the reasoning there.
+    /// mean is decided in `LaneHost::resolve`, in `surface.rs` — a private method,
+    /// so this is prose rather than a link — and it is deliberately **not** pixel
+    /// heights: see the reasoning there.
     #[test]
     fn rows_tile_the_lane_in_proportion_to_their_weights() {
         let total = 1000.0;

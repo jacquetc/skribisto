@@ -3,7 +3,7 @@
 
 //! The community edition's own mark sources.
 //!
-//! Three, registered through the same door an extension uses, under the ids
+//! Four, registered through the same door an extension uses, under the ids
 //! [`builtin_ids`](super::builtin_ids) reserves. Going through the public registry
 //! rather than a private list is deliberate: it is what keeps the settings page,
 //! the enabled check and the draw order one code path for everybody, so a bug that
@@ -185,10 +185,14 @@ fn spelling() -> LaneProviderSpec {
                 .filter_map(|&(start, length)| {
                     let at = (ctx.locate)(start)?;
                     Some(LaneMark {
-                        // The offset, not an ordinal: a mark's id has to hold
-                        // still across repaints or a screen reader is handed a
-                        // tree that renumbers itself, and inserting a word above
-                        // renumbers every ordinal below it.
+                        // The offset, not an ordinal: it holds still across a
+                        // repaint or a recompute that changes nothing, which is
+                        // the case that matters -- it is what happens sixty
+                        // times a second while a writer types. An ordinal fails
+                        // that same case in a way the offset does not: fixing
+                        // or adding a *different* misspelling elsewhere shifts
+                        // every ordinal after it, even though the word this
+                        // mark points at never moved.
                         id: start as u64,
                         span: LaneSpan::at(at),
                         column: LaneColumn::Left,
@@ -227,10 +231,12 @@ fn word_at(text: &[char], start: usize, length: usize) -> String {
 
 /// Every hit for whatever the writer last searched for.
 ///
-/// The hit the writer is standing on spans the lane's full width; the rest sit in
-/// the centre column. A width difference rather than a colour one, because the
-/// distinction has to survive a reader who cannot separate two hues, and at three
-/// pixels tall hue is a weak channel even with normal vision.
+/// The hit the writer is standing on draws longer than the rest; every hit,
+/// current or not, sits in the same centre column. A length difference rather
+/// than a colour one, because the distinction has to survive a reader who cannot
+/// separate two hues, and at three pixels tall hue is a weak channel even with
+/// normal vision. Why length carries it and not a second column: see the comment
+/// on `column` below.
 fn search() -> LaneProviderSpec {
     LaneProviderSpec {
         id: "search".to_string(),
@@ -343,8 +349,13 @@ fn boundaries() -> LaneProviderSpec {
         default_on: true,
         refresh: LaneRefresh::Manual,
         marks: Rc::new(|ctx| {
-            // Offset zero is the top of this row's text, which is what the boundary
-            // is. `None` before the row has been laid out, and the mark is simply
+            // Offset zero is this row's first line, not its top: `locate` answers
+            // with the middle of whatever line an offset sits on, and that is
+            // exactly right here too. The notch on a `Rule` is drawn at
+            // `m.top - 2.0`, so a mark anchored to the true top of the strip
+            // would be clipped rather than drawn -- the same reason a point mark
+            // is grown around its position instead of pinned to a line's start.
+            // `None` before the row has been laid out, and the mark is simply
             // absent for that frame rather than drawn at the top of the lane.
             let Some(top) = (ctx.locate)(0) else {
                 return Vec::new();
