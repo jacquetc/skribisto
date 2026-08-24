@@ -257,7 +257,7 @@ pub fn side_synopsis_editor(
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
-    item: Option<common::types::EntityId>,
+    anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
     estimate_height: bool,
 ) -> impl Widget {
@@ -277,7 +277,7 @@ pub fn side_synopsis_editor(
         comments,
         images,
         read_only,
-        item,
+        anchor,
         estimate_height,
     )
 }

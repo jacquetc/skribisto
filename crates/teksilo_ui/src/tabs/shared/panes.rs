@@ -171,6 +171,7 @@ fn attribution_control(handle: Rc<RefCell<Option<EditorHandle>>>) -> impl Widget
 pub(crate) fn laned(
     tab: &ContentTab,
     surface: crate::margin_lane::LaneSurface,
+    scope: crate::margin_lane::LaneScope,
     area: ScrollArea,
     content: impl Widget + 'static,
 ) -> impl Widget {
@@ -186,7 +187,7 @@ pub(crate) fn laned(
     // down exactly one code path, which is what stops them drifting apart about
     // where a mark belongs.
     let extents = crate::margin_lane::RowExtents::new();
-    let inputs = lane_inputs(tab, surface, extents.clone());
+    let inputs = lane_inputs(tab, surface, scope, extents.clone());
     let lane = crate::margin_lane::lane_for(&area, inputs);
     let page = crate::margin_lane::RowExtent::new(
         tab.item_id(),
@@ -207,10 +208,14 @@ pub(crate) fn laned(
 /// — a full synchronous Djot import, and what once made switching a Book to Full
 /// Book freeze for seconds. A placed row is a built row, so its document is already
 /// open.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn laned_stream(
     tab: &ContentTab,
     vm: &crate::stream::StreamViewModel,
     flavour: crate::stream::SplitFlavour,
+    // The page's own token, shared with every editor on it — see
+    // `crate::margin_lane::LaneScope`.
+    scope: crate::margin_lane::LaneScope,
     extents: crate::margin_lane::RowExtents,
     area: ScrollArea,
     content: impl Widget + 'static,
@@ -292,6 +297,7 @@ pub(crate) fn laned_stream(
             } else {
                 crate::format::EditorKind::Prose
             },
+            scope,
             format: tab.format.clone(),
             rows: LaneRows::Placed { extents, row },
         },
@@ -305,6 +311,7 @@ pub(crate) fn laned_stream(
 fn lane_inputs(
     tab: &ContentTab,
     surface: crate::margin_lane::LaneSurface,
+    scope: crate::margin_lane::LaneScope,
     extents: crate::margin_lane::RowExtents,
 ) -> crate::margin_lane::LaneInputs {
     let app_ctx = tab.app_ctx();
@@ -336,6 +343,10 @@ fn lane_inputs(
         ids: tab.ids().clone(),
         surface,
         kind: crate::format::EditorKind::Prose,
+        // The surface this lane is *on*, so it resolves the editor beside it rather
+        // than another render of the same item — a dual-pane tab has two, and a
+        // scene open in a Full Chapter beside this tab is a third.
+        scope,
         format: tab.format.clone(),
         rows: crate::margin_lane::LaneRows::Placed {
             extents,
@@ -447,6 +458,11 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
     // The page before its content: the editors below stage their handle into this
     // page's binding, and the port that promotes it is mounted at the end.
     let (area, port, page) = writing_page_scroll(tab, segment_will_show(tab, segments::SEG_OWN));
+    // One token for this page: the editors below and the lane beside them are the
+    // same surface, and nothing else may answer for it. See
+    // `crate::margin_lane::LaneScope`.
+    let scope = crate::margin_lane::LaneScope::fresh();
+
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(t) = tab.title() {
         col = col.child(centered(
@@ -515,7 +531,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 // tab's main widget; a Part or a Book has none, so here the synopsis is
                 // the page and the position worth remembering is its.
                 tab.main().is_none().then(|| page.clone()),
-                Some(tab.item_id()),
+                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
             ));
@@ -546,7 +562,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             tab.open_doc.trashed.get(),
             // This tab's own item, so the margin lane can reach this editor by
             // name rather than through focus.
-            Some(tab.item_id()),
+            Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
             // A tab's editor is on screen and lays out on its first frame.
             false,
         ));
@@ -556,6 +572,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
     laned(
         tab,
         crate::margin_lane::LaneSurface::Editor,
+        scope,
         area,
         col.child(vspace(28.0)).child(port),
     )
@@ -570,9 +587,19 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
 
     let wants_side = tab.synopsis_placement.map(|p| p.is_side());
 
+    // **One scope per arm, and this is where the difference is made.** Both arms
+    // build a prose column for the *same* item, and `Switcher` keeps whichever it
+    // has mounted alive for the tab's life — so both stay registered, both keep the
+    // geometry of their last layout, and "the editor showing this item" stopped
+    // being a question with one answer. Each arm's editors and the lane beside them
+    // are handed the same token; nothing else holds it. See
+    // `crate::margin_lane::LaneScope`, which records what went wrong without it.
+    let top_scope = crate::margin_lane::LaneScope::fresh();
+    let side_scope = crate::margin_lane::LaneScope::fresh();
+
     // The Top layout — today's flowing page, unchanged: title, tags, the compact
     // synopsis box and the prose all scroll together.
-    let top = manuscript_page(tab, Some(tab.show_synopsis.clone()));
+    let top = manuscript_page(tab, Some(tab.show_synopsis.clone()), top_scope);
 
     // The Side layout, built lazily by the `WidthProbe`'s `Switcher` and only if the
     // writer ever actually gets it — a Top-placement project never pays for it.
@@ -580,8 +607,8 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
         // One handle, shared by the effects widget (which drives the pane from the
         // setting) and the header's fold button — so "folded" has a single owner.
         let sync = SideSync::new(tab.side_splitter.clone(), tab.synopsis_side_width.clone());
-        let synopsis = side_synopsis_pane(tab, sync.clone());
-        let manuscript = manuscript_page(tab, None);
+        let synopsis = side_synopsis_pane(tab, sync.clone(), side_scope);
+        let manuscript = manuscript_page(tab, None, side_scope);
         let mut splitter = Splitter::new(tab.side_splitter.clone())
             .pane(synopsis)
             .pane(manuscript);
@@ -630,6 +657,11 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
     // One page, always the one shown. Built first so the synopsis below can stage
     // its handle into it.
     let (area, port, page) = writing_page_scroll(tab, true);
+    // One token for this page: the editors below and the lane beside them are the
+    // same surface, and nothing else may answer for it. See
+    // `crate::margin_lane::LaneScope`.
+    let scope = crate::margin_lane::LaneScope::fresh();
+
     let mut col = VStack::new().spacing(8.0).child(vspace(20.0));
 
     if let Some(t) = tab.title() {
@@ -695,7 +727,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 // On a heading tab the synopsis is the page, so it is this tab's main
                 // widget and what its remembered caret belongs to.
                 Some(page.clone()),
-                Some(tab.item_id()),
+                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
             ));
@@ -705,6 +737,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
         laned(
             tab,
             crate::margin_lane::LaneSurface::Editor,
+            scope,
             area,
             col.child(vspace(28.0)).child(port),
         ),
@@ -745,6 +778,11 @@ pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
 /// ([`folder_synopsis_with_overview`]), which owns the backdrop for the pair.
 fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
     let (area, port, page) = writing_page_scroll(tab, will_show);
+    // One token for this page: the editors below and the lane beside them are the
+    // same surface, and nothing else may answer for it. See
+    // `crate::margin_lane::LaneScope`.
+    let scope = crate::margin_lane::LaneScope::fresh();
+
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(s) = tab.synopsis() {
         col = col
@@ -774,7 +812,7 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
                 tab.open_doc.trashed.get(),
                 // The synopsis *is* this page, so it is the tab's main widget.
                 Some(page.clone()),
-                Some(tab.item_id()),
+                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
             ));
@@ -782,6 +820,7 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
     laned(
         tab,
         crate::margin_lane::LaneSurface::Editor,
+        scope,
         area,
         col.child(vspace(28.0)).child(port),
     )

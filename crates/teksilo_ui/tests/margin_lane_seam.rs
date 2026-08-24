@@ -287,6 +287,11 @@ use teksilo_ui::margin_lane::{
     install_builtin_providers, locate_offset, set_active_query,
 };
 
+/// The one row every single-document fixture here maps. `texture::units` tags each
+/// paragraph with the row it came from so [`merge_below`] can refuse to fold a bar
+/// across a document boundary; a fixture with one document names it once.
+const ROW: common::types::EntityId = 1;
+
 /// A document with paragraphs of very unequal length, laid out narrow enough to
 /// wrap, and its handle.
 ///
@@ -823,7 +828,7 @@ fn the_texture_draws_dialogue_as_a_share_of_each_paragraph() {
         common::entities::QuoteStyle::LocaleDefault,
     );
 
-    let bars = teksilo_ui::margin_lane::texture::bars(&doc, markers, &span_of, 240.0);
+    let bars = teksilo_ui::margin_lane::texture::bars(ROW, &doc, markers, &span_of, 240.0);
     assert_eq!(bars.len(), 2, "one bar per paragraph: {bars:?}");
 
     let quoted = &bars[0];
@@ -887,7 +892,7 @@ fn no_bar_is_longer_than_the_column_however_much_merging_it_takes() {
     );
 
     // Sixty pixels for forty paragraphs: every bar has to merge with its neighbours.
-    let bars = teksilo_ui::margin_lane::texture::bars(&doc, markers, &span_of, 60.0);
+    let bars = teksilo_ui::margin_lane::texture::bars(ROW, &doc, markers, &span_of, 60.0);
     assert!(!bars.is_empty());
     assert!(
         bars.len() < 40,
@@ -939,7 +944,7 @@ fn consecutive_bars_are_separated_rather_than_tiled_into_one_mass() {
     );
 
     let lane_height = 600.0;
-    let bars = teksilo_ui::margin_lane::texture::bars(&doc, markers, &span_of, lane_height);
+    let bars = teksilo_ui::margin_lane::texture::bars(ROW, &doc, markers, &span_of, lane_height);
     assert!(
         bars.len() > 4,
         "twelve paragraphs on a tall lane must not all merge"
@@ -984,6 +989,7 @@ fn a_row_arriving_late_does_not_resize_the_bars_already_drawn() {
     use teksilo_ui::margin_lane::texture::{Paragraph, bars_from};
 
     let para = |start: f32, end: f32, words: usize| Paragraph {
+        owner: ROW,
         span: LaneSpan::new(start, end),
         stats: ParagraphStats { words, spoken: 0 },
     };
@@ -1044,7 +1050,7 @@ fn an_unmeasurable_language_draws_no_texture_rather_than_an_empty_one() {
         common::entities::QuoteStyle::LocaleDefault,
     );
     assert!(!markers.is_measurable(), "the premise of this test");
-    assert!(teksilo_ui::margin_lane::texture::bars(&doc, markers, &span_of, 240.0).is_empty());
+    assert!(teksilo_ui::margin_lane::texture::bars(ROW, &doc, markers, &span_of, 240.0).is_empty());
 }
 
 /// A `LaneContext` is what an extension writes against, so it has to be buildable

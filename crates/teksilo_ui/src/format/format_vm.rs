@@ -304,6 +304,18 @@ struct RegisteredEditor {
     ///
     /// [`TypographyBoundEditor`]: crate::tabs::shared::editor
     item: Option<EntityId>,
+    /// Which writing surface built this editor — see
+    /// [`LaneScope`](crate::margin_lane::LaneScope), where the whole argument
+    /// lives.
+    ///
+    /// Set with `item` and never apart from it: several surfaces can show the
+    /// same item at once, so the item alone does not identify an editor, and a
+    /// lane asking by item alone was answered by whichever had registered first.
+    ///
+    /// `None` for the editors the widget tests build with no surface around
+    /// them, which is also the only case
+    /// [`handle_for_item`](Self::handle_for_item) still answers by order.
+    scope: Option<crate::margin_lane::LaneScope>,
 }
 
 /// One gate per control group, for the dock to hang `visible_when` on.
@@ -622,6 +634,7 @@ impl FormatViewModel {
                 footnotes: None,
                 typo: None,
                 item: None,
+                scope: None,
             }),
         }
         // A rebuild of the editor the menu is sticky on must re-point the latch
@@ -745,14 +758,22 @@ impl FormatViewModel {
         }
     }
 
-    /// Tell an already-registered editor which `BinderItem`'s text it is showing.
+    /// Tell an already-registered editor which `BinderItem`'s text it is showing,
+    /// and which writing surface built it.
     ///
     /// Separate from [`register`](Self::register) for the same reason as the two
     /// above: not every registered surface is showing one item's text, and the
-    /// search preview band would have to invent an id it does not have.
-    pub fn set_registered_item(&self, id: WidgetId, item: EntityId) {
+    /// widget tests would have to invent an anchor they do not have.
+    ///
+    /// **Both halves or neither.** This used to take the item alone, and the
+    /// surface was inferred by [`handle_for_item`](Self::handle_for_item) from
+    /// registration order — which is wrong wherever more than one live editor
+    /// shows the same item, and three ordinary arrangements do. See
+    /// [`LaneAnchor`](crate::margin_lane::LaneAnchor).
+    pub fn set_registered_anchor(&self, id: WidgetId, anchor: crate::margin_lane::LaneAnchor) {
         if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
-            entry.item = Some(item);
+            entry.item = Some(anchor.item);
+            entry.scope = Some(anchor.scope);
         }
     }
 
@@ -766,19 +787,42 @@ impl FormatViewModel {
     /// roles — a scene tab has both a prose column and a synopsis box, and a lane on
     /// one must not resolve its offsets against the other.
     ///
-    /// **A laid-out editor wins over one that is merely registered.** One item can
-    /// have two editors of the same kind at once: the dual-pane tab builds its prose
-    /// column for both the Top and the Side layout, and only the arm on screen is
-    /// ever laid out. Both register, so "the first entry" is a coin toss, and losing
-    /// it hands back a handle with no geometry — which for a margin lane is not a
-    /// wrong position but no position at all, silently and for the life of the tab.
-    /// Falls back to the first registration when none has been laid out yet, which
-    /// is every editor on its first frame.
-    pub fn handle_for_item(&self, item: EntityId, kind: EditorKind) -> Option<EditorHandle> {
+    /// **`scope` is the answer, not a hint.** One item can have several editors of
+    /// the same kind mounted at once, and it is not one exotic arrangement but
+    /// three ordinary ones: the dual-pane tab builds its prose column for both the
+    /// Top and the Side synopsis layout; a scene open in a tab is also a row of the
+    /// Full Chapter in the other half of the split editor; the search preview band
+    /// is a third. All of them are live, all of them are laid out, and all of them
+    /// share one `FormatViewModel` — it is per window.
+    ///
+    /// So when the caller names a scope, only an editor from *that* surface may
+    /// answer, and `None` is the honest reply when it has not been built yet. A
+    /// lane already handles `None` correctly — it is the normal state of every row
+    /// below the fold, and the one thing it must never do is substitute a position
+    /// from somewhere else. Falling back across scopes is precisely the bug: the
+    /// Side page's lane spent the life of the tab converting offsets against the
+    /// Top arm's frozen geometry, and the gap above the first paragraph moved with
+    /// a column nobody was looking at.
+    ///
+    /// **Within a scope, a laid-out editor still wins over one merely registered.**
+    /// That tie-break was the whole of the old rule and it was never wrong, only
+    /// insufficient: a handle with no geometry is not a wrong position but no
+    /// position at all, silently and for the life of the tab. It is kept, scoped.
+    ///
+    /// `scope: None` is the unscoped legacy answer — first laid-out registration
+    /// wins — and exists for the editors the widget tests build with no surface
+    /// around them. Nothing in the application passes it.
+    pub fn handle_for_item(
+        &self,
+        item: EntityId,
+        kind: EditorKind,
+        scope: Option<crate::margin_lane::LaneScope>,
+    ) -> Option<EditorHandle> {
         let registry = self.registry.borrow();
         let mut matching = registry
             .iter()
             .filter(|e| e.item == Some(item) && e.kind == kind)
+            .filter(|e| scope.is_none() || e.scope == scope)
             .map(|e| &e.handle);
         let first = matching.next()?;
         if first.content_height().is_some() {
@@ -794,9 +838,12 @@ impl FormatViewModel {
 
     /// Every mounted editor of `kind`, by the item it is showing.
     ///
-    /// What a **stream** lane needs: one call rather than one lookup per row, and
-    /// the only way to discover that a row has not been built yet, which is the
-    /// normal state of every row below the fold.
+    /// The bulk read a surface mapping many rows at once could take, one call rather
+    /// than one lookup per row. Nothing in the application uses it: the margin lane
+    /// asks per row through [`handle_for_item`](Self::handle_for_item), because it
+    /// only ever asks about rows that have been *placed* — which is a much smaller
+    /// set than every registered editor, and because the answer has to be narrowed
+    /// to the asking surface, which this cannot do.
     pub fn handles_by_item(&self, kind: EditorKind) -> Vec<(EntityId, EditorHandle)> {
         self.registry
             .borrow()

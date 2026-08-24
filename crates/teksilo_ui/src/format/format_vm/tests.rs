@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 use super::*;
+use crate::margin_lane::{LaneAnchor, LaneScope};
 use teksilo::text_document::TextDocument;
 use teksilo::widgets::rich_text::RichTextEditor;
 
@@ -35,6 +36,124 @@ fn vm_over_doc(text: &str) -> (FormatViewModel, RichTextEditor, TextDocument) {
 /// A view-model with nothing focused.
 fn vm_detached() -> FormatViewModel {
     FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)))
+}
+
+/// A live editor over `text`, laid out at `width`, and its handle.
+///
+/// The tree comes back with it because it has to stay alive: dropping it would tear
+/// the editor down, and `content_height()` — which is what "has this been laid out"
+/// means here — would go back to `None`.
+fn laid_out_at(text: &str, width: f32) -> (EditorHandle, teksilo::core::widget_tree::WidgetTree) {
+    use teksilo::canvas::SizeProposal;
+    let doc = TextDocument::new();
+    doc.set_plain_text(text).expect("plain text");
+    let editor = RichTextEditor::editor(doc);
+    let handle = editor.handle();
+    let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+    let _ = tree.add(editor);
+    // Twice: the engine lays out in `paint`, so the first render is what gives the
+    // second pass a real `content_height` to report.
+    for _ in 0..2 {
+        tree.layout(SizeProposal::exact(width, 600.0));
+        let _ = tree.render();
+    }
+    (handle, tree)
+}
+
+/// **A lane must reach the editor on its own surface, not whichever registered
+/// first.**
+///
+/// The scenario is ordinary, not exotic: `prose` builds its manuscript page twice —
+/// once per synopsis layout — so one Scene tab mounts two prose editors for its own
+/// item, each with a lane of its own; `Switcher` starts on Top and paints it before
+/// it can flip to Side, so Top's geometry is frozen at that first frame and both
+/// answer `content_height()` for the rest of the tab's life. A scene open in a tab
+/// *and* as a row of the Full Chapter beside it is a second such pair, and the
+/// search preview band a third.
+///
+/// The old tie-break — first registration with geometry — then handed the Side
+/// page's lane the Top arm's column, which is laid out at a different width and so
+/// wraps differently: every mark and every texture bar on the strip was converted
+/// against text that was not on screen, and the gap above the first paragraph moved
+/// with a column nobody was looking at.
+#[test]
+fn a_lane_reaches_the_editor_on_its_own_surface_not_whichever_registered_first() {
+    const PROSE: &str = "First paragraph here, long enough to wrap several times on a \
+narrow column so that the wrapped height genuinely depends on the width it was laid \
+out at.\n\nSecond paragraph, also long enough to wrap.";
+
+    // The Top arm, laid out wide, then the Side arm, narrowed by the synopsis pane
+    // beside it. Both stay mounted and both keep the geometry of their last layout.
+    let (top, _top_tree) = laid_out_at(PROSE, 600.0);
+    let (side, _side_tree) = laid_out_at(PROSE, 340.0);
+    assert!(
+        top.content_height().is_some(),
+        "the parked arm kept its layout"
+    );
+    assert_ne!(
+        top.content_height(),
+        side.content_height(),
+        "and the two arms disagree about how tall the same prose is"
+    );
+
+    let vm = vm_detached();
+    let w = ids(2);
+    let (top_scope, side_scope) = (LaneScope::fresh(), LaneScope::fresh());
+    vm.register(w[0], top.clone(), EditorKind::Prose);
+    vm.register(w[1], side.clone(), EditorKind::Prose);
+    vm.set_registered_anchor(w[0], LaneAnchor::new(11, top_scope));
+    vm.set_registered_anchor(w[1], LaneAnchor::new(11, side_scope));
+
+    assert_eq!(
+        vm.handle_for_item(11, EditorKind::Prose, Some(side_scope))
+            .and_then(|h| h.content_height()),
+        side.content_height(),
+        "the Side page's lane must map against the Side arm, which is what is on screen"
+    );
+    assert_eq!(
+        vm.handle_for_item(11, EditorKind::Prose, Some(top_scope))
+            .and_then(|h| h.content_height()),
+        top.content_height(),
+        "and the Top page's lane against the Top arm — each answers for itself"
+    );
+}
+
+/// **A surface with no editor of its own gets nothing, never a neighbour's.**
+///
+/// This is the half that makes the scope an answer rather than a preference. A row
+/// below the fold has no editor, and `None` is what a lane already handles: it skips
+/// the row. Falling back to another surface's editor would put that row's marks at
+/// positions measured somewhere else — silently, and with total confidence.
+#[test]
+fn a_surface_with_no_editor_of_its_own_is_told_so() {
+    let (_editor, handle) = loose_editor("a scene");
+    let vm = vm_detached();
+    let (id, _) = two_ids();
+    let mine = LaneScope::fresh();
+    let theirs = LaneScope::fresh();
+    vm.register(id, handle, EditorKind::Prose);
+    vm.set_registered_anchor(id, LaneAnchor::new(11, theirs));
+
+    assert!(
+        vm.handle_for_item(11, EditorKind::Prose, Some(mine))
+            .is_none(),
+        "another surface's editor may not answer for mine"
+    );
+    assert!(
+        vm.handle_for_item(11, EditorKind::Prose, Some(theirs))
+            .is_some(),
+        "…and its own surface still finds it"
+    );
+    assert!(
+        vm.handle_for_item(11, EditorKind::Prose, None).is_some(),
+        "the unscoped answer is unchanged, for the editors the widget tests build"
+    );
+}
+
+/// An anchor on a surface of its own, for the tests that only care which item an
+/// editor is showing.
+fn anchor(item: common::types::EntityId) -> crate::margin_lane::LaneAnchor {
+    crate::margin_lane::LaneAnchor::new(item, crate::margin_lane::LaneScope::fresh())
 }
 
 /// Two distinct `WidgetId`s. It is a slotmap key type, so the only way to
@@ -95,14 +214,14 @@ fn an_editor_can_be_found_by_the_item_it_shows_without_focus() {
     vm.register(a_id, a_handle.clone(), EditorKind::Prose);
     vm.register(b_id, b_handle.clone(), EditorKind::Prose);
     vm.register(syn_id, syn_handle.clone(), EditorKind::Synopsis);
-    vm.set_registered_item(a_id, 11);
-    vm.set_registered_item(b_id, 22);
-    vm.set_registered_item(syn_id, 11);
+    vm.set_registered_anchor(a_id, anchor(11));
+    vm.set_registered_anchor(b_id, anchor(22));
+    vm.set_registered_anchor(syn_id, anchor(11));
 
     // Asserted by effect, like the tests below: `EditorHandle` has no identity API,
     // and "this is the editor holding that item's text" is the property that matters.
     assert_eq!(
-        vm.handle_for_item(11, EditorKind::Prose)
+        vm.handle_for_item(11, EditorKind::Prose, None)
             .map(|h| {
                 h.select_all();
                 h.selected_text()
@@ -111,7 +230,7 @@ fn an_editor_can_be_found_by_the_item_it_shows_without_focus() {
         "scene one"
     );
     assert_eq!(
-        vm.handle_for_item(22, EditorKind::Prose)
+        vm.handle_for_item(22, EditorKind::Prose, None)
             .map(|h| {
                 h.select_all();
                 h.selected_text()
@@ -121,7 +240,7 @@ fn an_editor_can_be_found_by_the_item_it_shows_without_focus() {
     );
     // Same item, other kind: a different editor, not the prose one again.
     assert_eq!(
-        vm.handle_for_item(11, EditorKind::Synopsis)
+        vm.handle_for_item(11, EditorKind::Synopsis, None)
             .map(|h| {
                 h.select_all();
                 h.selected_text()
@@ -129,7 +248,7 @@ fn an_editor_can_be_found_by_the_item_it_shows_without_focus() {
             .unwrap(),
         "scene one's synopsis"
     );
-    assert!(vm.handle_for_item(99, EditorKind::Prose).is_none());
+    assert!(vm.handle_for_item(99, EditorKind::Prose, None).is_none());
 }
 
 /// A stream lane resolves every row in one call, and has to be able to tell that a
@@ -147,8 +266,8 @@ fn every_registered_editor_of_a_kind_comes_back_with_its_item() {
     vm.register(b_id, b_handle, EditorKind::Prose);
     // Registered for the formatting commands, but showing no one item's text.
     vm.register(unnamed_id, unnamed_handle, EditorKind::Prose);
-    vm.set_registered_item(a_id, 11);
-    vm.set_registered_item(b_id, 22);
+    vm.set_registered_anchor(a_id, anchor(11));
+    vm.set_registered_anchor(b_id, anchor(22));
 
     let mut items: Vec<u64> = vm
         .handles_by_item(EditorKind::Prose)
@@ -174,12 +293,12 @@ fn a_torn_down_editor_stops_answering_for_its_item() {
     let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::Scene)));
     let (id, _) = two_ids();
     vm.register(id, handle, EditorKind::Prose);
-    vm.set_registered_item(id, 11);
-    assert!(vm.handle_for_item(11, EditorKind::Prose).is_some());
+    vm.set_registered_anchor(id, anchor(11));
+    assert!(vm.handle_for_item(11, EditorKind::Prose, None).is_some());
 
     vm.unregister(id);
     assert!(
-        vm.handle_for_item(11, EditorKind::Prose).is_none(),
+        vm.handle_for_item(11, EditorKind::Prose, None).is_none(),
         "a lane must not be able to draw marks through a dead editor"
     );
 }

@@ -48,7 +48,8 @@ use teksilo::text_document::{FlowElementSnapshot, TextDocument};
 /// Shortest bar the texture will draw, in lane pixels.
 ///
 /// Below this a bar is a line of aliasing rather than a reading, so consecutive
-/// paragraphs are merged until one clears it. Two rather than three (the mark
+/// paragraphs **of one document** are merged until one clears it — see
+/// [`merge_below`], including the one case it cannot rescue. Two rather than three (the mark
 /// minimum): a bar is a horizontal rule whose *length* carries the meaning, and it
 /// stays legible at a height a square would not.
 pub const MIN_BAR_HEIGHT: f32 = 2.0;
@@ -80,6 +81,18 @@ pub const BAR_GAP: f32 = 1.0;
 /// which is exactly where merging happens.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Paragraph {
+    /// The row this paragraph came from.
+    ///
+    /// Carried for [`merge_below`]'s sake and nothing else. A stream hands
+    /// [`bars_from`] every mapped row's paragraphs as **one flat list**, and the
+    /// merge pass walks it without knowing where one document ends: a scene that
+    /// closed on a short line ("She left.") took the next scene's opening paragraph
+    /// with it, and the merged bar covered the gap between them — which is the next
+    /// row's heading, and the boundary rule the lane draws there. It also reported a
+    /// dialogue share that was neither scene's. Measured on a Full Book, where at
+    /// that zoom nearly every paragraph is under the pixel floor, this fired at
+    /// essentially every scene boundary.
+    pub owner: EntityId,
     pub span: LaneSpan,
     pub stats: ParagraphStats,
 }
@@ -96,6 +109,7 @@ pub struct Paragraph {
 /// unmeasurable language is not a language with no dialogue, and drawing every bar
 /// with an empty fill would state a zero this application's own rules forbid.
 pub fn bars(
+    owner: EntityId,
     doc: &TextDocument,
     markers: DialogueMarkers,
     locate: &dyn Fn(usize, usize) -> Option<LaneSpan>,
@@ -103,7 +117,11 @@ pub fn bars(
 ) -> Vec<LaneBar> {
     // A scale of its own: one document is the whole manuscript here, so there is no
     // other row whose arrival could move it.
-    bars_from(units(doc, markers, locate), lane_height, &Cell::new(0))
+    bars_from(
+        units(owner, doc, markers, locate),
+        lane_height,
+        &Cell::new(0),
+    )
 }
 
 /// The measured paragraphs of one document, placed on the lane but **not yet
@@ -111,6 +129,7 @@ pub fn bars(
 ///
 /// The half a stream calls per row before scaling them all together.
 pub fn units(
+    owner: EntityId,
     doc: &TextDocument,
     markers: DialogueMarkers,
     locate: &dyn Fn(usize, usize) -> Option<LaneSpan>,
@@ -140,6 +159,7 @@ pub fn units(
             // as a zero-height bar and was then merged away for being too short to
             // see. A span asks the question the bar is actually about.
             Some(Paragraph {
+                owner,
                 span: locate(block.position, block.position + block.length)?,
                 stats,
             })
@@ -231,7 +251,8 @@ pub fn bars_from(
         .collect()
 }
 
-/// Merge consecutive paragraphs until each bar clears [`MIN_BAR_HEIGHT`].
+/// Merge consecutive paragraphs of **one document** until each bar clears
+/// [`MIN_BAR_HEIGHT`].
 ///
 /// Adaptive in pixels rather than by a fixed paragraph count: the same scene is
 /// twelve bars in a tall pane and three in a short one, and a count chosen for one
@@ -241,23 +262,61 @@ pub fn bars_from(
 /// fill is the true share over the merged range. Averaging the members' shares
 /// instead would over-weight a two-word paragraph of pure speech against the
 /// four-hundred-word paragraph beside it.
+///
+/// ## Never across a document
+///
+/// The list a stream hands over is every mapped row's paragraphs concatenated, and
+/// consecutive entries either side of the join belong to different scenes with a
+/// gap between them — the next row's heading, and the boundary rule. See
+/// [`Paragraph::owner`], which is carried for this and nothing else.
+///
+/// ## Two passes, because one cannot finish the job
+///
+/// The forward pass folds a paragraph into the short bar **before** it, and that
+/// cannot rescue a short bar with nothing after it to absorb — the tail of a
+/// document, and now also a short bar whose successor belongs to the next one. Both
+/// the module note and this comment claimed the invariant anyway, and the tail bar
+/// was quietly emitted under the floor and drawn as a one-pixel hairline by the
+/// widget's own `.max(1.0)`. So a second pass folds what is left **backwards**,
+/// right to left so a fold that is still short cascades into its own predecessor.
+///
+/// One case survives and cannot be fixed here: a document whose *whole* mapped
+/// extent is shorter than the floor has one bar and no neighbour of its own to join.
+/// It is drawn at the hairline, which is the honest picture of a scene that occupies
+/// two pixels of the strip.
 fn merge_below(paragraphs: Vec<Paragraph>, lane_height: f32) -> Vec<Paragraph> {
     if lane_height <= 0.0 {
         return paragraphs;
     }
     let min_span = MIN_BAR_HEIGHT / lane_height;
+    let short = |p: &Paragraph| p.span.end - p.span.start < min_span;
+
     let mut out: Vec<Paragraph> = Vec::with_capacity(paragraphs.len());
     for p in paragraphs {
         match out.last_mut() {
-            Some(last) if last.span.end - last.span.start < min_span => {
-                last.span = LaneSpan::new(last.span.start, p.span.end);
-                last.stats.words += p.stats.words;
-                last.stats.spoken += p.stats.spoken;
-            }
+            Some(last) if last.owner == p.owner && short(last) => absorb(last, &p),
             _ => out.push(p),
         }
     }
+
+    let mut i = out.len();
+    while i > 1 {
+        i -= 1;
+        if !short(&out[i]) || out[i - 1].owner != out[i].owner {
+            continue;
+        }
+        let tail = out.remove(i);
+        absorb(&mut out[i - 1], &tail);
+    }
     out
+}
+
+/// Fold `p` into `into`: one bar spanning both, and the sums that make its fill the
+/// true share over the whole of it.
+fn absorb(into: &mut Paragraph, p: &Paragraph) {
+    into.span = LaneSpan::new(into.span.start, p.span.end);
+    into.stats.words += p.stats.words;
+    into.stats.spoken += p.stats.spoken;
 }
 
 /// How this item marks speech, under the project's house style.
@@ -306,11 +365,18 @@ pub fn markers_for_item(
 mod tests {
     use super::*;
 
-    fn p(start: f32, end: f32, words: usize, spoken: usize) -> Paragraph {
+    /// One paragraph of the row `owner`.
+    fn owned(owner: EntityId, start: f32, end: f32, words: usize, spoken: usize) -> Paragraph {
         Paragraph {
+            owner,
             span: LaneSpan::new(start, end),
             stats: ParagraphStats { words, spoken },
         }
+    }
+
+    /// One paragraph of a single-document surface, where every unit is one row's.
+    fn p(start: f32, end: f32, words: usize, spoken: usize) -> Paragraph {
+        owned(1, start, end, words, spoken)
     }
 
     /// The whole point of merging: a hundred paragraphs on a six-hundred-pixel lane
@@ -350,6 +416,103 @@ mod tests {
             share < 0.02,
             "the sliver must not drag the share up to the mean of 0.5: got {share}"
         );
+    }
+
+    /// **A bar may never span two documents.** A stream hands the merge pass every
+    /// mapped row's paragraphs as one flat list, and a scene that closes on a short
+    /// line took the next scene's opening paragraph with it — producing a bar that
+    /// covered the gap between them (the next row's heading, and the boundary rule
+    /// the lane draws there) and reported a dialogue share that was neither scene's.
+    /// On a Full Book, where nearly every paragraph is under the pixel floor, that
+    /// happened at essentially every boundary.
+    #[test]
+    fn a_short_closing_line_does_not_drag_the_next_scene_into_its_bar() {
+        // Row 1: a long paragraph, then "She left." — half a pixel on a 600px strip.
+        // Row 2, after its heading: one long paragraph, all of it speech.
+        let merged = merge_below(
+            vec![
+                owned(1, 0.10, 0.29, 400, 0),
+                owned(1, 0.29, 0.2905, 2, 0),
+                owned(2, 0.50, 0.60, 300, 300),
+            ],
+            600.0,
+        );
+        assert!(
+            !merged
+                .iter()
+                .any(|p| p.span.start < 0.30 && p.span.end > 0.45),
+            "no bar may run from one scene, across its neighbour's heading, into the \
+             next: got {:?}",
+            merged
+                .iter()
+                .map(|p| (p.span.start, p.span.end))
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            merged
+                .iter()
+                .all(|p| p.stats.spoken == 0 || p.stats.spoken == p.stats.words),
+            "and no bar may report a share that is neither scene's"
+        );
+    }
+
+    /// **The floor is an invariant, not an aspiration.** The forward pass folds a
+    /// paragraph into the short bar *before* it, which cannot rescue a short bar
+    /// with nothing after it — the tail of a document, and a bar whose successor
+    /// belongs to the next one. Both were emitted under the floor and drawn as a
+    /// one-pixel hairline, while this module's own docs claimed every bar cleared it.
+    #[test]
+    fn a_short_tail_is_folded_backwards_rather_than_left_under_the_floor() {
+        let min = MIN_BAR_HEIGHT / 600.0;
+
+        // A long paragraph, then two closing slivers with nothing after them.
+        let tail = merge_below(
+            vec![
+                p(0.0, 0.5, 400, 0),
+                p(0.5, 0.5005, 2, 0),
+                p(0.5005, 0.501, 3, 0),
+            ],
+            600.0,
+        );
+        assert!(
+            tail.iter().all(|b| b.span.end - b.span.start >= min),
+            "every bar must clear the floor: got {:?}",
+            tail.iter()
+                .map(|b| b.span.end - b.span.start)
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            tail.iter().map(|b| b.stats.words).sum::<usize>(),
+            405,
+            "and folding must not lose a word"
+        );
+
+        // The same sliver, this time stranded by the next row rather than by the end
+        // of the list — the forward pass may not reach across, so the backward one
+        // has to catch it.
+        let boundary = merge_below(
+            vec![
+                p(0.0, 0.5, 400, 0),
+                p(0.5, 0.5005, 2, 0),
+                owned(2, 0.7, 0.9, 300, 0),
+            ],
+            600.0,
+        );
+        assert!(
+            boundary.iter().all(|b| b.span.end - b.span.start >= min),
+            "a sliver stranded at a document boundary must fold backwards too"
+        );
+        assert_eq!(boundary.len(), 2, "one bar per row, and neither crosses");
+    }
+
+    /// The one case the two passes cannot rescue, stated so nobody re-opens it: a
+    /// document whose whole mapped extent is under the floor has one bar and no
+    /// neighbour of its own to join. The hairline is the honest picture.
+    #[test]
+    fn a_document_shorter_than_the_floor_keeps_its_single_hairline() {
+        let merged = merge_below(vec![owned(7, 0.4, 0.4005, 5, 0)], 600.0);
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].owner, 7);
     }
 
     /// Before the lane is laid out there is no pixel budget to measure against, and

@@ -159,12 +159,17 @@ pub(super) struct TypographyBoundEditor {
     /// highlight the note the writer is standing on. `None` on every surface with
     /// no project behind it, and on every editor that is not a tab's main prose.
     pub(super) footnotes: Option<(crate::footnotes::FootnoteBinding, TextDocument)>,
-    /// The `BinderItem` whose text this editor shows, announced to the formatting
-    /// registry so anything needing *a named item's* editor can find it — the
-    /// margin lane, which converts offsets for every row on screen at once and so
-    /// cannot go through focus. `None` on the surfaces built with no project
-    /// around them.
-    pub(super) item: Option<common::types::EntityId>,
+    /// The `BinderItem` whose text this editor shows **and the writing surface
+    /// that built it**, announced to the formatting registry so anything needing
+    /// *a named item's* editor can find it — the margin lane, which converts
+    /// offsets for every row on screen at once and so cannot go through focus.
+    /// `None` on the surfaces built with no project around them.
+    ///
+    /// The surface travels with the item because the item alone does not identify
+    /// an editor: a dual-pane tab mounts two prose columns for its own scene, and
+    /// a scene open in a tab is also a row of the Full Chapter beside it. See
+    /// [`LaneAnchor`](crate::margin_lane::LaneAnchor).
+    pub(super) anchor: Option<crate::margin_lane::LaneAnchor>,
 }
 
 impl TypographyBoundEditor {
@@ -191,15 +196,15 @@ impl TypographyBoundEditor {
             banded: None,
             games: None,
             footnotes: None,
-            item: None,
+            anchor: None,
         }
     }
 
-    /// Name the `BinderItem` this editor is showing. Opt-in, because the surfaces
-    /// that are not showing one item's text (the search preview band, the widget
-    /// tests) have no id to give.
-    pub(super) fn with_item(mut self, item: common::types::EntityId) -> Self {
-        self.item = Some(item);
+    /// Name the `BinderItem` this editor is showing, and the surface showing it.
+    /// Opt-in, because the surfaces built with no project around them (the widget
+    /// tests) have no anchor to give.
+    pub(super) fn with_anchor(mut self, anchor: crate::margin_lane::LaneAnchor) -> Self {
+        self.anchor = Some(anchor);
         self
     }
 
@@ -478,9 +483,10 @@ impl Widget for TypographyBoundEditor {
             if let Some((binding, _)) = &self.footnotes {
                 format.set_registered_footnotes(self_id, binding.clone());
             }
-            // Which item's text this is, for the readers that are not focus-shaped.
-            if let Some(item) = self.item {
-                format.set_registered_item(self_id, item);
+            // Which item's text this is and which surface is showing it, for the
+            // readers that are not focus-shaped. Both together: see `LaneAnchor`.
+            if let Some(anchor) = self.anchor {
+                format.set_registered_anchor(self_id, anchor);
             }
             self.format = Some((format, self_id));
         }

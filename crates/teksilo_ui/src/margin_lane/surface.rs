@@ -82,6 +82,18 @@ pub struct LaneInputs {
     pub ids: crate::app_ids::AppIds,
     pub surface: LaneSurface,
     pub kind: EditorKind,
+    /// **The writing surface this lane is mounted on**, shared with every editor
+    /// that surface built.
+    ///
+    /// Without it "the editor showing item X" has more than one answer and the
+    /// registry broke the tie by registration order — so a dual-pane tab's Side
+    /// page mapped its marks against the Top arm's frozen geometry, and a scene
+    /// open both in a tab and as a row of the Full Chapter beside it had one of
+    /// the two lanes converting offsets against the other's column. See
+    /// [`LaneScope`](crate::margin_lane::LaneScope), and
+    /// [`FormatViewModel::handle_for_item`](crate::format::FormatViewModel::handle_for_item)
+    /// for why naming one means *only* that surface may answer.
+    pub scope: super::LaneScope,
     pub format: crate::format::FormatViewModel,
     pub rows: LaneRows,
 }
@@ -192,6 +204,25 @@ impl MappedRow {
             extent: self.extent,
         }
     }
+}
+
+/// **Where an editor's laid-out text begins, in window space.**
+///
+/// The same offset asked for in both spaces and subtracted: `window_y` is where the
+/// first *line* is drawn, `content_y` is how far that line sits below the top of the
+/// laid-out text, so the difference is the text's own origin — which is what every
+/// local fraction [`locate::locate_span`] hands back is measured from.
+///
+/// A free function of two numbers so the rule can be checked against a real editor
+/// without a mounted lane: what has to hold is that this does **not** move when the
+/// first paragraph's top spacing does, because the text's origin does not move —
+/// only the first line inside it does.
+///
+/// Taking the first line's window rect alone (which is what this used to do) counted
+/// that spacing twice, once here and once again in the paragraph's own fraction. See
+/// [`LaneHost::text_extent`].
+fn content_origin(window_y: f32, content_y: f32) -> f32 {
+    window_y - content_y
 }
 
 /// A row's slice, narrowed to the part of it a text occupies.
@@ -444,7 +475,7 @@ pub fn lane_for(area: &ScrollArea, inputs: LaneInputs) -> impl Widget {
         caret: Signal::new(None),
         texture_on: Cell::new(false),
         store: RefCell::new(None),
-        colors: RefCell::new(None),
+        theme: RefCell::new(None),
         inputs,
         last_inputs: Cell::new(0),
         last_output: Cell::new(0),
@@ -490,7 +521,27 @@ struct LaneHost {
     /// Read in `build`, where a `BuildContext` exists. The panes that mount a lane
     /// are plain `fn(&ContentTab) -> impl Widget` and have none.
     store: RefCell<Option<teksilo::settings::SettingsStore>>,
-    colors: RefCell<Option<teksilo::tokens::ColorTokens>>,
+    /// The **live** theme, not a copy of the palette taken at build.
+    ///
+    /// A mark's colour is resolved here rather than in the widget, because a
+    /// provider names a palette slot and the host is what turns a slot into a
+    /// colour. That resolution used to run against `ctx.theme().colors` cloned in
+    /// `build` — and `WidgetTree::set_theme` marks the tree dirty for **relayout and
+    /// repaint, not rebuild**, so `build` never ran again and the strip kept the
+    /// previous theme's palette for as long as the tab was open. Light-to-dark left
+    /// every mark in the light theme's colours, which is exactly the failure
+    /// [`resolve`](super::resolve)'s own doc says the host takes the colour back to
+    /// prevent: "a mark that fails contrast on a theme it never saw".
+    ///
+    /// Two things had to change together, and neither alone was enough: the theme's
+    /// generation is a term of [`input_fingerprint`](Self::input_fingerprint), so a
+    /// switch gets past the recompute guard, and the colour is a term of
+    /// [`output_fingerprint`], so the new marks get past the publication guard.
+    ///
+    /// The `Theme` itself is only cloned **past** the guard: `recompute` runs on
+    /// every dirty frame and `generation()` is a field read, where `get()` copies
+    /// the whole theme.
+    theme: RefCell<Option<Signal<teksilo::core::styles::Theme>>>,
     inputs: LaneInputs,
     /// Fingerprint of everything the marks are derived *from*.
     last_inputs: Cell<u64>,
@@ -510,18 +561,26 @@ impl std::fmt::Debug for LaneHost {
 }
 
 impl LaneHost {
-    /// Has anything the marks depend on moved since the last pass?
+    /// **This lane's own editor for `item`**, and the only way any of this module
+    /// asks for one.
     ///
-    /// Every term is O(1). A document revision per row, the arbiter's generation,
-    /// each comment set's generation, the row extents' generation (which is what a
-    /// reflow moves), the text's own height where there is only one row, and the
-    /// lane's height. Deliberately **not** the marks: deciding whether to recompute
-    /// by recomputing would defeat the whole guard.
+    /// One door rather than seven call sites, because the argument that makes the
+    /// answer correct — the surface — is easy to leave off and fails silently when
+    /// it is: the lookup falls back to whichever editor registered first and the
+    /// strip goes on drawing, in the wrong places. See
+    /// [`LaneInputs::scope`].
+    fn handle_for(&self, item: EntityId) -> Option<teksilo::widgets::rich_text::EditorHandle> {
+        self.inputs
+            .format
+            .handle_for_item(item, self.inputs.kind, Some(self.inputs.scope))
+    }
+
     /// Has anything the marks depend on moved since the last pass?
     ///
     /// Every term is O(1): a document revision per row, the arbiter's generation,
     /// each comment set's generation, the row extents' generation (which is what a
-    /// reflow moves), and **each row's laid-out text height**.
+    /// reflow moves), the theme's own generation, and **each row's laid-out text
+    /// height**.
     ///
     /// That last one is not redundant with the extents, and leaving it out was a real
     /// bug rather than a hypothetical. On the frame a page is first laid out there is
@@ -537,6 +596,15 @@ impl LaneHost {
         let mut h = Fnv::new();
         h.add(query::active_query().generation());
         h.add(height.to_bits() as u64);
+        // **The theme**, because a mark's colour is resolved here and a theme switch
+        // relayouts without rebuilding. The generation rather than the palette: this
+        // runs before the guard, on every dirty frame, and `get()` copies a `Theme`.
+        h.add(
+            self.theme
+                .borrow()
+                .as_ref()
+                .map_or(0, |theme| theme.generation()),
+        );
         h.add(self.inputs.rows.extents().generation().get());
         // Every provider that named a counter to watch, as one number. Once per
         // pass rather than per row: a provider's trigger is a property of the
@@ -567,9 +635,7 @@ impl LaneHost {
             // watch the page squiggle it and the lane not.
             h.add(row.spell.as_ref().map_or(0, |s| s.generation()));
             h.add(
-                self.inputs
-                    .format
-                    .handle_for_item(row.item, self.inputs.kind)
+                self.handle_for(row.item)
                     .and_then(|handle| handle.content_height())
                     // A row with no laid-out text yet is distinguished from one whose
                     // text happens to be zero pixels tall, so the frame that gains
@@ -590,8 +656,8 @@ impl LaneHost {
             return;
         }
         let store = self.store.borrow();
-        let colors = self.colors.borrow();
-        let (Some(store), Some(colors)) = (store.as_ref(), colors.as_ref()) else {
+        let theme = self.theme.borrow();
+        let (Some(store), Some(theme)) = (store.as_ref(), theme.as_ref()) else {
             return;
         };
         let texture_on = self.texture_on.get();
@@ -639,6 +705,11 @@ impl LaneHost {
         }
         self.last_inputs.set(fingerprint);
 
+        // Past the guard, and only here: `Signal::get` copies the whole `Theme`, and
+        // `recompute` runs on every dirty frame. The guard above saw the cheap half
+        // of the same question — the theme's generation.
+        let colors = &theme.get().colors;
+
         let mut marks = Vec::new();
         let mut units = Vec::new();
         #[cfg(feature = "debug-traces")]
@@ -650,11 +721,7 @@ impl LaneHost {
             // why a lane must never substitute a zero position: a mark at fraction 0
             // is not "unknown", it is "the top of the manuscript", stated with total
             // confidence.
-            let Some(handle) = self
-                .inputs
-                .format
-                .handle_for_item(row.item, self.inputs.kind)
-            else {
+            let Some(handle) = self.handle_for(row.item) else {
                 continue;
             };
             // The prose's slice, not the row's: the marks belong to the text, and
@@ -703,6 +770,7 @@ impl LaneHost {
                     self.row_units(row, &handle)
                         .iter()
                         .map(|p| texture::Paragraph {
+                            owner: p.owner,
                             span: LaneSpan::new(
                                 extent.place(p.span.start),
                                 extent.place(p.span.end),
@@ -734,12 +802,7 @@ impl LaneHost {
         if lane_debug() {
             let with_handle = rows
                 .iter()
-                .filter(|MappedRow { row, .. }| {
-                    self.inputs
-                        .format
-                        .handle_for_item(row.item, self.inputs.kind)
-                        .is_some()
-                })
+                .filter(|MappedRow { row, .. }| self.handle_for(row.item).is_some())
                 .count();
             eprintln!(
                 "LANE guard=miss us={} marks_us={marks_us} units_us={units_us} rows={} handles={} placed={} max_scroll={:.1} \
@@ -769,12 +832,6 @@ impl LaneHost {
         }
     }
 
-    /// Where the writer's caret is, as a fraction of the lane.
-    ///
-    /// The row the writer is actually **in**: a stream has as many carets as it has
-    /// editors, and only the focused one is theirs. `None` when the focus is
-    /// anywhere else on the page, which is honest — the lane then shows no caret
-    /// rule rather than the last place one happened to be.
     /// The rows to map this pass, each with where it sits on the lane.
     ///
     /// **A row's slice is its share of the manuscript's characters, not its share of
@@ -835,9 +892,17 @@ impl LaneHost {
             cursor += weight;
         }
         // A row the writer has closed stops being remembered, so a long session
-        // does not accumulate weights for scenes that are gone.
+        // does not accumulate state for scenes that are gone. **Both** caches: the
+        // paragraph lists are much the larger of the two — one `Vec<Paragraph>` per
+        // scene ever scrolled past, against one `f32` — and only the weights were
+        // ever swept, so a Full Book read end to end kept every scene's measured
+        // paragraphs alive for the life of the tab. `watched` is pruned on the same
+        // rule in `watch_carets`; this is the third and last of them.
         let live: HashSet<EntityId> = placed.iter().map(|m| m.row.item).collect();
         self.weights
+            .borrow_mut()
+            .retain(|item, _| live.contains(item));
+        self.row_units
             .borrow_mut()
             .retain(|item, _| live.contains(item));
         placed
@@ -859,7 +924,22 @@ impl LaneHost {
     ///
     /// Falls back to the whole slice when the row has not been laid out or the
     /// editor has no text geometry yet. That is the old behaviour, and it is the
-    /// right fallback: an unknown gap is better left closed than guessed at.
+    /// right fallback: an unknown gap is better left closed than guessed at. It is
+    /// also never seen: on a frame with no text geometry [`locate::locate_span`]
+    /// answers `None` for every paragraph too, so the row contributes no bars and
+    /// no marks rather than badly placed ones.
+    ///
+    /// ⚠ **`text_top` is the top of the editor's *content box*, not of its first
+    /// line.** The two differ by the first block's own top spacing, and taking the
+    /// first line's window rect for the content origin counted that spacing twice —
+    /// once here, and again in the paragraph's local fraction, which
+    /// [`locate::locate_span`] measures from the content origin and which therefore
+    /// already includes it. With `Settings ▸ Editor ▸ Typography ▸ Paragraph
+    /// spacing before` at its default of zero the two are the same number and
+    /// nothing showed; at 12 px every bar and every mark on the strip sat
+    /// `12 / row_height` too low, and past about 32 px the clamp in [`narrow`]
+    /// started biting, which made the error a function of the page's total height —
+    /// so the gap above the first paragraph then moved as the writer typed.
     fn text_extent(
         &self,
         row: &LaneRow,
@@ -869,15 +949,14 @@ impl LaneHost {
         scroll: f32,
     ) -> LaneExtent {
         let (row_top, row_height) = pixels;
-        let Some(handle) = self
-            .inputs
-            .format
-            .handle_for_item(row.item, self.inputs.kind)
-        else {
+        let Some(handle) = self.handle_for(row.item) else {
             return extent;
         };
-        let (Some(text_height), Some(first)) = (handle.content_height(), handle.range_rect(0, 0))
-        else {
+        let (Some(text_height), Some(first), Some(first_local)) = (
+            handle.content_height(),
+            handle.range_rect(0, 0),
+            handle.range_content_rect(0, 0),
+        ) else {
             return extent;
         };
         if row_height <= 0.0 || text_height <= 0.0 {
@@ -888,15 +967,21 @@ impl LaneHost {
         // other. `RowExtent` reports `window_y + scroll`, which is why this is the
         // exact inverse of what it did.
         let row_window_top = row_top + origin - scroll;
-        let text_top = (first.y - row_window_top).max(0.0);
+        let text_top = (content_origin(first.y, first_local.y) - row_window_top).max(0.0);
         let out = narrow(extent, row_height, text_top, text_height);
         #[cfg(feature = "debug-traces")]
         if lane_debug() {
             eprintln!(
                 "TEXT item={} row_top={row_top:.1} row_h={row_height:.1} first_y={:.1} \
-                 row_win_top={row_window_top:.1} text_top={text_top:.1} text_h={text_height:.1} \
-                 -> ({:.4},{:.4}) from ({:.4},{:.4})",
-                row.item, first.y, out.offset, out.scale, extent.offset, extent.scale,
+                 first_local_y={:.1} row_win_top={row_window_top:.1} text_top={text_top:.1} \
+                 text_h={text_height:.1} -> ({:.4},{:.4}) from ({:.4},{:.4})",
+                row.item,
+                first.y,
+                first_local.y,
+                out.offset,
+                out.scale,
+                extent.offset,
+                extent.scale,
             );
         }
         out
@@ -944,7 +1029,7 @@ impl LaneHost {
         }
         let span_of =
             |start: usize, end: usize| locate::locate_span(handle, LaneExtent::WHOLE, start, end);
-        let measured = Rc::new(texture::units(&row.doc, row.markers, &span_of));
+        let measured = Rc::new(texture::units(row.item, &row.doc, row.markers, &span_of));
         self.row_units
             .borrow_mut()
             .insert(row.item, (key, measured.clone()));
@@ -1016,8 +1101,13 @@ impl LaneHost {
         let _ = self.viewport_span.set_if_changed(span);
     }
 
-    /// Publish the caret, and make sure the lane will be asked again when the
-    /// writer moves it.
+    /// Publish where the writer's caret is, as a fraction of the lane — and make
+    /// sure the lane will be asked again when they move it.
+    ///
+    /// The row the writer is actually **in**: a stream has as many carets as it has
+    /// editors, and only the focused one is theirs. `None` when the focus is
+    /// anywhere else on the page, which is honest — the lane then shows no caret
+    /// rule rather than the last place one happened to be.
     ///
     /// **The watch is the point.** `recompute` runs from `place_children`, so it
     /// only runs when something has asked for a layout -- and moving the caret asks
@@ -1027,10 +1117,7 @@ impl LaneHost {
     fn publish_caret(&self, rows: &[MappedRow]) {
         self.watch_carets(rows);
         let at = rows.iter().find_map(|MappedRow { row, text, .. }| {
-            let handle = self
-                .inputs
-                .format
-                .handle_for_item(row.item, self.inputs.kind)?;
+            let handle = self.handle_for(row.item)?;
             if !handle.focused_signal().get() {
                 return None;
             }
@@ -1081,11 +1168,7 @@ impl LaneHost {
             if self.watched.borrow().contains_key(&row.item) {
                 continue;
             }
-            let Some(handle) = self
-                .inputs
-                .format
-                .handle_for_item(row.item, self.inputs.kind)
-            else {
+            let Some(handle) = self.handle_for(row.item) else {
                 continue;
             };
             let pulse = self.caret_pulse.clone();
@@ -1182,11 +1265,7 @@ impl Widget for LaneHost {
         // registry, which the editors have already written to by the time a sibling
         // lane builds.
         for row in self.inputs.rows.placed_rows() {
-            if let Some(handle) = self
-                .inputs
-                .format
-                .handle_for_item(row.item, self.inputs.kind)
-            {
+            if let Some(handle) = self.handle_for(row.item) {
                 handle
                     .document_version()
                     .bind_to(self_id, registry, BindingLevel::Relayout);
@@ -1196,10 +1275,20 @@ impl Widget for LaneHost {
         // **A stream's row extents, at `Relayout`.** The third, and it needs its
         // reason recorded separately.
         //
-        // The rows are placed deep inside the scroll area; this host is their
-        // *sibling*, and a parent places its children before their own subtrees are
-        // laid out. So on the pass where a reflow happens, the extents this host
-        // reads are last frame's. Asking for another layout is what closes that gap.
+        // This used to say that a parent places its children before their own
+        // subtrees are laid out, so the extents read here are last frame's. That is
+        // not what `layout_widget_recursive` does: it fills a parent's placements,
+        // then walks each child's *whole* subtree in order before moving to the
+        // next sibling — and the lane is declared after the scroll area it maps, so
+        // on any pass where the rows are placed at all, they are placed first and
+        // this host reads what they reported this frame.
+        //
+        // The binding is still needed, and for a plainer reason: a row is not
+        // placed on every pass. The `Repeater` builds a row when it is scrolled
+        // into view, and `RowExtent`'s `Drop` forgets one that has been unbuilt —
+        // both change the mapped set from *outside* this widget's own layout, and
+        // neither dirties it. Without something to hear about that, a lane goes on
+        // dividing the strip among the rows it last saw.
         //
         // It terminates because [`RowExtents::report`] is guarded: the extra pass
         // re-places the rows, they report what they already reported, the generation
@@ -1221,7 +1310,9 @@ impl Widget for LaneHost {
         self.caret_pulse
             .bind_to(self_id, registry, BindingLevel::Relayout);
 
-        self.colors.replace(Some(ctx.theme().colors.clone()));
+        // The signal, not `ctx.theme().colors` — see the field's own note for the
+        // light-to-dark bug that made the difference.
+        self.theme.replace(Some(ctx.theme_signal()));
         self.texture_on.set(texture.get());
         self.store.replace(Some(store.clone()));
 
@@ -1376,6 +1467,13 @@ fn output_fingerprint(marks: &[LaneMark], bars: &[LaneBar]) -> u64 {
         h.add(m.span.end.to_bits() as u64);
         h.add(m.column as u64);
         h.add(m.shape as u64);
+        // **The colour too.** Everything else here answers "is this mark in the same
+        // place"; a theme switch moves nothing and repaints everything, so without
+        // this the recompute a theme change now triggers would resolve fresh colours
+        // and then be turned away on its way out.
+        for channel in [m.color.r(), m.color.g(), m.color.b(), m.color.a()] {
+            h.add(channel.to_bits() as u64);
+        }
     }
     for b in bars {
         h.add(b.span.start.to_bits() as u64);
@@ -1637,6 +1735,7 @@ mod tests {
             ids: crate::app_ids::AppIds::new(),
             surface: LaneSurface::Editor,
             kind: EditorKind::Prose,
+            scope: crate::margin_lane::LaneScope::fresh(),
             // Detached: no editor is registered, so `handle_for_item` answers
             // `None` and `text_extent` returns the slice unnarrowed. That is the
             // pre-layout fallback, and it is what isolates `resolve`'s own
@@ -1784,12 +1883,13 @@ mod tests {
             caret: Signal::new(None),
             texture_on: Cell::new(false),
             store: RefCell::new(None),
-            colors: RefCell::new(None),
+            theme: RefCell::new(None),
             inputs: LaneInputs {
                 app_ctx: Rc::new(frontend::AppContext::new()),
                 ids: crate::app_ids::AppIds::new(),
                 surface: LaneSurface::Editor,
                 kind: EditorKind::Prose,
+                scope: crate::margin_lane::LaneScope::fresh(),
                 // Detached: no editor is registered, so `handle_for_item` answers
                 // `None` and `text_extent` returns the slice unnarrowed. That is
                 // the pre-layout fallback, and it is what isolates `resolve`'s own
@@ -1804,6 +1904,148 @@ mod tests {
             last_output: Cell::new(0),
             texture_scale: Cell::new(0),
         }
+    }
+
+    /// **The text's origin is not its first line.** The two differ by the first
+    /// block's own top spacing (`Settings ▸ Editor ▸ Typography ▸ Paragraph spacing
+    /// before`, a live 0–40 px slider), and `text_extent` used to take the first
+    /// line's window rect for the origin — counting that spacing once there and
+    /// again in the paragraph's own local fraction, which `locate_span` measures
+    /// from the origin and which therefore already includes it.
+    ///
+    /// Every bar and every mark on the strip then sat `spacing / row_height` too
+    /// low, and past about 32 px the clamp in `narrow` began to bite, which made the
+    /// error a function of the page's total height — so the gap above the first
+    /// paragraph moved as the writer typed.
+    ///
+    /// Asserted as an invariant rather than against a literal: the origin must hold
+    /// still while the spacing changes, because the text begins where it begins.
+    #[test]
+    fn the_texts_origin_does_not_move_when_its_first_paragraph_gains_top_spacing() {
+        use teksilo::canvas::SizeProposal;
+        use teksilo::text_document::TextDocument;
+        use teksilo::widgets::rich_text::RichTextEditor;
+
+        const PROSE: &str = "A first paragraph long enough to wrap on a narrow column, \
+so the geometry is not degenerate.\n\nAnd a second one.";
+
+        let measure = |spacing: f32| {
+            let doc = TextDocument::new();
+            doc.set_plain_text(PROSE).expect("plain text");
+            let editor = RichTextEditor::editor(doc);
+            let handle = editor.handle();
+            handle.set_typography_defaults(teksilo::text::EditorTypographyDefaults {
+                font_family: None,
+                line_height: 1.6,
+                first_line_indent: 24.0,
+                paragraph_spacing_before: spacing,
+                paragraph_spacing_after: 0.0,
+            });
+            let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+            let _ = tree.add(editor);
+            // Twice: the engine lays out in `paint`, so the first render is what
+            // gives the second pass real geometry to report.
+            for _ in 0..2 {
+                tree.layout(SizeProposal::exact(320.0, 600.0));
+                let _ = tree.render();
+            }
+            let first = handle.range_rect(0, 0).expect("laid out");
+            let local = handle.range_content_rect(0, 0).expect("laid out");
+            (content_origin(first.y, local.y), first.y)
+        };
+
+        let (origin_flush, line_flush) = measure(0.0);
+        let (origin_spaced, line_spaced) = measure(12.0);
+
+        assert!(
+            (line_spaced - line_flush - 12.0).abs() < 0.5,
+            "the fixture must actually move the first line: {line_flush} -> {line_spaced}"
+        );
+        assert!(
+            (origin_spaced - origin_flush).abs() < 0.5,
+            "the text still begins where it began, but the origin moved from \
+             {origin_flush} to {origin_spaced} — that difference is the paragraph \
+             spacing, and it is already inside every local fraction the texture uses"
+        );
+    }
+
+    /// **A theme switch has to reach the marks, and two guards stood in its way.**
+    ///
+    /// `WidgetTree::set_theme` marks the tree dirty for relayout and repaint but
+    /// does **not** rebuild, so a palette cloned in `build` was the previous theme's
+    /// for the life of the tab — and light-to-dark left every mark in the light
+    /// theme's colours, which is the one failure the host takes the colour back from
+    /// providers to prevent. The recompute guard is the first half of the fix.
+    #[test]
+    fn the_recompute_guard_hears_a_theme_switch() {
+        let host = host_over(&[(1, &prose(100), 0.0, 500.0)]);
+        let theme = Signal::new(teksilo::presets::intui::light());
+        host.theme.replace(Some(theme.clone()));
+
+        let rows = host.resolve(0.0);
+        let before = host.input_fingerprint(&rows, 500.0);
+        assert_eq!(
+            host.input_fingerprint(&rows, 500.0),
+            before,
+            "nothing moved, so the guard must still turn the pass away"
+        );
+
+        theme.set(teksilo::presets::intui::dark());
+        assert_ne!(
+            host.input_fingerprint(&rows, 500.0),
+            before,
+            "but a theme switch must get past it — the marks' colours are resolved here"
+        );
+    }
+
+    /// The second half: a recompute that resolves fresh colours must also get *out*.
+    /// Every other term of the publication fingerprint answers "is this mark in the
+    /// same place", and a theme switch moves nothing.
+    #[test]
+    fn the_publication_guard_hears_a_recoloured_mark() {
+        let mark = |color| LaneMark {
+            id: 1,
+            span: LaneSpan::at(0.5),
+            column: crate::widgets::LaneColumn::Left,
+            shape: crate::widgets::LaneShape::Dot,
+            color,
+            label: teksilo::prelude::lit!("mark"),
+            group: 3,
+        };
+        let light = teksilo::presets::intui::light().colors.accent;
+        let dark = teksilo::presets::intui::dark().colors.accent;
+        assert_ne!(light, dark, "the fixture must actually change the colour");
+        assert_ne!(
+            output_fingerprint(&[mark(light)], &[]),
+            output_fingerprint(&[mark(dark)], &[]),
+            "a mark that changed only its colour must still be published"
+        );
+    }
+
+    /// **Every per-row cache is swept on the same rule.** `weights` and `watched`
+    /// always were; `row_units` never was, and it is much the larger of the three —
+    /// one `Vec<Paragraph>` per scene ever scrolled past, against one `f32`. A Full
+    /// Book read end to end kept every scene's measured paragraphs alive for the
+    /// life of the tab.
+    #[test]
+    fn a_row_that_is_gone_stops_being_remembered() {
+        let host = host_over(&[(1, &prose(100), 0.0, 500.0)]);
+        host.row_units
+            .borrow_mut()
+            .insert(1, ((0, 0), Rc::new(Vec::new())));
+        host.row_units
+            .borrow_mut()
+            .insert(404, ((0, 0), Rc::new(Vec::new())));
+
+        let _ = host.resolve(0.0);
+
+        let live: Vec<EntityId> = host.row_units.borrow().keys().copied().collect();
+        assert_eq!(
+            live,
+            vec![1],
+            "the scene that is still mapped keeps its paragraphs; the one that is \
+             gone must not"
+        );
     }
 
     /// `n` characters of prose, as one paragraph.

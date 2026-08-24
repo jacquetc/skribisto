@@ -16,9 +16,17 @@ use super::*;
 /// `compact_synopsis` is the Top layout's gate. `None` means this page is the
 /// manuscript **column of the Side layout**, where the synopsis lives in its own
 /// splitter pane and must not also appear here.
+///
+/// `scope` is minted by the caller rather than here, and that is the whole point:
+/// `prose` builds this page **twice** — once per synopsis layout — so the two must
+/// be told apart, and the Side layout's synopsis pane, which this function does not
+/// build, has to share the arm's answer. An editor and the lane beside it agree on
+/// which surface they are only because one value reaches both. See
+/// [`LaneScope`](crate::margin_lane::LaneScope).
 pub(super) fn manuscript_page(
     tab: &ContentTab,
     compact_synopsis: Option<Signal<bool>>,
+    scope: crate::margin_lane::LaneScope,
 ) -> impl Widget {
     // Both layouts arm the remembered offset, and deliberately so. Unlike a
     // container's segments, which are different pages of different heights, Top and
@@ -93,10 +101,11 @@ pub(super) fn manuscript_page(
                 // A trashed item's synopsis is read-only for the same reason its prose
                 // is — see `writing_column`.
                 tab.open_doc.trashed.get(),
-                // This tab's item, so a lane on the synopsis surface can reach this
-                // editor by name. The Top layout and the Side layout below are two
-                // renders of the same field, and only one is ever mounted.
-                Some(tab.item_id()),
+                // This tab's item and this arm's surface, so a lane on the synopsis
+                // surface can reach this editor and not the other arm's. The Top
+                // layout and the Side layout below are two renders of the same
+                // field, and both stay mounted once built.
+                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                 // See the prose column above.
                 false,
             ),
@@ -129,9 +138,9 @@ pub(super) fn manuscript_page(
             // statement, not a guard: before this the content beneath it was built
             // by the same editable render path as any other tab.
             tab.open_doc.trashed.get(),
-            // This tab's own item, so the margin lane can reach this editor by
-            // name rather than through focus.
-            Some(tab.item_id()),
+            // This tab's own item and this arm's surface, so the margin lane beside
+            // *this* page reaches this editor rather than the other arm's.
+            Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
             // A tab's editor is on screen and lays out on its first frame.
             false,
         ));
@@ -148,6 +157,7 @@ pub(super) fn manuscript_page(
     let page = super::laned(
         tab,
         crate::margin_lane::LaneSurface::Editor,
+        scope,
         area,
         col.child(port),
     );
@@ -165,7 +175,11 @@ pub(super) fn manuscript_page(
 /// mounts this very pane under a theme-token override where `Panel` resolved its
 /// background against the base palette instead of the theme, and every paint there
 /// has had to be a `RectWidget` since.
-pub(super) fn side_synopsis_pane(tab: &ContentTab, sync: SideSync) -> impl Widget {
+pub(super) fn side_synopsis_pane(
+    tab: &ContentTab,
+    sync: SideSync,
+    scope: crate::margin_lane::LaneScope,
+) -> impl Widget {
     let body: Box<dyn Widget> = match tab.synopsis() {
         Some(s) => Box::new(
             VStack::new()
@@ -208,8 +222,9 @@ pub(super) fn side_synopsis_pane(tab: &ContentTab, sync: SideSync) -> impl Widge
                     // A trashed item's synopsis is read-only for the same reason its prose
                     // is — see `writing_column`.
                     tab.open_doc.trashed.get(),
-                    // See the Top layout's call above.
-                    Some(tab.item_id()),
+                    // See the Top layout's call above. The scope is the Side arm's,
+                    // shared with the manuscript column beside it.
+                    Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                     false,
                 ))),
         ),

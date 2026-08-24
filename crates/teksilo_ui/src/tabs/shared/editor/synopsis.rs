@@ -83,10 +83,14 @@ pub fn synopsis_editor(
     images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
-    // The `BinderItem` whose synopsis this is, announced to the formatting
-    // registry so a lane can reach this editor by name rather than through focus.
-    // `None` on the surfaces built with no project around them.
-    item: Option<common::types::EntityId>,
+    // The `BinderItem` whose synopsis this is **and the surface showing it**,
+    // announced to the formatting registry so a lane can reach this editor by name
+    // rather than through focus. `None` on the surfaces built with no project
+    // around them.
+    //
+    // The surface travels with the item because the item alone does not identify an
+    // editor — see `crate::margin_lane::LaneAnchor`.
+    anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to the editor — see [`writing_column`]'s own note.
     estimate_height: bool,
 ) -> impl Widget {
@@ -179,8 +183,8 @@ pub fn synopsis_editor(
     if let Some(g) = games {
         bound = bound.with_writing_games(g);
     }
-    if let Some(id) = item {
-        bound = bound.with_item(id);
+    if let Some(anchor) = anchor {
+        bound = bound.with_anchor(anchor);
     }
     // Only the page-sized synopsis pins. `Compact` is a six-line box with its
     // own scrollbar — holding a line at a fixed height inside it would mean
@@ -454,7 +458,7 @@ pub fn synopsis_section(
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
-    item: Option<common::types::EntityId>,
+    anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
     estimate_height: bool,
 ) -> impl Widget {
@@ -487,7 +491,7 @@ pub fn synopsis_section(
                             comments,
                             images.clone(),
                             read_only,
-                            item,
+                            anchor,
                             estimate_height,
                         )
                     }
@@ -569,7 +573,7 @@ pub fn synopsis_column(
     // on a page rather than the page itself.
     view_state: Option<crate::shared::ViewStateBinding>,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
-    item: Option<common::types::EntityId>,
+    anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
     estimate_height: bool,
 ) -> CenterColumnFlowing {
@@ -597,7 +601,7 @@ pub fn synopsis_column(
                     comments,
                     images.clone(),
                     read_only,
-                    item,
+                    anchor,
                     estimate_height,
                 )
             }

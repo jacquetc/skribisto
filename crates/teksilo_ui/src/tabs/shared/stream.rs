@@ -78,6 +78,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
     let mut mapped: Option<(
         crate::stream::StreamViewModel,
         crate::margin_lane::RowExtents,
+        crate::margin_lane::LaneScope,
         ScrollArea,
     )> = None;
 
@@ -100,6 +101,11 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
         // layer can answer this: typing in row 1 pushes row 2 down and fires no
         // event any of these view-models watch — see `margin_lane::rows`.
         let extents = crate::margin_lane::RowExtents::new();
+        // One token for this page. Every editor on it — the container's own field
+        // and each row — is the same surface as the lane beside them, and a scene
+        // that is also open in a tab of its own must not answer for this one. See
+        // `crate::margin_lane::LaneScope`.
+        let scope = crate::margin_lane::LaneScope::fresh();
         let (page, port, _binding) =
             crate::tabs::shared::panes::writing_page_scroll(tab, will_show);
         let page_scroll = page.scroll_y_signal().clone();
@@ -107,7 +113,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
         // activation. It goes anywhere inside the page, so it goes here rather
         // than being threaded out through `mapped` alongside the area.
         col = col.child(port);
-        mapped = Some((vm.clone(), extents.clone(), page));
+        mapped = Some((vm.clone(), extents.clone(), scope, page));
         // The container's own surface is a commentable editor like any row's.
         let own_comments = match flavour {
             SplitFlavour::Prose => tab.open_doc.comment_binding_main(),
@@ -153,6 +159,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                         &games,
                         &gutter,
                         arrival_project.as_deref(),
+                        scope,
                     ),
                 ))
             }
@@ -220,7 +227,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // The container itself: its own prose is one more item's text on
                     // this page, and a lane must be able to reach it by name like any
                     // row's.
-                    Some(tab.item_id()),
+                    Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                     // Every mapped document on this page guesses its height until it
                     // has laid out, including the container's own prose: the page's
                     // height is the sum of these claims, and most of them are below
@@ -255,7 +262,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // caret for the tab to remember. Same reason as the absent sink.
                     Option::None,
                     // The container itself, like its prose column above.
-                    Some(tab.item_id()),
+                    Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                     // Every mapped document on this page guesses its height until it
                     // has laid out, including the container's own prose: the page's
                     // height is the sum of these claims, and most of them are below
@@ -280,8 +287,8 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             .child(vspace(28.0));
     }
     crate::tabs::Boxed::new(match mapped {
-        Some((vm, extents, page)) => Box::new(crate::tabs::shared::panes::laned_stream(
-            tab, &vm, flavour, extents, page, col,
+        Some((vm, extents, scope, page)) => Box::new(crate::tabs::shared::panes::laned_stream(
+            tab, &vm, flavour, scope, extents, page, col,
         )) as Box<dyn Widget>,
         // No stream view-model, so no rows and nothing to map -- and no page was
         // built above either, so this one gets its own.
@@ -456,6 +463,9 @@ fn stream_row(
     // Which project this row's typing belongs to — forwarded straight to
     // [`writing_column`], see its own note. `None` on an unsaved project.
     arrival_project: Option<&str>,
+    // The stream page this row is on, so its editor answers to that page's lane and
+    // not to a tab open on the same scene — see `crate::margin_lane::LaneScope`.
+    scope: crate::margin_lane::LaneScope,
 ) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
@@ -531,7 +541,7 @@ fn stream_row(
                         // Which row this is. The reason the registry carries it at all:
                         // a lane maps every row on this page at once, and all but one
                         // of them will never have focus.
-                        Some(id),
+                        Some(crate::margin_lane::LaneAnchor::new(id, scope)),
                         // See the container's own column above.
                         true,
                     ));
@@ -565,7 +575,7 @@ fn stream_row(
                         // caret for the tab to remember. Same reason as the absent sink.
                         Option::None,
                         // Which row this is — see the prose flavour above.
-                        Some(id),
+                        Some(crate::margin_lane::LaneAnchor::new(id, scope)),
                         // See the container's own column above.
                         true,
                     ));

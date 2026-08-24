@@ -207,12 +207,19 @@ pub fn writing_column(
     // must respect the trash has to check it itself; see the
     // `the_gate_stops_typing_and_not_the_programmatic_api` test.
     read_only: bool,
-    // The `BinderItem` whose text this is, announced to the formatting registry so
-    // anything needing *a named item's* editor can find it without going through
-    // focus — the margin lane, which converts offsets for every row of a stream at
-    // once. `None` on the surfaces built with no project around them, the same
-    // shape as `comments` / `footnotes` / `images` above.
-    item: Option<common::types::EntityId>,
+    // The `BinderItem` whose text this is **and the surface showing it**, announced
+    // to the formatting registry so anything needing *a named item's* editor can
+    // find it without going through focus — the margin lane, which converts offsets
+    // for every row of a stream at once. `None` on the surfaces built with no
+    // project around them, the same shape as `comments` / `footnotes` / `images`
+    // above.
+    //
+    // The surface, not just the item: several live editors can show the same item
+    // at once (a dual-pane tab builds two prose columns for its own scene; a scene
+    // open in a tab is also a row of the Full Chapter beside it), and a lane asking
+    // by item alone was answered by whichever had registered first. See
+    // `crate::margin_lane::LaneAnchor`.
+    anchor: Option<crate::margin_lane::LaneAnchor>,
     // Whether this editor should guess its height from its text before anything has
     // laid it out.
     //
@@ -435,8 +442,8 @@ pub fn writing_column(
     if let Some(tw) = typewriter {
         bound = bound.with_typewriter(tw);
     }
-    if let Some(id) = item {
-        bound = bound.with_item(id);
+    if let Some(anchor) = anchor {
+        bound = bound.with_anchor(anchor);
     }
     if let Some(band) = caret {
         bound = bound.with_caret_band(band);
@@ -861,7 +868,7 @@ pub fn writing_section(
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
     // Forwarded straight to [`writing_column`] — see its own note.
-    item: Option<common::types::EntityId>,
+    anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to [`writing_column`] — see its own note.
     estimate_height: bool,
 ) -> impl Widget {
@@ -892,7 +899,7 @@ pub fn writing_section(
             images,
             arrival_project,
             read_only,
-            item,
+            anchor,
             estimate_height,
         ))
 }

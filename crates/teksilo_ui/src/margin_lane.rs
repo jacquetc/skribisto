@@ -10,11 +10,11 @@
 //!
 //! ## Why a registry rather than a match
 //!
-//! Comments, search hits and document boundaries are four different features
-//! that happen to share a strip. Hard-coding them would mean the strip grows a
-//! new arm every time one is added, and would leave the commercial edition no
-//! way in at all. A registry makes each of them the same shape as a dock or an
-//! Analysis category, which is a seam this app already has three of.
+//! Comments, search hits, document boundaries and spelling are four different
+//! features that happen to share a strip. Hard-coding them would mean the strip
+//! grows a new arm every time one is added, and would leave the commercial
+//! edition no way in at all. A registry makes each of them the same shape as a
+//! dock or an Analysis category, which is a seam this app already has three of.
 //!
 //! ## What a provider does *not* decide
 //!
@@ -64,6 +64,83 @@ pub use surface::{LaneInputs, LaneRow, LaneRows, lane_for};
 /// never exercised.
 pub fn install_builtin_providers() -> Vec<LaneProviderHandle> {
     providers::install()
+}
+
+/// **Which writing surface an editor belongs to**, and the one thing that lets a
+/// lane find *its own* editor rather than someone else's.
+///
+/// ## The bug this exists for
+///
+/// A lane converts a document offset into a position by asking the formatting
+/// registry for "the editor showing item X". That question has more than one
+/// honest answer, and the registry used to break the tie by registration order:
+///
+/// * `tabs::shared::panes::prose` builds its manuscript page
+///   **twice** — once for the Top synopsis layout and once for the Side one —
+///   so a single Scene tab registers two prose editors for its own item, each
+///   with a lane of its own. `WidthProbe` mounts Top first and paints it before
+///   it can flip to Side, so Top's geometry is frozen at that first frame and
+///   answers for the rest of the tab's life. The Side page's lane then mapped
+///   every mark and every texture bar against a column laid out at a different
+///   width, and the gap above the first paragraph drifted with it.
+/// * A scene open in a tab **and** appearing as a row of a Full Chapter in the
+///   other half of the split editor is two live, laid-out editors for one item,
+///   in one window, sharing one `FormatViewModel`.
+/// * The search preview band is a third.
+///
+/// None of those is a coin toss the registry could win by being cleverer: "which
+/// editor is on screen" is not the question. The question is which editor is
+/// *the one this lane sits beside*, and only the surface that built them both
+/// knows that. So it says so, with one of these.
+///
+/// ## What it is
+///
+/// An opaque process-local token, minted by [`LaneScope::fresh`] once per writing
+/// surface and handed to every editor that surface builds **and** to the lane
+/// beside them. It is never persisted and never leaves the process — a fresh
+/// value each launch is exactly right, unlike a dock or segment id.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LaneScope(u64);
+
+impl LaneScope {
+    /// A token no other surface holds.
+    ///
+    /// A plain thread-local counter: every mint and every read is on the UI
+    /// thread by construction, the same argument the provider registry itself
+    /// rests on.
+    pub fn fresh() -> Self {
+        thread_local! {
+            static NEXT: std::cell::Cell<u64> = const { std::cell::Cell::new(1) };
+        }
+        NEXT.with(|next| {
+            let id = next.get();
+            next.set(id.wrapping_add(1));
+            Self(id)
+        })
+    }
+}
+
+/// What an editor announces itself as: whose text it is showing, and on which
+/// surface.
+///
+/// One value rather than two parameters because the two are only ever useful
+/// together — an item with no scope is the ambiguity [`LaneScope`] exists to
+/// remove, and a scope with no item names nothing a lane can ask for. Passing
+/// them separately is how a call site ends up supplying one and forgetting the
+/// other, which fails silently: the lookup falls back to the old order-dependent
+/// answer and looks like it worked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LaneAnchor {
+    /// The `BinderItem` whose text this editor holds.
+    pub item: common::types::EntityId,
+    /// The writing surface it was built by.
+    pub scope: LaneScope,
+}
+
+impl LaneAnchor {
+    pub fn new(item: common::types::EntityId, scope: LaneScope) -> Self {
+        Self { item, scope }
+    }
 }
 
 /// Which text surface a lane is mounted on.

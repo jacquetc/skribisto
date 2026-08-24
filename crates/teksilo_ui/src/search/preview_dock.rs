@@ -194,10 +194,15 @@ impl PreviewBody {
 /// Not shared with `panes::laned` despite the shape, because that one takes a
 /// `ContentTab` and this band has none: it is a preview of a document, not a tab
 /// open on one.
+#[allow(clippy::too_many_arguments)]
 fn laned_band(
     vm: &SearchReplaceViewModel,
     format: &FormatViewModel,
     item: u64,
+    // The band's own token, shared with the editor above — the previewed scene is
+    // very often also open in a tab, and both register for the same item. See
+    // `crate::margin_lane::LaneScope`.
+    scope: crate::margin_lane::LaneScope,
     doc: teksilo::text_document::TextDocument,
     kind: crate::format::EditorKind,
     content: impl Widget + 'static,
@@ -237,6 +242,7 @@ fn laned_band(
             ids: vm.ids().clone(),
             surface: LaneSurface::SearchPreview,
             kind,
+            scope,
             format: format.clone(),
             rows: LaneRows::Placed {
                 extents: extents.clone(),
@@ -303,6 +309,11 @@ impl Widget for PreviewBody {
         {
             Some((open_doc, prose, spell, kind)) => {
                 self.install_find_highlight(ctx, &prose.doc);
+                // This band's own token. The scene being previewed is very often the
+                // one open in a tab as well, and both register an editor for the same
+                // item — so the band's lane has to be able to say which of the two is
+                // *its*. See `crate::margin_lane::LaneScope`.
+                let scope = crate::margin_lane::LaneScope::fresh();
                 // Cap the editor's width like a scene column, so a wide paragraph
                 // stays readable (Settings ▸ preview width). Flowing (intrinsic
                 // height, inner scroll off) inside an outer `ScrollArea` — the same
@@ -404,13 +415,17 @@ impl Widget for PreviewBody {
                     // lane needs and focus cannot answer. `TypographyBoundEditor`
                     // does the same for every other writing surface; this band
                     // bypasses it, so it says so itself.
-                    format.set_registered_item(self_id, open_doc.item_id);
+                    format.set_registered_anchor(
+                        self_id,
+                        crate::margin_lane::LaneAnchor::new(open_doc.item_id, scope),
+                    );
                     self.format_view = Some((format, self_id));
                 }
                 Box::new(laned_band(
                     &self.vm,
                     &self.format,
                     open_doc.item_id,
+                    scope,
                     prose.doc.clone(),
                     kind,
                     Padding::symmetric(12.0, 8.0)
