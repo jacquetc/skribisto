@@ -98,3 +98,93 @@ fn an_extension_can_build_a_lane_provider_naming_only_ext() {
     // field for the life of the process, and one it cannot spell it cannot keep.
     let _kept: teksilo_ui::ext::LaneProviderHandle = handle;
 }
+
+/// **A chart sized the way this crate's own two charts are sized.**
+///
+/// `ext`'s drift test walks `pub fn register…` declarations (`src/ext/tests.rs`), and a
+/// plain function or a `const` never matches that prefix, so renaming or reshaping any of
+/// these five would not fail there. It fails here instead, compiled from outside the crate
+/// against nothing but `ext`, which is the same check that already guards the margin
+/// lane's types above.
+///
+/// The point of the guarantee is in `tabs::shared::charts`'s own module doc: two charts of
+/// one manuscript that size themselves differently make one book look like two shapes. A
+/// third chart, wherever it is built, has to be able to reach the same formula.
+#[test]
+fn an_extension_can_size_a_chart_naming_only_ext() {
+    use teksilo_ui::ext::{BAR_PITCH, CHART_HEIGHT, STRIP_HEIGHT, content_width, wide_chart};
+
+    let n = 12;
+    assert!(
+        content_width(n) >= n as f32 * BAR_PITCH,
+        "every datum keeps its full pitch, however long the series is"
+    );
+    // A compile-time check rather than a runtime one: both sides are constants, so an
+    // `assert!` here folds to a literal and clippy is right to say so.
+    const _: () = assert!(CHART_HEIGHT > STRIP_HEIGHT);
+
+    // Building one is the real proof: `wide_chart` has to take a real widget and hand one
+    // back, naming nothing this module has not exported.
+    let probe = || teksilo::widgets::TextWidget::new(teksilo::prelude::lit!("probe"));
+    let _primary = wide_chart(n, CHART_HEIGHT, probe());
+    let _strip = wide_chart(n, STRIP_HEIGHT, probe());
+}
+
+/// **A dock can be placed naming only `ext`.**
+///
+/// `ExtensionDock::placement` is an `AppDock` and its id has to fall inside a band the
+/// registry enforces at runtime, so an extension that cannot name those three from the
+/// façade has to reach past it for the one field of the registration it cannot avoid.
+#[test]
+fn an_extension_can_place_a_dock_naming_only_ext() {
+    use teksilo_ui::ext::{APP_DOCK_ID_CEILING, AppDock, EXTENSION_DOCK_ID_FLOOR};
+
+    const ID: u64 = EXTENSION_DOCK_ID_FLOOR + 1;
+    // The check an extension wants to make at compile time rather than at first launch.
+    const _: () = assert!(ID > EXTENSION_DOCK_ID_FLOOR);
+    const _: () = assert!(EXTENSION_DOCK_ID_FLOOR > APP_DOCK_ID_CEILING);
+
+    let placement = AppDock {
+        id: ID,
+        side: teksilo::widgets::DockSide::Trailing,
+        own_tab: true,
+    };
+    assert_eq!(placement.id, ID);
+}
+
+/// **An extension can read what the writer is typing, naming only `ext`.**
+///
+/// The ordinary read commands answer with the stored text, and typing does not reach the
+/// store until a flush. A surface reporting on the focused scene that reads the store shows
+/// the text as of the last save, with nothing on screen saying so.
+///
+/// The capability arrives on `DockContext`, not through `app_state`: it is per window, like
+/// `active`, and `app_state` is write-once at builder time besides.
+#[test]
+fn an_extension_can_read_a_rows_live_prose_naming_only_ext() {
+    use std::rc::Rc;
+    use teksilo_ui::ext::{LiveProse, LiveProseFn};
+
+    // What an extension holds: the reader off its own `DockContext`, and the two types it
+    // needs to name to use the result.
+    let reader: LiveProseFn = Rc::new(|item| {
+        (item == 7).then(|| LiveProse {
+            text: "the ferry, as it stands right now".to_string(),
+            version: teksilo::prelude::Signal::new(3),
+        })
+    });
+
+    let live = reader(7).expect("the row this stand-in knows about");
+    assert_eq!(live.text, "the ferry, as it stands right now");
+    assert_eq!(
+        live.version.get(),
+        3,
+        "the counter has to be readable and bindable, or the reader gets one snapshot \
+         and never hears about the next keystroke"
+    );
+    assert!(
+        reader(8).is_none(),
+        "a row with no mounted editor is None, never an empty string a caller would \
+         render as an empty scene"
+    );
+}

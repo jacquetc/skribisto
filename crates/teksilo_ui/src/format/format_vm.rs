@@ -812,6 +812,31 @@ impl FormatViewModel {
     /// `scope: None` is the unscoped legacy answer — first laid-out registration
     /// wins — and exists for the editors the widget tests build with no surface
     /// around them. Nothing in the application passes it.
+    /// A view of `item`'s **document**, for a caller that wants the text rather than a
+    /// position in it.
+    ///
+    /// Scope-free, deliberately, and safe only for that. Every mounted view of one row is a
+    /// view on the same `TextDocument`: `OpenDocsStore` holds one refcounted `OpenDoc` per
+    /// item, and the tab page, the Top and Side arms, a stream row and the search preview
+    /// band are all handed that same document. So the text and its version are identical
+    /// whichever registration answers, and naming a surface would be answering a question
+    /// that has no bearing on the result.
+    ///
+    /// A dock has no surface to name in any case. [`LaneScope`](crate::margin_lane::LaneScope)
+    /// asks "which editor is this lane sitting beside", and a dock sits beside none of them.
+    ///
+    /// ⚠ Geometry is **not** shared, and this is the wrong door for it. Anything converting
+    /// an offset into a rectangle has to name its own scope through
+    /// [`Self::handle_for_item`], or it reads one column's layout while sitting against
+    /// another, which is the drift that made scopes necessary in the first place.
+    pub fn document_view(&self, item: EntityId, kind: EditorKind) -> Option<EditorHandle> {
+        self.registry
+            .borrow()
+            .iter()
+            .find(|e| e.item == Some(item) && e.kind == kind)
+            .map(|e| e.handle.clone())
+    }
+
     pub fn handle_for_item(
         &self,
         item: EntityId,

@@ -1454,3 +1454,17 @@ fn nothing_focused_resizes_nothing() {
     let vm = vm_detached();
     assert!(vm.focused_typography().is_none());
 }
+
+/// **The two lookups answer different questions, and only one of them is scope-free.**
+///
+/// `document_view` is for the row's text, which every view of it shares; `handle_for_item`
+/// is for a position in that text, which they do not share. Confusing them is how a lane
+/// came to convert offsets against a column nobody was looking at, so this pins that
+/// `document_view` takes no scope and `handle_for_item` still demands one.
+#[test]
+fn the_document_lookup_is_scope_free_and_the_position_one_is_not() {
+    let vm = FormatViewModel::detached();
+    // Nothing registered: both answer `None`, and neither invents a handle.
+    assert!(vm.document_view(1, EditorKind::Prose).is_none());
+    assert!(vm.handle_for_item(1, EditorKind::Prose, None).is_none());
+}

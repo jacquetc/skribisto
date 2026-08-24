@@ -1675,6 +1675,22 @@ impl Widget for App {
             // picking the signals here, so this call site cannot drift from what
             // `active_context`'s own test exercises.
             active: crate::active_context::ActiveContext::for_window(&editors, &self.outline),
+            // Tier 3 again, and for the same reason: *this* window's editors. The handle is
+            // resolved per call and never held, because `RichTextEditor::construct` mints a
+            // fresh one.
+            live_prose: {
+                let format = self.format.clone();
+                Rc::new(move |item| {
+                    // `document_view`, not `handle_for_item`: this reads the row's text
+                    // and its version, both of which every view of that row shares, and a
+                    // dock has no surface to name a scope with.
+                    let handle = format.document_view(item, crate::format::EditorKind::Prose)?;
+                    Some(crate::docks::LiveProse {
+                        text: handle.to_plain_text(),
+                        version: handle.document_version(),
+                    })
+                })
+            },
         };
         crate::commands_ext::register_all_extension_commands(ctx, &seam);
         // …and anything an extension wants done with this context that is not a

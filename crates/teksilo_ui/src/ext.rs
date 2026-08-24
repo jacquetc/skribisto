@@ -45,7 +45,17 @@
 //! lifecycle}`.
 
 // ── Docks ────────────────────────────────────────────────────────────────────
-pub use crate::docks::{DockContext, DockHandle, ExtensionDock, register_dock};
+pub use crate::docks::{
+    DockContext, DockHandle, ExtensionDock, LiveProse, LiveProseFn, register_dock,
+};
+// The placement an `ExtensionDock` carries, and the band its id has to sit in.
+//
+// `ExtensionDock::placement` is an `AppDock`, so a registration cannot be written without
+// naming this type: leaving it out of the façade means every extension reaches past `ext`
+// for the one field it cannot avoid. The two bounds go with it because an id outside them
+// is refused at registration, at runtime, in whichever window opened first, and a caller
+// that can name them can check at compile time instead.
+pub use crate::docks::{APP_DOCK_ID_CEILING, AppDock, EXTENSION_DOCK_ID_FLOOR};
 
 // ── Marking a project dirty ──────────────────────────────────────────────────
 //
@@ -66,6 +76,25 @@ pub use crate::docks::inspector_sections::{
 pub use crate::tabs::ContentTab;
 pub use crate::tabs::shared::segments::{
     ContainerSegmentHandle, ContainerSegmentSpec, register_container_segment, segment_id,
+};
+
+// ── Chart sizing ─────────────────────────────────────────────────────────────
+//
+// Not a registration slot: there is nothing per-extension to key, which is the
+// same shape as `app_paths` and `active_query` below.
+//
+// Pace and Analysis already share this exact sizing so that one manuscript reads
+// as one shape on both of their charts (see the module doc on
+// `tabs::shared::charts` for why a chart is sized from its data rather than its
+// viewport). An out-of-tree edition adding a third chart to the same tab bar has
+// no other route to that shape, and re-deriving the formula rather than calling
+// it drifts silently the first time `BAR_PITCH` or either height moves.
+//
+// ⚠ These five are frozen the way a registration id is frozen: their values are
+// a visual contract between charts that sit beside each other, not an
+// implementation detail.
+pub use crate::tabs::shared::charts::{
+    BAR_PITCH, CHART_HEIGHT, STRIP_HEIGHT, content_width, wide_chart,
 };
 
 // ── The margin lane ──────────────────────────────────────────────────────────

@@ -227,6 +227,39 @@ pub struct DockContext {
     /// [`crate::active_context`]. Docks get it and tabs do not: a tab is already
     /// scoped to one container, a dock sits outside every tab.
     pub active: crate::active_context::ActiveContext,
+    /// **The prose of a row the writer has open, as it stands right now.**
+    ///
+    /// The ordinary read commands answer with the *stored* text, and typing does not reach
+    /// the store: an edit marks its document dirty, and the prose reaches `Content` on a
+    /// flush, which is to say on a save. A dock reporting on the scene the writer is in and
+    /// reading the store therefore shows them the text as of their last save, silently,
+    /// while a margin lane two inches away is already following the same keystrokes.
+    ///
+    /// `None` when the row has no mounted prose editor: it is not open, or it is below the
+    /// fold of a stream whose rows build lazily. A caller falls back to the stored text for
+    /// that rather than treating it as an empty scene.
+    ///
+    /// A closure over **this window's** editors, for the same reason `active` is: a second
+    /// window on the same Work has different rows open, and `ctx.app_state` cannot tell them
+    /// apart. It also cannot be re-pointed after the builder runs, so the seeded
+    /// `FormatViewModel` there is permanently detached and its registry permanently empty.
+    ///
+    /// ⚠ **Call it per build; never hold what it returns.** `RichTextEditor::construct`
+    /// mints a fresh handle, so a cached [`LiveProse`] addresses an editor that may be gone,
+    /// and its `version` stops moving with nothing to say that it has.
+    pub live_prose: LiveProseFn,
+}
+
+/// Reads [`LiveProse`] for one row. See [`DockContext::live_prose`].
+pub type LiveProseFn = Rc<dyn Fn(common::types::EntityId) -> Option<LiveProse>>;
+
+/// A row's prose as the editor holds it, and the counter that moves as it is typed.
+pub struct LiveProse {
+    /// The row's prose, plain.
+    pub text: String,
+    /// Bumps on every document change. Bind it to rebuild as the writer types; without it a
+    /// reader gets one snapshot and never hears about the next keystroke.
+    pub version: teksilo::prelude::Signal<u64>,
 }
 
 /// An extension's dock: where it sits, what it is called, and what it draws.
@@ -531,6 +564,8 @@ mod extension_roster_tests {
             ids: AppIds::new(),
             work: crate::save::WorkHandle::detached(app_ctx, AppIds::new()),
             active: crate::active_context::ActiveContext::detached(),
+            // Nothing mounted in a test tree, so no row has live prose.
+            live_prose: Rc::new(|_| None),
         };
         let widgets = registered_dock_widgets(&cx);
         assert_eq!(
@@ -589,6 +624,8 @@ mod extension_roster_tests {
             ids,
             work: save_state.handle(),
             active: crate::active_context::ActiveContext::detached(),
+            // Nothing mounted in a test tree, so no row has live prose.
+            live_prose: Rc::new(|_| None),
         };
 
         // Exactly what a dock's build closure does with its context.

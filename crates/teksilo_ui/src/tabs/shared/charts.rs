@@ -24,6 +24,10 @@
 //!
 //! Pace and Analysis chart the same manuscript. When they sized themselves differently the
 //! same book looked like two different shapes, which is worse than either choice on its own.
+//!
+//! Re-exported through [`crate::ext`] for that same reason, one crate out: an out-of-tree
+//! edition adding a third chart to the same tab bar has no other way to keep it the shape
+//! these two are, and a re-derived formula drifts the first time a constant here moves.
 
 use teksilo::prelude::*;
 use teksilo::widgets::{FixedSize, ScrollArea, ScrollBarPolicy};

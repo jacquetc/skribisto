@@ -30,7 +30,12 @@ mod panes;
 pub mod segments;
 mod stream;
 
-pub use charts::*;
+// Deliberately not `pub use charts::*;`. That glob was the *only* thing making `wide_chart`,
+// `content_width` and the three sizing constants reachable from outside this crate, by
+// accident rather than by declaration: the items are `pub`, and a glob re-export carries an
+// item at its own visibility rather than its module's. The declared door is
+// [`crate::ext`]; see the "Chart sizing" section there.
+pub(crate) use charts::*;
 pub use editor::*;
 pub use panes::*;
 // No `pub use segments::*` — `segments` is already a `pub mod`, so a glob adds

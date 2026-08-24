@@ -401,6 +401,8 @@ fn seam_context() -> SeamContext {
         ids: AppIds::new(),
         work: crate::save::WorkHandle::detached(app_ctx, AppIds::new()),
         active: crate::active_context::ActiveContext::detached(),
+        // Nothing mounted in a test tree, so no row has live prose.
+        live_prose: Rc::new(|_| None),
     }
 }
 
