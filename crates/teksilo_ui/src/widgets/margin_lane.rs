@@ -737,7 +737,7 @@ impl MarginLane {
 ///
 /// One pixel, drawn as a dotted hairline rather than a border: it groups the two
 /// halves of one widget rather than separating two widgets.
-const TEXTURE_DIVIDER: f32 = 1.0;
+pub const TEXTURE_DIVIDER: f32 = 1.0;
 
 /// The hairline down each edge of the strip, which is what gives it a constant
 /// footprint whether or not it currently holds a mark.

@@ -69,6 +69,21 @@ pub(crate) struct WidthProbe {
     side_enabled: Signal<bool>,
     /// Current width of the synopsis pane, so the breakpoint tracks the divider.
     side_width: Signal<f32>,
+    /// Width the manuscript pane spends on things that are not prose: today the
+    /// margin lane, which is the scroll area's sibling inside that pane and so
+    /// takes its width out of the same column.
+    ///
+    /// Counted because the breakpoint exists to protect the prose column, and a
+    /// threshold that reserves [`PROSE_MIN_WIDTH`] for the whole pane hands the
+    /// prose that minus the strip. With the texture column on that is forty-one
+    /// points: a writer who turned it on had made their own column narrower than
+    /// the minimum this refuses to go below, and nothing said so.
+    ///
+    /// Taken from the settings store in [`build`](Widget::build) rather than from
+    /// the caller, because the store is reachable from a `BuildContext` and from
+    /// nowhere else. `None` until then, and in a tree with no settings registered
+    /// at all -- which reads as zero, the width a lane that cannot be shown takes.
+    reserved: Option<Signal<f32>>,
     mode: Signal<usize>,
     /// Non-reactive mirror of the last value written to `mode` — the guard that
     /// makes the layout-time write idempotent.
@@ -87,6 +102,7 @@ impl WidthProbe {
         Self {
             side_enabled,
             side_width,
+            reserved: None,
             // Start on Top: the available width is unknown until the first
             // layout pass, and Top is the layout that fits every width. A tab
             // that should be Side flips on that first pass, before paint.
@@ -111,7 +127,11 @@ impl WidthProbe {
         if !self.side_enabled.get() {
             return MODE_TOP;
         }
-        let threshold = self.side_width.get() + PROSE_MIN_WIDTH;
+        // The prose column's minimum, the pane beside it, and whatever the
+        // manuscript pane spends on furniture -- the margin lane. All three come
+        // out of the same width, so all three are in the threshold.
+        let reserved = self.reserved.as_ref().map_or(0.0, Signal::get);
+        let threshold = self.side_width.get() + PROSE_MIN_WIDTH + reserved;
         // Asymmetric crossing points: harder to enter Side than to stay in it.
         let limit = if self.last_mode.get() == MODE_SIDE {
             threshold - SIDE_BREAKPOINT_HYSTERESIS
@@ -144,6 +164,21 @@ impl Widget for WidthProbe {
             .bind_to(self_id, ctx.binding_registry(), BindingLevel::Relayout);
         self.side_width
             .bind_to(self_id, ctx.binding_registry(), BindingLevel::Relayout);
+        // The margin lane's width, read here because a `BuildContext` is the only
+        // place the settings store can be reached. Bound at the same level: a
+        // writer flipping the lane or its texture on moves the breakpoint, and
+        // must not have to resize the window to see the arrangement it now asks
+        // for.
+        if self.reserved.is_none()
+            && let Some(store) = ctx.try_settings()
+        {
+            let reserved = crate::margin_lane::reserved_width_signal(
+                store,
+                crate::margin_lane::LaneSurface::Editor,
+            );
+            reserved.bind_to(self_id, ctx.binding_registry(), BindingLevel::Relayout);
+            self.reserved = Some(reserved);
+        }
 
         if let Some((top, side)) = self.pending.take() {
             let switcher = Switcher::new(self.mode.clone())

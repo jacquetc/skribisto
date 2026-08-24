@@ -443,6 +443,69 @@ pub fn registered_for(surface: LaneSurface) -> Vec<LaneProviderSpec> {
     })
 }
 
+/// How much width a lane will take on `surface`, right now.
+///
+/// **What a layout has to reserve for it, and could not ask before.** The strip
+/// is the scroll area's sibling: it takes its width out of the pane the prose is
+/// in. A breakpoint that decides "is there room for two columns" by counting the
+/// prose's minimum and the other pane's width is short by exactly this, and the
+/// column it was protecting comes out narrower than the minimum it enforced.
+///
+/// Zero when the lane is not shown here at all, which is the same question
+/// [`resolve::is_enabled`] answers and is asked through it so the two cannot
+/// disagree. Otherwise the mark columns, plus the texture column and its divider
+/// when the writer has that on.
+///
+/// Reads the same keys the lane binds at `Rebuild`, so a layout that binds this
+/// re-runs when the writer flips either switch.
+pub fn reserved_width(store: &teksilo::settings::SettingsStore, surface: LaneSurface) -> f32 {
+    width_of(
+        resolve::is_enabled(store, surface),
+        resolve::texture_enabled(store),
+    )
+}
+
+/// [`reserved_width`] as a signal, for a layout that has to re-decide when it
+/// changes.
+///
+/// Derived from the same three keys, so a writer turning the lane or the texture
+/// on gets the new arrangement on that frame rather than on the next window
+/// resize. Derived signals cannot be `observe`d but can be `bind_to`-ed, which is
+/// what a breakpoint wants.
+pub fn reserved_width_signal(
+    store: &teksilo::settings::SettingsStore,
+    surface: LaneSurface,
+) -> teksilo::prelude::Signal<f32> {
+    let lane = store.signal(
+        crate::MARGIN_LANE_ENABLED_KEY,
+        crate::MARGIN_LANE_ENABLED_DEFAULT,
+    );
+    let here = store.signal(
+        &crate::margin_lane_surface_key(surface),
+        crate::margin_lane_surface_default(surface),
+    );
+    let texture = store.signal(
+        crate::MARGIN_LANE_TEXTURE_KEY,
+        crate::MARGIN_LANE_TEXTURE_DEFAULT,
+    );
+    lane.zip3(&here, &texture)
+        .map(|(lane, here, texture)| width_of(*lane && *here, *texture))
+}
+
+/// The arithmetic both readings share, so they cannot disagree about a number a
+/// layout reserves and the widget then spends.
+fn width_of(shown: bool, texture: bool) -> f32 {
+    if !shown {
+        return 0.0;
+    }
+    let marks = crate::widgets::DEFAULT_LANE_WIDTH;
+    if texture {
+        marks + crate::widgets::DEFAULT_TEXTURE_WIDTH + crate::widgets::TEXTURE_DIVIDER
+    } else {
+        marks
+    }
+}
+
 /// The namespace that registered `id`, if any. For diagnostics and tests.
 pub fn namespace_of(id: &str) -> Option<String> {
     PROVIDERS.with(|reg| {

@@ -35,7 +35,7 @@ pub use destination_picker::DestinationPicker;
 pub(crate) use diff_pane::DiffPane;
 pub use margin_lane::{
     DEFAULT_LANE_WIDTH, DEFAULT_TEXTURE_WIDTH, LaneBar, LaneColumn, LaneMark, LaneShape, LaneSpan,
-    MIN_MARK_HEIGHT, MarginLane, ResolvedMark,
+    MIN_MARK_HEIGHT, MarginLane, ResolvedMark, TEXTURE_DIVIDER,
 };
 pub use pill::{Pill, PillTooltip, attach_labelled_composite_tooltip};
 pub use structure_number::StructureNumber;
