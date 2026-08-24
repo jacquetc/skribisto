@@ -31,8 +31,16 @@ pub struct DialogueMarkers {
     pub open_quote: Option<char>,
     /// The glyph that closes it. Equal to `open_quote` for symmetric conventions.
     pub close_quote: Option<char>,
-    /// The dash that opens a line of dialogue, where the language uses one.
-    pub dash: Option<char>,
+    /// Every dash that opens a line of dialogue, where the language uses one —
+    /// empty where it does not.
+    ///
+    /// A **list**, because a convention is not a glyph. French sets dialogue with
+    /// the *cadratin* (`—`) or the *demi-cadratin* (`–`) and a manuscript may
+    /// honestly contain both; recognising only the one the app happens to type
+    /// measured a fifteen-hundred-exchange French novel as a book without
+    /// dialogue. Built from [`crate::typography::DIALOGUE_DASHES`], which is where
+    /// the membership and its exclusions are argued.
+    pub dashes: &'static [char],
 }
 
 impl DialogueMarkers {
@@ -44,7 +52,7 @@ impl DialogueMarkers {
 
     /// Whether anything here lets us recognise speech at all.
     pub fn is_measurable(&self) -> bool {
-        self.open_quote.is_some() || self.dash.is_some()
+        self.open_quote.is_some() || !self.dashes.is_empty()
     }
 }
 
@@ -86,8 +94,11 @@ pub fn markers_for(tag: &str, quote_style: QuoteStyle) -> DialogueMarkers {
         open_quote: Some(quotes.open()),
         close_quote: Some(quotes.close()),
         // No override exists for the dialogue dash, so an uncurated row
-        // legitimately contributes none.
-        dash: row.dialogue_dash,
+        // legitimately contributes none. Resolved through typography rather than
+        // read off `row` for the same reason `quotes_for` is: the glyph the app
+        // *types* is one of a family it must *recognise*, and the family is that
+        // module's to state.
+        dashes: crate::typography::dialogue_dashes_for(tag),
     }
 }
 
@@ -172,7 +183,7 @@ pub fn measure_paragraph(para: &str, markers: DialogueMarkers) -> ParagraphStats
     if words == 0 || !markers.is_measurable() {
         return ParagraphStats { words, spoken: 0 };
     }
-    let spoken = if markers.dash.is_some_and(|d| para.starts_with(d)) {
+    let spoken = if markers.dashes.iter().any(|&d| para.starts_with(d)) {
         // The dash convention is per *paragraph*: there is no closing dash to look
         // for, so an opening one makes the whole paragraph speech.
         words
@@ -301,12 +312,12 @@ mod tests {
     const EN: DialogueMarkers = DialogueMarkers {
         open_quote: Some('\u{201C}'),
         close_quote: Some('\u{201D}'),
-        dash: None,
+        dashes: &[],
     };
     const FR: DialogueMarkers = DialogueMarkers {
         open_quote: Some('«'),
         close_quote: Some('»'),
-        dash: Some('—'),
+        dashes: crate::typography::DIALOGUE_DASHES,
     };
 
     #[test]
@@ -414,6 +425,59 @@ mod tests {
         assert_eq!(s.dialogue, Some(2.0 / 6.0));
     }
 
+    /// **The bug this list exists for.** A convention is not a glyph: French sets
+    /// dialogue with the *tiret cadratin* (`—`) or the *tiret demi-cadratin* (`–`)
+    /// and both are ordinary in published fiction. Recognising only the one the
+    /// editor happens to type measured a real French novel — fifteen hundred
+    /// demi-cadratin exchanges — as a book containing no dialogue at all, and the
+    /// texture column beside it drew a wall of narration down every scene.
+    #[test]
+    fn every_dialogue_dash_a_writer_may_use_opens_speech() {
+        // Spelled out rather than read off `DIALOGUE_DASHES`: a test that iterates
+        // the list it is checking goes quietly vacuous the moment the list shrinks,
+        // which is precisely the regression it is here to catch. The membership of
+        // the list is a different question, asserted by the drift test below.
+        for dash in ['\u{2014}', '\u{2013}', '\u{2015}'] {
+            let s = measure(
+                &format!("{dash} Tu viens ?\n\nIl ne répondit pas."),
+                Some("fr"),
+                FR,
+            );
+            assert_eq!(
+                s.words, 6,
+                "{dash:?} is punctuation, not a word: {:?}",
+                s.paragraph_words
+            );
+            assert_eq!(
+                s.dialogue,
+                Some(2.0 / 6.0),
+                "{dash:?} must open a line of speech"
+            );
+        }
+    }
+
+    /// A hyphen opens a Djot bullet, and it is also the shorthand the editor
+    /// *converts into* a dialogue dash rather than a mark in its own right. Reading
+    /// one as speech would report a list of scene notes as a conversation.
+    #[test]
+    fn a_hyphen_is_not_a_dialogue_dash() {
+        let s = measure("- du pain\n\n- du vin", Some("fr"), FR);
+        assert_eq!(s.dialogue, Some(0.0));
+    }
+
+    /// The other half of "all or nothing, per locale". English has no dash
+    /// convention, so a paragraph opening with one is an aside or an interruption
+    /// — calling it speech would invent dialogue rather than find it.
+    #[test]
+    fn a_language_without_the_convention_reads_no_dash_as_speech() {
+        let s = measure("\u{2014} and then he stopped talking.", Some("en"), EN);
+        assert_eq!(s.dialogue, Some(0.0));
+        assert_eq!(
+            markers_for("en", QuoteStyle::LocaleDefault).dashes,
+            &[] as &[char]
+        );
+    }
+
     #[test]
     fn french_guillemets_are_recognised() {
         let s = measure("« Vraiment ? » demanda-t-elle.", Some("fr"), FR);
@@ -461,6 +525,41 @@ mod tests {
                 markers_for(tag, QuoteStyle::LocaleDefault).is_measurable(),
                 "{tag} must be measurable"
             );
+        }
+    }
+
+    /// The dash the editor **types** must be one of the dashes it **recognises**.
+    ///
+    /// Two lists, one convention — and two lists drift. A locale whose
+    /// `dialogue_dash` fell outside [`crate::typography::DIALOGUE_DASHES`] would
+    /// have the editor inserting a mark its own measurement reads as narration,
+    /// which is the exact shape of the bug the family was added for. This is the
+    /// dash half of the quote agreement asserted below.
+    #[test]
+    fn every_dash_the_editor_types_is_a_dash_the_measurement_knows() {
+        use crate::typography::{DIALOGUE_DASHES, dialogue_dashes_for, ruleset_for};
+        for tag in [
+            "en", "en-GB", "fr", "de", "de-CH", "es", "ca", "it", "pt", "pt-BR", "nl", "pl", "ru",
+            "sv", "tr", "ar",
+        ] {
+            match ruleset_for(tag).dialogue_dash {
+                Some(typed) => {
+                    assert!(
+                        DIALOGUE_DASHES.contains(&typed),
+                        "{tag} types {typed:?}, which the measurement would read as narration"
+                    );
+                    assert_eq!(
+                        dialogue_dashes_for(tag),
+                        DIALOGUE_DASHES,
+                        "{tag} opens dialogue with a dash, so it accepts every one of them"
+                    );
+                }
+                None => assert_eq!(
+                    dialogue_dashes_for(tag),
+                    &[] as &[char],
+                    "{tag} has no dash convention and must not acquire one"
+                ),
+            }
         }
     }
 
@@ -763,7 +862,7 @@ mod tests {
         let straight = DialogueMarkers {
             open_quote: Some('"'),
             close_quote: Some('"'),
-            dash: None,
+            dashes: &[],
         };
         let s = measure("\"Come here,\" she said.", Some("en"), straight);
         assert_eq!(s.dialogue, Some(0.5));

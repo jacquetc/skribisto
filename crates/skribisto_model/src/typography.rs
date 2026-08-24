@@ -103,6 +103,7 @@ pub const LSAQUO: char = '\u{2039}'; // ‹
 pub const RSAQUO: char = '\u{203A}'; // ›
 pub const EM_DASH: char = '\u{2014}'; // —
 pub const EN_DASH: char = '\u{2013}'; // –
+pub const HORIZONTAL_BAR: char = '\u{2015}'; // ― — Unicode's own "quotation dash"
 pub const ELLIPSIS: char = '\u{2026}'; // …
 pub const NBSP: char = '\u{00A0}'; // no-break space
 pub const NNBSP: char = '\u{202F}'; // narrow no-break space
@@ -313,6 +314,44 @@ pub fn quotes_for(tag: &str, quote_style: QuoteStyle) -> QuoteSystem {
         QuoteStyle::CurlySingle => PAIR_SINGLE_CURLY,
         QuoteStyle::Guillemets => PAIR_GUILLEMET,
         QuoteStyle::LowHigh => PAIR_LOW_HIGH,
+    }
+}
+
+/// Every dash a line of dialogue is opened with in practice.
+///
+/// **Not the same list as [`TypographyRuleset::dialogue_dash`], and the difference
+/// is the point.** That field is the one glyph the app *types* for a locale; this
+/// is every glyph it must *recognise* as that locale's convention. A writer sets
+/// dialogue with whichever of these their keyboard, their previous word processor
+/// or their publisher's house style gave them, and all of them are the same
+/// convention on the page.
+///
+/// French names the two most common ones outright — `—` is the *tiret cadratin*,
+/// `–` the *tiret demi-cadratin* — and both are ordinary in published French
+/// fiction. This list existing is what stopped a French manuscript of fifteen
+/// hundred demi-cadratin exchanges from measuring as a book with no dialogue in
+/// it.
+///
+/// Two dashes are deliberately absent. The **hyphen-minus** is what a writer types
+/// *before* the app converts it, and it also opens a bullet in Djot, so accepting
+/// it would read a shopping list as a conversation. The **figure dash** (`‒`) is
+/// a digit-width mark for numerals and no one sets speech with it;
+/// admitting it would be a guess, and this module does not guess.
+pub const DIALOGUE_DASHES: &[char] = &[EM_DASH, EN_DASH, HORIZONTAL_BAR];
+
+/// The dashes that open a line of dialogue in `tag` — empty where the locale has
+/// no such convention.
+///
+/// All or nothing, per locale: a language that opens dialogue with a dash accepts
+/// the whole of [`DIALOGUE_DASHES`], and one that does not accepts none of them.
+/// English is the case that makes the second half matter — an em dash beginning an
+/// English paragraph is an interruption or an aside, and reading it as speech would
+/// invent dialogue rather than find it.
+pub fn dialogue_dashes_for(tag: &str) -> &'static [char] {
+    if ruleset_for(tag).dialogue_dash.is_some() {
+        DIALOGUE_DASHES
+    } else {
+        &[]
     }
 }
 
