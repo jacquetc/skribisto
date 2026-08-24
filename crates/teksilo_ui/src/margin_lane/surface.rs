@@ -45,7 +45,7 @@ use teksilo::core::binding::BindingLevel;
 use teksilo::core::widget::{LayoutContext, LayoutResponse, PaintContext, Widget, WidgetPlacement};
 use teksilo::core::widget_id::WidgetId;
 use teksilo::prelude::*;
-use teksilo::widgets::ScrollArea;
+use teksilo::widgets::{MenuItem, MenuList, ScrollArea};
 
 use super::{CommentAnchor, LaneCall, LaneExtent, LaneSurface, locate, query, resolve, texture};
 use crate::format::EditorKind;
@@ -265,6 +265,86 @@ fn pixel_at_fraction(rows: &[RowSpan], fraction: f32) -> f32 {
 /// and a mark with nowhere to land is worse than a mark a pixel out of place.
 fn row_weight_from_chars(chars: usize) -> f32 {
     chars.max(1) as f32
+}
+
+/// One switch a lane's context menu offers: what to call it, and the flag itself.
+///
+/// A pair rather than a widget so the list can be tested. What has to hold is
+/// that the flag is *the same flag* the settings page writes, and a test that
+/// built menu widgets could only look at their labels.
+pub(super) struct LaneSwitch {
+    pub label: LocalizedString,
+    pub flag: Signal<bool>,
+}
+
+/// What a lane offers when it is right-clicked, in order.
+///
+/// The providers registered for this surface, then the two switches that turn
+/// off what is drawing them. Ordered so the destructive one is last and cannot
+/// be hit on the way to a mark.
+///
+/// **Every flag comes from `SettingsStore::signal`, which is get-or-create**:
+/// the same key returns clones of one signal, so this menu, the Margin marks
+/// settings page and the per-provider gate in [`resolve`](super::resolve) are
+/// three views of one flag rather than three copies of a value. That is the
+/// whole reason this is safe to offer in two places at once, and it is why the
+/// test below flips one and reads the other.
+pub(super) fn lane_switches(
+    store: &teksilo::settings::SettingsStore,
+    surface: LaneSurface,
+) -> Vec<LaneSwitch> {
+    let mut out: Vec<LaneSwitch> = super::registered_for(surface)
+        .into_iter()
+        .map(|spec| LaneSwitch {
+            label: (spec.label)(),
+            flag: store.signal(&spec.settings_key(), spec.default_on),
+        })
+        .collect();
+    out.push(LaneSwitch {
+        label: tr!(settings_margin_lane_texture()),
+        flag: store.signal(
+            crate::MARGIN_LANE_TEXTURE_KEY,
+            crate::MARGIN_LANE_TEXTURE_DEFAULT,
+        ),
+    });
+    out.push(LaneSwitch {
+        label: tr!(settings_margin_lane_enabled()),
+        flag: store.signal(
+            crate::MARGIN_LANE_ENABLED_KEY,
+            crate::MARGIN_LANE_ENABLED_DEFAULT,
+        ),
+    });
+    out
+}
+
+/// The lane's own context menu: turn a kind of mark on or off where you are
+/// looking at it, without going to Settings for a switch you can see the effect
+/// of from here.
+///
+/// `checked`, not `reflect_checked`: activation writes the flag, which is what
+/// makes this a control rather than a readout. The lane already binds every one
+/// of these keys at `Rebuild` (see `LaneHost::build`), so the strip redraws
+/// before the menu has finished closing.
+///
+/// Built at click time from the live registry rather than captured at mount, so
+/// an extension that registers a provider after this surface was built still
+/// appears in it.
+///
+/// The last item turns the lane itself off, so the thing that was right-clicked
+/// disappears. That is the convention -- an overview ruler's own menu hides the
+/// ruler -- and it is last for the same reason a delete is last.
+fn lane_menu(store: &teksilo::settings::SettingsStore, surface: LaneSurface) -> MenuList {
+    let switches = lane_switches(store, surface);
+    let providers = switches.len().saturating_sub(2);
+    let mut menu = MenuList::new();
+    for (i, switch) in switches.into_iter().enumerate() {
+        // Between what the lane marks and what draws it at all.
+        if i == providers {
+            menu = menu.separator();
+        }
+        menu = menu.item(MenuItem::new(switch.label).checked(switch.flag));
+    }
+    menu
 }
 
 /// Build the lane for a single-document surface, beside `area`.
@@ -1030,6 +1110,20 @@ impl Widget for LaneHost {
         )
         .caret(self.caret.clone())
         .access_label(super::default_lane_label())
+        .context_menu({
+            // On the widget, not around it: `ShowContextMenu` is advertised on
+            // the node that owns the factory, and the node a screen reader
+            // lands on is the one the lane emits. A factory on a wrapper opens
+            // for a pointer and is invisible to everyone else.
+            //
+            // Built at click time from the live registry rather than captured
+            // at mount, so a provider registered after this surface was built
+            // still appears in it.
+            let surface = self.inputs.surface;
+            move |_pos, ctx: &mut teksilo::core::widget::EventContext| {
+                Some(Box::new(lane_menu(ctx.settings(), surface)) as Box<dyn Widget>)
+            }
+        })
         .on_jump({
             // Through the same mapping, in reverse. Multiplying the fraction by
             // `max_scroll` would land at that fraction of the *pixels*, which is a
@@ -1378,6 +1472,130 @@ mod tests {
     // holding the extents constant *by construction*, which assumes exactly what
     // needs proving.
 
+    /// The inputs a lane reads, over `rows` -- each `(item, prose, top, height)`.
+    fn inputs_over(rows: &[(EntityId, &str, f32, f32)]) -> LaneInputs {
+        let extents = crate::margin_lane::RowExtents::new();
+        let mut docs: HashMap<EntityId, teksilo::text_document::TextDocument> = HashMap::new();
+        for (item, prose, top, height) in rows {
+            let doc = teksilo::text_document::TextDocument::new();
+            doc.set_plain_text(prose).expect("set_plain_text");
+            assert_eq!(
+                doc.character_count(),
+                prose.chars().count(),
+                "the fixture must be settled before it is measured"
+            );
+            docs.insert(*item, doc);
+            extents.report(*item, *top, *height);
+        }
+        let lookup = Rc::new(move |item: EntityId| {
+            docs.get(&item).map(|doc| LaneRow {
+                item,
+                doc: doc.clone(),
+                comments: None,
+                markers: DialogueMarkers::none(),
+            })
+        });
+        LaneInputs {
+            app_ctx: Rc::new(frontend::AppContext::new()),
+            ids: crate::app_ids::AppIds::new(),
+            surface: LaneSurface::Editor,
+            kind: EditorKind::Prose,
+            // Detached: no editor is registered, so `handle_for_item` answers
+            // `None` and `text_extent` returns the slice unnarrowed. That is the
+            // pre-layout fallback, and it is what isolates `resolve`'s own
+            // arithmetic from the editor geometry composed onto it.
+            format: crate::format::FormatViewModel::detached(),
+            rows: LaneRows::Placed {
+                extents,
+                row: lookup,
+            },
+        }
+    }
+
+    /// **The lane announces that it has a menu.**
+    ///
+    /// A factory reaches a pointer wherever it is attached, because the search
+    /// walks up the parent chain. An assistive technology offers only what the
+    /// node it is on advertises, and `ShowContextMenu` is advertised on the node
+    /// that owns the factory. Attaching it to a wrapper around the lane -- which
+    /// is what this did first -- left the announced node without it, so the menu
+    /// worked for a mouse and did not exist for anyone else. The live tree said
+    /// so plainly: the lane's node listed no actions at all.
+    #[test]
+    fn the_lane_advertises_its_menu_on_the_node_that_carries_its_name() {
+        use teksilo::core::accesskit;
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        let id = tree.add(lane_for(
+            &ScrollArea::new(),
+            inputs_over(&[(1, "prose", 0.0, 100.0)]),
+        ));
+        tree.layout(teksilo::canvas::SizeProposal::exact(40.0, 400.0));
+
+        // The node an assistive technology lands on: the one with the lane's own
+        // role and name, not the host that mounted it.
+        let update = tree.sync_accessibility();
+        let named = update
+            .nodes
+            .iter()
+            .find(|(_, n)| n.role() == accesskit::Role::Group && n.label().is_some())
+            .map(|(_, n)| n)
+            .expect("the lane emits a named node");
+        assert!(
+            named.supports_action(accesskit::Action::ShowContextMenu),
+            "the node carrying the lane's name must advertise its menu; \
+             a factory on a wrapper is a menu only a mouse can find"
+        );
+        let _ = id;
+    }
+
+    /// **Right-clicking the lane opens its menu.**
+    ///
+    /// The wiring, which no amount of reading settles: the factory is attached to
+    /// the host, the pointer lands on the `MarginLane` inside it, and whether the
+    /// walk up finds the factory is a fact about the arena rather than about
+    /// either file.
+    #[test]
+    fn right_clicking_the_lane_opens_its_menu() {
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        let area = ScrollArea::new();
+        let id = tree.add(lane_for(&area, inputs_over(&[(1, "prose", 0.0, 100.0)])));
+        tree.layout(teksilo::canvas::SizeProposal::exact(40.0, 400.0));
+        tree.render();
+
+        assert!(
+            tree.active_overlays().is_empty(),
+            "nothing is open before the click"
+        );
+        let b = tree.bounds(id);
+        tree.dispatch_event(teksilo::core::event::WidgetEvent::PointerDown {
+            position: teksilo::canvas::Point::new(b.x + b.width / 2.0, b.y + b.height / 2.0),
+            button: teksilo::core::event::PointerButton::Secondary,
+            modifiers: teksilo::core::event::Modifiers::NONE,
+        });
+        assert_eq!(
+            tree.active_overlays().len(),
+            1,
+            "a secondary press on the lane must open the lane's own menu"
+        );
+
+        // And it survives the release. A right-click is a press AND a release,
+        // and the release lands on the lane -- which is outside the menu that
+        // just opened over it. A menu dismissed by the second half of the click
+        // that opened it never appears at all.
+        tree.dispatch_event(teksilo::core::event::WidgetEvent::PointerUp {
+            position: teksilo::canvas::Point::new(b.x + b.width / 2.0, b.y + b.height / 2.0),
+            button: teksilo::core::event::PointerButton::Secondary,
+            modifiers: teksilo::core::event::Modifiers::NONE,
+        });
+        assert_eq!(
+            tree.active_overlays().len(),
+            1,
+            "the release that completes the right-click must not dismiss the menu"
+        );
+    }
+
     /// A lane over `rows`, each `(item, prose, top, height)`.
     ///
     /// The pixel tops and heights are supplied independently of the prose, because
@@ -1587,6 +1805,117 @@ mod tests {
         assert!(
             placed[0].extent.offset.abs() < 1e-6,
             "and still starts at 0.0"
+        );
+    }
+
+    // ── the lane's own context menu ──────────────────────────────────────────
+
+    /// A settings store of its own, on a temp file it does not share.
+    fn temp_store() -> teksilo::settings::SettingsStore {
+        use std::sync::atomic::{AtomicU32, Ordering};
+        static N: AtomicU32 = AtomicU32::new(0);
+        let n = N.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "skribisto_lane_menu_{}_{n}.toml",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        teksilo::settings::SettingsStore::open(path).expect("open temp settings store")
+    }
+
+    fn probe_spec() -> crate::margin_lane::LaneProviderSpec {
+        crate::margin_lane::LaneProviderSpec {
+            id: "menu-probe".to_string(),
+            label: Rc::new(|| lit!("Probe")),
+            hint: Rc::new(|| lit!("Probe")),
+            column: crate::widgets::LaneColumn::Left,
+            shape: crate::widgets::LaneShape::Dot,
+            palette_slot: 1,
+            surfaces: &[LaneSurface::Editor],
+            default_on: true,
+            refresh: crate::margin_lane::LaneRefresh::Manual,
+            marks: Rc::new(|_| Vec::new()),
+        }
+    }
+
+    /// **The menu writes the flag the settings page writes.**
+    ///
+    /// The one claim that makes offering these switches in two places safe, and
+    /// the one that would fail in silence: a key fetched a second time that came
+    /// back as a *fresh* signal would leave the menu ticking a box nothing reads,
+    /// with the lane and the settings page both still on the old value and no
+    /// error anywhere. Neither surface's own code shows it.
+    ///
+    /// So this flips it through the menu's handle and reads it back through the
+    /// key, which is what the settings page's `Toggle` and the per-provider gate
+    /// in `resolve` each do independently.
+    #[test]
+    fn the_menu_and_the_settings_page_hold_one_flag_between_them() {
+        let store = temp_store();
+        let _h = crate::margin_lane::register_lane_provider("test.menu.shared", probe_spec())
+            .expect("register");
+        let key = probe_spec().settings_key();
+
+        let switches = lane_switches(&store, LaneSurface::Editor);
+        let probe = switches
+            .iter()
+            .find(|s| s.label.resolve_now() == "Probe")
+            .expect("the registered provider is offered");
+        assert!(probe.flag.get(), "it starts on, as the spec says");
+
+        probe.flag.set(false);
+
+        assert!(
+            !store.signal(&key, true).get(),
+            "the menu's flag is a different signal from the one everything else reads"
+        );
+    }
+
+    /// The menu offers this surface's providers, then the two switches that turn
+    /// off what draws them -- the lane's own last, because activating it makes
+    /// the thing that was right-clicked disappear and it must not sit on the way
+    /// to a mark.
+    #[test]
+    fn the_menu_lists_this_surfaces_providers_then_the_two_switches() {
+        let store = temp_store();
+        let _h = crate::margin_lane::register_lane_provider("test.menu.order", probe_spec())
+            .expect("register");
+
+        let editor = lane_switches(&store, LaneSurface::Editor);
+        assert_eq!(
+            editor.len(),
+            crate::margin_lane::registered_for(LaneSurface::Editor).len() + 2,
+            "every provider on this surface, plus the texture and the lane itself"
+        );
+
+        // Identified by flipping rather than by label: what matters is which
+        // switch it is, not what it is called.
+        editor.last().expect("a switch").flag.set(false);
+        assert!(
+            !store
+                .signal(
+                    crate::MARGIN_LANE_ENABLED_KEY,
+                    crate::MARGIN_LANE_ENABLED_DEFAULT,
+                )
+                .get(),
+            "the last item must be the lane's own switch"
+        );
+        editor[editor.len() - 2].flag.set(false);
+        assert!(
+            !store
+                .signal(
+                    crate::MARGIN_LANE_TEXTURE_KEY,
+                    crate::MARGIN_LANE_TEXTURE_DEFAULT,
+                )
+                .get(),
+            "and the one before it the texture"
+        );
+
+        // A surface the provider does not list gets a shorter menu, rather than
+        // one filtered when it is drawn.
+        assert_eq!(
+            lane_switches(&store, LaneSurface::SearchPreview).len(),
+            crate::margin_lane::registered_for(LaneSurface::SearchPreview).len() + 2
         );
     }
 }

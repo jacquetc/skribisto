@@ -67,14 +67,14 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use teksilo::canvas::{Canvas, Rect, Size, SizeProposal};
+use teksilo::canvas::{Canvas, Point, Rect, Size, SizeProposal};
 use teksilo::core::accessibility::{AccessNodeBuilder, SyntheticKind};
 use teksilo::core::accesskit;
 use teksilo::core::binding::BindingLevel;
 use teksilo::core::event::{EventResponse, PointerButton};
 use teksilo::core::gesture::DragPhase;
 use teksilo::core::signal::{Prop, Signal};
-use teksilo::core::widget::{LayoutContext, LayoutResponse, PaintContext, Widget};
+use teksilo::core::widget::{EventContext, LayoutContext, LayoutResponse, PaintContext, Widget};
 use teksilo::core::widget_builder::HandlerSet;
 use teksilo::core::widget_id::WidgetId;
 use teksilo::i18n::LocalizedString;
@@ -424,6 +424,16 @@ pub struct MarginLane {
     /// Whether [`MarginLane::texture_width`] was called. See [`MarginLane::texture`].
     texture_width_set: bool,
     on_jump: Option<Rc<dyn Fn(f32)>>,
+    /// What the strip offers on a right-click, if anything.
+    ///
+    /// Held here rather than wrapped around the lane from outside, and the
+    /// reason is the accessibility tree: a node advertises `ShowContextMenu`
+    /// only where it owns the factory ITSELF, and the node a screen reader
+    /// lands on is the one this widget emits. A factory on a wrapper works for
+    /// a pointer and is invisible to everyone else -- which is the same shape
+    /// of gap as a control that only exists on hover.
+    #[allow(clippy::type_complexity)]
+    context_menu: Option<Rc<dyn Fn(Point, &mut EventContext) -> Option<Box<dyn Widget>>>>,
     access_label: Option<LocalizedString>,
     /// Bounds as of the last **layout**, not the last paint.
     ///
@@ -485,6 +495,7 @@ impl MarginLane {
             texture_width: Prop::from(0.0),
             texture_width_set: false,
             on_jump: None,
+            context_menu: None,
             access_label: None,
             cached_bounds: Rc::new(Cell::new(Rect::ZERO)),
             selected: Signal::new(None),
@@ -551,6 +562,24 @@ impl MarginLane {
     /// which is the reason this is a fraction of the map and not a pixel: the two
     /// are only the same number where the content is laid out uniformly, and a
     /// manuscript is not.
+    /// What the strip offers on a right-click.
+    ///
+    /// The widget knows nothing about what the items mean -- the factory is
+    /// called with an `EventContext` and builds whatever the host wants. It
+    /// lives on the widget rather than on a wrapper so the menu is announced:
+    /// `ShowContextMenu` is advertised on the node that owns the factory, and
+    /// that has to be the node carrying this widget's role and name.
+    ///
+    /// Right-click is free here by construction: the tap recogniser accepts the
+    /// primary button only, and the box drag matches Primary too.
+    pub fn context_menu(
+        mut self,
+        factory: impl Fn(Point, &mut EventContext) -> Option<Box<dyn Widget>> + 'static,
+    ) -> Self {
+        self.context_menu = Some(Rc::new(factory));
+        self
+    }
+
     pub fn on_jump(mut self, f: impl Fn(f32) + 'static) -> Self {
         self.on_jump = Some(Rc::new(f));
         self
@@ -734,6 +763,10 @@ impl Widget for MarginLane {
         // keyboard users reach the marks themselves.
         let mut handlers = HandlerSet::new().focusable(true);
 
+        if let Some(factory) = self.context_menu.clone() {
+            handlers = handlers.context_menu(move |pos, ctx| factory(pos, ctx));
+        }
+
         // The viewport box is a **handle**, and behaves like one: press it and it
         // travels with the pointer, keeping the offset it was grabbed at; press
         // the strip anywhere else and it comes to you, centred.
@@ -846,6 +879,7 @@ impl Widget for MarginLane {
                     texture_width: texture_width.clone(),
                     texture_width_set: true,
                     on_jump: None,
+                    context_menu: None,
                     access_label: None,
                     cached_bounds: cached_bounds.clone(),
                     selected: selected.clone(),
