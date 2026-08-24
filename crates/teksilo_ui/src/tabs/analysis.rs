@@ -27,8 +27,8 @@ use teksilo::core::widget::WidgetPlacement;
 use teksilo::data::{ChartDatum, ChartModel, ChartSeries};
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Button, ButtonVariant, Expand, HStack, Padding, ScrollArea, Segment, SegmentedControl, Spacer,
-    Switcher, TextWidget, Toggle, VStack,
+    Button, ButtonVariant, Expand, HStack, MaxSize, Padding, ScrollArea, Segment, SegmentedControl,
+    Spacer, Switcher, TextWidget, Toggle, VStack,
 };
 use teksilo::widgets::{SegmentId, segmented_control};
 use teksilo_charts::BarChart;
@@ -172,7 +172,19 @@ fn builtin_categories() -> Vec<AnalysisCategorySpec> {
                 label: Rc::new(move || c.label()),
                 view: Rc::new(move |vm, dto| match c {
                     AnalysisCategory::Shape => {
-                        Box::new(shape_view(dto, vm.ignore_empty(), vm.footnote_words()))
+                        // Read once per build, never per bar: a generated name depends on
+                        // every item before it, so this walks the manuscript.
+                        let names = vm
+                            .ids()
+                            .work_id
+                            .get()
+                            .map(|id| crate::models::NameContext::read(&vm.app_ctx(), id));
+                        Box::new(shape_view(
+                            dto,
+                            vm.ignore_empty(),
+                            vm.footnote_words(),
+                            names.as_ref(),
+                        ))
                     }
                     // Reads nothing from `dto`: this category measures how text
                     // *arrived*, which no analysis run produces and no scope
@@ -407,6 +419,48 @@ fn heading(text: impl Into<LocalizedString>) -> impl Widget {
         .color(TextRole::Secondary)
 }
 
+/// The width a paragraph of explanatory prose is held to.
+///
+/// About eighty characters at the body size, which is the top of the range a reader can
+/// track from the end of one line to the start of the next.
+const PROSE_MEASURE: f32 = 640.0;
+
+/// A paragraph explaining what a section measures, held to [`PROSE_MEASURE`].
+///
+/// ⚠ Not the same thing as [`note`], and the difference is the whole reason this exists.
+/// `TextWidget` wraps by default, but it only wraps against a width its parent proposes,
+/// and nothing above these sections proposes one: the pane hands its children the whole
+/// content column. On a maximised window that column is around 1,450 logical pixels, so a
+/// paragraph laid out through `note` alone becomes a single line of roughly two hundred
+/// characters. It is not a wrapping bug; there is simply no width to wrap at until
+/// something names one.
+fn prose(text: impl Into<LocalizedString>) -> impl Widget {
+    MaxSize::width(PROSE_MEASURE).child(note(text))
+}
+
+/// **What this row is called on screen**, which is not always its title.
+///
+/// An untitled chapter is "Chapter 3" in the outline, generated from its position in the
+/// manuscript, and the axis of a chart of that same manuscript has to agree: a column of
+/// bars all labelled with the same blank is not an axis. [`NameContext`] is the one place
+/// that question is answered, and the outline, the search tree and this chart all ask it.
+///
+/// Falls back to the row's own title when there is no context to ask (a test, or a project
+/// still loading) and when the row has no generated name to offer: only structural rows
+/// are numbered, so a genuinely untitled leaf scene keeps whatever it had.
+fn bar_label(
+    names: Option<&crate::models::NameContext>,
+    item_id: common::types::EntityId,
+    title: &str,
+) -> String {
+    if !title.trim().is_empty() {
+        return title.to_string();
+    }
+    names
+        .and_then(|n| n.item(item_id).and_then(|it| n.generated_name(it)))
+        .unwrap_or_else(|| title.to_string())
+}
+
 fn scenes_of(dto: &BookAnalysisResultDto) -> Vec<&SceneAnalysis> {
     match &dto.scenes {
         SceneAnalyses::Measured(rows) => rows.iter().collect(),
@@ -446,6 +500,7 @@ fn shape_view(
     dto: &BookAnalysisResultDto,
     ignore_empty: Signal<bool>,
     footnote_words: Signal<Option<i64>>,
+    names: Option<&crate::models::NameContext>,
 ) -> impl Widget {
     // Read once, up front, so every return path below — including the two early "no
     // scenes"/"all texts empty" ones — carries the same footnote line. It does not
@@ -493,6 +548,7 @@ fn shape_view(
     let mut dialogue_points: Vec<ChartDatum<String>> = Vec::new();
     for s in &scenes {
         let SceneAnalysis::Measured {
+            item_id,
             title,
             words,
             dialogue,
@@ -501,6 +557,7 @@ fn shape_view(
         else {
             continue;
         };
+        let title = &bar_label(names, *item_id, title);
         // One colour for the whole series, and the median drawn as a line below. The
         // earlier design tinted below-median bars `SurfaceRole::Raised` to set them apart,
         // which in the light theme is `#FFFFFF` — the same value as the `Content` page they
@@ -637,7 +694,7 @@ fn arrivals_view(counts: &common::arrival::Counts) -> impl Widget {
     VStack::new()
         .spacing(10.0)
         .child(heading(tr!(analysis_arrivals())))
-        .child(note(tr!(analysis_arrivals_explainer())))
+        .child(prose(tr!(analysis_arrivals_explainer())))
         .child(rows)
         // Below the figures, not above: they are caveats on what was just read,
         // and a reader who takes nothing else from this pane should still take
@@ -781,9 +838,138 @@ mod tests {
             &d,
             Signal::new(true),
             Signal::new(Some(420)),
+            None,
         )));
         tree.layout(SizeProposal::exact(700.0, 900.0));
         assert!(tree.bounds(id).height > 0.0, "the pane laid out to nothing");
+    }
+
+    // ── the chart's axis labels ──────────────────────────────────────────────
+
+    /// **A titled row keeps its title, and an untitled one does not become blank.**
+    ///
+    /// A chapter-folder book keeps its prose in unnamed rows, so on a real manuscript most
+    /// of this chart's bars have no title of their own. The outline names them by their
+    /// position and this axis has to agree, or one book is labelled two ways in two panes
+    /// three inches apart.
+    ///
+    /// The generated-name path itself needs a store to number against; what is asserted
+    /// here is that the fallbacks do not lose a name that already exists.
+    #[test]
+    fn a_bar_keeps_its_own_title_and_never_falls_back_over_one() {
+        assert_eq!(super::bar_label(None, 7, "Prologue"), "Prologue");
+        assert_eq!(
+            super::bar_label(None, 7, "  Low tide  "),
+            "  Low tide  ",
+            "a title with surrounding space is still a title"
+        );
+        assert_eq!(
+            super::bar_label(None, 7, ""),
+            "",
+            "with nothing to ask, the row keeps exactly what it had"
+        );
+    }
+
+    // ── the prose measure ────────────────────────────────────────────────────
+
+    /// A paragraph of the length these sections actually carry.
+    const LONG: &str = "How text reached this project while it has been open. It says which \
+                        route the characters came down, and nothing at all about who wrote \
+                        them: a writer who drafts elsewhere and pastes has pasted, and one \
+                        who dictates has dictated. There is no number to aim for here.";
+
+    /// **A paragraph must wrap, and a wide pane is what stops it.**
+    ///
+    /// `TextWidget` wraps by default, but only against a width its parent proposes. Given
+    /// the whole content column of a maximised window it has no width to wrap at and lays
+    /// out as one very long line. This asserts the opposite: offered far more room than the
+    /// measure, the paragraph takes the measure and grows downwards instead.
+    ///
+    /// ⚠ Measured on the **child**, never on the root. A root is handed
+    /// `SizeProposal::exact` and reports exactly that whatever it wanted, so a root-level
+    /// assertion here passes and fails for reasons that have nothing to do with wrapping.
+    #[test]
+    fn an_explainer_paragraph_is_held_to_a_measure_however_wide_the_pane_is() {
+        use super::prose;
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::prelude::{SizeProposal, lit};
+        use teksilo::widgets::VStack;
+
+        let mut tree = WidgetTree::new();
+        // A literal rather than the real key: this asserts a layout rule, and it must not
+        // start passing because a translator shortened a sentence.
+        let para = tree.add_boxed(Box::new(prose(lit!(LONG))));
+        let _root = tree.add_boxed(Box::new(VStack::new().add_child(para)));
+        // Wider than any measure: a maximised window on a large display.
+        tree.layout(SizeProposal::exact(1450.0, 900.0));
+
+        let b = tree.bounds(para);
+        assert!(
+            b.width <= super::PROSE_MEASURE + 0.5,
+            "the paragraph took {}px of a 1450px pane; it should stop at {}",
+            b.width,
+            super::PROSE_MEASURE
+        );
+        assert!(
+            b.height > 0.0,
+            "the paragraph laid out to nothing, so the width assertion above proves nothing"
+        );
+    }
+
+    /// And it is the cap doing it, not the sentence running out.
+    ///
+    /// The same paragraph without the cap takes the whole column. Without this, the test
+    /// above would pass just as well on a sentence that happened to be short.
+    ///
+    /// ⚠ This asserts **width**, not line count, and that is a limit of the harness rather
+    /// than a choice. A bare `WidgetTree` has no typesetter attached, so line breaking is
+    /// never exercised here and both paragraphs report a single line whatever width they
+    /// are given. What the cap does to the *text* has to be seen with a real text backend.
+    #[test]
+    fn the_same_paragraph_uncapped_takes_the_whole_pane() {
+        use super::{note, prose};
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::prelude::{SizeProposal, lit};
+        use teksilo::widgets::VStack;
+
+        let mut tree = WidgetTree::new();
+        let capped = tree.add_boxed(Box::new(prose(lit!(LONG))));
+        let bare = tree.add_boxed(Box::new(note(lit!(LONG))));
+        let _root = tree.add_boxed(Box::new(VStack::new().add_child(capped).add_child(bare)));
+        tree.layout(SizeProposal::exact(1450.0, 900.0));
+
+        let (c, u) = (tree.bounds(capped), tree.bounds(bare));
+        assert!(
+            u.width > super::PROSE_MEASURE,
+            "the uncapped paragraph was {}px wide, so this pane is not wide enough to \
+             demonstrate anything",
+            u.width
+        );
+        assert!(
+            c.width < u.width,
+            "capped width {} is not less than uncapped width {}: the cap did nothing",
+            c.width,
+            u.width
+        );
+    }
+
+    /// The measure is a reading constraint, not a resizing one: a pane narrower than the
+    /// measure must still get the whole of its own width rather than a cropped column.
+    #[test]
+    fn a_narrow_pane_keeps_its_full_width() {
+        use super::prose;
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::prelude::{SizeProposal, lit};
+        use teksilo::widgets::VStack;
+
+        let mut tree = WidgetTree::new();
+        let para = tree.add_boxed(Box::new(prose(lit!(LONG))));
+        let _root = tree.add_boxed(Box::new(VStack::new().add_child(para)));
+        tree.layout(SizeProposal::exact(320.0, 900.0));
+        assert!(
+            tree.bounds(para).width <= 320.0,
+            "a cap must never make a child wider than the space it was offered"
+        );
     }
 
     /// Before the companion `count_words` operation has landed, the figure is `None` —
@@ -799,6 +985,7 @@ mod tests {
             &d,
             Signal::new(true),
             Signal::new(None),
+            None,
         )));
         tree.layout(SizeProposal::exact(700.0, 900.0));
         assert!(tree.bounds(id).height > 0.0, "the pane laid out to nothing");
@@ -819,6 +1006,7 @@ mod tests {
             &d,
             Signal::new(true),
             Signal::new(Some(12)),
+            None,
         )));
         tree.layout(SizeProposal::exact(700.0, 900.0));
         assert!(tree.bounds(id).height > 0.0, "the pane laid out to nothing");
