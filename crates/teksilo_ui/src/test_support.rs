@@ -108,6 +108,18 @@ pub(crate) fn click(tree: &mut WidgetTree, id: WidgetId) {
     });
 }
 
+/// As [`tree_with_events`], plus whatever `state` the caller supplies: the general
+/// form [`tree_with_settings`]/[`tree_with_toast_registry`] each specialise for one
+/// type. Reach for this directly when a pane needs more than one `app_state` type at
+/// once (e.g. both `TagsViewModel` and `MentionIndex`), rather than layering two
+/// single-purpose helpers that would each build (and discard) their own `WidgetTree`.
+pub(crate) fn tree_with_app_state(
+    app_ctx: &Rc<AppContext>,
+    state: HashMap<TypeId, Box<dyn Any>>,
+) -> WidgetTree {
+    tree_with_events_and_state(app_ctx, state)
+}
+
 fn tree_with_events_and_state(
     app_ctx: &Rc<AppContext>,
     state: HashMap<TypeId, Box<dyn Any>>,

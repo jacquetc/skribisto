@@ -132,6 +132,9 @@ pub fn create_type_icon(t: skribisto_model::CreateType) -> IconWidget {
         CreateType::ParatextFolder => (BinderItemRole::Folder, BinderItemSubRole::Paratext),
         CreateType::Folder => (BinderItemRole::Folder, BinderItemSubRole::None),
         CreateType::EndOfBook => (BinderItemRole::Item, BinderItemSubRole::BookEnd),
+        // Structurally a Note (see the variant's own doc), so the same glyph: the row in
+        // the menu reads as kin to "Note" rather than as an unrelated new concept.
+        CreateType::StoryBibleEntry => (BinderItemRole::Item, BinderItemSubRole::Note),
     };
     role_sub_role_icon(&role, &sub_role)
 }

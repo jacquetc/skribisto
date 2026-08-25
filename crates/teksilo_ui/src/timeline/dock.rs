@@ -1333,6 +1333,28 @@ mod tests {
         }
     }
 
+    /// The dock's label, resolved fresh in [`timeline_dock`] every build
+    /// (`tr!(timeline_title())`), not persisted anywhere: see `AppDock`'s own
+    /// doc for why that is what makes this rename ("Timeline" to "Go back in
+    /// time") safe. This pins the *value*, so a future edit that reverts the
+    /// wording (or, just as easily, a typo) fails here instead of only being
+    /// noticed by someone reading a running window.
+    #[test]
+    fn the_dock_title_reads_go_back_in_time() {
+        assert_eq!(tr!(timeline_title()).resolve_now(), "Go back in time");
+    }
+
+    /// `TIMELINE_DOCK_ID` is the id `DockLayoutState` keys a saved desk by (see
+    /// `crate::docks`'s module doc): it must survive the label rename byte for
+    /// byte, or every writer's saved bottom-band layout is dropped as unknown on
+    /// their next launch. Pinned to the literal value, not to the `DOCK_ID_BASE +
+    /// 11` expression that produced it, so a change to either side of that sum
+    /// still fails this test.
+    #[test]
+    fn the_dock_id_is_unchanged_by_the_rename() {
+        assert_eq!(crate::docks::TIMELINE_DOCK_ID, 0xD0C_000B);
+    }
+
     fn moments(n: usize, days: i64) -> Vec<crate::timeline::Moment> {
         use skrib_format::versions::VersionRef;
         let start = chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap();

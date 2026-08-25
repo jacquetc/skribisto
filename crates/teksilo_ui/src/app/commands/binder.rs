@@ -9,14 +9,24 @@ use teksilo::prelude::*;
 use teksilo::widgets::message_box::EventContextMessageBoxExt;
 use teksilo::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton};
 
+use skribisto_model::CreateType;
+
 use crate::intents::AppIntent;
+use crate::story_bible;
 
 use super::CommandDeps;
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let outline = deps.outline.clone();
-        ctx.register_action_global(Action::new("binder.new_item").on_invoke(move |i, _c| {
+        let modal_deps = story_bible::modal::ModalDeps {
+            app_ctx: deps.app_ctx.clone(),
+            ids: deps.ids.clone(),
+            tags: deps.session.tags.clone(),
+            templates: deps.session.note_templates.clone(),
+            editors: deps.editors.clone(),
+        };
+        ctx.register_action_global(Action::new("binder.new_item").on_invoke(move |i, c| {
             if let Some(AppIntent::NewItem {
                 create_type,
                 relation,
@@ -27,13 +37,24 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 // drilled-into container id explicitly. The intent carries a store id, so
                 // it is resolved to the tree's durable key here — and an anchor whose row
                 // has left the tree falls back to the selection rather than to nothing.
-                outline.add_recommended(
-                    anchor_item_id.and_then(|id| outline.key_for_item(id)),
-                    &skribisto_model::Recommendation {
-                        create_type: *create_type,
-                        relation: *relation,
-                    },
-                );
+                let anchor = anchor_item_id.and_then(|id| outline.key_for_item(id));
+                let rec = skribisto_model::Recommendation {
+                    create_type: *create_type,
+                    relation: *relation,
+                };
+                if *create_type == CreateType::StoryBibleEntry {
+                    // Create immediately, matching every sibling in the ＋ Create
+                    // vocabulary exactly: no modal stands between the click and the
+                    // row existing. Then open the configuration step on it. See
+                    // `story_bible::modal`'s own doc for why this is two doors, not
+                    // one, and `OutlineViewModel::add_recommended_returning_id`'s for
+                    // why the id has to come back at all.
+                    if let Some(item_id) = outline.add_recommended_returning_id(anchor, &rec) {
+                        story_bible::modal::present_configure(modal_deps.clone(), item_id, c);
+                    }
+                } else {
+                    outline.add_recommended(anchor, &rec);
+                }
             }
         }));
     }

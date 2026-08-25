@@ -187,6 +187,12 @@ impl OverviewViewModel {
             let me = self.clone();
             ctx.effect(&self.inner.filters.sort, move |_| me.recompute_projecting());
         }
+        {
+            let me = self.clone();
+            ctx.effect(&self.inner.filters.tag_filter, move |_| {
+                me.recompute_projecting()
+            });
+        }
         // The count follows the *visible* row set, so it reflects an active search.
         //
         // Registered **once**: `wire` runs on every build of the pane, and the `Switcher`
@@ -299,6 +305,20 @@ impl OverviewViewModel {
     }
     pub fn sort_signal(&self) -> Signal<Option<(String, SortDirection)>> {
         self.inner.filters.sort.clone()
+    }
+    /// The tag filter chip row's own checked set: see [`OverviewFilters::tag_filter`].
+    pub fn tag_filter_signal(&self) -> Signal<Vec<u64>> {
+        self.inner.filters.tag_filter.clone()
+    }
+    /// This tab's backend handle, needed by the Books column's own gate
+    /// (`crate::docks::inspector::live_books`), which the column set reads fresh on
+    /// every table build rather than caching, the same way the Inspector's own
+    /// Books section does.
+    pub fn app_ctx(&self) -> Rc<AppContext> {
+        self.inner.app_ctx.clone()
+    }
+    pub fn ids(&self) -> AppIds {
+        self.inner.ids.clone()
     }
     pub fn count_signal(&self) -> Signal<usize> {
         self.inner.count.clone()
@@ -694,11 +714,12 @@ impl OverviewViewModel {
 
     /// Whether reordering is meaningful right now.
     ///
-    /// False while a search or sort is active. The slice the table draws *is* the
-    /// projected tree, so `parent`/`child_keys` return **sorted or filtered** neighbours:
-    /// "move down" under a word-count sort would move the scene after whichever row is
-    /// next *by word count*, writing a manuscript order the writer never chose, and under
-    /// a search it would jump the row over every hidden sibling. The Corkboard makes the
+    /// False while a search, a tag filter, or a sort is active. The slice the table draws
+    /// *is* the projected tree, so `parent`/`child_keys` return **sorted or filtered**
+    /// neighbours: "move down" under a word-count sort would move the scene after
+    /// whichever row is next *by word count*, writing a manuscript order the writer never
+    /// chose, and under a search or a tag filter it would jump the row over every hidden
+    /// sibling. The Corkboard makes the
     /// same call (`.reorderable(!projecting)`).
     pub fn can_reorder(&self) -> bool {
         !self.inner.projecting.get()
@@ -747,15 +768,16 @@ impl OverviewViewModel {
         );
     }
 
-    /// Whether the table is showing a projection (search and/or sort) rather than
-    /// manuscript order. The table binds this to disable reordering.
+    /// Whether the table is showing a projection (search, tag filter, and/or sort)
+    /// rather than manuscript order. The table binds this to disable reordering.
     pub fn is_projecting(&self) -> Signal<bool> {
         self.inner.projecting.clone()
     }
 
     fn recompute_projecting(&self) {
         let projecting = !self.inner.filters.query.get().trim().is_empty()
-            || self.inner.filters.sort.get().is_some();
+            || self.inner.filters.sort.get().is_some()
+            || !self.inner.filters.tag_filter.get().is_empty();
         if self.inner.projecting.get() != projecting {
             self.inner.projecting.set(projecting);
         }
@@ -966,6 +988,27 @@ mod tests {
         vm.search_query_signal().set(String::new());
         vm.recompute_projecting();
         assert!(vm.can_reorder(), "clearing both restores reordering");
+    }
+
+    /// The tag filter gates reordering the same way search and sort already do: a
+    /// checked chip makes the table a projection, and a row's "neighbour" there is
+    /// a filtered one, not the manuscript's.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn reordering_is_refused_while_a_tag_is_checked() {
+        let vm = vm_for(101).unwrap();
+        assert!(vm.can_reorder());
+
+        vm.tag_filter_signal().set(vec![3]);
+        vm.recompute_projecting();
+        assert!(
+            !vm.can_reorder(),
+            "a checked tag filter must not be reorderable"
+        );
+
+        vm.tag_filter_signal().set(Vec::new());
+        vm.recompute_projecting();
+        assert!(vm.can_reorder(), "clearing the filter restores reordering");
     }
 
     /// The edit buffer lives on the view-model, so a reload cannot re-seed it — the

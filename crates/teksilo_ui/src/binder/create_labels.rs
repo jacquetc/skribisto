@@ -36,6 +36,7 @@ pub fn recommendation_label(create_type: CreateType) -> LocalizedString {
         CreateType::Paratext => tr!(create_paratext()),
         CreateType::ParatextFolder => tr!(create_paratext_folder()),
         CreateType::EndOfBook => tr!(create_book_end()),
+        CreateType::StoryBibleEntry => tr!(create_story_bible_entry()),
     }
 }
 
@@ -71,6 +72,7 @@ pub fn default_title(create_type: CreateType) -> LocalizedString {
         CreateType::Paratext => tr!(new_item_paratext()),
         CreateType::ParatextFolder => tr!(new_item_paratext_folder()),
         CreateType::EndOfBook => tr!(create_book_end()),
+        CreateType::StoryBibleEntry => tr!(new_item_story_bible_entry()),
     }
 }
 
@@ -159,6 +161,7 @@ pub fn recommendation_tooltip_key(create_type: CreateType) -> &'static str {
         CreateType::Paratext => tt::WM_PARATEXT,
         CreateType::ParatextFolder => tt::WM_PARATEXT_FOLDER,
         CreateType::EndOfBook => tt::WM_END_OF_BOOK,
+        CreateType::StoryBibleEntry => tt::WM_STORY_BIBLE_ENTRY,
     }
 }
 

@@ -100,7 +100,7 @@ note-template-section-what-it-says = What it says
 
 ## Preset field prompts
 note-template-field-full-name = Full name
-note-template-field-known-as = Known as
+note-template-field-known-as = Also known as, tracked in the Inspector's Alias field
 note-template-field-age = Age
 note-template-field-role-in-story = Role in the story
 note-template-field-build-and-features = Build and distinguishing features

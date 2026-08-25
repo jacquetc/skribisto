@@ -27,8 +27,8 @@ use uuid::Uuid;
 use crate::goals::format_count;
 use crate::models::COL_GOAL;
 use crate::models::{
-    COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_COMMENTS,
-    COL_TOTAL_WORDS, COL_TYPE,
+    COL_BOOKS, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE,
+    COL_TOTAL_COMMENTS, COL_TOTAL_WORDS, COL_TYPE,
 };
 
 /// Build the column set for a table bound to `vm`.
@@ -41,17 +41,28 @@ use crate::models::{
 /// is thin, which is exactly why the Target column prints a bare number rather than the
 /// "1 234 / 2 000" string that would read better and cost another 130 dp.
 pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow>> {
-    vec![
+    let mut cols = vec![
         title_column(vm),
         type_column(vm),
         label_column(vm),
         tags_column(vm),
+    ];
+    // Gated the same way every other Books surface in this edition is: below two
+    // Books in the Work, no column at all, not a disabled or an empty one. See
+    // `docks::inspector::live_books`'s own doc for why this reads the same
+    // candidate table rather than a second, independently-drifting one.
+    let candidates = crate::docks::inspector::live_books(&vm.app_ctx(), &vm.ids());
+    if candidates.len() >= 2 {
+        cols.push(books_column(vm, candidates));
+    }
+    cols.extend([
         own_words_column(vm),
         total_words_column(vm),
         goal_column(vm),
         open_comments_column(vm),
         total_comments_column(vm),
-    ]
+    ]);
+    cols
 }
 
 /// Give a cell the row's context menu.
@@ -234,6 +245,51 @@ fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     // count, so there is nothing for the column to elide - an ellipsis after the
     // dots would read as one more glyph rather than as truncation.
     .truncation(TruncationPolicy::None)
+}
+
+/// **Books**: which Book or Books the row's own `book_ids` declares it filed under,
+/// resolved to titles. Only ever built when the Work has two or more live Books
+/// ([`overview_columns`]'s own gate); a row with no filing prints nothing at all:
+/// **empty means "not yet filed", never "every Book"** (see `common::entities::BinderItem::books`'s
+/// own doc), so a blank cell here is the honest answer, not a missing one.
+///
+/// Read-only and unsortable, for the same reason the Tags column beside it is
+/// unsortable: which Book or Books a row answers to is a fact you narrow by, the
+/// filter chip row does exactly that job for tags, not one you'd ever want the
+/// table's own row order to follow.
+fn books_column(
+    vm: &OverviewViewModel,
+    candidates: Vec<crate::tags::cast_add::CastCandidate>,
+) -> Column<OverviewRow> {
+    let vm = vm.clone();
+    let titles: std::collections::HashMap<u64, String> =
+        candidates.into_iter().map(|c| (c.id, c.title)).collect();
+    Column::new(
+        COL_BOOKS,
+        tr!(overview_col_books()),
+        move |row: &OverviewRow, _cx| {
+            // An id that no longer resolves to a live Book (trashed, deleted, or never
+            // valid) is dropped rather than shown as a blank placeholder chip: the
+            // same unresolved-target rule the Inspector's own book chip row applies.
+            let text = row
+                .book_ids
+                .iter()
+                .filter_map(|id| titles.get(id))
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ");
+            with_row_menu(
+                &vm,
+                row,
+                TextWidget::new(lit!(text))
+                    .color(TextRole::Secondary)
+                    .single_line(),
+            )
+        },
+    )
+    .width(ColumnWidth::Flex(1.2))
+    .min_width(90.0)
+    .truncation(TruncationPolicy::Ellipsis)
 }
 
 /// **Own words** — this row's own prose only.
@@ -489,6 +545,105 @@ mod tests {
             goal_at,
             total_at + 1,
             "the Target column belongs with the counts, right after Total"
+        );
+    }
+
+    /// **Below two Books, no column at all; at two, it appears.** The same
+    /// "gated at the source, not per surface" discipline every other Books
+    /// control in this edition follows. Deliberately **not** gated to a single
+    /// feature set: `overview_columns` reads `live_books`, which goes straight
+    /// through `frontend::commands::*`, real in both builds, unlike
+    /// `OverviewViewModel`'s own row source, so a real, freshly seeded backend
+    /// (not the `mocks` fixture ids the test above depends on) proves this in
+    /// either build.
+    #[test]
+    fn the_books_column_appears_only_with_two_or_more_books() {
+        use frontend::AppContext;
+        use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+        use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+        use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+        let app_ctx = std::rc::Rc::new(AppContext::new());
+        let work = work_commands::create_orphan_work(&app_ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let binder = binder_commands::create_binder(
+            &app_ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("create binder");
+        let container = binder_item_commands::create_binder_item(
+            &app_ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "Book One".into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            binder.id,
+            0,
+        )
+        .expect("create Book One");
+        let ids = crate::app_ids::AppIds::new();
+        ids.work_id.set(Some(work.id));
+
+        let vm = crate::overview::OverviewViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            container.id,
+            &BinderItemRole::Folder,
+            &BinderItemSubRole::Book,
+            Signal::new(Default::default()),
+            crate::settings::TreeExpansionViewModel::new(
+                app_ctx.clone(),
+                ids.clone(),
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+            Signal::new(Default::default()),
+        )
+        .expect("a Book is overview-capable");
+
+        let one_book: Vec<String> = overview_columns(&vm)
+            .iter()
+            .map(|c| c.id().to_string())
+            .collect();
+        assert!(
+            !one_book.contains(&COL_BOOKS.to_string()),
+            "one Book: no Books column: {one_book:?}"
+        );
+
+        binder_item_commands::create_binder_item(
+            &app_ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "Book Two".into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            binder.id,
+            1,
+        )
+        .expect("create Book Two");
+
+        let two_books: Vec<String> = overview_columns(&vm)
+            .iter()
+            .map(|c| c.id().to_string())
+            .collect();
+        assert!(
+            two_books.contains(&COL_BOOKS.to_string()),
+            "two Books: the Books column must appear: {two_books:?}"
         );
     }
 }

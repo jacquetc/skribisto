@@ -50,6 +50,19 @@ pub fn pov_chips(table: &[DiscoverableEntity], ids: &[u64]) -> Vec<PovChip> {
         .collect()
 }
 
+/// True when a point of view was pinned but does not fully resolve against `table`:
+/// the target was trashed, or lost its discoverable tag, after being pinned.
+///
+/// Distinct from `ids.is_empty()`, which means no point of view was ever set: this
+/// means one *was*, and rotted out from under the pin. [`pov_chips`] silently drops
+/// an id like that rather than rendering a blank chip, which is right for the chip
+/// row itself, but leaves nothing telling the writer the pin is still there and
+/// pointing at nothing, the same blank space a never-set point of view would show.
+/// The Inspector section renders this in plain words instead of staying silent.
+pub fn pov_has_unresolved(table: &[DiscoverableEntity], ids: &[u64]) -> bool {
+    !ids.is_empty() && pov_chips(table, ids).len() < ids.len()
+}
+
 /// The viewpoint characters of one item, each removable.
 pub fn pov_chip_row(chips: Vec<PovChip>, clear: ClearPointOfView) -> impl Widget {
     let mut row = HStack::new().spacing(4.0);
@@ -134,5 +147,37 @@ mod tests {
             .map(|c| c.title)
             .collect();
         assert_eq!(titles, ["Hap", "Devon"]);
+    }
+
+    /// No point of view was ever set: not the "rotted pin" state at all.
+    #[test]
+    fn no_pins_is_not_an_unresolved_pin() {
+        let table = vec![entity(1, "Devon")];
+        assert!(!pov_has_unresolved(&table, &[]));
+    }
+
+    /// Every pin resolves cleanly: nothing to explain to the writer.
+    #[test]
+    fn fully_resolved_pins_are_not_reported_as_unresolved() {
+        let table = vec![entity(1, "Devon"), entity(2, "Hap")];
+        assert!(!pov_has_unresolved(&table, &[1, 2]));
+    }
+
+    /// The one pin that was set points at an id the table no longer has, the way a
+    /// trashed or untagged former viewpoint character would: the pill row must not
+    /// look identical to "no point of view was ever set".
+    #[test]
+    fn a_pin_pointing_at_a_gone_target_is_reported_as_unresolved() {
+        let table = vec![entity(1, "Devon")];
+        assert!(pov_has_unresolved(&table, &[99]));
+    }
+
+    /// One of two pins rotted out; the other still resolves and still renders. The
+    /// state must still be flagged, since a writer glancing at one chip has no way
+    /// to know a second one used to be there.
+    #[test]
+    fn a_partially_resolved_pin_set_is_still_reported_as_unresolved() {
+        let table = vec![entity(1, "Devon")];
+        assert!(pov_has_unresolved(&table, &[1, 99]));
     }
 }

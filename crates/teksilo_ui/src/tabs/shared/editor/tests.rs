@@ -49,6 +49,7 @@ fn card_synopsis_editor_in_a_fixed_box_bounds_a_tall_synopsis_so_it_scrolls() {
         None,
         None,
         None,
+        None,
     );
     let mut tree = WidgetTree::new();
     let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
@@ -210,4 +211,181 @@ fn right_clicking_inside_a_selection_keeps_it() {
         "formatting must not move the selection out from under the next click"
     );
     assert!(handle.is_bold());
+}
+
+/// A fresh editor over the sentence "Elizabeth Bennet walked into the room.",
+/// with `range` selected. `range` is the selection `editor_context_menu` will
+/// read *at menu-build time*, matching how the real factory rebuilds the menu
+/// fresh on every right-click rather than caching a stale one.
+fn editor_with_selection(range: (usize, usize)) -> (TextDocument, EditorHandle) {
+    let doc = TextDocument::new();
+    doc.set_markdown("Elizabeth Bennet walked into the room.")
+        .expect("parse")
+        .wait()
+        .expect("import");
+    let editor = RichTextEditor::editor(doc.clone());
+    let handle = editor.handle();
+    handle.select_range(range.0, range.1);
+    (doc, handle)
+}
+
+/// Whether the built context menu offers "Add as note", detected by an
+/// accessibility label containing "note", which nothing else in this menu's
+/// vocabulary does (no spell corrections and no comment binding are wired
+/// in, so neither the spelling nor the comment group contribute any rows).
+fn add_as_note_row_is_offered(
+    doc: &TextDocument,
+    handle: &EditorHandle,
+    item_id: Option<u64>,
+) -> bool {
+    let menu = editor_context_menu(
+        handle.clone(),
+        Signal::new(0),
+        None,
+        doc.clone(),
+        None,
+        None,
+        item_id,
+    );
+    let mut tree = WidgetTree::new();
+    tree.add(menu);
+    tree.layout(SizeProposal::exact(300.0, 600.0));
+    tree.sync_accessibility()
+        .nodes
+        .iter()
+        .filter_map(|(_, n)| n.label().map(|s| s.to_string()))
+        .any(|l| l.to_lowercase().contains("note"))
+}
+
+/// **The gate on "Add as note".** It must appear only when both a real
+/// selection and a real `item_id` are in hand: the two things the row
+/// hands off to `AppIntent::AddAsNote`, per `editor_context_menu`'s own
+/// doc comment ("empty, or no row to scope it to, and the row simply is
+/// not offered").
+#[test]
+fn add_as_note_row_present_only_with_a_selection_and_an_item_id() {
+    let (doc, with_selection) = editor_with_selection((0, 9)); // "Elizabeth"
+    assert!(
+        add_as_note_row_is_offered(&doc, &with_selection, Some(42)),
+        "a real selection plus a real item_id must offer Add as note"
+    );
+    assert!(
+        !add_as_note_row_is_offered(&doc, &with_selection, None),
+        "with item_id: None (no project row to scope it to) the row must not be offered"
+    );
+
+    let (doc, no_selection) = editor_with_selection((0, 0));
+    assert!(
+        !add_as_note_row_is_offered(&doc, &no_selection, Some(42)),
+        "with no selection there is nothing to file, so the row must not be offered"
+    );
+}
+
+/// A single-child host that owns a global [`Action`] the way `App::build`'s
+/// own command modules do (`ctx.register_action_global`, only reachable from
+/// inside a `build()`), so a mounted menu's `ctx.send_intent` has something
+/// real to reach. Exists only for
+/// [`activating_add_as_note_sends_the_intent_with_the_right_item_id_and_selection`]:
+/// `WidgetTree::push_action` itself is crate-private to teksilo-core.
+#[derive(Debug)]
+struct ActionHost {
+    menu: Option<MenuList>,
+    action: Option<Action>,
+    menu_id: Option<WidgetId>,
+}
+
+impl Widget for ActionHost {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(action) = self.action.take() {
+            ctx.register_action_global(action);
+        }
+        let id = ctx.add(self.menu.take().expect("ActionHost built more than once"));
+        self.menu_id = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        Size::new(
+            proposal.width.unwrap_or(300.0),
+            proposal.height.unwrap_or(600.0),
+        )
+        .into()
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        if let Some(child) = children.first_mut() {
+            child.origin = Point::new(bounds.x, bounds.y);
+            child.size = Size::new(bounds.width, bounds.height);
+        }
+    }
+}
+
+/// **The wiring itself fires.** Activating the row must reach
+/// `AppIntent::AddAsNote` with exactly the `item_id` the menu was built
+/// with and exactly the text that was selected at that moment, proven by
+/// actually navigating the mounted menu and pressing Enter, per the
+/// project's own rule that event behaviour gets a headless test rather
+/// than an inspection.
+#[test]
+fn activating_add_as_note_sends_the_intent_with_the_right_item_id_and_selection() {
+    let (doc, handle) = editor_with_selection((0, 9)); // "Elizabeth"
+    let menu = editor_context_menu(
+        handle.clone(),
+        Signal::new(0),
+        None,
+        doc,
+        None,
+        None,
+        Some(42),
+    );
+
+    let captured: Rc<RefCell<Option<(u64, String)>>> = Rc::new(RefCell::new(None));
+    let captured_for_action = captured.clone();
+    // `register_action_global` (what `App::build`'s own command modules call)
+    // is only reachable from inside a `Widget::build`, and `WidgetTree::push_action`
+    // is crate-private to teksilo-core, so a minimal host widget stands in for
+    // the app root that would normally own this action, exactly the way
+    // `app::commands::story_bible::register` owns it for real.
+    let action = Action::new("story_bible.add_as_note").on_invoke(move |i, _c| {
+        if let Some(AppIntent::AddAsNote {
+            item_id,
+            selected_text,
+        }) = AppIntent::from_intent(i)
+        {
+            *captured_for_action.borrow_mut() = Some((*item_id, selected_text.clone()));
+        }
+    });
+
+    let mut tree = WidgetTree::new();
+    let host_id = tree.add(ActionHost {
+        menu: Some(menu),
+        action: Some(action),
+        menu_id: None,
+    });
+
+    tree.layout(SizeProposal::exact(300.0, 600.0));
+    let menu_id = tree
+        .children(host_id)
+        .into_iter()
+        .next()
+        .expect("the menu must have been mounted as the host's one child");
+    tree.focus(menu_id);
+    // Type-ahead: "Add as note…" is the only item in this menu (no
+    // spelling group, no comment group) whose label starts with 'a':
+    // Cut/Copy/Paste/Select all/the format strip all fail that match.
+    tree.press_key(Key::A, Modifiers::NONE);
+    tree.press_key(Key::Enter, Modifiers::NONE);
+
+    let (item_id, selected_text) = captured
+        .borrow()
+        .clone()
+        .expect("activating the row must send AppIntent::AddAsNote");
+    assert_eq!(item_id, 42);
+    assert_eq!(selected_text, "Elizabeth");
 }

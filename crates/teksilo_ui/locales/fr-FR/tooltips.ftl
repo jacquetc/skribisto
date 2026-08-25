@@ -23,6 +23,8 @@ wm-folder = Un dossier d’organisation.
 wm-folder-more = Un conteneur pour ranger les éléments du classeur à votre convenance. Il porte un [synopsis](:wm-synopsis) mais pas de texte propre. Les éléments à l’intérieur portent le texte.
 wm-end-of-book = Marque la fin d’un livre.
 wm-end-of-book-more = Chaque livre partage une seule liste continue ; sa fin n’est donc pas déterminée par l’imbrication. Ce repère indique que le [livre](:wm-book) s’arrête ici. Tout ce qui suit appartient au livre suivant.
+wm-story-bible-entry = Une note sur votre histoire, étiquetée et pourvue d’alias.
+wm-story-bible-entry-more = Une [note](:wm-note) sur un personnage, un lieu ou tout autre élément à répertorier, créée avec un nom, des étiquettes, des alias et un modèle de départ en une seule étape. Rien sur la page ne la distingue ensuite : elle reste une note ordinaire, que vous pouvez renommer, réétiqueter ou convertir comme n’importe quelle autre.
 wm-synopsis = Un résumé d’un élément d’écriture.
 wm-synopsis-more = Un résumé attaché à tout élément d’écriture, en général un court paragraphe mais aussi long que vous voulez. Utilisez-le pour préparer et naviguer avant que le texte n’existe. Il se place à côté du texte principal dans l’éditeur.
 
@@ -36,8 +38,10 @@ scene-break-major-more =
     La même idée qu’un saut de scène ordinaire, d’un cran au-dessus. À utiliser quand une rupture simple sous-estimerait le saut.
 
     Se saisit sous la forme # # #, et le style d’export l’imprime différemment du niveau ordinaire. La norme Shunn oppose précisément un seul # à # # #. Là où une tradition ne connaît pas de marque plus forte, les deux niveaux s’impriment de la même façon.
-wm-story-bible = Skribisto recherche cet élément dans votre texte.
-wm-story-bible-more = Activez cette option pour les étiquettes qui nomment ce dont vous parlez : personnages, lieux, objets. Tout élément portant une telle étiquette est recherché dans votre texte par son titre et par les autres noms que vous lui donnez, si bien que chaque [scène](:wm-scene) énumère qui et quoi y apparaît sans que vous ayez à créer le moindre lien. Laissez-la désactivée pour les étiquettes qui décrivent un élément au lieu de le nommer, comme un état d’avancement ou un rappel de vérifier la continuité.
+wm-find-in-prose = Skribisto recherche cet élément dans votre texte.
+wm-find-in-prose-more = Activez cette option pour les étiquettes qui nomment ce dont vous parlez : personnages, lieux, objets. Tout élément portant une telle étiquette est recherché dans votre texte par son titre et par les autres noms que vous lui donnez, si bien que chaque [scène](:wm-scene) énumère qui et quoi y apparaît sans que vous ayez à créer le moindre lien. Laissez-la désactivée pour les étiquettes qui décrivent un élément au lieu de le nommer, comme un état d’avancement ou un rappel de vérifier la continuité. Chaque élément ainsi repéré rejoint aussi votre [bible narrative](:wm-story-bible).
+wm-story-bible = Chaque personnage, lieu et autre entrée étiquetée, réunis dans une même grille.
+wm-story-bible-more = S’ouvre depuis l’onglet propre à chaque dossier de notes. Les cartes sont groupées par étiquette, et chacune indique le nombre d’alias de l’entrée et le nombre de scènes où elle est apparue, à partir de chaque étiquette [repérable dans le texte](:wm-find-in-prose) du projet. Filtrer par livre ne fait que réduire les cartes affichées ; cela ne décide jamais quelles entrées existent.
 
 tooltip-go-to = Rejoindre n’importe quel élément du classeur (Ctrl+G)
 synopsis-collapse-tooltip = Masquer la colonne du synopsis
@@ -79,11 +83,11 @@ pace-plan-more = Un [objectif](:goal-target) et une échéance, avec les jours o
 # styles d'export et marqueurs d'aller-retour. Enregistrées comme les deux réseaux
 # ci-dessus, et reliées à eux chaque fois qu'un concept en cite réellement un.
 concept-tag = Une étiquette colorée que vous posez sur n’importe quel élément, réutilisable dans tout le projet.
-concept-tag-more = Étiquetez un élément pour le repérer : un statut, un lieu, un fil que vous suivez. La même étiquette peut se poser sur n’importe quel nombre d’éléments, et un élément peut en porter plusieurs. Activez la [bible narrative](:wm-story-bible) pour une étiquette qui nomme quelque chose dans votre livre, un personnage ou un lieu : Skribisto se met alors à le chercher dans votre texte.
+concept-tag-more = Étiquetez un élément pour le repérer : un statut, un lieu, un fil que vous suivez. La même étiquette peut se poser sur n’importe quel nombre d’éléments, et un élément peut en porter plusieurs. Activez [repérer dans le texte](:wm-find-in-prose) pour une étiquette qui nomme quelque chose dans votre livre, un personnage ou un lieu : Skribisto se met alors à le chercher dans votre texte.
 concept-label = Une courte note que vous écrivez sous le titre d’un élément, pour vous seul.
 concept-label-more = Ce n’est pas une [étiquette](:concept-tag) : elle n’appartient qu’à cet élément, un texte libre sans couleur ni catalogue derrière lui, quelque chose comme « 1er rebondissement » ou « à nommer ». Définissez-la depuis le menu contextuel de la ligne, ou modifiez-la directement dans la colonne Libellé de la vue d’ensemble ; elle apparaît en petit sous le titre, dans l’arborescence comme dans le flux.
 concept-point-of-view = À travers les yeux de qui une scène est racontée : un ou plusieurs membres de la présence.
-concept-point-of-view-more = Se règle dans l’Inspecteur, à côté de la présence. Choisir quelqu’un qui n’y figure pas encore l’y ajoute du même geste. Porter plusieurs points de vue est un choix légitime, utile pour une scène partagée ou un changement de regard en cours de livre, que Skribisto ne bloque pas. Les candidats sont les éléments que votre [bible narrative](:wm-story-bible) fait rechercher dans le texte.
+concept-point-of-view-more = Se règle dans l’Inspecteur, à côté de la présence. Choisir quelqu’un qui n’y figure pas encore l’y ajoute du même geste. Porter plusieurs points de vue est un choix légitime, utile pour une scène partagée ou un changement de regard en cours de livre, que Skribisto ne bloque pas. Les candidats sont les éléments qu’une étiquette [repérer dans le texte](:wm-find-in-prose) place dans votre bible narrative.
 concept-epigraph = Une citation placée en tête d’une partie ou d’un chapitre.
 concept-epigraph-more = Un champ à part, distinct du texte propre du [chapitre](:wm-chapter) ou de la [partie](:wm-part) ; une [scène](:wm-scene) ou une [note](:wm-note) n’en porte aucune. Écrivez-en une comme une citation ordinaire ; écrivez-en plusieurs et chacune devient sa propre citation en bloc, imprimée comme sa propre épigraphe. Ses mots ne sont jamais comptés dans le manuscrit.
 concept-footnote = Un appel de note marqué dans le texte, qui s’imprime comme une note numérotée.

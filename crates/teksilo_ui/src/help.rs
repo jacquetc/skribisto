@@ -364,6 +364,10 @@ fn concept_topics() -> Vec<HelpTopicSpec> {
             Rc::new(|| tr!(create_paratext_folder())),
         ),
         (tips::WM_END_OF_BOOK, Rc::new(|| tr!(create_book_end()))),
+        (
+            tips::WM_STORY_BIBLE_ENTRY,
+            Rc::new(|| tr!(create_story_bible_entry())),
+        ),
         (tips::WM_SYNOPSIS, Rc::new(|| tr!(synopsis()))),
         (
             tips::SCENE_BREAK_MINOR,
@@ -372,6 +376,10 @@ fn concept_topics() -> Vec<HelpTopicSpec> {
         (
             tips::SCENE_BREAK_MAJOR,
             Rc::new(|| tr!(help_concept_major_scene_break())),
+        ),
+        (
+            tips::WM_FIND_IN_PROSE,
+            Rc::new(|| tr!(help_concept_find_in_prose())),
         ),
         (
             tips::WM_STORY_BIBLE,

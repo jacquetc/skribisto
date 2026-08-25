@@ -93,13 +93,20 @@ pub(super) fn section(
                     }
                 })
             };
+            // Armed with the story-bible table so the "+" popover can name any other
+            // item already answering to the alias being typed, live, as a fact rather
+            // than a warning: see `AliasPillField::collision_lookup`.
+            let alias_table = panel.mention_index.discoverable_table();
             col = col
                 .child(
                     TextWidget::new(tr!(inspector_aliases()))
                         .style(TextStyleRole::Tiny)
                         .color(TextRole::Secondary),
                 )
-                .child(crate::tags::AliasPillField::new(alias_value, set_aliases));
+                .child(
+                    crate::tags::AliasPillField::new(alias_value, set_aliases)
+                        .collision_lookup(alias_table, d.id),
+                );
         }
 
         // Books: which Book or Books this note is declared to belong to. This is
@@ -411,15 +418,29 @@ pub(super) fn section(
                                 .color(TextRole::Secondary),
                         );
                     } else {
-                        col = col.child(crate::tags::pov_chip_row(
-                            crate::tags::pov_chips(&table, &pov_ids),
-                            clear_pov,
-                        ));
-                        // Two viewpoints in one scene is head-hopping. Stated as
-                        // an observation, not a warning: writers do it on purpose,
-                        // and the schema allows it precisely so it can be seen
-                        // rather than blocked.
-                        if pov_ids.len() > 1 {
+                        let pov_chips = crate::tags::pov_chips(&table, &pov_ids);
+                        if !pov_chips.is_empty() {
+                            col =
+                                col.child(crate::tags::pov_chip_row(pov_chips.clone(), clear_pov));
+                        }
+                        // A pin that no longer resolves (the target was trashed, or
+                        // lost its discoverable tag) must not look identical to no
+                        // point of view ever having been set: see
+                        // `tags::pov::pov_has_unresolved`.
+                        if crate::tags::pov_has_unresolved(&table, &pov_ids) {
+                            col = col.child(
+                                TextWidget::new(tr!(pov_unresolved()))
+                                    .style(TextStyleRole::Tiny)
+                                    .color(TextRole::Secondary),
+                            );
+                        }
+                        // Two viewpoints in one scene is head-hopping. Stated as an
+                        // observation, not a warning: writers do it on purpose, and
+                        // the schema allows it precisely so it can be seen rather
+                        // than blocked. Counted on what actually resolves, not on
+                        // the raw pin count: a pin pointing at a gone target is not
+                        // a second viewpoint the reader can ever meet.
+                        if pov_chips.len() > 1 {
                             col = col.child(
                                 TextWidget::new(tr!(pov_multiple()))
                                     .style(TextStyleRole::Tiny)

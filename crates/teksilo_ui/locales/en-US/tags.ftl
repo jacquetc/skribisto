@@ -54,7 +54,7 @@ tags-pill-remove = Remove { $name }
 tags-pill-filter-placeholder = Filter or name a new tag
 tags-pill-no-match = No tag matches
 tags-pill-create = Create "{ $name }"
-tags-pill-new-discoverable = Story-bible tag
+tags-pill-new-discoverable = Find-in-prose tag
 tags-pill-new-discoverable-hint = Items with this tag are matched against your prose to fill the roster.
 
 ## The alias pill field
@@ -63,10 +63,11 @@ tags-alias-add = Add another name
 tags-alias-remove = Remove { $name }
 tags-alias-placeholder = Another name, then Enter
 tags-alias-hint = Names this appears under in your prose, beside its title.
+tags-alias-collision = { $name } already answers to this name.
 
 ## Settings ▸ Work ▸ Tags
 settings-page-tags = Tags
-settings-tags-desc = Tags label the items in your binder. A story-bible tag also tells Skribisto to look for that item's names in your prose.
+settings-tags-desc = Tags label the items in your binder. A find-in-prose tag also tells Skribisto to look for that item's names in your prose.
 settings-tags-add = Add tag
 settings-tags-add-placeholder = Name a new tag
 settings-tags-added = Added "{ $name }"
@@ -77,7 +78,7 @@ settings-tags-count = { $n ->
    *[other] { $n } tags
 }
 settings-tags-details-placeholder = What this tag means
-settings-tags-discoverable = Story bible
+settings-tags-discoverable = Find in prose
 settings-tags-delete = Delete { $name }
 settings-tags-deleted = Deleted "{ $name }" and removed it from every item
 settings-tags-empty = No tags yet.
@@ -127,6 +128,7 @@ pov-empty = No point of view set
 pov-add = Set point of view…
 pov-multiple = This scene has two points of view.
 pov-remove = Remove { $name } as point of view
+pov-unresolved = A point of view was pinned here, but that entry no longer exists or lost its story-bible tag.
 
 # ── Book filing ──────────────────────────────────────────────────────────────
 # Which Book or Books a note or note folder is declared to belong to. Shown

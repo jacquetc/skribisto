@@ -52,6 +52,63 @@ pub struct BinderDestination {
     pub title: String,
 }
 
+impl BinderDestination {
+    /// `(binder, insert index, indent)` for this destination, against the store
+    /// `ctx` reads live: the translation `app::recreate_row::resolve_place`
+    /// spells out in full for its own, single caller; this is the same mapping,
+    /// promoted here once a second caller (the story-bible creation modal)
+    /// needed it too, so the two cannot drift apart by hand-copying it again.
+    ///
+    /// A binder row means *into this binder*; a container row means *inside
+    /// it*; anything else means *after it*. `None` when the destination no
+    /// longer resolves: the chosen binder vanished, or the anchor item did,
+    /// which a caller reads the same way an unresolved [`DestinationPicker::selected`]
+    /// would: nothing to create against, refuse rather than guess.
+    pub fn resolve(&self, ctx: &AppContext) -> Option<(u64, usize, i64)> {
+        use frontend::commands::{binder_commands, binder_item_commands};
+        use frontend::common::direct_access::binder::BinderRelationshipField;
+
+        if self.binder_id == 0 {
+            return None;
+        }
+        let order = binder_commands::get_binder_relationship(
+            ctx,
+            &self.binder_id,
+            &BinderRelationshipField::BinderItems,
+        )
+        .unwrap_or_default();
+        let meta: crate::binder::placement::ItemMeta =
+            binder_item_commands::get_binder_item_multi(ctx, &order)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .map(|it| (it.id, (it.role, it.indent, it.sub_role)))
+                .collect();
+
+        let Some(anchor) = self.anchor_item_id else {
+            // A whole binder was chosen: at the end of it, top level.
+            return Some((self.binder_id, order.len(), 0));
+        };
+        let pos = order.iter().position(|&x| x == anchor)?;
+        let anchor_indent = meta.get(&anchor)?.1;
+        let relation = match self.position {
+            DropPosition::Into => skribisto_model::Relation::Child,
+            DropPosition::After => skribisto_model::Relation::Sibling,
+            // `Relation` has no "before"; see `resolve_place`'s own doc for why
+            // that is refused rather than approximated.
+            DropPosition::Before => return None,
+        };
+        let (index, indent) = crate::binder::placement::insertion_point_for_item(
+            &order,
+            &meta,
+            pos,
+            anchor_indent,
+            relation,
+        );
+        Some((self.binder_id, index, indent))
+    }
+}
+
 /// A handle on the picker's live state. Cheap to clone; clone it into the
 /// handlers that need to read the selection.
 #[derive(Clone)]

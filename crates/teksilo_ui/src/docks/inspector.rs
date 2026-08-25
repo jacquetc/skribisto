@@ -120,7 +120,12 @@ pub(super) fn live_item_metas(ctx: &AppContext, ids: &AppIds) -> Vec<ItemMeta> {
 /// Same shape as [`live_item_metas`]: a fresh walk of the Work's binders, not a
 /// cached signal, because the Inspector already rebuilds on every focus change,
 /// which is the moment this needs to be current.
-pub(super) fn live_books(
+///
+/// `pub(crate)`, not `pub(super)`: [`crate::story_bible`]'s creation modal needs the
+/// exact same candidate table, gated the exact same way, for its own Books section,
+/// and a second walk written there would be one more place the >=2 gate and the
+/// `activated` filter would have to be kept in step with this one by hand.
+pub(crate) fn live_books(
     ctx: &AppContext,
     ids: &AppIds,
 ) -> Vec<crate::tags::cast_add::CastCandidate> {

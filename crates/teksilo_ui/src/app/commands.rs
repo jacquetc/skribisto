@@ -59,6 +59,7 @@ mod format;
 mod go;
 mod help;
 mod images;
+mod story_bible;
 mod templates;
 mod trash;
 mod view;
@@ -170,4 +171,5 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     go::register(ctx, deps);
     help::register(ctx, deps);
     images::register(ctx, deps);
+    story_bible::register(ctx, deps);
 }

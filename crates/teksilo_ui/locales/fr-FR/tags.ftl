@@ -55,7 +55,7 @@ tags-pill-remove = Retirer { $name }
 tags-pill-filter-placeholder = Filtrer ou nommer une étiquette
 tags-pill-no-match = Aucune étiquette ne correspond
 tags-pill-create = Créer « { $name } »
-tags-pill-new-discoverable = Étiquette de bible narrative
+tags-pill-new-discoverable = Étiquette repérable dans le texte
 tags-pill-new-discoverable-hint = Les éléments portant cette étiquette sont recherchés dans votre texte pour remplir la distribution.
 
 ## Le champ des autres noms
@@ -64,10 +64,11 @@ tags-alias-add = Ajouter un autre nom
 tags-alias-remove = Retirer { $name }
 tags-alias-placeholder = Un autre nom, puis Entrée
 tags-alias-hint = Les noms sous lesquels cet élément apparaît dans votre texte, en plus de son titre.
+tags-alias-collision = { $name } répond déjà à ce nom.
 
 ## Paramètres ▸ Projet ▸ Étiquettes
 settings-page-tags = Étiquettes
-settings-tags-desc = Les étiquettes servent à qualifier les éléments du classeur. Une étiquette de bible narrative indique en plus à Skribisto de chercher les noms de cet élément dans votre texte.
+settings-tags-desc = Les étiquettes servent à qualifier les éléments du classeur. Une étiquette repérable dans le texte indique en plus à Skribisto de chercher les noms de cet élément dans votre texte.
 settings-tags-add = Ajouter
 settings-tags-add-placeholder = Nommer une nouvelle étiquette
 settings-tags-added = « { $name } » ajoutée
@@ -78,7 +79,7 @@ settings-tags-count = { $n ->
    *[other] { $n } étiquettes
 }
 settings-tags-details-placeholder = Ce que signifie cette étiquette
-settings-tags-discoverable = Bible narrative
+settings-tags-discoverable = Repérer dans le texte
 settings-tags-delete = Supprimer { $name }
 settings-tags-deleted = « { $name } » supprimée et retirée de tous les éléments
 settings-tags-empty = Aucune étiquette pour le moment.
@@ -137,6 +138,7 @@ pov-empty = Aucun point de vue défini
 pov-add = Définir le point de vue…
 pov-multiple = Cette scène a deux points de vue.
 pov-remove = Retirer { $name } comme point de vue
+pov-unresolved = Un point de vue a été épinglé ici, mais cette entrée n’existe plus ou a perdu son étiquette de bible narrative.
 
 # ── Classement par livre ─────────────────────────────────────────────────────
 # Le ou les livres auxquels une note ou un dossier de notes est rattaché.

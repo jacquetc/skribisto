@@ -364,6 +364,11 @@ pub fn writing_column(
     // there and "Add to dictionary" targets the right-clicked word.
     {
         let handle = editor.handle();
+        // The row, off the anchor: "Add as note" needs the item this text belongs to,
+        // and the anchor is where that is named now that a surface token travels with
+        // it. A column built with no project around it has no anchor and no capture
+        // either, which is the same `None` the submenu already handles.
+        let item = anchor.map(|a| a.item);
         let cursor = editor.cursor_position_signal();
         let doc = doc.clone();
         let spell = spell.clone();
@@ -377,6 +382,7 @@ pub fn writing_column(
                 doc.clone(),
                 spell.clone(),
                 comments.clone(),
+                item,
             )))
         });
     }
@@ -569,6 +575,13 @@ fn editor_context_menu(
     doc: TextDocument,
     spell: Option<Rc<SpellSession>>,
     comments: Option<crate::comments::binding::CommentBinding>,
+    // The row this editor's text belongs to. `None` on the surfaces built with
+    // no project around them (the widget tests), the same shape every other
+    // project-only capability here already takes. Feeds "Add as note": the
+    // selection cannot span two rows of a manuscript stream (each row is its
+    // own document), so the row the caret is in is the only scope the feature
+    // needs, and the only one it can name.
+    item_id: Option<u64>,
 ) -> MenuList {
     // One resolution for the whole spelling group — only misspelled words are
     // offered, filtered through this editor's live spell-checker so the group
@@ -654,6 +667,29 @@ fn editor_context_menu(
                     // The whole selection, so a drag across several paragraphs
                     // comments all of them as one thread.
                     b.add_paragraph(start, end);
+                }),
+            )
+            .separator();
+    }
+
+    // "Add as note" files the current selection as a new story-bible entry.
+    // Resolved *now*, from the selection this right-click actually has (the menu
+    // is rebuilt fresh on every open, so this can never go stale the way a
+    // cached selection would): empty, or no row to scope it to, and the row
+    // simply is not offered, the same "omitted, not greyed out" rule the
+    // spelling group above already follows.
+    let selected = handle.selected_text();
+    if let Some(item_id) = item_id
+        && !selected.trim().is_empty()
+    {
+        let selected_text = selected;
+        list = list
+            .item(
+                MenuItem::new(tr!(ctx_add_as_note())).on_activate_fn(move |ctx| {
+                    ctx.send_intent(AppIntent::AddAsNote {
+                        item_id,
+                        selected_text: selected_text.clone(),
+                    });
                 }),
             )
             .separator();

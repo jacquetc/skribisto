@@ -22,6 +22,8 @@ wm-folder = An organizing folder.
 wm-folder-more = A container for arranging items in the binder however suits you. It carries a [synopsis](:wm-synopsis) but no prose of its own. The items inside hold the writing.
 wm-end-of-book = Marks where a book ends.
 wm-end-of-book-more = Every book shares one continuous list, so a book's end is not decided by nesting. This marker says the [book](:wm-book) stops here. Anything after it belongs to the next book.
+wm-story-bible-entry = A tagged, aliased note about your story.
+wm-story-bible-entry-more = A [note](:wm-note) about a character, a location, or anything else worth filing, created with a name, tags, aliases and a starting template all in one step. Nothing on the page distinguishes it afterward, since it stays an ordinary note you can rename, retag or convert like any other.
 wm-synopsis = A summary of a writing item.
 wm-synopsis-more = A summary attached to any writing item, usually a short paragraph but as long as you like. Use it to plan and navigate before the prose exists. It sits beside the main text in the editor.
 
@@ -35,8 +37,10 @@ scene-break-major-more =
     The same idea as an ordinary scene break, one step up. Use it when a plain break would understate the jump.
 
     Typed as # # #, and printed differently from the ordinary tier by the export style. Shunn's standard manuscript format sets a single # against # # # for exactly this distinction. Where a tradition has no stronger mark, both tiers print the same.
-wm-story-bible = Skribisto looks for this item in your prose.
-wm-story-bible-more = Turn this on for tags that name things you write about: characters, places, objects. Any item carrying such a tag is matched against your prose by its title and by the other names you give it, so each [scene](:wm-scene) lists who and what appears in it without you linking anything by hand. Leave it off for tags that describe an item rather than name one, such as a draft status or a reminder to check continuity.
+wm-find-in-prose = Skribisto looks for this item in your prose.
+wm-find-in-prose-more = Turn this on for tags that name things you write about: characters, places, objects. Any item carrying such a tag is matched against your prose by its title and by the other names you give it, so each [scene](:wm-scene) lists who and what appears in it without you linking anything by hand. Leave it off for tags that describe an item rather than name one, such as a draft status or a reminder to check continuity. Every item it matches also joins your [story bible](:wm-story-bible).
+wm-story-bible = Every character, place and other tagged entry, gathered in one grid.
+wm-story-bible-more = Open from any notes folder's own tab. Cards group by tag, and each names how many aliases an entry answers to and how many scenes it has turned up in, drawn from every [find in prose](:wm-find-in-prose) tag in the project. Filtering by book only narrows which cards show; it never decides which entries exist.
 
 tooltip-go-to = Jump to any item in the binder (Ctrl+G)
 synopsis-collapse-tooltip = Hide the synopsis column
@@ -77,11 +81,11 @@ pace-plan-more = A [target](:goal-target) and a deadline, with the days you writ
 # the round-trip markers an export can carry. Registered the same way as the two
 # webs above, and cross-linking into them wherever a concept genuinely cites one.
 concept-tag = A color-coded label you can put on any item, reusable across the whole project.
-concept-tag-more = Tag an item to mark it: a status, a location, a thread you are tracking. The same tag can sit on any number of items, and one item can carry several. Turn on [story bible](:wm-story-bible) for a tag that names something in your book, a character or a place, and Skribisto starts looking for it in your prose.
+concept-tag-more = Tag an item to mark it: a status, a location, a thread you are tracking. The same tag can sit on any number of items, and one item can carry several. Turn on [find in prose](:wm-find-in-prose) for a tag that names something in your book, a character or a place, and Skribisto starts looking for it in your prose.
 concept-label = A short note you write under an item's title, for your own eyes.
 concept-label-more = Not a [tag](:concept-tag): a label belongs to one item alone, plain text with no color or catalog behind it, something like "1st plot point" or "needs a name". Set it from the row's context menu, or edit it inline in the Overview's Label column; it shows as a small subtitle under the title, in the outline and in the stream alike.
 concept-point-of-view = Whose eyes a scene is narrated through: one or more of your story's cast.
-concept-point-of-view-more = Set in the Inspector, beside the cast. Choosing someone not yet in the cast adds them there too. More than one viewpoint is a legal choice, useful for a shared scene or a change of eyes mid-book, not something Skribisto blocks. Candidates come from the items your [story bible](:wm-story-bible) tags make discoverable.
+concept-point-of-view-more = Set in the Inspector, beside the cast. Choosing someone not yet in the cast adds them there too. More than one viewpoint is a legal choice, useful for a shared scene or a change of eyes mid-book, not something Skribisto blocks. Candidates come from the items a [find in prose](:wm-find-in-prose) tag puts in your story bible.
 concept-epigraph = A quotation set at the head of a part or a chapter.
 concept-epigraph-more = Its own field, separate from the [chapter](:wm-chapter)'s or the [part](:wm-part)'s own prose; a [scene](:wm-scene) or a [note](:wm-note) carries none. Write one as an ordinary quotation; write several and each becomes its own blockquote, printed as its own epigraph. Its words are never counted as manuscript words.
 concept-footnote = A citation marked in the prose, printing as a numbered note.

@@ -510,6 +510,10 @@ mod tests {
     /// `~/Library/Application Support/{tld}.{author}.{app}`.
     #[test]
     fn the_macos_socket_path_fits_in_sun_path() {
+        // `SocketId::leaf` reads the process-wide identity static; see
+        // `identity::lock_for_test`'s own doc for why every test that reads it,
+        // not only the ones that register a different one, needs this lock.
+        let _serial = crate::identity::lock_for_test();
         const DARWIN_SUN_PATH: usize = 104;
         // Generous: longer than almost any real macOS short name.
         let long_user = "jean-baptiste-de-la";
@@ -550,6 +554,12 @@ mod tests {
     /// and exiting.
     #[test]
     fn editions_elect_on_different_primary_sockets() {
+        // `crate::identity::register` mutates the process-wide identity static;
+        // this lock is what keeps that mutation from racing every other test
+        // that reads or writes it, in this module and every other one. See
+        // `identity::lock_for_test`'s own doc for the intermittent-failure
+        // history this exists to prevent.
+        let _serial = crate::identity::lock_for_test();
         let community = SocketId::Primary.leaf();
         let _h = crate::identity::register(crate::identity::AppIdentity::new(
             "eu",
@@ -575,6 +585,7 @@ mod tests {
     /// before a backup restore overwrites it.
     #[test]
     fn editions_share_one_lock_directory() {
+        let _serial = crate::identity::lock_for_test();
         let community = namespace();
         let _h = crate::identity::register(crate::identity::AppIdentity::new(
             "eu",
@@ -594,6 +605,7 @@ mod tests {
     /// identified by pid alone.
     #[test]
     fn a_peer_socket_is_addressed_by_pid_alone() {
+        let _serial = crate::identity::lock_for_test();
         let before = SocketId::Pid(4242).leaf();
         let _h = crate::identity::register(crate::identity::AppIdentity::new(
             "eu",
@@ -628,6 +640,7 @@ mod tests {
     /// `\\.\pipe\` name, and neither tolerates a `/`.
     #[test]
     fn socket_leaves_are_short_and_flat() {
+        let _serial = crate::identity::lock_for_test();
         for leaf in [
             SocketId::Primary.leaf(),
             SocketId::Pid(4_294_967_295).leaf(),

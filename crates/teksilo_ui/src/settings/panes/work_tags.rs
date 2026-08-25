@@ -466,12 +466,13 @@ impl Widget for TagRowView {
                 }
             });
         }
-        // The row's one control whose label cannot explain itself: "Story bible" names the
-        // set the tag joins, not what switching it on makes Skribisto do. Bound by registry
-        // key so it reads identically here and in the pill field's "New tag…" form.
+        // The row's one control whose label cannot explain itself: "Find in prose" says
+        // what switching it on makes Skribisto do, not what set the tag joins. Bound by
+        // registry key so it reads identically here and in the pill field's "New tag…"
+        // form.
         let toggle = Toggle::new(discoverable)
             .label(tr!(settings_tags_discoverable()))
-            .rich_tooltip(crate::tooltip_registry::WM_STORY_BIBLE);
+            .rich_tooltip(crate::tooltip_registry::WM_FIND_IN_PROSE);
 
         let delete = {
             let vm = self.vm.clone();

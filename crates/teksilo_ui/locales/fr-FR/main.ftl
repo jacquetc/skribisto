@@ -36,7 +36,7 @@ menu-quit = &Quitter
 menu-view = &Affichage
 menu-outline = &Plan
 menu-search = &Rechercher dans le projet
-menu-timeline = C&hronologie
+menu-timeline = R&emonter le temps
 menu-search-preview = &Aperçu de recherche
 menu-fullscreen = P&lein écran
 menu-focus-mode = &Mode sans distraction
@@ -83,6 +83,7 @@ create-folder = Dossier
 create-paratext = Paratexte
 create-paratext-folder = Dossier de paratextes
 create-book-end = Fin du livre
+create-story-bible-entry = Entrée de bible narrative…
 # Item-type names for the Overview's Type column (the rest reuse the create-* nouns).
 type-book-start = Début du livre
 type-text = Texte
@@ -99,6 +100,7 @@ new-item-note-folder = Nouveau dossier de notes
 new-item-folder = Nouveau dossier
 new-item-paratext = Nouveau paratexte
 new-item-paratext-folder = Nouveau dossier de paratextes
+new-item-story-bible-entry = Nouvelle entrée de bible narrative
 
 ## Recommandations de création: indication de placement en fin de ligne
 placement-inside = à l’intérieur
@@ -550,6 +552,10 @@ overview-col-title = Titre
 overview-col-type = Type
 overview-col-label = Libellé
 overview-col-tags = Étiquettes
+# Construite uniquement quand le Work compte deux Livres ou plus : voir la
+# condition d'`overview_columns`, la même que partage chaque surface Livres de
+# cette édition.
+overview-col-books = Livres
 overview-col-own-words = Mots
 overview-col-total-words = Total
 overview-row-count = { $count ->
@@ -598,6 +604,7 @@ segment-chapter = Chapitre
 segment-part = Partie
 segment-book = Livre
 segment-notes = Notes
+segment-story-bible = Bible narrative
 segment-pace = Rythme
 pace-placeholder = Le planificateur de rythme apparaît ici.
 # Planificateur de rythme
@@ -2084,7 +2091,7 @@ versions-hidden-paragraphs = { $count ->
 }
 
 # ── Bandeau Chronologie ──
-timeline-title = Chronologie
+timeline-title = Remonter le temps
 timeline-coverage = { $count ->
     [one] { $count } version enregistrée, remontant au { $oldest }
    *[other] { $count } versions enregistrées, remontant au { $oldest }
@@ -2355,6 +2362,7 @@ help-section-reference = Ce que sont les choses
 # créable, faute d'étiquette « ＋ Créer » à réutiliser. Voir help.rs::concept_topics.
 help-concept-scene-break = Saut de scène
 help-concept-major-scene-break = Saut de scène majeur
+help-concept-find-in-prose = Repérer dans le texte
 help-concept-story-bible = Bible narrative
 help-concept-goal-unit = Mots ou caractères
 help-concept-goal-progress = Progression
@@ -2387,7 +2395,6 @@ help-concept-round-trip-marks = Marqueurs d’aller-retour
 # Le contrôle d'attribution de l'épigraphe. Voir tabs/shared/panes.rs::attribution_control.
 epigraph-mark-attribution = Ligne de source
 epigraph-mark-attribution-tip = Marque la ligne où se trouve le curseur comme la source de la citation, pour qu’elle s’imprime en attribution
-pace-summary-dont-show = Ne plus afficher à l'ouverture
 
 ## Margin lane — the strip beside the scrollbar that maps a document
 margin-lane-name = Repères de marge

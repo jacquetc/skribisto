@@ -18,7 +18,8 @@
 //! either build. The seam was not making a mock build inert, it was making it
 //! answer a question wrongly, and eight `workspace_layout` tests that seed real
 //! items and expect them back failed under `--features mocks` because of it.
-//! [`ordered_all_items`] below makes the identical relationship hops with no arm
+//! [`crate::models::binder_stream::ordered_all_items`] below makes the identical
+//! relationship hops with no arm
 //! at all, which is the shape to match. A build with no project open still gets
 //! an empty stream, because a Work with no binders has no items, which is the
 //! only case the old arm was really covering.

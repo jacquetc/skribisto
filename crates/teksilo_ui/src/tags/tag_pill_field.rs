@@ -477,7 +477,7 @@ impl Widget for TagPickerCreate {
         col = col.child(
             Toggle::new(self.new_discoverable.clone())
                 .label(tr!(tags_pill_new_discoverable()))
-                .rich_tooltip(crate::tooltip_registry::WM_STORY_BIBLE),
+                .rich_tooltip(crate::tooltip_registry::WM_FIND_IN_PROSE),
         );
         // The inline hint stays despite the tooltip: this is a creation form in a
         // transient popover, where a hover-only explanation is easy to never find.

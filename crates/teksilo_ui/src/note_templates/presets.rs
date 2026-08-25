@@ -341,6 +341,25 @@ mod tests {
         }
     }
 
+    /// The Character sheet preset used to ask the writer to type "Known as" as
+    /// loose prose in the body, duplicating `BinderItem.aliases` (a first-class
+    /// field the mention scan actually reads) with a line nothing does. It must
+    /// still mention the concept (a writer who used Insert template on an
+    /// already-open note has no other way to be told where it lives), but never
+    /// again as a bare fill-in-the-blank asking for the same words twice.
+    #[test]
+    fn the_known_as_prompt_points_to_the_alias_field_instead_of_duplicating_it() {
+        let body = Preset::CharacterSheet.rows()[0].body.clone();
+        assert!(
+            !body.contains("\n- Known as:"),
+            "must no longer ask the writer to type it as a bare field:\n{body}"
+        );
+        assert!(
+            body.to_lowercase().contains("alias field"),
+            "must point the writer at the Inspector's Alias field instead:\n{body}"
+        );
+    }
+
     /// The shape the `doc` builder promises: a level-1 title, level-2 sections, `- ` prompts.
     #[test]
     fn a_body_has_a_title_sections_and_prompts() {

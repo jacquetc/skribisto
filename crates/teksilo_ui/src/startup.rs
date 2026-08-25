@@ -214,6 +214,7 @@ pub(crate) fn build_ui_config() -> UiConfig {
                     include_str!("../locales/en-US/tooltips.ftl"),
                     include_str!("../locales/en-US/tags.ftl"),
                     include_str!("../locales/en-US/templates.ftl"),
+                    include_str!("../locales/en-US/story_bible.ftl"),
                 ],
             ),
             (
@@ -223,6 +224,7 @@ pub(crate) fn build_ui_config() -> UiConfig {
                     include_str!("../locales/fr-FR/tooltips.ftl"),
                     include_str!("../locales/fr-FR/tags.ftl"),
                     include_str!("../locales/fr-FR/templates.ftl"),
+                    include_str!("../locales/fr-FR/story_bible.ftl"),
                 ],
             ),
         ])

@@ -39,7 +39,7 @@ menu-quit = &Quit
 menu-view = &View
 menu-outline = &Outline
 menu-search = &Search in Project
-menu-timeline = Ti&meline
+menu-timeline = &Go back in time
 menu-search-preview = Search &Preview
 menu-fullscreen = &Fullscreen
 menu-focus-mode = &Distraction-free Mode
@@ -86,6 +86,7 @@ create-folder = Folder
 create-paratext = Paratext
 create-paratext-folder = Paratext folder
 create-book-end = End of Book
+create-story-bible-entry = Story bible entry…
 # Item-type names for the Overview's Type column (the rest reuse the create-* nouns).
 type-book-start = Book start
 type-text = Text
@@ -102,6 +103,7 @@ new-item-note-folder = New Note Folder
 new-item-folder = New Folder
 new-item-paratext = New Paratext
 new-item-paratext-folder = New Paratext Folder
+new-item-story-bible-entry = New Story Bible Entry
 
 ## Create recommendations: trailing placement hint on each row
 placement-inside = inside
@@ -552,6 +554,9 @@ overview-col-title = Title
 overview-col-type = Type
 overview-col-label = Label
 overview-col-tags = Tags
+# Only ever built when the Work has two or more Books: see `overview_columns`'s
+# own gate, the same one every Books surface in this edition shares.
+overview-col-books = Books
 overview-col-own-words = Words
 overview-col-total-words = Total
 overview-row-count = { $count ->
@@ -601,6 +606,7 @@ segment-part = Part
 segment-book = Book
 segment-pace = Pace
 segment-notes = Notes
+segment-story-bible = Story bible
 pace-placeholder = The Pace planner appears here.
 # Pace planner
 pace-empty-title = Plan this book's pace
@@ -2100,7 +2106,7 @@ versions-hidden-paragraphs = { $count ->
 }
 
 # ── Timeline band ──
-timeline-title = Timeline
+timeline-title = Go back in time
 timeline-coverage = { $count ->
     [one] { $count } version recorded, going back to { $oldest }
    *[other] { $count } versions recorded, going back to { $oldest }
@@ -2370,6 +2376,7 @@ help-section-reference = What things are
 # there is no "＋ Create" label to reuse. See help.rs::concept_topics.
 help-concept-scene-break = Scene break
 help-concept-major-scene-break = Major scene break
+help-concept-find-in-prose = Find in prose
 help-concept-story-bible = Story bible
 help-concept-goal-unit = Words or characters
 help-concept-goal-progress = Progress

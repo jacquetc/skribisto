@@ -100,7 +100,7 @@ note-template-section-what-it-says = Ce qu’elle dit
 
 ## Intitulés de champ
 note-template-field-full-name = Nom complet
-note-template-field-known-as = Surnom
+note-template-field-known-as = Surnom, à renseigner dans le champ Autres noms de l’inspecteur
 note-template-field-age = Âge
 note-template-field-role-in-story = Rôle dans le récit
 note-template-field-build-and-features = Silhouette et signes particuliers

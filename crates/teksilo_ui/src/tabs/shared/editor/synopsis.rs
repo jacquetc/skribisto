@@ -169,6 +169,7 @@ pub fn synopsis_editor(
                 doc.clone(),
                 spell.clone(),
                 comments.clone(),
+                item,
             )))
         });
     }
@@ -262,6 +263,9 @@ pub fn card_synopsis_editor(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::shared::images::ImageSource>,
+    // The `BinderItem` this card is about; see `writing_column`'s own note.
+    // Feeds "Add as note", same as every other editor's context menu.
+    item: Option<common::types::EntityId>,
 ) -> (impl Widget, EditorHandle) {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -301,6 +305,7 @@ pub fn card_synopsis_editor(
                 // A corkboard card is a preview surface, not a writing surface —
                 // it offers no comment affordances.
                 None,
+                item,
             )))
         });
     }

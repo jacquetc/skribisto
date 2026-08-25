@@ -486,6 +486,15 @@ pub enum CreateType {
     /// A folder to keep paratexts in — organisational only.
     ParatextFolder,
     EndOfBook,
+    /// A story-bible entry: a character, a location, an artifact, whatever the writer
+    /// is filing. Structurally **identical** to [`CreateType::Note`] (same `combo`, so
+    /// [`CreateType::of`] answers `Note` for either; nothing on disk distinguishes
+    /// them, on purpose: a bible entry *is* a Note, tagged and aliased). What earns it
+    /// a separate vocabulary entry is the ceremony the UI wraps around it, not a
+    /// different stored shape: picking it opens the story-bible creation modal
+    /// (name, location, tags, aliases, a template, a small body) instead of landing a
+    /// bare, unconfigured row the writer has to tag and alias by hand afterward.
+    StoryBibleEntry,
 }
 
 impl CreateType {
@@ -508,6 +517,9 @@ impl CreateType {
             CreateType::Paratext => (Role::Item, SubRole::Paratext),
             CreateType::ParatextFolder => (Role::Folder, SubRole::Paratext),
             CreateType::EndOfBook => (Role::Item, SubRole::BookEnd),
+            // Same combo as `Note`; see the variant's own doc for why that is not a
+            // bug: nothing on disk ever needs to tell the two apart.
+            CreateType::StoryBibleEntry => (Role::Item, SubRole::Note),
         }
     }
 
@@ -570,6 +582,9 @@ const CANONICAL: &[CreateType] = &[
     CreateType::Scene,
     CreateType::NoteFolder,
     CreateType::Note,
+    // Right beside `Note`, its structural twin: offered everywhere a Note is, one
+    // click into a different creation ceremony rather than a different stored shape.
+    CreateType::StoryBibleEntry,
     CreateType::Folder,
     // Offered from every anchor, like Note and Folder. Nothing restricts where a paratext
     // may go — a writer may want an interleaved author's note between two parts — so the
@@ -945,10 +960,21 @@ mod create_type_inverse_tests {
     /// otherwise a caller asking "what is this row" gets a different answer than the
     /// one that created it, which is how an import ends up nesting under the wrong
     /// thing.
+    ///
+    /// **One deliberate exception: `StoryBibleEntry`.** Its own doc says why:
+    /// it shares `Note`'s exact combo on purpose, because it has no storage shape
+    /// of its own, so `of` answering `Note` for a row it made is correct, not a
+    /// bug this test should catch. The invariant the rest of this test protects
+    /// (an import nesting under the wrong thing) does not even apply to it: the
+    /// document importer's own vocabulary (`teksilo_ui::import_document::ROW_TYPES`)
+    /// never offers it, so no row is ever imported *as* one to begin with.
     #[test]
     fn every_create_type_round_trips_through_its_stored_pair() {
         for mode in [ChapterMode::Folder, ChapterMode::Flat] {
             for kind in CANONICAL {
+                if *kind == CreateType::StoryBibleEntry {
+                    continue;
+                }
                 let (role, sub_role) = kind.combo(mode.clone());
                 assert_eq!(
                     CreateType::of(&role, &sub_role),
@@ -956,6 +982,21 @@ mod create_type_inverse_tests {
                     "{kind:?} under {mode:?} came back as something else"
                 );
             }
+        }
+    }
+
+    /// The one documented exception above, pinned as its own assertion so it
+    /// reads as a decision rather than a silent skip: a `StoryBibleEntry`
+    /// resolves to `Note`, never to itself and never to `None`.
+    #[test]
+    fn story_bible_entry_deliberately_resolves_back_as_a_note() {
+        for mode in [ChapterMode::Folder, ChapterMode::Flat] {
+            let (role, sub_role) = CreateType::StoryBibleEntry.combo(mode.clone());
+            assert_eq!(
+                CreateType::of(&role, &sub_role),
+                Some(CreateType::Note),
+                "under {mode:?}, a story-bible entry's own combo must still read back as Note"
+            );
         }
     }
 

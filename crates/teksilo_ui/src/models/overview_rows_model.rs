@@ -59,6 +59,9 @@ pub const COL_TOTAL_WORDS: &str = "total_words";
 pub const COL_OPEN_COMMENTS: &str = "open_comments";
 pub const COL_TOTAL_COMMENTS: &str = "total_comments";
 pub const COL_TAGS: &str = "tags";
+/// The Books column, like [`COL_TAGS`]: read-only and unsortable, and rendered
+/// only when the Work has two or more live Books; see `tabs::overview::columns::books_column`.
+pub const COL_BOOKS: &str = "books";
 pub const COL_GOAL: &str = "goal";
 
 /// One row of the Overview table: a single `BinderItem` in the container's subtree.
@@ -92,6 +95,13 @@ pub struct OverviewRow {
     /// `BinderItemDto` the loader already reads, and a per-cell lookup would issue one
     /// backend read per visible row per rebuild.
     pub tags: Vec<u64>,
+    /// The writer's own filing: which Book or Books this row is declared under
+    /// (`BinderItem.books`). A declaration, never a measurement: empty means not
+    /// yet filed, never "every Book" (see that field's own doc). Read straight
+    /// off the entity, exactly like `tags` above; the **Books** column renders it
+    /// only once the Work has two or more Books, matching every other Books
+    /// surface in this edition.
+    pub book_ids: Vec<u64>,
     /// The chapter/part ordinal this row carries in the book, or `None` for a row that
     /// holds none. Its own field, never folded into `title` — the Title column is
     /// edit-in-place, and its editor seeds from `title`.
@@ -136,6 +146,13 @@ pub struct OverviewFilters {
     pub query: Signal<String>,
     /// Active sort, or `None` for manuscript order.
     pub sort: Signal<Option<(String, SortDirection)>>,
+    /// Tag ids currently checked in the filter chip row above the table; empty =
+    /// no filtering, the same "narrow, never sort" role the Tags column's own doc
+    /// comment reserves for tags (`columns::tags_column`: "finding tagged rows is
+    /// a filter question, not a sort one"). A row matches when it carries **any**
+    /// of the checked tags (OR, the usual faceted-filter reading), not all of
+    /// them: see [`shape`]'s own doc for why.
+    pub tag_filter: Signal<Vec<u64>>,
 }
 
 impl OverviewFilters {
@@ -143,6 +160,7 @@ impl OverviewFilters {
         Self {
             query: Signal::new(String::new()),
             sort: Signal::new(None),
+            tag_filter: Signal::new(Vec::new()),
         }
     }
 }
@@ -302,6 +320,10 @@ impl OverviewRowsModel {
             {
                 let r = resource.clone();
                 filters.sort.observe(move |_| r())
+            },
+            {
+                let r = resource.clone();
+                filters.tag_filter.observe(move |_| r())
             },
             {
                 let r = resource.clone();
@@ -545,28 +567,45 @@ fn reload_preserving(
     *remembered.borrow_mut() = union;
 }
 
-/// Apply the search filter and the sort to a freshly loaded row set.
+/// Apply the search filter, the tag filter and the sort to a freshly loaded row set.
 ///
 /// Search uses `KeepAncestors`: a match stays *reachable*, so its enclosing chapter and
 /// part remain as context rather than the match appearing at the root of nowhere. Sort is
 /// **per sibling group** — `TreeRowFilter::sort` reorders children within each parent and
 /// never flattens the hierarchy, because a book whose scenes were globally sorted by word
 /// count would no longer be a book.
+///
+/// **The tag filter is OR, not AND.** A row matches when it carries at least one of the
+/// checked tags. AND (every checked tag present on the same row) is a real, defensible
+/// reading too, but it is not what a chip row visually promises: unchecked chips read as
+/// "also show me these", the same way a shop's size-and-colour facets narrow by "any
+/// checked colour", not "only items that are every checked colour at once". Same
+/// `KeepAncestors` reasoning as search: a matching scene keeps its chapter and part
+/// visible as context.
 fn shape(
     rows: Vec<TreeRow<Uuid, OverviewRow>>,
     filters: &OverviewFilters,
 ) -> Vec<TreeRow<Uuid, OverviewRow>> {
     let needle = row_search::needle(&filters.query.get());
     let sort = filters.sort.get();
-    if needle.is_none() && sort.is_none() {
+    let tag_filter = filters.tag_filter.get();
+    if needle.is_none() && sort.is_none() && tag_filter.is_empty() {
         return rows;
     }
+    // `TreeRowFilter::filter` holds exactly one predicate: a second call would
+    // silently *replace* the first, not AND with it, so search and the tag
+    // filter are folded into one closure rather than two `.filter()` calls.
     let mut sieve = TreeRowFilter::new().filter_mode(TreeFilterMode::KeepAncestors);
-    if let Some(needle) = needle {
+    if needle.is_some() || !tag_filter.is_empty() {
         sieve = sieve.filter(move |r: &OverviewRow| {
-            // Title and label only — the two things the table actually shows. Matching
-            // on data with no column would keep rows the writer sees no reason for.
-            row_search::row_matches(&needle, &[&r.title, &r.label])
+            // Title and label only: the two things the table actually shows.
+            // Matching on data with no column would keep rows the writer sees no
+            // reason for.
+            let text_ok = needle
+                .as_ref()
+                .is_none_or(|n| row_search::row_matches(n, &[&r.title, &r.label]));
+            let tag_ok = tag_filter.is_empty() || r.tags.iter().any(|t| tag_filter.contains(t));
+            text_ok && tag_ok
         });
     }
     if let Some((col, dir)) = sort {
@@ -981,6 +1020,7 @@ mod rows {
                         },
                         total_words: 0, // filled by the fold below
                         tags: it.tags.clone(),
+                        book_ids: it.books.clone(),
                         number: numbers
                             .get(&it.id)
                             .map(skribisto_model::numbering::Numbered::number),
@@ -1074,6 +1114,11 @@ mod rows {
                 },
                 total_words: 0, // filled by the fold below
                 tags: tags.to_vec(),
+                // The fixture models no Book filing at all: `live_books` reads the
+                // real `Folder/Book` table this mock module never populates, so the
+                // Books column simply never renders under `mocks`, so nothing here
+                // needs to fabricate a `book_ids` value to match it.
+                book_ids: Vec::new(),
                 // Every fixture row is titled, so none needs the fallback.
                 fallback_label: None,
                 // The fixture book's chapter ordinals, in step with the mock binder tree.
@@ -1702,6 +1747,65 @@ mod mock_tests {
             m.visible_count(),
             collapsed_count,
             "clearing the search restores the writer's collapse exactly"
+        );
+    }
+
+    /// The tag filter narrows to rows carrying the checked tag, keeps ancestors
+    /// reachable the same way search does, and the unfiltered default (an empty
+    /// checked set) hides nothing: this is the filter answer to the Tags
+    /// column's own "a filter question, not a sort one" comment.
+    #[test]
+    fn tag_filter_narrows_to_rows_carrying_the_checked_tag_and_keeps_ancestors() {
+        let filters = OverviewFilters::new();
+        let m = model_with(101, filters.clone());
+        let full_count = m.visible_count();
+
+        // Row 202 ("Scene 2") is the fixture's only row tagged 3.
+        filters.tag_filter.set(vec![3]);
+        let rows = visible_rows(&m);
+        assert!(
+            rows.iter().any(|r| r.item_id == 202),
+            "the tagged row itself shows"
+        );
+        assert!(
+            !rows.iter().any(|r| r.item_id == 201),
+            "a sibling row without the checked tag must not show, even though it \
+             carries tag 2"
+        );
+        assert!(
+            rows.iter().any(|r| r.item_id == 301) && rows.iter().any(|r| r.item_id == 104),
+            "its part and chapter survive as ancestors"
+        );
+
+        filters.tag_filter.set(Vec::new());
+        assert_eq!(
+            m.visible_count(),
+            full_count,
+            "the unfiltered default (nothing checked) hides nothing"
+        );
+    }
+
+    /// Checking two tags is OR, not AND: a row carrying *either* one matches, the
+    /// reading a chip row visually promises. See `shape`'s own doc for why.
+    #[test]
+    fn tag_filter_is_an_or_across_every_checked_tag() {
+        let filters = OverviewFilters::new();
+        let m = model_with(101, filters.clone());
+
+        // Row 201 carries [1, 2]; row 202 carries [3]; row 105 carries [1] alone.
+        filters.tag_filter.set(vec![2, 3]);
+        let rows = visible_rows(&m);
+        assert!(
+            rows.iter().any(|r| r.item_id == 201),
+            "matches via the checked tag 2"
+        );
+        assert!(
+            rows.iter().any(|r| r.item_id == 202),
+            "matches via the checked tag 3"
+        );
+        assert!(
+            !rows.iter().any(|r| r.item_id == 105),
+            "carries neither checked tag (only tag 1)"
         );
     }
 

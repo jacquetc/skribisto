@@ -51,6 +51,10 @@ pub const WM_FOLDER: &str = "wm-folder";
 pub const WM_PARATEXT: &str = "wm-paratext";
 pub const WM_PARATEXT_FOLDER: &str = "wm-paratext-folder";
 pub const WM_END_OF_BOOK: &str = "wm-end-of-book";
+/// `CreateType::StoryBibleEntry`'s own row: structurally a Note (see that variant's
+/// doc), but explained on its own terms, as the creation ceremony a bible entry gets
+/// (a location, tags, aliases, a template) rather than the bare row a Note is.
+pub const WM_STORY_BIBLE_ENTRY: &str = "wm-story-bible-entry";
 /// A concept, not a create/convert row: cited by Scene / Note / Note folder /
 /// Folder, so it is a cascade target only.
 pub const WM_SYNOPSIS: &str = "wm-synopsis";
@@ -58,13 +62,28 @@ pub const WM_SYNOPSIS: &str = "wm-synopsis";
 /// author places *in the prose*, bound by the Format menu's entries.
 pub const SCENE_BREAK_MINOR: &str = "scene-break-minor";
 pub const SCENE_BREAK_MAJOR: &str = "scene-break-major";
-/// The `discoverable` flag on a tag, surfaced as the "Story bible" switch.
+/// The `discoverable` flag on a tag, surfaced as the "Find in prose" switch.
 ///
 /// Registered rather than written inline because it is the pane's one control
-/// whose label cannot explain itself: "Story bible" says what the tag *joins*,
-/// not what turning it on *does*. It is offered in two places — the switch on
-/// every row of the Tags settings pane, and the same switch in the tag pill
-/// field's "New tag…" form — and both must say the same thing.
+/// whose label cannot explain itself: "Find in prose" says what turning it on
+/// *does*, not what the tag *joins*, and a writer still benefits from both
+/// halves. It is offered in two places, the switch on every row of the Tags
+/// settings pane and the same switch in the tag pill field's "New tag…" form,
+/// and both must say the same thing.
+pub const WM_FIND_IN_PROSE: &str = "wm-find-in-prose";
+/// The Story bible place itself (C2): a card grid, one per notes folder, of
+/// every item a [`WM_FIND_IN_PROSE`] tag has matched.
+///
+/// Was, until the checkbox's own rename, the id `WM_FIND_IN_PROSE` now holds:
+/// the pane's tooltip for "does turning this on make the item searchable",
+/// attached directly to the switch. Once the checkbox stopped being called
+/// "Story bible", the phrase was free to name the place instead, and the
+/// concept moved with it, keeping the *id* (nothing persisted depends on the
+/// string "wm-story-bible" changing, only what it teaches) while the *text*
+/// became a genuinely different explanation. Reachable from the Help window's
+/// glossary and from [`WM_FIND_IN_PROSE`]'s own "more" disclosure, not hung on
+/// any control of its own, since the place already names itself on its own
+/// tab.
 pub const WM_STORY_BIBLE: &str = "wm-story-bible";
 
 // ── Word / character targets ──────────────────────────────────────────────────
@@ -108,9 +127,11 @@ pub const WM_KEYS: &[&str] = &[
     WM_PARATEXT,
     WM_PARATEXT_FOLDER,
     WM_END_OF_BOOK,
+    WM_STORY_BIBLE_ENTRY,
     WM_SYNOPSIS,
     SCENE_BREAK_MINOR,
     SCENE_BREAK_MAJOR,
+    WM_FIND_IN_PROSE,
     WM_STORY_BIBLE,
     GOAL_TARGET,
     GOAL_UNIT,
@@ -196,6 +217,8 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
             .with_more(tr!(wm_paratext_folder_more())),
         TooltipContent::new(WM_END_OF_BOOK, tr!(wm_end_of_book()))
             .with_more(tr!(wm_end_of_book_more())),
+        TooltipContent::new(WM_STORY_BIBLE_ENTRY, tr!(wm_story_bible_entry()))
+            .with_more(tr!(wm_story_bible_entry_more())),
         TooltipContent::new(WM_SYNOPSIS, tr!(wm_synopsis())).with_more(tr!(wm_synopsis_more())),
         // The shortcut chip tracks a rebind, so the accelerator shown here can
         // never drift from the one actually registered.
@@ -205,6 +228,8 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
         TooltipContent::new(SCENE_BREAK_MAJOR, tr!(scene_break_major()))
             .with_more(tr!(scene_break_major_more()))
             .for_shortcut("format.major_scene_break"),
+        TooltipContent::new(WM_FIND_IN_PROSE, tr!(wm_find_in_prose()))
+            .with_more(tr!(wm_find_in_prose_more())),
         TooltipContent::new(WM_STORY_BIBLE, tr!(wm_story_bible()))
             .with_more(tr!(wm_story_bible_more())),
         TooltipContent::new(GOAL_TARGET, tr!(goal_target())).with_more(tr!(goal_target_more())),
@@ -272,11 +297,19 @@ mod tests {
     /// cold, as a glossary entry in the Help window. The second is free once registered;
     /// the first is a decision per concept. This list is where "no control" is *stated*
     /// rather than left as an absence nobody can tell from an oversight.
-    const BROWSE_ONLY: &[(&str, &str)] = &[(
-        WM_SYNOPSIS,
-        "a concept cited by other entries, not a thing you create; the synopsis box \
+    const BROWSE_ONLY: &[(&str, &str)] = &[
+        (
+            WM_SYNOPSIS,
+            "a concept cited by other entries, not a thing you create; the synopsis box \
              itself is labelled and needs no explainer",
-    )];
+        ),
+        (
+            WM_STORY_BIBLE,
+            "the place already names itself on its own notes-folder tab, so nothing in \
+             the app needs a '?' pointing at it; reached instead through the Help \
+             window's glossary and through wm-find-in-prose-more's own cascade link",
+        ),
+    ];
 
     /// Every `.rich_tooltip(..)` / `RichTip::new(..)` argument appearing anywhere under
     /// `src/`, as raw source text.

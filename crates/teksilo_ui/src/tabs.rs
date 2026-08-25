@@ -76,6 +76,7 @@ pub(crate) mod pace;
 /// however public it looks, which is exactly what `container.segments` was until
 /// something outside the crate first tried to use it.
 pub mod shared;
+pub(crate) mod story_bible_place;
 
 /// Which of the item's two names this field edits.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -140,6 +141,11 @@ pub struct ContentTab {
     /// Part / Book), gated on the same
     /// [`StreamLevel::for_container`](crate::models::StreamLevel::for_container) as `stream`.
     corkboard: Option<crate::corkboard::CorkboardViewModel>,
+    /// The Story bible grid's own Books filter chip, per-tab like [`Self::segment`]:
+    /// each open notes-folder tab keeps its own choice. `None` is the unfiltered
+    /// default (every entry, filed or not), matching every other Books surface in
+    /// this edition. See [`crate::tabs::story_bible_place`].
+    pub story_bible_book_filter: Signal<Option<u64>>,
     /// The Overview view-model — `Some` for every container that offers the segment,
     /// gated on [`skribisto_model::overview_capable`]. That is a **wider** gate than the
     /// stream's and the corkboard's: a `Folder/Note` has no manuscript extent, so it has
@@ -740,6 +746,7 @@ impl ContentTab {
             analysis,
             corkboard,
             overview,
+            story_bible_book_filter: Signal::new(None),
             goal_unit,
             counting_method,
             ids,

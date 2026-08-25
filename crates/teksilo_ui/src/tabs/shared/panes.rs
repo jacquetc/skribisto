@@ -826,34 +826,49 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
     )
 }
 
-/// A **notes folder**'s body: its own synopsis page, an overview of what it holds, and
-/// whatever else has been registered for it.
+/// A **notes folder**'s body: its own synopsis page, its story-bible card grid, an
+/// overview of what it holds, and whatever else has been registered for it.
 ///
-/// Two built-in segments, not five. A notes folder has no manuscript extent: the
+/// Three built-in segments, not five. A notes folder has no manuscript extent: the
 /// compiler never walks into it, so Full Chapter / Full Part / Full Synopsis and the
 /// Corkboard (which is a view *of* a manuscript stream) would all be empty by
 /// construction. What it does have is a subtree: a research folder with thirty notes in
-/// it is exactly the thing you want tabulated. So it gets the one segment that applies.
+/// it is exactly the thing you want tabulated, and (unlike a plain research folder) a
+/// notes folder is also where a discoverable cast lives, which is what the Story bible
+/// segment is for.
 ///
 /// This is why [`skribisto_model::overview_capable`] is not
 /// `StreamLevel::for_container` — they disagree here, and only here.
 ///
+/// **The Story bible segment is ordinary code, hardcoded here exactly like Notes and
+/// Overview.** It does not go through [`segments::register_container_segment`]: that
+/// door is for an out-of-tree extension, and this is the community edition finishing a
+/// feature it already half-built (the notes folder, the discoverable flag, aliases).
+/// See [`crate::tabs::story_bible_place`]'s own module doc.
+///
 /// Registered segments (see [`segments::register_container_segment`]) are appended
-/// after Notes and before Overview, the same relative position `folder_segmented` gives
-/// them: after the container's own extras, before the view that closes every bar. A
-/// `BinderItemSubRole::Note` gate is accepted at registration with no error, so a
-/// segment registered for it and never consulted here would fail silently rather than
-/// loudly; this is the other half of that contract.
+/// after Story bible and before Overview, the same relative position `folder_segmented`
+/// gives them: after the container's own built-in views, before the view that closes
+/// every bar. A `BinderItemSubRole::Note` gate is accepted at registration with no
+/// error, so a segment registered for it and never consulted here would fail silently
+/// rather than loudly; this is the other half of that contract.
 pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
     let sub_role = tab.sub_role().clone();
-    let mut items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![(
-        segments::SEG_NOTES,
-        tr!(segment_notes()),
-        Box::new(folder_synopsis_body(
-            tab,
-            segment_will_show(tab, segments::SEG_NOTES),
-        )) as Box<dyn Widget>,
-    )];
+    let mut items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![
+        (
+            segments::SEG_NOTES,
+            tr!(segment_notes()),
+            Box::new(folder_synopsis_body(
+                tab,
+                segment_will_show(tab, segments::SEG_NOTES),
+            )) as Box<dyn Widget>,
+        ),
+        (
+            segments::SEG_STORY_BIBLE,
+            tr!(segment_story_bible()),
+            crate::tabs::story_bible_place::story_bible_pane(tab),
+        ),
+    ];
     for spec in segments::registered_for(&sub_role) {
         // Leaked so the id borrows for the rest of this build: see `folder_segmented`,
         // which leaks the same way for the same reason: bounded by the number of

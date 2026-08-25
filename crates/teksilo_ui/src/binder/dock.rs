@@ -508,13 +508,18 @@ pub fn promote_with_guard(
 
 /// The "Add ▸" submenu content: the recommended new-item types for `key`, in
 /// recommended order, each with a rich tooltip. Fires `add_recommended` on the
-/// outline directly (row-anchored — mirrors `new_item_at`, not via an intent).
+/// outline directly (row-anchored, mirrors `new_item_at`, not via an intent),
+/// **except** `StoryBibleEntry`, which needs to open a modal afterward and so
+/// has to reach the one place that can (the global `binder.new_item` action,
+/// which owns the deps a modal needs); every other row still bypasses the
+/// intent bus exactly as before.
 fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
     let recs = outline.recommendations_for_key(Some(key));
     // Anchor title for the tooltips — `Some` only for a real item row.
     let anchor_title = outline
         .node_item(key)
         .and_then(|(item_id, title)| item_id.map(|_| title));
+    let anchor_item_id = outline.node_item(key).and_then(|(item_id, _)| item_id);
     let mut menu = MenuList::new();
     for rec in &recs {
         let vm = outline.clone();
@@ -527,7 +532,17 @@ fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> Me
                 .icon(crate::binder::icons::create_type_icon(rec.create_type))
                 .trailing_hint(placement)
                 .rich_tooltip(recommendation_tooltip_key(rec.create_type))
-                .on_activate_fn(move |_| vm.add_recommended(Some(key), &rec_owned)),
+                .on_activate_fn(move |c| {
+                    if rec_owned.create_type == skribisto_model::CreateType::StoryBibleEntry {
+                        c.send_intent(crate::intents::AppIntent::NewItem {
+                            create_type: rec_owned.create_type,
+                            relation: rec_owned.relation,
+                            anchor_item_id,
+                        });
+                    } else {
+                        vm.add_recommended(Some(key), &rec_owned);
+                    }
+                }),
         );
     }
     menu

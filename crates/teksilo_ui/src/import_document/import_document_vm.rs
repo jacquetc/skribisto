@@ -1929,6 +1929,12 @@ fn create_type_to_kind(kind: CreateType) -> ImportRowKind {
         CreateType::Paratext => ImportRowKind::Paratext,
         CreateType::ParatextFolder => ImportRowKind::ParatextFolder,
         CreateType::EndOfBook => ImportRowKind::EndOfBook,
+        // A document importer has no notion of "story bible entry": that ceremony
+        // is a UI-only creation flow, and the type is structurally a Note anyway
+        // (see `CreateType::StoryBibleEntry`'s own doc), so an imported row can
+        // never actually resolve to it: `CreateType::of` answers `Note` for the
+        // combo either produces. This arm exists only so the match stays total.
+        CreateType::StoryBibleEntry => ImportRowKind::Note,
     }
 }
 

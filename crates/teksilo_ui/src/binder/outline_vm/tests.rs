@@ -940,6 +940,42 @@ mod recommend {
         );
     }
 
+    /// **C1a: the story-bible entry vocabulary item creates its row immediately,
+    /// exactly like every other sibling, and never defers creation behind a
+    /// modal.** `add_recommended_returning_id` is the mechanism the caller in
+    /// `app::commands::binder` opens the story-bible configuration modal from,
+    /// so this is the guarantee that no modal stands between the click and the
+    /// row existing: the row is already a real, titled, correctly-typed member
+    /// of the binder by the time this call returns, and the returned id names
+    /// exactly that row.
+    #[test]
+    fn story_bible_entry_creates_immediately_and_returns_its_row_id() {
+        let (outline, binder) = seed();
+
+        let created = outline
+            .add_recommended_returning_id(None, &rec(CreateType::StoryBibleEntry, Relation::Child))
+            .expect("a story-bible entry must create its row immediately, not defer to a modal");
+
+        let order = order_of(&outline, binder);
+        assert_eq!(
+            order,
+            vec![created],
+            "the row must already be in the binder"
+        );
+
+        let item = outline
+            .item_dto(created)
+            .expect("the row must be readable back");
+        assert_eq!(item.role, BinderItemRole::Item);
+        assert_eq!(item.sub_role, BinderItemSubRole::Note);
+        let want_title: String =
+            crate::binder::create_labels::default_title(CreateType::StoryBibleEntry).into();
+        assert_eq!(
+            item.title, want_title,
+            "titled from its own vocabulary entry, not a generic placeholder"
+        );
+    }
+
     /// The reported bug: creating the **first** child of a container left the
     /// parent collapsed, so the new row was real, selected, and invisible.
     /// A container with no children has never been expanded — there was no

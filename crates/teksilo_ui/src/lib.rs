@@ -151,6 +151,7 @@ pub mod singles;
 pub mod spellcheck;
 pub mod startup;
 pub mod statusbar;
+pub mod story_bible;
 pub mod stream;
 pub mod tabs;
 pub mod tags;

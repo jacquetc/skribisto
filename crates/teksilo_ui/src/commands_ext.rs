@@ -266,6 +266,7 @@ const APP_INTENT_NAMESPACES: &[&str] = &[
     "search.",
     "session.",
     "spellcheck.",
+    "story_bible.",
     "templates.",
     "timeline.",
     "trash.",

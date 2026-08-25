@@ -228,6 +228,19 @@ pub enum AppIntent {
     /// `UserDictionaryViewModel::add_words` + shows the added-toast.
     #[name = "editor.add_to_dictionary"]
     AddWordsToDictionary { words: Vec<String> },
+
+    /// File the current selection as a new story-bible entry: fired from the
+    /// editor's "Add as note" context-menu item, with the selected words already
+    /// resolved (the menu is rebuilt fresh on every right-click, so this is never
+    /// stale) and `item_id` naming the row the selection sits in, since a
+    /// selection cannot span two rows of a manuscript stream.
+    ///
+    /// The menu mounts at the arena root, so it reaches only a **global** action
+    /// (`story_bible.add_as_note`), which opens the story-bible creation modal
+    /// pre-filled from the selection. Nothing is created by firing this intent:
+    /// the modal itself gathers everything until Create is pressed.
+    #[name = "story_bible.add_as_note"]
+    AddAsNote { item_id: u64, selected_text: String },
 }
 
 #[cfg(test)]

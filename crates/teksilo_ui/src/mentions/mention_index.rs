@@ -121,6 +121,36 @@ impl MentionIndex {
         self.inner.version.clone()
     }
 
+    /// Seed a fresh index as if a batch scan just landed, both directions
+    /// (`by_owner` *and* `by_target`): the crate-wide test seam for anything that
+    /// reads [`Self::backlinks_for`] without driving a real `scan_mentions`
+    /// round trip, which under `--features mocks` has no backend to complete.
+    ///
+    /// The private `tests` submodule below has its own narrower `seeded_index`
+    /// (table + `by_owner` only, everything its own suite needs); this is the one
+    /// other modules in the crate (e.g. `tabs::story_bible_place`'s tests) can
+    /// reach, because it is `pub(crate)` rather than buried in a private
+    /// submodule.
+    #[cfg(test)]
+    pub(crate) fn seeded_for_tests(
+        table: Vec<DiscoverableEntity>,
+        rows: Vec<MentionRow>,
+    ) -> MentionIndex {
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let ids = crate::app_ids::AppIds::new();
+        let index = MentionIndex::new(app_ctx, ids);
+        let mut by_owner: HashMap<u64, Vec<MentionRow>> = HashMap::new();
+        let mut by_target: HashMap<u64, Vec<MentionRow>> = HashMap::new();
+        for row in rows {
+            by_owner.entry(row.owner_id).or_default().push(row.clone());
+            by_target.entry(row.target_id).or_default().push(row);
+        }
+        *index.inner.table.borrow_mut() = table;
+        *index.inner.by_owner.borrow_mut() = by_owner;
+        *index.inner.by_target.borrow_mut() = by_target;
+        index
+    }
+
     /// Scan now, skipping only if one is already running.
     ///
     /// Used for the events that change *who is discoverable* — a tag gaining or losing its

@@ -64,6 +64,10 @@ pub const SEG_CORKBOARD: &str = "corkboard";
 pub const SEG_OVERVIEW: &str = "overview";
 /// A notes folder's own page (`folder_synopsis_with_overview`, which has no streams).
 pub const SEG_NOTES: &str = "notes";
+/// A notes folder's card grid of story-bible entries, grouped by discoverable tag
+/// (`folder_synopsis_with_overview`, alongside Notes). Persisted verbatim as a
+/// remembered view: see `crate::tabs::story_bible_place`'s own module doc.
+pub const SEG_STORY_BIBLE: &str = "story-bible";
 
 /// The `SegmentId` for a stable string id.
 ///
@@ -135,6 +139,7 @@ fn is_builtin(id: &str) -> bool {
             | SEG_CORKBOARD
             | SEG_OVERVIEW
             | SEG_NOTES
+            | SEG_STORY_BIBLE
     )
 }
 
@@ -240,6 +245,7 @@ mod tests {
             SEG_CORKBOARD,
             SEG_OVERVIEW,
             SEG_NOTES,
+            SEG_STORY_BIBLE,
         ] {
             assert!(
                 segment_id(id).get() < (1u64 << 48),
@@ -260,6 +266,7 @@ mod tests {
             SEG_CORKBOARD,
             SEG_OVERVIEW,
             SEG_NOTES,
+            SEG_STORY_BIBLE,
         ];
         let mut seen = std::collections::HashSet::new();
         for id in all {

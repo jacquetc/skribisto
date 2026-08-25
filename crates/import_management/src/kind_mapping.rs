@@ -50,5 +50,10 @@ pub(crate) fn create_type_to_kind(kind: skribisto_model::CreateType) -> ImportRo
         C::Paratext => ImportRowKind::Paratext,
         C::ParatextFolder => ImportRowKind::ParatextFolder,
         C::EndOfBook => ImportRowKind::EndOfBook,
+        // The document importer never produces this vocabulary entry: it is a UI-only
+        // creation ceremony, structurally a Note (see `CreateType::StoryBibleEntry`'s own
+        // doc), so this arm exists only to keep the match total, the same reasoning as
+        // `teksilo_ui::import_document::import_document_vm::create_type_to_kind`.
+        C::StoryBibleEntry => ImportRowKind::Note,
     }
 }

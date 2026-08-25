@@ -15,6 +15,13 @@
 //! context, and the reveal is an override: clearing the box restores exactly the collapse
 //! state the writer had. **Sort is per sibling group** — a book whose scenes were globally
 //! sorted by word count would no longer be a book.
+//!
+//! **The Tags column stays display-only; a filter chip row above the table answers the
+//! filter question instead.** See [`columns::tags_column`]'s own doc for why the column
+//! itself is deliberately unsortable, and [`tag_filter`] for the row that narrows by tag
+//! the way that comment always meant something else to do. A **Books** column
+//! ([`columns::books_column`]) rides beside Tags, read-only, rendered only when the Work
+//! has two or more Books.
 
 use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
@@ -32,11 +39,13 @@ use crate::overview::OverviewViewModel;
 mod columns;
 mod header;
 mod table;
+mod tag_filter;
 mod wire;
 
 use columns::*;
 use header::*;
 use table::*;
+use tag_filter::*;
 use wire::*;
 
 /// The pane: a wiring child, the header, and the table filling the rest.
@@ -52,6 +61,7 @@ pub fn overview_pane(tab: &super::ContentTab) -> Box<dyn Widget> {
             .spacing(0.0)
             .child(WireOverview { vm: vm.clone() })
             .child(overview_header(&vm))
+            .child(Padding::symmetric(14.0, 8.0).child(super::Boxed::new(tag_filter_row(&vm))))
             .child(Expand::new().child(OverviewTable { vm, root: None })),
     )
 }

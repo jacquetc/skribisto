@@ -81,7 +81,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .intent("preview.toggle")
             .shortcut("preview.toggle"),
     )
-    // Reveal the project-wide Timeline band. Not a convenience: it
+    // Reveal the project-wide "Go back in time" band. Not a convenience: it
     // shares the bottom side with the search preview, and a hidden
     // bottom side takes its rail with it — so unlike a leading or
     // trailing dock, there is no glyph left to click. Without this
@@ -130,4 +130,28 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .intent("editor.size.reset")
             .shortcut("editor.size.reset"),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `menu-timeline` (this row) and `timeline-title` (the dock's own
+    /// `tr!(timeline_title())`, resolved fresh in `timeline_dock`'s build
+    /// function) are two independent Fluent keys, not one label function read
+    /// from two places, the assumption the "Timeline" to "Go back in time"
+    /// rename plan asked to be confirmed by a direct look rather than trusted.
+    /// It does not hold, so this row was edited by hand alongside the dock's
+    /// own key; pinned here so the two cannot drift apart again silently.
+    #[test]
+    fn the_menu_row_names_the_same_place_as_the_dock_title() {
+        let menu_label = tr!(menu_timeline()).resolve_now();
+        let dock_title = tr!(timeline_title()).resolve_now();
+        assert_eq!(dock_title, "Go back in time");
+        assert!(
+            menu_label.contains("Go back in time"),
+            "the View menu row must read '{}', not: {menu_label}",
+            dock_title
+        );
+    }
 }

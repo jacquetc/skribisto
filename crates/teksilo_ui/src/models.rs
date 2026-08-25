@@ -97,8 +97,8 @@ pub use numbering::{
 };
 pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard};
 pub use overview_rows_model::{
-    COL_GOAL, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_COMMENTS,
-    COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow, OverviewRowsModel,
+    COL_BOOKS, COL_GOAL, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE,
+    COL_TOTAL_COMMENTS, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow, OverviewRowsModel,
 };
 pub use pace_model::{DailyCount, HolidayRow, MilestoneKind, MilestoneRow, PaceModel};
 pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsService};

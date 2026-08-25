@@ -356,7 +356,7 @@ impl OutlineViewModel {
     // ── actions (each: backend command on the undo stack, then reload) ──
 
     /// The shared create tail: build the DTO and run the undoable create command,
-    /// then reload and reveal what was just made.
+    /// then reload, reveal what was just made, and hand back its store id.
     ///
     /// `title` is passed in already resolved rather than derived from `role` here:
     /// the caller knows the logical `CreateType` (Chapter, Scene, Note…), which
@@ -366,7 +366,10 @@ impl OutlineViewModel {
     /// Revealing is not cosmetic. Creating the *first* child of a container puts the
     /// new row under a parent that, having had no children, has never been expanded —
     /// so without this the write succeeds and the writer sees nothing happen.
-    fn create_item_at(
+    ///
+    /// The id is what lets the story-bible entry vocabulary item open a
+    /// configuration step on the row it just made; every other caller discards it.
+    fn create_item_at_returning_id(
         &self,
         binder: u64,
         index: usize,
@@ -374,7 +377,7 @@ impl OutlineViewModel {
         role: BinderItemRole,
         sub_role: BinderItemSubRole,
         title: String,
-    ) {
+    ) -> Option<u64> {
         let dto = CreateBinderItemDto {
             title,
             role,
@@ -384,20 +387,24 @@ impl OutlineViewModel {
             indent,
             ..Default::default()
         };
-        if let Ok(created) = binder_item_commands::create_binder_item(
+        match binder_item_commands::create_binder_item(
             &self.app_ctx,
             self.stack(),
             &dto,
             binder,
             index as i32,
         ) {
-            // Reload first: the row must exist in the tree before its ancestors can
-            // be walked, and `expand_ancestors` resolves the chain through the model.
-            //
-            // `select_in_place`, not `reveal_item` — a create fired from the
-            // Corkboard or Overview must not yank the outline dock open.
-            self.reload();
-            self.select_in_place(BinderTreeKey::Item(created.uid));
+            Ok(created) => {
+                // Reload first: the row must exist in the tree before its ancestors can
+                // be walked, and `expand_ancestors` resolves the chain through the model.
+                //
+                // `select_in_place`, not `reveal_item`: a create fired from the
+                // Corkboard or Overview must not yank the outline dock open.
+                self.reload();
+                self.select_in_place(BinderTreeKey::Item(created.uid));
+                Some(created.id)
+            }
+            Err(_) => None,
         }
     }
 
@@ -438,18 +445,32 @@ impl OutlineViewModel {
     /// menu). The logical `CreateType` is resolved to a concrete `(role, sub_role)`
     /// via the project's chapter mode. Guarded by `validate_item`.
     pub fn add_recommended(&self, anchor: Option<BinderTreeKey>, rec: &Recommendation) {
+        self.add_recommended_returning_id(anchor, rec);
+    }
+
+    /// As [`Self::add_recommended`], plus the created row's store id.
+    ///
+    /// The story-bible entry vocabulary item (`CreateType::StoryBibleEntry`) needs
+    /// this: it is created immediately, exactly like every sibling in the ＋ Create
+    /// vocabulary (same anchor resolution, same relation, same placement), and the
+    /// id it hands back is what lets the caller open the configuration step (name,
+    /// tags, aliases, a template) on the row that now exists, rather than deferring
+    /// creation behind a modal the way no other vocabulary entry does.
+    pub fn add_recommended_returning_id(
+        &self,
+        anchor: Option<BinderTreeKey>,
+        rec: &Recommendation,
+    ) -> Option<u64> {
         let anchor = anchor.or_else(|| self.selection.selected_keys().first().copied());
         let (role, sub_role) = rec.create_type.combo(self.chapter_mode());
         if skribisto_model::validate_item(&role, &sub_role, &[]).is_err() {
-            return;
+            return None;
         }
-        let Some((binder, index, indent)) = self.insertion_point_for(anchor, rec.relation) else {
-            return;
-        };
+        let (binder, index, indent) = self.insertion_point_for(anchor, rec.relation)?;
         // Resolve the localized default to owned data here — this call is the
         // chrome/data boundary (see `create_labels::default_title`).
         let title: String = crate::binder::create_labels::default_title(rec.create_type).into();
-        self.create_item_at(binder, index, indent, role, sub_role, title);
+        self.create_item_at_returning_id(binder, index, indent, role, sub_role, title)
     }
 
     // ── promote / demote (convert a binder item to its paired type) ──

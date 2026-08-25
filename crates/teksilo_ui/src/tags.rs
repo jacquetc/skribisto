@@ -25,7 +25,7 @@ pub use alias_pill_field::AliasPillField;
 pub use books::{book_add_button, book_chip_row, book_chips};
 pub use cast_add::{LiveCastOverlay, candidates_from_table, cast_add_button};
 pub use mention_list::MentionList;
-pub use pov::{pov_add_button, pov_chip_row, pov_chips};
+pub use pov::{pov_add_button, pov_chip_row, pov_chips, pov_has_unresolved};
 pub use presets::Preset;
 pub use tag_chip::TagDotsRow;
 pub use tag_pill_field::TagPillField;
