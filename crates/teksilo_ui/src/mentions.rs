@@ -11,5 +11,7 @@
 //! [`crate::shared::ProgressRecorder`].
 
 mod mention_index;
+mod presence;
 
 pub use mention_index::{MentionIndex, MentionRow};
+pub use presence::confirm as confirm_presence;

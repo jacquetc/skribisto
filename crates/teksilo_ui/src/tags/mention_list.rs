@@ -47,6 +47,10 @@ use teksilo::prelude::*;
 use teksilo::widgets::{Badge, HStack, IconButton, TextWidget, VStack};
 
 use crate::mentions::MentionRow;
+
+/// The confirm checkmark's glyph size, matching the leading glyphs the framework's own
+/// menu rows draw at.
+pub(crate) const CONFIRM_GLYPH: f32 = 12.0;
 use crate::widgets::attach_labelled_composite_tooltip;
 
 /// Persist a new confirmed-reference list for the item the list belongs to (append one id).
@@ -54,6 +58,15 @@ pub type PinReference = Rc<dyn Fn(u64, &mut EventContext)>;
 
 /// Remove a confirmed reference from the item the list belongs to.
 pub type UnpinReference = Rc<dyn Fn(u64, &mut EventContext)>;
+
+/// Confirm, from a **backlink** row, that the entry this list belongs to really does
+/// appear in that row's document — keyed by `owner_id`, the document doing the
+/// mentioning.
+///
+/// Not [`PinReference`] reused, and the difference is the whole reason this exists: a pin
+/// is keyed on the row's *target* and writes the list owner's references, which from this
+/// direction would record the claim backwards. See [`crate::mentions::confirm_presence`].
+pub type ConfirmPresence = Rc<dyn Fn(u64, &mut EventContext)>;
 
 /// Open a row's target in the side pane.
 pub type OpenTarget = Rc<dyn Fn(u64, String, &mut EventContext)>;
@@ -121,6 +134,9 @@ pub struct MentionList {
     pin: Option<PinReference>,
     /// Same gate as pin: only the cast direction (owner item) can unpin.
     unpin: Option<UnpinReference>,
+    /// The backlink direction's own control — see [`ConfirmPresence`]. `None` on a
+    /// roster, where the pin above is already the right shape.
+    confirm: Option<ConfirmPresence>,
     open: OpenTarget,
     root_child: Option<WidgetId>,
 }
@@ -138,9 +154,19 @@ impl MentionList {
             naming,
             pin,
             unpin,
+            confirm: None,
             open,
             root_child: None,
         }
+    }
+
+    /// Offer, on every suggested row, to confirm that this entry really appears in that
+    /// document. **Confirm only**: a row that is already confirmed shows no control at
+    /// all, because taking a mention back is a statement about the *scene's* cast and
+    /// belongs where the cast is edited.
+    pub fn confirm(mut self, confirm: ConfirmPresence) -> Self {
+        self.confirm = Some(confirm);
+        self
     }
 }
 
@@ -262,6 +288,27 @@ impl Widget for MentionList {
                         .embedded()
                         .tooltip(tr!(cast_pin(name = row.title.clone())))
                         .on_activate_fn(move |c| pin(target, c)),
+                );
+            } else if !row.is_point_of_view
+                && let Some(confirm) = self.confirm.clone()
+            {
+                // A checkmark, not the roster's plus: from this end the writer is
+                // agreeing with something the scan already found, not adding someone to
+                // a scene they were absent from.
+                //
+                // Never on a declared point of view. `set_point_of_view` already writes
+                // the character into the scene's cast as one composite, so such a row is
+                // confirmed too and never reaches here — and a row that renders *plain*,
+                // as a declaration does, must not also carry a control that says the
+                // writer has yet to agree with it.
+                let owner = row.owner_id;
+                line = line.child(
+                    IconButton::new(teksilo::widgets::primitives::IconWidget::checkmark(
+                        CONFIRM_GLYPH,
+                    ))
+                    .embedded()
+                    .tooltip(tr!(mentions_confirm(name = name.clone())))
+                    .on_activate_fn(move |c| confirm(owner, c)),
                 );
             }
 

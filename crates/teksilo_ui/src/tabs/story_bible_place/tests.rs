@@ -351,6 +351,41 @@ fn an_entry_with_no_mentions_reads_as_zero_not_missing() {
     assert_eq!(cards[0].mentions, 0);
 }
 
+/// **"Never looked" is not "looked and found none".**
+///
+/// `MentionIndex`'s alias table is built from discoverable entries alone, so an untagged
+/// entry is absent from it by construction and its count is zero for a reason that has
+/// nothing to do with the manuscript. Reporting "No appearances yet" there asserts an
+/// absence never measured: on a real project it read that way for a character written
+/// into every chapter, under a group heading that already said "Not yet tagged".
+#[test]
+fn an_untagged_entry_is_not_told_it_has_no_appearances() {
+    let searched = GroupedCard {
+        entry: entry(10, "Elizabeth Bennet", vec![1], 2),
+        mentions: 0,
+        group: "character".to_string(),
+        discoverable: true,
+    };
+    let never_searched = GroupedCard {
+        discoverable: false,
+        ..searched.clone()
+    };
+
+    let found_none = appearances_line(&searched).resolve_now();
+    let not_looked = appearances_line(&never_searched).resolve_now();
+    assert_ne!(
+        found_none, not_looked,
+        "a scan that found nothing and a scan that never ran must not read the same"
+    );
+    assert!(
+        !not_looked.is_empty(),
+        "an untagged card still says something, it simply does not claim an absence"
+    );
+    // Asserted on the *keys*, which is all a test without loaded locale resources can
+    // see — and all this rule is: the two states must not reach for the same string.
+    // What each one reads is the `.ftl`'s business.
+}
+
 /// [`super::BibleCard`] builds and lays out without panicking over the data
 /// `grouped_cards` produces: the render half of "a card shows its alias count
 /// and mention badge".
@@ -360,6 +395,7 @@ fn the_card_widget_builds_over_its_own_grouped_data() {
         entry: entry(10, "Elizabeth Bennet", vec![1], 2),
         mentions: 4,
         group: "character".to_string(),
+        discoverable: true,
     };
     let mut tree = WidgetTree::new();
     let id = tree.add_boxed(Box::new(BibleCard { card, root: None }));

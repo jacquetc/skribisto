@@ -442,3 +442,60 @@ fn a_surface_with_no_palette_still_offers_untagged() {
         "the one always-present row must render: {labels:?}"
     );
 }
+
+/// **The writer's palette reaches the capture menu.**
+///
+/// A tag is recognised by its colour everywhere else in the app — the binder's dots, the
+/// corkboard's, the editor's subtitle row — and this menu is exactly where a writer picks
+/// between four of them at speed. A row that named the tag without showing its colour
+/// would be the one place in the app where the palette does not hold.
+///
+/// The assertion is on **painted** colour, not on a builder call, because the default
+/// every other menu row wants is the opposite one: `MenuItem` tints its icon to the row's
+/// own foreground, which is right for a glyph that repeats the label and erases one whose
+/// colour *is* the label. `icon_keeps_color` is what separates the two, and only a render
+/// can tell whether it took.
+#[test]
+fn a_capture_row_shows_the_tag_in_the_writers_own_colour() {
+    use crate::story_bible::capture::{CaptureMenu, CaptureTag};
+
+    let tag = |id: u64, name: &str, color: &str| CaptureTag {
+        id,
+        uid: uuid::Uuid::from_u128(id as u128),
+        name: name.to_string(),
+        color: color.to_string(),
+        discoverable: true,
+    };
+    // Two colours no theme role resolves to, so finding them can only mean the tags'
+    // own reached the screen.
+    let menu = CaptureMenu {
+        primary: vec![tag(1, "Characters", "#e91e63"), tag(2, "Places", "#00838f")],
+        recent: Vec::new(),
+        all: Vec::new(),
+    };
+
+    let mut tree = WidgetTree::new();
+    tree.add(render_capture_menu(7, "Elise Laroche", menu));
+    tree.layout(teksilo::prelude::SizeProposal::exact(400.0, 300.0));
+
+    let painted: Vec<[u8; 4]> = tree
+        .render()
+        .paths
+        .iter()
+        .map(|p| {
+            let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+            [q(p.color[0]), q(p.color[1]), q(p.color[2]), q(p.color[3])]
+        })
+        .collect();
+    let rgba8 = |hex: &str| {
+        let c = crate::tags::contrast::parse(hex);
+        let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+        [q(c.r()), q(c.g()), q(c.b()), q(c.a())]
+    };
+    for hex in ["#e91e63", "#00838f"] {
+        assert!(
+            painted.contains(&rgba8(hex)),
+            "the swatch for {hex} was not painted in the writer's colour; got {painted:?}"
+        );
+    }
+}

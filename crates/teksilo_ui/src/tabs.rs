@@ -47,7 +47,7 @@ use crate::pace::PaceViewModel;
 use crate::settings::{EditorTypography, EditorTypographySet};
 use crate::shared::SynopsisPlacement;
 use crate::singles::{SingleBinderItem, SingleContent};
-use crate::stream::StreamViewModel;
+use crate::stream::{SplitFlavour, StreamViewModel};
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
@@ -184,6 +184,23 @@ pub struct ContentTab {
     /// prose field to search. Persisted on the tab so it survives tab rebuilds
     /// (its `FindSession` + query outlive the widget tree it draws into).
     find: Option<crate::search::FindViewModel>,
+    /// The find banner of this tab's **multi-document** pages: a manuscript stream, a
+    /// full-synopsis stream, a note's In-prose reading. `Some` for every tab that has
+    /// one of those pages at all.
+    ///
+    /// A second view-model rather than a mode on `find`, because the two are searching
+    /// different things and the writer moves between them by switching segment: keeping
+    /// a query and a match cursor per page is what makes going back to a stream land
+    /// where it was left. Only one of the two is ever mounted, because only one segment
+    /// is — see [`Self::active_find`], which is what Ctrl+F resolves through.
+    page_find: Option<crate::search::FindViewModel>,
+    /// **What the In-prose reading is showing**, in the order it shows it.
+    ///
+    /// Published by that page on every build and read by `page_find`'s document source,
+    /// which is built here — long before the page exists and with no route to it. Only
+    /// ever consulted while that segment is the one on screen, so the list a segment
+    /// switch leaves behind is never searched.
+    in_prose_docs: Rc<RefCell<Vec<(u64, teksilo::text_document::TextDocument)>>>,
     /// This tab's **synopsis** editor handle, re-attached on every build the way
     /// the prose one is (a tab rebuild mints a fresh editor and a fresh handle).
     ///
@@ -632,6 +649,46 @@ impl Widget for Boxed {
     }
 }
 
+/// Which of a tab's **multi-document** pages the segment bar is showing.
+///
+/// The three pages that put more than one writing surface in front of the reader at
+/// once. Everything else — a container's own page, the Corkboard, the Overview, a
+/// note's Details — is either one document or none, and Ctrl+F resolves to the tab's
+/// own banner (or to nothing) there.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum FindPage {
+    /// A manuscript stream or its full-synopsis twin: the container's own surface, then
+    /// one editor per row.
+    Stream(SplitFlavour),
+    /// An `Item/Note`'s In prose reading: the manuscript rows it is declared present in.
+    InProse,
+}
+
+/// Read the segment bar for [`FindPage`]. `None` while the bar has chosen nothing yet,
+/// which resolves to the first segment — a container's own page, never a stream.
+fn find_page(segment: &Signal<Option<teksilo::widgets::SegmentId>>) -> Option<FindPage> {
+    use crate::tabs::shared::segments as seg;
+    let shown = segment.get()?;
+    if shown == seg::segment_id(seg::SEG_MANUSCRIPT) {
+        Some(FindPage::Stream(SplitFlavour::Prose))
+    } else if shown == seg::segment_id(seg::SEG_SYNOPSIS) {
+        Some(FindPage::Stream(SplitFlavour::Synopsis))
+    } else if shown == seg::segment_id(seg::SEG_NOTE_IN_PROSE) {
+        Some(FindPage::InProse)
+    } else {
+        None
+    }
+}
+
+/// An `Item/Note` — the one non-container combination with a page of many documents
+/// (its In prose reading).
+fn is_note(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> bool {
+    matches!(
+        (role, sub_role),
+        (BinderItemRole::Item, BinderItemSubRole::Note)
+    )
+}
+
 impl ContentTab {
     /// Wrap a shared `OpenDoc` with this tab's presentation state, plus — for a folder
     /// container — its manuscript-stream view-model. `StreamViewModel::new` returns
@@ -758,6 +815,66 @@ impl ContentTab {
         // Seed the container's view from the per-type memory (own page = 0 when
         // disabled or for a non-segmented type).
         let segment = Signal::new(view_memory.initial(&open_doc.role, &open_doc.sub_role));
+        // Where the In-prose reading publishes the rows it is showing, so the banner
+        // below — built here, before that page exists — can search them.
+        let in_prose_docs: Rc<RefCell<Vec<(u64, TextDocument)>>> =
+            Rc::new(RefCell::new(Vec::new()));
+        // The banner over this tab's pages of *many* documents. Present for a container
+        // (both of its streams) and for an `Item/Note` (its In-prose reading); every
+        // other combination has only single-document pages, and `find` above is theirs.
+        let page_find =
+            (stream.is_some() || is_note(&open_doc.role, &open_doc.sub_role)).then(|| {
+                let documents: crate::search::PageDocuments = {
+                    let segment = segment.clone();
+                    let stream = stream.clone();
+                    let open_doc = open_doc.clone();
+                    let in_prose = in_prose_docs.clone();
+                    Rc::new(move || match find_page(&segment) {
+                        Some(FindPage::Stream(flavour)) => {
+                            let Some(vm) = stream.as_ref() else {
+                                return Vec::new();
+                            };
+                            // The container's **own** writing surface first: a chapter
+                            // folder's prose is the top of the page, above its rows, and
+                            // a page that skipped it would find nothing in the one
+                            // paragraph the writer typed straight into the chapter.
+                            let own = match flavour {
+                                SplitFlavour::Prose => open_doc.main.as_ref(),
+                                SplitFlavour::Synopsis => open_doc.synopsis.as_ref(),
+                            };
+                            own.map(|field| (open_doc.item_id, field.doc.clone()))
+                                .into_iter()
+                                .chain(vm.page_documents(flavour))
+                                .collect()
+                        }
+                        Some(FindPage::InProse) => in_prose.borrow().clone(),
+                        None => Vec::new(),
+                    })
+                };
+                // A page builds one editor per row, so the only thing that can say which
+                // mounted editor is showing row 31 is the registry every writing editor
+                // announces itself to. Keyed by the kind the *visible* page is made of:
+                // a Full Synopsis is a page of synopsis editors over the same items.
+                let resolve: crate::search::ResolveEditor = {
+                    let segment = segment.clone();
+                    let format = format.clone();
+                    Rc::new(move |item: u64| {
+                        let kind = match find_page(&segment) {
+                            Some(FindPage::Stream(SplitFlavour::Synopsis)) => {
+                                crate::format::EditorKind::Synopsis
+                            }
+                            _ => crate::format::EditorKind::Prose,
+                        };
+                        format
+                            .handles_by_item(kind)
+                            .into_iter()
+                            .filter(|(shown, _)| *shown == item)
+                            .map(|(_, handle)| handle)
+                            .collect()
+                    })
+                };
+                crate::search::FindViewModel::over_page(documents, resolve)
+            });
         // Synopsis | manuscript. Seeded from the persisted width, but *hidden* and
         // at `min_size` 0 until something shows it: a Splitter counts hidden panes'
         // minimums into its own, so a pane parked at its real minimum would set a
@@ -806,6 +923,8 @@ impl ContentTab {
             work,
             app_ctx,
             find,
+            page_find,
+            in_prose_docs,
             synopsis_handle: Rc::new(RefCell::new(None)),
             view_state: Signal::new(crate::shared::ViewState::default()),
             view_state_ports: Rc::new(crate::shared::ViewStatePorts::default()),
@@ -875,6 +994,30 @@ impl ContentTab {
     /// main prose field (Scene / ChapterScene / Note).
     pub fn find(&self) -> Option<&crate::search::FindViewModel> {
         self.find.as_ref()
+    }
+
+    /// The find banner of this tab's pages of many documents — a manuscript stream, a
+    /// full synopsis, a note's In-prose reading. See [`Self::page_find`].
+    pub fn page_find(&self) -> Option<&crate::search::FindViewModel> {
+        self.page_find.as_ref()
+    }
+
+    /// **The banner Ctrl+F opens**: the one belonging to the page actually on screen.
+    ///
+    /// A segmented tab has two, and which of them the writer means is decided by the
+    /// segment bar, not by the tab's type. Resolved on every command rather than latched
+    /// so that switching segment moves the shortcut with it.
+    pub fn active_find(&self) -> Option<&crate::search::FindViewModel> {
+        match find_page(&self.segment) {
+            Some(_) => self.page_find.as_ref(),
+            None => self.find.as_ref(),
+        }
+    }
+
+    /// The sink the In-prose reading publishes the rows it is showing into, so this
+    /// tab's page banner can search them. See [`Self::in_prose_docs`].
+    pub fn in_prose_docs_sink(&self) -> Rc<RefCell<Vec<(u64, TextDocument)>>> {
+        self.in_prose_docs.clone()
     }
 
     /// The sink the synopsis editor re-attaches its handle to on every build.

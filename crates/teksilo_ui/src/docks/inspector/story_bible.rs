@@ -481,7 +481,9 @@ pub(super) fn section(
                 }
 
                 // Backlinks, on a discoverable item: where this character appears.
-                // No pin — that would write the wrong item's references.
+                // No *pin* — keyed on the row's target, it would write this entry's own
+                // references and record the claim backwards. Confirm is the same
+                // relationship written from this end, keyed on the row's owner instead.
                 if tag_value.get().iter().any(|id| discoverable.contains(id)) {
                     let backlinks = index.backlinks_for(d.id);
                     if !backlinks.is_empty() {
@@ -496,9 +498,10 @@ pub(super) fn section(
                                     .style(TextStyleRole::Tiny)
                                     .color(TextRole::Secondary),
                             )
-                            .child(crate::tags::MentionList::new(
-                                backlinks, naming, None, None, open,
-                            ));
+                            .child(
+                                crate::tags::MentionList::new(backlinks, naming, None, None, open)
+                                    .confirm(confirm_presence(&panel.app_ctx, d.id, stack)),
+                            );
                     }
                 }
             } else if tag_value.get().iter().any(|id| discoverable.contains(id)) {
@@ -520,12 +523,30 @@ pub(super) fn section(
                                 .style(TextStyleRole::Tiny)
                                 .color(TextRole::Secondary),
                         )
-                        .child(crate::tags::MentionList::new(
-                            backlinks, naming, None, None, open,
-                        ));
+                        .child(
+                            crate::tags::MentionList::new(backlinks, naming, None, None, open)
+                                .confirm(confirm_presence(&panel.app_ctx, d.id, stack)),
+                        );
                 }
             }
         }
     }
     col
+}
+
+/// The backlink direction's confirm control, for `entry`'s own "Appears in" list.
+///
+/// Built here rather than inside [`crate::tags::MentionList`] for the same reason pin and
+/// unpin are: the widget has no `AppContext`, and which relationship a control writes is
+/// the caller's claim to make. `entry` is the story-bible item the list belongs to; the
+/// id the closure receives is the *document* that mentions it.
+fn confirm_presence(
+    app_ctx: &Rc<frontend::AppContext>,
+    entry: u64,
+    stack: Option<u64>,
+) -> crate::tags::mention_list::ConfirmPresence {
+    let app_ctx = app_ctx.clone();
+    Rc::new(move |owner, _c| {
+        let _ = crate::mentions::confirm_presence(&app_ctx, &[owner], entry, stack);
+    })
 }

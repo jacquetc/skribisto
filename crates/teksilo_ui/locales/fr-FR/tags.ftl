@@ -130,6 +130,10 @@ cast-unresolved = Ne fait plus partie de la bible narrative
 
 ## Rétroliens sur une entrée de bible narrative
 mentions-backlinks = Apparaît dans
+# Le bouton d’une suggestion de rétrolien : l’autrice confirme que c’est bien elle,
+# et l’entrée est inscrite dans la présence de ce document. Confirmation seule : il
+# n’y a pas de « ce n’est pas elle » à enregistrer.
+mentions-confirm = Ajouter à la présence de { $name }
 mentions-hit-count = { $n ->
     [one] une fois
    *[other] { $n } fois
@@ -187,4 +191,16 @@ note-details-pov-multiple = Cette note a deux points de vue.
 note-details-backlinks = Apparaît dans le manuscrit
 note-details-backlinks-empty = Rien pour l’instant. Dès que ce nom apparaîtra dans votre texte, il s’affichera ici.
 note-details-backlinks-outside = Hors des livres
+note-details-backlinks-confirm-all = Confirmer toutes les présences
+note-details-backlinks-confirm-all-tooltip = Inscrit cette entrée dans la présence de chaque document affiché ici qui ne l’a pas encore confirmée
 note-details-untitled-document = Sans titre
+
+## Le compteur de la lecture « Dans le texte » : combien de fois cette entrée est
+## nommée dans les rangées affichées, et à laquelle la lectrice s'est déplacée.
+note-in-prose-mentions = { $n ->
+    [one] 1 mention
+   *[other] { $n } mentions
+}
+note-in-prose-mention-at = { $current } sur { $total }
+note-in-prose-mention-previous = Mention précédente
+note-in-prose-mention-next = Mention suivante

@@ -38,6 +38,7 @@ use std::rc::Rc;
 
 use teksilo::data::ListModel;
 use teksilo::prelude::*; // EventContext, Signal, BuildContext, tr!
+use teksilo::text_document::TextDocument;
 use teksilo::widgets::InputDialog;
 
 use crate::comments::binding::CommentBinding;
@@ -251,6 +252,37 @@ impl StreamViewModel {
     /// standalone tab on the same item are one document. Cached and reused.
     pub fn row_doc(&self, id: u64) -> Option<Rc<OpenDoc>> {
         self.handle(id).map(|h| h.doc)
+    }
+
+    /// Every document this stream is **already showing**, in the order it shows them —
+    /// what a find spanning the whole page searches.
+    ///
+    /// Deliberately non-opening: it reads the row cache directly rather than going
+    /// through [`row_doc`](Self::row_doc), which on a miss runs a full synchronous Djot
+    /// import — the thing that once made switching a Book to Full Book freeze for
+    /// seconds. A row the page has not opened yet is a row the reader is not looking at,
+    /// and it contributes nothing rather than being imported on a keystroke.
+    ///
+    /// In practice that excludes nothing on a mounted page: `Repeater` is not
+    /// virtualized, so every row of the stream has a live editor and its document is
+    /// opened by the row factory. What it does exclude is the moment *before* that — the
+    /// banner is the page's parent and builds first — which the per-frame re-sync in
+    /// [`FindViewModel::tick`](crate::search::FindViewModel::tick) picks up.
+    pub fn page_documents(&self, flavour: SplitFlavour) -> Vec<(u64, TextDocument)> {
+        let cache = self.inner.row_handles.borrow();
+        self.inner
+            .rows
+            .ids()
+            .into_iter()
+            .filter_map(|id| {
+                let handle = cache.get(&id)?;
+                let field = match flavour {
+                    SplitFlavour::Prose => handle.doc.main.as_ref(),
+                    SplitFlavour::Synopsis => handle.doc.synopsis.as_ref(),
+                }?;
+                Some((id, field.doc.clone()))
+            })
+            .collect()
     }
 
     /// This row's door to the comment feature, for the surface `flavour` names.

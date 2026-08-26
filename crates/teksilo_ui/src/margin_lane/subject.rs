@@ -18,6 +18,21 @@
 //! are the same person. A single-needle query cannot say that, and asking the writer to
 //! type an alternation would be asking them to do the index's job.
 //!
+//! ## The matcher is the app's own, and that is not an optimisation
+//!
+//! [`hits`] runs `skribisto_model::mentions`, the same scan the roster, the Inspector's
+//! cast list and every backlink read from. It did not always: a first cut matched the
+//! names byte for byte, and **an entry called "Élise Laroche" lit up nothing at all**
+//! while her alias "Claire" lit up three times — because the app's matcher folds
+//! diacritics and a byte comparison does not. The reading listed the row (the index found
+//! her) and then marked nothing in it, which reads as the feature being broken rather
+//! than as two matchers disagreeing.
+//!
+//! So there is one matcher. Case-sensitive, diacritic-**in**sensitive, whole word, names
+//! under `MIN_NAME_LEN` ignored: those are `mention_options`' rules, they are deliberately
+//! not preferences, and every surface that says where a name is has to obey the same ones
+//! or the writer is told two different stories about their own book.
+//!
 //! ## Scope
 //!
 //! Set while a note's **In prose** segment is on screen, cleared when it goes away.
@@ -25,23 +40,32 @@
 //! writer opens such a reading again, exactly as the find banner forgets its query.
 
 use common::types::EntityId;
+use skribisto_model::mentions::{self, DiscoverableEntity};
 use teksilo::core::signal::Signal;
+use teksilo::text_document::matching::FoldLocale;
 
 /// The entry a reading is about, and the names it goes by.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LaneSubject {
-    /// The note itself. A row declaring this id as its point of view earns a mark even
-    /// where the prose never writes the name, which is the case the whole reading exists
-    /// for: a scene in deep third person may name nobody at all.
-    pub note_id: EntityId,
-    /// Its title and every alias, longest first.
+    /// The entry's matching surface: its title and every alias, in the shape the app's own
+    /// mention matcher takes. `entity.id` is the note itself — a row declaring it as its
+    /// point of view earns a mark even where the prose never writes the name, which is the
+    /// case the whole reading exists for: a scene in deep third person may name nobody.
     ///
-    /// Longest first so a document naming her "Elizabeth Bennet" is marked once for the
-    /// full name rather than twice, overlapping, for the name and the surname inside it.
-    pub names: Vec<String>,
+    /// The whole entity rather than a flattened list of names, because the matcher wants
+    /// the title and the aliases apart (a title match outranks an alias one) and because
+    /// ordering the names is *its* job — see the module note on why there is one matcher.
+    pub entity: DiscoverableEntity,
     /// Which Work this belongs to, so a second window on a second project marks nothing
     /// rather than this project's names.
     pub work_uid: String,
+}
+
+impl LaneSubject {
+    /// The note this reading is about.
+    pub fn note_id(&self) -> EntityId {
+        self.entity.id
+    }
 }
 
 thread_local! {
@@ -67,54 +91,72 @@ pub fn set_active_subject(subject: Option<LaneSubject>) {
 /// unconditionally would blank a strip nobody touched.
 pub fn clear_subject_for(note_id: EntityId) {
     ACTIVE.with(|s| {
-        if s.get().is_some_and(|a| a.note_id == note_id) {
+        if s.get().is_some_and(|a| a.note_id() == note_id) {
             let _ = s.set_if_changed(None);
         }
     });
 }
 
-/// Every offset in `text` where one of `names` appears, as whole words, longest name
-/// first so an alias inside a longer name does not double-mark it.
+/// Every span of `text` where `entity` is named, as `(start, end)` char offsets in
+/// document order.
 ///
-/// Whole-word rather than substring, matching the mention scanner's own rule: a
-/// character called Ana must not light up every "banana" in the book.
-pub fn hits(text: &str, names: &[String]) -> Vec<(usize, usize)> {
-    let chars: Vec<char> = text.chars().collect();
-    let mut taken = vec![false; chars.len()];
-    let mut out: Vec<(usize, usize)> = Vec::new();
-    for name in names {
-        let needle: Vec<char> = name.chars().collect();
-        if needle.is_empty() || needle.len() > chars.len() {
-            continue;
-        }
-        for start in 0..=(chars.len() - needle.len()) {
-            let end = start + needle.len();
-            if taken[start..end].iter().any(|t| *t) {
-                continue;
-            }
-            if chars[start..end] != needle[..] {
-                continue;
-            }
-            let before_ok = start == 0 || !chars[start - 1].is_alphanumeric();
-            let after_ok = end == chars.len() || !chars[end].is_alphanumeric();
-            if before_ok && after_ok {
-                taken[start..end].iter_mut().for_each(|t| *t = true);
-                out.push((start, end));
-            }
-        }
-    }
-    out.sort_unstable();
-    out
+/// The app's own mention scan, not a second matcher — see the module note for the bug
+/// that rule is written in. It is memoised on `(prose, alias table, locale)`, so a lane
+/// and an underline layer asking about the same row in the same frame pay for one scan.
+///
+/// `FoldLocale::default()` rather than the row's own dictionary language, because that is
+/// what [`crate::mentions::MentionIndex`] scans with: this must agree with the roster the
+/// reading was built from, and a locale of its own would let the two disagree about a
+/// Turkish dotless i.
+pub fn hits(text: &str, entity: &DiscoverableEntity) -> Vec<(usize, usize)> {
+    let table = [entity.clone()];
+    let fingerprint = mentions::fingerprint_alias_table(&table);
+    mentions::cached_mentions(text, &table, fingerprint, FoldLocale::default())
+        .iter()
+        .map(|m| (m.char_start, m.char_start + m.char_len))
+        .collect()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn names(v: &[&str]) -> Vec<String> {
-        let mut n: Vec<String> = v.iter().map(|s| s.to_string()).collect();
-        n.sort_by_key(|s| std::cmp::Reverse(s.chars().count()));
-        n
+    /// The entry as the matcher takes it: a title and its aliases, kept apart.
+    fn entry(title: &str, aliases: &[&str]) -> DiscoverableEntity {
+        DiscoverableEntity {
+            id: 7,
+            title: title.to_string(),
+            aliases: aliases.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    /// **The bug this module's matcher rule is written in.**
+    ///
+    /// An entry called "Élise Laroche" with the aliases "Élise" and "Claire" lit up only
+    /// Claire: the byte-exact matcher this replaced could not see through the accent, so
+    /// the reading listed the row (the index folds diacritics and found her) and then
+    /// marked nothing in it. Both spellings must find both spellings, in either direction,
+    /// because a writer types one of them into the story bible and the other into the
+    /// prose without ever noticing.
+    #[test]
+    fn an_accent_does_not_hide_a_name() {
+        let accented = entry("Élise Laroche", &["Élise", "Claire"]);
+        let plain = entry("Elise Laroche", &["Elise", "Claire"]);
+        let prose_accented = "Élise entra. Claire la suivit.";
+        let prose_plain = "Elise entra. Claire la suivit.";
+
+        for (who, prose) in [
+            (&accented, prose_accented),
+            (&accented, prose_plain),
+            (&plain, prose_accented),
+            (&plain, prose_plain),
+        ] {
+            assert_eq!(
+                hits(prose, who),
+                vec![(0, 5), (13, 19)],
+                "both names, whichever side carries the accent"
+            );
+        }
     }
 
     /// **A name inside a longer name is marked once, not twice.**
@@ -123,40 +165,41 @@ mod tests {
     /// marks on one occurrence and count her twice in anything reading the list.
     #[test]
     fn a_longer_name_wins_the_overlap() {
-        let n = names(&["Elizabeth", "Elizabeth Bennet"]);
-        assert_eq!(hits("Elizabeth Bennet arrived.", &n), vec![(0, 16)]);
+        let who = entry("Elizabeth Bennet", &["Elizabeth"]);
+        assert_eq!(hits("Elizabeth Bennet arrived.", &who), vec![(0, 16)]);
     }
 
     /// Each alias is found on its own.
     #[test]
     fn every_alias_is_found() {
-        let n = names(&["Elizabeth", "Lizzy"]);
-        assert_eq!(hits("Lizzy teased Elizabeth.", &n), vec![(0, 5), (13, 22)]);
+        let who = entry("Elizabeth", &["Lizzy"]);
+        assert_eq!(
+            hits("Lizzy teased Elizabeth.", &who),
+            vec![(0, 5), (13, 22)]
+        );
     }
 
-    /// **Whole words only.** A character called Ana must not light up every banana,
-    /// which is the mention scanner's own rule and the reason this is not a substring
-    /// search.
+    /// **Whole words only.** A character called Ana must not light up every banana —
+    /// the mention scanner's own rule, which this now simply *is* rather than imitates.
     #[test]
     fn a_name_inside_a_word_is_not_a_hit() {
-        let n = names(&["Ana"]);
-        assert!(hits("a banana, and Ana's hat", &n).contains(&(14, 17)));
-        assert_eq!(hits("a banana", &n), Vec::new());
+        let who = entry("Ana", &[]);
+        assert!(hits("a banana, and Ana's hat", &who).contains(&(14, 17)));
+        assert_eq!(hits("a banana", &who), Vec::new());
     }
 
     /// An apostrophe is not a letter, so a possessive still matches.
     #[test]
     fn a_possessive_still_matches() {
-        let n = names(&["Ana"]);
-        assert_eq!(hits("Ana's hat", &n), vec![(0, 3)]);
+        let who = entry("Ana", &[]);
+        assert_eq!(hits("Ana's hat", &who), vec![(0, 3)]);
     }
 
     /// The subject is withdrawn only by whoever published it.
     #[test]
     fn only_the_publisher_withdraws_the_subject() {
         let mine = LaneSubject {
-            note_id: 7,
-            names: vec!["Elizabeth".into()],
+            entity: entry("Elizabeth", &[]),
             work_uid: "w".into(),
         };
         set_active_subject(Some(mine.clone()));
@@ -174,30 +217,13 @@ mod tests {
     /// yields nothing to mark.
     #[test]
     fn a_deep_point_of_view_scene_offers_the_prose_nothing_to_mark() {
-        let n = names(&["Elizabeth", "Lizzy"]);
+        let who = entry("Elizabeth", &["Lizzy"]);
         assert_eq!(
             hits(
                 "She stared out at the grey water long after the ferry had gone.",
-                &n
+                &who
             ),
-            Vec::new(),
-            "nothing textual, which is exactly why the declaration has to earn its own mark"
+            Vec::new()
         );
-    }
-
-    /// The subject is per Work: a second window on another project marks nothing.
-    #[test]
-    fn a_subject_carries_the_work_it_belongs_to() {
-        let s = LaneSubject {
-            note_id: 3,
-            names: names(&["Elizabeth"]),
-            work_uid: "work-a".into(),
-        };
-        set_active_subject(Some(s.clone()));
-        assert_eq!(
-            active_subject().get().map(|a| a.work_uid),
-            Some("work-a".into())
-        );
-        clear_subject_for(3);
     }
 }

@@ -290,10 +290,26 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             .child(centered(add_button(&vm), &header_cw))
             .child(vspace(28.0));
     }
-    crate::tabs::Boxed::new(match mapped {
-        Some((vm, extents, scope, page)) => Box::new(crate::tabs::shared::panes::laned_stream(
-            tab, &vm, flavour, scope, extents, page, col,
-        )) as Box<dyn Widget>,
+    let body: Box<dyn Widget> = match mapped {
+        Some((vm, extents, scope, page)) => {
+            let laned = crate::tabs::shared::panes::laned_stream(
+                tab, &vm, flavour, scope, extents, page, col,
+            );
+            // **Ctrl+F reads the whole stream.** A Full Chapter, Part or Book is one
+            // manuscript to the writer in front of it, so the banner searches the
+            // container's own prose and every row's as one run, and Next steps out of a
+            // row into the next rather than stopping at its last line. Which of the two
+            // stream flavours it is searching comes from the segment bar, so one
+            // view-model serves both — only one of them is ever mounted.
+            //
+            // The lane goes **inside** the wrapper, for the reason `manuscript_page`
+            // records: the banner is a strip above the page, and a lane running past it
+            // would map an extent that starts below its own top.
+            match tab.page_find().cloned() {
+                Some(find) => Box::new(crate::tabs::shared::editor::find_banner_over(find, laned)),
+                None => Box::new(laned) as Box<dyn Widget>,
+            }
+        }
         // No stream view-model, so no rows and nothing to map -- and no page was
         // built above either, so this one gets its own.
         None => {
@@ -301,7 +317,8 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                 crate::tabs::shared::panes::writing_page_scroll(tab, will_show);
             Box::new(area.child(col.child(port))) as Box<dyn Widget>
         }
-    })
+    };
+    crate::tabs::Boxed::new(body)
 }
 
 /// The gutter this page reserves: the margin's full column once anything on the

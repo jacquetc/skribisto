@@ -54,6 +54,10 @@ story-bible-grid-mention-count = { $count ->
    *[other] Apparaît dans { $count } scènes de l’ensemble du projet
 }
 story-bible-books-filter-all = Tous les livres
+# Une entrée sans étiquette découvrable n'a jamais figuré dans la table du scan :
+# rien n'a donc été cherché. Afficher « Aucune apparition » pour elle affirmerait une
+# absence jamais mesurée.
+story-bible-grid-not-searched = Pas encore analysé — il manque une étiquette de bible narrative
 
 ## Le segment « Dans le texte » de l'onglet d'un `Item/Note` (C3) : un flux
 ## modifiable du texte du manuscrit où cette note a été déclarée présente, un

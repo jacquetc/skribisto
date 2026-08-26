@@ -134,8 +134,17 @@ mod imp {
         }
 
         /// Current ordered row ids.
+        ///
+        /// Reads the ids out of the model rather than going through
+        /// [`rows`](Self::rows), which clones every row whole — a label `String` per
+        /// row included. That is wasted work for a list of `u64`s, and this one is asked
+        /// once a frame while a stream's find banner is open, over a Book that can be
+        /// hundreds of rows long.
         pub fn ids(&self) -> Vec<u64> {
-            self.rows().into_iter().map(|r| r.item_id).collect()
+            let m = &self.inner.model;
+            (0..m.len())
+                .filter_map(|i| m.with_item(i, |r| r.item_id))
+                .collect()
         }
 
         /// Subscribe once to structural events and do an initial fill. `on_removed`
@@ -556,7 +565,10 @@ mod imp {
         }
 
         pub fn ids(&self) -> Vec<u64> {
-            self.rows().into_iter().map(|r| r.item_id).collect()
+            let m = &self.model;
+            (0..m.len())
+                .filter_map(|i| m.with_item(i, |r| r.item_id))
+                .collect()
         }
 
         pub fn wire(&self, _ctx: &mut BuildContext, _on_removed: impl Fn(&[u64]) + 'static) {}

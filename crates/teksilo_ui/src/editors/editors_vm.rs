@@ -439,7 +439,7 @@ impl EditorsViewModel {
     /// the active tab has no main prose field. See
     /// [`crate::search::FindViewModel::editor_handle`] for why the handle lives there.
     pub fn focused_prose_handle(&self) -> Option<teksilo::widgets::rich_text::EditorHandle> {
-        self.focused_find()?.editor_handle()
+        self.focused_own_find()?.editor_handle()
     }
 
     /// Insert a scene break of `tier` at the caret of the focused prose editor.
@@ -641,9 +641,24 @@ impl EditorsViewModel {
         })
     }
 
-    /// The `FindViewModel` of the focused pane's active tab — `None` when nothing
-    /// is open there or the active tab has no main prose field.
+    /// The find banner Ctrl+F means: the one belonging to the **page on screen** in the
+    /// focused pane's active tab. `None` when nothing is open there, or when that page
+    /// has no prose to search.
+    ///
+    /// A segmented tab has two — its own document's, and its streams' — and which of
+    /// them the writer means is the segment bar's answer, not the tab type's. See
+    /// [`ContentTab::active_find`](crate::tabs::ContentTab::active_find).
     fn focused_find(&self) -> Option<crate::search::FindViewModel> {
+        self.with_focused_tab(|t| t.active_find().cloned())
+    }
+
+    /// The focused tab's **own document's** banner, whichever page is on screen.
+    ///
+    /// Distinct from [`focused_find`](Self::focused_find) because it is not asked as a
+    /// find question at all: it is how the prose-editing commands reach "this tab's main
+    /// editor", which is a fact about the tab and not about the page — see
+    /// [`focused_prose_handle`](Self::focused_prose_handle).
+    fn focused_own_find(&self) -> Option<crate::search::FindViewModel> {
         self.with_focused_tab(|t| t.find().cloned())
     }
 

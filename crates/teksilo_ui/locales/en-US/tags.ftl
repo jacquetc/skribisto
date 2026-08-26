@@ -117,6 +117,12 @@ cast-unresolved = No longer in the story bible
 
 ## Backlinks on a story-bible item
 mentions-backlinks = Appears in
+# The control on a suggested backlink row: the writer says yes, this really is her,
+# and the entry is written into that document's cast. Named after what it does rather
+# than after the agreement, and worded to mirror `cast-pin`, which is the same write
+# made from the other end. Confirm only — there is no "not her" to record; see
+# `teksilo_ui::mentions::presence`.
+mentions-confirm = Add to the cast of { $name }
 mentions-hit-count = { $n ->
     [one] once
    *[other] { $n } times
@@ -175,4 +181,17 @@ note-details-pov-multiple = This note has two points of view.
 note-details-backlinks = Appears in the manuscript
 note-details-backlinks-empty = Nothing yet. Once this name appears in your prose, it will show up here.
 note-details-backlinks-outside = Outside the books
+note-details-backlinks-confirm-all = Confirm every appearance
+note-details-backlinks-confirm-all-tooltip = Add this entry to the cast of every document shown here that has not confirmed it yet
 note-details-untitled-document = Untitled
+
+## The In prose reading's own counter: how many times this entry is named across
+## the rows on screen, and which of them the reader has stepped to. See
+## `teksilo_ui::story_bible::highlight::SubjectWalk`.
+note-in-prose-mentions = { $n ->
+    [one] 1 mention
+   *[other] { $n } mentions
+}
+note-in-prose-mention-at = { $current } of { $total }
+note-in-prose-mention-previous = Previous mention
+note-in-prose-mention-next = Next mention

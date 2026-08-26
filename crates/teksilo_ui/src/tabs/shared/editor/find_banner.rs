@@ -141,18 +141,32 @@ impl Widget for FindBanner {
             ),
         );
 
+        // Whether the replace half is on offer at all. It is not over a **page** of
+        // documents — a stream's rows, a note's In-prose reading — because rewriting
+        // across many documents is Search & Replace's job: it has the preview and the
+        // scope picker, and a Replace All here would leave one undo per row. Finding is
+        // untouched; only the rewriting half goes. Reactive rather than read once,
+        // because a split changes a page's row count under an open banner.
+        let may_replace = self.find.single_document_signal();
+        let replace_open = self
+            .find
+            .replace_mode_signal()
+            .zip(&may_replace)
+            .map(|(mode, single)| *mode && *single);
+
         // The find row. A left replace-mode toggle (⇄) discloses the replace row;
         // then a capped-width query field, the count, the prev/next chevrons, and
         // the Match-case / Whole-word toggles; a spacer pushes Close to the trailing
         // edge. All buttons are flat (`.toolbar()` = ghost).
         let find_row = HStack::new()
             .spacing(3.0)
-            .child(
+            .child(VisibleWhen::new(
+                may_replace,
                 IconButton::new(crate::icons::find::replace_icon())
                     .toolbar()
                     .toggle(self.find.replace_mode_signal())
                     .tooltip(tr!(find_replace_toggle())),
-            )
+            ))
             .add_child(query_id)
             .child(
                 Padding::symmetric(0.0, 6.0).child(
@@ -225,10 +239,7 @@ impl Widget for FindBanner {
         let keyed = VStack::new()
             .spacing(4.0)
             .child(find_row)
-            .child(VisibleWhen::new(
-                self.find.replace_mode_signal(),
-                replace_row,
-            ))
+            .child(VisibleWhen::new(replace_open, replace_row))
             .on_key(move |ev, ctx| match ev {
                 WidgetEvent::KeyDown {
                     key: Key::Enter,

@@ -82,8 +82,8 @@ use teksilo::core::accesskit::Role;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Button, ButtonVariant, Divider, Expand, GroupHeader, HStack, Padding, PopoverButton,
-    ScrollArea, Segment, SegmentId, SegmentedControl, TextWidget, VStack,
+    Button, ButtonVariant, Divider, Expand, GroupHeader, HStack, IconButton, Padding,
+    PopoverButton, ScrollArea, Segment, SegmentId, SegmentedControl, Spacer, TextWidget, VStack,
 };
 
 use frontend::AppContext;
@@ -96,7 +96,7 @@ use crate::singles::SingleBinderItem;
 use crate::tags::alias_pill_field::SetAliases;
 use crate::tags::books::ClearBook;
 use crate::tags::cast_add::{CastAddPopover, CastCandidate};
-use crate::tags::mention_list::PinReference;
+use crate::tags::mention_list::{CONFIRM_GLYPH, ConfirmPresence, PinReference};
 use crate::tags::tag_pill_field::SetTags;
 use crate::tags::{
     AliasPillField, TagPillField, TagsViewModel, book_add_button, book_chip_row, book_chips,
@@ -335,6 +335,8 @@ impl Widget for NoteDetailsPane {
                     self.ids.work_id.get().unwrap_or_default(),
                     backlinks,
                     &self.appears_in_book,
+                    self.item_id,
+                    self.ids.stack_id.get(),
                 ))
             } else if is_discoverable {
                 Some(backlinks_empty_hint())
@@ -667,6 +669,9 @@ fn backlinks_section(
     work_id: u64,
     rows: Vec<MentionRow>,
     selected: &Signal<Option<SegmentId>>,
+    // The entry this reading belongs to, and the undo stack its confirmations go on.
+    entry: u64,
+    stack: Option<u64>,
 ) -> VStack {
     // **Story order**, not match quality. This is a reading, not a set of candidates:
     // "she appears in chapter two, then not again until chapter nine" is a fact about the
@@ -736,6 +741,26 @@ fn backlinks_section(
     let untitled = tr!(note_details_untitled_document()).resolve_now();
     let backlinks = backlink_rows(rows, &titles, &untitled);
 
+    // **Scoped to the Book on screen**, not to the whole reading. The bar above is what
+    // makes that scope visible, and a button that silently reached past it into Books the
+    // writer is not looking at would be the one control on this page whose reach is wider
+    // than the list under it.
+    // A declared point of view is already in the document's cast — `set_point_of_view`
+    // writes both as one composite — so it is neither unconfirmed nor a row this button
+    // has anything to say about.
+    let unconfirmed: Vec<u64> = backlinks
+        .iter()
+        .filter(|r| !r.is_confirmed && !r.is_point_of_view)
+        .map(|r| r.owner_id)
+        .collect();
+
+    let confirm_one: ConfirmPresence = {
+        let app_ctx = app_ctx.clone();
+        Rc::new(move |owner, _c| {
+            let _ = crate::mentions::confirm_presence(&app_ctx, &[owner], entry, stack);
+        })
+    };
+
     let mut col = VStack::new()
         .spacing(6.0)
         .child(section_header(tr!(note_details_backlinks())));
@@ -746,10 +771,26 @@ fn backlinks_section(
         }
         col = col.child(bar);
     }
-    col.child(BacklinksList {
+    col = col.child(BacklinksList {
         rows: backlinks,
+        confirm: Some(confirm_one),
         root: None,
-    })
+    });
+    // Offered only while there is something to confirm: with every document on this page
+    // already agreed to, the button is a control that can do nothing, and hiding it is
+    // how the section says "you have worked through this one".
+    if !unconfirmed.is_empty() {
+        let app_ctx = app_ctx.clone();
+        col = col.child(
+            Button::new(tr!(note_details_backlinks_confirm_all()))
+                .variant(ButtonVariant::Tinted)
+                .tooltip(tr!(note_details_backlinks_confirm_all_tooltip()))
+                .on_activate_fn(move |_c| {
+                    let _ = crate::mentions::confirm_presence(&app_ctx, &unconfirmed, entry, stack);
+                }),
+        );
+    }
+    col
 }
 
 fn backlinks_empty_hint() -> VStack {
@@ -775,6 +816,11 @@ fn backlinks_empty_hint() -> VStack {
 /// scene has *this note* pinned", not "this note has pinned *it*".
 struct BacklinksList {
     rows: Vec<BacklinkRow>,
+    /// Confirm, on a row the scan only guessed at, that this entry really does appear in
+    /// that document — see [`crate::mentions::confirm_presence`]. Confirm only: an
+    /// agreed row offers nothing, because taking a mention back is a statement about the
+    /// document's cast and belongs where the cast is edited.
+    confirm: Option<ConfirmPresence>,
     root: Option<WidgetId>,
 }
 
@@ -824,6 +870,20 @@ impl Widget for BacklinksList {
                     TextWidget::new(lit!(row.hit_count.to_string()))
                         .style(TextStyleRole::Tiny)
                         .color(TextRole::Secondary),
+                );
+            }
+            if !row.is_confirmed
+                && !row.is_point_of_view
+                && let Some(confirm) = self.confirm.clone()
+            {
+                let owner = row.owner_id;
+                head = head.child(Expand::horizontal().child(Spacer::new())).child(
+                    IconButton::new(teksilo::widgets::primitives::IconWidget::checkmark(
+                        CONFIRM_GLYPH,
+                    ))
+                    .embedded()
+                    .tooltip(tr!(mentions_confirm(name = row.document_title.clone())))
+                    .on_activate_fn(move |c| confirm(owner, c)),
                 );
             }
 
@@ -919,6 +979,72 @@ mod tests {
             is_point_of_view: false,
             evidence: evidence.to_string(),
         }
+    }
+
+    /// Walk the built tree, naming every widget type it holds.
+    fn types(tree: &teksilo::core::widget_tree::WidgetTree, root: WidgetId) -> Vec<String> {
+        let mut out = vec![tree.widget_type_name(root).unwrap_or_default().to_string()];
+        for child in tree.children(root) {
+            out.extend(types(tree, child));
+        }
+        out
+    }
+
+    fn section(rows: Vec<MentionRow>) -> Vec<String> {
+        let ctx = Rc::new(frontend::AppContext::new());
+        let selected: Signal<Option<SegmentId>> = Signal::new(None);
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        let root = tree.add(backlinks_section(&ctx, 0, rows, &selected, 42, None));
+        tree.layout(teksilo::prelude::SizeProposal::exact(500.0, 600.0));
+        types(&tree, root)
+    }
+
+    /// **Both confirm controls are offered only while there is something to confirm** —
+    /// the per-row checkmark, and the section's "Confirm every appearance".
+    ///
+    /// A reading the writer has already worked through would otherwise keep a button that
+    /// can do nothing, and pressing it would be indistinguishable from pressing it on a
+    /// reading full of suggestions, since it writes nothing either way. Their absence is
+    /// how the section says the work is done.
+    ///
+    /// The two are counted apart — `IconButton` also ends in "Button" — because they
+    /// answer different questions: one row, or the whole page.
+    #[test]
+    fn the_confirm_controls_appear_only_while_something_is_unconfirmed() {
+        let counts = |rows: Vec<MentionRow>| {
+            let built = section(rows);
+            // Full paths, so `ends_with` separates the two: an `IconButton` also ends
+            // in "Button", and the section's own button is the wider claim of the pair.
+            let per_row = built.iter().filter(|t| t.ends_with("::IconButton")).count();
+            let all = built.iter().filter(|t| t.ends_with("::Button")).count();
+            (per_row, all)
+        };
+
+        let suggested = row(7, 42, "Elena", 2, "Elena crossed.");
+        assert_eq!(
+            counts(vec![suggested.clone()]),
+            (1, 1),
+            "a suggested appearance is confirmable on its own row and with the page"
+        );
+
+        let mut agreed = suggested.clone();
+        agreed.is_confirmed = true;
+        assert_eq!(
+            counts(vec![agreed]),
+            (0, 0),
+            "nothing left to confirm, so neither control"
+        );
+
+        // A declared point of view is already in the document's cast — `set_point_of_view`
+        // writes both as one composite — so it is not a suggestion waiting on agreement,
+        // and it renders plain rather than ghosted, which a control would contradict.
+        let mut pov = suggested;
+        pov.is_point_of_view = true;
+        assert_eq!(
+            counts(vec![pov]),
+            (0, 0),
+            "a declared point of view is not an unconfirmed suggestion"
+        );
     }
 
     #[test]

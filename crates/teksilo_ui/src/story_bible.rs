@@ -28,5 +28,6 @@
 pub mod capture;
 pub mod capture_flow;
 pub mod create;
+pub mod highlight;
 pub mod infer_book;
 pub mod modal;

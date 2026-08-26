@@ -3929,3 +3929,246 @@ fn marking_is_a_toggle_that_leaves_the_other_lines_alone() {
         "the mark is a block-level statement about one line, not the whole epigraph"
     );
 }
+
+/// **Ctrl+F on a stream reads the whole stream.**
+///
+/// A Full Chapter, Part or Book is one manuscript to the writer in front of it, and a
+/// find that stopped at the first row's last line would be answering a question nobody
+/// asked. The banner over the page therefore searches the container's own prose and
+/// every row's as one run, and its count is the page's, not a document's.
+///
+/// Two things are pinned here that no unit test can reach. The banner must resolve to
+/// the **page** on screen — a segmented tab has two, and the segment bar is what says
+/// which — and the documents must arrive from the rows this page actually mounted, which
+/// is a handshake between three files.
+///
+/// `#[cfg(not(feature = "mocks"))]`: the mock `StreamRowsModel` fabricates a stream for
+/// every container and ignores the head id, so it cannot show that the real subtree walk
+/// reached these rows.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn a_streams_find_banner_searches_every_row_of_the_page() {
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+    let ctx = Rc::new(AppContext::new());
+    let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default()).unwrap();
+    let binder = binder_commands::create_binder(
+        &ctx,
+        None,
+        &CreateBinderDto {
+            name: "Manuscript".into(),
+            activated: true,
+            ..Default::default()
+        },
+        work.id,
+        0,
+    )
+    .unwrap()
+    .id;
+    let mut index = 0i32;
+    let mut add = |title: &str, role: BinderItemRole, sub_role: BinderItemSubRole, indent: i64| {
+        let id = binder_item_commands::create_binder_item(
+            &ctx,
+            None,
+            &CreateBinderItemDto {
+                title: title.into(),
+                role,
+                sub_role,
+                activated: true,
+                is_exportable: true,
+                indent,
+                ..Default::default()
+            },
+            binder,
+            index,
+        )
+        .unwrap()
+        .id;
+        index += 1;
+        id
+    };
+    let chapter = add(
+        "The crossing",
+        BinderItemRole::Folder,
+        BinderItemSubRole::ChapterScene,
+        0,
+    );
+    let first = add("Dusk", BinderItemRole::Item, BinderItemSubRole::Scene, 1);
+    let second = add("Dawn", BinderItemRole::Item, BinderItemSubRole::Scene, 1);
+
+    let ids = AppIds::new();
+    ids.work_id.set(Some(work.id));
+    let tab = tab_for(
+        &ctx,
+        chapter,
+        &BinderItemRole::Folder,
+        &BinderItemSubRole::ChapterScene,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &ids,
+    );
+
+    // On the container's own page there is nothing multi-document to search, so Ctrl+F
+    // means the tab's own banner — a chapter folder's prose — exactly as before.
+    tab.segment.set(Some(shared::segments::segment_id(
+        shared::segments::SEG_OWN,
+    )));
+    assert!(
+        tab.active_find()
+            .is_some_and(|f| f.editor_handle().is_none() && f.has_documents()),
+        "the container's own page resolves to its own single-document banner"
+    );
+
+    tab.segment.set(Some(shared::segments::segment_id(
+        shared::segments::SEG_MANUSCRIPT,
+    )));
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+
+    // The prose the reader is looking at: the chapter's own — held by the tab itself,
+    // which is what the page renders at the top — then its two scenes, held by the
+    // shared store the rows open through.
+    tab.main()
+        .expect("a chapter folder carries its own prose")
+        .doc
+        .set_plain_text("the ferry was late")
+        .unwrap();
+    for (id, text) in [
+        (first, "no boats at all"),
+        (second, "the ferry, and then the ferry again"),
+    ] {
+        tab.docs()
+            .open(id)
+            .and_then(|d| d.main.as_ref().map(|m| m.doc.clone()))
+            .expect("a prose-bearing row")
+            .set_plain_text(text)
+            .unwrap();
+    }
+
+    let find = tab
+        .active_find()
+        .cloned()
+        .expect("the manuscript stream has a banner");
+    find.ensure_session(
+        teksilo::text_document::HighlightFormat::default(),
+        teksilo::text_document::HighlightFormat::default(),
+    );
+    find.open();
+    find.query_signal().set("ferry".into());
+    find.refresh_query();
+
+    assert!(find.visible_signal().get(), "there was something to search");
+    assert_eq!(
+        find.count_signal().get(),
+        3,
+        "one in the chapter's own prose and two in the last scene — the page, not a row"
+    );
+    assert_eq!(find.current_signal().get(), 1);
+    assert!(
+        !find.single_document_signal().get(),
+        "and the replace half is withheld over a page"
+    );
+
+    // The lane is told which row holds the cursor, so exactly one mark on the strip
+    // reads as current while every row still shows its own hits.
+    let q = crate::margin_lane::active_query()
+        .get()
+        .expect("the lane was told");
+    assert_eq!(
+        q.source,
+        crate::margin_lane::LaneQuerySource::Editor(chapter),
+        "the first hit on the page is in the chapter's own prose"
+    );
+    assert_eq!(
+        q.current_in(second),
+        None,
+        "the last scene shows hits, none current"
+    );
+
+    // And the strip is actually on the page rather than only in the view-model: before
+    // this, a stream had no banner mounted at all, so Ctrl+F opened nothing anywhere.
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    let banner =
+        first_of_type(&tree, root, "FindBanner").expect("the stream page carries a find banner");
+    assert!(
+        tree.bounds(banner).height > 0.0,
+        "an opened banner takes height above the manuscript"
+    );
+
+    find.close();
+    crate::margin_lane::set_active_query(None);
+}
+
+/// **A chapter folder's own page can be searched.**
+///
+/// It carries its own prose — a `Folder/ChapterScene` is a chapter a writer can type
+/// straight into — and Ctrl+F has always resolved to its banner. That banner was never
+/// mounted, so the shortcut opened a view-model, ran the query, published the hits to the
+/// margin lane, and put nothing on screen: the silent half of a feature. A Part or a Book
+/// has no prose on this page and still gets no banner, which is the honest answer rather
+/// than an empty strip.
+#[test]
+fn a_chapter_folders_own_page_carries_the_banner_ctrl_f_opens() {
+    let ctx = Rc::new(AppContext::new());
+    let own = shared::segments::segment_id(shared::segments::SEG_OWN);
+
+    let tab = tab_for(
+        &ctx,
+        1,
+        &BinderItemRole::Folder,
+        &BinderItemSubRole::ChapterScene,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    tab.segment.set(Some(own));
+    let find = tab
+        .active_find()
+        .cloned()
+        .expect("a chapter folder's own prose is searchable");
+
+    let mut tree = crate::test_support::tree_with_settings(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    assert!(
+        first_of_type(&tree, root, "FindBanner").is_none_or(|b| tree.bounds(b).height == 0.0),
+        "a closed banner takes no height, so the prose sits flush at the top"
+    );
+
+    find.open();
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    let banner = first_of_type(&tree, root, "FindBanner")
+        .expect("the container's own page carries a find banner");
+    assert!(
+        tree.bounds(banner).height > 0.0,
+        "and Ctrl+F puts it on screen"
+    );
+    find.close();
+
+    // A Book's own page is a title and a synopsis — no prose, so nothing to find.
+    let book = tab_for(
+        &ctx,
+        2,
+        &BinderItemRole::Folder,
+        &BinderItemSubRole::Book,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    book.segment.set(Some(own));
+    assert!(
+        book.active_find().is_none(),
+        "no prose on a Book's own page, so Ctrl+F is a no-op there"
+    );
+}

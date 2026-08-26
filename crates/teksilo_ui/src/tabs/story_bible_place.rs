@@ -204,6 +204,17 @@ struct GroupedCard {
     entry: BibleEntry,
     mentions: usize,
     group: String,
+    /// Whether this entry carries a discoverable tag — that is, whether the scan ever
+    /// looked for it at all.
+    ///
+    /// **`mentions == 0` means two different things and the card must not conflate
+    /// them.** For a tagged entry it means the scan read the manuscript and found the
+    /// name nowhere. For an untagged one it means the scan was never given the name:
+    /// `MentionIndex`'s alias table is built from discoverable entries alone, so an
+    /// untagged entry is absent from it by construction. Reporting "No appearances yet"
+    /// for the second is asserting an absence that was never measured — a character
+    /// written into every chapter reads as appearing in none.
+    discoverable: bool,
 }
 
 /// Fan each entry out into one row per **matching discoverable tag** (an entry
@@ -241,6 +252,7 @@ fn grouped_cards(
                     entry: entry.clone(),
                     mentions: mention_count,
                     group: untagged_label.clone(),
+                    discoverable: false,
                 },
             ));
         } else {
@@ -251,6 +263,7 @@ fn grouped_cards(
                         entry: entry.clone(),
                         mentions: mention_count,
                         group: tag.name.clone(),
+                        discoverable: true,
                     },
                 ));
             }
@@ -267,16 +280,26 @@ fn grouped_cards(
     ranked.into_iter().map(|(_, c)| c).collect()
 }
 
-/// The pane: `Some(TagsViewModel)`/`Some(MentionIndex)` read from `app_state`
-/// (Tier 1, one instance app-wide), exactly the way [`crate::tags::tag_chip::TagDotsRow`]
-/// already does and for the same reason: every call site here is a plain
-/// composition function with no constructor-threaded handle to reach for, and a
-/// notes-folder tab is always about the one open project a single window has.
+/// The pane, built from **this tab's own** palette and mention index.
+///
+/// Not `ctx.app_state::<TagsViewModel>()` / `app_state::<MentionIndex>()`, which is what
+/// this shipped with. That slot is not the one open project's: at first launch
+/// `startup.rs` installs a throwaway `WorkSession`, and a pane resolving through
+/// `app_state` gets *its* handles — a palette with no tags and an index with no scan.
+/// Reopening this tab is exactly when that shows: every entry falls into "Not yet
+/// tagged" and every card reads "No appearances yet", on a project whose bible is
+/// fully filed. Nothing errors, because an empty palette and an unfiled bible are the
+/// same shape.
+///
+/// `note_details` was moved off `app_state` for this precise reason (see its own
+/// `mention_index` field); this pane was not, and kept the bug for both handles at once.
 pub(crate) fn story_bible_pane(tab: &ContentTab) -> Box<dyn Widget> {
     Box::new(StoryBiblePane {
         app_ctx: tab.app_ctx(),
         ids: tab.ids().clone(),
         container_id: tab.item_id(),
+        tags: tab.tags(),
+        mention_index: tab.mention_index(),
         book_filter: tab.story_bible_book_filter.clone(),
         root: None,
         #[cfg(test)]
@@ -290,6 +313,10 @@ struct StoryBiblePane {
     app_ctx: Rc<AppContext>,
     ids: AppIds,
     container_id: u64,
+    /// This tab's own, threaded at construction — see [`story_bible_pane`] for what
+    /// reaching for the `app_state` slot instead costs.
+    tags: TagsViewModel,
+    mention_index: MentionIndex,
     book_filter: Signal<Option<u64>>,
     root: Option<WidgetId>,
     /// Captured on every `build()`, read back only by this module's own tests via
@@ -310,24 +337,18 @@ impl std::fmt::Debug for StoryBiblePane {
 
 impl Widget for StoryBiblePane {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let Some(tags_vm) = ctx.app_state::<TagsViewModel>().cloned() else {
-            self.root = None;
-            return Vec::new();
-        };
-        let Some(mention_index) = ctx.app_state::<MentionIndex>().cloned() else {
-            self.root = None;
-            return Vec::new();
-        };
-        let Some(work_id) = self.ids.work_id.get() else {
-            self.root = None;
-            return Vec::new();
-        };
-
-        // Rebuild whenever a scan lands (covers every binder-item mutation this
-        // grid cares about: a new entry created, a tag/alias/books edit, a trash;
-        // see `app::wiring::long_ops`'s own rescan wiring, which fires on every
-        // `BinderItem` Created/Updated/Removed event), the tag palette itself
-        // changing, or the writer picking a different Books chip.
+        // **Bound before anything can return.** Rebuild whenever a scan lands (covers
+        // every binder-item mutation this grid cares about: a new entry created, a
+        // tag/alias/books edit, a trash; see `app::wiring::long_ops`'s own rescan wiring,
+        // which fires on every `BinderItem` Created/Updated/Removed event), the tag
+        // palette itself changing, or the writer picking a different Books chip.
+        //
+        // Registered above the `work_id` guard on purpose. A guard that decides whether
+        // to subscribe to the data the guard itself reads can only ever be right the
+        // first time: a pane built before the Work id lands would register nothing, and
+        // then have no reason to build again once it did.
+        let tags_vm = self.tags.clone();
+        let mention_index = self.mention_index.clone();
         mention_index.changed_signal().bind_to(
             ctx.self_id(),
             ctx.binding_registry(),
@@ -338,6 +359,14 @@ impl Widget for StoryBiblePane {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
+        self.ids
+            .work_id
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+
+        let Some(work_id) = self.ids.work_id.get() else {
+            self.root = None;
+            return Vec::new();
+        };
         self.book_filter
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
@@ -537,12 +566,7 @@ impl Widget for BibleGrid {
             .tile_a11y_label(move |i| {
                 a11y_model
                     .with_item(i, |c| {
-                        format!(
-                            "{}, {}",
-                            c.entry.title,
-                            tr!(story_bible_grid_mention_count(count = c.mentions as i64))
-                                .resolve_now()
-                        )
+                        format!("{}, {}", c.entry.title, appearances_line(c).resolve_now())
                     })
                     .unwrap_or_default()
             })
@@ -586,6 +610,20 @@ impl std::fmt::Debug for BibleCard {
     }
 }
 
+/// What a card says about where this entry turns up.
+///
+/// The **one** place the "never looked" / "looked and found none" distinction is made,
+/// so the card and the accessibility label it is announced by can never disagree — see
+/// [`GroupedCard::discoverable`] for why conflating them is a falsehood rather than a
+/// wording preference.
+fn appearances_line(card: &GroupedCard) -> teksilo::i18n::LocalizedString {
+    if card.discoverable {
+        tr!(story_bible_grid_mention_count(count = card.mentions as i64))
+    } else {
+        tr!(story_bible_grid_not_searched())
+    }
+}
+
 impl Widget for BibleCard {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let entry = &self.card.entry;
@@ -605,12 +643,10 @@ impl Widget for BibleCard {
                 .single_line(),
             )
             .child(
-                TextWidget::new(tr!(story_bible_grid_mention_count(
-                    count = self.card.mentions as i64
-                )))
-                .style(TextStyleRole::Tiny)
-                .color(TextRole::Secondary)
-                .single_line(),
+                TextWidget::new(appearances_line(&self.card))
+                    .style(TextStyleRole::Tiny)
+                    .color(TextRole::Secondary)
+                    .single_line(),
             );
         let id = ctx.add(Padding::uniform(10.0).child(col));
         self.root = Some(id);

@@ -441,9 +441,18 @@ fn document_title(ctx: &LaneContext<'_>) -> String {
 /// is either a name the writer wrote or a declaration they made by hand. That is the
 /// rule [`LaneProviderSpec::default_on`](super::LaneProviderSpec::default_on) states,
 /// and the same one comments and boundaries pass.
+/// This provider's id.
+///
+/// **Frozen.** The lane synthesises `editor.margin_lane.provider.story_bible` from it and
+/// writes that into the writer's `general.toml` the first time the key is read, so
+/// renaming it silently resets whether the marks are on. Named rather than repeated as a
+/// literal because a second surface draws the same finding in the text and takes its
+/// colour from this spec — see [`crate::story_bible::highlight`].
+pub const STORY_BIBLE_PROVIDER_ID: &str = "story_bible";
+
 fn story_bible() -> LaneProviderSpec {
     LaneProviderSpec {
-        id: "story_bible".into(),
+        id: STORY_BIBLE_PROVIDER_ID.into(),
         label: Rc::new(|| crate::tr!(margin_lane_provider_story_bible())),
         hint: Rc::new(|| crate::tr!(margin_lane_provider_story_bible_hint())),
         column: LaneColumn::Right,
@@ -482,7 +491,7 @@ fn story_bible() -> LaneProviderSpec {
             )
             .ok()
             .flatten()
-            .is_some_and(|it| it.point_of_view.contains(&subject.note_id));
+            .is_some_and(|it| it.point_of_view.contains(&subject.note_id()));
             if declared_pov && let Some(at) = (ctx.locate)(0) {
                 out.push(LaneMark {
                     id: 0,
@@ -498,7 +507,7 @@ fn story_bible() -> LaneProviderSpec {
             let Ok(text) = ctx.doc.to_plain_text() else {
                 return out;
             };
-            for (i, (start, end)) in super::subject::hits(&text, &subject.names)
+            for (i, (start, end)) in super::subject::hits(&text, &subject.entity)
                 .into_iter()
                 .enumerate()
             {

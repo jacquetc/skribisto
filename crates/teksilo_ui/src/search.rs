@@ -17,5 +17,5 @@ pub mod preview_dock;
 pub mod replace_flow;
 mod search_replace_vm;
 
-pub use find_vm::FindViewModel;
+pub use find_vm::{FindViewModel, PageDocuments, ResolveEditor};
 pub use search_replace_vm::SearchReplaceViewModel;

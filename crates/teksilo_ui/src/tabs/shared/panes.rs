@@ -461,7 +461,7 @@ pub(crate) fn segment_will_show(tab: &ContentTab, id: &str) -> bool {
 /// one body covers all three containers: a Part and a Book simply have no prose to show.
 /// The synopsis here is a *primary* surface, so it grows with its content (unlike the
 /// compact box that sits above a scene's prose in the dual-pane editor).
-pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
+pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
     // The page before its content: the editors below stage their handle into this
     // page's binding, and the port that promotes it is mounted at the end.
     let (area, port, page) = writing_page_scroll(tab, segment_will_show(tab, segments::SEG_OWN));
@@ -552,7 +552,11 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             tab.main_column_width(),
             tab.main_typography(),
             tab.mark_dirty_fn(),
-            None, // the container's own page has no find banner (no top strip here)
+            // The banner is mounted over the whole page below, not inside this
+            // section — so it spans the prose it searches and stays pinned above it.
+            // The editor still attaches its handle to it, which is what Escape
+            // returns focus through.
+            tab.find().cloned(),
             tab.open_doc.spell_main(),
             tab.open_doc.replacement_main(),
             Some(tab.format.clone()),
@@ -578,13 +582,24 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
     // whole thing rather than each editor scrolling inside its own box.
-    laned(
+    let page = laned(
         tab,
         crate::margin_lane::LaneSurface::Editor,
         scope,
         area,
         col.child(vspace(28.0)).child(port),
-    )
+    );
+    // A **chapter folder** carries its own prose here, and Ctrl+F reached it long before
+    // this: `open_find` resolves the tab's banner and opened it, on a page that mounted
+    // no banner at all. So the shortcut set a query, published it to the margin lane, and
+    // showed nothing — the silent half of a feature. A Part or a Book has no prose here
+    // and gets no banner, which is the honest answer rather than an empty strip.
+    //
+    // The lane goes inside, as everywhere else: the banner is a strip above the page.
+    match tab.main().and(tab.find().cloned()) {
+        Some(find) => Box::new(crate::tabs::shared::editor::find_banner_over(find, page)),
+        None => Box::new(page),
+    }
 }
 
 /// The dual-pane writing editor (Skribisto's signature): an optional title, a
@@ -1074,11 +1089,7 @@ pub fn folder_segmented(
     // reasoning `tabs::analysis` records for the category bar.
     let sub_role = tab.sub_role().clone();
     let mut items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![
-        (
-            segments::SEG_OWN,
-            own_label.into(),
-            Box::new(folder_own_pane(tab)) as Box<dyn Widget>,
-        ),
+        (segments::SEG_OWN, own_label.into(), folder_own_pane(tab)),
         (
             segments::SEG_MANUSCRIPT,
             manuscript_label.into(),

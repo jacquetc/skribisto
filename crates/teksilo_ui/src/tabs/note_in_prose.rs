@@ -38,8 +38,10 @@ use std::rc::Rc;
 
 use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
+use teksilo::text_document::TextDocument;
 use teksilo::widgets::{
-    Divider, Expand, HStack, Segment, SegmentId, SegmentedControl, Spacer, TextWidget, VStack,
+    Divider, Expand, HStack, IconButton, Segment, SegmentId, SegmentedControl, Spacer, TextWidget,
+    VStack,
 };
 
 use frontend::common::event::{
@@ -75,7 +77,16 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
     // shape `RowExtents` exists for.
     let extents = crate::margin_lane::RowExtents::new();
     let docs: Rc<RefCell<HashMap<u64, Rc<OpenDoc>>>> = Rc::new(RefCell::new(HashMap::new()));
+    // Shared with the walk below, which reads the layers this pane builds and never
+    // owns any of its own.
+    let highlights: Rc<RefCell<HashMap<u64, crate::story_bible::highlight::SubjectHighlight>>> =
+        Rc::new(RefCell::new(HashMap::new()));
     let page_scroll = area.scroll_y_signal().clone();
+    // Created here, not inside the body: its counter is mounted **outside** the scrolling
+    // page so it stays put, and the body needs the same handle to keep the layers in step.
+    let walk = Rc::new(crate::story_bible::highlight::SubjectWalk::new(
+        highlights.clone(),
+    ));
     // One token for this page. Every editor on it is the same surface, and a scene
     // that is also open in a tab of its own must not answer for this reading. See
     // [`crate::margin_lane::LaneScope`].
@@ -106,6 +117,10 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         generation: Signal::new(0),
         wired: Cell::new(false),
         docs: docs.clone(),
+        highlights: highlights.clone(),
+        walk: walk.clone(),
+        highlight_format: RefCell::new(None),
+        find_docs: tab.in_prose_docs_sink(),
         store: tab.docs(),
         root: None,
     };
@@ -146,11 +161,32 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
             rows: crate::margin_lane::LaneRows::Placed { extents, row },
         },
     );
-    Box::new(
-        HStack::new()
-            .child(Expand::new().child(area.child(col)))
-            .child(lane),
-    )
+    // **Pinned above the page, not inside it.** The mentions it counts are spread down a
+    // scroll that can be a whole Book long, so a counter that scrolled away with the first
+    // row would be gone at exactly the moment a reader wanted the next one. Same place,
+    // and the same reason, as the find banner directly above it.
+    let page = VStack::new()
+        .spacing(0.0)
+        .child(shared::centered(
+            mention_bar(walk.clone(), tab.format.clone()),
+            &tab.column_width,
+        ))
+        .child(
+            Expand::new().child(
+                HStack::new()
+                    .child(Expand::new().child(area.child(col)))
+                    .child(lane),
+            ),
+        );
+    // **Ctrl+F reads this page too.** It is the same shape as a Full Book stream — many
+    // manuscript documents on one axis — and a writer checking where a character turns
+    // up wants to walk the mentions, not the row boundaries. The banner sits above the
+    // page and beside nothing: the lane is inside, for the reason `manuscript_page`
+    // records.
+    match tab.page_find().cloned() {
+        Some(find) => Box::new(crate::tabs::shared::editor::find_banner_over(find, page)),
+        None => Box::new(page),
+    }
 }
 
 /// Every backend origin that can change which rows this note is declared present in, or
@@ -255,6 +291,31 @@ struct NoteInProseBody {
     /// The rows' open documents, shared with the lane beside this page so the two
     /// cannot disagree about which document a row is showing.
     docs: Rc<RefCell<HashMap<u64, Rc<OpenDoc>>>>,
+    /// One highlight layer per shown row: every name of this entry, marked in the prose
+    /// it is read against. Keyed like [`Self::docs`] and pruned with it.
+    ///
+    /// Held here rather than inside each row's widget because the layer must outlive a
+    /// row's *build* — it carries the derived ranges and the document subscription, and a
+    /// fresh one per build would re-scan every row's prose on every keystroke elsewhere
+    /// on the page.
+    highlights: Rc<RefCell<HashMap<u64, crate::story_bible::highlight::SubjectHighlight>>>,
+    /// Where the reader is among those marks, and how many there are — what the header's
+    /// counter reads and its two chevrons move. Shares the map above rather than owning
+    /// layers of its own: the reading builds and prunes those with the rows it shows.
+    walk: Rc<crate::story_bible::highlight::SubjectWalk>,
+    /// The format those layers were built with, so a theme switch rebuilds them rather
+    /// than leaving the previous theme's colour washed over the prose. The same staleness
+    /// `FindSession`'s own lazily-created session has, fixed here because this layer is
+    /// created without anyone opening anything.
+    highlight_format: RefCell<Option<teksilo::text_document::HighlightFormat>>,
+    /// **What this reading has put in front of the writer**, in the order it shows it —
+    /// republished on every build, and read by the tab's page find banner.
+    ///
+    /// The banner is built with the tab, long before this page exists and with no route
+    /// to it, so the page announces itself instead. Written here rather than derived
+    /// there because the order and the membership are this build's own: the selected
+    /// Book filters them, and a row whose document has not opened is not shown.
+    find_docs: Rc<RefCell<Vec<(u64, TextDocument)>>>,
     /// This tab's shared document store, threaded from [`ContentTab::docs`] once, at
     /// construction, exactly as [`Self::ids`]/[`Self::app_ctx`] are. **Not** read from
     /// `ctx.app_state::<OpenDocsStore>()`: that slot resolves to whatever window's
@@ -324,6 +385,69 @@ impl NoteInProseBody {
                 slot.insert(doc);
             }
         }
+    }
+
+    /// **The same names the lane marks, highlighted in the prose beside it.**
+    ///
+    /// One layer per shown row, kept in step with [`Self::docs`], plus the per-frame
+    /// re-derive every range session in this app needs: the prose here is editable, and
+    /// an offset carried across an edit would mark the wrong characters.
+    ///
+    /// The refresh is registered on every build because `ctx.effect` is scoped to one —
+    /// and it captures *this build's* names, so a rename re-derives without the layers
+    /// having to watch the store themselves.
+    fn sync_highlights(
+        &self,
+        ctx: &mut BuildContext,
+        entity: Option<&skribisto_model::mentions::DiscoverableEntity>,
+        order: Vec<u64>,
+    ) {
+        let color = crate::story_bible::highlight::subject_color(&ctx.theme().colors);
+        let format = crate::story_bible::highlight::subject_format(color);
+        let current_format = crate::story_bible::highlight::subject_current_format(color);
+        // The strip's own switch, which governs this too — see the layer's module note.
+        // With no settings store at all (a headless build) the marks are on, the same
+        // answer `subject_enabled` gives for an unregistered provider.
+        let wanted: Option<skribisto_model::mentions::DiscoverableEntity> =
+            match ctx.app_state::<teksilo::settings::SettingsStore>() {
+                Some(store) if !crate::story_bible::highlight::subject_enabled(store) => None,
+                _ => entity.cloned(),
+            };
+        {
+            let mut layers = self.highlights.borrow_mut();
+            // A theme switch changes the colour a layer was built with, and a layer
+            // carries its formats for life. Rebuilding the set is the cheap correct
+            // answer: it happens once per theme change, not once per frame.
+            if self.highlight_format.borrow().as_ref() != Some(&format) {
+                layers.clear();
+                *self.highlight_format.borrow_mut() = Some(format.clone());
+            }
+            let docs = self.docs.borrow();
+            layers.retain(|id, _| docs.contains_key(id));
+            for (id, doc) in docs.iter() {
+                let Some(field) = doc.main.as_ref() else {
+                    continue;
+                };
+                layers.entry(*id).or_insert_with(|| {
+                    crate::story_bible::highlight::SubjectHighlight::new(
+                        &field.doc,
+                        format.clone(),
+                        current_format.clone(),
+                    )
+                });
+            }
+        }
+        // The order the page mounts them in, so a step crosses rows the way the reading
+        // is read rather than the way a `HashMap` happens to hold them.
+        self.walk.set_order(order);
+        // Once here as well as on the frame tick below, so the first paint of a freshly
+        // mounted reading already carries its marks and its count rather than acquiring
+        // them a frame later.
+        self.walk.refresh(wanted.as_ref());
+
+        let walk = self.walk.clone();
+        let tick = ctx.frame_tick();
+        ctx.effect(&tick, move |_| walk.refresh(wanted.as_ref()));
     }
 
     fn book_bar(&self, books: &[BookChoice]) -> SegmentedControl {
@@ -438,34 +562,29 @@ impl Widget for NoteInProseBody {
         // withdrawn when it goes away. The lane's provider is registered long before this
         // tab exists and has no route back to it, which is the same problem, and the same
         // answer, as the find banner's own `active_query`. See `margin_lane::subject`.
-        {
-            let names = {
-                let mut n: Vec<String> = frontend::commands::binder_item_commands::get_binder_item(
-                    &self.app_ctx,
-                    &self.note_id,
-                )
+        // The entry as the app's own mention matcher takes it: the title and the aliases
+        // kept apart, not flattened. Ordering and overlap are the matcher's business —
+        // see `margin_lane::subject::hits` for the bug that rule is written in.
+        let entity =
+            frontend::commands::binder_item_commands::get_binder_item(&self.app_ctx, &self.note_id)
                 .ok()
                 .flatten()
-                .map(|it| {
-                    std::iter::once(it.title)
-                        .chain(it.aliases)
+                .map(|it| skribisto_model::mentions::DiscoverableEntity {
+                    id: self.note_id,
+                    title: it.title,
+                    aliases: it
+                        .aliases
+                        .into_iter()
                         .filter(|s| !s.trim().is_empty())
-                        .collect()
+                        .collect(),
                 })
-                .unwrap_or_default();
-                // Longest first, so "Elizabeth Bennet" is marked once rather than twice
-                // for the name inside it. `subject::hits` relies on this order.
-                n.sort_by_key(|s| std::cmp::Reverse(s.chars().count()));
-                n
-            };
-            crate::margin_lane::set_active_subject(self.work_uid().map(|work_uid| {
-                crate::margin_lane::LaneSubject {
-                    note_id: self.note_id,
-                    names,
-                    work_uid,
-                }
-            }));
-        }
+                .filter(|e| !e.title.trim().is_empty() || !e.aliases.is_empty());
+        crate::margin_lane::set_active_subject(
+            entity
+                .clone()
+                .zip(self.work_uid())
+                .map(|(entity, work_uid)| crate::margin_lane::LaneSubject { entity, work_uid }),
+        );
 
         if !self.wired.replace(true) {
             if self.selected_book.get().is_none() {
@@ -533,6 +652,16 @@ impl Widget for NoteInProseBody {
             .unwrap_or_default();
 
         self.sync_docs(&rows, &self.store);
+        // The rows this build will actually mount, in reading order: a declared row whose
+        // document did not open is not on the page, and must not be counted or stepped to.
+        let order: Vec<u64> = {
+            let docs = self.docs.borrow();
+            rows.iter()
+                .map(|r| r.item_id)
+                .filter(|id| docs.contains_key(id))
+                .collect()
+        };
+        self.sync_highlights(ctx, entity.as_ref(), order);
 
         let mut col = VStack::new().spacing(10.0);
         if books.is_empty() {
@@ -567,6 +696,19 @@ impl Widget for NoteInProseBody {
                 }
             }
         }
+        // Tell the find banner what it is over — the same rows, in the same order, that
+        // the column above just mounted, so Ctrl+F reads this page as one run of prose.
+        // Reset first: a Book with no declared rows, or a note with no Book at all, must
+        // leave the previous build's list behind rather than be searched through it.
+        *self.find_docs.borrow_mut() = {
+            let docs = self.docs.borrow();
+            rows.iter()
+                .filter_map(|row| {
+                    let field = docs.get(&row.item_id)?.main.as_ref()?;
+                    Some((row.item_id, field.doc.clone()))
+                })
+                .collect()
+        };
 
         let id = ctx.add(col);
         self.root = Some(id);
@@ -583,6 +725,107 @@ impl Widget for NoteInProseBody {
     fn children(&self) -> Vec<WidgetId> {
         self.root.into_iter().collect()
     }
+}
+
+/// **How many times this entry is named on this page, and a way to get to each.**
+///
+/// Marking every mention says *that* they are there; on a Book's reading of forty
+/// documents it does not get anyone to them. So the count is a control: two chevrons
+/// that step through the marks in reading order, crossing rows, exactly as the find
+/// banner steps through what was typed.
+///
+/// **Always on the page**, not behind a shortcut, because the marks it counts are —
+/// and hidden entirely when there is nothing to count, so a reading with no textual
+/// mention (an entry declared only as a point of view) shows no counter rather than a
+/// zero and two dead buttons.
+///
+/// The label reads as the plain total until the reader steps into it, and as "3 of
+/// 17" after. Reporting an ordinal before anyone has moved would be claiming a
+/// position the reader has not taken.
+fn mention_bar(
+    walk: Rc<crate::story_bible::highlight::SubjectWalk>,
+    format: FormatViewModel,
+) -> impl Widget + 'static {
+    let total = walk.total_signal();
+    let ordinal = walk.ordinal_signal();
+    let label = total.zip(&ordinal).map(|(total, ordinal)| {
+        if *ordinal == 0 {
+            tr!(note_in_prose_mentions(n = *total as i64)).resolve_now()
+        } else {
+            tr!(note_in_prose_mention_at(
+                current = *ordinal as i64,
+                total = *total as i64
+            ))
+            .resolve_now()
+        }
+    });
+    let step = |walk: Rc<crate::story_bible::highlight::SubjectWalk>,
+                format: FormatViewModel,
+                forward: bool| {
+        move |c: &mut EventContext| {
+            // **Ask for a frame before anything else.** Stepping writes the counter's
+            // two signals, and the label binds a *derived* signal over them, which the
+            // binding registry picks up by polling generations on the next frame that
+            // runs — writing a signal does not pump one. The reveal below usually does,
+            // by moving a selection, but not when the step finds no mounted editor and
+            // not when the mention was already on screen. The counter changed either
+            // way, so the frame is asked for either way.
+            //
+            // The find banner needs the same thing and gets it the same two ways: its
+            // Next selects (which repaints), and `replace_current` / `replace_all`, which
+            // change a document without any editor interaction, call this outright.
+            c.request_frame();
+            let Some((item, start, length)) = walk.step(forward) else {
+                return;
+            };
+            // **Every** editor showing that row, by name. A page builds one per row and
+            // none of them is "this tab's", so the registry is the only thing that can
+            // answer — the same route the stream find's reveal takes.
+            //
+            // Every one, not the first: the same scene can be a row here *and* a tab of
+            // its own, and a tab that is not on screen is parked dormant with no layout to
+            // locate an offset in. Revealing through that one requests nothing at all,
+            // which is exactly what "the page does not follow" looked like. `reveal_range`
+            // reports whether it could, so the first that can does the scrolling.
+            let mut revealed = false;
+            for handle in format
+                .handles_by_item(crate::format::EditorKind::Prose)
+                .into_iter()
+                .filter(|(shown, _)| *shown == item)
+                .map(|(_, handle)| handle)
+            {
+                // Selected and scrolled to, exactly as the find banner's own Next does.
+                // The wash already says *which* mention, so the selection is not carrying
+                // the mark — it is carrying everything else a reader expects of "go to
+                // the next one": a caret to type at, Ctrl+C on the name, and the repaint
+                // the editor's own state change brings.
+                handle.select_range(start, start + length);
+                revealed |= !revealed && handle.reveal_range(c, start, start + length);
+            }
+        }
+    };
+    let row = HStack::new()
+        .spacing(4.0)
+        .child(
+            TextWidget::new(lit!(""))
+                .text(label)
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        )
+        .child(
+            IconButton::new(crate::icons::find::nav_prev_icon())
+                .embedded()
+                .tooltip(tr!(note_in_prose_mention_previous()))
+                .on_activate_fn(step(walk.clone(), format.clone(), false)),
+        )
+        .child(
+            IconButton::new(crate::icons::find::nav_next_icon())
+                .embedded()
+                .tooltip(tr!(note_in_prose_mention_next()))
+                .on_activate_fn(step(walk.clone(), format.clone(), true)),
+        )
+        .child(Expand::horizontal().child(Spacer::new()));
+    crate::tabs::shared::editor::VisibleWhen::new(total.map(|n| *n > 0), row)
 }
 
 /// The row's declaration, in plain words: whether this note holds the point of view
@@ -774,6 +1017,201 @@ mod tests {
     /// lookup was reaching in the wild: the declared row must still open, and it must
     /// open through the tab's own store, not silently do nothing (the old fallback for
     /// a missing store) and not open a second, disjoint one nothing else can see.
+    /// **Ctrl+F reads this page as one run of prose.**
+    ///
+    /// The banner is built with the tab, before this page exists and with no route to
+    /// it, so the page announces the rows it has mounted. That handshake is the whole
+    /// wiring, and it is invisible from either side alone: the banner would simply find
+    /// nothing, which is also what an empty Book looks like.
+    #[test]
+    fn the_rows_this_reading_shows_are_what_its_find_banner_searches() {
+        let f = seed();
+        f.tab.segment.set(Some(shared::segments::segment_id(
+            shared::segments::SEG_NOTE_IN_PROSE,
+        )));
+
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+
+        let published: Vec<u64> = f
+            .tab
+            .in_prose_docs_sink()
+            .borrow()
+            .iter()
+            .map(|(id, _)| *id)
+            .collect();
+        assert_eq!(
+            published,
+            vec![f.scene_id],
+            "the declared row, and the order it is shown in"
+        );
+
+        // The scene the note is declared in, with something to find in it.
+        let doc = f
+            .tab
+            .docs()
+            .open(f.scene_id)
+            .and_then(|d| d.main.as_ref().map(|m| m.doc.clone()))
+            .expect("the declared row's prose");
+        doc.set_plain_text("the ferry left, and the ferry came back")
+            .unwrap();
+
+        let find = f
+            .tab
+            .active_find()
+            .cloned()
+            .expect("the In prose reading has a banner");
+        find.ensure_session(
+            teksilo::text_document::HighlightFormat::default(),
+            teksilo::text_document::HighlightFormat::default(),
+        );
+        find.query_signal().set("ferry".into());
+        find.refresh_query();
+        assert_eq!(
+            find.count_signal().get(),
+            2,
+            "both hits, found in a document this page mounted rather than in the note"
+        );
+    }
+
+    /// **The names are marked in the prose, not only beside it.**
+    ///
+    /// The strip says which rows and roughly where; a reader scanning a scene for the one
+    /// place the name is actually written was left to find it by eye. This is the other
+    /// half of the same measurement, and the wiring between the two is a handshake the
+    /// layer alone cannot prove: the pane has to build one per shown row, keep it in step
+    /// with the documents it opened, and re-derive it.
+    #[test]
+    fn the_names_of_the_entry_are_marked_in_the_prose_it_is_read_against() {
+        let f = seed();
+        let doc = f
+            .tab
+            .docs()
+            .open(f.scene_id)
+            .and_then(|d| d.main.as_ref().map(|m| m.doc.clone()))
+            .expect("the declared row's prose");
+        // "A note" is the entry's title in this fixture, written once here and once as
+        // part of a longer word that must not match.
+        doc.set_plain_text("A note was left. Anoteworthy day.")
+            .unwrap();
+
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+
+        let marked: Vec<(usize, usize)> = paint_spans(&doc)
+            .into_iter()
+            .filter(|s| s.background_color.is_some())
+            .map(|s| (s.start, s.length))
+            .collect();
+        assert_eq!(
+            marked,
+            vec![(0, 6)],
+            "the name where it is written, and not inside a longer word"
+        );
+    }
+
+    fn paint_spans(doc: &TextDocument) -> Vec<teksilo::text_document::PaintHighlightSpan> {
+        use teksilo::text_document::{FlowElementSnapshot, HighlightMask};
+        match &doc.snapshot_flow_masked(&HighlightMask::all()).elements[0] {
+            FlowElementSnapshot::Block(b) => b.paint_highlights.clone(),
+            _ => panic!("block"),
+        }
+    }
+
+    /// **The marks are reachable, not only visible.**
+    ///
+    /// Marking every mention says that they are there; on a Book's reading of forty
+    /// documents it does not get anyone to them. The counter and its two chevrons are the
+    /// other half, and they are on the page rather than behind a shortcut because the
+    /// marks they count are.
+    ///
+    /// Hidden entirely with nothing to count: a reading whose entry is declared as a
+    /// point of view but never named would otherwise show a zero and two dead buttons.
+    /// Asserted on laid-out height, because the bar is `VisibleWhen`-gated — it is built
+    /// either way and takes no space when dormant.
+    #[test]
+    fn the_mention_counter_is_on_the_page_only_when_there_is_something_to_count() {
+        let chevron_height = |prose: &str| {
+            let f = seed();
+            f.tab
+                .docs()
+                .open(f.scene_id)
+                .and_then(|d| d.main.as_ref().map(|m| m.doc.clone()))
+                .expect("the declared row's prose")
+                .set_plain_text(prose)
+                .unwrap();
+
+            let mut tree = crate::test_support::tree_with_events(&f.ctx);
+            let root = tree.add_boxed(note_in_prose_pane(&f.tab));
+            tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+            fn tallest(tree: &teksilo::core::widget_tree::WidgetTree, id: WidgetId) -> f32 {
+                let mine = if tree
+                    .widget_type_name(id)
+                    .is_some_and(|n| n.ends_with("::IconButton"))
+                {
+                    tree.bounds(id).height
+                } else {
+                    0.0
+                };
+                tree.children(id)
+                    .into_iter()
+                    .map(|c| tallest(tree, c))
+                    .fold(mine, f32::max)
+            }
+            tallest(&tree, root)
+        };
+
+        // "A note" is the entry's title in this fixture.
+        assert!(
+            chevron_height("A note was left, and A note again.") > 0.0,
+            "two mentions, so a counter and a way to walk them"
+        );
+        assert_eq!(
+            chevron_height("Nobody came."),
+            0.0,
+            "nothing named here, so no counter and no dead chevrons"
+        );
+    }
+
+    /// **The chevrons have somewhere to send the reader.**
+    ///
+    /// Stepping is two halves: the walk moves its cursor, and the row's *editor* is asked
+    /// to select and scroll to the span. The second half goes through the editor registry
+    /// by item id — a page builds one editor per row and none of them is "this tab's" —
+    /// and if a row's editor never registered under its own id, the walk would move
+    /// silently and the page would not budge. That is exactly what "the buttons do
+    /// nothing" looks like, and nothing else in the suite would notice.
+    #[test]
+    fn a_mounted_row_is_reachable_through_the_editor_registry() {
+        let f = seed();
+        f.tab
+            .docs()
+            .open(f.scene_id)
+            .and_then(|d| d.main.as_ref().map(|m| m.doc.clone()))
+            .expect("the declared row's prose")
+            .set_plain_text("A note was left, and A note again.")
+            .unwrap();
+
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+
+        let reachable: Vec<u64> = f
+            .tab
+            .format
+            .handles_by_item(crate::format::EditorKind::Prose)
+            .into_iter()
+            .map(|(item, _)| item)
+            .collect();
+        assert!(
+            reachable.contains(&f.scene_id),
+            "the declared row's editor must be reachable by its own id, or a step has \
+             nowhere to reveal; registry holds {reachable:?}"
+        );
+    }
+
     #[test]
     fn a_declared_row_opens_through_the_tabs_own_document_store() {
         let f = seed();
