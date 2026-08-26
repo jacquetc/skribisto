@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The story-bible entry modal: C1 in full, wired for its two doors (C1a's
-//! configuration step, C1b's "Add as note") and reusable by any future one.
+//! The story-bible entry modal: the configuration step the ＋ Create vocabulary opens
+//! on a row it has just made.
 //!
 //! **Nothing is created until Create is pressed.** Every field below lives in
 //! local `Signal` state owned by [`EntryPanel`]; Cancel is simply
@@ -12,19 +12,18 @@
 //! hand them to [`super::create::create_entry`] / [`super::create::configure_entry`],
 //! the one place either mode actually touches the store.
 //!
-//! ## Two modes, one widget
+//! ## One mode, and why there is no location picker
 //!
-//! [`Mode::Create`] is the gather-then-confirm shape every other creation
-//! dialog in this app already uses (see `app::recreate_row`, `goals::distribute_panel`):
-//! nothing exists yet, so it carries a [`DestinationPicker`], since the location is
-//! part of what Create commits.
+//! `CreateType::StoryBibleEntry` creates its row **immediately**, matching every sibling
+//! type exactly (see `OutlineViewModel::add_recommended_returning_id`'s own doc for
+//! why), so by the time this widget exists the row already has a place. There is
+//! nothing left to pick.
 //!
-//! [`Mode::Configure`] is what the ＋ Create vocabulary opens: `CreateType::StoryBibleEntry`
-//! creates its row **immediately**, matching every sibling type exactly (see
-//! `OutlineViewModel::add_recommended_returning_id`'s own doc for why), so by the
-//! time this widget exists the row already has a place. There is nothing left to
-//! pick, so the location section simply does not render, the same "gated at the
-//! source, not per field" discipline the Books section below already uses.
+//! It used to have a second mode, for "Add as note", which did carry a
+//! [`crate::widgets::destination_picker::DestinationPicker`] because nothing existed
+//! yet. That door no longer asks: a tag now says where its notes go, so the whole
+//! gesture is one click and there is no modal in it at all. See
+//! [`crate::story_bible::capture_flow`].
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -43,14 +42,12 @@ use frontend::AppContext;
 
 use crate::app_ids::AppIds;
 use crate::editors::EditorsViewModel;
-use crate::models::BinderTreeKey;
 use crate::note_templates::{NoteTemplatesViewModel, Preset};
 use crate::tags::TagsViewModel;
 use crate::tags::books::ClearBook;
 use crate::tags::cast_add::CastCandidate;
 use crate::tags::mention_list::PinReference;
 use crate::toast_scope::ToastWorkExt;
-use crate::widgets::destination_picker::DestinationPicker;
 
 use super::create::{self, EntryDraft};
 use super::infer_book;
@@ -88,35 +85,18 @@ pub struct Prefill {
     /// own doc); harmless to pass a non-empty guess otherwise, since the
     /// control that would show it simply does not render.
     pub books: Vec<u64>,
-    /// Where the location picker opens pointing (`Mode::Create` only): a
-    /// selection the writer can still change before Create, exactly like
-    /// `DestinationPicker::preselect`'s own contract.
-    pub preselect: Option<BinderTreeKey>,
 }
 
-/// Where the entry lands, and what Create does once pressed.
+/// Which row Create configures.
+///
+/// A one-variant enum rather than a bare `u64`: it is the argument every function below
+/// threads, and naming it is what made the second variant's removal a compile error
+/// everywhere it mattered rather than a silent behaviour change.
 #[derive(Clone)]
 enum Mode {
-    /// Nothing exists yet; Create makes the item (see [`super::create::create_entry`]).
-    Create { destination: DestinationPicker },
     /// The row already exists; Create only configures it (see
     /// [`super::create::configure_entry`]).
     Configure { item_id: u64 },
-}
-
-/// Open the **creation** step: "Add as note", and any future stand-alone door.
-pub fn present_create(deps: ModalDeps, prefill: Prefill, ctx: &mut EventContext) {
-    let destination = DestinationPicker::new(deps.app_ctx.clone(), deps.ids.work_id.clone());
-    if let Some(key) = prefill.preselect {
-        destination.preselect(key);
-    }
-    open(
-        deps,
-        Mode::Create { destination },
-        prefill,
-        tr!(story_bible_modal_create_title()),
-        ctx,
-    );
 }
 
 /// Open the **configuration** step on a row the ＋ Create vocabulary already
@@ -143,23 +123,27 @@ pub fn present_configure(deps: ModalDeps, item_id: u64, ctx: &mut EventContext) 
     );
 }
 
-/// The [`Prefill`] for "Add as note": the selected words as both the proposed
-/// name and the first alias candidate, the source row itself preselected as
-/// the location (still fully changeable before Create), and, when the Work
-/// has two or more Books, the scene's own containing Book as the `books`
-/// pre-set, unambiguous since a scene sits inside exactly one Book.
+/// The [`Prefill`] for "Add as note": the selected words as both the proposed name and
+/// the first alias candidate, and, when the Work has two or more Books, the scene's own
+/// containing Book as the `books` pre-set, unambiguous since a scene sits inside exactly
+/// one Book.
 ///
-/// `None` only when `item_id` no longer resolves: the row was trashed, or the
-/// project changed between the right-click and the intent reaching here, in
-/// which case the caller shows nothing rather than a modal pointing at thin
-/// air.
+/// Read by [`crate::story_bible::capture_flow`], which no longer opens this modal at
+/// all: the tag says where the note goes, so there is nothing left to confirm. What
+/// survives here is the part that was never about the dialog, which is working out what
+/// the writer actually selected.
+///
+/// `None` only when `item_id` no longer resolves: the row was trashed, or the project
+/// changed between the right-click and the intent reaching here, in which case the
+/// caller files nothing rather than a note about thin air.
 pub fn prefill_from_selection(
     app_ctx: &Rc<AppContext>,
     ids: &AppIds,
     item_id: u64,
     selected_text: &str,
 ) -> Option<Prefill> {
-    let item = frontend::commands::binder_item_commands::get_binder_item(app_ctx, &item_id)
+    // Fetched purely to answer "does this row still exist?" — see the `None` case above.
+    frontend::commands::binder_item_commands::get_binder_item(app_ctx, &item_id)
         .ok()
         .flatten()?;
     let name = selected_text.trim().to_string();
@@ -177,7 +161,6 @@ pub fn prefill_from_selection(
             vec![name]
         },
         books,
-        preselect: Some(BinderTreeKey::Item(item.uid)),
     })
 }
 
@@ -259,8 +242,8 @@ fn draft_from(
     }
 }
 
-/// Commit the draft, create (`Mode::Create`) or configure (`Mode::Configure`),
-/// then dismiss and, if `open_after`, reveal the item in an editor tab. A blank
+/// Commit the draft onto the row [`Mode::Configure`] names, then dismiss and, if
+/// `open_after`, reveal the item in an editor tab. A blank
 /// name refuses silently: the Create buttons are already disabled on it, so
 /// this is only reached that way through direct scripting/testing, and doing
 /// nothing is the correct answer either way; never a bare-title row.
@@ -275,28 +258,9 @@ fn commit(
         return;
     }
     let stack = deps.ids.stack_id.get();
-    let outcome = match mode {
-        Mode::Create { destination } => {
-            let Some(place) = destination
-                .selected()
-                .and_then(|d| d.resolve(&deps.app_ctx))
-            else {
-                ctx.show_toast(
-                    Toast::warning(tr!(story_bible_modal_choose_location()))
-                        .scoped_id("story_bible.no_location", deps.ids.work_id.get())
-                        .target_work(deps.ids.work_id.get()),
-                );
-                return;
-            };
-            let (binder, index, indent) = place;
-            create::create_entry(&deps.app_ctx, stack, binder, index, indent, &draft)
-                .map(|c| c.item_id)
-        }
-        Mode::Configure { item_id } => {
-            let item_id = *item_id;
-            create::configure_entry(&deps.app_ctx, stack, item_id, &draft).then_some(item_id)
-        }
-    };
+    let Mode::Configure { item_id } = mode;
+    let item_id = *item_id;
+    let outcome = create::configure_entry(&deps.app_ctx, stack, item_id, &draft).then_some(item_id);
     let Some(item_id) = outcome else {
         ctx.show_toast(
             Toast::error(tr!(story_bible_modal_failed()))
@@ -400,21 +364,6 @@ impl Widget for EntryPanel {
                 TextInput::new(self.name.clone())
                     .placeholder(tr!(story_bible_modal_name_placeholder())),
             );
-
-        // ── Location (Create mode only: a row the ＋ Create vocabulary
-        // already placed has nothing left to pick) ──
-        if let Mode::Create { destination } = &self.mode {
-            col = col
-                .child(
-                    TextWidget::new(tr!(story_bible_modal_location_label()))
-                        .style(TextStyleRole::Tiny)
-                        .color(TextRole::Secondary),
-                )
-                .child(
-                    MaxSize::height(160.0)
-                        .child(destination.view(tr!(story_bible_modal_no_binders()))),
-                );
-        }
 
         // ── Tags ──
         col = col
@@ -631,8 +580,6 @@ impl Widget for EntryPanel {
 mod tests {
     use super::*;
     use frontend::commands::{binder_commands, binder_item_commands, work_commands};
-    #[cfg(not(feature = "mocks"))]
-    use frontend::common::direct_access::binder::BinderRelationshipField;
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
     use frontend::common::entities::{BinderItemRole, BinderItemSubRole, GoalUnit};
     use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
@@ -642,10 +589,6 @@ mod tests {
         app_ctx: Rc<AppContext>,
         ids: AppIds,
         binder_id: u64,
-        // Only `create_mode_creates_nothing_until_create_is_pressed_then_creates_once`
-        // reads this, and that test is itself gated off `mocks` (see its own doc).
-        #[cfg(not(feature = "mocks"))]
-        binder_uid: uuid::Uuid,
     }
 
     /// A Work with one Binder, no Books yet: the "fewer than two Books" shape
@@ -673,8 +616,6 @@ mod tests {
             app_ctx,
             ids,
             binder_id: binder.id,
-            #[cfg(not(feature = "mocks"))]
-            binder_uid: binder.uid,
         }
     }
 
@@ -913,63 +854,6 @@ mod tests {
         create_and_open: WidgetId,
     }
 
-    /// **`Mode::Create` creates nothing until Create is pressed, then creates
-    /// exactly once.** Every other test in this module builds `Mode::Configure`,
-    /// where the row already exists; this is the one path none of them cover,
-    /// "Add as note" and any future stand-alone "New entry" door: a
-    /// `DestinationPicker` resolving to a real insertion point and
-    /// `create::create_entry` actually landing a row from inside the widget,
-    /// not called directly the way `create::tests` calls it.
-    ///
-    /// Gated off `mocks` for the same reason `widgets::destination_picker`'s own
-    /// `real_backend_tests` module is: under `mocks` the picker's tree model
-    /// fabricates its own binder regardless of what this test seeds, so a
-    /// preselect naming the real seeded binder's uid can never resolve there.
-    #[cfg(not(feature = "mocks"))]
-    #[test]
-    fn create_mode_creates_nothing_until_create_is_pressed_then_creates_once() {
-        let f = seed();
-        let deps = deps(&f);
-        let destination = DestinationPicker::new(f.app_ctx.clone(), f.ids.work_id.clone());
-        destination.preselect(BinderTreeKey::Binder(f.binder_uid));
-        let panel = EntryPanel::new(
-            deps,
-            Mode::Create { destination },
-            Prefill {
-                name: "Elizabeth Bennet".into(),
-                aliases: vec!["Lizzy".into()],
-                ..Prefill::default()
-            },
-        );
-        let (mut tree, _id, ids) = mount(&f.app_ctx, panel);
-
-        let before = binder_commands::get_binder_relationship(
-            &f.app_ctx,
-            &f.binder_id,
-            &BinderRelationshipField::BinderItems,
-        )
-        .unwrap_or_default();
-        assert!(
-            before.is_empty(),
-            "nothing is created merely by opening the modal and picking a destination"
-        );
-
-        crate::test_support::click(&mut tree, ids.create);
-
-        let after = binder_commands::get_binder_relationship(
-            &f.app_ctx,
-            &f.binder_id,
-            &BinderRelationshipField::BinderItems,
-        )
-        .unwrap_or_default();
-        assert_eq!(after.len(), 1, "Create must land exactly one row");
-        let created = binder_item_commands::get_binder_item(&f.app_ctx, &after[0])
-            .expect("read")
-            .expect("item");
-        assert_eq!(created.title, "Elizabeth Bennet");
-        assert_eq!(created.aliases, vec!["Lizzy".to_string()]);
-    }
-
     /// **Create and open opens the new item.**
     #[test]
     fn create_and_open_opens_the_new_item() {
@@ -1066,7 +950,6 @@ mod tests {
                 name: "Elizabeth Bennet".into(),
                 aliases: vec!["Lizzy".into()],
                 books: vec![book_one],
-                preselect: None,
             },
         );
         // A tag pick too: Cancel must discard this along with everything

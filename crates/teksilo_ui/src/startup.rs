@@ -272,6 +272,8 @@ pub(crate) struct Tier1Services {
     pub backup_settings: BackupSettingsViewModel,
     /// Which Book a note's "In prose" segment last showed, per project.
     pub note_book_choice: models::NoteBookChoiceService,
+    /// What "Add as note" remembers between captures, per project.
+    pub note_capture: models::NoteCaptureService,
 }
 
 pub(crate) fn open_tier1_services(
@@ -346,6 +348,16 @@ pub(crate) fn open_tier1_services(
                 .ok()
         })
         .unwrap_or_else(models::NoteBookChoiceService::in_memory_default);
+    // Which tags this writer captures under, and where an untagged note goes
+    // (`note_capture.toml`). A sixth `SettingsFile` sibling, degraded the same way: with
+    // no config directory the capture menu still works, it simply stops remembering.
+    let note_capture = crate::identity::app_paths()
+        .and_then(|paths| {
+            models::NoteCaptureService::open(&paths)
+                .map_err(|e| eprintln!("note capture: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::NoteCaptureService::in_memory_default);
     // The Import-Plume view-model is a singleton (form + in-flight job + progress
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
@@ -450,6 +462,7 @@ pub(crate) fn open_tier1_services(
         df_themes,
         backup_settings,
         note_book_choice,
+        note_capture,
     }
 }
 

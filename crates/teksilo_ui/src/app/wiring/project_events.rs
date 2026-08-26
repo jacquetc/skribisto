@@ -348,6 +348,7 @@ pub(in crate::app) struct LifecycleDeps {
     // cold-start import (installed after the New seed, same call)
     pub import_document: crate::import_document::ImportDocumentViewModel,
     pub cold_start_import: ColdStartImport,
+    pub tag_preset: PendingTagPreset,
 }
 
 /// A Launcher "From documents…" waiting for the project it is about to fill to
@@ -371,6 +372,31 @@ impl ColdStartImport {
 
     fn take(&self) -> bool {
         self.0.replace(false)
+    }
+}
+
+/// The tag palette a New Work form asked its project to start with, waiting for that
+/// project to exist.
+///
+/// The same one-shot shape as [`ColdStartImport`], and for the same reason: the form
+/// answers the question, but there is no palette to apply it to until `new_work` has
+/// run. `App::build` arms it immediately before that call and the `NewWork` subscriber
+/// **takes** it, so the second project created in the same window does not inherit the
+/// first one's answer.
+///
+/// A `None` inside the cell is a writer who chose no tags, which is the default and a
+/// real answer. Not being armed at all is the same outcome, which is why this can carry
+/// `Option<Preset>` rather than needing to distinguish the two.
+#[derive(Clone, Default)]
+pub(crate) struct PendingTagPreset(Rc<Cell<Option<crate::tags::Preset>>>);
+
+impl PendingTagPreset {
+    pub(crate) fn arm(&self, preset: Option<crate::tags::Preset>) {
+        self.0.set(preset);
+    }
+
+    fn take(&self) -> Option<crate::tags::Preset> {
+        self.0.replace(None)
     }
 }
 
@@ -604,6 +630,36 @@ pub(in crate::app) fn install_lifecycle(
         );
     }
 
+    // ── The starting tag palette ───────────────────────────────────────────
+    //
+    // Ordered after the seed above for the same reason the import wizard is: the
+    // project exists and `work_id` is set by the time this runs, which is what
+    // `TagsViewModel::apply_preset` needs to have anywhere to write.
+    //
+    // Deliberately not undoable-as-a-separate-step in the writer's mind: it lands on
+    // the fresh project's own stack alongside everything else the template laid down,
+    // and a writer who wants a different palette changes it in Settings rather than
+    // pressing Ctrl+Z on a project they have not typed in yet.
+    {
+        let pending = deps.tag_preset.clone();
+        let session = deps.session.clone();
+        let my_ids = deps.ids.clone();
+        ctx.subscribe_event(
+            Origin::WorkManagement(WorkManagementEvent::NewWork),
+            move |event: &Event| {
+                if !my_ids.is_bootstrap_or_own(&event.ids) {
+                    return;
+                }
+                if let Some(preset) = pending.take() {
+                    let summary = session.tags.apply_preset(preset);
+                    if summary.added == 0 {
+                        eprintln!("new work: the chosen tag palette added nothing");
+                    }
+                }
+            },
+        );
+    }
+
     // ── Missing dictionaries toast ─────────────────────────────────────────
     for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
         let docs = deps.spell_docs.clone();
@@ -653,4 +709,47 @@ pub(in crate::app) fn install_lifecycle(
     }
 
     attach_seed
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tags::Preset;
+
+    /// **A one-shot is taken once.** The whole point of `take` rather than a read: two
+    /// projects created in the same window must not both get the first one's palette.
+    #[test]
+    fn a_taken_preset_is_not_taken_twice() {
+        let pending = PendingTagPreset::default();
+        pending.arm(Some(Preset::Basic));
+        assert_eq!(pending.take(), Some(Preset::Basic));
+        assert_eq!(
+            pending.take(),
+            None,
+            "the second project created in this window must choose for itself"
+        );
+    }
+
+    /// **Never armed and armed-with-nothing are the same outcome**, which is what lets
+    /// this carry `Option<Preset>` rather than having to tell the two apart. A writer who
+    /// left the picker alone chose no tags, and that is a real answer.
+    #[test]
+    fn an_unarmed_one_shot_and_an_explicit_no_preset_agree() {
+        let never = PendingTagPreset::default();
+        assert_eq!(never.take(), None);
+
+        let explicit = PendingTagPreset::default();
+        explicit.arm(None);
+        assert_eq!(explicit.take(), None);
+    }
+
+    /// **Arming again replaces.** A wizard that failed to create, then was reopened and
+    /// completed, must apply the second answer and not the first.
+    #[test]
+    fn arming_again_replaces_the_pending_answer() {
+        let pending = PendingTagPreset::default();
+        pending.arm(Some(Preset::Fantasy));
+        pending.arm(Some(Preset::Mystery));
+        assert_eq!(pending.take(), Some(Preset::Mystery));
+    }
 }

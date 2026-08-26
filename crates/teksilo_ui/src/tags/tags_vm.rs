@@ -334,6 +334,9 @@ pub fn parse_csv(text: &str) -> Result<(Vec<TagRow>, usize)> {
         let color = record.get(1).unwrap_or_default().trim();
         rows.push(TagRow {
             id: 0,
+            // Same as a preset row: a parsed CSV line describes a tag to create, and
+            // its identity is minted on import.
+            uid: uuid::Uuid::nil(),
             name: name.to_string(),
             color: if is_hex_color(color) {
                 color.to_string()
@@ -365,8 +368,75 @@ fn is_hex_color(s: &str) -> bool {
 mod tests {
     use super::*;
 
+    /// **A preset actually seeds the project's palette, and applying it twice adds
+    /// nothing.** This is what the New Work wizard's picker and the Settings page both
+    /// commit to, and it is what makes the question safe to answer and then change your
+    /// mind about.
+    ///
+    /// Reads the tags back off the **Work**, not off this view-model: under
+    /// `--features mocks` the list model mutates a fabricated palette and never writes,
+    /// so asking the view-model would answer about the mock rather than the project.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_preset_seeds_the_palette_and_reapplying_it_adds_nothing() {
+        use frontend::commands::work_commands;
+        use frontend::common::direct_access::work::WorkRelationshipField;
+        use frontend::direct_access::CreateWorkDto;
+
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let ids = AppIds::new();
+        ids.work_id.set(Some(work.id));
+        let vm = TagsViewModel::detached(ctx.clone(), ids.clone());
+
+        let tags_of = || {
+            work_commands::get_work_relationship(&ctx, &work.id, &WorkRelationshipField::Tags)
+                .unwrap_or_default()
+        };
+        assert!(tags_of().is_empty(), "a fresh project starts with no tags");
+
+        let summary = vm.apply_preset(Preset::Basic);
+        assert_eq!(summary.added, Preset::Basic.rows().len());
+        assert_eq!(tags_of().len(), Preset::Basic.rows().len());
+
+        let again = vm.apply_preset(Preset::Basic);
+        assert_eq!(again.added, 0, "re-applying is a no-op, not a doubling");
+        assert_eq!(tags_of().len(), Preset::Basic.rows().len());
+    }
+
+    /// A genre preset **extends** Basic rather than standing alone, so applying it to an
+    /// empty palette lays down Basic's tags too. A writer picking "Fantasy" in the New
+    /// Work wizard gets a usable palette, not three exotic tags and nothing to file a
+    /// character under.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_genre_preset_brings_the_basic_tags_with_it() {
+        use frontend::commands::work_commands;
+        use frontend::common::direct_access::work::WorkRelationshipField;
+        use frontend::direct_access::CreateWorkDto;
+
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let ids = AppIds::new();
+        ids.work_id.set(Some(work.id));
+        let vm = TagsViewModel::detached(ctx.clone(), ids);
+        let _ = vm.apply_preset(Preset::Fantasy);
+
+        let landed =
+            work_commands::get_work_relationship(&ctx, &work.id, &WorkRelationshipField::Tags)
+                .unwrap_or_default();
+        assert_eq!(landed.len(), Preset::Fantasy.rows().len());
+        assert!(
+            Preset::Fantasy.rows().len() > Preset::Basic.rows().len(),
+            "a genre preset extends Basic rather than replacing it"
+        );
+    }
+
     fn row(name: &str, color: &str, details: &str, discoverable: bool) -> TagRow {
         TagRow {
+            uid: uuid::Uuid::nil(),
             id: 0,
             name: name.into(),
             color: color.into(),

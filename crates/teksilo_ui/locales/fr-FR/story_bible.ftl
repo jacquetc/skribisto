@@ -1,17 +1,16 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-## La fenêtre de création d'une entrée de bible narrative (C1), atteinte
-## depuis « Ajouter comme note » sur une sélection de texte, et comme étape
-## de configuration ouverte par « Entrée de bible narrative… » du vocabulaire
-## ＋ Créer sur une ligne qu'il vient de créer. Voir
-## `teksilo_ui::story_bible::modal`.
+## La fenêtre d'une entrée de bible narrative : l'étape de configuration ouverte par
+## « Entrée de bible narrative… » du vocabulaire ＋ Créer sur une ligne qu'il vient de
+## créer. Voir `teksilo_ui::story_bible::modal`.
+##
+## « Ajouter comme note » n'y mène plus : cette porte range la note aussitôt, sous la
+## seule étiquette choisie. Ses propres chaînes sont plus bas, sous « la capture ».
 
-story-bible-modal-create-title = Nouvelle entrée de bible narrative
 story-bible-modal-configure-title = Configurer la nouvelle entrée
 story-bible-modal-name-label = Nom
 story-bible-modal-name-placeholder = Un personnage, un lieu, tout ce qui mérite d’être répertorié…
-story-bible-modal-location-label = Où
 story-bible-modal-no-binders = Ce projet n’a pas encore de classeur où la ranger
 story-bible-modal-template-label = Partir d’un modèle (facultatif)
 story-bible-modal-template-placeholder = Aucun modèle
@@ -19,12 +18,15 @@ story-bible-modal-body-label = Contenu
 story-bible-modal-cancel = Annuler
 story-bible-modal-create = Créer
 story-bible-modal-create-and-open = Créer et ouvrir
-story-bible-modal-choose-location = Choisissez d’abord où ranger cette entrée
 story-bible-modal-failed = Impossible de créer l’entrée
 
-## « Ajouter comme note » : la ligne du menu contextuel de l'éditeur qui ouvre
-## la fenêtre ci-dessus, préremplie à partir de la sélection en cours.
+## « Ajouter comme note » : la ligne du menu contextuel de l'éditeur. Un sous-menu des
+## étiquettes du projet, en trois niveaux, « Sans étiquette » toujours en dernier et
+## toujours présent. En choisir une range aussitôt la sélection comme note, sans boîte
+## de dialogue : l'étiquette dit où elle va et de quoi elle part.
 ctx-add-as-note = Ajouter comme &note…
+ctx-add-as-note-all-tags = Toutes les étiquettes…
+ctx-add-as-note-untagged = Sans étiquette
 
 ## La bible narrative (C2) : une grille de fiches sur chaque dossier de notes,
 ## groupée par étiquette repérable. Voir `teksilo_ui::tabs::story_bible_place`.
@@ -61,3 +63,14 @@ note-in-prose-cast = Présence
 note-in-prose-pov-and-cast = Point de vue · Présence
 note-in-prose-no-books = Ce projet n’a pas encore de livre
 note-in-prose-empty-book = Pas encore déclarée dans ce livre
+
+# The capture flow: one click from a selection to a filed note.
+story-bible-capture-toast = « { $name } » ajouté à la bible narrative
+story-bible-capture-open = Ouvrir
+story-bible-capture-undo = Annuler
+story-bible-capture-where-title = Où ranger ces notes ?
+story-bible-capture-where-prompt = Choisissez le dossier où classer les nouvelles notes.
+story-bible-capture-where-confirm = Classer ici
+story-bible-capture-where-needs-folder = Choisissez un dossier dans lequel ranger ces notes.
+story-bible-capture-where-tag = Question posée une seule fois. Les notes étiquetées « { $tag } » iront désormais ici, et vous pourrez le changer dans Paramètres, Œuvre, Étiquettes.
+story-bible-capture-where-untagged = Question posée une seule fois. Les notes sans étiquette iront désormais ici, et vous pourrez le changer dans Paramètres, Œuvre, Étiquettes.

@@ -28,6 +28,9 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct TagRow {
     pub id: u64,
+    /// The durable identity, for anything that outlives a session. A store id is
+    /// re-minted by every `load_work`, so the capture recents key on this instead.
+    pub uid: uuid::Uuid,
     pub name: String,
     /// Background colour as the writer chose it, `#rrggbb`.
     pub color: String,
@@ -41,7 +44,7 @@ pub struct TagRow {
     /// question: picking the tag settles the destination and the template with it.
     ///
     /// Read-only here. They are relationships, so they are written through
-    /// [`TagsViewModel::set_creates_in`] rather than the scalar `update` path the
+    /// [`crate::tags::TagsViewModel::set_creates_in`] rather than the scalar `update` path the
     /// other four fields share.
     pub creates_in: Option<u64>,
     pub note_template: Option<u64>,
@@ -442,6 +445,7 @@ mod imp {
             .flatten()
             .map(|t| TagRow {
                 id: t.id,
+                uid: t.uid,
                 name: t.name,
                 color: t.color,
                 details: t.details,
@@ -496,6 +500,9 @@ mod imp {
     fn row(id: u64, name: &str, color: &str, details: &str, discoverable: bool) -> TagRow {
         TagRow {
             id,
+            // Stable per row rather than nil, so a mock build's capture recents (which
+            // key on uid) can tell two mock tags apart.
+            uid: uuid::Uuid::from_u128(id as u128),
             name: name.to_string(),
             color: color.to_string(),
             details: details.to_string(),

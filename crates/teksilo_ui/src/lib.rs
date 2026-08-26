@@ -366,6 +366,7 @@ pub fn run() {
         df_themes,
         backup_settings,
         note_book_choice,
+        note_capture,
     } = startup::open_tier1_services(&app_ctx, init_root_id);
 
     // The margin lane's own mark sources, registered through the same door an
@@ -668,6 +669,7 @@ pub fn run() {
         // chose. Absent, the segment silently forgets the choice on every open, which is
         // exactly what it did before this registration existed.
         .app_state(note_book_choice.clone())
+        .app_state(note_capture.clone())
         .app_state(initial_state.session.backup_scheduler.clone())
         .app_state(project_factory.clone())
         // Bind this instance's sockets: its own per-pid one always, and the

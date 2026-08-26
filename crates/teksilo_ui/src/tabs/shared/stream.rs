@@ -137,6 +137,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             // Resolved once for the page rather than per row: it is one store
             // read, and a stream can be a hundred rows.
             let arrival_project = tab.work_unique_id();
+            let tags = tab.tags();
             let extents = extents.clone();
             let page_scroll = page_scroll.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
@@ -160,6 +161,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                         &gutter,
                         arrival_project.as_deref(),
                         scope,
+                        Some(&tags),
                     ),
                 ))
             }
@@ -233,6 +235,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // height is the sum of these claims, and most of them are below
                     // the fold.
                     true,
+                    Some(tab.tags()),
                 )),
                 SplitFlavour::Synopsis => Box::new(synopsis_column(
                     &field.doc,
@@ -268,6 +271,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // height is the sum of these claims, and most of them are below
                     // the fold.
                     true,
+                    tab.capture_palette(),
                 )),
             };
             col = col
@@ -466,6 +470,9 @@ fn stream_row(
     // The stream page this row is on, so its editor answers to that page's lane and
     // not to a tab open on the same scene — see `crate::margin_lane::LaneScope`.
     scope: crate::margin_lane::LaneScope,
+    // This project's palette, for the capture submenu on each row's editor. Threaded,
+    // not reached for: Tier-2 state, so `app_state` would answer with another Work's.
+    tags: Option<&crate::tags::TagsViewModel>,
 ) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
@@ -544,6 +551,7 @@ fn stream_row(
                         Some(crate::margin_lane::LaneAnchor::new(id, scope)),
                         // See the container's own column above.
                         true,
+                        tags.cloned(),
                     ));
                 }
             }
@@ -578,6 +586,13 @@ fn stream_row(
                         Some(crate::margin_lane::LaneAnchor::new(id, scope)),
                         // See the container's own column above.
                         true,
+                        // Built here rather than taken from the tab: a stream row is
+                        // handed the palette and the project separately, and this is
+                        // the same pair the prose flavour above passes.
+                        tags.map(|tags| crate::tabs::shared::editor::CapturePalette {
+                            tags: tags.clone(),
+                            work_uid: arrival_project.map(str::to_string),
+                        }),
                     ));
                 }
             }

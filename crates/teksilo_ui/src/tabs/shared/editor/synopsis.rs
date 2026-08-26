@@ -93,6 +93,11 @@ pub fn synopsis_editor(
     anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to the editor — see [`writing_column`]'s own note.
     estimate_height: bool,
+    // This project's tags, for the "Add as note" submenu — a writer picks a name out of
+    // a synopsis as readily as out of the prose. `None` on the surfaces built with no
+    // project around them and on the corkboard card, which is a preview rather than a
+    // writing surface; the row is then not offered at all.
+    capture: Option<crate::tabs::shared::editor::CapturePalette>,
 ) -> impl Widget {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -157,11 +162,15 @@ pub fn synopsis_editor(
     };
     {
         let handle = editor.handle();
+        // The row, off the anchor, for the reason `writing_column` gives beside its
+        // own capture submenu.
+        let item = anchor.map(|a| a.item);
         let cursor = editor.cursor_position_signal();
         let doc = doc.clone();
         let spell = spell.clone();
-        editor = editor.context_menu(move |pt, _ctx| {
+        editor = editor.context_menu(move |pt, ctx| {
             handle.reposition_caret_for_context_menu(pt);
+            let recents = super::capture_recents(ctx, capture.as_ref());
             Some(Box::new(editor_context_menu(
                 handle.clone(),
                 cursor.clone(),
@@ -170,6 +179,8 @@ pub fn synopsis_editor(
                 spell.clone(),
                 comments.clone(),
                 item,
+                capture.clone(),
+                recents,
             )))
         });
     }
@@ -306,6 +317,11 @@ pub fn card_synopsis_editor(
                 // it offers no comment affordances.
                 None,
                 item,
+                // No palette here: a card is built with no tab around it. "Add as note"
+                // is still offered, and comes down to Untagged.
+                Option::None,
+                // No palette, so nothing to rank.
+                Vec::new(),
             )))
         });
     }
@@ -466,6 +482,11 @@ pub fn synopsis_section(
     anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
     estimate_height: bool,
+    // This project's tags, for the "Add as note" submenu — a writer picks a name out of
+    // a synopsis as readily as out of the prose. `None` on the surfaces built with no
+    // project around them and on the corkboard card, which is a preview rather than a
+    // writing surface; the row is then not offered at all.
+    capture: Option<crate::tabs::shared::editor::CapturePalette>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     teksu!(
@@ -498,6 +519,7 @@ pub fn synopsis_section(
                             read_only,
                             anchor,
                             estimate_height,
+                            capture.clone(),
                         )
                     }
                 }
@@ -581,6 +603,11 @@ pub fn synopsis_column(
     anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
     estimate_height: bool,
+    // This project's tags, for the "Add as note" submenu — a writer picks a name out of
+    // a synopsis as readily as out of the prose. `None` on the surfaces built with no
+    // project around them and on the corkboard card, which is a preview rather than a
+    // writing surface; the row is then not offered at all.
+    capture: Option<crate::tabs::shared::editor::CapturePalette>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     // Read back below, once the editor has been constructed. Cloned first because
@@ -608,6 +635,7 @@ pub fn synopsis_column(
                     read_only,
                     anchor,
                     estimate_height,
+                    capture.clone(),
                 )
             }
         }

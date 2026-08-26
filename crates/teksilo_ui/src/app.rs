@@ -22,7 +22,10 @@ mod window_role;
 mod wiring;
 
 pub(crate) use recreate_row::{DeletedRow, RecreateContext, recreate_row};
+// Re-exported because the New Work wizard, which lives outside this module, arms it:
+// its in-place path chooses a tag palette for a project that does not exist yet.
 pub(crate) use restore_version::restore_version;
+pub(crate) use wiring::project_events::PendingTagPreset;
 
 pub(crate) use window_role::WindowRole;
 
@@ -186,7 +189,16 @@ pub enum PendingAction {
     /// Carried on the action rather than parked on the factory: a factory field
     /// would mean "the next window this creates", which is an ordering
     /// assumption nothing enforces — this names the one window that asked.
-    New { dto: NewWorkDto, then_import: bool },
+    ///
+    /// `tag_preset` is the palette the form asked the project to start with, and rides
+    /// here for the same reason `then_import` does: the project is created in the
+    /// window this action opens, not the one whose form was filled in, so a one-shot
+    /// armed on the presenting side would never be seen.
+    New {
+        dto: NewWorkDto,
+        then_import: bool,
+        tag_preset: Option<crate::tags::Preset>,
+    },
     /// Show a Work that is **already open** in another window of this process —
     /// Work ▸ New Window. The one action that performs no backend mutation at
     /// all: the `Work` is loaded, its `AppIds` are seeded, its singles point at
@@ -1582,6 +1594,11 @@ impl Widget for App {
         // Per-window `ProjectSwitchViewModel` (minted in the factory with this
         // window's own `unsaved`/`backup_mode`). Only the desk owner installs
         // hooks — see [`WindowRole::installs_project_switch_hooks`].
+        // Built here rather than beside `cold_start_import` below, because the New Work
+        // form hook installed just under this line has to capture it: the in-place
+        // creation path arms it from inside the wizard, and the arm has to reach the
+        // same window's own one-shot.
+        let pending_tag_preset = wiring::project_events::PendingTagPreset::default();
         let project_switch = self.project_switch.clone();
         if self.role.installs_project_switch_hooks() {
             project_switch.set_save_hook(Rc::new({
@@ -1591,15 +1608,19 @@ impl Widget for App {
             project_switch.set_new_work_form_hook(Rc::new({
                 let app_ctx = self.app_ctx.clone();
                 let ids = ids.clone();
+                let tag_preset = pending_tag_preset.clone();
                 move |c: &mut EventContext| {
                     let app_ctx = app_ctx.clone();
                     let ids = ids.clone();
+                    let tag_preset = tag_preset.clone();
                     c.present_modal(
-                        ModalRequest::deferred(move |t| t.add(NewWorkPanel::new(app_ctx, ids)))
-                            .presentation(ModalPresentation::InTree)
-                            .title("New Work")
-                            .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                            .size(640, 620),
+                        ModalRequest::deferred(move |t| {
+                            t.add(NewWorkPanel::new(app_ctx, ids, tag_preset))
+                        })
+                        .presentation(ModalPresentation::InTree)
+                        .title("New Work")
+                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                        .size(640, 620),
                     );
                 }
             }));
@@ -1738,6 +1759,7 @@ impl Widget for App {
                 trash_dock: self.trash_dock,
                 import_document: self.import_document.clone(),
                 cold_start_import: cold_start_import.clone(),
+                tag_preset: pending_tag_preset.clone(),
             },
         );
 
@@ -2003,7 +2025,11 @@ impl Widget for App {
                         });
                     }
                 }
-                Some(PendingAction::New { dto, then_import }) => {
+                Some(PendingAction::New {
+                    dto,
+                    then_import,
+                    tag_preset,
+                }) => {
                     let target = dto.file_name.clone();
                     // Arm the cold-start import BEFORE creating the work: the
                     // `NewWork` subscriber that consumes it is already live, and
@@ -2012,6 +2038,10 @@ impl Widget for App {
                     if then_import {
                         cold_start_import.arm();
                     }
+                    // Armed for the same reason and at the same moment: the
+                    // subscriber that applies it is already live, and there is no
+                    // palette to write into until the call below has returned.
+                    pending_tag_preset.arm(tag_preset);
                     if let Err(e) = work_management_commands::new_work(&self.app_ctx, &dto) {
                         eprintln!("skribisto: could not create '{target}': {e}");
                     }

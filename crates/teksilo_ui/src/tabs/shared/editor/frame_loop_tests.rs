@@ -93,6 +93,8 @@ fn column_with(
         // No project around this tree, so no item to name.
         None,
         false,
+        // No project behind a frame-loop probe, so no palette and no capture menu.
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);
@@ -196,6 +198,8 @@ fn prose_column_playing(
         // No project around this tree, so no item to name.
         None,
         false,
+        // No project behind a frame-loop probe, so no palette and no capture menu.
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);
@@ -302,6 +306,8 @@ fn a_game_stops_typing_and_not_the_programmatic_api() {
         // No project around this tree, so no item to name.
         None,
         false,
+        // No project behind a frame-loop probe, so no palette and no capture menu.
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);

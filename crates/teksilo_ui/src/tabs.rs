@@ -1039,6 +1039,19 @@ impl ContentTab {
             .unique_id;
         (!uid.is_empty()).then_some(uid)
     }
+    /// What every editor on this tab needs to offer "Add as note": this project's tags
+    /// and the uid its capture recents are filed under.
+    ///
+    /// Always `Some` here. A `ContentTab` exists only because a project is open, so
+    /// there is always a palette to show, even when it is empty and the submenu comes
+    /// down to Untagged alone. The `Option` is the *editor's*, for the surfaces built
+    /// with no tab around them at all.
+    pub fn capture_palette(&self) -> Option<crate::tabs::shared::editor::CapturePalette> {
+        Some(crate::tabs::shared::editor::CapturePalette {
+            tags: self.tags(),
+            work_uid: self.work_unique_id(),
+        })
+    }
     /// The `(role, sub_role)` pair this tab edits — what [`tab_pane`] dispatches on.
     pub fn role(&self) -> &BinderItemRole {
         &self.open_doc.role

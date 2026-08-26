@@ -230,6 +230,12 @@ pub fn writing_column(
     // is on screen and lays out on its first frame, so the guess would buy it nothing
     // and every consumer of its first-frame size would pay for it.
     estimate_height: bool,
+    // This project's tags, for the "Add as note" submenu: the writer picks one tag, and
+    // that one choice settles whether the entry is findable in prose, where it is filed,
+    // and what shape it starts in. `None` on every surface built with no project around
+    // it, the same shape as `comments` / `footnotes` / `images` above, and the submenu
+    // simply does not render there. See [`CapturePalette`].
+    tags: Option<crate::tags::TagsViewModel>,
 ) -> HStack {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -245,6 +251,12 @@ pub fn writing_column(
         let resolve = source.resolver();
         editor = editor.on_image_missing(resolve);
     }
+    // Cloned before the tally consumes it: the capture submenu, built later, keys this
+    // project's recents on the same uid.
+    let capture = tags.clone().map(|tags| CapturePalette {
+        tags,
+        work_uid: arrival_project.clone(),
+    });
     if let Some(project) = arrival_project {
         // The toolkit says which channel; what a *manuscript* makes of that is
         // the application's to decide, so the mapping is here rather than in
@@ -373,8 +385,15 @@ pub fn writing_column(
         let doc = doc.clone();
         let spell = spell.clone();
         let comments = comments.clone();
-        editor = editor.context_menu(move |pt, _ctx| {
+        editor = editor.context_menu(move |pt, ctx| {
             handle.reposition_caret_for_context_menu(pt);
+            // Which tags this writer reaches for, read off the service the app already
+            // holds open rather than reopening its file here. `MenuItem::submenu` runs
+            // its factory during `build`, not at hover, so anything the submenu does
+            // happens on *every* right-click that offers the row: a fresh
+            // `SettingsFile::load` would take an advisory lock and parse TOML on the UI
+            // thread before the writer had so much as looked at "Add as note".
+            let recents = capture_recents(ctx, capture.as_ref());
             Some(Box::new(editor_context_menu(
                 handle.clone(),
                 cursor.clone(),
@@ -383,6 +402,8 @@ pub fn writing_column(
                 spell.clone(),
                 comments.clone(),
                 item,
+                capture.clone(),
+                recents,
             )))
         });
     }
@@ -568,6 +589,156 @@ fn image_context_menu(handle: EditorHandle) -> MenuList {
 /// opened on a squiggle, one click from the fix rather than behind a submenu. It is
 /// **omitted** entirely when nothing flagged resolves here, rather than shown
 /// greyed out — a right-click on ordinary prose opens straight at Cut.
+/// What the "Add as note" submenu needs to offer this project's tags.
+///
+/// Two things travel together because neither is any use alone: the palette says which
+/// tags exist, and the project uid says whose recents to rank them by. Bundled rather
+/// than passed as a pair so a surface that wants capture threads one parameter, and so
+/// "this surface has no project around it" stays a single `None` instead of two that
+/// could disagree.
+///
+/// Threaded rather than read off `app_state`: a palette is Tier-2, so an `app_state`
+/// lookup answers with whichever Work's session registered first, which on a second open
+/// project is the wrong book's tags.
+#[derive(Clone)]
+pub struct CapturePalette {
+    /// This project's tags.
+    pub tags: crate::tags::TagsViewModel,
+    /// `Work.unique_id`, the key [`crate::models::NoteCaptureService`] files recents
+    /// under. `None` on a project not yet saved anywhere, which simply has no recents
+    /// yet and gets plain palette order.
+    pub work_uid: Option<String>,
+}
+
+/// Which tags this project's writer reached for most recently, for the capture submenu's
+/// second tier.
+///
+/// Read from the [`crate::models::NoteCaptureService`] the app registered at startup,
+/// which is already in memory. Emphatically **not** a fresh `NoteCaptureService::open`:
+/// `MenuItem::submenu` builds its content eagerly during `build` rather than at hover
+/// (see its own `build`, which calls the factory and then dormants the result), so
+/// everything the submenu does happens on every right-click that offers the row, and a
+/// file open there would put an advisory lock and a TOML parse on the UI thread for a
+/// writer who only wanted Copy.
+///
+/// Empty for a project not yet saved (no usable uid to key by) and when the service is
+/// unreachable, which costs the menu its ordering and nothing else.
+pub(super) fn capture_recents(
+    ctx: &EventContext,
+    palette: Option<&CapturePalette>,
+) -> Vec<uuid::Uuid> {
+    let Some(uid) = palette.and_then(|p| p.work_uid.as_deref()) else {
+        return Vec::new();
+    };
+    ctx.app_state::<crate::models::NoteCaptureService>()
+        .map(|svc| svc.recent_tags(uid))
+        .unwrap_or_default()
+}
+
+/// The "Add as note" submenu: which tag this capture is filed under.
+///
+/// Three tiers and an escape hatch, in this order: the discoverable tags, because those
+/// are the story-bible ones and the common case; the few other tags this writer actually
+/// reaches for; one **All tags** submenu holding everything, discoverable first, for
+/// whatever the two shortlists left out; and **Untagged**, always last and always
+/// present.
+///
+/// Untagged is not a fallback for a broken state. A writer capturing a stray thought has
+/// not decided they are building a story bible, and a menu that offers no way through
+/// without picking one has got the moment wrong. It is also what makes a brand-new
+/// project work with no special case: with no tags at all this renders Untagged alone.
+///
+/// Every row fires the same intent with a different tag, so the whole gesture is one
+/// click and nothing is asked twice. The ordering rules are
+/// [`crate::story_bible::capture::build_menu`]'s, and tested there.
+fn capture_submenu(
+    item_id: u64,
+    selected_text: &str,
+    palette: Option<&CapturePalette>,
+    recents: &[uuid::Uuid],
+) -> MenuList {
+    use crate::story_bible::capture::build_menu;
+
+    let menu = palette
+        .map(|palette| {
+            build_menu(
+                &palette.tags.rows(),
+                recents,
+                crate::models::MAX_RECENT_TAGS,
+            )
+        })
+        .unwrap_or_default();
+    render_capture_menu(item_id, selected_text, menu)
+}
+
+/// [`capture_submenu`]'s rendering half, with the tiers already resolved.
+///
+/// Split out so a test can hand in a tier shape directly: resolving the tiers needs a
+/// `TagsViewModel`, and therefore a whole project, while the rule this half encodes,
+/// which dividers render, is decided entirely by which tiers came back empty.
+fn render_capture_menu(
+    item_id: u64,
+    selected_text: &str,
+    menu: crate::story_bible::capture::CaptureMenu,
+) -> MenuList {
+    use crate::story_bible::capture::CaptureEntry;
+
+    let fire = |tag_id: Option<u64>| {
+        let text = selected_text.to_string();
+        move |ctx: &mut EventContext| {
+            ctx.send_intent(AppIntent::AddAsNote {
+                item_id,
+                selected_text: text.clone(),
+                tag_id,
+            });
+        }
+    };
+
+    let mut list = MenuList::new();
+    for entry in menu.entries() {
+        list = match entry {
+            CaptureEntry::Separator => list.separator(),
+            CaptureEntry::Tag(t) => {
+                list.item(MenuItem::new(lit!(t.name.clone())).on_activate_fn(fire(Some(t.id))))
+            }
+            CaptureEntry::Untagged => {
+                list.item(MenuItem::new(tr!(ctx_add_as_note_untagged())).on_activate_fn(fire(None)))
+            }
+            CaptureEntry::AllTags => {
+                // The overflow tier repeats the whole palette, discoverable first, so a
+                // tag the two shortlists left out is still one click further in rather
+                // than unreachable.
+                let all = menu.all.clone();
+                let text = selected_text.to_string();
+                list.item(MenuItem::submenu(
+                    tr!(ctx_add_as_note_all_tags()),
+                    move || {
+                        let mut inner = MenuList::new();
+                        for t in &all {
+                            let (text, tag_id) = (text.clone(), t.id);
+                            inner = inner.item(MenuItem::new(lit!(t.name.clone())).on_activate_fn(
+                                move |ctx: &mut EventContext| {
+                                    ctx.send_intent(AppIntent::AddAsNote {
+                                        item_id,
+                                        selected_text: text.clone(),
+                                        tag_id: Some(tag_id),
+                                    });
+                                },
+                            ));
+                        }
+                        Box::new(inner) as Box<dyn Widget>
+                    },
+                ))
+            }
+        };
+    }
+    list
+}
+
+// Eight, and every one of them is a distinct door this menu opens: the handle and
+// cursor it acts through, the split callback, the document, spelling, comments, the
+// item, and the tag palette. Bundling them would only move the list somewhere else.
+#[allow(clippy::too_many_arguments)]
 fn editor_context_menu(
     handle: EditorHandle,
     cursor: Signal<usize>,
@@ -582,6 +753,17 @@ fn editor_context_menu(
     // own document), so the row the caret is in is the only scope the feature
     // needs, and the only one it can name.
     item_id: Option<u64>,
+    // This project's tags, for the "Add as note" submenu. `None` on a surface built
+    // with no project around it; the submenu then comes down to **Untagged** alone,
+    // which is a working capture and not a broken one. Deliberately *not* a gate on
+    // whether the row appears: a surface that forgets to thread this would silently
+    // lose the feature, and the whole point of the third tier is that there is always
+    // a way through.
+    capture: Option<CapturePalette>,
+    // This project's recently used capture tags, most recent first. Resolved by the
+    // caller, which has a context to read the app's own service through; see
+    // [`capture_recents`].
+    recents: Vec<uuid::Uuid>,
 ) -> MenuList {
     // One resolution for the whole spelling group — only misspelled words are
     // offered, filtered through this editor's live spell-checker so the group
@@ -684,14 +866,14 @@ fn editor_context_menu(
     {
         let selected_text = selected;
         list = list
-            .item(
-                MenuItem::new(tr!(ctx_add_as_note())).on_activate_fn(move |ctx| {
-                    ctx.send_intent(AppIntent::AddAsNote {
-                        item_id,
-                        selected_text: selected_text.clone(),
-                    });
-                }),
-            )
+            .item(MenuItem::submenu(tr!(ctx_add_as_note()), move || {
+                Box::new(capture_submenu(
+                    item_id,
+                    &selected_text,
+                    capture.as_ref(),
+                    &recents,
+                )) as Box<dyn Widget>
+            }))
             .separator();
     }
 
@@ -907,6 +1089,7 @@ pub fn writing_section(
     anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to [`writing_column`] — see its own note.
     estimate_height: bool,
+    tags: Option<crate::tags::TagsViewModel>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -937,6 +1120,7 @@ pub fn writing_section(
             read_only,
             anchor,
             estimate_height,
+            tags,
         ))
 }
 

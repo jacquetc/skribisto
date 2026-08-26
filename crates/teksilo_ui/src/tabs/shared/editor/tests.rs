@@ -93,6 +93,9 @@ fn synopsis_height(fit: SynopsisFit, pane_height: Option<f32>) -> f32 {
         // No project, so no item to name either.
         None,
         false,
+        // A widget test builds no project, so there is no palette; the submenu
+        // comes down to Untagged alone.
+        None,
     );
     let mut tree = WidgetTree::new();
     let id = match pane_height {
@@ -246,6 +249,11 @@ fn add_as_note_row_is_offered(
         None,
         None,
         item_id,
+        // No palette: the submenu comes down to Untagged alone, which is exactly the
+        // shape a project with no tags gets. The row is still offered, which is what
+        // this asks about.
+        None,
+        Vec::new(),
     );
     let mut tree = WidgetTree::new();
     tree.add(menu);
@@ -343,9 +351,13 @@ fn activating_add_as_note_sends_the_intent_with_the_right_item_id_and_selection(
         None,
         None,
         Some(42),
+        None,
+        Vec::new(),
     );
 
-    let captured: Rc<RefCell<Option<(u64, String)>>> = Rc::new(RefCell::new(None));
+    /// What the action saw: the item, the selection, and the tag the writer picked.
+    type Captured = Rc<RefCell<Option<(u64, String, Option<u64>)>>>;
+    let captured: Captured = Rc::new(RefCell::new(None));
     let captured_for_action = captured.clone();
     // `register_action_global` (what `App::build`'s own command modules call)
     // is only reachable from inside a `Widget::build`, and `WidgetTree::push_action`
@@ -356,9 +368,10 @@ fn activating_add_as_note_sends_the_intent_with_the_right_item_id_and_selection(
         if let Some(AppIntent::AddAsNote {
             item_id,
             selected_text,
+            tag_id,
         }) = AppIntent::from_intent(i)
         {
-            *captured_for_action.borrow_mut() = Some((*item_id, selected_text.clone()));
+            *captured_for_action.borrow_mut() = Some((*item_id, selected_text.clone(), *tag_id));
         }
     });
 
@@ -380,12 +393,52 @@ fn activating_add_as_note_sends_the_intent_with_the_right_item_id_and_selection(
     // spelling group, no comment group) whose label starts with 'a':
     // Cut/Copy/Paste/Select all/the format strip all fail that match.
     tree.press_key(Key::A, Modifiers::NONE);
+    // It is a submenu now, not a leaf: the tag is chosen *inside* it, so the row
+    // itself opens rather than fires. Nothing may have been sent yet.
+    tree.press_key(Key::ArrowRight, Modifiers::NONE);
+    assert_eq!(
+        tree.active_overlays().len(),
+        1,
+        "the tag submenu must be up"
+    );
+    assert!(
+        captured.borrow().is_none(),
+        "opening the submenu must not capture anything: no tag has been chosen"
+    );
+    // With no palette the submenu is Untagged alone, which is the tagless project's
+    // whole menu and the one row every project always has.
+    tree.press_key(Key::ArrowDown, Modifiers::NONE);
     tree.press_key(Key::Enter, Modifiers::NONE);
 
-    let (item_id, selected_text) = captured
+    let (item_id, selected_text, tag_id) = captured
         .borrow()
         .clone()
         .expect("activating the row must send AppIntent::AddAsNote");
     assert_eq!(item_id, 42);
     assert_eq!(selected_text, "Elizabeth");
+    assert_eq!(tag_id, None, "the Untagged row files under no tag");
+}
+
+/// The submenu is still offered on a surface with no palette, and comes down to
+/// **Untagged** alone.
+///
+/// The ordering and the dividers are [`crate::story_bible::capture::CaptureMenu::entries`]'s
+/// rules and are tested there against plain values; this checks only that the widget
+/// half renders what that rule returns, and that a palette-less surface therefore keeps
+/// a working capture rather than losing the row.
+#[test]
+fn a_surface_with_no_palette_still_offers_untagged() {
+    let mut tree = WidgetTree::new();
+    tree.add(capture_submenu(42, "Elizabeth", None, &[]));
+    tree.layout(SizeProposal::exact(300.0, 600.0));
+    let labels: Vec<String> = tree
+        .sync_accessibility()
+        .nodes
+        .iter()
+        .filter_map(|(_, n)| n.label().map(|s| s.to_string()))
+        .collect();
+    assert!(
+        labels.iter().any(|l| l.to_lowercase().contains("untag")),
+        "the one always-present row must render: {labels:?}"
+    );
 }

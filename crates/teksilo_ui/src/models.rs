@@ -46,6 +46,7 @@ mod import_prefs_file;
 mod installed_dictionaries_model;
 mod manuscript_digest;
 mod note_book_choice_file;
+mod note_capture_file;
 mod note_prose_rows;
 mod numbering;
 mod open_docs;
@@ -98,6 +99,7 @@ pub use folder_memory_file::{
 pub use import_prefs_file::ImportPrefsService;
 pub use manuscript_digest::{LiveRow, digest_of, live_manuscript, live_prose};
 pub use note_book_choice_file::{NoteBookChoiceService, PerProjectNoteBookChoice};
+pub use note_capture_file::{MAX_RECENT_TAGS, NoteCaptureService, PerProjectNoteCapture};
 pub use note_prose_rows::{
     BookChoice, Declaration, NoteProseRow, books_in_work, declared_rows_in_book,
     resolve_book_choice,

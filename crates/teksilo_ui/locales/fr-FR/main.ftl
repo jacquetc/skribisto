@@ -934,6 +934,9 @@ new-work-back-matter = Annexes
 new-work-paratext = Structure du livre
 new-work-paratext-none = Aucune structure
 new-work-paratext-hint = Les pages liminaires et les annexes propres à une tradition éditoriale. Vous pourrez tout déplacer, renommer ou supprimer ensuite.
+new-work-tags = Étiquettes
+new-work-tags-none = Aucune étiquette
+new-work-tags-hint = Une palette de départ pour étiqueter les personnages, les lieux et le reste. Facultative, et chaque étiquette peut ensuite être renommée, recolorée ou supprimée.
 
 ## Boîte de dialogue d'import Plume Creator
 import-plume-title = Importer un projet Plume Creator

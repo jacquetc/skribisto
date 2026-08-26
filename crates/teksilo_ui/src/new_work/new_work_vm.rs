@@ -50,6 +50,7 @@ use frontend::work_management::{NewWorkDto, NewWorkTemplate};
 
 use crate::app::PendingAction;
 use crate::shell::windows::ProjectWindowFactory;
+use crate::tags::Preset;
 
 /// Build the `NewWorkDto` for the New Work dialog.
 ///
@@ -283,11 +284,27 @@ pub struct NewWorkViewModel {
     /// dialog is built: a preset added in Settings while the dialog is open is a case
     /// nobody meets, and re-reading per keystroke would parse every file on every frame.
     paratext_presets: Rc<Vec<ParatextPreset>>,
+    /// Which tag palette the project starts with, or `None` for none at all.
+    ///
+    /// `None` is the default and a real answer, not an unset one: a project with no
+    /// tags is a project whose writer has not decided they are keeping a story bible,
+    /// and every surface that reads the palette already works with an empty one. It is
+    /// also why this question can be asked here at all without being a commitment: a
+    /// preset only *seeds* the palette, and every tag it lays down can be renamed,
+    /// recoloured or deleted afterwards in Settings.
+    tag_preset: Signal<Option<Preset>>,
     app_ctx: Rc<AppContext>,
     /// Where "Create Work" puts the new project — see [`CreateTarget`].
     target: CreateTarget,
     /// What the project being created is *for* — see [`NewWorkPurpose`].
     purpose: NewWorkPurpose,
+    /// Where the in-place path leaves [`Self::tag_preset`] for the project that does not
+    /// exist yet.
+    ///
+    /// `None` for every target that creates its project in a **different** window: that
+    /// window has its own one-shot, which cannot be reached from here, so the preset
+    /// travels on [`PendingAction::New`] instead and `App::build` arms it over there.
+    pending_tag_preset: Option<crate::app::PendingTagPreset>,
 }
 
 /// What the project this form creates is for.
@@ -356,7 +373,11 @@ impl NewWorkViewModel {
     /// is THIS window's own `AppIds` — see the field's own doc for why
     /// [`Self::create`] must resolve the outgoing Work through it rather than
     /// `ctx.app_state`.
-    pub fn new(app_ctx: Rc<AppContext>, ids: crate::app_ids::AppIds) -> Self {
+    pub(crate) fn new(
+        app_ctx: Rc<AppContext>,
+        ids: crate::app_ids::AppIds,
+        pending_tag_preset: crate::app::PendingTagPreset,
+    ) -> Self {
         let (presets, preselected) = load_paratext_presets();
         Self {
             name: Signal::new(String::new()),
@@ -370,9 +391,11 @@ impl NewWorkViewModel {
             goal_unit_touched: Signal::new(false),
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
+            tag_preset: Signal::new(None),
             app_ctx,
             target: CreateTarget::InPlace(ids),
             purpose: NewWorkPurpose::Project,
+            pending_tag_preset: Some(pending_tag_preset),
         }
     }
 
@@ -443,12 +466,16 @@ impl NewWorkViewModel {
             goal_unit_touched: Signal::new(false),
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
+            tag_preset: Signal::new(None),
             app_ctx,
             purpose: NewWorkPurpose::Project,
             target: CreateTarget::NewWindow {
                 factory: Box::new(factory),
                 close_presenting_window,
             },
+            // The project is created in a window that does not exist yet, which has its
+            // own one-shot; the preset rides on `PendingAction::New` instead.
+            pending_tag_preset: None,
         }
     }
 
@@ -614,6 +641,11 @@ impl NewWorkViewModel {
     }
 
     /// The chosen preset, or `None` for no structure at all.
+    /// Which tag palette the new project starts with.
+    pub fn tag_preset(&self) -> Signal<Option<Preset>> {
+        self.tag_preset.clone()
+    }
+
     pub fn paratext_preset(&self) -> Signal<Option<String>> {
         self.paratext_preset.clone()
     }
@@ -681,9 +713,28 @@ impl NewWorkViewModel {
         match &self.target {
             CreateTarget::InPlace(ids) => {
                 crate::app::close_outgoing_work(&self.app_ctx, ids.work_id.get());
+                // Armed **before** the call, never applied after it. `new_work` returning
+                // `Ok` does not mean `ids.work_id` names the new project: a subscription
+                // event crosses `EventHubClient`'s own background thread and then the
+                // winit event loop (`AppEventProxy::post_subscription_event`), so no
+                // subscriber has run by the time this line is reached and `ids.work_id`
+                // still holds the id of the project just closed. Writing a palette here
+                // would write it against a deleted Work and lose the writer's choice
+                // with nothing on screen to say so. The `NewWork` subscriber in
+                // `wiring::project_events` takes this instead, once the seed has landed:
+                // the same ordering, and the same reason, as the cold-start import.
+                if let Some(pending) = &self.pending_tag_preset {
+                    pending.arm(self.tag_preset.get());
+                }
                 match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
                     Ok(()) => ctx.dismiss_modal(),
                     Err(e) => {
+                        // Nothing was created, so nothing must stay armed: the next
+                        // project made in this window would otherwise inherit a palette
+                        // chosen for a project that never existed.
+                        if let Some(pending) = &self.pending_tag_preset {
+                            pending.arm(None);
+                        }
                         ctx.show_toast(Toast::error(tr!(could_not_create_work(
                             error = e.to_string()
                         ))));
@@ -701,6 +752,7 @@ impl NewWorkViewModel {
                 let (config, _state) = factory.window_config(PendingAction::New {
                     dto: self.dto(),
                     then_import: self.purpose == NewWorkPurpose::FromDocuments,
+                    tag_preset: self.tag_preset.get(),
                 });
                 ctx.open_window(config);
                 if *close_presenting_window {
@@ -811,7 +863,11 @@ mod tests {
 
     #[test]
     fn target_path_recomputes_on_change() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        );
         let path = vm.target_path();
         vm.location().set("~/Books".into());
         vm.name().set("Tidewrack".into());
@@ -823,7 +879,11 @@ mod tests {
 
     #[test]
     fn dto_carries_form_choices() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        );
         vm.location().set("~/Books".into());
         vm.name().set("Tidewrack".into());
         vm.format_idx().set(1); // bundle
@@ -846,7 +906,11 @@ mod tests {
     #[test]
     #[cfg(not(feature = "mocks"))]
     fn the_details_gate_needs_a_name_and_a_writable_folder() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        );
         let gate = vm.can_create();
         vm.location()
             .set(std::env::temp_dir().to_string_lossy().to_string());
@@ -871,7 +935,11 @@ mod tests {
     #[test]
     #[cfg(feature = "mocks")]
     fn the_details_gate_is_off_under_mocks() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        );
         let gate = vm.can_create();
         assert!(gate.get(), "an untouched mocks form must still advance");
         vm.location().set("/nonexistent-skribisto-probe".into());
@@ -885,8 +953,12 @@ mod tests {
     /// exists.
     #[test]
     fn a_from_documents_project_carries_no_template_and_no_paratexts() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new())
-            .for_documents();
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        )
+        .for_documents();
         vm.location().set("~/Books".into());
         vm.name().set("Tidewrack".into());
 
@@ -907,7 +979,11 @@ mod tests {
     /// depends on the preset file happening to match no locale.
     #[test]
     fn from_documents_clears_a_preselected_paratext() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        );
         vm.paratext_preset().set(Some("us-trade-novel".into()));
         let vm = vm.for_documents();
         assert_eq!(vm.paratext_preset().get(), None);
@@ -915,7 +991,11 @@ mod tests {
 
     #[test]
     fn chapter_scene_applies_only_to_manuscript_templates() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        );
         let applicable = vm.chapter_scene_applicable();
         // Manuscript templates (Empty Novel / Light Novel / Novel).
         for idx in [1, 2, 3] {

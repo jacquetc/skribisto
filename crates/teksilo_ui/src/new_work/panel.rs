@@ -119,9 +119,13 @@ impl NewWorkPanel {
     /// creates the work in place, replacing this window's project. `ids` is
     /// THIS window's own `AppIds` — see [`NewWorkViewModel::new`]'s doc for why
     /// "Create Work" must close the outgoing Work through it.
-    pub fn new(app_ctx: Rc<AppContext>, ids: crate::app_ids::AppIds) -> Self {
+    pub(crate) fn new(
+        app_ctx: Rc<AppContext>,
+        ids: crate::app_ids::AppIds,
+        tag_preset: crate::app::PendingTagPreset,
+    ) -> Self {
         Self {
-            vm: NewWorkViewModel::new(app_ctx, ids),
+            vm: NewWorkViewModel::new(app_ctx, ids, tag_preset),
             root_child: None,
             name_field: std::cell::Cell::new(None),
             controller: StepperController::new(STEP_COUNT),
@@ -311,6 +315,22 @@ fn paratext_combo(vm: &NewWorkViewModel) -> ComboBox<String> {
         localized(move || display.clone())
     })
     .placeholder(tr!(new_work_paratext_none()))
+}
+
+/// The starting tag palette. Empty selection means no tags at all, which is the default
+/// and a real answer: a project whose writer has not decided they are keeping a story
+/// bible works exactly as well, and "Add as note" still files under **Untagged**.
+///
+/// The preset names are `tr!`'d rather than data, so a French writer applying "Basic"
+/// gets `personnage` / `lieu` — see [`crate::tags::presets`] for why the palettes are
+/// generated in code.
+fn tag_preset_combo(vm: &NewWorkViewModel) -> ComboBox<crate::tags::Preset> {
+    ComboBox::from_items(
+        crate::tags::Preset::ALL.to_vec(),
+        vm.tag_preset(),
+        |preset: &crate::tags::Preset| preset.label(),
+    )
+    .placeholder(tr!(new_work_tags_none()))
 }
 
 /// The reactive "Will create …" preview — the one runtime-computed string.
@@ -521,6 +541,19 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
                     .label(tr!(new_work_chapter_scene()))
                     .enabled(vm.chapter_scene_applicable())
                     .rich_tooltip_content(chapter_scene_tooltip()),
+            )
+            // ── Tags: the palette the project starts with. Here rather than on
+            // its own step because it is the same question the template asks —
+            // what is already in the project on the first morning — and because
+            // "none" is the default, so a writer who does not care walks past it
+            // without a decision to make. ────────────────────────────────────
+            .full_width(Divider::new())
+            .line(
+                field_label(tr!(new_work_tags())),
+                VStack::new()
+                    .spacing(6.0)
+                    .child(FixedSize::new().width(240.0).child(tag_preset_combo(vm)))
+                    .child(hint(tr!(new_work_tags_hint()))),
             ),
     )
 }
@@ -724,6 +757,7 @@ mod tests {
         let id = tree.add_boxed(Box::new(NewWorkPanel::new(
             ctx,
             crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
         )));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);
@@ -739,10 +773,17 @@ mod tests {
     /// undetected until a writer clicked Next.
     #[test]
     fn every_step_builds_and_lays_out() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
-        let documents =
-            NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new())
-                .for_documents();
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        );
+        let documents = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        )
+        .for_documents();
         for (name, page) in [
             (
                 "details",
@@ -778,8 +819,11 @@ mod tests {
 
     /// Mount a wizard of either purpose and hand back its controller.
     fn mounted(from_documents: bool) -> (StepperController, WidgetTree, WidgetId) {
-        let mut panel =
-            NewWorkPanel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let mut panel = NewWorkPanel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingTagPreset::default(),
+        );
         if from_documents {
             panel.vm = panel.vm.clone().for_documents();
         }

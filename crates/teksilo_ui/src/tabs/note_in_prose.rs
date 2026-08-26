@@ -93,6 +93,7 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         caret: tab.caret_band(),
         games: tab.writing_games(),
         arrival_project: tab.work_unique_id(),
+        tags: tab.tags(),
         selected_book: Signal::new(None),
         generation: Signal::new(0),
         wired: Cell::new(false),
@@ -181,6 +182,10 @@ struct NoteInProseBody {
     caret: crate::shared::CaretBand,
     games: crate::writing_session::WritingGamesViewModel,
     arrival_project: Option<String>,
+    /// This project's palette, for the capture submenu on every row's editor. Held
+    /// rather than reached for: it is Tier-2, so `app_state` would answer with whichever
+    /// Work registered first.
+    tags: crate::tags::TagsViewModel,
     /// Which Book's rows are on screen. Created once, here, and never recreated on a
     /// rebuild of this struct's own `build`: a `Signal` minted inside `build` itself would
     /// lose the writer's choice the moment any of [`reload_origins`] fired. This one
@@ -357,6 +362,9 @@ impl NoteInProseBody {
                 // every stream row does, so the page's scroll extent is not off by
                 // an order of magnitude before the first paint settles.
                 true,
+                // Every row here is manuscript prose in a real project, so the
+                // capture submenu is available from it like any other editor.
+                Some(self.tags.clone()),
             ));
         }
         col
@@ -450,7 +458,19 @@ impl Widget for NoteInProseBody {
         if books.is_empty() {
             col = col.child(shared::centered(no_books_text(), &self.header_width));
         } else {
-            col = col.child(shared::centered(self.book_bar(&books), &self.header_width));
+            // **One Book, no bar.** A control offering a single choice answers a question
+            // the writer never asked, and the rest of the app already refuses it: the
+            // Inspector's Books section and `note_details`'s both render nothing at all
+            // below two Books, on `docks::inspector::live_books`'s own stated reasoning.
+            // A bar here at one Book put the same tab in two minds about whether "which
+            // Book" was a fact worth surfacing, with the Inspector saying no in the
+            // trailing rail while this said yes an inch away.
+            //
+            // The *scope* is unchanged: one Book is still selected and still filters the
+            // rows below. Only the chrome that would let a writer change it goes.
+            if books.len() >= 2 {
+                col = col.child(shared::centered(self.book_bar(&books), &self.header_width));
+            }
             if rows.is_empty() {
                 col = col.child(shared::centered(empty_book_text(), &self.header_width));
             } else {

@@ -108,6 +108,7 @@ pub(super) fn manuscript_page(
                 Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                 // See the prose column above.
                 false,
+                tab.capture_palette(),
             ),
         ));
     }
@@ -143,6 +144,7 @@ pub(super) fn manuscript_page(
             Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
             // A tab's editor is on screen and lays out on its first frame.
             false,
+            Some(tab.tags()),
         ));
     }
 
@@ -226,6 +228,7 @@ pub(super) fn side_synopsis_pane(
                     // shared with the manuscript column beside it.
                     Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                     false,
+                    tab.capture_palette(),
                 ))),
         ),
         None => Box::new(vspace(0.0)),

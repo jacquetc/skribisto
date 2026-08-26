@@ -929,6 +929,9 @@ new-work-back-matter = Back matter
 new-work-paratext = Book structure
 new-work-paratext-none = No structure
 new-work-paratext-hint = The front and back matter a tradition opens and closes a book with. You can move, rename or delete any of it afterwards.
+new-work-tags = Tags
+new-work-tags-none = No tags
+new-work-tags-hint = A starting palette for tagging characters, places and the rest. Optional, and every tag can be renamed, recolored or deleted afterwards.
 
 ## Import Plume Creator dialog
 import-plume-title = Import Plume Creator project

@@ -77,6 +77,8 @@ fn column_with_document_and(
         // No project around this tree, so no item to name.
         None,
         false,
+        // No project behind this probe, so no palette and no capture menu.
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);

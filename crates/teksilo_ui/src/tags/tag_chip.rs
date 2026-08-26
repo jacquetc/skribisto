@@ -511,6 +511,7 @@ mod tests {
     fn tag(id: u64, name: &str, color: &str, discoverable: bool) -> TagRow {
         TagRow {
             id,
+            uid: uuid::Uuid::nil(),
             name: name.to_string(),
             color: color.to_string(),
             details: String::new(),

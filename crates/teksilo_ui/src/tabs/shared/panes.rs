@@ -117,6 +117,7 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             Option::None,
             // A tab's editor is on screen and lays out on its first frame.
             false,
+            tab.capture_palette(),
         ));
     Some(crate::widgets::tip::RichTip::new(
         crate::tooltip_registry::CONCEPT_EPIGRAPH,
@@ -540,6 +541,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
+                tab.capture_palette(),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -571,6 +573,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
             // A tab's editor is on screen and lays out on its first frame.
             false,
+            Some(tab.tags()),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -752,6 +755,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
+                tab.capture_palette(),
             ));
     }
     tab_backdrop(
@@ -837,6 +841,7 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
                 Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
+                tab.capture_palette(),
             ));
     }
     laned(

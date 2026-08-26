@@ -115,6 +115,9 @@ impl Preset {
 fn row(name: LocalizedString, color: &str, discoverable: bool) -> TagRow {
     TagRow {
         id: 0,
+        // A preset row is a *description* of a tag to create, never a stored one, so
+        // it carries no identity yet: `import_tags` mints one when the row lands.
+        uid: uuid::Uuid::nil(),
         name: name.resolve_now(),
         color: color.to_string(),
         details: String::new(),

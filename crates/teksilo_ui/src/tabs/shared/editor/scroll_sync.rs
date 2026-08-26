@@ -260,6 +260,8 @@ pub fn side_synopsis_editor(
     anchor: Option<crate::margin_lane::LaneAnchor>,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
     estimate_height: bool,
+    // Forwarded straight to [`synopsis_editor`] — see its own note.
+    capture: Option<crate::tabs::shared::editor::CapturePalette>,
 ) -> impl Widget {
     synopsis_editor(
         doc,
@@ -279,6 +281,7 @@ pub fn side_synopsis_editor(
         read_only,
         anchor,
         estimate_height,
+        capture,
     )
 }
 

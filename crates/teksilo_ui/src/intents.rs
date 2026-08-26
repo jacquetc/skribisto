@@ -235,12 +235,27 @@ pub enum AppIntent {
     /// stale) and `item_id` naming the row the selection sits in, since a
     /// selection cannot span two rows of a manuscript stream.
     ///
+    /// `tag_id` is the **one** tag the writer picked from the submenu, and it settles
+    /// the whole capture: a discoverable tag is what makes the entry findable in prose
+    /// at all, and the tag also carries where the note is filed (`creates_in`) and what
+    /// shape it starts in (`note_template`). Exactly one, never several, because two
+    /// tags could name two destinations and the point of the gesture is that the
+    /// destination is never in doubt.
+    ///
+    /// `None` is the **Untagged** row: a writer capturing a stray thought has not
+    /// decided they are building a story bible. Such a note is inert by construction (it
+    /// matches nothing in prose), and its folder comes from
+    /// [`crate::models::NoteCaptureService`] rather than from a tag, because there is no
+    /// tag to hold one.
+    ///
     /// The menu mounts at the arena root, so it reaches only a **global** action
-    /// (`story_bible.add_as_note`), which opens the story-bible creation modal
-    /// pre-filled from the selection. Nothing is created by firing this intent:
-    /// the modal itself gathers everything until Create is pressed.
+    /// (`story_bible.add_as_note`).
     #[name = "story_bible.add_as_note"]
-    AddAsNote { item_id: u64, selected_text: String },
+    AddAsNote {
+        item_id: u64,
+        selected_text: String,
+        tag_id: Option<u64>,
+    },
 }
 
 #[cfg(test)]

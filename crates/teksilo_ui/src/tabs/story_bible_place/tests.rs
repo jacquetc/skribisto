@@ -179,6 +179,7 @@ fn create_book(f: &Fixture, index: i32, title: &str) -> u64 {
 fn tag(id: u64, name: &str, discoverable: bool) -> TagRow {
     TagRow {
         id,
+        uid: uuid::Uuid::nil(),
         name: name.to_string(),
         color: "#2e7d32".to_string(),
         details: String::new(),
