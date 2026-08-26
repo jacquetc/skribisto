@@ -60,7 +60,7 @@ impl Widget for ExportSplitButton {
             // No project open — a disabled affordance, not a dead-end.
             ctx.add(
                 Button::new(tr!(export_title()))
-                    .variant(ButtonVariant::Tinted)
+                    .variant(ButtonVariant::Filled)
                     .enabled(false),
             )
         } else if scopes.as_slice() == [ExportScopeKind::Custom] {
@@ -69,7 +69,7 @@ impl Widget for ExportSplitButton {
             // export action, not a bare "Choose…").
             ctx.add(
                 Button::new(tr!(export_title()))
-                    .variant(ButtonVariant::Tinted)
+                    .variant(ButtonVariant::Filled)
                     .on_activate_fn(|ctx| {
                         ctx.send_intent(AppIntent::ExportScoped {
                             scope: ExportScopeKind::Custom,
@@ -80,7 +80,7 @@ impl Widget for ExportSplitButton {
             // `new_static`: the primary region stays pinned to index 0 (the focused item's own
             // facet). A dropdown pick must NOT promote/replace it — the label tracks the
             // *selection*, which opening the panel does not change.
-            let mut btn = SplitButton::new_static().variant(ButtonVariant::Tinted);
+            let mut btn = SplitButton::new_static().variant(ButtonVariant::Filled);
             for scope in &scopes {
                 let s = scope.clone();
                 btn = btn.item(
