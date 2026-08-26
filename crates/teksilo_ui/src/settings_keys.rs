@@ -715,6 +715,16 @@ pub static SETTINGS: &[SettingSpec] = &[
         doc: "Remembered segment id for notes-folder tabs (\"notes\" or \"overview\").",
     },
     SettingSpec {
+        key: "editor.last_view.item_note",
+        ty: "string (segment id)",
+        default: || val(crate::tabs::shared::segments::SEG_NOTE_OWN),
+        check: check::<String>,
+        doc: "Remembered segment id for a single note's own tab (\"note-own\", \
+              \"note-details\", or \"note-in-prose\"). Separate from \
+              editor.last_view.note, which is the notes *folder*: the two share a \
+              sub-role but carry different bars.",
+    },
+    SettingSpec {
         key: crate::TYPEWRITER_KEY,
         ty: "bool",
         default: || val(crate::TYPEWRITER_DEFAULT),

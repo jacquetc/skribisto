@@ -607,6 +607,12 @@ segment-book = Book
 segment-pace = Pace
 segment-notes = Notes
 segment-story-bible = Story bible
+# The three segments on an `Item/Note` tab: its own prose, its story-bible fields, and
+# (only when it carries a discoverable tag) the manuscript prose it has been declared
+# present in. See `teksilo_ui::tabs::item_note`.
+segment-note-own = Note
+segment-note-details = Details
+segment-note-in-prose = In prose
 pace-placeholder = The Pace planner appears here.
 # Pace planner
 pace-empty-title = Plan this book's pace

@@ -50,3 +50,12 @@ story-bible-grid-mention-count = { $count ->
    *[other] Appears in { $count } scenes across the whole project
 }
 story-bible-books-filter-all = All books
+
+## The "In prose" segment on an `Item/Note` tab (C3): a writable stream of the
+## manuscript prose this note has been declared present in, one Book at a time.
+## See `teksilo_ui::tabs::note_in_prose`.
+note-in-prose-pov = Point of view
+note-in-prose-cast = Cast
+note-in-prose-pov-and-cast = Point of view · Cast
+note-in-prose-no-books = This project has no Book yet
+note-in-prose-empty-book = Not declared in this Book yet

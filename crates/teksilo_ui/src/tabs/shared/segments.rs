@@ -69,6 +69,24 @@ pub const SEG_NOTES: &str = "notes";
 /// remembered view: see `crate::tabs::story_bible_place`'s own module doc.
 pub const SEG_STORY_BIBLE: &str = "story-bible";
 
+/// The three segments an `Item/Note` carries: its own prose, its story-bible fields, and
+/// the manuscript prose it has been declared present in.
+///
+/// **Namespaced with a `note-` prefix, deliberately.** `SEG_NOTES` above is already
+/// `"notes"`, one character away from a bare `"note"`, and these are persisted verbatim
+/// into a writer's `general.toml`: two ids that differ by a letter are the pair that gets
+/// mistyped once and never noticed. The prefix also keeps a future Details or In-prose
+/// segment on some other container from colliding with a note's.
+///
+/// `SEG_NOTE_OWN` mirrors [`SEG_OWN`]'s sense, "this row's own page", for the same reason
+/// a container's first segment is called that.
+pub const SEG_NOTE_OWN: &str = "note-own";
+pub const SEG_NOTE_DETAILS: &str = "note-details";
+/// **Prose, not scenes.** A `Folder/ChapterScene` carries its own `SceneText`, so a writer
+/// who works straight in a chapter has prose that belongs in this reading. Membership is
+/// `skribisto_model::counts_prose`, never a sub-role list.
+pub const SEG_NOTE_IN_PROSE: &str = "note-in-prose";
+
 /// The `SegmentId` for a stable string id.
 ///
 /// FNV-1a, folded into 48 bits so the result always lands below `SegmentId`'s `FRESH_BASE`
@@ -140,6 +158,9 @@ fn is_builtin(id: &str) -> bool {
             | SEG_OVERVIEW
             | SEG_NOTES
             | SEG_STORY_BIBLE
+            | SEG_NOTE_OWN
+            | SEG_NOTE_DETAILS
+            | SEG_NOTE_IN_PROSE
     )
 }
 

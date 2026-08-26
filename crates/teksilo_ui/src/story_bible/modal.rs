@@ -789,6 +789,7 @@ mod tests {
             crate::format::FormatViewModel::detached(),
             crate::writing_session::WritingGamesViewModel::detached(),
             Signal::new(GoalUnit::default()),
+            tags_vm(f),
         )
     }
 

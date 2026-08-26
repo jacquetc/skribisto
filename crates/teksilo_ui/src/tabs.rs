@@ -69,6 +69,17 @@ mod item_paratext;
 mod item_part;
 mod item_scene;
 mod item_text;
+/// The `Item/Note` tab's "Details" segment body, a sibling of `item_note`, not a
+/// dispatch target of its own: `tab_pane` never routes here directly, `item_note`'s
+/// own `render` calls into it (alongside `SEG_NOTE_OWN` and `SEG_NOTE_IN_PROSE`) the
+/// same way `folder_synopsis_with_overview` calls into `story_bible_place`.
+pub(crate) mod note_details;
+/// The `Item/Note` tab's third segment: a writable stream of the manuscript prose a
+/// story-bible entry has been declared present in. `pub(crate)`, not private, for the
+/// same reason `story_bible_place` is: `item_note` (a sibling module, not a descendant of
+/// this one) has to reach [`note_in_prose::note_in_prose_pane`] to put it on the segment
+/// bar.
+pub(crate) mod note_in_prose;
 pub(crate) mod overview;
 pub(crate) mod pace;
 /// `pub`, not `pub(crate)`, because [`shared::segments`] is an extension slot: a
@@ -290,6 +301,26 @@ pub struct ContentTab {
     /// every open surface of this project at once — including the ones in a
     /// second window, since the activation half is Tier 2.
     pub writing_games: crate::writing_session::WritingGamesViewModel,
+    /// This tab's tag palette handle, threaded from the same [`crate::sessions::WorkSession`]
+    /// real windows build [`crate::editors::EditorsViewModel`] from. **Not** read from
+    /// `ctx.app_state::<TagsViewModel>()`: `note_details`'s Details segment builds its "+"
+    /// popover from this field. `app_state` resolves to whatever window's session
+    /// registered last, which at first launch (no project open yet) is `startup.rs`'s
+    /// throwaway `WorkSession` on a fresh, never-seeded `AppIds`, so `TagsViewModel::create`,
+    /// which needs a real `work_id`, silently created nothing. See [`Self::tags`].
+    tags: crate::tags::TagsViewModel,
+    /// This tab's shared document store, threaded from the same
+    /// [`crate::sessions::WorkSession`] [`Self::tags`] is. **Not** read from
+    /// `ctx.app_state::<OpenDocsStore>()`: [`crate::tabs::note_in_prose::note_in_prose_pane`]
+    /// opens every declared row's document through this handle. `app_state`
+    /// resolves to whatever window's session registered last, which at first
+    /// launch (no project open yet) is `startup.rs`'s throwaway `WorkSession`,
+    /// with its own, empty `OpenDocsStore`, disjoint from the one this tab's own
+    /// editor actually shares. A row opened through that stale store would be a
+    /// second, independent `OpenDoc` for the same item: the same silent
+    /// split-document risk [`Self::tags`]'s doc records, one document instead of
+    /// one tag. See [`Self::docs`].
+    docs: OpenDocsStore,
 }
 
 /// Which prose kind a dual-pane main-text editor is, so it can pick the Scene vs
@@ -454,6 +485,10 @@ pub fn tab_for(
         crate::save::WorkHandle::detached(ctx.clone(), ids.clone()),
         // Words, like a fresh project: a standalone tab has no `Work` behind it to ask.
         Signal::new(GoalUnit::default()),
+        // Likewise a standalone palette, not a null object: it reads/writes through the
+        // same `ids` this tab got, so a caller that already set `ids.work_id` (a test
+        // exercising a real Work) gets a handle that genuinely creates tags against it.
+        crate::tags::TagsViewModel::detached(ctx.clone(), ids.clone()),
     )
 }
 
@@ -611,6 +646,7 @@ impl ContentTab {
         writing_games: crate::writing_session::WritingGamesViewModel,
         work: crate::save::WorkHandle,
         goal_unit: Signal<GoalUnit>,
+        tags: crate::tags::TagsViewModel,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -687,6 +723,9 @@ impl ContentTab {
             goal_unit.clone(),
         );
         let counting_method = corkboard_defaults.counting_method.clone();
+        // Kept for `Self::docs` below, since `StreamViewModel::new` consumes `docs`
+        // by move, so the tab's own handle has to be cloned off before that call.
+        let docs_for_tab = docs.clone();
         let stream = StreamViewModel::new(
             app_ctx.clone(),
             ids.clone(),
@@ -704,7 +743,7 @@ impl ContentTab {
         });
         // Seed the container's view from the per-type memory (own page = 0 when
         // disabled or for a non-segmented type).
-        let segment = Signal::new(view_memory.initial(&open_doc.sub_role));
+        let segment = Signal::new(view_memory.initial(&open_doc.role, &open_doc.sub_role));
         // Synopsis | manuscript. Seeded from the persisted width, but *hidden* and
         // at `min_size` 0 until something shows it: a Splitter counts hidden panes'
         // minimums into its own, so a pane parked at its real minimum would set a
@@ -774,6 +813,8 @@ impl ContentTab {
             view_memory,
             format,
             writing_games,
+            tags,
+            docs: docs_for_tab,
         }
     }
 
@@ -781,6 +822,22 @@ impl ContentTab {
     /// editor this tab builds.
     pub fn writing_games(&self) -> crate::writing_session::WritingGamesViewModel {
         self.writing_games.clone()
+    }
+
+    /// This tab's tag palette handle. See [`Self`]'s own field doc for why this
+    /// is threaded rather than read off `ctx.app_state::<TagsViewModel>()`.
+    /// `pub`, not `pub(crate)`: [`note_details`] is a sibling module, the same
+    /// reach every other accessor here already grants it.
+    pub fn tags(&self) -> crate::tags::TagsViewModel {
+        self.tags.clone()
+    }
+
+    /// This tab's shared document store. See [`Self`]'s own field doc for why
+    /// this is threaded rather than read off `ctx.app_state::<OpenDocsStore>()`.
+    /// `pub`, not `pub(crate)`: [`note_in_prose`] is a sibling module, the same
+    /// reach [`Self::tags`] already grants it.
+    pub fn docs(&self) -> OpenDocsStore {
+        self.docs.clone()
     }
 
     /// The Corkboard view-model — `Some` only for a folder container.

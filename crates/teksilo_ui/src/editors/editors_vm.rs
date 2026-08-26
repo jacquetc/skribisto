@@ -171,6 +171,11 @@ pub struct EditorsViewModel {
     /// into every `ContentTab` for the same reason as the handles above: a second window on
     /// a second project must not read the first one's answer.
     goal_unit: Signal<GoalUnit>,
+    /// This window's tag palette (Tier 2, its `WorkSession`'s `TagsViewModel`), threaded
+    /// into every `ContentTab` so a segment like `note_details` reaches a handle bound to
+    /// this project's own `Work` instead of reading `ctx.app_state::<TagsViewModel>()`.
+    /// See `ContentTab::tags`'s own doc for the bug that closes.
+    tags: crate::tags::TagsViewModel,
 }
 
 impl EditorsViewModel {
@@ -200,6 +205,7 @@ impl EditorsViewModel {
         format: crate::format::FormatViewModel,
         writing_games: crate::writing_session::WritingGamesViewModel,
         goal_unit: Signal<GoalUnit>,
+        tags: crate::tags::TagsViewModel,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -247,6 +253,7 @@ impl EditorsViewModel {
             save_state,
             tree_expansion,
             goal_unit,
+            tags,
         }
     }
 
@@ -726,6 +733,7 @@ impl EditorsViewModel {
             // must bump the counter this window's close guard reads.
             self.save_state.handle(),
             self.goal_unit.clone(),
+            self.tags.clone(),
         )
     }
 

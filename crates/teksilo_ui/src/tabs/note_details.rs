@@ -1,0 +1,893 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! `Item/Note`'s **Details** segment: the story-bible fields, at the tab's full
+//! width, so a writer can flesh out a character or a place without an Inspector
+//! dock open beside the editor at all.
+//!
+//! Almost the same field set as [`crate::docks::inspector::story_bible`], reused
+//! deliberately rather than reinvented: the tag/alias pill fields, the Books
+//! chips, the cast list and the point-of-view chips all come straight from
+//! [`crate::tags`], and every write still goes through
+//! [`crate::singles::SingleBinderItem`]'s existing setters (`set_tags`,
+//! `set_aliases`, `set_books`, `set_references`, `set_point_of_view`), the exact
+//! commands the dock already issues, with the exact same undo behaviour. A
+//! second, home-grown writer for any of those five relationships is exactly how
+//! this segment and the dock would quietly start disagreeing about what "cast"
+//! or "filed under" means.
+//!
+//! ## What the dock's plumbing does not need to be built twice here
+//!
+//! [`crate::docks::inspector::Inspector`] rebuilds itself for **whichever item
+//! currently has focus**, which is why its own probe re-targets on every
+//! rebuild (`if self.probe.id() != item_id`) and its cast section runs a
+//! debounced, frame-ticked [`crate::tags::LiveCastOverlay`] to catch a
+//! keystroke without re-exporting the focused document on every one of them. A
+//! `ContentTab` never re-targets: [`note_details_pane`] is built once per tab,
+//! against the one item that tab already is, for as long as that tab exists. So
+//! [`NoteDetailsPane`] points its single [`SingleBinderItem`] probe at
+//! [`ContentTab::item_id`] once, at construction, and never again, and reads
+//! this item's own live prose straight off [`crate::tabs::ProseField::djot`]
+//! (the same `to_djot` a debounced overlay would eventually produce anyway) each
+//! time this pane actually rebuilds, rather than polling it every frame. That
+//! rebuild is not tied to every keystroke either: nothing here binds to
+//! `OpenDoc::edit_gen` at `BindingLevel::Rebuild`, for the same reason
+//! `LiveCastOverlay`'s own doc gives ("typing must not rebuild this dock"). A
+//! keystroke in the "Note" segment reaches this one the next time the writer
+//! actually switches to it, or the next time a tag/scan/mention event rebuilds
+//! it for an unrelated reason, which is current enough for a page the writer is
+//! not simultaneously looking at.
+//!
+//! Also dropped: the dock's per-field "echo the write into a local mirror only
+//! once it lands" dance. That mirror exists there because the dock's tag/alias/
+//! books probes are *separate* `SingleBinderItem`s from the header probe that
+//! actually drives its rebuild, so a successful write on one of them would not,
+//! by itself, be seen until the next external `BinderItem::Updated` event came
+//! back around. Here every write and the one rebuild-triggering read
+//! ([`Self::probe`]'s own `dto_signal`) go through the **same** probe, whose
+//! setters already refresh that signal synchronously on success. So the next
+//! frame's rebuild reads the field straight back out of the DTO, correctly,
+//! with no separate mirror to keep in step or fail to echo when a write is
+//! silently refused (the item was trashed by another window mid-click, say).
+//!
+//! And "Apply to children" (the dock's Books section only offers it when the
+//! focused row has a subtree) never appears here at all: `Item/Note` is always
+//! a leaf, so there is never a subtree to apply anything to.
+//!
+//! ## What is new: "Appears in the manuscript" does not reuse `MentionList`
+//!
+//! [`crate::tags::MentionList`] renders [`MentionRow::title`] as the row's own
+//! headline, which is correct for the *cast* direction (there, `title` is the
+//! target character's name, exactly what a cast row should say) and wrong for
+//! *this* direction. [`MentionIndex::backlinks_for`] returns rows whose
+//! `target_id` is always this same note, so `title` is always resolved against
+//! this note's own name too. Every row would show the same headline, and the
+//! one thing this section exists to say (*which* scene or note wrote it) would
+//! never appear at all. So [`BacklinksList`] resolves `owner_id` against a
+//! batched [`binder_item_commands::get_binder_item_multi`] instead, one read
+//! for the whole list, the same shape
+//! [`crate::tabs::story_bible_place::scene_mention_counts`] already uses for
+//! its own owner lookup, and shows *that* title as the row's headline.
+//!
+//! The evidence sentence is quoted in the row itself, not tucked behind a
+//! hover the way the dock's narrow width forces it to be: a full tab has the
+//! room to show what was actually written, and "this is what the segment is
+//! for" only lands if the sentence is visible without an extra gesture.
+
+use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
+
+use teksilo::core::BindingLevel;
+use teksilo::core::accesskit::Role;
+use teksilo::core::widget::WidgetPlacement;
+use teksilo::prelude::*;
+use teksilo::widgets::{
+    Divider, Expand, GroupHeader, HStack, Padding, ScrollArea, TextWidget, VStack,
+};
+
+use frontend::AppContext;
+use frontend::commands::binder_item_commands;
+
+use crate::app_ids::AppIds;
+use crate::intents::AppIntent;
+use crate::mentions::{MentionIndex, MentionRow};
+use crate::models::OpenDoc;
+use crate::singles::SingleBinderItem;
+use crate::tags::alias_pill_field::SetAliases;
+use crate::tags::books::ClearBook;
+use crate::tags::cast_add::CastCandidate;
+use crate::tags::mention_list::{OpenTarget, PinReference, UnpinReference};
+use crate::tags::tag_pill_field::SetTags;
+use crate::tags::{
+    AliasPillField, MentionList, TagPillField, TagsViewModel, book_add_button, book_chip_row,
+    book_chips, candidates_from_table, cast_add_button,
+};
+use crate::tooltip_registry::CONCEPT_TAG;
+use crate::widgets::tip::RichTip;
+
+use super::{ContentTab, TitlePart, shared, title_field};
+
+/// The Details segment's body: `Some(MentionIndex)` is still read from
+/// `app_state` inside [`NoteDetailsPane::build`], exactly the way
+/// [`crate::tabs::story_bible_place::story_bible_pane`] reads it: this is a
+/// plain composition function with no constructor-threaded handle to reach it
+/// through, and an `Item/Note` tab is always about the one open project a
+/// single window has.
+///
+/// The tag palette is **not** read that way any more. It used to be, and that
+/// was BUG 1: `ctx.app_state::<TagsViewModel>()` resolves to whichever
+/// session last registered one, which at first launch (no project open yet)
+/// is `startup.rs`'s throwaway `WorkSession` on a fresh, never-seeded
+/// `AppIds`, so the "+" popover's `TagsViewModel::create`, which needs a real
+/// `work_id`, silently created nothing. [`ContentTab::tags`] is threaded from
+/// the same `WorkSession` [`docks::inspector::Inspector`](crate::docks::inspector::Inspector)
+/// already receives through its own constructor, so this pane's handle is
+/// bound to the tab's actual, open Work regardless of what (if anything) is
+/// registered as `app_state`.
+///
+/// Wired into the tab's `SegmentedControl` / `Switcher` pair by
+/// [`crate::tabs::shared::item_note_segmented`], alongside `SEG_NOTE_OWN` and
+/// `SEG_NOTE_IN_PROSE`.
+pub(crate) fn note_details_pane(tab: &ContentTab) -> Box<dyn Widget> {
+    let app_ctx = tab.app_ctx();
+    let probe = SingleBinderItem::new(app_ctx.clone());
+    probe.set_id(Some(tab.item_id()));
+    Box::new(NoteDetailsPane {
+        ids: tab.ids().clone(),
+        item_id: tab.item_id(),
+        column_width: tab.column_width.clone(),
+        open_doc: tab.open_doc.clone(),
+        set_tags: tab.set_tags_fn(),
+        tags: tab.tags(),
+        // Built once, here, and held for as long as this pane is: **not**
+        // rebuilt fresh inside `build()`. `title_input` binds to `name.value`
+        // directly; a fresh `TitleField` on every rebuild would reseed that
+        // signal from the persisted title each time, discarding a rename the
+        // writer is still mid-keystroke on the moment anything else (a scan
+        // landing, a tag changing) rebuilds this pane for an unrelated reason.
+        // Same reasoning as `Inspector` holding its own probe across rebuilds
+        // rather than minting one per build. `Rc`-wrapped so `build()` can
+        // clone a handle into the commit closure below without fighting the
+        // borrow checker over a field also borrowed for `title_input` itself.
+        name: Rc::new(title_field(&app_ctx, tab.item_id(), TitlePart::Title)),
+        app_ctx,
+        probe,
+        root: None,
+    })
+}
+
+struct NoteDetailsPane {
+    app_ctx: Rc<AppContext>,
+    ids: AppIds,
+    item_id: u64,
+    column_width: Signal<f32>,
+    /// This item's shared editing state: read for its `tags` mirror (the same
+    /// one `set_tags` below writes, and the same one any other open view of
+    /// this item already shares) and for `main`'s live Djot text, the cast
+    /// section's own "what has been typed so far" input.
+    open_doc: Rc<OpenDoc>,
+    /// This tab's existing tags writer. See the module doc's "reuse... the
+    /// same commands" paragraph.
+    set_tags: SetTags,
+    /// This tab's tag palette, threaded from [`ContentTab::tags`]. See this
+    /// module's own doc for the bug reading it from `app_state` used to cause.
+    tags: TagsViewModel,
+    /// The name field. See its construction site's own comment for why this
+    /// lives here rather than being rebuilt inside `build()`.
+    name: Rc<crate::tabs::TitleField>,
+    /// Fixed to `item_id` once, at construction, and never re-pointed: see the
+    /// module doc's "what the dock's plumbing does not need to be built twice
+    /// here" section.
+    probe: SingleBinderItem,
+    root: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for NoteDetailsPane {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NoteDetailsPane").finish()
+    }
+}
+
+impl Widget for NoteDetailsPane {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // The one rebuild trigger this pane needs: every write below goes through
+        // this same probe, and every one of `SingleBinderItem`'s setters already
+        // refreshes its own `dto_signal` synchronously on success; see the module
+        // doc. Re-subscribed every build, not once: `BuildContext::subscribe_event`
+        // scopes a subscription to the widget's current build and drops it on the
+        // next one (the same rule the dock's own probe follows).
+        self.probe.dto_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        self.probe.wire(ctx);
+
+        // Not yet loaded (or the item was trashed/deleted out from under an
+        // already-open tab): degrade to nothing rather than panic on an
+        // `Option` that genuinely can be `None` for a moment.
+        let Some(d) = self.probe.dto() else {
+            self.root = None;
+            return Vec::new();
+        };
+        let stack = self.ids.stack_id.clone();
+
+        // The tag palette is a constructor-threaded handle (`ContentTab::tags`), always
+        // present. See this module's own doc for why it is no longer an `app_state`
+        // lookup. The mention index still is: a widget test, or a window built before
+        // a project has finished loading, may have none, and this pane must show
+        // whatever it still can rather than panic. Only the sections *that* one
+        // actually feeds are skipped; the rest (the name, Tags, and Books, which reads
+        // straight through the backend) still render.
+        self.tags.changed_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        let mention_index = ctx.app_state::<MentionIndex>().cloned();
+        if let Some(index) = &mention_index {
+            index.changed_signal().bind_to(
+                ctx.self_id(),
+                ctx.binding_registry(),
+                BindingLevel::Rebuild,
+            );
+        }
+
+        let discoverable_ids: HashSet<u64> = self
+            .tags
+            .rows()
+            .into_iter()
+            .filter(|t| t.discoverable)
+            .map(|t| t.id)
+            .collect();
+        let is_discoverable = item_is_discoverable(&d.tags, &discoverable_ids);
+
+        // ── Two columns, deliberately ────────────────────────────────────────
+        //
+        // The whole reason this segment exists rather than sending the writer to the
+        // Inspector is room, and room spent on a taller stack of the same fields buys
+        // nothing: the dock already stacks them, and it does it in less space. What a
+        // tab has that a dock does not is *width*, so the fields take one column and the
+        // manuscript takes the other, and the writer can set an alias while looking at
+        // the sentence that made them want it.
+        //
+        // The right column is the point. Everything on the left is a fact the writer is
+        // stating; everything on the right is what they have already written about this
+        // person, quoted. A form with more room would have been the lazy answer.
+        let mut fields = VStack::new().spacing(22.0);
+
+        fields = fields.child(name_field(&self.name, stack.clone()));
+
+        fields = fields.child(tags_section(
+            self.open_doc.tags.clone(),
+            self.set_tags.clone(),
+            self.tags.clone(),
+        ));
+
+        // Aliases only make sense on an item the mention index will actually
+        // scan for: a discoverable tag is what puts it in that set. See
+        // `docks::inspector::story_bible`'s own reasoning, reused verbatim.
+        if is_discoverable {
+            fields = fields.child(aliases_section(
+                &self.probe,
+                d.aliases.clone(),
+                self.item_id,
+                stack.get(),
+                mention_index.as_ref(),
+            ));
+        }
+
+        // Below two Books in the Work, this renders nothing at all: no control,
+        // no empty picker, no chrome. See `docks::inspector::live_books`'s own
+        // doc for why.
+        let book_candidates = crate::docks::inspector::live_books(&self.app_ctx, &self.ids);
+        if book_candidates.len() >= 2 {
+            fields = fields.child(books_section(
+                &self.probe,
+                book_candidates,
+                d.books.clone(),
+                self.item_id,
+                stack.get(),
+            ));
+        }
+
+        // Cast: shown whenever the *project* has any discoverable tags at all, so a
+        // writer can Add before any prose names anyone. Never gated on this note's own
+        // tags, matching the dock's `cast_scope` block.
+        //
+        // Point of view is deliberately **not** here. On a note it answers a question
+        // nobody asks of a note: a point of view is a fact about a *scene*, set where
+        // the writer is looking at that scene. It stays in the Inspector, where a
+        // focused scene is what the panel is about.
+        if let Some(index) = &mention_index
+            && !discoverable_ids.is_empty()
+        {
+            // `point_of_view` is still read here even though this pane no longer shows
+            // it: `cast_for` uses it to mark a row the writer declared rather than the
+            // scan guessed, and dropping it would silently reclassify those rows as mere
+            // suggestions. Not displaying a field is not the same as pretending it is
+            // empty.
+            let cast = index.cast_for(self.item_id, None, &d.references, &d.point_of_view, &[]);
+            fields = fields.child(cast_section(
+                index,
+                &self.probe,
+                cast,
+                d.references.clone(),
+                self.item_id,
+                stack.get(),
+            ));
+        }
+
+        // ── The right column: what is already written ────────────────────────
+        //
+        // Only the mention index can answer this. An item with no discoverable tag is
+        // not a target the scan ever reaches, so the empty state is shown only for one
+        // that *is* discoverable; an ordinary note gets no column at all rather than an
+        // empty promise.
+        // Both arms are a `VStack` on purpose: `Box<dyn Widget>` is not itself a
+        // `Widget` here, so an optional column has to unify on a concrete type rather
+        // than on a trait object.
+        let manuscript: Option<VStack> = mention_index.as_ref().and_then(|index| {
+            let backlinks = index.backlinks_for(self.item_id);
+            if !backlinks.is_empty() {
+                Some(backlinks_section(&self.app_ctx, backlinks))
+            } else if is_discoverable {
+                Some(backlinks_empty_hint())
+            } else {
+                None
+            }
+        });
+        let two_columns = manuscript.is_some();
+
+        // One column when there is nothing to put beside the fields, so an ordinary note
+        // is not a half-empty spread. Two when there is, sharing the width evenly.
+        let mut body = HStack::new()
+            .spacing(28.0)
+            .child(Expand::horizontal().child(fields));
+        if let Some(right) = manuscript {
+            body = body
+                .child(Divider::vertical())
+                .child(Expand::horizontal().child(right));
+        }
+
+        // Wider than a writing measure only when there are genuinely two columns to
+        // hold. Derived from the writer's own column width so changing it moves both.
+        let widen = if two_columns { 2.0 } else { 1.0 };
+        let gutter = if two_columns { 28.0 } else { 0.0 };
+        let spread = self.column_width.map(move |w| w * widen + gutter);
+        let col = shared::centered(body, &spread);
+
+        let id = ctx.add(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(col)));
+        self.root = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root.into_iter().collect()
+    }
+}
+
+/// True when any of `tags` is one of `discoverable_ids`. Pulled out of
+/// [`NoteDetailsPane::build`] purely so it has a name and a unit test of its
+/// own; the gate it decides (aliases, and whether an empty backlinks list still
+/// shows its "nothing yet" hint) is worth pinning down on its own.
+fn item_is_discoverable(tags: &[u64], discoverable_ids: &HashSet<u64>) -> bool {
+    tags.iter().any(|id| discoverable_ids.contains(id))
+}
+
+/// The name: a one-line input over `BinderItem.title`, committed on blur or
+/// Enter. A name is also an identifier (the outline tree and this very tab's
+/// own title show it), so it must not wait for anything to debounce. Reuses
+/// [`title_field`]/[`shared::title_input`] exactly as the Book/Part/Chapter
+/// heading forms do; the only reason `Item/Note` never had one of these before
+/// is that its `(role, sub_role)` carries no title `Content` row for
+/// [`super::prose_field`] to seed one from. `title_field` never depended on
+/// that seeding, it just wraps `BinderItem.title` directly.
+///
+/// `on_change` is a no-op, deliberately: the dirty flag every other
+/// `title_input` call site feeds it is [`OpenDoc::dirty`], and that flag is
+/// unconditionally cleared by `OpenDoc::flush` whether or not this field was
+/// among the reasons it was set. A field not registered on `OpenDoc` at all
+/// (this one is not; `Item/Note`'s matrix entry carries no title content role,
+/// so `OpenDoc::build` never seeds `open_doc.title`) has no business setting a
+/// flag that `flush` would then clear without ever having flushed it. Nothing
+/// is lost by that: `set_title` below writes to the backend immediately, on
+/// blur or Enter, exactly like every pill and chip write on this page already
+/// does.
+fn name_field(field: &Rc<crate::tabs::TitleField>, stack: Signal<Option<u64>>) -> impl Widget {
+    let commit_field = field.clone();
+    shared::title_input(
+        field,
+        tr!(note_details_name_placeholder()),
+        || {},
+        move || {
+            let _ = commit_field.flush(stack.get());
+        },
+    )
+}
+
+fn section_header(text: impl Into<teksilo::i18n::LocalizedString>) -> impl Widget {
+    GroupHeader::new(text)
+        .style(TextStyleRole::SmallBold)
+        .color(TextRole::Secondary)
+}
+
+fn tags_section(value: Signal<Vec<u64>>, set: SetTags, vm: TagsViewModel) -> impl Widget {
+    VStack::new()
+        .spacing(6.0)
+        .child(RichTip::new(
+            CONCEPT_TAG,
+            section_header(tr!(note_details_tags())),
+        ))
+        .child(TagPillField::new(value, set, vm))
+}
+
+/// Same write path as `docks::inspector::story_bible`'s own alias section,
+/// `SingleBinderItem::set_aliases`, a scalar read-modify-write. Armed with the
+/// discoverable table when the mention index is available, so the "+" popover
+/// can name any other item already answering to the alias being typed; without
+/// it the field still works, it just offers no collision hint (see
+/// [`AliasPillField::collision_lookup`]).
+fn aliases_section(
+    probe: &SingleBinderItem,
+    aliases: Vec<String>,
+    item_id: u64,
+    stack: Option<u64>,
+    mention_index: Option<&MentionIndex>,
+) -> impl Widget {
+    let value = Signal::new(aliases);
+    let probe = probe.clone();
+    let set_aliases: SetAliases = Rc::new(move |names, _c: &mut EventContext| {
+        let _ = probe.set_aliases(&names, stack);
+    });
+    let mut field = AliasPillField::new(value, set_aliases);
+    if let Some(index) = mention_index {
+        field = field.collision_lookup(index.discoverable_table(), item_id);
+    }
+    VStack::new()
+        .spacing(6.0)
+        .child(section_header(tr!(note_details_aliases())))
+        .child(field)
+}
+
+/// The Book or Books this note is filed under. No "Apply to children": see the
+/// module doc, `Item/Note` is always a leaf.
+fn books_section(
+    probe: &SingleBinderItem,
+    candidates: Vec<CastCandidate>,
+    book_ids: Vec<u64>,
+    item_id: u64,
+    stack: Option<u64>,
+) -> impl Widget {
+    let probe_pin = probe.clone();
+    let set_book: PinReference = Rc::new(move |target, _c| {
+        let mut next = probe_pin.dto().map(|x| x.books).unwrap_or_default();
+        if !next.contains(&target) {
+            next.push(target);
+        }
+        let _ = probe_pin.set_books(&next, stack);
+    });
+    let probe_clear = probe.clone();
+    let clear_book: ClearBook = Rc::new(move |target: u64, _c: &mut EventContext| {
+        let next: Vec<u64> = probe_clear
+            .dto()
+            .map(|x| x.books)
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|&id| id != target)
+            .collect();
+        let _ = probe_clear.set_books(&next, stack);
+    });
+
+    let mut col = VStack::new()
+        .spacing(6.0)
+        .child(section_header(tr!(note_details_books())));
+    if book_ids.is_empty() {
+        col = col.child(
+            TextWidget::new(tr!(note_details_books_empty()))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        );
+    } else {
+        col = col.child(book_chip_row(
+            book_chips(&candidates, &book_ids),
+            clear_book,
+        ));
+    }
+    col.child(book_add_button(candidates, book_ids, item_id, set_book))
+}
+
+/// References-first cast for this note, exactly the shape
+/// `docks::inspector::story_bible` builds: confirmed pins first, then scan
+/// suggestions, both read straight off `index.cast_for`. Rows open the
+/// mentioned item to the side, the same [`AppIntent::OpenItemToSide`] every
+/// other roster in the app already sends.
+fn cast_section(
+    index: &MentionIndex,
+    probe: &SingleBinderItem,
+    cast: Vec<MentionRow>,
+    references: Vec<u64>,
+    item_id: u64,
+    stack: Option<u64>,
+) -> impl Widget {
+    let index_pin = index.clone();
+    let probe_pin = probe.clone();
+    let pin: PinReference = Rc::new(move |target, _c| {
+        let mut next = probe_pin.dto().map(|x| x.references).unwrap_or_default();
+        if !next.contains(&target) {
+            next.push(target);
+        }
+        let next = index_pin.filter_cast_targets(item_id, &next);
+        let _ = probe_pin.set_references(&next, stack);
+    });
+    let index_unpin = index.clone();
+    let probe_unpin = probe.clone();
+    let unpin: UnpinReference = Rc::new(move |target, _c| {
+        let next: Vec<u64> = probe_unpin
+            .dto()
+            .map(|x| x.references)
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|&id| id != target)
+            .collect();
+        let next = index_unpin.filter_cast_targets(item_id, &next);
+        let _ = probe_unpin.set_references(&next, stack);
+    });
+    let open: OpenTarget = Rc::new(|item_id, title, c: &mut EventContext| {
+        c.send_intent(AppIntent::OpenItemToSide { item_id, title });
+    });
+
+    let cast_empty = cast.is_empty();
+    let table = index.discoverable_table();
+    let candidates = candidates_from_table(&table);
+
+    let mut col = VStack::new()
+        .spacing(6.0)
+        .child(section_header(tr!(note_details_cast())))
+        .child(MentionList::new(cast, Some(pin.clone()), Some(unpin), open));
+    if cast_empty {
+        col = col.child(
+            TextWidget::new(tr!(note_details_cast_empty()))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        );
+    }
+    col.child(cast_add_button(candidates, references, item_id, pin))
+}
+
+/// One row of "Appears in the manuscript": a [`MentionRow`] paired with the
+/// title of the document it was found in. See the module doc for why this is
+/// not [`MentionRow::title`] itself.
+#[derive(Clone, Debug, PartialEq)]
+struct BacklinkRow {
+    owner_id: u64,
+    document_title: String,
+    matched_name: String,
+    is_title_match: bool,
+    hit_count: i64,
+    is_confirmed: bool,
+    is_point_of_view: bool,
+    evidence: String,
+}
+
+/// Pair `rows` with the title of the document each was found in, falling back
+/// to `untitled` for a document whose title is blank or that no longer
+/// resolves at all (trashed or deleted between the scan and this read). Same
+/// "named, not left blank" reasoning [`MentionList`]'s own doc gives for an
+/// unresolved pin.
+///
+/// Pure: the backend read that builds `titles` lives in
+/// [`backlinks_section`], not here, so this is testable with no `AppContext`
+/// at all.
+fn backlink_rows(
+    rows: Vec<MentionRow>,
+    titles: &HashMap<u64, String>,
+    untitled: &str,
+) -> Vec<BacklinkRow> {
+    rows.into_iter()
+        .map(|r| {
+            let document_title = titles
+                .get(&r.owner_id)
+                .map(|t| t.trim())
+                .filter(|t| !t.is_empty())
+                .map(str::to_string)
+                .unwrap_or_else(|| untitled.to_string());
+            BacklinkRow {
+                owner_id: r.owner_id,
+                document_title,
+                matched_name: r.matched_name,
+                is_title_match: r.is_title_match,
+                hit_count: r.hit_count,
+                is_confirmed: r.is_confirmed,
+                is_point_of_view: r.is_point_of_view,
+                evidence: r.evidence,
+            }
+        })
+        .collect()
+}
+
+fn backlinks_section(app_ctx: &AppContext, rows: Vec<MentionRow>) -> VStack {
+    let mut seen = HashSet::new();
+    let owner_ids: Vec<u64> = rows
+        .iter()
+        .filter(|r| seen.insert(r.owner_id))
+        .map(|r| r.owner_id)
+        .collect();
+    // One batched read for the whole list, not one per row: see the module doc.
+    let titles: HashMap<u64, String> =
+        binder_item_commands::get_binder_item_multi(app_ctx, &owner_ids)
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .map(|it| (it.id, it.title))
+            .collect();
+    let untitled = tr!(note_details_untitled_document()).resolve_now();
+    let backlinks = backlink_rows(rows, &titles, &untitled);
+
+    VStack::new()
+        .spacing(6.0)
+        .child(section_header(tr!(note_details_backlinks())))
+        .child(BacklinksList {
+            rows: backlinks,
+            root: None,
+        })
+}
+
+fn backlinks_empty_hint() -> VStack {
+    VStack::new()
+        .spacing(6.0)
+        .child(section_header(tr!(note_details_backlinks())))
+        .child(
+            TextWidget::new(tr!(note_details_backlinks_empty()))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        )
+}
+
+/// The list itself: one row per document that mentions this note, each naming
+/// the document, quoting the sentence the first hit sits in, and, when it
+/// applies, how often the name was found and which alias matched.
+///
+/// A row that is a confirmed cast pin or a declared point of view on the
+/// *mentioning* scene reads plain, not ghosted, the same "the writer's own
+/// declaration, not the scanner's guess" rule [`MentionList`]'s own doc states:
+/// `MentionRow::is_confirmed`/`is_point_of_view` mean exactly the same thing
+/// here as they do in the cast direction, just read from the other end: "that
+/// scene has *this note* pinned", not "this note has pinned *it*".
+struct BacklinksList {
+    rows: Vec<BacklinkRow>,
+    root: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for BacklinksList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BacklinksList")
+            .field("rows", &self.rows.len())
+            .finish()
+    }
+}
+
+impl Widget for BacklinksList {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let mut col = VStack::new().spacing(12.0);
+
+        for row in &self.rows {
+            // Plain when the mentioning scene has declared a real relationship to
+            // this note; ghosted when it is only the scan's guess. See this
+            // struct's own doc.
+            let colour = if row.is_confirmed || row.is_point_of_view {
+                TextRole::Primary
+            } else {
+                TextRole::Secondary
+            };
+
+            let mut head = HStack::new().spacing(6.0).child(
+                TextWidget::new(lit!(row.document_title.clone()))
+                    .style(TextStyleRole::SmallBold)
+                    .color(colour)
+                    .max_lines(1),
+            );
+            // The alias that matched, when it was not the title: "Lizzy" explains
+            // a row that otherwise just repeats "Elizabeth Bennet".
+            if !row.is_title_match && !row.matched_name.is_empty() {
+                head = head.child(
+                    TextWidget::new(lit!(format!("({})", row.matched_name)))
+                        .style(TextStyleRole::Tiny)
+                        .color(TextRole::Secondary)
+                        .max_lines(1),
+                );
+            }
+            if row.hit_count > 1 {
+                head = head.child(
+                    TextWidget::new(lit!(row.hit_count.to_string()))
+                        .style(TextStyleRole::Tiny)
+                        .color(TextRole::Secondary),
+                );
+            }
+
+            let mut line = VStack::new().spacing(2.0).child(head);
+            // Omitted for a confirmed reference or a declared point of view the
+            // prose never names: there is nothing to quote, and an empty quote
+            // reads as a bug rather than as "nothing found".
+            if !row.evidence.is_empty() {
+                line = line.child(
+                    TextWidget::new(lit!(format!("\u{201c}{}\u{201d}", row.evidence)))
+                        .style(TextStyleRole::Small)
+                        .color(TextRole::Secondary),
+                );
+            }
+
+            let owner_id = row.owner_id;
+            let title = row.document_title.clone();
+            let id = ctx.add(
+                line.access_role(Role::ListItem)
+                    .access_label(lit!(row.document_title.clone()))
+                    .focusable(true)
+                    .on_tap({
+                        let title = title.clone();
+                        move |_e, c: &mut EventContext| {
+                            c.send_intent(AppIntent::OpenItemToSide {
+                                item_id: owner_id,
+                                title: title.clone(),
+                            })
+                        }
+                    })
+                    // `on_tap` never fires from the keyboard: Enter/Space opens the
+                    // mentioning document, the same accessible affordance
+                    // `MentionList`'s own rows offer.
+                    .on_key(move |ev, c| {
+                        if let WidgetEvent::KeyDown { key, .. } = ev
+                            && matches!(key, Key::Enter | Key::Space)
+                        {
+                            c.send_intent(AppIntent::OpenItemToSide {
+                                item_id: owner_id,
+                                title: title.clone(),
+                            });
+                            return EventResponse::Handled;
+                        }
+                        EventResponse::Ignored
+                    }),
+            );
+            col = col.add_child(id);
+        }
+
+        let id = ctx.add(col.access_role(Role::List));
+        self.root = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root.into_iter().collect()
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn row(owner: u64, target: u64, title: &str, hits: i64, evidence: &str) -> MentionRow {
+        MentionRow {
+            owner_id: owner,
+            target_id: target,
+            title: title.to_string(),
+            matched_name: title.to_string(),
+            is_title_match: true,
+            hit_count: hits,
+            is_confirmed: false,
+            is_point_of_view: false,
+            evidence: evidence.to_string(),
+        }
+    }
+
+    #[test]
+    fn an_item_with_no_discoverable_tags_at_all_is_not_discoverable() {
+        let discoverable: HashSet<u64> = [10, 11].into_iter().collect();
+        assert!(!item_is_discoverable(&[1, 2], &discoverable));
+    }
+
+    #[test]
+    fn an_item_carrying_a_discoverable_tag_is_discoverable() {
+        let discoverable: HashSet<u64> = [10, 11].into_iter().collect();
+        assert!(item_is_discoverable(&[2, 11], &discoverable));
+    }
+
+    #[test]
+    fn an_item_with_no_tags_at_all_is_not_discoverable() {
+        let discoverable: HashSet<u64> = [10].into_iter().collect();
+        assert!(!item_is_discoverable(&[], &discoverable));
+    }
+
+    /// The whole reason `backlink_rows` exists: the document title, not
+    /// `MentionRow::title` (which would be this same note's own name on every
+    /// row; see the module doc).
+    #[test]
+    fn a_backlink_row_names_the_owner_document_not_the_target() {
+        let rows = vec![row(2, 99, "This Note's Own Name", 1, "Grace smiled.")];
+        let mut titles = HashMap::new();
+        titles.insert(2, "Chapter Three".to_string());
+        let out = backlink_rows(rows, &titles, "Untitled");
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].document_title, "Chapter Three");
+        assert_eq!(out[0].owner_id, 2);
+        assert_eq!(out[0].evidence, "Grace smiled.");
+    }
+
+    /// An owner with a blank title falls back to the placeholder, not an empty
+    /// headline.
+    #[test]
+    fn a_blank_owner_title_falls_back_to_the_placeholder() {
+        let rows = vec![row(2, 99, "x", 1, "")];
+        let mut titles = HashMap::new();
+        titles.insert(2, "   ".to_string());
+        let out = backlink_rows(rows, &titles, "Untitled");
+        assert_eq!(out[0].document_title, "Untitled");
+    }
+
+    /// An owner that no longer resolves at all (trashed or deleted between the
+    /// scan and this read) gets the same placeholder as a blank title, rather
+    /// than a row with nothing at all to click on.
+    #[test]
+    fn an_unresolved_owner_falls_back_to_the_placeholder() {
+        let rows = vec![row(2, 99, "x", 1, "")];
+        let out = backlink_rows(rows, &HashMap::new(), "Untitled");
+        assert_eq!(out[0].document_title, "Untitled");
+    }
+
+    /// Every field but the title is carried straight through, unchanged.
+    #[test]
+    fn every_other_field_is_carried_through_unchanged() {
+        let mut r = row(2, 99, "x", 5, "Evidence here.");
+        r.is_confirmed = true;
+        r.is_point_of_view = true;
+        r.is_title_match = false;
+        r.matched_name = "Lizzy".to_string();
+        let mut titles = HashMap::new();
+        titles.insert(2, "Scene One".to_string());
+        let out = backlink_rows(vec![r], &titles, "Untitled");
+        assert_eq!(out[0].hit_count, 5);
+        assert!(out[0].is_confirmed);
+        assert!(out[0].is_point_of_view);
+        assert!(!out[0].is_title_match);
+        assert_eq!(out[0].matched_name, "Lizzy");
+    }
+
+    /// Two different owners resolve to two different rows, in the order given
+    /// (`MentionIndex::backlinks_for` already sorts; this must not reshuffle).
+    #[test]
+    fn two_owners_resolve_to_two_distinct_documents() {
+        let rows = vec![row(2, 99, "x", 3, ""), row(3, 99, "x", 1, "")];
+        let mut titles = HashMap::new();
+        titles.insert(2, "Chapter One".to_string());
+        titles.insert(3, "Chapter Two".to_string());
+        let out = backlink_rows(rows, &titles, "Untitled");
+        assert_eq!(out[0].document_title, "Chapter One");
+        assert_eq!(out[1].document_title, "Chapter Two");
+    }
+}

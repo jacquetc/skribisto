@@ -606,6 +606,12 @@ segment-book = Livre
 segment-notes = Notes
 segment-story-bible = Bible narrative
 segment-pace = Rythme
+# Les trois segments de l'onglet d'un `Item/Note` : son propre texte, ses champs de
+# bible narrative, et (seulement si elle porte une étiquette repérable) le texte du
+# manuscrit où elle a été déclarée présente. Voir `teksilo_ui::tabs::item_note`.
+segment-note-own = Note
+segment-note-details = Détails
+segment-note-in-prose = Dans le texte
 pace-placeholder = Le planificateur de rythme apparaît ici.
 # Planificateur de rythme
 pace-empty-title = Planifiez le rythme de ce livre

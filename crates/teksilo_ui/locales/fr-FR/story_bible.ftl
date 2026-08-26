@@ -52,3 +52,12 @@ story-bible-grid-mention-count = { $count ->
    *[other] Apparaît dans { $count } scènes de l’ensemble du projet
 }
 story-bible-books-filter-all = Tous les livres
+
+## Le segment « Dans le texte » de l'onglet d'un `Item/Note` (C3) : un flux
+## modifiable du texte du manuscrit où cette note a été déclarée présente, un
+## livre à la fois. Voir `teksilo_ui::tabs::note_in_prose`.
+note-in-prose-pov = Point de vue
+note-in-prose-cast = Présence
+note-in-prose-pov-and-cast = Point de vue · Présence
+note-in-prose-no-books = Ce projet n’a pas encore de livre
+note-in-prose-empty-book = Pas encore déclarée dans ce livre

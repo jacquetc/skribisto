@@ -398,6 +398,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         crate::format::FormatViewModel::detached(),
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(frontend::common::entities::GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(app_ctx.clone(), ids),
     )
 }
 

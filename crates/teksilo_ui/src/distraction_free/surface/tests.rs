@@ -96,6 +96,7 @@ fn fixture() -> Fixture {
         crate::format::FormatViewModel::detached(),
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(frontend::common::entities::GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone()),
     );
     let doc = Rc::new(OpenDoc::build(
         &app_ctx,

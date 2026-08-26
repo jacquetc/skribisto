@@ -120,9 +120,13 @@ fn every_declared_key_is_registered() {
 /// The other direction. A registered key that no longer exists in the app is dead
 /// weight that `--dump-config` still advertises as settable.
 ///
-/// Five keys are legitimately not declared as `*_KEY` constants and are exempt: the
-/// four `editor.last_view.*` (inline literals in `EditorViewMemory::new`) and
+/// Six keys are legitimately not declared as `*_KEY` constants and are exempt: the
+/// five `editor.last_view.*` (inline literals in `EditorViewMemory::new`) and
 /// teksilo's own `accessibility.text_scale` (a `SettingsKey<f32>` in the framework).
+///
+/// `item_note` is the single note's own bar, separate from `note` (the notes *folder*):
+/// the two share a sub-role and carry different segments, so one key for both had each
+/// storing an id the other cannot resolve.
 #[test]
 fn every_registered_key_still_exists() {
     let declared = declared_keys();
@@ -131,6 +135,7 @@ fn every_registered_key_still_exists() {
         "editor.last_view.part",
         "editor.last_view.chapter",
         "editor.last_view.note",
+        "editor.last_view.item_note",
         teksilo::settings::TEXT_SCALE_KEY.key,
     ];
 

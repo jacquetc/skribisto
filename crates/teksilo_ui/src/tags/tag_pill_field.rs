@@ -445,15 +445,32 @@ impl Widget for TagPickerCreate {
                 return;
             }
             let hex = color.get().to_hex_lower(false);
-            if let Some(id) = vm.create(&new_name, &hex, "", discoverable.get()) {
-                let mut next = value.get();
-                next.push(id);
-                value.set(next.clone());
-                set(next, c);
+            match vm.create(&new_name, &hex, "", discoverable.get()) {
+                Some(id) => {
+                    let mut next = value.get();
+                    next.push(id);
+                    value.set(next.clone());
+                    set(next, c);
+                    query.set(String::new());
+                    discoverable.set(false);
+                    color.set(default_create_color());
+                }
+                None => {
+                    // `TagsViewModel::create` returns `None` only when there is no open
+                    // Work to create against (see its own doc), a case the constructor-
+                    // threaded handle every caller now gets should not reach in practice.
+                    // But a silent no-op here used to look identical to a successful
+                    // create: the popover cleared as if the tag existed. Toast, and leave
+                    // the typed name/colour/toggle in place rather than resetting a form
+                    // that did not actually submit, the same "refuse and say why" shape
+                    // the duplicate-name guard above already uses.
+                    c.show_toast(
+                        Toast::warning(tr!(tags_pill_create_failed(name = new_name.clone())))
+                            .scoped_id("tags.create-failed", vm.work_id())
+                            .target_work(vm.work_id()),
+                    );
+                }
             }
-            query.set(String::new());
-            discoverable.set(false);
-            color.set(default_create_color());
         });
 
         let mut col = VStack::new().spacing(6.0);

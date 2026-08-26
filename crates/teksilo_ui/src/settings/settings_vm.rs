@@ -21,7 +21,7 @@ use teksilo::widgets::SegmentId;
 use crate::tabs::shared::segments as seg; // EventContext, Signal, intui
 use teksilo::settings::SettingsStore;
 
-use frontend::common::entities::BinderItemSubRole;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use skribisto_model::counting::CountingMethodSetting;
 
 use frontend::common::entities::QuoteStyle;
@@ -200,6 +200,15 @@ pub struct EditorViewMemory {
     part: Signal<String>,
     chapter: Signal<String>,
     note: Signal<String>,
+    /// A **single note**, not a notes folder.
+    ///
+    /// Its own slot because `stored` used to key on `sub_role` alone, and both
+    /// `Folder/Note` and `Item/Note` answer to `Note`. They now carry different bars
+    /// (a folder has Notes / Story bible / Overview; a note has its own prose, Details
+    /// and In prose), so one shared slot would have each writing an id the other cannot
+    /// resolve: every visit to a note's In prose segment would reset the notes folder to
+    /// its first segment, silently and permanently, with no error anywhere.
+    item_note: Signal<String>,
 }
 
 impl EditorViewMemory {
@@ -210,6 +219,7 @@ impl EditorViewMemory {
             part: store.signal("editor.last_view.part", seg::SEG_OWN.to_string()),
             chapter: store.signal("editor.last_view.chapter", seg::SEG_OWN.to_string()),
             note: store.signal("editor.last_view.note", seg::SEG_NOTES.to_string()),
+            item_note: store.signal("editor.last_view.item_note", seg::SEG_NOTE_OWN.to_string()),
         }
     }
 
@@ -223,6 +233,7 @@ impl EditorViewMemory {
             part: Signal::new(seg::SEG_OWN.to_string()),
             chapter: Signal::new(seg::SEG_OWN.to_string()),
             note: Signal::new(seg::SEG_NOTES.to_string()),
+            item_note: Signal::new(seg::SEG_NOTE_OWN.to_string()),
         }
     }
 
@@ -233,8 +244,21 @@ impl EditorViewMemory {
 
     /// The persisted last-view signal for a segmented container sub-role, or `None`
     /// for a type with no `SegmentedControl`.
-    fn stored(&self, sub_role: &BinderItemSubRole) -> Option<Signal<String>> {
+    /// **Keyed on the pair, never on `sub_role` alone.** `Folder/Note` and `Item/Note`
+    /// share a sub-role and carry entirely different bars; keying on the sub-role gave
+    /// them one slot, so each would store an id the other resolves to nothing and falls
+    /// back from. See [`Self::item_note`].
+    fn stored(
+        &self,
+        role: &BinderItemRole,
+        sub_role: &BinderItemSubRole,
+    ) -> Option<Signal<String>> {
         use BinderItemSubRole::*;
+        // A single note's own bar, distinct from the notes *folder* that shares its
+        // sub-role.
+        if *role == BinderItemRole::Item && matches!(sub_role, Note) {
+            return Some(self.item_note.clone());
+        }
         match sub_role {
             Book => Some(self.book.clone()),
             Part => Some(self.part.clone()),
@@ -266,11 +290,15 @@ impl EditorViewMemory {
     /// string authoritative: the number is recomputed every launch, so it cannot drift, and
     /// an id whose segment no longer exists resolves to slot 0 through
     /// `segmented_control::index_signal` exactly as an absent one does.
-    pub fn initial(&self, sub_role: &BinderItemSubRole) -> Option<SegmentId> {
+    pub fn initial(
+        &self,
+        role: &BinderItemRole,
+        sub_role: &BinderItemSubRole,
+    ) -> Option<SegmentId> {
         if !self.enabled.get() {
             return Option::None;
         }
-        self.stored(sub_role)
+        self.stored(role, sub_role)
             .map(|s| s.get())
             .filter(|id| !id.is_empty())
             .map(|id| seg::segment_id(&id))
@@ -278,9 +306,9 @@ impl EditorViewMemory {
 
     /// Record `segment` as the last view for `sub_role` (no-op when disabled, for a
     /// non-segmented type, or when already equal).
-    pub fn remember(&self, sub_role: &BinderItemSubRole, segment: &str) {
+    pub fn remember(&self, role: &BinderItemRole, sub_role: &BinderItemSubRole, segment: &str) {
         if self.enabled.get()
-            && let Some(s) = self.stored(sub_role)
+            && let Some(s) = self.stored(role, sub_role)
             && s.get() != segment
         {
             s.set(segment.to_string());
@@ -1166,27 +1194,56 @@ mod tests {
         let m = EditorViewMemory::detached(true);
         let id = |s: &str| Some(seg::segment_id(s));
         assert_eq!(
-            m.initial(&Book),
+            m.initial(&BinderItemRole::Folder, &Book),
             id(seg::SEG_OWN),
             "starts on the container's own page"
         );
-        m.remember(&Book, seg::SEG_ANALYSIS);
+        m.remember(&BinderItemRole::Folder, &Book, seg::SEG_ANALYSIS);
         assert_eq!(
-            m.initial(&Book),
+            m.initial(&BinderItemRole::Folder, &Book),
             id(seg::SEG_ANALYSIS),
             "a new Book tab inherits the last view"
         );
         // Per-type isolation.
-        m.remember(&ChapterScene, seg::SEG_MANUSCRIPT);
-        assert_eq!(m.initial(&ChapterScene), id(seg::SEG_MANUSCRIPT));
+        m.remember(&BinderItemRole::Folder, &ChapterScene, seg::SEG_MANUSCRIPT);
         assert_eq!(
-            m.initial(&Book),
+            m.initial(&BinderItemRole::Folder, &ChapterScene),
+            id(seg::SEG_MANUSCRIPT)
+        );
+        assert_eq!(
+            m.initial(&BinderItemRole::Folder, &Book),
             id(seg::SEG_ANALYSIS),
             "types don't cross-contaminate"
         );
         // A non-segmented type (a plain Scene) has no view memory.
-        m.remember(&Scene, seg::SEG_MANUSCRIPT);
-        assert_eq!(m.initial(&Scene), Option::None);
+        m.remember(&BinderItemRole::Folder, &Scene, seg::SEG_MANUSCRIPT);
+        assert_eq!(m.initial(&BinderItemRole::Folder, &Scene), Option::None);
+    }
+
+    /// **The two `Note` bars must not share one remembered view.** A `Folder/Note`
+    /// carries Notes / Story bible / Overview; an `Item/Note` carries its own prose,
+    /// Details and In prose. Keyed on the sub-role alone, as this was, they shared a
+    /// single slot: every visit to a note's In prose segment wrote an id the folder
+    /// cannot resolve, so the folder fell back to its first segment from then on,
+    /// permanently, with no error anywhere. Neither bar existed when that key was
+    /// written, which is why nothing caught it until the second one was built.
+    #[test]
+    fn a_note_and_a_notes_folder_remember_their_views_separately() {
+        use BinderItemSubRole::*;
+        let m = EditorViewMemory::detached(true);
+        let id = |s: &str| Some(seg::segment_id(s));
+        m.remember(&BinderItemRole::Folder, &Note, seg::SEG_OVERVIEW);
+        m.remember(&BinderItemRole::Item, &Note, seg::SEG_NOTE_IN_PROSE);
+        assert_eq!(
+            m.initial(&BinderItemRole::Folder, &Note),
+            id(seg::SEG_OVERVIEW),
+            "the notes folder keeps the view the writer chose on it"
+        );
+        assert_eq!(
+            m.initial(&BinderItemRole::Item, &Note),
+            id(seg::SEG_NOTE_IN_PROSE),
+            "and the single note keeps its own, which the folder can never resolve"
+        );
     }
 
     /// A notes folder remembers its view like every other segmented container.
@@ -1198,18 +1255,18 @@ mod tests {
         use BinderItemSubRole::*;
         let m = EditorViewMemory::detached(true);
         assert_eq!(
-            m.initial(&Note),
+            m.initial(&BinderItemRole::Folder, &Note),
             Some(seg::segment_id(seg::SEG_NOTES)),
             "a notes folder starts on its own page"
         );
-        m.remember(&Note, seg::SEG_OVERVIEW);
+        m.remember(&BinderItemRole::Folder, &Note, seg::SEG_OVERVIEW);
         assert_eq!(
-            m.initial(&Note),
+            m.initial(&BinderItemRole::Folder, &Note),
             Some(seg::segment_id(seg::SEG_OVERVIEW)),
             "and returns to the view it was left on"
         );
         assert_eq!(
-            m.initial(&Book),
+            m.initial(&BinderItemRole::Folder, &Book),
             Some(seg::segment_id(seg::SEG_OWN)),
             "without touching another container type's memory"
         );
@@ -1226,14 +1283,14 @@ mod tests {
     fn a_paratext_folder_shares_the_notes_view_memory() {
         use BinderItemSubRole::*;
         let m = EditorViewMemory::detached(true);
-        m.remember(&Paratext, seg::SEG_OVERVIEW);
+        m.remember(&BinderItemRole::Folder, &Paratext, seg::SEG_OVERVIEW);
         assert_eq!(
-            m.initial(&Paratext),
+            m.initial(&BinderItemRole::Folder, &Paratext),
             Some(seg::segment_id(seg::SEG_OVERVIEW)),
             "a paratext folder must remember its view at all"
         );
         assert_eq!(
-            m.initial(&Note),
+            m.initial(&BinderItemRole::Folder, &Note),
             Some(seg::segment_id(seg::SEG_OVERVIEW)),
             "…out of the same store as the notes folder, since it is the same bar"
         );
@@ -1243,17 +1300,17 @@ mod tests {
     fn view_memory_disabled_is_inert() {
         use BinderItemSubRole::*;
         let m = EditorViewMemory::detached(true);
-        m.remember(&Part, seg::SEG_SYNOPSIS); // recorded while enabled
+        m.remember(&BinderItemRole::Folder, &Part, seg::SEG_SYNOPSIS); // recorded while enabled
         m.enabled().set(false);
         assert_eq!(
-            m.initial(&Part),
+            m.initial(&BinderItemRole::Folder, &Part),
             Option::None,
             "disabled starts wherever the bar's first segment is"
         );
-        m.remember(&Part, seg::SEG_MANUSCRIPT); // no-op while disabled
+        m.remember(&BinderItemRole::Folder, &Part, seg::SEG_MANUSCRIPT); // no-op while disabled
         m.enabled().set(true);
         assert_eq!(
-            m.initial(&Part),
+            m.initial(&BinderItemRole::Folder, &Part),
             Some(seg::segment_id(seg::SEG_SYNOPSIS)),
             "the disabled write was ignored"
         );

@@ -54,6 +54,7 @@ tags-pill-remove = Remove { $name }
 tags-pill-filter-placeholder = Filter or name a new tag
 tags-pill-no-match = No tag matches
 tags-pill-create = Create "{ $name }"
+tags-pill-create-failed = Couldn't create "{ $name }"
 tags-pill-new-discoverable = Find-in-prose tag
 tags-pill-new-discoverable-hint = Items with this tag are matched against your prose to fill the roster.
 
@@ -147,3 +148,24 @@ books-empty = Not filed under a book yet
 books-add = File under a book…
 books-remove = Remove from { $name }
 books-apply-to-children = Apply filing to children
+
+# ── The Details segment on an `Item/Note` tab ────────────────────────────────
+# Almost the same field set as the Inspector's own story-bible section (tags,
+# aliases, cast, point of view, books), reused deliberately, but under its own
+# `note-details-` keys: this segment is a full-width page, not a dock, so its
+# copy is free to say a little more than the dock's narrower strings do. See
+# `teksilo_ui::tabs::note_details`.
+note-details-name-placeholder = Name…
+note-details-tags = Tags
+note-details-aliases = Other names
+note-details-books = Filed under
+note-details-books-empty = Not filed under a Book yet
+note-details-cast = Cast
+note-details-cast-empty = Nobody found yet. Add one, or wait for a scan to suggest one.
+note-details-pov = Point of view
+note-details-pov-empty = No point of view set
+note-details-pov-unresolved = A point of view was pinned here, but that entry no longer exists or lost its story-bible tag.
+note-details-pov-multiple = This note has two points of view.
+note-details-backlinks = Appears in the manuscript
+note-details-backlinks-empty = Nothing yet. Once this name appears in your prose, it will show up here.
+note-details-untitled-document = Untitled

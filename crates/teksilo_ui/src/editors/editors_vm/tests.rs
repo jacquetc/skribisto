@@ -42,6 +42,7 @@ fn editors_with(app_ctx: Rc<AppContext>, save_state: SaveStateViewModel) -> Edit
         ids.clone(),
         crate::models::TreeExpansionService::in_memory_default(),
     );
+    let tags = crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone());
     EditorsViewModel::new(
         app_ctx,
         Signal::new(700.0),
@@ -65,6 +66,7 @@ fn editors_with(app_ctx: Rc<AppContext>, save_state: SaveStateViewModel) -> Edit
         crate::format::FormatViewModel::detached(),
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
+        tags,
     )
 }
 
@@ -771,7 +773,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::shared::CaretHighlightSettings::off(),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
-        ids_a,
+        ids_a.clone(),
         docs.clone(),
         Signal::new(false),
         save_state.clone(),
@@ -783,6 +785,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::format::FormatViewModel::detached(),
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_a),
     );
     let ids_b = AppIds::new();
     let tree_expansion_b = crate::settings::TreeExpansionViewModel::new(
@@ -801,7 +804,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::shared::CaretHighlightSettings::off(),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
-        ids_b,
+        ids_b.clone(),
         docs.clone(),
         Signal::new(false),
         save_state,
@@ -813,6 +816,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::format::FormatViewModel::detached(),
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_b),
     );
 
     // Window A has item 1 in its primary pane and item 2 in its side pane;

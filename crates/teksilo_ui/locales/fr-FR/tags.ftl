@@ -55,6 +55,7 @@ tags-pill-remove = Retirer { $name }
 tags-pill-filter-placeholder = Filtrer ou nommer une étiquette
 tags-pill-no-match = Aucune étiquette ne correspond
 tags-pill-create = Créer « { $name } »
+tags-pill-create-failed = Impossible de créer « { $name } »
 tags-pill-new-discoverable = Étiquette repérable dans le texte
 tags-pill-new-discoverable-hint = Les éléments portant cette étiquette sont recherchés dans votre texte pour remplir la distribution.
 
@@ -158,3 +159,25 @@ books-empty = Pas encore classé sous un livre
 books-add = Classer sous un livre…
 books-remove = Retirer de { $name }
 books-apply-to-children = Appliquer le classement aux enfants
+
+# ── Le segment Détails de l'onglet d'un `Item/Note` ──────────────────────────
+# Presque le même ensemble de champs que la section bible narrative de
+# l'inspecteur (étiquettes, autres noms, présence, point de vue, livres),
+# repris volontairement, mais sous ses propres clés `note-details-` : ce
+# segment est une page pleine largeur, pas un panneau, et son texte peut donc
+# se permettre d'en dire un peu plus que les chaînes plus étroites du
+# panneau. Voir `teksilo_ui::tabs::note_details`.
+note-details-name-placeholder = Nom…
+note-details-tags = Étiquettes
+note-details-aliases = Autres noms
+note-details-books = Classé sous
+note-details-books-empty = Pas encore classé sous un livre
+note-details-cast = Présence
+note-details-cast-empty = Personne pour l’instant. Ajoutez quelqu’un, ou attendez qu’une analyse en suggère un.
+note-details-pov = Point de vue
+note-details-pov-empty = Aucun point de vue défini
+note-details-pov-unresolved = Un point de vue a été épinglé ici, mais cette entrée n’existe plus ou a perdu son étiquette de bible narrative.
+note-details-pov-multiple = Cette note a deux points de vue.
+note-details-backlinks = Apparaît dans le manuscrit
+note-details-backlinks-empty = Rien pour l’instant. Dès que ce nom apparaîtra dans votre texte, il s’affichera ici.
+note-details-untitled-document = Sans titre

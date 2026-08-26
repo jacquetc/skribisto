@@ -1110,7 +1110,7 @@ fn switching_a_container_view_persists_and_a_new_tab_inherits() {
             crate::tabs::shared::segments::SEG_MANUSCRIPT,
         )));
     assert_eq!(
-        mem.initial(&ChapterScene),
+        mem.initial(&BinderItemRole::Folder, &ChapterScene),
         Some(crate::tabs::shared::segments::segment_id(
             crate::tabs::shared::segments::SEG_MANUSCRIPT
         )),
@@ -1200,7 +1200,7 @@ fn same_type_tabs_share_one_last_view_and_the_last_switch_wins() {
     let _tb = build(&b);
     // Merely opening + building a second same-type tab wrote nothing.
     assert_eq!(
-        mem.initial(&ChapterScene),
+        mem.initial(&BinderItemRole::Folder, &ChapterScene),
         Some(crate::tabs::shared::segments::segment_id(
             crate::tabs::shared::segments::SEG_OWN
         ))
@@ -1210,7 +1210,7 @@ fn same_type_tabs_share_one_last_view_and_the_last_switch_wins() {
             crate::tabs::shared::segments::SEG_MANUSCRIPT,
         ))); // A switches → Full Chapter
     assert_eq!(
-        mem.initial(&ChapterScene),
+        mem.initial(&BinderItemRole::Folder, &ChapterScene),
         Some(crate::tabs::shared::segments::segment_id(
             crate::tabs::shared::segments::SEG_MANUSCRIPT
         ))
@@ -1220,7 +1220,7 @@ fn same_type_tabs_share_one_last_view_and_the_last_switch_wins() {
             crate::tabs::shared::segments::SEG_SYNOPSIS,
         ))); // B → Full Synopsis: last switch wins
     assert_eq!(
-        mem.initial(&ChapterScene),
+        mem.initial(&BinderItemRole::Folder, &ChapterScene),
         Some(crate::tabs::shared::segments::segment_id(
             crate::tabs::shared::segments::SEG_SYNOPSIS
         ))
@@ -1230,7 +1230,7 @@ fn same_type_tabs_share_one_last_view_and_the_last_switch_wins() {
             crate::tabs::shared::segments::SEG_OWN,
         ))); // A switches back → its switch wins in turn
     assert_eq!(
-        mem.initial(&ChapterScene),
+        mem.initial(&BinderItemRole::Folder, &ChapterScene),
         Some(crate::tabs::shared::segments::segment_id(
             crate::tabs::shared::segments::SEG_OWN
         ))
@@ -1311,6 +1311,7 @@ fn scene_page_seeded(text: &str) -> (WidgetTree, WidgetId, ContentTab) {
         crate::writing_session::WritingGamesViewModel::detached(),
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
     );
     let mut tree = crate::test_support::tree_with_settings(&ctx);
     let root = tree.add_boxed(tab_pane(&tab));
@@ -1552,6 +1553,7 @@ fn scene_page_max_scroll(typewriter: crate::shared::TypewriterSettings) -> (f32,
         crate::writing_session::WritingGamesViewModel::detached(),
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
     );
     let mut tree = crate::test_support::tree_with_events(&ctx);
     let root = tree.add_boxed(tab_pane(&tab));
@@ -2550,6 +2552,101 @@ fn committing_a_title_reaches_both_of_its_homes() {
     assert_eq!(chapter_title.as_deref(), Some("The Long Road"));
 }
 
+/// BUG 1's fix. `note_details::note_details_pane` used to resolve its tag
+/// palette via `ctx.app_state::<TagsViewModel>()`, which on the app's own
+/// first-launch fallback (see `startup.rs`'s throwaway `WorkSession`, built on
+/// a fresh, never-seeded `AppIds`) is bound to no `work_id` at all. So the
+/// Details segment's "+" popover called `TagsViewModel::create`, which needs a
+/// real `work_id` (see `WorkTagsListModel::create`'s own doc), and it silently
+/// created nothing.
+///
+/// This builds the pane with **no `app_state` registered at all**, the same
+/// "nothing to find" state that lookup was reaching in the wild, and proves
+/// it does not matter any more: the tab's own [`ContentTab::tags`] is what the
+/// pane is built from now, and that handle genuinely creates a tag against the
+/// tab's real, open Work.
+///
+/// `#[cfg(not(feature = "mocks"))]`: the mocks palette's `create` ignores its
+/// `owner_id` entirely (see `WorkTagsListModel::create`'s mock `impl`) and
+/// always succeeds, so it cannot tell a Work-bound handle from an unbound one.
+/// Only the real backend's `owner_id?` early-return actually exercises the
+/// bug this test pins.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn the_details_segment_creates_a_tag_against_the_tabs_own_work() {
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+    let ctx = Rc::new(AppContext::new());
+    let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default()).unwrap();
+    let binder = binder_commands::create_binder(
+        &ctx,
+        None,
+        &CreateBinderDto {
+            name: "B".into(),
+            activated: true,
+            ..Default::default()
+        },
+        work.id,
+        0,
+    )
+    .unwrap();
+    let item = binder_item_commands::create_binder_item(
+        &ctx,
+        None,
+        &CreateBinderItemDto {
+            title: "A note".into(),
+            role: BinderItemRole::Item,
+            sub_role: BinderItemSubRole::Note,
+            activated: true,
+            is_exportable: true,
+            ..Default::default()
+        },
+        binder.id,
+        -1,
+    )
+    .unwrap();
+
+    // The tab's own ids, bound to the real Work: the handle `note_details_pane`
+    // must reach through `ContentTab::tags()`, not through whatever (if
+    // anything) `app_state` happens to hold.
+    let ids = AppIds::new();
+    ids.work_id.set(Some(work.id));
+    let tab = tab_for(
+        &ctx,
+        item.id,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::Note,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &ids,
+    );
+
+    // The pane must build with no `app_state` registered at all. Before the fix,
+    // an unregistered `TagsViewModel` made the whole Tags section render nothing
+    // (the `if let Some(vm) = &tags_vm` gate this module's doc used to describe);
+    // it must now render regardless, since the handle comes off the tab.
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(note_details::note_details_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+    let _ = tree.render();
+    assert!(
+        first_of_type(&tree, root, "TagPillField").is_some(),
+        "the Details segment built no Tags section at all with nothing in `app_state`"
+    );
+
+    // The exact handle the pane's Tags section was built from: it must be able
+    // to create a tag, which it can do only if it actually knows the tab's Work.
+    let id = tab.tags().create("Protagonist", "#607d8b", "", true);
+    assert!(
+        id.is_some(),
+        "the Details segment's tags handle could not create a tag against its own Work"
+    );
+}
+
 /// A segment registered for `BinderItemSubRole::Note` actually appears on a
 /// `Folder/Note` tab's bar.
 ///
@@ -2740,6 +2837,7 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
             crate::writing_session::WritingGamesViewModel::detached(),
             crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
             Signal::new(GoalUnit::default()),
+            crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
         )
     };
     let distraction_free_width = Signal::new(620.0);
@@ -2835,6 +2933,7 @@ fn a_stream_lane_marks_every_row_on_its_own_slice() {
         crate::writing_session::WritingGamesViewModel::detached(),
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
     );
     tab.segment
         .set(Some(crate::tabs::shared::segments::segment_id(
@@ -2935,6 +3034,7 @@ fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
         crate::writing_session::WritingGamesViewModel::detached(),
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
     );
 
     // Segment 1 is the manuscript stream (own page / manuscript / Full

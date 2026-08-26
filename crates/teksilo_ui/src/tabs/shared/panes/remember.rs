@@ -11,6 +11,7 @@
 
 use super::*;
 
+use frontend::common::entities::BinderItemRole;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -24,6 +25,10 @@ use std::rc::Rc;
 pub(super) struct RememberSegment {
     segment: Signal<Option<SegmentId>>,
     memory: EditorViewMemory,
+    // Both halves of the key: `Folder/Note` and `Item/Note` share a sub-role and carry
+    // different bars, so the sub-role alone would have them overwrite each other's
+    // remembered view. See `EditorViewMemory::stored`.
+    role: BinderItemRole,
     sub_role: BinderItemSubRole,
     /// Ordered `(string id, derived SegmentId)` for this container's segments.
     ///
@@ -49,9 +54,20 @@ impl RememberSegment {
     /// than merely intended. Every segment pins an explicit id: `Segment::new` would
     /// otherwise mint `SegmentId::fresh()`, a process-global counter, and a remembered
     /// view keyed on one of those could never be found again after a restart.
+    ///
+    /// `visible` overrides a declared segment's chip from always-shown to reactive, by
+    /// string id: an entry `(id, prop)` wires `Segment::visible(prop)` onto that one
+    /// segment, leaving every other segment at `Segment::new`'s own default of always
+    /// visible. Empty for every caller but [`super::item_note_segmented`] today.
+    ///
+    /// This is deliberately **not** a reason to rebuild the list `wrap` itself is called
+    /// with. A `Prop::Bound` signal drives `SegmentedControl`'s own chip live, with no
+    /// rebuild of this pairing, of the `Switcher`, or of any already-mounted page inside
+    /// it; see `item_note_segmented`'s own doc for why that matters here.
     pub(super) fn wrap(
         tab: &ContentTab,
         items: Vec<(&str, LocalizedString, Box<dyn Widget>)>,
+        visible: &[(&str, Prop<bool>)],
         shell: impl FnOnce(crate::tabs::Boxed, crate::tabs::Boxed) -> VStack,
     ) -> Self {
         let ids: Vec<(String, SegmentId)> = items
@@ -83,8 +99,12 @@ impl RememberSegment {
 
         let mut bar = SegmentedControl::new(tab.segment.clone());
         let mut content = Switcher::new(segmented_control::index_signal(&tab.segment, &keys));
-        for ((_, label, pane), key) in items.into_iter().zip(keys.iter().copied()) {
-            bar = bar.segment(Segment::new(label).id(key));
+        for ((id, label, pane), key) in items.into_iter().zip(keys.iter().copied()) {
+            let mut segment = Segment::new(label).id(key);
+            if let Some(entry) = visible.iter().find(|entry| entry.0 == id) {
+                segment = segment.visible(entry.1.clone());
+            }
+            bar = bar.segment(segment);
             content = content.child_boxed(pane);
         }
 
@@ -95,6 +115,7 @@ impl RememberSegment {
         Self {
             segment: tab.segment.clone(),
             memory: tab.view_memory.clone(),
+            role: tab.role().clone(),
             sub_role: tab.sub_role().clone(),
             shown,
             ports: tab.view_state_ports(),
@@ -116,10 +137,33 @@ impl Widget for RememberSegment {
         let child = self.child.take().expect("RememberSegment built once");
         let id = ctx.add_boxed(child);
         self.child_id = Some(id);
-        let (memory, sub_role) = (self.memory.clone(), self.sub_role.clone());
+        let (memory, role, sub_role) = (
+            self.memory.clone(),
+            self.role.clone(),
+            self.sub_role.clone(),
+        );
         let ids = self.ids.clone();
         let shown = self.shown.clone();
         let ports = self.ports.clone();
+        // Reconcile the mirror against `self.segment` **now**, not only from the effect
+        // below. `ctx.add_boxed` just built the whole bar-plus-`Switcher` subtree
+        // synchronously, and a `Segment` hidden behind a `visible` prop (see `wrap`'s own
+        // `visible` parameter) can self-heal `self.segment` away from a seed that named it
+        // as part of that very build, `SegmentedControl`'s own "select the neighbour"
+        // convention. That correction is a real write to the shared signal, but it lands
+        // before the effect below is registered, so without this the mirror would keep
+        // reporting the hidden id forever: `EditorViewMemory::remember` is never called
+        // for it (nothing here treats a self-heal as the writer's own choice), yet
+        // `editors_vm::remember_position` reads this same mirror into the *per-tab*
+        // workspace state, which would then keep re-seeding the same unreachable id on
+        // every future restore. Deliberately **not** `memory.remember(...)` and not
+        // `ports.take_focus()` here: those two belong only to a genuine switch the writer
+        // made, which is exactly what the effect below still gates on.
+        if let Some(sel) = self.segment.get()
+            && let Some((id, _)) = ids.iter().find(|(_, key)| *key == sel)
+        {
+            *shown.borrow_mut() = id.clone();
+        }
         // `ctx.effect` fires only on *changes*, not on setup — so a rebuild installs
         // a fresh observer that stays quiet until the user actually switches the
         // `SegmentedControl`. That's what keeps a rebuild of one tab from writing its
@@ -133,7 +177,7 @@ impl Widget for RememberSegment {
             if let Some(sel) = *v
                 && let Some((id, _)) = ids.iter().find(|(_, key)| *key == sel)
             {
-                memory.remember(&sub_role, id);
+                memory.remember(&role, &sub_role, id);
                 *shown.borrow_mut() = id.clone();
                 // The writer has just chosen a different page, which outranks a focus
                 // request nobody has consumed yet: a container opened on its Overview
@@ -253,7 +297,7 @@ mod tests {
                     as Box<dyn Widget>,
             ),
         ];
-        let widget = RememberSegment::wrap(tab, items, |bar, content| {
+        let widget = RememberSegment::wrap(tab, items, &[], |bar, content| {
             VStack::new().spacing(0.0).child(bar).child(content)
         });
         let mut tree = WidgetTree::new();
@@ -395,7 +439,7 @@ mod tests {
         tab.segment
             .set(Some(segments::segment_id(segments::SEG_SYNOPSIS)));
         assert_eq!(
-            mem.initial(&BinderItemSubRole::ChapterScene),
+            mem.initial(&BinderItemRole::Folder, &BinderItemSubRole::ChapterScene),
             Some(segments::segment_id(segments::SEG_SYNOPSIS)),
             "a container's switch must still be remembered per type"
         );

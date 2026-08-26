@@ -270,6 +270,8 @@ pub(crate) struct Tier1Services {
     pub paratext_presets: ParatextPresetsViewModel,
     pub df_themes: crate::distraction_free::DistractionFreeThemesViewModel,
     pub backup_settings: BackupSettingsViewModel,
+    /// Which Book a note's "In prose" segment last showed, per project.
+    pub note_book_choice: models::NoteBookChoiceService,
 }
 
 pub(crate) fn open_tier1_services(
@@ -333,6 +335,17 @@ pub(crate) fn open_tier1_services(
                 .ok()
         })
         .unwrap_or_else(TreeExpansionService::in_memory_default);
+    // Which Book a note's "In prose" segment was last showing, one row per project
+    // (`note_book_choice.toml`). A fifth `SettingsFile` sibling, opened and degraded the
+    // same way: a writer whose config dir is unavailable simply reopens on the first Book
+    // rather than losing the segment.
+    let note_book_choice = crate::identity::app_paths()
+        .and_then(|paths| {
+            models::NoteBookChoiceService::open(&paths)
+                .map_err(|e| eprintln!("note book choice: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::NoteBookChoiceService::in_memory_default);
     // The Import-Plume view-model is a singleton (form + in-flight job + progress
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
@@ -436,6 +449,7 @@ pub(crate) fn open_tier1_services(
         paratext_presets,
         df_themes,
         backup_settings,
+        note_book_choice,
     }
 }
 

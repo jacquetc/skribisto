@@ -167,6 +167,10 @@ impl App {
                     format_for_editors,
                     writing_games_for_editors,
                     session.single_work.goal_unit(),
+                    // The **shared** Work-scoped palette, not a fresh one. See
+                    // `ContentTab::tags`'s own doc for why this must never be
+                    // read off `ctx.app_state::<TagsViewModel>()` instead.
+                    session.tags.clone(),
                 )
             })
             .clone();

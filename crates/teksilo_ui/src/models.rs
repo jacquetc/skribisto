@@ -24,7 +24,12 @@ mod binder_list_model;
 /// the only correct way to key extension data to a row, since `EntityId` is
 /// re-minted on every load.
 pub mod binder_stream;
-mod coalesced_reload;
+/// `pub(crate)`, widened from a `models`-only `mod` so `tabs::note_in_prose` can
+/// reload its own row list on the same coalesced "once per frame, however many events
+/// arrived" terms every model in this file already gets. See the module's own doc
+/// for what a `subscribe_event` loop without it costs. `reload_on_events` was already
+/// `pub(crate) fn`; only the module wrapping it was narrower than that.
+pub(crate) mod coalesced_reload;
 mod comments_list_model;
 mod corkboard_cards_model;
 mod dict_word_list_model;
@@ -40,6 +45,8 @@ pub(crate) mod import_plan_source;
 mod import_prefs_file;
 mod installed_dictionaries_model;
 mod manuscript_digest;
+mod note_book_choice_file;
+mod note_prose_rows;
 mod numbering;
 mod open_docs;
 mod overview_rows_model;
@@ -90,6 +97,11 @@ pub use folder_memory_file::{
 };
 pub use import_prefs_file::ImportPrefsService;
 pub use manuscript_digest::{LiveRow, digest_of, live_manuscript, live_prose};
+pub use note_book_choice_file::{NoteBookChoiceService, PerProjectNoteBookChoice};
+pub use note_prose_rows::{
+    BookChoice, Declaration, NoteProseRow, books_in_work, declared_rows_in_book,
+    resolve_book_choice,
+};
 #[allow(unused_imports)]
 pub use numbering::{
     NameContext, fallback_label_for, item_meta_of, label_and_badge, numbers_for_items,

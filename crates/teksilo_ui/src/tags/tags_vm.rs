@@ -61,6 +61,17 @@ impl TagsViewModel {
         Self { list, ids }
     }
 
+    /// A palette wired to nothing but `ids`, for the standalone-tab and test
+    /// construction sites that have no [`crate::sessions::WorkSession`] behind
+    /// them (mirrors [`crate::save::WorkHandle::detached`]). Not a null object:
+    /// if `ids.work_id` is already set (a test that created a real Work before
+    /// calling this), [`Self::create`] and every other write reach it exactly as
+    /// the session-owned instance would. It is "detached" only in the sense that
+    /// nothing shares or polls this particular handle.
+    pub(crate) fn detached(app_ctx: Rc<frontend::AppContext>, ids: AppIds) -> Self {
+        Self::new(WorkTagsListModel::new(app_ctx, ids.clone()), ids)
+    }
+
     /// Wire the held Layer-A handle's event subscriptions (from `App::build`, after
     /// the LoadWork seed is registered — see `WorkTagsListModel::wire`).
     pub fn wire(&self, ctx: &mut BuildContext) {
