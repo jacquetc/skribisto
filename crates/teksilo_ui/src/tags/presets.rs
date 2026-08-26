@@ -119,6 +119,10 @@ fn row(name: LocalizedString, color: &str, discoverable: bool) -> TagRow {
         color: color.to_string(),
         details: String::new(),
         discoverable,
+        // A preset names a taxonomy, not a filing scheme: where a tag's notes go is
+        // the writer's own choice, asked once the first time they file under it.
+        creates_in: None,
+        note_template: None,
     }
 }
 

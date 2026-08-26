@@ -80,6 +80,11 @@ settings-tags-count = { $n ->
 }
 settings-tags-details-placeholder = What this tag means
 settings-tags-discoverable = Find in prose
+settings-tags-creates-in = New notes go to
+settings-tags-creates-in-unset = Ask me the first time
+settings-tags-creates-in-untitled = Untitled folder
+settings-tags-template = Starting template
+settings-tags-template-unset = Blank note
 settings-tags-delete = Delete { $name }
 settings-tags-deleted = Deleted "{ $name }" and removed it from every item
 settings-tags-empty = No tags yet.

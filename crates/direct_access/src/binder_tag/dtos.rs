@@ -18,6 +18,8 @@ pub struct BinderTagDto {
     pub color: String,
     pub details: String,
     pub discoverable: bool,
+    pub creates_in: Option<EntityId>,
+    pub note_template: Option<EntityId>,
 }
 
 impl From<BinderTagDto> for BinderTag {
@@ -31,6 +33,8 @@ impl From<BinderTagDto> for BinderTag {
             color: dto.color,
             details: dto.details,
             discoverable: dto.discoverable,
+            creates_in: dto.creates_in,
+            note_template: dto.note_template,
         }
     }
 }
@@ -46,6 +50,8 @@ impl From<&BinderTagDto> for BinderTag {
             color: dto.color.clone(),
             details: dto.details.clone(),
             discoverable: dto.discoverable.clone(),
+            creates_in: dto.creates_in.clone(),
+            note_template: dto.note_template.clone(),
         }
     }
 }
@@ -61,6 +67,8 @@ impl From<BinderTag> for BinderTagDto {
             color: entity.color,
             details: entity.details,
             discoverable: entity.discoverable,
+            creates_in: entity.creates_in,
+            note_template: entity.note_template,
         }
     }
 }
@@ -74,6 +82,8 @@ pub struct CreateBinderTagDto {
     pub color: String,
     pub details: String,
     pub discoverable: bool,
+    pub creates_in: Option<EntityId>,
+    pub note_template: Option<EntityId>,
 }
 
 impl From<CreateBinderTagDto> for BinderTag {
@@ -87,6 +97,8 @@ impl From<CreateBinderTagDto> for BinderTag {
             color: dto.color,
             details: dto.details,
             discoverable: dto.discoverable,
+            creates_in: dto.creates_in,
+            note_template: dto.note_template,
         }
     }
 }
@@ -102,6 +114,8 @@ impl From<&CreateBinderTagDto> for BinderTag {
             color: dto.color.clone(),
             details: dto.details.clone(),
             discoverable: dto.discoverable.clone(),
+            creates_in: dto.creates_in.clone(),
+            note_template: dto.note_template.clone(),
         }
     }
 }
@@ -116,6 +130,8 @@ impl From<BinderTag> for CreateBinderTagDto {
             color: entity.color,
             details: entity.details,
             discoverable: entity.discoverable,
+            creates_in: entity.creates_in,
+            note_template: entity.note_template,
         }
     }
 }
@@ -142,6 +158,8 @@ impl From<UpdateBinderTagDto> for BinderTag {
             color: dto.color,
             details: dto.details,
             discoverable: dto.discoverable,
+            creates_in: Default::default(),
+            note_template: Default::default(),
         }
     }
 }
@@ -157,6 +175,8 @@ impl From<&UpdateBinderTagDto> for BinderTag {
             color: dto.color.clone(),
             details: dto.details.clone(),
             discoverable: dto.discoverable.clone(),
+            creates_in: Default::default(),
+            note_template: Default::default(),
         }
     }
 }
@@ -189,4 +209,12 @@ impl From<BinderTagDto> for UpdateBinderTagDto {
             discoverable: dto.discoverable,
         }
     }
+}
+pub use common::direct_access::binder_tag::BinderTagRelationshipField;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BinderTagRelationshipDto {
+    pub id: EntityId,
+    pub field: BinderTagRelationshipField,
+    pub right_ids: Vec<EntityId>,
 }

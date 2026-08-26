@@ -20,22 +20,24 @@
 //! Like the dictionary pane it needs generic-closure widgets (`ListView`) the `teksu!` DSL
 //! cannot express, so it is a chained-builder module.
 
-use teksilo::core::styles::TextInputVariant;
+use teksilo::core::styles::{ComboBoxVariant, TextInputVariant};
 use teksilo::data::SortFilterListModel;
 use teksilo::prelude::*;
 use teksilo::res;
 use teksilo::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use teksilo::widgets::{
-    BuiltInIcons, Button, ButtonVariant, Center, ColorEdit, Expand, FixedSize, HStack, IconButton,
-    IconLocation, IconWidget, ListView, MaxSize, MenuItem, MenuList, MinSize, Padding, Panel,
-    PopoverButton, RectWidget, SearchField, Spacer, Switcher, TextInput, TextWidget, Toast, Toggle,
-    VStack, ValidationState,
+    BuiltInIcons, Button, ButtonVariant, Center, ColorEdit, ComboBox, Expand, FixedSize, HStack,
+    IconButton, IconLocation, IconWidget, ListView, MaxSize, MenuItem, MenuList, MinSize, Padding,
+    Panel, PopoverButton, RectWidget, SearchField, Spacer, Switcher, TextInput, TextWidget, Toast,
+    Toggle, VStack, ValidationState,
 };
 
 use crate::app_ids::HasWorkId;
 use crate::models::TagRow;
+use crate::note_templates::NoteTemplatesViewModel;
 use crate::tags::{Preset, TagsViewModel, contrast};
 use crate::toast_scope::ToastWorkExt;
+use frontend::common::entities::BinderItemRole;
 
 const NAME_COL: &str = "name";
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;
@@ -56,7 +58,15 @@ fn export_glyph() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/settings/export.svg")).icon_size(15.0)
 }
 
-pub fn work_tags_pane(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
+/// `app_ctx`, `ids` and `templates` are threaded from `WorkSession` rather than read off
+/// `app_state`, the same discipline `settings::content` already applies to `vm` and for
+/// the same reason recorded there: an `app_state` lookup resolves to whichever Work's
+/// session registered first, not this window's.
+pub fn work_tags_pane(
+    ctx: &mut BuildContext,
+    vm: &TagsViewModel,
+    templates: &NoteTemplatesViewModel,
+) -> impl Widget {
     let filtered = SortFilterListModel::new(vm.list_model()).with_predicate(NAME_COL, |text| {
         let needle = text.trim().to_lowercase();
         Box::new(move |row: &TagRow| {
@@ -73,14 +83,20 @@ pub fn work_tags_pane(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget
     }
 
     let list_vm = vm.clone();
+    // Resolved once per pane build, not once per row: a project with forty tags would
+    // otherwise walk the whole binder forty times to paint one dropdown each.
+    let folders = folder_options(&vm.app_ctx(), &vm.ids());
+    let template_rows = template_options(templates);
     let list = ListView::from_source(filtered, move |_i, row: &TagRow, _selected| {
         Box::new(TagRowView {
             vm: list_vm.clone(),
             row: row.clone(),
+            folders: folders.clone(),
+            templates: template_rows.clone(),
             root_child: None,
         })
     })
-    .auto_item_height(52.0);
+    .auto_item_height(82.0);
 
     let empty_idx = {
         let vm = vm.clone();
@@ -355,6 +371,10 @@ fn export_button(vm: &TagsViewModel) -> impl Widget {
 struct TagRowView {
     vm: TagsViewModel,
     row: TagRow,
+    /// Both resolved once per pane build and shared by every row: see the note at the
+    /// call site.
+    folders: Vec<PickOption>,
+    templates: Vec<PickOption>,
     root_child: Option<WidgetId>,
 }
 
@@ -474,6 +494,48 @@ impl Widget for TagRowView {
             .label(tr!(settings_tags_discoverable()))
             .rich_tooltip(crate::tooltip_registry::WM_FIND_IN_PROSE);
 
+        // ── Where its notes go, and what shape they start in ────────────────
+        //
+        // Both write a relationship rather than a column, so neither rides the row's
+        // `update` path. Both are also genuinely optional: "Ask me the first time" is
+        // the first entry, so clearing a destination is as easy as setting one. A tag
+        // whose folder the writer later reorganises away must be un-filable without
+        // deleting the tag itself.
+        let creates_in = {
+            let selected = Signal::new(
+                self.folders
+                    .iter()
+                    .find(|o| o.id == self.row.creates_in)
+                    .cloned()
+                    // A destination that no longer resolves (the folder was deleted
+                    // between this build and the last) falls back to the unset row
+                    // rather than rendering a blank control.
+                    .or_else(|| self.folders.first().cloned()),
+            );
+            let vm = self.vm.clone();
+            ComboBox::from_items(self.folders.clone(), selected, |o: &PickOption| {
+                lit!(o.label.clone())
+            })
+            .variant(ComboBoxVariant::Plain)
+            .on_select(move |o: &PickOption, _c| vm.set_creates_in(id, o.id))
+        };
+
+        let template = {
+            let selected = Signal::new(
+                self.templates
+                    .iter()
+                    .find(|o| o.id == self.row.note_template)
+                    .cloned()
+                    .or_else(|| self.templates.first().cloned()),
+            );
+            let vm = self.vm.clone();
+            ComboBox::from_items(self.templates.clone(), selected, |o: &PickOption| {
+                lit!(o.label.clone())
+            })
+            .variant(ComboBoxVariant::Plain)
+            .on_select(move |o: &PickOption, _c| vm.set_note_template(id, o.id))
+        };
+
         let delete = {
             let vm = self.vm.clone();
             let name = self.row.name.clone();
@@ -505,7 +567,25 @@ impl Widget for TagRowView {
                         .child(toggle)
                         .child(delete),
                 )
-                .child(Padding::new(0.0, 0.0, 0.0, 26.0).child(details_field)),
+                .child(Padding::new(0.0, 0.0, 0.0, 26.0).child(details_field))
+                .child(
+                    Padding::new(0.0, 0.0, 0.0, 26.0).child(
+                        HStack::new()
+                            .spacing(8.0)
+                            .child(
+                                TextWidget::new(tr!(settings_tags_creates_in()))
+                                    .style(TextStyleRole::Tiny)
+                                    .color(TextRole::Secondary),
+                            )
+                            .child(creates_in)
+                            .child(
+                                TextWidget::new(tr!(settings_tags_template()))
+                                    .style(TextStyleRole::Tiny)
+                                    .color(TextRole::Secondary),
+                            )
+                            .child(template),
+                    ),
+                ),
         );
         let root = ctx.add(body);
         self.root_child = Some(root);
@@ -522,6 +602,62 @@ impl Widget for TagRowView {
     fn children(&self) -> Vec<WidgetId> {
         self.root_child.into_iter().collect()
     }
+}
+
+/// One row of a picker: a store id and what to call it.
+///
+/// `Option<u64>` rather than `u64` so "not set" is a real, selectable choice rather
+/// than a state the writer can only reach by never touching the control. Clearing a
+/// destination has to be as easy as setting one: a tag filed into a folder the writer
+/// later reorganises away should be un-filable without deleting the tag.
+#[derive(Clone, PartialEq, Eq)]
+pub(crate) struct PickOption {
+    pub id: Option<u64>,
+    pub label: String,
+}
+
+/// Every folder in the Work, as destinations a tag can file into, in binder order.
+///
+/// Folders only: a note is created *inside* something, and a scene has no inside. Not
+/// narrowed to notes folders, deliberately, because "where do my research notes go" is
+/// the writer's question to answer and a project that keeps them under a Book folder is
+/// organising, not misusing. Trashed rows are excluded by `ordered_flat_items`.
+fn folder_options(app_ctx: &frontend::AppContext, ids: &crate::app_ids::AppIds) -> Vec<PickOption> {
+    let mut out = vec![PickOption {
+        id: Option::None,
+        label: tr!(settings_tags_creates_in_unset()).resolve_now(),
+    }];
+    let Some(work_id) = ids.work_id.get() else {
+        return out;
+    };
+    for (_, it) in crate::models::binder_stream::ordered_flat_items(app_ctx, work_id) {
+        if it.role == BinderItemRole::Folder {
+            out.push(PickOption {
+                id: Some(it.id),
+                // An untitled folder is ordinary, not an edge case: a picker row
+                // reading nothing at all is unpickable.
+                label: if it.title.trim().is_empty() {
+                    tr!(settings_tags_creates_in_untitled()).resolve_now()
+                } else {
+                    it.title.clone()
+                },
+            });
+        }
+    }
+    out
+}
+
+/// Every note template, as starting shapes, plus a blank.
+fn template_options(templates: &NoteTemplatesViewModel) -> Vec<PickOption> {
+    let mut out = vec![PickOption {
+        id: Option::None,
+        label: tr!(settings_tags_template_unset()).resolve_now(),
+    }];
+    out.extend(templates.rows().into_iter().map(|t| PickOption {
+        id: Some(t.id),
+        label: t.name,
+    }));
+    out
 }
 
 /// The row's leading colour dot.

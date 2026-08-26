@@ -183,6 +183,8 @@ fn tag(id: u64, name: &str, discoverable: bool) -> TagRow {
         color: "#2e7d32".to_string(),
         details: String::new(),
         discoverable,
+        creates_in: None,
+        note_template: None,
     }
 }
 
@@ -630,6 +632,8 @@ mod real_backend_only {
                 color: "#2e7d32".to_string(),
                 details: String::new(),
                 discoverable,
+                creates_in: None,
+                note_template: None,
             },
             f.ids.work_id.get().expect("a Work must be open"),
             -1,

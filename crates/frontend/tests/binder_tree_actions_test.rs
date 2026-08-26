@@ -1690,6 +1690,8 @@ fn duplicate_reverts_cloned_tag_links() {
             color: "#f00".into(),
             details: String::new(),
             discoverable: false,
+            creates_in: None,
+            note_template: None,
         },
     )
     .expect("create tag")

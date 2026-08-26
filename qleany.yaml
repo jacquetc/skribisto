@@ -913,6 +913,37 @@ entities:
   # A plain workflow tag ("status/draft") leaves this false.
   - name: discoverable
     type: boolean
+  # Where a note created under this tag lands, and what shape it starts in.
+  #
+  # Both are the writer's own filing, set once on the tag and then never asked about
+  # again: "Add as note" picks exactly one tag, and that one choice answers three
+  # questions at once (is this findable in prose, where does it go, what template does
+  # it start from). Deliberately available on *any* tag, not only discoverable ones: a
+  # topical tag like `research` wants a home just as much, and a writer should never
+  # have to learn that some tags configure differently from others. `None` is the
+  # default and costs nothing.
+  #
+  # Relationships rather than raw id fields, and that is not ceremony: there is no
+  # scalar entity-id field type in this manifest, and the relationship is what
+  # generates the back-reference sweep. A plain id would dangle the moment the writer
+  # trashed the folder it names. Same shape as `TrashInfo::trashed_binder_item`: weak,
+  # single-valued, optional.
+  #
+  # Additive, so no `FORMAT_VERSION` bump and no heal step: an unset value was never
+  # an invalid state, the same rule `aliases`, `point_of_view` and `books` were added
+  # under.
+  - name: creates_in
+    type: entity
+    entity: BinderItem
+    relationship: many_to_one
+    optional: true
+  # `note_template`, not `template`: the generator refuses the bare word, which is a
+  # C++ reserved keyword, and it names the entity it points at anyway.
+  - name: note_template
+    type: entity
+    entity: NoteTemplate
+    relationship: many_to_one
+    optional: true
   undoable: true
 - name: Content
   single_model: true

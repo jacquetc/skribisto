@@ -158,6 +158,7 @@ impl CommandUnitOfWork for LoadWorkUnitOfWork {
 #[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
+#[macros::uow_action(entity = "BinderTag", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "Pace", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Holiday", action = "CreateOrphan")]

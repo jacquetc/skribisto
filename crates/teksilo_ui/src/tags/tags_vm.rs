@@ -17,6 +17,7 @@ use std::path::Path;
 use std::rc::Rc;
 
 use anyhow::{Context, Result};
+use frontend::common::direct_access::binder_tag::BinderTagRelationshipField;
 use teksilo::data::ListModel;
 use teksilo::prelude::*;
 
@@ -118,6 +119,17 @@ impl TagsViewModel {
         self.list.colliding_name(candidate, exclude)
     }
 
+    /// The context this palette reads through, for a surface that must walk the binder
+    /// beside it. See [`crate::models::WorkTagsListModel::app_ctx`].
+    pub fn app_ctx(&self) -> Rc<frontend::AppContext> {
+        self.list.app_ctx()
+    }
+
+    /// The ids this palette is scoped to.
+    pub fn ids(&self) -> AppIds {
+        self.ids.clone()
+    }
+
     fn stack(&self) -> Option<u64> {
         self.ids.stack_id.get()
     }
@@ -159,6 +171,33 @@ impl TagsViewModel {
 
     pub fn set_discoverable(&self, id: u64, on: bool) {
         self.patch(id, |r| r.discoverable = on);
+    }
+
+    /// Where notes created under this tag land. `None` clears it, and the writer is
+    /// asked once the next time they file under the tag.
+    ///
+    /// Not routed through [`Self::patch`]: that rewrites the row's own columns, and
+    /// this is a relationship, which lives in a junction the generated back-reference
+    /// sweep can reach. Without that sweep a trashed folder would leave a tag pointing
+    /// at nothing, which is the whole reason these are relationships rather than id
+    /// fields.
+    pub fn set_creates_in(&self, id: u64, folder: Option<u64>) {
+        self.list.set_relationship(
+            id,
+            BinderTagRelationshipField::CreatesIn,
+            folder,
+            self.stack(),
+        );
+    }
+
+    /// What shape such a note starts in. `None` means a blank note.
+    pub fn set_note_template(&self, id: u64, template: Option<u64>) {
+        self.list.set_relationship(
+            id,
+            BinderTagRelationshipField::NoteTemplate,
+            template,
+            self.stack(),
+        );
     }
 
     fn patch(&self, id: u64, f: impl FnOnce(&mut TagRow)) {
@@ -311,6 +350,8 @@ pub fn parse_csv(text: &str) -> Result<(Vec<TagRow>, usize)> {
                     .as_str(),
                 "true" | "yes" | "1"
             ),
+            creates_in: None,
+            note_template: None,
         });
     }
     Ok((rows, malformed))
@@ -331,6 +372,8 @@ mod tests {
             color: color.into(),
             details: details.into(),
             discoverable,
+            creates_in: None,
+            note_template: None,
         }
     }
 

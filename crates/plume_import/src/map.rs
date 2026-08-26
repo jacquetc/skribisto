@@ -326,6 +326,10 @@ impl<'a> Builder<'a> {
             color,
             details: details.to_string(),
             discoverable,
+            // A Plume project has no notion of either, so an imported tag is unfiled
+            // and untemplated: the writer is asked once, the first time they use it.
+            creates_in: None,
+            note_template: None,
         });
         file_id
     }

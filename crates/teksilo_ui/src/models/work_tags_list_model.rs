@@ -35,6 +35,16 @@ pub struct TagRow {
     pub details: String,
     /// Items carrying this tag are story-bible material for the mention index.
     pub discoverable: bool,
+    /// Where a note created under this tag lands, and what shape it starts in. Both
+    /// are the writer's own filing, set on the Tags page or answered once the first
+    /// time they file under the tag, and both are what let "Add as note" ask a single
+    /// question: picking the tag settles the destination and the template with it.
+    ///
+    /// Read-only here. They are relationships, so they are written through
+    /// [`TagsViewModel::set_creates_in`] rather than the scalar `update` path the
+    /// other four fields share.
+    pub creates_in: Option<u64>,
+    pub note_template: Option<u64>,
 }
 
 /// Sort key: case-insensitive, then exact, so equal-fold names keep a deterministic order.
@@ -89,10 +99,12 @@ mod imp {
 
     use frontend::AppContext;
     use frontend::commands::{binder_tag_commands, tag_management_commands, work_commands};
+    use frontend::common::direct_access::binder_tag::BinderTagRelationshipField;
     use frontend::common::direct_access::work::WorkRelationshipField;
     use frontend::common::event::{
         DirectAccessEntity, EntityEvent, Event, Origin, TagManagementEvent, WorkManagementEvent,
     };
+    use frontend::direct_access::BinderTagRelationshipDto;
     use frontend::direct_access::{CreateBinderTagDto, UpdateBinderTagDto};
     use frontend::tag_management::ImportTagsDto;
 
@@ -261,6 +273,10 @@ mod imp {
                 color: color.to_string(),
                 details: details.to_string(),
                 discoverable,
+                // A tag is born unfiled and untemplated: the writer sets both on the
+                // Tags page, or answers once the first time they file under it.
+                creates_in: None,
+                note_template: None,
             };
             match binder_tag_commands::create_binder_tag(&self.inner.ctx, stack_id, &dto, owner, -1)
             {
@@ -311,6 +327,42 @@ mod imp {
             if let Err(e) = binder_tag_commands::update_binder_tag(&self.inner.ctx, stack_id, &dto)
             {
                 eprintln!("tags: update failed: {e}");
+            }
+        }
+
+        /// Point a tag at the folder its notes are created in, or clear it.
+        ///
+        /// A **relationship**, so it cannot ride the scalar `update` above: that one
+        /// rewrites the row's own columns, and a reference lives in a junction table
+        /// where the generated back-reference sweep can reach it. Clearing is an empty
+        /// slice rather than a separate call, which is what the generated
+        /// `SetRelationship` takes.
+        ///
+        /// Undoable on the shared stack like every other tag edit, so a writer who
+        /// answers the first-use question and immediately regrets it can walk it back.
+        /// The context this palette reads through. Threaded to surfaces that must walk
+        /// the binder beside the palette (the Tags page's destination picker), so they
+        /// need not reach for `app_state` and get another Work's.
+        pub fn app_ctx(&self) -> Rc<AppContext> {
+            self.inner.ctx.clone()
+        }
+
+        pub fn set_relationship(
+            &self,
+            id: u64,
+            field: BinderTagRelationshipField,
+            target: Option<u64>,
+            stack_id: Option<u64>,
+        ) {
+            let dto = BinderTagRelationshipDto {
+                id,
+                field,
+                right_ids: target.into_iter().collect(),
+            };
+            if let Err(e) =
+                binder_tag_commands::set_binder_tag_relationship(&self.inner.ctx, stack_id, &dto)
+            {
+                eprintln!("tags: set relationship failed: {e}");
             }
         }
 
@@ -394,6 +446,8 @@ mod imp {
                 color: t.color,
                 details: t.details,
                 discoverable: t.discoverable,
+                creates_in: t.creates_in,
+                note_template: t.note_template,
             })
             .collect();
         sort_rows(&mut rows);
@@ -417,6 +471,7 @@ mod imp {
     use teksilo::prelude::*;
 
     use frontend::AppContext;
+    use frontend::common::direct_access::binder_tag::BinderTagRelationshipField;
 
     use crate::app_ids::AppIds;
 
@@ -427,6 +482,10 @@ mod imp {
         version: Signal<u64>,
         lookup: Signal<Rc<HashMap<u64, TagRow>>>,
         next_id: Cell<u64>,
+        /// Kept rather than dropped so `app_ctx` answers in both builds. A mock palette
+        /// still sits in a real `AppContext`; what it lacks is a seeded Work, not a
+        /// context.
+        ctx: Rc<AppContext>,
     }
 
     #[derive(Clone)]
@@ -441,11 +500,13 @@ mod imp {
             color: color.to_string(),
             details: details.to_string(),
             discoverable,
+            creates_in: None,
+            note_template: None,
         }
     }
 
     impl WorkTagsListModel {
-        pub fn new(_ctx: Rc<AppContext>, _ids: AppIds) -> Self {
+        pub fn new(ctx: Rc<AppContext>, _ids: AppIds) -> Self {
             // A palette shaped like the Basic preset: a status ladder that demonstrates
             // the `status/…` clustering, two flags, and the discoverable taxonomy.
             let mut rows = vec![
@@ -476,8 +537,13 @@ mod imp {
                     version: Signal::new(0),
                     lookup,
                     next_id: Cell::new(7),
+                    ctx,
                 }),
             }
+        }
+
+        pub fn app_ctx(&self) -> Rc<AppContext> {
+            self.inner.ctx.clone()
         }
 
         pub fn wire(&self, _ctx: &mut BuildContext) {}
@@ -548,6 +614,23 @@ mod imp {
                 r.color = color.to_string();
                 r.details = details.to_string();
                 r.discoverable = discoverable;
+            }
+            self.replace(rows);
+        }
+
+        pub fn set_relationship(
+            &self,
+            id: u64,
+            field: BinderTagRelationshipField,
+            target: Option<u64>,
+            _stack_id: Option<u64>,
+        ) {
+            let mut rows = self.rows();
+            if let Some(r) = rows.iter_mut().find(|r| r.id == id) {
+                match field {
+                    BinderTagRelationshipField::CreatesIn => r.creates_in = target,
+                    BinderTagRelationshipField::NoteTemplate => r.note_template = target,
+                }
             }
             self.replace(rows);
         }

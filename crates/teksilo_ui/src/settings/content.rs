@@ -287,7 +287,11 @@ pub(super) fn build(
                     ))),
                     tr!(settings_page_tags()),
                 ),
-                crate::settings::panes::work_tags::work_tags_pane(ctx, &tvm),
+                crate::settings::panes::work_tags::work_tags_pane(
+                    ctx,
+                    &tvm,
+                    &session.note_templates,
+                ),
             ))
         }
         _ => Box::new(empty_pane(

@@ -17,6 +17,7 @@ use chrono::{DateTime, Utc};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
+use common::direct_access::binder_tag::BinderTagRelationshipField;
 use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::milestone::MilestoneRelationshipField;
 use common::direct_access::pace::PaceRelationshipField;
@@ -68,6 +69,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
+#[macros::uow_action(entity = "BinderTag", action = "SetRelationship")]
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "Pace", action = "SetRelationship")]
 #[macros::uow_action(entity = "Milestone", action = "SetRelationship")]
@@ -303,6 +305,10 @@ pub(crate) fn materialize(
             color: t.color.clone(),
             details: t.details.clone(),
             discoverable: t.discoverable,
+            // Wired afterwards by `set_binder_tag_relationship`, once every item and
+            // template has a store id to point at, exactly as `books` is.
+            creates_in: None,
+            note_template: None,
             id: 0,
         })?;
         tag_map.insert(t.id, created.id);
@@ -337,6 +343,9 @@ pub(crate) fn materialize(
 
     // Per-project note templates, in their stored order.
     let mut note_template_ids: Vec<EntityId> = Vec::new();
+    // Keyed by file id so a tag's `note_template` can be remapped after this loop, the
+    // same shape `tag_map` and `item_map` already have.
+    let mut note_template_map: HashMap<u64, EntityId> = HashMap::new();
     for t in &loaded.note_templates {
         let created = uow.create_orphan_note_template(&NoteTemplate {
             // `heal_uid` rather than a plain copy: a bundle written before the uid
@@ -352,6 +361,7 @@ pub(crate) fn materialize(
             starred: t.starred,
             id: 0,
         })?;
+        note_template_map.insert(t.id, created.id);
         note_template_ids.push(created.id);
     }
 
@@ -524,6 +534,24 @@ pub(crate) fn materialize(
     }
     for (s, dsts) in &books_by_source {
         uow.set_binder_item_relationship(s, &BinderItemRelationshipField::Books, dsts)?;
+    }
+
+    // A tag's own filing: where a note created under it lands, and what shape it starts
+    // in. Single-valued, so each is a one-element relationship rather than a list, but
+    // it travels the same road as everything above: a pair of file ids remapped onto the
+    // store ids `load_work` has just minted. A destination whose row is not in this
+    // bundle (a folder deleted while the tag kept naming it, in a project written before
+    // the back-reference sweep existed) is simply dropped here rather than restored as a
+    // dangling id, and the writer is asked once the next time they file under that tag.
+    for (tag, dst) in &loaded.tag_creates_in {
+        if let (Some(&t), Some(&d)) = (tag_map.get(tag), item_map.get(dst)) {
+            uow.set_binder_tag_relationship(&t, &BinderTagRelationshipField::CreatesIn, &[d])?;
+        }
+    }
+    for (tag, dst) in &loaded.tag_note_template {
+        if let (Some(&t), Some(&d)) = (tag_map.get(tag), note_template_map.get(dst)) {
+            uow.set_binder_tag_relationship(&t, &BinderTagRelationshipField::NoteTemplate, &[d])?;
+        }
     }
 
     // Trash index (remap origin + trashed targets).
@@ -1073,6 +1101,11 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                 // dropped — text colour is derived from `color` at render time now.
                 details: String::new(),
                 discoverable: false,
+                // Nor any notion of where a tag files its notes, or what shape they
+                // start in: a legacy project's tags are unfiled and untemplated, and
+                // the writer is asked once the first time they use one.
+                creates_in: None,
+                note_template: None,
             }
         })
         .collect();
@@ -1233,6 +1266,10 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         point_of_view: Vec::new(),
         // Nor a Book-filing concept: nothing here to carry over.
         books: Vec::new(),
+        // The legacy SQLite format has no notion of either, so a converted project's
+        // tags are unfiled and untemplated until the writer says otherwise.
+        tag_creates_in: Vec::new(),
+        tag_note_template: Vec::new(),
         absolute_path: p.absolute_path.clone(),
     }
 }

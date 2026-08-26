@@ -183,6 +183,8 @@ fn main() -> anyhow::Result<()> {
         color: "#4477aa".to_string(),
         details: "Story-bible entry for a person in the book.".to_string(),
         discoverable: true,
+        creates_in: None,
+        note_template: None,
     });
 
     // ── story-bible notes, in their own binder ────────────────────────────────

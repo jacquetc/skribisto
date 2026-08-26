@@ -81,6 +81,11 @@ settings-tags-count = { $n ->
 }
 settings-tags-details-placeholder = Ce que signifie cette étiquette
 settings-tags-discoverable = Repérer dans le texte
+settings-tags-creates-in = Les nouvelles notes vont dans
+settings-tags-creates-in-unset = Me demander la première fois
+settings-tags-creates-in-untitled = Dossier sans titre
+settings-tags-template = Modèle de départ
+settings-tags-template-unset = Note vierge
 settings-tags-delete = Supprimer { $name }
 settings-tags-deleted = « { $name } » supprimée et retirée de tous les éléments
 settings-tags-empty = Aucune étiquette pour le moment.

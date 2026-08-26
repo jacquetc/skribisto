@@ -425,6 +425,19 @@ pub struct BinderTagFile {
     /// Items carrying this tag are story-bible material for the mention index.
     #[serde(default)]
     pub discoverable: bool,
+    /// The folder a note created under this tag lands in, as a `file_id`, resolved on
+    /// load exactly as `BinderItemFile::book_ids` is.
+    ///
+    /// Additive, so no `FORMAT_VERSION` bump: absent means "not filed yet", which was
+    /// never an invalid state. A bundle written before this field existed loads with
+    /// `None` and the writer is asked once, the same first-use question a tag created
+    /// today gets.
+    #[serde(default)]
+    pub creates_in: Option<u64>,
+    /// The note template a note created under this tag starts from, as a `file_id`.
+    /// Additive on the same terms.
+    #[serde(default)]
+    pub note_template: Option<u64>,
 }
 
 /// `dictionary.ron`

@@ -56,6 +56,12 @@ pub struct LoadedWork {
     /// declared this item filed under. A declaration, never a positional read: see
     /// `BinderItemFile::book_ids`.
     pub books: Vec<(u64, u64)>,
+    /// (tag file id, folder file id) -- where a note created under this tag lands.
+    /// A tag's own filing, carried the same way `books` is: as a pair remapped onto
+    /// freshly minted store ids once every row exists, never as a raw id on the tag.
+    pub tag_creates_in: Vec<(u64, u64)>,
+    /// (tag file id, note template file id) -- what shape such a note starts in.
+    pub tag_note_template: Vec<(u64, u64)>,
     /// Absolute path recorded in `RecentWork` (the opened file/folder).
     pub absolute_path: String,
 }

@@ -320,6 +320,8 @@ pub fn from_entities(
                 color: t.color.clone(),
                 details: t.details.clone(),
                 discoverable: t.discoverable,
+                creates_in: t.creates_in,
+                note_template: t.note_template,
             })
             .collect(),
         dict_words: dict_words
@@ -590,6 +592,8 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                 color: t.color.clone(),
                 details: t.details.clone(),
                 discoverable: t.discoverable,
+                creates_in: t.creates_in,
+                note_template: t.note_template,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -678,6 +682,20 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
 
     let mut references: Vec<(u64, u64)> = Vec::new();
     let mut point_of_view: Vec<(u64, u64)> = Vec::new();
+    // A tag's own filing, collected as pairs for the same reason every other
+    // relationship is: the destination is a `file_id` here and becomes a store id only
+    // once `load_work` has minted one for every row.
+    let mut tag_creates_in: Vec<(u64, u64)> = Vec::new();
+    let mut tag_note_template: Vec<(u64, u64)> = Vec::new();
+    for t in &bundle.tags {
+        if let Some(dst) = t.creates_in {
+            tag_creates_in.push((t.file_id, dst));
+        }
+        if let Some(dst) = t.note_template {
+            tag_note_template.push((t.file_id, dst));
+        }
+    }
+
     let mut books: Vec<(u64, u64)> = Vec::new();
     let mut loaded_binders = Vec::with_capacity(bundle.binders.len());
 
@@ -929,6 +947,8 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         references,
         point_of_view,
         books,
+        tag_creates_in,
+        tag_note_template,
         absolute_path: absolute_path.to_string(),
     })
 }

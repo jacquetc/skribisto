@@ -93,6 +93,8 @@ fn mk_tag(fx: &Fixture, name: &str, discoverable: bool) -> EntityId {
             color: "#f00".into(),
             details: String::new(),
             discoverable,
+            creates_in: None,
+            note_template: None,
         },
     )
     .expect("create tag")

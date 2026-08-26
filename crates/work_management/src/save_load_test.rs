@@ -153,6 +153,16 @@ pub(crate) fn sample_bundle() -> WorkBundle {
             color: "#f00".into(),
             details: "Needs a second pass".into(),
             discoverable: false,
+            // Filed: notes created under this tag land in item 300, the same Book the
+            // fixture files an item under below. Not a trivial `None`, so the round
+            // trip below actually proves a tag's own filing survives rather than
+            // proving two empty values are equal.
+            //
+            // `Option::None` elsewhere in this file is qualified deliberately:
+            // `BinderItemSubRole::None` is in scope under a glob import and shadows
+            // the bare name.
+            creates_in: Some(300),
+            note_template: Option::None,
         },
         BinderTag {
             id: 11,
@@ -163,6 +173,10 @@ pub(crate) fn sample_bundle() -> WorkBundle {
             color: "#0f0".into(),
             details: String::new(),
             discoverable: true,
+            // `Option::None`, qualified: `BinderItemSubRole::None` is in scope
+            // under a glob import here and shadows the bare name.
+            creates_in: Option::None,
+            note_template: Option::None,
         },
     ];
     let dict_words = vec![DictWord {
@@ -477,6 +491,21 @@ fn save_load_round_trip_through_store() {
         norm(&resaved).books,
         1,
         "the Book filing must survive the round trip"
+    );
+    // Same reasoning one level up, for a tag's own filing: the fixture points a tag at
+    // a real folder, so this fails if `creates_in` is dropped by the bundle writer, the
+    // bundle reader, `load_work`'s deferred relationship pass, or `gather`. Each of
+    // those four is a place it silently could be, and the equality check above would
+    // not tell them apart from the field never being read at all.
+    let filed: Vec<_> = resaved
+        .tags
+        .iter()
+        .filter(|t| t.creates_in.is_some())
+        .collect();
+    assert_eq!(
+        filed.len(),
+        1,
+        "a tag's own destination must survive the round trip"
     );
 
     // The stable id survives the save → load → save round-trip through the store.

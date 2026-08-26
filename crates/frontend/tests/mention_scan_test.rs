@@ -134,6 +134,8 @@ fn fixture() -> Fixture {
             color: "#4477aa".into(),
             details: String::new(),
             discoverable: true,
+            creates_in: None,
+            note_template: None,
         },
     )
     .unwrap()

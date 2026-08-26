@@ -180,6 +180,8 @@ fn sample_inputs() -> SampleInputs {
             color: "#f00".into(),
             details: "Needs a second pass before the beta read".into(),
             discoverable: false,
+            creates_in: None,
+            note_template: None,
         },
         BinderTag {
             id: 11,
@@ -190,6 +192,8 @@ fn sample_inputs() -> SampleInputs {
             color: "#0f0".into(),
             details: String::new(),
             discoverable: true,
+            creates_in: None,
+            note_template: None,
         },
     ];
     let dict_words = vec![

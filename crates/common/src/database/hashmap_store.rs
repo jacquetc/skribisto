@@ -86,6 +86,8 @@ pub struct HashMapStore {
     pub jn_binder_item_from_binder_item_point_of_view: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_item_references: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_tag_from_binder_item_tags: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_binder_item_from_binder_tag_creates_in: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_note_template_from_binder_tag_note_template: RwLock<HashMap<EntityId, Vec<EntityId>>>,
 
     // ── ID counters (one per entity type) ──────────────────────────
     pub counters: RwLock<std::collections::HashMap<String, EntityId>>,
@@ -103,7 +105,7 @@ impl HashMapStore {
     /// Clone the entire store for savepoint support. O(1) thanks to im::HashMap.
     /// (Poison-tolerant, but NOT atomic across tables — used for savepoints, which
     /// are taken on the single writer thread with no concurrent writer; use
-    /// [`Self::freeze`] when an atomic cross-table snapshot is required.)
+    /// [`freeze`] when an atomic cross-table snapshot is required.)
     pub fn snapshot(&self) -> HashMapStoreSnapshot {
         HashMapStoreSnapshot {
             roots: read_or_recover(&self.roots).clone(),
@@ -236,13 +238,21 @@ impl HashMapStore {
                 &self.jn_binder_tag_from_binder_item_tags,
             )
             .clone(),
+            jn_binder_item_from_binder_tag_creates_in: read_or_recover(
+                &self.jn_binder_item_from_binder_tag_creates_in,
+            )
+            .clone(),
+            jn_note_template_from_binder_tag_note_template: read_or_recover(
+                &self.jn_note_template_from_binder_tag_note_template,
+            )
+            .clone(),
             counters: read_or_recover(&self.counters).clone(),
         }
     }
 
     /// Atomically snapshot the whole store into a fresh, isolated `HashMapStore`.
     ///
-    /// Unlike [`Self::snapshot`], this holds a read guard on **every** table, junction,
+    /// Unlike [`snapshot`], this holds a read guard on **every** table, junction,
     /// and the counters *simultaneously* while cloning, so the result is a single
     /// consistent point-in-time view of the store *at the instant freeze runs*.
     /// O(1) clones (im::HashMap structural sharing); the lock hold is just the
@@ -352,6 +362,10 @@ impl HashMapStore {
             read_or_recover(&self.jn_binder_item_from_binder_item_references);
         let g_jn_binder_tag_from_binder_item_tags =
             read_or_recover(&self.jn_binder_tag_from_binder_item_tags);
+        let g_jn_binder_item_from_binder_tag_creates_in =
+            read_or_recover(&self.jn_binder_item_from_binder_tag_creates_in);
+        let g_jn_note_template_from_binder_tag_note_template =
+            read_or_recover(&self.jn_note_template_from_binder_tag_note_template);
         let g_counters = read_or_recover(&self.counters);
 
         HashMapStore {
@@ -457,6 +471,12 @@ impl HashMapStore {
             jn_binder_tag_from_binder_item_tags: RwLock::new(
                 g_jn_binder_tag_from_binder_item_tags.clone(),
             ),
+            jn_binder_item_from_binder_tag_creates_in: RwLock::new(
+                g_jn_binder_item_from_binder_tag_creates_in.clone(),
+            ),
+            jn_note_template_from_binder_tag_note_template: RwLock::new(
+                g_jn_note_template_from_binder_tag_note_template.clone(),
+            ),
             counters: RwLock::new(g_counters.clone()),
             savepoints: RwLock::new(std::collections::HashMap::new()),
             next_savepoint_id: RwLock::new(0),
@@ -558,6 +578,10 @@ impl HashMapStore {
             snap.jn_binder_item_from_binder_item_references.clone();
         *write_or_recover(&self.jn_binder_tag_from_binder_item_tags) =
             snap.jn_binder_tag_from_binder_item_tags.clone();
+        *write_or_recover(&self.jn_binder_item_from_binder_tag_creates_in) =
+            snap.jn_binder_item_from_binder_tag_creates_in.clone();
+        *write_or_recover(&self.jn_note_template_from_binder_tag_note_template) =
+            snap.jn_note_template_from_binder_tag_note_template.clone();
         *write_or_recover(&self.counters) = snap.counters.clone();
     }
 
@@ -708,6 +732,10 @@ impl HashMapStore {
             snap.jn_binder_item_from_binder_item_references.clone();
         *write_or_recover(&self.jn_binder_tag_from_binder_item_tags) =
             snap.jn_binder_tag_from_binder_item_tags.clone();
+        *write_or_recover(&self.jn_binder_item_from_binder_tag_creates_in) =
+            snap.jn_binder_item_from_binder_tag_creates_in.clone();
+        *write_or_recover(&self.jn_note_template_from_binder_tag_note_template) =
+            snap.jn_note_template_from_binder_tag_note_template.clone();
         // counters intentionally NOT restored — IDs must remain monotonically increasing
     }
 
@@ -792,6 +820,8 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_binder_item_from_binder_item_point_of_view: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_item_references: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_tag_from_binder_item_tags: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_binder_item_from_binder_tag_creates_in: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_note_template_from_binder_tag_note_template: HashMap<EntityId, Vec<EntityId>>,
     counters: std::collections::HashMap<String, EntityId>,
 }
 

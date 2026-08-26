@@ -515,6 +515,8 @@ mod tests {
             color: color.to_string(),
             details: String::new(),
             discoverable,
+            creates_in: None,
+            note_template: None,
         }
     }
 
