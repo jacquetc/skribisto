@@ -10,6 +10,7 @@ menu-new-work = &Nouvelle œuvre
 menu-open-work = &Ouvrir une œuvre…
 menu-new-window = Nouvelle fenê&tre
 menu-import-from = &Importer depuis
+menu-create-from = &Créer depuis
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = &Documents (Markdown, Word, ODT)…
 menu-export = E&xporter
@@ -459,7 +460,7 @@ welcome-version = Version { $version }
 welcome-search = Rechercher des œuvres
 welcome-open = Ouvrir
 welcome-new-work = Nouvelle œuvre
-welcome-new-from-documents = Depuis des documents…
+welcome-create-from = Créer depuis…
 welcome-recent-works = Œuvres récentes
 welcome-empty-recents = Aucune œuvre récente.
 # Affiché à la place de la liste des œuvres récentes lorsque la recherche n'en

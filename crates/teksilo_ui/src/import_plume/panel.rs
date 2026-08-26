@@ -25,6 +25,34 @@ use crate::import_plume::ImportPlumeViewModel;
 const CARD_W: f32 = 600.0;
 const CARD_H: f32 = 500.0;
 
+/// Present the Import Plume Creator modal over whichever window asked for it.
+///
+/// **Two windows fire this, and each registers its own action for it** — the
+/// project window's Work ▸ Import from ▸ Plume Creator (`app::commands::file`)
+/// and the Launcher's Create from ▸ Plume Creator (`welcome::panel`). They must,
+/// because each `WidgetTree` owns its own `global_actions` and the Launcher never
+/// builds an `App`; what they must *not* do is grow two copies of what the
+/// command does, which is why the body lives here.
+///
+/// The view-model is the shared, app-state one — the same instance the long
+/// operation's events are routed to — reset first, so a previous session's paths
+/// do not linger in the form. An import needs no open project (it writes a
+/// brand-new `.skrib` and touches no store entity), which is exactly why the
+/// Launcher can offer it at all.
+pub(crate) fn present_import_plume(ctx: &mut EventContext) {
+    let Some(vm) = ctx.app_state::<ImportPlumeViewModel>().cloned() else {
+        return;
+    };
+    vm.reset_form();
+    ctx.present_modal(
+        teksilo::core::modal::ModalRequest::deferred(move |t| t.add(ImportPlumePanel::new(vm)))
+            .presentation(teksilo::core::modal::ModalPresentation::InTree)
+            .title("Import Plume Creator project")
+            .close_behavior(teksilo::core::modal::ModalCloseBehavior::EscapeOrClickOutside)
+            .size(600, 500),
+    );
+}
+
 pub struct ImportPlumePanel {
     vm: ImportPlumeViewModel,
     root_child: Option<WidgetId>,

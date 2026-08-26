@@ -62,26 +62,12 @@ pub(in crate::app) fn install(
     progress_recorder: &ProgressRecorder,
 ) {
     // Import from Plume Creator — progress / cancel / success / error toast.
+    // Its own table, on the view-model, because the Launcher subscribes to the
+    // same four events on its own widget tree (see
+    // `ImportPlumeViewModel::wire_long_operation`) and one of the two windows
+    // that can start this import must not carry a private copy of its wiring.
     if let Some(vm) = ctx.app_state::<ImportPlumeViewModel>().cloned() {
-        route(
-            ctx,
-            &vm,
-            &[
-                (
-                    LongOperationEvent::Progress,
-                    |v: &ImportPlumeViewModel, c, e| v.on_long_op_progress(c, e),
-                ),
-                (LongOperationEvent::Completed, |v, c, e| {
-                    v.on_long_op_completed(c, e)
-                }),
-                (LongOperationEvent::Cancelled, |v, c, e| {
-                    v.on_long_op_cancelled(c, e)
-                }),
-                (LongOperationEvent::Failed, |v, c, e| {
-                    v.on_long_op_failed(c, e)
-                }),
-            ],
-        );
+        vm.wire_long_operation(ctx);
     }
 
     // Export — same shape as import. Threaded in (Tier 2, per-open-Work), not

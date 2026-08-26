@@ -11,10 +11,10 @@ exists and a single structural assertion could not see past step one.
 
 Flow: launch the app (no CLI arg) → the **Launcher window** opens (the
 Welcome UI is a real window now, not a modal — see `teksilo_ui::main`'s module
-docs) → click the Launcher's "New Work" button (there is no `Ctrl+N` global
-shortcut in the Launcher window — that action only exists inside an
-already-open project window's tree, so a keyboard fallback would just no-op;
-the button is the only path here) → **step 1**: assert the Form landmark, the
+docs) → click the Launcher's "New Work" button (the button, deliberately: the
+Launcher does register a `work.new` action and Ctrl+N of its own now, but this
+probe is about the button reaching it — the chord and the menu row are covered
+by `automation_launcher_menu.py`) → **step 1**: assert the Form landmark, the
 Format RadioGroup, that Next is gated off while the name is empty, that focus
 opens on the name field, and that the reactive "Will create …/<slug>.skrib"
 path preview recomputes (single-file vs bundle) → **step 2**: the language and
@@ -240,11 +240,11 @@ def find_value_contains(substr, timeout=6):
 
 # ── Open the New Work modal ───────────────────────────────────────────────────
 # Click the Launcher's "New Work" button — this exercises the real wiring
-# (`WelcomeViewModel::new_work` presents `NewWorkPanel::new_for_launcher`
-# directly in the Launcher window). This is the *only* path here: unlike an
-# already-open project window, the Launcher registers no `work.new` global
-# action/shortcut (there is no `App` mounted there), so a `Ctrl+N` fallback
-# would just no-op. The modal is detected structurally by its FormLayout body
+# (the button sends the `work.new` intent, which `WelcomePanel::build` registers
+# on the Launcher's own tree over `WelcomeViewModel::new_work`, presenting
+# `NewWorkPanel::new_for_launcher`). Deliberately the button and not the chord:
+# Ctrl+N works here too, and `automation_launcher_menu.py` is what pins it.
+# The modal is detected structurally by its FormLayout body
 # (role "Form") — the SegmentedControls surface as RadioGroups and the label
 # is localized, so role is the robust anchor.
 def new_work_form():

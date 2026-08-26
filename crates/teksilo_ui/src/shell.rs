@@ -11,7 +11,8 @@
 //! directory listing what is open across whatever instances do exist, [`process`] holds the
 //! path helpers left over from the multi-process era, and [`project_switcher_button`] is the
 //! title-bar control that ties them together. [`windows`] builds the two window kinds
-//! (Launcher and project).
+//! (Launcher and project), each with its own menu model ([`launcher_menu`],
+//! [`project_menus`]).
 //!
 //! Several processes are still reachable and still supported — `--new-instance` asks for one
 //! outright, and a wedged primary degrades to one — which is why the open registry and the
@@ -32,6 +33,7 @@ pub(crate) const TITLE_BAR_HEIGHT: f32 = 34.0;
 pub(crate) mod first_run_window;
 pub(crate) mod instance;
 pub(crate) mod ipc;
+pub(crate) mod launcher_menu;
 pub(crate) mod launcher_window;
 pub(crate) mod open_registry;
 pub(crate) mod process;

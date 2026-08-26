@@ -28,7 +28,7 @@ use teksilo::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::{import_management_commands, long_operation_commands};
-use frontend::common::event::Event;
+use frontend::common::event::{Event, LongOperationEvent, Origin};
 use frontend::import_management::ImportPlumeCreatorFileDto;
 
 use crate::intents::AppIntent;
@@ -327,6 +327,46 @@ impl ImportPlumeViewModel {
     // Each event is generic across all long operations, so every handler first
     // matches the payload's `id` against the in-flight job — events for another
     // op (or a stale one) are ignored.
+
+    /// Subscribe a widget tree to this import's four long-operation events.
+    ///
+    /// **Called once per window that can start an import**, and there are two:
+    /// `app::wiring::long_ops` for a project window, and `WelcomePanel::build`
+    /// for the Launcher. The Launcher's is not optional — event subscriptions
+    /// are per `WidgetTree`, so an import started from a Launcher with no
+    /// project window open would otherwise sit under a progress toast that
+    /// never ticked, never resolved, and never offered **Open now**.
+    ///
+    /// Subscribing from several windows at once is safe by construction, and
+    /// already is: every handler below filters on the operation id this
+    /// view-model started ([`Self::active`]) and clears it on the first terminal
+    /// event, so whichever subscriber runs second finds nothing to do. Two
+    /// project windows have always relied on exactly that.
+    pub fn wire_long_operation(&self, ctx: &mut BuildContext) {
+        type Handler = fn(&ImportPlumeViewModel, &mut EventContext, &Event);
+        const HANDLERS: &[(LongOperationEvent, Handler)] = &[
+            (LongOperationEvent::Progress, |v, c, e| {
+                v.on_long_op_progress(c, e)
+            }),
+            (LongOperationEvent::Completed, |v, c, e| {
+                v.on_long_op_completed(c, e)
+            }),
+            (LongOperationEvent::Cancelled, |v, c, e| {
+                v.on_long_op_cancelled(c, e)
+            }),
+            (LongOperationEvent::Failed, |v, c, e| {
+                v.on_long_op_failed(c, e)
+            }),
+        ];
+        for (event, handler) in HANDLERS {
+            let vm = self.clone();
+            let handler = *handler;
+            ctx.subscribe_event_with_ctx(
+                Origin::LongOperation(event.clone()),
+                move |e: &Event, c| handler(&vm, c, e),
+            );
+        }
+    }
 
     /// A progress tick: update the loading toast's percentage + message in place.
     pub fn on_long_op_progress(&self, ctx: &mut EventContext, event: &Event) {

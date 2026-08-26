@@ -9,7 +9,8 @@ use teksilo::prelude::*;
 use teksilo::res;
 use teksilo::widgets::primitives::icon_widget::IconMode;
 use teksilo::widgets::{
-    Center, Expand, HStack, IconWidget, Padding, TextWidget, TitleBar, VStack, WindowFrame,
+    Center, CollapsePolicy, Expand, HStack, IconButtonSize, IconWidget, MenuBar, NativeMenuMode,
+    Padding, TextWidget, TitleBar, VStack, WindowFrame,
 };
 
 use frontend::AppContext;
@@ -25,11 +26,14 @@ use crate::welcome::panel::WelcomePanel;
 /// no title bar at all, so `TitleBar` + `WindowFrame` *are* the window chrome
 /// (a `Native`-decorated window would be the odd one out: no consistent
 /// drag/resize/traffic-light behaviour with the rest of the app). "Appropriate
-/// chrome" for the launcher means a **leaner** `TitleBar` — the drag region,
-/// the window title, and the window controls (min/max/close), same as the
-/// project window's — with no `MenuBar`/File menu and no `ProjectSwitcherButton`
-/// (both assume an open project). Mirrors `ProjectWindowFactory::window_config`'s
-/// `title_bar`/`WindowFrame` composition.
+/// chrome" for the launcher means a **leaner** `TitleBar` — the drag region, the
+/// brand mark and hamburger, the window title, and the window controls
+/// (min/max/close) — with no `ProjectSwitcherButton`, no spell-check toggle and
+/// no Export control (all three assume an open project). Mirrors
+/// `ProjectWindowFactory::window_config`'s `title_bar`/`WindowFrame` composition,
+/// menu bar included: same `leading` slot, same collapse policy, same
+/// suppress-on-macOS flag — over a much shorter model
+/// ([`crate::shell::launcher_menu`]).
 ///
 /// No close guard: the Launcher holds no unsaved state, so closing it (its
 /// own title-bar close button, Alt+F4, or the panel's inline close button)
@@ -60,48 +64,66 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
         .activate_from_env(true)
         .root(move |tree, _state| {
             let theme = tree.theme().clone();
-            // Leaner title bar: brand icon + window title, drag region, and
-            // the platform's window controls — no menu, no project switcher.
-            // Falls back to a plain label on any platform whose host is
-            // unavailable (mirrors the project window's fallback).
+            // Leaner title bar: brand icon + hamburger in the leading slot, the
+            // window title centred, drag region, and the platform's window
+            // controls — no project switcher. Falls back to a plain label on any
+            // platform whose host is unavailable (mirrors the project window's
+            // fallback).
             let title_bar = match tree.title_bar_host() {
                 Some(host) => {
                     // Leading inset: the icon is the first thing in the title
-                    // bar's centre slot, which starts at the window's left edge
+                    // bar's leading slot, which starts at the window's left edge
                     // — bare, it sits flush against it. The project window uses
-                    // the same padding on its brand icon (which leads its
-                    // hamburger).
-                    let brand_icon = tree.add(
-                        Padding::new(0.0, 0.0, 0.0, 8.0).child(
-                            IconWidget::from_raster(
-                                res!("../../resources/icons/skribisto.png"),
-                                25.0,
-                            )
+                    // the same padding on its brand icon (which likewise leads
+                    // its hamburger).
+                    let brand_icon = Padding::new(0.0, 0.0, 0.0, 8.0).child(
+                        IconWidget::from_raster(res!("../../resources/icons/skribisto.png"), 25.0)
                             .mode(IconMode::FullColor),
-                        ),
+                    );
+                    // Same three settings as the project window's bar, for the
+                    // same three reasons: `Toolbar` (30 dp) because the strip is
+                    // `TITLE_BAR_HEIGHT` tall and does not grow for an oversized
+                    // child; `Always` because this app's menu is a hamburger, not
+                    // a strip of labels; `Suppress` because on macOS the same
+                    // `MenuModel` is mirrored into the global bar at the top of
+                    // the screen (`install_native_menu` in `lib.rs`) and a second
+                    // copy in-window, where no Mac user looks, is all `Coexist`
+                    // would buy. The flag is inert off macOS.
+                    let menubar = MenuBar::from_model(super::launcher_menu::build_launcher_menu())
+                        .native_on_macos(NativeMenuMode::Suppress)
+                        .collapse_policy(CollapsePolicy::Always)
+                        .hamburger_size(IconButtonSize::Toolbar);
+                    // The menu bar goes in `leading`, never in `center`: the
+                    // centre slot lives inside the TitleBar's DragRegion, which is
+                    // published to the OS as the window caption, and the OS owns
+                    // caption pixels outright — a hamburger there would drag the
+                    // window instead of opening. (The project window carves its
+                    // switcher back out with a `DeadZone` for exactly that reason;
+                    // the leading slot needs no such rescue.)
+                    let leading = teksu!(
+                        HStack {
+                            spacing: 5.0
+                            alignment: teksilo::tokens::VAlignment::Center
+                            child: brand_icon
+                            child: menubar
+                        }
                     );
                     tree.add_boxed(Box::new(teksu!(
                     TitleBar::new(host) {
                         height: super::TITLE_BAR_HEIGHT
                         background: SurfaceRole::Main
+                        leading: leading
                         center: Expand::horizontal {
-                            HStack {
-                                spacing: 5.0
-                                alignment: teksilo::tokens::VAlignment::Center
-                                #{ brand_icon }
-                                Expand::horizontal {
-                                    Center {
-                                        // The window's title bar names the screen
-                                        // ("Welcome to Skribisto"), so the Welcome
-                                        // content below needs no title strip of its
-                                        // own — the two together were a window
-                                        // inside a window. Project windows keep the
-                                        // bare app name here.
-                                        TextWidget::new(tr!(welcome_title())) {
-                                            style: theme.typography.body_bold.clone()
-                                            color: TextRole::Primary
-                                        }
-                                    }
+                            Center {
+                                // The window's title bar names the screen
+                                // ("Welcome to Skribisto"), so the Welcome
+                                // content below needs no title strip of its
+                                // own — the two together were a window
+                                // inside a window. Project windows keep the
+                                // bare app name here.
+                                TextWidget::new(tr!(welcome_title())) {
+                                    style: theme.typography.body_bold.clone()
+                                    color: TextRole::Primary
                                 }
                             }
                         }

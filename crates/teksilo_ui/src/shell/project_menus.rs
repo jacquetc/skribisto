@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Project window menu model and Format-menu row helpers.
+//! Project window menu model, Format-menu row helpers, and the two
+//! platform-standard (macOS) menus every window shares.
 //!
 //! The full File/Edit/Format/Go/Tools/Help model is built here so
 //! `shell::windows` only hosts the window factory and chrome frame.
+//! [`app_standard_menu_base`] and [`window_standard_menu`] are `pub(crate)`
+//! because the Launcher's much shorter menu ([`crate::shell::launcher_menu`])
+//! declares the same two — one declaration each, rather than a second copy that
+//! can drift on labels or on the guarded quit route.
 
 use std::rc::Rc;
 
@@ -242,6 +247,12 @@ pub(crate) const NOT_ON_MACOS: bool = !cfg!(target_os = "macos");
 /// first, carrying About / Hide / Quit on the standard responder-chain
 /// selectors.
 ///
+/// The **shared** half: everything every window agrees on. The project window
+/// layers Settings on top ([`app_standard_menu`]); the Launcher
+/// ([`crate::shell::launcher_menu`]) takes it as it stands, so the two editions
+/// of the App menu cannot drift apart on the app name, the About/Hide labels or
+/// the guarded quit route.
+///
 /// Declared rather than left to Teksilo's auto-injection: the bridge adds a
 /// default App menu when the model declares none, but with English `lit!`
 /// labels, so a French system would read "Skribisto ▸ Quit". The product name
@@ -261,7 +272,7 @@ pub(crate) const NOT_ON_MACOS: bool = !cfg!(target_os = "macos");
 /// own Ctrl+Q shortcut cannot cover for that, because the keystroke never
 /// reaches the widget tree to begin with. Routing it hands ⌘Q to the same
 /// guarded `app.quit` action Work ▸ Quit fires, which owns the exit from there.
-fn app_standard_menu() -> teksilo::widgets::StandardMenu {
+pub(crate) fn app_standard_menu_base() -> teksilo::widgets::StandardMenu {
     let app = crate::identity::display_name();
     teksilo::widgets::StandardMenu::app()
         .title(lit!(app.clone()))
@@ -275,10 +286,23 @@ fn app_standard_menu() -> teksilo::widgets::StandardMenu {
         // they moved it — a main-menu key equivalent is dispatched before the
         // responder chain, so the new chord would never reach the app.
         .quit_shortcut("app.quit")
-        // Settings belongs in the App menu on a Mac, at ⌘, — a placement no
-        // `MenuEntry` can reach, since the platform fills this menu in. Same
-        // intent and same registered shortcut as Work > Settings, so the two
-        // are one command with one chord rather than two that can disagree.
+}
+
+/// The project window's application menu: [`app_standard_menu_base`] plus the
+/// Settings row.
+///
+/// Settings belongs in the App menu on a Mac, at ⌘, — a placement no `MenuEntry`
+/// can reach, since the platform fills this menu in. Same intent and same
+/// registered shortcut as Work ▸ Settings, so the two are one command with one
+/// chord rather than two that can disagree.
+///
+/// The Launcher deliberately does **not** add it: `app.settings` opens
+/// `SettingsPanel` over a `WorkSession`, which is Tier-2 state a window with no
+/// project does not have. An unrouted `settings_intent` is not a greyed row but
+/// no row at all (`settings_route: None` omits the item), which is the honest
+/// answer there — rather than a ⌘, that reaches nothing.
+fn app_standard_menu() -> teksilo::widgets::StandardMenu {
+    app_standard_menu_base()
         .settings(tr!(native_menu_settings()))
         .settings_intent("app.settings")
         .settings_shortcut("app.settings")
@@ -290,7 +314,7 @@ fn app_standard_menu() -> teksilo::widgets::StandardMenu {
 /// Worth declaring for Skribisto specifically: several project windows in one
 /// process is the ordinary shape here (Work ▸ New Window, and one window per
 /// open project), so the window list is the only surface that names them all.
-fn window_standard_menu() -> teksilo::widgets::StandardMenu {
+pub(crate) fn window_standard_menu() -> teksilo::widgets::StandardMenu {
     teksilo::widgets::StandardMenu::window()
         .title(tr!(native_menu_window()))
         .minimize(tr!(native_menu_minimize()))

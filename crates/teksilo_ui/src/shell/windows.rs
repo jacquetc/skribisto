@@ -234,6 +234,21 @@ impl ProjectWindowFactory {
         }
     }
 
+    /// The app-global [`QuitSequencer`](crate::project::QuitSequencer) — one per
+    /// process, minted in [`Self::new`].
+    ///
+    /// Handed out because the **Launcher** needs it too. Quitting is not a
+    /// window's business: single-instance means the Launcher can be on screen
+    /// beside any number of project windows, so a Quit that only closed the
+    /// window it was fired from would leave the app running and the command
+    /// lying about what it does. Both windows therefore register `app.quit` over
+    /// this one sequencer — which is also why it must be shared and not rebuilt:
+    /// two sequencers would each walk the same open Works and prompt twice for
+    /// each.
+    pub fn quit(&self) -> crate::project::QuitSequencer {
+        self.quit.clone()
+    }
+
     /// Build the `WindowConfig` for a project window that performs `action`
     /// once its [`App`] mounts (see `App::build`'s first-build logic) — the
     /// same "seed only after the `LoadWork`/`NewWork` subscription is live"

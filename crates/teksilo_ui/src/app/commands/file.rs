@@ -15,8 +15,7 @@ use teksilo::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use teksilo::prelude::*;
 
 use crate::import_document::panel::{ImportDocumentOptions, present_import_document};
-use crate::import_plume::ImportPlumeViewModel;
-use crate::import_plume::panel::ImportPlumePanel;
+use crate::import_plume::panel::present_import_plume;
 use crate::intents::AppIntent;
 use crate::new_work::panel::NewWorkPanel;
 use crate::project::PendingSwitch;
@@ -155,23 +154,12 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     }
 
     // Import from Plume Creator: present the Import Plume modal (menu-only, no shortcut).
-    // Global so the title-bar overlay menu reaches it — like work.new. The panel is built
-    // over the shared, app-state `ImportPlumeViewModel` (the same instance the
-    // long-operation events are routed to), reset first so a previous session's paths don't
-    // linger.
-    ctx.register_action_global(Action::new("work.import_plume").on_invoke(move |_i, c| {
-        let Some(vm) = c.app_state::<ImportPlumeViewModel>().cloned() else {
-            return;
-        };
-        vm.reset_form();
-        c.present_modal(
-            ModalRequest::deferred(move |t| t.add(ImportPlumePanel::new(vm)))
-                .presentation(ModalPresentation::InTree)
-                .title("Import Plume Creator project")
-                .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                .size(600, 500),
-        );
-    }));
+    // Global so the title-bar overlay menu reaches it — like work.new. The body lives in
+    // `import_plume::panel` because the Launcher registers this same action on its own
+    // widget tree (see `welcome::panel`), and one command must not have two implementations.
+    ctx.register_action_global(
+        Action::new("work.import_plume").on_invoke(|_i, c| present_import_plume(c)),
+    );
 
     // Import documents (Markdown / plain text) INTO the open project: presents the wizard.
     // Menu-only, no shortcut. Global so the title-bar overlay menu reaches it.

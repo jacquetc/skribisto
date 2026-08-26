@@ -44,13 +44,17 @@ use teksilo::widgets::button::InteractionState;
 use teksilo::widgets::styles::{RecipeButtonStyle, RecipeStandardItemStyle};
 use teksilo::widgets::{
     ActivateOn, Button, ButtonVariant, Center, Divider, Expand, HStack, IconLocation, IconWidget,
-    ListView, MinSize, Padding, Panel, SearchField, Spacer, StandardListItem, Switcher, TabBar,
-    TabDelegate, TabId, TabIndicatorPosition, TabSizing, TextWidget, VStack,
+    ListView, MenuItem, MenuList, MinSize, Padding, Panel, PopoverButton, SearchField, Spacer,
+    StandardListItem, Switcher, TabBar, TabDelegate, TabId, TabIndicatorPosition, TabSizing,
+    TextWidget, VStack,
 };
 
 use frontend::AppContext;
 
 use crate::models::ExamplesListModel;
+use crate::shell::launcher_menu::{
+    ACTION_IMPORT_PLUME, ACTION_NEW, ACTION_NEW_FROM_DOCUMENTS, ACTION_OPEN,
+};
 use crate::welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 
 /// The four left-rail sections, in order.
@@ -127,10 +131,12 @@ impl WelcomePanel {
     }
 
     /// Works pane: search + Open/New-Work actions, then the recent-works list.
+    ///
+    /// The three action controls **send named intents** rather than calling the
+    /// view-model: each of them is also a row in the Launcher menu's Work menu,
+    /// and the pair must run one implementation. `WelcomePanel::build` registers
+    /// all of them on this window's tree.
     fn works_pane(&self, vm: &WelcomeViewModel, ctx: &mut BuildContext) -> impl Widget + 'static {
-        let open_vm = vm.clone();
-        let new_vm = vm.clone();
-        let documents_vm = vm.clone();
         let open_icon =
             IconWidget::from_svg_icon(res!("assets/icons/binder/folder.svg")).icon_size(16.0);
         let plus_icon =
@@ -150,20 +156,25 @@ impl WelcomePanel {
                         Button::new(tr!(welcome_open())) {
                             variant: ButtonVariant::Plain
                             icon: open_icon, IconLocation::Leading
-                            on_activate_fn: move |ctx| open_vm.pick_open(ctx)
+                            on_activate_fn: |ctx| ctx.send_intent(Intent::new(ACTION_OPEN))
                         }
-                        // The cold-start door for a book that is currently a
-                        // folder of Markdown files. Plain, beside Open rather
-                        // than beside New Work: it is a way *in*, not a second
-                        // kind of blank project.
-                        Button::new(tr!(welcome_new_from_documents())) {
-                            variant: ButtonVariant::Plain
-                            on_activate_fn: move |ctx| documents_vm.new_work_from_documents(ctx)
-                        }
+                        // The cold-start doors for a book that is not a
+                        // `.skrib` yet — a folder of Markdown files, or a Plume
+                        // Creator project. Plain, beside Open rather than beside
+                        // New Work: these are ways *in*, not a second kind of
+                        // blank project.
+                        //
+                        // A popover and no longer a single button: there are two
+                        // of these now, and a second flat button in this row
+                        // would read as a second way to start a blank project.
+                        // The rows fire the same two named actions the Launcher
+                        // menu's Create from ▸ submenu does — one command each,
+                        // two surfaces.
+                        child: create_from_button()
                         Button::new(tr!(welcome_new_work())) {
                             variant: ButtonVariant::Filled
                             icon: plus_icon, IconLocation::Leading
-                            on_activate_fn: move |ctx| new_vm.new_work(ctx)
+                            on_activate_fn: |ctx| ctx.send_intent(Intent::new(ACTION_NEW))
                         }
                     }
                 }
@@ -567,6 +578,35 @@ fn link_button(
 /// can't do that by itself — the Octicons mark is a near-black silhouette
 /// (invisible on a dark sidebar) and the Discord logo is brand blurple; the
 /// shape alone already says "Discord", so tinting costs no information.
+/// The Works pane's **Create from…** control: a popover offering the two ways
+/// into a project that does not start from a `.skrib`.
+///
+/// Each row sends a *named intent* rather than calling the view-model, so this
+/// button and the Launcher menu's Create from ▸ submenu run the one
+/// implementation `WelcomePanel::build` registered on this window's tree —
+/// [`ACTION_NEW_FROM_DOCUMENTS`] and [`ACTION_IMPORT_PLUME`], the same constants
+/// that menu's rows name.
+///
+/// `bare()`: the popover's content is a `MenuList`, which brings its own themed
+/// surface; the popover's default one would draw a second frame around it.
+fn create_from_button() -> impl Widget + 'static {
+    // The same two labels the menu's Create from ▸ submenu carries, which are in
+    // turn the project window's own Work ▸ Import from rows — three surfaces
+    // naming one pair of importers.
+    let menu = MenuList::new()
+        .item(
+            MenuItem::new(tr!(menu_import_document()))
+                .on_activate_fn(|ctx| ctx.send_intent(Intent::new(ACTION_NEW_FROM_DOCUMENTS))),
+        )
+        .item(
+            MenuItem::new(tr!(menu_import_plume()))
+                .on_activate_fn(|ctx| ctx.send_intent(Intent::new(ACTION_IMPORT_PLUME))),
+        );
+    PopoverButton::new(Button::new(tr!(welcome_create_from())).variant(ButtonVariant::Plain))
+        .bare()
+        .content(menu)
+}
+
 fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
     // The Discord logo's viewBox is 71×55, not square — `SvgIcon` fits it into
     // the icon box preserving aspect and centring, so it lands ~18×14 next to
@@ -705,25 +745,124 @@ impl Widget for WelcomePanel {
             .cloned()
             .expect("ProjectWindowFactory registered in main");
         let app_ctx = self.app_ctx.clone();
+        // Taken before the factory is moved into the view-model below: the quit
+        // sequencer is app-global and this window is one of its two callers.
+        let quit = factory.quit();
         let vm = self
             .vm
             .get_or_insert_with(|| WelcomeViewModel::new(ctx.settings(), app_ctx, factory))
             .clone();
 
-        // Ctrl+Q / File ▸ Quit on the bare Launcher: no project is open, so
-        // there's nothing to veto — a plain guarded `close_window()` suffices,
-        // unlike the project window's `app.quit` (`guard_unsaved_exit` in
-        // `app.rs`). Registered here rather than reused from `App` because each
-        // `WidgetTree` (one per OS window) has its own independent
-        // `global_actions`/`shortcut_registry`, so `App::build`'s registration
-        // is unreachable from a window that never builds an `App`.
+        // Ctrl+Q / the Launcher menu's Quit. Registered here rather than reused
+        // from `App` because each `WidgetTree` (one per OS window) has its own
+        // independent `global_actions`/`shortcut_registry`, so `App::build`'s
+        // registration is unreachable from a window that never builds an `App`.
+        //
+        // It runs the shared `QuitSequencer` — NOT a bare `close_window()`, which
+        // is what this used to do on the reasoning that a window with no project
+        // has nothing to veto. True of the window, wrong about the app: under
+        // single-instance the Launcher sits beside however many project windows
+        // are open (a second launch asks the primary to `ShowLauncher`, and
+        // Work ▸ Welcome leaves one behind), and any of them can hold unsaved
+        // prose. Quit closed the Launcher and left the app running — a command
+        // that did not do what its label said. The sequencer walks every open
+        // Work through the app's one shared unsaved-changes branch, takes each
+        // on-close backup, then closes every window; with nothing open it drains
+        // immediately and behaves exactly as before.
         ctx.register_shortcut_global(
             Shortcut::new("app.quit")
                 .name(tr!(shortcut_name_app_quit()))
                 .primary(KeyStroke::ctrl(Key::Q))
                 .build(),
         );
-        ctx.register_action_global(Action::new("app.quit").on_invoke(|_i, c| c.close_window()));
+        ctx.register_action_global(Action::new("app.quit").on_invoke(move |_i, c| quit.begin(c)));
+
+        // New Work and Open Work. Both are already buttons on the Works pane, and
+        // both now have a menu row and a chord as well — a menu is where a
+        // keyboard user and a screen reader go looking for a command, and Ctrl+N
+        // / Ctrl+O are the two chords a writer arriving from the project window
+        // has already learnt. One named action each, so the button and the row
+        // cannot drift into two flows.
+        //
+        // The same action *names* the project window registers, over different
+        // bodies: there the two go through `ProjectSwitchViewModel` first,
+        // because creating or opening a project *replaces* the one on screen and
+        // may have unsaved prose to account for. This window holds no project,
+        // so there is nothing to guard — it opens a project window and closes
+        // itself, which is what every launch door here does.
+        ctx.register_shortcut_global(
+            Shortcut::new(ACTION_NEW)
+                .name(tr!(shortcut_name_work_new()))
+                .primary(KeyStroke::ctrl(Key::N))
+                .build(),
+        );
+        {
+            let new_vm = vm.clone();
+            ctx.register_action_global(
+                Action::new(ACTION_NEW).on_invoke(move |_i, c| new_vm.new_work(c)),
+            );
+        }
+        ctx.register_shortcut_global(
+            Shortcut::new(ACTION_OPEN)
+                .name(tr!(shortcut_name_work_open()))
+                .primary(KeyStroke::ctrl(Key::O))
+                .build(),
+        );
+        {
+            let open_vm = vm.clone();
+            ctx.register_action_global(
+                Action::new(ACTION_OPEN).on_invoke(move |_i, c| open_vm.pick_open(c)),
+            );
+        }
+
+        // The two "start a project from something that is not a `.skrib`"
+        // commands. Named actions and not two closures, because two surfaces
+        // fire each of them — the title bar's Create from ▸ submenu
+        // (`shell::launcher_menu`) and the Works pane's own "Create from…"
+        // button ([`create_from_button`]) — and one command must have one
+        // implementation.
+        {
+            let documents_vm = vm.clone();
+            ctx.register_action_global(
+                Action::new(ACTION_NEW_FROM_DOCUMENTS)
+                    .on_invoke(move |_i, c| documents_vm.new_work_from_documents(c)),
+            );
+        }
+        // Same action name the project window registers for Work ▸ Import from ▸
+        // Plume Creator, over the same shared body: an import writes a brand-new
+        // `.skrib` and touches no store entity, so it needs no open project and
+        // means exactly the same thing here.
+        ctx.register_action_global(
+            Action::new(ACTION_IMPORT_PLUME)
+                .on_invoke(|_i, c| crate::import_plume::panel::present_import_plume(c)),
+        );
+
+        // The import's toast is `broadcast()`, so its **Open now** button reaches
+        // this window too — and fires `work.open_path`, which nothing in the
+        // Launcher's tree answered. Dead exactly where the import was most likely
+        // started. No unsaved-changes guard to consult (this window holds no
+        // project): open a project window on the path, then close the Launcher —
+        // in that order, per `main.rs`'s ordering rule, and the same thing every
+        // other launch door here does.
+        ctx.register_action_global(Action::new("work.open_path").on_invoke(|i, c| {
+            if let Some(crate::intents::AppIntent::OpenWorkPath { path }) =
+                crate::intents::AppIntent::from_intent(i)
+            {
+                crate::shell::windows::open_or_focus_project(c, path);
+                c.close_window();
+            }
+        }));
+
+        // Drive that import's progress/result toast from this window as well:
+        // long-operation subscriptions are per widget tree, and the project
+        // window's (`app::wiring::long_ops`) does not exist when the Launcher is
+        // the only window on screen.
+        if let Some(plume) = ctx
+            .app_state::<crate::import_plume::ImportPlumeViewModel>()
+            .cloned()
+        {
+            plume.wire_long_operation(ctx);
+        }
 
         // Help, on the Launcher's own registry for the same reason `app.quit` is: each
         // `WidgetTree` (one per OS window) has its own `global_actions`/

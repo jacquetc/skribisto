@@ -10,6 +10,10 @@ menu-new-work = &New Work
 menu-open-work = &Open Work…
 menu-new-window = New &Window
 menu-import-from = &Import from
+# The Launcher's counterpart to `menu-import-from`, over the same two rows: these
+# produce a brand-new project, where the project window's importers land content
+# *in* the one already open.
+menu-create-from = &Create from
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = &Documents (Markdown, Word, ODT)…
 menu-export = E&xport
@@ -458,7 +462,7 @@ welcome-version = Version { $version }
 welcome-search = Search works
 welcome-open = Open
 welcome-new-work = New Work
-welcome-new-from-documents = From documents…
+welcome-create-from = Create from…
 welcome-recent-works = Recent Works
 welcome-empty-recents = No recent works yet.
 # Shown in place of the recents list when the search matched none of them,

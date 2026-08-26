@@ -328,10 +328,16 @@ fn a_loading_window_keeps_the_plain_project_id() {
 // Translators pick mnemonics per language, so a locale that reads clean in
 // English can collide in French. Every supported locale is checked.
 
-/// Menu scopes, mirroring the `MenuModel` built in
-/// [`ProjectWindowFactory::window_config`]. Add an entry to that menu, add its
-/// key here — an unlisted key is simply unchecked, which is the one
-/// failure mode this table has.
+/// Menu scopes, mirroring the two `MenuModel`s this app builds — the project
+/// window's ([`ProjectWindowFactory::window_config`]) and the Launcher's
+/// ([`crate::shell::launcher_menu::build_launcher_menu`]). Add
+/// an entry to either menu, add its key here — an unlisted key is simply
+/// unchecked, which is the one failure mode this table has.
+///
+/// The two windows share `menu-work` and `menu-quit` but not a keyboard
+/// namespace: only one of them is on screen at a time, and each opens onto its
+/// own set of rows. So the Launcher's menus are their own scopes, and a letter
+/// may be reused freely between the two.
 const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
     (
         "menu bar",
@@ -480,6 +486,23 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
             "menu-help-report",
             "menu-about",
         ],
+    ),
+    // ── The Launcher window's own (much shorter) menu ─────────────────
+    (
+        "Launcher > Work",
+        &[
+            "menu-new-work",
+            "menu-open-work",
+            "menu-create-from",
+            "menu-quit",
+        ],
+    ),
+    // The same two keys "Work > Import from" checks — one pair of importer labels,
+    // reused. Their own scope all the same: only one of the two windows is on
+    // screen at a time, and each opens onto its own set of rows.
+    (
+        "Launcher > Work > Create from",
+        &["menu-import-document", "menu-import-plume"],
     ),
 ];
 
