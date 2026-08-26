@@ -309,6 +309,15 @@ pub struct ContentTab {
     /// throwaway `WorkSession` on a fresh, never-seeded `AppIds`, so `TagsViewModel::create`,
     /// which needs a real `work_id`, silently created nothing. See [`Self::tags`].
     tags: crate::tags::TagsViewModel,
+    /// Who is named where, across this Work, threaded from the same
+    /// [`crate::sessions::WorkSession`] [`Self::tags`] is, and **not** read from
+    /// `ctx.app_state::<MentionIndex>()`. That resolves to whichever session was
+    /// registered in `lib.rs`, which on the ordinary Launcher path is a throwaway
+    /// `WorkSession` built on a fresh `AppIds` that is never seeded: its index's own
+    /// `fire` returns early for want of a `work_id`, so it never scans, and
+    /// `backlinks_for` answers empty for every note, forever. What that looks like from
+    /// the writer's chair is "Appears in the manuscript" simply never working.
+    mention_index: crate::mentions::MentionIndex,
     /// This tab's shared document store, threaded from the same
     /// [`crate::sessions::WorkSession`] [`Self::tags`] is. **Not** read from
     /// `ctx.app_state::<OpenDocsStore>()`: [`crate::tabs::note_in_prose::note_in_prose_pane`]
@@ -489,6 +498,10 @@ pub fn tab_for(
         // same `ids` this tab got, so a caller that already set `ids.work_id` (a test
         // exercising a real Work) gets a handle that genuinely creates tags against it.
         crate::tags::TagsViewModel::detached(ctx.clone(), ids.clone()),
+        // Likewise its own index, on the same `ids`: a standalone tab has no session to
+        // borrow one from, and a shared handle here would be the very confusion the
+        // field's own doc warns about.
+        crate::mentions::MentionIndex::new(ctx.clone(), ids.clone()),
     )
 }
 
@@ -647,6 +660,7 @@ impl ContentTab {
         work: crate::save::WorkHandle,
         goal_unit: Signal<GoalUnit>,
         tags: crate::tags::TagsViewModel,
+        mention_index: crate::mentions::MentionIndex,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -814,6 +828,7 @@ impl ContentTab {
             format,
             writing_games,
             tags,
+            mention_index,
             docs: docs_for_tab,
         }
     }
@@ -830,6 +845,12 @@ impl ContentTab {
     /// reach every other accessor here already grants it.
     pub fn tags(&self) -> crate::tags::TagsViewModel {
         self.tags.clone()
+    }
+
+    /// This Work's mention index. See [`Self::mention_index`]'s own field doc for why it
+    /// is threaded rather than resolved through `app_state`.
+    pub fn mention_index(&self) -> crate::mentions::MentionIndex {
+        self.mention_index.clone()
     }
 
     /// This tab's shared document store. See [`Self`]'s own field doc for why

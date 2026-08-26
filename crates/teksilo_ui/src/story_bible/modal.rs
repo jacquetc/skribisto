@@ -731,6 +731,7 @@ mod tests {
             crate::writing_session::WritingGamesViewModel::detached(),
             Signal::new(GoalUnit::default()),
             tags_vm(f),
+            crate::mentions::MentionIndex::new(f.app_ctx.clone(), f.ids.clone()),
         )
     }
 

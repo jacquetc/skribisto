@@ -608,15 +608,19 @@ fn make_book_fixture() -> BookFixture {
     }
 }
 
-/// Dropping one Book directly `Into` another is the most direct way to nest
-/// them, and must be refused.
+/// **A Book dropped inside another Book is allowed, and starts a book there.**
+///
+/// A book runs from its own marker to the next one; indent is how the writer arranged
+/// the tree and never feeds the compiler. So a `Folder/Book` nested by indent is not
+/// contained by anything, it simply opens the next book at that point, exactly as it
+/// would at the top level. This used to be refused, on reasoning that mistook the flat
+/// fold's correct answer for a fault.
 #[test]
-fn moving_a_book_into_a_book_is_refused() {
+fn a_book_may_be_moved_inside_another_book() {
     let fx = make_book_fixture();
     let stack = undo_redo_commands::create_new_stack(&fx.ctx);
-    let before = order(&fx.ctx, fx.binder);
 
-    let err = binder_item_management_commands::move_items(
+    binder_item_management_commands::move_items(
         &fx.ctx,
         Some(stack),
         &MoveDto {
@@ -625,27 +629,31 @@ fn moving_a_book_into_a_book_is_refused() {
             target_is_binder: false,
             move_place: MovePlace::Into,
         },
-    );
+    )
+    .expect("nesting a Book inside a Book is the writer's business, not an error");
 
-    assert!(err.is_err(), "nesting a Book inside a Book must fail");
-    assert_eq!(
-        order(&fx.ctx, fx.binder),
-        before,
-        "a refused move must leave the tree exactly as it was"
+    let after = order(&fx.ctx, fx.binder);
+    assert!(
+        after.contains(&fx.book_b),
+        "the moved Book is still in the binder"
+    );
+    let pos_a = after.iter().position(|&x| x == fx.book_a).expect("book a");
+    let pos_b = after.iter().position(|&x| x == fx.book_b).expect("book b");
+    assert!(
+        pos_b > pos_a,
+        "it lands inside Book A's run, after its marker"
     );
 }
 
-/// Dropping a Book `Before`/`After` a row that already sits *inside* another
-/// Book's subtree nests it just as surely as `Into` does: the guard has to
-/// catch this by the resulting ancestor chain, not merely by a literal `Into` a
-/// Book anchor.
+/// The same, arrived at the other way: dropping a Book beside a row that already sits
+/// deep inside another Book's subtree. There was a guard here reading the resulting
+/// ancestor chain; there is nothing for it to catch any more.
 #[test]
-fn moving_a_book_beside_a_row_already_inside_a_book_is_refused() {
+fn a_book_may_be_moved_beside_a_row_already_inside_a_book() {
     let fx = make_book_fixture();
     let stack = undo_redo_commands::create_new_stack(&fx.ctx);
-    let before = order(&fx.ctx, fx.binder);
 
-    let err = binder_item_management_commands::move_items(
+    binder_item_management_commands::move_items(
         &fx.ctx,
         Some(stack),
         &MoveDto {
@@ -654,13 +662,13 @@ fn moving_a_book_beside_a_row_already_inside_a_book_is_refused() {
             target_is_binder: false,
             move_place: MovePlace::Before,
         },
-    );
+    )
+    .expect("a Book beside a nested row is allowed");
 
     assert!(
-        err.is_err(),
-        "landing beside a row already inside a Book still nests the moved Book"
+        order(&fx.ctx, fx.binder).contains(&fx.book_b),
+        "the Book is still there, wherever the writer put it"
     );
-    assert_eq!(order(&fx.ctx, fx.binder), before);
 }
 
 /// The guard is about containment, not about Books existing near each other:
@@ -720,14 +728,13 @@ fn moving_a_non_book_into_a_book_is_unaffected() {
     );
 }
 
-/// The guard must catch the alternate, flat-marker book encoding too: an
-/// `Item/BookBegin` row (what a legacy project's "book-beginning" section maps
-/// to on import, see `load_work_uc::legacy::section_type_to_sub_role`) opens a
-/// book exactly as `Folder/Book` does, per `SubRoleExt::opens_book`. A guard
-/// that only compared against `BinderItemSubRole::Book` literally would let
-/// this row nest inside another Book's subtree with no error at all.
+/// The flat-marker encoding behaves the same as the folder one, which is the point:
+/// `Item/BookBegin` opens a book exactly as `Folder/Book` does, per
+/// `SubRoleExt::opens_book`, so it is allowed inside another Book for exactly the same
+/// reason and starts a book where it lands. This used to be refused, and the test that
+/// pinned the refusal was right to insist the two encodings agree; they still do.
 #[test]
-fn moving_a_book_begin_marker_into_a_book_is_refused() {
+fn a_book_begin_marker_may_be_moved_inside_a_book() {
     let fx = make_book_fixture();
     let setup = undo_redo_commands::create_new_stack(&fx.ctx);
     let book_begin = mk_item_sub_role(
@@ -748,9 +755,7 @@ fn moving_a_book_begin_marker_into_a_book_is_refused() {
     );
 
     let stack = undo_redo_commands::create_new_stack(&fx.ctx);
-    let before = order(&fx.ctx, fx.binder);
-
-    let err = binder_item_management_commands::move_items(
+    binder_item_management_commands::move_items(
         &fx.ctx,
         Some(stack),
         &MoveDto {
@@ -759,14 +764,13 @@ fn moving_a_book_begin_marker_into_a_book_is_refused() {
             target_is_binder: false,
             move_place: MovePlace::Before,
         },
-    );
+    )
+    .expect("a flat book marker is allowed wherever a Folder/Book is");
 
     assert!(
-        err.is_err(),
-        "an Item/BookBegin marker landing inside another Book's subtree must be \
-         refused exactly like a Folder/Book is"
+        order(&fx.ctx, fx.binder).contains(&book_begin),
+        "the marker is still in the binder"
     );
-    assert_eq!(order(&fx.ctx, fx.binder), before);
 }
 
 // ─────────────────────────────── duplicate ───────────────────────────────
@@ -2417,7 +2421,7 @@ fn trash_book_item(fx: &BookFixture, stack: u64, root: EntityId) {
 /// destination ancestor chain, not a literal `Into` a Book anchor, is what the
 /// guard has to catch.
 #[test]
-fn restoring_a_book_into_a_book_is_refused() {
+fn a_book_may_be_restored_inside_another_book() {
     let fx = make_book_fixture();
     let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
     trash_book_item(&fx, s1, fx.book_b); // trashes book_b + scene_b
@@ -2436,14 +2440,14 @@ fn restoring_a_book_into_a_book_is_refused() {
         },
     );
 
-    assert!(err.is_err(), "restoring a Book inside a Book must fail");
-    assert_eq!(
+    err.expect("restoring a Book inside a Book is allowed, as moving one there is");
+    assert_ne!(
         order(&fx.ctx, fx.binder),
         before,
-        "a refused restore must leave the tree exactly as it was"
+        "the restored Book is back in the binder"
     );
-    assert!(!activated(&fx.ctx, fx.book_b), "book_b stays in the trash");
-    assert!(!activated(&fx.ctx, fx.scene_b), "and so does its own scene");
+    assert!(activated(&fx.ctx, fx.book_b), "book_b is out of the trash");
+    assert!(activated(&fx.ctx, fx.scene_b), "and so is its own scene");
 }
 
 /// The guard is about containment, not about Books existing near each other:
@@ -2508,13 +2512,11 @@ fn restoring_an_ordinary_row_into_a_book_is_unaffected() {
     );
 }
 
-/// The guard must catch the alternate, flat-marker book encoding too: an
-/// `Item/BookBegin` row opens a book exactly as `Folder/Book` does, per
-/// `SubRoleExt::opens_book`. A guard that only compared against
-/// `BinderItemSubRole::Book` literally would let this row restore inside
-/// another Book's subtree with no error at all.
+/// The flat-marker encoding behaves the same as the folder one, which is the whole point
+/// of `SubRoleExt::opens_book`: an `Item/BookBegin` restored inside another Book's subtree
+/// is allowed, and starts a book there, exactly as a `Folder/Book` is.
 #[test]
-fn restoring_a_book_begin_marker_into_a_book_is_refused() {
+fn a_book_begin_marker_may_be_restored_inside_a_book() {
     let fx = make_book_fixture();
     let setup = undo_redo_commands::create_new_stack(&fx.ctx);
     let book_begin = mk_item_sub_role(
@@ -2549,12 +2551,12 @@ fn restoring_a_book_begin_marker_into_a_book_is_refused() {
         },
     );
 
-    assert!(
-        err.is_err(),
-        "an Item/BookBegin marker restoring inside another Book's subtree must be \
-         refused exactly like a Folder/Book is"
+    err.expect("a flat book marker is allowed wherever a Folder/Book is");
+    assert_ne!(
+        order(&fx.ctx, fx.binder),
+        before,
+        "the marker is back in the binder"
     );
-    assert_eq!(order(&fx.ctx, fx.binder), before);
 }
 
 // ──────────────────── delete_trash_entries (per-entry purge) ────────────────────

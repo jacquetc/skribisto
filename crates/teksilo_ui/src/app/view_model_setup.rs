@@ -171,6 +171,9 @@ impl App {
                     // `ContentTab::tags`'s own doc for why this must never be
                     // read off `ctx.app_state::<TagsViewModel>()` instead.
                     session.tags.clone(),
+                    // The Work's own index, for the same reason and with the same
+                    // consequence if it were read off `app_state` instead.
+                    session.mention_index.clone(),
                 )
             })
             .clone();

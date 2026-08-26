@@ -21,9 +21,7 @@ use crate::RestoreItemsToDto;
 use crate::RestoreItemsToResultDto;
 use crate::dtos::DropPosition;
 use anyhow::{Result, anyhow};
-use binder_ordering::{
-    DropPlace, ancestors_of, anchor_for_binder_target, insert_block, resolve_item_target,
-};
+use binder_ordering::{DropPlace, anchor_for_binder_target, insert_block, resolve_item_target};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
@@ -31,7 +29,6 @@ use common::direct_access::work::WorkRelationshipField;
 use common::entities::{Binder, BinderItem, BinderItemRole, BinderItemSubRole, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
-use skribisto_model::SubRoleExt;
 use std::collections::{HashMap, HashSet};
 
 /// Map the feature-local `DropPosition` DTO enum onto the shared
@@ -148,7 +145,6 @@ impl RestoreItemsToUseCase {
         // "still trashed after restore" case to special-case. `opens_book` covers both
         // book encodings, the `Folder/Book` container and the flat-marker
         // `Item/BookBegin`.
-        let mut book_in_batch: Option<EntityId> = None;
 
         for &item_id in &dto.binder_item_ids {
             if all_moving.contains(&item_id) {
@@ -190,12 +186,6 @@ impl RestoreItemsToUseCase {
                     for &id in &subtree {
                         all_moving.insert(id);
                     }
-                    if book_in_batch.is_none() {
-                        book_in_batch = subtree
-                            .iter()
-                            .find(|id| sub_role.get(id).is_some_and(SubRoleExt::opens_book))
-                            .copied();
-                    }
                     plan.push(Plan {
                         src_binder: Some(src),
                         subtree,
@@ -207,9 +197,6 @@ impl RestoreItemsToUseCase {
                     // singleton (its descendants, if any, are unrecoverable — the
                     // order that defined them is gone).
                     all_moving.insert(item_id);
-                    if book_in_batch.is_none() && item.sub_role.opens_book() {
-                        book_in_batch = Some(item_id);
-                    }
                     plan.push(Plan {
                         src_binder: None,
                         subtree: vec![item_id],
@@ -283,35 +270,11 @@ impl RestoreItemsToUseCase {
                 )?;
 
                 // Refuse rather than silently coercing indent: a book-opening row
-                // may never land inside another book's subtree. Same invariant,
-                // same guard shape as `binder_item_management::move_items_uc`
-                // (see its own comment for the full "why"; the short version is
-                // that `skribisto_model::compile`'s book-boundary walk tracks the
-                // current book purely by the next `opens_book`/`closes_book`
-                // marker in flat stream order, never by indent, so nesting a
-                // book inside a book silently folds the outer book's word count
-                // into the inner one's). The domain-aware "is this ancestor a
-                // Book" check lives once, in `skribisto_model::enclosing_book`.
-                if let Some(book_id) = book_in_batch {
-                    let dest_ancestors: Vec<EntityId> = dest_order
-                        .iter()
-                        .position(|&x| x == a)
-                        .map(|anchor_pos| {
-                            std::iter::once(a)
-                                .chain(ancestors_of(&dest_order, &dest_indent, anchor_pos))
-                                .filter(|id| *dest_indent.get(id).unwrap_or(&0) < base_indent)
-                                .collect()
-                        })
-                        .unwrap_or_default();
-                    if let Some(book_ancestor) =
-                        skribisto_model::enclosing_book(dest_ancestors, &dest_sub_role)
-                    {
-                        return Err(anyhow!(
-                            "restore_items_to: cannot restore Book {book_id} inside Book \
-                             {book_ancestor}: a Book may not contain another Book"
-                        ));
-                    }
-                }
+                // **A Book restored inside another Book is allowed**, the same as moving
+                // one there: a book runs from its own marker to the next, so a Book row
+                // nested by indent starts the next book rather than being contained by
+                // anything. See `binder_item_management::move_items_uc`, where the
+                // matching guard and its reasoning were removed first.
 
                 (base_indent, anchor)
             }

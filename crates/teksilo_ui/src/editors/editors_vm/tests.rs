@@ -36,6 +36,8 @@ fn editors() -> EditorsViewModel {
 /// `SaveStateViewModel` — modelling two windows onto one project.
 fn editors_with(app_ctx: Rc<AppContext>, save_state: SaveStateViewModel) -> EditorsViewModel {
     let ids = AppIds::new();
+    // Built before the call: the arguments it needs are moved into earlier parameters.
+    let mention_index = crate::mentions::MentionIndex::new(app_ctx.clone(), ids.clone());
     let docs = OpenDocsStore::new(app_ctx.clone());
     let tree_expansion = crate::settings::TreeExpansionViewModel::new(
         app_ctx.clone(),
@@ -67,6 +69,7 @@ fn editors_with(app_ctx: Rc<AppContext>, save_state: SaveStateViewModel) -> Edit
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
         tags,
+        mention_index,
     )
 }
 
@@ -757,6 +760,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
     // onto the same Work.
     let docs = OpenDocsStore::new(app_ctx.clone());
     let ids_a = AppIds::new();
+    let index_a = crate::mentions::MentionIndex::new(app_ctx.clone(), ids_a.clone());
     let tree_expansion_a = crate::settings::TreeExpansionViewModel::new(
         app_ctx.clone(),
         ids_a.clone(),
@@ -786,8 +790,10 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_a),
+        index_a,
     );
     let ids_b = AppIds::new();
+    let index_b = crate::mentions::MentionIndex::new(app_ctx.clone(), ids_b.clone());
     let tree_expansion_b = crate::settings::TreeExpansionViewModel::new(
         app_ctx.clone(),
         ids_b.clone(),
@@ -817,6 +823,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_b),
+        index_b,
     );
 
     // Window A has item 1 in its primary pane and item 2 in its side pane;

@@ -1312,6 +1312,7 @@ fn scene_page_seeded(text: &str) -> (WidgetTree, WidgetId, ContentTab) {
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
     let mut tree = crate::test_support::tree_with_settings(&ctx);
     let root = tree.add_boxed(tab_pane(&tab));
@@ -1554,6 +1555,7 @@ fn scene_page_max_scroll(typewriter: crate::shared::TypewriterSettings) -> (f32,
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
     let mut tree = crate::test_support::tree_with_events(&ctx);
     let root = tree.add_boxed(tab_pane(&tab));
@@ -2838,6 +2840,7 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
             crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
             Signal::new(GoalUnit::default()),
             crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+            crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
         )
     };
     let distraction_free_width = Signal::new(620.0);
@@ -2934,6 +2937,7 @@ fn a_stream_lane_marks_every_row_on_its_own_slice() {
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
     tab.segment
         .set(Some(crate::tabs::shared::segments::segment_id(
@@ -3035,6 +3039,7 @@ fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
 
     // Segment 1 is the manuscript stream (own page / manuscript / Full

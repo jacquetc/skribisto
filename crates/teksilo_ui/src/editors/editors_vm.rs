@@ -176,6 +176,13 @@ pub struct EditorsViewModel {
     /// this project's own `Work` instead of reading `ctx.app_state::<TagsViewModel>()`.
     /// See `ContentTab::tags`'s own doc for the bug that closes.
     tags: crate::tags::TagsViewModel,
+    /// Who is named where, across this Work. Threaded for exactly the reason
+    /// [`crate::tabs::ContentTab::tags`] is: `note_details`'s "Appears in the manuscript"
+    /// column reads it, and `ctx.app_state::<MentionIndex>()` answers with whichever
+    /// session registered, which at first launch is `lib.rs`'s throwaway `WorkSession` on
+    /// a never-seeded `AppIds`. That index's own `fire` returns early with no `work_id`,
+    /// so it never scans anything and the column is empty for the whole session.
+    mention_index: crate::mentions::MentionIndex,
 }
 
 impl EditorsViewModel {
@@ -206,6 +213,7 @@ impl EditorsViewModel {
         writing_games: crate::writing_session::WritingGamesViewModel,
         goal_unit: Signal<GoalUnit>,
         tags: crate::tags::TagsViewModel,
+        mention_index: crate::mentions::MentionIndex,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -254,6 +262,7 @@ impl EditorsViewModel {
             tree_expansion,
             goal_unit,
             tags,
+            mention_index,
         }
     }
 
@@ -734,6 +743,7 @@ impl EditorsViewModel {
             self.save_state.handle(),
             self.goal_unit.clone(),
             self.tags.clone(),
+            self.mention_index.clone(),
         )
     }
 

@@ -15,15 +15,13 @@ use crate::MoveDto;
 use crate::MovePlace;
 use anyhow::{Result, anyhow};
 use binder_ordering::{
-    DropPlace, ancestors_of, anchor_for_binder_target, expand_to_subtrees, insert_block,
-    resolve_item_target,
+    DropPlace, anchor_for_binder_target, expand_to_subtrees, insert_block, resolve_item_target,
 };
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::entities::{Binder, BinderItem, BinderItemRole, BinderItemSubRole};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
-use skribisto_model::SubRoleExt;
 use std::collections::{HashMap, HashSet};
 
 /// Map the feature-local `MovePlace` DTO enum onto the shared `binder_ordering`
@@ -126,14 +124,6 @@ impl MoveItemsUseCase {
         }
         let move_set: HashSet<EntityId> = full_move_ids.iter().copied().collect();
         let root_old_indent = *indent.get(&full_move_ids[0]).unwrap_or(&0);
-        // Whether the block being relocated carries a book-opening row anywhere in
-        // it (the root or a descendant): the only thing the guard below needs to
-        // know about the moved side. `opens_book` covers both book encodings, the
-        // `Folder/Book` container and the flat-marker `Item/BookBegin`.
-        let moving_a_book = full_move_ids
-            .iter()
-            .any(|id| sub_role.get(id).is_some_and(SubRoleExt::opens_book));
-
         // Resolve destination binder, the new base indent for the moved root,
         // and the anchor id to insert before (None = append at end).
         let (dest_binder, base_indent, anchor_id): (EntityId, i64, Option<EntityId>) = if dto
@@ -185,53 +175,19 @@ impl MoveItemsUseCase {
                 &move_set,
             )?;
 
-            // Refuse rather than silently coercing indent: a book-opening row may
-            // never land inside another book's subtree. The constraint matrix
-            // (`skribisto_model::COMBINATIONS`) has no opinion on containment at
-            // all. `indent` deliberately does not feed it, and the binder's own
-            // doc comments say placement is not policed, so this is not a rule
-            // pulled from there; it guards a different invariant.
-            // `skribisto_model::compile`'s book-boundary walk (and
-            // `progress_management::count_words_uc::fold_counts`, which keys a
-            // per-book word total off it) tracks "the current book" purely by the
-            // next `opens_book`/`closes_book` marker in flat stream order, with no
-            // reference to indent. Nesting a book inside a book still puts the
-            // inner book's own `opens_book` marker in that same flat stream, so
-            // once the compiler walks past the inner book's subtree every row
-            // that is still, by indent, part of the *outer* book gets folded into
-            // the *inner* book's running total instead, with no error anywhere,
-            // because the flat walk never looked at indent to notice it had left
-            // the inner book at all.
-            if moving_a_book {
-                let dest_ancestors: Vec<EntityId> = dest_order
-                    .iter()
-                    .position(|&x| x == target_id)
-                    .map(|target_pos| {
-                        std::iter::once(target_id)
-                            .chain(ancestors_of(&dest_order, &indent, target_pos))
-                            .filter(|id| *indent.get(id).unwrap_or(&0) < base_indent)
-                            .collect()
-                    })
-                    .unwrap_or_default();
-                // The domain-aware half ("is this ancestor a Book") lives once in
-                // `skribisto_model::enclosing_book`, shared with
-                // `trash_management::restore_items_to_uc`'s identical guard.
-                if let Some(book_ancestor) =
-                    skribisto_model::enclosing_book(dest_ancestors, &sub_role)
-                {
-                    // The root, when it is itself a book-opening row; otherwise the
-                    // book sits somewhere inside the moved subtree.
-                    let nested_book = full_move_ids
-                        .iter()
-                        .find(|id| sub_role.get(id).is_some_and(SubRoleExt::opens_book))
-                        .copied()
-                        .unwrap_or(full_move_ids[0]);
-                    return Err(anyhow!(
-                        "move_items: cannot move Book {nested_book} inside Book \
-                         {book_ancestor}: a Book may not contain another Book"
-                    ));
-                }
-            }
+            // **A Book inside a Book is allowed.** There is nothing to resolve: a
+            // book runs from its own marker to the next one, so a Book row nested by
+            // indent inside another simply *starts* the next book, exactly as it would
+            // at the top level. Indent is a fact about how the writer arranged the
+            // tree, not about where a book ends, and the compiler never consults it.
+            //
+            // This used to refuse, on the reasoning that "once the compiler walks past
+            // the inner book's subtree, every row still part of the outer book by
+            // indent gets folded into the inner book's total". That describes the flat
+            // fold correctly and then calls it a fault: those rows *are* the inner
+            // book's, and the only thing that made it look wrong was reading the tree
+            // as containment. Nesting one book inside another reads badly, and it is
+            // the writer's business whether to.
 
             (dest_binder, base_indent, anchor)
         };

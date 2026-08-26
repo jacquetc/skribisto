@@ -20,6 +20,7 @@
 //! Like the dictionary pane it needs generic-closure widgets (`ListView`) the `teksu!` DSL
 //! cannot express, so it is a chained-builder module.
 
+use teksilo::core::BindingLevel;
 use teksilo::core::styles::{ComboBoxVariant, TextInputVariant};
 use teksilo::data::SortFilterListModel;
 use teksilo::prelude::*;
@@ -85,6 +86,22 @@ pub fn work_tags_pane(
     let list_vm = vm.clone();
     // Resolved once per pane build, not once per row: a project with forty tags would
     // otherwise walk the whole binder forty times to paint one dropdown each.
+    // Rebuild this pane when the writer's template list changes.
+    //
+    // Each tag's "Starting template" dropdown is a `ComboBox::from_items`, which copies
+    // the list it is given into a private model nothing writes to again, and the list
+    // itself is resolved once per pane build just below. Without this binding a template
+    // created on the sibling Templates page is invisible here until the Settings window
+    // is closed and reopened, which is exactly what a writer reported. Re-deriving the
+    // whole pane is the cheap answer and the one the panes around this already use: the
+    // alternative, a mapped live `ListModel` behind `from_items`, buys nothing on a list
+    // a writer edits by hand a few times a project.
+    templates.changed_signal().bind_to(
+        ctx.self_id(),
+        ctx.binding_registry(),
+        BindingLevel::Rebuild,
+    );
+
     let folders = folder_options(&vm.app_ctx(), &vm.ids());
     let template_rows = template_options(templates);
     let list = ListView::from_source(filtered, move |_i, row: &TagRow, _selected| {

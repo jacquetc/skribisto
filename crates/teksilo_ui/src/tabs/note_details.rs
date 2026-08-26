@@ -139,6 +139,7 @@ pub(crate) fn note_details_pane(tab: &ContentTab) -> Box<dyn Widget> {
         open_doc: tab.open_doc.clone(),
         set_tags: tab.set_tags_fn(),
         tags: tab.tags(),
+        mention_index: tab.mention_index(),
         // Built once, here, and held for as long as this pane is: **not**
         // rebuilt fresh inside `build()`. `title_input` binds to `name.value`
         // directly; a fresh `TitleField` on every rebuild would reseed that
@@ -161,6 +162,7 @@ struct NoteDetailsPane {
     ids: AppIds,
     item_id: u64,
     column_width: Signal<f32>,
+    mention_index: crate::mentions::MentionIndex,
     /// This item's shared editing state: read for its `tags` mirror (the same
     /// one `set_tags` below writes, and the same one any other open view of
     /// this item already shares) and for `main`'s live Djot text, the cast
@@ -224,7 +226,7 @@ impl Widget for NoteDetailsPane {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
-        let mention_index = ctx.app_state::<MentionIndex>().cloned();
+        let mention_index = Some(self.mention_index.clone());
         if let Some(index) = &mention_index {
             index.changed_signal().bind_to(
                 ctx.self_id(),
