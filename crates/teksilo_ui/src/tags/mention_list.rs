@@ -20,6 +20,22 @@
 //! wrong: the matcher cannot tell a character called Don from the contraction "don't", so
 //! rather than assert a roster it shows its working and lets the writer decline.
 //!
+//! ## A third claim: declared, not detected and not necessarily pinned
+//!
+//! [`MentionRow::is_point_of_view`](crate::mentions::MentionRow::is_point_of_view) is a
+//! *different* persisted relationship from `is_confirmed` (`point_of_view`, not
+//! `references`), and it must never be read as a stronger or weaker version of a pin.
+//! A point-of-view row renders **plain, not ghosted**: whose eyes a scene is narrated
+//! through is exactly the kind of thing a scan cannot detect (deep POV may name nobody), so
+//! this is the writer's own declaration, not a guess to confirm or decline, and looks like
+//! one. It carries a small badge saying so, because the row otherwise looks identical to an
+//! ordinary confirmed pin. **It never offers unpin on its own:** unpin removes a
+//! `references` entry, and a point of view was never written into `references`, so that
+//! control stays keyed off `is_confirmed` alone, exactly as it already was before this flag
+//! existed. A row can be point of view *and* confirmed at once (the writer cast the same
+//! character formally too); the badge and the confirmed styling simply both apply, and both
+//! must read sensibly together rather than fight for the row's one visual state.
+//!
 //! Nothing here writes except pin/unpin, which go through `references` and are undoable.
 
 use std::rc::Rc;
@@ -28,7 +44,7 @@ use teksilo::core::accesskit::Role;
 use teksilo::core::overlay::TooltipPlacement;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
-use teksilo::widgets::{HStack, IconButton, TextWidget, VStack};
+use teksilo::widgets::{Badge, HStack, IconButton, TextWidget, VStack};
 
 use crate::mentions::MentionRow;
 use crate::widgets::attach_labelled_composite_tooltip;
@@ -86,18 +102,39 @@ impl Widget for MentionList {
         for row in &self.rows {
             let mut line = HStack::new().spacing(6.0);
 
-            // Ghosted while it is only a guess.
-            let colour = if row.is_confirmed {
+            // Ghosted while it is only a guess. A confirmed pin and a declared point of view
+            // are both the writer's own decision rather than the scan's, so either keeps the
+            // row plain.
+            let colour = if row.is_confirmed || row.is_point_of_view {
                 TextRole::Primary
             } else {
                 TextRole::Secondary
             };
-            line = line.child(
+            // **A pin whose target is gone is named, not left blank.** `cast_for` resolves a
+            // row's title through the discoverable table and falls back to an empty string
+            // when the target is not in it, which happens for a pin whose entry has since
+            // been trashed or had its story-bible tag removed. Rendered raw that was a
+            // nameless row carrying nothing but a delete button, which reads as a bug rather
+            // than as a stale pin.
+            //
+            // Named here in the view rather than invented in the index, which is right to
+            // report "no title" for something it genuinely cannot resolve. And named rather
+            // than dropped, unlike `pov_chips`, because this row owns the only affordance
+            // that can remove the pin: hiding it would strand the writer with a reference
+            // they can see the effects of and cannot reach.
+            let unresolved = row.title.trim().is_empty();
+            let label = if unresolved {
+                TextWidget::new(tr!(cast_unresolved()))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary)
+                    .max_lines(1)
+            } else {
                 TextWidget::new(lit!(row.title.clone()))
                     .style(TextStyleRole::Small)
                     .color(colour)
-                    .max_lines(1),
-            );
+                    .max_lines(1)
+            };
+            line = line.child(label);
 
             // The alias that matched, when it was not the title — "Lizzy" explains a roster
             // entry that reads "Elizabeth Bennet" far better than the count does.
@@ -107,6 +144,16 @@ impl Widget for MentionList {
                         .style(TextStyleRole::Tiny)
                         .color(TextRole::Secondary)
                         .max_lines(1),
+                );
+            }
+
+            // A small, deliberate badge, never a substitute for the pin/unpin state above,
+            // which stays keyed off `is_confirmed` alone. See the module doc's "third claim"
+            // section for why this cannot be folded into `is_confirmed` instead.
+            if row.is_point_of_view {
+                line = line.child(
+                    Badge::new(tr!(mentions_point_of_view_badge()))
+                        .tooltip(tr!(mentions_point_of_view_badge_tooltip())),
                 );
             }
 
@@ -242,6 +289,19 @@ mod tests {
     use teksilo::core::widget_tree::WidgetTree;
 
     fn row(target: u64, title: &str, confirmed: bool, evidence: &str) -> MentionRow {
+        pov_row(target, title, confirmed, false, evidence)
+    }
+
+    /// Same shape as [`row`], with the point-of-view flag also settable, kept as a second
+    /// function rather than a fifth positional bool on `row` itself, whose call sites (all
+    /// predating this flag) stay untouched.
+    fn pov_row(
+        target: u64,
+        title: &str,
+        confirmed: bool,
+        point_of_view: bool,
+        evidence: &str,
+    ) -> MentionRow {
         MentionRow {
             owner_id: 1,
             target_id: target,
@@ -250,6 +310,7 @@ mod tests {
             is_title_match: true,
             hit_count: 1,
             is_confirmed: confirmed,
+            is_point_of_view: point_of_view,
             evidence: evidence.to_string(),
         }
     }
@@ -315,5 +376,72 @@ mod tests {
         let id = tree.add_boxed(Box::new(list(vec![], true, true)));
         tree.layout(SizeProposal::exact(300.0, 200.0));
         assert!(tree.children(id).len() <= 1);
+    }
+
+    /// The badge announces as `Role::Label` (see `Badge`'s own doc); nothing else in a row
+    /// does, so counting labels is a reliable proxy for "how many point-of-view badges did
+    /// this list draw" the same way `button_count` is a reliable proxy for pin/unpin.
+    fn label_count(rows: Vec<MentionRow>, with_pin: bool, with_unpin: bool) -> usize {
+        let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+        tree.add_boxed(Box::new(list(rows, with_pin, with_unpin)));
+        tree.layout(SizeProposal::exact(300.0, 200.0));
+        let _ = tree.render();
+        tree.sync_accessibility()
+            .nodes
+            .iter()
+            .filter(|(_, n)| n.role() == Role::Label)
+            .count()
+    }
+
+    /// **The defect this row type was fixed against.** A point of view with no reference
+    /// pin has nothing in `references` to remove, so it must offer pin (to confirm it as a
+    /// cast member too), never unpin: a dead unpin button that silently does nothing on
+    /// click is worse than the missing row it would sit next to.
+    #[test]
+    fn a_point_of_view_only_row_offers_pin_never_unpin() {
+        let rows = vec![pov_row(2, "Grace", false, true, "")];
+        assert_eq!(
+            button_count(rows, true, true),
+            1,
+            "pin only: is_confirmed is false, so there is nothing to unpin"
+        );
+    }
+
+    /// Once the same target is also pinned, the row switches to unpin, same as any other
+    /// confirmed row: the point-of-view flag never overrides `is_confirmed`'s own control.
+    #[test]
+    fn a_row_that_is_both_confirmed_and_point_of_view_offers_unpin_not_pin() {
+        let rows = vec![pov_row(2, "Grace", true, true, "")];
+        assert_eq!(
+            button_count(rows, true, true),
+            1,
+            "unpin only: is_confirmed is true regardless of the point-of-view flag"
+        );
+    }
+
+    /// The badge renders only for a point-of-view row, and exactly once, never doubled up
+    /// when the same row is also confirmed. Compared against a same-shaped row's own
+    /// baseline label count (the title text is itself an AT label, see `TextWidget`'s
+    /// default role, so the useful assertion is "one more label than an otherwise
+    /// identical row", not an absolute count that would break the moment the row grows
+    /// another label of its own for an unrelated reason).
+    #[test]
+    fn the_point_of_view_badge_renders_only_for_a_point_of_view_row() {
+        let baseline = label_count(vec![row(2, "Grace", false, "")], true, true);
+
+        let pov_only = vec![pov_row(2, "Grace", false, true, "")];
+        assert_eq!(
+            label_count(pov_only, true, true),
+            baseline + 1,
+            "a point-of-view row adds exactly one label: its badge"
+        );
+
+        let both = vec![pov_row(2, "Grace", true, true, "")];
+        assert_eq!(
+            label_count(both, true, true),
+            baseline + 1,
+            "a row that is both confirmed and point of view still shows exactly one badge, \
+             not two"
+        );
     }
 }

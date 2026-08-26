@@ -36,6 +36,7 @@ pub enum MentionHit {
         is_title_match: bool,
         hit_count: i64,
         is_confirmed: bool,
+        is_point_of_view: bool,
         evidence: String,
     },
 }

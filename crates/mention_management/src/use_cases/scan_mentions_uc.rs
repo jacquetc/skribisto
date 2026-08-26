@@ -281,9 +281,19 @@ fn run_scan(
         }
     }
 
-    // Persisted references join the same list. A reference the writer pinned by hand must
-    // appear even when the name is never written — a scene told in deep POV may name nobody
-    // — so this is a union, not a filter over the textual hits.
+    // Persisted references and declared points of view join the same list. A reference the
+    // writer pinned by hand, or a viewpoint character they declared, must appear even when
+    // the name is never written (a scene told in deep POV may name nobody), so this is a
+    // union, not a filter over the textual hits.
+    //
+    // The two declarations are folded side by side but kept on two separate flags,
+    // deliberately never collapsed into one: `is_confirmed` means "this target is in the
+    // owner's `references`", `is_point_of_view` means "this target is in the owner's
+    // `point_of_view`", and a row can carry either, both, or neither. The Inspector's
+    // roster offers an "unpin" control keyed off `is_confirmed` alone: it removes the
+    // target from `references`, and a point of view was never written into `references`
+    // for that control to have anything to remove. Setting `is_confirmed` on a POV-only row
+    // would hand the writer a button that looks live and silently does nothing.
     for b in &g.binders {
         for iwc in &b.items {
             let owner = &iwc.item;
@@ -295,6 +305,14 @@ fn run_scan(
                     continue;
                 }
                 rows.entry((owner.id, *target)).or_default().is_confirmed = true;
+            }
+            for target in &owner.point_of_view {
+                if !titles.contains_key(target) {
+                    continue;
+                }
+                rows.entry((owner.id, *target))
+                    .or_default()
+                    .is_point_of_view = true;
             }
         }
     }
@@ -313,6 +331,7 @@ fn run_scan(
             is_title_match: r.is_title_match,
             hit_count: r.hit_count,
             is_confirmed: r.is_confirmed,
+            is_point_of_view: r.is_point_of_view,
             evidence: r.evidence,
         })
         .collect();
@@ -345,6 +364,7 @@ fn run_scan(
 struct Row {
     hit_count: i64,
     is_confirmed: bool,
+    is_point_of_view: bool,
     is_title_match: bool,
     matched_name: String,
     evidence: String,

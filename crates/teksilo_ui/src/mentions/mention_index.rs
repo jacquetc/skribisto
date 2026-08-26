@@ -67,8 +67,18 @@ pub struct MentionRow {
     pub hit_count: i64,
     /// A persisted `references` entry, as opposed to a suggestion the scan derived.
     pub is_confirmed: bool,
-    /// The sentence the first hit sits in. Empty for a confirmed reference whose name is
-    /// never actually written.
+    /// A persisted `point_of_view` entry: `target_id` is whose eyes `owner_id`'s prose is
+    /// narrated through. Independent of `is_confirmed`: a point of view lives in its own
+    /// relationship, not in `references`, so this is never true merely because the row is
+    /// also confirmed, and a row can carry both, either, or neither. Folded in the same way
+    /// and for the same reason a reference is: a scene told in deep POV may never write its
+    /// own viewpoint character's name, so the scan unions the declaration in rather than
+    /// relying on a textual hit. **Never** treat this as an "unpin from references" signal:
+    /// the target may not be in `references` at all, and the cast list's unpin control stays
+    /// keyed off `is_confirmed` alone for exactly that reason.
+    pub is_point_of_view: bool,
+    /// The sentence the first hit sits in. Empty for a confirmed reference or a declared
+    /// point of view whose name is never actually written.
     pub evidence: String,
 }
 
@@ -220,6 +230,7 @@ impl MentionIndex {
                     is_title_match,
                     hit_count,
                     is_confirmed,
+                    is_point_of_view,
                     evidence,
                 } = h
                 else {
@@ -233,6 +244,7 @@ impl MentionIndex {
                     is_title_match,
                     hit_count,
                     is_confirmed,
+                    is_point_of_view,
                     evidence,
                 };
                 by_owner.entry(owner_id).or_default().push(row.clone());
@@ -303,17 +315,43 @@ impl MentionIndex {
     /// editor key handler. When `None`, suggestions come from the batch index alone.
     /// `is_confirmed` is always taken from `confirmed` (the focused item's `references`),
     /// never from a child owner's pins when `extra_owners` is used for a chapter union.
+    /// `is_point_of_view` follows the same rule and the same reason: `point_of_view` is the
+    /// focused item's own field, never a child owner's, so `extra_owners` never contributes
+    /// to it, and it is taken from that live argument alone, exactly like `confirmed_set`
+    /// below. A batch fallback was tried here first and dropped: the one production caller
+    /// (the Inspector's cast section) always has a fresh DTO in hand and passes both
+    /// `references` and `point_of_view` from it, so falling back to the last scan's own
+    /// record bought nothing on the add side and cost correctness on the remove side, a
+    /// point of view the writer just cleared kept reading as still declared until the next
+    /// scan overwrote the stale batch entry.
     pub fn cast_for(
         &self,
         owner_id: u64,
         live_prose: Option<&str>,
         confirmed: &[u64],
+        point_of_view: &[u64],
         extra_owners: &[u64],
     ) -> Vec<MentionRow> {
         let table = self.inner.table.borrow();
         // When the table is empty, still surface raw confirmed ids (titles may be
         // blank until the first scan); never drop the writer's pins.
         let confirmed_set: HashMap<u64, ()> = confirmed
+            .iter()
+            .copied()
+            .filter(|&id| id != owner_id && (table.is_empty() || table.iter().any(|e| e.id == id)))
+            .map(|id| (id, ()))
+            .collect();
+
+        // The owner's own declared point of view, taken straight from the live argument and
+        // nothing else: the focused item's own field, mirroring `confirmed_set` above for
+        // `references`. Not unioned with `by_owner`'s batch record any more (an earlier
+        // version was): the one production caller always has a fresh DTO in hand, so a batch
+        // fallback bought nothing on the add side and cost correctness on the remove side, a
+        // target the writer just cleared here would otherwise keep reading as declared until
+        // the next scan overwrote the stale batch entry. Never sourced from `extra_owners`
+        // either, so a chapter union never credits the chapter itself with a child scene's
+        // own POV declaration.
+        let owner_pov: HashMap<u64, ()> = point_of_view
             .iter()
             .copied()
             .filter(|&id| id != owner_id && (table.is_empty() || table.iter().any(|e| e.id == id)))
@@ -402,6 +440,7 @@ impl MentionIndex {
                         is_title_match: h.is_title_match,
                         hit_count: 0,
                         is_confirmed: false,
+                        is_point_of_view: false,
                         evidence: mentions::evidence_sentence(prose, h),
                     });
                 row.hit_count += 1;
@@ -431,16 +470,50 @@ impl MentionIndex {
                             is_title_match: true,
                             hit_count: 0,
                             is_confirmed: true,
+                            is_point_of_view: owner_pov.contains_key(&target_id),
                             evidence: String::new(),
                         },
                     );
                 }
             }
         }
+        // Inject a declared point of view with neither a prose hit nor a reference pin: the
+        // loop above only reaches a target already in `confirmed_set`, and a point of view
+        // that names nobody and was never pinned is exactly the row this feature exists to
+        // stop dropping.
+        for &target_id in owner_pov.keys() {
+            if by_target.contains_key(&target_id) {
+                continue;
+            }
+            let title = table
+                .iter()
+                .find(|e| e.id == target_id)
+                .map(|e| e.title.clone())
+                .unwrap_or_default();
+            by_target.insert(
+                target_id,
+                MentionRow {
+                    owner_id,
+                    target_id,
+                    title: title.clone(),
+                    matched_name: title,
+                    is_title_match: true,
+                    hit_count: 0,
+                    is_confirmed: confirmed_set.contains_key(&target_id),
+                    is_point_of_view: true,
+                    evidence: String::new(),
+                },
+            );
+        }
 
-        // Drop suggestions that somehow kept a child-confirmed flag without being in
-        // `confirmed` — merge_suggestion already forces false, but be explicit.
+        // Authoritative, unconditional reset for both flags: `merge_suggestion` above may
+        // have carried a child owner's own `is_point_of_view` through its `..row` spread
+        // (it only forces `is_confirmed` false, not this), and the two injection loops above
+        // only touch the targets they already know about. Rather than track every path a
+        // stray flag could have taken, restate both from their one true source, `confirmed`
+        // and `owner_pov`, for every row that survives to here.
         for row in by_target.values_mut() {
+            row.is_point_of_view = owner_pov.contains_key(&row.target_id);
             row.is_confirmed = confirmed_set.contains_key(&row.target_id);
         }
 
@@ -485,18 +558,26 @@ impl MentionIndex {
                 is_title_match: h.is_title_match,
                 hit_count: 0,
                 is_confirmed: false,
+                is_point_of_view: false,
                 evidence: mentions::evidence_sentence(prose, h),
             });
             row.hit_count += 1;
         }
 
-        // The live pass sees the prose but not the `references` table, so carry `is_confirmed`
-        // across from the batch. A confirmed row the live pass found no text for must also
-        // survive — that is the whole point of pinning something the prose never names.
+        // The live pass sees the prose but neither the `references` table nor the
+        // `point_of_view` one, so carry both flags across from the batch. A confirmed row,
+        // or a point-of-view row, that the live pass found no text for must still survive:
+        // that is the whole point of a pin (or a declared viewpoint) the prose never names.
+        // Dropping this second flag here would be this exact feature's own bug: a POV row
+        // would read correctly the moment a scan lands, then lose its POV-ness the instant
+        // the writer focused that scene and this live pass ran over it.
         for b in batch {
             match live.get_mut(&b.target_id) {
-                Some(row) => row.is_confirmed = b.is_confirmed,
-                None if b.is_confirmed => {
+                Some(row) => {
+                    row.is_confirmed = b.is_confirmed;
+                    row.is_point_of_view = b.is_point_of_view;
+                }
+                None if b.is_confirmed || b.is_point_of_view => {
                     live.insert(b.target_id, b);
                 }
                 None => {}
@@ -560,6 +641,7 @@ mod tests {
             is_title_match: title_match,
             hit_count: hits,
             is_confirmed: confirmed,
+            is_point_of_view: false,
             evidence: String::new(),
         }
     }
@@ -626,6 +708,20 @@ mod tests {
     }
 
     fn suggestion(owner: u64, target: u64, title: &str, hits: i64, confirmed: bool) -> MentionRow {
+        pov_suggestion(owner, target, title, hits, confirmed, false)
+    }
+
+    /// Same shape as [`suggestion`], with the point-of-view flag also settable, kept as a
+    /// second function rather than a sixth positional bool on `suggestion` itself, whose
+    /// call sites (all predating this flag) stay untouched.
+    fn pov_suggestion(
+        owner: u64,
+        target: u64,
+        title: &str,
+        hits: i64,
+        confirmed: bool,
+        point_of_view: bool,
+    ) -> MentionRow {
         MentionRow {
             owner_id: owner,
             target_id: target,
@@ -634,6 +730,7 @@ mod tests {
             is_title_match: true,
             hit_count: hits,
             is_confirmed: confirmed,
+            is_point_of_view: point_of_view,
             evidence: if hits > 0 {
                 format!("{title} walked in.")
             } else {
@@ -648,7 +745,7 @@ mod tests {
             vec![entity(10, "Elena"), entity(11, "Dock")],
             HashMap::new(),
         );
-        let cast = index.cast_for(1, None, &[10], &[]);
+        let cast = index.cast_for(1, None, &[10], &[], &[]);
         assert_eq!(cast.len(), 1);
         assert!(cast[0].is_confirmed);
         assert_eq!(cast[0].target_id, 10);
@@ -661,7 +758,7 @@ mod tests {
         let mut by_owner = HashMap::new();
         by_owner.insert(1, vec![suggestion(1, 10, "Grace", 2, false)]);
         let index = seeded_index(vec![entity(10, "Grace")], by_owner);
-        let cast = index.cast_for(1, Some(""), &[], &[]);
+        let cast = index.cast_for(1, Some(""), &[], &[], &[]);
         assert_eq!(
             cast.len(),
             1,
@@ -680,7 +777,7 @@ mod tests {
             vec![suggestion(2, 10, "Grace", 3, true)], // child-confirmed
         );
         let index = seeded_index(vec![entity(10, "Grace")], by_owner);
-        let cast = index.cast_for(1, None, &[], &[2]);
+        let cast = index.cast_for(1, None, &[], &[], &[2]);
         assert_eq!(cast.len(), 1);
         assert!(
             !cast[0].is_confirmed,
@@ -695,7 +792,7 @@ mod tests {
         by_owner.insert(2, vec![suggestion(2, 10, "Grace", 1, false)]);
         let index = seeded_index(vec![entity(10, "Grace"), entity(11, "Will")], by_owner);
         // Chapter pins Will only; Grace is a child suggestion.
-        let cast = index.cast_for(1, None, &[11], &[2]);
+        let cast = index.cast_for(1, None, &[11], &[], &[2]);
         assert_eq!(cast.len(), 2);
         assert!(cast[0].is_confirmed && cast[0].target_id == 11);
         assert!(!cast[1].is_confirmed && cast[1].target_id == 10);
@@ -710,6 +807,145 @@ mod tests {
         assert_eq!(
             index.filter_cast_targets(1, &[10, 1, 10, 99, 11]),
             vec![10, 11]
+        );
+    }
+
+    /// A declared point of view with no prose hit and no reference pin must still appear as
+    /// its own row, the same "nothing textual will ever produce this" case `is_confirmed`'s
+    /// own no-hit injection already covers, now covered for `is_point_of_view` too.
+    #[test]
+    fn cast_for_shows_a_point_of_view_with_no_prose_hits() {
+        let index = seeded_index(vec![entity(10, "Grace")], HashMap::new());
+        let cast = index.cast_for(1, None, &[], &[10], &[]);
+        assert_eq!(cast.len(), 1);
+        assert!(cast[0].is_point_of_view);
+        assert!(
+            !cast[0].is_confirmed,
+            "a point of view is not a reference pin"
+        );
+        assert_eq!(cast[0].hit_count, 0);
+    }
+
+    /// **The bug this fix closes.** The batch's own record of a point of view must not
+    /// keep the flag lit once the caller's live argument no longer lists it: a writer who
+    /// cleared a point of view must see that instantly, not read `is_point_of_view` back as
+    /// still true until the next scan overwrites `by_owner`. The bare suggestion row can
+    /// still surface (a zero-hit batch entry is merged as a suggestion candidate exactly as
+    /// a stale `is_confirmed` one already could, unrelated to this fix); what must not
+    /// survive is the flag itself.
+    #[test]
+    fn cast_for_does_not_show_a_batch_only_point_of_view_the_live_argument_no_longer_lists() {
+        let mut by_owner = HashMap::new();
+        by_owner.insert(1, vec![pov_suggestion(1, 10, "Grace", 0, false, true)]);
+        let index = seeded_index(vec![entity(10, "Grace")], by_owner);
+        let cast = index.cast_for(1, None, &[], &[], &[]);
+        assert!(
+            cast.iter().all(|row| !row.is_point_of_view),
+            "a stale batch record alone must not keep is_point_of_view true once the \
+             caller's own live argument no longer carries it"
+        );
+    }
+
+    /// **The gap this argument closes.** A point of view the writer just declared has no
+    /// batch entry at all yet (no scan has run since); `cast_for` must still show it the
+    /// moment the caller's own DTO says so, exactly as `is_confirmed` already does for a
+    /// pin, rather than waiting for the next scan to land. This is why `point_of_view` is a
+    /// live argument and not read from `by_owner` alone the way it was before.
+    #[test]
+    fn cast_for_shows_a_freshly_declared_point_of_view_with_no_batch_entry_yet() {
+        let index = seeded_index(vec![entity(10, "Grace")], HashMap::new());
+        let cast = index.cast_for(1, None, &[], &[10], &[]);
+        assert_eq!(
+            cast.len(),
+            1,
+            "the live argument alone must be enough, with no scan having run at all"
+        );
+        assert!(cast[0].is_point_of_view);
+        assert!(!cast[0].is_confirmed);
+        assert_eq!(cast[0].hit_count, 0);
+    }
+
+    /// Non-empty live prose replaces the owner's own batch half of the *suggestion* merge
+    /// (see `cast_for`'s own doc), which has nothing to do with `owner_pov`: a point-of-view
+    /// declaration has no text hit to be merged in the first place. The live `point_of_view`
+    /// argument, always fresh from the same DTO a real caller reads the prose from, is what
+    /// must keep carrying the flag while live prose is in play.
+    #[test]
+    fn cast_for_keeps_the_owners_point_of_view_even_when_live_prose_replaces_its_batch_half() {
+        let index = seeded_index(vec![entity(10, "Grace")], HashMap::new());
+        // Live prose that names nobody at all: Grace's own point of view has no text hit
+        // to be rediscovered from, by construction of the feature this covers.
+        let cast = index.cast_for(1, Some("The rain kept falling."), &[], &[10], &[]);
+        assert_eq!(
+            cast.len(),
+            1,
+            "the point-of-view row must survive the live pass"
+        );
+        assert!(cast[0].is_point_of_view);
+        assert_eq!(cast[0].hit_count, 0);
+    }
+
+    /// A chapter union must not credit the chapter itself with a child scene's own declared
+    /// point of view, the same rule `cast_for_chapter_union_ignores_child_pins` already
+    /// enforces for `references`.
+    #[test]
+    fn cast_for_chapter_union_ignores_a_child_scenes_own_point_of_view() {
+        let mut by_owner = HashMap::new();
+        by_owner.insert(2, vec![pov_suggestion(2, 10, "Grace", 3, false, true)]);
+        let index = seeded_index(vec![entity(10, "Grace")], by_owner);
+        let cast = index.cast_for(1, None, &[], &[], &[2]);
+        assert_eq!(cast.len(), 1);
+        assert!(
+            !cast[0].is_point_of_view,
+            "chapter cast must not inherit a child's own point of view"
+        );
+        assert_eq!(cast[0].hit_count, 3, "the child's text hits still surface");
+    }
+
+    /// A row can be both at once, pinned into the cast *and* the owner's declared point of
+    /// view, and `cast_for` must keep both flags rather than treat them as alternatives.
+    #[test]
+    fn cast_for_can_show_a_row_that_is_both_pinned_and_point_of_view() {
+        let index = seeded_index(vec![entity(10, "Grace")], HashMap::new());
+        let cast = index.cast_for(1, None, &[10], &[10], &[]);
+        assert_eq!(cast.len(), 1);
+        assert!(cast[0].is_confirmed);
+        assert!(cast[0].is_point_of_view);
+    }
+
+    /// A point-of-view row with no prose hit at all must survive `roster_for`'s live pass:
+    /// the live pass only ever sees text, and a deep-POV scene may name its viewpoint
+    /// character nowhere in it.
+    #[test]
+    fn roster_for_keeps_a_point_of_view_row_the_live_pass_finds_no_text_for() {
+        let mut by_owner = HashMap::new();
+        by_owner.insert(1, vec![pov_suggestion(1, 10, "Grace", 0, false, true)]);
+        let index = seeded_index(vec![entity(10, "Grace")], by_owner);
+        let roster = index.roster_for(1, Some("The rain kept falling."));
+        assert_eq!(
+            roster.len(),
+            1,
+            "the point-of-view row must survive the live pass"
+        );
+        assert!(roster[0].is_point_of_view);
+        assert!(!roster[0].is_confirmed);
+    }
+
+    /// **The bug this module was fixed against.** When the live pass *does* find the
+    /// viewpoint character's name in the prose, the row it builds starts with
+    /// `is_point_of_view: false` (the live pass only knows about text); the batch carry-across
+    /// must still restore the flag rather than leave it cleared just because a hit happened
+    /// to exist this time.
+    #[test]
+    fn roster_for_restores_the_point_of_view_flag_on_a_row_the_live_pass_also_matched() {
+        let mut by_owner = HashMap::new();
+        by_owner.insert(1, vec![pov_suggestion(1, 10, "Grace", 1, false, true)]);
+        let index = seeded_index(vec![entity(10, "Grace")], by_owner);
+        let roster = index.roster_for(1, Some("Grace opened the door."));
+        assert_eq!(roster.len(), 1);
+        assert!(
+            roster[0].is_point_of_view,
+            "a live text hit must not silently clear the point-of-view flag the batch carried"
         );
     }
 }

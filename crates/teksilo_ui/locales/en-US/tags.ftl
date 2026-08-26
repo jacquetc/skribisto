@@ -107,6 +107,7 @@ cast-add-empty = No story-bible entries to add
 cast-pin = Add { $name } to cast
 cast-unpin = Remove { $name } from cast
 cast-empty = No one pinned yet — add or keep a suggestion
+cast-unresolved = No longer in the story bible
 
 ## Backlinks on a story-bible item
 mentions-backlinks = Appears in
@@ -114,6 +115,11 @@ mentions-hit-count = { $n ->
     [one] once
    *[other] { $n } times
 }
+# The badge on a row whose target is the owner's declared point of view (see
+# `point_of_view`, distinct from `references`). Shown on both the Cast list and the
+# backlinks ("Appears in") list, since a point of view can appear in either direction.
+mentions-point-of-view-badge = Point of view
+mentions-point-of-view-badge-tooltip = Declared as the point of view here, set by hand, not detected in the prose.
 
 ## Legacy keys kept so older scripts/tests that still reference them compile
 mentions-roster = Cast

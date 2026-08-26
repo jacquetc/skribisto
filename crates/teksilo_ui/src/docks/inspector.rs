@@ -328,24 +328,42 @@ impl Widget for Inspector {
                 let metas = skribisto_model::numbering::level_of(&d.sub_role)
                     .is_some()
                     .then(|| live_item_metas(&self.app_ctx, &self.outline.ids()));
-                let ordinal = metas.as_ref().and_then(|m| {
-                    self.outline
-                        .ids()
-                        .work_id
-                        .get()
-                        .and_then(|id| {
-                            crate::models::numbers_for_work(&self.app_ctx, id, m)
-                                .get(&d.id)
-                                .copied()
-                        })
-                        .map(|n| n.number())
+                let work_id = self.outline.ids().work_id.get();
+                let numbered = metas.as_ref().and_then(|m| {
+                    work_id.and_then(|id| {
+                        crate::models::numbers_for_work(&self.app_ctx, id, m)
+                            .get(&d.id)
+                            .copied()
+                    })
                 });
+                // **Named the way the tree names it**, through the one resolver both the
+                // outline row and the outline card already go through. An untitled
+                // structural row is not nameless: it answers to its ordinal, in its own
+                // language, and `label_and_badge` also *drops* the separate number badge in
+                // that case, because "Chapter 7" already carries the number and showing both
+                // reads as a stutter.
+                //
+                // Resolved here rather than rendered raw because the Inspector was doing
+                // exactly what `fallback_label_for`'s own doc warns about: showing a bare
+                // "2." with nothing beside it, which reads as a broken row rather than an
+                // untitled chapter. Two surfaces disagreeing about what a row is *called* is
+                // the same drift this crate guards everywhere else, so this calls the shared
+                // resolver rather than growing a third answer of its own.
+                let work_langs = work_id
+                    .map(|id| crate::models::work_language_tags(&self.app_ctx, id))
+                    .unwrap_or_default();
+                let fallback =
+                    crate::models::fallback_label_for(&d, numbered.as_ref(), &work_langs);
+                let (name, ordinal) = crate::models::label_and_badge(
+                    &d.title,
+                    fallback.as_deref(),
+                    numbered.map(|n| n.number()),
+                );
                 let mut header = HStack::new().spacing(6.0);
                 if ordinal.is_some() {
                     header = header.child(crate::widgets::StructureNumber::new(ordinal));
                 }
-                header = header
-                    .child(TextWidget::new(lit!(d.title.clone())).style(TextStyleRole::BodyBold));
+                header = header.child(TextWidget::new(lit!(name)).style(TextStyleRole::BodyBold));
                 let mut col = VStack::new().spacing(12.0).child(header);
                 // The headline affordance: convert this item to another type. A folder
                 // can become any other kind of folder, so it is a menu, not a button.

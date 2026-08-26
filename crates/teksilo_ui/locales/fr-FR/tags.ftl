@@ -120,6 +120,7 @@ cast-add-empty = Aucune entrée de bible narrative à ajouter
 cast-pin = Ajouter { $name } à la présence
 cast-unpin = Retirer { $name } de la présence
 cast-empty = Personne n’est encore épinglé — ajoutez ou conservez une suggestion
+cast-unresolved = Ne fait plus partie de la bible narrative
 
 ## Rétroliens sur une entrée de bible narrative
 mentions-backlinks = Apparaît dans
@@ -127,6 +128,12 @@ mentions-hit-count = { $n ->
     [one] une fois
    *[other] { $n } fois
 }
+# Le badge sur une ligne dont la cible est le point de vue déclaré du propriétaire (voir
+# `point_of_view`, distinct de `references`). Affiché aussi bien dans la liste de présence
+# que dans les rétroliens (« Apparaît dans »), car un point de vue peut apparaître dans les
+# deux sens.
+mentions-point-of-view-badge = Point de vue
+mentions-point-of-view-badge-tooltip = Déclaré comme point de vue ici, défini à la main, pas détecté dans le texte.
 
 ## Anciennes clés conservées pour les scripts/tests qui y font encore référence
 mentions-roster = Présence

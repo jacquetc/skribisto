@@ -210,14 +210,70 @@ impl std::fmt::Debug for AliasEntry {
     }
 }
 
-impl Widget for AliasEntry {
+/// The "another entry already answers to this" line under the alias input.
+///
+/// **Its own widget purely so it can bind to `draft` without the input above binding
+/// too.** The hint has to repaint on every keystroke; the `TextInput` must survive them.
+/// Those two requirements are irreconcilable in one widget, because a rebuild recreates
+/// every child it builds, so the one that must survive owns nothing reactive and the one
+/// that must repaint is split out here. Same split, same reason, as
+/// [`crate::tags::tag_pill_field::TagPicker`] and its filter box.
+struct AliasCollisionHint {
+    draft: Signal<String>,
+    table: Vec<DiscoverableEntity>,
+    owner_id: u64,
+    root_child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for AliasCollisionHint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AliasCollisionHint").finish()
+    }
+}
+
+impl Widget for AliasCollisionHint {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Rebuild on every keystroke, same reasoning as `CastAddPopover::query`: the
-        // collision hint below reads `self.draft.get()` directly, so nothing repaints
-        // it without this.
         self.draft
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        let text = alias_collision(&self.table, self.owner_id, &self.draft.get());
+        // Nothing to say: an empty row rather than no widget at all, so the layout above
+        // does not jump as the writer types past a collision.
+        let id = ctx.add(
+            TextWidget::new(match text {
+                Some(other) => tr!(tags_alias_collision(name = other)),
+                None => lit!(String::new()),
+            })
+            .style(TextStyleRole::Tiny)
+            .color(TextRole::Secondary),
+        );
+        self.root_child = Some(id);
+        vec![id]
+    }
 
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+impl Widget for AliasEntry {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // **This shell must not bind to `draft`.** It builds the `TextInput`, and a
+        // rebuild recreates that input: the caret goes back to 0 and the text comes back
+        // selected, so the next keystroke replaces everything the writer typed. Binding
+        // here is what made the field unusable, and it is the same trap
+        // [`crate::tags::tag_pill_field::TagPicker`] documents on its own filter box for
+        // the same reason.
+        //
+        // The collision hint still has to repaint on every keystroke, so it binds to
+        // `draft` *itself*, from inside [`AliasCollisionHint`] below. A child rebuilding
+        // does not touch its parent's already-mounted input.
         let draft = self.draft.clone();
         let value = self.value.clone();
         let set = self.set.clone();
@@ -242,17 +298,17 @@ impl Widget for AliasEntry {
 
         let mut col = VStack::new().spacing(4.0).child(field);
 
-        // The live hint: a fact about the one item in front of the writer, not a
-        // warning. A shared alias is a legal thing to want, so this never blocks
-        // Enter and is silent the moment nothing else answers to the typed text.
-        if let Some(lookup) = &self.collision
-            && let Some(other) = alias_collision(&lookup.table, lookup.owner_id, &self.draft.get())
-        {
-            col = col.child(
-                TextWidget::new(tr!(tags_alias_collision(name = other)))
-                    .style(TextStyleRole::Tiny)
-                    .color(TextRole::Secondary),
-            );
+        // The live hint, in its own widget so typing repaints it without recreating the
+        // input above. A fact about the one item in front of the writer, not a warning:
+        // a shared alias is a legal thing to want, so this never blocks Enter and is
+        // silent the moment nothing else answers to the typed text.
+        if let Some(lookup) = &self.collision {
+            col = col.child(AliasCollisionHint {
+                draft: self.draft.clone(),
+                table: lookup.table.clone(),
+                owner_id: lookup.owner_id,
+                root_child: None,
+            });
         }
 
         col = col.child(

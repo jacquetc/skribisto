@@ -23,7 +23,7 @@ use std::rc::Rc;
 
 use frontend::AppContext;
 use frontend::commands::{binder_commands, binder_item_commands, work_commands};
-use frontend::common::entities::BinderItemRole;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
 use teksilo::core::widget_tree::WidgetTree;
 
@@ -378,7 +378,18 @@ fn mention_row(owner_id: u64, target_id: u64) -> MentionRow {
         is_title_match: false,
         hit_count: 1,
         is_confirmed: false,
+        is_point_of_view: false,
         evidence: String::new(),
+    }
+}
+
+/// A row with no text hit at all: a scene bound only through `point_of_view` or
+/// `references`, exactly as `scan_mentions_uc` would fold one in.
+fn declared_mention_row(owner_id: u64, target_id: u64, point_of_view: bool) -> MentionRow {
+    MentionRow {
+        hit_count: 0,
+        is_point_of_view: point_of_view,
+        ..mention_row(owner_id, target_id)
     }
 }
 
@@ -404,6 +415,30 @@ fn scene_mention_counts_excludes_note_owned_hits() {
         counts.get(&elizabeth.item_id),
         Some(&1),
         "one scene-owned hit counted, the note-owned one excluded"
+    );
+}
+
+/// **The badge's meaning, restated in a test.** A scene bound only through
+/// `point_of_view`, no text hit, no pin, still counts toward the badge, the
+/// same way an `is_confirmed`-only row always has: see the module doc's own
+/// paragraph on why this is not a meaning change for "appears in N scenes".
+#[test]
+fn scene_mention_counts_includes_a_point_of_view_only_scene() {
+    let f = seed();
+    let scene = create_scene(&f, 0, "A scene telling nothing but her thoughts");
+    let elizabeth = entry(999, "Elizabeth Bennet", vec![], 0);
+
+    let index = MentionIndex::seeded_for_tests(
+        Vec::new(),
+        vec![declared_mention_row(scene, elizabeth.item_id, true)],
+    );
+
+    let counts = scene_mention_counts(&f.app_ctx, &index, std::slice::from_ref(&elizabeth));
+    assert_eq!(
+        counts.get(&elizabeth.item_id),
+        Some(&1),
+        "a declared point of view is a real presence in the scene, with or without a \
+         text hit to show for it"
     );
 }
 

@@ -1411,12 +1411,18 @@ features:
       # that item -- two views over one list, rather than two row kinds to keep in
       # step. `is_list` cannot take an enum, so the Vec rides inside a complex
       # variant; `row` exists to declare the row type that `hits` then references.
+      # `is_confirmed` and `is_point_of_view` are two independent, persisted
+      # relationships folded into the same union (`references` and
+      # `point_of_view` respectively) -- a row can carry either, both, or
+      # neither, and must never collapse the two into one flag: an "unpin"
+      # control keyed off `is_confirmed` alone would otherwise offer to remove
+      # a point of view from a relationship it was never written into.
       - name: row
         type: enum
         enum_name: MentionHit
         enum_values:
         - Empty
-        - "Found { owner_id: EntityId, target_id: EntityId, title: String, matched_name: String, is_title_match: bool, hit_count: i64, is_confirmed: bool, evidence: String }"
+        - "Found { owner_id: EntityId, target_id: EntityId, title: String, matched_name: String, is_title_match: bool, hit_count: i64, is_confirmed: bool, is_point_of_view: bool, evidence: String }"
       - name: hits
         type: enum
         enum_name: MentionHits

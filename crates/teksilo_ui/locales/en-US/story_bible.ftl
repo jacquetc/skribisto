@@ -39,9 +39,14 @@ story-bible-grid-alias-count = { $count ->
 # Work-wide, never a per-book figure: a scan hit in any Book of this project
 # counts, regardless of which Book the writer currently has open. Scene-owned
 # only: a worldbuilding note naming this entry does not count as "a scene".
+# Counts a declared presence, not only a text hit: a scene the writer pinned
+# by hand, or declared as its point of view, counts even when the entry's
+# name is never actually written there. Worded "appears", not "mentioned":
+# the wording must not claim the name is in the text when only a
+# relationship was declared.
 story-bible-grid-mention-count = { $count ->
-    [0] Not mentioned yet
-    [one] Mentioned in { $count } scene across the whole project
-   *[other] Mentioned in { $count } scenes across the whole project
+    [0] No appearances yet
+    [one] Appears in { $count } scene across the whole project
+   *[other] Appears in { $count } scenes across the whole project
 }
 story-bible-books-filter-all = All books

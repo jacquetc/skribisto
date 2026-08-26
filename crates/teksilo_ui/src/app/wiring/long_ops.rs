@@ -223,6 +223,27 @@ pub(in crate::app) fn install(
             let i = index.clone();
             ctx.subscribe_event(Origin::WorkManagement(event), move |_e: &Event| i.rescan());
         }
+        // ...and scan **now**, for the project that is already open by the time this runs.
+        //
+        // The subscription above only ever hears a `LoadWork` fired *after* it exists, and
+        // on the ordinary startup path the project is opened by `startup::launch_maintenance`
+        // before `App::build` installs any of this. So the event that should have seeded the
+        // index has already been and gone with nobody listening, and the index stays empty
+        // for the whole session unless the writer happens to edit a tag or save. What that
+        // looks like from the writer's chair is the feature simply being broken: the Cast
+        // picker offers nobody, an already-pinned cast member renders as a nameless row
+        // (`cast_for` resolves a title through the discoverable table and falls back to an
+        // empty string), and "Set point of view" opens an empty list on a project full of
+        // discoverable notes.
+        //
+        // `fire` returns early when no project is open, so this is a no-op on a window that
+        // opens onto nothing, and the `active` guard in `rescan` means a genuine `LoadWork`
+        // arriving immediately after cannot start a second scan on top of this one.
+        //
+        // Same shape, and the same reason, as `wiring::spellcheck`'s own eager
+        // `dictionaries.rescan()`: a registry that is only reconciled by future events is
+        // wrong on arrival exactly once, at the moment the writer first looks at it.
+        index.rescan();
         // The alias table changing is what makes a roster appear at all, so those events
         // rescan straight away rather than waiting for a save. A tag gaining its story-bible
         // flag, or an item gaining a tag or an alias, is a deliberate act — and the writer is

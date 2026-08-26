@@ -184,6 +184,53 @@ fn fixture() -> Fixture {
     }
 }
 
+/// A second scene beside the fixture's own: written in deep third person, naming the
+/// character nowhere in its own prose, and bound to them only through `point_of_view`. The
+/// fold under test is the only thing that can make this scene appear in the character's
+/// backlinks at all: nothing textual ever will, by construction.
+fn add_pov_scene(fx: &Fixture) -> EntityId {
+    let binder =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
+    let created = binder_item_commands::create_binder_item_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[item(BinderItemSubRole::Scene, "The letter")],
+        binder,
+        -1,
+    )
+    .unwrap();
+    let scene = created[0].id;
+    content_commands::create_content_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role: ContentRole::SceneText,
+            data: "She stared out at the grey water long after the ferry had gone.".to_string(),
+        }],
+        scene,
+        -1,
+    )
+    .unwrap();
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: scene,
+            field: BinderItemRelationshipField::PointOfView,
+            right_ids: vec![fx.character],
+        },
+    )
+    .unwrap();
+    scene
+}
+
 fn work_management_new(ctx: &AppContext, dir: &std::path::Path) {
     frontend::commands::work_management_commands::new_work(
         ctx,
@@ -420,6 +467,156 @@ fn a_pinned_reference_comes_back_confirmed() {
         vec![(fx.scene, fx.character)],
         "confirmed and suggested are the same row seen twice, not two rows"
     );
+}
+
+/// **The defect this feature closes.** A scene told in deep POV, naming its viewpoint
+/// character nowhere in its own prose, must still appear in that character's backlinks:
+/// the writer declared the relationship on `point_of_view`, and the union this scan builds
+/// is what surfaces it. `is_confirmed` stays false: nothing wrote `references` for this row.
+#[test]
+fn a_deep_pov_scene_appears_even_though_it_never_names_its_viewpoint_character() {
+    let fx = fixture();
+    let pov_scene = add_pov_scene(&fx);
+
+    let hits = scan(&fx);
+    let pov_hit = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == pov_scene))
+        .expect(
+            "the point-of-view scene must produce a row of its own even though it names \
+             nobody: this is the exact case the fold exists to cover",
+        );
+    match pov_hit {
+        MentionHit::Found {
+            target_id,
+            is_point_of_view,
+            is_confirmed,
+            hit_count,
+            evidence,
+            ..
+        } => {
+            assert_eq!(*target_id, fx.character);
+            assert!(
+                *is_point_of_view,
+                "the scene's declared point of view must be flagged"
+            );
+            assert!(
+                !is_confirmed,
+                "nothing pinned this scene's character into `references`"
+            );
+            assert_eq!(
+                *hit_count, 0,
+                "the name was never written, so there is nothing to count"
+            );
+            assert!(
+                evidence.is_empty(),
+                "there is no sentence to show for a name the prose never wrote"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+}
+
+/// A cast pin and a declared point of view are two independent relationships, and the scan
+/// must keep them on two independent flags: pinning one scene into `references` must not
+/// mark a *different* scene's `point_of_view` row as confirmed, and a point-of-view row
+/// must not read as though it were pinned just because something else in the project was.
+#[test]
+fn a_cast_pin_and_a_point_of_view_stay_on_separate_rows_and_separate_flags() {
+    let fx = fixture();
+    let pov_scene = add_pov_scene(&fx);
+
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: fx.scene,
+            field: BinderItemRelationshipField::References,
+            right_ids: vec![fx.character],
+        },
+    )
+    .expect("pin the fixture's own scene");
+
+    let hits = scan(&fx);
+
+    let pinned_row = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == fx.scene))
+        .expect("the pinned scene's row");
+    match pinned_row {
+        MentionHit::Found {
+            is_confirmed,
+            is_point_of_view,
+            ..
+        } => {
+            assert!(*is_confirmed, "this scene's reference was pinned");
+            assert!(
+                !is_point_of_view,
+                "this scene was never declared as the character's point of view"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+
+    let pov_row = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == pov_scene))
+        .expect("the point-of-view scene's row");
+    match pov_row {
+        MentionHit::Found {
+            is_confirmed,
+            is_point_of_view,
+            ..
+        } => {
+            assert!(
+                !is_confirmed,
+                "a point of view was never pinned into this scene's `references`"
+            );
+            assert!(*is_point_of_view);
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+}
+
+/// One scene can be both at once: pinned into the cast *and* declared as the character's
+/// point of view. The row must carry both flags together, never collapsing to one or
+/// silently dropping the other.
+#[test]
+fn a_scene_that_is_both_pinned_and_point_of_view_sets_both_flags() {
+    let fx = fixture();
+    let pov_scene = add_pov_scene(&fx);
+
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: pov_scene,
+            field: BinderItemRelationshipField::References,
+            right_ids: vec![fx.character],
+        },
+    )
+    .expect("also pin the point-of-view scene's character into references");
+
+    let hits = scan(&fx);
+    let row = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == pov_scene))
+        .expect("the doubly-declared scene's row");
+    match row {
+        MentionHit::Found {
+            is_confirmed,
+            is_point_of_view,
+            ..
+        } => {
+            assert!(*is_confirmed, "the pin must still set is_confirmed");
+            assert!(
+                *is_point_of_view,
+                "pinning the reference must not clear the point-of-view flag the same row \
+                 already carried"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
 }
 
 /// A scan of a project with no discoverable tag has nothing to match against — and must still

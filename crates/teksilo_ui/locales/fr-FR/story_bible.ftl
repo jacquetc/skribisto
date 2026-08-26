@@ -41,9 +41,14 @@ story-bible-grid-alias-count = { $count ->
 # occurrence relevée dans n’importe quel livre du projet compte, quel que
 # soit celui actuellement ouvert. Uniquement les scènes : une note d’univers
 # qui cite cette entrée ne compte pas comme « une scène ».
+# Compte une présence déclarée, pas seulement une occurrence textuelle : une
+# scène épinglée à la main, ou déclarée comme son point de vue, compte même
+# si le nom de l’entrée n’y est jamais réellement écrit. Le texte dit
+# « apparaît », pas « mentionnée » : il ne doit pas prétendre que le nom
+# figure dans le texte quand seule une relation a été déclarée.
 story-bible-grid-mention-count = { $count ->
-    [0] Pas encore mentionnée
-    [one] Mentionnée dans { $count } scène de l’ensemble du projet
-   *[other] Mentionnée dans { $count } scènes de l’ensemble du projet
+    [0] Aucune apparition pour l’instant
+    [one] Apparaît dans { $count } scène de l’ensemble du projet
+   *[other] Apparaît dans { $count } scènes de l’ensemble du projet
 }
 story-bible-books-filter-all = Tous les livres

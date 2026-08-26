@@ -67,6 +67,29 @@ pub use crate::docks::{APP_DOCK_ID_CEILING, AppDock, EXTENSION_DOCK_ID_FLOOR};
 // registration functions, and a *type* handed out by one is invisible to it.
 pub use crate::save::WorkHandle;
 
+// ── The mention index ────────────────────────────────────────────────────────
+//
+// Who is named where, across the whole Work. Kept current by
+// `WorkManagementEvent::LoadWork`/`NewWork`, a binder tag or item being created,
+// updated or removed, and a throttled rescan on save (`app/wiring/long_ops.rs`);
+// published as `app_state` in `App::build`, so `ctx.app_state::<MentionIndex>()`
+// from inside any window's widget tree reads the same answer every roster and
+// backlink list in the app resolves through. Published for the same reason
+// `WorkHandle` is above: an extension that receives a value it cannot name has
+// to reach past this façade to spell its type, which is the one thing the
+// façade exists to prevent. `MentionRow`'s fields are already `pub` and the
+// type is already `Clone`, so this is a pure visibility fix, nothing more.
+//
+// `skribisto_model::mentions::DiscoverableEntity`, what
+// `MentionIndex::discoverable_table` hands back, is deliberately *not*
+// re-exported here, unlike the margin lane's own types below. A lane provider
+// has no other route to `LaneColumn`/`LaneShape`/`LaneMark`/`LaneSpan`; a
+// downstream edition already depends on `skribisto_model` directly for its own
+// counting and drift math (verified against `skribisto-pro/Cargo.toml`), so it
+// can already name `DiscoverableEntity` on its own crate's dependency, and
+// re-exporting it here would only be a second name for the same type.
+pub use crate::mentions::{MentionIndex, MentionRow};
+
 // ── Inspector sections ───────────────────────────────────────────────────────
 pub use crate::docks::inspector_sections::{
     InspectorContext, InspectorSectionHandle, InspectorSectionSpec, register_inspector_section,

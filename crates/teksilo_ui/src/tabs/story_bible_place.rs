@@ -22,16 +22,29 @@
 //! (`GridView` + `grouping_sections`, the same widget the Corkboard itself uses,
 //! wired for a flat list rather than a manuscript stream).
 //!
-//! **The mentioned-in-N-scenes badge is Work-wide, on purpose, and worded so.** A
+//! **The appears-in-N-scenes badge is Work-wide, on purpose, and worded so.** A
 //! subject that outlives a single Book (a bible entry chief among them) is read
-//! across the whole Work, and a per-card count here answers "how often does the
-//! manuscript name this entry", never "how often does *this Book* name it". A
-//! trilogy writer must never be able to read the number as being about whichever
-//! Book they happen to have open. It sums
+//! across the whole Work, and a per-card count here answers "in how many scenes
+//! does this entry have a real presence", never "how often does *this Book* name
+//! it". A trilogy writer must never be able to read the number as being about
+//! whichever Book they happen to have open. It sums
 //! [`crate::mentions::MentionIndex::backlinks_for`], which is already Work-wide
 //! by construction, narrowed to **scene-owned** hits only (a worldbuilding note
 //! naming a character is a real mention, but it is not "a scene": a Note has no
 //! reading order), so the word "scenes" in the badge is never a loose one.
+//!
+//! **"Appears" already meant more than "named in the text" before point of view
+//! existed, and stays that way on purpose.** A `backlinks_for` row a writer pinned
+//! by hand (`is_confirmed`) has counted here with zero text hits since the Cast
+//! feature shipped: the badge has never claimed "the manuscript writes this
+//! entry's name N times", only "this entry has a declared presence in N scenes",
+//! which is why it says "appears" rather than the stronger "mentioned", a word
+//! a deep-POV, no-text-hit scene would make false. A scene bound only through
+//! `point_of_view` is exactly the same shape of claim, a declaration the writer
+//! made, not a text hit the scan happened to find, so it counts under the
+//! badge's existing meaning rather than a new one. What would break the word
+//! "appears" is a hit with **no relationship to the scene at all** counting
+//! toward it; a declared point of view is not that.
 //!
 //! **The Books filter chip narrows by declaration, never by measurement.** A
 //! card's own `book_ids` (the writer's filing, see `common::entities::BinderItem::books`'s
@@ -60,7 +73,6 @@ use teksilo::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::binder_item_commands;
-use frontend::common::entities::BinderItemSubRole;
 
 use crate::app_ids::AppIds;
 use crate::intents::AppIntent;
@@ -134,7 +146,18 @@ fn subtree_notes(ctx: &AppContext, work_id: u64, container_id: u64) -> Vec<Bible
 /// Note-owned hits (a worldbuilding note naming a character), but a Note has no
 /// reading order and is not "a scene" this entry appeared in, the same
 /// restriction the plan's own Appearances reading applies, restated here so the
-/// badge's own wording ("mentioned in N scenes") is never a loose claim.
+/// badge's own wording ("appears in N scenes") is never a loose claim. The test is
+/// [`skribisto_model::counts_prose`], "does this owner's `(role, sub_role)` carry
+/// manuscript prose", never a hand-rolled sub-role list: that predicate is
+/// the one place the matrix's answer to "is this a scene" lives, and a second,
+/// separately-maintained list here is exactly how this badge and a newly-admitted
+/// prose-bearing sub-role would quietly stop agreeing about what counts.
+///
+/// **Counts every `backlinks_for` row for a scene-owned entry, not only the ones with
+/// text evidence.** That includes a row that is confirmed-only (pinned by hand, no text
+/// hit) and, since the scan started folding it in, a row that is point-of-view-only (a
+/// deep-POV scene naming nobody). See the module doc's own paragraph on why this is not a
+/// meaning change: the badge has always counted a declared presence, not a text hit count.
 fn scene_mention_counts(
     ctx: &AppContext,
     index: &MentionIndex,
@@ -160,12 +183,7 @@ fn scene_mention_counts(
             .unwrap_or_default()
             .into_iter()
             .flatten()
-            .filter(|it| {
-                matches!(
-                    it.sub_role,
-                    BinderItemSubRole::Scene | BinderItemSubRole::ChapterScene
-                )
-            })
+            .filter(|it| skribisto_model::counts_prose(&it.role, &it.sub_role))
             .map(|it| it.id)
             .collect();
     owners_by_entry

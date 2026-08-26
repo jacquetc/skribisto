@@ -282,7 +282,13 @@ pub(super) fn section(
                 // prose_for already drops empty strings; cast_for treats
                 // empty as batch-only as well.
                 let live_prose = panel.live_cast.prose_for(d.id);
-                let cast = index.cast_for(d.id, live_prose.as_deref(), &d.references, &extra);
+                let cast = index.cast_for(
+                    d.id,
+                    live_prose.as_deref(),
+                    &d.references,
+                    &d.point_of_view,
+                    &extra,
+                );
                 let cast_empty = cast.is_empty();
 
                 // Read current refs from the probe on each click — a frozen
