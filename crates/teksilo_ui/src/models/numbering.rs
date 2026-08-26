@@ -24,13 +24,22 @@ use skribisto_model::numbering::{self, Numbered, NumberingRules};
 
 /// One binder item as the numbering pass sees it.
 ///
-/// The single place this seven-field mapping lives. It was written out by hand in five row
-/// sources, so adding `exclude_from_numbering` meant editing all five in lockstep — and
-/// missing one would have silently numbered that view against a stale view of the model,
-/// with no compiler error, because every field of `ItemMeta` is default-able.
+/// The single place this mapping lives. It was written out by hand in five row sources, so
+/// adding a field meant editing all five in lockstep — and missing one would have silently
+/// numbered that view against a stale view of the model, with no compiler error, because
+/// every field of `ItemMeta` is default-able.
+///
+/// **`binder_id` is left at zero**, and both callers here are numbering passes, which are
+/// deliberately work-wide: an ordinal counts across the concatenated stream, exactly as the
+/// outline and the exported file do, so a manuscript whose chapters span two binders keeps
+/// counting rather than restarting. Nothing in a numbering pass asks where a book ends, so
+/// nothing here reads the field. A caller that *does* ask that question, anything reaching
+/// `compile::enclosing_head` or `row_indices_in`, must build its metas with the real binder
+/// or it will walk straight out of the manuscript.
 pub fn item_meta_of(it: &BinderItemDto) -> ItemMeta {
     ItemMeta {
         id: it.id,
+        binder_id: 0,
         role: it.role.clone(),
         sub_role: it.sub_role.clone(),
         indent: it.indent as i32,

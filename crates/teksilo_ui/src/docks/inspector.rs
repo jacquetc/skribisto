@@ -83,6 +83,10 @@ pub(super) fn live_item_metas(ctx: &AppContext, ids: &AppIds) -> Vec<ItemMeta> {
         for it in items.into_iter().flatten() {
             out.push(ItemMeta {
                 id: it.id,
+                // The real binder: this stream feeds `milestone`'s `enclosing_head`, which
+                // must stop at the manuscript's edge rather than claim a notes row for the
+                // work's last Book.
+                binder_id,
                 role: it.role,
                 sub_role: it.sub_role,
                 indent: it.indent as i32,

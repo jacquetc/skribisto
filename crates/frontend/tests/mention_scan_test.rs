@@ -21,10 +21,11 @@
 //! copy of it, and a scan has no business emitting an entity event even of a kind the UI
 //! currently ignores.
 
+use direct_access::binder_item::dtos::UpdateBinderItemDto;
 use frontend::AppContext;
 use frontend::commands::{
     binder_item_commands, binder_tag_commands, content_commands, mention_management_commands,
-    undo_redo_commands, work_commands,
+    trash_management_commands, undo_redo_commands, work_commands,
 };
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
@@ -34,6 +35,7 @@ use frontend::common::types::EntityId;
 use frontend::direct_access::{
     BinderItemRelationshipDto, CreateBinderItemDto, CreateBinderTagDto, CreateContentDto,
 };
+use frontend::trash_management::TrashBinderItemsDto;
 use mention_management::{MentionHit, MentionHits, ScanMentionsDto};
 use work_management::{NewWorkDto, NewWorkTemplate};
 
@@ -734,5 +736,107 @@ fn a_document_naming_the_character_two_ways_keeps_both_names() {
     assert!(
         hit_count >= 2,
         "and the count still counts every hit, not every distinct name"
+    );
+}
+
+/// **A note excluded from the export is still findable.**
+///
+/// Every note is created with `is_exportable: false` now: a character page is the writer's
+/// own workings, not part of the book. That flag says whether a row's prose is *compiled*,
+/// and it must never say whether the row can be *found*. Those are two different questions
+/// about two different roles a row plays, and the scan is the place they would be confused.
+///
+/// If someone gates the alias table on `is_exportable`, every story-bible entry in every
+/// project disappears from the roster, from "Appears in the manuscript", and from the
+/// Atelier story bible, silently and with nothing on screen to say why. This test is what
+/// turns that from a quiet catastrophe into a red build.
+#[test]
+fn a_note_excluded_from_the_export_is_still_a_mention_target() {
+    let fx = fixture();
+
+    // Exactly the shape the app now creates: discoverable, and out of the export.
+    let it = binder_item_commands::get_binder_item(&fx.ctx, &fx.character)
+        .expect("read")
+        .expect("the character exists");
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &UpdateBinderItemDto {
+            id: it.id,
+            created_at: it.created_at,
+            updated_at: now(),
+            uid: it.uid,
+            title: it.title.clone(),
+            sub_title: it.sub_title.clone(),
+            role: it.role.clone(),
+            sub_role: it.sub_role.clone(),
+            label: it.label.clone(),
+            activated: it.activated,
+            is_favorite: it.is_favorite,
+            is_exportable: false,
+            exclude_from_numbering: it.exclude_from_numbering,
+            indent: it.indent,
+            word_count_goal: it.word_count_goal,
+            char_count_goal: it.char_count_goal,
+            dict_language: it.dict_language.clone(),
+            aliases: it.aliases.clone(),
+        },
+    )
+    .expect("take the character out of the export");
+
+    let hits = scan(&fx);
+    assert_eq!(
+        hit_targets(&hits),
+        vec![(fx.scene, fx.character)],
+        "the scene still names her, and she is still someone the scan can find"
+    );
+}
+
+/// **A note in the trash is nobody.**
+///
+/// Not a mention target, so nothing can be found as it; not a mention source, so its own
+/// body stops being scanned; and not a candidate the writer can pin anywhere, since every
+/// picker in the app builds its list from the same table this scan produces (the cast
+/// roster and the point-of-view list through `discoverable_table`, the note Links field
+/// through `ordered_flat_items`, the Books field through `live_books`, all of which drop a
+/// deactivated row).
+///
+/// The scan already did the right thing here; this is the test that says so, because
+/// "trashed" and "not exported" are two different absences and only one of them is allowed
+/// to reach the discovery path. The sibling test above pins the other half.
+#[test]
+fn a_trashed_note_is_neither_found_nor_offered() {
+    let fx = fixture();
+
+    // The character is named in the scene's prose, so before trashing there is exactly one
+    // hit to lose. Without this the test would pass on a scan that found nothing at all.
+    assert_eq!(
+        hit_targets(&scan(&fx)),
+        vec![(fx.scene, fx.character)],
+        "the fixture must have something to find before it is taken away"
+    );
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(stack),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.character as i64],
+            origin_binder_id: work_commands::get_work_relationship(
+                &fx.ctx,
+                &fx.work,
+                &WorkRelationshipField::Binders,
+            )
+            .unwrap()
+            .pop()
+            .unwrap() as i64,
+        },
+    )
+    .expect("trash the character");
+
+    assert!(
+        hit_targets(&scan(&fx)).is_empty(),
+        "a trashed note is not a name the scan can find, even where the prose still writes it"
     );
 }

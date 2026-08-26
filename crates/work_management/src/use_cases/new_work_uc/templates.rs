@@ -331,12 +331,15 @@ fn build_template_inner(
 
             let items = vec![
                 item(Folder, SubNone, l.notes.clone(), 0, false, vec![]),
+                // Out of the export, like every note: a notebook is the writer's own
+                // workings, and the switch is one click away in the Inspector for the
+                // rare note that is genuinely meant to be printed.
                 item(
                     Item,
                     Note,
                     format!("{} 1", l.note),
                     1,
-                    true,
+                    false,
                     vec![(NoteText, String::new()), (SynopsisText, String::new())],
                 ),
             ];

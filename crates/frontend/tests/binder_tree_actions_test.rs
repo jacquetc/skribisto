@@ -2732,3 +2732,56 @@ fn delete_trash_entries_on_a_stale_id_is_a_noop() {
         vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
     );
 }
+
+/// **Converting carries the export flag, both ways.**
+///
+/// A note is not the book and a scene is, so the flag has to move with the type or the row
+/// says two different things about itself: a Note still marked exportable prints the
+/// writer's own workings into their manuscript, and a Scene converted back from one stays
+/// silently absent from the book it is now part of.
+///
+/// The mirror of the `SceneText` / `NoteText` remap the test above covers, and it rides in
+/// the same update, so undo takes back both at once.
+#[test]
+fn promote_between_scene_and_note_carries_the_export_flag() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Scene");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    assert!(item(&fx.ctx, s).is_exportable, "a scene starts in the book");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Note.code(),
+        },
+    )
+    .expect("promote to Note");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert!(
+        !item(&fx.ctx, s).is_exportable,
+        "and leaves the book on the way to being a note"
+    );
+
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Scene.code(),
+        },
+    )
+    .expect("promote back to Scene");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Scene);
+    assert!(
+        item(&fx.ctx, s).is_exportable,
+        "and rejoins it on the way back"
+    );
+
+    // One step, not two: the flag rides in the same update as the type.
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert!(!item(&fx.ctx, s).is_exportable);
+}

@@ -442,6 +442,7 @@ mod tests {
     fn meta(id: u64, sub_role: BinderItemSubRole) -> ItemMeta {
         ItemMeta {
             id,
+            binder_id: 1,
             role: BinderItemRole::Item,
             sub_role,
             indent: 0,

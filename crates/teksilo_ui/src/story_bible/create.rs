@@ -93,7 +93,10 @@ pub fn create_entry(
         role: BinderItemRole::Item,
         sub_role: BinderItemSubRole::Note,
         activated: true,
-        is_exportable: true,
+        // Out of the export, like every other note: a story-bible entry is the writer's
+        // own workings, not part of the book. See `OutlineViewModel`'s own create path,
+        // which applies the same rule to every note shape.
+        is_exportable: false,
         indent,
         aliases: draft.aliases.clone(),
         books: draft.books.clone(),

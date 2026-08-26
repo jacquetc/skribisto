@@ -228,8 +228,16 @@ fn run_analysis(
     let level = compile::StreamLevel::for_container(&metas[head].role, &metas[head].sub_role)
         .unwrap_or(StreamLevel::Book);
 
-    let sub_roles: Vec<_> = metas.iter().map(|m| m.sub_role.clone()).collect();
-    let rows = compile::row_indices(&sub_roles, head, level);
+    // `row_indices_in`, not `row_indices`: this walk holds the **whole work's** stream,
+    // which is binder-major and concatenated with nothing between one binder and the next,
+    // while only manuscript rows carry book markers. The bare-slice version cannot see
+    // that edge, so a Book's extent ran straight out of the manuscript and swallowed the
+    // notes and research binders, and every measure here is a comparison of the book
+    // against itself. It only ever stopped because every shipped template ends its
+    // manuscript with an explicit `BookEnd`, which is an accident of the templates rather
+    // than a rule, and exactly the thing a writer keeping an old draft in another binder
+    // would be relying on.
+    let rows = compile::row_indices_in(&metas, head, level);
 
     // Only the rows actually in scope are copied out of the gathered tree. Cloning every
     // item in the work would mean copying every scene's Djot text — the whole manuscript —

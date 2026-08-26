@@ -49,6 +49,7 @@ pub fn item_metas(g: &Gathered) -> Vec<ItemMeta> {
             let it = &iwc.item;
             v.push(ItemMeta {
                 id: it.id,
+                binder_id: bwi.binder.id,
                 role: it.role.clone(),
                 sub_role: it.sub_role.clone(),
                 indent: it.indent as i32,

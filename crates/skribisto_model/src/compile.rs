@@ -95,6 +95,32 @@ pub fn row_indices(sub_roles: &[BinderItemSubRole], head: usize, level: StreamLe
     out
 }
 
+/// [`row_indices`], but over the whole work's `ItemMeta` stream and stopping at the
+/// container's **own binder's edge**.
+///
+/// [`row_indices`] takes a bare sub-role slice and therefore cannot see where one binder
+/// ends, which is correct for its callers: a stream view builds its slice from a single
+/// binder already. A caller holding the concatenated stream instead (anything built on
+/// `skribisto_compiler::item_metas`) has to say so, or a Book's extent runs out of the
+/// manuscript and swallows the notes and research binders whole.
+///
+/// Returns indices into `items`, so a caller can read the rows straight back.
+pub fn row_indices_in(items: &[ItemMeta], head: usize, level: StreamLevel) -> Vec<usize> {
+    let Some(binder) = items.get(head).map(|m| m.binder_id) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for (i, m) in items.iter().enumerate().skip(head + 1) {
+        if m.binder_id != binder || is_boundary(level, &m.sub_role) {
+            break;
+        }
+        if is_row(&m.sub_role) {
+            out.push(i);
+        }
+    }
+    out
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Export scope resolution
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,6 +132,19 @@ pub fn row_indices(sub_roles: &[BinderItemSubRole], head: usize, level: StreamLe
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ItemMeta {
     pub id: u64,
+    /// Which binder this row lives in.
+    ///
+    /// **A book never runs past its own binder's edge.** The stream is binder-major and
+    /// concatenated with nothing between one binder and the next, while `opens_book` and
+    /// `closes_book` are only ever set by manuscript rows. Without this, a walk looking
+    /// for where a book ends runs straight out of the manuscript and swallows the notes
+    /// and research binders whole, and a walk looking for which book a row is *in*
+    /// answers "the work's last book" for every note in the project.
+    ///
+    /// It only ever worked because every shipped template ends its manuscript with an
+    /// explicit `BookEnd`. That is an accident of the templates, not a rule, and a writer
+    /// who deletes that marker, or keeps an old draft in another binder, is relying on it.
+    pub binder_id: u64,
     pub role: BinderItemRole,
     pub sub_role: BinderItemSubRole,
     /// Binder-tree indent (0 = top level). Only the [`ScopeKind::Folder`] subtree walk
@@ -170,6 +209,7 @@ pub fn primary_scope(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Opt
 /// Example: a scene directly under a Part (no chapter) has no enclosing *chapter*, so
 /// "Export Chapter" is unavailable on it.
 pub fn enclosing_head(items: &[ItemMeta], pos: usize, level: StreamLevel) -> Option<usize> {
+    let binder = items.get(pos)?.binder_id;
     if pos >= items.len() {
         return None;
     }
@@ -190,6 +230,13 @@ pub fn enclosing_head(items: &[ItemMeta], pos: usize, level: StreamLevel) -> Opt
         return Some(pos);
     }
     for i in (0..pos).rev() {
+        // The binder's own edge is a boundary like any other, and the hardest one to
+        // notice: the stream is concatenated with nothing between one binder and the
+        // next, so without this the walk leaves the manuscript entirely and reports a
+        // notes row as belonging to the work's last book.
+        if items[i].binder_id != binder {
+            return None;
+        }
         let sr = &items[i].sub_role;
         if opens(sr) {
             return Some(i);
@@ -238,10 +285,14 @@ fn single(items: &[ItemMeta], focused: usize, want: BinderItemSubRole) -> Option
 
 fn scope_extent(items: &[ItemMeta], focused: usize, level: StreamLevel) -> Option<Vec<u64>> {
     let head = enclosing_head(items, focused, level)?;
+    let binder = items[head].binder_id;
     let mut ids = Vec::new();
     push_swept(&mut ids, &items[head]);
     for it in items.iter().skip(head + 1) {
-        if is_boundary(level, &it.sub_role) {
+        // The binder's edge ends the extent as surely as the next book marker does. Without
+        // it, exporting "this Book" sweeps up whatever the notes and research binders
+        // happen to hold, since only manuscript rows carry the markers this walk looks for.
+        if it.binder_id != binder || is_boundary(level, &it.sub_role) {
             break;
         }
         push_swept(&mut ids, it);
@@ -286,6 +337,7 @@ mod tests {
     fn meta(id: u64, role: BinderItemRole, sub_role: SR, indent: i32) -> ItemMeta {
         ItemMeta {
             id,
+            binder_id: 1,
             role,
             sub_role,
             indent,
@@ -394,5 +446,47 @@ mod tests {
     fn custom_never_resolves_here() {
         let s = flat_book();
         assert_eq!(resolve_scope(&s, 2, ScopeKind::Custom), None);
+    }
+
+    /// **A book stops at its own binder's edge.**
+    ///
+    /// The stream is binder-major and concatenated with nothing between one binder and the
+    /// next, and only manuscript rows carry book markers. So a walk that does not check
+    /// which binder it is in runs out of the manuscript and claims whatever the notes or
+    /// research binder holds.
+    ///
+    /// It only ever stopped because every shipped template ends its manuscript with a
+    /// `BookEnd`. That is an accident of the templates, not a rule, and it is exactly what
+    /// a writer keeping an old draft in another binder would be relying on. This fixture
+    /// deliberately has no end marker.
+    #[test]
+    fn a_book_does_not_run_into_the_next_binder() {
+        let mut items = vec![
+            meta(1, BinderItemRole::Folder, SR::Book, 0),
+            meta(2, BinderItemRole::Item, SR::Scene, 1),
+        ];
+        // The research binder, holding an old draft the writer moved out of the way.
+        let mut old = meta(3, BinderItemRole::Folder, SR::ChapterScene, 0);
+        old.binder_id = 2;
+        let mut old_scene = meta(4, BinderItemRole::Item, SR::Scene, 1);
+        old_scene.binder_id = 2;
+        items.push(old);
+        items.push(old_scene);
+
+        assert_eq!(
+            row_indices_in(&items, 0, StreamLevel::Book),
+            vec![1],
+            "the Book holds its own scene and nothing from the next binder"
+        );
+        assert_eq!(
+            scope_extent(&items, 1, StreamLevel::Book),
+            Some(vec![1, 2]),
+            "and the export sweep stops there too"
+        );
+        assert_eq!(
+            enclosing_head(&items, 3, StreamLevel::Book),
+            None,
+            "a row in another binder is in no Book, not in the work's last one"
+        );
     }
 }

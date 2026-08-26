@@ -454,7 +454,7 @@ impl<'a> Builder<'a> {
                     SubRole::Note,
                     &obj.name,
                     1,
-                    true,
+                    false,
                     vec![
                         (ContentRole::NoteText, note_text),
                         (ContentRole::SynopsisText, synopsis),
@@ -605,7 +605,7 @@ impl<'a> Builder<'a> {
                 SubRole::Note,
                 &notes_title(&node.name),
                 indent + 1,
-                true,
+                false,
                 vec![
                     (ContentRole::NoteText, own_note),
                     (ContentRole::SynopsisText, String::new()),
@@ -750,7 +750,7 @@ impl<'a> Builder<'a> {
             SubRole::Note,
             &notes_title(&node.name),
             indent,
-            true,
+            false,
             vec![
                 (ContentRole::NoteText, note),
                 (ContentRole::SynopsisText, String::new()),

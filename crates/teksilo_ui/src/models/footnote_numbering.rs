@@ -336,6 +336,7 @@ mod tests {
         ItemProse {
             meta: ItemMeta {
                 id,
+                binder_id: 1,
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Scene,
                 indent: 0,

@@ -378,12 +378,20 @@ impl OutlineViewModel {
         sub_role: BinderItemSubRole,
         title: String,
     ) -> Option<u64> {
+        let is_note = sub_role == BinderItemSubRole::Note;
         let dto = CreateBinderItemDto {
             title,
             role,
             sub_role,
             activated: true,
-            is_exportable: true,
+            // **A note starts out of the export.** Whichever shape it is, `Folder/Note` or
+            // `Item/Note`, a note is the writer's own workings: a character page, a
+            // research clipping, a reminder. None of it belongs in the book unless the
+            // writer says so, and the switch is one click away in the Inspector for the
+            // rare note that is genuinely front or back matter.
+            //
+            // Everything else keeps the default: a scene, a chapter, a part are the book.
+            is_exportable: !is_note,
             indent,
             ..Default::default()
         };

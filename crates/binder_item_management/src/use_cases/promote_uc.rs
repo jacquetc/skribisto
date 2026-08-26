@@ -125,6 +125,23 @@ impl PromoteUseCase {
         updated.role = target_role.clone();
         updated.sub_role = target_sub_role.clone();
         updated.updated_at = now;
+        // A note is not the book, and a scene is.
+        //
+        // Converting between them has to carry the export flag with it, or the row is left
+        // saying two different things about itself: a Note still marked exportable prints
+        // the writer's own workings into their manuscript, and a Scene converted back from
+        // one stays silently absent from the book it is now part of. The flag is set from
+        // the *target* type rather than preserved, because the writer's answer to "is this
+        // in the book" is exactly what they just changed.
+        //
+        // Here, not at the three call sites: the Inspector's Promote button, the outline's
+        // "Convert to" and the Overview's all funnel through this one use case, and
+        // `PromoteDto` carries no such field for a caller to get wrong. It rides in the
+        // same update, so it is the same undo step as the conversion.
+        //
+        // The mirror of `remap_content` below, which moves the text itself between
+        // `SceneText` and `NoteText` for the same reason.
+        updated.is_exportable = target_sub_role != common::entities::BinderItemSubRole::Note;
         uow.update_binder_item(&updated)?;
 
         // 2. Remap the content roles into the target's vocabulary so the text survives.

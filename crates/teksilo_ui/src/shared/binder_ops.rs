@@ -187,12 +187,17 @@ pub(crate) fn create_by_recommendation(
     let (index, indent) =
         placement::insertion_point_for_item(&order, &meta, pos, anchor_indent, rec.relation);
 
+    let is_note = sub_role == BinderItemSubRole::Note;
     let dto = CreateBinderItemDto {
         title: title.to_string(),
         role,
         sub_role,
         activated: true,
-        is_exportable: true,
+        // Out of the export, like every note, whichever door it came through. This one is
+        // the corkboard's and the stream's "+", and it recommends `Note`/`NoteFolder` off
+        // a note anchor, so without this the same note is exportable or not depending on
+        // which button made it.
+        is_exportable: !is_note,
         indent,
         ..Default::default()
     };
