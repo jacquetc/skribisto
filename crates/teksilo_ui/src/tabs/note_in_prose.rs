@@ -68,8 +68,14 @@ use super::{ContentTab, shared};
 /// [`NoteInProseBody::build`].
 pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
     let will_show = shared::segment_will_show(tab, shared::segments::SEG_NOTE_IN_PROSE);
-    let (area, port, _page) = shared::writing_page_scroll(tab, will_show);
+    let (area, port, _binding) = shared::writing_page_scroll(tab, will_show);
     let mark_dirty: Rc<dyn Fn()> = Rc::new(tab.mark_dirty_fn());
+    // Where each row landed, so the lane can map it. Same machinery as a Full Book
+    // stream: this reading is one scroll area over many documents, which is exactly the
+    // shape `RowExtents` exists for.
+    let extents = crate::margin_lane::RowExtents::new();
+    let docs: Rc<RefCell<HashMap<u64, Rc<OpenDoc>>>> = Rc::new(RefCell::new(HashMap::new()));
+    let page_scroll = area.scroll_y_signal().clone();
     // One token for this page. Every editor on it is the same surface, and a scene
     // that is also open in a tab of its own must not answer for this reading. See
     // [`crate::margin_lane::LaneScope`].
@@ -94,10 +100,12 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         games: tab.writing_games(),
         arrival_project: tab.work_unique_id(),
         tags: tab.tags(),
+        extents: extents.clone(),
+        page_scroll: page_scroll.clone(),
         selected_book: Signal::new(None),
         generation: Signal::new(0),
         wired: Cell::new(false),
-        docs: RefCell::new(HashMap::new()),
+        docs: docs.clone(),
         store: tab.docs(),
         root: None,
     };
@@ -108,7 +116,41 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         .child(body)
         .child(shared::vspace(28.0))
         .child(port);
-    Box::new(area.child(col))
+
+    // The lane, beside the page and not inside it, exactly as a Full Book stream mounts
+    // its own. `LaneSurface::Stream` because that is what this is: many documents on one
+    // axis. It therefore carries every provider a stream carries, comments and spelling
+    // and boundaries included, which is right -- a writer editing real prose here expects
+    // the marks they left on it -- and the story-bible provider on top.
+    let opened = docs.clone();
+    let row: Rc<dyn Fn(u64) -> Option<crate::margin_lane::LaneRow>> = Rc::new(move |item| {
+        let doc = opened.borrow().get(&item).cloned()?;
+        let field = doc.main.as_ref()?;
+        Some(crate::margin_lane::LaneRow {
+            item,
+            doc: field.doc.clone(),
+            comments: doc.comment_binding_main(),
+            spell: doc.spell_main(),
+            markers: Default::default(),
+        })
+    });
+    let lane = crate::margin_lane::lane_for(
+        &area,
+        crate::margin_lane::LaneInputs {
+            app_ctx: tab.app_ctx(),
+            ids: tab.ids().clone(),
+            surface: crate::margin_lane::LaneSurface::Stream,
+            kind: crate::format::EditorKind::Prose,
+            scope,
+            format: tab.format.clone(),
+            rows: crate::margin_lane::LaneRows::Placed { extents, row },
+        },
+    );
+    Box::new(
+        HStack::new()
+            .child(Expand::new().child(area.child(col)))
+            .child(lane),
+    )
 }
 
 /// Every backend origin that can change which rows this note is declared present in, or
@@ -192,6 +234,9 @@ struct NoteInProseBody {
     /// survives because it is a field, set once when [`note_in_prose_pane`] constructs
     /// this widget, exactly as `ContentTab::story_bible_book_filter` survives
     /// `StoryBiblePane`'s own rebuilds by living one level further out.
+    /// Where each row landed, published for the lane. See [`crate::margin_lane::rows`].
+    extents: crate::margin_lane::RowExtents,
+    page_scroll: Signal<f32>,
     selected_book: Signal<Option<SegmentId>>,
     /// Bumped by [`reload_origins`]'s coalesced reload; bound to `BindingLevel::Rebuild`
     /// below purely to give this widget a rebuild trigger of its own; the rows are always
@@ -207,7 +252,9 @@ struct NoteInProseBody {
     /// editing here edits the real document. Reconciled on every build against the
     /// currently declared set (see [`NoteInProseBody::sync_docs`]); released for good when
     /// this widget drops.
-    docs: RefCell<HashMap<u64, Rc<OpenDoc>>>,
+    /// The rows' open documents, shared with the lane beside this page so the two
+    /// cannot disagree about which document a row is showing.
+    docs: Rc<RefCell<HashMap<u64, Rc<OpenDoc>>>>,
     /// This tab's shared document store, threaded from [`ContentTab::docs`] once, at
     /// construction, exactly as [`Self::ids`]/[`Self::app_ctx`] are. **Not** read from
     /// `ctx.app_state::<OpenDocsStore>()`: that slot resolves to whatever window's
@@ -387,6 +434,39 @@ impl Widget for NoteInProseBody {
 
         let books = crate::models::books_in_work(&self.app_ctx, work_id);
 
+        // **Whose names the lane marks**, published while this reading is on screen and
+        // withdrawn when it goes away. The lane's provider is registered long before this
+        // tab exists and has no route back to it, which is the same problem, and the same
+        // answer, as the find banner's own `active_query`. See `margin_lane::subject`.
+        {
+            let names = {
+                let mut n: Vec<String> = frontend::commands::binder_item_commands::get_binder_item(
+                    &self.app_ctx,
+                    &self.note_id,
+                )
+                .ok()
+                .flatten()
+                .map(|it| {
+                    std::iter::once(it.title)
+                        .chain(it.aliases)
+                        .filter(|s| !s.trim().is_empty())
+                        .collect()
+                })
+                .unwrap_or_default();
+                // Longest first, so "Elizabeth Bennet" is marked once rather than twice
+                // for the name inside it. `subject::hits` relies on this order.
+                n.sort_by_key(|s| std::cmp::Reverse(s.chars().count()));
+                n
+            };
+            crate::margin_lane::set_active_subject(self.work_uid().map(|work_uid| {
+                crate::margin_lane::LaneSubject {
+                    note_id: self.note_id,
+                    names,
+                    work_uid,
+                }
+            }));
+        }
+
         if !self.wired.replace(true) {
             if self.selected_book.get().is_none() {
                 let persisted = book_service
@@ -477,7 +557,12 @@ impl Widget for NoteInProseBody {
                 let docs = self.docs.borrow();
                 for row in &rows {
                     if let Some(doc) = docs.get(&row.item_id) {
-                        col = col.child(self.row_widget(row, doc));
+                        col = col.child(crate::margin_lane::RowExtent::new(
+                            row.item_id,
+                            self.extents.clone(),
+                            self.page_scroll.clone(),
+                            self.row_widget(row, doc),
+                        ));
                     }
                 }
             }

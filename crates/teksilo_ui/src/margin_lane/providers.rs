@@ -64,6 +64,7 @@ pub fn install() -> Vec<LaneProviderHandle> {
         (format!("{NAMESPACE}.search"), search()),
         (format!("{NAMESPACE}.boundaries"), boundaries()),
         (format!("{NAMESPACE}.spelling"), spelling()),
+        (format!("{NAMESPACE}.story_bible"), story_bible()),
     ]
     .into_iter()
     .filter_map(
@@ -408,6 +409,117 @@ fn document_title(ctx: &LaneContext<'_>) -> String {
         crate::tr!(margin_lane_boundary_untitled()).resolve_now()
     } else {
         title
+    }
+}
+
+// ── the story-bible subject ──────────────────────────────────────────────────
+
+/// **Where the entry a reading is about is named**, plus one mark per row that
+/// declares her as its point of view.
+///
+/// Only ever draws on a note's **In prose** reading, because that is the only surface
+/// with a subject: [`super::subject::active_subject`] is set while such a reading is on
+/// screen and withdrawn when it goes away. Everywhere else this contributes nothing, so
+/// a writer who never opens one never sees it.
+///
+/// ## The zero-width mark
+///
+/// A row is in this reading because the writer *declared* it, and the strongest
+/// declaration is a point of view: this scene is told through her eyes. Such a scene
+/// very often never writes her name at all, which is the whole reason deep third person
+/// exists. Marking only textual hits would leave exactly those rows blank, so the row
+/// earns a mark at its own first character: a stop the reader can move to, saying she is
+/// here even though the prose does not say so.
+///
+/// Zero-width by construction rather than by convention. It is a position, not a range,
+/// and giving it an arbitrary length would claim a stretch of prose that has nothing to
+/// do with it.
+///
+/// ## Default on
+///
+/// It marks what a person put there, never a machine's opinion of the prose: every mark
+/// is either a name the writer wrote or a declaration they made by hand. That is the
+/// rule [`LaneProviderSpec::default_on`](super::LaneProviderSpec::default_on) states,
+/// and the same one comments and boundaries pass.
+fn story_bible() -> LaneProviderSpec {
+    LaneProviderSpec {
+        id: "story_bible".into(),
+        label: Rc::new(|| crate::tr!(margin_lane_provider_story_bible())),
+        hint: Rc::new(|| crate::tr!(margin_lane_provider_story_bible_hint())),
+        column: LaneColumn::Right,
+        shape: LaneShape::Dot,
+        palette_slot: 4,
+        surfaces: &[LaneSurface::Stream],
+        default_on: true,
+        refresh: LaneRefresh::OnDocumentChange,
+        marks: Rc::new(|ctx| {
+            let Some(subject) = super::subject::active_subject().get() else {
+                return Vec::new();
+            };
+            // A second window on a second project marks nothing rather than this
+            // project's names, the same guard the Atelier's own cast lane applies.
+            let here = frontend::commands::work_commands::get_work(
+                ctx.app_ctx,
+                &match ctx.ids.work_id.get() {
+                    Some(w) => w,
+                    None => return Vec::new(),
+                },
+            )
+            .ok()
+            .flatten()
+            .map(|w| w.unique_id)
+            .unwrap_or_default();
+            if here != subject.work_uid {
+                return Vec::new();
+            }
+
+            let mut out = Vec::new();
+
+            // The declaration first, so it sorts to the top of the row.
+            let declared_pov = frontend::commands::binder_item_commands::get_binder_item(
+                ctx.app_ctx,
+                &ctx.item_id,
+            )
+            .ok()
+            .flatten()
+            .is_some_and(|it| it.point_of_view.contains(&subject.note_id));
+            if declared_pov && let Some(at) = (ctx.locate)(0) {
+                out.push(LaneMark {
+                    id: 0,
+                    span: LaneSpan::new(at, at),
+                    column: LaneColumn::Right,
+                    shape: LaneShape::Dot,
+                    color: ctx.color,
+                    label: crate::tr!(margin_lane_mark_point_of_view()),
+                    group: ctx.group,
+                });
+            }
+
+            let Ok(text) = ctx.doc.to_plain_text() else {
+                return out;
+            };
+            for (i, (start, end)) in super::subject::hits(&text, &subject.names)
+                .into_iter()
+                .enumerate()
+            {
+                let (Some(a), Some(b)) = ((ctx.locate)(start), (ctx.locate)(end)) else {
+                    continue;
+                };
+                out.push(LaneMark {
+                    // Offset by one so the point-of-view mark keeps id zero: ids need
+                    // only be stable within one provider across repaints, and a hit's
+                    // position is exactly that.
+                    id: i as u64 + 1,
+                    span: LaneSpan::new(a, b),
+                    column: LaneColumn::Right,
+                    shape: LaneShape::Dot,
+                    color: ctx.color,
+                    label: crate::tr!(margin_lane_mark_named_here()),
+                    group: ctx.group,
+                });
+            }
+            out
+        }),
     }
 }
 

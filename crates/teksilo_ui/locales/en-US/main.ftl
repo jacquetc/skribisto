@@ -2318,6 +2318,7 @@ help-section-extensions = Extensions
 
 help-topic-getting-started = Your first project
 help-topic-writing-model = How a book is put together
+help-topic-drafts-and-old-versions = Keeping an older draft
 help-topic-goals-and-pace = Targets and pace
 help-topic-comments = Comments
 help-topic-round-trip = Sending your book to a reader
@@ -2421,6 +2422,10 @@ epigraph-mark-attribution-tip = Mark the line the caret is in as the quotation's
 ## Margin lane — the strip beside the scrollbar that maps a document
 margin-lane-name = Margin marks
 margin-lane-provider-comments = Comments
+margin-lane-provider-story-bible = Story bible entry
+margin-lane-provider-story-bible-hint = On a note's In prose reading, where that entry is named, and the scenes told through its eyes.
+margin-lane-mark-point-of-view = Told from here
+margin-lane-mark-named-here = Named here
 margin-lane-provider-comments-hint = Where a note is attached to the text
 margin-lane-provider-search = Search hits
 margin-lane-provider-search-hint = Every hit for what you last searched for, wherever it is in the document

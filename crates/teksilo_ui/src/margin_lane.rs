@@ -44,6 +44,7 @@ pub mod providers;
 pub mod query;
 pub mod resolve;
 pub mod rows;
+pub mod subject;
 pub mod surface;
 pub mod texture;
 
@@ -53,6 +54,7 @@ pub use query::{
 };
 pub use resolve::{LaneCall, group_of, is_enabled, texture_enabled};
 pub use rows::{RowExtent, RowExtents};
+pub use subject::{LaneSubject, active_subject, clear_subject_for, set_active_subject};
 pub use surface::{LaneInputs, LaneRow, LaneRows, lane_for};
 
 /// Register every provider the community edition owns.
@@ -438,7 +440,14 @@ thread_local! {
 /// done: the id is a persisted settings key, so once an extension has shipped
 /// under one, taking it back would silently repoint a writer's saved preference.
 pub fn builtin_ids() -> &'static [&'static str] {
-    &["comments", "search", "boundaries", "spelling", "footnotes"]
+    &[
+        "comments",
+        "search",
+        "boundaries",
+        "spelling",
+        "footnotes",
+        "story_bible",
+    ]
 }
 
 fn is_builtin(id: &str) -> bool {

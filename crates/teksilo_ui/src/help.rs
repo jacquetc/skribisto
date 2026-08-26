@@ -501,6 +501,12 @@ pub fn builtin_topics() -> Vec<HelpTopicSpec> {
             body: djot_topic!("writing-model"),
         },
         HelpTopicSpec {
+            key: "help-drafts-and-old-versions",
+            section: HelpSection::Writing,
+            title: Rc::new(|| tr!(help_topic_drafts_and_old_versions())),
+            body: djot_topic!("drafts-and-old-versions"),
+        },
+        HelpTopicSpec {
             key: "help-goals-and-pace",
             section: HelpSection::Writing,
             title: Rc::new(|| tr!(help_topic_goals_and_pace())),
