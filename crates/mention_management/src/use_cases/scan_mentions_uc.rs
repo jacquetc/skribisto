@@ -269,13 +269,21 @@ fn run_scan(
                     // Keep the first hit's evidence and name: cut once, here, where the
                     // prose is already in hand. Nothing downstream has access to another
                     // item's text, so this is the only place it can be done at all.
+                    // The **first** hit's sentence, cut once here where the prose is
+                    // already in hand: nothing downstream can reach another item's text.
                     if entry.evidence.is_empty() {
                         entry.evidence = mentions::evidence_sentence(&plain, h);
-                        entry.matched_name = entity
-                            .map(|e| h.matched_name(e).to_string())
-                            .unwrap_or_default();
-                        entry.is_title_match = h.is_title_match;
                     }
+                    // **Every** distinct name, though, not just the first. A scene that
+                    // writes "Elizabeth" twice and "Lizzy" once is telling the writer
+                    // something the first hit alone would hide.
+                    if let Some(name) = entity.map(|e| h.matched_name(e).to_string())
+                        && !name.is_empty()
+                        && !entry.matched_names.iter().any(|n| n == &name)
+                    {
+                        entry.matched_names.push(name);
+                    }
+                    entry.is_title_match |= h.is_title_match;
                 }
             }
         }
@@ -323,10 +331,18 @@ fn run_scan(
             owner_id,
             target_id,
             title: titles.get(&target_id).cloned().unwrap_or_default(),
-            matched_name: if r.matched_name.is_empty() {
-                titles.get(&target_id).cloned().unwrap_or_default()
+            // A row with no textual hit at all is a pure declaration: a pin, or a point
+            // of view on a scene that never writes the name. It is named by the entry's
+            // own title, because that is the only name in play.
+            matched_names: if r.matched_names.is_empty() {
+                titles
+                    .get(&target_id)
+                    .cloned()
+                    .into_iter()
+                    .filter(|t| !t.is_empty())
+                    .collect()
             } else {
-                r.matched_name
+                r.matched_names
             },
             is_title_match: r.is_title_match,
             hit_count: r.hit_count,
@@ -366,7 +382,7 @@ struct Row {
     is_confirmed: bool,
     is_point_of_view: bool,
     is_title_match: bool,
-    matched_name: String,
+    matched_names: Vec<String>,
     evidence: String,
 }
 

@@ -107,6 +107,63 @@ pub struct BookChoice {
     pub fallback_label: Option<String>,
 }
 
+/// Which Book each row of the work sits in, alongside the Books themselves.
+///
+/// One walk of the flat stream, because a caller needing both would otherwise make two and
+/// could get its answers from two different moments.
+///
+/// **A row need not be in any Book.** Front matter, a stray note at the top of the binder,
+/// anything past a `BookEnd`, and every row of a project with no Book at all: those are
+/// simply absent from `of_item`, which is a real answer and not a failure. A surface that
+/// groups by Book has to say something about them rather than drop them.
+pub struct BookIndex {
+    /// Every Book, in manuscript order.
+    pub books: Vec<BookChoice>,
+    /// Row id to the `item_id` of the Book it is in. Absent means "in no Book".
+    pub of_item: std::collections::HashMap<u64, u64>,
+}
+
+/// Build a [`BookIndex`] for the work.
+///
+/// A Book runs from its own marker to the next one or to its explicit end marker, through
+/// [`skribisto_model::SubRoleExt`] rather than a literal `sub_role == Book`, so the flat
+/// `Item/BookBegin` a legacy import produces opens a book here exactly as a `Folder/Book`
+/// does. Indent plays no part: the compiler folds the ordered list and never consults it.
+pub fn book_index(ctx: &AppContext, work_id: u64) -> BookIndex {
+    use skribisto_model::SubRoleExt;
+
+    let flat = ordered_flat_items(ctx, work_id);
+    let whole = ordered_item_dtos(ctx, work_id);
+    let numbers = numbers_for_items(ctx, work_id, &whole);
+    let langs = work_language_tags(ctx, work_id);
+
+    let mut books = Vec::new();
+    let mut of_item = std::collections::HashMap::new();
+    let mut current: Option<u64> = None;
+    for (_, it) in &flat {
+        if it.sub_role.closes_book() {
+            current = None;
+            continue;
+        }
+        if it.sub_role.opens_book() {
+            current = Some(it.id);
+            let numbered = numbers.get(&it.id);
+            books.push(BookChoice {
+                item_id: it.id,
+                uid: it.uid,
+                number: numbered.map(Numbered::number),
+                fallback_label: fallback_label_for(it, numbered, &langs),
+                title: it.title.clone(),
+            });
+            continue;
+        }
+        if let Some(book) = current {
+            of_item.insert(it.id, book);
+        }
+    }
+    BookIndex { books, of_item }
+}
+
 /// Every Book in `work_id`, activated, in manuscript order: the segmented control's
 /// candidates. Empty when the Work has no Book at all, which is what tells the pane to
 /// draw its honest empty state instead of a bar with nothing on it.
@@ -629,5 +686,125 @@ mod tests {
         let f = seed();
         let other_note_id = f.b1_scene_undeclared; // any id this note never appears on
         assert!(declared_rows_in_book(&f.ctx, f.work_id, other_note_id, f.book_one).is_empty());
+    }
+
+    // ---- `book_index`: which Book a row is in, and the rows in none ----
+
+    /// A work with one binder and nothing in it, plus a way to append rows.
+    ///
+    /// Its own seeder rather than [`seed`]'s: that one builds a fixed two-Book shape these
+    /// tests would have to work around, and what they are about is the *stream*, one row
+    /// at a time.
+    fn bare_work() -> (
+        Rc<AppContext>,
+        u64,
+        impl FnMut(BinderItemRole, BinderItemSubRole, i64) -> u64,
+    ) {
+        let ctx = Rc::new(AppContext::new());
+        let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let binder = binder_commands::create_binder(
+            &ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("create binder")
+        .id;
+        let c = ctx.clone();
+        let mut index = 0i32;
+        let add = move |role: BinderItemRole, sub_role: BinderItemSubRole, indent: i64| {
+            let id = binder_item_commands::create_binder_item(
+                &c,
+                None,
+                &CreateBinderItemDto {
+                    title: "row".into(),
+                    role,
+                    sub_role,
+                    activated: true,
+                    is_exportable: true,
+                    indent,
+                    ..Default::default()
+                },
+                binder,
+                index,
+            )
+            .expect("create item")
+            .id;
+            index += 1;
+            id
+        };
+        (ctx, work.id, add)
+    }
+
+    /// **A row need not be in any Book, and that is a real answer.**
+    ///
+    /// Front matter before the first Book, and anything past a `BookEnd`, belong to no
+    /// Book at all. A surface grouping by Book has to be able to say so, or those rows
+    /// become unreachable the moment a project has two Books and every segment filters
+    /// them out.
+    #[test]
+    fn rows_outside_every_book_are_absent_rather_than_guessed() {
+        let (ctx, work, mut add) = bare_work();
+        let front = add(BinderItemRole::Item, BinderItemSubRole::Scene, 0);
+        let book = add(BinderItemRole::Folder, BinderItemSubRole::Book, 0);
+        let inside = add(BinderItemRole::Item, BinderItemSubRole::Scene, 1);
+        let end = add(BinderItemRole::Item, BinderItemSubRole::BookEnd, 0);
+        let after = add(BinderItemRole::Item, BinderItemSubRole::Scene, 0);
+
+        let index = book_index(&ctx, work);
+        assert_eq!(
+            index.books.iter().map(|b| b.item_id).collect::<Vec<_>>(),
+            vec![book],
+            "one Book, found through opens_book"
+        );
+        assert_eq!(index.of_item.get(&inside), Some(&book));
+        assert_eq!(index.of_item.get(&front), None, "before any Book");
+        assert_eq!(index.of_item.get(&after), None, "past the end marker");
+        assert_eq!(
+            index.of_item.get(&end),
+            None,
+            "the marker itself is in no Book"
+        );
+    }
+
+    /// A project with **no Book at all** places nothing, and says so by having no Books
+    /// rather than by inventing one. This is the shape the note pane must not draw a
+    /// one-segment bar for.
+    #[test]
+    fn a_project_with_no_book_places_nothing() {
+        let (ctx, work, mut add) = bare_work();
+        let a = add(BinderItemRole::Item, BinderItemSubRole::Scene, 0);
+        let b = add(BinderItemRole::Item, BinderItemSubRole::Scene, 0);
+
+        let index = book_index(&ctx, work);
+        assert!(index.books.is_empty());
+        assert_eq!(index.of_item.get(&a), None);
+        assert_eq!(index.of_item.get(&b), None);
+    }
+
+    /// The flat `Item/BookBegin` encoding opens a Book exactly as `Folder/Book` does, so a
+    /// legacy-imported project groups like any other.
+    #[test]
+    fn a_flat_book_marker_opens_a_book_here_too() {
+        let (ctx, work, mut add) = bare_work();
+        let begin = add(BinderItemRole::Item, BinderItemSubRole::BookBegin, 0);
+        let scene = add(BinderItemRole::Item, BinderItemSubRole::Scene, 0);
+
+        let index = book_index(&ctx, work);
+        assert_eq!(
+            index.books.iter().map(|b| b.item_id).collect::<Vec<_>>(),
+            vec![begin]
+        );
+        assert_eq!(
+            index.of_item.get(&scene),
+            Some(&begin),
+            "at the marker's own indent, which plays no part"
+        );
     }
 }

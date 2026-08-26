@@ -377,7 +377,7 @@ fn mention_row(owner_id: u64, target_id: u64) -> MentionRow {
         owner_id,
         target_id,
         title: String::new(),
-        matched_name: String::new(),
+        matched_names: Vec::new(),
         is_title_match: false,
         hit_count: 1,
         is_confirmed: false,

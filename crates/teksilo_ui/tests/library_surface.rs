@@ -229,7 +229,7 @@ fn an_extension_can_name_the_mention_index_and_destructure_its_rows() {
         owner_id: 10,
         target_id: 20,
         title: "Elena".to_string(),
-        matched_name: "Elena".to_string(),
+        matched_names: vec!["Elena".to_string()],
         is_title_match: true,
         hit_count: 3,
         is_confirmed: false,
@@ -240,7 +240,7 @@ fn an_extension_can_name_the_mention_index_and_destructure_its_rows() {
         owner_id,
         target_id,
         title,
-        matched_name,
+        matched_names,
         is_title_match,
         hit_count,
         is_confirmed,
@@ -250,7 +250,7 @@ fn an_extension_can_name_the_mention_index_and_destructure_its_rows() {
     assert_eq!(owner_id, 10);
     assert_eq!(target_id, 20);
     assert_eq!(title, "Elena");
-    assert_eq!(matched_name, "Elena");
+    assert_eq!(matched_names, vec!["Elena".to_string()]);
     assert!(is_title_match);
     assert_eq!(hit_count, 3);
     assert!(!is_confirmed);

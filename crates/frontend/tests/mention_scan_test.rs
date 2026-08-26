@@ -329,13 +329,17 @@ fn scan_writes_no_entities() {
     // than silently reduce the scan to title-only matching.
     match &hits[0] {
         MentionHit::Found {
-            matched_name,
+            matched_names,
             is_title_match,
             hit_count,
             evidence,
             ..
         } => {
-            assert_eq!(matched_name, CHARACTER, "matched via the alias");
+            assert_eq!(
+                matched_names,
+                &vec![CHARACTER.to_string()],
+                "matched via the alias"
+            );
             assert!(!is_title_match, "the title is the full name, not the alias");
             assert_eq!(*hit_count, 1);
             assert!(
@@ -654,5 +658,81 @@ fn a_project_with_nothing_discoverable_scans_clean() {
             .iter()
             .all(|e| !matches!(e.origin, Origin::DirectAccess(_))),
         "an empty scan must be as write-free as a full one"
+    );
+}
+
+/// A scene that names the character **both** ways: through the alias and through the
+/// full title. One document, two of her names.
+fn add_two_name_scene(fx: &Fixture) -> EntityId {
+    let binder =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
+    let created = binder_item_commands::create_binder_item_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[item(BinderItemSubRole::Scene, "The introduction")],
+        binder,
+        -1,
+    )
+    .unwrap();
+    let scene = created[0].id;
+    content_commands::create_content_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role: ContentRole::SceneText,
+            data: format!(
+                "{CHARACTER} Sarraute offered her hand. Nobody called her that; \
+                 to the whole street she was only {CHARACTER}."
+            ),
+        }],
+        scene,
+        -1,
+    )
+    .unwrap();
+    scene
+}
+
+/// **Every name that matched, not just the first.**
+///
+/// A scene that writes both "Elena" and "Elena Sarraute" is telling the writer something
+/// a single `matched_name` had to throw away: which of her names this scene actually
+/// reaches for. The surfaces render them merged, "(Elena, Elena Sarraute)", which is what
+/// makes a second level of detail unnecessary to show the same fact.
+#[test]
+fn a_document_naming_the_character_two_ways_keeps_both_names() {
+    let fx = fixture();
+    let scene = add_two_name_scene(&fx);
+    let hits = scan(&fx);
+
+    let row = hits
+        .iter()
+        .find_map(|h| match h {
+            MentionHit::Found {
+                owner_id,
+                matched_names,
+                hit_count,
+                ..
+            } if *owner_id == scene => Some((matched_names.clone(), *hit_count)),
+            _ => None,
+        })
+        .expect("the two-name scene must produce a row");
+
+    let (mut names, hit_count) = row;
+    names.sort();
+    assert_eq!(
+        names,
+        vec![CHARACTER.to_string(), format!("{CHARACTER} Sarraute")],
+        "both of her names are kept, deduplicated"
+    );
+    assert!(
+        hit_count >= 2,
+        "and the count still counts every hit, not every distinct name"
     );
 }

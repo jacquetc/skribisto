@@ -101,8 +101,8 @@ pub use manuscript_digest::{LiveRow, digest_of, live_manuscript, live_prose};
 pub use note_book_choice_file::{NoteBookChoiceService, PerProjectNoteBookChoice};
 pub use note_capture_file::{MAX_RECENT_TAGS, NoteCaptureService, PerProjectNoteCapture};
 pub use note_prose_rows::{
-    BookChoice, Declaration, NoteProseRow, books_in_work, declared_rows_in_book,
-    resolve_book_choice,
+    BookChoice, BookIndex, Declaration, NoteProseRow, book_index, books_in_work,
+    declared_rows_in_book, resolve_book_choice,
 };
 #[allow(unused_imports)]
 pub use numbering::{

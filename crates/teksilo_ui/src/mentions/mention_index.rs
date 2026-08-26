@@ -61,8 +61,14 @@ pub struct MentionRow {
     /// The story-bible item that was named.
     pub target_id: u64,
     pub title: String,
-    /// Which of the target's names matched — its title, or one of its aliases.
-    pub matched_name: String,
+    /// Every distinct name of the target that matched in this document, in the order they
+    /// were first met: its title, its aliases, or several at once. A scene that writes
+    /// "Elizabeth" twice and "Lizzy" once carries both, because which names a writer
+    /// actually reaches for in a given scene is the interesting part.
+    ///
+    /// A row with no textual hit at all, a pin or a point of view on a scene that never
+    /// writes the name, carries the entry's own title, which is the only name in play.
+    pub matched_names: Vec<String>,
     pub is_title_match: bool,
     pub hit_count: i64,
     /// A persisted `references` entry, as opposed to a suggestion the scan derived.
@@ -80,6 +86,16 @@ pub struct MentionRow {
     /// The sentence the first hit sits in. Empty for a confirmed reference or a declared
     /// point of view whose name is never actually written.
     pub evidence: String,
+}
+
+impl MentionRow {
+    /// The matched names as one label: `Lizzy`, or `Elizabeth, Lizzy`.
+    ///
+    /// Joined here rather than in each view, so two surfaces showing the same row cannot
+    /// punctuate it differently.
+    pub fn matched_label(&self) -> String {
+        self.matched_names.join(", ")
+    }
 }
 
 struct Inner {
@@ -226,7 +242,7 @@ impl MentionIndex {
                     owner_id,
                     target_id,
                     title,
-                    matched_name,
+                    matched_names,
                     is_title_match,
                     hit_count,
                     is_confirmed,
@@ -240,7 +256,7 @@ impl MentionIndex {
                     owner_id,
                     target_id,
                     title,
-                    matched_name,
+                    matched_names,
                     is_title_match,
                     hit_count,
                     is_confirmed,
@@ -377,11 +393,11 @@ impl MentionIndex {
                     existing.hit_count = existing.hit_count.max(row.hit_count);
                     if existing.evidence.is_empty() && !row.evidence.is_empty() {
                         existing.evidence = row.evidence;
-                        existing.matched_name = row.matched_name;
+                        existing.matched_names = row.matched_names;
                         existing.is_title_match = row.is_title_match;
                     } else if row.is_title_match && !existing.is_title_match {
                         existing.is_title_match = true;
-                        existing.matched_name = row.matched_name;
+                        existing.matched_names = row.matched_names;
                     }
                 }
                 None => {
@@ -436,7 +452,7 @@ impl MentionIndex {
                         owner_id,
                         target_id: h.entity_id,
                         title: entity.title.clone(),
-                        matched_name: h.matched_name(entity).to_string(),
+                        matched_names: vec![h.matched_name(entity).to_string()],
                         is_title_match: h.is_title_match,
                         hit_count: 0,
                         is_confirmed: false,
@@ -466,7 +482,7 @@ impl MentionIndex {
                             owner_id,
                             target_id,
                             title: title.clone(),
-                            matched_name: title,
+                            matched_names: vec![title],
                             is_title_match: true,
                             hit_count: 0,
                             is_confirmed: true,
@@ -496,7 +512,7 @@ impl MentionIndex {
                     owner_id,
                     target_id,
                     title: title.clone(),
-                    matched_name: title,
+                    matched_names: vec![title],
                     is_title_match: true,
                     hit_count: 0,
                     is_confirmed: confirmed_set.contains_key(&target_id),
@@ -554,7 +570,7 @@ impl MentionIndex {
                 owner_id: item_id,
                 target_id: h.entity_id,
                 title: entity.title.clone(),
-                matched_name: h.matched_name(entity).to_string(),
+                matched_names: vec![h.matched_name(entity).to_string()],
                 is_title_match: h.is_title_match,
                 hit_count: 0,
                 is_confirmed: false,
@@ -637,7 +653,7 @@ mod tests {
             owner_id: 1,
             target_id: target,
             title: title.to_string(),
-            matched_name: title.to_string(),
+            matched_names: vec![title.to_string()],
             is_title_match: title_match,
             hit_count: hits,
             is_confirmed: confirmed,
@@ -726,7 +742,7 @@ mod tests {
             owner_id: owner,
             target_id: target,
             title: title.to_string(),
-            matched_name: title.to_string(),
+            matched_names: vec![title.to_string()],
             is_title_match: true,
             hit_count: hits,
             is_confirmed: confirmed,

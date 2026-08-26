@@ -63,11 +63,11 @@
 //! `target_id` is always this same note, so `title` is always resolved against
 //! this note's own name too. Every row would show the same headline, and the
 //! one thing this section exists to say (*which* scene or note wrote it) would
-//! never appear at all. So [`BacklinksList`] resolves `owner_id` against a
-//! batched [`binder_item_commands::get_binder_item_multi`] instead, one read
-//! for the whole list, the same shape
-//! [`crate::tabs::story_bible_place::scene_mention_counts`] already uses for
-//! its own owner lookup, and shows *that* title as the row's headline.
+//! never appear at all. So this section resolves `owner_id` through
+//! [`crate::tags::documents_in_manuscript_order`] instead, which answers the document
+//! titles and the reading order in the same walk, and shows *that* title as the row's
+//! headline. The Inspector's own backlink list goes through the same function, so the
+//! two surfaces cannot come to disagree about either.
 //!
 //! The evidence sentence is quoted in the row itself, not tucked behind a
 //! hover the way the dock's narrow width forces it to be: a full tab has the
@@ -82,11 +82,11 @@ use teksilo::core::accesskit::Role;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Divider, Expand, GroupHeader, HStack, Padding, ScrollArea, TextWidget, VStack,
+    Button, ButtonVariant, Divider, Expand, GroupHeader, HStack, Padding, PopoverButton,
+    ScrollArea, Segment, SegmentId, SegmentedControl, TextWidget, VStack,
 };
 
 use frontend::AppContext;
-use frontend::commands::binder_item_commands;
 
 use crate::app_ids::AppIds;
 use crate::intents::AppIntent;
@@ -95,12 +95,11 @@ use crate::models::OpenDoc;
 use crate::singles::SingleBinderItem;
 use crate::tags::alias_pill_field::SetAliases;
 use crate::tags::books::ClearBook;
-use crate::tags::cast_add::CastCandidate;
-use crate::tags::mention_list::{OpenTarget, PinReference, UnpinReference};
+use crate::tags::cast_add::{CastAddPopover, CastCandidate};
+use crate::tags::mention_list::PinReference;
 use crate::tags::tag_pill_field::SetTags;
 use crate::tags::{
-    AliasPillField, MentionList, TagPillField, TagsViewModel, book_add_button, book_chip_row,
-    book_chips, candidates_from_table, cast_add_button,
+    AliasPillField, TagPillField, TagsViewModel, book_add_button, book_chip_row, book_chips,
 };
 use crate::tooltip_registry::CONCEPT_TAG;
 use crate::widgets::tip::RichTip;
@@ -140,6 +139,7 @@ pub(crate) fn note_details_pane(tab: &ContentTab) -> Box<dyn Widget> {
         set_tags: tab.set_tags_fn(),
         tags: tab.tags(),
         mention_index: tab.mention_index(),
+        appears_in_book: Signal::new(None),
         // Built once, here, and held for as long as this pane is: **not**
         // rebuilt fresh inside `build()`. `title_input` binds to `name.value`
         // directly; a fresh `TitleField` on every rebuild would reseed that
@@ -161,6 +161,12 @@ struct NoteDetailsPane {
     app_ctx: Rc<AppContext>,
     ids: AppIds,
     item_id: u64,
+    /// Which Book's appearances the right column is showing.
+    ///
+    /// Held on the pane, not minted per build: this pane rebuilds whenever a scan lands or
+    /// a tag changes, and a fresh signal each time would throw the writer back to the
+    /// first Book mid-read. `None` until the first build picks one.
+    appears_in_book: Signal<Option<SegmentId>>,
     column_width: Signal<f32>,
     mention_index: crate::mentions::MentionIndex,
     /// This item's shared editing state: read for its `tags` mirror (the same
@@ -293,32 +299,24 @@ impl Widget for NoteDetailsPane {
             ));
         }
 
-        // Cast: shown whenever the *project* has any discoverable tags at all, so a
-        // writer can Add before any prose names anyone. Never gated on this note's own
-        // tags, matching the dock's `cast_scope` block.
+        // Links: always, on any note.
         //
-        // Point of view is deliberately **not** here. On a note it answers a question
-        // nobody asks of a note: a point of view is a fact about a *scene*, set where
-        // the writer is looking at that scene. It stays in the Inspector, where a
-        // focused scene is what the panel is about.
-        if let Some(index) = &mention_index
-            && !discoverable_ids.is_empty()
-        {
-            // `point_of_view` is still read here even though this pane no longer shows
-            // it: `cast_for` uses it to mark a row the writer declared rather than the
-            // scan guessed, and dropping it would silently reclassify those rows as mere
-            // suggestions. Not displaying a field is not the same as pretending it is
-            // empty.
-            let cast = index.cast_for(self.item_id, None, &d.references, &d.point_of_view, &[]);
-            fields = fields.child(cast_section(
-                index,
-                &self.probe,
-                cast,
-                d.references.clone(),
-                self.item_id,
-                stack.get(),
-            ));
-        }
+        // Not gated on the project having discoverable tags, and not on this note having
+        // one. A link is the writer pointing at another page by hand; whether a scanner
+        // could have found either of them is a different question entirely, and the two
+        // were tangled here because the control was borrowed from the scene's Cast.
+        //
+        // Point of view is deliberately not here either. On a note it answers a question
+        // nobody asks of a note: a point of view is a fact about a *scene*, set where the
+        // writer is looking at that scene. It stays in the Inspector.
+        fields = fields.child(links_section(
+            &self.app_ctx,
+            self.ids.work_id.get().unwrap_or_default(),
+            &self.probe,
+            d.references.clone(),
+            self.item_id,
+            stack.get(),
+        ));
 
         // ── The right column: what is already written ────────────────────────
         //
@@ -332,7 +330,12 @@ impl Widget for NoteDetailsPane {
         let manuscript: Option<VStack> = mention_index.as_ref().and_then(|index| {
             let backlinks = index.backlinks_for(self.item_id);
             if !backlinks.is_empty() {
-                Some(backlinks_section(&self.app_ctx, backlinks))
+                Some(backlinks_section(
+                    &self.app_ctx,
+                    self.ids.work_id.get().unwrap_or_default(),
+                    backlinks,
+                    &self.appears_in_book,
+                ))
             } else if is_discoverable {
                 Some(backlinks_empty_hint())
             } else {
@@ -506,62 +509,89 @@ fn books_section(
     col.child(book_add_button(candidates, book_ids, item_id, set_book))
 }
 
-/// References-first cast for this note, exactly the shape
-/// `docks::inspector::story_bible` builds: confirmed pins first, then scan
-/// suggestions, both read straight off `index.cast_for`. Rows open the
-/// mentioned item to the side, the same [`AppIntent::OpenItemToSide`] every
-/// other roster in the app already sends.
-fn cast_section(
-    index: &MentionIndex,
+/// **Links** from this note to other notes.
+///
+/// The same `BinderItem.references` field a *scene* shows as its **Cast**, borrowed for a
+/// different job, which is why neither the name nor the shape is shared with it. On a
+/// scene, "who is present here" is a fact about the story that a scan can genuinely
+/// suggest. On a note it is a pointer the writer makes by hand: Elizabeth's page linking
+/// to Longbourn, or to her sister. There is nothing to suggest and nothing to confirm, so
+/// this shows only what the writer put here.
+///
+/// Chips plus a "+", exactly as **Filed under** does directly above it, because it is the
+/// same gesture over a different table: a set of items the writer picks by hand and can
+/// take off again. A `MentionList` was wrong twice over here, offering scan suggestions
+/// for something no scan produces, and a "confirm" for something already deliberate.
+///
+/// Candidates are the work's own notes, both `Folder/Note` and `Item/Note`, not the
+/// discoverable table: a link is not about who the scanner can find, and refusing to link
+/// to a plain note would be an arbitrary limit on a manual pointer.
+fn links_section(
+    app_ctx: &AppContext,
+    work_id: u64,
     probe: &SingleBinderItem,
-    cast: Vec<MentionRow>,
     references: Vec<u64>,
     item_id: u64,
     stack: Option<u64>,
 ) -> impl Widget {
-    let index_pin = index.clone();
-    let probe_pin = probe.clone();
-    let pin: PinReference = Rc::new(move |target, _c| {
-        let mut next = probe_pin.dto().map(|x| x.references).unwrap_or_default();
+    let probe_add = probe.clone();
+    let add: PinReference = Rc::new(move |target, _c| {
+        let mut next = probe_add.dto().map(|x| x.references).unwrap_or_default();
         if !next.contains(&target) {
             next.push(target);
         }
-        let next = index_pin.filter_cast_targets(item_id, &next);
-        let _ = probe_pin.set_references(&next, stack);
+        let _ = probe_add.set_references(&next, stack);
     });
-    let index_unpin = index.clone();
-    let probe_unpin = probe.clone();
-    let unpin: UnpinReference = Rc::new(move |target, _c| {
-        let next: Vec<u64> = probe_unpin
+    let probe_clear = probe.clone();
+    let clear: ClearBook = Rc::new(move |target: u64, _c: &mut EventContext| {
+        let next: Vec<u64> = probe_clear
             .dto()
             .map(|x| x.references)
             .unwrap_or_default()
             .into_iter()
             .filter(|&id| id != target)
             .collect();
-        let next = index_unpin.filter_cast_targets(item_id, &next);
-        let _ = probe_unpin.set_references(&next, stack);
-    });
-    let open: OpenTarget = Rc::new(|item_id, title, c: &mut EventContext| {
-        c.send_intent(AppIntent::OpenItemToSide { item_id, title });
+        let _ = probe_clear.set_references(&next, stack);
     });
 
-    let cast_empty = cast.is_empty();
-    let table = index.discoverable_table();
-    let candidates = candidates_from_table(&table);
+    let candidates = note_candidates(app_ctx, work_id, item_id);
 
     let mut col = VStack::new()
         .spacing(6.0)
-        .child(section_header(tr!(note_details_cast())))
-        .child(MentionList::new(cast, Some(pin.clone()), Some(unpin), open));
-    if cast_empty {
+        .child(section_header(tr!(note_details_links())));
+    if references.is_empty() {
         col = col.child(
-            TextWidget::new(tr!(note_details_cast_empty()))
+            TextWidget::new(tr!(note_details_links_empty()))
                 .style(TextStyleRole::Small)
                 .color(TextRole::Secondary),
         );
+    } else {
+        col = col.child(book_chip_row(book_chips(&candidates, &references), clear));
     }
-    col.child(cast_add_button(candidates, references, item_id, pin))
+    col.child(
+        PopoverButton::new(
+            Button::new(tr!(note_details_links_add())).variant(ButtonVariant::Plain),
+        )
+        .content(CastAddPopover::new(candidates, references, item_id, add)),
+    )
+}
+
+/// Every other note in the work, as link candidates, in manuscript order.
+///
+/// Both note shapes: a `Folder/Note` is as linkable as an `Item/Note` and a writer who
+/// organised their bible into folders would otherwise find half of it unreachable. This
+/// note itself is excluded, because a link from a page to itself says nothing.
+fn note_candidates(app_ctx: &AppContext, work_id: u64, item_id: u64) -> Vec<CastCandidate> {
+    crate::models::binder_stream::ordered_flat_items(app_ctx, work_id)
+        .into_iter()
+        .filter(|(_, it)| {
+            it.sub_role == frontend::common::entities::BinderItemSubRole::Note && it.id != item_id
+        })
+        .map(|(_, it)| CastCandidate {
+            id: it.id,
+            title: it.title,
+        })
+        .collect()
 }
 
 /// One row of "Appears in the manuscript": a [`MentionRow`] paired with the
@@ -571,7 +601,7 @@ fn cast_section(
 struct BacklinkRow {
     owner_id: u64,
     document_title: String,
-    matched_name: String,
+    matched_names: Vec<String>,
     is_title_match: bool,
     hit_count: i64,
     is_confirmed: bool,
@@ -604,7 +634,7 @@ fn backlink_rows(
             BacklinkRow {
                 owner_id: r.owner_id,
                 document_title,
-                matched_name: r.matched_name,
+                matched_names: r.matched_names,
                 is_title_match: r.is_title_match,
                 hit_count: r.hit_count,
                 is_confirmed: r.is_confirmed,
@@ -615,31 +645,111 @@ fn backlink_rows(
         .collect()
 }
 
-fn backlinks_section(app_ctx: &AppContext, rows: Vec<MentionRow>) -> VStack {
-    let mut seen = HashSet::new();
-    let owner_ids: Vec<u64> = rows
-        .iter()
-        .filter(|r| seen.insert(r.owner_id))
-        .map(|r| r.owner_id)
-        .collect();
-    // One batched read for the whole list, not one per row: see the module doc.
-    let titles: HashMap<u64, String> =
-        binder_item_commands::get_binder_item_multi(app_ctx, &owner_ids)
-            .unwrap_or_default()
-            .into_iter()
-            .flatten()
-            .map(|it| (it.id, it.title))
+/// The segment id for "in no Book at all".
+///
+/// A real id, not an absence: this group is a place a writer can stand, and it has to be
+/// distinguishable from every Book's own id. `u64::MAX` because a Book's id is a store id
+/// and will never reach it.
+const OUTSIDE_BOOKS: SegmentId = SegmentId::from_u64(u64::MAX);
+
+/// A Book's own label, numbered as the binder numbers it.
+fn book_label(book: &crate::models::BookChoice) -> String {
+    let (text, badge) =
+        crate::models::label_and_badge(&book.title, book.fallback_label.as_deref(), book.number);
+    match badge {
+        Some(n) => format!("{n}. {text}"),
+        None => text,
+    }
+}
+
+fn backlinks_section(
+    app_ctx: &AppContext,
+    work_id: u64,
+    rows: Vec<MentionRow>,
+    selected: &Signal<Option<SegmentId>>,
+) -> VStack {
+    // **Story order**, not match quality. This is a reading, not a set of candidates:
+    // "she appears in chapter two, then not again until chapter nine" is a fact about the
+    // shape of the book, and the index's own ordering, which puts confirmed pins and title
+    // matches first, throws it away. One walk of the flat stream answers both the order
+    // and the document titles, which is the same walk the Inspector's own backlink list
+    // goes through so the two cannot disagree about either.
+    let (rows, naming) = crate::tags::documents_in_manuscript_order(app_ctx, work_id, rows);
+    let titles: HashMap<u64, String> = match naming {
+        crate::tags::MentionNaming::Owner(titles) => titles,
+        crate::tags::MentionNaming::Target => HashMap::new(),
+    };
+
+    // ── Which Book am I reading? ─────────────────────────────────────────────
+    //
+    // A bar only when there is genuinely a choice: two or more groups. One Book with
+    // everything inside it, or no Book at all, is a question with a single answer, and the
+    // app already refuses to draw a control for one of those (see `live_books`).
+    //
+    // **Rows in no Book get a group of their own**, and only when some exist. Front
+    // matter, a stray note at the top, anything past a `BookEnd`: without this they would
+    // be filtered out by every Book segment and become unreachable the moment a project
+    // has two Books. That is the case a "one segment per Book" bar quietly loses.
+    let index = crate::models::book_index(app_ctx, work_id);
+    let mut groups: Vec<(SegmentId, LocalizedString, Vec<MentionRow>)> = Vec::new();
+    for book in &index.books {
+        let mine: Vec<MentionRow> = rows
+            .iter()
+            .filter(|r| index.of_item.get(&r.owner_id) == Some(&book.item_id))
+            .cloned()
             .collect();
+        if !mine.is_empty() {
+            groups.push((
+                SegmentId::from_u64(book.item_id),
+                lit!(book_label(book)),
+                mine,
+            ));
+        }
+    }
+    let loose: Vec<MentionRow> = rows
+        .iter()
+        .filter(|r| !index.of_item.contains_key(&r.owner_id))
+        .cloned()
+        .collect();
+    if !loose.is_empty() {
+        groups.push((OUTSIDE_BOOKS, tr!(note_details_backlinks_outside()), loose));
+    }
+
+    let single = groups.len() < 2;
+    let shown: Vec<MentionRow> = if single {
+        rows
+    } else {
+        let chosen = selected
+            .get()
+            .filter(|id| groups.iter().any(|(g, _, _)| g == id))
+            .unwrap_or(groups[0].0);
+        if selected.get() != Some(chosen) {
+            selected.set(Some(chosen));
+        }
+        groups
+            .iter()
+            .find(|(g, _, _)| *g == chosen)
+            .map(|(_, _, r)| r.clone())
+            .unwrap_or_default()
+    };
+    let rows = shown;
     let untitled = tr!(note_details_untitled_document()).resolve_now();
     let backlinks = backlink_rows(rows, &titles, &untitled);
 
-    VStack::new()
+    let mut col = VStack::new()
         .spacing(6.0)
-        .child(section_header(tr!(note_details_backlinks())))
-        .child(BacklinksList {
-            rows: backlinks,
-            root: None,
-        })
+        .child(section_header(tr!(note_details_backlinks())));
+    if !single {
+        let mut bar = SegmentedControl::new(selected.clone());
+        for (id, label, _) in &groups {
+            bar = bar.segment(Segment::new(label.clone()).id(*id));
+        }
+        col = col.child(bar);
+    }
+    col.child(BacklinksList {
+        rows: backlinks,
+        root: None,
+    })
 }
 
 fn backlinks_empty_hint() -> VStack {
@@ -698,9 +808,12 @@ impl Widget for BacklinksList {
             );
             // The alias that matched, when it was not the title: "Lizzy" explains
             // a row that otherwise just repeats "Elizabeth Bennet".
-            if !row.is_title_match && !row.matched_name.is_empty() {
+            // Shown unless the only thing that matched was the title, where it would
+            // merely repeat the row's own headline.
+            if row.matched_names.len() > 1 || (row.matched_names.len() == 1 && !row.is_title_match)
+            {
                 head = head.child(
-                    TextWidget::new(lit!(format!("({})", row.matched_name)))
+                    TextWidget::new(lit!(format!("({})", row.matched_names.join(", "))))
                         .style(TextStyleRole::Tiny)
                         .color(TextRole::Secondary)
                         .max_lines(1),
@@ -799,7 +912,7 @@ mod tests {
             owner_id: owner,
             target_id: target,
             title: title.to_string(),
-            matched_name: title.to_string(),
+            matched_names: vec![title.to_string()],
             is_title_match: true,
             hit_count: hits,
             is_confirmed: false,
@@ -869,7 +982,7 @@ mod tests {
         r.is_confirmed = true;
         r.is_point_of_view = true;
         r.is_title_match = false;
-        r.matched_name = "Lizzy".to_string();
+        r.matched_names = vec!["Lizzy".to_string()];
         let mut titles = HashMap::new();
         titles.insert(2, "Scene One".to_string());
         let out = backlink_rows(vec![r], &titles, "Untitled");
@@ -877,7 +990,7 @@ mod tests {
         assert!(out[0].is_confirmed);
         assert!(out[0].is_point_of_view);
         assert!(!out[0].is_title_match);
-        assert_eq!(out[0].matched_name, "Lizzy");
+        assert_eq!(out[0].matched_names, vec!["Lizzy".to_string()]);
     }
 
     /// Two different owners resolve to two different rows, in the order given

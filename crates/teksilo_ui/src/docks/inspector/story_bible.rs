@@ -67,6 +67,30 @@ pub(super) fn section(
                 tags_vm.clone(),
             ));
 
+        // **Bound before anything reads them, and outside every gate below.**
+        //
+        // Both of these arrive *after* a project opens: the palette when the Work's tags
+        // load, the index when the first scan lands. Every story-bible section here is
+        // gated on one or the other, and the bindings used to sit *inside* those gates,
+        // so on a project opened straight onto a Note the panel built with an empty
+        // palette, took the "nothing is discoverable" branch, and therefore never
+        // subscribed to the thing that would have told it otherwise. It stayed blank
+        // until the writer moved focus to another row and back, which rebuilds the dock
+        // for an unrelated reason and by then finds both loaded.
+        //
+        // A guard must never decide whether to subscribe to the data the guard itself
+        // reads.
+        tags_vm.changed_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        panel.mention_index.changed_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+
         // Aliases only make sense on an item the mention index will actually
         // scan for: a discoverable tag is what puts it in that set, so aliases on
         // anything else would be indexed against nothing. Gating on the tags the
@@ -216,11 +240,6 @@ pub(super) fn section(
         // writer can Add even before any prose names anyone.
         if !discoverable.is_empty() {
             let index = panel.mention_index.clone();
-            index.changed_signal().bind_to(
-                ctx.self_id(),
-                ctx.binding_registry(),
-                BindingLevel::Rebuild,
-            );
             // Live overlay version only — not open_docs.edited (that would rebuild
             // the whole Inspector on every keystroke).
             panel.live_cast.version().bind_to(
@@ -338,6 +357,7 @@ pub(super) fn section(
                     )
                     .child(crate::tags::MentionList::new(
                         cast,
+                        crate::tags::MentionNaming::Target,
                         Some(pin.clone()),
                         Some(unpin),
                         open.clone(),
@@ -465,13 +485,20 @@ pub(super) fn section(
                 if tag_value.get().iter().any(|id| discoverable.contains(id)) {
                     let backlinks = index.backlinks_for(d.id);
                     if !backlinks.is_empty() {
+                        let (backlinks, naming) = crate::tags::documents_in_manuscript_order(
+                            &panel.app_ctx,
+                            panel.outline.ids().work_id.get().unwrap_or_default(),
+                            backlinks,
+                        );
                         col = col
                             .child(
                                 TextWidget::new(tr!(mentions_backlinks()))
                                     .style(TextStyleRole::Tiny)
                                     .color(TextRole::Secondary),
                             )
-                            .child(crate::tags::MentionList::new(backlinks, None, None, open));
+                            .child(crate::tags::MentionList::new(
+                                backlinks, naming, None, None, open,
+                            ));
                     }
                 }
             } else if tag_value.get().iter().any(|id| discoverable.contains(id)) {
@@ -482,13 +509,20 @@ pub(super) fn section(
                     });
                 let backlinks = index.backlinks_for(d.id);
                 if !backlinks.is_empty() {
+                    let (backlinks, naming) = crate::tags::documents_in_manuscript_order(
+                        &panel.app_ctx,
+                        panel.outline.ids().work_id.get().unwrap_or_default(),
+                        backlinks,
+                    );
                     col = col
                         .child(
                             TextWidget::new(tr!(mentions_backlinks()))
                                 .style(TextStyleRole::Tiny)
                                 .color(TextRole::Secondary),
                         )
-                        .child(crate::tags::MentionList::new(backlinks, None, None, open));
+                        .child(crate::tags::MentionList::new(
+                            backlinks, naming, None, None, open,
+                        ));
                 }
             }
         }

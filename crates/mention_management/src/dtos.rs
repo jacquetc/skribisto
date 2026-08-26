@@ -32,7 +32,12 @@ pub enum MentionHit {
         owner_id: EntityId,
         target_id: EntityId,
         title: String,
-        matched_name: String,
+        /// Every distinct name of the target that matched in this document, in the order
+        /// they were first met: its title, its aliases, or several of them. A scene that
+        /// writes "Elizabeth" twice and "Lizzy" once carries both, because which names a
+        /// writer actually reaches for in a given scene is the interesting part, and a
+        /// single name would have to pick one and silently drop the rest.
+        matched_names: Vec<String>,
         is_title_match: bool,
         hit_count: i64,
         is_confirmed: bool,

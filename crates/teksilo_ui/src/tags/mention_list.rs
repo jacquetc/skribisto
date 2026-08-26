@@ -58,8 +58,63 @@ pub type UnpinReference = Rc<dyn Fn(u64, &mut EventContext)>;
 /// Open a row's target in the side pane.
 pub type OpenTarget = Rc<dyn Fn(u64, String, &mut EventContext)>;
 
+/// Which end of each mention names its row.
+///
+/// The same `MentionRow` is read from two directions. A **roster** on a scene asks "who
+/// appears here", so each row is named by its *target*: the story-bible entry. A
+/// **backlink** list on an entry asks "where does she appear", so each row is named by its
+/// *owner*: the scene or chapter.
+///
+/// Naming both by the target is how a note's own "Appears in" came to render its own
+/// title once per row, over and over, saying nothing at all. The owner titles come from
+/// the caller because resolving them is a batched store read and this widget has no
+/// `AppContext`.
+pub enum MentionNaming {
+    /// Name each row by the entry it mentions.
+    Target,
+    /// Name each row by the document doing the mentioning, titles keyed by `owner_id`.
+    Owner(std::collections::HashMap<u64, String>),
+}
+
+/// Backlink rows in **manuscript order**, and the title of the document each one names.
+///
+/// Two things the backlink direction needs and the roster does not, resolved in one walk
+/// of the work's flat item stream because that walk answers both at once.
+///
+/// **Order.** [`crate::mentions::MentionIndex`] sorts a row list by how good a match it
+/// is: confirmed first, then title matches, then hit count. That is right for a roster,
+/// which is a set of candidates, and wrong for a backlink list, which is a *reading*. "She
+/// appears in chapter two, then not again until chapter nine" is a fact about the shape of
+/// the book, and a list ordered by match quality throws it away.
+///
+/// **Names.** A row carries its target's title, never its owner's, so a backlink list has
+/// to look the documents up. Batched here rather than per row.
+///
+/// Rows whose owner is not in the stream keep their relative order at the end rather than
+/// being dropped: the scan already excludes trashed and deactivated owners, so anything
+/// left is a row this walk simply could not place, and silently losing it would be worse
+/// than showing it last.
+pub fn documents_in_manuscript_order(
+    ctx: &frontend::AppContext,
+    work_id: u64,
+    mut rows: Vec<MentionRow>,
+) -> (Vec<MentionRow>, MentionNaming) {
+    let flat = crate::models::binder_stream::ordered_flat_items(ctx, work_id);
+    let mut position: std::collections::HashMap<u64, usize> =
+        std::collections::HashMap::with_capacity(flat.len());
+    let mut titles: std::collections::HashMap<u64, String> =
+        std::collections::HashMap::with_capacity(flat.len());
+    for (i, (_, it)) in flat.iter().enumerate() {
+        position.insert(it.id, i);
+        titles.insert(it.id, it.title.clone());
+    }
+    rows.sort_by_key(|r| position.get(&r.owner_id).copied().unwrap_or(usize::MAX));
+    (rows, MentionNaming::Owner(titles))
+}
+
 pub struct MentionList {
     rows: Vec<MentionRow>,
+    naming: MentionNaming,
     /// `None` for the backlinks direction: pinning means "this scene references that
     /// character", which is a statement about the *scene*, and a backlinks list is looking
     /// at the character. Offering a pin there would write the wrong item's references.
@@ -73,12 +128,14 @@ pub struct MentionList {
 impl MentionList {
     pub fn new(
         rows: Vec<MentionRow>,
+        naming: MentionNaming,
         pin: Option<PinReference>,
         unpin: Option<UnpinReference>,
         open: OpenTarget,
     ) -> Self {
         Self {
             rows,
+            naming,
             pin,
             unpin,
             open,
@@ -122,14 +179,26 @@ impl Widget for MentionList {
             // than dropped, unlike `pov_chips`, because this row owns the only affordance
             // that can remove the pin: hiding it would strand the writer with a reference
             // they can see the effects of and cannot reach.
-            let unresolved = row.title.trim().is_empty();
+            let name = match &self.naming {
+                MentionNaming::Target => row.title.clone(),
+                MentionNaming::Owner(titles) => {
+                    titles.get(&row.owner_id).cloned().unwrap_or_default()
+                }
+            };
+            let unresolved = name.trim().is_empty();
+            let missing = match &self.naming {
+                MentionNaming::Target => tr!(cast_unresolved()),
+                // A document with no title of its own is ordinary, not stale: it is what
+                // the binder itself calls an unnamed row, not a pin pointing at nothing.
+                MentionNaming::Owner(_) => tr!(note_details_untitled_document()),
+            };
             let label = if unresolved {
-                TextWidget::new(tr!(cast_unresolved()))
+                TextWidget::new(missing)
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary)
                     .max_lines(1)
             } else {
-                TextWidget::new(lit!(row.title.clone()))
+                TextWidget::new(lit!(name.clone()))
                     .style(TextStyleRole::Small)
                     .color(colour)
                     .max_lines(1)
@@ -138,9 +207,16 @@ impl Widget for MentionList {
 
             // The alias that matched, when it was not the title — "Lizzy" explains a roster
             // entry that reads "Elizabeth Bennet" far better than the count does.
-            if !row.is_title_match && !row.matched_name.is_empty() {
+            // Every name that matched here, not just the first: "(Elizabeth, Lizzy)"
+            // says which names this scene actually reaches for, which one of them could
+            // not. Omitted when the only match was the title, where it would just repeat
+            // the row's own headline.
+            // Shown unless the only thing that matched was the title, where it would
+            // merely repeat the row's own headline.
+            if row.matched_names.len() > 1 || (row.matched_names.len() == 1 && !row.is_title_match)
+            {
                 line = line.child(
-                    TextWidget::new(lit!(format!("({})", row.matched_name)))
+                    TextWidget::new(lit!(format!("({})", row.matched_label())))
                         .style(TextStyleRole::Tiny)
                         .color(TextRole::Secondary)
                         .max_lines(1),
@@ -190,11 +266,23 @@ impl Widget for MentionList {
             }
 
             let open = self.open.clone();
-            let target = row.target_id;
-            let title = row.title.clone();
+            // Open what the row *names*. A roster row names the entry, so it opens the
+            // entry; a backlink row names the document, so it opens the document. Opening
+            // the target from a backlink list would reopen the note the writer is already
+            // looking at, once per row.
+            let target = match &self.naming {
+                MentionNaming::Target => row.target_id,
+                MentionNaming::Owner(_) => row.owner_id,
+            };
+            let row_name = if unresolved {
+                String::new()
+            } else {
+                name.clone()
+            };
+            let title = row_name.clone();
             let id = ctx.add(
                 line.access_role(Role::ListItem)
-                    .access_label(lit!(row.title.clone()))
+                    .access_label(lit!(row_name.clone()))
                     .focusable(true)
                     .on_tap({
                         let open = open.clone();
@@ -222,7 +310,7 @@ impl Widget for MentionList {
                     ctx,
                     id,
                     Box::new(evidence_body(row)),
-                    lit!(row.title.clone()),
+                    lit!(row_name.clone()),
                     TooltipPlacement::Side,
                 );
             }
@@ -265,7 +353,7 @@ impl Widget for MentionList {
 /// four hundred contractions; the sentence can, at a glance.
 fn evidence_body(row: &MentionRow) -> impl Widget {
     let mut col = VStack::new().spacing(2.0).child(
-        TextWidget::new(lit!(row.matched_name.clone()))
+        TextWidget::new(lit!(row.matched_label()))
             .style(TextStyleRole::Small)
             .color(TextRole::TooltipText),
     );
@@ -306,7 +394,7 @@ mod tests {
             owner_id: 1,
             target_id: target,
             title: title.to_string(),
-            matched_name: title.to_string(),
+            matched_names: vec![title.to_string()],
             is_title_match: true,
             hit_count: 1,
             is_confirmed: confirmed,
@@ -318,6 +406,7 @@ mod tests {
     fn list(rows: Vec<MentionRow>, with_pin: bool, with_unpin: bool) -> MentionList {
         MentionList::new(
             rows,
+            MentionNaming::Target,
             with_pin.then(|| Rc::new(|_id: u64, _c: &mut EventContext| {}) as PinReference),
             with_unpin.then(|| Rc::new(|_id: u64, _c: &mut EventContext| {}) as UnpinReference),
             Rc::new(|_id: u64, _t: String, _c: &mut EventContext| {}),
