@@ -586,10 +586,17 @@ pub static SETTINGS: &[SettingSpec] = &[
     SettingSpec {
         key: crate::LOCALE_KEY,
         ty: "string (BCP-47: \"en-US\" | \"fr-FR\")",
-        default: || val("en-US"),
+        // Not a constant: with this key unset the app asks the OS which
+        // languages the writer reads, so on a French account the *default* is
+        // `fr-FR` and printing a flat `en-US` here would be a dump that
+        // disagrees with the launch it claims to describe.
+        default: || val(crate::startup::os_default_locale()),
         check: check::<String>,
-        doc: "Interface language. The OS locale is never consulted, so a probe asserting \
-              on translated text must set this.",
+        doc: "Interface language. Consulted first; only when it is unset does the app fall \
+              back to the writer's OS languages (closest supported match, so `fr-CA` reaches \
+              `fr-FR`), and then to en-US. A probe asserting on translated text must set \
+              this rather than inherit it — the default above is whatever THIS machine \
+              reports.",
     },
     SettingSpec {
         key: crate::PACE_SUMMARY_ON_OPEN_KEY,
@@ -1201,7 +1208,7 @@ pub fn spec(key: &str) -> Option<SettingSpec> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Resolve a dotted key against a parsed TOML tree.
-fn lookup<'a>(root: &'a toml::Value, key: &str) -> Option<&'a toml::Value> {
+pub(crate) fn lookup<'a>(root: &'a toml::Value, key: &str) -> Option<&'a toml::Value> {
     let mut cur = root;
     for segment in key.split('.') {
         cur = cur.as_table()?.get(segment)?;

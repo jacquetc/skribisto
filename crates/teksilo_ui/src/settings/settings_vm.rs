@@ -420,6 +420,14 @@ impl SettingsViewModel {
     pub fn new(store: &SettingsStore) -> Self {
         Self {
             dark: store.signal(DARK_KEY, false),
+            // Deliberately a flat "en-US" rather than `startup::os_default_locale()`,
+            // unlike every other reading of this key. This signal is the *persisted*
+            // language, and `App`'s locale effect writes the live locale into it
+            // whenever the two differ — so seeding it with the value detection just
+            // produced would make the two agree, nothing would be written, and the
+            // detected language would stay unrecorded. A seed that cannot match a
+            // detected non-English locale is what turns the first launch's detection
+            // into a choice on disk.
             locale: store.signal(LOCALE_KEY, "en-US".to_string()),
             user_name: store.signal(USER_NAME_KEY, String::new()),
             user_initials: store.signal(USER_INITIALS_KEY, String::new()),

@@ -118,36 +118,157 @@ pub(crate) fn apply_config_pins(path: &str) {
 /// `ctx.settings()` inside `App::build`) because it decides whether a bare
 /// launch's *initial window* is the Launcher or a project — a decision made
 /// in `main`, before any widget tree (hence any `BuildContext`) exists.
-pub(crate) fn read_prefs() -> (bool, String, bool, bool, bool) {
+///
+/// The locale is the one member returned as an `Option`, and it has to be:
+/// `None` means *nobody has ever chosen a language*, which is the only state in
+/// which [`crate::startup::build_ui_config`] lets teksilo consult the OS. Every
+/// other member has a defensible flat default; a language does not, because
+/// "the writer wants English" and "the writer has not said" are different
+/// facts, and collapsing them is what made a French Windows account launch in
+/// English.
+pub(crate) fn read_prefs() -> (bool, Option<String>, bool, bool, bool) {
     let Some(paths) = crate::identity::app_paths() else {
-        return (
-            false,
-            "en-US".to_string(),
-            false,
-            SPELLCHECK_ENABLED_DEFAULT,
-            true,
-        );
+        return (false, None, false, SPELLCHECK_ENABLED_DEFAULT, true);
     };
+    let general = paths.config_file("general");
+    // Read before the store below opens: see `persisted_locale`.
+    let locale = persisted_locale(&general);
     // `config_file` appends `.toml`, and the settings bundle opens its K/V
     // store under the name "general" (-> general.toml). Pass the bare name
     // here too, otherwise this reads `general.toml.toml` and never sees the
     // values the settings panel wrote, so prefs don't restore on restart.
-    match SettingsStore::open(paths.config_file("general")) {
+    match SettingsStore::open(general) {
         Ok(store) => (
             store.signal(DARK_KEY, false).get(),
-            store.signal(LOCALE_KEY, "en-US".to_string()).get(),
+            locale,
             store.signal(AUTOSAVE_KEY, false).get(),
             store
                 .signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT)
                 .get(),
             store.signal(SHOW_WELCOME_KEY, true).get(),
         ),
-        Err(_) => (
-            false,
-            "en-US".to_string(),
-            false,
-            SPELLCHECK_ENABLED_DEFAULT,
-            true,
-        ),
+        Err(_) => (false, locale, false, SPELLCHECK_ENABLED_DEFAULT, true),
+    }
+}
+
+/// The interface language the writer has actually chosen, or `None` when the key
+/// is absent — the only state in which the OS gets a say.
+///
+/// Read straight out of the TOML rather than through the [`SettingsStore`] its
+/// four neighbours use, and that is not a stylistic preference. `store.signal(key,
+/// default)` **seeds** a missing key, and the store writes its whole table back to
+/// disk — so asking the store "has the writer chosen a language?" is itself the
+/// act of choosing one. That is how the original bug outlived its own fix: the
+/// first launch of every install wrote `ui.locale = "en-US"`, turning "nobody has
+/// said" into "the writer chose English" before a single window had appeared, and
+/// no amount of OS detection can reach a key that is already set. Nothing here
+/// opens, seeds or writes anything.
+///
+/// An empty string is treated as absent: it is not a locale tag, only ever the
+/// residue of a seed, and the alternative is a `--dump-config` that reports
+/// `ui.locale = ""` as *set*.
+fn persisted_locale(general: &std::path::Path) -> Option<String> {
+    let text = std::fs::read_to_string(general).ok()?;
+    let root = toml::from_str::<toml::Value>(&text).ok()?;
+    settings_keys::lookup(&root, LOCALE_KEY)?
+        .as_str()
+        .map(str::to_owned)
+        .filter(|l| !l.is_empty())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn write(dir: &std::path::Path, body: &str) -> std::path::PathBuf {
+        let p = dir.join("general.toml");
+        std::fs::write(&p, body).unwrap();
+        p
+    }
+
+    /// The distinction the whole `Option` exists for, and the one the original
+    /// bug erased: a file with no `ui.locale` line has to read back as "nobody
+    /// has chosen", not as "English".
+    #[test]
+    fn an_absent_key_reads_back_as_no_choice() {
+        let dir = tempfile::tempdir().unwrap();
+        let general = write(dir.path(), "ui.dark = false\n");
+        assert_eq!(persisted_locale(&general), None);
+    }
+
+    /// …as does a file that does not exist at all — the true first launch.
+    #[test]
+    fn a_missing_file_reads_back_as_no_choice() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(persisted_locale(&dir.path().join("general.toml")), None);
+    }
+
+    /// A choice the writer made wins, and must keep winning on a machine whose
+    /// OS says otherwise — the regression that turning OS detection on risks.
+    #[test]
+    fn a_chosen_language_reads_back_verbatim() {
+        let dir = tempfile::tempdir().unwrap();
+        let general = write(dir.path(), "[ui]\nlocale = \"en-US\"\n");
+        assert_eq!(persisted_locale(&general), Some("en-US".to_string()));
+        let general = write(dir.path(), "[ui]\nlocale = \"fr-FR\"\n");
+        assert_eq!(persisted_locale(&general), Some("fr-FR".to_string()));
+    }
+
+    /// Dotted and nested spellings are the same key — `--config` writes the
+    /// nested form, a hand-written pins file the dotted one.
+    #[test]
+    fn the_dotted_spelling_is_the_same_key() {
+        let dir = tempfile::tempdir().unwrap();
+        let general = write(dir.path(), "ui.locale = \"fr-FR\"\n");
+        assert_eq!(persisted_locale(&general), Some("fr-FR".to_string()));
+    }
+
+    /// An empty string is residue, not a choice. No locale tag is empty, and
+    /// reporting one as *set* would be a `--dump-config` that lies twice over.
+    #[test]
+    fn an_empty_value_is_not_a_choice() {
+        let dir = tempfile::tempdir().unwrap();
+        let general = write(dir.path(), "[ui]\nlocale = \"\"\n");
+        assert_eq!(persisted_locale(&general), None);
+    }
+
+    /// Nothing here may create or touch the file: reading the setting must not
+    /// be the act of writing it, which is the defect this function replaced.
+    #[test]
+    fn reading_never_creates_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let general = dir.path().join("general.toml");
+        assert_eq!(persisted_locale(&general), None);
+        assert!(
+            !general.exists(),
+            "reading a missing file must not create it"
+        );
+
+        std::fs::write(&general, "ui.dark = false\n").unwrap();
+        let before = std::fs::read_to_string(&general).unwrap();
+        assert_eq!(persisted_locale(&general), None);
+        assert_eq!(
+            std::fs::read_to_string(&general).unwrap(),
+            before,
+            "reading must leave the file byte-identical"
+        );
+    }
+
+    /// A corrupt file is not a reason to refuse to launch; the writer simply has
+    /// no recorded choice, and the OS gets its say.
+    #[test]
+    fn an_unparseable_file_reads_back_as_no_choice() {
+        let dir = tempfile::tempdir().unwrap();
+        let general = write(dir.path(), "this is not = = toml\n");
+        assert_eq!(persisted_locale(&general), None);
+    }
+
+    /// A non-string sitting at the key (an older schema, a hand-edit) is not a
+    /// language either.
+    #[test]
+    fn a_non_string_value_is_not_a_choice() {
+        let dir = tempfile::tempdir().unwrap();
+        let general = write(dir.path(), "[ui]\nlocale = 42\n");
+        assert_eq!(persisted_locale(&general), None);
     }
 }

@@ -116,9 +116,12 @@ def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True, 
     """A private `XDG_CONFIG_HOME` with the app's settings pinned. Returns an env dict.
 
     A probe that asserts on translated text must SET the language, never inherit
-    it — `auto_detect_os_locale(false)` in main.rs means the OS locale is never
-    consulted, so a probe reading the operator's real `general.toml` compares
-    expectations against whatever locale happens to be pinned there instead.
+    it, and this writes `ui.locale` on every call for exactly that reason. Two
+    ways inheriting goes wrong: a probe reading the operator's real
+    `general.toml` compares expectations against whatever locale happens to be
+    pinned there, and — since `startup.rs` turned `auto_detect_os_locale` on — a
+    sandbox that left the key *unset* would take the language from the
+    operator's OS, so the same probe would pass in Boston and fail in Lyon.
 
     Pointing `XDG_CONFIG_HOME` at a scratch directory fixes that, and also
     side-steps a settings file written by a newer build (e.g. `workspace.toml`

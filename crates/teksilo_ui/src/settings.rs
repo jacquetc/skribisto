@@ -334,7 +334,11 @@ impl SettingsPanel {
                     .on_result(move |res, ctx| {
                         if res.button == StandardButton::RestoreDefaults {
                             ctx.set_theme(intui::light());
-                            ctx.set_locale("en-US");
+                            // The factory language is "whatever a fresh install
+                            // on this machine would have picked", not a flat
+                            // en-US — resetting a French account to English
+                            // would be restoring somebody else's default.
+                            ctx.set_locale(crate::startup::os_default_locale());
                             reset_scale.set(TEXT_SCALE_DEFAULT);
                             reset_vm.reset_editor_defaults();
                         }

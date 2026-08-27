@@ -163,8 +163,14 @@ pub(crate) fn build_not_defaults(
     if let Some(loc) = locale {
         // Compare against a once-parsed default rather than allocating a String
         // per change (clippy::cmp_owned).
-        let default_locale: teksilo::i18n::LanguageIdentifier =
-            "en-US".parse().expect("valid default locale");
+        //
+        // `os_default_locale()`, not a flat `en-US`: the factory language is
+        // whatever a fresh install on this machine would pick, so on a French
+        // account this must read `fr-FR` or *Reset to defaults* is lit at
+        // factory state and stays lit after a reset has already run.
+        let default_locale: teksilo::i18n::LanguageIdentifier = crate::startup::os_default_locale()
+            .parse()
+            .expect("valid default locale");
         diffs.push(loc.map(move |l| *l != default_locale));
     }
     any_true(diffs)

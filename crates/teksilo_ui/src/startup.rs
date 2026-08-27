@@ -16,7 +16,7 @@ use frontend::commands::handling_app_lifecycle_commands;
 
 use teksilo::core::Theme;
 use teksilo::core::presets::intui;
-use teksilo::i18n::I18nConfig;
+use teksilo::i18n::{I18nConfig, I18nManager};
 use teksilo::settings::{AppPaths, WindowStateService};
 use teksilo::widgets::framework_locales;
 
@@ -174,6 +174,37 @@ pub(crate) fn is_known_window_label(
     }
 }
 
+/// The one place the app's supported interface languages are named.
+///
+/// [`locales::registered_locales`] is filtered against exactly this list, so an
+/// extension can never make a language selectable that the app itself has no
+/// strings for, and [`os_default_locale`] resolves the writer's OS languages
+/// against it too.
+pub(crate) const SUPPORTED_LOCALES: &[&str] = &["en-US", "fr-FR"];
+
+/// What the interface language is when nobody has ever chosen one: the closest
+/// supported match for the writer's OS languages, or `en-US` if none of them is
+/// a language this app speaks.
+///
+/// Resolved by teksilo rather than here so this and the real startup path can
+/// not disagree — [`I18nManager::resolve_initial_locale`] reads only the four
+/// fields set below, so a bundle-free config answers exactly what the compiled
+/// one would. It is the answer `--dump-config` must print for an unset
+/// `ui.locale`, and the one *Reset to defaults* must restore: reporting a flat
+/// `en-US` while a French account launches in French is the precise kind of
+/// quiet lie [`crate::settings_keys`] exists to prevent.
+pub(crate) fn os_default_locale() -> String {
+    let cfg = I18nConfig::new()
+        .supported_locales(
+            SUPPORTED_LOCALES
+                .iter()
+                .map(|l| l.parse().expect("a supported locale tag must parse")),
+        )
+        .auto_detect_os_locale(true)
+        .fallback_locale("en-US".parse().expect("the fallback tag must parse"));
+    I18nManager::resolve_initial_locale(&cfg).to_string()
+}
+
 /// The theme, the compiled `I18nConfig`, and the persisted UI-prefs booleans
 /// the app builder needs before its first window exists.
 pub(crate) struct UiConfig {
@@ -187,14 +218,10 @@ pub(crate) struct UiConfig {
 pub(crate) fn build_ui_config() -> UiConfig {
     // Read persisted UI prefs before constructing the app (same AppPaths the
     // builder will use via `.application(...)`).
-    let (dark, locale_str, autosave_init, spellcheck_init, show_welcome_init) = cli::read_prefs();
+    let (dark, chosen_locale, autosave_init, spellcheck_init, show_welcome_init) =
+        cli::read_prefs();
 
     let theme = if dark { intui::dark() } else { intui::light() };
-
-    // The one place the app's supported locales are named. `locales::registered_locales`
-    // is filtered against exactly this list, so an extension can never make a
-    // language selectable that the app itself has no strings for.
-    const SUPPORTED_LOCALES: &[&str] = &["en-US", "fr-FR"];
 
     let i18n = I18nConfig::new()
         .source_locale("en-US".parse().unwrap())
@@ -228,8 +255,18 @@ pub(crate) fn build_ui_config() -> UiConfig {
                 ],
             ),
         ])
-        .user_locale(locale_str.parse().ok())
-        .auto_detect_os_locale(false)
+        // `None` when the writer has never picked a language — which is the only
+        // state that lets the OS step below run at all, since a `user_locale`
+        // teksilo supports short-circuits resolution. `read_prefs` returning a
+        // flat `"en-US"` for an unset key is what made a French Windows account
+        // launch in English: the app was telling teksilo the writer had chosen
+        // English.
+        .user_locale(chosen_locale.and_then(|l| l.parse().ok()))
+        // Consulted only for that unset case, and only through
+        // `SUPPORTED_LOCALES` — an OS reporting `fr`, `fr-CA` or `fr-BE` lands
+        // on `fr-FR`, and a language the app has no strings for falls through
+        // to the fallback below.
+        .auto_detect_os_locale(true)
         .fallback_locale("en-US".parse().unwrap())
         .framework_locales(framework_locales());
 
@@ -501,4 +538,40 @@ pub(crate) fn shutdown(
         eprintln!("clean_up_before_exit failed: {e:#}");
     }
     app_ctx.shutdown();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The one hard invariant of [`os_default_locale`]. `set_locale` silently
+    /// no-ops on a locale outside `supported_locales`, and teksilo does *not*
+    /// validate `fallback_locale` against that list — so a default outside the
+    /// set would not raise anything, it would leave the interface stuck in
+    /// whatever language it already showed, with `--dump-config` cheerfully
+    /// printing the unreachable tag as the effective value.
+    ///
+    /// Machine-dependent by nature (it reads this host's OS languages), which is
+    /// the point: the assertion holds whatever the operator's account is set to.
+    #[test]
+    fn the_default_locale_is_always_one_the_app_has_strings_for() {
+        let got = os_default_locale();
+        assert!(
+            SUPPORTED_LOCALES.contains(&got.as_str()),
+            "os_default_locale() returned {got:?}, which is not in {SUPPORTED_LOCALES:?}"
+        );
+    }
+
+    /// The list teksilo resolves against has to be parseable, or
+    /// [`os_default_locale`] panics on the first launch of every install rather
+    /// than on a developer's machine.
+    #[test]
+    fn every_supported_locale_tag_parses() {
+        for tag in SUPPORTED_LOCALES {
+            assert!(
+                tag.parse::<teksilo::i18n::LanguageIdentifier>().is_ok(),
+                "{tag} is not a parseable BCP-47 tag"
+            );
+        }
+    }
 }
