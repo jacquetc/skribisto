@@ -223,27 +223,20 @@ pub(in crate::app) fn install(
             let i = index.clone();
             ctx.subscribe_event(Origin::WorkManagement(event), move |_e: &Event| i.rescan());
         }
-        // ...and scan **now**, for the project that is already open by the time this runs.
+        // That subscription is what seeds the index, and it is installed in time to do it:
+        // `App::build` fires this window's `PendingAction::Load`/`New` at its very end,
+        // long after `wiring::focus_sync::install` reaches this function. Nothing opens a
+        // project before then either. `startup::launch_maintenance` prunes window state and
+        // calls `initialize_app`; it loads no Work.
         //
-        // The subscription above only ever hears a `LoadWork` fired *after* it exists, and
-        // on the ordinary startup path the project is opened by `startup::launch_maintenance`
-        // before `App::build` installs any of this. So the event that should have seeded the
-        // index has already been and gone with nobody listening, and the index stays empty
-        // for the whole session unless the writer happens to edit a tag or save. What that
-        // looks like from the writer's chair is the feature simply being broken: the Cast
-        // picker offers nobody, an already-pinned cast member renders as a nameless row
-        // (`cast_for` resolves a title through the discoverable table and falls back to an
-        // empty string), and "Set point of view" opens an empty list on a project full of
-        // discoverable notes.
+        // So no eager scan belongs here. One stood here for a while and did nothing on the
+        // path its comment named: `ids.work_id` is still `None` at this point on an
+        // ordinary launch, so `MentionIndex::fire` returned at its first `let ... else`.
+        // The only path that got past that guard is `PendingAction::AttachExisting`
+        // (Work ▸ New Window), whose `AppIds` and whose `WorkSession` (the index with it)
+        // are the sibling window's, already scanned by the load that opened it there, so
+        // what the call bought that window was a second whole-Work scan of what it held.
         //
-        // `fire` returns early when no project is open, so this is a no-op on a window that
-        // opens onto nothing, and the `active` guard in `rescan` means a genuine `LoadWork`
-        // arriving immediately after cannot start a second scan on top of this one.
-        //
-        // Same shape, and the same reason, as `wiring::spellcheck`'s own eager
-        // `dictionaries.rescan()`: a registry that is only reconciled by future events is
-        // wrong on arrival exactly once, at the moment the writer first looks at it.
-        index.rescan();
         // The alias table changing is what makes a roster appear at all, so those events
         // rescan straight away rather than waiting for a save. A tag gaining its story-bible
         // flag, or an item gaining a tag or an alias, is a deliberate act — and the writer is

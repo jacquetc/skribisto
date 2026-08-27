@@ -192,17 +192,21 @@ fn an_extension_can_read_a_rows_live_prose_naming_only_ext() {
 /// **The mention index, named and its rows destructured, naming only `ext`.**
 ///
 /// `MentionIndex` is not behind a `register_…` slot at all; it is handed out
-/// through `ctx.app_state::<MentionIndex>()`, the same way `WorkHandle` is
-/// reached through a context type. That makes it invisible to `ext`'s drift
+/// through a context type — `DockContext::mention_index`,
+/// `ContentTab::mention_index()` or `NoteSectionContext::mention_index`,
+/// depending on which slot opened the caller — the same way `WorkHandle` is
+/// reached through `DockContext::work`/`ContentTab::work()`. That makes it
+/// invisible to `ext`'s drift
 /// walk twice over: the walk only ever sees `pub fn register…` declarations,
 /// and this type is not the payload of one of those either, it is a bare `pub
 /// use`. Nothing about it would trip the walk if it were ever quietly dropped.
 ///
 /// There is no `AppContext`/`AppIds` reachable through `ext` to build a real
 /// `MentionIndex` with, which is deliberate: the seam hands out the live
-/// instance itself through `app_state`, never the means to construct a second
-/// one (the same reasoning `ext.rs` gives for never capturing an `AppContext`
-/// at registration). So this proves what a downstream edition actually needs
+/// instance itself through the context that opened the caller, never the
+/// means to construct a second one (the same reasoning `ext.rs` gives for
+/// never capturing an `AppContext` at registration). So this proves what a
+/// downstream edition actually needs
 /// from outside the crate: that the type can be named as a parameter a reading
 /// function takes, and that `MentionRow`, what such a function hands back, can
 /// be built and pattern-matched field by field. If a field were renamed or
@@ -212,10 +216,10 @@ fn an_extension_can_name_the_mention_index_and_destructure_its_rows() {
     use teksilo_ui::ext::{MentionIndex, MentionRow};
 
     // A downstream reading function, shaped like `story_bible/read.rs` would
-    // write it: takes whatever `ctx.app_state::<MentionIndex>()` handed the
-    // window, hands back rows. Compiling this is the assertion; it is never
-    // called with a real index, because building one needs types this seam
-    // deliberately does not publish.
+    // write it: takes whatever the opening context's `mention_index` handed
+    // the window, hands back rows. Compiling this is the assertion; it is
+    // never called with a real index, because building one needs types this
+    // seam deliberately does not publish.
     fn backlink_titles(index: &MentionIndex, item_id: u64) -> Vec<String> {
         index
             .backlinks_for(item_id)

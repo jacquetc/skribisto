@@ -83,6 +83,7 @@ settings-tags-discoverable = Find in prose
 settings-tags-creates-in = New notes go to
 settings-tags-creates-in-unset = Ask me the first time
 settings-tags-creates-in-untitled = Untitled folder
+settings-tags-creates-in-trashed = { $name } (in the trash)
 settings-tags-template = Starting template
 settings-tags-template-unset = Blank note
 settings-tags-delete = Delete { $name }

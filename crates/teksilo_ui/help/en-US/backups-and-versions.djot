@@ -48,7 +48,7 @@ The Versions panel, on the trailing rail beside Comments and Format, shows this 
 row you're editing. *Restore this version* puts that older text back in place, a fresh safety
 backup first and `Ctrl+Z` to undo, but only on a row that still exists.
 
-For a row you deleted outright, there's the Timeline (_View ▸ Timeline_): the project-wide
+For a row you deleted outright, there's Go back in time (_View ▸ Go back in time_): the project-wide
 history band, and the only place a gone row is reachable. *Bring this back…* recreates it with
 the text it had then, wherever in the binder you choose; undo is the toast's button, not
 `Ctrl+Z`, since this creates a row instead of editing one.

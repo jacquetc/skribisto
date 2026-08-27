@@ -61,7 +61,14 @@ pub fn overview_pane(tab: &super::ContentTab) -> Box<dyn Widget> {
             .spacing(0.0)
             .child(WireOverview { vm: vm.clone() })
             .child(overview_header(&vm))
-            .child(Padding::symmetric(14.0, 8.0).child(super::Boxed::new(tag_filter_row(&vm))))
-            .child(Expand::new().child(OverviewTable { vm, root: None })),
+            .child(super::Boxed::new(tag_filter_row(&vm, tab.tags())))
+            .child(Expand::new().child(OverviewTable {
+                // Seeded here, at the moment the pane is composed, so the first build
+                // already has the right answer; kept current from there by the table's
+                // own event wiring.
+                books: Signal::new(live_book_titles(&vm.app_ctx(), &vm.ids())),
+                vm,
+                root: None,
+            })),
     )
 }

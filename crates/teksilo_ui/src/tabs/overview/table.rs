@@ -6,6 +6,7 @@
 #[allow(unused_imports)]
 use super::*;
 
+use frontend::common::event::Origin;
 use teksilo::data::{SortDirection, TreeDataSource};
 use teksilo::widgets::{DragTransferMode, TreeTableView};
 
@@ -25,7 +26,50 @@ use crate::models::COL_TITLE;
 /// the mechanism.
 pub(super) struct OverviewTable {
     pub(super) vm: OverviewViewModel,
+    /// Every live Book in the Work, as `(id, title)`: what the **Books** column's own
+    /// gate and its id-to-title map are built from.
+    ///
+    /// A signal rather than a read inside [`Widget::build`], because this widget rebuilds
+    /// for the edit cursor and the projection flag and for nothing else: a Book created
+    /// or renamed from the binder never reached the column, which stayed absent (or kept
+    /// printing the old title) until the writer closed and reopened the tab. Refreshed
+    /// from the binder events that can change it, and bound at `Rebuild`, so the table is
+    /// rebuilt when the Books actually change and not once per unrelated row edit.
+    pub(super) books: Signal<Vec<(u64, String)>>,
     pub(super) root: Option<WidgetId>,
+}
+
+/// The events that can add, rename, trash or restore a `Folder/Book`.
+///
+/// The same set the Overview's own row source listens to, minus the reorder-only ones:
+/// what the Books column reads is which Books exist and what they are called, and a
+/// project being loaded or replaced changes both.
+fn book_origins() -> Vec<Origin> {
+    use frontend::common::event::{
+        DirectAccessEntity, EntityEvent, TrashManagementEvent, WorkManagementEvent,
+    };
+    let item = |e: EntityEvent| Origin::DirectAccess(DirectAccessEntity::BinderItem(e));
+    vec![
+        item(EntityEvent::Created),
+        item(EntityEvent::Updated),
+        item(EntityEvent::Removed),
+        Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+        Origin::TrashManagement(TrashManagementEvent::TrashBinder),
+        Origin::TrashManagement(TrashManagementEvent::RestoreItems),
+        Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
+        Origin::WorkManagement(WorkManagementEvent::LoadWork),
+        Origin::WorkManagement(WorkManagementEvent::NewWork),
+    ]
+}
+
+/// Re-read the live Books and publish them, changing the signal only when the answer
+/// actually differs. Named so a test can drive exactly what the event closure calls.
+pub(super) fn refresh_books(
+    app_ctx: &std::rc::Rc<frontend::AppContext>,
+    ids: &crate::app_ids::AppIds,
+    books: &Signal<Vec<(u64, String)>>,
+) {
+    let _ = books.set_if_changed(live_book_titles(app_ctx, ids));
 }
 
 impl std::fmt::Debug for OverviewTable {
@@ -50,10 +94,25 @@ impl Widget for OverviewTable {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
+        // Rebuild when the Work's Books change: the Books column's gate and its
+        // id-to-title map are resolved at build time, and nothing else here would ever
+        // ask again. Coalesced to one read per frame (a 200-row import fires 200 events),
+        // and published through `set_if_changed`, so an event that leaves the Books alone
+        // costs one read and no rebuild at all.
+        self.books
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        {
+            let books = self.books.clone();
+            let app_ctx = self.vm.app_ctx();
+            let ids = self.vm.ids();
+            crate::models::coalesced_reload::reload_on_events(ctx, book_origins(), move || {
+                refresh_books(&app_ctx, &ids, &books);
+            });
+        }
 
         let vm = self.vm.clone();
         let table = TreeTableView::from_source_keyed(self.vm.rows(), self.vm.selection())
-            .columns(overview_columns(&vm))
+            .columns(overview_columns(&vm, &self.books.get()))
             .tree_column(COL_TITLE)
             .auto_row_height(26.0)
             .alternating_rows(true)
@@ -173,5 +232,145 @@ impl Widget for OverviewTable {
 
     fn children(&self) -> Vec<WidgetId> {
         self.root.into_iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use frontend::AppContext;
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+    use crate::app_ids::AppIds;
+    use crate::models::COL_BOOKS;
+
+    /// A Work with one binder holding one `Folder/Book`, which is also the container the
+    /// Overview is built against.
+    fn seed() -> (std::rc::Rc<AppContext>, AppIds, u64, u64) {
+        let app_ctx = std::rc::Rc::new(AppContext::new());
+        let work = work_commands::create_orphan_work(&app_ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let binder = binder_commands::create_binder(
+            &app_ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("create binder");
+        let book = binder_item_commands::create_binder_item(
+            &app_ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "Book One".into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            binder.id,
+            0,
+        )
+        .expect("create Book One")
+        .id;
+        let ids = AppIds::new();
+        ids.work_id.set(Some(work.id));
+        (app_ctx, ids, binder.id, book)
+    }
+
+    fn view_model(
+        app_ctx: &std::rc::Rc<AppContext>,
+        ids: &AppIds,
+        container: u64,
+    ) -> OverviewViewModel {
+        crate::overview::OverviewViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            container,
+            &BinderItemRole::Folder,
+            &BinderItemSubRole::Book,
+            Signal::new(Default::default()),
+            crate::settings::TreeExpansionViewModel::new(
+                app_ctx.clone(),
+                ids.clone(),
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+            Signal::new(Default::default()),
+        )
+        .expect("a Book is overview-capable")
+    }
+
+    /// **The Books column follows the binder instead of the build that mounted the
+    /// table.** Both halves used to be frozen: the gate (`live_books` read inside
+    /// `overview_columns`) and the id-to-title map the cells resolve through. This table
+    /// only rebuilds for the edit cursor and the projection flag, so a second Book
+    /// created from the binder never grew the column and a rename left every Books cell
+    /// printing the old title, both until the writer closed and reopened the tab.
+    ///
+    /// What is driven here is [`refresh_books`] - exactly the closure the event wiring in
+    /// `build` calls - and the column set built from what it publishes. A headless tree
+    /// drops backend events (`test_support`'s `NullPoster`), so the delivery of the event
+    /// itself is not what this can prove; the re-read and the gate reading it are.
+    #[test]
+    fn the_books_column_follows_the_binder_rather_than_the_mounting_build() {
+        let (app_ctx, ids, binder, book_one) = seed();
+        let vm = view_model(&app_ctx, &ids, book_one);
+        let books = Signal::new(live_book_titles(&app_ctx, &ids));
+
+        let column_ids = |books: &Signal<Vec<(u64, String)>>| -> Vec<String> {
+            overview_columns(&vm, &books.get())
+                .iter()
+                .map(|c| c.id().to_string())
+                .collect()
+        };
+        assert!(
+            !column_ids(&books).contains(&COL_BOOKS.to_string()),
+            "one Book: no Books column"
+        );
+
+        // A second Book arrives from the binder, with this tab open.
+        let book_two = binder_item_commands::create_binder_item(
+            &app_ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "Book Two".into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            binder,
+            1,
+        )
+        .expect("create Book Two")
+        .id;
+        refresh_books(&app_ctx, &ids, &books);
+        assert!(
+            column_ids(&books).contains(&COL_BOOKS.to_string()),
+            "the column must appear without reopening the tab"
+        );
+
+        // ...and a rename reaches the map the cells print from.
+        let it = binder_item_commands::get_binder_item(&app_ctx, &book_two)
+            .expect("read Book Two")
+            .expect("Book Two exists");
+        let mut dto = crate::shared::binder_ops::update_item_dto(&it);
+        dto.title = "The Crossing".into();
+        binder_item_commands::update_binder_item(&app_ctx, None, &dto).expect("rename");
+        refresh_books(&app_ctx, &ids, &books);
+        assert!(
+            books.get().iter().any(|(_, t)| t == "The Crossing"),
+            "the titles the Books cells resolve through must be the current ones: {:?}",
+            books.get()
+        );
     }
 }

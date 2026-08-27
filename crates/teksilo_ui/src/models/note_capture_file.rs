@@ -154,6 +154,13 @@ impl NoteCaptureService {
         if !super::uid_is_usable(work_uid) {
             return Ok(());
         }
+        // A nil uid names no tag, so remembering it would make the list say something
+        // false: every tag whose identity was never minted matches it, and the reader
+        // resolving these against the palette would find them all "recently used".
+        // Nothing is recorded rather than something wrong.
+        if tag_uid.is_nil() {
+            return Ok(());
+        }
         self.file.mutate(|f| {
             f.version = NoteCaptureFile::CURRENT_VERSION;
             let row = touch(f, work_uid, last_path);
@@ -301,6 +308,21 @@ mod tests {
         let (svc, _d) = service();
         svc.note_tag_used("", "/p", uid(1)).unwrap();
         assert!(svc.recent_tags("").is_empty());
+    }
+
+    /// A nil uid names no tag. Writing one would make the file claim a capture under
+    /// every tag whose identity was never minted, so it is not written at all, and the
+    /// history it would have displaced is left intact.
+    #[test]
+    fn a_nil_tag_uid_is_never_remembered() {
+        let (svc, _d) = service();
+        svc.note_tag_used("w", "/p", uid(1)).unwrap();
+        svc.note_tag_used("w", "/p", Uuid::nil()).unwrap();
+        assert_eq!(
+            svc.recent_tags("w"),
+            vec![uid(1)],
+            "nothing recorded, and the real history untouched"
+        );
     }
 
     #[test]

@@ -288,6 +288,10 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
             delete_from_backward_junction(&self.store.jn_binder_item_from_pace_book_item, id);
             // self-referential backward: same forward junction
             delete_from_backward_junction(&self.store.jn_binder_item_from_binder_item_books, id);
+            delete_from_backward_junction(
+                &self.store.jn_binder_item_from_binder_tag_creates_in,
+                id,
+            );
             // self-referential backward: same forward junction
             delete_from_backward_junction(
                 &self.store.jn_binder_item_from_binder_item_point_of_view,

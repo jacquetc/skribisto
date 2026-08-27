@@ -10,8 +10,11 @@
 //! that turns "the writer clicked this row" into a place — a binder, an anchor,
 //! and whether the new material goes *inside* the row or *after* it.
 //!
-//! Only the tree excludes trashed rows, which both callers want for the same
-//! reason: a destination must be somewhere the writer can actually see.
+//! Trashed rows are excluded twice over, which every caller wants for the same
+//! reason: a destination must be somewhere the writer can actually see. The tree
+//! never offers one, and [`BinderDestination::resolve`] refuses one — the second
+//! guard is not redundant, because a destination can be *remembered* (a tag's
+//! filing folder, the import wizard's last place) and trashed afterwards.
 //!
 //! ## Handle and view
 //!
@@ -61,14 +64,31 @@ impl BinderDestination {
     ///
     /// A binder row means *into this binder*; a container row means *inside
     /// it*; anything else means *after it*. `None` when the destination no
-    /// longer resolves: the chosen binder vanished, or the anchor item did,
-    /// which a caller reads the same way an unresolved [`DestinationPicker::selected`]
-    /// would: nothing to create against, refuse rather than guess.
+    /// longer resolves: the chosen binder vanished, or the anchor item did, or
+    /// either of them has since been **trashed**, which is the same thing as far
+    /// as the writer can see. A caller reads that the same way an unresolved
+    /// [`DestinationPicker::selected`] would: nothing to create against, refuse
+    /// rather than guess.
     pub fn resolve(&self, ctx: &AppContext) -> Option<(u64, usize, i64)> {
         use frontend::commands::{binder_commands, binder_item_commands};
         use frontend::common::direct_access::binder::BinderRelationshipField;
 
         if self.binder_id == 0 {
+            return None;
+        }
+        // Trashed counts as gone, here rather than in each caller. Trashing removes
+        // nothing: `trash_binder_items_uc` leaves the row in the binder's order and
+        // only flips `activated` to false over the subtree, and `trash_binder_uc` does
+        // the same to a whole binder. So membership in the order is not the test it
+        // looks like, and a destination remembered before the writer trashed it would
+        // otherwise resolve to a place inside the trash: the new row lands invisible in
+        // the outline and is destroyed by the next Empty trash. Refuse instead, which
+        // every caller already reads as "the destination is gone, ask again".
+        if !binder_commands::get_binder(ctx, &self.binder_id)
+            .ok()
+            .flatten()
+            .is_some_and(|b| b.activated)
+        {
             return None;
         }
         let order = binder_commands::get_binder_relationship(
@@ -77,18 +97,30 @@ impl BinderDestination {
             &BinderRelationshipField::BinderItems,
         )
         .unwrap_or_default();
-        let meta: crate::binder::placement::ItemMeta =
-            binder_item_commands::get_binder_item_multi(ctx, &order)
-                .unwrap_or_default()
-                .into_iter()
-                .flatten()
-                .map(|it| (it.id, (it.role, it.indent, it.sub_role)))
-                .collect();
+        // `meta` keeps the trashed rows: the index this returns is an insert position
+        // into the binder's **whole** order, trashed rows included, so the subtree walk
+        // in `insertion_point_for_item` has to see them or it stops early and places the
+        // row inside the wrong parent. Only the anchor is tested for life.
+        let mut meta = crate::binder::placement::ItemMeta::new();
+        let mut live: std::collections::HashSet<u64> = std::collections::HashSet::new();
+        for it in binder_item_commands::get_binder_item_multi(ctx, &order)
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+        {
+            if it.activated {
+                live.insert(it.id);
+            }
+            meta.insert(it.id, (it.role, it.indent, it.sub_role));
+        }
 
         let Some(anchor) = self.anchor_item_id else {
             // A whole binder was chosen: at the end of it, top level.
             return Some((self.binder_id, order.len(), 0));
         };
+        if !live.contains(&anchor) {
+            return None;
+        }
         let pos = order.iter().position(|&x| x == anchor)?;
         let anchor_indent = meta.get(&anchor)?.1;
         let relation = match self.position {
@@ -514,6 +546,85 @@ mod real_backend_tests {
         assert!(
             picker.pending.borrow().is_none(),
             "and must be cleared, so a later reload cannot re-apply it over a newer choice"
+        );
+    }
+
+    /// The other half of "outlives the row it names": the row is still *there*, in the
+    /// binder's order, with its uid and its indent intact. It has only been trashed.
+    /// Membership in the order is therefore not the test it looks like, and without the
+    /// guard `resolve` hands back a real place inside the trash: the new row is created,
+    /// reports success, is invisible in the outline, and is destroyed by the next Empty
+    /// trash. The refusal is what every caller already reads as "ask the writer again".
+    #[test]
+    fn a_destination_whose_anchor_has_been_trashed_no_longer_resolves() {
+        use frontend::commands::{
+            binder_commands, binder_item_commands, trash_management_commands, work_commands,
+        };
+        use frontend::common::direct_access::binder::BinderRelationshipField;
+        use frontend::common::direct_access::work::WorkRelationshipField;
+        use frontend::trash_management::TrashSelectionDto;
+
+        let app_ctx = Rc::new(AppContext::new());
+        let work_id = load_fixture(&app_ctx);
+
+        // The first binder that holds a live row, and that row.
+        let (binder, item) = work_commands::get_work_relationship(
+            &app_ctx,
+            &work_id,
+            &WorkRelationshipField::Binders,
+        )
+        .expect("binders")
+        .into_iter()
+        .find_map(|b| {
+            let order = binder_commands::get_binder_relationship(
+                &app_ctx,
+                &b,
+                &BinderRelationshipField::BinderItems,
+            )
+            .unwrap_or_default();
+            binder_item_commands::get_binder_item_multi(&app_ctx, &order)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .find(|it| it.activated)
+                .map(|it| (b, it.id))
+        })
+        .expect("the fixture has a live row in some binder");
+
+        let destination = BinderDestination {
+            binder_id: binder,
+            anchor_item_id: Some(item),
+            position: DropPosition::Into,
+            title: String::new(),
+        };
+        // Without this the assertion below would pass for the wrong reason.
+        assert!(
+            destination.resolve(&app_ctx).is_some(),
+            "a live anchor must resolve to a place"
+        );
+
+        trash_management_commands::trash_selection(
+            &app_ctx,
+            None,
+            &TrashSelectionDto {
+                work_id,
+                binder_ids: Vec::new(),
+                binder_item_ids: vec![item],
+            },
+        )
+        .expect("trash the anchor");
+        assert!(
+            !binder_item_commands::get_binder_item(&app_ctx, &item)
+                .expect("the row is still there")
+                .expect("trashing removes nothing")
+                .activated,
+            "the premise: the row keeps its place in the binder and only loses `activated`"
+        );
+
+        assert_eq!(
+            destination.resolve(&app_ctx),
+            None,
+            "a destination inside the trash must refuse rather than resolve"
         );
     }
 

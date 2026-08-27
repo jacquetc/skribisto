@@ -60,8 +60,8 @@ Le panneau *Versions*, sur le rail latéral droit, à côté des panneaux *Comme
 remet cet ancien texte en place, avec une copie de sécurité créée d’abord et
 `Ctrl+Z` pour annuler, mais uniquement sur une ligne qui existe encore.
 
-Pour une ligne que vous avez complètement supprimée, il y a la Chronologie (_Affichage ▸
-Chronologie_) : la bande d’historique à l’échelle du projet, et le seul endroit où une ligne
+Pour une ligne que vous avez complètement supprimée, il y a Remonter le temps (_Affichage ▸
+Remonter le temps_) : la bande d’historique à l’échelle du projet, et le seul endroit où une ligne
 disparue reste accessible. *Rétablir cet élément…* la recrée avec le texte qu’elle avait à ce
 moment-là, à l’endroit du classeur que vous choisissez ; l’annulation se fait par le bouton du
 message toast, pas par `Ctrl+Z`, puisque cela crée une ligne au lieu d’en modifier une.

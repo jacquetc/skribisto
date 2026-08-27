@@ -341,7 +341,10 @@ macro_rules! djot_topic {
 /// The title is not new either: where the concept is something you can create, it
 /// reuses the very label the "＋ Create" menu offers, so the glossary and the menu can
 /// never call the same thing two names. A handful of concepts are not create rows and
-/// have no such label; those get a title of their own, and only those.
+/// have no such label; those get a title of their own, and only those. One create row
+/// is an exception on purpose: its menu label ends in an ellipsis, correct there
+/// because it opens a dialog, wrong here where the title is not a control to invoke.
+/// It gets its own non-ellipsis title instead of the reused label.
 ///
 /// Order is the order the contents shows: the writing vocabulary first, then the
 /// target and pace vocabulary, matching the two webs `tooltip_registry` documents.
@@ -366,7 +369,7 @@ fn concept_topics() -> Vec<HelpTopicSpec> {
         (tips::WM_END_OF_BOOK, Rc::new(|| tr!(create_book_end()))),
         (
             tips::WM_STORY_BIBLE_ENTRY,
-            Rc::new(|| tr!(create_story_bible_entry())),
+            Rc::new(|| tr!(help_concept_story_bible_entry())),
         ),
         (tips::WM_SYNOPSIS, Rc::new(|| tr!(synopsis()))),
         (

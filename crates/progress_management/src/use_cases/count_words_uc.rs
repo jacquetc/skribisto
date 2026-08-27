@@ -238,11 +238,24 @@ fn fold_counts(
     let mut total_words: i64 = 0;
     let mut total_chars: i64 = 0;
     let mut current_book: Option<EntityId> = None;
+    let mut current_binder: Option<u64> = None;
     let mut per_book: Vec<(EntityId, i64)> = Vec::new();
     let mut total_note_words: i64 = 0;
     let mut per_book_notes: Vec<(EntityId, i64)> = Vec::new();
 
     for m in items {
+        // A book never runs past its own binder's edge. The stream is binder-major and
+        // concatenated with nothing between one binder and the next, and only manuscript
+        // rows ever carry `opens_book`/`closes_book` — so a book left open at the end of
+        // the manuscript (no `BookEnd`, which only the shipped templates add) would
+        // otherwise swallow every note and every old draft in the research binders and
+        // report them as its own words. `skribisto_model::compile`'s own walks close the
+        // book at this edge; this one has to agree with them, or the goal meter, the
+        // analysis and the export describe three different books.
+        if current_binder != Some(m.binder_id) {
+            current_binder = Some(m.binder_id);
+            current_book = None;
+        }
         if m.sub_role.opens_book() {
             current_book = Some(m.id);
         } else if m.sub_role.closes_book() {
@@ -422,6 +435,52 @@ mod tests {
         assert_eq!(out.total_word_count, 3);
         assert!(out.book_item_ids.is_empty(), "no Book → no per-book bucket");
     }
+
+    /// **A book stops at its own binder's edge.**
+    ///
+    /// The stream is binder-major and concatenated with nothing between one binder and the
+    /// next, and only manuscript rows carry `opens_book`/`closes_book`. A hand-made Book
+    /// with no closing `BookEnd` (only the shipped templates add one) therefore stays open
+    /// past the end of the manuscript, and every old draft the writer keeps in a research
+    /// binder lands in its bucket: the per-book goal meter fills with words the export and
+    /// the analysis, which both close the book here, say are not in the book at all.
+    #[test]
+    fn a_book_left_open_does_not_swallow_the_next_binder() {
+        use BinderItemRole::{Folder, Item};
+        use BinderItemSubRole as SR;
+
+        // Manuscript binder: a Book with one scene and NO BookEnd.
+        // Research binder: an old draft, activated and exportable like any other row.
+        let mut research = meta(30, Item, SR::Scene);
+        research.binder_id = 2;
+        let stream = vec![
+            meta(10, Folder, SR::Book),
+            meta(11, Folder, SR::ChapterScene),
+            meta(12, Item, SR::Scene),
+            research,
+        ];
+        let mut prose: HashMap<EntityId, Vec<String>> = HashMap::new();
+        prose.insert(12, vec!["a b c d".into()]); // 4
+        prose.insert(30, vec!["one two three four five six".into()]); // 6
+
+        let out = fold_counts(
+            &stream,
+            &prose,
+            &HashMap::new(),
+            CountMethod::WhitespaceSplit,
+        );
+        assert_eq!(
+            out.total_word_count, 10,
+            "every activated exportable scene still counts toward the work's total"
+        );
+        assert_eq!(out.book_item_ids, vec![10]);
+        assert_eq!(
+            out.book_word_counts,
+            vec![4],
+            "but the research binder's draft is not in the Book"
+        );
+    }
+
     /// **The fork this feature turns on.** A footnote IS authored words — unlike an
     /// epigraph's quoted matter — so the number must not be discarded. But folding it
     /// into the manuscript total would make a heavily annotated chapter report

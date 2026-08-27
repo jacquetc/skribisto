@@ -121,8 +121,8 @@ use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    BinderItem, Comment, CommentAnchorKind, CommentOrphanReason, CommentReply, Content,
-    ContentRole, Work,
+    BinderItem, BinderItemSubRole, Comment, CommentAnchorKind, CommentOrphanReason, CommentReply,
+    Content, ContentRole, Work,
 };
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
@@ -545,6 +545,11 @@ impl ApplyDocumentImportUseCase {
                 Some(created.id)
             };
 
+            // **A note starts out of the export**, whichever door made it. The review step
+            // lets the writer retype any row to Note, and a note is their own workings:
+            // research, a reminder, a character page. Computed here because the literal
+            // below moves `sub_role` into the row.
+            let is_note = sub_role == BinderItemSubRole::Note;
             let item = uow.create_orphan_binder_item(&BinderItem {
                 // A created row mints its own durable identity. Everything
                 // persisted about an item keys on this — including, since the
@@ -559,7 +564,10 @@ impl ApplyDocumentImportUseCase {
                 // exportable nor activated is present but invisible to export and
                 // to chapter numbering.
                 activated: true,
-                is_exportable: true,
+                // Without this the same note is exportable or not depending on whether it
+                // was imported or typed, and a preset with `include_notes` on prints one
+                // and not the other.
+                is_exportable: !is_note,
                 indent: *indent + shift,
                 ..Default::default()
             })?;

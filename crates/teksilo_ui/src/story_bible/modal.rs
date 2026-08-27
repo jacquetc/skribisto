@@ -28,6 +28,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use teksilo::core::BindingLevel;
 use teksilo::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
@@ -80,10 +81,13 @@ pub struct ModalDeps {
 pub struct Prefill {
     pub name: String,
     pub aliases: Vec<String>,
-    /// The guessed `books` pre-set. Only ever rendered when the Work has two
-    /// or more Books to begin with (see [`crate::docks::inspector::live_books`]'s
-    /// own doc); harmless to pass a non-empty guess otherwise, since the
-    /// control that would show it simply does not render.
+    /// The guessed `books` pre-set. The control that shows it renders whenever
+    /// the Work has a Book to file under at all, so a guess is visible and
+    /// changeable wherever one can be made: [`infer_book::book_containing`]
+    /// names a live `Folder/Book`, which is exactly what
+    /// [`crate::docks::inspector::live_books`] offers as a candidate. Only a
+    /// Work with no Book at all shows nothing, and there the guess is empty
+    /// too.
     pub books: Vec<u64>,
 }
 
@@ -123,15 +127,28 @@ pub fn present_configure(deps: ModalDeps, item_id: u64, ctx: &mut EventContext) 
     );
 }
 
-/// The [`Prefill`] for "Add as note": the selected words as both the proposed name and
-/// the first alias candidate, and, when the Work has two or more Books, the scene's own
-/// containing Book as the `books` pre-set, unambiguous since a scene sits inside exactly
-/// one Book.
+/// The [`Prefill`] for "Add as note": the selected words as the proposed name, and the
+/// scene's own containing Book as the `books` pre-set, unambiguous since a scene sits
+/// inside exactly one Book.
 ///
 /// Read by [`crate::story_bible::capture_flow`], which no longer opens this modal at
 /// all: the tag says where the note goes, so there is nothing left to confirm. What
 /// survives here is the part that was never about the dialog, which is working out what
 /// the writer actually selected.
+///
+/// The `books` guess stays a **modal** pre-set, and that door drops it on purpose:
+/// filing is a declaration, and a door that shows no chip row has nothing to declare
+/// with. See `capture_flow::draft_for`, which says so where the write happens.
+///
+/// **No alias.** The selection is the entry's *name*, and a name is already a needle:
+/// `skribisto_model::mentions::names_of` emits the title first and longest-first
+/// resolution drops the duplicate span, so an alias repeating the title matches
+/// nothing new. What it does do is persist: the Story bible card counts
+/// `aliases.len()` and would report "1 alias" under a title identical to it, on every
+/// entry, making "which of my entries still need aliases" unanswerable from the grid.
+/// It was defensible while this fed a modal the writer could delete the pill in
+/// (the doc called it the first alias *candidate*); the door that replaced that modal
+/// asks nothing and commits immediately.
 ///
 /// `None` only when `item_id` no longer resolves: the row was trashed, or the project
 /// changed between the right-click and the intent reaching here, in which case the
@@ -154,12 +171,8 @@ pub fn prefill_from_selection(
         .into_iter()
         .collect();
     Some(Prefill {
-        name: name.clone(),
-        aliases: if name.is_empty() {
-            Vec::new()
-        } else {
-            vec![name]
-        },
+        name,
+        aliases: Vec::new(),
         books,
     })
 }
@@ -308,6 +321,12 @@ struct EntryPanel {
     /// the modal", read back the same way the button ids are.
     #[cfg(test)]
     books_section_rendered: bool,
+    /// How many times `build()` has run, read back the same way. The direct
+    /// answer to "did the panel redraw when the filing changed": the chip row
+    /// is drawn from a snapshot of `books`, so a change nothing dirties leaves
+    /// the writer looking at the value Create is no longer going to write.
+    #[cfg(test)]
+    builds: usize,
 }
 
 impl EntryPanel {
@@ -331,6 +350,8 @@ impl EntryPanel {
             create_and_open_id: None,
             #[cfg(test)]
             books_section_rendered: false,
+            #[cfg(test)]
+            builds: 0,
         }
     }
 
@@ -351,6 +372,20 @@ impl std::fmt::Debug for EntryPanel {
 
 impl Widget for EntryPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // The Books section below reads `books` with a plain `get()`, which registers
+        // no dependency at all: without this the chip row keeps showing the guess
+        // after the writer has cleared it, while Create writes what the signal now
+        // holds. Every other field on this panel is drawn by a child widget that
+        // binds its own signal (`AliasPillField::build` does exactly this); the chip
+        // row is a plain function over a `Vec`, so the binding has to live here.
+        // `Rebuild`, because a cleared chip is a child gone, not a repaint.
+        self.books
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        #[cfg(test)]
+        {
+            self.builds += 1;
+        }
+
         let mut col = VStack::new().spacing(14.0);
 
         // ── Name ──
@@ -759,14 +794,22 @@ mod tests {
     /// guarantee, tested at the pure resolution function rather than through a
     /// live right-click, since nothing about turning a selection into a
     /// pre-fill needs a widget tree.
+    ///
+    /// And as the name **only**: an alias repeating the title matches nothing
+    /// the title does not already match, and the door this feeds commits
+    /// without showing it, so every captured entry would report "1 alias" on
+    /// the grid for an alias its writer never wrote.
     #[test]
-    fn the_selection_arrives_as_the_proposed_name_and_first_alias() {
+    fn the_selection_arrives_as_the_proposed_name_and_nothing_else() {
         let f = seed();
         let item_id = create_note(&f, 0, "New note");
         let prefill = prefill_from_selection(&f.app_ctx, &f.ids, item_id, "  Elizabeth Bennet  ")
             .expect("a live item must resolve a prefill");
         assert_eq!(prefill.name, "Elizabeth Bennet");
-        assert_eq!(prefill.aliases, vec!["Elizabeth Bennet".to_string()]);
+        assert!(
+            prefill.aliases.is_empty(),
+            "the entry's own name is not one of its aliases"
+        );
     }
 
     /// **Inference pre-sets `books` from the scene's Book, and the writer can
@@ -1030,6 +1073,61 @@ mod tests {
             .and_then(|a| a.downcast_ref::<EntryPanel>())
             .expect("EntryPanel must be introspectable via as_any")
             .books_section_rendered
+    }
+
+    fn panel(tree: &WidgetTree, id: WidgetId) -> &EntryPanel {
+        tree.widget_as_any(id)
+            .and_then(|a| a.downcast_ref::<EntryPanel>())
+            .expect("EntryPanel must be introspectable via as_any")
+    }
+
+    /// **Changing the filing redraws the row that shows it.**
+    ///
+    /// The chip row and the add button are plain functions over a `Vec<u64>`,
+    /// so nothing under them holds the signal and nothing under them can bind
+    /// it: the panel itself has to. Read with a bare `get()` and left unbound,
+    /// a cleared chip stayed on screen while Create wrote the emptied value,
+    /// and the writer's only evidence was the entry filed under a Book they
+    /// had just removed. Every other field here is drawn by a child widget
+    /// that binds its own signal, which is why this is the one that broke.
+    #[test]
+    fn changing_the_filing_rebuilds_the_panel() {
+        let f = seed();
+        let book_one = create_book(&f, 0, "Book One");
+        let _book_two = create_book(&f, 1, "Book Two");
+        let panel_widget = EntryPanel::new(
+            deps(&f),
+            Mode::Configure { item_id: 0 },
+            Prefill {
+                books: vec![book_one],
+                ..Prefill::default()
+            },
+        );
+        let (mut tree, id, _) = mount(&f.app_ctx, panel_widget);
+        assert!(
+            books_section_rendered(&tree, id),
+            "two Books: the chip row under test must be on screen"
+        );
+        let before = panel(&tree, id).builds;
+        let books = panel(&tree, id).books.clone();
+
+        // Exactly what the chip's own clear handler does.
+        books.set(Vec::new());
+        // `layout` is what walks a pending signal change into the arena; laying
+        // out a settled tree again costs nothing, so the loop only makes the
+        // assertion independent of how many passes one change needs.
+        for _ in 0..3 {
+            tree.layout(teksilo::prelude::SizeProposal {
+                width: Some(CARD_W as f32),
+                height: None,
+            });
+        }
+
+        assert!(
+            panel(&tree, id).builds > before,
+            "clearing the chip must dirty the panel that draws it, or the writer \
+             keeps looking at a filing Create is no longer going to write"
+        );
     }
 
     /// A template's body resolves to the preset's own text: the other half

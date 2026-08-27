@@ -19,7 +19,7 @@ use binder_ordering::{
 };
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
-use common::entities::{Binder, BinderItem, BinderItemRole, BinderItemSubRole};
+use common::entities::{Binder, BinderItem, BinderItemRole};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
@@ -105,14 +105,8 @@ impl MoveItemsUseCase {
         let src_order =
             uow.get_binder_relationship(&src_binder, &BinderRelationshipField::BinderItems)?;
         let mut indent: HashMap<EntityId, i64> = HashMap::new();
-        // `sub_role` rides alongside `indent` for exactly one reason: the
-        // Book-in-Book guard below has to tell a book-opening row (`Folder/Book`
-        // or the flat-marker `Item/BookBegin`, see `SubRoleExt::opens_book`) apart
-        // from anything else it might be walking past, on both sides of the move.
-        let mut sub_role: HashMap<EntityId, BinderItemSubRole> = HashMap::new();
         for it in uow.get_binder_item_multi(&src_order)?.into_iter().flatten() {
             indent.insert(it.id, it.indent);
-            sub_role.insert(it.id, it.sub_role);
         }
 
         // Expand requested ids to their full contiguous subtrees, in src order,
@@ -160,7 +154,6 @@ impl MoveItemsUseCase {
                     .get_binder_relationship(&dest_binder, &BinderRelationshipField::BinderItems)?;
                 for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
                     indent.insert(it.id, it.indent);
-                    sub_role.insert(it.id, it.sub_role);
                 }
                 order
             };

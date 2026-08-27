@@ -27,8 +27,6 @@ use common::entities::BinderItemRole as Role;
 use common::entities::BinderItemSubRole as SubRole;
 use common::entities::ContentRole;
 use common::entities::ContentRole::*;
-use common::types::EntityId;
-use std::collections::HashMap;
 
 /// Which language a scene is written in: the per-item → Work resolution chain,
 /// plus the `dict_language` tag-list grammar shared by search folding and spell-checking.
@@ -355,39 +353,6 @@ impl SubRoleExt for SubRole {
     fn carries_scene(&self) -> bool {
         matches!(self, SubRole::Scene | SubRole::ChapterScene)
     }
-}
-
-/// The nearest row in `ancestors` whose `sub_role` `opens_book()`, if any:
-/// which book-opening row, if any, encloses this destination.
-///
-/// `ancestors` is a destination's already-assembled ancestor chain (typically
-/// the target itself, chained with `binder_ordering::ancestors_of` and
-/// filtered to rows shallower than the moved/restored root's new indent; see
-/// the call sites). Building that chain stays with each caller: it mixes a
-/// use-case-specific `base_indent` threshold with `binder_ordering`'s
-/// indent-tree walk, and `binder_ordering` is deliberately domain-blind (its
-/// own doc comment on `ancestors_of` says as much) so it cannot know what a
-/// Book is. This function is the domain-aware half those callers both need,
-/// kept in one place instead of two: `binder_item_management::move_items_uc`
-/// and `trash_management::restore_items_to_uc` both resolve a destination via
-/// `binder_ordering::resolve_item_target`, and both must refuse landing a
-/// book-opening row inside another book's subtree, because
-/// `skribisto_model::compile`'s book-boundary walk tracks the current book
-/// purely by the next `opens_book`/`closes_book` marker in flat stream order
-/// (indent does not feed it). Nesting a book inside a book silently folds
-/// every row still enclosed by indent in the outer book into the inner book's
-/// running total instead, with no error anywhere.
-///
-/// Covers both book encodings (`Folder/Book` and the flat-marker
-/// `Item/BookBegin`) because it goes through `opens_book()`, never a literal
-/// `== SubRole::Book`.
-pub fn enclosing_book(
-    ancestors: impl IntoIterator<Item = EntityId>,
-    sub_role: &HashMap<EntityId, SubRole>,
-) -> Option<EntityId> {
-    ancestors
-        .into_iter()
-        .find(|id| sub_role.get(id).is_some_and(SubRoleExt::opens_book))
 }
 
 /// Which "kind" of writing item the Go menu's Next/Previous commands act on.

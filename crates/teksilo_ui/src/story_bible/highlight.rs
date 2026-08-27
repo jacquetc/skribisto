@@ -175,6 +175,11 @@ pub struct SubjectHighlight {
     /// switched off. Compared rather than assumed, so a rename or a new alias re-derives
     /// without the caller having to notice.
     subject: RefCell<Option<DiscoverableEntity>>,
+    /// The rest of the Work's discoverable names the pushed ranges were derived against.
+    /// Compared like [`Self::subject`] is, because overlap resolution is a whole-table
+    /// decision: a second entry gaining the alias "Grace Kelly" takes this entry's
+    /// "Grace" off the very sentence it was marked on, with nothing else changed.
+    table: RefCell<Vec<DiscoverableEntity>>,
     /// Where every name falls in this document, in order — `(start, length)` in
     /// characters. Kept apart from the pushed ranges below because the walk asks about
     /// positions while the paint layer asks about formats, and a step changes the second
@@ -235,6 +240,7 @@ impl SubjectHighlight {
             session,
             dirty,
             subject: RefCell::new(None),
+            table: RefCell::new(Vec::new()),
             spans: RefCell::new(Vec::new()),
             current: std::cell::Cell::new(None),
             last: RefCell::new(Vec::new()),
@@ -251,18 +257,29 @@ impl SubjectHighlight {
     /// Cheap to call every frame: with no edit and the same entry it does nothing at all,
     /// which matters because this runs once per mapped row and a Book's reading can be
     /// forty of them.
-    pub fn refresh(&self, subject: Option<&DiscoverableEntity>) -> bool {
-        let renamed = self.subject.borrow().as_ref() != subject;
+    pub fn refresh(
+        &self,
+        subject: Option<&DiscoverableEntity>,
+        table: &[DiscoverableEntity],
+    ) -> bool {
+        let renamed =
+            self.subject.borrow().as_ref() != subject || self.table.borrow().as_slice() != table;
         if !self.dirty.swap(false, Ordering::Relaxed) && !renamed {
             return false;
         }
         if renamed {
             *self.subject.borrow_mut() = subject.cloned();
+            *self.table.borrow_mut() = table.to_vec();
         }
         let spans: Vec<(usize, usize)> = match subject {
             Some(entity) => {
-                let text = self.doc.to_plain_text().unwrap_or_default();
-                hits(&text, entity)
+                // `to_addressable_text()`, NOT `to_plain_text()`: a `RangeHighlight`
+                // carries absolute document char offsets, and the export string drops
+                // each table's `U+FFFC` anchor and its `\n`, so every offset taken from
+                // it is two characters early per preceding table. The same rule
+                // `comments::binding` and `FindSession` already state.
+                let text = self.doc.to_addressable_text().unwrap_or_default();
+                hits(&text, entity, table)
                     .into_iter()
                     .map(|(start, end)| (start, end - start))
                     .collect()
@@ -415,15 +432,16 @@ impl SubjectWalk {
         self.ordinal.clone()
     }
 
-    /// Re-derive every row's marks against `names` and republish the counters.
+    /// Re-derive every row's marks against `names`, read against the Work's whole
+    /// discoverable `table`, and republish the counters.
     ///
     /// Called once a frame. Each layer is a cheap no-op unless its document was edited or
     /// the entry renamed, so the cost of a quiet frame is one flag read per row.
-    pub fn refresh(&self, subject: Option<&DiscoverableEntity>) {
+    pub fn refresh(&self, subject: Option<&DiscoverableEntity>, table: &[DiscoverableEntity]) {
         {
             let layers = self.layers.borrow();
             for layer in layers.values() {
-                layer.refresh(subject);
+                layer.refresh(subject, table);
             }
         }
         // Re-apply the cursor before publishing. This is the whole of the one-source-of-
@@ -589,7 +607,7 @@ mod tests {
     fn every_name_is_marked_where_it_is_written() {
         let d = doc("Lizzy waited. Elizabeth Bennet did not.");
         let layer = layer_over(&d);
-        assert!(layer.refresh(Some(&who(&["Elizabeth Bennet", "Lizzy"]))));
+        assert!(layer.refresh(Some(&who(&["Elizabeth Bennet", "Lizzy"])), &[]));
 
         let marked: Vec<(usize, usize)> = layer
             .last
@@ -608,12 +626,78 @@ mod tests {
         let d = doc("Lizzy waited.");
         let layer = layer_over(&d);
         let subject = who(&["Lizzy"]);
-        assert!(layer.refresh(Some(&subject)));
+        assert!(layer.refresh(Some(&subject), &[]));
         assert_eq!(layer.last.borrow()[0].start, 0);
 
         d.set_plain_text("That morning, Lizzy waited.").unwrap();
-        assert!(layer.refresh(Some(&subject)), "the edit staled the marks");
+        assert!(
+            layer.refresh(Some(&subject), &[]),
+            "the edit staled the marks"
+        );
         assert_eq!(layer.last.borrow()[0].start, 14);
+    }
+
+    /// The **char** index of `needle` in `haystack`, which is not its byte index.
+    ///
+    /// `str::find` answers in bytes, and a `U+FFFC` table anchor is one char and three
+    /// bytes. Every offset in this module is a char offset, so a test that reached for
+    /// `find` would be comparing two different units and reporting the difference as a
+    /// bug in the layer.
+    fn char_index_of(haystack: &str, needle: &str) -> Option<usize> {
+        let byte = haystack.find(needle)?;
+        Some(haystack[..byte].chars().count())
+    }
+
+    /// **A table ahead of the name must not move its mark.**
+    ///
+    /// `RangeHighlight` carries absolute document char offsets, and a table occupies a
+    /// `U+FFFC` anchor plus its separator in that space while `to_plain_text()` (the
+    /// human-readable export) drops both. Offsets taken from the export therefore land
+    /// two characters early per preceding table, which washed the wrong nine characters
+    /// and sent the mention bar's chevron to the wrong place.
+    #[test]
+    fn a_table_ahead_of_a_name_does_not_shift_its_mark() {
+        let d = TextDocument::new();
+        d.cursor().insert_table(2, 2).expect("insert a table");
+        let end = d.character_count();
+        let cursor = d.cursor_at(end);
+        cursor.insert_block().expect("a block after the table");
+        cursor
+            .insert_text("Elizabeth waited.")
+            .expect("prose after the table");
+
+        let addressable = d.to_addressable_text().expect("addressable text");
+        let exported = d.to_plain_text().expect("exported text");
+        let addressable_at =
+            char_index_of(&addressable, "Elizabeth").expect("named in the document");
+        let exported_at = char_index_of(&exported, "Elizabeth").expect("named in the export");
+        // Without the table the two strings agree and this test could never fail. The
+        // anchor and its separator are exactly what makes them differ.
+        assert_ne!(
+            addressable_at, exported_at,
+            "the table must be what the two strings disagree about"
+        );
+        // And the mark has to be at the document's own offset, which is the block's
+        // position: an offset off by the two characters the export drops is exactly the
+        // bug, and it is the block start that a `RangeHighlight` is read against.
+        assert_eq!(
+            d.blocks()
+                .into_iter()
+                .find(|b| b.text().starts_with("Elizabeth"))
+                .map(|b| b.position()),
+            Some(addressable_at),
+            "the addressable text and the block positions are one char space"
+        );
+
+        let layer = layer_over(&d);
+        assert!(layer.refresh(Some(&who(&["Elizabeth"])), &[]));
+        let marked: Vec<(usize, usize)> = layer
+            .last
+            .borrow()
+            .iter()
+            .map(|r| (r.start, r.length))
+            .collect();
+        assert_eq!(marked, vec![(addressable_at, 9)]);
     }
 
     /// A rename re-derives without an edit: nothing touched the prose, but the entry now
@@ -622,10 +706,10 @@ mod tests {
     fn a_renamed_entry_re_derives_without_an_edit() {
         let d = doc("Lizzy teased Marcus.");
         let layer = layer_over(&d);
-        assert!(layer.refresh(Some(&who(&["Lizzy"]))));
+        assert!(layer.refresh(Some(&who(&["Lizzy"])), &[]));
         assert_eq!(layer.marks(), 1);
 
-        assert!(layer.refresh(Some(&who(&["Lizzy", "Marcus"]))));
+        assert!(layer.refresh(Some(&who(&["Lizzy", "Marcus"])), &[]));
         assert_eq!(layer.marks(), 2, "the new alias is marked too");
     }
 
@@ -636,9 +720,9 @@ mod tests {
         let d = doc("Lizzy waited.");
         let layer = layer_over(&d);
         let subject = who(&["Lizzy"]);
-        assert!(layer.refresh(Some(&subject)));
-        assert!(!layer.refresh(Some(&subject)));
-        assert!(!layer.refresh(Some(&subject)));
+        assert!(layer.refresh(Some(&subject), &[]));
+        assert!(!layer.refresh(Some(&subject), &[]));
+        assert!(!layer.refresh(Some(&subject), &[]));
     }
 
     /// An entry with no names marks nothing rather than everything — the state a note
@@ -647,7 +731,7 @@ mod tests {
     fn an_unnamed_entry_marks_nothing() {
         let d = doc("Lizzy waited.");
         let layer = layer_over(&d);
-        assert!(!layer.refresh(None));
+        assert!(!layer.refresh(None, &[]));
         assert_eq!(layer.marks(), 0);
     }
 
@@ -689,7 +773,7 @@ mod tests {
             (2, "Nobody came."),
             (3, "Lizzy, and Lizzy again."),
         ]);
-        walk.refresh(Some(&who(&["Lizzy"])));
+        walk.refresh(Some(&who(&["Lizzy"])), &[]);
         assert_eq!(walk.total_signal().get(), 3);
         assert_eq!(
             walk.ordinal_signal().get(),
@@ -708,7 +792,7 @@ mod tests {
             (2, "Nobody came."),
             (3, "Lizzy, and Lizzy again."),
         ]);
-        walk.refresh(Some(&who(&["Lizzy"])));
+        walk.refresh(Some(&who(&["Lizzy"])), &[]);
 
         assert_eq!(walk.step(true), Some((1, 0, 5)), "the reading's first");
         assert_eq!(walk.ordinal_signal().get(), 1);
@@ -734,7 +818,7 @@ mod tests {
     #[test]
     fn stepping_back_enters_a_row_at_its_last_mention() {
         let (walk, _d) = reading(&[(1, "Lizzy, and Lizzy again."), (2, "One Lizzy.")]);
-        walk.refresh(Some(&who(&["Lizzy"])));
+        walk.refresh(Some(&who(&["Lizzy"])), &[]);
 
         assert_eq!(walk.step(false), Some((2, 4, 5)), "the reading's last");
         assert_eq!(walk.ordinal_signal().get(), 3);
@@ -749,7 +833,7 @@ mod tests {
     #[test]
     fn a_reading_with_no_mention_has_nowhere_to_step() {
         let (walk, _d) = reading(&[(1, "Nobody came."), (2, "Still nobody.")]);
-        walk.refresh(Some(&who(&["Lizzy"])));
+        walk.refresh(Some(&who(&["Lizzy"])), &[]);
         assert_eq!(walk.total_signal().get(), 0);
         assert_eq!(walk.step(true), None);
         assert_eq!(walk.step(false), None);
@@ -763,12 +847,12 @@ mod tests {
     fn an_edit_that_deletes_the_current_mention_drops_the_ordinal() {
         let (walk, docs) = reading(&[(1, "Lizzy waited."), (2, "Lizzy again.")]);
         let subject = who(&["Lizzy"]);
-        walk.refresh(Some(&subject));
+        walk.refresh(Some(&subject), &[]);
         assert_eq!(walk.step(true), Some((1, 0, 5)));
         assert_eq!(walk.ordinal_signal().get(), 1);
 
         docs[0].set_plain_text("Nobody waited.").unwrap();
-        walk.refresh(Some(&subject));
+        walk.refresh(Some(&subject), &[]);
         assert_eq!(walk.total_signal().get(), 1, "only row 2's is left");
         assert_eq!(
             walk.ordinal_signal().get(),
@@ -789,11 +873,11 @@ mod tests {
     fn a_row_that_leaves_the_reading_takes_the_cursor_with_it() {
         let (walk, _d) = reading(&[(1, "Lizzy waited."), (2, "Lizzy again.")]);
         let subject = who(&["Lizzy"]);
-        walk.refresh(Some(&subject));
+        walk.refresh(Some(&subject), &[]);
         assert_eq!(walk.step(true), Some((1, 0, 5)));
 
         walk.set_order(vec![2]);
-        walk.refresh(Some(&subject));
+        walk.refresh(Some(&subject), &[]);
         assert_eq!(walk.total_signal().get(), 1, "only the row still shown");
         assert_eq!(walk.ordinal_signal().get(), 0);
         assert_eq!(walk.step(true), Some((2, 0, 5)));
@@ -810,7 +894,7 @@ mod tests {
     fn an_edit_that_shrinks_a_row_keeps_the_mark_and_the_counter_together() {
         let (walk, docs) = reading(&[(1, "Lizzy, Lizzy and Lizzy.")]);
         let subject = who(&["Lizzy"]);
-        walk.refresh(Some(&subject));
+        walk.refresh(Some(&subject), &[]);
         walk.step(true);
         walk.step(true);
         walk.step(true);
@@ -818,7 +902,7 @@ mod tests {
 
         // Two of the three are gone; the row still has one.
         docs[0].set_plain_text("Lizzy waited.").unwrap();
-        walk.refresh(Some(&subject));
+        walk.refresh(Some(&subject), &[]);
 
         assert_eq!(walk.total_signal().get(), 1);
         assert_eq!(
@@ -843,7 +927,7 @@ mod tests {
     fn a_layer_rebuilt_from_scratch_gets_the_cursor_back() {
         let (walk, docs) = reading(&[(1, "Lizzy, and Lizzy again.")]);
         let subject = who(&["Lizzy"]);
-        walk.refresh(Some(&subject));
+        walk.refresh(Some(&subject), &[]);
         walk.step(true);
         walk.step(true);
         assert_eq!(walk.ordinal_signal().get(), 2);
@@ -853,7 +937,7 @@ mod tests {
         walk.layers
             .borrow_mut()
             .insert(1, SubjectHighlight::new(&docs[0], fmt(), here()));
-        walk.refresh(Some(&subject));
+        walk.refresh(Some(&subject), &[]);
 
         assert_eq!(standing_on(&walk), 1, "something is drawn as current again");
         assert_eq!(
@@ -911,7 +995,7 @@ mod tests {
         let d = doc("Lizzy waited.");
         {
             let layer = layer_over(&d);
-            assert!(layer.refresh(Some(&who(&["Lizzy"]))));
+            assert!(layer.refresh(Some(&who(&["Lizzy"])), &[]));
             assert!(!spans(&d).is_empty());
         }
         assert!(

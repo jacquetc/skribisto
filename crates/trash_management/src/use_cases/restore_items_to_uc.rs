@@ -26,7 +26,7 @@ use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{Binder, BinderItem, BinderItemRole, BinderItemSubRole, Work};
+use common::entities::{Binder, BinderItem, BinderItemRole, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
@@ -116,18 +116,12 @@ impl RestoreItemsToUseCase {
         let dest_order =
             uow.get_binder_relationship(&dest_binder_id, &BinderRelationshipField::BinderItems)?;
         let mut dest_indent: HashMap<EntityId, i64> = HashMap::new();
-        // `dest_sub_role` rides alongside `dest_indent` for exactly the same reason
-        // it does in `binder_item_management::move_items_uc`: the Book-in-Book
-        // guard below has to tell a book-opening row apart from anything else on
-        // the destination's ancestor chain.
-        let mut dest_sub_role: HashMap<EntityId, BinderItemSubRole> = HashMap::new();
         for it in uow
             .get_binder_item_multi(&dest_order)?
             .into_iter()
             .flatten()
         {
             dest_indent.insert(it.id, it.indent);
-            dest_sub_role.insert(it.id, it.sub_role);
         }
 
         // --- per-input resolution: gather each item's currently-trashed subtree.
@@ -135,16 +129,6 @@ impl RestoreItemsToUseCase {
         let mut orphaned = false;
         let mut plan: Vec<Plan> = Vec::new();
         let mut all_moving: HashSet<EntityId> = HashSet::new();
-        // First book-opening row found anywhere in the batch (a peeled root or a
-        // descendant of one), root or nested. This is the only thing the guard
-        // below needs to know about the restored side, and (for the error
-        // message) which id to name. `trashed_subtree_of` only ever returns rows
-        // that are CURRENTLY trashed, and step 1 of `execute` unconditionally
-        // reactivates every row this loop puts in `plan`, so every book-opening
-        // row found here is guaranteed to end this operation active: there is no
-        // "still trashed after restore" case to special-case. `opens_book` covers both
-        // book encodings, the `Folder/Book` container and the flat-marker
-        // `Item/BookBegin`.
 
         for &item_id in &dto.binder_item_ids {
             if all_moving.contains(&item_id) {
@@ -175,11 +159,9 @@ impl RestoreItemsToUseCase {
                         uow.get_binder_relationship(&src, &BinderRelationshipField::BinderItems)?;
                     let mut indent: HashMap<EntityId, i64> = HashMap::new();
                     let mut activated: HashMap<EntityId, bool> = HashMap::new();
-                    let mut sub_role: HashMap<EntityId, BinderItemSubRole> = HashMap::new();
                     for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
                         indent.insert(it.id, it.indent);
                         activated.insert(it.id, it.activated);
-                        sub_role.insert(it.id, it.sub_role);
                     }
                     let subtree = trashed_subtree_of(&order, &indent, &activated, item_id);
                     let root_old_indent = *indent.get(&item_id).unwrap_or(&0);
@@ -269,7 +251,6 @@ impl RestoreItemsToUseCase {
                     &all_moving,
                 )?;
 
-                // Refuse rather than silently coercing indent: a book-opening row
                 // **A Book restored inside another Book is allowed**, the same as moving
                 // one there: a book runs from its own marker to the next, so a Book row
                 // nested by indent starts the next book rather than being contained by

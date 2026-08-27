@@ -1817,6 +1817,46 @@ fn duplicate_copies_aliases() {
     );
 }
 
+/// `duplicate` copies the numbering opt-out, for the same reason it copies aliases.
+///
+/// Regression: the construction uses `..Default::default()`, and the default here is
+/// "numbered". A prologue the writer took out of the chapter numbering, duplicated to start
+/// a variant, would silently rejoin it: the copy becomes "Chapter 1" and every real chapter
+/// after it shifts by one, in the binder badges and in the export.
+#[test]
+fn duplicate_copies_the_numbering_opt_out() {
+    let fx = make_fixture();
+    let source = mk_scene(&fx, "Prologue");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source]);
+
+    let dto = item(&fx.ctx, source);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            exclude_from_numbering: true,
+            ..frontend::direct_access::UpdateBinderItemDto::from(dto)
+        },
+    )
+    .expect("take it out of the numbering");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    assert!(
+        item(&fx.ctx, clone).exclude_from_numbering,
+        "the clone must stay out of the numbering its source was taken out of"
+    );
+}
+
 fn item_references(fx: &Fixture, item_id: EntityId) -> Vec<EntityId> {
     binder_item_commands::get_binder_item_relationship(
         &fx.ctx,
@@ -2784,4 +2824,95 @@ fn promote_between_scene_and_note_carries_the_export_flag() {
     undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
     assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
     assert!(!item(&fx.ctx, s).is_exportable);
+}
+
+/// **Converting anywhere else leaves the export flag exactly where the writer put it.**
+///
+/// A scene the writer has deliberately kept out of the exported book (an alternative draft,
+/// say) is still their answer to "is this in the book" after they decide that scene *is* the
+/// chapter. Only the Note line moves the flag; the other ten targets are the same row, of a
+/// different type, and overwriting the choice there would discard it with no prompt and
+/// nothing visible changed but the type.
+#[test]
+fn promote_outside_the_note_pair_leaves_the_export_flag_alone() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Alternative chapter 3");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+
+    // The writer's own choice, made in the Inspector's Exportable toggle.
+    let dto = item(&fx.ctx, s);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            is_exportable: false,
+            ..frontend::direct_access::UpdateBinderItemDto::from(dto)
+        },
+    )
+    .expect("leave it out of the book");
+    assert!(!item(&fx.ctx, s).is_exportable);
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::FlatChapter.code(),
+        },
+    )
+    .expect("promote to a flat chapter");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::ChapterScene);
+    assert!(
+        !item(&fx.ctx, s).is_exportable,
+        "the writer's exclusion survives Scene -> flat chapter"
+    );
+
+    // And back down again: still theirs.
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Scene.code(),
+        },
+    )
+    .expect("promote back to a scene");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Scene);
+    assert!(
+        !item(&fx.ctx, s).is_exportable,
+        "and survives flat chapter -> Scene"
+    );
+
+    // A folder-to-folder conversion is the same row too: a part the writer excluded stays
+    // excluded when it becomes a book.
+    let f = mk_item_sub_role(
+        &fx.ctx,
+        fx.setup,
+        "Appendix material",
+        0,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Part,
+    );
+    let fdto = item(&fx.ctx, f);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            is_exportable: false,
+            ..frontend::direct_access::UpdateBinderItemDto::from(fdto)
+        },
+    )
+    .expect("leave the part out of the book");
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: f,
+            target: PromoteTarget::BookFolder.code(),
+        },
+    )
+    .expect("promote the part to a book");
+    assert_eq!(item(&fx.ctx, f).sub_role, BinderItemSubRole::Book);
+    assert!(!item(&fx.ctx, f).is_exportable, "and survives Part -> Book");
 }

@@ -21,5 +21,6 @@ crate::impl_leaf_entity_table!(
     backward_junctions: [
 
         (jn_note_template_from_work_note_templates),
+        (jn_note_template_from_binder_tag_note_template),
     ],
 );

@@ -2411,6 +2411,7 @@ help-concept-trash = Trash
 help-concept-spellcheck = Spell checking
 help-concept-search-replace = Search and replace
 help-concept-note-template = Note template
+help-concept-story-bible-entry = Story bible entry
 help-concept-text-replacement = Text replacement
 help-concept-smart-punctuation = Smart punctuation
 help-concept-export-style = Export style

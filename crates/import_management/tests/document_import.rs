@@ -498,6 +498,57 @@ fn created_rows_are_exportable_and_activated() {
     }
 }
 
+/// **A note starts out of the export, whichever door made it.**
+///
+/// The review step lets the writer retype any row to Note, and a note is their own
+/// workings. Every other door that makes one (the + Create button, the corkboard's and the
+/// stream's "+", the Notebook template, the Plume importer, the story-bible door) creates it
+/// with `is_exportable: false`. If this one did not, the same note would print or not print
+/// under a preset with `include_notes` on depending only on which button made it.
+#[test]
+fn a_row_retyped_to_note_is_created_out_of_the_export() {
+    let mut ctx = Ctx::new();
+    let path = ctx.write("clipping.md", "A research clipping about ferries.");
+    let rows = ctx.analyse(vec![path], ImportRowKind::Scene);
+    assert!(!rows.is_empty(), "the file produced a row to retype");
+
+    // Exactly what the review step's row-type combo does to the plan.
+    let retyped: Vec<DocumentImportRow> = rows
+        .into_iter()
+        .map(|r| match r {
+            DocumentImportRow::Found { title, djot, .. } => DocumentImportRow::Found {
+                indent: 0,
+                kind: ImportRowKind::Note,
+                title,
+                stripped_ordinal: String::new(),
+                djot,
+                epigraph: String::new(),
+                scene_breaks: 0,
+                word_count: 0,
+                comments: Vec::new(),
+                origin: String::new(),
+                included: true,
+                source_uid_tag: String::new(),
+                source_digest: String::new(),
+                source_file_digest: String::new(),
+            },
+            DocumentImportRow::Empty => DocumentImportRow::Empty,
+        })
+        .collect();
+
+    let created = ctx.apply(retyped, 0);
+    assert_eq!(created.len(), 1);
+    let item = binder_item_controller::get(&ctx.db, &created[0])
+        .expect("item")
+        .expect("item row");
+    assert_eq!(item.sub_role, common::entities::BinderItemSubRole::Note);
+    assert!(
+        !item.is_exportable,
+        "an imported note must start out of the export, like every other note"
+    );
+    assert!(item.activated, "it is still in the binder");
+}
+
 /// Many files, handed over out of order, land in the order their names imply.
 #[test]
 fn many_files_land_in_their_own_order_not_the_callers() {

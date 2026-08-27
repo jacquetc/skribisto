@@ -266,15 +266,18 @@ impl EditorViewMemory {
             // container with a `SegmentedControl`; the flat chapter is a prose tab and
             // never asks for this.
             ChapterScene => Some(self.chapter.clone()),
-            // A notes folder has a two-segment bar of its own
-            // (`folder_synopsis_with_overview`), and it was wrapped in `RememberSegment`
-            // like the others while this arm was missing — so its remembered view was a
-            // silent permanent no-op, and the comment claiming otherwise was false.
+            // A notes folder has a three-segment bar of its own
+            // (`folder_synopsis_with_overview`: Notes, Story bible, Overview), and it was
+            // wrapped in `RememberSegment` like the others while this arm was missing — so
+            // its remembered view was a silent permanent no-op, and the comment claiming
+            // otherwise was false.
             //
             // `Paratext` shares that arm, not a key of its own: `folder_paratext::render`
-            // delegates to the very same `folder_synopsis_with_overview`, so the two have
-            // the same two segments and the same choice to remember. Giving Paratext its
-            // own key would split one setting into two for one bar.
+            // delegates to the very same `folder_synopsis_with_overview`, which drops the
+            // Story bible segment for `Paratext` (it is not a story bible and cannot become
+            // one), so a paratext folder's bar has two segments where a notes folder's has
+            // three. They still share one remembered setting: giving Paratext its own key
+            // would split one setting into two for one function's worth of bar.
             Note | Paratext => Some(self.note.clone()),
             // `None` is shadowed by `BinderItemSubRole::None` under the glob import.
             _ => Option::None,

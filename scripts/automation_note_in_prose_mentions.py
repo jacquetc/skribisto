@@ -26,8 +26,12 @@ So this probe presses the chevrons and reads the label back, which is exactly th
 loop a writer performs.
 
 Usage: `python3 scripts/automation_note_in_prose_mentions.py <project.skrib> [entry]`
-The project must hold a story-bible entry (default "Elise") declared present in at
-least a couple of scenes that name it.
+The project must hold a story-bible entry (default "Elise") declared present at
+least 35 times across the reading. The walk below presses Next 35 times in a row
+before pressing Previous once and checking the ordinal it lands on; `SubjectWalk`
+wraps round the whole reading once every mention has been visited, so with fewer
+than 35 mentions the 35th press has already wrapped and every assertion after it
+reads a wrapped position, not a bug.
 """
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
@@ -222,8 +226,10 @@ def at_is(labels, current, total):
 
 
 total = int(TOTAL_SHAPE.search(start[0]).group(0).split()[0])
-if total < 2:
-    fail(f"the fixture must name the entry at least twice; found {total}")
+if total < 35:
+    fail("the fixture must name the entry at least 35 times so the walk below "
+         f"(35 presses of Next, then one Previous) cannot wrap round the reading "
+         f"before its assertions run; found {total}")
 
 # **One press, one answer.** The regression: the label used to lag a press behind.
 seen = []
@@ -268,10 +274,18 @@ time.sleep(1.2)
 print("  after 30 more:", counter(nodes()))
 after = first_prose_y()
 print("  top of the reading after :", after)
-if before and after and abs(before[1] - after[1]) < 20.0 and before[0] == after[0]:
+if before is None or after is None:
+    # first_prose_y() found no qualifying node either time — the scroll was never
+    # observed, so it cannot be reported as followed. Say so plainly rather than
+    # falling through to a PASS that would claim a check that did not happen.
+    viewport_note = " (viewport-follow check skipped: no reading node found to measure)"
+    print("SKIP: could not locate a reading node to measure the scroll against")
+elif abs(before[1] - after[1]) < 20.0 and before[0] == after[0]:
     shot("/tmp/in_prose_no_scroll.png")
     fail(f"the viewport did not follow: 35 mentions on and the reading still starts at "
          f"{after} — a reveal that reaches no scroll container, or reaches a dormant editor")
+else:
+    viewport_note = " (the page followed)"
 
 call("invoke_action", {"node": prv["id"], "action": "click"})
 time.sleep(1.0)
@@ -281,7 +295,7 @@ if not at_is(back, 34, total):
     fail(f"stepping back reads {back}, expected 34 of {total}")
 
 shot("/tmp/in_prose_mentions.png")
-print(f"PASS: {total} mentions, stepped 1..35 (the page followed) and back to 34")
+print(f"PASS: {total} mentions, stepped 1..35{viewport_note} and back to 34")
 for p in (mcp, app):
     if p and p.poll() is None:
         p.terminate()

@@ -209,10 +209,9 @@ pub fn primary_scope(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Opt
 /// Example: a scene directly under a Part (no chapter) has no enclosing *chapter*, so
 /// "Export Chapter" is unavailable on it.
 pub fn enclosing_head(items: &[ItemMeta], pos: usize, level: StreamLevel) -> Option<usize> {
+    // Also the bounds guard for the two `items[pos]`/`items[i]` indexings below: an
+    // out-of-range `pos` leaves here, before anything else reads the slice.
     let binder = items.get(pos)?.binder_id;
-    if pos >= items.len() {
-        return None;
-    }
     let opens = |sr: &BinderItemSubRole| match level {
         StreamLevel::Book => sr.opens_book(),
         StreamLevel::Part => sr.opens_part(),
@@ -365,7 +364,7 @@ mod tests {
     }
 
     #[test]
-    fn enclosing_book_chapter_and_none() {
+    fn enclosing_head_resolves_chapter_book_and_absent_part() {
         let s = flat_book();
         // A scene resolves up to its chapter and its book.
         assert_eq!(enclosing_head(&s, 2, StreamLevel::Chapter), Some(1));

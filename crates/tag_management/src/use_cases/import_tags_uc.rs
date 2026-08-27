@@ -123,6 +123,13 @@ impl ImportTagsUseCase {
                 continue;
             }
             let created = uow.create_orphan_binder_tag(&BinderTag {
+                // Minted here, not left to `..Default::default()`: this path writes through
+                // the unit of work and so never reaches `binder_tag_controller`'s
+                // `with_identity`. Every preset tag and every CSV row would otherwise be
+                // born nil-identified, and nil uids all compare equal: `note_capture.toml`'s
+                // `recent_tags` would collapse into one always-matching slot, and a save/open
+                // round trip could not tell one preset tag from another.
+                uid: common::uid::new_uid(),
                 created_at: now,
                 updated_at: now,
                 name: name.to_string(),

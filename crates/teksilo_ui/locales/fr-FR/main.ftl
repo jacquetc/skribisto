@@ -2397,6 +2397,7 @@ help-concept-trash = Corbeille
 help-concept-spellcheck = Vérification orthographique
 help-concept-search-replace = Rechercher et remplacer
 help-concept-note-template = Modèle de note
+help-concept-story-bible-entry = Entrée de bible narrative
 help-concept-text-replacement = Remplacement de texte
 help-concept-smart-punctuation = Ponctuation intelligente
 help-concept-export-style = Style d’export

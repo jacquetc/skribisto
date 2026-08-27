@@ -61,38 +61,6 @@ pub fn subtree_of(
     out
 }
 
-/// The chain of ids that enclose the item at `order[pos]`, nearest first: the
-/// closest earlier item one indent level up, then the one above that, and so on
-/// to a root (indent 0) item. Empty for a root-level item itself.
-///
-/// Domain-blind on purpose, like every other function here: it answers "what
-/// encloses this position" from `order`/`indent` alone. A caller that needs to
-/// know whether any of those enclosing ids is itself some particular kind of row
-/// (a `Folder/Book`, say) fetches that separately and filters this chain; teaching
-/// this crate what a Book is would be exactly the kind of domain leak its own
-/// module docs warn against.
-pub fn ancestors_of(
-    order: &[EntityId],
-    indent: &HashMap<EntityId, i64>,
-    pos: usize,
-) -> Vec<EntityId> {
-    let mut chain = Vec::new();
-    let Some(&start) = order.get(pos) else {
-        return chain;
-    };
-    let mut floor = *indent.get(&start).unwrap_or(&0);
-    let mut j = pos;
-    while j > 0 && floor > 0 {
-        j -= 1;
-        let ind = *indent.get(&order[j]).unwrap_or(&0);
-        if ind < floor {
-            chain.push(order[j]);
-            floor = ind;
-        }
-    }
-    chain
-}
-
 /// First index `j > pos` whose item indent is `<= base_indent`, or `order.len()`
 /// — i.e. the end (exclusive) of the subtree rooted at `pos`.
 pub fn subtree_end(
@@ -247,41 +215,6 @@ mod tests {
         assert_eq!(subtree_of(&order, &indent, 2), vec![2, 3]);
         assert_eq!(subtree_of(&order, &indent, 3), vec![3]);
         assert_eq!(subtree_of(&order, &indent, 5), vec![5]);
-    }
-
-    #[test]
-    fn ancestors_of_walks_up_one_level_at_a_time() {
-        // 1(0) 2(1) 3(2) 4(1) 5(0)
-        let order = vec![1, 2, 3, 4, 5];
-        let indent = indent_map(&[(1, 0), (2, 1), (3, 2), (4, 1), (5, 0)]);
-        assert_eq!(
-            ancestors_of(&order, &indent, 2),
-            vec![2, 1],
-            "3's ancestors: 2 then 1"
-        );
-        assert_eq!(ancestors_of(&order, &indent, 1), vec![1], "2's ancestor: 1");
-        assert_eq!(
-            ancestors_of(&order, &indent, 0),
-            Vec::<EntityId>::new(),
-            "1 is root-level"
-        );
-        assert_eq!(
-            ancestors_of(&order, &indent, 3),
-            vec![1],
-            "4 is back at 1's level"
-        );
-        assert_eq!(
-            ancestors_of(&order, &indent, 4),
-            Vec::<EntityId>::new(),
-            "5 is root-level"
-        );
-    }
-
-    #[test]
-    fn ancestors_of_out_of_range_pos_is_empty() {
-        let order = vec![1, 2];
-        let indent = indent_map(&[(1, 0), (2, 0)]);
-        assert!(ancestors_of(&order, &indent, 99).is_empty());
     }
 
     #[test]

@@ -374,6 +374,24 @@ fn every_registered_concept_is_browsable() {
 }
 
 #[test]
+fn the_story_bible_entry_glossary_title_has_no_trailing_ellipsis() {
+    // `create-story-bible-entry` ("Story bible entry…") is the "＋ Create" menu's
+    // label, correctly ellipsised there because that row opens a dialog. Reusing it
+    // verbatim as this topic's title and table-of-contents entry would carry the
+    // ellipsis into a place that opens nothing, promising a continuation that never
+    // arrives. This concept gets a non-ellipsis title of its own instead.
+    let topic = builtin_topics()
+        .into_iter()
+        .find(|t| t.key == crate::tooltip_registry::WM_STORY_BIBLE_ENTRY)
+        .expect("the story bible entry concept must be a browsable topic");
+    let title = (topic.title)().resolve_now();
+    assert!(
+        !title.ends_with('…'),
+        "the story bible entry glossary title must not end in an ellipsis, got: {title}"
+    );
+}
+
+#[test]
 fn every_cascade_link_in_a_tooltip_body_resolves_to_a_topic() {
     // `tooltip_registry`'s own test already pins that every `[label](:key)` in the
     // tooltip corpus points at a registered tooltip. This pins the consequence of

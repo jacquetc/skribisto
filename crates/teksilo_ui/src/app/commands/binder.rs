@@ -11,6 +11,7 @@ use teksilo::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, Standard
 
 use skribisto_model::CreateType;
 
+use crate::binder::OutlineViewModel;
 use crate::intents::AppIntent;
 use crate::story_bible;
 
@@ -18,7 +19,6 @@ use super::CommandDeps;
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
-        let outline = deps.outline.clone();
         let modal_deps = story_bible::modal::ModalDeps {
             app_ctx: deps.app_ctx.clone(),
             ids: deps.ids.clone(),
@@ -26,37 +26,57 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             templates: deps.session.note_templates.clone(),
             editors: deps.editors.clone(),
         };
-        ctx.register_action_global(Action::new("binder.new_item").on_invoke(move |i, c| {
-            if let Some(AppIntent::NewItem {
-                create_type,
-                relation,
-                anchor_item_id,
-            }) = AppIntent::from_intent(i)
-            {
-                // `None` anchors on the current Outline selection; a corkboard passes its
-                // drilled-into container id explicitly. The intent carries a store id, so
-                // it is resolved to the tree's durable key here — and an anchor whose row
-                // has left the tree falls back to the selection rather than to nothing.
-                let anchor = anchor_item_id.and_then(|id| outline.key_for_item(id));
-                let rec = skribisto_model::Recommendation {
-                    create_type: *create_type,
-                    relation: *relation,
-                };
-                if *create_type == CreateType::StoryBibleEntry {
-                    // Create immediately, matching every sibling in the ＋ Create
-                    // vocabulary exactly: no modal stands between the click and the
-                    // row existing. Then open the configuration step on it. See
-                    // `story_bible::modal`'s own doc for why this is two doors, not
-                    // one, and `OutlineViewModel::add_recommended_returning_id`'s for
-                    // why the id has to come back at all.
-                    if let Some(item_id) = outline.add_recommended_returning_id(anchor, &rec) {
-                        story_bible::modal::present_configure(modal_deps.clone(), item_id, c);
-                    }
-                } else {
-                    outline.add_recommended(anchor, &rec);
+        {
+            let outline = deps.outline.clone();
+            let modal_deps = modal_deps.clone();
+            ctx.register_action_global(Action::new("binder.new_item").on_invoke(move |i, c| {
+                if let Some(AppIntent::NewItem {
+                    create_type,
+                    relation,
+                    anchor_item_id,
+                }) = AppIntent::from_intent(i)
+                {
+                    // `None` anchors on the current Outline selection; a corkboard passes its
+                    // drilled-into container id explicitly. The intent carries a store id, so
+                    // it is resolved to the tree's durable key here — and an anchor whose row
+                    // has left the tree falls back to the selection rather than to nothing.
+                    let anchor = anchor_item_id.and_then(|id| outline.key_for_item(id));
+                    let rec = skribisto_model::Recommendation {
+                        create_type: *create_type,
+                        relation: *relation,
+                    };
+                    create_recommended(&outline, &modal_deps, anchor, &rec, c);
                 }
-            }
-        }));
+            }));
+        }
+        {
+            // The same verb, anchored on a row the writer pointed at rather than on a
+            // store id — the outline's per-row "Add ▸" menu. A binder row has no
+            // `BinderItem` id to put in `NewItem::anchor_item_id`, so this is the only
+            // shape that can say "in *this* binder"; see `AppIntent::NewItemHere`.
+            let outline = deps.outline.clone();
+            ctx.register_action_global(Action::new("binder.new_item_here").on_invoke(
+                move |i, c| {
+                    if let Some(AppIntent::NewItemHere {
+                        create_type,
+                        relation,
+                        anchor,
+                    }) = AppIntent::from_intent(i)
+                    {
+                        let rec = skribisto_model::Recommendation {
+                            create_type: *create_type,
+                            relation: *relation,
+                        };
+                        // Always `Some`: this intent exists because the caller has a row.
+                        // A stale key (the row left the tree between the click and the
+                        // dispatch) resolves to no insertion point and creates nothing,
+                        // which is the honest answer — falling back to the selection here
+                        // would put the row somewhere the writer never pointed at.
+                        create_recommended(&outline, &modal_deps, Some(*anchor), &rec, c);
+                    }
+                },
+            ));
+        }
     }
     {
         let outline = deps.outline.clone();
@@ -166,5 +186,36 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 );
             }),
         );
+    }
+}
+
+/// The shared tail of `binder.new_item` and `binder.new_item_here`: create the
+/// recommended row against `anchor`, and — for a story-bible entry alone — open the
+/// configuration step on the row that now exists.
+///
+/// `anchor = None` means "wherever the Outline selection is", which is what
+/// [`OutlineViewModel::add_recommended_returning_id`] falls back to. Both actions
+/// resolve to this so the two anchoring shapes cannot drift into two different
+/// creation ceremonies: a story-bible entry made from a row must be the same thing
+/// as one made from the header button.
+fn create_recommended(
+    outline: &OutlineViewModel,
+    modal_deps: &story_bible::modal::ModalDeps,
+    anchor: Option<crate::models::BinderTreeKey>,
+    rec: &skribisto_model::Recommendation,
+    c: &mut EventContext,
+) {
+    if rec.create_type == CreateType::StoryBibleEntry {
+        // Create immediately, matching every sibling in the ＋ Create
+        // vocabulary exactly: no modal stands between the click and the
+        // row existing. Then open the configuration step on it. See
+        // `story_bible::modal`'s own doc for why this is two doors, not
+        // one, and `OutlineViewModel::add_recommended_returning_id`'s for
+        // why the id has to come back at all.
+        if let Some(item_id) = outline.add_recommended_returning_id(anchor, rec) {
+            story_bible::modal::present_configure(modal_deps.clone(), item_id, c);
+        }
+    } else {
+        outline.add_recommended(anchor, rec);
     }
 }

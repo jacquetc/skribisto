@@ -30,9 +30,18 @@
 //! row marks where one Book's rows end and the next one's begin (the same "state machine
 //! over the flat item list" the constraint matrix is built on; see `skribisto_model`'s own
 //! module doc), so [`declared_rows_in_book`] walks the stream once, flipping a single flag
-//! at every `Folder/Book` row it meets, and keeps whatever it meets while that flag names
-//! the Book asked for. No indent check: exactly as `book_containing` establishes, position
-//! in the flat stream is what carries meaning here, not nesting depth.
+//! at every row that opens or closes a Book, and keeps whatever it meets while that flag
+//! names the Book asked for. No indent check: exactly as `book_containing` establishes,
+//! position in the flat stream is what carries meaning here, not nesting depth.
+//!
+//! **Two rules that walk has to obey, and both have been got wrong before.** It asks
+//! [`skribisto_model::SubRoleExt`] rather than comparing `sub_role` to `Book`, so the flat
+//! `Item/BookBegin` a legacy import produces opens a Book and an `Item/BookEnd` closes
+//! one. And it resets at every **binder edge**: [`ordered_flat_items`] concatenates the
+//! Work's binders end to end, and a manuscript that stops without an explicit `BookEnd`
+//! (which is optional, and only the shipped templates happen to write) would otherwise go
+//! on being its own last Book through the Notes and Research binders behind it. That is
+//! the bug `skribisto_model::compile` carries `ItemMeta.binder_id` for.
 
 use frontend::AppContext;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
@@ -113,9 +122,10 @@ pub struct BookChoice {
 /// could get its answers from two different moments.
 ///
 /// **A row need not be in any Book.** Front matter, a stray note at the top of the binder,
-/// anything past a `BookEnd`, and every row of a project with no Book at all: those are
-/// simply absent from `of_item`, which is a real answer and not a failure. A surface that
-/// groups by Book has to say something about them rather than drop them.
+/// anything past a `BookEnd`, every row of another binder that opens no Book of its own
+/// (a Notes or Research binder, in particular), and every row of a project with no Book at
+/// all: those are simply absent from `of_item`, which is a real answer and not a failure.
+/// A surface that groups by Book has to say something about them rather than drop them.
 pub struct BookIndex {
     /// Every Book, in manuscript order.
     pub books: Vec<BookChoice>,
@@ -125,10 +135,11 @@ pub struct BookIndex {
 
 /// Build a [`BookIndex`] for the work.
 ///
-/// A Book runs from its own marker to the next one or to its explicit end marker, through
-/// [`skribisto_model::SubRoleExt`] rather than a literal `sub_role == Book`, so the flat
-/// `Item/BookBegin` a legacy import produces opens a book here exactly as a `Folder/Book`
-/// does. Indent plays no part: the compiler folds the ordered list and never consults it.
+/// A Book runs from its own marker to the next one, to its explicit end marker, or to the
+/// edge of the binder it lives in, through [`skribisto_model::SubRoleExt`] rather than a
+/// literal `sub_role == Book`, so the flat `Item/BookBegin` a legacy import produces opens
+/// a book here exactly as a `Folder/Book` does. Indent plays no part: the compiler folds
+/// the ordered list and never consults it.
 pub fn book_index(ctx: &AppContext, work_id: u64) -> BookIndex {
     use skribisto_model::SubRoleExt;
 
@@ -140,7 +151,16 @@ pub fn book_index(ctx: &AppContext, work_id: u64) -> BookIndex {
     let mut books = Vec::new();
     let mut of_item = std::collections::HashMap::new();
     let mut current: Option<u64> = None;
-    for (_, it) in &flat {
+    let mut binder: Option<u64> = None;
+    for (binder_id, it) in &flat {
+        // A Book stops at its own binder's edge, exactly as `skribisto_model::compile`
+        // stops one: `flat` is binder-major and concatenated, so without this reset the
+        // manuscript's last Book would swallow every note and research row behind it and
+        // every surface grouping by Book would file them under a Book they are not in.
+        if binder != Some(*binder_id) {
+            binder = Some(*binder_id);
+            current = None;
+        }
         if it.sub_role.closes_book() {
             current = None;
             continue;
@@ -167,50 +187,50 @@ pub fn book_index(ctx: &AppContext, work_id: u64) -> BookIndex {
 /// Every Book in `work_id`, activated, in manuscript order: the segmented control's
 /// candidates. Empty when the Work has no Book at all, which is what tells the pane to
 /// draw its honest empty state instead of a bar with nothing on it.
+///
+/// [`book_index`]'s own list, rather than a second filter over the same stream: the two
+/// once differed by a literal `sub_role == Book` here against `opens_book()` there, which
+/// made a legacy-imported project answer "this project has no Book yet" on the segmented
+/// control while the very same note's Details page grouped its backlinks under those Books.
+/// One walk cannot disagree with itself.
 pub fn books_in_work(ctx: &AppContext, work_id: u64) -> Vec<BookChoice> {
-    let flat = ordered_flat_items(ctx, work_id);
-    // Numbering is read over the **whole** stream (trashed rows included), exactly as
-    // `numbers_for_items`'s own contract requires; see `crate::models::stream_rows_model`'s
-    // real `imp` for the identical two-list shape this mirrors.
-    let whole = ordered_item_dtos(ctx, work_id);
-    let numbers = numbers_for_items(ctx, work_id, &whole);
-    let langs = work_language_tags(ctx, work_id);
-
-    flat.into_iter()
-        .filter(|(_, it)| it.sub_role == BinderItemSubRole::Book)
-        .map(|(_, it)| {
-            let numbered = numbers.get(&it.id);
-            BookChoice {
-                item_id: it.id,
-                uid: it.uid,
-                number: numbered.map(Numbered::number),
-                fallback_label: fallback_label_for(&it, numbered, &langs),
-                title: it.title,
-            }
-        })
-        .collect()
+    book_index(ctx, work_id).books
 }
 
 /// The rows `note_id` has been declared present in, scoped to `book_id` (a live store id
 /// from [`books_in_work`]), in manuscript order.
 ///
-/// See the module doc for the membership rule and for why this walks the flat stream once
-/// rather than resolving each candidate row's Book separately.
+/// See the module doc for the membership rule, for why this walks the flat stream once
+/// rather than resolving each candidate row's Book separately, and for the two rules that
+/// walk obeys: [`skribisto_model::SubRoleExt`] rather than a literal `sub_role == Book`,
+/// and a reset at every binder edge.
 pub fn declared_rows_in_book(
     ctx: &AppContext,
     work_id: u64,
     note_id: u64,
     book_id: u64,
 ) -> Vec<NoteProseRow> {
+    use skribisto_model::SubRoleExt;
+
     let flat = ordered_flat_items(ctx, work_id);
     let whole = ordered_item_dtos(ctx, work_id);
     let numbers = numbers_for_items(ctx, work_id, &whole);
     let langs = work_language_tags(ctx, work_id);
 
     let mut in_book = false;
+    let mut binder: Option<u64> = None;
     let mut out = Vec::new();
-    for (_binder_id, it) in &flat {
-        if it.sub_role == BinderItemSubRole::Book {
+    for (binder_id, it) in &flat {
+        // The binder edge closes a Book here for the same reason it does in
+        // [`book_index`]: otherwise an old draft kept as scenes in a second binder is
+        // offered as rows of whichever Book the manuscript happened to end inside.
+        if binder != Some(*binder_id) {
+            binder = Some(*binder_id);
+            in_book = false;
+        }
+        if it.sub_role.closes_book() {
+            in_book = false;
+        } else if it.sub_role.opens_book() {
             in_book = it.id == book_id;
         }
         if !in_book {
@@ -365,6 +385,10 @@ mod tests {
         b1_part_declared_but_not_prose: u64,
         // Book two's own declared scene, kept out of Book one's reading.
         b2_scene_declared: u64,
+        // A declared scene in the **notes** binder, behind the whole manuscript: an old
+        // draft a writer kept. It is in no Book, and the manuscript's last Book must not
+        // claim it just because the manuscript ends without a `BookEnd`.
+        notes_scene_declared: u64,
     }
 
     fn seed() -> Fixture {
@@ -522,6 +546,16 @@ mod tests {
             1,
             true,
         );
+        // The manuscript deliberately ends with no `BookEnd`, which is the ordinary case:
+        // the marker is optional and only the shipped templates write one.
+        let notes_scene_declared = create(
+            notes,
+            &mut next_notes_index,
+            BinderItemRole::Item,
+            BinderItemSubRole::Scene,
+            0,
+            true,
+        );
 
         use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
         use frontend::direct_access::BinderItemRelationshipDto;
@@ -576,6 +610,12 @@ mod tests {
             BinderItemRelationshipField::References,
             vec![note_id],
         );
+        // Declared, and in no Book at all: another binder entirely.
+        declare(
+            notes_scene_declared,
+            BinderItemRelationshipField::References,
+            vec![note_id],
+        );
 
         Fixture {
             ctx,
@@ -591,6 +631,7 @@ mod tests {
             b1_scene_inactive,
             b1_part_declared_but_not_prose,
             b2_scene_declared,
+            notes_scene_declared,
         }
     }
 
@@ -806,5 +847,123 @@ mod tests {
             Some(&begin),
             "at the marker's own indent, which plays no part"
         );
+    }
+
+    /// Pin the note on a row's cast, the way the Inspector's own Cast section does.
+    fn declare_cast(ctx: &AppContext, item_id: u64, note_id: u64) {
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        use frontend::direct_access::BinderItemRelationshipDto;
+        binder_item_commands::set_binder_item_relationship(
+            ctx,
+            None,
+            &BinderItemRelationshipDto {
+                id: item_id,
+                field: BinderItemRelationshipField::References,
+                right_ids: vec![note_id],
+            },
+        )
+        .expect("declare cast");
+    }
+
+    // ---- the binder edge ----
+
+    /// **A Book stops at its own binder's edge.**
+    ///
+    /// [`ordered_flat_items`] hands back every binder concatenated, so a manuscript that
+    /// ends without an explicit `BookEnd` (the ordinary case: the marker is optional) used
+    /// to go on being its own last Book straight through the Notes binder behind it. Every
+    /// notes row then landed in `of_item` under that Book, and the note's Details page told
+    /// the writer an entry mentioned only in a notebook page appears in Book two.
+    #[test]
+    fn a_row_in_another_binder_is_in_no_book() {
+        let f = seed();
+        let index = book_index(&f.ctx, f.work_id);
+        assert_eq!(
+            index.of_item.get(&f.b2_scene_declared),
+            Some(&f.book_two),
+            "the manuscript's own rows are unaffected"
+        );
+        assert_eq!(
+            index.of_item.get(&f.note_id),
+            None,
+            "a note in the Notes binder is in no Book"
+        );
+        assert_eq!(
+            index.of_item.get(&f.notes_scene_declared),
+            None,
+            "and neither is a scene kept in that binder"
+        );
+    }
+
+    /// The same edge, on the reading itself: an old draft kept as scenes in a second
+    /// binder must not be offered as rows of whichever Book the manuscript ended inside.
+    #[test]
+    fn a_declared_row_in_another_binder_is_no_books_row() {
+        let f = seed();
+        for book in [f.book_one, f.book_two] {
+            let rows = declared_rows_in_book(&f.ctx, f.work_id, f.note_id, book);
+            assert!(
+                !rows.iter().any(|r| r.item_id == f.notes_scene_declared),
+                "a row of the Notes binder belongs to no Book"
+            );
+        }
+    }
+
+    // ---- `SubRoleExt`, never a literal `sub_role == Book` ----
+
+    /// A legacy import marks its Books with flat `Item/BookBegin` rows. `books_in_work`
+    /// once compared `sub_role` to `Book` literally and answered "no Books", so the whole
+    /// In prose reading drew "This project has no Book yet" for every entry, permanently,
+    /// while the same note's Details page grouped its backlinks under those very Books.
+    #[test]
+    fn a_flat_book_marker_is_a_book_on_the_segmented_control_too() {
+        let (ctx, work, mut add) = bare_work();
+        let note = add(BinderItemRole::Item, BinderItemSubRole::Note, 0);
+        let begin = add(BinderItemRole::Item, BinderItemSubRole::BookBegin, 0);
+        let scene = add(BinderItemRole::Item, BinderItemSubRole::Scene, 0);
+        declare_cast(&ctx, scene, note);
+
+        assert_eq!(
+            books_in_work(&ctx, work)
+                .iter()
+                .map(|b| b.item_id)
+                .collect::<Vec<_>>(),
+            vec![begin],
+            "a flat marker is a Book to choose between"
+        );
+        assert_eq!(
+            declared_rows_in_book(&ctx, work, note, begin)
+                .iter()
+                .map(|r| r.item_id)
+                .collect::<Vec<_>>(),
+            vec![scene],
+            "and its rows are that Book's rows"
+        );
+    }
+
+    /// **`Item/BookEnd` closes the Book for the reading too.** The writer picked
+    /// Create -> End of book; the row after it is outside every Book, and listing it under
+    /// the Book above would put it in a reading the export disagrees with.
+    #[test]
+    fn an_end_marker_closes_the_reading_too() {
+        let (ctx, work, mut add) = bare_work();
+        let note = add(BinderItemRole::Item, BinderItemSubRole::Note, 0);
+        let book = add(BinderItemRole::Folder, BinderItemSubRole::Book, 0);
+        let inside = add(BinderItemRole::Item, BinderItemSubRole::Scene, 1);
+        let _end = add(BinderItemRole::Item, BinderItemSubRole::BookEnd, 0);
+        let after = add(BinderItemRole::Item, BinderItemSubRole::Scene, 0);
+        declare_cast(&ctx, inside, note);
+        declare_cast(&ctx, after, note);
+
+        assert_eq!(
+            declared_rows_in_book(&ctx, work, note, book)
+                .iter()
+                .map(|r| r.item_id)
+                .collect::<Vec<_>>(),
+            vec![inside],
+            "the row past the end marker is in no Book, exactly as `book_index` says"
+        );
+        let index = book_index(&ctx, work);
+        assert_eq!(index.of_item.get(&after), None, "and the two agree");
     }
 }

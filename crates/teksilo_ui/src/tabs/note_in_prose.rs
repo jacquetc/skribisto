@@ -32,7 +32,7 @@
 //! the shape that helper measures. Wiring a lane over a scattered row set is future work,
 //! not attempted here.
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -111,11 +111,11 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         games: tab.writing_games(),
         arrival_project: tab.work_unique_id(),
         tags: tab.tags(),
+        mention_index: tab.mention_index(),
         extents: extents.clone(),
         page_scroll: page_scroll.clone(),
         selected_book: Signal::new(None),
         generation: Signal::new(0),
-        wired: Cell::new(false),
         docs: docs.clone(),
         highlights: highlights.clone(),
         walk: walk.clone(),
@@ -264,6 +264,16 @@ struct NoteInProseBody {
     /// rather than reached for: it is Tier-2, so `app_state` would answer with whichever
     /// Work registered first.
     tags: crate::tags::TagsViewModel,
+    /// **Who is named where, across this Work**, threaded from the same
+    /// [`crate::sessions::WorkSession`] [`Self::tags`] is, for the reason
+    /// `ContentTab::mention_index`'s own field doc gives, and never read from
+    /// `ctx.app_state::<MentionIndex>()`.
+    ///
+    /// Read for one thing here: its `discoverable_table()`, which is what the scan this
+    /// reading marks with resolves overlaps against. Without it a reading about "Grace"
+    /// washed every "Grace Kelly" in the book, on the same sentence the roster beside it
+    /// credited to Kelly alone.
+    mention_index: crate::mentions::MentionIndex,
     /// Which Book's rows are on screen. Created once, here, and never recreated on a
     /// rebuild of this struct's own `build`: a `Signal` minted inside `build` itself would
     /// lose the writer's choice the moment any of [`reload_origins`] fired. This one
@@ -278,12 +288,6 @@ struct NoteInProseBody {
     /// below purely to give this widget a rebuild trigger of its own; the rows are always
     /// re-read fresh, never diffed against a previous generation.
     generation: Signal<u64>,
-    /// Guards the one-time seed of [`Self::selected_book`] and the one-time registration
-    /// of the reload subscription: both belong at the *first* build only, the same
-    /// `Cell<bool>` guard `OverviewRowsModel::wire` and `StreamRowsModel`'s own `wire`
-    /// already use for the identical reason (`ctx.subscribe_event` re-registered on every
-    /// build would fire the same event handler once per build, not once per event).
-    wired: Cell<bool>,
     /// Every declared row's document, opened through the shared [`OpenDocsStore`] so
     /// editing here edits the real document. Reconciled on every build against the
     /// currently declared set (see [`NoteInProseBody::sync_docs`]); released for good when
@@ -335,16 +339,26 @@ impl std::fmt::Debug for NoteInProseBody {
     }
 }
 
-/// Release every document this pane still holds open. Mirrors
-/// `StreamViewModel`'s own `Inner::drop`, and for the identical reason: without this, a
-/// Book with forty declared rows would leak forty `OpenDoc`s every time this segment was
-/// abandoned for another one.
+/// Release every document this pane still holds open, and take this reading's marks off
+/// the margin lane. Mirrors `StreamViewModel`'s own `Inner::drop`, and for the identical
+/// reason: without this, a Book with forty declared rows would leak forty `OpenDoc`s every
+/// time this segment was abandoned for another one.
+///
+/// The lane subject is the other half of [`crate::margin_lane::set_active_subject`]'s own
+/// contract ("set while a note's **In prose** segment is on screen, cleared when it goes
+/// away"), and nothing was honouring it: the story-bible provider is `default_on` for
+/// every stream, so one visit to this page left a dot at every occurrence of that entry's
+/// names on every Full book / Full part / Full chapter stream in the project, for the rest
+/// of the session, with no reading open and nothing on screen explaining them.
+/// [`crate::margin_lane::clear_subject_for`] and not `set_active_subject(None)`: a second
+/// window may have a reading of another note open, and this one may only take back its own.
 impl Drop for NoteInProseBody {
     fn drop(&mut self) {
         let stack = self.ids.stack_id.get();
         for id in self.docs.borrow().keys() {
             self.store.release(*id, stack);
         }
+        crate::margin_lane::clear_subject_for(self.note_id);
     }
 }
 
@@ -400,6 +414,7 @@ impl NoteInProseBody {
         &self,
         ctx: &mut BuildContext,
         entity: Option<&skribisto_model::mentions::DiscoverableEntity>,
+        table: Vec<skribisto_model::mentions::DiscoverableEntity>,
         order: Vec<u64>,
     ) {
         let color = crate::story_bible::highlight::subject_color(&ctx.theme().colors);
@@ -443,11 +458,11 @@ impl NoteInProseBody {
         // Once here as well as on the frame tick below, so the first paint of a freshly
         // mounted reading already carries its marks and its count rather than acquiring
         // them a frame later.
-        self.walk.refresh(wanted.as_ref());
+        self.walk.refresh(wanted.as_ref(), &table);
 
         let walk = self.walk.clone();
         let tick = ctx.frame_tick();
-        ctx.effect(&tick, move |_| walk.refresh(wanted.as_ref()));
+        ctx.effect(&tick, move |_| walk.refresh(wanted.as_ref(), &table));
     }
 
     fn book_bar(&self, books: &[BookChoice]) -> SegmentedControl {
@@ -579,25 +594,60 @@ impl Widget for NoteInProseBody {
                         .collect(),
                 })
                 .filter(|e| !e.title.trim().is_empty() || !e.aliases.is_empty());
-        crate::margin_lane::set_active_subject(
-            entity
-                .clone()
-                .zip(self.work_uid())
-                .map(|(entity, work_uid)| crate::margin_lane::LaneSubject { entity, work_uid }),
-        );
+        // The Work's whole discoverable table, read fresh on every build so an alias
+        // added elsewhere in the story bible reaches both surfaces at once. Empty until
+        // the index's first scan lands, which `subject::hits` handles: it matches the
+        // reading's own entry either way.
+        let table = self.mention_index.discoverable_table();
+        // Published when there is something to publish, and **withdrawn by name** when
+        // there is not: an entry with no title and no alias, or a project with no uid yet,
+        // has nothing for the lane to mark, and clearing unconditionally would blank the
+        // marks a second window's reading of a different note had put there. The same
+        // "only if it is mine" rule [`Drop`] takes this off the lane with.
+        match entity
+            .clone()
+            .zip(self.work_uid())
+            .map(|(entity, work_uid)| crate::margin_lane::LaneSubject {
+                entity,
+                table: table.clone(),
+                work_uid,
+            }) {
+            Some(subject) => crate::margin_lane::set_active_subject(Some(subject)),
+            None => crate::margin_lane::clear_subject_for(self.note_id),
+        }
 
-        if !self.wired.replace(true) {
-            if self.selected_book.get().is_none() {
-                let persisted = book_service
-                    .as_ref()
-                    .and_then(|svc| self.work_uid().map(|uid| svc.book(&uid)))
-                    .flatten();
-                if let Some(book_id) = crate::models::resolve_book_choice(&books, persisted)
-                    && let Some(book) = books.iter().find(|b| b.item_id == book_id)
-                {
-                    self.selected_book.set(Some(book_segment_id(book)));
-                }
+        // **Re-resolved on every build, never seeded once.** A choice that no longer names
+        // a live Book is not a choice: trash the Book this reading was on and the previous
+        // one-shot seed left `selected_book` pointing at a row `books` no longer holds, so
+        // `selected_book_id` answered `None`, `rows` came back empty and the page showed
+        // "nothing declared in this Book yet" for good, on a note declared throughout the
+        // Book that *is* still there. The same trap caught the first mount: a segment
+        // opened before any `Folder/Book` row existed consumed its one seed on an empty
+        // list. `resolve_book_choice` is written for exactly this - it refuses to trust a
+        // stored uid blindly - and it is only worth anything if it is asked again.
+        let resolves = self
+            .selected_book
+            .get()
+            .is_some_and(|seg| books.iter().any(|b| book_segment_id(b) == seg));
+        if !resolves {
+            let persisted = book_service
+                .as_ref()
+                .and_then(|svc| self.work_uid().map(|uid| svc.book(&uid)))
+                .flatten();
+            if let Some(book_id) = crate::models::resolve_book_choice(&books, persisted)
+                && let Some(book) = books.iter().find(|b| b.item_id == book_id)
+            {
+                self.selected_book.set(Some(book_segment_id(book)));
             }
+        }
+        // Registered on **every** build, not once: `ctx.subscribe_event` and `ctx.effect`
+        // are scoped to the build that registered them (`rebuild_single_widget` drains
+        // both before calling `build` again), so a one-shot registration on a widget that
+        // does rebuild - and this one rebuilds on its own `selected_book`/`generation`
+        // bindings - stops hearing the backend after the writer's first switch of Book.
+        // Re-registering cannot double-fire for the same reason: the previous build's
+        // handles are already gone.
+        {
             let generation = self.generation.clone();
             crate::models::coalesced_reload::reload_on_events(ctx, reload_origins(), move || {
                 generation.set(generation.get().wrapping_add(1));
@@ -661,7 +711,7 @@ impl Widget for NoteInProseBody {
                 .filter(|id| docs.contains_key(id))
                 .collect()
         };
-        self.sync_highlights(ctx, entity.as_ref(), order);
+        self.sync_highlights(ctx, entity.as_ref(), table, order);
 
         let mut col = VStack::new().spacing(10.0);
         if books.is_empty() {
@@ -896,6 +946,48 @@ mod tests {
         ctx: Rc<frontend::AppContext>,
         tab: ContentTab,
         scene_id: u64,
+        /// The binder the Books and their scenes live in, so a test can add a second one.
+        manuscript: u64,
+        /// The note this tab is about, so a test can declare it in another Book's scene.
+        note_id: u64,
+        /// The one Book `seed` creates, so a test can trash it.
+        book_id: u64,
+    }
+
+    impl Fixture {
+        /// Give the Work a `unique_id`, which is what the lane subject is keyed by:
+        /// `CreateWorkDto::default()` leaves it empty, and an empty one reads as "no
+        /// project to key by" (`models::uid_is_usable`), so nothing is published.
+        fn give_the_work_a_uid(&self) {
+            let work_id = self
+                .tab
+                .ids()
+                .work_id
+                .get()
+                .expect("the fixture opens a Work");
+            let w = work_commands::get_work(&self.ctx, &work_id)
+                .expect("read the Work")
+                .expect("the Work exists");
+            work_commands::update_work(
+                &self.ctx,
+                None,
+                &frontend::direct_access::UpdateWorkDto {
+                    id: w.id,
+                    created_at: w.created_at,
+                    updated_at: chrono::Utc::now(),
+                    title: w.title,
+                    author_name: w.author_name,
+                    dict_language: w.dict_language,
+                    unique_id: "a-test-project".into(),
+                    chapter_mode: w.chapter_mode,
+                    custom_replacement_rules_enabled: w.custom_replacement_rules_enabled,
+                    goal_unit: w.goal_unit,
+                    number_chapters: w.number_chapters,
+                    part_resets_chapter: w.part_resets_chapter,
+                },
+            )
+            .expect("give the Work a uid");
+        }
     }
 
     fn seed() -> Fixture {
@@ -944,7 +1036,7 @@ mod tests {
         )
         .expect("create note")
         .id;
-        binder_item_commands::create_binder_item(
+        let book = binder_item_commands::create_binder_item(
             &ctx,
             None,
             &CreateBinderItemDto {
@@ -958,7 +1050,8 @@ mod tests {
             manuscript,
             0,
         )
-        .expect("create book");
+        .expect("create book")
+        .id;
         let scene = binder_item_commands::create_binder_item(
             &ctx,
             None,
@@ -1005,7 +1098,89 @@ mod tests {
             ctx,
             tab,
             scene_id: scene,
+            manuscript,
+            note_id: note,
+            book_id: book,
         }
+    }
+
+    /// A second (or third) `Folder/Book` at `index` in the manuscript binder.
+    fn add_book(f: &Fixture, title: &str, index: i32) -> u64 {
+        binder_item_commands::create_binder_item(
+            &f.ctx,
+            None,
+            &CreateBinderItemDto {
+                title: title.into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            f.manuscript,
+            index,
+        )
+        .expect("create book")
+        .id
+    }
+
+    /// A Scene at `index` that declares the fixture's note in its own cast, which is
+    /// what puts it in this reading.
+    fn add_scene_declaring_the_note(f: &Fixture, title: &str, index: i32) -> u64 {
+        let scene = binder_item_commands::create_binder_item(
+            &f.ctx,
+            None,
+            &CreateBinderItemDto {
+                title: title.into(),
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                activated: true,
+                is_exportable: true,
+                indent: 1,
+                ..Default::default()
+            },
+            f.manuscript,
+            index,
+        )
+        .expect("create scene")
+        .id;
+        binder_item_commands::set_binder_item_relationship(
+            &f.ctx,
+            None,
+            &BinderItemRelationshipDto {
+                id: scene,
+                field: BinderItemRelationshipField::References,
+                right_ids: vec![f.note_id],
+            },
+        )
+        .expect("declare the note in the scene's cast");
+        scene
+    }
+
+    /// Trash a row, the way the outline does: `activated` is the trashed flag inverted,
+    /// and `books_in_work` reads only activated rows.
+    fn trash(f: &Fixture, item_id: u64) {
+        let it = binder_item_commands::get_binder_item(&f.ctx, &item_id)
+            .expect("read the row")
+            .expect("the row exists");
+        let mut dto = crate::shared::binder_ops::update_item_dto(&it);
+        dto.activated = false;
+        binder_item_commands::update_binder_item(&f.ctx, None, &dto).expect("trash the row");
+    }
+
+    /// The `NoteInProseBody` node inside the mounted page: the widget whose `build` this
+    /// module's own logic lives in, and the one a test drives a rebuild of.
+    fn body_id(tree: &teksilo::core::widget_tree::WidgetTree, root: WidgetId) -> WidgetId {
+        fn find(tree: &teksilo::core::widget_tree::WidgetTree, id: WidgetId) -> Option<WidgetId> {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|n| n.ends_with("::NoteInProseBody"))
+            {
+                return Some(id);
+            }
+            tree.children(id).into_iter().find_map(|c| find(tree, c))
+        }
+        find(tree, root).expect("the page mounts a NoteInProseBody")
     }
 
     /// Before the fix this file threaded [`ContentTab::docs`] for, the store this pane
@@ -1226,6 +1401,115 @@ mod tests {
              same one `ContentTab::docs` hands out, not a stray `app_state` store (or \
              silently nothing, which is what an absent `app_state` entry used to mean \
              here)"
+        );
+    }
+
+    /// **A Book that stops being a Book must not strand the reading.**
+    ///
+    /// The choice used to be seeded exactly once, behind the same one-shot guard the
+    /// reload subscription sat behind, so a Book that was trashed after the page had
+    /// opened left `selected_book` naming a row `books_in_work` no longer answers with:
+    /// no Book resolved, no rows were read, and the page said "nothing declared in this
+    /// Book yet" for the rest of the tab's life, on a note declared in the Book that is
+    /// still there, with no control on screen to recover. `resolve_book_choice` exists
+    /// to refuse a stale choice; it is worth nothing if it is only ever asked once.
+    ///
+    /// The rebuild is driven directly rather than by trashing and waiting for the event:
+    /// a headless tree drops backend events (`test_support`'s `NullPoster`), so what is
+    /// under test here is `build`'s own re-resolution, which is where the defect was.
+    #[test]
+    fn the_chosen_book_is_re_resolved_when_it_is_no_longer_a_live_book() {
+        let f = seed();
+        let _book_two = add_book(&f, "Book two", 2);
+        let scene_two = add_scene_declaring_the_note(&f, "A later scene", 3);
+
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        let root = tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        let shown = || -> Vec<u64> {
+            f.tab
+                .in_prose_docs_sink()
+                .borrow()
+                .iter()
+                .map(|(id, _)| *id)
+                .collect()
+        };
+        assert_eq!(
+            shown(),
+            vec![f.scene_id],
+            "the reading opens on the first Book"
+        );
+
+        // The writer trashes the Book this reading is on.
+        trash(&f, f.book_id);
+        let body = body_id(&tree, root);
+        tree.arena_mark_needs_rebuild_for_testing(body);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+
+        assert_eq!(
+            shown(),
+            vec![scene_two],
+            "the reading must fall back to a Book that still exists, not to an empty page"
+        );
+    }
+
+    /// **The lane's marks go away with the reading that asked for them.**
+    ///
+    /// `margin_lane::subject`'s own contract is "set while a note's In prose segment is
+    /// on screen, cleared when it goes away", and nothing was honouring the second half:
+    /// `clear_subject_for` had no caller at all. The story-bible provider is `default_on`
+    /// for every stream, so one visit to this page left a dot at every occurrence of this
+    /// entry's names on every Full book stream in the project for the rest of the
+    /// session, with no reading open and nothing on screen to explain or remove them.
+    #[test]
+    fn the_lane_subject_is_withdrawn_when_the_reading_goes_away() {
+        let f = seed();
+        f.give_the_work_a_uid();
+
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert_eq!(
+            crate::margin_lane::active_subject()
+                .get()
+                .map(|s| s.note_id()),
+            Some(f.note_id),
+            "the reading publishes the entry it is about"
+        );
+
+        drop(tree);
+        assert!(
+            crate::margin_lane::active_subject().get().is_none(),
+            "and takes it back when the page is gone"
+        );
+    }
+
+    /// A reading with nothing to publish (an entry with no title and no alias, or a
+    /// project with no uid yet) must **withdraw its own** subject and not blank the
+    /// marks a second window's reading of a different note put on the lane.
+    #[test]
+    fn a_reading_with_nothing_to_publish_leaves_another_readings_marks_alone() {
+        let f = seed();
+        // No uid on this Work, so this page has nothing to publish.
+        let elsewhere = crate::margin_lane::LaneSubject {
+            entity: skribisto_model::mentions::DiscoverableEntity {
+                id: f.note_id + 1_000,
+                title: "Elizabeth".into(),
+                aliases: vec!["Lizzy".into()],
+            },
+            table: Vec::new(),
+            work_uid: "another-project".into(),
+        };
+        crate::margin_lane::set_active_subject(Some(elsewhere.clone()));
+
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+
+        assert_eq!(
+            crate::margin_lane::active_subject().get(),
+            Some(elsewhere),
+            "another window's reading is not this page's to clear"
         );
     }
 }

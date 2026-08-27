@@ -40,7 +40,10 @@ use crate::models::{
 /// outline and inspector docks open. Widen any of them and check that case — the margin
 /// is thin, which is exactly why the Target column prints a bare number rather than the
 /// "1 234 / 2 000" string that would read better and cost another 130 dp.
-pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow>> {
+pub(super) fn overview_columns(
+    vm: &OverviewViewModel,
+    books: &[(u64, String)],
+) -> Vec<Column<OverviewRow>> {
     let mut cols = vec![
         title_column(vm),
         type_column(vm),
@@ -51,9 +54,14 @@ pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow
     // Books in the Work, no column at all, not a disabled or an empty one. See
     // `docks::inspector::live_books`'s own doc for why this reads the same
     // candidate table rather than a second, independently-drifting one.
-    let candidates = crate::docks::inspector::live_books(&vm.app_ctx(), &vm.ids());
-    if candidates.len() >= 2 {
-        cols.push(books_column(vm, candidates));
+    //
+    // **Taken as an argument, not read here.** Both the gate and the titles it resolves
+    // are only as current as the build that ran them, and this one runs inside
+    // `OverviewTable::build`, which rebuilds for the edit cursor and the projection flag
+    // and nothing else. `OverviewTable` keeps them in a signal it re-reads on the binder
+    // events that can change them; see its own `build`.
+    if books.len() >= 2 {
+        cols.push(books_column(vm, books));
     }
     cols.extend([
         own_words_column(vm),
@@ -63,6 +71,24 @@ pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow
         total_comments_column(vm),
     ]);
     cols
+}
+
+/// Every live Book in the Work, as `(id, title)` in binder order.
+///
+/// [`crate::docks::inspector::live_books`] answered as-is, so the Overview cannot drift
+/// from the Inspector's own candidate table about which rows count as a Book or which of
+/// them are still live. Reduced to a plain, comparable pair so
+/// [`OverviewTable`](super::table::OverviewTable) can hold it in a `Signal` and rebuild
+/// only when the answer actually changes - a `CastCandidate` is not `PartialEq`, and a
+/// rebuild per unrelated binder event would tear down the table under the writer.
+pub(super) fn live_book_titles(
+    app_ctx: &std::rc::Rc<frontend::AppContext>,
+    ids: &crate::app_ids::AppIds,
+) -> Vec<(u64, String)> {
+    crate::docks::inspector::live_books(app_ctx, ids)
+        .into_iter()
+        .map(|c| (c.id, c.title))
+        .collect()
 }
 
 /// Give a cell the row's context menu.
@@ -257,13 +283,9 @@ fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// unsortable: which Book or Books a row answers to is a fact you narrow by, the
 /// filter chip row does exactly that job for tags, not one you'd ever want the
 /// table's own row order to follow.
-fn books_column(
-    vm: &OverviewViewModel,
-    candidates: Vec<crate::tags::cast_add::CastCandidate>,
-) -> Column<OverviewRow> {
+fn books_column(vm: &OverviewViewModel, books: &[(u64, String)]) -> Column<OverviewRow> {
     let vm = vm.clone();
-    let titles: std::collections::HashMap<u64, String> =
-        candidates.into_iter().map(|c| (c.id, c.title)).collect();
+    let titles: std::collections::HashMap<u64, String> = books.iter().cloned().collect();
     Column::new(
         COL_BOOKS,
         tr!(overview_col_books()),
@@ -531,7 +553,7 @@ mod tests {
         )
         .expect("a Book is overview-capable");
 
-        let ids: Vec<String> = overview_columns(&vm)
+        let ids: Vec<String> = overview_columns(&vm, &live_book_titles(&vm.app_ctx(), &vm.ids()))
             .iter()
             .map(|c| c.id().to_string())
             .collect();
@@ -612,10 +634,11 @@ mod tests {
         )
         .expect("a Book is overview-capable");
 
-        let one_book: Vec<String> = overview_columns(&vm)
-            .iter()
-            .map(|c| c.id().to_string())
-            .collect();
+        let one_book: Vec<String> =
+            overview_columns(&vm, &live_book_titles(&vm.app_ctx(), &vm.ids()))
+                .iter()
+                .map(|c| c.id().to_string())
+                .collect();
         assert!(
             !one_book.contains(&COL_BOOKS.to_string()),
             "one Book: no Books column: {one_book:?}"
@@ -637,10 +660,11 @@ mod tests {
         )
         .expect("create Book Two");
 
-        let two_books: Vec<String> = overview_columns(&vm)
-            .iter()
-            .map(|c| c.id().to_string())
-            .collect();
+        let two_books: Vec<String> =
+            overview_columns(&vm, &live_book_titles(&vm.app_ctx(), &vm.ids()))
+                .iter()
+                .map(|c| c.id().to_string())
+                .collect();
         assert!(
             two_books.contains(&COL_BOOKS.to_string()),
             "two Books: the Books column must appear: {two_books:?}"

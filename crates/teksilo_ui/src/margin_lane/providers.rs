@@ -175,9 +175,16 @@ fn spelling() -> LaneProviderSpec {
             // Once per row, not once per mark. The offsets are character indices
             // and there is no range read on a document, so the alternative is an
             // O(document) extraction per flagged word.
+            //
+            // `to_addressable_text()`, NOT `to_plain_text()`: a misspelling's offset is
+            // a document char offset, where an embedded table occupies its `U+FFFC`
+            // anchor plus a `\n` separator, and the human-readable export drops both.
+            // Sliced from the export, the accessible name of every mark after a table
+            // was two characters off per table -- a screen reader was read a word that
+            // is not in the prose.
             let text: Vec<char> = ctx
                 .doc
-                .to_plain_text()
+                .to_addressable_text()
                 .unwrap_or_default()
                 .chars()
                 .collect();
@@ -466,7 +473,7 @@ fn story_bible() -> LaneProviderSpec {
                 return Vec::new();
             };
             // A second window on a second project marks nothing rather than this
-            // project's names, the same guard the Atelier's own cast lane applies.
+            // project's names, the same guard every other work-scoped lane applies.
             let here = frontend::commands::work_commands::get_work(
                 ctx.app_ctx,
                 &match ctx.ids.work_id.get() {
@@ -494,7 +501,12 @@ fn story_bible() -> LaneProviderSpec {
             .is_some_and(|it| it.point_of_view.contains(&subject.note_id()));
             if declared_pov && let Some(at) = (ctx.locate)(0) {
                 out.push(LaneMark {
-                    id: 0,
+                    // Ordinal zero of *this row*, never a bare `0`: a stream calls this
+                    // provider once per row and `group` is one constant for the whole
+                    // provider, so a bare ordinal would give every row's point-of-view
+                    // mark the same accessibility node. See `mark_id`, and the test that
+                    // records the same bug shipping once for search.
+                    id: mark_id(ctx.item_id, 0),
                     span: LaneSpan::new(at, at),
                     column: LaneColumn::Right,
                     shape: LaneShape::Dot,
@@ -504,10 +516,18 @@ fn story_bible() -> LaneProviderSpec {
                 });
             }
 
-            let Ok(text) = ctx.doc.to_plain_text() else {
+            // `to_addressable_text()`, NOT `to_plain_text()`: `ctx.locate` takes a
+            // document char offset, the same space the comment anchors above are in,
+            // and the export drops each table's `U+FFFC` anchor and its `\n`. Marks
+            // taken from the export therefore landed two characters early per preceding
+            // table, so the strip and the wash `story_bible::highlight` draws on the
+            // very same finding disagreed about where the name is.
+            let Ok(text) = ctx.doc.to_addressable_text() else {
                 return out;
             };
-            for (i, (start, end)) in super::subject::hits(&text, &subject.entity)
+            // Scanned against the Work's whole table and filtered back to this entry --
+            // see `subject::hits`, which is also what the underline layer calls.
+            for (i, (start, end)) in super::subject::hits(&text, &subject.entity, &subject.table)
                 .into_iter()
                 .enumerate()
             {
@@ -515,10 +535,11 @@ fn story_bible() -> LaneProviderSpec {
                     continue;
                 };
                 out.push(LaneMark {
-                    // Offset by one so the point-of-view mark keeps id zero: ids need
-                    // only be stable within one provider across repaints, and a hit's
-                    // position is exactly that.
-                    id: i as u64 + 1,
+                    // Offset by one so the point-of-view mark keeps ordinal zero: the two
+                    // kinds of mark share one ordinal space per row, and hashing the row
+                    // in is what keeps this row's first hit distinct from every other
+                    // row's.
+                    id: mark_id(ctx.item_id, i + 1),
                     span: LaneSpan::new(a, b),
                     column: LaneColumn::Right,
                     shape: LaneShape::Dot,
@@ -553,6 +574,290 @@ mod tests {
             mark_id(101, 3),
             "and stable across repaints"
         );
+    }
+
+    /// **The same bug, on the story-bible provider, caught through the provider itself.**
+    ///
+    /// A stream calls it once per row and each call restarts its enumeration, so the bare
+    /// ordinal it used to write gave every row's point-of-view mark the id `0` and every
+    /// row's first name the id `1`. `MarginLane::element_id` hashes only `(group, id)` and
+    /// `group` is one constant for the whole provider, so five rows naming the entry once
+    /// became one accessibility node: a screen-reader user was told "Named here" once and
+    /// could never reach the other four, with nothing visibly wrong on screen.
+    ///
+    /// Asserted against the spec's own closure rather than against [`mark_id`], because
+    /// what shipped wrong was the call site, not the hash.
+    #[test]
+    fn two_rows_of_one_stream_get_distinct_story_bible_marks() {
+        use crate::app_ids::AppIds;
+        use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+        use frontend::direct_access::{
+            BinderItemRelationshipDto, CreateBinderDto, CreateBinderItemDto, CreateWorkDto,
+        };
+        use skribisto_model::mentions::DiscoverableEntity;
+        use teksilo::text_document::TextDocument;
+
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let work = work_commands::create_orphan_work(&app_ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let binder = binder_commands::create_binder(
+            &app_ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("create binder")
+        .id;
+        let mut next = 0i32;
+        let mut add = |sub_role: BinderItemSubRole| {
+            let id = binder_item_commands::create_binder_item(
+                &app_ctx,
+                None,
+                &CreateBinderItemDto {
+                    title: "row".into(),
+                    role: BinderItemRole::Item,
+                    sub_role,
+                    activated: true,
+                    is_exportable: true,
+                    ..Default::default()
+                },
+                binder,
+                next,
+            )
+            .expect("create item")
+            .id;
+            next += 1;
+            id
+        };
+        let note = add(BinderItemSubRole::Note);
+        let row_a = add(BinderItemSubRole::Scene);
+        let row_b = add(BinderItemSubRole::Scene);
+        for row in [row_a, row_b] {
+            binder_item_commands::set_binder_item_relationship(
+                &app_ctx,
+                None,
+                &BinderItemRelationshipDto {
+                    id: row,
+                    field: BinderItemRelationshipField::PointOfView,
+                    right_ids: vec![note],
+                },
+            )
+            .expect("declare the point of view");
+        }
+
+        let ids = AppIds::new();
+        ids.work_id.set(Some(work.id));
+        crate::margin_lane::subject::set_active_subject(Some(
+            crate::margin_lane::subject::LaneSubject {
+                entity: DiscoverableEntity {
+                    id: note,
+                    title: "Elizabeth".into(),
+                    aliases: Vec::new(),
+                },
+                table: Vec::new(),
+                work_uid: work.unique_id.clone(),
+            },
+        ));
+
+        // The two rows carry the same prose on purpose: identical text is exactly what
+        // made the two enumerations agree, ordinal for ordinal.
+        let doc = TextDocument::new();
+        doc.set_plain_text("Elizabeth waited. Elizabeth left.")
+            .expect("set the row's prose");
+
+        let spec = story_bible();
+        let anchors: Vec<crate::margin_lane::CommentAnchor> = Vec::new();
+        let locate = |_: usize| Some(0.25_f32);
+        let marks_of = |item_id: EntityId| {
+            let ctx = LaneContext {
+                kind: crate::format::EditorKind::Prose,
+                app_ctx: &app_ctx,
+                ids: &ids,
+                surface: LaneSurface::Stream,
+                doc: &doc,
+                item_id,
+                comment_anchors: &anchors,
+                misspellings: &[],
+                color: teksilo::tokens::Color::from_hex("#009E73"),
+                group: 3,
+                locate: &locate,
+            };
+            (spec.marks)(&ctx)
+                .into_iter()
+                .map(|m| m.id)
+                .collect::<Vec<u64>>()
+        };
+        let a = marks_of(row_a);
+        let b = marks_of(row_b);
+        // Withdraw before asserting: the subject is a thread-local, and a failing assert
+        // must not leave it published for whatever test runs next on this thread.
+        crate::margin_lane::subject::set_active_subject(None);
+
+        assert_eq!(a.len(), 3, "the declaration and both names: {a:?}");
+        assert_eq!(b.len(), 3, "and the same for the second row: {b:?}");
+        let mut all = [a.clone(), b.clone()].concat();
+        all.sort_unstable();
+        all.dedup();
+        assert_eq!(
+            all.len(),
+            6,
+            "six marks, six accessibility nodes, but row one gave {a:?} and row two {b:?}"
+        );
+    }
+
+    /// A table, then a block, then `prose`: the shape that puts a `U+FFFC` anchor and
+    /// its separator ahead of every offset in the text, which is the whole of what the
+    /// two providers below are about.
+    fn doc_after_a_table(prose: &str) -> teksilo::text_document::TextDocument {
+        let d = teksilo::text_document::TextDocument::new();
+        d.cursor().insert_table(2, 2).expect("insert a table");
+        let cursor = d.cursor_at(d.character_count());
+        cursor.insert_block().expect("a block after the table");
+        cursor.insert_text(prose).expect("prose after the table");
+        d
+    }
+
+    /// The **char** index of `needle`, which `str::find` does not answer: it answers in
+    /// bytes, and a `U+FFFC` anchor is one char and three bytes.
+    fn char_index_of(haystack: &str, needle: &str) -> usize {
+        let byte = haystack.find(needle).expect("present");
+        haystack[..byte].chars().count()
+    }
+
+    /// **A misspelling's offset is a document offset, and the label was sliced from the
+    /// export.**
+    ///
+    /// `LaneContext::misspellings` carries the offsets the editor's own spell session
+    /// underlines, in the document char space where a table occupies its anchor plus a
+    /// separator. `to_plain_text()` drops both, so the accessible name of every mark
+    /// after a table was cut two characters early per table: a screen reader was read a
+    /// word that is not in the prose, with the dot itself in the right place.
+    #[test]
+    fn a_table_ahead_of_a_flagged_word_does_not_shift_its_label() {
+        use crate::app_ids::AppIds;
+
+        let d = doc_after_a_table("teh quiet room.");
+        let addressable = d.to_addressable_text().expect("addressable text");
+        let exported = d.to_plain_text().expect("exported text");
+        let at = char_index_of(&addressable, "teh");
+        assert_ne!(
+            at,
+            char_index_of(&exported, "teh"),
+            "the table must be what the two strings disagree about"
+        );
+
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let ids = AppIds::new();
+        let anchors: Vec<crate::margin_lane::CommentAnchor> = Vec::new();
+        let flagged = [(at, 3usize)];
+        let locate = |_: usize| Some(0.25_f32);
+        let ctx = LaneContext {
+            kind: crate::format::EditorKind::Prose,
+            app_ctx: &app_ctx,
+            ids: &ids,
+            surface: LaneSurface::Editor,
+            doc: &d,
+            item_id: 1,
+            comment_anchors: &anchors,
+            misspellings: &flagged,
+            color: teksilo::tokens::Color::from_hex("#009E73"),
+            group: 1,
+            locate: &locate,
+        };
+        let marks = (spelling().marks)(&ctx);
+        assert_eq!(marks.len(), 1, "one flagged word, one dot");
+        assert!(
+            marks[0].label.resolve_now().contains("teh"),
+            "the flagged word itself, not the two characters before it: {:?}",
+            marks[0].label.resolve_now()
+        );
+    }
+
+    /// **A table ahead of a name must not move its mark on the strip.**
+    ///
+    /// `ctx.locate` takes a document char offset, the same space the comment anchors are
+    /// in. Reading the names out of `to_plain_text()` handed it offsets two characters
+    /// early per preceding table, so the dot on the strip and the wash
+    /// `story_bible::highlight` draws on the identical finding pointed at different
+    /// words.
+    #[test]
+    fn a_table_ahead_of_a_name_does_not_shift_its_mark_on_the_strip() {
+        use crate::app_ids::AppIds;
+        use frontend::commands::work_commands;
+        use frontend::direct_access::CreateWorkDto;
+        use skribisto_model::mentions::DiscoverableEntity;
+        use std::cell::RefCell;
+
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let work = work_commands::create_orphan_work(&app_ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let ids = AppIds::new();
+        ids.work_id.set(Some(work.id));
+
+        let d = doc_after_a_table("Elizabeth waited.");
+        let addressable = d.to_addressable_text().expect("addressable text");
+        let at = char_index_of(&addressable, "Elizabeth");
+        assert_ne!(
+            at,
+            char_index_of(&d.to_plain_text().expect("exported text"), "Elizabeth"),
+            "the table must be what the two strings disagree about"
+        );
+
+        crate::margin_lane::subject::set_active_subject(Some(
+            crate::margin_lane::subject::LaneSubject {
+                entity: DiscoverableEntity {
+                    id: 4_242,
+                    title: "Elizabeth".into(),
+                    aliases: Vec::new(),
+                },
+                table: Vec::new(),
+                work_uid: work.unique_id.clone(),
+            },
+        ));
+
+        let asked: RefCell<Vec<usize>> = RefCell::new(Vec::new());
+        let anchors: Vec<crate::margin_lane::CommentAnchor> = Vec::new();
+        let locate = |offset: usize| {
+            asked.borrow_mut().push(offset);
+            Some(0.25_f32)
+        };
+        let ctx = LaneContext {
+            kind: crate::format::EditorKind::Prose,
+            app_ctx: &app_ctx,
+            ids: &ids,
+            surface: LaneSurface::Stream,
+            doc: &d,
+            item_id: 1,
+            comment_anchors: &anchors,
+            misspellings: &[],
+            color: teksilo::tokens::Color::from_hex("#009E73"),
+            group: 3,
+            locate: &locate,
+        };
+        let marks = (spec_marks_of(&ctx)).len();
+        // Withdraw before asserting: the subject is a thread-local, and a failing assert
+        // must not leave it published for whatever test runs next on this thread.
+        crate::margin_lane::subject::set_active_subject(None);
+
+        assert_eq!(marks, 1, "the one name in the prose");
+        assert_eq!(
+            asked.borrow().first().copied(),
+            Some(at),
+            "the strip is asked for the document's own offset, not the export's"
+        );
+    }
+
+    /// The story-bible provider's own closure, so the test above exercises what ships
+    /// rather than a copy of it.
+    fn spec_marks_of(ctx: &LaneContext<'_>) -> Vec<LaneMark> {
+        (story_bible().marks)(ctx)
     }
 
     /// The number reaches an accessibility tree, so it must be the same number on

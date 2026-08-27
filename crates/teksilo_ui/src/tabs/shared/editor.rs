@@ -697,6 +697,18 @@ fn tag_swatch(color: &str) -> IconWidget {
     IconWidget::from_path(path, SWATCH).color(crate::tags::contrast::parse(color))
 }
 
+/// A tag's own name, safe to hand to a [`MenuItem`].
+///
+/// `MenuItem` parses **every** label for a mnemonic marker: `parse_mnemonic` runs on the
+/// resolved string with no gate on whether it came from a translation or from `lit!` data.
+/// So a writer's tag called "Cast & crew" rendered as "Cast  crew", with the C of "crew"
+/// silently underlined and bound as its access key. Doubling the ampersand is the escape
+/// the parser itself documents, and it is applied here rather than at the palette,
+/// because it is only true of labels going into a menu.
+fn menu_safe(name: &str) -> String {
+    name.replace('&', "&&")
+}
+
 /// [`capture_submenu`]'s rendering half, with the tiers already resolved.
 ///
 /// Split out so a test can hand in a tier shape directly: resolving the tiers needs a
@@ -725,7 +737,7 @@ fn render_capture_menu(
         list = match entry {
             CaptureEntry::Separator => list.separator(),
             CaptureEntry::Tag(t) => list.item(
-                MenuItem::new(lit!(t.name.clone()))
+                MenuItem::new(lit!(menu_safe(&t.name)))
                     .icon(tag_swatch(&t.color))
                     .icon_keeps_color()
                     .on_activate_fn(fire(Some(t.id))),
@@ -746,7 +758,7 @@ fn render_capture_menu(
                         for t in &all {
                             let (text, tag_id) = (text.clone(), t.id);
                             inner = inner.item(
-                                MenuItem::new(lit!(t.name.clone()))
+                                MenuItem::new(lit!(menu_safe(&t.name)))
                                     .icon(tag_swatch(&t.color))
                                     .icon_keeps_color()
                                     .on_activate_fn(move |ctx: &mut EventContext| {

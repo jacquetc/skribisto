@@ -888,6 +888,11 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
 /// feature it already half-built (the notes folder, the discoverable flag, aliases).
 /// See [`crate::tabs::story_bible_place`]'s own module doc.
 ///
+/// It is also the one segment here that is **not** offered to every container this
+/// function bodies: `Folder/Paratext` comes through here too, and front matter is not a
+/// story bible. So a paratext folder gets Notes and Overview, and a notes folder gets
+/// all three.
+///
 /// Registered segments (see [`segments::register_container_segment`]) are appended
 /// after Story bible and before Overview, the same relative position `folder_segmented`
 /// gives them: after the container's own built-in views, before the view that closes
@@ -896,21 +901,27 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
 /// rather than loudly; this is the other half of that contract.
 pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
     let sub_role = tab.sub_role().clone();
-    let mut items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![
-        (
-            segments::SEG_NOTES,
-            tr!(segment_notes()),
-            Box::new(folder_synopsis_body(
-                tab,
-                segment_will_show(tab, segments::SEG_NOTES),
-            )) as Box<dyn Widget>,
-        ),
-        (
+    let mut items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![(
+        segments::SEG_NOTES,
+        tr!(segment_notes()),
+        Box::new(folder_synopsis_body(
+            tab,
+            segment_will_show(tab, segments::SEG_NOTES),
+        )) as Box<dyn Widget>,
+    )];
+    // **A notes folder only.** This function is also `Folder/Paratext`'s body (see
+    // [`crate::tabs::folder_paratext`]), and a front-matter folder is not a story bible
+    // and cannot become one: `story_bible_pane` reads the container's `SearchFacet::Note`
+    // descendants, and a paratext folder holds `Item/Paratext` rows, so the grid was
+    // empty by construction. The bar there read "Notes | Story bible | Overview" and the
+    // middle chip led to "Nothing filed here yet", permanently.
+    if sub_role == BinderItemSubRole::Note {
+        items.push((
             segments::SEG_STORY_BIBLE,
             tr!(segment_story_bible()),
             crate::tabs::story_bible_place::story_bible_pane(tab),
-        ),
-    ];
+        ));
+    }
     for spec in segments::registered_for(&sub_role) {
         // Leaked so the id borrows for the rest of this build: see `folder_segmented`,
         // which leaks the same way for the same reason: bounded by the number of
@@ -1208,6 +1219,21 @@ mod item_note_segmented_tests {
     /// one currently selected, have a real backend to read once the writer actually
     /// selects them.
     fn note_tab(ctx: &Rc<frontend::AppContext>, work_id: u64) -> ContentTab {
+        note_tab_with_memory(
+            ctx,
+            work_id,
+            crate::settings::EditorViewMemory::detached(false),
+        )
+    }
+
+    /// As [`note_tab`], with the per-type view memory the caller wants to inspect.
+    /// `detached(false)` is inert (`remember` is a no-op while the setting is off), which
+    /// is right for the tests that only care about the bar.
+    fn note_tab_with_memory(
+        ctx: &Rc<frontend::AppContext>,
+        work_id: u64,
+        memory: crate::settings::EditorViewMemory,
+    ) -> ContentTab {
         let binder = binder_commands::create_binder(
             ctx,
             None,
@@ -1242,6 +1268,56 @@ mod item_note_segmented_tests {
             item.id,
             &BinderItemRole::Item,
             &BinderItemSubRole::Note,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            memory,
+            &ids,
+        )
+    }
+
+    /// A container tab of `sub_role` (`Note` for a notes folder, `Paratext` for front
+    /// or back matter), both of which `folder_synopsis_with_overview` bodies.
+    fn folder_tab(
+        ctx: &Rc<frontend::AppContext>,
+        work_id: u64,
+        sub_role: BinderItemSubRole,
+    ) -> ContentTab {
+        let binder = binder_commands::create_binder(
+            ctx,
+            None,
+            &CreateBinderDto {
+                name: "B".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work_id,
+            0,
+        )
+        .expect("create binder");
+        let item = binder_item_commands::create_binder_item(
+            ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "A folder".into(),
+                role: BinderItemRole::Folder,
+                sub_role: sub_role.clone(),
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            binder.id,
+            -1,
+        )
+        .expect("create folder");
+        let ids = AppIds::new();
+        ids.work_id.set(Some(work_id));
+        tab_for(
+            ctx,
+            item.id,
+            &BinderItemRole::Folder,
+            &sub_role,
             &[],
             Signal::new(700.0),
             Signal::new(true),
@@ -1407,6 +1483,93 @@ mod item_note_segmented_tests {
             shown == segments::SEG_NOTE_OWN || shown == segments::SEG_NOTE_DETAILS,
             "it must land on one of the two real segments, not a blank state: landed on \
              {shown:?}"
+        );
+    }
+
+    /// **A self-heal is not the writer's choice, and must not be remembered as one.**
+    ///
+    /// Removing a note's last discoverable tag takes the "In prose" chip away under the
+    /// writer, and `SegmentedControl` selects the neighbour by writing the tab's own
+    /// segment signal - the same write a click makes. `RememberSegment`'s persistence
+    /// effect had no way to tell them apart, so it wrote `note-details` into
+    /// `editor.last_view.item_note`, and from then on **every** note the writer opened
+    /// landed on Details instead of its own text.
+    #[test]
+    fn a_chip_vanishing_under_the_writer_does_not_rewrite_the_remembered_view() {
+        let (ctx, work_id) = seed_work();
+        let memory = crate::settings::EditorViewMemory::detached(true);
+        let tab = note_tab_with_memory(&ctx, work_id, memory.clone());
+        let tag = create_tag(&ctx, work_id, true);
+        tab.open_doc.tags.set(vec![tag]);
+
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        tree.add_boxed(item_note_segmented(&tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+
+        // A genuine switch: this one *is* the writer's choice, and is remembered.
+        tab.segment
+            .set(Some(segments::segment_id(segments::SEG_NOTE_IN_PROSE)));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        let chosen = memory.initial(&BinderItemRole::Item, &BinderItemSubRole::Note);
+        assert_eq!(
+            chosen,
+            Some(segments::segment_id(segments::SEG_NOTE_IN_PROSE)),
+            "precondition: a switch the writer made is remembered"
+        );
+
+        // The chip disappears under them.
+        tab.open_doc.tags.set(vec![]);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert_ne!(
+            tab.segment_shown(),
+            segments::SEG_NOTE_IN_PROSE,
+            "precondition: the bar really did move off the vanished chip"
+        );
+
+        assert_eq!(
+            memory.initial(&BinderItemRole::Item, &BinderItemSubRole::Note),
+            chosen,
+            "the remembered view belongs to the writer's own switches; a self-heal must \
+             leave it alone, or every note they open next lands somewhere they never chose"
+        );
+    }
+
+    /// **The Story bible grid is a notes folder's, not every container this function
+    /// bodies.** `Folder/Paratext` comes through the same `folder_synopsis_with_overview`,
+    /// and the grid reads a container's `Item/Note` descendants: front matter holds
+    /// `Item/Paratext` rows, so the segment was empty by construction and permanently so.
+    ///
+    /// Driven through the segment seed, which `RememberSegment::wrap` only honours for an
+    /// id the container actually has: it lands on Story bible for a notes folder and
+    /// cannot for a paratext folder.
+    #[test]
+    fn a_paratext_folder_has_no_story_bible_segment_and_a_notes_folder_does() {
+        let (ctx, work_id) = seed_work();
+
+        let notes = folder_tab(&ctx, work_id, BinderItemSubRole::Note);
+        notes.seed_segment(segments::SEG_STORY_BIBLE);
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        tree.add_boxed(folder_synopsis_with_overview(&notes));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert_eq!(
+            notes.segment_shown(),
+            segments::SEG_STORY_BIBLE,
+            "a notes folder is where the story bible lives"
+        );
+
+        let paratext = folder_tab(&ctx, work_id, BinderItemSubRole::Paratext);
+        paratext.seed_segment(segments::SEG_STORY_BIBLE);
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        tree.add_boxed(folder_synopsis_with_overview(&paratext));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert_ne!(
+            paratext.segment_shown(),
+            segments::SEG_STORY_BIBLE,
+            "front matter is not a story bible, and cannot become one"
+        );
+        assert!(
+            !paratext.segment_shown().is_empty(),
+            "it must land on a real segment of its own"
         );
     }
 

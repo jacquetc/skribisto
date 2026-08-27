@@ -84,6 +84,7 @@ settings-tags-discoverable = Repérer dans le texte
 settings-tags-creates-in = Les nouvelles notes vont dans
 settings-tags-creates-in-unset = Me demander la première fois
 settings-tags-creates-in-untitled = Dossier sans titre
+settings-tags-creates-in-trashed = { $name } (dans la corbeille)
 settings-tags-template = Modèle de départ
 settings-tags-template-unset = Note vierge
 settings-tags-delete = Supprimer { $name }

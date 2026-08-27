@@ -176,6 +176,17 @@ fn create_book(f: &Fixture, index: i32, title: &str) -> u64 {
     .id
 }
 
+/// Trash a row the way the outline does: `activated` is the trashed flag inverted, and
+/// `docks::inspector::live_books` only ever answers with activated rows.
+fn trash(f: &Fixture, item_id: u64) {
+    let it = binder_item_commands::get_binder_item(&f.app_ctx, &item_id)
+        .expect("read the row")
+        .expect("the row exists");
+    let mut dto = crate::shared::binder_ops::update_item_dto(&it);
+    dto.activated = false;
+    binder_item_commands::update_binder_item(&f.app_ctx, None, &dto).expect("trash the row");
+}
+
 fn tag(id: u64, name: &str, discoverable: bool) -> TagRow {
     TagRow {
         id,
@@ -648,6 +659,63 @@ fn filtering_by_book_hides_entries_filed_elsewhere_and_the_unfiltered_default_hi
         .map(|c| c.entry.title.clone())
         .collect();
     assert_eq!(titles, vec!["Filed under Book One".to_string()]);
+}
+
+/// **The filter goes when the control for it does.** The chip row is gated at two live
+/// Books, so trashing one takes the whole row away, "All books" included; the chosen Book
+/// used to stay in the signal and keep filtering behind it, and with the filter on the
+/// Book that was just trashed every entry dropped out. The pane then said "Nothing filed
+/// here yet" over a fully filed bible, with nothing on the tab that could clear it short
+/// of closing and reopening the tab, which that empty state gives no reason to try.
+#[test]
+fn trashing_the_filtered_book_clears_the_filter_instead_of_emptying_the_grid() {
+    let f = seed();
+    let book_one = create_book(&f, 0, "Book One");
+    let book_two = create_book(&f, 1, "Book Two");
+    let _filed_under_one = create_note(
+        &f,
+        1,
+        "Filed under Book One",
+        vec![],
+        vec![],
+        vec![book_one],
+    );
+    let _filed_under_two = create_note(
+        &f,
+        2,
+        "Filed under Book Two",
+        vec![],
+        vec![],
+        vec![book_two],
+    );
+    let _unfiled = create_note(&f, 3, "Not yet filed", vec![], vec![], vec![]);
+    let tab = notes_tab(&f);
+
+    tab.story_bible_book_filter.set(Some(book_two));
+    let (tree, id) = mount(&f, &tab);
+    assert_eq!(
+        pane_of(&tree, id).cards_rendered.len(),
+        1,
+        "filtered to Book Two"
+    );
+
+    trash(&f, book_two);
+    let (tree, id) = mount(&f, &tab);
+    assert!(
+        !pane_of(&tree, id).book_filter_rendered,
+        "one live Book left, so no chip row: the filter is unreachable"
+    );
+    assert_eq!(
+        pane_of(&tree, id).cards_rendered.len(),
+        3,
+        "so nothing may still be filtered out"
+    );
+    assert_eq!(
+        tab.story_bible_book_filter.get(),
+        None,
+        "and the state matches what is on screen, so the Book coming back does not \
+         silently re-apply it"
+    );
 }
 
 #[cfg(not(feature = "mocks"))]

@@ -132,11 +132,40 @@ pub enum AppIntent {
     /// `None` = the current Outline selection (the outline dock's own "Create").
     /// The corkboard passes `Some(current_container)` because its drilled-into
     /// container is independent of the Outline's selection.
+    ///
+    /// A **binder row** cannot be named this way at all (a binder has no
+    /// `BinderItem` id) — see [`Self::NewItemHere`], which the outline's own
+    /// per-row menu fires for exactly that reason.
     #[name = "binder.new_item"]
     NewItem {
         create_type: CreateType,
         relation: Relation,
         anchor_item_id: Option<u64>,
+    },
+
+    /// Create a new binder item anchored on **one named row of the tree** — the
+    /// row-addressed twin of [`Self::NewItem`], consumed by the `binder.new_item_here`
+    /// global action and resolved through exactly the same create + configure tail.
+    ///
+    /// Two things separate it from [`Self::NewItem`]:
+    ///
+    /// * The anchor is a [`BinderTreeKey`](crate::models::BinderTreeKey), so it can name a
+    ///   **binder row** as well as an item row. `anchor_item_id` cannot: a binder has no
+    ///   `BinderItem` id, so the outline's per-row "Add ▸" menu had nothing to send for a
+    ///   right-clicked binder and fell back to `None` — which the handler reads as "the
+    ///   current Outline selection", quietly creating the row in whatever binder the
+    ///   selection happened to be in rather than the one under the pointer.
+    /// * The anchor is never optional. This intent exists *because* the caller has a row;
+    ///   "wherever the selection is" is [`Self::NewItem`] with `None`.
+    ///
+    /// A key and not a store id, for the same reason as [`Self::ImportHere`]: an intent is
+    /// dispatched a frame or more after the click, and an `EntityId` is only meaningful
+    /// until the next `load_work`.
+    #[name = "binder.new_item_here"]
+    NewItemHere {
+        create_type: CreateType,
+        relation: Relation,
+        anchor: crate::models::BinderTreeKey,
     },
 
     /// Import documents straight into a place the writer has already pointed at, from
@@ -291,6 +320,32 @@ mod tests {
         match AppIntent::from_intent(&intent) {
             Some(AppIntent::OpenWorkPath { path }) => assert_eq!(path, "/tmp/novel.skrib"),
             other => panic!("expected OpenWorkPath, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn new_item_here_round_trips_its_anchor() {
+        // The outline's per-row "Add ▸" menu carries the right-clicked row across the
+        // bus. A lost anchor is invisible: the handler falls back to the Outline
+        // selection and the row is created in some other binder entirely.
+        let anchor = crate::models::BinderTreeKey::Binder(uuid::Uuid::from_u128(11));
+        let intent: Intent = AppIntent::NewItemHere {
+            create_type: CreateType::StoryBibleEntry,
+            relation: Relation::Sibling,
+            anchor,
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::NewItemHere {
+                create_type,
+                relation,
+                anchor: got,
+            }) => {
+                assert_eq!(*create_type, CreateType::StoryBibleEntry);
+                assert_eq!(*relation, Relation::Sibling);
+                assert_eq!(*got, anchor);
+            }
+            other => panic!("expected NewItemHere, got {other:?}"),
         }
     }
 

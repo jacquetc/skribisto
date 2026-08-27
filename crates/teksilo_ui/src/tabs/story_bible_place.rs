@@ -372,6 +372,23 @@ impl Widget for StoryBiblePane {
 
         let entries = subtree_notes(&self.app_ctx, work_id, self.container_id);
         let candidates = crate::docks::inspector::live_books(&self.app_ctx, &self.ids);
+        let book_filter_rendered = candidates.len() >= 2;
+
+        // **A filter the writer cannot see must not still be narrowing the grid.** The
+        // chip row is gated at two live Books, so trashing one took the whole row away
+        // (including "All books") while the chosen Book stayed in the signal and kept
+        // filtering: with the filter on the Book that was trashed, every entry dropped
+        // out and the pane said "Nothing filed here yet" over a fully filed bible, with
+        // no chip, no menu and nothing else on the tab that could clear it. Cleared
+        // rather than merely ignored, so the state matches what is on screen: a Book
+        // coming back must not silently re-apply a filter the writer last saw days ago.
+        if self
+            .book_filter
+            .get()
+            .is_some_and(|id| !book_filter_rendered || !candidates.iter().any(|c| c.id == id))
+        {
+            self.book_filter.set(None);
+        }
         let selected_book = self.book_filter.get();
 
         // Narrow by declaration, never hide by measurement: see the module doc.
@@ -385,7 +402,6 @@ impl Widget for StoryBiblePane {
 
         let mut col = VStack::new().spacing(10.0);
 
-        let book_filter_rendered = candidates.len() >= 2;
         #[cfg(test)]
         {
             self.book_filter_rendered = book_filter_rendered;

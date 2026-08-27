@@ -29,8 +29,8 @@ use teksilo::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use teksilo::widgets::{
     BuiltInIcons, Button, ButtonVariant, Center, ColorEdit, ComboBox, Expand, FixedSize, HStack,
     IconButton, IconLocation, IconWidget, ListView, MaxSize, MenuItem, MenuList, MinSize, Padding,
-    Panel, PopoverButton, RectWidget, SearchField, Spacer, Switcher, TextInput, TextWidget, Toast,
-    Toggle, VStack, ValidationState,
+    Panel, PopoverButton, RectWidget, SearchField, Shrinkable, Spacer, Switcher, TextInput,
+    TextWidget, Toast, Toggle, VStack, ValidationState,
 };
 
 use crate::app_ids::HasWorkId;
@@ -43,6 +43,10 @@ use frontend::common::entities::BinderItemRole;
 const NAME_COL: &str = "name";
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;
 const LIST_MIN_HEIGHT: f32 = 320.0;
+/// `ComboBox`'s own minimum width, mirrored here as the floor the row's two dropdowns
+/// compress to. Below it the combo clamps anyway, so shrinking further would only make the
+/// row lie about how much room it needs.
+const COMBO_MIN_WIDTH: f32 = 120.0;
 const SWATCH_SIZE: f32 = 12.0;
 
 /// Colour offered for a tag created here before the writer picks one. Mid-slate: legible in
@@ -83,58 +87,14 @@ pub fn work_tags_pane(
         ctx.effect(&query, move |q| filter_view.set_filter(NAME_COL, q));
     }
 
-    let list_vm = vm.clone();
-    // Resolved once per pane build, not once per row: a project with forty tags would
-    // otherwise walk the whole binder forty times to paint one dropdown each.
-    // Rebuild this pane when the writer's template list changes.
-    //
-    // Each tag's "Starting template" dropdown is a `ComboBox::from_items`, which copies
-    // the list it is given into a private model nothing writes to again, and the list
-    // itself is resolved once per pane build just below. Without this binding a template
-    // created on the sibling Templates page is invisible here until the Settings window
-    // is closed and reopened, which is exactly what a writer reported. Re-deriving the
-    // whole pane is the cheap answer and the one the panes around this already use: the
-    // alternative, a mapped live `ListModel` behind `from_items`, buys nothing on a list
-    // a writer edits by hand a few times a project.
-    templates.changed_signal().bind_to(
-        ctx.self_id(),
-        ctx.binding_registry(),
-        BindingLevel::Rebuild,
-    );
-
-    let folders = folder_options(&vm.app_ctx(), &vm.ids());
-    let template_rows = template_options(templates);
-    let list = ListView::from_source(filtered, move |_i, row: &TagRow, _selected| {
-        Box::new(TagRowView {
-            vm: list_vm.clone(),
-            row: row.clone(),
-            folders: folders.clone(),
-            templates: template_rows.clone(),
-            root_child: None,
-        })
-    })
-    .auto_item_height(82.0);
-
-    let empty_idx = {
-        let vm = vm.clone();
-        vm.changed_signal().map(move |_| usize::from(vm.is_empty()))
+    // The list is a widget of its own so the template refresh has an id of its own to
+    // rebuild: see [`TagList`].
+    let list_card = TagList {
+        vm: vm.clone(),
+        templates: templates.clone(),
+        filtered,
+        root_child: None,
     };
-    let list_card = Panel::new()
-        .background(SurfaceRole::Content)
-        .border_color(BorderRole::Default)
-        .border_width(1.0)
-        .corner_radius(8.0)
-        .padding(0.0)
-        .child(
-            // The floor goes on the card, not the list: a `Switcher` reports its active
-            // child's size, and a virtualised `ListView` given unbounded height inside the
-            // pane's own scroll reports ~nothing.
-            MinSize::new(0.0, LIST_MIN_HEIGHT).child(
-                Switcher::new(empty_idx)
-                    .child(Expand::vertical().child(list))
-                    .child(empty_state(vm)),
-            ),
-        );
 
     // Description lives on the add field's tooltip — no body-copy paragraph above the list.
     VStack::new()
@@ -378,6 +338,97 @@ fn export_button(vm: &TagsViewModel) -> impl Widget {
         })
 }
 
+/// The bordered list of tags, as a widget of its own.
+///
+/// **Why a widget and not a builder function.** Each row's "Starting template" dropdown is
+/// a `ComboBox::from_items`, which copies the list it is handed into a private model
+/// nothing writes to again, so a template created on the sibling Templates page is
+/// invisible here until the options are derived afresh. Deriving them afresh means a
+/// `BindingLevel::Rebuild`, and a Rebuild needs a widget id.
+///
+/// `BuildContext::self_id()` inside [`work_tags_pane`] is **not** this pane: the pane is a
+/// plain function handed the caller's context, and the caller is the `SettingsPanel`
+/// itself. Binding there rebuilt the entire Settings window on every fire, which threw
+/// away the pane's own filter query signal and its `SortFilterListModel` with it: the
+/// filter box cleared and every filtered-out tag reappeared each time a tag was added,
+/// deleted, a preset applied or a CSV imported (all of which push a `Work` update, which
+/// is what the templates model bumps its version on). Rebuilding *this* id re-derives the
+/// options and the rows, and leaves the query, the toolbar and the add field alone.
+struct TagList {
+    vm: TagsViewModel,
+    templates: NoteTemplatesViewModel,
+    filtered: SortFilterListModel<TagRow>,
+    root_child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for TagList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TagList").finish()
+    }
+}
+
+impl Widget for TagList {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.templates.changed_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+
+        // Both resolved once per list build, not once per row: a project with forty tags
+        // would otherwise walk the whole binder forty times to paint one dropdown each.
+        let folders = folder_options(&self.vm.app_ctx(), &self.vm.ids());
+        let template_rows = template_options(&self.templates);
+        let list_vm = self.vm.clone();
+        let list =
+            ListView::from_source(self.filtered.clone(), move |_i, row: &TagRow, _selected| {
+                Box::new(TagRowView {
+                    vm: list_vm.clone(),
+                    row: row.clone(),
+                    folders: folders.clone(),
+                    templates: template_rows.clone(),
+                    root_child: None,
+                })
+            })
+            .auto_item_height(82.0);
+
+        let empty_idx = {
+            let vm = self.vm.clone();
+            vm.changed_signal().map(move |_| usize::from(vm.is_empty()))
+        };
+        let card = Panel::new()
+            .background(SurfaceRole::Content)
+            .border_color(BorderRole::Default)
+            .border_width(1.0)
+            .corner_radius(8.0)
+            .padding(0.0)
+            .child(
+                // The floor goes on the card, not the list: a `Switcher` reports its active
+                // child's size, and a virtualised `ListView` given unbounded height inside the
+                // pane's own scroll reports ~nothing.
+                MinSize::new(0.0, LIST_MIN_HEIGHT).child(
+                    Switcher::new(empty_idx)
+                        .child(Expand::vertical().child(list))
+                        .child(empty_state(&self.vm)),
+                ),
+            );
+        let root = ctx.add(card);
+        self.root_child = Some(root);
+        vec![root]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
 /// One palette row: swatch + colour picker, inline name, details, story-bible toggle, delete.
 ///
 /// A real `Widget` rather than a plain builder function, because a row needs a
@@ -519,22 +570,26 @@ impl Widget for TagRowView {
         // whose folder the writer later reorganises away must be un-filable without
         // deleting the tag itself.
         let creates_in = {
-            let selected = Signal::new(
-                self.folders
-                    .iter()
-                    .find(|o| o.id == self.row.creates_in)
-                    .cloned()
-                    // A destination that no longer resolves (the folder was deleted
-                    // between this build and the last) falls back to the unset row
-                    // rather than rendering a blank control.
-                    .or_else(|| self.folders.first().cloned()),
-            );
+            // A tag can be filed into a folder the writer has since trashed, and that
+            // tag is still set: trashing removes nothing, it only flips `activated`
+            // over the subtree, so `creates_in` still names the row. [`folder_options`]
+            // cannot offer it, because nobody may *newly* pick a destination inside the
+            // trash, so without the extra entry below the lookup misses and the row
+            // falls through to "Ask me the first time" while the store says otherwise.
+            //
+            // Surfaced rather than cleared, deliberately. Clearing is the other honest
+            // answer and it is worse: it throws away a choice the writer never revoked,
+            // it happens behind their back the moment they open this pane, and
+            // restoring the folder from the trash would not bring the filing back.
+            // Naming it says what is true, and any live folder in the list replaces it
+            // in one click.
+            let (folders, shown) =
+                row_destinations(&self.vm.app_ctx(), &self.folders, self.row.creates_in);
+            let selected = Signal::new(shown);
             let vm = self.vm.clone();
-            ComboBox::from_items(self.folders.clone(), selected, |o: &PickOption| {
-                lit!(o.label.clone())
-            })
-            .variant(ComboBoxVariant::Plain)
-            .on_select(move |o: &PickOption, _c| vm.set_creates_in(id, o.id))
+            ComboBox::from_items(folders, selected, |o: &PickOption| lit!(o.label.clone()))
+                .variant(ComboBoxVariant::Plain)
+                .on_select(move |o: &PickOption, _c| vm.set_creates_in(id, o.id))
         };
 
         let template = {
@@ -586,6 +641,14 @@ impl Widget for TagRowView {
                 )
                 .child(Padding::new(0.0, 0.0, 0.0, 26.0).child(details_field))
                 .child(
+                    // Both dropdowns are `Shrinkable`, because both are sized by words the
+                    // writer chose: a folder they called "Personnages secondaires et lieux"
+                    // makes the first combo as wide as that title, and a `ComboBox` is
+                    // rigid by default, so the row simply overflowed and pushed the
+                    // trailing "Starting template" control out of reach. `COMBO_MIN_WIDTH`
+                    // is the combo's own floor, so compression stops exactly where the
+                    // widget would clamp anyway. Same failure, and the same reasoning, as
+                    // this pane's toolbar records above: French would still have clipped.
                     Padding::new(0.0, 0.0, 0.0, 26.0).child(
                         HStack::new()
                             .spacing(8.0)
@@ -594,13 +657,17 @@ impl Widget for TagRowView {
                                     .style(TextStyleRole::Tiny)
                                     .color(TextRole::Secondary),
                             )
-                            .child(creates_in)
+                            .child(
+                                Shrinkable::new()
+                                    .min_width(COMBO_MIN_WIDTH)
+                                    .child(creates_in),
+                            )
                             .child(
                                 TextWidget::new(tr!(settings_tags_template()))
                                     .style(TextStyleRole::Tiny)
                                     .color(TextRole::Secondary),
                             )
-                            .child(template),
+                            .child(Shrinkable::new().min_width(COMBO_MIN_WIDTH).child(template)),
                     ),
                 ),
         );
@@ -638,7 +705,13 @@ pub(crate) struct PickOption {
 /// Folders only: a note is created *inside* something, and a scene has no inside. Not
 /// narrowed to notes folders, deliberately, because "where do my research notes go" is
 /// the writer's question to answer and a project that keeps them under a Book folder is
-/// organising, not misusing. Trashed rows are excluded by `ordered_flat_items`.
+/// organising, not misusing.
+///
+/// Trashed rows are excluded by `ordered_flat_items`, and must be: a destination inside
+/// the trash is one the capture flow refuses to file into. That is about what may be
+/// *picked*, not about what is already stored, so a tag whose folder has since been
+/// trashed gets its own extra entry from [`trashed_destination`] rather than being
+/// misreported here as unset.
 fn folder_options(app_ctx: &frontend::AppContext, ids: &crate::app_ids::AppIds) -> Vec<PickOption> {
     let mut out = vec![PickOption {
         id: Option::None,
@@ -662,6 +735,71 @@ fn folder_options(app_ctx: &frontend::AppContext, ids: &crate::app_ids::AppIds) 
         }
     }
     out
+}
+
+/// What one row's "New notes go to" dropdown offers, and the entry it starts on.
+///
+/// `offered` is the shared, live-folders-only list from [`folder_options`]; the pair this
+/// returns is that list plus, when the row needs it, one extra entry naming its own
+/// trashed destination. The selection is looked up in the widened list, so a tag whose
+/// folder is in the trash starts on *that* row and not on "Ask me the first time".
+///
+/// Split out of the widget so the "trashed" case can be asserted against a real store:
+/// the difference is one entry in a `ComboBox`'s item list, which a laid-out tree cannot
+/// be asked about.
+fn row_destinations(
+    app_ctx: &frontend::AppContext,
+    offered: &[PickOption],
+    creates_in: Option<u64>,
+) -> (Vec<PickOption>, Option<PickOption>) {
+    let mut folders = offered.to_vec();
+    if let Some(trashed) = trashed_destination(app_ctx, creates_in, &folders) {
+        folders.push(trashed);
+    }
+    let shown = folders
+        .iter()
+        .find(|o| o.id == creates_in)
+        .cloned()
+        // A destination that no longer resolves *at all* — the folder was deleted for
+        // good rather than trashed — has no title left to show and nothing to restore,
+        // so the unset row is the truth here and not a fallback.
+        .or_else(|| folders.first().cloned());
+    (folders, shown)
+}
+
+/// This tag's own filing destination, when it is a folder [`folder_options`] cannot
+/// offer because the writer has trashed it.
+///
+/// `None` in the three cases where the pane already tells the truth: the tag files
+/// nowhere, its folder is live and therefore already in `offered`, or the id names no
+/// row at all — a destination emptied out of the trash is genuinely gone, and there is
+/// no title left to put in front of the writer.
+///
+/// One store read, and only for a row that is actually in this state.
+fn trashed_destination(
+    app_ctx: &frontend::AppContext,
+    creates_in: Option<u64>,
+    offered: &[PickOption],
+) -> Option<PickOption> {
+    let destination = creates_in?;
+    if offered.iter().any(|o| o.id == Some(destination)) {
+        return None;
+    }
+    let item = frontend::commands::binder_item_commands::get_binder_item(app_ctx, &destination)
+        .ok()
+        .flatten()?;
+    if item.activated {
+        return None;
+    }
+    let name = if item.title.trim().is_empty() {
+        tr!(settings_tags_creates_in_untitled()).resolve_now()
+    } else {
+        item.title.clone()
+    };
+    Some(PickOption {
+        id: Some(destination),
+        label: tr!(settings_tags_creates_in_trashed(name = name)).resolve_now(),
+    })
 }
 
 /// Every note template, as starting shapes, plus a blank.
@@ -731,4 +869,250 @@ fn empty_state(vm: &TagsViewModel) -> impl Widget {
                 .content(menu),
             ),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    use crate::app_ids::AppIds;
+    use crate::models::WorkNoteTemplatesListModel;
+
+    fn view_models() -> (
+        Rc<frontend::AppContext>,
+        TagsViewModel,
+        NoteTemplatesViewModel,
+    ) {
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let ids = AppIds::new();
+        let tags = TagsViewModel::detached(app_ctx.clone(), ids.clone());
+        let templates = NoteTemplatesViewModel::new(
+            WorkNoteTemplatesListModel::new(app_ctx.clone(), ids.clone()),
+            ids,
+        );
+        (app_ctx, tags, templates)
+    }
+
+    fn option(id: Option<u64>, label: &str) -> PickOption {
+        PickOption {
+            id,
+            label: label.to_string(),
+        }
+    }
+
+    /// Stands in for the Settings panel: it hosts the pane exactly as
+    /// `settings::content::build` does, by calling it with its own `BuildContext`, and
+    /// counts how many times it is itself built.
+    struct Host {
+        vm: TagsViewModel,
+        templates: NoteTemplatesViewModel,
+        builds: Rc<Cell<u32>>,
+        child: Option<WidgetId>,
+    }
+
+    impl std::fmt::Debug for Host {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("Host").finish()
+        }
+    }
+
+    impl Widget for Host {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            self.builds.set(self.builds.get() + 1);
+            let pane = work_tags_pane(ctx, &self.vm, &self.templates);
+            let id = ctx.add(pane);
+            self.child = Some(id);
+            vec![id]
+        }
+
+        fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+            self.child
+                .and_then(|id| ctx.child_size(id, proposal))
+                .map(LayoutResponse::from)
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        }
+
+        fn children(&self) -> Vec<WidgetId> {
+            self.child.into_iter().collect()
+        }
+    }
+
+    /// The template refresh must rebuild the list and nothing above it.
+    ///
+    /// The pane is a plain function handed its caller's `BuildContext`, so a
+    /// `BindingLevel::Rebuild` on `ctx.self_id()` names the **caller**, the Settings
+    /// panel itself. Firing it tore down the whole window: the pane's filter query signal and its
+    /// `SortFilterListModel` were rebuilt from scratch, so the writer's filter text
+    /// vanished and every filtered-out tag came back. The templates model bumps its
+    /// version on any `Work` update, which is what adding or deleting a tag pushes, so
+    /// this happened on ordinary palette edits and not only on a template edit.
+    #[test]
+    fn a_template_refresh_does_not_rebuild_the_settings_window() {
+        let (app_ctx, vm, templates) = view_models();
+        let builds = Rc::new(Cell::new(0));
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        tree.add_boxed(Box::new(Host {
+            vm,
+            templates: templates.clone(),
+            builds: builds.clone(),
+            child: None,
+        }));
+        tree.layout(SizeProposal::exact(560.0, 480.0));
+        assert_eq!(builds.get(), 1, "the host builds once to begin with");
+
+        // Bumped the way `WorkNoteTemplatesListModel::refresh_for` bumps it, rather than
+        // through `refresh()`: the mock model's `refresh` is a no-op, so driving it that
+        // way would leave this test unable to fail under `--features mocks`. A tag added,
+        // a tag deleted, a preset applied and a CSV imported all reach this signal, since
+        // each pushes a `Work` update and the model bumps its version on every one.
+        let version = templates.changed_signal();
+        version.set(version.get().wrapping_add(1));
+        tree.layout(SizeProposal::exact(560.0, 480.0));
+        assert_eq!(
+            builds.get(),
+            1,
+            "the Settings panel itself was rebuilt: the pane's filter query and its \
+             filtered model went with it"
+        );
+    }
+
+    /// The pane must say what the tag is actually set to.
+    ///
+    /// Trashing removes nothing: the folder keeps its uid, its title and its place in the
+    /// binder, and the tag still names it. But it drops out of `folder_options`, because
+    /// nobody may newly pick a destination inside the trash, so the row's lookup missed
+    /// and fell through to the first entry, "Ask me the first time" — a pane telling the
+    /// writer their tag was unset while the store said otherwise, and one that would flip
+    /// back on its own the moment the folder was restored.
+    #[test]
+    fn a_tag_filed_into_a_trashed_folder_is_not_reported_as_unset() {
+        use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+        use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+        use frontend::trash_management::TrashSelectionDto;
+
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let work = work_commands::create_orphan_work(&app_ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let binder = binder_commands::create_binder(
+            &app_ctx,
+            None,
+            &CreateBinderDto {
+                name: "Research".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            -1,
+        )
+        .expect("create binder");
+        let folder = binder_item_commands::create_binder_item(
+            &app_ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "People".into(),
+                role: BinderItemRole::Folder,
+                activated: true,
+                ..Default::default()
+            },
+            binder.id,
+            -1,
+        )
+        .expect("create folder");
+
+        frontend::commands::trash_management_commands::trash_selection(
+            &app_ctx,
+            None,
+            &TrashSelectionDto {
+                work_id: work.id,
+                binder_ids: Vec::new(),
+                binder_item_ids: vec![folder.id],
+            },
+        )
+        .expect("trash the folder");
+
+        // The premise, asserted rather than assumed: the row is still there and only
+        // `activated` changed, which is why the tag still points at it.
+        let stored = binder_item_commands::get_binder_item(&app_ctx, &folder.id)
+            .expect("read the folder")
+            .expect("trashing does not remove the row");
+        assert!(
+            !stored.activated,
+            "the folder must actually be in the trash"
+        );
+
+        // What `folder_options` would hand this row: live folders only, so not this one.
+        let offered = vec![option(None, "Ask me the first time")];
+        let (folders, shown) = row_destinations(&app_ctx, &offered, Some(folder.id));
+
+        let shown = shown.expect("the dropdown must start on something");
+        assert_eq!(
+            shown.id,
+            Some(folder.id),
+            "the row must start on the folder the tag is really set to, not on the unset entry"
+        );
+        assert!(
+            shown.label.contains("People"),
+            "the trashed destination must be named, so the writer can see what it is: {:?}",
+            shown.label
+        );
+        assert_ne!(
+            shown.label, offered[0].label,
+            "and it must not read as the unset entry"
+        );
+        assert_eq!(
+            folders.len(),
+            2,
+            "exactly one extra entry is added, and only for a row that needs it"
+        );
+
+        // A tag that files nowhere, and a tag pointing at a live folder, are untouched.
+        let (live_only, unset) = row_destinations(&app_ctx, &offered, None);
+        assert_eq!(live_only.len(), 1, "an unset tag adds no entry");
+        assert_eq!(unset.map(|o| o.id), Some(None), "and still reads as unset");
+    }
+
+    /// A folder title is whatever the writer typed, and the combo showing it is rigid by
+    /// default, so the row's natural width follows that title without limit. Rigid, the
+    /// row overflows and the trailing "Starting template" control is pushed out of reach;
+    /// the writer cannot get at the control that chooses the tag's note template at all.
+    ///
+    /// The width offered here is comfortably above the two labels plus two floors, so what
+    /// the assertion measures is the dropdowns' compressibility and not the labels'.
+    #[test]
+    fn a_long_folder_title_does_not_push_the_template_picker_out_of_the_row() {
+        let (app_ctx, vm, _templates) = view_models();
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        tree.add_boxed(Box::new(TagRowView {
+            vm,
+            row: TagRow {
+                id: 1,
+                name: "personnage".to_string(),
+                color: DEFAULT_NEW_COLOR.to_string(),
+                creates_in: Some(2),
+                note_template: Some(3),
+                ..TagRow::default()
+            },
+            folders: vec![
+                option(None, "Not set"),
+                option(
+                    Some(2),
+                    "Personnages secondaires, lieux et themes recurrents du deuxieme cycle",
+                ),
+            ],
+            templates: vec![option(None, "None"), option(Some(3), "Fiche personnage")],
+            root_child: None,
+        }));
+        const ROW_W: f32 = 760.0;
+        tree.layout(SizeProposal::with_width(ROW_W));
+        let wanted = tree
+            .measure_root_intrinsic(SizeProposal::with_width(ROW_W))
+            .expect("the row is the tree's only root");
+        assert!(
+            wanted.width <= ROW_W + 0.5,
+            "the row wants {} px inside {ROW_W}: the trailing picker is pushed out of it",
+            wanted.width
+        );
+    }
 }

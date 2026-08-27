@@ -510,16 +510,21 @@ pub fn promote_with_guard(
 /// recommended order, each with a rich tooltip. Fires `add_recommended` on the
 /// outline directly (row-anchored, mirrors `new_item_at`, not via an intent),
 /// **except** `StoryBibleEntry`, which needs to open a modal afterward and so
-/// has to reach the one place that can (the global `binder.new_item` action,
+/// has to reach the one place that can (the global `binder.new_item_here` action,
 /// which owns the deps a modal needs); every other row still bypasses the
 /// intent bus exactly as before.
+///
+/// It is `binder.new_item_here` and not `binder.new_item` because the anchor is
+/// **this row**, and `AppIntent::NewItem` can only name an *item*: a binder row has
+/// no `BinderItem` id, so sending `anchor_item_id: None` for one told the handler
+/// "use the Outline selection" and created the entry in whatever binder the
+/// selection was in rather than the one that was right-clicked.
 fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
     let recs = outline.recommendations_for_key(Some(key));
     // Anchor title for the tooltips — `Some` only for a real item row.
     let anchor_title = outline
         .node_item(key)
         .and_then(|(item_id, title)| item_id.map(|_| title));
-    let anchor_item_id = outline.node_item(key).and_then(|(item_id, _)| item_id);
     let mut menu = MenuList::new();
     for rec in &recs {
         let vm = outline.clone();
@@ -534,10 +539,10 @@ fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> Me
                 .rich_tooltip(recommendation_tooltip_key(rec.create_type))
                 .on_activate_fn(move |c| {
                     if rec_owned.create_type == skribisto_model::CreateType::StoryBibleEntry {
-                        c.send_intent(crate::intents::AppIntent::NewItem {
+                        c.send_intent(crate::intents::AppIntent::NewItemHere {
                             create_type: rec_owned.create_type,
                             relation: rec_owned.relation,
-                            anchor_item_id,
+                            anchor: key,
                         });
                     } else {
                         vm.add_recommended(Some(key), &rec_owned);
@@ -744,6 +749,114 @@ mod tests {
     // so one configuration sees it as unused and the other cannot compile without it.
     #[allow(unused_imports)]
     use super::*;
+
+    /// A single-child host that owns global [`Action`]s the way `App::build`'s own
+    /// command modules do (`ctx.register_action_global`, which is only reachable from
+    /// inside a `build()`), so a mounted menu's `ctx.send_intent` has something real to
+    /// reach: `WidgetTree::push_action` is crate-private to teksilo-core. The same
+    /// stand-in `tabs::shared::editor::tests` uses, and for the same reason.
+    #[derive(Debug)]
+    struct MenuActionHost {
+        menu: Option<MenuList>,
+        actions: Vec<Action>,
+    }
+
+    impl Widget for MenuActionHost {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            for action in self.actions.drain(..) {
+                ctx.register_action_global(action);
+            }
+            let menu = self
+                .menu
+                .take()
+                .expect("MenuActionHost built more than once");
+            vec![ctx.add(menu)]
+        }
+
+        fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            proposal.resolve(320.0, 600.0).into()
+        }
+
+        fn place_children(
+            &self,
+            bounds: Rect,
+            _proposal: SizeProposal,
+            children: &mut [WidgetPlacement],
+            _ctx: &LayoutContext,
+        ) {
+            for child in children.iter_mut() {
+                child.origin = bounds.origin();
+                child.size = bounds.size();
+            }
+        }
+    }
+
+    /// **The binder the writer right-clicked is the binder the entry lands in.**
+    ///
+    /// A binder row has no `BinderItem` id, so the story-bible arm of the "Add ▸"
+    /// menu had nothing to put in `AppIntent::NewItem::anchor_item_id` and sent `None`,
+    /// which the global action reads as "wherever the Outline selection is". With the
+    /// selection in another binder, right-clicking *this* one filed the entry in *that*
+    /// one, with nothing on screen to say so. `NewItemHere` carries the row instead.
+    ///
+    /// Driven through a really mounted menu and a really registered global action,
+    /// because the defect was in the wiring: every value a direct call would have
+    /// returned was correct.
+    #[test]
+    fn the_add_menu_on_a_binder_row_anchors_the_entry_on_that_binder() {
+        use std::cell::{Cell, RefCell};
+        use std::rc::Rc;
+
+        let app_ctx = Rc::new(AppContext::new());
+        let outline = OutlineViewModel::new_default(app_ctx, crate::app_ids::AppIds::new());
+        // A binder row, named the way the tree names one. Nothing this menu builds reads
+        // the store for a binder key (`recommendations_for_key` answers with the root set,
+        // `node_item` with `None`), so the anchor under test needs no fixture, and a
+        // synthetic uid keeps the assertion about the key that was carried.
+        let key = BinderTreeKey::Binder(uuid::Uuid::from_u128(4242));
+        let entry_label =
+            recommendation_label(skribisto_model::CreateType::StoryBibleEntry).resolve_now();
+
+        /// What the row-anchored action saw.
+        type Captured = Rc<RefCell<Option<BinderTreeKey>>>;
+        let captured: Captured = Rc::new(RefCell::new(None));
+        let for_here = captured.clone();
+        let here = Action::new("binder.new_item_here").on_invoke(move |i, _c| {
+            if let Some(AppIntent::NewItemHere { anchor, .. }) = AppIntent::from_intent(i) {
+                *for_here.borrow_mut() = Some(*anchor);
+            }
+        });
+        // The selection-anchored action too, so a regression reports the actual failure
+        // ("it went to the selection") rather than merely "nothing arrived".
+        let strayed = Rc::new(Cell::new(false));
+        let for_stray = strayed.clone();
+        let selection_anchored =
+            Action::new("binder.new_item").on_invoke(move |_i, _c| for_stray.set(true));
+
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        tree.add(MenuActionHost {
+            menu: Some(add_recommendations_menu(outline, key)),
+            actions: vec![here, selection_anchored],
+        });
+        tree.layout(SizeProposal::exact(320.0, 600.0));
+
+        // `MenuLabel` is accessibility-hidden (the enclosing `MenuItem` owns the name),
+        // so this resolves to the row itself, and `Action::Click` is its activation path.
+        let row = tree
+            .find_by_label(&entry_label)
+            .unwrap_or_else(|| panic!("the Add menu on a binder row must offer {entry_label:?}"));
+        crate::test_support::click(&mut tree, row);
+
+        assert!(
+            !strayed.get(),
+            "the entry was created against the Outline selection, not the right-clicked binder"
+        );
+        assert_eq!(
+            *captured.borrow(),
+            Some(key),
+            "the right-clicked binder must be the anchor the intent carries"
+        );
+    }
 
     /// The row card actually opens when the pointer rests on an outline row.
     ///

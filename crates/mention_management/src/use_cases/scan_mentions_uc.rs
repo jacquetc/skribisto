@@ -327,14 +327,21 @@ fn run_scan(
 
     let mut hits: Vec<MentionHit> = rows
         .into_iter()
-        .map(|((owner_id, target_id), r)| MentionHit::Found {
-            owner_id,
-            target_id,
-            title: titles.get(&target_id).cloned().unwrap_or_default(),
+        .map(|((owner_id, target_id), r)| {
             // A row with no textual hit at all is a pure declaration: a pin, or a point
             // of view on a scene that never writes the name. It is named by the entry's
             // own title, because that is the only name in play.
-            matched_names: if r.matched_names.is_empty() {
+            //
+            // And that name is the *title*, so `is_title_match` has to say so. The
+            // backlink surfaces render a name beside the document only when it is not the
+            // title (`matched_names.len() == 1 && !is_title_match`), and that parenthetical
+            // reads as "this is the name that was found in that document's prose". On a
+            // declaration-only row nothing was found in any prose, so leaving the flag
+            // false makes the entry's own list claim a textual hit the scene's Inspector
+            // correctly denies. `mentions::mention_index`'s own injected declaration rows
+            // set it for exactly this reason; this is the same row, from the scan side.
+            let declared_only = r.matched_names.is_empty();
+            let matched_names = if declared_only {
                 titles
                     .get(&target_id)
                     .cloned()
@@ -343,12 +350,19 @@ fn run_scan(
                     .collect()
             } else {
                 r.matched_names
-            },
-            is_title_match: r.is_title_match,
-            hit_count: r.hit_count,
-            is_confirmed: r.is_confirmed,
-            is_point_of_view: r.is_point_of_view,
-            evidence: r.evidence,
+            };
+            let is_title_match = r.is_title_match || (declared_only && !matched_names.is_empty());
+            MentionHit::Found {
+                owner_id,
+                target_id,
+                title: titles.get(&target_id).cloned().unwrap_or_default(),
+                matched_names,
+                is_title_match,
+                hit_count: r.hit_count,
+                is_confirmed: r.is_confirmed,
+                is_point_of_view: r.is_point_of_view,
+                evidence: r.evidence,
+            }
         })
         .collect();
     // Deterministic order so the UI does not reshuffle between identical scans.

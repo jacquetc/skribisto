@@ -105,7 +105,7 @@ impl HashMapStore {
     /// Clone the entire store for savepoint support. O(1) thanks to im::HashMap.
     /// (Poison-tolerant, but NOT atomic across tables — used for savepoints, which
     /// are taken on the single writer thread with no concurrent writer; use
-    /// [`freeze`] when an atomic cross-table snapshot is required.)
+    /// [`Self::freeze`] when an atomic cross-table snapshot is required.)
     pub fn snapshot(&self) -> HashMapStoreSnapshot {
         HashMapStoreSnapshot {
             roots: read_or_recover(&self.roots).clone(),
@@ -252,7 +252,7 @@ impl HashMapStore {
 
     /// Atomically snapshot the whole store into a fresh, isolated `HashMapStore`.
     ///
-    /// Unlike [`snapshot`], this holds a read guard on **every** table, junction,
+    /// Unlike [`Self::snapshot`], this holds a read guard on **every** table, junction,
     /// and the counters *simultaneously* while cloning, so the result is a single
     /// consistent point-in-time view of the store *at the instant freeze runs*.
     /// O(1) clones (im::HashMap structural sharing); the lock hold is just the

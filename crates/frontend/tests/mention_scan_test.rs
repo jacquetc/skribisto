@@ -525,6 +525,46 @@ fn a_deep_pov_scene_appears_even_though_it_never_names_its_viewpoint_character()
     }
 }
 
+/// **A declaration is named by the entry's title, and says so.**
+///
+/// A row with no textual hit is named by the entry's own title, because that is the only
+/// name in play. The backlink surfaces print a name beside the document only when it is
+/// *not* the title, and that parenthetical means "this is the name that matched in that
+/// document's prose". A declaration-only row matched no prose at all, so `is_title_match`
+/// has to be true or the entry's "Appears in" list claims a hit the scene's own Inspector,
+/// built from the same relationship, correctly denies.
+#[test]
+fn a_declaration_only_row_is_named_by_the_title_and_flagged_as_the_title() {
+    let fx = fixture();
+    let pov_scene = add_pov_scene(&fx);
+
+    let hits = scan(&fx);
+    let pov_hit = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == pov_scene))
+        .expect("the point-of-view scene produces a row");
+    match pov_hit {
+        MentionHit::Found {
+            matched_names,
+            is_title_match,
+            hit_count,
+            ..
+        } => {
+            assert_eq!(*hit_count, 0, "nothing was found in the prose");
+            assert_eq!(
+                matched_names.as_slice(),
+                &[format!("{CHARACTER} Sarraute")],
+                "the entry's own title is the only name in play"
+            );
+            assert!(
+                *is_title_match,
+                "and it is the title, so no surface may render it as a name found in the prose"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+}
+
 /// A cast pin and a declared point of view are two independent relationships, and the scan
 /// must keep them on two independent flags: pinning one scene into `references` must not
 /// mark a *different* scene's `point_of_view` row as confirmed, and a point-of-view row
@@ -747,9 +787,9 @@ fn a_document_naming_the_character_two_ways_keeps_both_names() {
 /// about two different roles a row plays, and the scan is the place they would be confused.
 ///
 /// If someone gates the alias table on `is_exportable`, every story-bible entry in every
-/// project disappears from the roster, from "Appears in the manuscript", and from the
-/// Atelier story bible, silently and with nothing on screen to say why. This test is what
-/// turns that from a quiet catastrophe into a red build.
+/// project disappears from the roster, from "Appears in the manuscript", and from every
+/// downstream edition's own reading of the same table, silently and with nothing on screen
+/// to say why. This test is what turns that from a quiet catastrophe into a red build.
 #[test]
 fn a_note_excluded_from_the_export_is_still_a_mention_target() {
     let fx = fixture();

@@ -163,6 +163,11 @@ impl DuplicateUseCase {
                     activated: src.activated,
                     is_favorite: src.is_favorite,
                     is_exportable: src.is_exportable,
+                    // Copied for the same reason as `aliases` below: `..Default::default()`
+                    // blanks it, and the default is "numbered". A duplicated prologue that
+                    // quietly rejoined the numbering would become "Chapter 1" and shift
+                    // every real chapter after it, in the binder badges and in the export.
+                    exclude_from_numbering: src.exclude_from_numbering,
                     indent: src.indent,
                     word_count_goal: src.word_count_goal,
                     char_count_goal: src.char_count_goal,

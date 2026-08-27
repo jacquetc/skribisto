@@ -865,12 +865,35 @@ impl ContentTab {
                             }
                             _ => crate::format::EditorKind::Prose,
                         };
-                        format
+                        let mut handles: Vec<_> = format
                             .handles_by_item(kind)
                             .into_iter()
                             .filter(|(shown, _)| *shown == item)
                             .map(|(_, handle)| handle)
-                            .collect()
+                            .collect();
+                        // **Laid out first**, and that is the whole of what this order
+                        // guarantees. The registry answers in the order the writer opened
+                        // their tabs in and has no notion of which pane the banner is
+                        // over: the same scene can be a row on this page, a tab of its
+                        // own and the other half of a split, and all three register. So
+                        // this closure cannot name "the right one" — which is why the
+                        // caller reveals the match in every one of them rather than
+                        // stopping at the first that answers.
+                        //
+                        // What it can be asked is whether an editor has any geometry at
+                        // all, and an editor that has laid out is one the writer may be
+                        // looking at. Putting those in front decides the places where the
+                        // caller does have to pick exactly one: the editor Escape hands
+                        // the caret back to, and the row a stream is scrolled to when no
+                        // editor could scroll to the match itself. Same rule as
+                        // `FormatViewModel::handle_for_item` and `FindViewModel`'s own
+                        // `laid_out_first`, restated rather than shared only because
+                        // neither is reachable from here.
+                        //
+                        // `sort_by_key` is stable, so registration order survives inside
+                        // each group.
+                        handles.sort_by_key(|h| u8::from(h.content_height().is_none()));
+                        handles
                     })
                 };
                 crate::search::FindViewModel::over_page(documents, resolve)

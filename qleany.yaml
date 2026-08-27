@@ -1453,7 +1453,7 @@ features:
         enum_name: MentionHit
         enum_values:
         - Empty
-        - "Found { owner_id: EntityId, target_id: EntityId, title: String, matched_name: String, is_title_match: bool, hit_count: i64, is_confirmed: bool, is_point_of_view: bool, evidence: String }"
+        - "Found { owner_id: EntityId, target_id: EntityId, title: String, matched_names: Vec<String>, is_title_match: bool, hit_count: i64, is_confirmed: bool, is_point_of_view: bool, evidence: String }"
       - name: hits
         type: enum
         enum_name: MentionHits

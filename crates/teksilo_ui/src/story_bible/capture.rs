@@ -89,7 +89,17 @@ impl CaptureMenu {
 ///
 /// Pure: no store, no widgets, so every rule above is testable without a project.
 pub fn build_menu(rows: &[TagRow], recents: &[Uuid], cap: usize) -> CaptureMenu {
-    let rank = |uid: &Uuid| recents.iter().position(|r| r == uid);
+    // A nil uid is not an identity, so it ranks as nothing. A tag created before the
+    // creation boundary minted one carries `Uuid::nil()`, and so does anything a build
+    // like that wrote into the recents file; matching them would rank *every* such tag
+    // as the one just used, filling the second tier with tags the writer has never
+    // captured under and flattening the ordering of both tiers to a constant.
+    let rank = |uid: &Uuid| {
+        if uid.is_nil() {
+            return None;
+        }
+        recents.iter().position(|r| r == uid)
+    };
 
     // Palette order is already alphabetical and deterministic (`sort_rows`), so a tag
     // nobody has used yet keeps a stable place rather than moving between builds.
@@ -359,6 +369,39 @@ mod tests {
         let m = build_menu(&rows, &[uid(99), uid(2)], 5);
         assert_eq!(m.primary.len(), 2);
         assert_eq!(m.primary[0].name, "place", "the live recent still floats");
+    }
+
+    /// A nil uid names no tag. Rows carrying one (created before the creation boundary
+    /// minted identities, and still on disk in projects saved by such a build) must not
+    /// all match each other: without the guard every one of them ranks first, so the
+    /// second tier fills with tags the writer never captured under and the "most
+    /// recently used floats" ordering becomes a constant.
+    #[test]
+    fn a_nil_uid_ranks_as_nothing_rather_than_matching_every_tag() {
+        let nil = |id: u64, name: &str, discoverable: bool| TagRow {
+            uid: Uuid::nil(),
+            ..tag(id, name, discoverable)
+        };
+        let rows = vec![
+            nil(1, "character", true),
+            nil(2, "item", true),
+            nil(3, "draft", false),
+            nil(4, "todo", false),
+        ];
+        let m = build_menu(&rows, &[Uuid::nil()], 5);
+        assert!(
+            m.recent.is_empty(),
+            "no tag was captured under, so nothing is recent: {:?}",
+            m.recent
+        );
+        assert_eq!(
+            m.primary
+                .iter()
+                .map(|t| t.name.as_str())
+                .collect::<Vec<_>>(),
+            vec!["character", "item"],
+            "palette order survives, rather than every row claiming rank 0"
+        );
     }
 
     /// Discoverable first in the overflow too, so one list reads in the same order the

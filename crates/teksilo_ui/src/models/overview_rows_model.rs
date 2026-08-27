@@ -25,7 +25,7 @@
 //! model would duplicate the fold and the slice, which is exactly the code most worth
 //! having one copy of.
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
@@ -214,8 +214,6 @@ pub struct OverviewRowsModel {
     remembered: Rc<RefCell<HashSet<Uuid>>>,
     /// Keeps the filter-signal observers alive for the model's lifetime.
     _filters: Rc<Vec<ObserverHandle>>,
-    /// One-shot guard so `wire` subscribes to backend events only once.
-    subscribed: Rc<Cell<bool>>,
     /// The open Work's own id — guards the `LoadWork`/`NewWork` re-source
     /// subscription in [`Self::wire`] against a sibling Work's project boundary
     /// (see that method's docs). Not otherwise read: `reload`/the slice's own
@@ -346,21 +344,37 @@ impl OverviewRowsModel {
             ids_by_uid,
             remembered,
             _filters: Rc::new(observers),
-            subscribed: Rc::new(Cell::new(false)),
             work_id,
         }
     }
 
-    /// Subscribe once so the table re-sources on any backend change that can alter it —
+    /// Subscribe so the table re-sources on any backend change that can alter it —
     /// whoever caused it (this table, the outline, the corkboard, a stream row, an
     /// import, an undo).
+    ///
+    /// **Re-subscribes on every call, deliberately.** Everything below hangs off
+    /// `BuildContext`, and a rebuild drops all of it: `rebuild_single_widget` clears the
+    /// node's `effect_handles` and drains its `subscription_handles` before `build` runs
+    /// again. The only caller is `WireOverview::build`, by way of
+    /// `OverviewViewModel::wire`, and that widget *does* rebuild. A one-shot guard
+    /// therefore left the table permanently deaf after the first rebuild while still
+    /// reporting itself wired: rows renamed, moved, trashed or restored from anywhere
+    /// else never reached it, and the numbers went stale with nothing on screen to say
+    /// so. `WorkTagsListModel::wire` carries the same note for the same reason.
+    ///
+    /// Re-registering is safe because the handles the previous build owned are already
+    /// gone by the time this runs, so nothing accumulates.
     pub fn wire(&self, ctx: &mut BuildContext) {
-        if self.subscribed.replace(true) {
-            return;
-        }
-        // The first load: this is the moment the pane exists, and it is why the
-        // constructor deliberately does not load (see `new`).
-        self.slice.reload();
+        // Always, not only the first time. On the first call this is the load the
+        // constructor deliberately does not do (see `new`); on a later one it is the
+        // catch-up for whatever the store did while this model had no subscriptions at
+        // all, which no event will now arrive to tell it about.
+        //
+        // Through `reload`, not the bare `slice.reload()` this used when it ran once:
+        // now that it runs again on every rebuild, a rebuild while a search is open
+        // would otherwise let the slice prune every expanded row the filter had hidden
+        // (see [`Self::remembered`]) and the writer's tree would come back collapsed.
+        self.reload();
         use DirectAccessEntity::BinderItem;
         use EntityEvent::{Created, Removed, Updated};
         // Structural + metadata changes: any of these can add, drop, move or rename a row.
@@ -1279,6 +1293,102 @@ mod rows {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::Cell;
+
+    use teksilo::core::BindingLevel;
+    use teksilo::prelude::{LayoutContext, LayoutResponse, SizeProposal, Widget, WidgetId};
+
+    /// Stands in for `WireOverview`: it wires the model on every build, exactly as that
+    /// widget does through `OverviewViewModel::wire`, and can be made to rebuild on
+    /// demand.
+    struct WireProbe {
+        model: OverviewRowsModel,
+        rebuild: Signal<u64>,
+        builds: Rc<Cell<u32>>,
+    }
+
+    impl std::fmt::Debug for WireProbe {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("WireProbe").finish()
+        }
+    }
+
+    impl Widget for WireProbe {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            self.rebuild
+                .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+            self.builds.set(self.builds.get() + 1);
+            self.model.wire(ctx);
+            Vec::new()
+        }
+
+        fn layout_response(&self, p: SizeProposal, _c: &LayoutContext) -> LayoutResponse {
+            p.resolve(0.0, 0.0).into()
+        }
+    }
+
+    fn wired_model(app_ctx: &Rc<AppContext>) -> OverviewRowsModel {
+        OverviewRowsModel::new(
+            app_ctx.clone(),
+            Signal::new(Some(1)),
+            101,
+            Signal::new(CountingMethodSetting::default()),
+            OverviewFilters::new(),
+            Signal::new(GoalUnit::default()),
+        )
+    }
+
+    /// **`wire` has to run again after a rebuild.**
+    ///
+    /// Everything it registers lives on the `BuildContext`: `rebuild_single_widget`
+    /// clears the node's `effect_handles` and drains its `subscription_handles` before
+    /// `build` runs again, so a rebuilt `WireOverview` starts from nothing. Behind the
+    /// one-shot `subscribed` cell this method used to carry, the second call returned
+    /// immediately and the table was left subscribed to nothing while the cell still
+    /// said it was wired: every later rename, move, trash and restore from any other
+    /// surface went unnoticed, silently.
+    ///
+    /// A headless tree never *fires* backend events (`test_support`'s `NullPoster`
+    /// drops them), so what is asserted here is that the body runs at all — the
+    /// re-source it performs is the observable half, and it is the same early return
+    /// that skipped the re-subscription. Reverting to the guard fails this.
+    #[test]
+    fn wiring_runs_again_after_the_wiring_widget_rebuilds() {
+        let app_ctx = Rc::new(AppContext::new());
+        let model = wired_model(&app_ctx);
+        let rebuild = Signal::new(0u64);
+        let builds = Rc::new(Cell::new(0));
+
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        tree.add_boxed(Box::new(WireProbe {
+            model: model.clone(),
+            rebuild: rebuild.clone(),
+            builds: builds.clone(),
+        }));
+        tree.layout(SizeProposal::exact(200.0, 200.0));
+
+        assert_eq!(builds.get(), 1, "the probe builds once to begin with");
+        let after_first = model.version_signal().get();
+        assert!(
+            after_first > 0,
+            "the first wire performs the load the constructor deliberately skips"
+        );
+
+        rebuild.set(1);
+        tree.layout(SizeProposal::exact(200.0, 200.0));
+
+        // The premise. Without a real rebuild the assertion below proves nothing.
+        assert_eq!(
+            builds.get(),
+            2,
+            "the wiring widget must actually have rebuilt, or this test is vacuous"
+        );
+        assert!(
+            model.version_signal().get() > after_first,
+            "wire returned early on the rebuild: the model is now subscribed to nothing \
+             and will never hear another backend change"
+        );
+    }
 
     /// An exportable fixture row: its own words are also what it contributes to a total.
     fn r(uid: u64, own: Option<usize>, depth: usize) -> TreeRow<Uuid, OverviewRow> {

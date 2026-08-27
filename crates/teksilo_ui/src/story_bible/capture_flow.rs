@@ -151,9 +151,26 @@ fn remembered_folder(deps: &CaptureDeps, tag_id: Option<u64>) -> Option<u64> {
 ///
 /// Goes through [`BinderDestination`] rather than computing a place directly, so a
 /// capture lands exactly where the picker would have put it had the writer chosen the
-/// same row by hand. `None` when the folder has been deleted since it was remembered,
-/// which the caller reads as "ask again" rather than guessing at another folder.
+/// same row by hand. `None` when the folder is gone since it was remembered, which the
+/// caller reads as "ask again" rather than guessing at another folder.
+///
+/// **Trashed counts as gone.** Trashing does not remove the row: `trash_binder_items_uc`
+/// leaves it in the binder's order and only flips `activated` to false over the subtree,
+/// and nothing sweeps the tag's `creates_in` because no relationship was removed. So
+/// membership in the binder order is not the test it looks like: without the
+/// `activated` check below, a capture lands inside the trash, reports success, is
+/// invisible in the outline, and is destroyed by the next Empty trash. It is also what
+/// the Settings pane already believes, since its own folder list is built from
+/// `binder_stream::ordered_flat_items`, which drops trashed rows: with the tag's folder
+/// trashed that pane shows the tag as unset, and this must agree with it.
 fn place_inside(ctx: &AppContext, work_id: u64, folder: u64) -> Option<(u64, usize, i64)> {
+    if !binder_item_commands::get_binder_item(ctx, &folder)
+        .ok()
+        .flatten()
+        .is_some_and(|it| it.activated)
+    {
+        return None;
+    }
     let binder = binder_of_item(ctx, work_id, folder)?;
     BinderDestination {
         binder_id: binder,
@@ -188,6 +205,10 @@ fn binder_of_item(ctx: &AppContext, work_id: u64, item_id: u64) -> Option<u64> {
 }
 
 /// The live id for a durable uid, across every binder of the Work.
+///
+/// **Live**, in the same sense [`place_inside`] means it: a trashed row keeps its uid
+/// and its place in the binder order, so matching on the uid alone would hand the
+/// untagged path a destination inside the trash instead of asking the writer again.
 fn item_id_of_uid(ctx: &AppContext, work_id: u64, uid: uuid::Uuid) -> Option<u64> {
     for binder in
         work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
@@ -203,7 +224,7 @@ fn item_id_of_uid(ctx: &AppContext, work_id: u64, uid: uuid::Uuid) -> Option<u64
             .unwrap_or_default()
             .into_iter()
             .flatten()
-            .find(|it| it.uid == uid)
+            .find(|it| it.uid == uid && it.activated)
         {
             return Some(found.id);
         }
@@ -287,7 +308,19 @@ fn draft_for(prefill: &modal::Prefill, tag_id: Option<u64>, body: String) -> Ent
         // destination and the template, and two would settle them twice.
         tags: tag_id.into_iter().collect(),
         aliases: prefill.aliases.clone(),
-        books: prefill.books.clone(),
+        // **Not the Book the selection sat in**, however confidently that can be
+        // worked out. `BinderItem.books` is the writer's declaration of what they have
+        // filed, never an observation of where a row physically sits (the field's own
+        // doc in `qleany.yaml` says so, and `tags::books` repeats it); the positional
+        // answer already exists as `infer_book::book_containing` and is nobody's
+        // filing. The modal door may pre-set it because it *shows* the chip row and
+        // the writer presses Create with it on screen. This door shows nothing at all,
+        // by design, so a guess written here is a filing the writer never made, never
+        // saw, and would only discover by wondering why their entry vanished from a
+        // Book's own grid. Empty is the honest state: "not yet filed", which the
+        // Inspector's Books section and the entry's own Details page are both there to
+        // change.
+        books: Vec::new(),
         body,
     }
 }
@@ -608,6 +641,17 @@ mod tests {
         .id
     }
 
+    /// Trash `item` the way the binder does: the row keeps its uid and its place in
+    /// the binder's order, and only `activated` flips. That is exactly what makes
+    /// "is it still in the order" the wrong question to ask about a destination.
+    fn trash(ctx: &Rc<AppContext>, item: u64) {
+        let mut it = binder_item_commands::get_binder_item(ctx, &item)
+            .expect("read")
+            .expect("exists");
+        it.activated = false;
+        binder_item_commands::update_binder_item(ctx, None, &it.into()).expect("trash the row");
+    }
+
     #[test]
     fn the_owning_binder_is_found_whichever_one_it_is() {
         let (ctx, work, manuscript, research) = seed();
@@ -657,6 +701,77 @@ mod tests {
     fn a_folder_that_has_been_deleted_since_refuses_rather_than_guessing() {
         let (ctx, work, _manuscript, _research) = seed();
         assert_eq!(place_inside(&ctx, work, 999_999), None);
+    }
+
+    /// **A trashed folder is not a destination either.**
+    ///
+    /// Trashing is not deletion: the row stays in the binder's order and nothing
+    /// sweeps the tag's `creates_in`, so the only thing that tells a live folder from a
+    /// trashed one is `activated`. Without that check the capture reports success and
+    /// puts the note inside the trash, where the outline does not show it and the next
+    /// Empty trash destroys it. The Settings pane already reads this folder as gone,
+    /// because its list drops trashed rows, and the two must not disagree.
+    #[test]
+    fn a_trashed_folder_refuses_rather_than_filing_into_the_trash() {
+        let (ctx, work, _manuscript, research) = seed();
+        let people = add(&ctx, research, "People", BinderItemRole::Folder, 0);
+        assert!(
+            place_inside(&ctx, work, people).is_some(),
+            "live to begin with, or the assertion below proves nothing"
+        );
+
+        trash(&ctx, people);
+
+        let order = binder_commands::get_binder_relationship(
+            &ctx,
+            &research,
+            &BinderRelationshipField::BinderItems,
+        )
+        .unwrap_or_default();
+        assert!(
+            order.contains(&people),
+            "trashing keeps the row in the binder: that is the whole trap"
+        );
+        assert_eq!(
+            place_inside(&ctx, work, people),
+            None,
+            "a trashed folder must be refused, so the caller asks again"
+        );
+
+        let draft = draft_for(
+            &modal::Prefill {
+                name: "Elizabeth Bennet".into(),
+                ..modal::Prefill::default()
+            },
+            None,
+            String::new(),
+        );
+        assert!(
+            file_note(&ctx, None, work, &draft, people).is_none(),
+            "and nothing is filed inside the trash"
+        );
+    }
+
+    /// The untagged path resolves its remembered folder by uid, and a trashed row keeps
+    /// its uid: the same refusal has to happen there, or the answer kept in the
+    /// writer's settings outlives the folder it names.
+    #[test]
+    fn a_trashed_folder_does_not_resolve_from_its_remembered_uid() {
+        let (ctx, work, _manuscript, research) = seed();
+        let people = add(&ctx, research, "People", BinderItemRole::Folder, 0);
+        let uid = binder_item_commands::get_binder_item(&ctx, &people)
+            .expect("read")
+            .expect("exists")
+            .uid;
+        assert_eq!(item_id_of_uid(&ctx, work, uid), Some(people));
+
+        trash(&ctx, people);
+
+        assert_eq!(
+            item_id_of_uid(&ctx, work, uid),
+            None,
+            "the uid still matches a row; the row is simply no longer a place to file"
+        );
     }
 
     /// **Only a container is a filing answer.**
@@ -710,7 +825,11 @@ mod tests {
         assert_eq!(tagged.tags, vec![3]);
         assert_eq!(tagged.title, "Elizabeth Bennet");
         assert_eq!(tagged.aliases, vec!["Lizzy".to_string()]);
-        assert_eq!(tagged.books, vec![7], "the Book the selection was in");
+        assert!(
+            tagged.books.is_empty(),
+            "filing is a declaration: this door asks nothing and shows nothing, so it \
+             must not file the entry under the Book the selection happened to sit in"
+        );
         assert_eq!(tagged.body, "## Appearance\n", "the tag's template");
 
         // Untagged is a real capture, not a degraded one: the same row, no tags on it.

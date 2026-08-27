@@ -127,12 +127,15 @@ impl PromoteUseCase {
         updated.updated_at = now;
         // A note is not the book, and a scene is.
         //
-        // Converting between them has to carry the export flag with it, or the row is left
+        // Crossing that line has to carry the export flag with it, or the row is left
         // saying two different things about itself: a Note still marked exportable prints
         // the writer's own workings into their manuscript, and a Scene converted back from
-        // one stays silently absent from the book it is now part of. The flag is set from
-        // the *target* type rather than preserved, because the writer's answer to "is this
-        // in the book" is exactly what they just changed.
+        // one stays silently absent from the book it is now part of. Only across that line:
+        // for every other conversion (folder to folder, Scene to flat chapter, and back)
+        // `is_exportable` is the writer's own "leave this out of the exported book" answer,
+        // given in the Inspector, about a row that stays just as much part of the book as
+        // it was. Overwriting it there would discard that choice with no prompt and nothing
+        // visible changed but the type.
         //
         // Here, not at the three call sites: the Inspector's Promote button, the outline's
         // "Convert to" and the Overview's all funnel through this one use case, and
@@ -141,7 +144,11 @@ impl PromoteUseCase {
         //
         // The mirror of `remap_content` below, which moves the text itself between
         // `SceneText` and `NoteText` for the same reason.
-        updated.is_exportable = target_sub_role != common::entities::BinderItemSubRole::Note;
+        let was_note = item.sub_role == common::entities::BinderItemSubRole::Note;
+        let becomes_note = target_sub_role == common::entities::BinderItemSubRole::Note;
+        if was_note != becomes_note {
+            updated.is_exportable = !becomes_note;
+        }
         uow.update_binder_item(&updated)?;
 
         // 2. Remap the content roles into the target's vocabulary so the text survives.

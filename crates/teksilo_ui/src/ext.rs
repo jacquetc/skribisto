@@ -72,23 +72,42 @@ pub use crate::save::WorkHandle;
 //
 // Who is named where, across the whole Work. Kept current by
 // `WorkManagementEvent::LoadWork`/`NewWork`, a binder tag or item being created,
-// updated or removed, and a throttled rescan on save (`app/wiring/long_ops.rs`);
-// published as `app_state` in `App::build`, so `ctx.app_state::<MentionIndex>()`
-// from inside any window's widget tree reads the same answer every roster and
-// backlink list in the app resolves through. Published for the same reason
-// `WorkHandle` is above: an extension that receives a value it cannot name has
-// to reach past this façade to spell its type, which is the one thing the
-// façade exists to prevent. `MentionRow`'s fields are already `pub` and the
-// type is already `Clone`, so this is a pure visibility fix, nothing more.
+// updated or removed, and a throttled rescan on save (`app/wiring/long_ops.rs`).
+//
+// **Take it from the context the slot hands you, never from `app_state`.**
+// `DockContext::mention_index`, `ContentTab::mention_index()` and
+// `NoteSectionContext::mention_index` are all *this Work's* index, the same one
+// every roster and backlink list in the app resolves through. There is also a
+// `MentionIndex` published as `app_state` in `App::build`, and it is the one slot
+// that cannot answer this correctly: it is fixed at process start and holds
+// whatever the *bootstrap* session built. Launch with a project on the command
+// line, which is how a developer runs the app, and the bootstrap session is that
+// project, so the slot happens to hold the right index and everything works.
+// Open the app first and pick a project from Recents, which is what most writers
+// do, and it holds the throwaway session's index, bound to a `work_id` of `None`
+// and empty for the life of the process. A reading built on it then states an
+// absence rather than an error: a character named in twenty-two scenes reads as
+// "not named in any scene yet". A downstream edition shipped exactly that.
+//
+// A window an extension opens for itself is neither a dock nor a tab, so no
+// context reaches inside it. Hand the index down from whichever slot opened the
+// window, the way `view_model_setup` threads it into every tab, rather than
+// reaching for `ctx.app_state::<MentionIndex>()` from the window's widget tree.
+//
+// Published for the same reason `WorkHandle` is above: an extension that receives
+// a value it cannot name has to reach past this façade to spell its type, which is
+// the one thing the façade exists to prevent. `MentionRow`'s fields are already
+// `pub` and the type is already `Clone`, so this is a pure visibility fix, nothing
+// more.
 //
 // `skribisto_model::mentions::DiscoverableEntity`, what
 // `MentionIndex::discoverable_table` hands back, is deliberately *not*
 // re-exported here, unlike the margin lane's own types below. A lane provider
 // has no other route to `LaneColumn`/`LaneShape`/`LaneMark`/`LaneSpan`; a
 // downstream edition already depends on `skribisto_model` directly for its own
-// counting and drift math (verified against `skribisto-pro/Cargo.toml`), so it
-// can already name `DiscoverableEntity` on its own crate's dependency, and
-// re-exporting it here would only be a second name for the same type.
+// counting and drift math, so it can already name `DiscoverableEntity` on its own
+// crate's dependency, and re-exporting it here would only be a second name for
+// the same type.
 pub use crate::mentions::{MentionIndex, MentionRow};
 
 // ── Inspector sections ───────────────────────────────────────────────────────

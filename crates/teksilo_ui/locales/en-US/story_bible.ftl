@@ -55,9 +55,9 @@ story-bible-grid-mention-count = { $count ->
 story-bible-books-filter-all = All books
 # An entry with no discoverable tag was never in the scan's alias table, so nothing
 # was ever looked for. Reporting "No appearances yet" for it asserts an absence that
-# was never measured — a character written into every chapter would read as appearing
+# was never measured: a character written into every chapter would read as appearing
 # in none. See `GroupedCard::discoverable`.
-story-bible-grid-not-searched = Not searched yet — needs a story-bible tag
+story-bible-grid-not-searched = Not searched yet: needs a story-bible tag
 
 ## The "In prose" segment on an `Item/Note` tab (C3): a writable stream of the
 ## manuscript prose this note has been declared present in, one Book at a time.

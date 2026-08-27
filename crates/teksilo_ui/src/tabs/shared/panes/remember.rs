@@ -37,6 +37,15 @@ pub(super) struct RememberSegment {
     /// effect below would have to store the number, which is exactly what makes a
     /// remembered view unrecoverable across a restart.
     ids: Vec<(String, SegmentId)>,
+    /// The segments whose chip is live rather than always shown, by string id: exactly
+    /// the `visible` table [`Self::wrap`] was called with.
+    ///
+    /// Kept because it is the only thing that can tell a **self-heal** from the writer's
+    /// own click. `SegmentedControl` writes the same signal either way (its "select the
+    /// neighbour" convention, `segmented_control.rs`), and the effect below cannot
+    /// otherwise distinguish "the chip I was on has just disappeared" from "I pressed
+    /// the one next to it".
+    visible: Vec<(String, Prop<bool>)>,
     /// Where the segment on screen is mirrored for a capture to read.
     shown: Rc<RefCell<String>>,
     /// This tab's view-state ports, so a segment the **writer** switches to can
@@ -117,6 +126,10 @@ impl RememberSegment {
             memory: tab.view_memory.clone(),
             role: tab.role().clone(),
             sub_role: tab.sub_role().clone(),
+            visible: visible
+                .iter()
+                .map(|(id, prop)| ((*id).to_string(), prop.clone()))
+                .collect(),
             shown,
             ports: tab.view_state_ports(),
             ids,
@@ -143,6 +156,7 @@ impl Widget for RememberSegment {
             self.sub_role.clone(),
         );
         let ids = self.ids.clone();
+        let visible = self.visible.clone();
         let shown = self.shown.clone();
         let ports = self.ports.clone();
         // Reconcile the mirror against `self.segment` **now**, not only from the effect
@@ -177,8 +191,26 @@ impl Widget for RememberSegment {
             if let Some(sel) = *v
                 && let Some((id, _)) = ids.iter().find(|(_, key)| *key == sel)
             {
-                memory.remember(&role, &sub_role, id);
+                // **A self-heal is not a choice.** A `Segment` behind a `visible` prop
+                // can vanish under the writer (removing a note's last discoverable tag
+                // takes the "In prose" chip away while they are reading it), and
+                // `SegmentedControl` then selects the neighbour by writing this very
+                // signal — indistinguishable here from a click except by this: the
+                // segment we were on is no longer visible. Persisting that wrote
+                // `note-details` into `editor.last_view.item_note`, so every note the
+                // writer opened afterwards landed on Details instead of its own text, a
+                // choice they never made. The mirror below is still corrected (the
+                // segment on screen really did change); the remembered view and the
+                // pending focus request, which belong to a deliberate switch, are not.
+                let healed = visible
+                    .iter()
+                    .find(|(vid, _)| *vid == *shown.borrow())
+                    .is_some_and(|(_, prop)| !prop.get());
                 *shown.borrow_mut() = id.clone();
+                if healed {
+                    return;
+                }
+                memory.remember(&role, &sub_role, id);
                 // The writer has just chosen a different page, which outranks a focus
                 // request nobody has consumed yet: a container opened on its Overview
                 // arms one that no page there can honour, and firing it later, when

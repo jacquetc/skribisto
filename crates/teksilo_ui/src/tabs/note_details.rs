@@ -240,6 +240,16 @@ impl Widget for NoteDetailsPane {
                 BindingLevel::Rebuild,
             );
         }
+        // The Book bar under "Appears in the manuscript" writes this signal and nothing
+        // else reads it, so without this binding the chip moved and the list under it did
+        // not: `SegmentedControl` binds the selection to *itself* only (Relayout /
+        // AccessibilityOnly), which repaints the strip but never rebuilds this pane. The
+        // rows, their quoted evidence, the per-row confirm buttons and "Confirm every
+        // appearance" (scoped to the Book on screen) all come from `backlinks_section`'s
+        // own read of this value, so they stayed on the previous Book while the bar said
+        // otherwise. Same binding `note_in_prose` already gives its own Book bar.
+        self.appears_in_book
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         let discoverable_ids: HashSet<u64> = self
             .tags
@@ -699,6 +709,51 @@ fn book_label(book: &crate::models::BookChoice) -> String {
     }
 }
 
+/// Group `rows` by the Book the document each was found in belongs to, in manuscript
+/// order, with whatever is in no Book at all last, under [`OUTSIDE_BOOKS`]. A group with
+/// nothing in it is left out entirely, so the caller's "two or more groups, or no bar"
+/// rule reads off the length.
+///
+/// **A Book's own row counts as being inside that Book.** [`crate::models::BookIndex`]
+/// maps the rows a Book *contains* and never the Book row itself (`book_index` pushes the
+/// `BookChoice` and moves straight on), so a mention found in a Book's own synopsis - and
+/// `scan_mentions_uc::is_prose` counts a synopsis - would otherwise be grouped under "Not
+/// in any book" as a row headed with that very Book's title, which reads as the page
+/// contradicting itself about the writer's own book.
+///
+/// Pure: the backend read that builds the index lives in [`backlinks_section`], so this
+/// is testable with no `AppContext` at all.
+fn book_groups(
+    rows: &[MentionRow],
+    index: &crate::models::BookIndex,
+) -> Vec<(SegmentId, Vec<MentionRow>)> {
+    let mut groups: Vec<(SegmentId, Vec<MentionRow>)> = Vec::new();
+    for book in &index.books {
+        let mine: Vec<MentionRow> = rows
+            .iter()
+            .filter(|r| {
+                r.owner_id == book.item_id || index.of_item.get(&r.owner_id) == Some(&book.item_id)
+            })
+            .cloned()
+            .collect();
+        if !mine.is_empty() {
+            groups.push((SegmentId::from_u64(book.item_id), mine));
+        }
+    }
+    let loose: Vec<MentionRow> = rows
+        .iter()
+        .filter(|r| {
+            !index.of_item.contains_key(&r.owner_id)
+                && !index.books.iter().any(|b| b.item_id == r.owner_id)
+        })
+        .cloned()
+        .collect();
+    if !loose.is_empty() {
+        groups.push((OUTSIDE_BOOKS, loose));
+    }
+    groups
+}
+
 fn backlinks_section(
     app_ctx: &AppContext,
     work_id: u64,
@@ -731,29 +786,18 @@ fn backlinks_section(
     // be filtered out by every Book segment and become unreachable the moment a project
     // has two Books. That is the case a "one segment per Book" bar quietly loses.
     let index = crate::models::book_index(app_ctx, work_id);
-    let mut groups: Vec<(SegmentId, LocalizedString, Vec<MentionRow>)> = Vec::new();
-    for book in &index.books {
-        let mine: Vec<MentionRow> = rows
-            .iter()
-            .filter(|r| index.of_item.get(&r.owner_id) == Some(&book.item_id))
-            .cloned()
-            .collect();
-        if !mine.is_empty() {
-            groups.push((
-                SegmentId::from_u64(book.item_id),
-                lit!(book_label(book)),
-                mine,
-            ));
-        }
-    }
-    let loose: Vec<MentionRow> = rows
-        .iter()
-        .filter(|r| !index.of_item.contains_key(&r.owner_id))
-        .cloned()
+    let groups: Vec<(SegmentId, LocalizedString, Vec<MentionRow>)> = book_groups(&rows, &index)
+        .into_iter()
+        .map(|(id, mine)| {
+            let label = index
+                .books
+                .iter()
+                .find(|b| SegmentId::from_u64(b.item_id) == id)
+                .map(|b| lit!(book_label(b)))
+                .unwrap_or_else(|| tr!(note_details_backlinks_outside()));
+            (id, label, mine)
+        })
         .collect();
-    if !loose.is_empty() {
-        groups.push((OUTSIDE_BOOKS, tr!(note_details_backlinks_outside()), loose));
-    }
 
     let single = groups.len() < 2;
     let shown: Vec<MentionRow> = if single {
@@ -1152,6 +1196,68 @@ mod tests {
         assert!(out[0].is_point_of_view);
         assert!(!out[0].is_title_match);
         assert_eq!(out[0].matched_names, vec!["Lizzy".to_string()]);
+    }
+
+    /// A `BookChoice` as `book_index` would answer it: an id, a title, no number.
+    fn book(item_id: u64, title: &str) -> crate::models::BookChoice {
+        crate::models::BookChoice {
+            item_id,
+            uid: uuid::Uuid::nil(),
+            title: title.to_string(),
+            number: None,
+            fallback_label: None,
+        }
+    }
+
+    /// **A Book's own synopsis is inside that Book.** `scan_mentions_uc` counts a
+    /// synopsis as prose, so a name written into Book One's own synopsis comes back as a
+    /// row owned by the Book row itself - and `BookIndex::of_item` never maps a Book to
+    /// itself, so grouping on that map alone filed it under "Not in any book", as a row
+    /// headed "Book One". The page contradicted itself about the writer's own book.
+    #[test]
+    fn a_mention_in_a_books_own_synopsis_is_grouped_under_that_book() {
+        let index = crate::models::BookIndex {
+            books: vec![book(10, "Book One"), book(20, "Book Two")],
+            of_item: [(11u64, 10u64), (21u64, 20u64)].into_iter().collect(),
+        };
+        let rows = vec![
+            row(10, 99, "Elizabeth", 1, "Elizabeth returns to Longbourn."),
+            row(11, 99, "Elizabeth", 1, "She walked out."),
+        ];
+
+        let groups = book_groups(&rows, &index);
+        assert_eq!(
+            groups.len(),
+            1,
+            "one Book has rows, so one group: {groups:?}"
+        );
+        assert_eq!(groups[0].0, SegmentId::from_u64(10), "Book One's own group");
+        assert_eq!(groups[0].1.len(), 2, "the synopsis row and the scene row");
+        assert!(
+            groups.iter().all(|(id, _)| *id != OUTSIDE_BOOKS),
+            "nothing here is outside the books"
+        );
+    }
+
+    /// A row genuinely in no Book (front matter, anything past a `BookEnd`) still gets
+    /// its own group, last: without it those rows would be unreachable behind every
+    /// Book's segment.
+    #[test]
+    fn a_row_in_no_book_at_all_keeps_its_own_group() {
+        let index = crate::models::BookIndex {
+            books: vec![book(10, "Book One")],
+            of_item: [(11u64, 10u64)].into_iter().collect(),
+        };
+        let rows = vec![
+            row(11, 99, "Elizabeth", 1, "She walked out."),
+            row(99, 99, "Elizabeth", 1, "A dedication."),
+        ];
+
+        let groups = book_groups(&rows, &index);
+        assert_eq!(groups.len(), 2);
+        assert_eq!(groups[0].0, SegmentId::from_u64(10));
+        assert_eq!(groups[1].0, OUTSIDE_BOOKS, "the loose group comes last");
+        assert_eq!(groups[1].1.len(), 1);
     }
 
     /// Two different owners resolve to two different rows, in the order given

@@ -32,10 +32,15 @@
 //!
 //! ## Replacing is deliberately not part of it
 //!
-//! The replace row appears only while the banner is over exactly one document. Rewriting
+//! The replace row appears only while the banner is over **its own** document. Rewriting
 //! text across a page of them is Search & Replace's job: it has the preview, the scope
 //! picker and the per-document accounting, and an in-editor Replace All that quietly
 //! edited forty scenes would leave a writer with forty separate things to undo.
+//!
+//! A page that happens to hold a single row is still a page. Its row is an editor the
+//! page built, not the one this view-model was handed, so there is no editor here to
+//! ask whether a writing game has frozen the prose - and a Replace All would then be a
+//! way to delete text the same session is refusing to let Backspace touch.
 //!
 //! ## Lifetimes
 //!
@@ -69,8 +74,19 @@ pub type PageDocuments = Rc<dyn Fn() -> Vec<(EntityId, TextDocument)>>;
 /// Every one, not the first, and that is not defensive: the same scene can be a row on
 /// this page *and* a tab of its own, and a tab that is not on screen is parked dormant
 /// with no layout at all. Revealing through that one requests nothing and reports nothing
-/// — the match is selected, the counter moves, and the page does not budge. The caller
-/// tries each until one says it could.
+/// — the match is selected, the counter moves, and the page does not budge.
+///
+/// No order here can say which pane the banner is over — the registry knows the order
+/// the writer opened their tabs in and nothing else. So the caller asks every one of
+/// them rather than stopping at the first that answers: stopping scrolled whichever
+/// editor happened to be registered first, which in a split view is the side pane,
+/// leaving the page being read exactly where it was.
+///
+/// What the order *is* asked to guarantee is the one property the registry can be asked
+/// about: an editor that has laid out comes before one that has not, because a laid-out
+/// editor is one the writer can be looking at. That decides the two places the banner
+/// has to pick exactly one of them — the editor Escape hands the caret back to, and the
+/// row a stream is scrolled to when nothing could scroll to the match itself.
 pub type ResolveEditor = Rc<dyn Fn(EntityId) -> Vec<EditorHandle>>;
 
 /// What a banner searches.
@@ -86,7 +102,6 @@ struct Slice {
     /// `None` only for the single-document banner of a surface with no item behind it
     /// (the widget tests, and the preview band) — a page always names its rows.
     item: Option<EntityId>,
-    doc: TextDocument,
     session: FindSession,
 }
 
@@ -128,8 +143,14 @@ pub struct FindViewModel {
     /// Kept as signals so the label is reactive.
     count: Signal<usize>,
     current: Signal<usize>,
-    /// Whether this banner is over exactly one document. The replace row's gate — see
-    /// the module note — and reactive, because a page's row count changes under it.
+    /// Whether this banner is over **its own** document rather than a page of them.
+    /// The replace row's gate — see the module note.
+    ///
+    /// Fixed when the banner is made, deliberately. Derived from the row count instead,
+    /// a page that happened to hold exactly one document — a note mentioned in a single
+    /// scene, a brand-new Book — disclosed the replace row over rows that never hand
+    /// this view-model a handle, so the writing-game check below had nothing to ask and
+    /// let the rewrite through.
     single: Signal<bool>,
     /// Bumped on every [`open`](Self::open). The banner binds this at
     /// `BindingLevel::Rebuild`, so opening the banner rebuilds it — the moment it
@@ -214,7 +235,7 @@ impl FindViewModel {
     pub fn current_signal(&self) -> Signal<usize> {
         self.current.clone()
     }
-    /// Whether the banner is over exactly one document — what the replace row is
+    /// Whether the banner is over a document of its own — what the replace row is
     /// disclosed by. See the module note on why replacing across a page is withheld.
     pub fn single_document_signal(&self) -> Signal<bool> {
         self.single.clone()
@@ -309,10 +330,10 @@ impl FindViewModel {
             .map(|(item, doc)| Slice {
                 session: FindSession::new(&doc, current_format.clone(), other_format.clone()),
                 item,
-                doc,
             })
             .collect();
-        self.single.set(rebuilt.len() == 1);
+        // `single` is deliberately *not* re-derived from `rebuilt.len()`: see its field
+        // note. What this banner is over does not change when a row is split away.
         *self.slices.borrow_mut() = rebuilt;
         self.cursor.set(0);
         true
@@ -336,12 +357,25 @@ impl FindViewModel {
     /// banner observes at `Rebuild`). Idempotent — pressing Ctrl+F while already
     /// open just re-focuses the field.
     ///
+    /// Reopening after Escape **re-runs the query it kept**. [`close`](Self::close)
+    /// empties every highlight layer, and nothing else would put them back: the
+    /// banner's effects behind the field fire on a *change* to the query, and the query
+    /// did not change. Without this the field reads "ferry" over a page with nothing
+    /// marked, the counter reads "No results", and Enter does nothing until the writer
+    /// edits text they can already see.
+    ///
     /// Refuses on a page with nothing to search — see [`has_documents`](Self::has_documents).
     pub fn open(&self) {
         if !self.has_documents() {
             return;
         }
+        // Only on the way in. Ctrl+F pressed while the banner is already open is a
+        // request for the field, not a request to walk back to the first match.
+        let reopening = !self.visible.get();
         self.visible.set(true);
+        if reopening {
+            self.refresh_query();
+        }
         let s = &self.focus_seq;
         s.set(s.get().wrapping_add(1));
     }
@@ -362,10 +396,30 @@ impl FindViewModel {
     /// walked to, not the tab's own; focus lands only if that editor is built.
     pub fn close_and_refocus(&self, ctx: &mut EventContext) {
         let landed = self.cursor_item();
+        let target = Self::laid_out_first(self.handles_for(landed));
         self.close();
-        if let Some(handle) = self.handles_for(landed).into_iter().next() {
+        if let Some(handle) = target {
             handle.focus(ctx);
         }
+    }
+
+    /// The first of these editors that has been through a frame, else the first of them
+    /// at all.
+    ///
+    /// **A laid-out editor wins over one that is merely registered** — the rule
+    /// [`crate::format::FormatViewModel::handle_for_item`] already applies, for the same
+    /// reason. One item can be mounted several times at once: a row on this page, its
+    /// own tab in the other pane, the search preview's band, the dual-pane tab's second
+    /// arm. The registry answers in registration order, which is the order the writer
+    /// opened their tabs in, so "the first" is a coin toss — and losing it hands the
+    /// caret to an editor that is not on screen, where the writer's next keystroke goes
+    /// somewhere they cannot see.
+    fn laid_out_first(handles: Vec<EditorHandle>) -> Option<EditorHandle> {
+        handles
+            .iter()
+            .find(|h| h.content_height().is_some())
+            .or_else(|| handles.first())
+            .cloned()
     }
 
     /// The matcher options built from the toggles.
@@ -534,6 +588,12 @@ impl FindViewModel {
     /// Restores the invariant the walk depends on: exactly one current match on the
     /// page. Without it a deletion could leave every session holding `None`, and the
     /// next Enter would re-enter from the top of the page rather than from here.
+    ///
+    /// **From here** is the whole of it, and it is why the search runs *forward from the
+    /// row the reader was standing in*, wrapping round the page, rather than starting
+    /// again at the first row that has a hit. A writer who fixes the last of three
+    /// "teh"s must not be handed the first one back and made to walk again past the two
+    /// they have already read.
     fn normalise_cursor(&self) {
         let mut slices = self.slices.borrow_mut();
         if slices
@@ -542,12 +602,18 @@ impl FindViewModel {
         {
             return;
         }
-        let first = slices.iter().position(|s| s.session.match_count() > 0);
+        let n = slices.len();
+        let from = self.cursor.get().min(n.saturating_sub(1));
+        // Hop 0 is the row the reader is in: it can still hold matches and merely have
+        // lost the one that was current, and re-entering it is then right.
+        let landing = (0..n)
+            .map(|hop| (from + hop) % n)
+            .find(|&i| slices[i].session.match_count() > 0);
         for (i, slice) in slices.iter_mut().enumerate() {
-            slice.session.set_current((Some(i) == first).then_some(0));
+            slice.session.set_current((Some(i) == landing).then_some(0));
         }
         drop(slices);
-        self.cursor.set(first.unwrap_or(0));
+        self.cursor.set(landing.unwrap_or(from));
     }
 
     // ── in-editor replace ────────────────────────────────────────────────────
@@ -601,11 +667,17 @@ impl FindViewModel {
         })
     }
 
-    /// The one document this banner is over, when it is over exactly one. `None` on a
-    /// page — the gate every replace path below shares.
+    /// The one document this banner is over, when it is over one of **its own**. `None`
+    /// on a page — the gate every replace path below shares.
+    ///
+    /// Taken from the subject rather than from `slices.len()`: a page holding a single
+    /// row is still a page, and rewriting that row from here would go round the editor
+    /// [`may_replace`](Self::may_replace) exists to ask.
     fn only_doc(&self) -> Option<TextDocument> {
-        let slices = self.slices.borrow();
-        (slices.len() == 1).then(|| slices[0].doc.clone())
+        match self.subject.as_ref() {
+            FindSubject::Own(doc) => Some(doc.clone()),
+            FindSubject::Page(_) => None,
+        }
     }
 
     /// Replace the current match, then step onto the next — the find-bar
@@ -685,15 +757,49 @@ impl FindViewModel {
 
     /// Select + scroll a match into view through the editor showing it.
     ///
-    /// Every editor over that document is selected in, and the *first that can* does the
-    /// scrolling — see [`ResolveEditor`] for why "the first one" is the wrong answer.
+    /// Every editor over that document is selected in, and **every one that can** does
+    /// the scrolling. Not the first that answers: the registry's order is the order the
+    /// writer opened their tabs in, so in a split view the side pane's own tab of that
+    /// scene answers before the stream row the banner is over, scrolls itself, and
+    /// leaves the page being read exactly where it was. An editor with no layout to
+    /// scroll in reports so and is passed over. See [`ResolveEditor`].
+    ///
+    /// ## When not one of them can, the row is revealed instead
+    ///
+    /// A stream is one scrolling page of one editor per row, and a row below the fold
+    /// has never been painted, so its engine has no layout at all. Every handle then
+    /// answers `false`, and it would go on answering `false` for ever: the row is only
+    /// painted once it is on screen, and it only comes on screen if something scrolls
+    /// to it. That is the whole of the "Ctrl+F on a Book selects the match, moves the
+    /// counter and does not move the page" report — and it is the *normal* case on a
+    /// long stream, not an edge one.
+    ///
+    /// So the fallback asks an editor to reveal **itself**, by widget rather than by
+    /// text range, which the arena can answer for a row whose text was never shaped.
+    /// The row comes on screen, the next paint gives it a layout, and the reveal that
+    /// follows — the next Enter, or the re-reveal a repaint triggers — can put the
+    /// match itself in the middle.
+    ///
+    /// **Once, not once per handle.** Two editors over one document are two different
+    /// places on screen, and asking both would scroll one page to the row and then
+    /// another page somewhere else, leaving the writer looking at whichever moved
+    /// last. A dormant editor refuses, so the first acceptance is a live one.
     fn reveal(&self, ctx: &mut EventContext, found: Option<(Option<EntityId>, FindMatch)>) {
         let Some((item, m)) = found else { return };
         let (start, end) = (m.position, m.position + m.length);
+        let handles = self.handles_for(item);
         let mut revealed = false;
-        for handle in self.handles_for(item) {
+        for handle in &handles {
             handle.select_range(start, end);
-            revealed |= !revealed && handle.reveal_range(ctx, start, end);
+            revealed |= handle.reveal_range(ctx, start, end);
+        }
+        if revealed {
+            return;
+        }
+        for handle in &handles {
+            if handle.reveal_widget(ctx) {
+                break;
+            }
         }
     }
 
@@ -1122,13 +1228,11 @@ mod tests {
         vm.query_signal().set("ferry".into());
         vm.refresh_query();
         assert_eq!(vm.count_signal().get(), 1);
-        assert!(vm.single_document_signal().get(), "one row so far");
 
         rows.borrow_mut().push((2, doc("the ferry again")));
         vm.tick();
 
         assert_eq!(vm.count_signal().get(), 2, "the new row was searched too");
-        assert!(!vm.single_document_signal().get());
     }
 
     /// **Replacing is withheld over a page.** Rewriting across many documents is Search
@@ -1193,5 +1297,231 @@ mod tests {
         assert_eq!(vm.count_signal().get(), 2, "only row 2's hits are left");
         assert_eq!(standing(&vm), Some((2, 0)), "the cursor moved to them");
         assert_eq!(currents(&vm), 1);
+    }
+
+    /// **An edit re-enters the walk forward of where the writer was**, not at the top of
+    /// the page.
+    ///
+    /// A writer walking the page fixes the hit they are standing on. The row loses its
+    /// only match and the cursor has to move — onward, round the page, to the next row
+    /// that still has one. Re-entering at the *first* row with a hit hands them back a
+    /// match they have already read and passed, and the banner jumps backwards.
+    #[test]
+    fn an_edit_re_enters_the_walk_forward_of_where_the_reader_was() {
+        let (vm, rows) = page(&[(1, "teh"), (2, "teh"), (3, "teh")]);
+        vm.query_signal().set("teh".into());
+        vm.refresh_query();
+        assert_eq!(standing(&vm), Some((1, 0)));
+
+        vm.step(true);
+        vm.publish();
+        assert_eq!(standing(&vm), Some((2, 0)), "the second of the three");
+
+        // Fixed in place, in the row the reader is standing in.
+        rows.borrow()[1].1.set_plain_text("the").unwrap();
+        vm.tick();
+
+        assert_eq!(vm.count_signal().get(), 2, "rows 1 and 3 still have theirs");
+        assert_eq!(
+            standing(&vm),
+            Some((3, 0)),
+            "carried on into the row below, not back to the top of the page"
+        );
+        assert_eq!(currents(&vm), 1);
+    }
+
+    /// **Reopening finds the kept query live**, not dead text over an unmarked page.
+    ///
+    /// Escape clears every highlight layer. Ctrl+F puts the banner back with the query
+    /// still in the field, and nothing else re-runs it: the effects behind the field
+    /// fire on a change, and the text did not change.
+    #[test]
+    fn reopening_the_banner_runs_the_query_it_kept() {
+        let vm = FindViewModel::new(doc("the ferry, the ferry, the ferry"));
+        vm.ensure_session(fmt(), fmt());
+        vm.open();
+        vm.query_signal().set("ferry".into());
+        vm.refresh_query();
+        assert_eq!(vm.count_signal().get(), 3);
+
+        vm.close();
+        assert_eq!(vm.count_signal().get(), 0, "closing takes the marks off");
+
+        vm.open();
+        assert_eq!(
+            vm.count_signal().get(),
+            3,
+            "the kept query is searched again rather than left as dead text in the field"
+        );
+        assert_eq!(vm.current_signal().get(), 1, "standing on the first again");
+    }
+
+    /// **A page of one document is still a page**, and replacing stays withheld over it.
+    ///
+    /// A note mentioned in a single scene, or a brand-new Book with one scene, publishes
+    /// exactly one row. Its editor is one the page built and never hands this view-model
+    /// a handle, so `may_replace` would have no command filter to ask — and Alt+A would
+    /// delete prose a writing game is refusing to let Backspace touch.
+    #[test]
+    fn a_page_holding_one_document_still_withholds_replacing() {
+        let (vm, rows) = page(&[(1, "a ferry")]);
+        vm.query_signal().set("ferry".into());
+        vm.refresh_query();
+        assert_eq!(vm.count_signal().get(), 1);
+
+        assert!(
+            !vm.single_document_signal().get(),
+            "one row is still a page, so the replace row stays undisclosed"
+        );
+
+        vm.replacement_signal().set("barge".into());
+        assert_eq!(vm.replace_all_now(), 0, "nothing rewritten");
+        assert!(
+            rows.borrow()[0]
+                .1
+                .to_plain_text()
+                .unwrap()
+                .contains("ferry"),
+            "the prose is untouched"
+        );
+
+        vm.open_with_replace();
+        assert!(
+            !vm.replace_mode_signal().get(),
+            "and Ctrl+R over it opens a plain find"
+        );
+    }
+
+    /// **A laid-out editor wins over one that is merely registered.**
+    ///
+    /// The same item can be mounted several times at once — a row on this page, its own
+    /// tab in the other pane, a search preview's band — and the registry answers in the
+    /// order they were built, which is the order the writer opened their tabs in. Escape
+    /// has to hand the caret to one that is actually on screen, or the writer carries on
+    /// typing into an editor nobody can see.
+    #[test]
+    fn refocusing_prefers_an_editor_that_has_been_through_a_frame() {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::widgets::rich_text::RichTextEditor;
+
+        // Built first, never mounted: no layout, and so nowhere to put a caret.
+        let parked = RichTextEditor::editor(doc("the ferry, off screen"));
+        let parked_handle = parked.handle();
+
+        // Built second, and on screen.
+        let onscreen = RichTextEditor::editor(doc("the ferry, on screen"));
+        let onscreen_handle = onscreen.handle();
+        let mut tree = WidgetTree::new();
+        tree.add(onscreen);
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+        let _ = tree.render();
+
+        assert!(
+            parked_handle.content_height().is_none(),
+            "fixture: the parked editor has never laid out"
+        );
+        assert!(
+            onscreen_handle.content_height().is_some(),
+            "fixture: the mounted one has"
+        );
+
+        let picked =
+            FindViewModel::laid_out_first(vec![parked_handle.clone(), onscreen_handle.clone()]);
+        assert_eq!(
+            picked.map(|h| h.to_plain_text()),
+            Some(onscreen_handle.to_plain_text()),
+            "registration order must not decide where the caret lands"
+        );
+
+        // With nothing laid out there is no better answer than the first, which is what
+        // a single-document banner's own editor always is on its first frame.
+        let fallback = FindViewModel::laid_out_first(vec![parked_handle.clone()]);
+        assert_eq!(
+            fallback.map(|h| h.to_plain_text()),
+            Some(parked_handle.to_plain_text())
+        );
+    }
+
+    /// **A match in a row that has never been painted still moves the page.**
+    ///
+    /// A stream is one scrolling page of one editor per row, and every row below the
+    /// fold is unpainted: it has no text layout, so `reveal_range` cannot locate the
+    /// match in it and answers `false`. Nothing else used to be tried, so Ctrl+F on a
+    /// Book selected the match, moved the "1 of 40" counter, and left the page exactly
+    /// where it was. For ever, too: the row only gets a layout once it is painted, and
+    /// it is only painted once something scrolls to it.
+    ///
+    /// The way out is to reveal the row as a *widget*, which the arena can answer for
+    /// text it never shaped.
+    #[test]
+    fn a_match_below_the_fold_scrolls_the_page_to_its_row() {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::widgets::rich_text::RichTextEditor;
+        use teksilo::widgets::{FixedSize, ScrollArea, TextWidget, VStack};
+
+        let row_doc = doc("nothing here yet\nthe ferry leaves at six");
+        let editor = RichTextEditor::editor(row_doc.clone());
+        let handle = editor.handle();
+
+        let mut tree = WidgetTree::new();
+        let editor_id = tree.add(editor);
+        // 2000 px of earlier rows above it, so this one starts far below a 150 px
+        // viewport - exactly where row 31 of a Book sits when the banner finds it.
+        let above = tree.add(
+            FixedSize::new()
+                .width(220.0)
+                .height(2000.0)
+                .child(TextWidget::new(lit!(""))),
+        );
+        let row = tree.add(
+            FixedSize::new()
+                .width(220.0)
+                .height(300.0)
+                .child_id(editor_id),
+        );
+        let content = tree.add(VStack::new().add_child(above).add_child(row));
+        let page_area = ScrollArea::from_id(content).smooth_scrolling(false);
+        let page_y = page_area.scroll_y_signal().clone();
+        let _page = tree.add(page_area);
+
+        let sz = SizeProposal::exact(220.0, 150.0);
+        tree.layout(sz);
+        // Deliberately no `render`: the paint pass is what runs the full layout, and an
+        // unpainted row is the whole point of this test.
+        assert!(
+            handle.content_height().is_none(),
+            "fixture: the row must have no text layout, or `reveal_range` would serve \
+             it and this would be testing nothing"
+        );
+
+        let banner = {
+            let rows = row_doc.clone();
+            let h = handle.clone();
+            FindViewModel::over_page(
+                Rc::new(move || vec![(1, rows.clone())]),
+                Rc::new(move |_| vec![h.clone()]),
+            )
+        };
+        banner.ensure_session(fmt(), fmt());
+        banner.open();
+        banner.query_signal().set("ferry".into());
+        banner.refresh_query();
+        assert_eq!(
+            banner.count_signal().get(),
+            1,
+            "fixture: the match is found"
+        );
+        assert_eq!(page_y.get(), 0.0, "fixture: the page starts at the top");
+
+        tree.run_with_event_context(&mut teksilo::core::NoopWindowOps, |ctx| {
+            banner.reveal_current(ctx);
+        });
+        tree.layout(sz);
+
+        assert!(
+            page_y.get() > 0.0,
+            "the page must scroll to the row holding the match; still at {}",
+            page_y.get()
+        );
     }
 }

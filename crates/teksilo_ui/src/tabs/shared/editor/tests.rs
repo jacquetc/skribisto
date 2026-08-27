@@ -455,6 +455,55 @@ fn a_surface_with_no_palette_still_offers_untagged() {
 /// own foreground, which is right for a glyph that repeats the label and erases one whose
 /// colour *is* the label. `icon_keeps_color` is what separates the two, and only a render
 /// can tell whether it took.
+/// **A writer's own ampersand survives the menu.** `MenuItem` runs its mnemonic parser
+/// over every label it is given, `lit!` data included, so a tag called "Cast & crew"
+/// reached the "Add as note" submenu as "Cast  crew" with the C of "crew" underlined and
+/// bound as an access key. Every other surface in the app shows the name as typed; this
+/// was the one that quietly rewrote it.
+///
+/// Asserted on the label the item actually carries, which is where the escape has to be:
+/// the parser turns "Cast && crew" back into the one ampersand on screen.
+#[test]
+fn a_tag_named_with_an_ampersand_reaches_the_capture_menu_intact() {
+    use crate::story_bible::capture::{CaptureMenu, CaptureTag};
+
+    let menu = CaptureMenu {
+        primary: vec![CaptureTag {
+            id: 1,
+            uid: uuid::Uuid::from_u128(1),
+            name: "Cast & crew".to_string(),
+            color: "#e91e63".to_string(),
+            discoverable: true,
+        }],
+        recent: Vec::new(),
+        all: Vec::new(),
+    };
+
+    let mut tree = WidgetTree::new();
+    let root = tree.add(render_capture_menu(7, "Elise Laroche", menu));
+    tree.layout(teksilo::prelude::SizeProposal::exact(400.0, 300.0));
+
+    fn labels(tree: &WidgetTree, id: teksilo::prelude::WidgetId, out: &mut Vec<String>) {
+        if let Some(item) = tree
+            .widget_as_any(id)
+            .and_then(|a| a.downcast_ref::<teksilo::widgets::MenuItem>())
+        {
+            out.push(item.label());
+        }
+        for child in tree.children(id) {
+            labels(tree, child, out);
+        }
+    }
+    let mut found = Vec::new();
+    labels(&tree, root, &mut found);
+
+    assert!(
+        found.contains(&"Cast && crew".to_string()),
+        "the ampersand must be escaped for the mnemonic parser, not eaten by it; got \
+         {found:?}"
+    );
+}
+
 #[test]
 fn a_capture_row_shows_the_tag_in_the_writers_own_colour() {
     use crate::story_bible::capture::{CaptureMenu, CaptureTag};

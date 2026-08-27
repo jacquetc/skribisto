@@ -298,7 +298,11 @@ pub(crate) fn materialize(
     let mut tag_ids: Vec<EntityId> = Vec::new();
     for t in &loaded.tags {
         let created = uow.create_orphan_binder_tag(&BinderTag {
-            uid: t.uid,
+            // `heal_uid` rather than a plain copy, exactly as the note templates, binders
+            // and items below: a project saved by a build that created tags nil-identified
+            // would otherwise keep them nil through every load, so the defect would outlive
+            // the fix. Healing a non-nil uid is a no-op, so it is safe on every load path.
+            uid: common::uid::heal_uid(t.uid),
             created_at: t.created_at,
             updated_at: t.updated_at,
             name: t.name.clone(),

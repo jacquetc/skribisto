@@ -101,9 +101,9 @@ pub(super) fn live_item_metas(ctx: &AppContext, ids: &AppIds) -> Vec<ItemMeta> {
 
 /// Every live `Folder/Book` in the open Work, id and title, across every Binder in
 /// binder order. This is the Books section's own candidate list, and (through its
-/// length) the gate that decides whether that section renders at all: below two Books, a
-/// writer sees no control, no empty picker, no chrome (see `tags::books`'s module
-/// doc for why).
+/// emptiness) the gate that decides whether that section renders at all: with no
+/// Book at all, a writer sees no control, no empty picker, no chrome — offered
+/// from the first Book onward (see `tags::books`'s module doc for why).
 ///
 /// **Trashed excluded.** `activated` gates what a filing target may resolve to,
 /// matching `reconcile_backref_binder_item_books`'s own reasoning for pruning a
