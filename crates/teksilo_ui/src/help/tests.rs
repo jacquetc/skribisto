@@ -18,6 +18,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use super::*;
+use teksilo::core::widget_tree::WidgetTree;
 use teksilo::text_document::TextDocument;
 
 /// Every locale the help set ships. Read from the directory rather than a list, so a
@@ -529,4 +530,193 @@ fn re_registering_a_namespace_replaces_its_topics() {
     let _second = register_topics("ext.replace", vec![spec("ext-new")]).expect("second");
     assert!(topic("ext-old").is_none(), "the old topic must be gone");
     assert!(topic("ext-new").is_some(), "the new topic must be present");
+}
+
+// ── The table of contents' filter field ──
+
+/// Every `SearchField` in the subtree under `root`, in tree order.
+///
+/// By widget *identity*, not by count: a rebuild mints fresh `WidgetId`s, so a field
+/// that came back with a different id is a field the reader's caret and selection did
+/// not survive — which is the whole failure being pinned here.
+fn search_field_ids(tree: &WidgetTree, root: WidgetId, out: &mut Vec<WidgetId>) {
+    if tree
+        .widget_type_name(root)
+        .is_some_and(|name| name.contains("SearchField"))
+    {
+        out.push(root);
+    }
+    for child in tree.children(root) {
+        search_field_ids(tree, child, out);
+    }
+}
+
+/// Count of `Button` widgets under `root` — the topic rows, so a differential over this
+/// says whether the list actually narrowed.
+fn button_count(tree: &WidgetTree, root: WidgetId, n: &mut usize) {
+    if tree
+        .widget_type_name(root)
+        .is_some_and(|name| name.contains("Button"))
+    {
+        *n += 1;
+    }
+    for child in tree.children(root) {
+        button_count(tree, child, n);
+    }
+}
+
+/// Typing in the filter must narrow the list **without** destroying the field being
+/// typed into.
+///
+/// `HelpPanel` bound the query at `BindingLevel::Rebuild` and built the `SearchField`
+/// inside that same subtree, so every keystroke replaced the input with a fresh one —
+/// caret at 0, value selected — and the next character overwrote the whole query. The
+/// field could never hold more than the last letter struck, which is what "the search
+/// input erases all strokes" was. The same bug had already been fixed once in
+/// `tags::tag_pill_field`; this pins the Help window's copy of it.
+///
+/// Both halves are asserted on purpose. Dropping the query binding altogether would
+/// keep the field alive and stop the list ever filtering, and an identity-only test
+/// would call that a pass.
+#[test]
+fn typing_in_the_filter_narrows_the_list_without_recreating_the_field() {
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    let root = tree.add(panel::HelpPanel::new(vm.clone()));
+    let proposal = SizeProposal::exact(940.0, 680.0);
+    tree.layout(proposal);
+
+    let mut before_fields = Vec::new();
+    search_field_ids(&tree, root, &mut before_fields);
+    assert_eq!(
+        before_fields.len(),
+        1,
+        "the table of contents carries exactly one filter field"
+    );
+    let mut before_rows = 0;
+    button_count(&tree, root, &mut before_rows);
+
+    // A needle no topic title contains, so the list is guaranteed to shrink whatever
+    // the shipped set of topics happens to be on the day this runs.
+    vm.query().set("zzzzz".to_string());
+    tree.layout(proposal);
+
+    let mut after_fields = Vec::new();
+    search_field_ids(&tree, root, &mut after_fields);
+    assert_eq!(
+        after_fields, before_fields,
+        "the filter field was rebuilt on a keystroke: a fresh TextInput opens with its \
+         value selected, so the next character typed would replace the whole query"
+    );
+
+    let mut after_rows = 0;
+    button_count(&tree, root, &mut after_rows);
+    assert!(
+        after_rows < before_rows,
+        "the query reached the topic list ({before_rows} -> {after_rows} buttons)"
+    );
+}
+
+/// Opening a topic must not recreate the filter field either.
+///
+/// Same failure, reached the other way round: type a filter, click a result, and a
+/// shell that rebuilds on the open topic hands back a re-selected field whose next
+/// keystroke wipes what is in it. Only the reading pane and the list's own highlight
+/// depend on which topic is open, and both of those live below the field now.
+#[test]
+fn opening_a_topic_does_not_recreate_the_filter_field() {
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    let root = tree.add(panel::HelpPanel::new(vm.clone()));
+    let proposal = SizeProposal::exact(940.0, 680.0);
+    tree.layout(proposal);
+
+    let mut before = Vec::new();
+    search_field_ids(&tree, root, &mut before);
+    assert_eq!(before.len(), 1, "precondition: one filter field");
+
+    let other = all_topics()
+        .iter()
+        .map(|spec| spec.key)
+        .find(|key| *key != DEFAULT_TOPIC)
+        .expect("the help set ships more than one topic");
+    vm.open(other);
+    tree.layout(proposal);
+
+    let mut after = Vec::new();
+    search_field_ids(&tree, root, &mut after);
+    assert_eq!(
+        after, before,
+        "clicking a topic rebuilt the filter field, so a half-typed query would be \
+         replaced by the next character struck"
+    );
+    assert_eq!(
+        vm.current_key().get(),
+        other,
+        "precondition: the topic opened"
+    );
+}
+
+/// Every widget under `root`, itself included — a size the shortcut sheet's list can
+/// only shrink, since its rows are plain labels rather than one nameable widget type.
+fn widget_count(tree: &WidgetTree, root: WidgetId) -> usize {
+    1 + tree
+        .children(root)
+        .into_iter()
+        .map(|child| widget_count(tree, child))
+        .sum::<usize>()
+}
+
+/// Help ▸ Keyboard shortcuts carried the identical defect, so it gets the identical
+/// test: typing must narrow the sheet without destroying the field being typed into.
+///
+/// The registry is seeded here rather than left empty. An empty one filters to nothing
+/// whatever is typed, and the differential half — the half that stops a "fix" which
+/// simply drops the binding — would have no rows to lose.
+#[test]
+fn typing_in_the_shortcut_filter_narrows_the_sheet_without_recreating_the_field() {
+    use teksilo::core::event::Key;
+    use teksilo::core::shortcut::{KeyStroke, Shortcut};
+
+    let mut tree = WidgetTree::new();
+    for (id, name, chord) in [
+        ("test.alpha", "Alpha", Key::A),
+        ("test.beta", "Beta", Key::B),
+        ("test.gamma", "Gamma", Key::G),
+    ] {
+        tree.shortcut_registry_mut().register(
+            Shortcut::new(id)
+                .name(name.to_string())
+                .category("test")
+                .primary(KeyStroke::ctrl(chord))
+                .build(),
+        );
+    }
+
+    let filter = Signal::new(String::new());
+    let root = tree.add(shortcuts::ShortcutSheet::with_filter(filter.clone()));
+    let proposal = SizeProposal::exact(560.0, 620.0);
+    tree.layout(proposal);
+
+    let mut before_fields = Vec::new();
+    search_field_ids(&tree, root, &mut before_fields);
+    assert_eq!(before_fields.len(), 1, "the sheet carries one filter field");
+    let before = widget_count(&tree, root);
+
+    // Matches "Alpha" and neither of the other two.
+    filter.set("alpha".to_string());
+    tree.layout(proposal);
+
+    let mut after_fields = Vec::new();
+    search_field_ids(&tree, root, &mut after_fields);
+    assert_eq!(
+        after_fields, before_fields,
+        "the shortcuts filter field was rebuilt on a keystroke, so the next character \
+         typed would replace the whole query"
+    );
+    let after = widget_count(&tree, root);
+    assert!(
+        after < before,
+        "the query never reached the shortcut list ({before} -> {after} widgets)"
+    );
 }

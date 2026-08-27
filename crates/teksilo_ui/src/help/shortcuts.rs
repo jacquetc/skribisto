@@ -44,15 +44,30 @@ pub fn present_shortcuts(ctx: &mut EventContext) {
     );
 }
 
-struct ShortcutSheet {
+/// The sheet itself: the filter field, the list, and the footer.
+///
+/// **It binds nothing.** The filter text is held here and bound one level down, in
+/// [`ShortcutList`], because the `SearchField` is built in this subtree: bound here, every
+/// keystroke would rebuild the field along with the list, and a fresh `TextInput` opens
+/// with its caret at 0 and its value selected — so the next character struck would
+/// replace the whole query and the field could never hold more than one letter. That is
+/// the same defect the Help window's table of contents and `tags::tag_pill_field` both
+/// carried, and the same split fixes it.
+pub(crate) struct ShortcutSheet {
     filter: Signal<String>,
     root_child: Option<WidgetId>,
 }
 
 impl ShortcutSheet {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
+        Self::with_filter(Signal::new(String::new()))
+    }
+
+    /// The sheet over a filter signal the caller holds — which is how a test can type
+    /// into it without going through the field's own key handling.
+    pub(crate) fn with_filter(filter: Signal<String>) -> Self {
         Self {
-            filter: Signal::new(String::new()),
+            filter,
             root_child: None,
         }
     }
@@ -72,7 +87,31 @@ struct Row {
     chord: Option<String>,
 }
 
-impl Widget for ShortcutSheet {
+/// The filtered list of chords, and the note shown when nothing matches.
+///
+/// A widget of its own so that the filter query can be bound *below* the `SearchField`
+/// rather than above it — see [`ShortcutSheet`] for what binding it above did.
+struct ShortcutList {
+    filter: Signal<String>,
+    root_child: Option<WidgetId>,
+}
+
+impl ShortcutList {
+    fn new(filter: Signal<String>) -> Self {
+        Self {
+            filter,
+            root_child: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for ShortcutList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ShortcutList").finish_non_exhaustive()
+    }
+}
+
+impl Widget for ShortcutList {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let sid = ctx.self_id();
         let reg = ctx.binding_registry();
@@ -147,15 +186,42 @@ impl Widget for ShortcutSheet {
             )
         });
 
-        let mut body = VStack::new()
-            .spacing(0.0)
-            .child(Padding::symmetric(8.0, 12.0).child(
-                SearchField::new(self.filter.clone()).placeholder(tr!(help_shortcuts_filter())),
-            ));
+        let mut body = VStack::new().spacing(0.0);
         if let Some(empty) = empty {
             body = body.child(empty);
         }
         body = body.child(Expand::new().child(ScrollArea::new().child(list)));
+
+        let id = ctx.add(body);
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(
+        &self,
+        proposal: SizeProposal,
+        ctx: &LayoutContext,
+    ) -> teksilo::core::widget::LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(Into::into)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+impl Widget for ShortcutSheet {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // No binding at all here — see the type docs.
+        let body = VStack::new()
+            .spacing(0.0)
+            .child(Padding::symmetric(8.0, 12.0).child(
+                SearchField::new(self.filter.clone()).placeholder(tr!(help_shortcuts_filter())),
+            ))
+            .child(Expand::new().child(ShortcutList::new(self.filter.clone())));
 
         let footer = HStack::new()
             .spacing(8.0)

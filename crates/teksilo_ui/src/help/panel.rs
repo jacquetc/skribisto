@@ -82,20 +82,25 @@ impl Widget for HelpPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let sid = ctx.self_id();
         let reg = ctx.binding_registry();
-        // The open topic, the filter, and the locale each change what is on screen.
-        // The locale one matters more here than almost anywhere else in the app: a
-        // topic body is picked *by locale*, so a language switch has to re-resolve the
-        // document, not merely re-resolve labels.
-        self.vm
-            .current_key()
-            .bind_to(sid, reg, BindingLevel::Rebuild);
-        self.vm.query().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.vm.depth().bind_to(sid, reg, BindingLevel::Rebuild);
+        // **The locale is the only thing this shell rebuilds on, and the filter text is
+        // deliberately not on the list.** The `SearchField` is built inside this
+        // subtree, so a rebuild destroys it and builds a fresh one whose caret parks at
+        // 0 with the whole value selected — and the next keystroke then replaces
+        // everything typed so far. Binding the query here is exactly why the field
+        // could never hold more than the last character struck. The two children below
+        // bind what each of them actually reads instead, which leaves the field the
+        // reader is typing into untouched. `TagPicker`/`TagPickerList` carry the same
+        // split for the same bug.
+        //
+        // The locale earns the shell-wide rebuild the other two do not. A topic body is
+        // picked *by locale*, so a language switch has to re-resolve the document, not
+        // merely re-resolve labels — and it has to re-resolve the filter's own
+        // placeholder too, which no child of it can do on its behalf.
         ctx.locale_signal().bind_to(sid, reg, BindingLevel::Rebuild);
 
-        let nav_widget = self.build_nav(ctx);
+        let nav_widget = self.build_nav();
         let nav = ctx.add_boxed(Box::new(nav_widget));
-        let content = self.build_content(ctx);
+        let content = ctx.add(HelpReadingPane::new(self.vm.clone()));
 
         // `MinSize::width`, not `FixedSize::width`. `FixedSize` proposes `None` on the
         // axis it does not bind, so a width-only one hands the column unbounded height:
@@ -139,12 +144,72 @@ impl Widget for HelpPanel {
 }
 
 impl HelpPanel {
-    /// The table of contents: a filter, then one group per non-empty section.
-    fn build_nav(&self, ctx: &mut BuildContext) -> impl Widget + 'static {
-        let current = self.vm.current_key().get();
-        let mut column = VStack::new().spacing(2.0);
+    /// The table of contents: the filter field, then the filtered list under it.
+    ///
+    /// Takes no [`BuildContext`] on purpose. Everything it assembles is a plain widget,
+    /// and the one part that has to react to typing is [`HelpTopicList`], which owns its
+    /// own `build` — which is the whole point of the split.
+    fn build_nav(&self) -> impl Widget + 'static {
+        VStack::new()
+            .spacing(0.0)
+            .child(
+                Padding::symmetric(8.0, 8.0).child(
+                    SearchField::new(self.vm.query()).placeholder(tr!(help_filter_topics())),
+                ),
+            )
+            .child(Expand::new().child(HelpTopicList::new(self.vm.clone())))
+    }
+}
 
-        for (section, topics) in self.vm.contents() {
+/// The filtered table of contents: one group per section that still has a topic in it,
+/// or a note saying nothing matched.
+///
+/// It is a widget of its own for one reason: **the filter query has to be bound below
+/// the `SearchField`, never above it.** Bound above — which is how this shipped — every
+/// keystroke rebuilt the field along with the list, and a fresh `TextInput` opens with
+/// its caret at 0 and its value selected, so the following character overwrote the
+/// whole query. The field could hold exactly one letter, which read as it erasing every
+/// stroke. Bound here, the list narrows on each keystroke and the field is never touched.
+///
+/// It binds no locale: [`HelpPanel`] does, and a rebuild there rebuilds this with it.
+struct HelpTopicList {
+    vm: HelpViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl HelpTopicList {
+    fn new(vm: HelpViewModel) -> Self {
+        Self {
+            vm,
+            root_child: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for HelpTopicList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HelpTopicList").finish_non_exhaustive()
+    }
+}
+
+impl Widget for HelpTopicList {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let sid = ctx.self_id();
+        let reg = ctx.binding_registry();
+        self.vm.query().bind_to(sid, reg, BindingLevel::Rebuild);
+        // Which topic is open is the only state a row carries (the `Tinted` variant
+        // below), so the highlight moving is this list's business rather than the whole
+        // window's — one more thing the reading pane no longer drags the filter through.
+        self.vm
+            .current_key()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+
+        let current = self.vm.current_key().get();
+        let contents = self.vm.contents();
+        let nothing_matched = contents.is_empty();
+
+        let mut column = VStack::new().spacing(2.0);
+        for (section, topics) in contents {
             column = column.child(
                 Padding::new(14.0, 8.0, 4.0, 8.0).child(
                     TextWidget::new(section.label())
@@ -171,26 +236,99 @@ impl HelpPanel {
             }
         }
 
-        let empty_note = self.vm.contents().is_empty().then(|| {
-            Padding::symmetric(12.0, 12.0).child(
-                TextWidget::new(tr!(help_no_matching_topic()))
-                    .style(TextStyleRole::Body)
-                    .color(TextRole::Secondary),
-            )
-        });
-
-        let mut body = VStack::new().spacing(0.0).child(
-            Padding::symmetric(8.0, 8.0)
-                .child(SearchField::new(self.vm.query()).placeholder(tr!(help_filter_topics()))),
-        );
-        if let Some(note) = empty_note {
-            body = body.child(note);
+        let mut body = VStack::new().spacing(0.0);
+        if nothing_matched {
+            body = body.child(
+                Padding::symmetric(12.0, 12.0).child(
+                    TextWidget::new(tr!(help_no_matching_topic()))
+                        .style(TextStyleRole::Body)
+                        .color(TextRole::Secondary),
+                ),
+            );
         }
-        let _ = ctx;
-        body.child(Expand::new().child(ScrollArea::new().child(column)))
+
+        let id = ctx.add(body.child(Expand::new().child(ScrollArea::new().child(column))));
+        self.root_child = Some(id);
+        vec![id]
     }
 
-    /// The reading pane: a header, then the topic body.
+    fn layout_response(
+        &self,
+        proposal: SizeProposal,
+        ctx: &LayoutContext,
+    ) -> teksilo::core::widget::LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(Into::into)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+/// The reading pane: a header, then the topic body.
+///
+/// Bound to the open topic and the depth of the back trail, and to nothing else. Keeping
+/// it out of [`HelpPanel`] is what lets that shell stop rebuilding on the open topic,
+/// and so what keeps a click in the table of contents from recreating — and re-selecting
+/// the contents of — the filter field the reader may be part way through typing into.
+///
+/// It also means typing in the filter no longer re-parses and re-typesets the page being
+/// read on every keystroke.
+struct HelpReadingPane {
+    vm: HelpViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl HelpReadingPane {
+    fn new(vm: HelpViewModel) -> Self {
+        Self {
+            vm,
+            root_child: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for HelpReadingPane {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HelpReadingPane").finish_non_exhaustive()
+    }
+}
+
+impl Widget for HelpReadingPane {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let sid = ctx.self_id();
+        let reg = ctx.binding_registry();
+        self.vm
+            .current_key()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm.depth().bind_to(sid, reg, BindingLevel::Rebuild);
+
+        let id = self.build_content(ctx);
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(
+        &self,
+        proposal: SizeProposal,
+        ctx: &LayoutContext,
+    ) -> teksilo::core::widget::LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(Into::into)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+impl HelpReadingPane {
+    /// The header, then the topic body.
     fn build_content(&self, ctx: &mut BuildContext) -> WidgetId {
         let Some(spec) = self.vm.current_topic() else {
             // Reachable when an extension that registered the open topic is dropped
