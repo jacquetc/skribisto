@@ -165,6 +165,12 @@ session-configure = Set the session's word goal and time limit
 session-configure-title = Writing session
 session-word-goal = Word goal
 session-time-limit = Time limit
+# The spin box's non-editable trailing unit. An abbreviation, not a word that
+# agrees with the number: a `SpinBox` suffix is static text and cannot carry a
+# plural selector. The separating space is prepended in code (Qt's `" min"`
+# convention), so give the unit alone. Never shown at 0 — that reads
+# `session-no-limit` instead.
+session-time-limit-unit = min
 session-no-goal = No goal
 session-no-limit = No limit
 session-reset = Reset session

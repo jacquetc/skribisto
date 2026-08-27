@@ -148,7 +148,21 @@ fn configure_form(vm: &WritingSessionViewModel) -> impl Widget {
         .child(Spacer::new())
         .child(
             FixedSize::new().width(SPIN_WIDTH).child(
+                // The unit, or the number means nothing: this field is minutes
+                // and the word goal beside it is words, and nothing in the row
+                // says which is which. `suffix` takes a plain `String` — a
+                // `SpinBox` renders it as static, non-editable trailing text —
+                // so the translation is resolved here, at build time, which is
+                // correct because a locale change rebuilds composite widgets and
+                // re-runs this. The separating space is Qt's `" min"` convention
+                // and belongs to the layout; the unit itself belongs to the
+                // translator.
+                //
+                // At 0 the suffix is suppressed on its own and
+                // `special_value_text` takes the whole field — "No limit", not
+                // "No limit min".
                 SpinBox::new(vm.time_target_min(), 0i64, 600)
+                    .suffix(format!(" {}", tr!(session_time_limit_unit()).resolve_now()))
                     .special_value_text(tr!(session_no_limit())),
             ),
         );

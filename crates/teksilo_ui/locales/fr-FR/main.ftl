@@ -162,6 +162,7 @@ session-configure = Définir l’objectif de mots et la limite de temps
 session-configure-title = Session d’écriture
 session-word-goal = Objectif de mots
 session-time-limit = Limite de temps
+session-time-limit-unit = min
 session-no-goal = Aucun objectif
 session-no-limit = Aucune limite
 session-reset = Réinitialiser la session
