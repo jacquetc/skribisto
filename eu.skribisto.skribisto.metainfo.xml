@@ -8,7 +8,7 @@
   <project_license>GPL-3.0-only</project_license>
   <description>
     <p>Skribisto helps you write anything, from a novel to course notes, without fighting formatting along the way. Organise a project in a binder tree of folders and items; the book's structure — Part, Chapter, Scene, Note — comes from the role you give each row, not from where it sits in the tree. Every writing row keeps its prose and its synopsis side by side.</p>
-    <p>Skribisto is not a word processor: a project exports to DOCX, EPUB, PDF, HTML, Markdown, Djot, LaTeX or plain text, so the final formatting happens in whichever program you prefer.</p>
+    <p>Skribisto is not a word processor: a project exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX or plain text, so the final formatting happens in whichever program you prefer.</p>
     <ul>
       <li>Dual editor pane (prose and synopsis), with split panes and tabs</li>
       <li>Read a whole chapter, part or book as one continuous document, or every synopsis at once</li>
@@ -66,7 +66,7 @@
           <li>Trash with restore and undo</li>
           <li>Backups with a retention policy, several destinations, a scheduler, and read-only opening</li>
           <li>Import projects from Plume Creator</li>
-          <li>Export to Word (DOCX), EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live preview</li>
+          <li>Export to Word (DOCX), OpenDocument (ODT), EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live preview</li>
           <li>Spell checking with downloadable dictionaries</li>
           <li>Light and dark themes, and per-editor typography</li>
           <li>Open several projects side by side, each in its own window</li>

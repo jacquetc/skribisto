@@ -39,9 +39,9 @@ does not come from where a row sits in that tree: it comes from the *role* you g
 whether Book, Part, Chapter, Scene, Note or plain Text. Every writing row owns both its prose
 and a synopsis, which is why the editor has two panes.
 
-What Skribisto is not: LibreOffice, Calligra or Word. A project exports to DOCX, EPUB, PDF,
-HTML, Markdown, Djot, LaTeX or plain text, so the final formatting can happen in a full word
-processor.
+What Skribisto is not: LibreOffice, Calligra or Word. A project exports to DOCX, ODT, EPUB,
+PDF, HTML, Markdown, Djot, LaTeX or plain text, so the final formatting can happen in a full
+word processor.
 
 Accessibility is too often forgotten. The interface exposes an accessibility tree (AccessKit),
 so screen readers can drive it; JAWS and NVDA are the ones used for testing. Please get in
@@ -71,7 +71,8 @@ touch if you hit a glaring gap.
   scheduler, and opening a backup read-only)
 - Opens legacy `.skrib` SQLite projects, upgrading them on load
 - Imports from Plume Creator (`.plume`)
-- Exports to DOCX, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live preview
+- Exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live
+  preview
 - Spell checking with downloadable dictionaries
 - Light and dark themes, per-editor typography, adjustable text scale
 - English and French user interface, for now
