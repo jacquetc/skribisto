@@ -285,11 +285,16 @@ impl Widget for NoteDetailsPane {
             ));
         }
 
-        // Below two Books in the Work, this renders nothing at all: no control,
-        // no empty picker, no chrome. See `docks::inspector::live_books`'s own
-        // doc for why.
+        // **One Book is still a Book to file under.** This was gated at two, on the
+        // reasoning that a one-Book writer has nothing to declare — which is true of a
+        // *filter* and false of a *field*. Filing is not "which Book am I looking at",
+        // it is "which Book is this entry part of", and the model refuses to infer it:
+        // empty `books` reads as not yet filed, never as every book (see the field's own
+        // doc). So a one-Book project could not file anything, every entry stayed unfiled
+        // for good, and the moment a second Book arrived the writer had a whole cast to
+        // file retrospectively. With no Book at all there is genuinely nothing to offer.
         let book_candidates = crate::docks::inspector::live_books(&self.app_ctx, &self.ids);
-        if book_candidates.len() >= 2 {
+        if !book_candidates.is_empty() {
             fields = fields.child(books_section(
                 &self.probe,
                 book_candidates,
@@ -327,7 +332,7 @@ impl Widget for NoteDetailsPane {
         // Both arms are a `VStack` on purpose: `Box<dyn Widget>` is not itself a
         // `Widget` here, so an optional column has to unify on a concrete type rather
         // than on a trait object.
-        let manuscript: Option<VStack> = mention_index.as_ref().and_then(|index| {
+        let mut manuscript: Option<VStack> = mention_index.as_ref().and_then(|index| {
             let backlinks = index.backlinks_for(self.item_id);
             if !backlinks.is_empty() {
                 Some(backlinks_section(
@@ -344,6 +349,36 @@ impl Widget for NoteDetailsPane {
                 None
             }
         });
+
+        // ── Registered sections: what an extension has to say about *this* entry ──
+        //
+        // Under the backlinks, in the manuscript column, because a reading is about
+        // what the prose already says rather than a field the writer sets — see
+        // `shared::note_sections` for the whole of why this door exists and why it is
+        // not `container.segments`.
+        //
+        // A page that had no manuscript column grows one: a section is entitled to say
+        // something about an entry the scan found nothing for ("not searched yet", "no
+        // hits"), which is a fact about the entry rather than an empty promise.
+        if let Some(index) = mention_index.as_ref() {
+            let sections = crate::tabs::shared::note_sections::registered_note_sections();
+            if !sections.is_empty() {
+                let cx = crate::tabs::shared::note_sections::NoteSectionContext {
+                    app_ctx: self.app_ctx.clone(),
+                    ids: self.ids.clone(),
+                    item_id: self.item_id,
+                    discoverable: is_discoverable,
+                    mention_index: index.clone(),
+                };
+                let mut col = manuscript.unwrap_or_else(|| VStack::new().spacing(18.0));
+                for spec in sections {
+                    col = col
+                        .child(section_header((spec.label)()))
+                        .child(crate::tabs::Boxed::new((spec.view)(&cx)));
+                }
+                manuscript = Some(col);
+            }
+        }
         let two_columns = manuscript.is_some();
 
         // One column when there is nothing to put beside the fields, so an ordinary note

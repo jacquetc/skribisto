@@ -141,16 +141,20 @@ pub(super) fn section(
         // `Item/Note` under one "Note" facet for search, not a hand-rolled
         // sub_role list.
         //
-        // Renders nothing at all below two Books in the Work: no control, no empty
-        // picker, no chrome. A one-Book writer has nothing to declare, and a
-        // disabled field would answer a question they never asked. See
-        // `docks::inspector::live_books`'s own doc comment for the reasoning.
+        // **Offered from the first Book, not the second.** This was gated at two, on
+        // the reasoning that a one-Book writer has nothing to declare. That is true of a
+        // *filter* — a chip row offering one choice asks a question nobody has — and
+        // false of a *field*: filing says which Book an entry is part of, and the model
+        // refuses to infer it (empty `books` is "not yet filed", never "every book").
+        // Gated at two, a one-Book project could not file anything at all, so every
+        // entry read as unfiled for ever, and adding a second Book handed the writer a
+        // whole cast to file after the fact. Nothing is offered with no Book at all.
         if matches!(
             skribisto_model::search_facet_of(&d.role, &d.sub_role),
             Some(skribisto_model::SearchFacet::Note)
         ) {
             let candidates = super::live_books(&panel.app_ctx, &panel.outline.ids());
-            if candidates.len() >= 2 {
+            if !candidates.is_empty() {
                 let stack = panel.outline.ids().stack_id.get();
                 let books_value = Signal::new(d.books.clone());
                 let books_probe = SingleBinderItem::new(panel.app_ctx.clone());

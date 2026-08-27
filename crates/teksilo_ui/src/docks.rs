@@ -227,6 +227,24 @@ pub struct DockContext {
     /// [`crate::active_context`]. Docks get it and tabs do not: a tab is already
     /// scoped to one container, a dock sits outside every tab.
     pub active: crate::active_context::ActiveContext,
+    /// **This Work's** mention index — where every discoverable name actually
+    /// turns up in the manuscript.
+    ///
+    /// Handed over rather than left to `ctx.app_state::<MentionIndex>()`, which is
+    /// the one slot that cannot answer this correctly: `app_state` is fixed at
+    /// process start and answers with whatever the *bootstrap* session built (see
+    /// `crate::app`'s own note on the same trap for `AppIds`). Launch with a
+    /// project on the command line and the bootstrap session is that project, so
+    /// the slot happens to hold the right index and everything works. Open the app
+    /// first and pick a project afterwards — what most writers do — and the slot
+    /// holds the throwaway session's index, bound to a `work_id` of `None`, empty
+    /// for the life of the process.
+    ///
+    /// It is the same handle `view_model_setup` threads into every tab, for the
+    /// reason recorded there: an index read off `app_state` is silently a
+    /// different, emptier index, and every reading built on it reports an absence
+    /// rather than an error.
+    pub mention_index: crate::mentions::MentionIndex,
     /// **The prose of a row the writer has open, as it stands right now.**
     ///
     /// The ordinary read commands answer with the *stored* text, and typing does not reach
@@ -562,8 +580,9 @@ mod extension_roster_tests {
         let cx = DockContext {
             app_ctx: app_ctx.clone(),
             ids: AppIds::new(),
-            work: crate::save::WorkHandle::detached(app_ctx, AppIds::new()),
+            work: crate::save::WorkHandle::detached(app_ctx.clone(), AppIds::new()),
             active: crate::active_context::ActiveContext::detached(),
+            mention_index: crate::mentions::MentionIndex::new(app_ctx, AppIds::new()),
             // Nothing mounted in a test tree, so no row has live prose.
             live_prose: Rc::new(|_| None),
         };
@@ -620,10 +639,11 @@ mod extension_roster_tests {
         assert!(!save_state.is_unsaved(), "a fresh Work starts clean");
 
         let cx = DockContext {
-            app_ctx,
-            ids,
+            app_ctx: app_ctx.clone(),
+            ids: ids.clone(),
             work: save_state.handle(),
             active: crate::active_context::ActiveContext::detached(),
+            mention_index: crate::mentions::MentionIndex::new(app_ctx, ids),
             // Nothing mounted in a test tree, so no row has live prose.
             live_prose: Rc::new(|_| None),
         };

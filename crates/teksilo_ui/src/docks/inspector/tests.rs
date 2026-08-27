@@ -313,15 +313,20 @@ fn a_section_that_declines_a_sub_role_is_not_built() {
 /// The Books section is gated on two independent things at once: the focused
 /// row must be story-bible material outside the manuscript flow (the
 /// constraint-matrix "Note" facet, `Folder/Note` or `Item/Note`) *and* the
-/// Work must hold at least two Books. A one-Book writer must see no control,
-/// no empty picker, no chrome: not a disabled field, which would answer a
-/// question they never asked.
+/// Work must hold **at least one** Book.
+///
+/// One, not two. It was two, on the reasoning that a one-Book writer has nothing
+/// to declare — true of a filter, false of a field. Filing says which Book an
+/// entry is part of, and the model refuses to infer it (empty `books` reads as
+/// not yet filed, never as every book), so gated at two a one-Book project could
+/// not file anything at all: every entry stayed unfiled for good, and adding a
+/// second Book handed the writer a whole cast to file after the fact.
 ///
 /// Measured through the section's own effect on the panel's leaf count,
 /// exactly as `an_unfocused_panel_is_the_placeholder` measures the whole
 /// panel: nothing else about the focused Note's rendering depends on how
-/// many Books the Work holds, so a leaf-count change between one Book and
-/// two isolates this section.
+/// many Books the Work holds, so a leaf-count change between none and one
+/// isolates this section.
 ///
 /// The gate is checked against what the probe *itself* reports for this
 /// build (see `focused_dto`'s own note): under the `mocks` feature
@@ -332,7 +337,7 @@ fn a_section_that_declines_a_sub_role_is_not_built() {
 /// asserts just as strictly as the `if` branch asserts the opposite for the
 /// row that does resolve as one (the default, non-`mocks` build).
 #[test]
-fn the_books_section_appears_only_once_the_work_holds_two_books() {
+fn the_books_section_appears_with_the_first_book_not_the_second() {
     let ctx = Rc::new(AppContext::new());
     let (work_id, note_id) = work_with_item(&ctx, BinderItemSubRole::Note);
     let binder_id = binder_of(&ctx, work_id);
@@ -342,24 +347,24 @@ fn the_books_section_appears_only_once_the_work_holds_two_books() {
         Some(skribisto_model::SearchFacet::Note)
     );
 
-    // One Book, the baseline: `work_with_item` seeds no Book at all.
+    // No Book at all, the baseline: `work_with_item` seeds none.
+    let (no_book_tree, no_book_root) = laid_out(&ctx, work_id, Some(note_id));
+    let with_no_book = leaves(&no_book_tree, no_book_root).len();
+
     add_book(&ctx, binder_id, "Book One");
     let (one_book_tree, one_book_root) = laid_out(&ctx, work_id, Some(note_id));
     let with_one_book = leaves(&one_book_tree, one_book_root).len();
 
-    add_book(&ctx, binder_id, "Book Two");
-    let (two_books_tree, two_books_root) = laid_out(&ctx, work_id, Some(note_id));
-    let with_two_books = leaves(&two_books_tree, two_books_root).len();
-
     if is_note_family {
         assert!(
-            with_two_books > with_one_book,
-            "a second Book must add the Books section's own leaves (one: \
-             {with_one_book}, two: {with_two_books})"
+            with_one_book > with_no_book,
+            "the *first* Book must bring the Books section with it (none: \
+             {with_no_book}, one: {with_one_book}) — gated at two, a one-Book \
+             project could never file anything at all"
         );
     } else {
         assert_eq!(
-            with_one_book, with_two_books,
+            with_no_book, with_one_book,
             "the focused row does not resolve as a Note under this build, so \
              Book count must have no effect on the panel at all"
         );

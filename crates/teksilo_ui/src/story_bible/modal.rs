@@ -396,15 +396,15 @@ impl Widget for EntryPanel {
                 }),
             ));
 
-        // ── Books: only when the Work actually has two or more to choose
-        // among, the same gate every other Books surface in this edition
-        // shares. See `docks::inspector::live_books`'s own doc.
+        // ── Books: whenever the Work has one to file under, the same gate every
+        // other Books surface shares. Filing is a field, not a filter — see
+        // `docks::inspector::live_books`'s own doc for why one Book is still a Book.
         let candidates = self.book_candidates();
         #[cfg(test)]
         {
-            self.books_section_rendered = candidates.len() >= 2;
+            self.books_section_rendered = !candidates.is_empty();
         }
-        if candidates.len() >= 2 {
+        if !candidates.is_empty() {
             col = col.child(
                 TextWidget::new(tr!(books_section()))
                     .style(TextStyleRole::Tiny)
@@ -829,7 +829,7 @@ mod tests {
         let id = tree.add_boxed(Box::new(panel));
         // Unbounded height: an *exact* proposal lets the inner `ScrollArea` fill
         // and report back the proposed height regardless of content, which is
-        // exactly the size `no_books_control_renders_below_two_books` needs to
+        // exactly the size `the_books_control_appears_with_the_first_book_not_the_second` needs to
         // tell apart. This panel is only ever laid out inside a modal's own
         // fixed card in the real app, but every button click test here only
         // needs the tree built and clickable, not a particular pixel size.
@@ -983,7 +983,7 @@ mod tests {
     /// have run C0's own migration path. `build()`'s own gate is read back
     /// via the same `as_any` introspection the button ids use.
     #[test]
-    fn no_books_control_renders_below_two_books() {
+    fn the_books_control_appears_with_the_first_book_not_the_second() {
         let no_books = seed();
         let panel_none = EntryPanel::new(
             deps(&no_books),
@@ -1005,8 +1005,9 @@ mod tests {
         );
         let (tree_one, id_one, _) = mount(&one_book.app_ctx, panel_one);
         assert!(
-            !books_section_rendered(&tree_one, id_one),
-            "one Book: still no control"
+            books_section_rendered(&tree_one, id_one),
+            "one Book is still a Book to file under: filing is a field, not a filter, \
+             and gated at two it could never be set on a one-Book project at all"
         );
 
         let two_books = seed();

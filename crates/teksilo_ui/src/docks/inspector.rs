@@ -119,7 +119,7 @@ pub(super) fn live_item_metas(ctx: &AppContext, ids: &AppIds) -> Vec<ItemMeta> {
 /// [`crate::tags::books::book_chips`] drops an id that resolves to one: filing is
 /// scoped to the modern encoding, not to every row `SubRoleExt::opens_book()`
 /// would admit. A Work whose Books are all still legacy rows shows no Books
-/// section at all, by the same >=2 gate, until at least two are promoted.
+/// section at all, because this returns nothing, until at least one is promoted.
 ///
 /// Same shape as [`live_item_metas`]: a fresh walk of the Work's binders, not a
 /// cached signal, because the Inspector already rebuilds on every focus change,
@@ -127,7 +127,7 @@ pub(super) fn live_item_metas(ctx: &AppContext, ids: &AppIds) -> Vec<ItemMeta> {
 ///
 /// `pub(crate)`, not `pub(super)`: [`crate::story_bible`]'s creation modal needs the
 /// exact same candidate table, gated the exact same way, for its own Books section,
-/// and a second walk written there would be one more place the >=2 gate and the
+/// and a second walk written there would be one more place the emptiness gate and the
 /// `activated` filter would have to be kept in step with this one by hand.
 pub(crate) fn live_books(
     ctx: &AppContext,

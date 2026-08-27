@@ -399,8 +399,9 @@ fn seam_context() -> SeamContext {
     crate::docks::DockContext {
         app_ctx: app_ctx.clone(),
         ids: AppIds::new(),
-        work: crate::save::WorkHandle::detached(app_ctx, AppIds::new()),
+        work: crate::save::WorkHandle::detached(app_ctx.clone(), AppIds::new()),
         active: crate::active_context::ActiveContext::detached(),
+        mention_index: crate::mentions::MentionIndex::new(app_ctx, AppIds::new()),
         // Nothing mounted in a test tree, so no row has live prose.
         live_prose: Rc::new(|_| None),
     }

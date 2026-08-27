@@ -19,6 +19,7 @@
 //! | [`register_dock`] | a window's shell is built |
 //! | [`register_inspector_section`] | the Inspector renders |
 //! | [`register_container_segment`] | a container tab is built |
+//! | [`register_note_details_section`] | an entry's Details page is built |
 //! | [`register_category`] | the Analysis pane is built |
 //! | [`register_topics`] | the Help window is built |
 //! | [`register_lane_provider`] | a text surface's margin lane is built |
@@ -118,6 +119,17 @@ pub use crate::tabs::shared::segments::{
 // implementation detail.
 pub use crate::tabs::shared::charts::{
     BAR_PITCH, CHART_HEIGHT, STRIP_HEIGHT, content_width, wide_chart,
+};
+
+// ── One entry's Details page ─────────────────────────────────────────────────
+//
+// A *per-entry* door, deliberately not a segment: a reading about one story-bible
+// entry belongs on that entry's own page, where the app already knows which entry
+// it is about. See `tabs::shared::note_sections` for what an extension had to do
+// without one.
+pub use crate::tabs::shared::note_sections::{
+    NoteSectionContext, NoteSectionHandle, NoteSectionSpec, register_note_details_section,
+    registered_note_sections,
 };
 
 // ── The margin lane ──────────────────────────────────────────────────────────

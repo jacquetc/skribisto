@@ -25,6 +25,7 @@ pub(crate) mod dictionary_menu;
 pub(crate) mod editor;
 /// A container's own-page target readout, and the Distribute entry point.
 pub mod goal_header;
+pub mod note_sections;
 mod panes;
 /// The `container.segments` extension slot and the stable ids the bar is keyed by.
 pub mod segments;

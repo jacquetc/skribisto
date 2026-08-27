@@ -1696,6 +1696,12 @@ impl Widget for App {
             // picking the signals here, so this call site cannot drift from what
             // `active_context`'s own test exercises.
             active: crate::active_context::ActiveContext::for_window(&editors, &self.outline),
+            // Tier 2: **the Work's own** index, the same handle every tab is given.
+            // Never `ctx.app_state::<MentionIndex>()` — that slot answers with the
+            // bootstrap session's, which for an app started without a project is an
+            // index bound to no Work and empty forever. See `DockContext` for the
+            // whole account.
+            mention_index: session.mention_index.clone(),
             // Tier 3 again, and for the same reason: *this* window's editors. The handle is
             // resolved per call and never held, because `RichTextEditor::construct` mints a
             // fresh one.
