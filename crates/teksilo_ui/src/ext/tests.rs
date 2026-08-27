@@ -78,7 +78,7 @@ fn declared_registrars() -> Vec<(String, PathBuf)> {
 /// A slot nobody re-exported is a slot a downstream edition has to reach by its
 /// internal path — which is exactly what `ext` exists to stop, and exactly what
 /// happens by default, since adding a registry and updating this module are two
-/// separate acts. One of the nine arrived while this refactor was in flight.
+/// separate acts. One of them arrived while this refactor was in flight.
 #[test]
 fn every_registration_slot_is_reachable_through_ext() {
     let ext = std::fs::read_to_string(crate_src().join("ext.rs")).expect("read ext.rs");
@@ -100,6 +100,48 @@ fn every_registration_slot_is_reachable_through_ext() {
     );
 }
 
+/// A slot re-exported but **not listed in the module-doc table** above it.
+///
+/// The sibling test proves a slot is *reachable*; nothing proved it was
+/// *documented*, and the two drift in opposite directions. The `pub use` is
+/// forced by the compiler the moment an extension needs it, so it never goes
+/// missing for long; the table is prose, and prose was three rows and one
+/// sentence behind by the time anyone read it against the code
+/// (`register_wiring` had no row at all, under a paragraph that said "nine").
+///
+/// The row is what a downstream author reads first, so it is the half worth
+/// pinning.
+#[test]
+fn every_slot_has_a_row_in_the_module_doc_table() {
+    let ext = std::fs::read_to_string(crate_src().join("ext.rs")).expect("read ext.rs");
+    // The module doc alone. A `pub use` further down mentions every name, so
+    // scanning the whole file would pass no matter what the table said.
+    let doc: String = ext
+        .lines()
+        .take_while(|l| l.starts_with("//!") || l.starts_with("//") || l.trim().is_empty())
+        .filter(|l| l.starts_with("//!"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let excused: Vec<&str> = NOT_A_SLOT.iter().map(|(n, _)| *n).collect();
+
+    let undocumented: Vec<String> = declared_registrars()
+        .into_iter()
+        .filter(|(name, _)| !excused.contains(&name.as_str()))
+        // The intra-doc link, closing backtick included, so `register` does not
+        // match the row belonging to `register_dock`.
+        .filter(|(name, _)| !doc.contains(&format!("[`{name}`]")))
+        .map(|(name, file)| format!("  {name}  (declared in {})", file.display()))
+        .collect();
+
+    assert!(
+        undocumented.is_empty(),
+        "these registration slots are re-exported from `ext` but have no row in \
+         its module-doc table:\n{}\n\
+         Add a row naming when it is read and what its view is handed.",
+        undocumented.join("\n")
+    );
+}
+
 /// The excuse list must not outlive what it excuses: a stale entry silently
 /// widens the check's blind spot.
 #[test]
@@ -118,7 +160,7 @@ fn nothing_on_the_not_a_slot_list_has_been_deleted() {
 fn the_scan_itself_finds_the_slots() {
     let names: Vec<String> = declared_registrars().into_iter().map(|(n, _)| n).collect();
     assert!(
-        names.len() >= 9,
+        names.len() >= 13,
         "the scan found only {} registration functions, so it is broken: {names:?}",
         names.len()
     );
@@ -126,10 +168,14 @@ fn the_scan_itself_finds_the_slots() {
         "register_dock",
         "register_inspector_section",
         "register_container_segment",
+        "register_note_details_section",
         "register_category",
+        "register_topics",
+        "register_lane_provider",
         "register_command",
         "register_settings",
         "register_page",
+        "register_wiring",
         "register_locales",
     ] {
         assert!(

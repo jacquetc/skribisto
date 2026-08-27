@@ -10,24 +10,30 @@
 //! nothing else, so that moving a view from `docks/comments.rs` into
 //! `comments/dock.rs` is an internal change rather than a downstream break.
 //!
-//! There are nine registration slots and five context types. Each slot is a
-//! namespaced registration returning a **drop-handle**, refusing an id that is
-//! built-in or already held by another namespace.
+//! **Thirteen registration slots.** Each is a namespaced registration returning a
+//! **drop-handle**, refusing an id that is built-in or already held by another
+//! namespace, and each hands the live application handles to the *view* it
+//! registers rather than to the registration itself — through the context type
+//! named beside it.
 //!
-//! | Slot | Read at |
-//! |---|---|
-//! | [`register_dock`] | a window's shell is built |
-//! | [`register_inspector_section`] | the Inspector renders |
-//! | [`register_container_segment`] | a container tab is built |
-//! | [`register_note_details_section`] | an entry's Details page is built |
-//! | [`register_category`] | the Analysis pane is built |
-//! | [`register_topics`] | the Help window is built |
-//! | [`register_lane_provider`] | a text surface's margin lane is built |
-//! | [`register_command`] | `App::build`, and each window's menu build |
-//! | [`register_settings`] | every `spec`/`dump`/`load_pins` lookup |
-//! | [`register_page`] | the Settings window is built |
-//! | [`register_locales`] | **once**, in `run()` |
-//! | [`register`] (identity) | **earliest of all**, before `AppContext` exists |
+//! The table is the count: `ext/tests.rs` fails the build if a slot is missing a
+//! row, which is how the prose here came to say "nine" over a table of twelve.
+//!
+//! | Slot | Read at | Its view is handed |
+//! |---|---|---|
+//! | [`register_dock`] | a window's shell is built | [`DockContext`] |
+//! | [`register_inspector_section`] | the Inspector renders | [`InspectorContext`] |
+//! | [`register_container_segment`] | a container tab is built | [`ContentTab`] |
+//! | [`register_note_details_section`] | an entry's Details page is built | [`NoteSectionContext`] |
+//! | [`register_category`] | the Analysis pane is built | [`AnalysisViewModel`] |
+//! | [`register_topics`] | the Help window is built | nothing; a topic is content |
+//! | [`register_lane_provider`] | a text surface's margin lane is built | [`LaneContext`] |
+//! | [`register_command`] | `App::build`, and each window's menu build | [`SeamContext`] |
+//! | [`register_settings`] | every `spec`/`dump`/`load_pins` lookup | nothing; a key is data |
+//! | [`register_page`] | the Settings window is built | [`SeamContext`] |
+//! | [`register_wiring`] | every `App::build`, beside the extension commands | `&mut BuildContext` |
+//! | [`register_locales`] | **once**, in `run()` | nothing; a bundle is data |
+//! | [`register`] (identity) | **earliest of all**, before `AppContext` exists | nothing; it *is* the answer |
 //!
 //! Two rules that the table cannot show, and that have both gone wrong before:
 //!
