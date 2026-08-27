@@ -12,6 +12,12 @@ build*
 !package/windows/build.py
 out/
 temp
+# A local build-speed config, deliberately NOT committed: it selects `mold` as the
+# linker, and committing it would make mold a hard requirement for every clone —
+# a contributor without it gets `cannot find linker "mold"` at link time, which
+# `cargo check`/`clippy` would not have warned them about, since neither links.
+# Keep the file, share the recipe (README), bind nobody.
+/.cargo/config.toml
 temp_*/
 
 # Python (scripts/automation_*.py)

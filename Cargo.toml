@@ -87,7 +87,35 @@ skribisto_compiler = { package = "skribisto-compiler", version = "0.0.1", path =
 skribisto_fonts = { package = "skribisto-fonts", version = "0.0.1", path = "crates/skribisto-fonts" }
 
 # Sibling repos (path deps live next to this workspace; see README "Build it, test it")
-text-document = { path = "../text-document/crates/public_api", version = "1.9.3" }
+text-document = { path = "../text-document/crates/public_api", version = "1.10.2" }
+
+[profile.dev]
+# Debuginfo, not the linker, was the dev loop's biggest single cost. Measured on
+# 2026-08-27 (24 cores, warm, uncontended): editing one leaf file in `teksilo_ui`
+# cost 8.89 s to `cargo build` but only 3.80 s to `cargo check` — and the build's
+# `sys` time was 9.40 s against 10.58 s `user`, i.e. the second half of the loop
+# was I/O, not compilation. The cause was on disk: under Cargo's default
+# `debug = 2` the `teksilo_ui` rlib was **1.24 GB** and the debug binary **1.08 GB**,
+# `target/debug` had reached **138 GB** on a 97%-full disk, and rustc was reloading
+# and rewriting a **2.3–2.8 GB** incremental dep-graph on every edit however small.
+#
+# `line-tables-only` keeps exactly what a writer's bug report needs — `file:line`
+# in panic messages and backtraces — and drops only the variable/type information
+# a *step-debugger* wants. If you need to run this under gdb/lldb, don't edit this
+# line: override the one crate under inspection instead, e.g.
+#
+#     [profile.dev.package.teksilo_ui]
+#     debug = 2
+#
+# `split-debuginfo = "unpacked"` then leaves that reduced DWARF in the object
+# files beside the binary rather than copying it into the executable at link time.
+#
+# Verified NOT to be the cause, so don't re-investigate: `tr!` (2,616 invocations,
+# but `teksilo-i18n-macros` caches the parsed `.ftl` in a `OnceLock` per rustc
+# process) and monomorphization (teksilo's widgets are type-erased — `HStack` is
+# a plain non-generic struct over `Box<dyn Widget>`).
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
 
 [profile.release]
 lto = "fat"
