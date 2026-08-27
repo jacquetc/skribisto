@@ -218,11 +218,14 @@ fn group(
 ) -> VisibleWhen {
     VisibleWhen::new(
         visible,
-        Padding::new(0.0, 0.0, GROUP_GAP, 0.0).child(
-            VStack::new()
-                .spacing(BUTTON_GAP)
-                .child(GroupHeader::new(header))
-                .child(controls),
+        teksu!(
+            Padding::new(0.0, 0.0, GROUP_GAP, 0.0) {
+                VStack {
+                    spacing: BUTTON_GAP
+                    GroupHeader::new(header)
+                    child: controls
+                }
+            }
         ),
     )
 }
@@ -455,16 +458,19 @@ fn controls(vm: &FormatViewModel) -> Padding {
 
     let tables = VisibleWhen::new(
         g.tables.clone(),
-        VStack::new()
-            .spacing(BUTTON_GAP)
-            .child(GroupHeader::new(tr!(format_group_tables())))
-            .child(row().child(command_button(
-                glyph::table_insert(),
-                tr!(format_table_insert()),
-                vm.clone(),
-                |vm| vm.insert_table(3, 3),
-            )))
-            .child(VisibleWhen::new(vm.in_table(), table_ops)),
+        teksu!(
+            VStack {
+                spacing: BUTTON_GAP
+                GroupHeader::new(tr!(format_group_tables()))
+                child: row().child(command_button(
+                    glyph::table_insert(),
+                    tr!(format_table_insert()),
+                    vm.clone(),
+                    |vm| vm.insert_table(3, 3),
+                ))
+                child: VisibleWhen::new(vm.in_table(), table_ops)
+            }
+        ),
     );
 
     let breaks = group(
@@ -497,21 +503,29 @@ fn controls(vm: &FormatViewModel) -> Padding {
     // still centres the wrapped block.
     let empty = VisibleWhen::new(
         g.empty.clone(),
-        VStack::new()
-            .alignment(HAlignment::Center)
-            .child(TextWidget::new(tr!(format_panel_empty())).color(TextRole::Secondary)),
+        teksu!(
+            VStack {
+                alignment: HAlignment::Center
+                TextWidget::new(tr!(format_panel_empty())) {
+                    color: TextRole::Secondary
+                }
+            }
+        ),
     );
 
-    Padding::uniform(DOCK_PADDING).child(
-        VStack::new()
-            .spacing(0.0)
-            .child(empty)
-            .child(history)
-            .child(marks)
-            .child(block)
-            .child(lists)
-            .child(tables)
-            .child(breaks),
+    teksu!(
+        Padding::uniform(DOCK_PADDING) {
+            VStack {
+                spacing: 0.0
+                child: empty
+                child: history
+                child: marks
+                child: block
+                child: lists
+                child: tables
+                child: breaks
+            }
+        }
     )
 }
 

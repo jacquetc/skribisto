@@ -10,27 +10,32 @@ use teksilo::res;
 use teksilo::widgets::{IconWidget, SplitButton};
 
 pub(super) fn overview_header(vm: &OverviewViewModel) -> impl Widget {
-    let row = HStack::new()
-        .spacing(10.0)
-        .child(
-            Expand::horizontal().child(
-                SearchField::new(vm.search_query_signal())
-                    .placeholder(tr!(overview_search_placeholder())),
-            ),
-        )
-        .child(OverviewCount {
-            vm: vm.clone(),
-            root: None,
-        })
-        .child(expand_collapse_buttons(vm))
-        .child(OverviewCreateButton {
-            vm: vm.clone(),
-            root: None,
-        });
-
-    Panel::new()
-        .background(SurfaceRole::Raised)
-        .child(Padding::symmetric(14.0, 8.0).child(row))
+    teksu!(
+        Panel {
+            background: SurfaceRole::Raised
+            Padding::symmetric(14.0, 8.0) {
+                HStack {
+                    spacing: 10.0
+                    Expand::horizontal {
+                        SearchField::new(vm.search_query_signal()) {
+                            placeholder: tr!(overview_search_placeholder())
+                        }
+                    }
+                    // Parenthesised: a bare `Name { .. }` at body position is a
+                    // `teksu!` element, not a Rust struct literal.
+                    child: (OverviewCount {
+                        vm: vm.clone(),
+                        root: None,
+                    })
+                    child: expand_collapse_buttons(vm)
+                    child: (OverviewCreateButton {
+                        vm: vm.clone(),
+                        root: None,
+                    })
+                }
+            }
+        }
+    )
 }
 
 /// Expand-all / collapse-all. A book's outline is the one place where "show me
@@ -39,25 +44,26 @@ pub(super) fn overview_header(vm: &OverviewViewModel) -> impl Widget {
 fn expand_collapse_buttons(vm: &OverviewViewModel) -> impl Widget {
     let expand = vm.clone();
     let collapse = vm.clone();
-    HStack::new()
-        .spacing(2.0)
-        // `tooltip` is also the button's accessible name (an `IconButton` has no separate
-        // label — see the framework's own `a11y_builtin_*` helpers), so these are named
-        // for a screen reader by the same call.
-        .child(
+    teksu!(
+        HStack {
+            spacing: 2.0
+            // `tooltip` is also the button's accessible name (an `IconButton` has no
+            // separate label — see the framework's own `a11y_builtin_*` helpers), so
+            // these are named for a screen reader by the same call.
             IconButton::new(IconWidget::from_svg_icon(res!(
                 "assets/icons/expand-all.svg"
-            )))
-            .tooltip(tr!(overview_expand_all()))
-            .on_activate_fn(move |_| expand.expand_all()),
-        )
-        .child(
+            ))) {
+                tooltip: tr!(overview_expand_all())
+                on_activate_fn: move |_| expand.expand_all()
+            }
             IconButton::new(IconWidget::from_svg_icon(res!(
                 "assets/icons/collapse-all.svg"
-            )))
-            .tooltip(tr!(overview_collapse_all()))
-            .on_activate_fn(move |_| collapse.collapse_all()),
-        )
+            ))) {
+                tooltip: tr!(overview_collapse_all())
+                on_activate_fn: move |_| collapse.collapse_all()
+            }
+        }
+    )
 }
 
 /// The "N rows" count — follows the *visible* set, so it reflects an active search.

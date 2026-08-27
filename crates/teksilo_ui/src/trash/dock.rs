@@ -46,32 +46,42 @@ fn trash_panel(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {
 
     let header = {
         let vm = trash.clone();
-        Padding::symmetric(8.0, 8.0).child(
-            Button::new(tr!(trash_empty_button()))
-                .variant(ButtonVariant::Plain)
-                .enabled(has_entries.clone())
-                .on_activate_fn(move |ctx| vm.confirm_empty_trash(ctx)),
+        teksu!(
+            Padding::symmetric(8.0, 8.0) {
+                Button::new(tr!(trash_empty_button())) {
+                    variant: ButtonVariant::Plain
+                    enabled: has_entries.clone()
+                    on_activate_fn: move |ctx| vm.confirm_empty_trash(ctx)
+                }
+            }
         )
     };
 
     let tree = trash_tree(trash.clone(), on_open);
 
-    // Empty-state ↔ tree.
+    // Empty-state ↔ tree. Plain builders: `Switcher` takes its children as ordered
+    // pages, and the pairing with the index signal is positional.
     let body = Switcher::new(has_entries.map(|b| usize::from(*b)))
-        .child(
-            Padding::symmetric(16.0, 24.0).child(
-                TextWidget::new(tr!(trash_empty_state()))
-                    .style(TextStyleRole::Small)
-                    .color(TextRole::Secondary),
-            ),
-        )
+        .child(teksu!(
+            Padding::symmetric(16.0, 24.0) {
+                TextWidget::new(tr!(trash_empty_state())) {
+                    style: TextStyleRole::Small
+                    color: TextRole::Secondary
+                }
+            }
+        ))
         .child(tree);
 
-    VStack::new()
-        .spacing(0.0)
-        .child(header)
-        .child(Divider::new())
-        .child(Expand::new().child(body))
+    teksu!(
+        VStack {
+            spacing: 0.0
+            child: header
+            Divider
+            Expand {
+                child: body
+            }
+        }
+    )
 }
 
 fn trash_tree(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {

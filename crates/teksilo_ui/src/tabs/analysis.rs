@@ -353,29 +353,30 @@ impl AnalysisPane {
     fn header(&self) -> impl Widget {
         let vm = self.vm.clone();
         let running = self.vm.is_running();
-        let mut row = HStack::new()
-            .spacing(8.0)
-            .child(
-                TextWidget::new(tr!(analysis_scope_book()))
-                    .style(TextStyleRole::Small)
-                    .color(TextRole::Secondary),
-            )
-            .child(Spacer::new());
-
-        // Staleness is a plain statement of fact, not a warning: the result is still the
-        // one that was computed, and the writer decides whether it is worth re-running.
-        if self.vm.is_stale() {
-            row = row.child(
-                TextWidget::new(tr!(analysis_stale()))
-                    .style(TextStyleRole::Tiny)
-                    .color(TextRole::Secondary),
-            );
-        }
-        row.child(
-            Button::new(tr!(analysis_run()))
-                .variant(ButtonVariant::Plain)
-                .enabled(!running)
-                .on_activate_fn(move |_| vm.run()),
+        let stale = self.vm.is_stale();
+        teksu!(
+            HStack {
+                spacing: 8.0
+                TextWidget::new(tr!(analysis_scope_book())) {
+                    style: TextStyleRole::Small
+                    color: TextRole::Secondary
+                }
+                Spacer
+                // Staleness is a plain statement of fact, not a warning: the result is
+                // still the one that was computed, and the writer decides whether it is
+                // worth re-running.
+                if stale {
+                    TextWidget::new(tr!(analysis_stale())) {
+                        style: TextStyleRole::Tiny
+                        color: TextRole::Secondary
+                    }
+                }
+                Button::new(tr!(analysis_run())) {
+                    variant: ButtonVariant::Plain
+                    enabled: !running
+                    on_activate_fn: move |_| vm.run()
+                }
+            }
         )
     }
 
@@ -408,15 +409,24 @@ impl AnalysisPane {
 /// A padded, scrollable wrapper for an already-boxed body — what a category
 /// spec hands back. (It had an unboxed sibling, deleted as unused.)
 fn scrolled_boxed(inner: Box<dyn Widget>) -> Box<dyn Widget> {
-    Box::new(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(Boxed::new(inner))))
+    Box::new(teksu!(
+        ScrollArea {
+            Padding::symmetric(0.0, 24.0) {
+                Boxed::new(inner)
+            }
+        }
+    ))
 }
 
 use crate::shared::text::caption as note;
 
 fn heading(text: impl Into<LocalizedString>) -> impl Widget {
-    TextWidget::new(text)
-        .style(TextStyleRole::Tiny)
-        .color(TextRole::Secondary)
+    teksu!(
+        TextWidget::new(text) {
+            style: TextStyleRole::Tiny
+            color: TextRole::Secondary
+        }
+    )
 }
 
 /// The width a paragraph of explanatory prose is held to.
@@ -435,7 +445,11 @@ const PROSE_MEASURE: f32 = 640.0;
 /// characters. It is not a wrapping bug; there is simply no width to wrap at until
 /// something names one.
 fn prose(text: impl Into<LocalizedString>) -> impl Widget {
-    MaxSize::width(PROSE_MEASURE).child(note(text))
+    teksu!(
+        MaxSize::width(PROSE_MEASURE) {
+            child: note(text)
+        }
+    )
 }
 
 /// **What this row is called on screen**, which is not always its title.
@@ -483,9 +497,14 @@ fn is_empty_text(scene: &SceneAnalysis) -> bool {
 
 /// The control for [`is_empty_text`] filtering, drawn above the charts it governs.
 fn empty_toggle(ignore_empty: Signal<bool>) -> impl Widget {
-    HStack::new()
-        .child(Toggle::new(ignore_empty).label(tr!(analysis_ignore_empty())))
-        .child(Spacer::new())
+    teksu!(
+        HStack {
+            Toggle::new(ignore_empty) {
+                label: tr!(analysis_ignore_empty())
+            }
+            Spacer
+        }
+    )
 }
 
 // ── Shape ─────────────────────────────────────────────────────────────────────
@@ -509,9 +528,12 @@ fn shape_view(
     let footnote_section = footnote_words_section(footnote_words.get());
     let all = scenes_of(dto);
     if all.is_empty() {
-        return VStack::new()
-            .child(note(tr!(analysis_no_scenes())))
-            .child(footnote_section);
+        return teksu!(
+            VStack {
+                child: note(tr!(analysis_no_scenes()))
+                child: footnote_section
+            }
+        );
     }
     let hidden = all.iter().filter(|s| is_empty_text(s)).count();
     let hiding = ignore_empty.get();
@@ -523,11 +545,14 @@ fn shape_view(
     if scenes.is_empty() {
         // Every text is empty and they are all hidden — say which, or the pane reads as
         // "this book has no scenes" when in fact it has scenes with nothing written yet.
-        return VStack::new()
-            .spacing(10.0)
-            .child(empty_toggle(ignore_empty))
-            .child(note(tr!(analysis_all_texts_empty())))
-            .child(footnote_section);
+        return teksu!(
+            VStack {
+                spacing: 10.0
+                child: empty_toggle(ignore_empty)
+                child: note(tr!(analysis_all_texts_empty()))
+                child: footnote_section
+            }
+        );
     }
 
     let words: Vec<i64> = scenes
@@ -573,54 +598,53 @@ fn shape_view(
         }
     }
 
-    let mut col = VStack::new()
-        .spacing(10.0)
-        .child(empty_toggle(ignore_empty));
-    if hiding && hidden > 0 {
-        col = col.child(note(tr!(analysis_empty_hidden(count = hidden as i64))));
-    }
-    col = col
-        .child(heading(tr!(analysis_words_per_scene())))
-        .child(wide_chart(
-            points.len(),
-            CHART_HEIGHT,
-            BarChart::new(ChartModel::from_series_vec(vec![
-                ChartSeries::new(tr!(analysis_words_per_scene()).resolve_now()).data(points),
-            ]))
-            .grid(true)
-            .legend(false)
-            // The comparison the panel is built on, drawn rather than described. A caption
-            // saying "the median is 2,495" asks the reader to hold a number in their head
-            // and eyeball every bar against it.
-            .reference_line(ReferenceLine::new(
-                median as f32,
-                tr!(analysis_median_line(count = median.round() as i64)),
-            )),
-        ))
-        .child(note(tr!(analysis_median_words(
-            count = median.round() as i64
-        ))));
-
-    if dialogue_points.is_empty() {
-        // Not "0% dialogue" — the language has no curated convention, which is a different
-        // and honest statement.
-        col = col
-            .child(heading(tr!(analysis_dialogue())))
-            .child(note(tr!(analysis_dialogue_unsupported())));
-    } else {
-        col = col
-            .child(heading(tr!(analysis_dialogue())))
-            .child(wide_chart(
-                dialogue_points.len(),
-                STRIP_HEIGHT,
+    // The dialogue strip is one heading followed by one of two bodies — hence the
+    // heading hoisted out of the branch and a `child_opt` pair below it: a `teksu!`
+    // `if/else` arm holds a single element, and the heading is common to both.
+    let no_dialogue = dialogue_points.is_empty();
+    teksu!(
+        VStack {
+            spacing: 10.0
+            child: empty_toggle(ignore_empty)
+            child_opt: (hiding && hidden > 0)
+            .then(|| note(tr!(analysis_empty_hidden(count = hidden as i64))))
+            child: heading(tr!(analysis_words_per_scene()))
+            child: wide_chart(
+                points.len(),
+                CHART_HEIGHT,
                 BarChart::new(ChartModel::from_series_vec(vec![
-                    ChartSeries::new(tr!(analysis_dialogue()).resolve_now()).data(dialogue_points),
+                    ChartSeries::new(tr!(analysis_words_per_scene()).resolve_now()).data(points),
                 ]))
                 .grid(true)
-                .legend(false),
-            ));
-    }
-    col.child(footnote_section)
+                .legend(false)
+                // The comparison the panel is built on, drawn rather than described. A
+                // caption saying "the median is 2,495" asks the reader to hold a number
+                // in their head and eyeball every bar against it.
+                .reference_line(ReferenceLine::new(
+                    median as f32,
+                    tr!(analysis_median_line(count = median.round() as i64)),
+                )),
+            )
+            child: note(tr!(analysis_median_words(count = median.round() as i64)))
+            child: heading(tr!(analysis_dialogue()))
+            // Not "0% dialogue" — the language has no curated convention, which is a
+            // different and honest statement.
+            child_opt: no_dialogue.then(|| note(tr!(analysis_dialogue_unsupported())))
+            child_opt: (!no_dialogue).then(|| {
+                wide_chart(
+                    dialogue_points.len(),
+                    STRIP_HEIGHT,
+                    BarChart::new(ChartModel::from_series_vec(vec![
+                        ChartSeries::new(tr!(analysis_dialogue()).resolve_now())
+                            .data(dialogue_points),
+                    ]))
+                    .grid(true)
+                    .legend(false),
+                )
+            })
+            child: footnote_section
+        }
+    )
 }
 
 /// The book's footnote-word figure, kept visually apart from the words-per-scene chart
@@ -660,47 +684,61 @@ fn shape_view(
 fn arrivals_view(counts: &common::arrival::Counts) -> impl Widget {
     use common::arrival::Arrival;
 
-    let mut rows = VStack::new().spacing(6.0);
     let total: u64 = counts.values().copied().sum();
-    if total == 0 {
-        rows = rows.child(note(tr!(analysis_arrivals_nothing())));
+    // Fixed order, from `Arrival::ALL` — the declaration order, which is not
+    // a ranking and is not sorted by size. Sorting by count would put the
+    // largest route first and invite reading it as the finding.
+    let routes: Vec<(LocalizedString, LocalizedString)> = if total == 0 {
+        Vec::new()
     } else {
-        // Fixed order, from `Arrival::ALL` — the declaration order, which is not
-        // a ranking and is not sorted by size. Sorting by count would put the
-        // largest route first and invite reading it as the finding.
-        for route in Arrival::ALL {
-            let n = counts.get(&route).copied().unwrap_or(0);
-            let label = match route {
-                Arrival::Typed => tr!(analysis_arrivals_typed()),
-                Arrival::Pasted => tr!(analysis_arrivals_pasted()),
-                Arrival::Dictated => tr!(analysis_arrivals_dictated()),
-                Arrival::Imported => tr!(analysis_arrivals_imported()),
-                Arrival::Programmatic => tr!(analysis_arrivals_programmatic()),
-            };
-            let value = if n == 0 {
-                tr!(analysis_arrivals_none())
-            } else {
-                tr!(analysis_arrivals_count(count = n as i64))
-            };
-            rows = rows.child(
-                HStack::new()
-                    .spacing(8.0)
-                    .child(TextWidget::new(label))
-                    .child(note(value)),
-            );
-        }
-    }
+        Arrival::ALL
+            .into_iter()
+            .map(|route| {
+                let n = counts.get(&route).copied().unwrap_or(0);
+                let label = match route {
+                    Arrival::Typed => tr!(analysis_arrivals_typed()),
+                    Arrival::Pasted => tr!(analysis_arrivals_pasted()),
+                    Arrival::Dictated => tr!(analysis_arrivals_dictated()),
+                    Arrival::Imported => tr!(analysis_arrivals_imported()),
+                    Arrival::Programmatic => tr!(analysis_arrivals_programmatic()),
+                };
+                let value = if n == 0 {
+                    tr!(analysis_arrivals_none())
+                } else {
+                    tr!(analysis_arrivals_count(count = n as i64))
+                };
+                (label, value)
+            })
+            .collect()
+    };
 
-    VStack::new()
-        .spacing(10.0)
-        .child(heading(tr!(analysis_arrivals())))
-        .child(prose(tr!(analysis_arrivals_explainer())))
-        .child(rows)
-        // Below the figures, not above: they are caveats on what was just read,
-        // and a reader who takes nothing else from this pane should still take
-        // these two.
-        .child(note(tr!(analysis_arrivals_scope())))
-        .child(note(tr!(analysis_arrivals_session())))
+    let rows = teksu!(
+        VStack {
+            spacing: 6.0
+            child_opt: (total == 0).then(|| note(tr!(analysis_arrivals_nothing())))
+            for (label, value) in routes.into_iter() {
+                HStack {
+                    spacing: 8.0
+                    TextWidget::new(label)
+                    child: note(value)
+                }
+            }
+        }
+    );
+
+    teksu!(
+        VStack {
+            spacing: 10.0
+            child: heading(tr!(analysis_arrivals()))
+            child: prose(tr!(analysis_arrivals_explainer()))
+            child: rows
+            // Below the figures, not above: they are caveats on what was just read,
+            // and a reader who takes nothing else from this pane should still take
+            // these two.
+            child: note(tr!(analysis_arrivals_scope()))
+            child: note(tr!(analysis_arrivals_session()))
+        }
+    )
 }
 
 fn footnote_words_section(value: Option<i64>) -> impl Widget {
@@ -708,10 +746,13 @@ fn footnote_words_section(value: Option<i64>) -> impl Widget {
         Some(n) => note(tr!(analysis_footnote_words_count(count = n))),
         None => note(tr!(analysis_footnote_words_pending())),
     };
-    VStack::new()
-        .spacing(6.0)
-        .child(heading(tr!(analysis_footnote_words())))
-        .child(line)
+    teksu!(
+        VStack {
+            spacing: 6.0
+            child: heading(tr!(analysis_footnote_words()))
+            child: line
+        }
+    )
 }
 
 #[cfg(test)]

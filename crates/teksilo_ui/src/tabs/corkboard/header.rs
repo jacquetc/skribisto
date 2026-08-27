@@ -9,57 +9,74 @@ use super::*;
 // ── Header ────────────────────────────────────────────────────────────────────
 
 pub(super) fn corkboard_header(vm: &CorkboardViewModel) -> impl Widget {
-    let top = HStack::new()
-        .spacing(10.0)
-        .child(Expand::horizontal().child(CorkboardBreadcrumb {
-            vm: vm.clone(),
-            root: None,
-        }))
-        .child(CorkboardCount {
-            vm: vm.clone(),
-            root: None,
-        })
-        .child(NestedFlatToggle {
-            vm: vm.clone(),
-            index: Signal::new(0),
-            root: None,
-        })
-        .child(CorkboardCreateButton {
-            vm: vm.clone(),
-            root: None,
-        });
+    // The four header widgets are plain Rust struct literals, so each one is
+    // parenthesised: a bare `Name { .. }` at body position is a `teksu!` *element*,
+    // which would lower to `Name::new().vm(..)` instead of the struct.
+    let top = teksu!(
+        HStack {
+            spacing: 10.0
+            Expand::horizontal {
+                child: (CorkboardBreadcrumb {
+                    vm: vm.clone(),
+                    root: None,
+                })
+            }
+            child: (CorkboardCount {
+                vm: vm.clone(),
+                root: None,
+            })
+            child: (NestedFlatToggle {
+                vm: vm.clone(),
+                index: Signal::new(0),
+                root: None,
+            })
+            child: (CorkboardCreateButton {
+                vm: vm.clone(),
+                root: None,
+            })
+        }
+    );
 
-    let bottom = HStack::new()
-        .spacing(10.0)
-        .child(
-            Expand::horizontal().child(
-                SearchField::new(vm.search_query_signal())
-                    .placeholder(tr!(corkboard_search_placeholder())),
-            ),
-        )
-        .child(SortControl {
-            vm: vm.clone(),
-            root: None,
-        })
-        .child(TextWidget::new(tr!(corkboard_card_size())).color(TextRole::Secondary))
-        .child(
-            FixedSize::new().width(170.0).child(
-                Slider::new(
-                    vm.card_size(),
-                    crate::CORKBOARD_CARD_SIZE_MIN,
-                    crate::CORKBOARD_CARD_SIZE_MAX,
-                )
-                .step(crate::CORKBOARD_CARD_SIZE_STEP)
-                .label(tr!(corkboard_card_size()))
-                // The slider writes an app-global setting, but sits inside one
-                // tab's header — say so, or dragging it silently resizes every
-                // other open board too.
-                .tooltip(tr!(corkboard_scope_hint())),
-            ),
-        );
+    let bottom = teksu!(
+        HStack {
+            spacing: 10.0
+            Expand::horizontal {
+                SearchField::new(vm.search_query_signal()) {
+                    placeholder: tr!(corkboard_search_placeholder())
+                }
+            }
+            child: (SortControl {
+                vm: vm.clone(),
+                root: None,
+            })
+            TextWidget::new(tr!(corkboard_card_size())) {
+                color: TextRole::Secondary
+            }
+            FixedSize::new() {
+                width: 170.0
+                Slider::new(vm.card_size(), crate::CORKBOARD_CARD_SIZE_MIN, crate::CORKBOARD_CARD_SIZE_MAX) {
+                    step: crate::CORKBOARD_CARD_SIZE_STEP
+                    label: tr!(corkboard_card_size())
+                    // The slider writes an app-global setting, but sits inside one
+                    // tab's header — say so, or dragging it silently resizes every
+                    // other open board too.
+                    tooltip: tr!(corkboard_scope_hint())
+                }
+            }
+        }
+    );
 
-    Panel::new().background(SurfaceRole::Raised).child(
-        Padding::symmetric(14.0, 8.0).child(VStack::new().spacing(8.0).child(top).child(bottom)),
+    teksu!(
+        Panel {
+            background: SurfaceRole::Raised
+            Padding::symmetric(14.0, 8.0) {
+                VStack {
+                    spacing: 8.0
+                    child: top
+                    child: bottom
+                }
+            }
+        }
     )
 }
 

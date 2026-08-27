@@ -132,46 +132,51 @@ impl SessionStatusItem {
 
 /// The gear popover: word goal + time limit, both persisted; `0` reads as "none".
 fn configure_form(vm: &WritingSessionViewModel) -> impl Widget {
-    let goal_row = HStack::new()
-        .spacing(8.0)
-        .child(TextWidget::new(tr!(session_word_goal())))
-        .child(Spacer::new())
-        .child(
-            FixedSize::new().width(SPIN_WIDTH).child(
-                SpinBox::new(vm.word_target(), 0i64, 100_000)
-                    .special_value_text(tr!(session_no_goal())),
-            ),
-        );
-    let time_row = HStack::new()
-        .spacing(8.0)
-        .child(TextWidget::new(tr!(session_time_limit())))
-        .child(Spacer::new())
-        .child(
-            FixedSize::new().width(SPIN_WIDTH).child(
-                // The unit, or the number means nothing: this field is minutes
-                // and the word goal beside it is words, and nothing in the row
-                // says which is which. `suffix` takes a plain `String` — a
-                // `SpinBox` renders it as static, non-editable trailing text —
-                // so the translation is resolved here, at build time, which is
-                // correct because a locale change rebuilds composite widgets and
-                // re-runs this. The separating space is Qt's `" min"` convention
-                // and belongs to the layout; the unit itself belongs to the
-                // translator.
-                //
-                // At 0 the suffix is suppressed on its own and
-                // `special_value_text` takes the whole field — "No limit", not
-                // "No limit min".
-                SpinBox::new(vm.time_target_min(), 0i64, 600)
-                    .suffix(format!(" {}", tr!(session_time_limit_unit()).resolve_now()))
-                    .special_value_text(tr!(session_no_limit())),
-            ),
-        );
-    Padding::uniform(12.0).child(
-        VStack::new()
-            .spacing(10.0)
-            .child(TextWidget::new(tr!(session_configure_title())).style(TextStyleRole::BodyBold))
-            .child(goal_row)
-            .child(time_row),
+    teksu!(
+        Padding::uniform(12.0) {
+            VStack {
+                spacing: 10.0
+                TextWidget::new(tr!(session_configure_title())) {
+                    style: TextStyleRole::BodyBold
+                }
+                HStack {
+                    spacing: 8.0
+                    TextWidget::new(tr!(session_word_goal()))
+                    Spacer
+                    FixedSize::new() {
+                        width: SPIN_WIDTH
+                        SpinBox::new(vm.word_target(), 0i64, 100_000) {
+                            special_value_text: tr!(session_no_goal())
+                        }
+                    }
+                }
+                HStack {
+                    spacing: 8.0
+                    TextWidget::new(tr!(session_time_limit()))
+                    Spacer
+                    FixedSize::new() {
+                        width: SPIN_WIDTH
+                        // The unit, or the number means nothing: this field is minutes
+                        // and the word goal beside it is words, and nothing in the row
+                        // says which is which. `suffix` takes a plain `String` — a
+                        // `SpinBox` renders it as static, non-editable trailing text —
+                        // so the translation is resolved here, at build time, which is
+                        // correct because a locale change rebuilds composite widgets and
+                        // re-runs this. The separating space is Qt's `" min"` convention
+                        // and belongs to the layout; the unit itself belongs to the
+                        // translator.
+                        //
+                        // At 0 the suffix is suppressed on its own and
+                        // `special_value_text` takes the whole field — "No limit", not
+                        // "No limit min".
+                        SpinBox::new(vm.time_target_min(), 0i64, 600) {
+                            suffix: format!(" {}", tr!(session_time_limit_unit()).resolve_now())
+                            special_value_text: tr!(session_no_limit())
+                        }
+                    }
+                }
+            }
+        }
     )
 }
 
