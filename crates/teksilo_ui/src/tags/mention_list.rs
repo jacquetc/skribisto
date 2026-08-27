@@ -51,7 +51,7 @@ use crate::mentions::MentionRow;
 /// The confirm checkmark's glyph size, matching the leading glyphs the framework's own
 /// menu rows draw at.
 pub(crate) const CONFIRM_GLYPH: f32 = 12.0;
-use crate::widgets::attach_labelled_composite_tooltip;
+use crate::widgets::{RING_RADIUS_ROW, attach_labelled_composite_tooltip, with_focus_ring};
 
 /// Persist a new confirmed-reference list for the item the list belongs to (append one id).
 pub type PinReference = Rc<dyn Fn(u64, &mut EventContext)>;
@@ -327,10 +327,21 @@ impl Widget for MentionList {
                 name.clone()
             };
             let title = row_name.clone();
+            // The row is a focus stop, so it must *look* like one when the
+            // keyboard lands on it. Teksilo paints no ring for a hand-built
+            // node — see `crate::widgets::focus_ring` — so these rows were
+            // Tab-reachable and visually silent.
+            let focused = ctx.signal(false);
+            let ringed = with_focus_ring(ctx, RING_RADIUS_ROW, line, &focused);
             let id = ctx.add(
-                line.access_role(Role::ListItem)
+                ringed
+                    .access_role(Role::ListItem)
                     .access_label(lit!(row_name.clone()))
                     .focusable(true)
+                    .on_focus({
+                        let focused = focused.clone();
+                        move |gained, _c| focused.set(gained)
+                    })
                     .on_tap({
                         let open = open.clone();
                         let title = title.clone();

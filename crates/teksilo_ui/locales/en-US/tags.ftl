@@ -50,6 +50,9 @@ tags-preset-period-detail = period detail
 ## The tag pill field (Inspector) and its "+" picker
 tags-pill-list = Tags
 tags-pill-add = Add a tag
+# The picker's own list of pickable tags, announced apart from the
+# `tags-pill-list` row of tags already assigned.
+tags-pick-list = Tags to pick from
 tags-pill-remove = Remove { $name }
 tags-pill-filter-placeholder = Filter or name a new tag
 tags-pill-no-match = No tag matches

@@ -19,6 +19,7 @@ use teksilo::widgets::{
 };
 
 use super::mention_list::PinReference;
+use crate::widgets::{RING_RADIUS_ROW, with_focus_ring};
 
 /// One story-bible entry offered in the Add popover.
 #[derive(Clone, Debug)]
@@ -107,13 +108,22 @@ impl Widget for CastAddPopover {
                 let pin = self.pin.clone();
                 let id = c.id;
                 let title = c.title.clone();
+                // Focus stops need a visible ring; teksilo paints none for a
+                // hand-built node (see `crate::widgets::focus_ring`).
+                let focused = ctx.signal(false);
+                let label = TextWidget::new(lit!(title.clone()))
+                    .style(TextStyleRole::Small)
+                    .max_lines(1);
+                let ringed = with_focus_ring(ctx, RING_RADIUS_ROW, label, &focused);
                 list = list.child(
-                    TextWidget::new(lit!(title.clone()))
-                        .style(TextStyleRole::Small)
-                        .max_lines(1)
+                    ringed
                         .access_role(Role::ListItem)
                         .access_label(lit!(title.clone()))
                         .focusable(true)
+                        .on_focus({
+                            let focused = focused.clone();
+                            move |gained, _c| focused.set(gained)
+                        })
                         .on_tap({
                             let pin = pin.clone();
                             move |_e, c| pin(id, c)

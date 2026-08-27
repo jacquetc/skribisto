@@ -29,7 +29,7 @@ use teksilo::core::overlay::TooltipPlacement;
 use teksilo::core::widget::{Widget, WidgetPlacement};
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
-use teksilo::tokens::{BorderRole, CornerRadius};
+use teksilo::tokens::CornerRadius;
 use teksilo::widgets::tooltip::{
     CompositeTooltipWidget, TooltipContent, attach_rich_tooltip_content_with_placement,
 };
@@ -284,31 +284,26 @@ impl Widget for Pill {
             content = content.add_child(x_id);
         }
 
-        // Keyboard-focus ring — the `StandardListItem`/`Button` idiom: a reactive border on
-        // the background rect, revealed only under `:focus-visible` (a keyboard focus, not
-        // a mouse click).
-        let focus_visible = ctx.focus_visible();
-        let ring = self
-            .focused
-            .zip(&focus_visible)
-            .map(|(f, v)| if *f && *v { 1.5 } else { 0.0 });
-        // The fill carries the hairline; the ring rides above it in its own transparent rect.
-        // One rect cannot do both — there is a single border per rect, and swapping its
-        // colour on focus would need the theme at signal-map time, which is not available.
-        // Stacking keeps each concern static and lets the ring simply paint over the
-        // hairline while focused.
+        // Keyboard-focus ring. The fill carries the hairline; the ring rides above it in
+        // its own transparent rect — one rect cannot do both, since there is a single
+        // border per rect and swapping its colour on focus would need the theme at
+        // signal-map time, which is not available. Stacking keeps each concern static and
+        // lets the ring simply paint over the hairline while focused.
+        //
+        // The rect itself comes from `crate::widgets::focus_ring`, which this idiom was
+        // extracted into once four other hand-built focus stops turned out to have no ring
+        // at all. `self.focused` rather than a `ctx.signal`: a `Pill` outlives its own
+        // rebuilds, so its ring should too.
+        let ring_rect =
+            crate::widgets::focus_ring(ctx, crate::widgets::RING_RADIUS_PILL, &self.focused);
         let bg = RectWidget::new()
             .background(self.background.clone())
             .corner_radius(CornerRadius::uniform(9999.0))
             .border_color(self.outline.clone().unwrap_or(Color::TRANSPARENT.into()))
             .border_width(if self.outline.is_some() { 1.0 } else { 0.0 });
-        let focus_ring = RectWidget::new()
-            .corner_radius(CornerRadius::uniform(9999.0))
-            .border_color(BorderRole::Focused)
-            .border_width(ring);
         let chip = ZStack::new()
             .child(bg)
-            .child(focus_ring)
+            .child(ring_rect)
             // `symmetric` is (vertical, horizontal) — 2 dp above and below, 8 dp either
             // side. Transposing these is what made every pill in the app 32 dp tall around a
             // 16 dp line of text, and squeezed short labels like "A" into circles.

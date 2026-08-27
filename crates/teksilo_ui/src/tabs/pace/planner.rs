@@ -9,8 +9,23 @@ use super::*;
 // ── WeekdayChips: the seven counted-day toggles ─────────────────────────────
 
 /// A wrapping row of seven weekday chips over the Pace's `weekday_mask`. Rebuilds
-/// on any mask change (so a chip's fill reflects the current bit); a click
-/// toggles that day's bit through the view-model.
+/// on any mask change (so a chip's fill reflects the current bit); activating a
+/// chip toggles that day's bit through the view-model.
+///
+/// **Each chip is a real [`Button`], not a tinted `ZStack`.** It was the latter,
+/// and that made the writing schedule the one setting in the app a keyboard
+/// could not reach: a `ZStack` carrying only `.on_tap` is a pointer-only
+/// control — no focus stop, no ring, no Enter/Space, and nothing but a promoted
+/// text label in the accessibility tree. `WeekdayChips` is the only writer of
+/// `weekday_mask` anywhere in the UI, so there was no second route to it.
+///
+/// A `Button` brings the focus ring, the hover and press chrome, Enter/Space
+/// and `Action::Click` with it. The two `access_*` calls then say what kind of
+/// button it is: accesskit has no `ToggleButton` role, so a multi-select chip
+/// is a `CheckBox` carrying `set_toggled` — the same encoding `MenuItem` uses
+/// for its check mode. Applied last, because they wrap the `Button` and every
+/// `Button` method has to come above them (the idiom `welcome::panel`'s
+/// `link_button` documents).
 pub(super) struct WeekdayChips {
     vm: PaceViewModel,
     root: Option<WidgetId>,
@@ -28,6 +43,33 @@ impl std::fmt::Debug for WeekdayChips {
     }
 }
 
+/// One weekday chip: a toggle button over a single bit of the `weekday_mask`.
+///
+/// Split out of the loop so its keyboard and accessibility contract can be
+/// tested without standing up a whole `PaceViewModel` — the contract is the
+/// point of it, and it is the half that was missing.
+fn weekday_chip(
+    label: LocalizedString,
+    on: bool,
+    toggle: impl Fn(&mut EventContext) + 'static,
+) -> impl Widget + 'static {
+    let chip = Button::new(label)
+        // Filled reads as "counted", Plain as "skipped" — the same accent-fill /
+        // neutral pair the hand-drawn chip painted, now resolved by the theme so
+        // it follows light and dark, and picks up the button's own hover, press
+        // and disabled states with it.
+        .variant(if on {
+            ButtonVariant::Filled
+        } else {
+            ButtonVariant::Plain
+        })
+        .on_activate_fn(toggle)
+        // Last: these wrap the `Button`, so every `Button` method is above them.
+        .access_role(teksilo::core::accesskit::Role::CheckBox)
+        .access_customize(move |b| b.set_toggled(on));
+    FixedSize::new().width(46.0).height(30.0).child(chip)
+}
+
 impl Widget for WeekdayChips {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         self.vm.weekday_mask().bind_to(
@@ -40,24 +82,11 @@ impl Widget for WeekdayChips {
         let mut row = Wrap::new().spacing(6.0).line_spacing(6.0);
         for (bit, label) in weekdays() {
             let on = mask & bit != 0;
-            let (bg, fg) = if on {
-                (SurfaceRole::Accent, TextRole::OnAccent)
-            } else {
-                (SurfaceRole::Container, TextRole::Secondary)
-            };
             let vm = self.vm.clone();
-            let chip = ZStack::new()
-                .child(
-                    RectWidget::new()
-                        .background(bg)
-                        .corner_radius(CornerRadius::uniform(8.0)),
-                )
-                .child(Center::new().child(TextWidget::new(label).color(fg).single_line()))
-                .on_tap(move |_e, _c| {
-                    let m = vm.weekday_mask().get();
-                    vm.set_weekday_mask(m ^ bit);
-                });
-            row = row.child(FixedSize::new().width(46.0).height(30.0).child(chip));
+            row = row.child(weekday_chip(label, on, move |_c| {
+                let m = vm.weekday_mask().get();
+                vm.set_weekday_mask(m ^ bit);
+            }));
         }
         self.root = Some(ctx.add(row));
         self.root.into_iter().collect()
@@ -204,5 +233,81 @@ pub(super) fn holiday_span(start: NaiveDate, end: NaiveDate) -> String {
         day_label(start)
     } else {
         format!("{}\u{2013}{}", day_label(start), day_label(end))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell as StdCell;
+    use std::rc::Rc as StdRc;
+    use teksilo::core::accesskit::{Role, Toggled};
+    use teksilo::core::event::{Key, Modifiers};
+    use teksilo::core::widget_tree::WidgetTree;
+
+    fn tree() -> WidgetTree {
+        WidgetTree::new().with_theme(teksilo::presets::intui::light())
+    }
+
+    /// Build one chip and hand back the tree plus a "was it toggled" cell.
+    fn chip(on: bool) -> (WidgetTree, WidgetId, StdRc<StdCell<bool>>) {
+        let fired = StdRc::new(StdCell::new(false));
+        let f = fired.clone();
+        let mut t = tree();
+        let id = t.add_boxed(Box::new(weekday_chip(lit!("Mon"), on, move |_c| {
+            f.set(true)
+        })));
+        t.layout(SizeProposal::exact(200.0, 60.0));
+        (t, id, fired)
+    }
+
+    /// The regression this replaced: the chip was a `ZStack` carrying `.on_tap`,
+    /// which is a pointer-only control — no focus stop at all. `WeekdayChips` is
+    /// the only writer of `weekday_mask` in the whole UI, so a keyboard-only
+    /// writer could not choose which days their schedule counts.
+    #[test]
+    fn a_chip_is_reachable_and_operable_from_the_keyboard() {
+        let (mut t, id, fired) = chip(false);
+
+        let button = t
+            .first_focusable_descendant(id)
+            .expect("a weekday chip must be a focus stop");
+        t.focus(button);
+        t.press_key(Key::Enter, Modifiers::NONE);
+        assert!(fired.get(), "Enter must toggle the day");
+    }
+
+    /// A multi-select chip is a check box carrying its state, not a bare button:
+    /// accesskit has no `ToggleButton` role, so `CheckBox` + `toggled` is the
+    /// encoding (the same one `MenuItem`'s check mode uses).
+    #[test]
+    fn a_chip_announces_its_name_role_and_state() {
+        for on in [false, true] {
+            let (mut t, id, _) = chip(on);
+            let _ = t.render();
+            let update = t.sync_accessibility();
+            let node = update
+                .nodes
+                .iter()
+                .map(|(_, n)| n)
+                .find(|n| n.role() == Role::CheckBox)
+                .unwrap_or_else(|| panic!("no CheckBox node for on={on}"));
+
+            assert!(
+                node.label().is_some_and(|l| l == "Mon"),
+                "the chip announces the weekday, got {:?}",
+                node.label()
+            );
+            assert_eq!(
+                node.toggled(),
+                Some(if on { Toggled::True } else { Toggled::False }),
+                "the chip announces whether the day is counted (on={on})"
+            );
+            assert!(
+                node.supports_action(teksilo::core::accesskit::Action::Click),
+                "assistive tech must be able to activate the chip"
+            );
+            let _ = id;
+        }
     }
 }

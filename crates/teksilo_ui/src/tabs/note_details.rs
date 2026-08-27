@@ -980,10 +980,24 @@ impl Widget for BacklinksList {
 
             let owner_id = row.owner_id;
             let title = row.document_title.clone();
+            // A focus stop with no visible ring is WCAG 2.4.7 — see
+            // `crate::widgets::focus_ring` for why the framework paints none.
+            let focused = ctx.signal(false);
+            let ringed = crate::widgets::with_focus_ring(
+                ctx,
+                crate::widgets::RING_RADIUS_ROW,
+                line,
+                &focused,
+            );
             let id = ctx.add(
-                line.access_role(Role::ListItem)
+                ringed
+                    .access_role(Role::ListItem)
                     .access_label(lit!(row.document_title.clone()))
                     .focusable(true)
+                    .on_focus({
+                        let focused = focused.clone();
+                        move |gained, _c| focused.set(gained)
+                    })
                     .on_tap({
                         let title = title.clone();
                         move |_e, c: &mut EventContext| {

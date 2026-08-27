@@ -58,6 +58,9 @@ fn row(
     date: Option<String>,
     on_tap: impl Fn(&mut EventContext) + 'static,
 ) -> impl Widget {
+    // Cloned before the two are moved into the text column below.
+    let a11y_title = title.clone();
+    let a11y_path = path.clone();
     let mut marker = FixedSize::new().width(16.0).height(16.0);
     if checked {
         marker = marker.child(IconWidget::checkmark(14.0));
@@ -119,12 +122,30 @@ fn row(
     // in its own zero-spacing HStack so it adds no gap to the row's natural width
     // (`content`'s own 8px spacing would otherwise apply to it too), and the tap
     // target stays the full row width rather than shrinking to the content.
+    //
+    // **Not `.focusable(true)`.** A `MenuList` navigates with its own
+    // `focused_index` — arrow keys move the highlight and Enter synthesises a
+    // click on it — while real tree focus stays on the panel so the key handler
+    // keeps receiving keys. A row that is also a Tab stop splits those two: Tab
+    // moves focus without moving the highlight, and the following Enter is
+    // handled by the panel and fires whatever the highlight still points at,
+    // which is a different row or none.
+    //
+    // **`Role::MenuItem` is declared by hand** because this row is not a
+    // `MenuItem` and cannot be — a title over a middle-ellipsised path over a
+    // date is two lines, and `MenuItem` has no subtitle. Without these an
+    // `HStack` is a content-free `GenericContainer`, which the a11y walk prunes
+    // as presentational: the popover announced as a menu of loose labels, with
+    // no row grouping, no name and no click action. The title is the name and
+    // the path the description, matching how the row reads.
     let inner = HStack::new()
         .spacing(0.0)
         .child(content)
         .child(Spacer::new())
         .cursor(CursorIcon::Pointer)
-        .focusable(true)
+        .access_role(teksilo::core::accesskit::Role::MenuItem)
+        .access_label_literal(a11y_title)
+        .access_description_literal(a11y_path)
         .on_tap(move |_event, ctx| on_tap(ctx));
     Padding::symmetric(6.0, 10.0).child(inner)
 }
@@ -509,6 +530,73 @@ mod tests {
         assert!(
             tree.is_active(focused),
             "the focused widget must be a live node"
+        );
+    }
+
+    /// The row is not a `MenuItem` and cannot be — two text lines plus a date —
+    /// so it declares the menu semantics by hand. Without them an `HStack` is a
+    /// content-free `GenericContainer`, which the a11y walk prunes as
+    /// presentational: the popover announced as a menu of loose labels, with no
+    /// row grouping and no name.
+    #[test]
+    fn a_row_announces_itself_as_a_named_menu_item() {
+        let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+        let id = tree.add_boxed(Box::new(row(
+            true,
+            true,
+            "Faux-Semblants".to_string(),
+            "/home/w/Faux-Semblants.skrib".to_string(),
+            None,
+            |_| {},
+        )));
+        tree.layout(SizeProposal::exact(400.0, 80.0));
+        let _ = tree.render();
+
+        let update = tree.sync_accessibility();
+        let node = update
+            .nodes
+            .iter()
+            .map(|(_, n)| n)
+            .find(|n| n.role() == teksilo::core::accesskit::Role::MenuItem)
+            .expect("the row must announce as a menu item, not a pruned container");
+        assert!(
+            node.label().is_some_and(|l| l == "Faux-Semblants"),
+            "the title names the row, got {:?}",
+            node.label()
+        );
+        assert!(
+            node.description()
+                .is_some_and(|d| d == "/home/w/Faux-Semblants.skrib"),
+            "the path is the description, got {:?}",
+            node.description()
+        );
+        let _ = id;
+    }
+
+    /// A row must **not** be its own Tab stop.
+    ///
+    /// `MenuList` navigates with an internal `focused_index` while real tree
+    /// focus stays on the panel, so the panel's key handler keeps receiving
+    /// keys. A row that is also focusable splits the two: Tab moves focus
+    /// without moving the highlight, and the Enter that follows is handled by
+    /// the panel and fires whatever the highlight still points at — a different
+    /// row, or nothing at all.
+    #[test]
+    fn a_row_is_not_its_own_tab_stop() {
+        let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+        let id = tree.add_boxed(Box::new(row(
+            false,
+            false,
+            "Project".to_string(),
+            "/tmp/p.skrib".to_string(),
+            None,
+            |_| {},
+        )));
+        tree.layout(SizeProposal::exact(400.0, 80.0));
+
+        assert!(
+            tree.first_focusable_descendant(id).is_none(),
+            "the enclosing MenuList owns the roving focus, not the row"
         );
     }
 

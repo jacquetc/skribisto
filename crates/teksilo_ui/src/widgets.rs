@@ -16,6 +16,7 @@
 
 pub mod destination_picker;
 pub mod diff_pane;
+pub mod focus_ring;
 /// The overview strip beside a scroll area. Three surfaces mount one — the text
 /// editor, a stream, and the search preview band — and it lives here rather than
 /// in the toolkit because what it maps is a *manuscript*: the whole reason it
@@ -33,6 +34,7 @@ pub mod tip;
 
 pub use destination_picker::DestinationPicker;
 pub(crate) use diff_pane::DiffPane;
+pub use focus_ring::{RING_RADIUS_PILL, RING_RADIUS_ROW, focus_ring, with_focus_ring};
 pub use margin_lane::{
     DEFAULT_LANE_WIDTH, DEFAULT_TEXTURE_WIDTH, LaneBar, LaneColumn, LaneMark, LaneShape, LaneSpan,
     MIN_MARK_HEIGHT, MarginLane, ResolvedMark, TEXTURE_DIVIDER,

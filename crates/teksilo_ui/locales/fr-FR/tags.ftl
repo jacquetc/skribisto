@@ -51,6 +51,9 @@ tags-preset-period-detail = détail d’époque
 ## Le champ d'étiquettes (inspecteur) et son sélecteur « + »
 tags-pill-list = Étiquettes
 tags-pill-add = Ajouter une étiquette
+# La liste des étiquettes proposées par le sélecteur, annoncée séparément
+# de « tags-pill-list », qui est la rangée des étiquettes déjà attribuées.
+tags-pick-list = Étiquettes proposées
 tags-pill-remove = Retirer { $name }
 tags-pill-filter-placeholder = Filtrer ou nommer une étiquette
 tags-pill-no-match = Aucune étiquette ne correspond

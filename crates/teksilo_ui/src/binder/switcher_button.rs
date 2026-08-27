@@ -26,8 +26,8 @@ use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     Button, ButtonVariant, FixedSize, HStack, IconButton, IconWidget, MenuItem, MenuList,
-    MessageBox, MessageBoxButtons, Padding, PopoverButton, PopoverIconButton, SearchField, Spacer,
-    StandardButton, TextWidget,
+    MessageBox, MessageBoxButtons, Padding, PopoverButton, PopoverIconButton, SearchField,
+    StandardButton,
 };
 
 use frontend::AppContext;
@@ -36,9 +36,6 @@ use crate::binder::OutlineViewModel;
 use crate::binder::icons::binder_icon;
 use crate::intents::AppIntent;
 use crate::models::{BinderListModel, BinderRow};
-
-/// Row width for the popover, so the trailing item counts align.
-const ROW_WIDTH: f32 = 236.0;
 
 /// Flat dropdown selecting which binder the outline tree shows.
 pub struct BinderSwitcherButton {
@@ -107,8 +104,17 @@ impl Widget for BinderSwitcherButton {
         .text_style(TextStyleRole::BodyBold)
         .trailing(IconWidget::chevron_down(12.0));
 
+        // `bare()`: the content is a `MenuList`, which draws its own themed
+        // surface — background, rounded border, drop shadow. The popover's
+        // default surface under it is a second frame around the first, which is
+        // why every other menu-in-a-popover in this app (the corkboard's ⋯, the
+        // stream's row menu, the settings presets, the Launcher's "Create
+        // from…") is bare too. Popovers holding hand-built content — the search
+        // scope panel below, the Go-to list — keep their surface, because
+        // nothing inside those brings one.
         let root = ctx.add(
             PopoverButton::new(trigger)
+                .bare()
                 .show_disclosure_caret(false)
                 .content(menu),
         );
@@ -124,73 +130,39 @@ impl Widget for BinderSwitcherButton {
     }
 }
 
-/// A 16 px leading column holding a checkmark when `current`.
-fn marker(current: bool) -> FixedSize {
-    let mut m = FixedSize::new().width(16.0).height(16.0);
-    if current {
-        m = m.child(IconWidget::checkmark(14.0));
-    }
-    m
-}
-
-fn title_color(current: bool) -> TextRole {
-    if current {
-        TextRole::Accent
-    } else {
-        TextRole::Primary
-    }
-}
-
 /// The "Show all binders" popover entry — clears the display filter.
 fn show_all_row(outline: &OutlineViewModel, current: bool) -> impl Widget {
     let outline = outline.clone();
-    let row = HStack::new()
-        .spacing(8.0)
-        .child(marker(current))
-        .child(
-            TextWidget::new(tr!(binder_show_all()))
-                .style(TextStyleRole::Body)
-                .color(title_color(current)),
-        )
-        .cursor(CursorIcon::Pointer)
-        .focusable(true)
-        .on_tap(move |_event, ctx| {
-            ctx.dismiss_self_overlay_chain();
-            outline.set_binder_filter(None);
-        });
-    Padding::symmetric(6.0, 8.0).child(FixedSize::new().width(ROW_WIDTH).child(row))
+    MenuItem::new(tr!(binder_show_all()))
+        .reflect_checked(current)
+        .on_activate_fn(move |_ctx| outline.set_binder_filter(None))
 }
 
-/// One binder entry — pick it on tap; right-click → Send to Trash (confirmed).
+/// One binder entry — pick it on activate; right-click → Send to Trash (confirmed).
 fn binder_row(outline: &OutlineViewModel, b: &BinderRow, current: bool) -> impl Widget {
     let id = b.id;
     let name = b.name.clone();
 
     let pick = outline.clone();
-    let row = HStack::new()
-        .spacing(8.0)
-        .child(marker(current))
-        .child(binder_icon())
-        .child(
-            TextWidget::new(lit!(b.name.clone()))
-                .style(TextStyleRole::BodyBold)
-                .color(title_color(current))
-                .single_line()
-                .overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing)),
-        )
-        .child(Spacer::new())
-        .child(
-            TextWidget::new(tr!(binder_item_count(count = b.item_count as i64)))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        )
-        .cursor(CursorIcon::Pointer)
-        .focusable(true)
-        .on_tap(move |_event, ctx| {
-            ctx.dismiss_self_overlay_chain();
-            pick.set_binder_filter(Some(id));
-        })
+    MenuItem::new(lit!(b.name.clone()))
+        // The leading slot is the *state* glyph, which is why the row no longer
+        // carries a binder icon: check and icon are mutually exclusive on a
+        // `MenuItem` (the Windows convention this framework follows), and in a
+        // list where every row is a binder the icon distinguished nothing while
+        // the checkmark says which one is showing. `reflect_checked` is the
+        // read-only tier — the truth lives in `binder_filter_signal`, and the
+        // two-way `checked` would fight it.
+        .reflect_checked(current)
+        .trailing_hint(tr!(binder_item_count(count = b.item_count as i64)))
+        .on_activate_fn(move |_ctx| pick.set_binder_filter(Some(id)))
         // Right-click → confirm → intent → the `binder.trash` global action.
+        //
+        // Last, because it wraps the `MenuItem`. That wrapping used to
+        // de-register the row from its own `MenuList`: the list reads a row's
+        // concrete type for its mnemonic, its type-ahead label and its submenu
+        // flag, and a decorated item was invisible to all three. Fixed in
+        // teksilo by forwarding `as_any_mut` through the wrapper and probing
+        // through `as_any`.
         .context_menu(move |_pos, _ctx| {
             let name = name.clone();
             let menu =
@@ -209,28 +181,15 @@ fn binder_row(outline: &OutlineViewModel, b: &BinderRow, current: bool) -> impl 
                         .present(ctx);
                 }));
             Some(Box::new(menu) as Box<dyn Widget>)
-        });
-    Padding::symmetric(6.0, 8.0).child(FixedSize::new().width(ROW_WIDTH).child(row))
+        })
 }
 
 /// The "New binder…" popover entry — create + rename dialog.
 fn new_binder_row(outline: &OutlineViewModel) -> impl Widget {
     let outline = outline.clone();
-    let row = HStack::new()
-        .spacing(8.0)
-        .child(marker(false))
-        .child(
-            TextWidget::new(tr!(binder_new()))
-                .style(TextStyleRole::Body)
-                .color(TextRole::Secondary),
-        )
-        .cursor(CursorIcon::Pointer)
-        .focusable(true)
-        .on_tap(move |_event, ctx| {
-            ctx.dismiss_self_overlay_chain();
-            outline.new_binder(ctx);
-        });
-    Padding::symmetric(6.0, 8.0).child(FixedSize::new().width(ROW_WIDTH).child(row))
+    MenuItem::new(tr!(binder_new()))
+        .text_role(TextRole::Secondary)
+        .on_activate_fn(move |ctx| outline.new_binder(ctx))
 }
 
 /// The ghost search button: a magnifier whose popover filters the tree live.

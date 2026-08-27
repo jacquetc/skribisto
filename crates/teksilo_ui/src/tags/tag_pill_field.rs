@@ -362,7 +362,17 @@ impl Widget for TagPickerList {
         // Capped and scrollable: a project with forty tags must not grow a popover taller
         // than the window. `MaxSize` does the capping — `ScrollArea` has no height setter of
         // its own and would otherwise take whatever the overlay proposes.
-        col = col.child(MaxSize::height(220.0).child(ScrollArea::new().child(list)));
+        // `Role::ListBox`, not `Role::List`: the rows below declare
+        // `Role::ListBoxOption` and carry a selected state, and an option
+        // outside a listbox is an orphan role that AT reads as a bare group.
+        col = col.child(
+            MaxSize::height(220.0).child(
+                ScrollArea::new().child(
+                    list.access_role(Role::ListBox)
+                        .access_label(tr!(tags_pick_list())),
+                ),
+            ),
+        );
 
         let id = ctx.add(col);
         self.root_child = Some(id);
@@ -561,12 +571,17 @@ impl Widget for TagPickRow {
         let check_id = ctx.add(check);
         ctx.set_opacity(check_id, if self.checked { 1.0 } else { 0.0 });
 
+        // A focus stop with no visible ring: see `crate::widgets::focus_ring`.
+        let focused = ctx.signal(false);
+        let body = HStack::new()
+            .spacing(6.0)
+            .add_child(check_id)
+            .child(swatch(contrast::parse(&self.tag.color)))
+            .child(TextWidget::new(lit!(self.tag.name.clone())));
+        let ringed =
+            crate::widgets::with_focus_ring(ctx, crate::widgets::RING_RADIUS_ROW, body, &focused);
         let id = ctx.add(
-            HStack::new()
-                .spacing(6.0)
-                .add_child(check_id)
-                .child(swatch(contrast::parse(&self.tag.color)))
-                .child(TextWidget::new(lit!(self.tag.name.clone())))
+            ringed
                 // Role, name and selected go on the SAME node that is focusable -- the pattern
                 // `MentionList`'s rows already use. Splitting them across the outer node and this
                 // one leaves keyboard focus landing on an unnamed GenericContainer.
@@ -577,6 +592,10 @@ impl Widget for TagPickRow {
                     move |b| b.set_selected(checked)
                 })
                 .focusable(true)
+                .on_focus({
+                    let focused = focused.clone();
+                    move |gained, _c| focused.set(gained)
+                })
                 .on_tap({
                     let on_toggle = on_toggle.clone();
                     move |_e, c| on_toggle(c)
