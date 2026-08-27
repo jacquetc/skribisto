@@ -5,7 +5,7 @@
 
 - [Skribisto](#skribisto)
   * [What it does today](#what-it-does-today)
-  * [User manual](#user-manual)
+  * [Help](#help)
   * [Discussions](#discussions)
   * [Support](#support)
   * [Help is always appreciated](#help-is-always-appreciated)
@@ -79,13 +79,15 @@ touch if you hit a glaring gap.
 - Single instance: several projects can be open at once, each in its own window, without
   spawning a new process per project
 
-## User manual
+## Help
 
-The dedicated website for the user manual is [here](https://manual.skribisto.eu/en_US/manual.html).
+The help ships with the application: **F1** opens the help topics, there is a keyboard
+shortcut window beside them, and Ctrl+Shift+P opens a command palette that finds any command
+by name. Because it is part of the binary, it describes the version you are running rather
+than the version somebody last wrote about.
 
-The dedicated website for the FAQ is [here](https://manual.skribisto.eu/en_US/faq.html).
-
-Each one can be translated (see the [Translation](#translation) section).
+The topics are translated like the rest of the interface (see the
+[Translation](#translation) section).
 
 ## Discussions
 
@@ -108,9 +110,8 @@ contact me or create issues.
 ### Easier tasks for beginners
 
 - Solve one of the [good first issue](https://github.com/jacquetc/skribisto/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) tickets
-- Translate the software, the user manual or the FAQ (see the [Translation](#translation) section)
-- Complete the FAQ or the user manual in the dedicated repository
-  [here](https://github.com/jacquetc/skribisto-help-website/tree/develop)
+- Translate the software, help topics included (see the [Translation](#translation) section)
+- Improve a help topic that explains the wrong thing, or write one that does not exist yet
 
 ## For tech people, under the hood
 
@@ -353,7 +354,7 @@ priority-support enquiries, contact <support@ferntech.eu>. For everyone else, th
 
 ## Trademark
 
-Skribisto™ is a trademark of Cyril Jacquet. The GPL source license does **not** grant
+Skribisto™ is a trademark of FernTech. The GPL source license does **not** grant
 trademark rights. Forks and derivative works may use the source code under the GPL but must
 adopt a **distinct name and distinct branding** when distributed (compare Firefox and
 Iceweasel, or Chromium and Chrome). Nominative use is fine, as in "built on Skribisto", "a
