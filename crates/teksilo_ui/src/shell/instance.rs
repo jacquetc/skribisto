@@ -267,14 +267,25 @@ pub(crate) fn bootstrap() -> Bootstrap {
     // behalf of a process that is about to exit. Everything below this block is
     // therefore reachable only by a primary or a standalone instance.
     //
-    // `--new-instance`, `--config`, `--dump-config` and a bare `.skrib` path are
-    // the whole argument surface; `parse_args` is a pure function so that surface
-    // is unit-tested.
+    // `--new-instance`, `--config`, `--dump-config`, `--style` and a bare `.skrib`
+    // path are the whole argument surface; `parse_args` is a pure function so that
+    // surface is unit-tested.
     let args = parse_args(std::env::args().skip(1));
     let initial_project = args.project.clone();
     if let Some(error) = &args.error {
         eprintln!("skribisto: {error}");
         std::process::exit(2);
+    }
+
+    // ── The design language, before anything at all is built ─────────────────
+    //
+    // Earlier than the settings flags below and earlier than the election, for
+    // the same reason `identity` is: widget chrome is resolved when a widget is
+    // built, so the style has to be in place before the first `AppContext`, let
+    // alone the first window. Nothing here reads settings, so it is free to run
+    // this early — and `--dump-config` exits below without ever using it.
+    if let Some(style) = args.style {
+        crate::style::install(style);
     }
 
     // ── The settings-schema flags, before anything else touches settings ──────
@@ -306,7 +317,13 @@ pub(crate) fn bootstrap() -> Bootstrap {
     // their own settings — so an elected-away `--config` run would pin nothing
     // and silently observe a differently-configured app, which is precisely the
     // failure this flag exists to remove.
-    let role = if args.new_instance || args.config.is_some() {
+    //
+    // `--style` implies it for the same reason and one worse: the primary built
+    // its widgets in whatever style *it* was launched with, and a style cannot
+    // be applied to a tree that already exists. An elected-away `--style` run
+    // would hand its project to a window in the previous design language and
+    // exit reporting success.
+    let role = if args.new_instance || args.config.is_some() || args.style.is_some() {
         InstanceRole::Standalone
     } else {
         elect()
@@ -363,6 +380,14 @@ pub const CONFIG_FLAG: &str = "--config";
 /// Print every settable key with its effective value and exit (debug builds only).
 pub const DUMP_CONFIG_FLAG: &str = "--dump-config";
 
+/// Build the app in a design language other than the default IntUI preset.
+///
+/// Takes a value the same two ways `--config` does (`--style=fluent` or
+/// `--style fluent`); the legal names are [`crate::style::names`]. Deliberately
+/// not a settings key — see [`crate::style`] for why a design language is a
+/// launch decision and light/dark is not.
+pub const STYLE_FLAG: &str = "--style";
+
 /// Everything the command line can say, in the order `main` acts on it.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct LaunchArgs {
@@ -374,10 +399,24 @@ pub struct LaunchArgs {
     pub config: Option<String>,
     /// `--dump-config`: print the effective settings and exit.
     pub dump_config: bool,
+    /// `--style <name>`: the design language to build this run in. `None` →
+    /// [`crate::style::AppStyle::IntUi`], the default. Validated here rather
+    /// than at the use site, so an unknown name is a startup error naming the
+    /// legal set instead of a silent fall back to the default.
+    pub style: Option<crate::style::AppStyle>,
     /// A malformed argument. Reported by `main`, which exits rather than launching
     /// — a probe that asked to pin settings and silently got none is worse than one
     /// that does not start, since it goes on to assert against the wrong state.
     pub error: Option<String>,
+}
+
+/// The `--style` rejection, in one place so the attached and separated forms
+/// cannot drift apart.
+fn unknown_style(value: &str) -> String {
+    format!(
+        "{STYLE_FLAG}: unknown style `{value}` (known: {})",
+        crate::style::names().join(", ")
+    )
 }
 
 /// Split `argv` (excluding argv\[0\]) into the flags and the optional project path.
@@ -406,6 +445,29 @@ where
                 out.error = Some(format!("{CONFIG_FLAG} needs a file path"));
             } else {
                 out.config = Some(value.to_string());
+            }
+        } else if let Some(value) = arg.strip_prefix("--style=") {
+            match crate::style::AppStyle::from_name(value) {
+                Some(style) => out.style = Some(style),
+                None => out.error = Some(unknown_style(value)),
+            }
+        } else if arg == STYLE_FLAG {
+            // Peek, never take — same reasoning as `--config` below: consuming a
+            // value that turned out to be the next flag disables that flag too.
+            let is_value = rest
+                .peek()
+                .is_some_and(|v| !v.as_ref().trim().is_empty() && !v.as_ref().starts_with("--"));
+            if is_value {
+                let value = rest.next().expect("just peeked");
+                match crate::style::AppStyle::from_name(value.as_ref()) {
+                    Some(style) => out.style = Some(style),
+                    None => out.error = Some(unknown_style(value.as_ref())),
+                }
+            } else {
+                out.error = Some(format!(
+                    "{STYLE_FLAG} needs a name ({})",
+                    crate::style::names().join(", ")
+                ));
             }
         } else if arg == CONFIG_FLAG {
             // Peek rather than take: a value that is itself a flag means the path
@@ -523,6 +585,74 @@ mod tests {
         assert!(parse_args(["--config="]).error.is_some());
     }
 
+    /// Both spellings, same as `--config`.
+    #[test]
+    fn style_takes_its_value_attached_or_separated() {
+        use crate::style::AppStyle;
+        assert_eq!(parse_args(["--style=fluent"]).style, Some(AppStyle::Fluent));
+        assert_eq!(
+            parse_args(["--style", "fluent"]).style,
+            Some(AppStyle::Fluent)
+        );
+        assert_eq!(
+            parse_args(["--style", "m3"]).style,
+            Some(AppStyle::Material3)
+        );
+    }
+
+    /// The same trap `--config` fell into: the value must not become the project.
+    #[test]
+    fn a_style_value_is_not_mistaken_for_the_project() {
+        let args = parse_args(["--style", "macos", "/tmp/a.skrib"]);
+        assert_eq!(args.style, Some(crate::style::AppStyle::MacOs));
+        assert_eq!(args.project.as_deref(), Some("/tmp/a.skrib"));
+        assert_eq!(args.error, None);
+    }
+
+    /// An unknown style is a hard error naming the legal set — never a silent
+    /// fall back to the default, which would launch the app in the style the
+    /// operator was trying to leave and report nothing.
+    #[test]
+    fn an_unknown_style_is_an_error_that_names_the_legal_set() {
+        for args in [
+            parse_args(["--style", "fluid"]),
+            parse_args(["--style=fluid"]),
+        ] {
+            let error = args.error.expect("an unknown style must be reported");
+            assert!(
+                error.contains("fluid"),
+                "{error} does not name the offender"
+            );
+            for known in crate::style::names() {
+                assert!(error.contains(known), "{error} does not list `{known}`");
+            }
+            assert_eq!(args.style, None);
+        }
+    }
+
+    /// A forgotten name must not swallow the next flag — same reasoning as
+    /// `--config`, and the error still has to list what was allowed.
+    #[test]
+    fn style_without_a_value_is_an_error_not_a_swallowed_flag() {
+        let args = parse_args(["--style", "--new-instance"]);
+        assert!(args.error.is_some(), "a missing name must be reported");
+        assert_eq!(args.style, None);
+        assert!(
+            args.new_instance,
+            "and the flag it would have swallowed still applies"
+        );
+
+        assert!(parse_args(["--style"]).error.is_some());
+        assert!(parse_args(["--style="]).error.is_some());
+    }
+
+    /// The default is no style at all, which `run` reads as IntUI — the app's
+    /// behaviour before the flag existed.
+    #[test]
+    fn no_style_flag_leaves_the_default() {
+        assert_eq!(parse_args(["/tmp/a.skrib"]).style, None);
+    }
+
     #[test]
     fn dump_config_is_a_bare_flag() {
         let args = parse_args(["--dump-config"]);
@@ -538,11 +668,14 @@ mod tests {
             "--new-instance",
             "--config=/tmp/pins.toml",
             "--dump-config",
+            "--style",
+            "fluent",
         ]);
         assert_eq!(args.project.as_deref(), Some("/tmp/a.skrib"));
         assert!(args.new_instance);
         assert_eq!(args.config.as_deref(), Some("/tmp/pins.toml"));
         assert!(args.dump_config);
+        assert_eq!(args.style, Some(crate::style::AppStyle::Fluent));
         assert_eq!(args.error, None);
     }
 

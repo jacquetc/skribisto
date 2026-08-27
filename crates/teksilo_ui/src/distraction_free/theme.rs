@@ -315,10 +315,12 @@ pub fn builtin_themes() -> Vec<DistractionFreeTheme> {
 /// that asks for `SurfaceRole::EditorCurrentLineBg` gets the theme's answer
 /// rather than the app palette's, which is the only thing this line buys.
 pub fn apply_to(theme: &mut teksilo::prelude::Theme, t: &DistractionFreeTheme) {
-    let base = match t.base {
-        ThemeBase::Light => teksilo::prelude::intui::light(),
-        ThemeBase::Dark => teksilo::prelude::intui::dark(),
-    };
+    // The run's own design language, so the chrome a distraction-free theme
+    // does not name — borders, scroll bars, disabled text around the page —
+    // matches the rest of the window instead of reverting to IntUI under
+    // `--style`. Only `appearance` + `colors` are replaced below, so the surface
+    // keeps the app's shape and typography either way; this is the palette half.
+    let base = crate::style::theme(t.base == ThemeBase::Dark);
     theme.appearance = base.appearance;
     theme.colors = base.colors;
     theme.colors.surface_main = Color::from_hex(&t.general_background);
@@ -569,10 +571,7 @@ mod tests {
         let mut theme = teksilo::prelude::intui::dark();
         apply_to(&mut theme, &paper);
         assert_eq!(theme.appearance, teksilo::prelude::ThemeAppearance::Light);
-        assert_eq!(
-            theme.colors.border,
-            teksilo::prelude::intui::light().colors.border
-        );
+        assert_eq!(theme.colors.border, crate::style::light().colors.border);
     }
 
     /// The warning is a warning about a real thing.

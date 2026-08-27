@@ -324,6 +324,9 @@ settings-distraction-free-go-to = Conserver le bouton Aller à…
 settings-distraction-free-go = Conserver les boutons Précédent et Suivant
 settings-distraction-free-chrome-hint = Le bouton Quitter reste toujours affiché, quels que soient ces choix — c’est votre porte de sortie si Échap est déjà pris.
 settings-field-app-theme = Thème
+# Les deux entrées du sélecteur de thème (les apparences claire / sombre de Fluent).
+settings-theme-light = Clair
+settings-theme-dark = Sombre
 settings-field-text-scale = Taille du texte de l’interface
 settings-field-language = Langue de l’interface
 settings-synopsis-placement = Position du synopsis

@@ -153,6 +153,7 @@ pub mod startup;
 pub mod statusbar;
 pub mod story_bible;
 pub mod stream;
+pub mod style;
 pub mod tabs;
 pub mod tags;
 pub mod text_replacement;

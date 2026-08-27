@@ -29,9 +29,23 @@ pub(in crate::settings) fn appearance_pane(
         .full_width(group(tr!(settings_group_theme())))
         .line(
             field_label(tr!(settings_field_app_theme())),
-            FixedSize::new()
-                .width(240.0)
-                .child(ThemeSwitcher::new().system(true)),
+            FixedSize::new().width(240.0).child(
+                // Light / Dark / System — the same three entries as ever, but
+                // built from the run's own design language rather than from
+                // `ThemeSwitcher::new()`'s hardcoded IntUI pair. Under
+                // `--style fluent` those defaults would match no active theme
+                // (the combo shows nothing, since it matches by `ThemeId`) and
+                // picking Light would drop the window out of Fluent for good.
+                //
+                // `.system(true)` keeps the follow-OS entry, which is the one
+                // that does leave the style by design — see `crate::style`.
+                ThemeSwitcher::new()
+                    .themes([
+                        (tr!(settings_theme_light()), crate::style::light()),
+                        (tr!(settings_theme_dark()), crate::style::dark()),
+                    ])
+                    .system(true),
+            ),
         )
         .line(
             field_label(tr!(settings_field_text_scale())),

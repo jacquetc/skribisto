@@ -15,7 +15,6 @@ use frontend::AppContext;
 use frontend::commands::handling_app_lifecycle_commands;
 
 use teksilo::core::Theme;
-use teksilo::core::presets::intui;
 use teksilo::i18n::{I18nConfig, I18nManager};
 use teksilo::settings::{AppPaths, WindowStateService};
 use teksilo::widgets::framework_locales;
@@ -221,7 +220,11 @@ pub(crate) fn build_ui_config() -> UiConfig {
     let (dark, chosen_locale, autosave_init, spellcheck_init, show_welcome_init) =
         cli::read_prefs();
 
-    let theme = if dark { intui::dark() } else { intui::light() };
+    // The active design language's light or dark theme — IntUI unless `--style`
+    // named another (see `crate::style`). This is the one site that decides the
+    // app's *chrome*: widget shapes resolve when a widget is built, so every
+    // later `set_theme` only ever retints within the same family.
+    let theme = crate::style::theme(dark);
 
     let i18n = I18nConfig::new()
         .source_locale("en-US".parse().unwrap())

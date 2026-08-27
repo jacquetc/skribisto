@@ -845,7 +845,7 @@ impl SettingsViewModel {
 
     /// Switch theme live and persist the choice.
     pub fn set_dark(&self, ctx: &mut EventContext, dark: bool) {
-        ctx.set_theme(if dark { intui::dark() } else { intui::light() });
+        ctx.set_theme(crate::style::theme(dark));
         self.dark.set(dark); // same cached signal → persisted
     }
 

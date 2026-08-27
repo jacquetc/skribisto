@@ -6013,6 +6013,9 @@ dependencies = [
  "teksilo-resources",
  "teksilo-settings",
  "teksilo-text",
+ "teksilo-theme-fluent",
+ "teksilo-theme-macos",
+ "teksilo-theme-material3",
  "teksilo-tokens",
  "teksilo-widgets",
 ]
@@ -6254,6 +6257,36 @@ dependencies = [
  "teksilo-tokens",
  "text-document",
  "text-typeset",
+]
+
+[[package]]
+name = "teksilo-theme-fluent"
+version = "0.7.0"
+dependencies = [
+ "teksilo-canvas",
+ "teksilo-core",
+ "teksilo-tokens",
+ "teksilo-widgets",
+]
+
+[[package]]
+name = "teksilo-theme-macos"
+version = "0.7.0"
+dependencies = [
+ "teksilo-canvas",
+ "teksilo-core",
+ "teksilo-tokens",
+ "teksilo-widgets",
+]
+
+[[package]]
+name = "teksilo-theme-material3"
+version = "0.7.0"
+dependencies = [
+ "teksilo-canvas",
+ "teksilo-core",
+ "teksilo-tokens",
+ "teksilo-widgets",
 ]
 
 [[package]]

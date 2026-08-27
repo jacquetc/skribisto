@@ -332,6 +332,9 @@ settings-distraction-free-go-to = Keep the Go to… button
 settings-distraction-free-go = Keep the Previous and Next buttons
 settings-distraction-free-chrome-hint = The Exit button always stays, whatever you choose here — it is your way out if Escape is busy.
 settings-field-app-theme = Theme
+# The two entries of the Theme picker (the Fluent light / dark appearances).
+settings-theme-light = Light
+settings-theme-dark = Dark
 settings-field-text-scale = Interface text size
 settings-field-language = Interface language
 settings-synopsis-placement = Synopsis position

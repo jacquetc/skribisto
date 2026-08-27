@@ -333,7 +333,10 @@ impl SettingsPanel {
                     .escape_button(StandardButton::Cancel)
                     .on_result(move |res, ctx| {
                         if res.button == StandardButton::RestoreDefaults {
-                            ctx.set_theme(intui::light());
+                            // Light within the run's own design language:
+                            // the style is a launch decision, not a setting,
+                            // so resetting the settings must not leave it.
+                            ctx.set_theme(crate::style::light());
                             // The factory language is "whatever a fresh install
                             // on this machine would have picked", not a flat
                             // en-US — resetting a French account to English
