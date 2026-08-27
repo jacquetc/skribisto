@@ -120,6 +120,7 @@ fn a_stored_tag_without_an_identity_is_healed_on_load() {
             &NewWorkDto {
                 goal_unit: Default::default(),
                 file_name: dir.to_string_lossy().to_string(),
+                title: String::new(),
                 is_folder: true,
                 template_kind: NewWorkTemplate::EmptyNovel,
                 labels: vec![],

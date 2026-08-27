@@ -733,9 +733,14 @@ fn labels() -> Vec<String> {
         "Notes",
         "Research",
         "Notebook",
-        "Chapter",
+        // Slot 4 is retired — see `TemplateLabels` for why it stays occupied.
+        "",
         "Scene",
         "Note",
+        "Front matter",
+        "Back matter",
+        "Characters",
+        "Places",
     ]
     .iter()
     .map(|s| s.to_string())
@@ -1273,6 +1278,7 @@ fn new_work(db: &DbContext, hub: &Arc<EventHub>, path: &str, is_folder: bool, t:
         &NewWorkDto {
             goal_unit: Default::default(),
             file_name: path.to_string(),
+            title: String::new(),
             is_folder,
             template_kind: t,
             labels: labels(),
@@ -1307,6 +1313,7 @@ fn new_work_persists_the_author_to_the_manifest() {
                 .to_str()
                 .unwrap()
                 .to_string(),
+            title: String::new(),
             is_folder: false,
             template_kind: NewWorkTemplate::Novel,
             labels: labels(),
@@ -1451,16 +1458,18 @@ fn new_work_novel_builds_full_tree() {
         "new work should get a UUID, got {:?}",
         b.manifest.work.unique_id
     );
-    // Title derived from the file stem.
+    // No title was typed, so it falls back to the file stem.
     assert_eq!(b.manifest.work.title, "My Novel");
     // The chosen default language is persisted as the work's dict_language.
     assert_eq!(b.manifest.work.dict_language, vec!["en-US".to_string()]);
     // Not saved as a folder.
     assert_eq!(b.manifest.shape, ShapeTag::Zip);
 
-    // Three binders, named from the labels.
+    // Two binders, named from the labels: the manuscript, and the notes the story
+    // bible lives in. "Research" is a folder inside the latter now, not a binder of its
+    // own — a binder row carries no `item_id`, so an empty one could not even be opened.
     let names: Vec<&str> = b.binders.iter().map(|bb| bb.binder.name.as_str()).collect();
-    assert_eq!(names, ["Manuscript", "Notes", "Research"]);
+    assert_eq!(names, ["Manuscript", "Notes"]);
 
     // Manuscript = Book + 20 chapters (each Folder/Chapter + Item/Scene) + BookEnd.
     let manuscript = &b.binders[0].items;
@@ -1479,9 +1488,124 @@ fn new_work_novel_builds_full_tree() {
         manuscript.last().unwrap().item.sub_role,
         BinderItemSubRole::BookEnd
     );
-    // Notes + Research are empty.
-    assert!(b.binders[1].items.is_empty());
-    assert!(b.binders[2].items.is_empty());
+    // Every chapter is born untitled — the manuscript's own numbering names it, in the
+    // language it is written in. See `templates::manuscript_binder`.
+    for it in manuscript
+        .iter()
+        .filter(|i| i.item.sub_role == BinderItemSubRole::ChapterScene)
+    {
+        assert!(it.item.title.is_empty(), "a chapter is born untitled");
+        assert!(
+            !it.item
+                .inline_contents
+                .iter()
+                .any(|c| c.role == ContentRole::ChapterTitle),
+            "and carries no generated chapter-title row"
+        );
+    }
+
+    // The Notes binder holds the three story-bible folders, each a `Folder/Note` so it
+    // gets an Overview and the Story bible grid.
+    let notes: Vec<&str> = b.binders[1]
+        .items
+        .iter()
+        .map(|i| i.item.title.as_str())
+        .collect();
+    assert_eq!(notes, ["Characters", "Places", "Research"]);
+    for it in &b.binders[1].items {
+        assert_eq!(it.item.role, BinderItemRole::Folder);
+        assert_eq!(it.item.sub_role, BinderItemSubRole::Note);
+    }
+}
+
+/// The name typed in the New Work form reaches the `Work` **and** the Book row.
+///
+/// It did not: the title was read back out of the slugified path, so a project called
+/// "The Long Road" was stored — and exported, through `render_title_page` — as
+/// `the-long-road`, with no surface anywhere in the app able to correct it.
+#[test]
+fn new_work_titles_the_project_and_the_book_from_the_typed_name() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    work_management_controller::new_work(
+        &db,
+        &hub,
+        &NewWorkDto {
+            goal_unit: Default::default(),
+            // What the UI actually passes: a slugified, lowercased path…
+            file_name: dir
+                .path()
+                .join("the-long-road.skrib")
+                .to_str()
+                .unwrap()
+                .to_string(),
+            // …beside the name the writer typed.
+            title: "The Long Road".to_string(),
+            is_folder: false,
+            template_kind: NewWorkTemplate::Novel,
+            labels: labels(),
+            language: vec!["en-US".to_string()],
+            author_name: String::new(),
+            chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
+        },
+    )
+    .expect("new_work");
+
+    let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    assert_eq!(b.manifest.work.title, "The Long Road");
+
+    let book = &b.binders[0].items[0];
+    assert_eq!(book.item.sub_role, BinderItemSubRole::Book);
+    assert_eq!(book.item.title, "The Long Road");
+    let book_title = book
+        .item
+        .inline_contents
+        .iter()
+        .find(|c| c.role == ContentRole::BookTitle)
+        .expect("the Book row carries a BookTitle");
+    assert_eq!(book_title.text, "The Long Road");
+}
+
+/// The parts template is the same book with a `Folder/Part` layer between the book and
+/// its chapters — three parts of eight, every part and chapter untitled.
+#[test]
+fn new_work_in_parts_builds_a_part_layer() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    new_work(
+        &db,
+        &hub,
+        dir.path().join("Parted.skrib").to_str().unwrap(),
+        false,
+        NewWorkTemplate::NovelInParts,
+    );
+
+    let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    let manuscript = &b.binders[0].items;
+    let parts: Vec<_> = manuscript
+        .iter()
+        .filter(|i| i.item.sub_role == BinderItemSubRole::Part)
+        .collect();
+    assert_eq!(parts.len(), 3);
+    for p in &parts {
+        assert_eq!(p.item.role, BinderItemRole::Folder);
+        assert_eq!(p.item.indent, 1);
+        assert!(p.item.title.is_empty(), "a part is born untitled too");
+    }
+    let chapters: Vec<_> = manuscript
+        .iter()
+        .filter(|i| i.item.sub_role == BinderItemSubRole::ChapterScene)
+        .collect();
+    assert_eq!(chapters.len(), 24);
+    for c in chapters {
+        assert_eq!(c.item.indent, 2, "a chapter sits inside its part");
+    }
 }
 
 /// Every binder and item a new project mints must carry its OWN uid.
@@ -1572,8 +1696,10 @@ fn new_work_folder_shape_is_honored() {
     );
     assert_eq!(b.binders.len(), 1);
     assert_eq!(b.binders[0].binder.name, "Notebook");
-    // Notes folder + a starter Note.
-    assert_eq!(b.binders[0].items[0].item.sub_role, BinderItemSubRole::None);
+    // A notes folder + a starter Note. `Folder/Note`, not `Folder/None`: only the
+    // former is `overview_capable` and only it carries the Story bible segment.
+    assert_eq!(b.binders[0].items[0].item.role, BinderItemRole::Folder);
+    assert_eq!(b.binders[0].items[0].item.sub_role, BinderItemSubRole::Note);
     assert_eq!(b.binders[0].items[1].item.sub_role, BinderItemSubRole::Note);
 }
 

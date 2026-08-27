@@ -56,6 +56,7 @@ fn big_manuscript() -> AppContext {
         &NewWorkDto {
             goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
+            title: String::new(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],

@@ -896,6 +896,7 @@ fn a_real_analysis_lands_a_plan_on_the_review_step() {
         &NewWorkDto {
             goal_unit: Default::default(),
             file_name: dir.path().join("p.skrib").to_string_lossy().into_owned(),
+            title: String::new(),
             is_folder: false,
             template_kind: NewWorkTemplate::Novel,
             labels: vec![],
@@ -1012,6 +1013,7 @@ fn a_docx_import_saved_as_a_project() {
         &NewWorkDto {
             goal_unit: Default::default(),
             file_name: out.clone(),
+            title: String::new(),
             is_folder: false,
             // The emptiest template there is: the point of this fixture is to
             // look at what the *import* produced, and a dozen seeded chapters

@@ -13,4 +13,8 @@
 mod new_work_vm;
 pub(crate) mod panel;
 
+/// How many tiles the Template step shows. The view's tile array is typed
+/// `[TemplateTile; TEMPLATE_TILE_COUNT]`, so it and
+/// [`new_work_vm::template_from_index`] cannot drift apart without a compile error.
+pub(crate) use new_work_vm::TEMPLATE_TILE_COUNT;
 pub use new_work_vm::{NewWorkPurpose, NewWorkViewModel};

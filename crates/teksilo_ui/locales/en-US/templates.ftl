@@ -82,6 +82,10 @@ note-template-preset-beat-sheet = Beat sheet
 note-template-preset-faction = Faction
 note-template-preset-research-note = Research note
 
+## Starter sets, offered when a project is created
+note-template-set-essentials = Essentials
+note-template-set-everything = Every template
+
 ## Preset section headings
 note-template-section-identity = Identity
 note-template-section-appearance = Appearance

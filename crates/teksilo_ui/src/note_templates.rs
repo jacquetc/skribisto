@@ -22,4 +22,4 @@ mod note_templates_vm;
 pub mod presets;
 
 pub use note_templates_vm::NoteTemplatesViewModel;
-pub use presets::Preset;
+pub use presets::{Preset, StarterSet};

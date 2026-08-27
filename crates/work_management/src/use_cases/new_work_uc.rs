@@ -71,12 +71,37 @@ pub struct NewWorkUseCase {
 
 /// Derive a human title from the chosen file/folder path (its stem), e.g.
 /// `"…/My Novel.skrib"` → `"My Novel"`. Falls back to `"Untitled"`.
+///
+/// The **fallback** only, since `NewWorkDto.title` grew: see [`work_title`].
 fn title_from_file_name(file_name: &str) -> String {
     Path::new(file_name)
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "Untitled".to_string())
+}
+
+/// The name this project — and the Book inside it — is given.
+///
+/// `dto.title` is the name the writer typed; the file stem stands in when it is blank.
+///
+/// This used to read the stem **unconditionally**, and that was a real defect rather than
+/// a shortcut: the UI slugifies the typed name to build the path (`"The Long Road"` →
+/// `…/the-long-road.skrib`, lowercased, spaces to dashes), so the stem is not the writer's
+/// title — it is a filename. `Work.title` reached the window title, the recents list, the
+/// Book row, its `BookTitle` content row and, through `render_title_page`, the exported
+/// title page, all reading `the-long-road`; and no surface in the app edits `Work.title`,
+/// so there was nowhere to put it right.
+///
+/// Trimmed, because a title of spaces is not a title. The blank fallback stays for a
+/// script or API caller holding only a path.
+fn work_title(dto: &NewWorkDto) -> String {
+    let typed = dto.title.trim();
+    if typed.is_empty() {
+        title_from_file_name(&dto.file_name)
+    } else {
+        typed.to_string()
+    }
 }
 
 impl NewWorkUseCase {
@@ -107,7 +132,7 @@ impl NewWorkUseCase {
         // previously-open Work survives a `new_work` call untouched — see that
         // test for the both-directions proof.
         let now = chrono::Utc::now();
-        let title = title_from_file_name(&dto.file_name);
+        let title = work_title(dto);
         let labels = TemplateLabels::from_list(&dto.labels);
 
         // Every Work owns exactly one punctuation row, created BEFORE the Work
@@ -361,5 +386,52 @@ impl NewWorkUseCase {
             });
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dto(file_name: &str, title: &str) -> NewWorkDto {
+        NewWorkDto {
+            file_name: file_name.to_string(),
+            title: title.to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// The name the writer typed wins over the path — the whole reason `title` exists.
+    /// The UI slugifies that name to build the path, so reading the stem back gave the
+    /// project, the Book row and the exported title page a lowercased, dashed filename.
+    #[test]
+    fn the_typed_title_beats_the_slugified_path() {
+        assert_eq!(
+            work_title(&dto("/books/the-long-road.skrib", "The Long Road")),
+            "The Long Road"
+        );
+    }
+
+    /// Blank falls back to the stem, which is both the old behaviour and the right
+    /// answer for a caller that only has a path.
+    #[test]
+    fn a_blank_title_falls_back_to_the_file_stem() {
+        for typed in ["", "   "] {
+            assert_eq!(
+                work_title(&dto("/books/tidewrack.skrib", typed)),
+                "tidewrack"
+            );
+        }
+        // …and a path with no usable stem still yields something nameable.
+        assert_eq!(work_title(&dto("", "")), "Untitled");
+    }
+
+    /// A title of surrounding whitespace is the writer's typing, not their intent.
+    #[test]
+    fn the_typed_title_is_trimmed() {
+        assert_eq!(
+            work_title(&dto("/books/x.skrib", "  Tidewrack  ")),
+            "Tidewrack"
+        );
     }
 }

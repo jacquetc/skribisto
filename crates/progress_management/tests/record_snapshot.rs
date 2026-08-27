@@ -48,6 +48,7 @@ fn record_progress_snapshot_upserts_by_day() {
         &NewWorkDto {
             goal_unit: Default::default(),
             file_name: dir.path().join("Novel.skrib").to_str().unwrap().to_string(),
+            title: String::new(),
             is_folder: false,
             template_kind: NewWorkTemplate::None,
             labels: vec![],

@@ -887,6 +887,7 @@ new-work-template-none = None
 new-work-template-empty-novel = Empty Novel
 new-work-template-light-novel = Light Novel
 new-work-template-novel = Novel
+new-work-template-novel-in-parts = Novel in parts
 new-work-template-notebook = Notebook
 new-work-cancel = Cancel
 new-work-create = Create Work
@@ -909,9 +910,10 @@ new-work-single-file-desc = One .skrib archive (zip). Portable, easy to back up.
 new-work-bundle-desc = A folder holding every text & asset. Friendlier to version control.
 # Template row trailing counts
 new-work-template-none-count = empty binder
-new-work-template-empty-novel-count = binders, no chapters
+new-work-template-empty-novel-count = 1 chapter
 new-work-template-light-novel-count = 15 chapters
 new-work-template-novel-count = 20 chapters
+new-work-template-novel-in-parts-count = 3 parts, 24 chapters
 new-work-template-notebook-count = free-form notes
 # ChapterScene toggle (novel templates)
 new-work-chapter-scene = Flat chapters
@@ -930,7 +932,6 @@ new-work-manuscript = Manuscript
 new-work-notes = Notes
 new-work-research = Research
 new-work-notebook = Notebook
-new-work-chapter = Chapter
 new-work-scene = Scene
 new-work-note = Note
 new-work-front-matter = Front matter
@@ -941,6 +942,11 @@ new-work-paratext-hint = The front and back matter a tradition opens and closes 
 new-work-tags = Tags
 new-work-tags-none = No tags
 new-work-tags-hint = A starting palette for tagging characters, places and the rest. Optional, and every tag can be renamed, recolored or deleted afterwards.
+new-work-note-templates = Note templates
+new-work-note-templates-none = No templates
+new-work-note-templates-hint = The shape a story-bible note starts in. Optional, and every template can be edited or deleted afterwards.
+new-work-characters = Characters
+new-work-places = Places
 
 ## Import Plume Creator dialog
 import-plume-title = Import Plume Creator project

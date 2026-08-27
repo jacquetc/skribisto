@@ -82,6 +82,10 @@ note-template-preset-beat-sheet = Trame de scène
 note-template-preset-faction = Faction
 note-template-preset-research-note = Note de documentation
 
+## Ensembles de départ, proposés à la création d'un projet
+note-template-set-essentials = L'essentiel
+note-template-set-everything = Tous les modèles
+
 ## Intitulés de section
 note-template-section-identity = Identité
 note-template-section-appearance = Apparence

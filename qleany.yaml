@@ -1327,6 +1327,10 @@ features:
       fields:
       - name: file_name
         type: string
+      # The name the writer typed, kept apart from `file_name` — which is a slugified,
+      # lowercased path and makes a poor book title. Blank falls back to the file stem.
+      - name: title
+        type: string
       - name: is_folder
         type: boolean
       - name: template_kind
@@ -1337,6 +1341,7 @@ features:
         - EmptyNovel
         - LightNovel
         - Novel
+        - NovelInParts
         - NoteBook
       - name: labels
         type: string

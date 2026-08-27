@@ -80,6 +80,17 @@ pub struct CloseWorkDto {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct NewWorkDto {
     pub file_name: String,
+    /// The name the writer typed, and the one the book is titled with.
+    ///
+    /// Deliberately **not** derived from [`Self::file_name`] any more. That path is a
+    /// slugified, lowercased stem (`"The Long Road"` → `.../the-long-road.skrib`), so
+    /// reading the title back out of it put `the-long-road` on the project, on the Book
+    /// row, in the recents list and — through `render_title_page` — on the exported
+    /// title page, with no surface anywhere to correct it.
+    ///
+    /// Blank falls back to the file stem, which is both the old behaviour and the right
+    /// backstop for a script or an API caller that only has a path.
+    pub title: String,
     pub is_folder: bool,
     pub template_kind: NewWorkTemplate,
     pub labels: Vec<String>,
@@ -116,5 +127,10 @@ pub enum NewWorkTemplate {
     EmptyNovel,
     LightNovel,
     Novel,
+    /// A novel divided into parts — the same manuscript spine as [`Self::Novel`] with a
+    /// `Folder/Part` layer between the book and its chapters. Its own variant rather
+    /// than a flag on `Novel` because the template list is what the writer chooses
+    /// from, and "how much book" is the one question that page asks.
+    NovelInParts,
     NoteBook,
 }

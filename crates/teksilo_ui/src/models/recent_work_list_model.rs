@@ -532,6 +532,7 @@ mod imp {
                 &NewWorkDto {
                     goal_unit: Default::default(),
                     file_name: proj.to_string_lossy().into_owned(),
+                    title: String::new(),
                     is_folder: false,
                     template_kind: NewWorkTemplate::Novel,
                     labels: vec![],

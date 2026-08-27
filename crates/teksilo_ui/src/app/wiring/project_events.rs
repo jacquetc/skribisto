@@ -348,7 +348,7 @@ pub(in crate::app) struct LifecycleDeps {
     // cold-start import (installed after the New seed, same call)
     pub import_document: crate::import_document::ImportDocumentViewModel,
     pub cold_start_import: ColdStartImport,
-    pub tag_preset: PendingTagPreset,
+    pub starters: PendingStarters,
 }
 
 /// A Launcher "From documents…" waiting for the project it is about to fill to
@@ -375,28 +375,49 @@ impl ColdStartImport {
     }
 }
 
-/// The tag palette a New Work form asked its project to start with, waiting for that
-/// project to exist.
+/// What the New Work form asked its project to start with, beyond the template's own
+/// rows: a tag palette, a set of note templates, or neither.
+///
+/// One value rather than a one-shot each, because the two are armed together and taken
+/// together — a project that inherited the previous project's palette but not its
+/// templates would be a bug with no name for it.
+///
+/// `None` on either side is a writer who chose nothing there, which is the default and a
+/// real answer, not an unset one.
+///
+/// `pub` rather than `pub(crate)` because it rides on `PendingAction::New`, which is
+/// `pub` — the same reason the `Option<tags::Preset>` it replaces was.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ProjectStarters {
+    pub tags: Option<crate::tags::Preset>,
+    pub templates: Option<crate::note_templates::StarterSet>,
+}
+
+impl ProjectStarters {
+    /// Nothing to lay down — the common case, and worth asking before doing any work.
+    fn is_empty(&self) -> bool {
+        self.tags.is_none() && self.templates.is_none()
+    }
+}
+
+/// The [`ProjectStarters`] a New Work form chose, waiting for the project they belong to
+/// to exist.
 ///
 /// The same one-shot shape as [`ColdStartImport`], and for the same reason: the form
-/// answers the question, but there is no palette to apply it to until `new_work` has
-/// run. `App::build` arms it immediately before that call and the `NewWork` subscriber
+/// answers the question, but there is nothing to apply it to until `new_work` has run.
+/// `App::build` arms it immediately before that call and the `NewWork` subscriber
 /// **takes** it, so the second project created in the same window does not inherit the
-/// first one's answer.
-///
-/// A `None` inside the cell is a writer who chose no tags, which is the default and a
-/// real answer. Not being armed at all is the same outcome, which is why this can carry
-/// `Option<Preset>` rather than needing to distinguish the two.
+/// first one's answers.
 #[derive(Clone, Default)]
-pub(crate) struct PendingTagPreset(Rc<Cell<Option<crate::tags::Preset>>>);
+pub(crate) struct PendingStarters(Rc<Cell<ProjectStarters>>);
 
-impl PendingTagPreset {
-    pub(crate) fn arm(&self, preset: Option<crate::tags::Preset>) {
-        self.0.set(preset);
+impl PendingStarters {
+    pub(crate) fn arm(&self, starters: ProjectStarters) {
+        self.0.set(starters);
     }
 
-    fn take(&self) -> Option<crate::tags::Preset> {
-        self.0.replace(None)
+    fn take(&self) -> ProjectStarters {
+        self.0.replace(ProjectStarters::default())
     }
 }
 
@@ -630,18 +651,19 @@ pub(in crate::app) fn install_lifecycle(
         );
     }
 
-    // ── The starting tag palette ───────────────────────────────────────────
+    // ── What the project starts with: the tag palette, the note templates ──
     //
     // Ordered after the seed above for the same reason the import wizard is: the
     // project exists and `work_id` is set by the time this runs, which is what
-    // `TagsViewModel::apply_preset` needs to have anywhere to write.
+    // `TagsViewModel::apply_preset` and its templates sibling need to have anywhere to
+    // write.
     //
     // Deliberately not undoable-as-a-separate-step in the writer's mind: it lands on
     // the fresh project's own stack alongside everything else the template laid down,
     // and a writer who wants a different palette changes it in Settings rather than
     // pressing Ctrl+Z on a project they have not typed in yet.
     {
-        let pending = deps.tag_preset.clone();
+        let pending = deps.starters.clone();
         let session = deps.session.clone();
         let my_ids = deps.ids.clone();
         ctx.subscribe_event(
@@ -650,10 +672,20 @@ pub(in crate::app) fn install_lifecycle(
                 if !my_ids.is_bootstrap_or_own(&event.ids) {
                     return;
                 }
-                if let Some(preset) = pending.take() {
+                let starters = pending.take();
+                if starters.is_empty() {
+                    return;
+                }
+                if let Some(preset) = starters.tags {
                     let summary = session.tags.apply_preset(preset);
                     if summary.added == 0 {
                         eprintln!("new work: the chosen tag palette added nothing");
+                    }
+                }
+                if let Some(set) = starters.templates {
+                    let summary = session.note_templates.apply_starter_set(set);
+                    if summary.added == 0 {
+                        eprintln!("new work: the chosen note templates added nothing");
                     }
                 }
             },
@@ -714,42 +746,75 @@ pub(in crate::app) fn install_lifecycle(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::note_templates::StarterSet;
     use crate::tags::Preset;
 
+    fn tags(preset: Preset) -> ProjectStarters {
+        ProjectStarters {
+            tags: Some(preset),
+            templates: None,
+        }
+    }
+
     /// **A one-shot is taken once.** The whole point of `take` rather than a read: two
-    /// projects created in the same window must not both get the first one's palette.
+    /// projects created in the same window must not both get the first one's answers.
     #[test]
-    fn a_taken_preset_is_not_taken_twice() {
-        let pending = PendingTagPreset::default();
-        pending.arm(Some(Preset::Basic));
-        assert_eq!(pending.take(), Some(Preset::Basic));
+    fn a_taken_answer_is_not_taken_twice() {
+        let pending = PendingStarters::default();
+        pending.arm(tags(Preset::Basic));
+        assert_eq!(pending.take(), tags(Preset::Basic));
         assert_eq!(
             pending.take(),
-            None,
+            ProjectStarters::default(),
             "the second project created in this window must choose for itself"
         );
     }
 
     /// **Never armed and armed-with-nothing are the same outcome**, which is what lets
-    /// this carry `Option<Preset>` rather than having to tell the two apart. A writer who
-    /// left the picker alone chose no tags, and that is a real answer.
+    /// this carry `Option`s rather than having to tell the two apart. A writer who left
+    /// both pickers alone chose no tags and no templates, and that is a real answer.
     #[test]
-    fn an_unarmed_one_shot_and_an_explicit_no_preset_agree() {
-        let never = PendingTagPreset::default();
-        assert_eq!(never.take(), None);
+    fn an_unarmed_one_shot_and_an_explicit_nothing_agree() {
+        let never = PendingStarters::default();
+        assert!(never.take().is_empty());
 
-        let explicit = PendingTagPreset::default();
-        explicit.arm(None);
-        assert_eq!(explicit.take(), None);
+        let explicit = PendingStarters::default();
+        explicit.arm(ProjectStarters::default());
+        assert!(explicit.take().is_empty());
     }
 
     /// **Arming again replaces.** A wizard that failed to create, then was reopened and
     /// completed, must apply the second answer and not the first.
     #[test]
     fn arming_again_replaces_the_pending_answer() {
-        let pending = PendingTagPreset::default();
-        pending.arm(Some(Preset::Fantasy));
-        pending.arm(Some(Preset::Mystery));
-        assert_eq!(pending.take(), Some(Preset::Mystery));
+        let pending = PendingStarters::default();
+        pending.arm(tags(Preset::Fantasy));
+        pending.arm(tags(Preset::Mystery));
+        assert_eq!(pending.take(), tags(Preset::Mystery));
+    }
+
+    /// **The two halves travel together.** They are armed and taken as one value
+    /// precisely so a project cannot end up with the palette it asked for and the
+    /// templates the *previous* project asked for.
+    #[test]
+    fn the_palette_and_the_templates_are_one_answer() {
+        let both = ProjectStarters {
+            tags: Some(Preset::SciFi),
+            templates: Some(StarterSet::Essentials),
+        };
+        let pending = PendingStarters::default();
+        pending.arm(both);
+        assert_eq!(pending.take(), both);
+        assert!(pending.take().is_empty());
+    }
+
+    /// One side chosen and not the other is ordinary, and must not read as "nothing".
+    #[test]
+    fn templates_alone_is_a_real_answer() {
+        let only_templates = ProjectStarters {
+            tags: None,
+            templates: Some(StarterSet::Everything),
+        };
+        assert!(!only_templates.is_empty());
     }
 }

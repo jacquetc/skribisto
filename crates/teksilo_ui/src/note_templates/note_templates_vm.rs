@@ -275,6 +275,15 @@ impl NoteTemplatesViewModel {
     pub fn apply_preset(&self, preset: crate::note_templates::Preset) -> TemplateImportSummary {
         self.import_rows(preset.rows())
     }
+
+    /// Apply a whole starter set — what a project created from the New Work wizard begins
+    /// with — as ONE undo step, for the same reason a preset is one.
+    pub fn apply_starter_set(
+        &self,
+        set: crate::note_templates::StarterSet,
+    ) -> TemplateImportSummary {
+        self.import_rows(set.rows())
+    }
 }
 
 /// The open Work these templates belong to — the pane's toast call sites use this to route

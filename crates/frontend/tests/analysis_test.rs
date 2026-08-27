@@ -103,6 +103,7 @@ fn fixture() -> Fixture {
         &NewWorkDto {
             goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
+            title: String::new(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],
@@ -311,6 +312,7 @@ fn a_part_heading_is_not_measured_as_a_scene() {
         &NewWorkDto {
             goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
+            title: String::new(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],

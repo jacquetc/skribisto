@@ -887,6 +887,7 @@ new-work-template-none = Aucun
 new-work-template-empty-novel = Roman vide
 new-work-template-light-novel = Roman court
 new-work-template-novel = Roman
+new-work-template-novel-in-parts = Roman en parties
 new-work-template-notebook = Carnet
 new-work-cancel = Annuler
 new-work-create = Créer l’œuvre
@@ -909,9 +910,10 @@ new-work-single-file-desc = Une archive .skrib (zip). Portable, facile à sauveg
 new-work-bundle-desc = Un dossier contenant chaque texte & ressource. Adapté au contrôle de version.
 # Décomptes des modèles
 new-work-template-none-count = classeur vide
-new-work-template-empty-novel-count = classeurs, sans chapitres
+new-work-template-empty-novel-count = 1 chapitre
 new-work-template-light-novel-count = 15 chapitres
 new-work-template-novel-count = 20 chapitres
+new-work-template-novel-in-parts-count = 3 parties, 24 chapitres
 new-work-template-notebook-count = notes libres
 # Bascule ChapterScene (modèles de roman)
 new-work-chapter-scene = Chapitres à plat
@@ -930,7 +932,6 @@ new-work-manuscript = Manuscrit
 new-work-notes = Notes
 new-work-research = Recherche
 new-work-notebook = Carnet
-new-work-chapter = Chapitre
 new-work-scene = Scène
 new-work-note = Note
 new-work-front-matter = Pages liminaires
@@ -941,6 +942,11 @@ new-work-paratext-hint = Les pages liminaires et les annexes propres à une trad
 new-work-tags = Étiquettes
 new-work-tags-none = Aucune étiquette
 new-work-tags-hint = Une palette de départ pour étiqueter les personnages, les lieux et le reste. Facultative, et chaque étiquette peut ensuite être renommée, recolorée ou supprimée.
+new-work-note-templates = Modèles de note
+new-work-note-templates-none = Aucun modèle
+new-work-note-templates-hint = La forme que prend une fiche de la bible narrative au départ. Facultatifs, et chaque modèle peut ensuite être modifié ou supprimé.
+new-work-characters = Personnages
+new-work-places = Lieux
 
 ## Boîte de dialogue d'import Plume Creator
 import-plume-title = Importer un projet Plume Creator

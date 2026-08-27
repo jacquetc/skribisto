@@ -122,10 +122,10 @@ impl NewWorkPanel {
     pub(crate) fn new(
         app_ctx: Rc<AppContext>,
         ids: crate::app_ids::AppIds,
-        tag_preset: crate::app::PendingTagPreset,
+        starters: crate::app::PendingStarters,
     ) -> Self {
         Self {
-            vm: NewWorkViewModel::new(app_ctx, ids, tag_preset),
+            vm: NewWorkViewModel::new(app_ctx, ids, starters),
             root_child: None,
             name_field: std::cell::Cell::new(None),
             controller: StepperController::new(STEP_COUNT),
@@ -333,6 +333,93 @@ fn tag_preset_combo(vm: &NewWorkViewModel) -> ComboBox<crate::tags::Preset> {
     .placeholder(tr!(new_work_tags_none()))
 }
 
+/// One row of the Template list: a compact tile (radio · icon · title · trailing count).
+struct TemplateTile {
+    icon: &'static teksilo::canvas::svg::SvgIcon,
+    title: LocalizedString,
+    /// What the template lays down, in a few words — and it must say what it *actually*
+    /// lays down. "Empty Novel" read "binders, no chapters" for as long as it has
+    /// existed while building exactly one chapter.
+    trailing: LocalizedString,
+}
+
+/// Every Template tile, in the order [`template_from_index`] reads.
+///
+/// **The return type is the drift guard.** `[TemplateTile; TEMPLATE_TILE_COUNT]` makes a
+/// tile added without the matching mapping — or a count changed without a tile — a
+/// compile error, where the old chained `.tile(..).tile(..)` list made it silent: an
+/// index past the end of the `match` falls through to `Novel`, so the writer would have
+/// got a second Novel under a new name.
+fn template_rows() -> [TemplateTile; crate::new_work::TEMPLATE_TILE_COUNT] {
+    [
+        TemplateTile {
+            icon: res!("assets/icons/new_work/none.svg"),
+            title: tr!(new_work_template_none()),
+            trailing: tr!(new_work_template_none_count()),
+        },
+        TemplateTile {
+            icon: res!("assets/icons/new_work/empty-novel.svg"),
+            title: tr!(new_work_template_empty_novel()),
+            trailing: tr!(new_work_template_empty_novel_count()),
+        },
+        TemplateTile {
+            icon: res!("assets/icons/new_work/light-novel.svg"),
+            title: tr!(new_work_template_light_novel()),
+            trailing: tr!(new_work_template_light_novel_count()),
+        },
+        TemplateTile {
+            icon: res!("assets/icons/new_work/novel.svg"),
+            title: tr!(new_work_template_novel()),
+            trailing: tr!(new_work_template_novel_count()),
+        },
+        // The same book with a `Folder/Part` layer. Its own tile rather than a toggle
+        // beside "Flat chapters": that toggle picks an *encoding* of one thing, this
+        // picks how much structure there is, which is what this list is for.
+        TemplateTile {
+            icon: res!("assets/icons/new_work/novel-in-parts.svg"),
+            title: tr!(new_work_template_novel_in_parts()),
+            trailing: tr!(new_work_template_novel_in_parts_count()),
+        },
+        TemplateTile {
+            icon: res!("assets/icons/new_work/notebook.svg"),
+            title: tr!(new_work_template_notebook()),
+            trailing: tr!(new_work_template_notebook_count()),
+        },
+    ]
+}
+
+/// The Template picker — a vertical [`RadioTileGroup`], one tile per `NewWorkTemplate`.
+///
+/// A row-accumulating builder, so a chained fold rather than `teksu!`.
+fn template_tiles(vm: &NewWorkViewModel) -> RadioTileGroup {
+    let mut group = RadioTileGroup::new(vm.template_idx()).layout(TileLayout::Vertical);
+    for row in template_rows() {
+        group = group.tile(
+            RadioTile::new()
+                .icon(tile_icon(row.icon))
+                .title(row.title)
+                .trailing(row.trailing),
+        );
+    }
+    group
+}
+
+/// The starter note templates. Empty selection means none at all, which is the default
+/// and a real answer: the insert menu simply has nothing in it yet, and any preset can be
+/// applied later from Settings ▸ Work ▸ Templates.
+///
+/// Like the tag palette beside it, the bodies are assembled from `tr!`'d field labels
+/// rather than shipped as data, so a French writer gets a French character sheet — see
+/// [`crate::note_templates::presets`].
+fn template_set_combo(vm: &NewWorkViewModel) -> ComboBox<crate::note_templates::StarterSet> {
+    ComboBox::from_items(
+        crate::note_templates::StarterSet::ALL.to_vec(),
+        vm.template_set(),
+        |set: &crate::note_templates::StarterSet| set.label(),
+    )
+    .placeholder(tr!(new_work_note_templates_none()))
+}
+
 /// The reactive "Will create …" preview — the one runtime-computed string.
 fn path_preview(vm: &NewWorkViewModel) -> impl Widget + use<> {
     HStack::new()
@@ -498,41 +585,7 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
             .row_spacing(18.0)
             // ── Template: a vertical list of compact rows (radio · icon ·
             // title · trailing count), one per NewWorkTemplate. ────────────
-            .line(
-                field_label(tr!(new_work_template())),
-                RadioTileGroup::new(vm.template_idx())
-                    .layout(TileLayout::Vertical)
-                    .tile(
-                        RadioTile::new()
-                            .icon(tile_icon(res!("assets/icons/new_work/none.svg")))
-                            .title(tr!(new_work_template_none()))
-                            .trailing(tr!(new_work_template_none_count())),
-                    )
-                    .tile(
-                        RadioTile::new()
-                            .icon(tile_icon(res!("assets/icons/new_work/empty-novel.svg")))
-                            .title(tr!(new_work_template_empty_novel()))
-                            .trailing(tr!(new_work_template_empty_novel_count())),
-                    )
-                    .tile(
-                        RadioTile::new()
-                            .icon(tile_icon(res!("assets/icons/new_work/light-novel.svg")))
-                            .title(tr!(new_work_template_light_novel()))
-                            .trailing(tr!(new_work_template_light_novel_count())),
-                    )
-                    .tile(
-                        RadioTile::new()
-                            .icon(tile_icon(res!("assets/icons/new_work/novel.svg")))
-                            .title(tr!(new_work_template_novel()))
-                            .trailing(tr!(new_work_template_novel_count())),
-                    )
-                    .tile(
-                        RadioTile::new()
-                            .icon(tile_icon(res!("assets/icons/new_work/notebook.svg")))
-                            .title(tr!(new_work_template_notebook()))
-                            .trailing(tr!(new_work_template_notebook_count())),
-                    ),
-            )
+            .line(field_label(tr!(new_work_template())), template_tiles(vm))
             // ── ChapterScene mode: write directly in chapters (novel templates
             // only; greyed otherwise). The rich tooltip explains both modes. ──
             .full_width(Divider::new())
@@ -554,6 +607,17 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
                     .spacing(6.0)
                     .child(FixedSize::new().width(240.0).child(tag_preset_combo(vm)))
                     .child(hint(tr!(new_work_tags_hint()))),
+            )
+            // ── Note templates: the shapes a story-bible entry starts in. Beside
+            // the palette because they are halves of one answer — a `character`
+            // tag and a character sheet are the same decision — and because the
+            // novel templates now ship the notes folders they fill. ───────────
+            .line(
+                field_label(tr!(new_work_note_templates())),
+                VStack::new()
+                    .spacing(6.0)
+                    .child(FixedSize::new().width(240.0).child(template_set_combo(vm)))
+                    .child(hint(tr!(new_work_note_templates_hint()))),
             ),
     )
 }
@@ -757,7 +821,7 @@ mod tests {
         let id = tree.add_boxed(Box::new(NewWorkPanel::new(
             ctx,
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         )));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);
@@ -776,12 +840,12 @@ mod tests {
         let vm = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         );
         let documents = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         )
         .for_documents();
         for (name, page) in [
@@ -822,7 +886,7 @@ mod tests {
         let mut panel = NewWorkPanel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         );
         if from_documents {
             panel.vm = panel.vm.clone().for_documents();

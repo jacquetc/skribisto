@@ -16,9 +16,12 @@
 
 use std::collections::HashMap;
 
+use teksilo::prelude::*;
+
 use frontend::AppContext;
 use frontend::commands::work_commands;
 use frontend::direct_access::BinderItemDto;
+use skribisto_model::SubRoleExt;
 use skribisto_model::compile::ItemMeta;
 use skribisto_model::numbering::{self, Numbered, NumberingRules};
 
@@ -77,7 +80,8 @@ pub fn numbers_for_work(
 }
 
 /// The name an untitled structural row falls back to — "Chapter 3", in the row's own
-/// language — or `None` when it has no ordinal and so no generated name.
+/// language, or "End of Book" for the marker that closes one — or `None` when the row has
+/// no generated name at all.
 ///
 /// Built here rather than in each row source so the language resolution happens once: the
 /// row's own `dict_language` tag wins, else the Work's, which is what the exporter's
@@ -95,6 +99,15 @@ pub fn fallback_label_for(
 ) -> Option<String> {
     if !it.title.trim().is_empty() {
         return None; // it has a name of its own
+    }
+    // The end-of-book marker. It opens no level, so `level_of` answers `None` for it and
+    // it can carry no ordinal — and it is contentless by construction, so it can never
+    // have a title either. That combination rendered a row with an icon and no text at
+    // all: not "the end of the book", just a blank line under the last chapter, on every
+    // project the New Work templates have ever made. It is the one row that is *always*
+    // nameless, so it is named after what it is.
+    if it.sub_role.closes_book() {
+        return Some(tr!(create_book_end()).resolve_now());
     }
     // Structural rows only. A scene or a note has no generated name to fall back on, and
     // labelling one "Scene" would be noise rather than information.
@@ -312,6 +325,32 @@ mod tests {
             let it = dto("", sr);
             assert_eq!(fallback_label_for(&it, None, &["en".into()]), None);
         }
+    }
+
+    /// **The end-of-book marker is the one row that is always nameless.** It is
+    /// contentless by construction, so it can never be titled, and it opens no level, so
+    /// it can never be numbered — which rendered it as an icon and no text at all, on
+    /// every project a New Work template has ever made. It is named after what it is.
+    #[test]
+    fn the_end_of_book_marker_is_named_after_what_it_is() {
+        let it = dto("", BinderItemSubRole::BookEnd);
+        let label = fallback_label_for(&it, None, &["en".into()]);
+        assert!(
+            label.as_deref().is_some_and(|s| !s.trim().is_empty()),
+            "the end marker must not render as a blank row"
+        );
+        // And `label_and_badge` shows it rather than an empty string with a badge.
+        let (shown, badge) = crate::models::label_and_badge("", label.as_deref(), None);
+        assert_eq!(shown, label.unwrap());
+        assert_eq!(badge, None);
+    }
+
+    /// A marker the writer *did* name keeps their name — the titled check runs first, as
+    /// it does for every other row.
+    #[test]
+    fn a_named_end_marker_keeps_its_name() {
+        let it = dto("Finis", BinderItemSubRole::BookEnd);
+        assert_eq!(fallback_label_for(&it, None, &["en".into()]), None);
     }
 
     /// [`ordered_item_dtos`] must answer in the **binder's stored relationship order**, not

@@ -72,6 +72,7 @@ fn ctx_with_one_of_each() -> (AppContext, Vec<(BinderItemSubRole, u64)>) {
         &NewWorkDto {
             goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
+            title: String::new(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],

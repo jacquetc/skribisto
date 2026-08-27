@@ -56,13 +56,21 @@ use crate::tags::Preset;
 ///
 /// The backend can't do i18n, so the template's human labels are resolved *here*
 /// and passed in, in the exact order `work_management`'s `TemplateLabels::from_list`
-/// reads them: `[Manuscript, Notes, Research, Notebook, Chapter, Scene, Note]`.
+/// reads them: `[Manuscript, Notes, Research, Notebook, <retired>, Scene, Note, Front
+/// matter, Back matter, Characters, Places]`.
+///
+/// `title` is the name the writer typed. It is **not** derivable from `file_name`, which
+/// this same view-model slugified to build (`"The Long Road"` → `.../the-long-road.skrib`)
+/// — reading the title back out of the path is what put `the-long-road` on the project,
+/// the Book row and the exported title page.
+///
 /// `language` is a locale tag (e.g. `"en-US"`) that becomes the new work's
 /// `dict_language`. Parsed through the shared helper so an unset choice yields no tags
 /// rather than a list holding one empty string.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn new_work_dto(
     file_name: String,
+    title: String,
     is_folder: bool,
     template_kind: NewWorkTemplate,
     language: String,
@@ -73,6 +81,7 @@ pub(crate) fn new_work_dto(
 ) -> NewWorkDto {
     NewWorkDto {
         file_name,
+        title,
         is_folder,
         template_kind,
         labels: vec![
@@ -80,14 +89,24 @@ pub(crate) fn new_work_dto(
             tr!(new_work_notes()).into(),
             tr!(new_work_research()).into(),
             tr!(new_work_notebook()).into(),
-            tr!(new_work_chapter()).into(),
+            // Slot 4 held the word "Chapter", which the template wrote into every
+            // generated chapter title. It does not any more — a chapter is named by the
+            // manuscript's own numbering, in the language it is *written* in, not the
+            // interface language this list is resolved in. The slot stays occupied
+            // rather than being reclaimed: the list is positional, so reusing it would
+            // silently retitle everything after it.
+            String::new(),
             tr!(new_work_scene()).into(),
             tr!(new_work_note()).into(),
-            // Appended, never inserted — the list is positional. These two name the
-            // folders the paratexts land in; the item titles inside them are NOT here,
-            // because they come from the preset verbatim in their own language.
+            // Appended, never inserted. These two name the folders the paratexts land
+            // in; the item titles inside them are NOT here, because they come from the
+            // preset verbatim in their own language.
             tr!(new_work_front_matter()).into(),
             tr!(new_work_back_matter()).into(),
+            // Appended later still: the two story-bible folders the Notes binder ships
+            // with, beside `new_work_research` above which names the third.
+            tr!(new_work_characters()).into(),
+            tr!(new_work_places()).into(),
         ],
         language: skribisto_model::language::parse_legacy_list(&language),
         chapter_scene_mode,
@@ -131,23 +150,38 @@ fn load_paratext_presets() -> (Rc<Vec<ParatextPreset>>, Option<String>) {
     (Rc::new(svc.all()), preselected)
 }
 
-/// Map the Template `SegmentedControl` index to its `NewWorkTemplate`.
+/// Map the Template `RadioTileGroup` index to its `NewWorkTemplate`.
 ///
-/// Kept in one place so the view (segment order) and the DTO stay in lockstep.
+/// Kept in one place so the view (tile order) and the DTO stay in lockstep.
 pub(crate) fn template_from_index(index: usize) -> NewWorkTemplate {
     match index {
         0 => NewWorkTemplate::None,
         1 => NewWorkTemplate::EmptyNovel,
         2 => NewWorkTemplate::LightNovel,
-        4 => NewWorkTemplate::NoteBook,
+        4 => NewWorkTemplate::NovelInParts,
+        5 => NewWorkTemplate::NoteBook,
         // 3 (Novel) is the default selection; any out-of-range index falls back
         // to it too.
         _ => NewWorkTemplate::Novel,
     }
 }
 
-/// The Template segment index for the default (Novel) selection.
+/// The Template tile index for the default (Novel) selection.
 pub(crate) const DEFAULT_TEMPLATE_INDEX: usize = 3;
+
+/// How many tiles the Template step shows — one per `NewWorkTemplate`.
+///
+/// The panel builds its tiles as a chained `RadioTileGroup`, which cannot be counted from
+/// outside, so this is the number the two agree on by hand. `every_template_is_reachable`
+/// below pins that every variant is reachable exactly once within it, which catches a
+/// variant added without a tile and a count bumped without a mapping.
+pub(crate) const TEMPLATE_TILE_COUNT: usize = 6;
+
+/// The tile indices that build a **book** — every novel-family template. The flat-chapter
+/// toggle and the paratext picker both apply to exactly these, so the range lives here
+/// rather than being spelled out at each of them (it was `1..=3` in two places, and
+/// adding the parts template would have silently missed both).
+const MANUSCRIPT_TEMPLATE_INDICES: std::ops::RangeInclusive<usize> = 1..=4;
 
 /// Derive the on-disk target from the folder + name + format.
 ///
@@ -293,18 +327,27 @@ pub struct NewWorkViewModel {
     /// preset only *seeds* the palette, and every tag it lays down can be renamed,
     /// recoloured or deleted afterwards in Settings.
     tag_preset: Signal<Option<Preset>>,
+    /// Which set of built-in note templates the project starts with, or `None` for none.
+    ///
+    /// The same bargain as [`Self::tag_preset`], and asked beside it: `None` is the
+    /// default and a real answer, applying a set only *seeds* the list, and every
+    /// template it lays down can be renamed, edited or deleted afterwards in Settings.
+    /// It is here rather than left to Settings because it is the same question the
+    /// template picker asks — what is already in the project on the first morning — and
+    /// because the novel templates now ship the notes folders these templates fill.
+    template_set: Signal<Option<crate::note_templates::StarterSet>>,
     app_ctx: Rc<AppContext>,
     /// Where "Create Work" puts the new project — see [`CreateTarget`].
     target: CreateTarget,
     /// What the project being created is *for* — see [`NewWorkPurpose`].
     purpose: NewWorkPurpose,
-    /// Where the in-place path leaves [`Self::tag_preset`] for the project that does not
-    /// exist yet.
+    /// Where the in-place path leaves [`Self::tag_preset`] and [`Self::template_set`] for
+    /// the project that does not exist yet.
     ///
     /// `None` for every target that creates its project in a **different** window: that
-    /// window has its own one-shot, which cannot be reached from here, so the preset
-    /// travels on [`PendingAction::New`] instead and `App::build` arms it over there.
-    pending_tag_preset: Option<crate::app::PendingTagPreset>,
+    /// window has its own one-shot, which cannot be reached from here, so the answers
+    /// travel on [`PendingAction::New`] instead and `App::build` arms them over there.
+    pending_starters: Option<crate::app::PendingStarters>,
 }
 
 /// What the project this form creates is for.
@@ -376,7 +419,7 @@ impl NewWorkViewModel {
     pub(crate) fn new(
         app_ctx: Rc<AppContext>,
         ids: crate::app_ids::AppIds,
-        pending_tag_preset: crate::app::PendingTagPreset,
+        pending_starters: crate::app::PendingStarters,
     ) -> Self {
         let (presets, preselected) = load_paratext_presets();
         Self {
@@ -392,10 +435,11 @@ impl NewWorkViewModel {
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
             tag_preset: Signal::new(None),
+            template_set: Signal::new(None),
             app_ctx,
             target: CreateTarget::InPlace(ids),
             purpose: NewWorkPurpose::Project,
-            pending_tag_preset: Some(pending_tag_preset),
+            pending_starters: Some(pending_starters),
         }
     }
 
@@ -467,6 +511,7 @@ impl NewWorkViewModel {
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
             tag_preset: Signal::new(None),
+            template_set: Signal::new(None),
             app_ctx,
             purpose: NewWorkPurpose::Project,
             target: CreateTarget::NewWindow {
@@ -474,8 +519,8 @@ impl NewWorkViewModel {
                 close_presenting_window,
             },
             // The project is created in a window that does not exist yet, which has its
-            // own one-shot; the preset rides on `PendingAction::New` instead.
-            pending_tag_preset: None,
+            // own one-shot; the answers ride on `PendingAction::New` instead.
+            pending_starters: None,
         }
     }
 
@@ -546,7 +591,8 @@ impl NewWorkViewModel {
         if self.purpose == NewWorkPurpose::FromDocuments {
             return Signal::new(true);
         }
-        self.template_idx.map(|i| matches!(*i, 1..=3))
+        self.template_idx
+            .map(|i| MANUSCRIPT_TEMPLATE_INDICES.contains(i))
     }
 
     /// Whether a paratext structure can be applied — the same three manuscript templates,
@@ -560,7 +606,8 @@ impl NewWorkViewModel {
         if self.purpose == NewWorkPurpose::FromDocuments {
             return Signal::new(false);
         }
-        self.template_idx.map(|i| matches!(*i, 1..=3))
+        self.template_idx
+            .map(|i| MANUSCRIPT_TEMPLATE_INDICES.contains(i))
     }
 
     /// The reactive "Will create …" path — recomputes as name/location/format
@@ -646,6 +693,22 @@ impl NewWorkViewModel {
         self.tag_preset.clone()
     }
 
+    /// Which set of built-in note templates the new project starts with.
+    pub fn template_set(&self) -> Signal<Option<crate::note_templates::StarterSet>> {
+        self.template_set.clone()
+    }
+
+    /// What this form asks the project to start with beyond its template.
+    ///
+    /// One value, because the two halves are armed and taken together — see
+    /// [`crate::app::ProjectStarters`].
+    fn starters(&self) -> crate::app::ProjectStarters {
+        crate::app::ProjectStarters {
+            tags: self.tag_preset.get(),
+            templates: self.template_set.get(),
+        }
+    }
+
     pub fn paratext_preset(&self) -> Signal<Option<String>> {
         self.paratext_preset.clone()
     }
@@ -658,6 +721,10 @@ impl NewWorkViewModel {
                 &self.name.get(),
                 self.format_idx.get(),
             ),
+            // The name as typed, beside the slugified path built from it. Trimmed, so a
+            // field of spaces reads as unset and the backend falls back to the file
+            // stem rather than titling the book with whitespace.
+            self.name.get().trim().to_string(),
             self.format_idx.get() == 1,
             template_from_index(self.template_idx.get()),
             self.language.get().unwrap_or_default(),
@@ -723,17 +790,17 @@ impl NewWorkViewModel {
                 // with nothing on screen to say so. The `NewWork` subscriber in
                 // `wiring::project_events` takes this instead, once the seed has landed:
                 // the same ordering, and the same reason, as the cold-start import.
-                if let Some(pending) = &self.pending_tag_preset {
-                    pending.arm(self.tag_preset.get());
+                if let Some(pending) = &self.pending_starters {
+                    pending.arm(self.starters());
                 }
                 match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
                     Ok(()) => ctx.dismiss_modal(),
                     Err(e) => {
                         // Nothing was created, so nothing must stay armed: the next
                         // project made in this window would otherwise inherit a palette
-                        // chosen for a project that never existed.
-                        if let Some(pending) = &self.pending_tag_preset {
-                            pending.arm(None);
+                        // and a template set chosen for a project that never existed.
+                        if let Some(pending) = &self.pending_starters {
+                            pending.arm(crate::app::ProjectStarters::default());
                         }
                         ctx.show_toast(Toast::error(tr!(could_not_create_work(
                             error = e.to_string()
@@ -752,7 +819,7 @@ impl NewWorkViewModel {
                 let (config, _state) = factory.window_config(PendingAction::New {
                     dto: self.dto(),
                     then_import: self.purpose == NewWorkPurpose::FromDocuments,
-                    tag_preset: self.tag_preset.get(),
+                    starters: self.starters(),
                 });
                 ctx.open_window(config);
                 if *close_presenting_window {
@@ -780,6 +847,7 @@ mod tests {
     fn the_author_field_reaches_the_new_work_dto() {
         let dto = new_work_dto(
             "/tmp/x.skrib".into(),
+            "X".into(),
             false,
             NewWorkTemplate::Novel,
             "en-US".into(),
@@ -799,6 +867,7 @@ mod tests {
         for typed in ["", "   "] {
             let dto = new_work_dto(
                 "/tmp/x.skrib".into(),
+                "X".into(),
                 false,
                 NewWorkTemplate::Novel,
                 "en-US".into(),
@@ -809,6 +878,61 @@ mod tests {
             );
             assert_eq!(dto.author_name, "", "{typed:?} must arrive as unset");
         }
+    }
+
+    /// **The typed name must reach the DTO as a title, not only as a path.** The form
+    /// slugifies it to build `file_name`, and the backend used to read the title back out
+    /// of that — so "The Long Road" became a project, a Book row and an exported title
+    /// page all reading `the-long-road`, with nowhere in the app to correct it.
+    #[test]
+    fn the_typed_name_reaches_the_dto_as_a_title() {
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingStarters::default(),
+        );
+        vm.location().set("/books".into());
+        vm.name().set("The Long Road".into());
+
+        let dto = vm.dto();
+        assert_eq!(dto.file_name, "/books/the-long-road.skrib");
+        assert_eq!(dto.title, "The Long Road");
+    }
+
+    /// Trimmed on the way out, so a field of spaces reads as unset and the backend falls
+    /// back to the file stem rather than titling the book with whitespace.
+    #[test]
+    fn a_whitespace_only_name_arrives_as_no_title() {
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingStarters::default(),
+        );
+        vm.location().set("/books".into());
+        vm.name().set("  Tidewrack  ".into());
+        assert_eq!(vm.dto().title, "Tidewrack");
+    }
+
+    /// Both starter answers travel together, so a project cannot get the palette it asked
+    /// for beside the templates the *previous* project asked for.
+    #[test]
+    fn the_starters_carry_both_answers() {
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingStarters::default(),
+        );
+        assert_eq!(vm.starters(), crate::app::ProjectStarters::default());
+
+        vm.tag_preset().set(Some(crate::tags::Preset::Fantasy));
+        vm.template_set()
+            .set(Some(crate::note_templates::StarterSet::Essentials));
+        let starters = vm.starters();
+        assert_eq!(starters.tags, Some(crate::tags::Preset::Fantasy));
+        assert_eq!(
+            starters.templates,
+            Some(crate::note_templates::StarterSet::Essentials)
+        );
     }
 
     #[test]
@@ -855,10 +979,60 @@ mod tests {
         assert_eq!(template_from_index(1), NewWorkTemplate::EmptyNovel);
         assert_eq!(template_from_index(2), NewWorkTemplate::LightNovel);
         assert_eq!(template_from_index(3), NewWorkTemplate::Novel);
-        assert_eq!(template_from_index(4), NewWorkTemplate::NoteBook);
+        assert_eq!(template_from_index(4), NewWorkTemplate::NovelInParts);
+        assert_eq!(template_from_index(5), NewWorkTemplate::NoteBook);
         // Out-of-range falls back to the default (Novel).
         assert_eq!(template_from_index(99), NewWorkTemplate::Novel);
         assert_eq!(DEFAULT_TEMPLATE_INDEX, 3);
+    }
+
+    /// Every template is reachable from exactly one tile.
+    ///
+    /// The failure this guards is silent in both directions: an out-of-range index falls
+    /// back to `Novel`, so a variant added without a tile is simply unreachable, and a
+    /// tile added without a mapping quietly creates a second "Novel".
+    #[test]
+    fn every_template_is_reachable() {
+        let seen: Vec<NewWorkTemplate> =
+            (0..TEMPLATE_TILE_COUNT).map(template_from_index).collect();
+        // Not `dedup`, which only collapses *adjacent* equals: the fallback arm maps
+        // every unmapped index to `Novel`, and a stray one is rarely next to the real
+        // Novel tile.
+        for (i, t) in seen.iter().enumerate() {
+            assert!(
+                !seen[..i].contains(t),
+                "tiles {} and {i} both map to {t:?}",
+                seen[..i].iter().position(|s| s == t).unwrap()
+            );
+        }
+        for wanted in [
+            NewWorkTemplate::None,
+            NewWorkTemplate::EmptyNovel,
+            NewWorkTemplate::LightNovel,
+            NewWorkTemplate::Novel,
+            NewWorkTemplate::NovelInParts,
+            NewWorkTemplate::NoteBook,
+        ] {
+            assert!(seen.contains(&wanted), "{wanted:?} has no tile");
+        }
+    }
+
+    /// The tile list and `MANUSCRIPT_TEMPLATE_INDICES` must agree on which templates
+    /// build a book: the flat-chapter toggle and the paratext picker are both gated on
+    /// that range, and the parts template was added in the middle of it.
+    #[test]
+    fn every_index_that_builds_a_book_is_a_manuscript_index() {
+        for idx in 0..TEMPLATE_TILE_COUNT {
+            let builds_a_book = !matches!(
+                template_from_index(idx),
+                NewWorkTemplate::None | NewWorkTemplate::NoteBook
+            );
+            assert_eq!(
+                MANUSCRIPT_TEMPLATE_INDICES.contains(&idx),
+                builds_a_book,
+                "tile {idx} disagrees with its template"
+            );
+        }
     }
 
     #[test]
@@ -866,7 +1040,7 @@ mod tests {
         let vm = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         );
         let path = vm.target_path();
         vm.location().set("~/Books".into());
@@ -882,7 +1056,7 @@ mod tests {
         let vm = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         );
         vm.location().set("~/Books".into());
         vm.name().set("Tidewrack".into());
@@ -896,8 +1070,13 @@ mod tests {
         assert!(dto.is_folder);
         assert_eq!(dto.template_kind, NewWorkTemplate::EmptyNovel);
         assert_eq!(dto.language, vec!["fr-FR".to_string()]);
-        // Seven binder names plus the two paratext folder names, appended.
-        assert_eq!(dto.labels.len(), 9);
+        // The full positional list: seven original slots (one of them retired), the two
+        // paratext folder names, then the two notes-folder names.
+        assert_eq!(dto.labels.len(), 11);
+        assert!(
+            dto.labels[4].is_empty(),
+            "slot 4 is retired and must stay a placeholder"
+        );
         assert!(dto.chapter_scene_mode);
     }
 
@@ -909,7 +1088,7 @@ mod tests {
         let vm = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         );
         let gate = vm.can_create();
         vm.location()
@@ -938,7 +1117,7 @@ mod tests {
         let vm = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         );
         let gate = vm.can_create();
         assert!(gate.get(), "an untouched mocks form must still advance");
@@ -956,7 +1135,7 @@ mod tests {
         let vm = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         )
         .for_documents();
         vm.location().set("~/Books".into());
@@ -982,7 +1161,7 @@ mod tests {
         let vm = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         );
         vm.paratext_preset().set(Some("us-trade-novel".into()));
         let vm = vm.for_documents();
@@ -994,16 +1173,16 @@ mod tests {
         let vm = NewWorkViewModel::new(
             Rc::new(AppContext::new()),
             crate::app_ids::AppIds::new(),
-            crate::app::PendingTagPreset::default(),
+            crate::app::PendingStarters::default(),
         );
         let applicable = vm.chapter_scene_applicable();
-        // Manuscript templates (Empty Novel / Light Novel / Novel).
-        for idx in [1, 2, 3] {
+        // Manuscript templates (Empty Novel / Light Novel / Novel / Novel in parts).
+        for idx in [1, 2, 3, 4] {
             vm.template_idx().set(idx);
             assert!(applicable.get(), "idx {idx} should enable the toggle");
         }
-        // None (0) and Notebook (4) grey it out.
-        for idx in [0, 4] {
+        // None (0) and Notebook (5) grey it out.
+        for idx in [0, 5] {
             vm.template_idx().set(idx);
             assert!(!applicable.get(), "idx {idx} should disable the toggle");
         }

@@ -255,6 +255,62 @@ impl Preset {
     }
 }
 
+/// A set of built-in templates a **new project** can start with, offered on the New Work
+/// wizard's template step beside the tag palette.
+///
+/// A set rather than a single [`Preset`] because one template is not an answer to "what do
+/// I want in this project": a novelist reaching for the character sheet reaches for the
+/// location sheet in the same breath. The two sets are the two honest answers — the ones
+/// that pair with the Notes folders the novel templates lay down, or all of them.
+///
+/// **None is the default and a real answer**, exactly as it is for the tag palette: a
+/// project with no templates works, the insert menu simply has nothing in it yet, and
+/// Settings ▸ Work ▸ Templates applies any preset later. This is why the question can be
+/// asked at creation without being a commitment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StarterSet {
+    /// The three that pair with the notes folders a novel template creates — Characters,
+    /// Places, Research.
+    Essentials,
+    /// Every built-in, for a writer who would rather delete than go looking.
+    Everything,
+}
+
+impl StarterSet {
+    /// Both sets, in menu order: the smaller one first, so the list reads as a decision
+    /// about *how much* rather than a pair of unrelated options.
+    pub const ALL: [StarterSet; 2] = [StarterSet::Essentials, StarterSet::Everything];
+
+    /// The menu label.
+    pub fn label(self) -> LocalizedString {
+        match self {
+            StarterSet::Essentials => tr!(note_template_set_essentials()),
+            StarterSet::Everything => tr!(note_template_set_everything()),
+        }
+    }
+
+    /// Which built-ins this set lays down.
+    pub fn presets(self) -> &'static [Preset] {
+        match self {
+            // Deliberately the three that answer the three folders: a Character sheet for
+            // Characters, a Location for Places, a Research note for Research. A beat
+            // sheet and a faction are real templates a real writer wants — and neither has
+            // a folder waiting for it on the first morning.
+            StarterSet::Essentials => &[
+                Preset::CharacterSheet,
+                Preset::Location,
+                Preset::ResearchNote,
+            ],
+            StarterSet::Everything => &Preset::ALL,
+        }
+    }
+
+    /// Every row this set creates, resolved in the active locale.
+    pub fn rows(self) -> Vec<TemplateRow> {
+        self.presets().iter().flat_map(|p| p.rows()).collect()
+    }
+}
+
 /// Assemble one Djot document: a level-1 title, then a level-2 heading per section with its
 /// prompts as a bullet list.
 ///
