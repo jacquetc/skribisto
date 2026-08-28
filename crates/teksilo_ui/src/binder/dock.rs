@@ -134,6 +134,18 @@ fn binder_tree(
                 .has_children(row.has_children)
                 .is_expanded(row.is_expanded)
                 .selected(selected)
+                // Without this the row is over-constrained by its own title: an
+                // unset overflow is `Wrap`, a wrapping label reports its full
+                // intrinsic width, and the label column then reports rigid against
+                // the panel's width — so a long title paints straight out of the
+                // dock and across the editor beside it. Every other tree and list
+                // dock (comments, versions, timeline) already truncates for this
+                // reason; the binder was the one that did not, and it went unseen
+                // only because the bundled example's rows were called "Chapter 1".
+                // A binder title is as long as the writer makes it, and a French
+                // chapter heading of the 1870s runs to a hundred characters.
+                .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+                .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                 .on_toggle_rc(row.toggle_callback());
             if !node.label.is_empty() {
                 item = item.subtitle(lit!(node.label.clone()));
