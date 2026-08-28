@@ -3,58 +3,40 @@ THIRD-PARTY CONTENT BUNDLED WITH SKRIBISTO
 
 Skribisto's own source code is licensed GPL-3.0-only (see COPYING at the repository
 root). That licence governs the application. It does NOT govern the example content
-bundled in this directory, which is third-party copyrighted material used by
-permission and whose rights are reserved by its author.
+bundled here.
 
+One directory per example, each holding the project file, the `NOTICE` that states
+its rights, and the TOML that declares its editorial metadata:
 
-Starforgers.skrib
+    starforgers/                   STARFORGERS, by Ken McConnell.
+                                   In copyright. Used with the full agreement of the
+                                   author. Not relicensed, and not redistributable
+                                   apart from Skribisto. See starforgers/NOTICE.
+
+    le_tour_du_monde_en_80_jours/  LE TOUR DU MONDE EN QUATRE-VINGTS JOURS, by Jules
+                                   Verne (Hetzel, 1873). Public domain worldwide.
+                                   See le_tour_du_monde_en_80_jours/NOTICE.
+
+In both, the prose belongs to its author and is never modified. The synopses, story
+bible, tags, labels and points of view are editorial description written by the
+Skribisto project; they are declared in each example's TOML and applied by
+
+    cargo run -p skribisto-skrib-format --example build_example -- …
+
+which asserts on every run that the prose it read back is byte-identical to what it
+writes out.
+
+Adding an example
 -----------------
 
-Work:        STARFORGERS (Star Saga, Book 1)
-Author:      Ken McConnell
-Publisher:   GB Press
-Editions:    First published 2011; Second Edition, December 2012
-Cover art:   Byron McConnell — https://byronmcconnell.com/
-Author site: https://www.ken-mcconnell.com/
-
-    Copyright 2011, 2012 by Ken McConnell. All Rights Reserved.
-
-The novel is bundled with Skribisto as an example project with the full agreement of
-the author, as recorded on the work's own copyright page inside the project file:
-
-    "This novel is used as an example in Skribisto with the full agreement of the
-     author Ken McConnell."
-
-Scope of that permission
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-The permission covers distributing the novel with Skribisto as example content. It is
-not a grant of any open-source licence, and it does not place the text in the public
-domain. In particular:
-
-  * The prose is not modified, and must not be modified. It is reproduced as the
-    author wrote it. This includes not introducing deliberate defects (duplicated
-    passages, altered wording) for testing or demonstration purposes — synthetic
-    fixtures exist for that.
-  * The text is not relicensed under GPL-3.0-only or any other licence by virtue of
-    being distributed alongside Skribisto.
-  * Redistribution of the novel apart from Skribisto, or any other use beyond the
-    example role described above, requires the author's permission.
-
-Editorial metadata added by the Skribisto project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To demonstrate Skribisto's features, the project adds descriptive metadata to this
-example project: scene synopses, tags, labels, character and story-bible notes,
-aliases and point-of-view assignments.
-
-This metadata is written by the Skribisto project, not by Ken McConnell. It is
-editorial description of the novel, not part of it, and any error or infelicity in it
-is the project's and not the author's. It carries no authority as to the author's
-intent.
-
-The prose files themselves (binders/*/text/*.djot) are the author's work and are
-untouched.
+The rights question comes first, and "it is old" does not settle it. A term of the
+author's life plus seventy years is only the starting point: France adds thirty years
+for an author who died for it (art. L123-10 CPI), and the United States runs
+ninety-five years from publication for anything published between 1929 and 1977. A
+work can therefore be public domain across most of Europe and still in copyright in
+both France and the United States — which is exactly the case for Le Petit Prince,
+and the reason it is not one of these examples. Prefer an author who died before 1930
+whose work was also published before 1930: that clears every term at once.
 
 
 Other bundled content

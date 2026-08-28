@@ -1,0 +1,390 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+#
+# The bundled example "Starforgers", end to end.
+#
+# The novel is Ken McConnell's, in print, and used with his agreement; everything in
+# THIS file is editorial description written by the Skribisto project — synopses,
+# story bible, aliases, points of view. It is not part of the book and carries no
+# authority as to the author's intent. See the NOTICE beside it.
+#
+# There is no `[source]` section and no `convert` step: Starforgers arrived as a
+# bundle, from its author, and its prose has never passed through this tool. Only
+# `enrich` runs, over the same schema the public-domain examples use:
+#
+#   cargo run -p skribisto-skrib-format --example build_example -- enrich \
+#       resources/examples/starforgers/starforgers.toml \
+#       resources/examples/starforgers/Starforgers.skrib
+#
+# ⚠ The cast lists below name only story-bible entries, and the bible is deliberately
+# not exhaustive — a note for every walk-on would demonstrate nothing but clutter.
+# The reading pass that produced this data also tallied 44 further names that
+# have no note, and the JSON predecessor of this file silently dropped every one of
+# them when it built the links. Nothing here drops anything silently any more: a name
+# with no entry is now a hard error at load. Several of those names recur often enough
+# to deserve a note — Sumi-ness (8), Vomisa (5), Saibot (4), Jaye (3), Red Allen (3), Kaigun (2), Mason (2), Kell (2) — and adding one is the way to
+# put them back into the cast lists.
+
+[book]
+title = "Starforgers"
+author = "Ken McConnell"
+unique_id = "ne6qxlagXXie"
+language = ["en_US"]
+timestamp = "2026-08-04T13:37:41.003666551+00:00"
+chapter_flat = false
+number_chapters = true
+
+# Descriptive only — `enrich` reads the binder names out of the bundle itself. They
+# are recorded so this file describes the whole example rather than half of it.
+manuscript_binder = "Writings"
+book_folder = "Starforgers"
+
+# ── tags ─────────────────────────────────────────────────────────────────────
+# `discoverable` is what puts an item's title and aliases into the mention index and
+# the point-of-view picker. A story-bible note without it is invisible to the scan.
+
+[[tag]]
+name = "Character"
+color = "#4477aa"
+discoverable = true
+details = "Story-bible entry for a person in the book."
+
+# ── the story bible ──────────────────────────────────────────────────────────
+# Its own binder, not notes appended to the manuscript: binders exist to separate the
+# book from the material about the book, and burying character notes in the
+# manuscript would put them in the analysis scope and in every whole-project export.
+# Flat, with no folders — this bible holds people and nothing else.
+
+[bible]
+binder = "Story bible"
+character_tag = "Character"
+
+
+[[character]]
+name = "Devon Ardel"
+aliases = ["Devon"]
+note = "Stellar Ranger on the frontier moon Ocherva, later recruited into the Starforgers. Daughter of Senator Gail Constantine."
+
+[[character]]
+name = "Rik Raider"
+aliases = ["Raider"]
+note = "Captain of the Tunnel Drive prototype starship Sokol."
+
+[[character]]
+name = "Neve Trimble"
+aliases = ["Trimble"]
+note = "Commander aboard the Sokol, serving under Captain Raider."
+
+[[character]]
+name = "Gail Constantine"
+aliases = ["Constantine", "Gail"]
+note = "Federation senator on Selene, arguing for Outer Rim defences. Devon's mother."
+
+[[character]]
+name = "Kantor"
+aliases = []
+note = "Chief Strategist of the Votainion Empire, pursuing the Federation after an encounter over Ocherva."
+
+[[character]]
+name = "Varco"
+aliases = []
+note = "Votainion commander aboard the flagship VCF Krestor, serving under Kantor."
+
+[[character]]
+name = "Nykostra"
+aliases = []
+note = "Empress of the Votainion Empire."
+
+[[character]]
+name = "Morgan Blud"
+# "Morgan" alone is how the crew talk about him ("Went down with his ship to buy his
+# crew time"), so the mention scan needs it or those lines match nothing. It was in the
+# reading pass's tallies and the JSON predecessor dropped it, because an alias it never
+# declared is a name it cannot resolve.
+aliases = ["Blud", "Morgan"]
+note = "Pirate captain. Responsible for the death of Devon's husband."
+
+[[character]]
+name = "Sasha"
+aliases = []
+note = "Captain Blud's partner in the raid on the SS Kelley."
+
+[[character]]
+name = "Ganner"
+aliases = []
+note = "Federation admiral, pressing for the Starforgers to be built up."
+
+[[character]]
+name = "Seth"
+aliases = []
+note = "Stellar Ranger on Ocherva; takes command of Company H when Devon leaves."
+
+[[character]]
+name = "Gareth"
+aliases = []
+note = "Viewpoint character in the later chapters of the book."
+
+[[character]]
+name = "Hap"
+aliases = []
+note = "Devon's wingman, killed by an alien fighter over Ocherva."
+
+[[character]]
+name = "Thirty-seven"
+aliases = ["Slim"]
+note = "Android attached to the Rangers on Ocherva; one of Senator Constantine's Silicant operatives."
+
+[[character]]
+name = "Eighty-eight"
+aliases = []
+note = "Silicant operative working for Senator Constantine."
+
+[[character]]
+name = "Aven"
+aliases = []
+note = "Ranger Control officer on Ocherva."
+
+[[character]]
+name = "Hoque"
+aliases = []
+note = "Federation senator opposing funding for Outer Rim defences."
+
+
+# ── the manuscript, chapter by chapter ───────────────────────────────────────
+# Addressed by `file_id` rather than by `number`: these rows were created by the
+# author's own project, not by this tool, and their ids are what the bundle holds.
+#
+# `pov` is empty wherever the chapter is genuinely multi-thread. Inventing a viewpoint
+# for those would be worse than leaving them unassigned — the unassigned bucket exists
+# for exactly this, and an example that never exercised it would hide it.
+
+[[chapter]]
+file_id = 3
+title = "Prologue"
+pov = []
+cast = ["Nykostra"]
+synopsis = "A historical excerpt describes how the Federation worlds Selene, Ursai, and Drexel prospered under a shared trade agreement until frontier massacres by a superior alien force prompted the founding of the experimental Starforgers unit, while the Votainion Empire under young Empress Nykostra expanded outward in search of the Votainions' lost homeworld, setting the two powers on a collision course."
+
+[[chapter]]
+file_id = 4
+title = "Chapter 1"
+pov = ["Devon"]
+cast = ["Devon", "Hap", "Aven", "Thirty-seven"]
+synopsis = "On the frontier moon Ocherva, Stellar Rangers Devon and Hap capture the sole survivor of a pirate gang tied to Captain Morgan Blud, then return to the town of Haven, where Devon drinks alone in the tavern to numb the pain of her husband's death at Blud's hands; the android Thirty-seven fetches her to Ranger Control, where Aven reports a large, unidentified ship inbound from deep space, and despite a coolant fault in Hap's Scrambler the two launch to intercept it."
+
+[[chapter]]
+file_id = 5
+title = "Chapter 2"
+pov = ["Devon"]
+cast = ["Devon", "Hap", "Aven", "Seth"]
+synopsis = "Devon and Hap chase down a fast, dark green alien craft that Devon dubs the Eight-fighter as it heads for Ocherva; after a warning shot provokes return fire that destroys Hap's Scrambler and kills her, a grief-stricken Devon rams the alien fighter down near Haven's main street, is wounded by its pale-skinned pilot in the ensuing standoff, watches him escape aboard a second Eight-fighter, and keeps the pistol he dropped as reinforcements arrive."
+
+[[chapter]]
+file_id = 6
+title = "Chapter 3"
+pov = []
+cast = ["Gail Constantine", "Hoque", "Rik Raider", "Neve Trimble"]
+synopsis = "In the Federation senate on Selene, Senator Gail Constantine confronts Senator Hoque over his opposition to funding Outer Rim defenses just as a holographic news report reveals the research vessel SS Bourke destroyed near Al-Shatar and a Stellar Ranger killed in a skirmish on Ocherva, leaving Gail fearful for her daughter there; aboard his new Tunnel Drive prototype starship, Captain Rik Raider is called away from touring wealthy investors like J. P. Lannington to receive a coded Fleet message from Senator Constantine, and asks Commander Neve Trimble to ready the ship and join him at a dinner on Selene."
+
+[[chapter]]
+file_id = 7
+title = "Chapter 4"
+pov = ["Kantor"]
+cast = ["Kantor", "Varco", "Nykostra"]
+synopsis = "Aboard the Votainion cruiser VCF Krestor, Chief Strategist Kantor returns wounded from the encounter over Ocherva and tells Commander Varco he has found a formidable new adversary worth pursuing; a meditative trance brings Kantor a violent vision of a coming galactic war, and when Empress Nykostra orders his armada home to quell unrest among the Kastra, one of her Soothsayers overrules her recall in a private transmission, prompting Kantor to defy the Empress and order Varco to press on toward a suspected enemy base."
+
+[[chapter]]
+file_id = 8
+title = "Chapter 5"
+pov = []
+cast = ["Kantor", "Varco", "Blud", "Sasha"]
+synopsis = "Kantor's armada annihilates a hidden asteroid smuggling base, the destruction made worse when a freighter's reactor explodes and kills everyone inside; separately, the Federation's prototype starship SS Kelley under Captain Blane Dobson is ambushed near Prahran by three vessels disguised as the lost transport Bainesbright, and after Dobson orders his crew to trigger a reactor meltdown rather than surrender the ship, pirates led by Captain Blud and his partner Sasha storm the bridge, kill Dobson, Jarve, and the rest of the crew, and take the Kelley intact — though Blud notices an unexplained flash on his scanners partway to Prahran."
+
+[[chapter]]
+file_id = 9
+title = "Chapter 6"
+pov = []
+cast = ["Trimble", "Constantine", "Ganner", "Raider"]
+synopsis = "At a dinner at Senator Constantine's home on Selene, Constantine and Admiral Ganner press Commander Trimble on the need to dissolve the Federation and build up the Starforgers against a mysterious alien threat, while Captain Raider stays diplomatically silent. Trimble excuses herself and Raider follows her onto the porch, where he reveals his father died at Kew after an alien attack years earlier; the dinner is cut short when Ganner learns the SS Kelley has been attacked by pirates and orders the Sokol recalled, and after a stolen goodbye kiss with his secret lover Constantine, word arrives that the base on Sillecore has also been attacked."
+
+[[chapter]]
+file_id = 10
+title = "Chapter 7"
+pov = []
+cast = ["Constantine", "Trimble", "Hoque", "Raider"]
+synopsis = "In the secret basement of her home, Senator Constantine (called Gail here) meets with her androids Saibot and Vomisa, who report that the pirates occupying the factory above Sillecore were wiped out in an unexplained core breach after an attack, and she decides to recall her operatives Eighty-eight and Thirty-seven while brushing aside Saibot's warning about exposing the hidden Silicant processing plant to the military; meanwhile Commander Trimble is stopped by Senator Hoque fishing for information on her way back to the Sokol, then works through last-minute launch glitches with Captain Raider and watches the recovered footage of the green alien fighters before the ship makes its tunnel jump toward the Kelley's last position."
+
+[[chapter]]
+file_id = 11
+title = "Chapter 8"
+pov = []
+cast = ["Kantor", "Raider", "Constantine", "Trimble"]
+synopsis = "Aboard the flagship VCF Krestor, Lord Kantor briefs his Votainion captains — Krom, Voss, and Kvorn — on invading the unprotected Prahranian system, favoring his own vision that the newly found species are the lost tribe of Voton over Kvorn's theory that they are the lost Kastra; aboard the Sokol, Captain Raider privately reviews messages from Admiral Ganner about the vanished SS Kelley and from Senator Constantine urging him to recruit her daughter Devon's Stellar Ranger pilots on Ocherva, then meets Commander Trimble and mechanic Commander Jaye on the flight deck to plan crewing the ship's mismatched prototype starfighters with Rangers once they reach Ocherva."
+
+[[chapter]]
+file_id = 12
+title = "Chapter 9"
+pov = ["Seth"]
+cast = ["Seth", "Devon", "Thirty-seven"]
+synopsis = "In the tavern Downer's on Ocherva, a grieving Seth climbs to the roof where Sheriff Devon has been drinking alone since her wingman Hap died in the fight with the alien fighter, pushing past the android Thirty-seven to reach her; Devon breaks down blaming herself for Hap's death and says she means to hunt down the aliens, and after Seth reveals that a military ship is coming tomorrow to recruit Rangers and admits he has always loved her, the two become lovers."
+
+[[chapter]]
+file_id = 13
+title = "Chapter 10"
+pov = ["Devon"]
+cast = ["Devon", "Seth", "Raider", "Trimble", "Aven", "Thirty-seven"]
+synopsis = "On Ocherva, Devon shows visiting Captain Raider and Commander Trimble the wrecked alien Eight-fighter she rammed to kill her friend's attacker, and in the Rangers' station vault — opened with Aven's help — the officers explain that the same kind of ship destroyed the SS Bourke and offer new Vickers Series E starfighters to recruit her and her pilots into the Starforgers; Devon then tells her assembled Company H Rangers she is leaving with a handful of volunteers, hands command and her badge to Seth, and says goodbye to her android Thirty-seven ('Slim') before departing with Trimble and Raider."
+
+[[chapter]]
+file_id = 14
+title = "Chapter 11"
+pov = []
+cast = ["Varco", "Kantor", "Nykostra"]
+synopsis = "Near a binary star system, Rear Admiral Kaigun presses Lord Kantor for action, and Kantor orders him to wipe out the aliens on a desert moon despite Commander Varco's caution that the strike could expose the Votainion fleet too early; a recorded message then arrives from the young Empress Nykostra, bloodied after surviving an assassination attempt and shown having ritually beheaded and consumed the Soothsayer to claim the ancient title Kamsa-riecht, ordering Kantor to keep following the Reesa-vern toward the Votainion homeworld Kerra-jorro — a command Kantor receives on his knees and resolves to obey at once."
+
+[[chapter]]
+file_id = 15
+title = "Chapter 12"
+pov = []
+cast = ["Devon Ardel", "Raider", "Trimble"]
+synopsis = "Aboard the SS Sokol, Devon Ardel shares rocket juice and a Prahran cigar with civilian test pilot Red Allen beside the salvaged wreck of the alien fighter that killed her wingman Hap, then runs an unauthorized ambush maneuver with her Ranger pilots (Mason, Kell, Larn, Rease) against Commander Jaye and Stuggs during a training patrol, earning her a grounding and a trip to the brig. In a separate scene, Captain Raider and Commander Trimble study a star map and decide to make their stand against the aliens at Prahran, home of the Stellar Rangers."
+
+[[chapter]]
+file_id = 16
+title = "Chapter 13"
+pov = []
+cast = ["Thirty-seven", "Seth", "Aven", "Eighty-eight", "Blud", "Sasha", "Gareth"]
+synopsis = "On the moon Ocherva, the alien commander Kaigun oversees an easy planetary assault while Rangers Seth and Aven make a doomed last stand alongside the android Thirty-seven in the Ranger Control storage vault, both men dying and leaving Thirty-seven alone. The android Eighty-eight finds Thirty-seven amid the ruins of Haven, and after pirates Captain Blud and Sasha investigate the wreckage and meet Eighty-eight, Blud strikes a deal to ferry the two Silicants and their hidden crates of silicate rock toward Selene aboard the Rashionu-sera, whose crew Gareth and Dohlber collect payment of fifty-thousand Redbacks."
+
+[[chapter]]
+file_id = 17
+title = "Chapter 14"
+pov = []
+cast = ["Hoque", "Gail"]
+synopsis = "In a rotating private club above Selene, Senator Hoque, his aide Zem, media mogul Tanner and Senator Drake plot to counter Senator Gail Constantine's rising Alliance Party support; Zem's detection device exposes the android server Saibot as a spying Silicant, and security guards shoot him through the window to his apparent destruction. Hoque has the wrecked Saibot delivered to Constantine's home, where her aides Sumi-ness and Vomisa reboot him and reveal he has spied on Hoque for six months, with Vomisa planning to blackmail Hoque into silence using evidence of his affairs."
+
+[[chapter]]
+file_id = 18
+title = "Chapter 15"
+pov = ["Ganner"]
+cast = ["Ganner", "Gail"]
+synopsis = "Waiting in Senator Gail Constantine's office, Admiral Ganner reflects on their secret romance and on the new tunnel-drive Starforgers fleet he has built around ships like the Sokol and the Kelley; when Gail arrives they debate shutting down the Core shipping lanes and sending diplomats to the aliens, and she reports the Alliance Party gaining on Hoque in the polls. Later at Starforce Command, Ganner joins Chief of Staff Admiral Danes, Admiral Torrin, Admiral Tam Darnel and Admiral Seldon for a briefing revealing that Ocherva has gone silent, prompting Danes to send reinforcements toward Prahran and put Selene's home guard on Condition Yellow."
+
+[[chapter]]
+file_id = 19
+title = "Chapter 16"
+pov = []
+cast = ["Blud", "Sasha", "Eighty-eight", "Thirty-seven", "Gareth"]
+synopsis = "Aboard the captured SS Kelley, Captain Blud tells his lover and first mate Sasha he means to bargain with the Federation at Prahran rather than fight the aliens alone, provoking a tense confrontation before she yields. Aboard the pirate ship Rashionu-sera, Gareth brings the androids Eighty-eight and Thirty-seven before its unstable Silicant captain, Two Three, who shocks himself with an electromagnet and shoots Thirty-seven's arm before ordering them both to Engineering, while Blud and Sasha's ship nears the Prahran system."
+
+[[chapter]]
+file_id = 20
+title = "Chapter 17"
+pov = []
+cast = ["Raider", "Blud", "Sasha", "Devon Ardel", "Trimble"]
+synopsis = "As the SS Sokol nears Prahran, Captain Raider parleys under a flag of truce with Captain Morgan Blud and his first mate Sasha aboard the captured SS Kelley; freed from the brig, Devon Ardel holds a knife to Blud's throat believing he killed her husband, until Raider reveals her husband died steering the Wayward Star clear to save its crew and that Blud only defected afterward. Blud and Sasha report that Ocherva and Haven have been wiped out, and Raider agrees to trade two Starforce engineers and a bridge officer for Sasha's service and Blud's help against the aliens, while Commander Trimble consoles the grieving Devon."
+
+[[chapter]]
+file_id = 21
+title = "Chapter 18"
+pov = []
+cast = ["Kantor", "Varco", "Raider", "Blud", "Sasha", "Devon"]
+synopsis = "Lord Kantor's Votainion armadas easily conquer the planet Prahran through orbital bombardment and ground occupation, while he and Commander Varco puzzle over the absence of any Prahranian stellar defense fleet. On the ground, General Solano and General Prevens evade an enemy air strike and radio Captain Raider of the Sokol for help as he readies an attack with Captain Blud's Kelley, while aboard the Sokol Lieutenant Devon mourns her dead friends from Ocherva with Red Allen before the coming battle."
+
+[[chapter]]
+file_id = 22
+title = "Chapter 19"
+pov = ["Gareth"]
+cast = ["Gareth", "Eighty-eight", "Thirty-seven"]
+synopsis = "Aboard the pirate freighter Rashionu-sera nearing Core space, Gareth secretly recruits the android Eighty-eight to help him seize control of the ship from its damaged, unstable Captain, Two-three. When they confront Two-three on the bridge, its erratic, armed rampage gets Eighty-eight ambushed and shut down, and it is dragged off to have its leg cut off in the machine shop."
+
+[[chapter]]
+file_id = 23
+title = "Chapter 20"
+pov = []
+cast = ["Devon", "Raider", "Sasha", "Trimble"]
+synopsis = "In the space battle over Prahran, Lieutenant Devon leads her Devil Flight wingmen Mason and Kell against the invading Votainion warships and their Eight-fighters, discovering that concentrated fire on the ships' necks can crack their shields, though she loses her pilot Rease and later Mason before her crippled Vickers fighter limps back to a rough manual landing on the Sokol. Aboard the Sokol's bridge, Captain Raider, Sasha, and the crew direct volleys against the alien vessels and absorb a damaging hit before ordering the fighters to disengage."
+
+[[chapter]]
+file_id = 24
+title = "Chapter 21"
+pov = ["Gareth"]
+cast = ["Gareth", "Thirty-seven", "Eighty-eight"]
+synopsis = "Gareth frees the android Thirty-seven, and together they fight through pirate guards to reach the deactivated, one-legged Eighty-eight in the ship's infirmary. The pair then spacewalk outside the hull to the bridge, cut through with a welding torch as a diversion, and kill the deranged Captain Two-three in a struggle, afterward welding Eighty-eight a makeshift pipe leg and continuing the Rashionu-sera's course to Selene under Senator Constantine's orders."
+
+[[chapter]]
+file_id = 25
+title = "Chapter 22"
+pov = []
+cast = ["Kantor", "Varco", "Raider", "Sasha", "Blud", "Devon"]
+synopsis = "Aboard his warship, Lord Kantor and Commander Varco track a lone fleeing enemy ship and conclude it is heading toward what Kantor believes is the fabled world Kerra-jorro, the aliens' home system. Meanwhile Captain Raider, aided by Sasha and rail-gun fire from Blud's ship the Blistered Soul, destroys a second Votainion starship over Prahran, then intercepts the freighter Rashionu-sera's hail revealing it is bound for Selene under Senator Constantine's orders, and after his Vickers fighters are wiped out he sends Devon and Red Allen down to find replacement planes."
+
+[[chapter]]
+file_id = 26
+title = "Chapter 23"
+pov = []
+cast = ["Ganner", "Gail Constantine", "Hoque"]
+synopsis = "Admiral Ganner interrupts a campaign meeting in Senator Gail Constantine's office to report Prahran's fall, then assembles a scratch defense fleet of unarmed merchant ships, led by Captain Stiles's Starchaser, aboard his flagship Terrington to intercept the lone Votainion warship approaching Selene. Elsewhere the androids Vomisa and Saibot discuss the prophetic Seventy-three, the opposition strategist Hoque plots with aides Zem and Tanner to exploit the invasion politically, and Gail confers with Ganner and her aide Sumi-ness about the freighter cargo run that has inadvertently drawn the enemy toward Selene."
+
+[[chapter]]
+file_id = 27
+title = "Chapter 24"
+pov = []
+cast = ["Gail Constantine", "Ganner", "Gareth"]
+synopsis = "On election night Gail Constantine loses her Senate race but is then told by her Silicant aides Sumi-ness, Saibot, and Vomisa that President Nesterna has named her Vice President after his own VP resigned, and she reluctantly accepts. Meanwhile Admiral Ganner aboard the Terrington faces down freighter captain Gareth, whose ship carries Silicant-chartered cargo, before the alien warship reappears alongside the limping Sokol and opens fire, crippling the Federation ship's stardrive."
+
+[[chapter]]
+file_id = 28
+title = "Chapter 25"
+pov = []
+cast = ["Raider", "Sasha", "Devon", "Gail", "Ganner"]
+synopsis = "Aboard the damaged Sokol, Raider and First Officer Sasha improvise a plan to detach the ship's head and use its engine to ram the crippled hull back into the fight, while Devon and test pilot Red Allen shuttle down to Curtis Field on Selene to launch Trogen starfighters. The Capital is bombed during Gail's evacuation, injuring her Silicant aide Sumi-ness, as Admiral Ganner's Terrington and allied freighters batter the alien warship and the now-headless Sokol returns to rejoin the fight."
+
+[[chapter]]
+file_id = 29
+title = "Chapter 26"
+pov = []
+cast = ["Kantor", "Varco", "Devon", "Gareth", "Eighty-eight", "Thirty-seven", "Gail"]
+synopsis = "Lord Kantor abandons the space battle to climb a mountain overlooking the besieged capital, Soban, searching for proof the planet is the legendary Votainion homeworld Kerra-jorro, while Devon and Red Allen kiss before launching Trogen fighters and Devon shoots down several enemy Eight-fighters over the burning city. Aboard the freighter, Gareth needles the androids Eighty-eight and Thirty-seven about turning their silicate cargo into a weapon, while in a command bunker Gail learns the President and most of the Senate are dead and, with Senator Uvaren as her new Vice President, becomes President of the Federation."
+
+[[chapter]]
+file_id = 30
+title = "Chapter 27"
+pov = []
+cast = ["Ganner", "Gareth", "Varco", "Kantor", "Devon"]
+synopsis = "Admiral Ganner works with pirate captain Gareth's freighter Rashionu-sera to lure the crippled Votainion warship into position, while Commander Varco's cruiser survives a storm of debris hurled at it while pursuing the enemy. On the mountain above Soban, Kantor finds ancient cave paintings that convince him the planet is Kerra-jorro, but before he can fully absorb his visions, Devon tracks him down, knocks him unconscious, and after a tense confrontation shoots him dead."
+
+[[chapter]]
+file_id = 31
+title = "Chapter 28"
+pov = []
+cast = ["Blud", "Trimble", "Ganner", "Devon", "Gareth", "Eighty-eight", "Thirty-seven"]
+synopsis = "The pirate ship Kelley, commanded by Captain Blud with First Officer Trimble, arrives after clearing Prahran and joins Admiral Ganner in planning a boarding raid on the crippled Votainion warship, with Trimble volunteering to lead it to avenge Captain Raider, believed lost with the Sokol. Devon, shaken after killing the alien pilot at the cave, flies his captured Eight-fighter back to the Kelley and joins the raiding party, where the android Thirty-seven, now parted from his mentor Eighty-eight, is recruited as translator after word from the Silicant leader Seventy-three reveals the enemy call themselves Votainions from the planet Voton."
+
+[[chapter]]
+file_id = 32
+title = "Chapter 29"
+pov = []
+cast = ["Varco", "Trimble", "Raider", "Blud", "Sasha", "Devon", "Thirty-seven", "Eighty-eight"]
+synopsis = "Commander Varco tries to cut his way into the wrecked Sokol before the Federation boarding party arrives, while Trimble's team finds Captain Raider alive but freezing near the sealed bulkhead where the ship's head was jettisoned. Blud's group fights through hidden passages inside the Votainion warship and finds First Officer Sasha killed in the fighting, prompting Blud to swear vengeance with her captured sword, while Trimble's pinned-down team sends the unarmed android Thirty-seven forward to negotiate and the Votainion defenders retreat rather than fire on it."
+
+[[chapter]]
+file_id = 33
+title = "Chapter 30"
+pov = []
+cast = ["Blud", "Eighty-eight", "Trimble", "Devon", "Varco", "Thirty-seven", "Nykostra", "Gail Constantine"]
+synopsis = "Blud and his pirate crew rampage through the boarded Votainion warship while the android Eighty-eight hacks its central computer using Seventy-three's lexicon database to crack the ship's systems. Commander Trimble's boarding party, with Lieutenant Devon and the translator-android Thirty-seven, captures Captain Varco and opens a transmission to the child Empress Nykostra, during which Devon is revealed to be President Gail Constantine's daughter, Gail formally declares war on the Votainion Empire, and Varco is taken prisoner rather than killed."
+
+[[chapter]]
+file_id = 34
+title = "Chapter 31"
+pov = []
+cast = ["Gail Constantine", "Eighty-eight", "Ganner", "Blud", "Raider", "Devon"]
+synopsis = "President Gail Constantine, now governing from her fortified estate above Soban, receives the Silicant leader Seventy-three, who announces his movement will seek independence for converted androids and unsettles her with his promise of a 'quiet' revolution. Admiral Ganner puts Captains Blud and Raider's Starforgers in charge of redesigning the Federation fleet around the captured Votainion warship for the coming war, while Devon flies to the abandoned outpost of Haven on Ocherva to mourn her dead lover Seth and her fallen Ranger Company H before leaving her old Ranger hat at their grave marker and riding back for the last time."
+
+[[chapter]]
+file_id = 35
+title = "Epilogue"
+pov = ["Nykostra"]
+cast = ["Nykostra"]
+synopsis = "On Voton, the child Empress Nykostra confronts the elderly Lords of the Nine Kastra from her throne, unveiling Lord Kantor's holographic scans of the mountain range and cave paintings on Kerra-jorro as proof it is the Votainions' true ancestral home world, and overrules a Soothsayer's warning that the campaign will destroy the Empire. She then orders the Votainion armadas to invade enemy space and reclaim Kerra-jorro as the new seat of the throne."

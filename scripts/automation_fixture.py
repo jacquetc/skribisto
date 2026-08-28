@@ -284,7 +284,7 @@ def repo_root():
 def repo_path(*parts):
     """A path to something inside this checkout — a fixture, a resource, a binary.
 
-        fixture.repo_path("resources/examples/Starforgers.skrib")
+        fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
     The same reason as `repo_root`: a probe that spells the path out in full
     tests one machine's filesystem, and reports its own absence as a failure of

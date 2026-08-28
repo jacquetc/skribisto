@@ -90,6 +90,13 @@ jobs:
       - name: Test (default)
         run: cargo test --workspace
 
+      # `cargo test` builds examples but does not run their tests. `build_example`
+      # is where the bundled example projects come from, and its parser and its
+      # Markdown-to-Djot round-trip assumptions are covered — so they need their
+      # own line here or they are covered by tests nothing runs.
+      - name: Test (examples)
+        run: cargo test --workspace --examples
+
       # The app ships in two blessed configurations. `mocks` is a real alternate
       # `mod imp` (fabricated backend) with its own logic — it must be built AND
       # tested, not merely `cargo check`ed. Scoped to `-p teksilo_ui` (the only

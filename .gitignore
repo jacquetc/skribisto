@@ -10,6 +10,10 @@ build*
 !crates/*/build.rs
 # ...and so is the Windows packaging script.
 !package/windows/build.py
+# ...and so is the tool that builds the bundled example projects, whose whole
+# source directory starts with the same word. Git does not descend into an
+# ignored directory, so the directory itself has to be un-ignored, not its files.
+!crates/skrib_format/examples/build_example/
 out/
 temp
 # A local build-speed config, deliberately NOT committed: it selects `mold` as the

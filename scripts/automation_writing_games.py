@@ -35,7 +35,7 @@ MCP = fixture.mcp_binary()
 SRC = os.path.abspath(
     sys.argv[1]
     if len(sys.argv) > 1
-    else fixture.repo_path("resources/examples/Starforgers.skrib")
+    else fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 )
 # Never open the checked-in fixture: this probe types into it and autosave is real.
 PROJECT = working_copy(SRC)

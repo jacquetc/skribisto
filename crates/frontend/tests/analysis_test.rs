@@ -455,22 +455,47 @@ fn an_unknown_scope_is_an_error_not_an_empty_analysis() {
 // The bundled example
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-/// The shipped Starforgers example opens, and the analysis has real material to work with.
+/// Every shipped example opens, and the analysis has real material to work with.
 ///
-/// Nothing else in the workspace loads this file, so until now it could have been corrupted
+/// Nothing else in the workspace loads these files, so without this they could be corrupted
 /// — by an enrichment pass, a format migration, anything — and the first person to find out
-/// would have been a user clicking it on the welcome screen.
+/// would be a user clicking one on the welcome screen. **An example added to
+/// `examples_list_model::EXAMPLES` and not added here is an example nothing checks.**
 ///
-/// It doubles as the only test running the measurements over real novel-length prose rather
-/// than generated filler: 85,000 words across 33 chapters, where the synthetic fixtures above
-/// are a few hundred words of `alphaword1 alphaword2`.
+/// They double as the only tests running the measurements over real novel-length prose
+/// rather than generated filler, where the synthetic fixtures above are a few hundred words
+/// of `alphaword1 alphaword2`.
 #[test]
-fn the_bundled_example_opens_and_analyses() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../resources/examples/Starforgers.skrib"
+fn the_bundled_starforgers_example_opens_and_analyses() {
+    // 85,000 words across 33 chapters. In copyright, used with its author's agreement.
+    a_bundled_example_opens_and_analyses(
+        concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/examples/starforgers/Starforgers.skrib"
+        ),
+        30,
     );
+}
 
+#[test]
+fn the_bundled_verne_example_opens_and_analyses() {
+    // 66,000 words across 37 chapters, public domain, and built from a plain-text source by
+    // `skribisto-skrib-format`'s `build_example`. That converter is the only thing standing
+    // between a Project Gutenberg transcription and this file, so this is where a regression
+    // in it surfaces.
+    a_bundled_example_opens_and_analyses(
+        concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/examples/le_tour_du_monde_en_80_jours/",
+            "le-tour-du-monde-en-quatre-vingts-jours.skrib"
+        ),
+        37,
+    );
+}
+
+/// `min_rows` is the number of prose rows the example is expected to carry, and the number
+/// of synopses it must still have.
+fn a_bundled_example_opens_and_analyses(path: &str, min_rows: usize) {
     let ctx = AppContext::new();
     frontend::commands::work_management_commands::load_work(
         &ctx,
@@ -530,8 +555,8 @@ fn the_bundled_example_opens_and_analyses() {
 
     let rows = measured(&dto);
     assert!(
-        rows.len() >= 30,
-        "the example has 33 prose chapters; measured {}",
+        rows.len() >= min_rows,
+        "{path}: expected at least {min_rows} measured prose rows, got {}",
         rows.len()
     );
     assert!(
@@ -564,8 +589,8 @@ fn the_bundled_example_opens_and_analyses() {
         })
         .count();
     assert!(
-        with_synopsis >= 30,
-        "the example ships a synopsis per chapter; found {with_synopsis}"
+        with_synopsis >= min_rows,
+        "{path}: an example ships a synopsis per chapter; found {with_synopsis}"
     );
 }
 

@@ -4,7 +4,7 @@
 
 """A popover must not outlive the focus that left it.
 
-    scripts/automation_popover_focus_out.py resources/examples/Starforgers.skrib
+    scripts/automation_popover_focus_out.py resources/examples/starforgers/Starforgers.skrib
 
 Skribisto used to wrap all 22 of its popover bodies in
 `FocusScope(TraversalScopePolicy::Cycle)`, enforced by a source-scanning lint,
@@ -198,7 +198,7 @@ def within(nodes, node_id, region):
 
 
 def main():
-    src = sys.argv[1] if len(sys.argv) > 1 else "resources/examples/Starforgers.skrib"
+    src = sys.argv[1] if len(sys.argv) > 1 else "resources/examples/starforgers/Starforgers.skrib"
     if not os.path.isabs(src):
         src = os.path.join(HERE, src)
     proj = working_copy(src, label="popover-focus-out")

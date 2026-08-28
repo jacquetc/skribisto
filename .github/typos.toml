@@ -38,6 +38,14 @@ extend-exclude = [
     # Paratext presets ship in the language they set text in — a German novel's
     # preset says "Autor", and translating it would break the preset.
     "resources/paratext/*.toml",
+    # The Verne example's spec: forty kilobytes of French — thirty-seven chapter
+    # synopses and a story bible, written in the language of the book they
+    # describe. Scoped to that one example rather than to `resources/examples/`,
+    # so the English Starforgers spec beside it stays checked; a French example
+    # added later needs its own line here, deliberately. The two `NOTICE` files
+    # are English and are NOT excluded — a slip in a rights statement is exactly
+    # what this checker should still catch.
+    "resources/examples/le_tour_du_monde_en_80_jours/*.toml",
 ]
 
 [default.extend-words]

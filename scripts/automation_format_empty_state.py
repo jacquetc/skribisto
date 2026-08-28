@@ -4,7 +4,7 @@
 
 """The Format dock's "nothing focused" hint must wrap, at every dock width.
 
-    scripts/automation_format_empty_state.py resources/examples/Starforgers.skrib
+    scripts/automation_format_empty_state.py resources/examples/starforgers/Starforgers.skrib
 
 With no formattable surface focused the dock hides every group and shows one
 sentence instead. That sentence was laid out by `Center`, which measures its

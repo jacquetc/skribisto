@@ -36,7 +36,7 @@ OUT = os.environ.get("SHOT_DIR", "/tmp")
 # Resolve to an absolute path — the launched app resolves a relative path against
 # its own working directory, which is not this script's.
 SOURCE = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
-    fixture.repo_path("resources/examples/Starforgers.skrib"))
+    fixture.repo_path("resources/examples/starforgers/Starforgers.skrib"))
 
 
 def fail(msg, app=None, mcp=None, log=None, mcp_err=None):

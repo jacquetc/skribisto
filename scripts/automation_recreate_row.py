@@ -70,7 +70,11 @@ def check(ok, why):
 
 # ── the fixture ────────────────────────────────────────────────────────────────
 
-EXAMPLES = fixture.repo_path("resources", "examples")
+# These two fixtures moved with the example projects into per-example directories.
+# This probe is the only thing that reads them, and it needs two *different* saves of
+# one project — 37 rows and 59 — so the shipped Starforgers.skrib cannot stand in for
+# either. The guard in `build_fixture` says so if they go missing again.
+EXAMPLES = fixture.repo_path("resources", "examples", "starforgers")
 OLDER = "Starforgers-20260722-230450.skrib"   # 37 rows — becomes the project
 NEWER = "Starforgers-20260806-093031.skrib"   # 59 rows — stays a backup
 
@@ -85,6 +89,13 @@ THINNED = 17
 
 def build_fixture():
     """A project with a row missing, a backup that still has it, beside it."""
+    for name in (OLDER, NEWER):
+        if not os.path.exists(os.path.join(EXAMPLES, name)):
+            sys.exit(
+                f"missing fixture {name!r} in {EXAMPLES}.\n"
+                "This probe needs two different saves of one project (37 rows and 59); "
+                "see the note beside EXAMPLES at the top of this file."
+            )
     root = tempfile.mkdtemp(prefix="skrib-recreate-")
     project = os.path.join(root, "Starforgers.skrib")
 

@@ -4,7 +4,7 @@
 
 """The Format dock must survive its own heading popover.
 
-    scripts/automation_format_heading_popover.py resources/examples/Starforgers.skrib
+    scripts/automation_format_heading_popover.py resources/examples/starforgers/Starforgers.skrib
 
 Every button in the Format dock is `focusable(false)` so that pressing one never
 blurs the editor out from under itself — but the heading picker is a

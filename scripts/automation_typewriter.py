@@ -42,7 +42,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
+EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 _sandbox = tempfile.mkdtemp(prefix="skribisto_typewriter_")

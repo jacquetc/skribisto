@@ -48,7 +48,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-EXAMPLE = str(_ROOT / "resources/examples/Starforgers.skrib")
+EXAMPLE = str(_ROOT / "resources/examples/starforgers/Starforgers.skrib")
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 
 

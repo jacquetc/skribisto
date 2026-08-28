@@ -10,10 +10,10 @@
 //! same `StandardListItem` row.
 //!
 //! Static — there is no backend for examples — so unlike `RecentWorkListModel`
-//! this has **no real/mock split**: the data (one entry today, *Starforgers*)
-//! is byte-identical in both builds, so a second `mod imp` would only duplicate
-//! the embedded payload (the data-seam exception in `models.rs`, taken to its
-//! limit: the *whole* model is the shared part). The `.skrib` bytes are
+//! this has **no real/mock split**: the data is byte-identical in both builds,
+//! so a second `mod imp` would only duplicate the embedded payload (the
+//! data-seam exception in `models.rs`, taken to its limit: the *whole* model is
+//! the shared part). The `.skrib` bytes are
 //! **embedded** in the binary so an example opens from any working directory
 //! and in a shipped build; the Welcome view-model extracts them to a writable
 //! temp copy before loading (the repo original is read-only). The public shape
@@ -40,16 +40,34 @@ pub struct ExampleEntry {
     pub bytes: &'static [u8],
 }
 
-/// The bundled examples. One today — add further entries here.
-const EXAMPLES: &[ExampleEntry] = &[ExampleEntry {
-    title: "Starforgers",
-    blurb: "by Ken McConnell",
-    file_name: "Starforgers.skrib",
-    bytes: include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../resources/examples/Starforgers.skrib"
-    )),
-}];
+/// The bundled examples — add further entries here.
+///
+/// Each lives in its own directory under `resources/examples/`, beside the `NOTICE`
+/// that states its rights and the TOML that regenerates its editorial metadata (see
+/// `skribisto-skrib-format`'s `build_example`). One is a contemporary novel used with
+/// its author's agreement; the other is public domain, so the two together show both
+/// halves of what an example may be.
+const EXAMPLES: &[ExampleEntry] = &[
+    ExampleEntry {
+        title: "Starforgers",
+        blurb: "by Ken McConnell",
+        file_name: "Starforgers.skrib",
+        bytes: include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/examples/starforgers/Starforgers.skrib"
+        )),
+    },
+    ExampleEntry {
+        title: "Le Tour du monde en quatre-vingts jours",
+        blurb: "by Jules Verne",
+        file_name: "le-tour-du-monde-en-quatre-vingts-jours.skrib",
+        bytes: include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/examples/le_tour_du_monde_en_80_jours/",
+            "le-tour-du-monde-en-quatre-vingts-jours.skrib"
+        )),
+    },
+];
 
 /// Reactive list model over the static bundled examples.
 #[derive(Clone)]

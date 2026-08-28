@@ -28,7 +28,7 @@ import automation_fixture as fixture  # noqa: E402
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-EXAMPLE = os.path.join(REPO, "resources/examples/Starforgers.skrib")
+EXAMPLE = os.path.join(REPO, "resources/examples/starforgers/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 

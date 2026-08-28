@@ -26,7 +26,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
+EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 #: Keep in step with `MIN_EDITOR_TAB_WIDTH` in `crates/teksilo_ui/src/app.rs`.
 MIN_TAB_WIDTH = 160.0

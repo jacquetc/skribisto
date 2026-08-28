@@ -17,7 +17,7 @@ import automation_fixture as fixture  # noqa: E402
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
-    fixture.repo_path("resources/examples/Starforgers.skrib"))
+    fixture.repo_path("resources/examples/starforgers/Starforgers.skrib"))
 TARGET = "Prologue"   # binder item to open
 
 

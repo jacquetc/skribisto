@@ -51,7 +51,7 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 SRC = os.path.abspath(
-    sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "resources/examples/Starforgers.skrib")
+    sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "resources/examples/starforgers/Starforgers.skrib")
 )
 # Never open the checked-in fixture: autosave is real, and this probe writes
 # settings besides.

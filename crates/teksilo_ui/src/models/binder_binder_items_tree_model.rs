@@ -1335,7 +1335,7 @@ mod filter_feedback_tests {
         let ctx = std::rc::Rc::new(AppContext::new());
         let path = concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../resources/examples/Starforgers.skrib"
+            "/../../resources/examples/starforgers/Starforgers.skrib"
         );
         frontend::commands::work_management_commands::load_work(
             &ctx,

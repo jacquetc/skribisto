@@ -22,7 +22,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
+EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 sandbox = tempfile.mkdtemp(prefix="skribisto_binder_kbd_")
 env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),

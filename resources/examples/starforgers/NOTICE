@@ -1,0 +1,66 @@
+STARFORGERS — RIGHTS AND PROVENANCE
+===================================
+
+Skribisto's own source code is licensed GPL-3.0-only (see COPYING at the repository
+root). That licence governs the application. It does NOT govern the content in this
+directory, which is third-party copyrighted material used by permission and whose
+rights are reserved by its author.
+
+
+Starforgers.skrib
+-----------------
+
+Work:        STARFORGERS (Star Saga, Book 1)
+Author:      Ken McConnell
+Publisher:   GB Press
+Editions:    First published 2011; Second Edition, December 2012
+Cover art:   Byron McConnell — https://byronmcconnell.com/
+Author site: https://www.ken-mcconnell.com/
+
+    Copyright 2011, 2012 by Ken McConnell. All Rights Reserved.
+
+The novel is bundled with Skribisto as an example project with the full agreement of
+the author, as recorded on the work's own copyright page inside the project file:
+
+    "This novel is used as an example in Skribisto with the full agreement of the
+     author Ken McConnell."
+
+Scope of that permission
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The permission covers distributing the novel with Skribisto as example content. It is
+not a grant of any open-source licence, and it does not place the text in the public
+domain. In particular:
+
+  * The prose is not modified, and must not be modified. It is reproduced as the
+    author wrote it. This includes not introducing deliberate defects (duplicated
+    passages, altered wording) for testing or demonstration purposes — synthetic
+    fixtures exist for that.
+  * The text is not relicensed under GPL-3.0-only or any other licence by virtue of
+    being distributed alongside Skribisto.
+  * Redistribution of the novel apart from Skribisto, or any other use beyond the
+    example role described above, requires the author's permission.
+
+Editorial metadata added by the Skribisto project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To demonstrate Skribisto's features, the project adds descriptive metadata to this
+example project: scene synopses, tags, labels, character and story-bible notes,
+aliases and point-of-view assignments.
+
+All of it is declared in `starforgers.toml` beside this file, and is applied by
+
+    cargo run -p skribisto-skrib-format --example build_example -- enrich \
+        resources/examples/starforgers/starforgers.toml \
+        resources/examples/starforgers/Starforgers.skrib
+
+which asserts, every run, that the prose it read back is byte-identical to what it
+writes out. A future edit to that tool therefore cannot quietly cross the line above.
+
+This metadata is written by the Skribisto project, not by Ken McConnell. It is
+editorial description of the novel, not part of it, and any error or infelicity in it
+is the project's and not the author's. It carries no authority as to the author's
+intent.
+
+The prose files themselves (binders/*/text/*.scene.djot) are the author's work and
+are untouched.

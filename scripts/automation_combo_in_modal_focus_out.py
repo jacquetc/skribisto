@@ -4,7 +4,7 @@
 
 """A dropdown opened inside Settings must close when Tab moves on.
 
-    scripts/automation_combo_in_modal_focus_out.py resources/examples/Starforgers.skrib
+    scripts/automation_combo_in_modal_focus_out.py resources/examples/starforgers/Starforgers.skrib
 
 Regression probe for a real bug report: arrow through a `ComboBox` list inside
 Settings, press Tab, and focus moved on while the popover stayed on screen.
@@ -176,7 +176,7 @@ def click_row(sess, node_id):
 
 
 def main():
-    src = sys.argv[1] if len(sys.argv) > 1 else "resources/examples/Starforgers.skrib"
+    src = sys.argv[1] if len(sys.argv) > 1 else "resources/examples/starforgers/Starforgers.skrib"
     if not os.path.isabs(src):
         src = os.path.join(HERE, src)
     proj = working_copy(src, label="combo-in-modal")

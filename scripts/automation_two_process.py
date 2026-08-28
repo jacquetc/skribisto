@@ -50,7 +50,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
+EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 RESULTS = []  # (name, passed: bool, detail: str) — collected, not raised, so
               # one finding doesn't hide the rest of the evidence.

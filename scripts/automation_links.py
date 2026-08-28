@@ -4,7 +4,7 @@
 
 """The Link command, end to end against the live app.
 
-    scripts/automation_links.py resources/examples/Starforgers.skrib
+    scripts/automation_links.py resources/examples/starforgers/Starforgers.skrib
 
 A link is the one piece of formatting that cannot be a toggle — it needs a
 destination — so it is the only format command that opens a dialog, and the only
