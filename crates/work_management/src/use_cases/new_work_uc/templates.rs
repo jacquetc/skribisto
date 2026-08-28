@@ -223,8 +223,10 @@ fn manuscript_binder(
             }
         }
     }
-    // Closes the book (empty marker). Load-bearing rather than decorative: back matter is
-    // appended after it, and it is what puts those rows *outside* the book.
+    // Closes the book (empty marker). Load-bearing rather than decorative: it is the
+    // boundary `compile::scope_extent` stops the book extent at, so it is what says which
+    // rows the exported book is made of — back matter included, since that is spliced in
+    // just above it.
     items.push(item(Item, BookEnd, String::new(), 1, true, vec![]));
 
     TemplateBinder {
@@ -348,7 +350,7 @@ pub fn build_template_with_paratexts(
     if paratexts.is_empty() {
         return binders;
     }
-    // Around the **book**, and only if there is one. A notebook template's first binder
+    // Inside the **book**, and only if there is one. A notebook template's first binder
     // is a Notes binder with no book in it at all, and dropping a "Half title" and a
     // "Table of contents" into someone's notebook would be nonsense — front and back
     // matter are the furniture of a book, so with no book there is nothing to furnish.
@@ -363,20 +365,51 @@ pub fn build_template_with_paratexts(
     }) else {
         return binders;
     };
-    // Front matter before the book row, back matter after everything. Both at the book's
-    // own indent, so they are siblings of it rather than inside it — a preface is not part
-    // of the book's body, which is the whole point of the thing.
-    {
-        let mut front = paratext_folder(&l.front_matter, &paratexts.front, 0);
-        if !paratexts.front.is_empty() {
-            front.append(&mut manuscript.items);
-            manuscript.items = front;
-        }
-        if !paratexts.back.is_empty() {
-            manuscript
-                .items
-                .extend(paratext_folder(&l.back_matter, &paratexts.back, 0));
-        }
+    // **Inside** the book, one level in, and that is load-bearing rather than tidy.
+    //
+    // A paratext is transparent to the stream state machine — it neither opens nor closes
+    // anything (`skribisto_model::SubRoleExt`) — so the compiler emits it wherever it
+    // stands in the flat order, verbatim, fenced by a page break on each side
+    // (`skribisto_compiler`'s `paratext_starts_page`, on by default). Between two scenes
+    // it is a page between two scenes; between the last body row and the closing marker it
+    // is a page there. That is the whole placement rule, and it is decided by *position*,
+    // not by containment.
+    //
+    // Which is why "outside the book" is not a milder version of this — it is not the book
+    // at all. `compile::scope_extent` opens the book extent at the `Book` row and stops at
+    // `BookEnd`, and Export defaults to the current book, so front and back matter laid
+    // down as *siblings* of the Book (as this function used to do) never reach the exported
+    // DOCX or ODT: the writer picks a tradition in the New Work wizard, gets its pages in
+    // the binder, and exports a file with none of them in it. The bundled Starforgers
+    // example is the reference shape — its front-matter folder is the Book's first child
+    // and its acknowledgements its last.
+    //
+    // Front matter directly after the book row; back matter after the body and before the
+    // closing marker. The indent puts them under the Book in the binder tree, where the
+    // writer reads them as the book's own furniture.
+    let book_pos = manuscript
+        .items
+        .iter()
+        .position(|i| i.sub_role == BinderItemSubRole::Book)
+        .expect("this binder was chosen by its book row");
+    // Back first: it splices after `book_pos`, so the position stays valid for the front
+    // splice below. The reverse order would have to recompute it.
+    if !paratexts.back.is_empty() {
+        // Before `BookEnd` when there is one. A template that closes its book at the
+        // binder's edge instead (no marker) puts the back matter last, which is the same
+        // position — the book runs to the edge either way.
+        let end = manuscript
+            .items
+            .iter()
+            .position(|i| i.sub_role == BinderItemSubRole::BookEnd)
+            .unwrap_or(manuscript.items.len());
+        let back = paratext_folder(&l.back_matter, &paratexts.back, 1);
+        manuscript.items.splice(end..end, back);
+    }
+    if !paratexts.front.is_empty() {
+        let front = paratext_folder(&l.front_matter, &paratexts.front, 1);
+        let after_book = book_pos + 1;
+        manuscript.items.splice(after_book..after_book, front);
     }
     binders
 }
@@ -831,21 +864,90 @@ mod paratext_tests {
         );
     }
 
-    /// Front matter is created before the book and back matter after it — placement at
-    /// creation, which the writer then owns entirely.
+    /// Front matter opens the book and back matter closes it — both **inside** the
+    /// `Book`…`BookEnd` extent, which is the only placement the exported document can
+    /// see. `compile::scope_extent` starts at the book row and stops at the marker, and
+    /// Export defaults to the current book, so a paratext outside that span is dropped
+    /// from the DOCX or ODT without a word said. Placement at creation only — the writer
+    /// then owns it entirely.
     #[test]
-    fn front_comes_before_the_book_and_back_after_it() {
+    fn paratexts_are_created_inside_the_book() {
         let binders =
             build_template_with_paratexts(NewWorkTemplate::Novel, "T", &labels(), false, &plan());
         let items = &manuscript(&binders).items;
         let pos = |title: &str| items.iter().position(|i| i.title == title).unwrap();
-        let book = items
-            .iter()
-            .position(|i| i.sub_role == BinderItemSubRole::Book)
-            .expect("a book row");
+        let first = |sr: BinderItemSubRole| {
+            items
+                .iter()
+                .position(|i| i.sub_role == sr)
+                .unwrap_or_else(|| panic!("a {sr:?} row"))
+        };
+        let book = first(BinderItemSubRole::Book);
+        let book_end = first(BinderItemSubRole::BookEnd);
+        let body = first(BinderItemSubRole::ChapterScene);
 
-        assert!(pos("Faux-titre") < book, "front matter precedes the book");
-        assert!(pos("Achevé d'imprimer") > book, "back matter follows it");
+        assert!(book < pos("Front matter"), "front matter opens the book");
+        assert!(pos("Page de titre") < body, "…and precedes the body");
+        assert!(body < pos("Back matter"), "back matter follows the body");
+        assert!(
+            pos("Achevé d'imprimer") < book_end,
+            "…and closes before the marker, not after it"
+        );
+    }
+
+    /// One level in from the book row, so the binder tree shows them as the book's own
+    /// furniture rather than as three sibling roots. The exporter reads order, not
+    /// indent — this is the half the writer sees.
+    #[test]
+    fn paratext_folders_sit_under_the_book() {
+        let binders =
+            build_template_with_paratexts(NewWorkTemplate::Novel, "T", &labels(), false, &plan());
+        let items = &manuscript(&binders).items;
+        let indent = |title: &str| {
+            items
+                .iter()
+                .find(|i| i.title == title)
+                .unwrap_or_else(|| panic!("{title} was not created"))
+                .indent
+        };
+
+        assert_eq!(indent("Front matter"), 1);
+        assert_eq!(indent("Back matter"), 1);
+        for leaf in ["Faux-titre", "Page de titre", "Achevé d'imprimer"] {
+            assert_eq!(indent(leaf), 2, "{leaf} belongs in its folder");
+        }
+    }
+
+    /// The same, on the template whose book has a `Part` layer: the paratext folders are
+    /// siblings of the parts, not of the book — one shape, whatever the body's depth.
+    #[test]
+    fn parts_do_not_change_where_the_paratexts_go() {
+        let binders = build_template_with_paratexts(
+            NewWorkTemplate::NovelInParts,
+            "T",
+            &labels(),
+            false,
+            &plan(),
+        );
+        let items = &manuscript(&binders).items;
+        let pos = |title: &str| items.iter().position(|i| i.title == title).unwrap();
+        let part = items
+            .iter()
+            .position(|i| i.sub_role == BinderItemSubRole::Part)
+            .expect("a part row");
+        let book_end = items
+            .iter()
+            .position(|i| i.sub_role == BinderItemSubRole::BookEnd)
+            .expect("a book end row");
+
+        assert!(
+            pos("Front matter") < part,
+            "front matter precedes the parts"
+        );
+        assert!(part < pos("Back matter"), "back matter follows them");
+        assert!(pos("Achevé d'imprimer") < book_end);
+        assert_eq!(items[pos("Front matter")].indent, 1);
+        assert_eq!(items[pos("Back matter")].indent, 1);
     }
 
     /// A paratext leaf carries its own content role, never `SceneText` — the one thing
