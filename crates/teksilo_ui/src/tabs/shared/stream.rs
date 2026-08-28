@@ -730,8 +730,13 @@ fn row_menu(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
             .on_activate_fn(mk(|v, c, id| v.trash_row(c, id))),
     );
 
+    // The kebab is already the "there is more here" glyph, so the disclosure
+    // caret `PopoverIconButton` paints in its corner would be a second one
+    // competing with it — the same reason the comments card suppresses it under
+    // its chevron.
     PopoverIconButton::new(IconButton::more())
         .bare()
+        .show_disclosure_caret(false)
         .content(list)
 }
 
