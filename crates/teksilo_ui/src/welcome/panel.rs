@@ -37,7 +37,6 @@ use teksilo::data::{ListModel, SelectionMode, SelectionModel};
 use teksilo::prelude::*;
 use teksilo::res;
 use teksilo::widgets::GroupHeader;
-use teksilo::widgets::primitives::icon_widget::IconMode;
 // `InteractionState` (the hover/press state the standard-item chrome recipe
 // consumes) is not re-exported at the widgets root — reach it by module path.
 use teksilo::widgets::button::InteractionState;
@@ -558,7 +557,8 @@ fn flat_icon_button_style() -> RecipeButtonStyle {
 /// string, so they can't drift.
 ///
 /// The chrome is [`flat_icon_button_style`]; the mark stays
-/// [`IconMode::Tintable`] (see [`social_links`]).
+/// [`IconMode::Tintable`](teksilo::widgets::primitives::icon_widget::IconMode::Tintable)
+/// (see [`social_links`]).
 fn link_button(
     icon: IconWidget,
     label: LocalizedString,
@@ -577,7 +577,9 @@ fn link_button(
 /// The project's two public links, tucked under the sidebar nav: the GitHub
 /// repository and the Discord server, each a flat icon [`link_button`].
 ///
-/// **Both marks stay [`IconMode::Tintable`]**, so they follow the theme into
+/// **Both marks stay
+/// [`IconMode::Tintable`](teksilo::widgets::primitives::icon_widget::IconMode::Tintable)**,
+/// so they follow the theme into
 /// dark mode and pick up the sidebar's hover/press tint. The shipped artwork
 /// can't do that by itself — the Octicons mark is a near-black silhouette
 /// (invisible on a dark sidebar) and the Discord logo is brand blurple; the
@@ -905,8 +907,7 @@ impl Widget for WelcomePanel {
         let mut tagline_style = ctx.theme().typography.small.clone();
         tagline_style.family = "EB Garamond".to_string();
         tagline_style.size = 15.0;
-        let logo = IconWidget::from_raster(res!("../../resources/icons/skribisto.png"), 60.0)
-            .mode(IconMode::FullColor);
+        let logo = crate::identity::brand_mark().widget(60.0);
         let branding = teksu!(
             Padding::symmetric(8.0, 4.0) {
                 VStack {

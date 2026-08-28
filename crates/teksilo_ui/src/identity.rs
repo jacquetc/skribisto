@@ -62,7 +62,12 @@
 
 use std::sync::{LazyLock, RwLock};
 
+use teksilo::canvas::raster::RasterIcon;
+use teksilo::canvas::svg::SvgIcon;
+use teksilo::res;
 use teksilo::settings::AppPaths;
+use teksilo::widgets::IconWidget;
+use teksilo::widgets::primitives::icon_widget::IconMode;
 
 /// The community edition's `directories` triple.
 ///
@@ -169,6 +174,14 @@ static IDENTITY: LazyLock<RwLock<Option<AppIdentity>>> = LazyLock::new(|| RwLock
 /// Registering twice replaces the earlier identity. The returned handle restores
 /// the previous one on drop, which matters in tests and is inert in an
 /// application, where the identity outlives the process.
+///
+/// ⚠ **Handles are scope guards: drop them in reverse.** This slot is not
+/// namespaced, so a handle's drop writes a value back rather than removing a key
+/// of its own. Two live registrations dropped in *registration* order therefore
+/// leave the second one's displaced value, the first edition's, installed after
+/// both handles are gone. Nothing reports it; it leaks into whatever runs next,
+/// which in practice means the next test. The same is true of
+/// [`register_brand_mark`].
 pub fn register(identity: AppIdentity) -> IdentityHandle {
     let mut slot = IDENTITY.write().unwrap_or_else(|e| e.into_inner());
     let previous = slot.replace(identity);
@@ -224,6 +237,158 @@ pub fn is_community() -> bool {
     current().is_community()
 }
 
+// ---------------------------------------------------------------------------
+// The brand mark
+// ---------------------------------------------------------------------------
+
+/// The artwork the writer reads as *which application this is*: the mark in the
+/// Launcher and project title bars, and the big one over the Welcome screen's
+/// sidebar.
+///
+/// Both variants are exactly what [`teksilo::res!`] produces, so a mark is one
+/// line at the call site and is checked when the edition is compiled rather than
+/// when a writer launches it: a PNG that is not one, or an SVG the icon renderer
+/// would draw as nothing, fails the build instead of leaving a hole where the
+/// logo goes.
+#[derive(Clone, Copy)]
+pub enum BrandMark {
+    /// A decoded raster image: `res!("….png")`, or a static `res!("….webp")`.
+    Raster(&'static RasterIcon),
+    /// A parsed vector icon: `res!("….svg")`.
+    Vector(&'static SvgIcon),
+}
+
+impl BrandMark {
+    /// The community edition's mark, and the default when nothing is registered.
+    ///
+    /// Public because "which mark is the stock one" is a question an edition can
+    /// legitimately ask: a first-run window offering to import from the
+    /// community installation shows both.
+    ///
+    /// The expression form of `res!` expands to a function-local `LazyLock`, so
+    /// the PNG is decoded **once for the process** here, and every call hands back
+    /// the same address. It used to be decoded three times, once per draw site.
+    #[must_use]
+    pub fn community() -> Self {
+        Self::Raster(res!("../../resources/icons/skribisto.png"))
+    }
+
+    /// This mark as a widget, `size` dp on a side.
+    ///
+    /// **[`IconMode::FullColor`] is set here, and that is most of why this method
+    /// exists.** An `IconWidget` is `Tintable` by default: it treats the artwork
+    /// as an alpha mask and paints the whole of it in one theme colour, which
+    /// turns a brand mark into a flat silhouette. At 25 dp in a title bar that
+    /// looks deliberate, so it is the kind of mistake that ships. Three call
+    /// sites each remembering the same builder call are three chances to lose the
+    /// colours; one method is none.
+    #[must_use]
+    pub fn widget(self, size: f32) -> IconWidget {
+        match self {
+            // `from_raster` takes the size directly; `from_svg_icon` defaults to
+            // the viewBox and needs `icon_size` to be told otherwise.
+            Self::Raster(icon) => IconWidget::from_raster(icon, size),
+            Self::Vector(icon) => IconWidget::from_svg_icon(icon).icon_size(size),
+        }
+        .mode(IconMode::FullColor)
+    }
+}
+
+/// Two marks are the same mark when they are the same resource.
+///
+/// `res!` hands back a process-wide `LazyLock`, so every call to one site yields
+/// one address and pointer identity is exactly the question worth asking. The
+/// alternative, comparing the decoded images, is a quarter-megabyte memcmp to
+/// answer "is this the same `res!` call", and it would call two different
+/// resources equal whenever someone shipped the same artwork twice.
+impl PartialEq for BrandMark {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Raster(a), Self::Raster(b)) => std::ptr::eq(*a, *b),
+            (Self::Vector(a), Self::Vector(b)) => std::ptr::eq(*a, *b),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for BrandMark {}
+
+impl std::fmt::Debug for BrandMark {
+    /// Deliberately not derived: `RasterIcon`'s own `Debug` prints its decoded
+    /// pixel buffer, which for a 256×256 mark is a quarter of a megabyte of
+    /// integers in the middle of whatever was being logged.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Raster(icon) => {
+                write!(f, "BrandMark::Raster({}×{})", icon.width(), icon.height())
+            }
+            Self::Vector(_) => f.write_str("BrandMark::Vector"),
+        }
+    }
+}
+
+static BRAND_MARK: RwLock<Option<BrandMark>> = RwLock::new(None);
+
+/// Declare the mark this application shows. Call **before** [`crate::run`], on
+/// the main thread, beside [`register`].
+///
+/// ## Read late, unlike the identity beside it
+///
+/// [`register`] feeds the single-instance election and is read before
+/// `AppContext` exists; this slot is read when a **window is built**, which is
+/// as late as anything in the seam gets. That makes a late registration merely
+/// ignored, the windows already built keeping the old mark, rather than the
+/// half-migrated process a late [`register`] produces. Register both before
+/// `run` anyway: it is the one moment at which every window is still unbuilt.
+///
+/// They are two slots and not one field because of that gap in read times, and
+/// because the mark drags `teksilo::widgets` in behind it, which is nothing the
+/// election path should have to link. An edition wanting its own face opens
+/// **both** doors; opening only this one leaves the writer the community's name
+/// under someone else's logo.
+///
+/// ## Not namespaced, and replace-wins
+///
+/// Like [`register`], and for the same reason: there is one mark, so there is
+/// nothing per-extension to key. The later call wins outright and the earlier
+/// caller is told nothing. This is a door for an *edition*, not for a plug-in.
+///
+/// The returned handle restores the previous mark on drop, which matters in
+/// tests and is inert in an application, where the mark outlives the process.
+/// Being a replace slot, it is a scope guard: see [`register`] for what dropping
+/// two of them in the wrong order leaves behind.
+pub fn register_brand_mark(mark: BrandMark) -> BrandMarkHandle {
+    let mut slot = BRAND_MARK.write().unwrap_or_else(|e| e.into_inner());
+    let previous = slot.replace(mark);
+    BrandMarkHandle { previous }
+}
+
+/// Restores the previous brand mark when dropped.
+#[derive(Debug)]
+pub struct BrandMarkHandle {
+    previous: Option<BrandMark>,
+}
+
+impl Drop for BrandMarkHandle {
+    fn drop(&mut self) {
+        let mut slot = BRAND_MARK.write().unwrap_or_else(|e| e.into_inner());
+        *slot = self.previous.take();
+    }
+}
+
+/// The running edition's mark, or the community one when nothing has registered.
+///
+/// **The only way any module in this crate should draw the application's own
+/// logo.** A site that keeps embedding `skribisto.png` itself renders the
+/// community mark under every other edition, in a title bar, silently;
+/// `tests::no_module_draws_its_own_brand_mark` walks the source for exactly that.
+pub fn brand_mark() -> BrandMark {
+    BRAND_MARK
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .unwrap_or_else(BrandMark::community)
+}
+
 /// Serialize a test that registers an identity.
 ///
 /// The identity is process-wide and `cargo test` runs in parallel, so a test that
@@ -247,6 +412,131 @@ mod tests {
 
     /// The whole compatibility promise of this module: a build that registers
     /// nothing is byte-for-byte the application that existed before it.
+    /// A mark of the *other* variant, so registering one also proves an edition
+    /// may hand in a vector where the community edition ships a raster.
+    fn a_test_mark() -> BrandMark {
+        BrandMark::Vector(res!("assets/icons/welcome/info.svg"))
+    }
+
+    /// The same compatibility promise [`the_default_identity_is_the_community_one`]
+    /// makes about the paths: a build that registers nothing draws exactly what it
+    /// drew before this slot existed.
+    #[test]
+    fn the_default_brand_mark_is_the_community_one() {
+        let _serial = lock_for_test();
+        assert_eq!(brand_mark(), BrandMark::community());
+    }
+
+    #[test]
+    fn a_registered_brand_mark_replaces_the_community_one() {
+        let _serial = lock_for_test();
+        let _h = register_brand_mark(a_test_mark());
+        assert_eq!(brand_mark(), a_test_mark());
+        assert_ne!(brand_mark(), BrandMark::community());
+    }
+
+    #[test]
+    fn dropping_the_handle_restores_the_previous_brand_mark() {
+        let _serial = lock_for_test();
+        {
+            let _h = register_brand_mark(a_test_mark());
+            assert_eq!(brand_mark(), a_test_mark());
+        }
+        assert_eq!(brand_mark(), BrandMark::community());
+    }
+
+    /// The mark and the name are two slots read at two different moments, so an
+    /// edition can move one without the other. Nothing stops that, and it is what
+    /// makes a community build renameable in the title bar, but it does mean
+    /// neither registration may quietly reset the other.
+    #[test]
+    fn the_mark_and_the_identity_are_independent() {
+        let _serial = lock_for_test();
+        let _mark = register_brand_mark(a_test_mark());
+        assert_eq!(display_name(), "Skribisto");
+        assert!(is_community());
+
+        let _id = register(AppIdentity::new("eu", "acme", "acme-writer"));
+        assert_eq!(
+            brand_mark(),
+            a_test_mark(),
+            "registering an identity must not disturb the mark"
+        );
+    }
+
+    /// A vector mark is sized by `icon_size`, a raster one by `from_raster`; both
+    /// go through one method so that neither can be built without
+    /// `IconMode::FullColor`. Construction only, and deliberately shallow: an
+    /// `IconWidget` publishes neither its mode nor its size, so whether the
+    /// artwork actually keeps its colours is a question only a rendered window
+    /// can answer. What this test is for is the pair: a mark of either variant
+    /// reaches `widget` without panicking on the size it is handed.
+    #[test]
+    fn both_variants_build_a_widget() {
+        let _serial = lock_for_test();
+        let _raster = BrandMark::community().widget(25.0);
+        let _vector = a_test_mark().widget(60.0);
+    }
+
+    /// **The drift guard, for the mark.** Every module must draw the application
+    /// logo through [`brand_mark`]; none may embed the community PNG itself.
+    ///
+    /// A site that keeps its own `res!("…/skribisto.png")` does not fail loudly.
+    /// It renders the *community* mark in an edition's title bar, beside that
+    /// edition's own name, and it looks like artwork rather than like a bug, so
+    /// it survives review and ships. A directory walk rather than a fixed list,
+    /// for the reason [`no_module_resolves_its_own_app_paths`] uses one: the case
+    /// worth catching is a draw site added in a file nobody thought to check.
+    #[test]
+    fn no_module_draws_its_own_brand_mark() {
+        use std::path::{Path, PathBuf};
+
+        fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                return;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, out);
+                } else if path.extension().is_some_and(|e| e == "rs") {
+                    out.push(path);
+                }
+            }
+        }
+
+        let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = Vec::new();
+        walk(&src, &mut files);
+
+        let mut offenders = Vec::new();
+        for file in files {
+            // This module *is* the one draw site, so it necessarily contains the
+            // scanner's own needle.
+            if file.file_name().is_some_and(|n| n == "identity.rs") {
+                continue;
+            }
+            let Ok(text) = std::fs::read_to_string(&file) else {
+                continue;
+            };
+            for (index, _) in text.match_indices("skribisto.png") {
+                let line = text[..index].matches('\n').count() + 1;
+                offenders.push(format!("{}:{line}", file.display()));
+            }
+        }
+
+        assert!(
+            offenders.is_empty(),
+            "these sites embed the community brand mark instead of going through \
+             `identity::brand_mark()`, so they would draw the community logo under \
+             any other edition:\n  {}\n\n\
+             Draw it with `crate::identity::brand_mark().widget(size)`, which also \
+             sets `IconMode::FullColor` so the artwork keeps its own colours \
+             instead of being tinted flat.",
+            offenders.join("\n  ")
+        );
+    }
+
     #[test]
     fn the_default_identity_is_the_community_one() {
         let _serial = lock_for_test();

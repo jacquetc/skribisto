@@ -45,6 +45,43 @@ fn the_extension_facing_modules_are_public() {
     };
 }
 
+/// **An edition's own face, registered from outside the crate.**
+///
+/// The same check as the lane provider below, for the door that decides what a
+/// writer sees in every title bar: the enum, its community value, the widget
+/// builder, the registry and its handle all have to be nameable by a downstream
+/// crate, or an edition can register a name for itself and not a mark.
+///
+/// It asserts almost nothing at runtime on purpose. What it is really doing is
+/// failing to compile if any of those five names stops being public.
+#[test]
+fn an_extension_can_register_its_own_brand_mark() {
+    use teksilo_ui::identity::{BrandMark, brand_mark, register_brand_mark};
+
+    assert_eq!(
+        brand_mark(),
+        BrandMark::community(),
+        "a build that registers nothing must draw the community mark"
+    );
+
+    // A vector where the community edition ships a raster, because an edition
+    // supplying its own artwork is the whole point of the door and the two
+    // variants must both be reachable.
+    let mine = BrandMark::Vector(teksilo::res!("assets/icons/welcome/info.svg"));
+    {
+        let _handle = register_brand_mark(mine);
+        assert_eq!(brand_mark(), mine);
+        // Both sizes the app draws the mark at, built the way the shell builds it.
+        let _title_bar = brand_mark().widget(25.0);
+        let _welcome = brand_mark().widget(60.0);
+    }
+    assert_eq!(
+        brand_mark(),
+        BrandMark::community(),
+        "dropping the handle must put the community mark back"
+    );
+}
+
 /// **A whole lane provider, built naming nothing but `ext`.**
 ///
 /// `ext`'s own drift test walks `pub fn register…` declarations and asserts each

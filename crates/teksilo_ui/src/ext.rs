@@ -34,6 +34,7 @@
 //! | [`register_wiring`] | every `App::build`, beside the extension commands | `&mut BuildContext` |
 //! | [`register_locales`] | **once**, in `run()` | nothing; a bundle is data |
 //! | [`register`] (identity) | **earliest of all**, before `AppContext` exists | nothing; it *is* the answer |
+//! | [`register_brand_mark`] | a window is built, so **latest of all** | nothing; a mark is artwork |
 //!
 //! Two rules that the table cannot show, and that have both gone wrong before:
 //!
@@ -41,7 +42,11 @@
 //!   thread *before* `run()`. Identity is the strictest — it is read before
 //!   `AppContext::new()`, so a late registration is worse than a no-op: the
 //!   process has already elected, bound a socket and resolved its settings under
-//!   the old identity.
+//!   the old identity. [`register_brand_mark`] sits at the other end of the same
+//!   range. Nothing reads it until a window is built, so a late registration
+//!   there is merely ignored by the windows already up. The two are separate
+//!   slots for that reason, and an edition wanting its own face should open
+//!   both: only one of them changes what the writer *reads*.
 //! * **Never capture an `AppContext` at registration.** The app builds its own
 //!   inside `run`, so a captured one is a second, permanently empty store and the
 //!   panel renders a convincing "nothing here" forever. Every slot hands the live
@@ -239,7 +244,10 @@ pub use crate::app_wiring::{Wiring, WiringHandle, register_wiring};
 pub use crate::locales::{LocaleBundle, LocaleHandle, register_locales};
 
 // ── Application identity ─────────────────────────────────────────────────────
-pub use crate::identity::{AppIdentity, IdentityHandle, app_paths, register};
+pub use crate::identity::{
+    AppIdentity, BrandMark, BrandMarkHandle, IdentityHandle, app_paths, brand_mark, register,
+    register_brand_mark,
+};
 
 // ── What the writer is looking at ────────────────────────────────────────────
 pub use crate::active_context::{ActiveContext, ActiveItem, ActivePane};

@@ -39,12 +39,10 @@ use std::rc::Rc;
 
 use teksilo::core::menu_item_id::MenuItemId;
 use teksilo::prelude::*;
-use teksilo::res;
 use teksilo::widgets::MenuModel;
-use teksilo::widgets::primitives::icon_widget::IconMode;
 use teksilo::widgets::{
-    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, IconWidget, MenuBar,
-    NativeMenuMode, Padding, Slide, SlideEdge, TextWidget, TitleBar, VStack, WindowFrame, ZStack,
+    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, MenuBar, NativeMenuMode,
+    Padding, Slide, SlideEdge, TextWidget, TitleBar, VStack, WindowFrame, ZStack,
 };
 
 use frontend::AppContext;
@@ -712,13 +710,8 @@ impl ProjectWindowFactory {
                         // on the icon: it sits at the window's left edge, so
                         // without padding it would flush against the frame —
                         // matching `launcher_window`'s brand icon.
-                        let brand_icon = Padding::new(0.0, 0.0, 0.0, 8.0).child(
-                            IconWidget::from_raster(
-                                res!("../../resources/icons/skribisto.png"),
-                                25.0,
-                            )
-                            .mode(IconMode::FullColor),
-                        );
+                        let brand_icon = Padding::new(0.0, 0.0, 0.0, 8.0)
+                            .child(crate::identity::brand_mark().widget(25.0));
                         let leading = teksu!(
                             HStack {
                                 spacing: 5.0

@@ -6,11 +6,9 @@
 use std::rc::Rc;
 
 use teksilo::prelude::*;
-use teksilo::res;
-use teksilo::widgets::primitives::icon_widget::IconMode;
 use teksilo::widgets::{
-    Center, CollapsePolicy, Expand, HStack, IconButtonSize, IconWidget, MenuBar, NativeMenuMode,
-    Padding, TextWidget, TitleBar, VStack, WindowFrame,
+    Center, CollapsePolicy, Expand, HStack, IconButtonSize, MenuBar, NativeMenuMode, Padding,
+    TextWidget, TitleBar, VStack, WindowFrame,
 };
 
 use frontend::AppContext;
@@ -76,10 +74,8 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
                     // — bare, it sits flush against it. The project window uses
                     // the same padding on its brand icon (which likewise leads
                     // its hamburger).
-                    let brand_icon = Padding::new(0.0, 0.0, 0.0, 8.0).child(
-                        IconWidget::from_raster(res!("../../resources/icons/skribisto.png"), 25.0)
-                            .mode(IconMode::FullColor),
-                    );
+                    let brand_icon = Padding::new(0.0, 0.0, 0.0, 8.0)
+                        .child(crate::identity::brand_mark().widget(25.0));
                     // Same three settings as the project window's bar, for the
                     // same three reasons: `Toolbar` (30 dp) because the strip is
                     // `TITLE_BAR_HEIGHT` tall and does not grow for an oversized
