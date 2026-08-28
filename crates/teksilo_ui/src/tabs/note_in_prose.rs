@@ -491,7 +491,13 @@ impl NoteInProseBody {
             .spacing(8.0)
             .child(crate::binder::icons::sub_role_icon(&row.sub_role).icon_size(14.0))
             .child(crate::widgets::StructureNumber::new(badge))
-            .child(TextWidget::new(lit!(title_text)).style(style).color(color))
+            .child(
+                TextWidget::new(lit!(title_text))
+                    .style(style)
+                    .color(color)
+                    // See `binder::dock`: the indicator after the spacer must stay put.
+                    .single_line(),
+            )
             .child(Expand::horizontal().child(Spacer::new()))
             .child(declaration_indicator(row.declaration));
 

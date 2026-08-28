@@ -170,7 +170,7 @@ impl Widget for CorkboardTile {
                 TextWidget::new(lit!(self.card.label.clone()))
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary)
-                    .max_lines(1),
+                    .single_line(),
             );
         }
         // The card's inner content height (tile height minus its `Padding`), from the
@@ -410,7 +410,7 @@ impl Widget for InlineTitle {
             ctx.add(
                 TextWidget::new(lit!(self.title.clone()))
                     .style(TextStyleRole::SmallBold)
-                    .max_lines(1)
+                    .single_line()
                     // A text cursor advertises the click-to-edit affordance on hover.
                     .cursor(CursorIcon::Text)
                     // A single primary click enters rename — and is **consumed**, so

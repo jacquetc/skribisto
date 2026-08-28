@@ -146,6 +146,9 @@ fn builtin_row(vm: &ExportStylesViewModel, row: &StyleRow, sheet: Option<Preset>
         .child(Badge::new(tr!(settings_styles_builtin_badge())))
         .child(duplicate);
     let item = StandardListItem::new(lit!(row.name.clone()))
+        // See the note in `distraction_free_themes::builtin_row`.
+        .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+        .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
         .subtitle(lit!(row.subtitle.clone()))
         .trailing_slot(trailing);
     match sheet {
@@ -193,6 +196,9 @@ fn user_row(
     // Highlight the row currently loaded in the editor.
     let id_hl = id.clone();
     let item = StandardListItem::new(lit!(row.name.clone()))
+        // See the note in `builtin_row` above.
+        .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+        .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
         .subtitle(lit!(row.subtitle.clone()))
         .selected(selected.map(move |s| s.as_deref() == Some(id_hl.as_str())))
         .trailing_slot(trailing);

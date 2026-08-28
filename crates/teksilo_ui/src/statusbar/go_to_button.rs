@@ -98,6 +98,11 @@ impl Widget for GoToPalette {
                     .depth(row.depth)
                     .has_children(row.has_children)
                     .is_expanded(row.is_expanded)
+                    // A row title is as long as the writer made it; without this the label
+                    // reports its full intrinsic width and paints out of the panel. See
+                    // `binder::dock`, where this was found.
+                    .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+                    .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .selected(selected)
                     .on_toggle_rc(row.toggle_callback());
                 if !node.label.is_empty() {

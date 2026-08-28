@@ -577,7 +577,11 @@ impl Widget for TagPickRow {
             .spacing(6.0)
             .add_child(check_id)
             .child(swatch(contrast::parse(&self.tag.color)))
-            .child(TextWidget::new(lit!(self.tag.name.clone())));
+            .child(
+                TextWidget::new(lit!(self.tag.name.clone()))
+                    // A tag is named by the writer. See `binder::dock`.
+                    .single_line(),
+            );
         let ringed =
             crate::widgets::with_focus_ring(ctx, crate::widgets::RING_RADIUS_ROW, body, &focused);
         let id = ctx.add(

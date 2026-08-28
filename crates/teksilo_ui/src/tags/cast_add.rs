@@ -113,7 +113,7 @@ impl Widget for CastAddPopover {
                 let focused = ctx.signal(false);
                 let label = TextWidget::new(lit!(title.clone()))
                     .style(TextStyleRole::Small)
-                    .max_lines(1);
+                    .single_line();
                 let ringed = with_focus_ring(ctx, RING_RADIUS_ROW, label, &focused);
                 list = list.child(
                     ringed

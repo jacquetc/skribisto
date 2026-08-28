@@ -312,6 +312,11 @@ impl Widget for ChooseTreeWidget {
                     .depth(entry.depth)
                     .has_children(entry.has_children)
                     .is_expanded(entry.is_expanded)
+                    // A row title is as long as the writer made it; without this the label
+                    // reports its full intrinsic width and paints out of the panel. See
+                    // `binder::dock`, where this was found.
+                    .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+                    .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .selected(selected)
                     .on_toggle_rc(rowctx.toggle_callback())
                     .tristate_checkbox(sig)

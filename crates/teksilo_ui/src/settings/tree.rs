@@ -106,6 +106,10 @@ pub(crate) fn build_tree(
             other => other.label(),
         };
         let mut row = StandardTreeItem::new(label)
+            // Every other row here is a `tr!()` label of known length, but the Work
+            // section's is "Work: <the project's title>" — as long as the writer named
+            // their book. See `binder::dock`.
+            .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
             .from_entry(entry)
             .selected(selected)
             .on_toggle_rc(rowctx.toggle_callback());

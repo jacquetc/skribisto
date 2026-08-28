@@ -95,6 +95,9 @@ fn installed_row(
     };
 
     StandardListItem::new(lit!(row.display_name.clone()))
+        // See the note in `distraction_free_themes::builtin_row`.
+        .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+        .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
         .subtitle(subtitle)
         .trailing_slot_boxed(trailing)
         .selected(selected)
@@ -210,6 +213,9 @@ fn catalog_row(vm: &DictionariesViewModel, row: &CatalogRow, selected: bool) -> 
     let actions = HStack::new().spacing(6.0).child(view_btn).child(trailing);
 
     StandardListItem::new(lit!(row.display_name.clone()))
+        // See the note in `installed_row` above.
+        .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+        .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
         .subtitle(lit!(format!("{}  ·  {}", row.size, row.license_name)))
         .trailing_slot(actions)
         .selected(selected)

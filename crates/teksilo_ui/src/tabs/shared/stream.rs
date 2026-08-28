@@ -429,7 +429,11 @@ fn container_header(vm: &StreamViewModel) -> impl Widget {
             TextWidget::new(lit!(""))
                 .text(vm.container_title())
                 .style(TextStyleRole::BodyBold)
-                .color(TextRole::Primary),
+                .color(TextRole::Primary)
+                // The rename button after the `Spacer` has to stay reachable, and a
+                // wrapping label reports its full width — so a container named at any
+                // length would push it off the end. See `binder::dock`.
+                .single_line(),
         )
         .child(Spacer::new())
         .child(
@@ -646,18 +650,26 @@ fn row_header(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
             // a rename must still show here without a reload, and a generated name has
             // nothing live to follow.
             match &fallback {
-                Some(f) => TextWidget::new(lit!(f.clone())).style(style).color(color),
+                Some(f) => TextWidget::new(lit!(f.clone()))
+                    .style(style)
+                    .color(color)
+                    .single_line(),
                 None => TextWidget::new(lit!(""))
                     .text(vm.row_title(id))
                     .style(style)
-                    .color(color),
+                    .color(color)
+                    // Everything after this in the row — the label, the tag dots, the
+                    // rule and the options menu — is pushed out by a long title unless
+                    // the title truncates. See `binder::dock`.
+                    .single_line(),
             },
         )
         // The row's free-text label (blank when unset).
         .child(
             TextWidget::new(lit!(""))
                 .text(vm.row_label(id))
-                .color(TextRole::Secondary),
+                .color(TextRole::Secondary)
+                .single_line(),
         )
         // Tag dots, between the label and the rule. Takes no space when the row is untagged.
         .child(crate::tags::TagDotsRow::new(

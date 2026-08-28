@@ -222,12 +222,12 @@ impl Widget for MentionList {
                 TextWidget::new(missing)
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary)
-                    .max_lines(1)
+                    .single_line()
             } else {
                 TextWidget::new(lit!(name.clone()))
                     .style(TextStyleRole::Small)
                     .color(colour)
-                    .max_lines(1)
+                    .single_line()
             };
             line = line.child(label);
 
@@ -245,7 +245,7 @@ impl Widget for MentionList {
                     TextWidget::new(lit!(format!("({})", row.matched_label())))
                         .style(TextStyleRole::Tiny)
                         .color(TextRole::Secondary)
-                        .max_lines(1),
+                        .single_line(),
                 );
             }
 

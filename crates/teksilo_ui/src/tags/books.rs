@@ -82,7 +82,13 @@ pub fn book_chip_row(chips: Vec<BookChip>, clear: ClearBook) -> impl Widget {
         let clear = clear.clone();
         let id = chip.id;
         row = row
-            .child(TextWidget::new(lit!(chip.title.clone())).style(TextStyleRole::Tiny))
+            .child(
+                TextWidget::new(lit!(chip.title.clone()))
+                    .style(TextStyleRole::Tiny)
+                    // A chip carries a binder title; the remove button after it has to
+                    // stay hittable. See `binder::dock`.
+                    .single_line(),
+            )
             .child(
                 IconButton::clear()
                     .embedded()

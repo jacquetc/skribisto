@@ -70,7 +70,12 @@ pub fn pov_chip_row(chips: Vec<PovChip>, clear: ClearPointOfView) -> impl Widget
         let clear = clear.clone();
         let id = chip.id;
         row = row
-            .child(TextWidget::new(lit!(chip.title.clone())).style(TextStyleRole::Tiny))
+            .child(
+                TextWidget::new(lit!(chip.title.clone()))
+                    .style(TextStyleRole::Tiny)
+                    // See the note in `tags::books::book_chip_row`.
+                    .single_line(),
+            )
             .child(
                 IconButton::clear()
                     .embedded()

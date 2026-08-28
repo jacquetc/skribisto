@@ -367,7 +367,13 @@ impl Widget for Inspector {
                 if ordinal.is_some() {
                     header = header.child(crate::widgets::StructureNumber::new(ordinal));
                 }
-                header = header.child(TextWidget::new(lit!(name)).style(TextStyleRole::BodyBold));
+                header = header.child(
+                    TextWidget::new(lit!(name))
+                        .style(TextStyleRole::BodyBold)
+                        // The Inspector is a fixed-width dock and this is the item's own
+                        // title, so it is the one string here with no bound at all.
+                        .single_line(),
+                );
                 let mut col = VStack::new().spacing(12.0).child(header);
                 // The headline affordance: convert this item to another type. A folder
                 // can become any other kind of folder, so it is a menu, not a button.

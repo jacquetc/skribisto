@@ -118,6 +118,11 @@ fn builtin_row(
             }
         });
     StandardListItem::new(lit!(theme.name.clone()))
+        // User-named, so unbounded — and a settings pane is measured under
+        // `width: None`, where one over-wide child inflates the whole page.
+        // See `binder::dock`.
+        .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+        .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
         .subtitle(lit!(swatch_line(theme)))
         .trailing_slot(
             HStack::new()
@@ -159,6 +164,9 @@ fn user_row(
     };
     let id_hl = id.clone();
     StandardListItem::new(lit!(theme.name.clone()))
+        // See the note in `builtin_row` above.
+        .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+        .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
         .subtitle(lit!(swatch_line(theme)))
         .selected(selected.map(move |s| s.as_deref() == Some(id_hl.as_str())))
         .trailing_slot(

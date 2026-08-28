@@ -156,6 +156,7 @@ pub mod stream;
 pub mod style;
 pub mod tabs;
 pub mod tags;
+pub mod text_overflow;
 pub mod text_replacement;
 pub mod timeline;
 pub mod toast_scope;

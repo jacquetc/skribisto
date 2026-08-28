@@ -351,6 +351,10 @@ impl WelcomePanel {
                 IconWidget::from_svg_icon(res!("assets/icons/binder/book.svg")).icon_size(20.0);
             Box::new(
                 StandardListItem::new(lit!(ex.title))
+                    // An example's title is the book's, and a book's title is as long
+                    // as its author made it. See `binder::dock`.
+                    .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+                    .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .subtitle(lit!(ex.blurb))
                     .leading_slot(icon)
                     .selected(selected),

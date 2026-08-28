@@ -124,6 +124,9 @@ impl Widget for BackupsListPanel {
                 );
             Box::new(
                 StandardListItem::new(lit!(row.date.clone()))
+                    // A formatted date never needs it, but the rule is blanket on
+                    // purpose: an exception here is one more thing to re-derive.
+                    .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .subtitle(lit!(format!("{} · {}", row.size, row.path)))
                     // A backup path is long and a destination can sit anywhere,
                     // so the subtitle must truncate rather than claim its full

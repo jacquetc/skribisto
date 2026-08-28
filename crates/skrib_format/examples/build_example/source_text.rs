@@ -223,8 +223,8 @@ II
 SECOND CHAPITRE,
 SUR DEUX LIGNES.
 
-[Illustration: une legende
-qui deborde.]
+[Illustration: une vue
+sur deux lignes.]
 
 Le corps du second.
 

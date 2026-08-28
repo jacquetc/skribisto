@@ -82,7 +82,7 @@ use teksilo::core::accesskit::Role;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Button, ButtonVariant, Divider, Expand, GroupHeader, HStack, IconButton, Padding,
+    Button, ButtonVariant, ColumnFlow, Expand, GroupHeader, HStack, IconButton, Padding,
     PopoverButton, ScrollArea, Segment, SegmentId, SegmentedControl, Spacer, TextWidget, VStack,
 };
 
@@ -134,7 +134,6 @@ pub(crate) fn note_details_pane(tab: &ContentTab) -> Box<dyn Widget> {
     Box::new(NoteDetailsPane {
         ids: tab.ids().clone(),
         item_id: tab.item_id(),
-        column_width: tab.column_width.clone(),
         open_doc: tab.open_doc.clone(),
         set_tags: tab.set_tags_fn(),
         tags: tab.tags(),
@@ -167,7 +166,6 @@ struct NoteDetailsPane {
     /// a tag changes, and a fresh signal each time would throw the writer back to the
     /// first Book mid-read. `None` until the first build picks one.
     appears_in_book: Signal<Option<SegmentId>>,
-    column_width: Signal<f32>,
     mention_index: crate::mentions::MentionIndex,
     /// This item's shared editing state: read for its `tags` mirror (the same
     /// one `set_tags` below writes, and the same one any other open view of
@@ -389,27 +387,30 @@ impl Widget for NoteDetailsPane {
                 manuscript = Some(col);
             }
         }
-        let two_columns = manuscript.is_some();
-
-        // One column when there is nothing to put beside the fields, so an ordinary note
-        // is not a half-empty spread. Two when there is, sharing the width evenly.
-        let mut body = HStack::new()
-            .spacing(28.0)
-            .child(Expand::horizontal().child(fields));
+        // A reading about an entry, not prose about one: laid out the way the Pace
+        // dashboard is, filling the scroll viewport and reflowing to a single column
+        // when the window cannot hold two — rather than the fixed two-up spread inside
+        // a centred reading column this used to be.
+        //
+        // That is not only a nicer shape at every width, it is the only one that holds
+        // "Appears in the manuscript" inside its own column. Each backlink row sits in
+        // the focus ring's `ZStack`, and a `ZStack` reports its content's **unbounded**
+        // width on purpose (see its `layout_response`), so a hundred-character chapter
+        // title claimed its full natural width and painted across the fields beside it.
+        // `ColumnFlow` sizes its columns itself and holds a child to one; a centred
+        // `HStack` of `Expand`s could not. Measured, and pinned by
+        // `crate::text_overflow`'s own test.
+        let mut body = ColumnFlow::new()
+            .min_column_width(MIN_DETAILS_COLUMN)
+            .max_columns(2)
+            .column_spacing(28.0)
+            .item_spacing(12.0)
+            .child(fields);
         if let Some(right) = manuscript {
-            body = body
-                .child(Divider::vertical())
-                .child(Expand::horizontal().child(right));
+            body = body.child(right);
         }
 
-        // Wider than a writing measure only when there are genuinely two columns to
-        // hold. Derived from the writer's own column width so changing it moves both.
-        let widen = if two_columns { 2.0 } else { 1.0 };
-        let gutter = if two_columns { 28.0 } else { 0.0 };
-        let spread = self.column_width.map(move |w| w * widen + gutter);
-        let col = shared::centered(body, &spread);
-
-        let id = ctx.add(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(col)));
+        let id = ctx.add(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(body)));
         self.root = Some(id);
         vec![id]
     }
@@ -893,6 +894,13 @@ fn backlinks_empty_hint() -> VStack {
 /// `MentionRow::is_confirmed`/`is_point_of_view` mean exactly the same thing
 /// here as they do in the cast direction, just read from the other end: "that
 /// scene has *this note* pinned", not "this note has pinned *it*".
+/// The narrowest a Details column may be before the pane reflows to one.
+///
+/// Wide enough to hold a field's label beside its value, and a backlink's title beside
+/// its confirm control; below that the two-up spread stops being readable and one
+/// column is the better answer. The same judgement `pace`'s dashboard makes.
+const MIN_DETAILS_COLUMN: f32 = 320.0;
+
 struct BacklinksList {
     rows: Vec<BacklinkRow>,
     /// Confirm, on a row the scan only guessed at, that this entry really does appear in
@@ -929,7 +937,7 @@ impl Widget for BacklinksList {
                 TextWidget::new(lit!(row.document_title.clone()))
                     .style(TextStyleRole::SmallBold)
                     .color(colour)
-                    .max_lines(1),
+                    .single_line(),
             );
             // The alias that matched, when it was not the title: "Lizzy" explains
             // a row that otherwise just repeats "Elizabeth Bennet".
@@ -941,7 +949,7 @@ impl Widget for BacklinksList {
                     TextWidget::new(lit!(format!("({})", row.matched_names.join(", "))))
                         .style(TextStyleRole::Tiny)
                         .color(TextRole::Secondary)
-                        .max_lines(1),
+                        .single_line(),
                 );
             }
             if row.hit_count > 1 {
@@ -1023,7 +1031,22 @@ impl Widget for BacklinksList {
                         EventResponse::Ignored
                     }),
             );
-            col = col.add_child(id);
+            // `Expand::horizontal` is doing real work here, not cosmetics. Each row sits
+            // in the focus ring's `ZStack`, and a `ZStack` reports its content's
+            // **unbounded** width by deliberate design — its `layout_response` explains
+            // that taking the width from the bounded pass would truncate a shrinkable
+            // label to a `MinSize`'s minimum during intrinsic measurement. A plain
+            // column then places the row at the width it asked for, so a
+            // hundred-character chapter title painted straight across the pane beside
+            // this one. `Expand` holds the row to the width it is actually given, and
+            // the elided titles inside take the difference.
+            //
+            // Measured, in a 200px box: `VStack(ZStack(row))` lays out at 968,
+            // `VStack(Expand(ZStack(row)))` at 200. `crate::text_overflow`'s own test
+            // pins both, and pins that `Shrinkable` and a bare `ColumnFlow` column do
+            // not close it — a stack only distributes a deficit along its main axis, and
+            // a flow's clamp does not reach through an intermediate stack.
+            col = col.child(Expand::horizontal().child_id(id));
         }
 
         let id = ctx.add(col.access_role(Role::List));

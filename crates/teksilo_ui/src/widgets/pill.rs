@@ -236,7 +236,11 @@ impl Widget for Pill {
             content = content.add_child(leading_id);
         }
 
-        let mut label = TextWidget::new(lit!(self.display.clone())).style(TextStyleRole::Tiny);
+        // A pill's text is user data (a tag, a name), and a pill sits in a row beside
+        // other pills — so it truncates rather than growing the row. See `binder::dock`.
+        let mut label = TextWidget::new(lit!(self.display.clone()))
+            .style(TextStyleRole::Tiny)
+            .single_line();
         if let Some(c) = self.text_color.clone() {
             label = label.color(c);
         }
