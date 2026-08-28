@@ -930,6 +930,68 @@ fn a_press_in_a_card_synopsis_does_not_arm_an_ancestor_drag() {
     );
 }
 
+/// **A press inside a card's inline rename field must not arm an ancestor's drag.**
+///
+/// The last control on a card that was not a dead zone, and it fails exactly the way
+/// the synopsis above did: selecting inside a `TextInput` is press-move-release, the
+/// same gesture the `GridView` beneath uses to start a card drag, and the field selects
+/// through `on_pointer_event` while returning `Ignored` on `PointerDown`. Dragging to
+/// select a word in the title dragged the card instead, so the title could be replaced
+/// but never edited with the mouse.
+///
+/// Two fields, identical but for the wrapper, so the dead zone is the only variable —
+/// and the bare one is the sensitivity control.
+#[test]
+fn a_press_in_a_cards_rename_field_does_not_arm_the_card_drag() {
+    use teksilo::core::event::PointerButton;
+    use teksilo::prelude::*;
+
+    let field =
+        || teksilo::widgets::TextInput::new(Signal::new("Dans lequel Phileas Fogg".to_string()));
+
+    let mut tree = WidgetTree::new();
+    let card = tree.add(
+        teksilo::widgets::VStack::new()
+            // Control: a bare field, as the card used to build it.
+            .child(field())
+            // Under test: what `InlineTitle::build` composes now.
+            .child(teksilo::widgets::DeadZone::new().child(field()))
+            .on_drag(|_phase, _ctx| {}),
+    );
+    tree.layout(teksilo::prelude::SizeProposal::exact(400.0, 200.0));
+    let _ = tree.render();
+
+    let bare = tree.child_bounds(card, 0);
+    let guarded = tree.child_bounds(card, 1);
+    assert!(
+        bare.height > 0.0 && guarded.height > 0.0,
+        "the fields laid out to zero size ({bare:?} / {guarded:?}), so the presses \
+         below would be meaningless"
+    );
+
+    let press = |tree: &mut WidgetTree, r: teksilo::canvas::Rect| {
+        let p = Point::new(r.x + r.width / 2.0, r.y + r.height / 2.0);
+        tree.pointer_down_button(p, PointerButton::Primary);
+        let armed: Vec<_> = tree.armed_drag_observers().to_vec();
+        tree.pointer_up_button(p, PointerButton::Primary);
+        armed
+    };
+
+    let armed_bare = press(&mut tree, bare);
+    let armed_guarded = press(&mut tree, guarded);
+
+    assert!(
+        !armed_bare.is_empty(),
+        "control: a press in an unguarded rename field must arm the card's drag — it \
+         did not, so the assertion below would pass vacuously"
+    );
+    assert!(
+        armed_guarded.is_empty(),
+        "a press inside the dead-zoned rename field armed {armed_guarded:?} — the \
+         writer cannot select in the title without also dragging the card"
+    );
+}
+
 /// A realized card still lays out after the dead-zone wrappers went in.
 ///
 /// `DeadZone` is documented layout-transparent — it reports its child's size and

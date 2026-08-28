@@ -403,7 +403,20 @@ impl Widget for InlineTitle {
             let fid = ctx.add(field);
             // Focus the field so the writer can type immediately.
             ctx.focus(fid);
-            fid
+            // A **gesture dead zone**, for the same reason the synopsis, the expand
+            // button and the kebab are each one — and this was the last control on a
+            // card without it. Selecting inside the field is press-move-release, which
+            // is the gesture the `GridView` beneath uses to start a card drag: the
+            // field does its selection through `on_pointer_event` and returns
+            // `Ignored` on `PointerDown`, which is exactly what `arm_drag_observers`
+            // walks past on its way to arming the tile above. Dragging to select a
+            // word in the title dragged the card instead. `DeadZone` stops that walk
+            // structurally rather than by winning a gesture race, and is
+            // layout-transparent. See `CardSynopsis::build`.
+            //
+            // Wrapped *after* `ctx.focus`, which has to name the field itself — a
+            // dead zone is not a focus target.
+            ctx.add(DeadZone::new().child_id(fid))
         } else {
             let vm = self.vm.clone();
             let item_id = self.item_id;
