@@ -11,10 +11,12 @@
 //! state + logic live in [`PaceViewModel`];
 //! this pane is a thin reactive view over it.
 
+use teksilo::canvas::EdgeInsets;
 use teksilo::core::BindingLevel;
 use teksilo::data::{ChartDatum, ChartModel, ChartSeries};
 use teksilo::prelude::*;
 use teksilo::tokens::{FontWeight, TextStyle};
+use teksilo::widgets::styles::RecipeButtonStyle;
 use teksilo::widgets::{
     Button, ButtonVariant, Center, ColumnFlow, DateEdit, DateRange, DateRangeEdit, Expand,
     FixedSize, FormLayout, HStack, IconButton, Padding, Panel, ScrollArea, SpinBox, StepType,
@@ -178,20 +180,11 @@ impl Widget for PaceBody {
 }
 
 /// One dashboard section: a titled Panel wrapping its body.
-pub(super) fn panel_section(title: LocalizedString, body: impl Widget + 'static) -> impl Widget {
-    Panel::new().child(
-        Padding::uniform(14.0).child(
-            VStack::new()
-                .spacing(10.0)
-                .child(
-                    TextWidget::new(title)
-                        .style(TextStyleRole::BodyBold)
-                        .color(TextRole::Primary),
-                )
-                .child(body),
-        ),
-    )
-}
+///
+/// Re-exported rather than defined here since the "where the book stands" summary
+/// ([`crate::pace::panel`]) draws its blocks with the same card — see
+/// [`crate::pace::panel_section`] for why it moved into the feature.
+pub(super) use crate::pace::panel_section;
 
 /// The "no schedule yet" state - an invitation to create one. `Start planning`
 /// sets a default 90-day deadline, which lazily creates the Pace.

@@ -13,5 +13,7 @@
 
 mod pace_vm;
 pub(crate) mod panel;
+mod section;
 
 pub use pace_vm::PaceViewModel;
+pub(crate) use section::{CARD_PADDING, panel_card, panel_section};
