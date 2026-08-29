@@ -687,6 +687,9 @@ impl ExportViewModel {
             footnotes.push(FootnoteWithContent { footnote });
         }
         Ok(Gathered {
+            // Export writes no bundle, so it has no reason to read the ladder — the same
+            // stance `status_multi` takes on the three analysis readers.
+            statuses: Vec::new(),
             assets: Vec::new(),
             work,
             tags: Vec::new(),

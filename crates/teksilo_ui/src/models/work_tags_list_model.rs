@@ -514,18 +514,21 @@ mod imp {
 
     impl WorkTagsListModel {
         pub fn new(ctx: Rc<AppContext>, _ids: AppIds) -> Self {
-            // A palette shaped like the Basic preset: a status ladder that demonstrates
-            // the `status/…` clustering, two flags, and the discoverable taxonomy.
+            // A palette shaped like the Basic preset: the flags, and the discoverable
+            // taxonomy. No `status/…` rungs — a workflow stage is single-valued and
+            // ordered, so it has its own axis now (`crate::statuses`), and a mock palette
+            // that still carried one would show a status-shaped *tag* beside a real status
+            // glyph in the very build meant for judging how the two read together.
             let mut rows = vec![
                 row(
                     1,
-                    "status/draft",
-                    "#607d8b",
-                    "Written, not yet revised",
+                    "continuity check",
+                    "#c0392b",
+                    "Verify against what came before",
                     false,
                 ),
-                row(2, "status/finished", "#27ae60", "", false),
-                row(3, "status/outline", "#95a5a6", "", false),
+                row(2, "plot point", "#c2185b", "", false),
+                row(3, "cut candidate", "#95a5a6", "", false),
                 row(
                     4,
                     "needs research",
@@ -700,28 +703,23 @@ mod tests {
         }
     }
 
-    /// Alphabetical ordering is what makes the `status/…` convention cluster — it is the
-    /// reason the entity carries no explicit ordering.
+    /// A palette has no stored order, so it is shown alphabetically and that is the whole
+    /// contract. (It used to also demonstrate a `status/…` prefix clustering; the ladder
+    /// that convention stood in for is a real, ordered axis now — see `crate::statuses` —
+    /// and prefix-sorting a tag name is no longer a thing anything relies on.)
     #[test]
-    fn sorting_clusters_the_status_prefix() {
+    fn sorting_is_alphabetical_and_case_insensitive() {
         let mut rows = vec![
             r(1, "place"),
-            r(2, "status/outline"),
+            r(2, "Artifact"),
             r(3, "character"),
-            r(4, "status/draft"),
-            r(5, "needs research"),
+            r(4, "needs research"),
         ];
         sort_rows(&mut rows);
         let names: Vec<&str> = rows.iter().map(|r| r.name.as_str()).collect();
         assert_eq!(
             names,
-            vec![
-                "character",
-                "needs research",
-                "place",
-                "status/draft",
-                "status/outline"
-            ]
+            vec!["Artifact", "character", "needs research", "place"]
         );
     }
 

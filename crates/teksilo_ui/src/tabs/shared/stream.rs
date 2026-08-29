@@ -683,7 +683,27 @@ fn row_header(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
             crate::tags::tag_chip::MAX_VISIBLE_STREAM,
         ))
         .child(Expand::horizontal().child(Divider::new()))
+        // The rung, immediately before the options menu — the trailing edge, where the
+        // glyphs line up into a scannable column down the stream and never compete with
+        // the tag dots in the middle band.
+        .child(status_button(vm, id))
         .child(row_menu(vm, row))
+}
+
+/// The row's status picker.
+///
+/// Shown on every row: `folder_segmented` only ever streams rows the writing model gives a
+/// manuscript extent, all of which carry content and so are `status_capable`. The check
+/// still belongs on the surfaces that can show a `BookEnd` or a `Text` — the Inspector and
+/// the Overview — rather than being assumed everywhere.
+fn status_button(vm: &StreamViewModel, id: u64) -> impl Widget {
+    let statuses = vm.statuses();
+    let current = vm.row_status(id).get();
+    let set: crate::statuses::SetStatus = {
+        let statuses = statuses.clone();
+        std::rc::Rc::new(move |status| statuses.set_item_status(id, status))
+    };
+    crate::statuses::status_picker(&statuses, current, set)
 }
 
 /// The per-row options menu. Merge and split are offered only where they are legal:

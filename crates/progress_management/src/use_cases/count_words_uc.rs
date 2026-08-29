@@ -73,6 +73,15 @@ impl<'a> TreeReader for dyn CountWordsUnitOfWorkTrait + 'a {
     ) -> Result<Vec<Option<common::entities::NoteTemplate>>> {
         Ok(Vec::new())
     }
+    /// Empty on purpose: this reader never writes a bundle, so it has no reason to read
+    /// the workflow ladder. Required rather than defaulted so a *save* path cannot forget
+    /// it — see `status_multi` on the trait.
+    fn status_multi(
+        &self,
+        _ids: &[EntityId],
+    ) -> Result<Vec<Option<common::entities::BinderStatus>>> {
+        Ok(Vec::new())
+    }
     fn all_work(&self) -> Result<Vec<Work>> {
         self.get_all_work()
     }

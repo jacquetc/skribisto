@@ -28,6 +28,10 @@ pub struct Spec {
     pub paratext: Vec<Paratext>,
     #[serde(default)]
     pub tag: Vec<Tag>,
+    /// The project's workflow ladder, **in ladder order** — that order is the ladder, so
+    /// the sequence here is the data, not presentation.
+    #[serde(default)]
+    pub status: Vec<Status>,
     #[serde(default)]
     pub bible: Bible,
     #[serde(default)]
@@ -140,6 +144,23 @@ pub struct Tag {
     pub discoverable: bool,
 }
 
+/// One rung of the workflow ladder.
+///
+/// A rung is *two* things, and only one of them is the writer's: the `name` and the order
+/// are theirs, while `category` picks from a closed app-owned set that owns the glyph and
+/// the per-theme colour. That is why there is no `color` here as there is on [`Tag`] — a
+/// status colour cannot be stored data and still clear WCAG against both themes.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Status {
+    pub name: String,
+    /// One of `Planned` / `Drafting` / `NeedsWork` / `Revised` / `Final`. Spelled exactly
+    /// as the enum, and a typo is a parse error rather than a silent default.
+    pub category: common::entities::StatusCategory,
+    #[serde(default)]
+    pub details: String,
+}
+
 /// Where the story bible goes. An empty `binder` skips it entirely.
 #[derive(Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -217,6 +238,15 @@ pub struct Chapter {
     /// The coloured binder label.
     #[serde(default)]
     pub label: String,
+    /// This chapter's rung, **by name**, matching one of the `[[status]]` entries. Empty
+    /// means "no status", which is a real state and the default.
+    ///
+    /// A name with no matching rung is a hard error at build time, not a silent drop — the
+    /// same discipline the story-bible cast lists already follow, and for the same reason:
+    /// a typo that quietly does nothing is discovered by a reader, months later, as an
+    /// absence.
+    #[serde(default)]
+    pub status: String,
 }
 
 impl Spec {

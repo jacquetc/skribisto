@@ -2452,3 +2452,81 @@ settings-margin-lane-surface-editor = Éditeur de texte
 settings-margin-lane-surface-stream = Flux
 settings-margin-lane-surface-search-preview = Aperçu de recherche
 menu-margin-lane = Repères de &marge
+
+## Statuts — l'échelle d'avancement du projet.
+## Le nom d'un échelon est une DONNÉE du projet : ces chaînes sont résolues une seule fois,
+## à la création de l'échelle, puis stockées telles quelles. Elles ne sont pas retraduites
+## ensuite, et l'auteur peut renommer n'importe quel échelon.
+## Les huit derniers reprennent le vocabulaire français de Plume Creator lui-même, pour
+## qu'un projet importé retrouve les mots qu'il avait.
+status-preset-drafting = Écriture
+status-preset-passes = Passes de révision
+status-preset-plume = Plume Creator
+status-todo = À écrire
+status-draft = Brouillon
+status-revised = Révisé
+status-final = Finalisé
+status-outline = Plan
+status-first-edit = 1re révision
+status-second-edit = 2e révision
+status-done = Terminé
+status-plume-draft-1 = 1er brouillon
+status-plume-draft-2 = 2nd brouillon
+status-plume-draft-3 = 3ème brouillon
+status-plume-edit-1 = 1ère édition
+status-plume-edit-2 = 2nde édition
+status-plume-edit-3 = 3ème édition
+status-plume-proofread = Vérifié
+status-plume-finished = Fini
+new-work-statuses = Avancement
+new-work-statuses-hint = Les étapes par lesquelles passe une scène. Vous pourrez les renommer, les réordonner ou en ajouter à tout moment.
+status-none = Aucun statut
+inspector-status = Statut
+overview-col-status = Statut
+overview-status-mixed = les parties en dessous divergent
+help-concept-status = Statut
+status-completion-title = Où en est le livre
+status-completion-headline = { $done } scènes terminées sur { $total }
+status-completion-empty = Aucune scène pour l'instant — cette vue lit le manuscrit, elle se remplira à mesure que vous écrirez.
+status-completion-open = Où en est le livre…
+
+## Réglages ▸ Projet ▸ Statuts — l'éditeur d'échelle.
+## L'auteur possède le NOM d'un échelon et l'ORDRE de l'échelle ; l'application possède sa
+## catégorie, et la catégorie possède le symbole et la couleur. Seuls les noms de catégorie
+## ci-dessous sont traduits — le nom d'un échelon est le texte de l'auteur et reste tel quel.
+settings-page-statuses = Statuts
+settings-desc-statuses = Renommer, réordonner, ajouter et supprimer les étapes par lesquelles passe une scène
+settings-statuses-add = Ajouter un statut
+settings-statuses-add-placeholder = Nom du nouveau statut
+settings-statuses-desc =
+    Les étapes par lesquelles passe une scène, dans l'ordre — de la moins avancée en haut à
+    la plus avancée en bas. Cet ordre définit ce que « moins avancé que » signifie partout
+    ailleurs dans l'application : placez-les selon votre processus réel.
+settings-statuses-apply-preset = Appliquer un préréglage…
+settings-statuses-preset-applied = { $added ->
+    [one] 1 statut ajouté
+   *[other] { $added } statuts ajoutés
+}
+settings-statuses-preset-refused = Ce projet a déjà une échelle. Les préréglages ne remplissent qu'une échelle vide — supprimez d'abord les échelons dont vous ne voulez pas.
+settings-statuses-duplicate = « { $name } » figure déjà sur cette échelle
+settings-statuses-added = « { $name } » ajouté
+settings-statuses-move-up = Monter (moins avancé)
+settings-statuses-move-down = Descendre (plus avancé)
+settings-statuses-details-placeholder = Ce que signifie cette étape (facultatif)
+settings-statuses-delete = Supprimer « { $name } »
+settings-statuses-delete-in-use = { $count ->
+    [one] Supprimer « { $name } » — { $count } élément le porte et perdra son statut
+   *[other] Supprimer « { $name } » — { $count } éléments le portent et perdront leur statut
+}
+settings-statuses-deleted = « { $name } » supprimé
+settings-statuses-deleted-in-use = { $count ->
+    [one] « { $name } » supprimé. { $count } élément n'a plus de statut.
+   *[other] « { $name } » supprimé. { $count } éléments n'ont plus de statut.
+}
+settings-statuses-empty-title = Aucun processus défini
+settings-statuses-empty-body = Un statut indique où en est une scène. Ajoutez-en un ci-dessus, ou partez d'un préréglage.
+status-category-planned = Prévu
+status-category-drafting = Brouillon
+status-category-needs-work = À reprendre
+status-category-revised = Révisé
+status-category-final = Terminé

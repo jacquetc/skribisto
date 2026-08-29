@@ -112,6 +112,22 @@ fn inline(item: &BundledItem, role: ContentRole) -> String {
         .unwrap_or_else(|| panic!("item '{}' has no inline {role:?}", item.item.title))
 }
 
+/// Plume's own eight-rung ladder, as the app hands it down (already locale-resolved).
+fn ladder() -> Vec<String> {
+    [
+        "1st draft",
+        "2nd draft",
+        "3rd draft",
+        "1st Edit",
+        "2nd Edit",
+        "3rd Edit",
+        "Proofread",
+        "Finished",
+    ]
+    .map(str::to_string)
+    .to_vec()
+}
+
 /// Import `members` (as a zip) and read the produced `.skrib` back.
 fn import_zip(members: &[(&str, &str)]) -> (ImportSummary, skrib_format::WorkBundle) {
     let dir = tempfile::tempdir().unwrap();
@@ -124,6 +140,7 @@ fn import_zip(members: &[(&str, &str)]) -> (ImportSummary, skrib_format::WorkBun
         false,
         "Manuscript",
         "Story Bible",
+        &ladder(),
     )
     .unwrap();
     let bundle = read_bundle(out.to_str().unwrap()).unwrap();
@@ -148,6 +165,7 @@ fn progress_is_reported_monotonically_to_completion() {
         false,
         "M",
         "S",
+        &ladder(),
         &|pct, _label| seen.borrow_mut().push(pct),
         &never,
     )
@@ -188,6 +206,7 @@ fn cancel_during_mapping_leaves_no_output_and_preserves_target() {
         true,
         "M",
         "S",
+        &ladder(),
         &|pct, _| {
             if pct >= 20.0 {
                 cancel.store(true, Ordering::Relaxed);
@@ -484,6 +503,7 @@ fn old_system_bare_directory_is_imported() {
         false,
         "Manuscript",
         "Story Bible",
+        &ladder(),
     )
     .unwrap();
     assert_eq!(summary.skipped_trashed, 0);
@@ -510,7 +530,8 @@ fn rejects_non_plume_and_refuses_overwrite() {
             out.to_str().unwrap(),
             false,
             "M",
-            "S"
+            "S",
+            &ladder()
         )
         .is_err()
     );
@@ -527,7 +548,8 @@ fn rejects_non_plume_and_refuses_overwrite() {
             out2.to_str().unwrap(),
             false,
             "M",
-            "S"
+            "S",
+            &ladder()
         )
         .is_err()
     );
@@ -538,7 +560,8 @@ fn rejects_non_plume_and_refuses_overwrite() {
             out2.to_str().unwrap(),
             true,
             "M",
-            "S"
+            "S",
+            &ladder()
         )
         .is_ok()
     );

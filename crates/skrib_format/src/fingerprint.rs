@@ -188,6 +188,7 @@ mod tests {
 
     fn minimal_bundle(title: &str, updated: &str) -> WorkBundle {
         WorkBundle {
+            statuses: Vec::new(),
             assets: Vec::new(),
             asset_bytes: Default::default(),
             manifest: ProjectManifest {
@@ -322,6 +323,7 @@ mod tests {
     fn item_with_footnote(footnote: FootnoteFile) -> BundledItem {
         BundledItem {
             item: BinderItemFile {
+                status_id: None,
                 file_id: 10,
                 uid: uuid::Uuid::nil(),
                 created_at: "2020-01-01T00:00:00Z".into(),

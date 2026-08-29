@@ -1011,6 +1011,7 @@ mod tests {
             &app_ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "People".into(),
                 role: BinderItemRole::Folder,
                 activated: true,

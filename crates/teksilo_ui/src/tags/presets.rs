@@ -8,7 +8,9 @@
 //! A data file would have to pick one language at authoring time.
 //!
 //! A new project starts with an *empty* palette — nothing is seeded — and the writer picks
-//! a preset if they want one. Genre presets **extend** Basic rather than standing alone,
+//! a preset if they want one. (The workflow *ladder* is the opposite: it is seeded on every
+//! new project, because a project without one has no status feature at all. See
+//! `crate::statuses::presets`.) Genre presets **extend** Basic rather than standing alone,
 //! so applying Sci-fi to an empty palette yields Basic's tags too, and applying it after
 //! Basic adds only what is new (`import_tags` skips names already present, so re-applying
 //! is a no-op rather than a doubling).
@@ -23,9 +25,7 @@ use crate::models::TagRow;
 /// against one of the two surfaces. Text colour is never stored — it is derived from these
 /// at paint time.
 mod hue {
-    pub const SLATE: &str = "#607d8b";
     pub const GREY: &str = "#95a5a6";
-    pub const GREEN: &str = "#27ae60";
     pub const AMBER: &str = "#f39c12";
     pub const ORANGE: &str = "#d35400";
     pub const BLUE: &str = "#2980b9";
@@ -139,15 +139,15 @@ fn genre_rows(specs: &[(LocalizedString, &str)]) -> Vec<TagRow> {
 
 fn basic_rows() -> Vec<TagRow> {
     vec![
-        // The workflow ladder: one hue at rising saturation, so progress along it reads at
-        // a glance without anyone having to read the label.
-        row(tr!(tags_preset_status_outline()), hue::GREY, false),
-        row(tr!(tags_preset_status_draft()), hue::SLATE, false),
-        row(tr!(tags_preset_status_to_review()), hue::AMBER, false),
-        row(tr!(tags_preset_status_finished()), hue::GREEN, false),
-        // Flags, deliberately *without* the `status/` prefix: an item can be a draft AND
-        // need research at once, so prefixing these would falsely imply they belong to the
-        // same mutually-exclusive ladder.
+        // Flags. These are what a tag is *for* on this axis: an item can need research AND
+        // a continuity check at once, so they are many-to-many by nature.
+        //
+        // The four-rung `status/…` ladder that used to open this list is gone: a workflow
+        // stage is single-valued and ordered, which a tag set cannot express, and it now
+        // has its own axis — see `crate::statuses`. Keeping both would have left two
+        // vocabularies that look identical on screen (a coloured dot either way) and mean
+        // different things, which is exactly the confusion Scrivener's Label-vs-Status
+        // threads are made of.
         row(tr!(tags_preset_needs_research()), hue::ORANGE, false),
         row(tr!(tags_preset_continuity_check()), hue::RED, false),
         // A structural marker, not a named entity — not discoverable, for the same reason
@@ -225,27 +225,5 @@ mod tests {
             3,
             "Basic's discoverable set should be character/place/item, got {discoverable:?}"
         );
-        for r in rows.iter().filter(|r| r.name.starts_with("status/")) {
-            assert!(!r.discoverable, "{:?} is a workflow state", r.name);
-        }
-    }
-
-    /// Alphabetical ordering is what makes the prefix worth having.
-    #[test]
-    fn the_status_prefix_clusters_when_sorted() {
-        let mut names: Vec<String> = Preset::Basic
-            .rows()
-            .iter()
-            .map(|r| r.name.clone())
-            .collect();
-        names.sort_by_key(|n| n.to_lowercase());
-        let first = names.iter().position(|n| n.starts_with("status/")).unwrap();
-        let count = names.iter().filter(|n| n.starts_with("status/")).count();
-        for n in names.iter().skip(first).take(count) {
-            assert!(
-                n.starts_with("status/"),
-                "the status run is interrupted by {n:?}"
-            );
-        }
     }
 }

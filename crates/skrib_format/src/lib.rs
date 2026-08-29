@@ -74,9 +74,9 @@ mod zip_io;
 // producer (the Plume importer) can build a bundle directly, exactly the way
 // `from_entities` builds one from store entities.
 pub use bundle::{
-    BinderFile, BinderItemFile, BinderTagFile, BinderWithItems, BundleKind, BundledBinder,
-    BundledItem, CarriedFile, CommentFile, CommentReplyFile, CommentWithReplies, DictWordFile,
-    FORMAT_VERSION, FootnoteFile, FootnoteWithContent, HolidayFile, InlineContent,
+    BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BinderWithItems, BundleKind,
+    BundledBinder, BundledItem, CarriedFile, CommentFile, CommentReplyFile, CommentWithReplies,
+    DictWordFile, FORMAT_VERSION, FootnoteFile, FootnoteWithContent, HolidayFile, InlineContent,
     ItemWithContents, ItemsFile, MilestoneFile, NoteTemplateFile, PaceFile, PaceWithChildren,
     ProgressSnapshotFile, ProjectManifest, ProseRef, ShapeTag, SmartPunctuationFile,
     TextReplacementRuleFile, TrashInfoFile, WorkBundle, WorkFile,

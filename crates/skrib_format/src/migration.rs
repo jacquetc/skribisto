@@ -68,6 +68,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             10 => step_v10_to_v11(bundle),
             11 => step_v11_to_v12(bundle),
             12 => step_v12_to_v13(bundle),
+            13 => step_v13_to_v14(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -284,6 +285,20 @@ fn step_v5_to_v6(_bundle: &mut WorkBundle) {}
 /// so an older build refuses the file rather than failing to deserialize the two new enum
 /// variants — the same reason v6 exists.
 fn step_v6_to_v7(_bundle: &mut WorkBundle) {}
+
+/// v13 → v14 added the workflow ladder. Nothing to heal on the way **forward**: a v13
+/// bundle has no `statuses.ron` and no `status_id` on any item, and `#[serde(default)]`
+/// already reads both as "no ladder, no statuses" — which is a legitimate state, not a
+/// damaged one, so there is nothing to fill in.
+///
+/// The bump exists for the *other* direction, and it is the v5/v8/v9 case rather than the
+/// v10/v11/v13 one. `statuses.ron` is a new root manifest, and both writers rebuild from
+/// what the bundle holds — the zip from a fresh staging directory, the exploded shape by
+/// pruning what it does not expect. An older build has no `statuses` field at all, so its
+/// first save would delete the whole ladder and strand every `status_id` behind it. The
+/// version floor (see `version_gate::compute_min_read_version`) turns that into a refusal
+/// to open, and only for projects that actually have a ladder.
+fn step_v13_to_v14(_bundle: &mut WorkBundle) {}
 
 /// v7 → v8 added binary assets. Nothing to heal: a v7 bundle has no `assets.ron`
 /// and no `assets/` tree, and `#[serde(default)]` already reads that as an empty

@@ -27,6 +27,7 @@ fn setup() -> (AppContext, u64, u64) {
         &ctx,
         None,
         &CreateWorkDto {
+            statuses: Vec::new(),
             title: "Test".into(),
             ..Default::default()
         },
@@ -114,6 +115,7 @@ fn make_item(
         ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: title.into(),
             role,
             sub_role,

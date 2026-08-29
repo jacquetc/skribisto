@@ -147,6 +147,7 @@ mod tests {
                 &c,
                 None,
                 &CreateBinderItemDto {
+                    status: None,
                     title: title.into(),
                     role: BinderItemRole::Item,
                     sub_role,

@@ -18,7 +18,7 @@
 
 use common::entities::{
     BinderItemRole, BinderItemSubRole, CommentAnchorKind, CommentOrphanReason, ContentRole,
-    GoalUnit, MilestoneKind,
+    GoalUnit, MilestoneKind, StatusCategory,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -140,7 +140,26 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 13;
+///
+/// # v13 → v14: the status vocabulary
+///
+/// `statuses.ron` — the project's workflow ladder — plus a `status_id` on every item.
+///
+/// **This one claims a floor**, and it is the v5/v8/v9 call rather than the v10/v11/v13
+/// one. `statuses.ron` is a *new root manifest*, and the mechanics are the same ones that
+/// forced a floor for templates and images: `zip_io::write_zip` rebuilds the archive from a
+/// fresh staging directory, and the exploded writer prunes what it does not expect. An
+/// older build has no `statuses` field, so its first save would delete the whole vocabulary
+/// — every rung the writer named, ordered and assigned — and leave every `status_id`
+/// dangling behind it. That is authored content, not a preference re-set in one click, so
+/// the floor turns a silent deletion into a loud refusal. As with templates and assets it
+/// is gated on the project actually having any, so a bundle with an empty ladder stays
+/// open to older builds.
+///
+/// `BinderItemFile.status_id` on its own would have needed nothing: it is additive with a
+/// `#[serde(default)]` and an unset value was never invalid. It is the manifest that costs
+/// the bump.
+pub const FORMAT_VERSION: u32 = 14;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -495,6 +514,28 @@ pub struct AssetFile {
     pub path: String,
 }
 
+/// One rung of the project's workflow ladder — `statuses.ron` at the bundle root.
+///
+/// Ordered: the file is written in ladder order and read back the same way, which is what
+/// `Work.statuses` (an `ordered_one_to_many`) means on disk. Nothing here stores a
+/// position, for the same reason `NoteTemplateFile` stores none.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BinderStatusFile {
+    pub file_id: u64,
+    /// Durable per-status identity, for the same reason `BinderTagFile` carries one: a
+    /// `file_id` is the store's `EntityId` at save time and is re-minted on every
+    /// `load_work`, so nothing outside this bundle may key on it.
+    #[serde(default)]
+    pub uid: uuid::Uuid,
+    pub created_at: String,
+    pub updated_at: String,
+    pub name: String,
+    /// Which app-owned bucket this rung belongs to — what picks its glyph and its
+    /// per-theme colour. Several rungs may share one.
+    pub category: StatusCategory,
+    pub details: String,
+}
+
 /// One row of `templates.ron`.
 ///
 /// The body is **not** inline: it lives in a sibling `templates/<short_id>-<slug>.djot`
@@ -792,6 +833,18 @@ pub struct BinderItemFile {
     /// empty vector (`parses_a_bundle_written_before_these_fields_existed` covers it).
     #[serde(default)]
     pub aliases: Vec<String>,
+    /// This row's rung on the workflow ladder, as the `file_id` of a `BinderStatusFile` —
+    /// the same within-bundle reference `tag_ids` uses, resolved to a store id at load.
+    ///
+    /// `None` is "no status", a real and common state, and `#[serde(default)]` gives
+    /// exactly that for every bundle written before v14. Purely additive on its own: it is
+    /// `statuses.ron` beside it that claims the read floor, not this field.
+    ///
+    /// A `file_id` that no longer resolves to a live status must be read as `None` rather
+    /// than rendered as a broken entry — the relationship is weak, so deleting a rung from
+    /// the vocabulary leaves the scenes that wore it intact and statusless.
+    #[serde(default)]
+    pub status_id: Option<u64>,
     pub inline_contents: Vec<InlineContent>,
     pub prose_refs: Vec<ProseRef>,
     /// M2M self-references (cross-links), as `file_id`s.
@@ -850,6 +903,12 @@ pub struct WorkBundle {
     pub dict_words: Vec<DictWordFile>,
     pub text_replacement_rules: Vec<TextReplacementRuleFile>,
     pub note_templates: Vec<NoteTemplateFile>,
+    /// The workflow ladder — `statuses.ron` at the bundle root, in ladder order.
+    ///
+    /// `#[serde(default)]` so a pre-v14 bundle reads back with an empty ladder, which is
+    /// the correct "this project has no statuses" state and needs no heal step.
+    #[serde(default)]
+    pub statuses: Vec<BinderStatusFile>,
     /// Image metadata rows — `assets.ron` at the bundle root.
     #[serde(default)]
     pub assets: Vec<AssetFile>,

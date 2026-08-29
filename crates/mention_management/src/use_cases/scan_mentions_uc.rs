@@ -87,6 +87,15 @@ impl<'a> TreeReader for dyn ScanMentionsUnitOfWorkTrait + 'a {
     ) -> Result<Vec<Option<common::entities::NoteTemplate>>> {
         Ok(Vec::new())
     }
+    /// Empty on purpose: the mention scan never writes a bundle, so it has no reason to
+    /// read the workflow ladder. See `status_multi`'s own doc for why this is a required
+    /// override rather than a default.
+    fn status_multi(
+        &self,
+        _ids: &[EntityId],
+    ) -> Result<Vec<Option<common::entities::BinderStatus>>> {
+        Ok(Vec::new())
+    }
     fn all_work(&self) -> Result<Vec<Work>> {
         self.get_all_work()
     }

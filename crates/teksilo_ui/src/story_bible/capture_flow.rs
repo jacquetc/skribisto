@@ -625,6 +625,7 @@ mod tests {
             ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 created_at: now,
                 updated_at: now,
                 title: title.into(),

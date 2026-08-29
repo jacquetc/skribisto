@@ -215,6 +215,45 @@ impl MergeTwoScenesUseCase {
 
         let snap_before = uow.snapshot_work(&[work_id])?;
 
+        // ── The merged row demotes to the LOWER of the two statuses ──────────────────
+        //
+        // A survives, so without this the target simply keeps its own rung — and merging a
+        // "Final" scene with a "Draft" one would leave the result marked Final while it now
+        // contains undrafted prose. That is a quiet lie about the manuscript, and exactly
+        // the sort a writer sorts and filters on.
+        //
+        // "Lower" is position in `Work.statuses`, which is an `ordered_one_to_many`: that
+        // order IS the ladder, and it is the only thing that defines which of two rungs is
+        // less finished. A rung that no longer resolves (the reference is weak — a status
+        // can be deleted out from under an item) sorts as unknown and loses to a known one,
+        // and "no status" loses to everything, since an unmarked half is the least
+        // finished thing there is.
+        if a.status != b.status {
+            let ladder = uow.get_work_relationship(&work_id, &WorkRelationshipField::Statuses)?;
+            let rank = |st: Option<EntityId>| -> Option<usize> {
+                st.and_then(|id| ladder.iter().position(|r| *r == id))
+            };
+            let lower = match (a.status, b.status) {
+                // Either half unmarked ⇒ the merge is unmarked.
+                (None, _) | (_, None) => None,
+                (Some(x), Some(y)) => match (rank(a.status), rank(b.status)) {
+                    (Some(rx), Some(ry)) => Some(if rx <= ry { x } else { y }),
+                    // One of them is no longer on the ladder at all: keep the one that is,
+                    // rather than inventing an order between a live rung and a dead id.
+                    (Some(_), None) => Some(x),
+                    (None, Some(_)) => Some(y),
+                    (None, None) => None,
+                },
+            };
+            if lower != a.status {
+                uow.set_binder_item_relationship(
+                    &target,
+                    &BinderItemRelationshipField::Status,
+                    &lower.map(|id| vec![id]).unwrap_or_default(),
+                )?;
+            }
+        }
+
         let now = chrono::Utc::now();
         // (source row id, target row id) for every role whose text actually moved —
         // fed to the footnote reanchor pass below, once every role has been folded in.

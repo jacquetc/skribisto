@@ -210,6 +210,13 @@ impl SplitSceneUseCase {
             // (a French passage inside an English project reverts to English for
             // spell-checking and search folding).
             dict_language: src.dict_language.clone(),
+            // Carried, and it belongs with `dict_language` rather than with the annotations
+            // below: a status describes how finished the PROSE is, and the prose is what
+            // moved. Half a first draft is still a first draft. Leaving it to
+            // `..Default::default()` would silently hand the new half "no status", so a
+            // writer who split a scene would find one half marked and the other blank with
+            // nothing having changed about either.
+            status: src.status,
             // Everything else is deliberately NOT carried from `src`, unlike `duplicate`:
             // duplicating makes a second copy of the same thing, whereas splitting makes a
             // genuinely new scene that happens to start with the source's back half.
@@ -218,8 +225,9 @@ impl SplitSceneUseCase {
             //     would silently double the project's total goal on every split.
             //   * `is_favorite`, `label`, `sub_title` — the author's annotations about the
             //     *source* scene, not facts about the prose that moved.
-            // `dict_language` above is the sole exception because it describes the prose
-            // itself, and the prose is the one thing genuinely shared between the halves.
+            // `dict_language` and `status` above are the exceptions, and by the same test:
+            // both describe the prose itself, and the prose is the one thing genuinely
+            // shared between the halves.
             ..Default::default()
         })?;
         let mut new_content_ids = Vec::new();

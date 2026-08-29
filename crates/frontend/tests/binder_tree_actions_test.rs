@@ -64,6 +64,7 @@ fn mk_item(
     role: BinderItemRole,
 ) -> EntityId {
     let dto = CreateBinderItemDto {
+        status: None,
         created_at: now(),
         updated_at: now(),
         title: title.to_string(),
@@ -92,6 +93,7 @@ fn mk_item_sub_role(
     sub_role: BinderItemSubRole,
 ) -> EntityId {
     let dto = CreateBinderItemDto {
+        status: None,
         created_at: now(),
         updated_at: now(),
         title: title.to_string(),
@@ -155,6 +157,7 @@ fn make_fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateWorkDto {
+            statuses: Vec::new(),
             created_at: now(),
             updated_at: now(),
             title: "Test".into(),
@@ -503,6 +506,7 @@ fn make_book_fixture() -> BookFixture {
         &ctx,
         Some(setup),
         &CreateWorkDto {
+            statuses: Vec::new(),
             created_at: now(),
             updated_at: now(),
             title: "Test".into(),
@@ -1152,6 +1156,7 @@ fn system_trash_index(fx: &Fixture) -> Vec<EntityId> {
 
 fn mk_scene(fx: &Fixture, title: &str) -> EntityId {
     let dto = CreateBinderItemDto {
+        status: None,
         created_at: now(),
         updated_at: now(),
         title: title.to_string(),
@@ -1928,6 +1933,7 @@ fn duplicate_copies_references() {
 
 fn mk_book(fx: &Fixture, title: &str) -> EntityId {
     let dto = CreateBinderItemDto {
+        status: None,
         created_at: now(),
         updated_at: now(),
         title: title.to_string(),

@@ -372,6 +372,30 @@ impl StreamViewModel {
         }
     }
 
+    /// This project's workflow ladder.
+    ///
+    /// Built from `app_ctx` + `ids` rather than threaded from the `WorkSession`, and that is
+    /// safe *here* only because `StatusesViewModel` caches nothing: `ladder()` reads through
+    /// the relationship on every call, so this handle and the session's can never disagree
+    /// about what the rungs are. The one thing it does not share is the session handle's
+    /// `revision` signal, which nothing on a stream row binds to — a row rebuilds on its own
+    /// `BinderItem::Updated`, and the picker's list is rebuilt with it.
+    pub fn statuses(&self) -> crate::statuses::StatusesViewModel {
+        crate::statuses::StatusesViewModel::new(self.inner.app_ctx.clone(), self.inner.ids.clone())
+    }
+
+    /// The row's current rung, live. `None` is "no status" — and so is a rung that no
+    /// longer resolves, since the reference is weak by design.
+    pub fn row_status(&self, id: u64) -> Signal<Option<u64>> {
+        match self.handle(id) {
+            Some(h) => h
+                .probe
+                .dto_signal()
+                .map(|d| d.as_ref().and_then(|x| x.status)),
+            None => Signal::new(None),
+        }
+    }
+
     /// Persist a row's tag ids.
     ///
     /// Tags are a *relationship*, not a scalar on the DTO, so this cannot go through

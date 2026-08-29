@@ -270,6 +270,16 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .intent("backups.show"),
     )
     .separator()
+    // ── 3b. Where the book stands ────────────────────
+    // The completion readout, on demand. The same content the Pace summary shows when a
+    // project opens — but that card only appears for a Book with an *active plan*, so a
+    // writer who has set no deadline would never otherwise reach it.
+    .item(
+        MenuEntry::new(tr!(status_completion_open()))
+            .visible(show_open.clone())
+            .intent("statuses.completion"),
+    )
+    .separator()
     // ── 4. Leave this work ───────────────────────────
     // Close the open work — routed through the guarded
     // `work.close` action (unsaved-changes prompt /

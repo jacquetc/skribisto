@@ -111,6 +111,7 @@ impl Ctx {
             &mut undo,
             None,
             &CreateWorkDto {
+                statuses: Vec::new(),
                 smart_punctuation,
                 chapter_mode: ChapterMode::Folder,
                 // A durable id, as every saved project has. `Default` leaves it
@@ -1255,14 +1256,18 @@ fn build_docx(
     doc.set_djot_sync(djot).expect("set_djot_sync");
     let comments = make_comments(&doc);
 
-    let path = std::env::temp_dir().join(format!(
-        "import_mgmt_docx_roundtrip_{}_{}.docx",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or_default()
-    ));
+    // A private directory per call, never a shared name in `temp_dir()`.
+    //
+    // This used to build the file name from `{pid}_{nanos}`, which collides in two ways
+    // once `cargo test` runs these in parallel — they share a process, so the pid is a
+    // constant, and `duration_since(UNIX_EPOCH).map(..).unwrap_or_default()` yields `0`
+    // for *every* caller the moment that call errors. Two tests then write and read the
+    // same path, and the reader gets a zip the writer is still filling in: the failure
+    // surfaces as `docx-rs` panicking with "Invalid checksum" deep inside `read_zip`,
+    // several frames from anything that names this function. `TempDir` cannot collide,
+    // and it removes itself on drop, so the explicit `remove_file` goes too.
+    let dir = tempfile::tempdir().expect("temp dir for the exported docx");
+    let path = dir.path().join("roundtrip.docx");
     doc.to_docx_with_options(
         &path.to_string_lossy(),
         DocxExportOptions {
@@ -1273,9 +1278,7 @@ fn build_docx(
     .expect("to_docx_with_options")
     .wait()
     .expect("docx export completes");
-    let bytes = std::fs::read(&path).expect("read exported docx");
-    let _ = std::fs::remove_file(&path);
-    bytes
+    std::fs::read(&path).expect("read exported docx")
 }
 
 /// As [`build_docx`], for `.odt`.

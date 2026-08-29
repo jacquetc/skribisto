@@ -82,6 +82,9 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
     let sniff_pending = deps.pace_pending.clone();
     let sniff_show_on_open = deps.pace_show_on_open.clone();
     let sniff_editors = deps.editors.clone();
+    // Captured up front, beside the other `sniff_*` handles: `deps.session` is moved
+    // further down, and the Pace summary needs the ladder to render its completion half.
+    let sniff_statuses = deps.session.statuses.clone();
     {
         let app_ctx = deps.app_ctx;
         let ids = deps.ids;
@@ -304,6 +307,7 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                     app_ctx.clone(),
                     ids.clone(),
                     show_on_open.clone(),
+                    sniff_statuses.clone(),
                     std::rc::Rc::new(move |book_item_id, _c: &mut EventContext| {
                         // The panel's one forward action: open the Book, which is
                         // where every number it showed can be edited. The title
@@ -391,10 +395,20 @@ impl ColdStartImport {
 pub struct ProjectStarters {
     pub tags: Option<crate::tags::Preset>,
     pub templates: Option<crate::note_templates::StarterSet>,
+    /// Which workflow ladder the project starts with.
+    ///
+    /// `Option` for symmetry with the two above, but it is **not** treated like them: a
+    /// `None` here still seeds [`crate::statuses::Preset::DEFAULT`] rather than seeding nothing.
+    /// An empty tag palette is a project that has no tags yet and works fine; an empty
+    /// ladder is a project with no status feature at all, and nothing in the UI would
+    /// prompt the writer to go and create one.
+    pub statuses: Option<crate::statuses::Preset>,
 }
 
 impl ProjectStarters {
-    /// Nothing to lay down — the common case, and worth asking before doing any work.
+    /// Nothing *optional* to lay down. Deliberately does not consider `statuses`: the
+    /// ladder is seeded on every new project, so the caller runs the status step before
+    /// asking this.
     fn is_empty(&self) -> bool {
         self.tags.is_none() && self.templates.is_none()
     }
@@ -662,6 +676,37 @@ pub(in crate::app) fn install_lifecycle(
     // the fresh project's own stack alongside everything else the template laid down,
     // and a writer who wants a different palette changes it in Settings rather than
     // pressing Ctrl+Z on a project they have not typed in yet.
+    // ── A loaded project with no ladder gets the default one ────────────────
+    //
+    // Not cosmetic, and not the same question as seeding a NEW project. `seed` is the
+    // only path that creates a rung and, until a ladder editor exists, the only one there
+    // is — so a project that arrives without a ladder has the status feature permanently
+    // dead: the picker opens on nothing, the filter row never mounts, and there is no
+    // door anywhere in the app to build one. That is every project written before v14,
+    // which is every project that exists today.
+    //
+    // A heal, in the same spirit as the uid and punctuation heals `load_work` already
+    // performs: absent state that has exactly one sensible value gets it. `seed` refuses
+    // to run over a non-empty ladder, so this is idempotent and cannot touch a project
+    // that has one.
+    //
+    // ⚠ Revisit when a ladder editor lands: at that point "empty" stops being
+    // indistinguishable from "pre-v14" and starts being a choice the writer could have
+    // made, which this would silently overturn.
+    {
+        let session = deps.session.clone();
+        let my_ids = deps.ids.clone();
+        ctx.subscribe_event(
+            Origin::WorkManagement(WorkManagementEvent::LoadWork),
+            move |event: &Event| {
+                if !my_ids.is_bootstrap_or_own(&event.ids) {
+                    return;
+                }
+                session.statuses.seed(crate::statuses::Preset::DEFAULT);
+            },
+        );
+    }
+
     {
         let pending = deps.starters.clone();
         let session = deps.session.clone();
@@ -673,6 +718,17 @@ pub(in crate::app) fn install_lifecycle(
                     return;
                 }
                 let starters = pending.take();
+
+                // The ladder first, and unconditionally — see `ProjectStarters::statuses`.
+                // `seed` refuses to run over a project that already has one, so a replayed
+                // event cannot duplicate it.
+                let ladder = starters
+                    .statuses
+                    .unwrap_or(crate::statuses::Preset::DEFAULT);
+                if session.statuses.seed(ladder) == 0 {
+                    eprintln!("skribisto: new work: the {ladder:?} status ladder seeded nothing");
+                }
+
                 if starters.is_empty() {
                     return;
                 }
@@ -751,6 +807,7 @@ mod tests {
 
     fn tags(preset: Preset) -> ProjectStarters {
         ProjectStarters {
+            statuses: None,
             tags: Some(preset),
             templates: None,
         }
@@ -799,6 +856,7 @@ mod tests {
     #[test]
     fn the_palette_and_the_templates_are_one_answer() {
         let both = ProjectStarters {
+            statuses: None,
             tags: Some(Preset::SciFi),
             templates: Some(StarterSet::Essentials),
         };
@@ -812,6 +870,7 @@ mod tests {
     #[test]
     fn templates_alone_is_a_real_answer() {
         let only_templates = ProjectStarters {
+            statuses: None,
             tags: None,
             templates: Some(StarterSet::Everything),
         };

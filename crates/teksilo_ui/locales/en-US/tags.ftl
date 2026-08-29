@@ -14,10 +14,6 @@ tags-preset-historical = Historical
 
 ## Basic preset — the workflow ladder. The `status/` prefix is a naming convention:
 ## alphabetical sorting alone makes these cluster together in every list.
-tags-preset-status-outline = status/outline
-tags-preset-status-draft = status/draft
-tags-preset-status-to-review = status/to review
-tags-preset-status-finished = status/finished
 
 ## Basic preset — flags. Deliberately unprefixed: a scene can be a draft AND need
 ## research at the same time, so these are not part of the ladder above.

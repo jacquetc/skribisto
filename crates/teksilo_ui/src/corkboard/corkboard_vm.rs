@@ -474,6 +474,15 @@ impl CorkboardViewModel {
     /// A transient probe, exactly as `commit_rename` above does: the corkboard keeps no
     /// per-card `SingleBinderItem` (only `container_probe`), and a write is rare enough that
     /// standing one up per card would cost more than it saves.
+    /// This project's workflow ladder.
+    ///
+    /// A fresh handle rather than the `WorkSession`'s, which is safe here for the reason
+    /// `StreamViewModel::statuses` spells out: the view-model caches no ladder, so two
+    /// handles cannot disagree about what the rungs are.
+    pub fn statuses(&self) -> crate::statuses::StatusesViewModel {
+        crate::statuses::StatusesViewModel::new(self.inner.app_ctx.clone(), self.inner.ids.clone())
+    }
+
     pub fn set_card_tags(&self, id: u64, tags: &[u64]) {
         let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
         probe.set_id(Some(id));

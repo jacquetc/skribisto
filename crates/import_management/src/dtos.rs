@@ -33,6 +33,7 @@ pub struct ImportPlumeCreatorFileDto {
     pub overwrite: bool,
     pub manuscript_binder_name: String,
     pub story_bible_binder_name: String,
+    pub status_names: Vec<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ImportPlumeCreatorFileResultDto {

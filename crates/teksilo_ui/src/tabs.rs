@@ -326,6 +326,7 @@ pub struct ContentTab {
     /// throwaway `WorkSession` on a fresh, never-seeded `AppIds`, so `TagsViewModel::create`,
     /// which needs a real `work_id`, silently created nothing. See [`Self::tags`].
     tags: crate::tags::TagsViewModel,
+    statuses: crate::statuses::StatusesViewModel,
     /// Who is named where, across this Work, threaded from the same
     /// [`crate::sessions::WorkSession`] [`Self::tags`] is, and **not** read from
     /// `ctx.app_state::<MentionIndex>()`. That resolves to whichever session was
@@ -518,6 +519,7 @@ pub fn tab_for(
         // Likewise its own index, on the same `ids`: a standalone tab has no session to
         // borrow one from, and a shared handle here would be the very confusion the
         // field's own doc warns about.
+        crate::statuses::StatusesViewModel::new(ctx.clone(), ids.clone()),
         crate::mentions::MentionIndex::new(ctx.clone(), ids.clone()),
     )
 }
@@ -717,6 +719,7 @@ impl ContentTab {
         work: crate::save::WorkHandle,
         goal_unit: Signal<GoalUnit>,
         tags: crate::tags::TagsViewModel,
+        statuses: crate::statuses::StatusesViewModel,
         mention_index: crate::mentions::MentionIndex,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
@@ -970,6 +973,7 @@ impl ContentTab {
             format,
             writing_games,
             tags,
+            statuses,
             mention_index,
             docs: docs_for_tab,
         }
@@ -987,6 +991,17 @@ impl ContentTab {
     /// reach every other accessor here already grants it.
     pub fn tags(&self) -> crate::tags::TagsViewModel {
         self.tags.clone()
+    }
+
+    /// This Work's status ladder.
+    ///
+    /// Threaded rather than resolved through `app_state`, for the reason `tags` above is:
+    /// `app_state` answers with whichever window's session registered last, which on the
+    /// launcher-first startup path is a throwaway session on a never-seeded `AppIds` — so
+    /// the ladder would read empty for the whole session and the filter row would never
+    /// appear, however many rungs the project has.
+    pub fn statuses(&self) -> crate::statuses::StatusesViewModel {
+        self.statuses.clone()
     }
 
     /// This Work's mention index. See [`Self::mention_index`]'s own field doc for why it

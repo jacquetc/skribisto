@@ -621,6 +621,7 @@ mod tests {
                 &app_ctx,
                 None,
                 &CreateBinderItemDto {
+                    status: None,
                     title: "row".into(),
                     role: BinderItemRole::Item,
                     sub_role,

@@ -31,6 +31,7 @@ pub enum BinderItemRelationshipField {
     Contents,
     PointOfView,
     References,
+    Status,
     Tags,
 }
 
@@ -535,6 +536,24 @@ impl<'a> BinderItemRepository<'a> {
                         });
                     }
                 }
+                BinderItemRelationshipField::Status => {
+                    let child_repo = repository_factory::write::create_binder_status_repository(
+                        self.transaction,
+                    )?;
+                    let found = child_repo.get_multi(&all_right_ids)?;
+                    let missing: Vec<_> = all_right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship_multi",
+                            ids: missing,
+                        });
+                    }
+                }
                 BinderItemRelationshipField::Tags => {
                     let child_repo =
                         repository_factory::write::create_binder_tag_repository(self.transaction)?;
@@ -638,6 +657,24 @@ impl<'a> BinderItemRepository<'a> {
                 BinderItemRelationshipField::References => {
                     let child_repo =
                         repository_factory::write::create_binder_item_repository(self.transaction)?;
+                    let found = child_repo.get_multi(right_ids)?;
+                    let missing: Vec<_> = right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship",
+                            ids: missing,
+                        });
+                    }
+                }
+                BinderItemRelationshipField::Status => {
+                    let child_repo = repository_factory::write::create_binder_status_repository(
+                        self.transaction,
+                    )?;
                     let found = child_repo.get_multi(right_ids)?;
                     let missing: Vec<_> = right_ids
                         .iter()
@@ -904,6 +941,22 @@ impl<'a> BinderItemRepository<'a> {
             let mut live_jn = write_or_recover(&store.jn_binder_item_from_binder_item_references);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_binder_item_from_binder_item_references.get(id) {
+                    Some(v) => {
+                        live_jn.insert(*id, v.clone());
+                    }
+                    None => {
+                        live_jn.remove(id);
+                    }
+                }
+            }
+            for id in &to_delete {
+                live_jn.remove(id);
+            }
+        }
+        {
+            let mut live_jn = write_or_recover(&store.jn_binder_status_from_binder_item_status);
+            for id in to_create.iter().chain(to_update.iter()) {
+                match snap.jn_binder_status_from_binder_item_status.get(id) {
                     Some(v) => {
                         live_jn.insert(*id, v.clone());
                     }

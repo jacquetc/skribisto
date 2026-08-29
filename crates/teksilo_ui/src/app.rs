@@ -994,7 +994,8 @@ fn open_search_settings() -> crate::models::SearchSettingsService {
 /// `FootnotesListModel::set_body` all skip no-op writes for exactly this reason.
 fn mutation_origins() -> Vec<Origin> {
     use DirectAccessEntity::{
-        Binder, BinderItem, BinderTag, Comment, CommentReply, DictWord, Footnote, Work,
+        Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, DictWord, Footnote,
+        Work,
     };
     let mut v = Vec::new();
     for ent in [
@@ -1008,6 +1009,15 @@ fn mutation_origins() -> Vec<Origin> {
         BinderTag(EntityEvent::Created),
         BinderTag(EntityEvent::Updated),
         BinderTag(EntityEvent::Removed),
+        // Renaming, reordering or deleting a rung is an edit to the project like any
+        // other. Missing this list is the gap that shipped three times — Comment,
+        // CommentReply and Footnote each landed with their edits silently discarded by
+        // Close, because `unsaved` is derived from `dirty_seq` and only this whitelist
+        // bumps it. Assigning a status to an ITEM is already covered: that writes through
+        // `BinderItem(Updated)` above.
+        BinderStatus(EntityEvent::Created),
+        BinderStatus(EntityEvent::Updated),
+        BinderStatus(EntityEvent::Removed),
         DictWord(EntityEvent::Created),
         DictWord(EntityEvent::Updated),
         DictWord(EntityEvent::Removed),
@@ -1085,6 +1095,18 @@ fn mutation_ids_belong_to_work(
                 ctx,
                 &my_work_id,
                 &WorkRelationshipField::Tags,
+            )
+            .unwrap_or_default();
+            event_ids.iter().any(|id| mine.contains(id))
+        }
+        // A rung is a direct `Work` child, so one relationship read answers it — the same
+        // shape `BinderTag` above has. Without this arm the fallback below would decide,
+        // and a status edit in one open project would mark every other open project dirty.
+        DirectAccessEntity::BinderStatus(_) => {
+            let mine = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::Statuses,
             )
             .unwrap_or_default();
             event_ids.iter().any(|id| mine.contains(id))
@@ -1470,6 +1492,7 @@ impl Widget for App {
         // (process-lifetime) widget; they are re-pointed on `LoadWork` below.
         let ids = session.ids.clone();
         let single_work = session.single_work.clone();
+        let statuses = session.statuses.clone();
         let single_work_info = session.single_work_info.clone();
         // Resolved off THIS window's own `session`, same as every other
         // Layer-A single above — a second, simultaneously-open Work always
@@ -1930,6 +1953,29 @@ impl Widget for App {
             ctx.register_action_global(Action::new("backup.now").on_invoke(move |_i, ctx| {
                 scheduler.backup_now(ctx);
             }));
+        }
+        // `statuses.completion` — "Where the book stands", on demand.
+        //
+        // The same readout the Pace summary shows on the way in, asked for rather than
+        // offered: a writer with no deadline set never sees that card, and this is how
+        // they reach the reading anyway. `register_action_global` and not
+        // `register_action`, like every other app command — the title-bar menu renders in
+        // an overlay that is a sibling of `App`, so a plain registration is never on the
+        // intent's source-to-root path and the row would be dead.
+        {
+            let app_ctx = self.app_ctx.clone();
+            let ids = ids.clone();
+            let statuses = statuses.clone();
+            ctx.register_action_global(Action::new("statuses.completion").on_invoke(
+                move |_i, c| {
+                    crate::statuses::panel::present(
+                        c,
+                        app_ctx.clone(),
+                        ids.clone(),
+                        statuses.clone(),
+                    );
+                },
+            ));
         }
         // `backups.show` — open the browsable list of this project's backup files.
         {

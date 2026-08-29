@@ -272,6 +272,16 @@ fn commit(
     let now = chrono::Utc::now();
     let _ = undo_redo_commands::begin_composite(&cx.app_ctx, stack);
     let dto = CreateBinderItemDto {
+        // A row brought back from a backup arrives **unmarked**, deliberately.
+        //
+        // `DeletedRow` records no status, and recording one would not help: a backup's
+        // `items.ron` names its rung by *file id*, and every id is re-minted on each
+        // `load_work`, so the number in a month-old bundle addresses nothing in the live
+        // ladder. Matching by name instead would be a guess — the writer may have renamed,
+        // merged or deleted that rung since — and a wrong stage is worse than none, because
+        // it is the field they sort and filter on. So the row comes back with its prose and
+        // its title, and the writer says where it stands.
+        status: None,
         created_at: now,
         updated_at: now,
         // Kept, not minted — see the module docs.

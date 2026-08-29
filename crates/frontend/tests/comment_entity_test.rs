@@ -55,6 +55,7 @@ fn make_fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateWorkDto {
+            statuses: Vec::new(),
             created_at: now(),
             updated_at: now(),
             title: "The Lighthouse".into(),

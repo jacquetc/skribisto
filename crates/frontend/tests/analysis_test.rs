@@ -39,6 +39,7 @@ fn now() -> chrono::DateTime<chrono::Utc> {
 
 fn item(sub_role: BinderItemSubRole, title: &str, role: BinderItemRole) -> CreateBinderItemDto {
     CreateBinderItemDto {
+        status: None,
         uid: common::uid::fixture_uid(
             title.len() as u64 * 1000 + title.chars().map(|c| c as u64).sum::<u64>(),
         ),

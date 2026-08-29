@@ -380,6 +380,7 @@ impl OutlineViewModel {
     ) -> Option<u64> {
         let is_note = sub_role == BinderItemSubRole::Note;
         let dto = CreateBinderItemDto {
+            status: None,
             title,
             role,
             sub_role,

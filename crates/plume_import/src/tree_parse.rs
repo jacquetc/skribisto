@@ -77,6 +77,7 @@ fn parse_node(node: roxmltree::Node, parent_trashed: bool) -> Option<PlumeNode> 
         name: node.attribute("name").unwrap_or_default().to_string(),
         is_trashed,
         badge: node.attribute("badge").unwrap_or_default().to_string(),
+        status: parse_status(node.attribute("status")),
         attend,
         children: parse_children(node, is_trashed),
     })
@@ -91,6 +92,24 @@ fn kind_of(tag: &str) -> Option<PlumeKind> {
         "separator" => Some(PlumeKind::Separator),
         _ => None,
     }
+}
+
+/// Plume's revision ladder has eight rungs; `MainTreeAbstractModel::giveStatusList()`
+/// builds it and `setStatus` stores the index. Anything outside `0..LADDER_LEN` — Plume
+/// itself initialises `MainTreeItem::m_status` to `-1`, and separators keep it — means
+/// "no status".
+const LADDER_LEN: u8 = 8;
+
+/// Read Plume's per-node `status` attribute: a 0-based index into its fixed ladder.
+///
+/// Deliberately **not** defaulting a missing attribute to `0`. Plume's own reader does
+/// (`child.attribute("status", "0").toInt()`), which is why every untouched node in a Plume
+/// project displays "1st draft" — but importing that would stamp a stage on hundreds of
+/// scenes the writer never marked, which is precisely the failure bibisco is known for. An
+/// absent or out-of-range value reads as "no status" here and the item arrives unmarked.
+fn parse_status(raw: Option<&str>) -> Option<u8> {
+    let n: i64 = raw?.trim().parse().ok()?;
+    (0..LADDER_LEN as i64).contains(&n).then_some(n as u8)
 }
 
 /// Parse Plume's leading-dash integer list (`"-3-7-12"`, `"0"`, `""`) into ids,
@@ -112,6 +131,20 @@ fn parse_ref_list(raw: Option<&str>) -> Vec<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn status_reads_a_ladder_index_and_rejects_everything_else() {
+        assert_eq!(parse_status(Some("0")), Some(0));
+        assert_eq!(parse_status(Some("7")), Some(7));
+        assert_eq!(parse_status(Some(" 3 ")), Some(3));
+        // Plume's own "never set" sentinel, and the one separators keep.
+        assert_eq!(parse_status(Some("-1")), None);
+        // Past the end of the ladder, or not a number at all.
+        assert_eq!(parse_status(Some("8")), None);
+        assert_eq!(parse_status(Some("wat")), None);
+        // Absent: NOT defaulted to 0, unlike Plume's own reader.
+        assert_eq!(parse_status(None), None);
+    }
 
     #[test]
     fn ref_list_parses_dash_list_and_drops_zero_sentinel() {

@@ -102,6 +102,9 @@ pub struct WorkSession {
     /// window on the same Work exists.
     pub save_state: SaveStateViewModel,
     pub tags: TagsViewModel,
+    /// This Work's workflow ladder — the rungs, and what sits on them. Work-scoped for the
+    /// same reason `tags` is: two projects open at once must never share a vocabulary.
+    pub statuses: crate::statuses::StatusesViewModel,
     /// This Work's note templates — Settings ▸ Work ▸ Templates and the Document menu's
     /// insert submenu both read it, so both always agree about what exists.
     pub note_templates: NoteTemplatesViewModel,
@@ -233,6 +236,7 @@ impl WorkSession {
 
         let work_tags = WorkTagsListModel::new(app_ctx.clone(), ids.clone());
         let tags = TagsViewModel::new(work_tags, ids.clone());
+        let statuses = crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone());
         let note_templates = NoteTemplatesViewModel::new(
             WorkNoteTemplatesListModel::new(app_ctx.clone(), ids.clone()),
             ids.clone(),
@@ -286,6 +290,7 @@ impl WorkSession {
             single_work_info,
             save_state,
             tags,
+            statuses,
             note_templates,
             user_dictionary,
             smart_punctuation,

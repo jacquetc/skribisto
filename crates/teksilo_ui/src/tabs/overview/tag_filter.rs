@@ -158,6 +158,7 @@ mod tests {
             &app_ctx,
             None,
             &frontend::direct_access::CreateBinderItemDto {
+                status: None,
                 title: "Book One".into(),
                 role: BinderItemRole::Folder,
                 sub_role: BinderItemSubRole::Book,

@@ -18,6 +18,7 @@ mod goal;
 mod language;
 mod milestone;
 mod numbering;
+mod status;
 mod story_bible;
 
 #[cfg(test)]
@@ -184,6 +185,7 @@ pub fn inspector_dock(
     focus: Signal<Option<u64>>,
     dock_id: DockWidgetId,
     tags: crate::tags::TagsViewModel,
+    statuses: crate::statuses::StatusesViewModel,
     mention_index: crate::mentions::MentionIndex,
     open_docs: crate::models::OpenDocsStore,
     counting_method: Signal<CountingMethodSetting>,
@@ -195,6 +197,7 @@ pub fn inspector_dock(
             outline.clone(),
             focus.clone(),
             tags.clone(),
+            statuses.clone(),
             mention_index.clone(),
             open_docs.clone(),
             counting_method.clone(),
@@ -208,6 +211,9 @@ pub fn inspector_dock(
 pub(super) struct Inspector {
     app_ctx: Rc<AppContext>,
     outline: OutlineViewModel,
+    /// This Work's ladder — Tier 2, threaded in for the same reason `tags` is: a second
+    /// window on the same project must read the same rungs.
+    pub(super) statuses: crate::statuses::StatusesViewModel,
     focus: Signal<Option<u64>>,
     probe: SingleBinderItem,
     /// Rebuild trigger bumped on binder moves — a same-indent cross-container move can
@@ -245,12 +251,14 @@ impl Inspector {
         outline: OutlineViewModel,
         focus: Signal<Option<u64>>,
         tags: crate::tags::TagsViewModel,
+        statuses: crate::statuses::StatusesViewModel,
         mention_index: crate::mentions::MentionIndex,
         open_docs: crate::models::OpenDocsStore,
         counting_method: Signal<CountingMethodSetting>,
         goal_unit: Signal<GoalUnit>,
     ) -> Self {
         Self {
+            statuses,
             probe: SingleBinderItem::new(app_ctx.clone()),
             app_ctx,
             outline,
@@ -390,6 +398,7 @@ impl Widget for Inspector {
                 }
                 col = story_bible::section(col, self, ctx, &d);
                 col = language::section(col, self, ctx, &d);
+                col = status::section(col, self, ctx, &d);
                 col = exportable::section(col, self, ctx, &d);
                 col = goal::section(col, self, ctx, &d);
                 col = numbering::section(col, self, ctx, &d);

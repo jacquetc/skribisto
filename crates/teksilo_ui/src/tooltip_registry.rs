@@ -153,6 +153,7 @@ pub const WM_KEYS: &[&str] = &[
 // the Help window (`crate::help`) as well as hoverable on its own control.
 pub const CONCEPT_TAG: &str = "concept-tag";
 pub const CONCEPT_LABEL: &str = "concept-label";
+pub const CONCEPT_STATUS: &str = "concept-status";
 pub const CONCEPT_POINT_OF_VIEW: &str = "concept-point-of-view";
 pub const CONCEPT_EPIGRAPH: &str = "concept-epigraph";
 pub const CONCEPT_FOOTNOTE: &str = "concept-footnote";
@@ -173,6 +174,7 @@ pub const CONCEPT_ROUND_TRIP_MARKS: &str = "concept-round-trip-marks";
 pub const CONCEPT_KEYS: &[&str] = &[
     CONCEPT_TAG,
     CONCEPT_LABEL,
+    CONCEPT_STATUS,
     CONCEPT_POINT_OF_VIEW,
     CONCEPT_EPIGRAPH,
     CONCEPT_FOOTNOTE,
@@ -253,6 +255,8 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
         TooltipContent::new(CONCEPT_TAG, tr!(concept_tag())).with_more(tr!(concept_tag_more())),
         TooltipContent::new(CONCEPT_LABEL, tr!(concept_label()))
             .with_more(tr!(concept_label_more())),
+        TooltipContent::new(CONCEPT_STATUS, tr!(concept_status()))
+            .with_more(tr!(concept_status_more())),
         TooltipContent::new(CONCEPT_POINT_OF_VIEW, tr!(concept_point_of_view()))
             .with_more(tr!(concept_point_of_view_more())),
         TooltipContent::new(CONCEPT_EPIGRAPH, tr!(concept_epigraph()))

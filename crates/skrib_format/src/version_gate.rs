@@ -76,6 +76,18 @@ pub fn compute_min_read_version(bundle: &WorkBundle) -> u32 {
         floor = floor.max(5);
     }
 
+    // Statuses are why v14 exists, and for the same mechanical reason templates were why
+    // v5 does. `statuses.ron` is a new root manifest: the zip writer rebuilds the archive
+    // from a fresh staging directory and the exploded writer prunes what it does not
+    // expect, so an older build — which has no `statuses` field at all — would delete the
+    // whole ladder on its first save and leave every item's `status_id` pointing at
+    // nothing. That is a vocabulary the writer named, ordered and assigned, not a
+    // preference; refuse to open instead. Gated on the project actually having one, so a
+    // bundle with an empty ladder stays open to every older build.
+    if !bundle.statuses.is_empty() {
+        floor = floor.max(14);
+    }
+
     // Assets are why v8 exists, and for exactly the reason templates were why v5
     // does: the zip writer rebuilds the archive from a fresh staging directory,
     // and the exploded writer prunes what it does not expect. An older build has

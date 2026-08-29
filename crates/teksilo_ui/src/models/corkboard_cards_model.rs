@@ -49,6 +49,10 @@ pub struct CorkboardCard {
     /// already refetches on `BinderItem(Updated)` (unlike the stream's), so the ids stay
     /// live for free and a card needs no `SingleBinderItem` of its own.
     pub tags: Vec<u64>,
+    /// Where this card is on the workflow ladder. `None` is "no status", and so is a rung
+    /// that no longer resolves — the reference is weak so a deleted rung leaves the card's
+    /// prose intact.
+    pub status: Option<u64>,
     /// The chapter/part ordinal this card carries in the book, or `None` for the cards
     /// that hold none (scenes, notes, an excluded prologue).
     ///
@@ -529,6 +533,7 @@ mod imp {
             is_container,
             child_count,
             tags: it.tags.clone(),
+            status: it.status,
             number: numbers
                 .get(&it.id)
                 .map(skribisto_model::numbering::Numbered::number),
@@ -650,7 +655,7 @@ mod imp {
     fn mock_cards(container_id: u64, nested: bool) -> Vec<CorkboardCard> {
         use BinderItemRole::{Folder, Item};
         use BinderItemSubRole::{ChapterScene, Note, Scene};
-        // Tag ids point at the mock palette in `WorkTagsListModel`: 1 = status/draft,
+        // Tag ids point at the mock palette in `WorkTagsListModel`: 1 = continuity check,
         // 4 = needs research, 5 = character (discoverable). Given so the mock corkboard
         // actually renders a dot row, including the discoverable ring and an overflow cell.
         let card =
@@ -664,6 +669,16 @@ mod imp {
                     is_container,
                     child_count,
                     tags: tags.to_vec(),
+                    // Status ids point at the mock ladder in the `statuses` mock below:
+                    // 901 = Draft, 903 = Final. Spread across the fixture on purpose, and
+                    // deliberately not on every card, so the mock corkboard renders a set
+                    // rung, a different rung and the unset case side by side — which is
+                    // what a glance at the mocks build is for.
+                    status: match item_id {
+                        201u64 | 302 => Some(901),
+                        202 => Some(903),
+                        _ => None,
+                    },
                     // The fixture book's own chapter ordinals, matching the mock binder
                     // tree and the mock Overview rows.
                     // Every fixture card is titled, so none needs the fallback.

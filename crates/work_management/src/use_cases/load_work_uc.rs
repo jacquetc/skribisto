@@ -27,8 +27,8 @@ use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Footnote,
-    Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search,
+    Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search,
     SmartPunctuation, System, TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
@@ -51,6 +51,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "DictWord", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "CreateOrphan")]
 #[macros::uow_action(entity = "NoteTemplate", action = "CreateOrphan")]
+#[macros::uow_action(entity = "BinderStatus", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Asset", action = "CreateOrphan")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
@@ -279,6 +280,7 @@ pub(crate) fn materialize(
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
         note_templates: Vec::new(),
+        statuses: Vec::new(),
         assets: Vec::new(),
         // The real id, not a placeholder — which is why the row above is created
         // BEFORE the Work rather than after it, unlike every collection here.
@@ -369,6 +371,28 @@ pub(crate) fn materialize(
         note_template_ids.push(created.id);
     }
 
+    // The workflow ladder, in its stored order — that order IS the ladder, so the
+    // relationship is written from this vector below and nothing else records it.
+    let mut status_ids: Vec<EntityId> = Vec::new();
+    // Keyed by file id, so each item's `status_id` can be remapped once every rung
+    // exists — the same shape `tag_map`, `item_map` and `note_template_map` have.
+    let mut status_map: HashMap<u64, EntityId> = HashMap::new();
+    for st in &loaded.statuses {
+        let created = uow.create_orphan_binder_status(&BinderStatus {
+            // Healed for the same reason a note template's is: the legacy SQLite path
+            // never builds a `WorkBundle`, so `migrate_bundle`'s step never runs for it.
+            uid: common::uid::heal_uid(st.uid),
+            created_at: st.created_at,
+            updated_at: st.updated_at,
+            name: st.name.clone(),
+            category: st.category.clone(),
+            details: st.details.clone(),
+            id: 0,
+        })?;
+        status_map.insert(st.id, created.id);
+        status_ids.push(created.id);
+    }
+
     // Image metadata rows. The bytes are not stored — they were written to the
     // project's media directory as the bundle was read, and the prose refers to
     // them by content hash.
@@ -399,6 +423,8 @@ pub(crate) fn materialize(
     let mut content_map: HashMap<u64, EntityId> = HashMap::new();
     let mut binder_ids: Vec<EntityId> = Vec::new();
     let mut item_tag_links: Vec<(EntityId, Vec<u64>)> = Vec::new();
+    // (store item id, status **file** id) — remapped once every rung exists.
+    let mut item_status_links: Vec<(EntityId, u64)> = Vec::new();
 
     for lb in &loaded.binders {
         let created_binder = uow.create_orphan_binder(&Binder {
@@ -463,6 +489,9 @@ pub(crate) fn materialize(
                 point_of_view: Vec::new(),
                 books: Vec::new(),
                 tags: Vec::new(),
+                // Wired below with the others, once every rung exists and the file ids
+                // have been remapped.
+                status: None,
             })?;
 
             if !content_ids.is_empty() {
@@ -475,6 +504,9 @@ pub(crate) fn materialize(
             item_map.insert(li.item.id, created_item.id);
             if !li.tag_ids.is_empty() {
                 item_tag_links.push((created_item.id, li.tag_ids.clone()));
+            }
+            if let Some(sid) = li.status_id {
+                item_status_links.push((created_item.id, sid));
             }
             item_ids.push(created_item.id);
         }
@@ -498,6 +530,22 @@ pub(crate) fn materialize(
                 item_id,
                 &BinderItemRelationshipField::Tags,
                 &resolved,
+            )?;
+        }
+    }
+
+    // Each item's rung (remap file status id -> store id).
+    //
+    // A file id that no longer names a live rung is silently dropped, never wired to
+    // something else and never treated as an error: the reference is weak, so a status
+    // deleted from the vocabulary must leave the scenes that wore it intact and
+    // statusless. `filter_map` is doing that on purpose.
+    for (item_id, file_status_id) in &item_status_links {
+        if let Some(&resolved) = status_map.get(file_status_id) {
+            uow.set_binder_item_relationship(
+                item_id,
+                &BinderItemRelationshipField::Status,
+                &[resolved],
             )?;
         }
     }
@@ -788,6 +836,14 @@ pub(crate) fn materialize(
             &note_template_ids,
         )?;
     }
+    if !status_ids.is_empty() {
+        // In ladder order — `status_ids` was pushed in the bundle's own order, and for an
+        // `ordered_one_to_many` that sequence IS the ladder. Without this the rungs are
+        // created as orphans and `Work.statuses` reads empty, so every item's status
+        // resolves to nothing on the next open. `save_load_round_trip_through_store` is
+        // the test that catches it; it was added after this line was missing.
+        uow.set_work_relationship(&work.id, &WorkRelationshipField::Statuses, &status_ids)?;
+    }
     if !asset_ids.is_empty() {
         uow.set_work_relationship(&work.id, &WorkRelationshipField::Assets, &asset_ids)?;
     }
@@ -1071,6 +1127,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
         note_templates: Vec::new(),
+        statuses: Vec::new(),
         assets: Vec::new(),
         // `materialize` mints the default row — see the note at its own literal.
         smart_punctuation: 0,
@@ -1210,9 +1267,14 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     // Legacy projects had no Book-filing concept either.
                     books: Vec::new(),
                     tags: Vec::new(),
+                    status: None,
                 },
                 contents,
                 tag_ids,
+                // The legacy SQLite `.skrib` has no status-like column: `tbl_tree_property`
+                // carries only `section_type`, `label` and the two count goals, and no
+                // version of the old app ever wrote a workflow state. Nothing to migrate.
+                status_id: None,
             });
         }
 
@@ -1251,6 +1313,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         text_replacement_rules: Vec::new(),
         // Legacy projects have no templates either.
         note_templates: Vec::new(),
+        statuses: Vec::new(),
         assets: Vec::new(),
         // Likewise — and `None` rather than an all-false row, so `materialize`
         // treats it as "never configured" and leaves the project following the

@@ -417,6 +417,7 @@ fn concept_topics() -> Vec<HelpTopicSpec> {
         (tips::PACE_PLAN, Rc::new(|| tr!(help_concept_pace_plan()))),
         (tips::CONCEPT_TAG, Rc::new(|| tr!(help_concept_tag()))),
         (tips::CONCEPT_LABEL, Rc::new(|| tr!(help_concept_label()))),
+        (tips::CONCEPT_STATUS, Rc::new(|| tr!(help_concept_status()))),
         (
             tips::CONCEPT_POINT_OF_VIEW,
             Rc::new(|| tr!(help_concept_point_of_view())),

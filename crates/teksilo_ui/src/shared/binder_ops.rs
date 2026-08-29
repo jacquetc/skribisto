@@ -189,6 +189,7 @@ pub(crate) fn create_by_recommendation(
 
     let is_note = sub_role == BinderItemSubRole::Note;
     let dto = CreateBinderItemDto {
+        status: None,
         title: title.to_string(),
         role,
         sub_role,
@@ -521,6 +522,7 @@ mod tests {
             label: "draft".into(),
             activated: true,
             is_favorite: true,
+            status: None,
             is_exportable: false,
             exclude_from_numbering: false,
             indent: 3,

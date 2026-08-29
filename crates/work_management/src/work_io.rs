@@ -246,6 +246,7 @@ pub fn serialize_and_write(
         &g.dict_words,
         &g.text_replacement_rules,
         &g.note_templates,
+        &g.statuses,
         &g.assets,
         read_asset_bytes(&g.assets, media_dir),
         g.smart_punctuation.as_ref(),

@@ -65,13 +65,15 @@ nam = "nam"
 caf = "caf"
 
 # ── Rust identifiers, including Qleany-generated ones. The generator pluralises
-#    an entity name by appending `s`, so `Search`/`Reply`/`Entry` become
-#    `searchs`/`replys`/`entrys` in every generated table and accessor; renaming
+#    an entity name by appending `s`, so `Search`/`Reply`/`Entry`/`BinderStatus`
+#    become `searchs`/`replys`/`entrys`/`binder_statuss` in every generated table and
+#    accessor; renaming
 #    them by hand would be undone by the next regeneration. `datas` is ours: a
 #    vector of `Content.data` values, where the singular would read as one.
 searchs = "searchs"
 replys = "replys"
 entrys = "entrys"
+statuss = "statuss"
 datas = "datas"
 
 # ── A dependency's own spelling, which is not ours to correct. `text2num` 2.8.0

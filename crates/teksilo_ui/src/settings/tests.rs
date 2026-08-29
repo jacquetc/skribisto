@@ -82,6 +82,7 @@ fn every_built_in_pane() -> Vec<Pane> {
         Pane::WorkDictionary,
         Pane::Spellcheck,
         Pane::WorkTags,
+        Pane::WorkStatuses,
         Pane::WorkAuthor,
         Pane::WorkTextReplacements,
         Pane::DistractionFree,
@@ -274,7 +275,12 @@ fn the_work_section_is_absent_until_a_project_is_open() {
 
     let open = tree_spec(true, &[]);
     assert!(all_panes(&open).contains(&Pane::Section(Sec::Work)));
-    assert_eq!(children_of(&open, Pane::Section(Sec::Work)).len(), 9);
+    assert_eq!(
+        children_of(&open, Pane::Section(Sec::Work)).len(),
+        10,
+        "author, structure, language, backup, dictionary, tags, statuses, templates, \
+         text replacements, punctuation"
+    );
 }
 
 /// Every built-in page says what it is for; only an extension's may not.

@@ -1199,6 +1199,7 @@ mod persist_tests {
             &ctx,
             None,
             &CreateWorkDto {
+                statuses: Vec::new(),
                 created_at: now(),
                 updated_at: now(),
                 title: "W".into(),

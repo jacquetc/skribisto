@@ -9,6 +9,7 @@
 pub mod asset_commands;
 pub mod binder_commands;
 pub mod binder_item_commands;
+pub mod binder_status_commands;
 pub mod binder_tag_commands;
 pub mod comment_commands;
 pub mod comment_reply_commands;

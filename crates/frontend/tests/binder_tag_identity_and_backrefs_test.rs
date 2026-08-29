@@ -56,6 +56,7 @@ fn make_fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateWorkDto {
+            statuses: Vec::new(),
             created_at: now(),
             updated_at: now(),
             title: "The Lighthouse".into(),
@@ -88,6 +89,7 @@ fn mk_folder(fx: &Fixture, title: &str) -> EntityId {
         &fx.ctx,
         Some(fx.setup),
         &CreateBinderItemDto {
+            status: None,
             created_at: now(),
             updated_at: now(),
             title: title.into(),

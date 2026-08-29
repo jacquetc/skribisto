@@ -336,6 +336,24 @@ entities:
     strong: true
     list_model: true
     list_model_displayed_field: name
+  # The project's workflow vocabulary — the rungs a writer moves a scene along.
+  #
+  # Ordered, unlike `tags`, and that is the whole difference between the two axes: a tag
+  # says what an item IS (many, unordered, a filing vocabulary), a status says what it is
+  # currently AT (one, ordered, and it only ever moves forward). The order is what makes
+  # "sort by status", "everything below Revised" and merge's demote-to-the-lower rule
+  # expressible at all, and `ordered_one_to_many` maintains it — which is why there is no
+  # `position` field on the entity itself, exactly as `note_templates` has none.
+  #
+  # Seeded from a localised preset at `new_work` rather than left empty like `tags`: a
+  # project with no statuses has no feature, whereas a project with no tags still works.
+  - name: statuses
+    type: entity
+    entity: BinderStatus
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: name
   # Unordered, like tags: an asset's position carries no product meaning — prose
   # references an asset by content hash, never by index.
   - name: assets
@@ -878,6 +896,24 @@ entities:
     type: entity
     entity: BinderItem
     relationship: many_to_many
+  # Where this row is in the writer's own workflow. Single-valued and optional: "no
+  # status" is a real, selectable state and the default, so a fresh import never paints
+  # a whole binder with a stage the writer never chose.
+  #
+  # Weak, optional, single-valued many_to_one -- the same shape as `BinderTag.creates_in`
+  # and `TrashInfo.trashed_binder_item`, and weak for the same reason: deleting a status
+  # from the vocabulary must not delete the scenes wearing it. Every reader must silently
+  # treat an id that no longer resolves as "no status" rather than render a broken entry.
+  #
+  # Deliberately NOT a scalar enum. The vocabulary has to absorb an arbitrary imported
+  # ladder (Plume ships eight rungs) and has to be renameable into the writer's own idiom,
+  # neither of which a storage enum can do. What stays closed is `BinderStatus.category`,
+  # which is what owns the glyph and the colour.
+  - name: status
+    type: entity
+    entity: BinderStatus
+    relationship: many_to_one
+    optional: true
   - name: tags
     type: entity
     entity: BinderTag
@@ -910,7 +946,10 @@ entities:
     type: string
   # Items carrying this tag are story-bible material: the mention index matches their
   # title + aliases against prose to build the per-scene roster and per-note backlinks.
-  # A plain workflow tag ("status/draft") leaves this false.
+  # A plain topical tag ("needs research") leaves this false.
+  #
+  # NB a workflow *stage* is not a tag at all — it is single-valued and ordered, which a
+  # tag set cannot express, so it lives on `BinderStatus` above.
   - name: discoverable
     type: boolean
   # Where a note created under this tag lands, and what shape it starts in.
@@ -944,6 +983,56 @@ entities:
     entity: NoteTemplate
     relationship: many_to_one
     optional: true
+  undoable: true
+# One rung of the project's workflow ladder.
+#
+# Two levels on purpose, and the split is not cosmetic. The writer owns the `name` and the
+# order; the app owns `category`, and the category -- never the name -- owns the glyph, the
+# colour, the sort bucket and the roll-up. Three unrelated products (Jira, Linear, Notion)
+# converged on exactly this shape, but here it is also forced: a status colour cannot be
+# stored user data at all. Clearing WCAG 1.4.11's 3:1 against Skribisto's own surfaces
+# requires L <= 0.2173 (vs the darkest light surface, `#DFE1E5`) AND L >= 0.2822 (vs the
+# lightest dark one, `#2C4A54`, an inactive-selected row -- a state the outline sits in
+# constantly). That band is EMPTY: no hex satisfies both, and 0 of the 11 colours in the
+# tag palette do either, which is why `tags/contrast.rs` draws a hairline round every dot.
+# So the colour has to come from a theme role, which only the app can own.
+#
+# The consequence to preserve: a French writer's "Relu" and an English writer's "Revised"
+# draw the same glyph, and an imported eight-rung Plume ladder still lands on five shapes.
+- name: BinderStatus
+  inherits_from: EntityBase
+  fields:
+  # A durable identity, for the same reason BinderTag carries one: an `EntityId` is
+  # re-minted on every `load_work`, so the `.skrib` references a status by `uid` and
+  # nothing that outlives a session may key on the store id. Renaming a rung must not
+  # re-point a single item, which is exactly what a positional index would do -- the
+  # mistake Manuskript and Plume both made.
+  - name: uid
+    type: uuid
+  - name: name
+    type: string
+  # Which of the five app-owned buckets this rung belongs to. Drives the glyph and the
+  # per-theme colour, and nothing else may. Several rungs may share a category -- an
+  # eight-rung Plume ladder collapses onto five shapes and stays readable, because the
+  # NAME is what tells two `Drafting` rungs apart and the name is right there beside it.
+  #
+  # Deliberately not user-extensible: the glyph set is drawn, not configured. novelWriter
+  # lets the user pick the shape and consequently ships `New` and `Finished` as the same
+  # star.
+  - name: category
+    type: enum
+    enum_name: StatusCategory
+    enum_values:
+      - Planned
+      - Drafting
+      - NeedsWork
+      - Revised
+      - Final
+  # A line or two saying what this rung means in this project, shown in its tooltip --
+  # the same job `BinderTag.details` does, and for the same reason: "Revised" means
+  # something specific to the writer who added it, and it decays.
+  - name: details
+    type: string
   undoable: true
 - name: Content
   single_model: true
@@ -2175,6 +2264,19 @@ features:
         type: string
       - name: story_bible_binder_name
         type: string
+      # Plume's own eight-rung revision ladder, resolved in the UI's locale and
+      # passed down, exactly as the two binder names above are. Plume stores a
+      # per-node `status` INDEX and translates the names at display time, so the
+      # names are not in the file and the importer has to be told them; seeding
+      # them here is what makes an imported project's statuses read in the
+      # writer's language instead of Plume's source English.
+      #
+      # An empty list means "do not seed statuses", which is what a caller that
+      # has no vocabulary to offer should pass. A short list is padded by index:
+      # a node whose status falls past the end simply gets none.
+      - name: status_names
+        type: string
+        is_list: true
     dto_out:
       name: ImportPlumeCreatorFileResultDto
       fields:

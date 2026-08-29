@@ -52,13 +52,6 @@ pub(crate) fn tree_with_events(app_ctx: &Rc<AppContext>) -> WidgetTree {
     tree_with_events_and_state(app_ctx, HashMap::new())
 }
 
-/// As [`tree_with_events`], plus a throwaway [`SettingsStore`] in `app_state`.
-///
-/// `ctx.settings()` **panics** when no store is registered, so any widget that reads
-/// a preference while building — the search preview reads its column width — cannot
-/// be laid out by `tree_with_events` alone. The store is backed by a per-test temp
-/// file (never the user's real settings) and left behind on disk, exactly as the
-/// view-model tests' own temp stores are.
 pub(crate) fn tree_with_settings(app_ctx: &Rc<AppContext>) -> WidgetTree {
     use std::sync::atomic::{AtomicU32, Ordering};
     static N: AtomicU32 = AtomicU32::new(0);

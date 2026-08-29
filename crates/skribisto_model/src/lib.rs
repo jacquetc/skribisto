@@ -268,6 +268,24 @@ pub fn counts_prose(role: &Role, sub_role: &SubRole) -> bool {
     content_allowed(role, sub_role, &SceneText)
 }
 
+/// Whether this `(role, sub_role)` may carry a workflow **status**.
+///
+/// Derived rather than listed: a row can be at a stage of writing exactly when there is
+/// writing on it to be at a stage of, so this is "does the combination carry any content
+/// at all". That admits twelve of the fourteen and excludes precisely the two markers that
+/// hold nothing — `Item/BookEnd`, which is a pure end-of-book signal, and `Item/Text`,
+/// whose prose lives on its children.
+///
+/// Deriving it matters more than the answer. A hand-kept list would be a second place the
+/// matrix is written down, and it would rot the first time a combination is added — the
+/// same reason [`counts_prose`] above asks `content_allowed` instead of matching on
+/// sub-roles. Containers are deliberately included: "this whole chapter still needs a
+/// revision pass" is a thing a writer means, and `Folder/Book` down to `Folder/None` can
+/// all mean it.
+pub fn status_capable(role: &Role, sub_role: &SubRole) -> bool {
+    !allowed_content(role, sub_role).is_empty()
+}
+
 /// Whether this `(role, sub_role)` gets an **Overview** table — the dense, sortable
 /// outliner of everything under a container.
 ///
@@ -983,5 +1001,51 @@ mod create_type_inverse_tests {
     fn a_pair_outside_the_create_vocabulary_has_no_create_type() {
         assert_eq!(CreateType::of(&Role::Item, &SubRole::Text), None);
         assert_eq!(CreateType::of(&Role::Item, &SubRole::BookBegin), None);
+    }
+}
+
+#[cfg(test)]
+mod status_capability_tests {
+    use super::*;
+
+    /// Pins the two exclusions, and pins that they are the *only* two. Written as a count
+    /// plus the named pair rather than a list of twelve, so adding a combination to the
+    /// matrix forces a deliberate answer here instead of silently inheriting one.
+    #[test]
+    fn every_combination_that_holds_content_may_carry_a_status() {
+        let mut without: Vec<(Role, SubRole)> = Vec::new();
+        for c in COMBINATIONS {
+            if !status_capable(&c.role, &c.sub_role) {
+                without.push((c.role.clone(), c.sub_role.clone()));
+            }
+        }
+        assert_eq!(
+            without,
+            vec![(Role::Item, SubRole::BookEnd), (Role::Item, SubRole::Text),],
+            "only the two content-free markers should be status-incapable"
+        );
+    }
+
+    /// The cases the feature exists for, stated positively so a regression in
+    /// `allowed_content` cannot pass the negative test above by emptying everything.
+    #[test]
+    fn scenes_notes_and_containers_all_qualify() {
+        for (role, sub_role) in [
+            (Role::Item, SubRole::Scene),
+            (Role::Item, SubRole::ChapterScene),
+            (Role::Item, SubRole::Note),
+            (Role::Item, SubRole::Paratext),
+            (Role::Item, SubRole::BookBegin),
+            (Role::Folder, SubRole::ChapterScene),
+            (Role::Folder, SubRole::Part),
+            (Role::Folder, SubRole::Book),
+            (Role::Folder, SubRole::Note),
+            (Role::Folder, SubRole::None),
+        ] {
+            assert!(
+                status_capable(&role, &sub_role),
+                "{role:?}/{sub_role:?} should be able to carry a status"
+            );
+        }
     }
 }

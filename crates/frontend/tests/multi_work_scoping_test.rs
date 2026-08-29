@@ -123,6 +123,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
         ctx,
         None,
         &CreateWorkDto {
+            statuses: Vec::new(),
             goal_unit: Default::default(),
             created_at: n,
             updated_at: n,
@@ -277,6 +278,7 @@ fn seed_mentionable_scene(
 
     let n = now();
     let mk = |sub_role, title: &str| CreateBinderItemDto {
+        status: None,
         uid: common::uid::fixture_uid(
             title.len() as u64 * 7919 + title.chars().map(|c| c as u64).sum::<u64>(),
         ),
@@ -385,6 +387,7 @@ fn seed_prose_scene(ctx: &AppContext, binder_id: EntityId, words: usize) {
         ctx,
         None,
         &[frontend::direct_access::CreateBinderItemDto {
+            status: None,
             uid: common::uid::fixture_uid(binder_id * 13 + words as u64),
             created_at: n,
             updated_at: n,
@@ -443,6 +446,7 @@ fn seed_trashed_item(
         ctx,
         None,
         &[frontend::direct_access::CreateBinderItemDto {
+            status: None,
             uid: common::uid::fixture_uid(binder_id * 97 + 1),
             created_at: n,
             updated_at: n,
@@ -783,6 +787,7 @@ fn seed_needle_scene(ctx: &AppContext, binder_id: EntityId, title: &str, prose: 
         ctx,
         None,
         &[frontend::direct_access::CreateBinderItemDto {
+            status: None,
             uid: common::uid::fixture_uid(binder_id * 61 + prose.len() as u64),
             created_at: n,
             updated_at: n,
@@ -1100,6 +1105,7 @@ fn seed_active_item(ctx: &AppContext, binder_id: EntityId, uid_seed: u64) -> Ent
         ctx,
         None,
         &[CreateBinderItemDto {
+            status: None,
             uid: common::uid::fixture_uid(uid_seed),
             created_at: n,
             updated_at: n,
@@ -1143,6 +1149,7 @@ fn seed_scene_pair(
     use frontend::direct_access::CreateBinderItemDto;
     let n = now();
     let mk = |i: u64, title: &str| CreateBinderItemDto {
+        status: None,
         uid: common::uid::fixture_uid(uid_seed + i),
         created_at: n,
         updated_at: n,

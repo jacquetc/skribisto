@@ -93,6 +93,7 @@ impl Ctx {
             &mut self.undo,
             None,
             &CreateWorkDto {
+                statuses: Vec::new(),
                 smart_punctuation: smart_punctuation_id,
                 ..Default::default()
             },
@@ -154,6 +155,7 @@ fn binder_item_management_item(ctx: &mut Ctx, binder_id: EntityId, activated: bo
         &mut ctx.undo,
         None,
         &CreateBinderItemDto {
+            status: None,
             activated,
             ..Default::default()
         },

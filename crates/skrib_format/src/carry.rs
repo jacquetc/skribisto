@@ -52,6 +52,7 @@ const ROOT_MANIFESTS: &[&str] = &[
     "orphan_footnotes.ron",
     "templates.ron",
     "assets.ron",
+    "statuses.ron",
 ];
 
 /// Does `rel` — a bundle-root-relative, `/`-separated path — name a file this
@@ -231,6 +232,7 @@ mod tests {
             "project.skrib",
             "tags.ron",
             "assets.ron",
+            "statuses.ron",
             "templates/ab12-character.djot",
             "assets/deadbeef.png",
             "history/index.ron",

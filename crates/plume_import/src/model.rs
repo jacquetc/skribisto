@@ -38,6 +38,17 @@ pub struct PlumeNode {
     pub is_trashed: bool,
     /// Plume `badge` free-text label (maps to `BinderItemFile.label`).
     pub badge: String,
+    /// Plume `status` — a 0-based index into Plume's own fixed revision ladder
+    /// (`MainTreeAbstractModel::giveStatusList()`: 1st draft, 2nd draft, 3rd draft,
+    /// 1st Edit, 2nd Edit, 3rd Edit, Proofread, Finished).
+    ///
+    /// A genuinely separate axis from [`badge`](Self::badge) — Plume's own tree model
+    /// carries them as two columns (`Titles · Synopsis · Notes · PoV · Status · Badge`),
+    /// the badge being unvalidated free text and this an enumerated ladder. Plume writes
+    /// `status="N"` on every node and defaults a missing one to `0`, but a separator or a
+    /// node the user never touched can carry `-1`; both read back as `None` here, meaning
+    /// "no status", so nothing invents a "1st draft" the writer never chose.
+    pub status: Option<u8>,
     /// Attendance object `number`s this node references — the union of the
     /// `attend=` (present characters) and `pov=` (point-of-view) lists, with the
     /// `0` "none" sentinel and duplicates removed.

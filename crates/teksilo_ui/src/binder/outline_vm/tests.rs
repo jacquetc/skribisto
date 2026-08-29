@@ -229,6 +229,7 @@ mod recommend {
         index: i32,
     ) -> u64 {
         let dto = CreateBinderItemDto {
+            status: None,
             title: format!("{role:?}/{sub_role:?}"),
             role,
             sub_role,

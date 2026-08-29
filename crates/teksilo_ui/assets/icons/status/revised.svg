@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Reviewed but not closed: a complete ring with a check inside it. The boundary is
+       whole (unlike `drafting`, which is still filling) but the disc is not solid, which is
+       what keeps it distinct from `final` at 16px by ink mass alone. -->
+  <circle cx="8" cy="8" r="5.5"/>
+  <path d="M5.5 8 L7.2 9.7 L10.6 6.3"/>
+</svg>

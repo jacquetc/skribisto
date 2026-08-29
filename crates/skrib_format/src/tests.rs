@@ -84,6 +84,36 @@ fn prose_text(role: &ContentRole) -> String {
     }
 }
 
+/// A two-rung ladder, deliberately spanning two different categories so a round trip
+/// proves the enum survives too, not just the strings.
+///
+/// A helper rather than part of `sample_inputs`, because a project that HAS a ladder floors
+/// at read version 14 and most tests here assert the lower floors a project without one
+/// keeps. `a_status_ladder_round_trips_through_the_bundle` opts in explicitly.
+fn sample_statuses() -> Vec<common::entities::BinderStatus> {
+    let now = ts();
+    vec![
+        common::entities::BinderStatus {
+            id: 90,
+            uid: common::uid::fixture_uid(90),
+            created_at: now,
+            updated_at: now,
+            name: "Draft".into(),
+            category: common::entities::StatusCategory::Drafting,
+            details: "Written once, not yet reread.".into(),
+        },
+        common::entities::BinderStatus {
+            id: 91,
+            uid: common::uid::fixture_uid(91),
+            created_at: now,
+            updated_at: now,
+            name: "Final".into(),
+            category: common::entities::StatusCategory::Final,
+            details: String::new(),
+        },
+    ]
+}
+
 /// Build a fixture covering every combination, with each item carrying exactly
 /// its allowed content roles. `content_id` is bumped to keep ids unique.
 struct SampleInputs {
@@ -91,6 +121,7 @@ struct SampleInputs {
     tags: Vec<BinderTag>,
     dict_words: Vec<DictWord>,
     note_templates: Vec<common::entities::NoteTemplate>,
+    statuses: Vec<common::entities::BinderStatus>,
     assets: Vec<Asset>,
     smart_punctuation: common::entities::SmartPunctuation,
     trash: Vec<TrashInfo>,
@@ -118,6 +149,8 @@ fn sample_inputs() -> SampleInputs {
         dict_words: vec![20, 21],
         text_replacement_rules: vec![],
         note_templates: vec![40, 41],
+        // No ladder by default — see `statuses` below for why.
+        statuses: vec![],
         assets: vec![50, 51],
         smart_punctuation: 30,
         binders: vec![100],
@@ -155,6 +188,7 @@ fn sample_inputs() -> SampleInputs {
             starred: false,
         },
     ];
+    let statuses = Vec::new();
     let smart_punctuation = common::entities::SmartPunctuation {
         id: 30,
         created_at: now,
@@ -232,6 +266,8 @@ fn sample_inputs() -> SampleInputs {
             // Distinct per row: this is inside the `for … enumerate()` above, so a
             // single literal would give every item the SAME identity.
             uid: common::uid::fixture_uid(item_id),
+            // No status by default, for the same reason the ladder above is empty.
+            status: None,
             id: item_id,
             created_at: now,
             updated_at: now,
@@ -348,6 +384,7 @@ fn sample_inputs() -> SampleInputs {
         tags,
         dict_words,
         note_templates,
+        statuses,
         smart_punctuation,
         trash,
         binders,
@@ -544,6 +581,7 @@ pub(crate) fn build_bundle_with_footnotes(shape: ShapeTag) -> WorkBundle {
         &s.dict_words,
         &[],
         &s.note_templates,
+        &s.statuses,
         &s.assets,
         Default::default(),
         Some(&s.smart_punctuation),
@@ -572,6 +610,7 @@ fn build_bundle_with(shape: ShapeTag, tweak: impl FnOnce(&mut SampleInputs)) -> 
         &s.dict_words,
         &[],
         &s.note_templates,
+        &s.statuses,
         &s.assets,
         Default::default(),
         Some(&s.smart_punctuation),
@@ -607,6 +646,7 @@ pub(crate) fn build_bundle(shape: ShapeTag) -> WorkBundle {
         &s.dict_words,
         &[],
         &s.note_templates,
+        &s.statuses,
         &s.assets,
         Default::default(),
         Some(&s.smart_punctuation),
@@ -828,6 +868,7 @@ fn disallowed_content_is_dropped() {
         },
     ];
     let work = Work {
+        statuses: Vec::new(),
         id: 1,
         created_at: now,
         updated_at: now,
@@ -851,6 +892,8 @@ fn disallowed_content_is_dropped() {
         &[],
         &[],
         &[],
+        &[],
+        // statuses — this project has no ladder.
         &[],
         &[],
         Default::default(),
@@ -1112,6 +1155,7 @@ fn an_uncommented_project_writes_no_comment_files_at_all() {
         &s.dict_words,
         &[],
         &s.note_templates,
+        &s.statuses,
         &s.assets,
         Default::default(),
         Some(&s.smart_punctuation),
@@ -2992,6 +3036,7 @@ fn the_floor_ignores_content_dropped_by_content_allowed() {
         &s.dict_words,
         &[],
         &s.note_templates,
+        &s.statuses,
         &s.assets,
         Default::default(),
         Some(&s.smart_punctuation),
@@ -3224,4 +3269,116 @@ fn the_v11_step_never_re_mints_an_existing_uid() {
     assert!(!after[0].is_nil(), "the nil one was filled");
     assert_ne!(after[0], kept[0], "…with a fresh value");
     assert_eq!(after[1..], kept[1..], "identified tags must keep their uid");
+}
+
+/// The whole point of the format change: a ladder, and an item's rung, must survive a write
+/// and a read. Both halves matter — `mapping.rs` writes and reads through two *independent*
+/// exhaustive lists, so updating one and not the other is a live possibility that would
+/// look correct all session and lose the data on the next open.
+#[test]
+fn a_status_ladder_round_trips_through_the_bundle() {
+    let mut s = sample_inputs();
+    let statuses = sample_statuses();
+    let draft = statuses[0].id;
+    s.work.statuses = statuses.iter().map(|st| st.id).collect();
+    // One item wearing a rung and the rest bare, so "no status" is covered too.
+    s.binders[0].items[0].item.status = Some(draft);
+
+    let bundle = from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &statuses,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &[],
+        &[],
+        &s.binders,
+        ShapeTag::Folder,
+    );
+
+    // Written: the ladder in order, and the reference on the right row.
+    assert_eq!(
+        bundle
+            .statuses
+            .iter()
+            .map(|st| st.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Draft", "Final"],
+        "the ladder is written in ladder order — that order IS the ladder"
+    );
+    assert_eq!(
+        bundle.statuses[0].category,
+        common::entities::StatusCategory::Drafting
+    );
+    assert_eq!(
+        bundle.statuses[1].category,
+        common::entities::StatusCategory::Final
+    );
+    assert_eq!(bundle.binders[0].items[0].item.status_id, Some(draft));
+    assert_eq!(
+        bundle.binders[0].items[1].item.status_id, None,
+        "an unmarked row stays unmarked"
+    );
+
+    // A project with a ladder cannot be opened by a build that would delete it.
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&bundle),
+        14,
+        "a ladder raises the read floor, exactly as templates and images do"
+    );
+
+    // Read back.
+    let loaded = bundle_to_loaded(bundle.clone(), "/tmp/x.skrib").expect("round trip");
+    assert_eq!(
+        loaded
+            .statuses
+            .iter()
+            .map(|st| st.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Draft", "Final"]
+    );
+    assert_eq!(loaded.statuses[0].details, "Written once, not yet reread.");
+    assert_eq!(
+        loaded.binders[0].items[0].status_id,
+        Some(draft),
+        "the rung reference survives the read — carried on LoadedItem beside tag_ids"
+    );
+    assert_eq!(loaded.binders[0].items[1].status_id, None);
+}
+
+/// A ladder-free project must keep the floor it had. Stated separately because the floor is
+/// gated on *having* statuses, and a gate that silently always fired would be invisible.
+#[test]
+fn a_project_without_a_ladder_keeps_its_lower_floor() {
+    let s = sample_inputs();
+    let bundle = from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &[],
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &[],
+        &[],
+        &s.binders,
+        ShapeTag::Folder,
+    );
+    assert!(bundle.statuses.is_empty());
+    assert!(
+        crate::version_gate::compute_min_read_version(&bundle) < 14,
+        "a project with no ladder should still open in an older build"
+    );
 }

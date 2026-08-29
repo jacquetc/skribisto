@@ -66,6 +66,10 @@ fn item(
 ) -> ItemWithContents {
     ItemWithContents {
         item: BinderItem {
+            // One row wears the ladder's second rung, so the round trip proves the
+            // *reference* survives and not merely the vocabulary. `302` is the item the
+            // trash fixture below also names, which keeps the fixture small.
+            status: (id == 302).then_some(91),
             uid: common::uid::fixture_uid(3),
             id,
             created_at: ts(),
@@ -115,6 +119,7 @@ pub(crate) fn sample_bundle() -> WorkBundle {
     use ContentRole::*;
 
     let work = Work {
+        statuses: Vec::new(),
         // Not the default: the store round trip has to prove it carries the field.
         goal_unit: common::entities::GoalUnit::Characters,
         id: 1,
@@ -289,12 +294,38 @@ pub(crate) fn sample_bundle() -> WorkBundle {
         trashed_binder_item: Some(302),
     }];
 
+    // A two-rung ladder, with one item wearing the second rung. Present in the fixture on
+    // purpose: without it the store round trip below cannot tell "the ladder survives" from
+    // "no ladder was ever read on either side" — which is exactly how `Work.statuses` came
+    // to be left unwired in `load_work`'s deferred relationship pass and nothing noticed.
+    let statuses = vec![
+        common::entities::BinderStatus {
+            id: 90,
+            uid: common::uid::fixture_uid(90),
+            created_at: ts(),
+            updated_at: ts(),
+            name: "Draft".into(),
+            category: common::entities::StatusCategory::Drafting,
+            details: String::new(),
+        },
+        common::entities::BinderStatus {
+            id: 91,
+            uid: common::uid::fixture_uid(91),
+            created_at: ts(),
+            updated_at: ts(),
+            name: "Final".into(),
+            category: common::entities::StatusCategory::Final,
+            details: String::new(),
+        },
+    ];
+
     skrib::from_entities(
         &work,
         &tags,
         &dict_words,
         &[],
         &[],
+        &statuses,
         &[],
         Default::default(),
         Some(&common::entities::SmartPunctuation {
@@ -506,6 +537,32 @@ fn save_load_round_trip_through_store() {
         filed.len(),
         1,
         "a tag's own destination must survive the round trip"
+    );
+
+    // The ladder, in order, and the item that wears a rung. Asserted separately from the
+    // `norm` equality above for the reason `books` and `creates_in` are: equality alone
+    // cannot tell "it survived" from "neither side ever read it". This is the assertion
+    // that fails if `load_work` creates the rungs but forgets to wire `Work.statuses`, or
+    // if `gather` never reads them back.
+    assert_eq!(
+        resaved
+            .statuses
+            .iter()
+            .map(|s| s.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Draft", "Final"],
+        "the ladder must survive the store round trip, in ladder order"
+    );
+    let worn: Vec<_> = resaved
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .filter_map(|i| i.item.status_id)
+        .collect();
+    assert_eq!(
+        worn.len(),
+        1,
+        "the item's rung must survive too, not just the vocabulary"
     );
 
     // The stable id survives the save → load → save round-trip through the store.

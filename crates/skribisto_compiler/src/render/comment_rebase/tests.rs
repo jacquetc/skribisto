@@ -34,6 +34,7 @@ fn iwc(id: u64, sub_role: SR, contents: Vec<Content>) -> ItemWithContents {
 
 fn gathered(items: Vec<ItemWithContents>) -> Gathered {
     Gathered {
+        statuses: Vec::new(),
         assets: Vec::new(),
         footnotes: Vec::new(),
         work: Work {

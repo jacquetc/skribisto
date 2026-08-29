@@ -2470,3 +2470,79 @@ settings-margin-lane-surface-editor = Text editor
 settings-margin-lane-surface-stream = Streams
 settings-margin-lane-surface-search-preview = Search preview
 menu-margin-lane = &Margin marks
+
+## Statuses — the project's workflow ladder.
+## A rung's name is project DATA: these are resolved once, when a ladder is seeded, and
+## stored literally from then on. They are not re-translated afterwards, and the writer is
+## free to rename any of them.
+status-preset-drafting = Drafting
+status-preset-passes = Revision passes
+status-preset-plume = Plume Creator
+status-todo = To do
+status-draft = Draft
+status-revised = Revised
+status-final = Final
+status-outline = Outline
+status-first-edit = 1st edit
+status-second-edit = 2nd edit
+status-done = Done
+status-plume-draft-1 = 1st draft
+status-plume-draft-2 = 2nd draft
+status-plume-draft-3 = 3rd draft
+status-plume-edit-1 = 1st edit
+status-plume-edit-2 = 2nd edit
+status-plume-edit-3 = 3rd edit
+status-plume-proofread = Proofread
+status-plume-finished = Finished
+new-work-statuses = Workflow
+new-work-statuses-hint = The stages you move a scene through. You can rename, reorder or add to these at any time.
+status-none = No status
+inspector-status = Status
+overview-col-status = Status
+overview-status-mixed = the parts below disagree
+help-concept-status = Status
+status-completion-title = Where the book stands
+status-completion-headline = { $done } of { $total } scenes finished
+status-completion-empty = No scenes yet — this reads the manuscript, so it fills in as you write.
+status-completion-open = Where the book stands…
+
+## Settings ▸ Work ▸ Statuses — the ladder editor.
+## The writer owns a rung's NAME and the ladder's ORDER; the app owns its category, and
+## the category owns the glyph and the colour. Only the category names below are
+## translated — a rung's name is the writer's own text and stays as they typed it.
+settings-page-statuses = Statuses
+settings-desc-statuses = Rename, reorder, add and remove the stages you move a scene through
+settings-statuses-add = Add status
+settings-statuses-add-placeholder = New status name
+settings-statuses-desc =
+    The stages a scene moves through, in order — from least finished at the top to most
+    finished at the bottom. That order is what "less finished than" means everywhere else
+    in the app, so put them the way your process actually runs.
+settings-statuses-apply-preset = Apply a preset…
+settings-statuses-preset-applied = { $added ->
+    [one] 1 status added
+   *[other] { $added } statuses added
+}
+settings-statuses-preset-refused = This project already has a ladder. Presets only fill an empty one — delete the rungs you don't want first.
+settings-statuses-duplicate = "{ $name }" is already on this ladder
+settings-statuses-added = Added "{ $name }"
+settings-statuses-move-up = Move up (less finished)
+settings-statuses-move-down = Move down (more finished)
+settings-statuses-details-placeholder = What this stage means (optional)
+settings-statuses-delete = Delete "{ $name }"
+settings-statuses-delete-in-use = { $count ->
+    [one] Delete "{ $name }" — 1 item is on it and will lose its status
+   *[other] Delete "{ $name }" — { $count } items are on it and will lose their status
+}
+settings-statuses-deleted = Deleted "{ $name }"
+settings-statuses-deleted-in-use = { $count ->
+    [one] Deleted "{ $name }". 1 item no longer has a status.
+   *[other] Deleted "{ $name }". { $count } items no longer have a status.
+}
+settings-statuses-empty-title = No workflow yet
+settings-statuses-empty-body = A status says how far along a scene is. Add one above, or start from a preset.
+status-category-planned = Planned
+status-category-drafting = Drafting
+status-category-needs-work = Needs work
+status-category-revised = Revised
+status-category-final = Final

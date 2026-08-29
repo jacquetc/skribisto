@@ -526,6 +526,7 @@ impl App {
                 active_item,
                 self.inspector_dock,
                 session.tags.clone(),
+                session.statuses.clone(),
                 session.mention_index.clone(),
                 session.open_docs.clone(),
                 settings.counting_method(),

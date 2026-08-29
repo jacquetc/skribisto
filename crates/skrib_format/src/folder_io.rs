@@ -182,6 +182,10 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
     // blob behind. Without this a project would accumulate every version of
     // every picture a writer ever swapped out, forever.
     write_if_changed(&root.join("assets.ron"), to_ron(&bundle.assets)?.as_bytes())?;
+    write_if_changed(
+        &root.join("statuses.ron"),
+        to_ron(&bundle.statuses)?.as_bytes(),
+    )?;
     let assets_dir = root.join(ASSETS_DIR);
     let mut expected_assets: BTreeSet<String> = BTreeSet::new();
     if !bundle.assets.is_empty() {
@@ -493,6 +497,9 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     // Assets. `fs::read`, not `read_to_string` — this is the one part of a
     // bundle that is not UTF-8, and every other reader here would reject it.
     let assets: Vec<AssetFile> = read_ron_vec(&root.join("assets.ron"), "assets.ron")?;
+    // Absent before v14, and an absent ladder is a legitimate "no statuses" state, so
+    // `read_ron_vec` returning empty for a missing file is exactly right here.
+    let statuses: Vec<BinderStatusFile> = read_ron_vec(&root.join("statuses.ron"), "statuses.ron")?;
     let mut asset_bytes = std::collections::BTreeMap::new();
     for a in &assets {
         let bytes = fs::read(root.join(&a.path))
@@ -599,6 +606,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         dict_words,
         text_replacement_rules,
         note_templates,
+        statuses,
         note_template_bodies,
         assets,
         asset_bytes,

@@ -59,6 +59,7 @@ pub const COL_TOTAL_WORDS: &str = "total_words";
 pub const COL_OPEN_COMMENTS: &str = "open_comments";
 pub const COL_TOTAL_COMMENTS: &str = "total_comments";
 pub const COL_TAGS: &str = "tags";
+pub const COL_STATUS: &str = "status";
 /// The Books column, like [`COL_TAGS`]: read-only and unsortable, and rendered
 /// only when the Work has two or more live Books; see `tabs::overview::columns::books_column`.
 pub const COL_BOOKS: &str = "books";
@@ -95,6 +96,25 @@ pub struct OverviewRow {
     /// `BinderItemDto` the loader already reads, and a per-cell lookup would issue one
     /// backend read per visible row per rebuild.
     pub tags: Vec<u64>,
+    /// This row's rung. `None` is "no status", and so is a rung that no longer resolves.
+    pub status: Option<u64>,
+    /// This row's position on the ladder — the **sort key**, because sorting by status
+    /// means sorting by how finished a row is, and only the ladder's order says that. A
+    /// name sort would put "Draft" above "Final" alphabetically and read as nonsense.
+    ///
+    /// Precomputed here rather than looked up in the comparator, which is handed two rows
+    /// and nothing else. `None` sorts first: unset is the least finished thing there is.
+    pub status_rank: Option<usize>,
+    /// Whether the subtree below this row **disagrees** with its own rung — the derived
+    /// half of the container answer, rendered as a single asterisk beside the glyph.
+    ///
+    /// Derived, never stored: `EntityId` is re-minted on every `load_work`, so a persisted
+    /// roll-up would be a cache going stale against the tree it summarises. Computed in the
+    /// same bottom-up pass `total_words` already uses.
+    ///
+    /// `false` on a leaf by construction — a row with no descendants has nothing to
+    /// disagree with it.
+    pub subtree_differs: bool,
     /// The writer's own filing: which Book or Books this row is declared under
     /// (`BinderItem.books`). A declaration, never a measurement: empty means not
     /// yet filed, never "every Book" (see that field's own doc). Read straight
@@ -153,6 +173,14 @@ pub struct OverviewFilters {
     /// of the checked tags (OR, the usual faceted-filter reading), not all of
     /// them: see [`shape`]'s own doc for why.
     pub tag_filter: Signal<Vec<u64>>,
+    /// Rung ids currently checked in the status filter chip row; empty = no filtering.
+    /// **OR**, like `tag_filter` — and on a single-valued axis an AND reading would be
+    /// empty by construction, which is the strongest reason not to offer one.
+    ///
+    /// `0` is the "no status" sentinel: absence is the zeroth member of the vocabulary,
+    /// which is what makes "show me everything I have not triaged" askable at all. `0` is
+    /// safe as a marker because the store never mints it as an `EntityId`.
+    pub status_filter: Signal<Vec<u64>>,
 }
 
 impl OverviewFilters {
@@ -161,6 +189,7 @@ impl OverviewFilters {
             query: Signal::new(String::new()),
             sort: Signal::new(None),
             tag_filter: Signal::new(Vec::new()),
+            status_filter: Signal::new(Vec::new()),
         }
     }
 }
@@ -322,6 +351,10 @@ impl OverviewRowsModel {
             {
                 let r = resource.clone();
                 filters.tag_filter.observe(move |_| r())
+            },
+            {
+                let r = resource.clone();
+                filters.status_filter.observe(move |_| r())
             },
             {
                 let r = resource.clone();
@@ -603,14 +636,15 @@ fn shape(
     let needle = row_search::needle(&filters.query.get());
     let sort = filters.sort.get();
     let tag_filter = filters.tag_filter.get();
-    if needle.is_none() && sort.is_none() && tag_filter.is_empty() {
+    let status_filter = filters.status_filter.get();
+    if needle.is_none() && sort.is_none() && tag_filter.is_empty() && status_filter.is_empty() {
         return rows;
     }
     // `TreeRowFilter::filter` holds exactly one predicate: a second call would
     // silently *replace* the first, not AND with it, so search and the tag
     // filter are folded into one closure rather than two `.filter()` calls.
     let mut sieve = TreeRowFilter::new().filter_mode(TreeFilterMode::KeepAncestors);
-    if needle.is_some() || !tag_filter.is_empty() {
+    if needle.is_some() || !tag_filter.is_empty() || !status_filter.is_empty() {
         sieve = sieve.filter(move |r: &OverviewRow| {
             // Title and label only: the two things the table actually shows.
             // Matching on data with no column would keep rows the writer sees no
@@ -619,7 +653,15 @@ fn shape(
                 .as_ref()
                 .is_none_or(|n| row_search::row_matches(n, &[&r.title, &r.label]));
             let tag_ok = tag_filter.is_empty() || r.tags.iter().any(|t| tag_filter.contains(t));
-            text_ok && tag_ok
+            // `UNSET` (0) matches a row with no rung, and also one whose rung no longer
+            // resolves — to every reader those are the same state, because the reference
+            // is weak on purpose.
+            let status_ok = status_filter.is_empty()
+                || match r.status {
+                    Some(id) => status_filter.contains(&id),
+                    None => status_filter.contains(&0),
+                };
+            text_ok && tag_ok && status_ok
         });
     }
     if let Some((col, dir)) = sort {
@@ -646,6 +688,12 @@ fn comparator(col_id: &str) -> impl Fn(&OverviewRow, &OverviewRow) -> std::cmp::
         COL_TOTAL_WORDS => a.total_words.cmp(&b.total_words),
         COL_OPEN_COMMENTS => a.own_comments.cmp(&b.own_comments),
         COL_TOTAL_COMMENTS => a.total_comments.cmp(&b.total_comments),
+        // By ladder position, never by name or id: sorting by status means ordering rows by
+        // how finished they are, which is exactly what the ladder's order records and what
+        // an alphabetical sort would destroy ("Draft" above "Final", read as nonsense).
+        // Unset sorts first — the least finished thing there is — which `Option`'s own
+        // ordering already gives.
+        COL_STATUS => a.status_rank.cmp(&b.status_rank),
         // Structural rank, not the label's alphabet — sorting by type should group a
         // book's parts above its chapters above its scenes, in the order they nest,
         // which "Book, Chapter, Part, Scene" would not.
@@ -755,20 +803,35 @@ pub(crate) fn subtree_of<T>(
 /// collapsed container must still show a correct total — which is the only reason the
 /// column is worth having.
 pub(crate) fn fold_totals(rows: &mut [TreeRow<Uuid, OverviewRow>]) {
-    // (depth, words, comments) for each not-yet-consumed forest root, deepest last.
+    /// What a finished subtree reports upward about its statuses: `Some(rank)` when every
+    /// row in it (the root included) sits on the same rung, `None` when they do not.
+    ///
+    /// `Option<usize>` inside, so "everyone here is unset" is itself a uniform answer and
+    /// an unmarked chapter of unmarked scenes draws no asterisk.
+    type Uniform = Option<Option<usize>>;
+
+    // (depth, words, comments, uniform) for each not-yet-consumed forest root, deepest last.
     //
-    // Both totals fold in ONE reverse pass rather than two: the walk is the
-    // expensive part, the arithmetic is not, and two passes would be two chances
-    // for the stack discipline to drift apart.
-    let mut stack: Vec<(usize, usize, usize)> = Vec::new();
+    // All three fold in ONE reverse pass rather than three: the walk is the
+    // expensive part, the arithmetic is not, and separate passes would be separate
+    // chances for the stack discipline to drift apart.
+    let mut stack: Vec<(usize, usize, usize, Uniform)> = Vec::new();
     for row in rows.iter_mut().rev() {
         let depth = row.depth;
         let mut total = row.item.manuscript_words;
         let mut total_c = row.item.own_comments;
-        while let Some(&(child_depth, child_total, child_comments)) = stack.last() {
+        // Starts as "this row alone, and it agrees with itself".
+        let mut uniform: Uniform = Some(row.item.status_rank);
+        while let Some(&(child_depth, child_total, child_comments, child_uniform)) = stack.last() {
             if child_depth > depth {
                 total += child_total;
                 total_c += child_comments;
+                uniform = match (uniform, child_uniform) {
+                    // Once anything below disagrees, the whole subtree is mixed.
+                    (None, _) | (_, None) => None,
+                    (Some(mine), Some(theirs)) if mine == theirs => Some(mine),
+                    _ => None,
+                };
                 stack.pop();
             } else {
                 break;
@@ -776,7 +839,10 @@ pub(crate) fn fold_totals(rows: &mut [TreeRow<Uuid, OverviewRow>]) {
         }
         row.item.total_words = total;
         row.item.total_comments = total_c;
-        stack.push((depth, total, total_c));
+        // The asterisk: the subtree does not agree with this row. False on a leaf by
+        // construction — nothing was popped, so `uniform` is still this row's own rung.
+        row.item.subtree_differs = uniform.is_none();
+        stack.push((depth, total, total_c, uniform));
     }
 }
 
@@ -935,6 +1001,21 @@ mod rows {
             crate::models::numbers_for_work(ctx, work_id, &metas)
         };
         let work_langs = crate::models::work_language_tags(ctx, work_id);
+        // The ladder, once per load rather than per row: position in it is the sort key and
+        // the thing the roll-up compares, and it is the same for every row in the table.
+        let status_rank: std::collections::HashMap<u64, usize> = {
+            use frontend::common::direct_access::work::WorkRelationshipField;
+            frontend::commands::work_commands::get_work_relationship(
+                ctx,
+                &work_id,
+                &WorkRelationshipField::Statuses,
+            )
+            .unwrap_or_default()
+            .into_iter()
+            .enumerate()
+            .map(|(i, id)| (id, i))
+            .collect()
+        };
         let Subtree::Found {
             rows: subtree,
             base,
@@ -1034,6 +1115,9 @@ mod rows {
                         },
                         total_words: 0, // filled by the fold below
                         tags: it.tags.clone(),
+                        status: it.status,
+                        status_rank: it.status.and_then(|id| status_rank.get(&id).copied()),
+                        subtree_differs: false, // filled by the fold below
                         book_ids: it.books.clone(),
                         number: numbers
                             .get(&it.id)
@@ -1128,6 +1212,22 @@ mod rows {
                 },
                 total_words: 0, // filled by the fold below
                 tags: tags.to_vec(),
+                // Status ids point at the mock ladder in `WorkStatusesListModel`:
+                // 901 = Draft, 903 = Final. Spread so the mocks Overview shows a set rung,
+                // a different rung and the unset case at once — and so the chapter folder
+                // (104) claims "Final" while a scene under it does not, which is the case
+                // the roll-up asterisk exists to mark.
+                status: match item_id {
+                    104u64 | 202 => Some(903),
+                    201 | 302 => Some(901),
+                    _ => None,
+                },
+                status_rank: match item_id {
+                    104u64 | 202 => Some(3),
+                    201 | 302 => Some(1),
+                    _ => None,
+                },
+                subtree_differs: false, // filled by the same fold
                 // The fixture models no Book filing at all: `live_books` reads the
                 // real `Folder/Book` table this mock module never populates, so the
                 // Books column simply never renders under `mocks`, so nothing here
@@ -1653,6 +1753,118 @@ mod tests {
             depths,
             vec![0, 1, 1, 0],
             "chapter, its 2 scenes, flat chapter"
+        );
+    }
+
+    // ── status: the filter ───────────────────────────────────────────────────
+
+    /// The chip row narrows to rows on any checked rung — **OR**, like the tag row. On a
+    /// single-valued axis an AND reading would be empty by construction.
+    #[test]
+    fn the_status_filter_is_an_or_across_every_checked_rung() {
+        let rows = |f: &[u64]| {
+            let all = [Some(10u64), Some(20), Some(30), None];
+            all.iter()
+                .filter(|st| {
+                    f.is_empty()
+                        || match st {
+                            Some(id) => f.contains(id),
+                            None => f.contains(&0),
+                        }
+                })
+                .count()
+        };
+        assert_eq!(rows(&[]), 4, "no chips checked means no filtering");
+        assert_eq!(rows(&[10]), 1);
+        assert_eq!(
+            rows(&[10, 30]),
+            2,
+            "two chips widen the set, never narrow it"
+        );
+    }
+
+    /// "No status" is a real, checkable member of the vocabulary — which is the whole
+    /// point of naming absence rather than leaving it null: it makes "show me everything I
+    /// have not triaged yet" a question the writer can actually ask.
+    #[test]
+    fn the_unset_sentinel_selects_rows_with_no_rung() {
+        let matches = |status: Option<u64>, f: &[u64]| match status {
+            Some(id) => f.contains(&id),
+            None => f.contains(&0),
+        };
+        assert!(matches(None, &[0]), "unset matches the sentinel");
+        assert!(!matches(Some(10), &[0]), "a set rung does not");
+        assert!(
+            matches(None, &[0, 10]),
+            "the sentinel combines with real rungs like any other chip"
+        );
+    }
+
+    // ── status: the ladder sort and the roll-up asterisk ─────────────────────
+
+    /// Sorting by status orders rows by how finished they are, which only the ladder's
+    /// order records. An alphabetical sort would put "Draft" above "Final".
+    #[test]
+    fn status_sorts_by_ladder_position_and_unset_comes_first() {
+        let mut rows: Vec<OverviewRow> = [None, Some(2), Some(0), Some(1)]
+            .into_iter()
+            .map(|rank| OverviewRow {
+                status_rank: rank,
+                ..Default::default()
+            })
+            .collect();
+        rows.sort_by(comparator(COL_STATUS));
+        assert_eq!(
+            rows.iter().map(|r| r.status_rank).collect::<Vec<_>>(),
+            vec![None, Some(0), Some(1), Some(2)],
+            "unset is the least finished thing there is, so it leads"
+        );
+    }
+
+    /// The asterisk means "the subtree does not agree with this row" — the five cases the
+    /// container answer is specified in, all through the one fold.
+    #[test]
+    fn the_rollup_asterisk_marks_a_subtree_that_disagrees() {
+        // A parent at depth 0 with two children at depth 1.
+        let case = |parent: Option<usize>, kids: [Option<usize>; 2]| {
+            let at = |uid: u64, rank: Option<usize>, depth: usize| {
+                TreeRow::new(
+                    common::uid::fixture_uid(uid),
+                    OverviewRow {
+                        status_rank: rank,
+                        ..Default::default()
+                    },
+                    depth,
+                )
+            };
+            let mut rows = vec![at(1, parent, 0), at(2, kids[0], 1), at(3, kids[1], 1)];
+            fold_totals(&mut rows);
+            (rows[0].item.subtree_differs, rows[1].item.subtree_differs)
+        };
+
+        assert!(
+            !case(Some(3), [Some(3), Some(3)]).0,
+            "a uniform subtree draws no asterisk"
+        );
+        assert!(
+            case(Some(3), [Some(3), Some(1)]).0,
+            "a descendant on a lower rung disagrees"
+        );
+        assert!(
+            case(Some(3), [Some(3), None]).0,
+            "an unmarked descendant disagrees with a marked parent"
+        );
+        assert!(
+            case(None, [Some(1), None]).0,
+            "a marked descendant disagrees with an unmarked parent"
+        );
+        assert!(
+            !case(None, [None, None]).0,
+            "an unmarked chapter of unmarked scenes is uniform, not mixed"
+        );
+        assert!(
+            !case(Some(3), [Some(1), Some(1)]).1,
+            "a leaf never carries the asterisk — it has nothing below to disagree"
         );
     }
 

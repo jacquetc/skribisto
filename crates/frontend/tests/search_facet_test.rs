@@ -32,6 +32,7 @@ const NEEDLE: &str = "Aurélien";
 fn item(role: BinderItemRole, sub_role: BinderItemSubRole, title: &str) -> CreateBinderItemDto {
     let now = chrono::Utc::now();
     CreateBinderItemDto {
+        status: None,
         // Derived from the title: this helper builds every row in the
         // fixture, so a single constant would give them all one identity.
         uid: common::uid::fixture_uid(

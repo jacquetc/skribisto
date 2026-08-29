@@ -84,6 +84,9 @@ pub enum FlatEventKind {
     BinderTagCreated,
     BinderTagUpdated,
     BinderTagRemoved,
+    BinderStatusCreated,
+    BinderStatusUpdated,
+    BinderStatusRemoved,
     ContentCreated,
     ContentUpdated,
     ContentRemoved,
@@ -304,6 +307,15 @@ impl From<Event> for FlatEvent {
                 }
                 DirectAccessEntity::BinderTag(EntityEvent::Removed) => {
                     FlatEventKind::BinderTagRemoved
+                }
+                DirectAccessEntity::BinderStatus(EntityEvent::Created) => {
+                    FlatEventKind::BinderStatusCreated
+                }
+                DirectAccessEntity::BinderStatus(EntityEvent::Updated) => {
+                    FlatEventKind::BinderStatusUpdated
+                }
+                DirectAccessEntity::BinderStatus(EntityEvent::Removed) => {
+                    FlatEventKind::BinderStatusRemoved
                 }
                 DirectAccessEntity::Content(EntityEvent::Created) => FlatEventKind::ContentCreated,
                 DirectAccessEntity::Content(EntityEvent::Updated) => FlatEventKind::ContentUpdated,
@@ -532,6 +544,9 @@ pub fn is_mutation(kind: &FlatEventKind) -> bool {
             | BinderTagCreated
             | BinderTagUpdated
             | BinderTagRemoved
+            | BinderStatusCreated
+            | BinderStatusUpdated
+            | BinderStatusRemoved
             | ContentCreated
             | ContentUpdated
             | ContentRemoved
@@ -653,6 +668,10 @@ mod tests {
         assert!(is_mutation(&FlatEventKind::BinderTagCreated));
         assert!(is_mutation(&FlatEventKind::BinderTagUpdated));
         assert!(is_mutation(&FlatEventKind::BinderTagRemoved));
+
+        assert!(is_mutation(&FlatEventKind::BinderStatusCreated));
+        assert!(is_mutation(&FlatEventKind::BinderStatusUpdated));
+        assert!(is_mutation(&FlatEventKind::BinderStatusRemoved));
 
         assert!(is_mutation(&FlatEventKind::ContentCreated));
         assert!(is_mutation(&FlatEventKind::ContentUpdated));

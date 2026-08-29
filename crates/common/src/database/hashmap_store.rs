@@ -42,6 +42,7 @@ pub struct HashMapStore {
     pub binders: RwLock<HashMap<EntityId, Binder>>,
     pub binder_items: RwLock<HashMap<EntityId, BinderItem>>,
     pub binder_tags: RwLock<HashMap<EntityId, BinderTag>>,
+    pub binder_statuss: RwLock<HashMap<EntityId, BinderStatus>>,
     pub contents: RwLock<HashMap<EntityId, Content>>,
     pub dict_words: RwLock<HashMap<EntityId, DictWord>>,
     pub text_replacement_rules: RwLock<HashMap<EntityId, TextReplacementRule>>,
@@ -66,6 +67,7 @@ pub struct HashMapStore {
     pub jn_note_template_from_work_note_templates: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_pace_from_work_paces: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_smart_punctuation_from_work_smart_punctuation: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_binder_status_from_work_statuses: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_tag_from_work_tags: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_text_replacement_rule_from_work_text_replacement_rules:
         RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -85,6 +87,7 @@ pub struct HashMapStore {
     pub jn_content_from_binder_item_contents: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_item_point_of_view: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_item_references: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_binder_status_from_binder_item_status: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_tag_from_binder_item_tags: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_tag_creates_in: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_note_template_from_binder_tag_note_template: RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -127,6 +130,7 @@ impl HashMapStore {
             binders: read_or_recover(&self.binders).clone(),
             binder_items: read_or_recover(&self.binder_items).clone(),
             binder_tags: read_or_recover(&self.binder_tags).clone(),
+            binder_statuss: read_or_recover(&self.binder_statuss).clone(),
             contents: read_or_recover(&self.contents).clone(),
             dict_words: read_or_recover(&self.dict_words).clone(),
             text_replacement_rules: read_or_recover(&self.text_replacement_rules).clone(),
@@ -170,6 +174,10 @@ impl HashMapStore {
             jn_pace_from_work_paces: read_or_recover(&self.jn_pace_from_work_paces).clone(),
             jn_smart_punctuation_from_work_smart_punctuation: read_or_recover(
                 &self.jn_smart_punctuation_from_work_smart_punctuation,
+            )
+            .clone(),
+            jn_binder_status_from_work_statuses: read_or_recover(
+                &self.jn_binder_status_from_work_statuses,
             )
             .clone(),
             jn_binder_tag_from_work_tags: read_or_recover(&self.jn_binder_tag_from_work_tags)
@@ -232,6 +240,10 @@ impl HashMapStore {
             .clone(),
             jn_binder_item_from_binder_item_references: read_or_recover(
                 &self.jn_binder_item_from_binder_item_references,
+            )
+            .clone(),
+            jn_binder_status_from_binder_item_status: read_or_recover(
+                &self.jn_binder_status_from_binder_item_status,
             )
             .clone(),
             jn_binder_tag_from_binder_item_tags: read_or_recover(
@@ -298,6 +310,7 @@ impl HashMapStore {
         let g_binders = read_or_recover(&self.binders);
         let g_binder_items = read_or_recover(&self.binder_items);
         let g_binder_tags = read_or_recover(&self.binder_tags);
+        let g_binder_statuss = read_or_recover(&self.binder_statuss);
         let g_contents = read_or_recover(&self.contents);
         let g_dict_words = read_or_recover(&self.dict_words);
         let g_text_replacement_rules = read_or_recover(&self.text_replacement_rules);
@@ -328,6 +341,8 @@ impl HashMapStore {
         let g_jn_pace_from_work_paces = read_or_recover(&self.jn_pace_from_work_paces);
         let g_jn_smart_punctuation_from_work_smart_punctuation =
             read_or_recover(&self.jn_smart_punctuation_from_work_smart_punctuation);
+        let g_jn_binder_status_from_work_statuses =
+            read_or_recover(&self.jn_binder_status_from_work_statuses);
         let g_jn_binder_tag_from_work_tags = read_or_recover(&self.jn_binder_tag_from_work_tags);
         let g_jn_text_replacement_rule_from_work_text_replacement_rules =
             read_or_recover(&self.jn_text_replacement_rule_from_work_text_replacement_rules);
@@ -360,6 +375,8 @@ impl HashMapStore {
             read_or_recover(&self.jn_binder_item_from_binder_item_point_of_view);
         let g_jn_binder_item_from_binder_item_references =
             read_or_recover(&self.jn_binder_item_from_binder_item_references);
+        let g_jn_binder_status_from_binder_item_status =
+            read_or_recover(&self.jn_binder_status_from_binder_item_status);
         let g_jn_binder_tag_from_binder_item_tags =
             read_or_recover(&self.jn_binder_tag_from_binder_item_tags);
         let g_jn_binder_item_from_binder_tag_creates_in =
@@ -388,6 +405,7 @@ impl HashMapStore {
             binders: RwLock::new(g_binders.clone()),
             binder_items: RwLock::new(g_binder_items.clone()),
             binder_tags: RwLock::new(g_binder_tags.clone()),
+            binder_statuss: RwLock::new(g_binder_statuss.clone()),
             contents: RwLock::new(g_contents.clone()),
             dict_words: RwLock::new(g_dict_words.clone()),
             text_replacement_rules: RwLock::new(g_text_replacement_rules.clone()),
@@ -422,6 +440,9 @@ impl HashMapStore {
             jn_pace_from_work_paces: RwLock::new(g_jn_pace_from_work_paces.clone()),
             jn_smart_punctuation_from_work_smart_punctuation: RwLock::new(
                 g_jn_smart_punctuation_from_work_smart_punctuation.clone(),
+            ),
+            jn_binder_status_from_work_statuses: RwLock::new(
+                g_jn_binder_status_from_work_statuses.clone(),
             ),
             jn_binder_tag_from_work_tags: RwLock::new(g_jn_binder_tag_from_work_tags.clone()),
             jn_text_replacement_rule_from_work_text_replacement_rules: RwLock::new(
@@ -468,6 +489,9 @@ impl HashMapStore {
             jn_binder_item_from_binder_item_references: RwLock::new(
                 g_jn_binder_item_from_binder_item_references.clone(),
             ),
+            jn_binder_status_from_binder_item_status: RwLock::new(
+                g_jn_binder_status_from_binder_item_status.clone(),
+            ),
             jn_binder_tag_from_binder_item_tags: RwLock::new(
                 g_jn_binder_tag_from_binder_item_tags.clone(),
             ),
@@ -504,6 +528,7 @@ impl HashMapStore {
         *write_or_recover(&self.binders) = snap.binders.clone();
         *write_or_recover(&self.binder_items) = snap.binder_items.clone();
         *write_or_recover(&self.binder_tags) = snap.binder_tags.clone();
+        *write_or_recover(&self.binder_statuss) = snap.binder_statuss.clone();
         *write_or_recover(&self.contents) = snap.contents.clone();
         *write_or_recover(&self.dict_words) = snap.dict_words.clone();
         *write_or_recover(&self.text_replacement_rules) = snap.text_replacement_rules.clone();
@@ -540,6 +565,8 @@ impl HashMapStore {
         *write_or_recover(&self.jn_smart_punctuation_from_work_smart_punctuation) = snap
             .jn_smart_punctuation_from_work_smart_punctuation
             .clone();
+        *write_or_recover(&self.jn_binder_status_from_work_statuses) =
+            snap.jn_binder_status_from_work_statuses.clone();
         *write_or_recover(&self.jn_binder_tag_from_work_tags) =
             snap.jn_binder_tag_from_work_tags.clone();
         *write_or_recover(&self.jn_text_replacement_rule_from_work_text_replacement_rules) = snap
@@ -576,6 +603,8 @@ impl HashMapStore {
             snap.jn_binder_item_from_binder_item_point_of_view.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_item_references) =
             snap.jn_binder_item_from_binder_item_references.clone();
+        *write_or_recover(&self.jn_binder_status_from_binder_item_status) =
+            snap.jn_binder_status_from_binder_item_status.clone();
         *write_or_recover(&self.jn_binder_tag_from_binder_item_tags) =
             snap.jn_binder_tag_from_binder_item_tags.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_tag_creates_in) =
@@ -658,6 +687,7 @@ impl HashMapStore {
         *write_or_recover(&self.binders) = snap.binders.clone();
         *write_or_recover(&self.binder_items) = snap.binder_items.clone();
         *write_or_recover(&self.binder_tags) = snap.binder_tags.clone();
+        *write_or_recover(&self.binder_statuss) = snap.binder_statuss.clone();
         *write_or_recover(&self.contents) = snap.contents.clone();
         *write_or_recover(&self.dict_words) = snap.dict_words.clone();
         *write_or_recover(&self.text_replacement_rules) = snap.text_replacement_rules.clone();
@@ -694,6 +724,8 @@ impl HashMapStore {
         *write_or_recover(&self.jn_smart_punctuation_from_work_smart_punctuation) = snap
             .jn_smart_punctuation_from_work_smart_punctuation
             .clone();
+        *write_or_recover(&self.jn_binder_status_from_work_statuses) =
+            snap.jn_binder_status_from_work_statuses.clone();
         *write_or_recover(&self.jn_binder_tag_from_work_tags) =
             snap.jn_binder_tag_from_work_tags.clone();
         *write_or_recover(&self.jn_text_replacement_rule_from_work_text_replacement_rules) = snap
@@ -730,6 +762,8 @@ impl HashMapStore {
             snap.jn_binder_item_from_binder_item_point_of_view.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_item_references) =
             snap.jn_binder_item_from_binder_item_references.clone();
+        *write_or_recover(&self.jn_binder_status_from_binder_item_status) =
+            snap.jn_binder_status_from_binder_item_status.clone();
         *write_or_recover(&self.jn_binder_tag_from_binder_item_tags) =
             snap.jn_binder_tag_from_binder_item_tags.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_tag_creates_in) =
@@ -779,6 +813,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) binders: HashMap<EntityId, Binder>,
     pub(crate) binder_items: HashMap<EntityId, BinderItem>,
     pub(crate) binder_tags: HashMap<EntityId, BinderTag>,
+    pub(crate) binder_statuss: HashMap<EntityId, BinderStatus>,
     pub(crate) contents: HashMap<EntityId, Content>,
     pub(crate) dict_words: HashMap<EntityId, DictWord>,
     pub(crate) text_replacement_rules: HashMap<EntityId, TextReplacementRule>,
@@ -801,6 +836,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_note_template_from_work_note_templates: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_pace_from_work_paces: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_smart_punctuation_from_work_smart_punctuation: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_binder_status_from_work_statuses: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_tag_from_work_tags: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_text_replacement_rule_from_work_text_replacement_rules:
         HashMap<EntityId, Vec<EntityId>>,
@@ -819,6 +855,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_content_from_binder_item_contents: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_item_point_of_view: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_item_references: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_binder_status_from_binder_item_status: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_tag_from_binder_item_tags: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_tag_creates_in: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_note_template_from_binder_tag_note_template: HashMap<EntityId, Vec<EntityId>>,

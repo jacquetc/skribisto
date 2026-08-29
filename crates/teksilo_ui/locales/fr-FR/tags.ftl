@@ -14,11 +14,6 @@ tags-preset-mystery = Policier
 tags-preset-historical = Historique
 
 ## Préréglage basique — le cycle de travail. Le préfixe « statut/ » est une convention de
-## nommage : le tri alphabétique suffit à regrouper ces étiquettes dans toutes les listes.
-tags-preset-status-outline = statut/plan
-tags-preset-status-draft = statut/brouillon
-tags-preset-status-to-review = statut/à relire
-tags-preset-status-finished = statut/terminé
 
 ## Préréglage basique — les marqueurs. Volontairement sans préfixe : une scène peut être un
 ## brouillon ET demander des recherches, ils ne font donc pas partie du cycle ci-dessus.

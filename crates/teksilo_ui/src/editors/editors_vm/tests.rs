@@ -45,6 +45,7 @@ fn editors_with(app_ctx: Rc<AppContext>, save_state: SaveStateViewModel) -> Edit
         crate::models::TreeExpansionService::in_memory_default(),
     );
     let tags = crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone());
+    let statuses = crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone());
     EditorsViewModel::new(
         app_ctx,
         Signal::new(700.0),
@@ -69,6 +70,7 @@ fn editors_with(app_ctx: Rc<AppContext>, save_state: SaveStateViewModel) -> Edit
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
         tags,
+        statuses,
         mention_index,
     )
 }
@@ -236,6 +238,7 @@ mod captions {
             &vm.app_ctx,
             None,
             &CreateWorkDto {
+                statuses: Vec::new(),
                 // The two fields naming derives from. Numbering *off* is a real state
                 // too — covered by `an_unnumbered_untitled_chapter_says_what_it_is`.
                 number_chapters: true,
@@ -272,6 +275,7 @@ mod captions {
             &vm.app_ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: title.into(),
                 role: BinderItemRole::Item,
                 sub_role,
@@ -789,7 +793,8 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::format::FormatViewModel::detached(),
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
-        crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_a),
+        crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_a.clone()),
+        crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids_a.clone()),
         index_a,
     );
     let ids_b = AppIds::new();
@@ -822,7 +827,8 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::format::FormatViewModel::detached(),
         crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(GoalUnit::default()),
-        crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_b),
+        crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_b.clone()),
+        crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids_b.clone()),
         index_b,
     );
 

@@ -35,6 +35,7 @@ pub enum WorkRelationshipField {
     NoteTemplates,
     Paces,
     SmartPunctuation,
+    Statuses,
     Tags,
     TextReplacementRules,
     TrashInfos,
@@ -315,6 +316,7 @@ impl<'a> WorkRepository<'a> {
         let dict_words = entity.dict_words.clone();
         let text_replacement_rules = entity.text_replacement_rules.clone();
         let note_templates = entity.note_templates.clone();
+        let statuses = entity.statuses.clone();
         let assets = entity.assets.clone();
         let smart_punctuation = entity.smart_punctuation.clone();
         let trash_infos = entity.trash_infos.clone();
@@ -334,6 +336,8 @@ impl<'a> WorkRepository<'a> {
             .remove_multi(event_buffer, &text_replacement_rules)?;
         repository_factory::write::create_note_template_repository(self.transaction)?
             .remove_multi(event_buffer, &note_templates)?;
+        repository_factory::write::create_binder_status_repository(self.transaction)?
+            .remove_multi(event_buffer, &statuses)?;
         repository_factory::write::create_asset_repository(self.transaction)?
             .remove_multi(event_buffer, &assets)?;
         repository_factory::write::create_smart_punctuation_repository(self.transaction)?
@@ -437,6 +441,14 @@ impl<'a> WorkRepository<'a> {
         // remove duplicates
         note_templates_ids.sort();
         note_templates_ids.dedup();
+        let mut statuses_ids: Vec<EntityId> = entities
+            .iter()
+            .flat_map(|entity| entity.as_ref().map(|entity| entity.statuses.clone()))
+            .flatten()
+            .collect();
+        // remove duplicates
+        statuses_ids.sort();
+        statuses_ids.dedup();
         let mut assets_ids: Vec<EntityId> = entities
             .iter()
             .flat_map(|entity| entity.as_ref().map(|entity| entity.assets.clone()))
@@ -494,6 +506,8 @@ impl<'a> WorkRepository<'a> {
             .remove_multi(event_buffer, &text_replacement_rules_ids)?;
         repository_factory::write::create_note_template_repository(self.transaction)?
             .remove_multi(event_buffer, &note_templates_ids)?;
+        repository_factory::write::create_binder_status_repository(self.transaction)?
+            .remove_multi(event_buffer, &statuses_ids)?;
         repository_factory::write::create_asset_repository(self.transaction)?
             .remove_multi(event_buffer, &assets_ids)?;
         repository_factory::write::create_smart_punctuation_repository(self.transaction)?
@@ -737,6 +751,24 @@ impl<'a> WorkRepository<'a> {
                         });
                     }
                 }
+                WorkRelationshipField::Statuses => {
+                    let child_repo = repository_factory::write::create_binder_status_repository(
+                        self.transaction,
+                    )?;
+                    let found = child_repo.get_multi(&all_right_ids)?;
+                    let missing: Vec<_> = all_right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship_multi",
+                            ids: missing,
+                        });
+                    }
+                }
                 WorkRelationshipField::Tags => {
                     let child_repo =
                         repository_factory::write::create_binder_tag_repository(self.transaction)?;
@@ -947,6 +979,24 @@ impl<'a> WorkRepository<'a> {
                         repository_factory::write::create_smart_punctuation_repository(
                             self.transaction,
                         )?;
+                    let found = child_repo.get_multi(right_ids)?;
+                    let missing: Vec<_> = right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship",
+                            ids: missing,
+                        });
+                    }
+                }
+                WorkRelationshipField::Statuses => {
+                    let child_repo = repository_factory::write::create_binder_status_repository(
+                        self.transaction,
+                    )?;
                     let found = child_repo.get_multi(right_ids)?;
                     let missing: Vec<_> = right_ids
                         .iter()
@@ -1273,6 +1323,28 @@ impl<'a> WorkRepository<'a> {
         {
             let mut child_ids: Vec<EntityId> = Vec::new();
             for id in to_create.iter().chain(to_update.iter()) {
+                if let Some(list) = snap.jn_binder_status_from_work_statuses.get(id) {
+                    child_ids.extend(list.iter().copied());
+                }
+            }
+            {
+                let live_jn = read_or_recover(&store.jn_binder_status_from_work_statuses);
+                for id in &ids {
+                    if let Some(list) = live_jn.get(id) {
+                        child_ids.extend(list.iter().copied());
+                    }
+                }
+            }
+            child_ids.sort();
+            child_ids.dedup();
+            if !child_ids.is_empty() {
+                repository_factory::write::create_binder_status_repository(self.transaction)?
+                    .restore_subtree(event_buffer, snap, &child_ids, visited)?;
+            }
+        }
+        {
+            let mut child_ids: Vec<EntityId> = Vec::new();
+            for id in to_create.iter().chain(to_update.iter()) {
                 if let Some(list) = snap.jn_asset_from_work_assets.get(id) {
                     child_ids.extend(list.iter().copied());
                 }
@@ -1542,6 +1614,22 @@ impl<'a> WorkRepository<'a> {
                     .jn_smart_punctuation_from_work_smart_punctuation
                     .get(id)
                 {
+                    Some(v) => {
+                        live_jn.insert(*id, v.clone());
+                    }
+                    None => {
+                        live_jn.remove(id);
+                    }
+                }
+            }
+            for id in &to_delete {
+                live_jn.remove(id);
+            }
+        }
+        {
+            let mut live_jn = write_or_recover(&store.jn_binder_status_from_work_statuses);
+            for id in to_create.iter().chain(to_update.iter()) {
+                match snap.jn_binder_status_from_work_statuses.get(id) {
                     Some(v) => {
                         live_jn.insert(*id, v.clone());
                     }

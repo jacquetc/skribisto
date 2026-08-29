@@ -193,6 +193,12 @@ impl OverviewViewModel {
                 me.recompute_projecting()
             });
         }
+        {
+            let me = self.clone();
+            ctx.effect(&self.inner.filters.status_filter, move |_| {
+                me.recompute_projecting()
+            });
+        }
         // The count follows the *visible* row set, so it reflects an active search.
         //
         // Registered **once**: `wire` runs on every build of the pane, and the `Switcher`
@@ -309,6 +315,11 @@ impl OverviewViewModel {
     /// The tag filter chip row's own checked set: see [`OverviewFilters::tag_filter`].
     pub fn tag_filter_signal(&self) -> Signal<Vec<u64>> {
         self.inner.filters.tag_filter.clone()
+    }
+
+    /// The status filter chip row's own checked set: see [`OverviewFilters::status_filter`].
+    pub fn status_filter_signal(&self) -> Signal<Vec<u64>> {
+        self.inner.filters.status_filter.clone()
     }
     /// This tab's backend handle, needed by the Books column's own gate
     /// (`crate::docks::inspector::live_books`), which the column set reads fresh on
@@ -520,6 +531,12 @@ impl OverviewViewModel {
     ///
     /// Through `SingleBinderItem::set_tags`, the same writer the Corkboard and the editor
     /// use, so a tag set from any of the three is one edit and one undo entry.
+    /// This project's workflow ladder. A fresh handle, safe for the reason
+    /// `StreamViewModel::statuses` spells out: the view-model caches no ladder.
+    pub fn statuses(&self) -> crate::statuses::StatusesViewModel {
+        crate::statuses::StatusesViewModel::new(self.inner.app_ctx.clone(), self.inner.ids.clone())
+    }
+
     pub fn set_tags(&self, item_id: u64, tags: &[u64]) {
         let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
         probe.set_id(Some(item_id));
@@ -777,7 +794,8 @@ impl OverviewViewModel {
     fn recompute_projecting(&self) {
         let projecting = !self.inner.filters.query.get().trim().is_empty()
             || self.inner.filters.sort.get().is_some()
-            || !self.inner.filters.tag_filter.get().is_empty();
+            || !self.inner.filters.tag_filter.get().is_empty()
+            || !self.inner.filters.status_filter.get().is_empty();
         if self.inner.projecting.get() != projecting {
             self.inner.projecting.set(projecting);
         }

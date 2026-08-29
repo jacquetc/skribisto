@@ -97,6 +97,9 @@ pub(crate) enum Pane {
     Spellcheck,
     /// Per-project tag palette (under the open Work's section).
     WorkTags,
+    /// Per-project workflow ladder — the status vocabulary and its order
+    /// (under the open Work's section, beside Tags).
+    WorkStatuses,
     /// Per-project author name (under the open Work's section).
     WorkAuthor,
     /// Per-project custom replacement lexicon (under the open Work's section).
@@ -162,6 +165,7 @@ impl Pane {
             Pane::WorkDictionary => "work-dictionary",
             Pane::Spellcheck => "spellcheck",
             Pane::WorkTags => "work-tags",
+            Pane::WorkStatuses => "work-statuses",
             Pane::WorkAuthor => "work-author",
             Pane::WorkTextReplacements => "work-text-replacements",
             Pane::DistractionFree => "distraction-free",
@@ -205,6 +209,7 @@ impl Pane {
             Pane::WorkLanguage => tr!(settings_page_language()),
             Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
             Pane::WorkTags => tr!(settings_page_tags()),
+            Pane::WorkStatuses => tr!(settings_page_statuses()),
             Pane::WorkTemplates => tr!(settings_page_templates()),
             // Resolved through the registry rather than stored, so a runtime
             // locale switch reaches a contributed page's label too. A page that
@@ -259,6 +264,7 @@ impl Pane {
             Pane::WorkLanguage => tr!(settings_desc_language()),
             Pane::WorkDictionary => tr!(settings_desc_personal_dictionary()),
             Pane::WorkTags => tr!(settings_desc_tags()),
+            Pane::WorkStatuses => tr!(settings_desc_statuses()),
             Pane::WorkTemplates => tr!(settings_desc_templates()),
             Pane::WorkAuthor => tr!(settings_desc_author()),
             Pane::WorkTextReplacements => tr!(settings_desc_text_replacements()),
@@ -514,6 +520,10 @@ pub(crate) fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec
                 Branch::Page(Pane::WorkBackup),
                 Branch::Page(Pane::WorkDictionary),
                 Branch::Page(Pane::WorkTags),
+                // Beside the tag palette: the project's other per-item vocabulary,
+                // and the one whose ORDER is data — which is why it is a page of its
+                // own rather than a section of the Tags one.
+                Branch::Page(Pane::WorkStatuses),
                 // Beside the tag palette: the other per-project catalogue the
                 // writer curates and that travels inside the `.skrib`.
                 Branch::Page(Pane::WorkTemplates),

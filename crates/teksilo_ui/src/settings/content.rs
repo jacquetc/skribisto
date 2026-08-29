@@ -301,6 +301,30 @@ pub(super) fn build(
         )),
     };
 
+    // Work ▸ Statuses — the workflow ladder editor, over THIS WINDOW's own
+    // `WorkSession::statuses`, same reasoning as `tags_pane` above.
+    let statuses_pane: Box<dyn Widget> = match (Some(session.statuses.clone()), &work) {
+        (Some(svm), Some(w)) if w.id().is_some() => {
+            let title = w.title().get();
+            Box::new(pane_frame(
+                crumb(
+                    Some(lit!(format!(
+                        "{}: {}",
+                        tr!(settings_sec_work()).resolve_now(),
+                        title
+                    ))),
+                    tr!(settings_page_statuses()),
+                ),
+                crate::settings::panes::work_statuses::work_statuses_pane(ctx, &svm),
+            ))
+        }
+        _ => Box::new(empty_pane(
+            None,
+            tr!(settings_page_statuses()),
+            res!("assets/icons/binder/book.svg"),
+        )),
+    };
+
     // Work ▸ Templates — the per-project note-template catalogue, over THIS WINDOW's
     // own `WorkSession::note_templates`, same reasoning as `tags_pane` above.
     let templates_pane: Box<dyn Widget> = match (Some(session.note_templates.clone()), &work) {
@@ -483,6 +507,7 @@ pub(super) fn build(
             Box::new(panes::spellcheck::spellcheck_pane(vm)),
         ),
         (Pane::WorkTags, tags_pane),
+        (Pane::WorkStatuses, statuses_pane),
         (Pane::WorkAuthor, author_pane),
         (Pane::WorkTextReplacements, text_replacements_pane),
         (

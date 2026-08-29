@@ -42,6 +42,7 @@ fn work_with_item(ctx: &Rc<AppContext>, sub_role: BinderItemSubRole) -> (u64, u6
         ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: "A row".into(),
             role: if matches!(
                 sub_role,
@@ -77,6 +78,7 @@ fn panel(ctx: &Rc<AppContext>, work_id: u64, focus: Signal<Option<u64>>) -> Insp
             crate::models::WorkTagsListModel::new(ctx.clone(), ids.clone()),
             ids.clone(),
         ),
+        crate::statuses::StatusesViewModel::new(ctx.clone(), ids.clone()),
         crate::mentions::MentionIndex::new(ctx.clone(), ids.clone()),
         crate::models::OpenDocsStore::new(ctx.clone()),
         Signal::new(CountingMethodSetting::default()),
@@ -126,6 +128,7 @@ fn add_book(ctx: &Rc<AppContext>, binder_id: u64, title: &str) -> u64 {
         ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: title.into(),
             role: BinderItemRole::Folder,
             sub_role: BinderItemSubRole::Book,

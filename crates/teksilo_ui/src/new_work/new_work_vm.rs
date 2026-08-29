@@ -327,6 +327,9 @@ pub struct NewWorkViewModel {
     /// preset only *seeds* the palette, and every tag it lays down can be renamed,
     /// recoloured or deleted afterwards in Settings.
     tag_preset: Signal<Option<Preset>>,
+    /// Which workflow ladder the project starts with. `None` means "the default one",
+    /// not "none" — see `ProjectStarters::statuses`.
+    status_preset: Signal<Option<crate::statuses::Preset>>,
     /// Which set of built-in note templates the project starts with, or `None` for none.
     ///
     /// The same bargain as [`Self::tag_preset`], and asked beside it: `None` is the
@@ -435,6 +438,7 @@ impl NewWorkViewModel {
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
             tag_preset: Signal::new(None),
+            status_preset: Signal::new(None),
             template_set: Signal::new(None),
             app_ctx,
             target: CreateTarget::InPlace(ids),
@@ -511,6 +515,7 @@ impl NewWorkViewModel {
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
             tag_preset: Signal::new(None),
+            status_preset: Signal::new(None),
             template_set: Signal::new(None),
             app_ctx,
             purpose: NewWorkPurpose::Project,
@@ -706,7 +711,13 @@ impl NewWorkViewModel {
         crate::app::ProjectStarters {
             tags: self.tag_preset.get(),
             templates: self.template_set.get(),
+            statuses: self.status_preset.get(),
         }
+    }
+
+    /// The chosen ladder, for the New Work form's own picker.
+    pub fn status_preset(&self) -> Signal<Option<crate::statuses::Preset>> {
+        self.status_preset.clone()
     }
 
     pub fn paratext_preset(&self) -> Signal<Option<String>> {

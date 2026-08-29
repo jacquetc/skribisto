@@ -173,6 +173,7 @@ mod tests {
             &app_ctx,
             None,
             &CreateWorkDto {
+                statuses: Vec::new(),
                 unique_id: "project-alpha".to_string(),
                 // Distinct from project-beta's below, and non-zero. `Work
                 // .smart_punctuation` is a one-to-one relationship, so the
@@ -210,6 +211,7 @@ mod tests {
             &app_ctx,
             None,
             &CreateWorkDto {
+                statuses: Vec::new(),
                 unique_id: "project-beta".to_string(),
                 smart_punctuation: 901,
                 ..Default::default()

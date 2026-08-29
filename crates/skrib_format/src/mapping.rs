@@ -7,8 +7,9 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, NoteTemplate,
-    ProgressSnapshot, QuoteStyle, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
+    Asset, Binder, BinderItem, BinderStatus, BinderTag, ChapterMode, Content, DictWord,
+    NoteTemplate, ProgressSnapshot, QuoteStyle, SmartPunctuation, TextReplacementRule, TrashInfo,
+    Work,
 };
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
@@ -82,6 +83,7 @@ pub fn from_entities(
     dict_words: &[DictWord],
     text_replacement_rules: &[TextReplacementRule],
     note_templates: &[NoteTemplate],
+    statuses: &[BinderStatus],
     assets: &[Asset],
     // Asset bytes keyed by content hash, read from the project's media
     // directory by the caller — this crate resolves no paths of its own.
@@ -227,6 +229,7 @@ pub fn from_entities(
                     char_count_goal: item.char_count_goal,
                     dict_language: item.dict_language.clone(),
                     aliases: item.aliases.clone(),
+                    status_id: item.status,
                     inline_contents,
                     prose_refs,
                     reference_ids: item.references.clone(),
@@ -364,6 +367,21 @@ pub fn from_entities(
         note_template_bodies: note_templates
             .iter()
             .map(|t| (t.id, t.body.clone()))
+            .collect(),
+        // Written in the order the caller hands them over, which is the order
+        // `Work.statuses` (an `ordered_one_to_many`) holds — that sequence *is* the
+        // ladder, so nothing else records it.
+        statuses: statuses
+            .iter()
+            .map(|st| BinderStatusFile {
+                file_id: st.id,
+                uid: st.uid,
+                created_at: fmt_dt(&st.created_at),
+                updated_at: fmt_dt(&st.updated_at),
+                name: st.name.clone(),
+                category: st.category.clone(),
+                details: st.details.clone(),
+            })
             .collect(),
         // Asset rows come from the store; their bytes come from the caller,
         // which read them out of the project's media directory. An asset with
@@ -565,6 +583,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
         note_templates: Vec::new(),
+        statuses: Vec::new(),
         assets: Vec::new(),
         // Zero for the same reason the vectors are empty — `materialize` mints
         // the row and writes its store id back. Unlike them, zero is not a
@@ -633,6 +652,22 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
     // failure by far: the writer opens a project whose templates look blank, autosave
     // rewrites `templates.ron` from that empty state moments later, and the text is gone
     // for good. Failing the load leaves every byte on disk and is recoverable.
+    let statuses: Vec<BinderStatus> = bundle
+        .statuses
+        .iter()
+        .map(|st| {
+            Ok(BinderStatus {
+                id: st.file_id,
+                uid: st.uid,
+                created_at: parse_dt(&st.created_at)?,
+                updated_at: parse_dt(&st.updated_at)?,
+                name: st.name.clone(),
+                category: st.category.clone(),
+                details: st.details.clone(),
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
     let note_templates = bundle
         .note_templates
         .iter()
@@ -784,9 +819,14 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                     point_of_view: Vec::new(),
                     books: Vec::new(),
                     tags: Vec::new(),
+                    // Carried on `LoadedItem` beside `tag_ids`, for the same reason: it is
+                    // still a *file* id here and only becomes a store id once every status
+                    // row exists.
+                    status: None,
                 },
                 contents,
                 tag_ids: f.tag_ids.clone(),
+                status_id: f.status_id,
             });
         }
 
@@ -937,6 +977,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         dict_words,
         text_replacement_rules,
         note_templates,
+        statuses,
         smart_punctuation,
         binders: loaded_binders,
         trash_infos,

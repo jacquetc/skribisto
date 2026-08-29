@@ -159,6 +159,7 @@ mod tests {
                 &ctx,
                 None,
                 &CreateBinderItemDto {
+                    status: None,
                     title: "row".into(),
                     role,
                     sub_role,

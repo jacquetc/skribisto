@@ -48,6 +48,7 @@ pub fn import(
     overwrite: bool,
     manuscript_binder_name: &str,
     story_bible_binder_name: &str,
+    status_names: &[String],
 ) -> Result<ImportSummary> {
     import_with_progress(
         source_path,
@@ -55,6 +56,7 @@ pub fn import(
         overwrite,
         manuscript_binder_name,
         story_bible_binder_name,
+        status_names,
         &|_, _| {},
         &AtomicBool::new(false),
     )
@@ -68,12 +70,14 @@ pub fn import(
 /// on disk: the `.skrib` is written to a sibling temp file and atomically renamed
 /// into place only after the final cancel check, so an existing `output_path`
 /// (overwrite) survives an aborted or failed import untouched.
+#[allow(clippy::too_many_arguments)]
 pub fn import_with_progress(
     source_path: &str,
     output_path: &str,
     overwrite: bool,
     manuscript_binder_name: &str,
     story_bible_binder_name: &str,
+    status_names: &[String],
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Result<ImportSummary> {
@@ -118,6 +122,7 @@ pub fn import_with_progress(
         &src,
         manuscript_binder_name,
         story_bible_binder_name,
+        status_names,
         report,
         cancel,
     );

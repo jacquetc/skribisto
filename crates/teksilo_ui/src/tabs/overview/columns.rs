@@ -27,7 +27,7 @@ use uuid::Uuid;
 use crate::goals::format_count;
 use crate::models::COL_GOAL;
 use crate::models::{
-    COL_BOOKS, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE,
+    COL_BOOKS, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_STATUS, COL_TAGS, COL_TITLE,
     COL_TOTAL_COMMENTS, COL_TOTAL_WORDS, COL_TYPE,
 };
 
@@ -48,6 +48,7 @@ pub(super) fn overview_columns(
         title_column(vm),
         type_column(vm),
         label_column(vm),
+        status_column(vm),
         tags_column(vm),
     ];
     // Gated the same way every other Books surface in this edition is: below two
@@ -219,6 +220,77 @@ fn label_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     .sortable(true)
     .editable(true)
     .truncation(TruncationPolicy::Ellipsis)
+}
+
+/// **Status** — where this row is on the project's workflow ladder.
+///
+/// The glyph alone, never glyph + word: this table's width budget is already thin (the
+/// fixed columns cost 540 dp against the ~610 dp an editor pane has in a split window with
+/// both docks open, which is why the Target column prints a bare number). The name arrives
+/// on hover, and the Inspector shows both.
+///
+/// **Sortable**, unlike Tags — and that is the whole difference between the two axes. A set
+/// of dots has no natural order; a ladder is nothing but an order, so "show me the least
+/// finished first" is a real question with a real answer. It sorts by ladder position, not
+/// by name: see `comparator`.
+///
+/// An unset row renders a **faint dashed ring**, not nothing — and that is a concession the
+/// framework forces rather than the design's first choice. The cell is the picker, and a
+/// button with no glyph is a target the writer cannot aim at; rendering it only on hover is
+/// not available either, because `CellContext::is_hovered` is hardcoded `false` in the
+/// table body. What saves it is the tint: unset draws in `TextRole::Disabled` while every
+/// real rung draws in a live role, so a column of unset rows still recedes and a set one
+/// still pops. The Inspector, which is not a grid of buttons, does say "No status" in
+/// words.
+///
+/// ⚠ **This column costs the width budget.** `columns.rs`' own header records that the
+/// fixed columns already come to ~540 dp against the ~610 dp an editor pane has in a split
+/// window with the outline and inspector docks open. This one is deliberately the narrowest
+/// interactive cell in the table, and it still pushes that case into a horizontal scroll.
+/// The honest options if that matters more than having it here are to drop another column
+/// or to make the set user-choosable; neither is decided.
+fn status_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
+    let vm = vm.clone();
+    Column::new(
+        COL_STATUS,
+        tr!(overview_col_status()),
+        move |row: &OverviewRow, _cx| {
+            let statuses = vm.statuses();
+            // A container whose subtree disagrees with it gets one asterisk beside the
+            // glyph — the *derived* half of the answer, and marked as derived rather than
+            // drawn as a second status. An authored value always wins; this only ever
+            // annotates it. Never in the binder tree, only here, where the row already sits
+            // among subtree sums.
+            let mark = if row.subtree_differs { "∗" } else { "" };
+            let set: crate::statuses::SetStatus = {
+                let statuses = statuses.clone();
+                let item_id = row.item_id;
+                Rc::new(move |status| statuses.set_item_status(item_id, status))
+            };
+            Box::new(
+                HStack::new()
+                    .spacing(1.0)
+                    .child(crate::statuses::status_picker_dense(
+                        &statuses,
+                        row.status,
+                        row.subtree_differs,
+                        set,
+                    ))
+                    // The asterisk carries the concept tooltip, so hovering the mark
+                    // explains what a derived value is rather than only naming the rung.
+                    .child(crate::widgets::tip::RichTip::new(
+                        crate::tooltip_registry::CONCEPT_STATUS,
+                        TextWidget::new(lit!(mark.to_string()))
+                            .color(TextRole::Secondary)
+                            .single_line(),
+                    )),
+            )
+        },
+    )
+    .width(ColumnWidth::Fixed(44.0))
+    .min_width(44.0)
+    .sortable(true)
+    .truncation(TruncationPolicy::None)
 }
 
 /// **Tags** — the row's tags as the same coloured dot row the stream, corkboard and
@@ -604,6 +676,7 @@ mod tests {
             &app_ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "Book One".into(),
                 role: BinderItemRole::Folder,
                 sub_role: BinderItemSubRole::Book,
@@ -648,6 +721,7 @@ mod tests {
             &app_ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "Book Two".into(),
                 role: BinderItemRole::Folder,
                 sub_role: BinderItemSubRole::Book,

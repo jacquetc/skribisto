@@ -1250,6 +1250,7 @@ mod item_note_segmented_tests {
             ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "A note".into(),
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Note,
@@ -1300,6 +1301,7 @@ mod item_note_segmented_tests {
             ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "A folder".into(),
                 role: BinderItemRole::Folder,
                 sub_role: sub_role.clone(),

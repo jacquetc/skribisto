@@ -109,12 +109,16 @@ pub fn present(
     app_ctx: Rc<AppContext>,
     ids: AppIds,
     show_on_open: Signal<bool>,
+    statuses: crate::statuses::StatusesViewModel,
     open_pace: OpenPace,
 ) {
     ctx.present_modal(
         ModalRequest::deferred(move |t| {
             t.add(PaceSummaryPanel {
                 rows: active_plans(&app_ctx, &ids),
+                // Measured here, with the plans, so both halves of the card describe the
+                // same moment — and measured *once*, not per build.
+                completion: crate::statuses::completion::measure(&app_ctx, &ids, &statuses),
                 show_on_open: show_on_open.clone(),
                 open_pace: open_pace.clone(),
                 root_child: None,
@@ -129,6 +133,11 @@ pub fn present(
 
 struct PaceSummaryPanel {
     rows: Vec<PlanRow>,
+    /// Where the manuscript stands, by rung. The *content* is
+    /// [`crate::statuses::completion`]'s and is shared verbatim with the panel the menu
+    /// bar opens — two renderings of one number that could drift apart is exactly what
+    /// that split prevents.
+    completion: crate::statuses::completion::Completion,
     show_on_open: Signal<bool>,
     /// Open the Book's Pace planner — the panel's one forward action.
     open_pace: OpenPace,
@@ -144,6 +153,16 @@ impl std::fmt::Debug for PaceSummaryPanel {
 impl Widget for PaceSummaryPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let mut list = VStack::new().spacing(14.0);
+        // The completion readout leads: it answers "where is the book" for every project,
+        // whereas the plans below answer "will I hit the date" only where one is set.
+        // Skipped entirely on a manuscript with no prose rows — the readout's own empty
+        // line has nothing to add to a card that is already about a deadline.
+        if !self.completion.is_empty() {
+            list = list.child(crate::tabs::Boxed::new(
+                crate::statuses::completion::readout(&self.completion),
+            ));
+            list = list.child(Divider::new());
+        }
         for row in &self.rows {
             let open = self.open_pace.clone();
             let book = row.book_item_id;

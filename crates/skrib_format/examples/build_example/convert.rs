@@ -294,6 +294,12 @@ fn build(spec: &Spec, chapters: &[RawChapter]) -> Result<WorkBundle> {
     };
 
     Ok(WorkBundle {
+        // Empty here, and filled by `enrich` — which is where every other piece of
+        // editorial vocabulary is laid down (tags, the story bible, points of view). The
+        // documented pipeline for a converted example is `convert` then `enrich`, so this
+        // is a starting state rather than a decision: `ensure_statuses` writes the ladder
+        // the spec declares on the pass that follows.
+        statuses: Vec::new(),
         manifest: ProjectManifest {
             format_version: FORMAT_VERSION,
             format_min_read_version: Some(7),
@@ -429,6 +435,7 @@ fn split_footnote(paragraph: &str) -> Option<(String, &str)> {
 /// A row with everything at its default, so each call site states only what it means.
 fn blank(file_id: u64, uid: uuid::Uuid, now: &str) -> BinderItemFile {
     BinderItemFile {
+        status_id: None,
         file_id,
         uid,
         created_at: now.to_string(),

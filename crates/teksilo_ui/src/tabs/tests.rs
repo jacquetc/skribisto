@@ -1374,6 +1374,7 @@ fn scene_page_seeded(text: &str) -> (WidgetTree, WidgetId, ContentTab) {
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::statuses::StatusesViewModel::new(ctx.clone(), AppIds::new()),
         crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
     let mut tree = crate::test_support::tree_with_settings(&ctx);
@@ -1617,6 +1618,7 @@ fn scene_page_max_scroll(typewriter: crate::shared::TypewriterSettings) -> (f32,
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::statuses::StatusesViewModel::new(ctx.clone(), AppIds::new()),
         crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
     let mut tree = crate::test_support::tree_with_events(&ctx);
@@ -2560,6 +2562,7 @@ fn committing_a_title_reaches_both_of_its_homes() {
         &ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: "Old name".into(),
             role: BinderItemRole::Folder,
             sub_role: BinderItemSubRole::ChapterScene,
@@ -2659,6 +2662,7 @@ fn the_details_segment_creates_a_tag_against_the_tabs_own_work() {
         &ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: "A note".into(),
             role: BinderItemRole::Item,
             sub_role: BinderItemSubRole::Note,
@@ -2748,6 +2752,7 @@ fn a_segment_registered_for_a_note_folder_appears_on_its_bar() {
         &ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: "Research".into(),
             role: BinderItemRole::Folder,
             sub_role: BinderItemSubRole::Note,
@@ -2902,6 +2907,7 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
             crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
             Signal::new(GoalUnit::default()),
             crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+            crate::statuses::StatusesViewModel::new(ctx.clone(), AppIds::new()),
             crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
         )
     };
@@ -2999,6 +3005,7 @@ fn a_stream_lane_marks_every_row_on_its_own_slice() {
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::statuses::StatusesViewModel::new(ctx.clone(), AppIds::new()),
         crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
     tab.segment
@@ -3101,6 +3108,7 @@ fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
         crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
         crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::statuses::StatusesViewModel::new(ctx.clone(), AppIds::new()),
         crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
 
@@ -3874,6 +3882,7 @@ fn is_stale_distinguishes_a_later_edit_from_flushed_and_quiet() {
         &ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: "Scene".into(),
             role: BinderItemRole::Item,
             sub_role: BinderItemSubRole::Scene,
@@ -4034,6 +4043,7 @@ fn a_streams_find_banner_searches_every_row_of_the_page() {
             &ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: title.into(),
                 role,
                 sub_role,

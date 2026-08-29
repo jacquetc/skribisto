@@ -47,6 +47,7 @@ impl<'a> WorkHashMapTable<'a> {
             WorkRelationshipField::SmartPunctuation => {
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation
             }
+            WorkRelationshipField::Statuses => &self.store.jn_binder_status_from_work_statuses,
             WorkRelationshipField::Tags => &self.store.jn_binder_tag_from_work_tags,
             WorkRelationshipField::TextReplacementRules => {
                 &self
@@ -71,6 +72,7 @@ impl<'a> WorkHashMapTable<'a> {
             &self.store.jn_note_template_from_work_note_templates,
             &entity.id,
         );
+        entity.statuses = junction_get(&self.store.jn_binder_status_from_work_statuses, &entity.id);
         entity.assets = junction_get(&self.store.jn_asset_from_work_assets, &entity.id);
         if let Some(val) = junction_get(
             &self.store.jn_smart_punctuation_from_work_smart_punctuation,
@@ -113,6 +115,7 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("work");
                 Work {
+                    statuses: Vec::new(),
                     id,
                     ..entity.clone()
                 }
@@ -183,6 +186,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation,
                 new_entity.id,
                 vec![new_entity.smart_punctuation],
+            );
+            junction_set(
+                &self.store.jn_binder_status_from_work_statuses,
+                new_entity.id,
+                new_entity.statuses.clone(),
             );
             junction_set(
                 &self.store.jn_binder_tag_from_work_tags,
@@ -331,6 +339,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 entity.note_templates.clone(),
             );
             junction_set(
+                &self.store.jn_binder_status_from_work_statuses,
+                entity.id,
+                entity.statuses.clone(),
+            );
+            junction_set(
                 &self.store.jn_asset_from_work_assets,
                 entity.id,
                 entity.assets.clone(),
@@ -388,6 +401,7 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 id,
             );
             junction_remove(&self.store.jn_note_template_from_work_note_templates, id);
+            junction_remove(&self.store.jn_binder_status_from_work_statuses, id);
             junction_remove(&self.store.jn_asset_from_work_assets, id);
             junction_remove(
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation,
@@ -435,6 +449,7 @@ impl<'a> WorkHashMapTableRO<'a> {
             WorkRelationshipField::SmartPunctuation => {
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation
             }
+            WorkRelationshipField::Statuses => &self.store.jn_binder_status_from_work_statuses,
             WorkRelationshipField::Tags => &self.store.jn_binder_tag_from_work_tags,
             WorkRelationshipField::TextReplacementRules => {
                 &self
@@ -459,6 +474,7 @@ impl<'a> WorkHashMapTableRO<'a> {
             &self.store.jn_note_template_from_work_note_templates,
             &entity.id,
         );
+        entity.statuses = junction_get(&self.store.jn_binder_status_from_work_statuses, &entity.id);
         entity.assets = junction_get(&self.store.jn_asset_from_work_assets, &entity.id);
         if let Some(val) = junction_get(
             &self.store.jn_smart_punctuation_from_work_smart_punctuation,

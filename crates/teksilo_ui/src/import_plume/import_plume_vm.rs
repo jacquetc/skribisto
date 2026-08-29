@@ -210,6 +210,13 @@ impl ImportPlumeViewModel {
 
     fn dto(&self, overwrite: bool) -> ImportPlumeCreatorFileDto {
         ImportPlumeCreatorFileDto {
+            // Plume stores a per-node status as an INDEX into its own fixed eight-rung
+            // ladder and translates the names at display time, so the `.plume` carries no
+            // names at all. Resolve them here, in the writer's locale, and hand them down
+            // — the same treatment the two binder names above get. The Plume preset is
+            // ordered to match Plume's list exactly, which is what makes the index map
+            // straight across.
+            status_names: crate::statuses::Preset::Plume.resolved_names(),
             source_path: self.source.get(),
             output_path: build_target(&self.location.get(), &self.name.get()),
             overwrite,

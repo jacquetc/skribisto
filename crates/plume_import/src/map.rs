@@ -18,9 +18,10 @@ use common::entities::BinderItemRole as Role;
 use common::entities::BinderItemSubRole as SubRole;
 use common::entities::ContentRole;
 use skrib_format::{
-    BinderFile, BinderItemFile, BinderTagFile, BundledBinder, BundledItem, DictWordFile,
-    FORMAT_VERSION, InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle, WorkFile,
-    binder_dir_name, html_to_djot, new_unique_id, prose_file_name, prose_kind, prose_relpath,
+    BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BundledBinder, BundledItem,
+    DictWordFile, FORMAT_VERSION, InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle,
+    WorkFile, binder_dir_name, html_to_djot, new_unique_id, prose_file_name, prose_kind,
+    prose_relpath,
 };
 use skribisto_model::SubRoleExt;
 use skribisto_model::content_allowed;
@@ -57,6 +58,7 @@ pub fn build_bundle(
     source: &PlumeSource,
     manuscript_name: &str,
     story_bible_name: &str,
+    status_names: &[String],
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Mapped {
@@ -73,6 +75,10 @@ pub fn build_bundle(
 
     let manuscript_bid = b.ids.take();
     let story_bid = b.ids.take();
+
+    // The status ladder BEFORE the walk, for the same reason the badge tags are: `emit_*`
+    // resolves each node's rung as it goes, so the rows have to exist and be numbered.
+    b.prepare_statuses(status_names);
 
     // Status tags BEFORE the walk: `emit_*` attaches one per node as it goes, so the
     // decision of whether badges are a vocabulary at all has to be already made.
@@ -190,6 +196,9 @@ pub fn build_bundle(
         // Plume has no template concept, so an imported project starts with none —
         // the writer applies a preset from Settings ▸ Templates if they want any.
         note_templates: Vec::new(),
+        // Plume's own revision ladder, minted from the vocabulary the caller supplied.
+        // Empty when it supplied none, in which case every node's status was dropped too.
+        statuses: b.statuses,
         // A Plume project has no binary assets to carry over.
         assets: Vec::new(),
         asset_bytes: Default::default(),
@@ -272,6 +281,11 @@ struct Builder<'a> {
     /// Node badge value → its (non-discoverable) status tag file id. Empty when the
     /// badges did not look like a reused vocabulary — see `badges_look_like_a_vocabulary`.
     badge_tag: HashMap<String, u64>,
+    /// The imported workflow ladder, in rung order.
+    statuses: Vec<BinderStatusFile>,
+    /// Plume ladder index → the `file_id` of the rung minted for it. Indexed directly, so
+    /// a node whose index falls past the end simply has no status.
+    status_ids: Vec<u64>,
     warnings: Vec<String>,
     imported_items: u64,
     skipped_trashed: u64,
@@ -301,6 +315,8 @@ impl<'a> Builder<'a> {
             tags: Vec::new(),
             group_tag: HashMap::new(),
             badge_tag: HashMap::new(),
+            statuses: Vec::new(),
+            status_ids: Vec::new(),
             warnings: Vec::new(),
             imported_items: 0,
             skipped_trashed: 0,
@@ -332,6 +348,55 @@ impl<'a> Builder<'a> {
             note_template: None,
         });
         file_id
+    }
+
+    /// Mint the workflow ladder from the vocabulary the caller supplied.
+    ///
+    /// Plume stores a per-node `status` as an **index** into its own fixed eight-rung list
+    /// and translates the names at display time, so the names are not in the project file
+    /// at all — the caller passes them down already resolved in the UI's locale, exactly as
+    /// it does the two binder names. An empty slice means "do not seed statuses", and every
+    /// node's status is then dropped rather than pointed at nothing.
+    ///
+    /// Category is assigned by position along the ladder, since that is the only signal
+    /// available: the first rung is where work starts, the last is where it ends, and the
+    /// middle is drafting. It is a starting point the writer can re-pick per rung — the
+    /// name is theirs, and so is the category.
+    fn prepare_statuses(&mut self, names: &[String]) {
+        let last = names.len().saturating_sub(1);
+        for (i, name) in names.iter().enumerate() {
+            let file_id = self.ids.take();
+            let category = if names.len() == 1 {
+                common::entities::StatusCategory::Drafting
+            } else if i == 0 {
+                common::entities::StatusCategory::Planned
+            } else if i == last {
+                common::entities::StatusCategory::Final
+            } else if i == last - 1 {
+                common::entities::StatusCategory::Revised
+            } else {
+                common::entities::StatusCategory::Drafting
+            };
+            self.statuses.push(BinderStatusFile {
+                file_id,
+                uid: common::uid::new_uid(),
+                created_at: self.now.clone(),
+                updated_at: self.now.clone(),
+                name: name.clone(),
+                category,
+                details: String::new(),
+            });
+            self.status_ids.push(file_id);
+        }
+    }
+
+    /// A node's Plume ladder index → the file id of the rung minted for it.
+    ///
+    /// `None` for an unset index, and also for one past the end of the vocabulary the
+    /// caller supplied — a shorter ladder simply loses its tail rather than folding
+    /// several Plume rungs onto one.
+    fn status_for(&self, node: &PlumeNode) -> Option<u64> {
+        self.status_ids.get(node.status? as usize).copied()
     }
 
     /// Mint the status tags, if the project's badges look like a reused vocabulary.
@@ -437,6 +502,7 @@ impl<'a> Builder<'a> {
                 folder_contents,
                 Vec::new(),
                 "",
+                None,
             );
             out.push(gbi);
 
@@ -461,6 +527,7 @@ impl<'a> Builder<'a> {
                     ],
                     Vec::new(),
                     "",
+                    None,
                 );
                 // Set after construction rather than as two more `make_item` parameters:
                 // it already takes ten, and only story-bible objects have either. As a
@@ -561,6 +628,10 @@ impl<'a> Builder<'a> {
             contents.push((ContentRole::SynopsisText, synopsis));
         }
         let refs = self.resolve_attend(&node.attend);
+        // Plume's own revision rung for this node, resolved against the ladder minted
+        // in `prepare_statuses`. `None` when the node carries no status, when the
+        // caller supplied no vocabulary, or when the index falls past its end.
+        let status = self.status_for(node);
         let (_id, mut bi) = self.make_item(
             bindex,
             bname,
@@ -572,6 +643,7 @@ impl<'a> Builder<'a> {
             contents,
             refs,
             &node.badge,
+            status,
         );
         self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
@@ -593,6 +665,7 @@ impl<'a> Builder<'a> {
                 ],
                 Vec::new(),
                 "",
+                None,
             );
             out.push(cbi);
         }
@@ -612,6 +685,7 @@ impl<'a> Builder<'a> {
                 ],
                 Vec::new(),
                 "",
+                None,
             );
             out.push(nbi);
         }
@@ -632,6 +706,7 @@ impl<'a> Builder<'a> {
                 Vec::new(),
                 Vec::new(),
                 "",
+                None,
             );
             out.push(ebi);
         }
@@ -650,6 +725,10 @@ impl<'a> Builder<'a> {
         let scene = self.text_djot(node.number);
         let synopsis = self.synopsis_djot(node.number);
         let refs = self.resolve_attend(&node.attend);
+        // Plume's own revision rung for this node, resolved against the ladder minted
+        // in `prepare_statuses`. `None` when the node carries no status, when the
+        // caller supplied no vocabulary, or when the index falls past its end.
+        let status = self.status_for(node);
         let (_id, mut bi) = self.make_item(
             bindex,
             bname,
@@ -665,6 +744,7 @@ impl<'a> Builder<'a> {
             ],
             refs,
             &node.badge,
+            status,
         );
         self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
@@ -683,6 +763,10 @@ impl<'a> Builder<'a> {
         let scene = self.text_djot(node.number);
         let synopsis = self.synopsis_djot(node.number);
         let refs = self.resolve_attend(&node.attend);
+        // Plume's own revision rung for this node, resolved against the ladder minted
+        // in `prepare_statuses`. `None` when the node carries no status, when the
+        // caller supplied no vocabulary, or when the index falls past its end.
+        let status = self.status_for(node);
         let (_id, mut bi) = self.make_item(
             bindex,
             bname,
@@ -697,6 +781,7 @@ impl<'a> Builder<'a> {
             ],
             refs,
             &node.badge,
+            status,
         );
         self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
@@ -757,6 +842,7 @@ impl<'a> Builder<'a> {
             ],
             Vec::new(),
             "",
+            None,
         );
         out.push(nbi);
     }
@@ -788,6 +874,7 @@ impl<'a> Builder<'a> {
         contents: Vec<(ContentRole, String)>,
         reference_ids: Vec<u64>,
         label: &str,
+        status_id: Option<u64>,
     ) -> (u64, BundledItem) {
         let item_id = self.ids.take();
         // Minted here rather than at construction below because the prose file
@@ -846,6 +933,7 @@ impl<'a> Builder<'a> {
                     role,
                     sub_role,
                     label: label.to_string(),
+                    status_id,
                     activated: true,
                     is_favorite: false,
                     is_exportable,
@@ -1121,8 +1209,17 @@ mod tests {
             name: name.to_string(),
             is_trashed: false,
             badge: badge.to_string(),
+            status: None,
             attend: Vec::new(),
             children: Vec::new(),
+        }
+    }
+
+    /// `node`, with a Plume ladder index on it.
+    fn node_at(kind: PlumeKind, number: u32, name: &str, badge: &str, status: u8) -> PlumeNode {
+        PlumeNode {
+            status: Some(status),
+            ..node(kind, number, name, badge)
         }
     }
 
@@ -1152,10 +1249,23 @@ mod tests {
             &source,
             "Manuscript",
             "Story Bible",
+            &PLUME_LADDER.map(str::to_string),
             &|_, _| {},
             &AtomicBool::new(false),
         )
     }
+
+    /// Plume's own eight rungs, as the app hands them down.
+    const PLUME_LADDER: [&str; 8] = [
+        "1st draft",
+        "2nd draft",
+        "3rd draft",
+        "1st Edit",
+        "2nd Edit",
+        "3rd Edit",
+        "Proofread",
+        "Finished",
+    ];
 
     fn tag<'a>(m: &'a Mapped, name: &str) -> &'a BinderTagFile {
         m.bundle
@@ -1320,6 +1430,133 @@ mod tests {
         assert!(
             !prose.contains("Lizzy"),
             "aliases must not be duplicated into the synopsis: {prose:?}"
+        );
+    }
+
+    // --- Plume `status` → the workflow ladder --------------------------------
+
+    #[test]
+    fn the_ladder_is_minted_in_order_with_a_category_per_rung() {
+        let m = map(
+            PlumeTree {
+                project_name: "P".into(),
+                roots: vec![node(PlumeKind::Scene, 1, "A", "")],
+            },
+            PlumeAttendance {
+                spinbox_label: String::new(),
+                groups: vec![],
+            },
+        );
+        let names: Vec<&str> = m.bundle.statuses.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names, PLUME_LADDER, "the ladder keeps the caller's order");
+
+        use common::entities::StatusCategory as C;
+        let cats: Vec<&C> = m.bundle.statuses.iter().map(|s| &s.category).collect();
+        assert_eq!(cats[0], &C::Planned, "the first rung is where work starts");
+        assert_eq!(cats[7], &C::Final, "the last rung is where it ends");
+        assert_eq!(
+            cats[6],
+            &C::Revised,
+            "the one before last is the review pass"
+        );
+        assert!(
+            cats[1..=5].iter().all(|c| *c == &C::Drafting),
+            "everything between is drafting, got {cats:?}"
+        );
+        assert!(
+            m.bundle.statuses.iter().all(|s| !s.uid.is_nil()),
+            "every rung mints a durable uid — a file id is re-minted on every load"
+        );
+    }
+
+    #[test]
+    fn a_nodes_status_index_lands_on_that_rung() {
+        // 0 = "1st draft", 7 = "Finished".
+        let roots = vec![
+            node_at(PlumeKind::Scene, 1, "First", "", 0),
+            node_at(PlumeKind::Scene, 2, "Last", "", 7),
+            node(PlumeKind::Scene, 3, "Unmarked", ""),
+        ];
+        let m = map(
+            PlumeTree {
+                project_name: "P".into(),
+                roots,
+            },
+            PlumeAttendance {
+                spinbox_label: String::new(),
+                groups: vec![],
+            },
+        );
+        let rung = |i: usize| Some(m.bundle.statuses[i].file_id);
+        assert_eq!(item(&m, "First").status_id, rung(0));
+        assert_eq!(item(&m, "Last").status_id, rung(7));
+        assert_eq!(
+            item(&m, "Unmarked").status_id,
+            None,
+            "a node Plume never marked arrives unmarked, not at '1st draft'"
+        );
+    }
+
+    #[test]
+    fn status_and_badge_are_independent_axes() {
+        // Plume's own tree model carries Status and Badge as two separate columns; an
+        // item may legitimately have one, both, or neither.
+        let roots = vec![
+            node_at(PlumeKind::Scene, 1, "A", "hook", 2),
+            node_at(PlumeKind::Scene, 2, "B", "hook", 2),
+        ];
+        let m = map(
+            PlumeTree {
+                project_name: "P".into(),
+                roots,
+            },
+            PlumeAttendance {
+                spinbox_label: String::new(),
+                groups: vec![],
+            },
+        );
+        let a = item(&m, "A");
+        assert_eq!(a.status_id, Some(m.bundle.statuses[2].file_id));
+        assert_eq!(
+            a.tag_ids,
+            vec![tag(&m, "hook").file_id],
+            "the badge still becomes its own tag — the status did not consume it"
+        );
+    }
+
+    #[test]
+    fn an_empty_vocabulary_seeds_nothing_and_assigns_nothing() {
+        let tree = PlumeTree {
+            project_name: "P".into(),
+            roots: vec![node_at(PlumeKind::Scene, 1, "A", "", 3)],
+        };
+        let attendance = PlumeAttendance {
+            spinbox_label: String::new(),
+            groups: vec![],
+        };
+        let source = PlumeSource::for_tests();
+        let info = PlumeInfo {
+            title: "T".into(),
+            created_at: None,
+            updated_at: None,
+        };
+        let m = build_bundle(
+            &tree,
+            &attendance,
+            &info,
+            &[],
+            &source,
+            "Manuscript",
+            "Story Bible",
+            &[],
+            &|_, _| {},
+            &AtomicBool::new(false),
+        );
+        assert!(m.bundle.statuses.is_empty());
+        assert_eq!(
+            item(&m, "A").status_id,
+            None,
+            "with no ladder to point at, a status is dropped rather than dangled"
         );
     }
 

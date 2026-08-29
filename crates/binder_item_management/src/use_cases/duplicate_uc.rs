@@ -179,6 +179,12 @@ impl DuplicateUseCase {
                     // answering to one name is the intended outcome here — the roster
                     // shows both.
                     aliases: src.aliases.clone(),
+                    // Copied, and explicit for the same reason as the two above:
+                    // `..Default::default()` blanks it. Duplicating makes a second copy of
+                    // the same thing, so it arrives at the same stage the original is at —
+                    // which is also what Scrivener does for every item created *from*
+                    // another (duplicate, split, import), rather than starting it fresh.
+                    status: src.status,
                     ..Default::default()
                 })?;
 

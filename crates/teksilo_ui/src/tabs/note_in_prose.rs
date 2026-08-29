@@ -1030,6 +1030,7 @@ mod tests {
             &ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "A note".into(),
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Note,
@@ -1046,6 +1047,7 @@ mod tests {
             &ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "Book one".into(),
                 role: BinderItemRole::Folder,
                 sub_role: BinderItemSubRole::Book,
@@ -1062,6 +1064,7 @@ mod tests {
             &ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "A scene".into(),
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Scene,
@@ -1116,6 +1119,7 @@ mod tests {
             &f.ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: title.into(),
                 role: BinderItemRole::Folder,
                 sub_role: BinderItemSubRole::Book,
@@ -1137,6 +1141,7 @@ mod tests {
             &f.ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: title.into(),
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Scene,

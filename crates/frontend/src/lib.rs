@@ -41,6 +41,7 @@ pub use flat_event::{FlatEvent, FlatEventKind};
 pub use direct_access::asset;
 pub use direct_access::binder;
 pub use direct_access::binder_item;
+pub use direct_access::binder_status;
 pub use direct_access::binder_tag;
 pub use direct_access::comment;
 pub use direct_access::comment_reply;

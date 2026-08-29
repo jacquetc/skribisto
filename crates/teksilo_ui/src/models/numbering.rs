@@ -386,6 +386,7 @@ mod tests {
                 &ctx,
                 None,
                 &CreateBinderItemDto {
+                    status: None,
                     title: title.into(),
                     role: BinderItemRole::Item,
                     sub_role: BinderItemSubRole::ChapterScene,

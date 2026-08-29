@@ -74,6 +74,7 @@ impl Ctx {
             &mut undo,
             None,
             &CreateWorkDto {
+                statuses: Vec::new(),
                 smart_punctuation: smart_punctuation_id,
                 ..Default::default()
             },
@@ -112,6 +113,7 @@ impl Ctx {
             &mut self.undo,
             None,
             &CreateBinderItemDto {
+                status: None,
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Scene,
                 activated: true,

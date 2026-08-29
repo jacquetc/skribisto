@@ -67,6 +67,7 @@ fn mk_work(ctx: &AppContext, stack: Option<u64>, title: &str) -> EntityId {
         ctx,
         stack,
         &CreateWorkDto {
+            statuses: Vec::new(),
             created_at: now(),
             updated_at: now(),
             title: title.into(),

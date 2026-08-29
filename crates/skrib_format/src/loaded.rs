@@ -10,8 +10,8 @@
 //! remaps them to fresh store ids while preserving order and M2M links.
 
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, CommentAnchorKind, CommentOrphanReason, Content,
-    DictWord, NoteTemplate, SmartPunctuation, TextReplacementRule, Work,
+    Asset, Binder, BinderItem, BinderStatus, BinderTag, CommentAnchorKind, CommentOrphanReason,
+    Content, DictWord, NoteTemplate, SmartPunctuation, TextReplacementRule, Work,
 };
 
 pub struct LoadedWork {
@@ -25,6 +25,8 @@ pub struct LoadedWork {
     /// its Djot `body` inline here — the manifest/blob split is an on-disk concern that
     /// `bundle_to_loaded` has already reassembled by this point.
     pub note_templates: Vec<NoteTemplate>,
+    /// The project's workflow ladder, in the order the writer arranged it.
+    pub statuses: Vec<BinderStatus>,
     /// Image metadata rows. The bytes are *not* here: they live in the
     /// project's media directory and in `assets/<hash>.<ext>` inside the
     /// bundle, which is what keeps a project's photographs out of the store
@@ -77,6 +79,10 @@ pub struct LoadedItem {
     pub contents: Vec<Content>,
     /// M2M tag file ids for this item.
     pub tag_ids: Vec<u64>,
+    /// This item's rung, as a status **file id**, remapped to the store id at
+    /// materialise time — the same treatment `tag_ids` gets. `None` is "no status";
+    /// so is a file id that no longer names a live status, since the reference is weak.
+    pub status_id: Option<u64>,
 }
 
 pub struct LoadedTrash {

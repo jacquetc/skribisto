@@ -1035,6 +1035,7 @@ mod tests {
             crate::writing_session::WritingGamesViewModel::detached(),
             Signal::new(GoalUnit::default()),
             crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone()),
+            crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone()),
             crate::mentions::MentionIndex::new(app_ctx.clone(), ids.clone()),
         );
         editors.set_item_view_states(item_view_states.clone());
@@ -1095,6 +1096,7 @@ mod tests {
                 &app_ctx,
                 None,
                 &CreateBinderItemDto {
+                    status: None,
                     title: format!("Scene {i}"),
                     role: BinderItemRole::Item,
                     sub_role: BinderItemSubRole::Scene,

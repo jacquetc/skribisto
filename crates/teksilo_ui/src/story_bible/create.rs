@@ -87,6 +87,7 @@ pub fn create_entry(
     let _ = undo_redo_commands::begin_composite(ctx, stack);
     let now = chrono::Utc::now();
     let dto = CreateBinderItemDto {
+        status: None,
         created_at: now,
         updated_at: now,
         title: draft.title.clone(),
@@ -363,6 +364,7 @@ mod tests {
             &ctx,
             Some(stack),
             &frontend::direct_access::CreateBinderItemDto {
+                status: None,
                 title: "New story bible entry".into(),
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Note,
@@ -427,6 +429,7 @@ mod tests {
             &ctx,
             None,
             &frontend::direct_access::CreateBinderItemDto {
+                status: None,
                 title: "Book One".into(),
                 role: BinderItemRole::Folder,
                 sub_role: BinderItemSubRole::Book,
@@ -445,6 +448,7 @@ mod tests {
             &ctx,
             Some(stack),
             &frontend::direct_access::CreateBinderItemDto {
+                status: None,
                 title: "New story bible entry".into(),
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Note,

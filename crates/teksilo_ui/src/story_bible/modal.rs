@@ -659,6 +659,7 @@ mod tests {
             &f.app_ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: title.into(),
                 role: BinderItemRole::Folder,
                 sub_role: BinderItemSubRole::Book,
@@ -678,6 +679,7 @@ mod tests {
             &f.app_ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: title.into(),
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Note,
@@ -766,6 +768,7 @@ mod tests {
             crate::writing_session::WritingGamesViewModel::detached(),
             Signal::new(GoalUnit::default()),
             tags_vm(f),
+            crate::statuses::StatusesViewModel::new(f.app_ctx.clone(), f.ids.clone()),
             crate::mentions::MentionIndex::new(f.app_ctx.clone(), f.ids.clone()),
         )
     }
@@ -825,6 +828,7 @@ mod tests {
             &f.app_ctx,
             None,
             &CreateBinderItemDto {
+                status: None,
                 title: "A scene".into(),
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Scene,

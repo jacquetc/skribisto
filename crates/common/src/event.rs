@@ -64,6 +64,7 @@ pub enum DirectAccessEntity {
     Binder(EntityEvent),
     BinderItem(EntityEvent),
     BinderTag(EntityEvent),
+    BinderStatus(EntityEvent),
     Content(EntityEvent),
     DictWord(EntityEvent),
     TextReplacementRule(EntityEvent),
@@ -229,6 +230,9 @@ impl Event {
                 }
                 DirectAccessEntity::BinderTag(event) => {
                     format!("direct_access_binder_tag_{:?}", event)
+                }
+                DirectAccessEntity::BinderStatus(event) => {
+                    format!("direct_access_binder_status_{:?}", event)
                 }
                 DirectAccessEntity::Content(event) => format!("direct_access_content_{:?}", event),
                 DirectAccessEntity::DictWord(event) => {

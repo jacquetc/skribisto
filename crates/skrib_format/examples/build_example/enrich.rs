@@ -22,12 +22,12 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use anyhow::{Result, bail, ensure};
+use anyhow::{Result, anyhow, bail, ensure};
 use common::entities::{BinderItemRole as Role, BinderItemSubRole as SubRole, ContentRole};
 use skrib_format::{
-    BinderFile, BinderItemFile, BinderTagFile, BundledBinder, BundledItem, ProseRef, SkribShape,
-    WorkBundle, binder_dir_name, markdown_to_djot, prose_file_name, prose_relpath, read_bundle,
-    write_bundle,
+    BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BundledBinder, BundledItem,
+    ProseRef, SkribShape, WorkBundle, binder_dir_name, markdown_to_djot, prose_file_name,
+    prose_relpath, read_bundle, write_bundle,
 };
 
 use crate::spec::{Entry, Spec, uid_for};
@@ -38,6 +38,7 @@ pub fn run(spec_path: &str, bundle_path: &str) -> Result<()> {
     let before = prose_snapshot(&bundle);
 
     let tags = ensure_tags(&mut bundle, &spec);
+    let statuses = ensure_statuses(&mut bundle, &spec);
     // `bible` is keyed by name *and* by every alias, so its length is not the number
     // of notes written — count the entries themselves.
     let notes = spec.entries().count();
@@ -51,7 +52,7 @@ pub fn run(spec_path: &str, bundle_path: &str) -> Result<()> {
     let targets = resolve_targets(&bundle, &spec)?;
     strip_synopses(&mut bundle, &targets);
     let bible = build_bible(&mut bundle, &spec, &tags)?;
-    let chapters = write_chapters(&mut bundle, &spec, &tags, &bible, &targets)?;
+    let chapters = write_chapters(&mut bundle, &spec, &tags, &statuses, &bible, &targets)?;
 
     let after = prose_snapshot(&bundle);
     ensure!(
@@ -62,8 +63,9 @@ pub fn run(spec_path: &str, bundle_path: &str) -> Result<()> {
     write_bundle(bundle_path, SkribShape::ZipFile, &bundle)?;
     println!(
         "enrich: {bundle_path} — {chapters} chapters annotated, {notes} story-bible \
-         notes, {} tags",
-        tags.len()
+         notes, {} tags, {} statuses",
+        tags.len(),
+        statuses.len()
     );
     Ok(())
 }
@@ -131,8 +133,94 @@ fn ensure_tags(bundle: &mut WorkBundle, spec: &Spec) -> BTreeMap<String, u64> {
         by_name.insert(declared.name.clone(), next);
     }
 
+    // Prune what the spec no longer declares, and sweep the dangling references it leaves.
+    //
+    // Without this the builder only ever *adds*: deleting a `[[tag]]` from the TOML left
+    // the row in the artifact for good, so a spec and the bundle it supposedly describes
+    // could disagree indefinitely with nothing saying so. Found when the four `statut/…`
+    // tags outlived their own removal — they had become a status axis, and the artifact
+    // went on shipping them as tags beside it.
+    //
+    // The TOML owns this vocabulary (the loop above already overwrites colour, details and
+    // `discoverable` from it), so pruning is the same ownership carried to its end. The
+    // sweep is not optional: an item's `tag_ids` are `file_id`s, and leaving one pointing
+    // at a removed row is a dangling reference the format has no way to represent.
+    let declared: BTreeSet<u64> = spec
+        .tag
+        .iter()
+        .filter_map(|d| by_name.get(&d.name).copied())
+        .collect();
+    bundle.tags.retain(|t| declared.contains(&t.file_id));
+    for bundled in bundle.binders.iter_mut().flat_map(|b| b.items.iter_mut()) {
+        bundled.item.tag_ids.retain(|id| declared.contains(id));
+    }
+    by_name.retain(|_, id| declared.contains(id));
+
     let ids: BTreeSet<u64> = bundle.tags.iter().map(|t| t.file_id).collect();
     bundle.manifest.work.tag_ids = ids.into_iter().collect();
+    by_name
+}
+
+/// Lay down the workflow ladder, and return `name -> file_id`.
+///
+/// Mirrors [`ensure_tags`] deliberately, including its "keep the row's identity, refresh
+/// what the TOML owns" rule: a rung matched by name keeps its `file_id` and `uid`, so
+/// re-running the builder does not re-point every chapter that wears it.
+///
+/// One real difference: **the order is the data.** `Work.statuses` is an
+/// `ordered_one_to_many`, so the sequence of `bundle.statuses` IS the ladder — which is
+/// what makes one rung "lower" than another for merge and for the Overview's sort. There
+/// is no `status_ids` field on the manifest to carry it (there is none for
+/// `note_templates` either, for the same reason), so this rebuilds the vector in spec
+/// order rather than appending to it.
+fn ensure_statuses(bundle: &mut WorkBundle, spec: &Spec) -> BTreeMap<String, u64> {
+    let mut next = bundle
+        .statuses
+        .iter()
+        .map(|s| s.file_id)
+        .chain(bundle.tags.iter().map(|t| t.file_id))
+        .max()
+        .unwrap_or(0);
+    let existing: BTreeMap<String, BinderStatusFile> = bundle
+        .statuses
+        .drain(..)
+        .map(|s| (s.name.clone(), s))
+        .collect();
+    let now = spec.book.timestamp.clone();
+    let mut by_name: BTreeMap<String, u64> = BTreeMap::new();
+
+    for declared in &spec.status {
+        let row = match existing.get(&declared.name) {
+            Some(prev) => BinderStatusFile {
+                // Identity kept; only what the TOML owns is refreshed.
+                file_id: prev.file_id,
+                uid: prev.uid,
+                created_at: prev.created_at.clone(),
+                updated_at: now.clone(),
+                name: declared.name.clone(),
+                category: declared.category.clone(),
+                details: declared.details.clone(),
+            },
+            None => {
+                next += 1;
+                BinderStatusFile {
+                    file_id: next,
+                    uid: uid_for(&spec.book.unique_id, "status", &declared.name),
+                    created_at: now.clone(),
+                    updated_at: now.clone(),
+                    name: declared.name.clone(),
+                    category: declared.category.clone(),
+                    details: declared.details.clone(),
+                }
+            }
+        };
+        by_name.insert(row.name.clone(), row.file_id);
+        bundle.statuses.push(row);
+    }
+
+    // A rung the spec has dropped is gone from the ladder, and every item that wore it
+    // reads as "no status" — which is exactly what the weak reference is for, and why
+    // removing a rung here does not have to touch a single chapter.
     by_name
 }
 
@@ -369,11 +457,12 @@ fn strip_synopses(bundle: &mut WorkBundle, targets: &[(u64, &crate::spec::Chapte
     }
 }
 
-/// Write each chapter's synopsis, point of view, references, tags and label.
+/// Write each chapter's synopsis, point of view, references, tags, status and label.
 fn write_chapters(
     bundle: &mut WorkBundle,
     spec: &Spec,
     tags: &BTreeMap<String, u64>,
+    statuses: &BTreeMap<String, u64>,
     bible: &Bible,
     targets: &[(u64, &crate::spec::Chapter)],
 ) -> Result<usize> {
@@ -436,6 +525,21 @@ fn write_chapters(
             .iter()
             .filter_map(|t| tags.get(t).copied())
             .collect();
+        // A hard error, not a `filter_map` like the tags above: a status is single-valued,
+        // so a typo does not merely lose one of several marks — it silently leaves the row
+        // unmarked, and "unmarked" is a legitimate state no reader can tell from a mistake.
+        // The spec's own header sets this discipline for cast names; it applies more here.
+        bundled.item.status_id = if declared.status.is_empty() {
+            None
+        } else {
+            Some(*statuses.get(&declared.status).ok_or_else(|| {
+                anyhow!(
+                    "chapter {:?} names status {:?}, which no [[status]] entry declares",
+                    declared.title,
+                    declared.status
+                )
+            })?)
+        };
         if !declared.label.is_empty() {
             bundled.item.label = declared.label.clone();
         }
@@ -483,6 +587,7 @@ fn max_content_id(bundle: &WorkBundle) -> u64 {
 
 fn blank(file_id: u64, uid: uuid::Uuid, now: &str) -> BinderItemFile {
     BinderItemFile {
+        status_id: None,
         file_id,
         uid,
         created_at: now.to_string(),

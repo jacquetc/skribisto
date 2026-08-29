@@ -41,6 +41,7 @@ fn work_with_annotations(ctx: &AppContext) -> (u64, u64, u64, u64) {
         ctx,
         None,
         &CreateWorkDto {
+            statuses: Vec::new(),
             created_at: now(),
             updated_at: now(),
             title: "W".into(),

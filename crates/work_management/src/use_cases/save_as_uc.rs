@@ -24,8 +24,8 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Footnote,
-    Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
     TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
@@ -53,6 +53,7 @@ pub trait SaveAsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "GetMultiRO")]
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
+#[macros::uow_action(entity = "BinderStatus", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO")]
@@ -113,6 +114,12 @@ impl<'a> TreeReader for dyn SaveAsUnitOfWorkTrait + 'a {
     }
     fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>> {
         self.get_note_template_multi(ids)
+    }
+    fn status_multi(
+        &self,
+        ids: &[EntityId],
+    ) -> Result<Vec<Option<common::entities::BinderStatus>>> {
+        self.get_binder_status_multi(ids)
     }
     fn footnote_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Footnote>>> {
         self.get_footnote_multi(ids)

@@ -193,6 +193,7 @@ pub struct Work {
     pub dict_words: Vec<EntityId>,
     pub text_replacement_rules: Vec<EntityId>,
     pub note_templates: Vec<EntityId>,
+    pub statuses: Vec<EntityId>,
     pub assets: Vec<EntityId>,
     pub smart_punctuation: EntityId,
     pub trash_infos: Vec<EntityId>,
@@ -471,6 +472,7 @@ pub struct BinderItem {
     pub references: Vec<EntityId>,
     pub point_of_view: Vec<EntityId>,
     pub books: Vec<EntityId>,
+    pub status: Option<EntityId>,
     pub tags: Vec<EntityId>,
 }
 
@@ -520,6 +522,34 @@ impl HasId for BinderTag {
     fn id(&self) -> EntityId {
         self.id
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct BinderStatus {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub uid: uuid::Uuid,
+    pub name: String,
+    pub category: StatusCategory,
+    pub details: String,
+}
+
+impl HasId for BinderStatus {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum StatusCategory {
+    #[default]
+    Planned,
+    Drafting,
+    NeedsWork,
+    Revised,
+    Final,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

@@ -136,6 +136,24 @@ impl Widget for CorkboardTile {
                 .child(DeadZone::new().child(expand)),
         );
         let mut footer = HStack::new().spacing(8.0).child(expand_slot);
+        // The rung, first in the metadata strip. `DeadZone` for the same reason the expand
+        // button and the tag dots have one: a press that captures the pointer for its own
+        // gesture otherwise arms the tile's drag underneath, so a click carrying the few
+        // pixels of jitter a real click always has would drag the card instead of opening
+        // the picker.
+        {
+            let statuses = self.vm.statuses();
+            let set: crate::statuses::SetStatus = {
+                let statuses = statuses.clone();
+                let id = self.card.item_id;
+                Rc::new(move |status| statuses.set_item_status(id, status))
+            };
+            footer = footer.child(DeadZone::new().child(crate::statuses::status_picker(
+                &statuses,
+                self.card.status,
+                set,
+            )));
+        }
         if !self.card.tags.is_empty() {
             let value = Signal::new(self.card.tags.clone());
             let set: crate::tags::tag_pill_field::SetTags = {

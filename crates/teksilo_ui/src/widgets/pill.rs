@@ -31,7 +31,8 @@ use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::tokens::CornerRadius;
 use teksilo::widgets::tooltip::{
-    CompositeTooltipWidget, TooltipContent, attach_rich_tooltip_content_with_placement,
+    CompositeTooltipWidget, TooltipContent, attach_plain_tooltip_with_placement,
+    attach_rich_tooltip_content_with_placement,
 };
 use teksilo::widgets::{Center, MinSize, Padding, RectWidget, TextWidget, ZStack};
 
@@ -89,7 +90,10 @@ pub fn attach_labelled_composite_tooltip(
         .max_width(COMPOSITE_TOOLTIP_WIDTH)
         .access_label(access_label);
     let sink = tooltip.shown_at_sink();
-    let tooltip_id = ctx.add(tooltip);
+    // Deferred, like every other tooltip tier: a pill is a per-row widget (tags on an
+    // Overview row, a stream row, a corkboard card), so an eagerly-built body is paid for
+    // by every pill on screen, on every rebuild — and paid again to tear down.
+    let tooltip_id = ctx.add_deferred_on_demand(tooltip);
     // Composite uses the *heavy* delay; only the plain tier uses `tooltip_delay`.
     let delay = ctx.theme().motion.tooltip_delay_heavy;
     ctx.attach_tooltip_with_sticky_sink_placement(
@@ -282,9 +286,14 @@ impl Widget for Pill {
                     .on_tap(move |_e, c| on_remove(c)),
             );
             ctx.set_opacity(x_id, self.hover.map(|&h| if h { 1.0 } else { 0.0 }));
-            let x_tip = ctx.add(teksilo::widgets::TooltipWidget::new(remove_label));
             let delay = ctx.theme().motion.tooltip_delay;
-            ctx.attach_tooltip_with_placement(x_id, x_tip, delay, self.tooltip_placement);
+            attach_plain_tooltip_with_placement(
+                ctx,
+                x_id,
+                remove_label,
+                delay,
+                self.tooltip_placement,
+            );
             content = content.add_child(x_id);
         }
 
@@ -359,9 +368,8 @@ impl Widget for Pill {
         match std::mem::take(&mut self.tooltip) {
             PillTooltip::None => {}
             PillTooltip::Plain(text) => {
-                let tip = ctx.add(teksilo::widgets::TooltipWidget::new(text));
                 let delay = ctx.theme().motion.tooltip_delay;
-                ctx.attach_tooltip_with_placement(id, tip, delay, self.tooltip_placement);
+                attach_plain_tooltip_with_placement(ctx, id, text, delay, self.tooltip_placement);
             }
             PillTooltip::Rich(content) => {
                 let delay = ctx.theme().motion.tooltip_delay;

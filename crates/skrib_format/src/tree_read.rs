@@ -31,8 +31,8 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Footnote,
-    Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
     TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::OperationProgress;
@@ -82,6 +82,13 @@ pub trait TreeReader {
     /// save. Making it required turns that into a compile error, and costs the three
     /// analysis readers (export / mentions / word count) one explicit empty stub each.
     fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>>;
+    /// The workflow ladder. **Required and undefaulted for the same reason as
+    /// `note_template_multi`**: a save path that forgot to override it would write every
+    /// project with an empty ladder and silently strand every item's status, which is
+    /// exactly the failure a defaulted read makes easy and a required one makes
+    /// impossible. The three analysis readers stub it empty on purpose — none of them
+    /// writes a bundle.
+    fn status_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<BinderStatus>>>;
     /// Image metadata rows. **Required and undefaulted for the same reason as
     /// `note_template_multi`**, and the stakes are the same: a save path that
     /// forgot to override it would write every project with zero assets, and the
@@ -184,6 +191,8 @@ pub struct Gathered {
     pub dict_words: Vec<DictWord>,
     pub text_replacement_rules: Vec<TextReplacementRule>,
     pub note_templates: Vec<NoteTemplate>,
+    /// The workflow ladder, in ladder order.
+    pub statuses: Vec<BinderStatus>,
     pub assets: Vec<Asset>,
     /// `None` when the reader does not read settings (export), or when the row
     /// genuinely does not resolve — never fabricated here, so the writer can
@@ -242,6 +251,7 @@ pub fn gather<R: TreeReader + ?Sized>(
     work.text_replacement_rules =
         reader.work_rel(&work_id, &WorkRelationshipField::TextReplacementRules)?;
     work.note_templates = reader.work_rel(&work_id, &WorkRelationshipField::NoteTemplates)?;
+    work.statuses = reader.work_rel(&work_id, &WorkRelationshipField::Statuses)?;
     work.assets = reader.work_rel(&work_id, &WorkRelationshipField::Assets)?;
     // A one-to-one relationship still comes back as a vector — take the first,
     // and treat an empty one as "no row", which is what a Work loaded from a
@@ -266,6 +276,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         reader.text_replacement_rule_multi(ids)
     })?;
     let note_templates = fetch_multi(&work.note_templates, |ids| reader.note_template_multi(ids))?;
+    let statuses = fetch_multi(&work.statuses, |ids| reader.status_multi(ids))?;
     let assets = fetch_multi(&work.assets, |ids| reader.asset_multi(ids))?;
     // Skip the read entirely for an unwired Work rather than asking for id 0,
     // which no store row can have.
@@ -355,6 +366,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         dict_words,
         text_replacement_rules,
         note_templates,
+        statuses,
         assets,
         smart_punctuation,
         trash_infos,

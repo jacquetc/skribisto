@@ -333,6 +333,22 @@ fn tag_preset_combo(vm: &NewWorkViewModel) -> ComboBox<crate::tags::Preset> {
     .placeholder(tr!(new_work_tags_none()))
 }
 
+/// The starting workflow ladder.
+///
+/// Unlike the tag palette above, there is **no empty answer**: a project with no ladder has
+/// no status feature, and nothing in the app would prompt the writer to go and build one.
+/// So this has no placeholder, and an untouched form still seeds
+/// [`crate::statuses::Preset::DEFAULT`] — the `None` the signal holds means "I did not choose",
+/// which `ProjectStarters` reads as the default rather than as "none".
+fn status_preset_combo(vm: &NewWorkViewModel) -> ComboBox<crate::statuses::Preset> {
+    ComboBox::from_items(
+        crate::statuses::Preset::ALL.to_vec(),
+        vm.status_preset(),
+        |preset: &crate::statuses::Preset| preset.label(),
+    )
+    .placeholder(crate::statuses::Preset::DEFAULT.label())
+}
+
 /// One row of the Template list: a compact tile (radio · icon · title · trailing count).
 struct TemplateTile {
     icon: &'static teksilo::canvas::svg::SvgIcon,
@@ -607,6 +623,16 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
                     .spacing(6.0)
                     .child(FixedSize::new().width(240.0).child(tag_preset_combo(vm)))
                     .child(hint(tr!(new_work_tags_hint()))),
+            )
+            // ── The workflow ladder. Beside the palette for the same reason the
+            // templates are: all three are "what does this project start with",
+            // answered once, at the only moment the writer is thinking about it. ─
+            .line(
+                field_label(tr!(new_work_statuses())),
+                VStack::new()
+                    .spacing(6.0)
+                    .child(FixedSize::new().width(240.0).child(status_preset_combo(vm)))
+                    .child(hint(tr!(new_work_statuses_hint()))),
             )
             // ── Note templates: the shapes a story-bible entry starts in. Beside
             // the palette because they are halves of one answer — a `character`

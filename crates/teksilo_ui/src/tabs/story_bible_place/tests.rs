@@ -79,6 +79,7 @@ fn seed() -> Fixture {
         &app_ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: "Story bible".into(),
             role: BinderItemRole::Folder,
             sub_role: BinderItemSubRole::Note,
@@ -116,6 +117,7 @@ fn create_note(
         &f.app_ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: title.into(),
             role: BinderItemRole::Item,
             sub_role: BinderItemSubRole::Note,
@@ -141,6 +143,7 @@ fn create_scene(f: &Fixture, index: i32, title: &str) -> u64 {
         &f.app_ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: title.into(),
             role: BinderItemRole::Item,
             sub_role: BinderItemSubRole::Scene,
@@ -161,6 +164,7 @@ fn create_book(f: &Fixture, index: i32, title: &str) -> u64 {
         &f.app_ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: title.into(),
             role: BinderItemRole::Folder,
             sub_role: BinderItemSubRole::Book,
@@ -245,6 +249,7 @@ fn subtree_notes_does_not_cross_into_a_sibling_folders_own_children() {
         &f.app_ctx,
         None,
         &CreateBinderItemDto {
+            status: None,
             title: "Another folder".into(),
             role: BinderItemRole::Folder,
             sub_role: BinderItemSubRole::Note,

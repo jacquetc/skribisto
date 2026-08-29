@@ -14,6 +14,10 @@ pub mod write {
                 binder_item_repository::BinderItemRepository,
                 binder_item_table::BinderItemHashMapTable,
             },
+            binder_status::{
+                binder_status_repository::BinderStatusRepository,
+                binder_status_table::BinderStatusHashMapTable,
+            },
             binder_tag::{
                 binder_tag_repository::BinderTagRepository, binder_tag_table::BinderTagHashMapTable,
             },
@@ -226,6 +230,16 @@ pub mod write {
         ))
     }
 
+    pub fn create_binder_status_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<BinderStatusRepository<'_>> {
+        let binder_status_table = BinderStatusHashMapTable::new(transaction.get_store());
+        Ok(BinderStatusRepository::new(
+            Box::new(binder_status_table),
+            transaction,
+        ))
+    }
+
     pub fn create_content_repository(
         transaction: &'_ Transaction,
     ) -> Result<ContentRepository<'_>> {
@@ -279,6 +293,10 @@ pub mod read {
             binder_item::{
                 binder_item_repository::BinderItemRepositoryRO,
                 binder_item_table::BinderItemHashMapTableRO,
+            },
+            binder_status::{
+                binder_status_repository::BinderStatusRepositoryRO,
+                binder_status_table::BinderStatusHashMapTableRO,
             },
             binder_tag::{
                 binder_tag_repository::BinderTagRepositoryRO,
@@ -476,6 +494,13 @@ pub mod read {
     ) -> Result<BinderTagRepositoryRO<'_>> {
         let binder_tag_table = BinderTagHashMapTableRO::new(transaction.get_store());
         Ok(BinderTagRepositoryRO::new(Box::new(binder_tag_table)))
+    }
+
+    pub fn create_binder_status_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<BinderStatusRepositoryRO<'_>> {
+        let binder_status_table = BinderStatusHashMapTableRO::new(transaction.get_store());
+        Ok(BinderStatusRepositoryRO::new(Box::new(binder_status_table)))
     }
 
     pub fn create_content_repository(

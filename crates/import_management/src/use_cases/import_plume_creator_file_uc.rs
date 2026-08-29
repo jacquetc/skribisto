@@ -86,6 +86,12 @@ impl LongOperation for ImportPlumeCreatorFileUseCase {
             self.dto.overwrite,
             &self.dto.manuscript_binder_name,
             &self.dto.story_bible_binder_name,
+            // Plume stores a per-node status as an INDEX into its own fixed ladder and
+            // translates the names at display time, so the file carries no names at all.
+            // The caller resolves them in the UI's locale and passes them down, exactly
+            // as it does the two binder names above; an empty list means "seed no
+            // statuses", and every node's status is then dropped rather than dangled.
+            &self.dto.status_names,
             &report,
             &cancel_flag,
         )

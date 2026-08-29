@@ -72,6 +72,9 @@ pub mod binder_item;
 // BinderTag
 pub mod binder_tag;
 
+// BinderStatus
+pub mod binder_status;
+
 // Content
 pub mod content;
 
@@ -145,6 +148,9 @@ pub use binder_item::dtos::*;
 
 pub use binder_tag::binder_tag_controller;
 pub use binder_tag::dtos::*;
+
+pub use binder_status::binder_status_controller;
+pub use binder_status::dtos::*;
 
 pub use content::content_controller;
 pub use content::dtos::*;

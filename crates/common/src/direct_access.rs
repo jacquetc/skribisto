@@ -6,6 +6,7 @@
 pub mod asset;
 pub mod binder;
 pub mod binder_item;
+pub mod binder_status;
 pub mod binder_tag;
 pub mod comment;
 pub mod comment_reply;

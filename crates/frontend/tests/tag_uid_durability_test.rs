@@ -52,6 +52,7 @@ fn every_imported_tag_is_created_with_its_own_durable_identity() {
         &ctx,
         Some(setup),
         &CreateWorkDto {
+            statuses: Vec::new(),
             created_at: now(),
             updated_at: now(),
             title: "The Lighthouse".into(),
