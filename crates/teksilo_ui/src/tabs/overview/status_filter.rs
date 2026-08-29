@@ -12,6 +12,11 @@
 //!   — which is exactly what makes *"show me everything I have not triaged yet"* a question
 //!   the writer can ask. A tag row has no equivalent, because "untagged" is not a tag.
 //!
+//! **Flat until it is doing something**, on the tag row's reasoning and for the same
+//! defect: `Ghost` while off, `Filled` while on. The old `Plain`/`Tinted` pair painted
+//! identically under IntUI, which maps `Tinted` to `Plain` — the row offered five chips
+//! and no way to see which were on.
+//!
 //! Still **OR, not AND**, like the tag row: checking Draft and Needs work shows rows at
 //! either. On a single-valued axis an AND reading would be empty by construction, which is
 //! the strongest possible reason not to offer it.
@@ -91,9 +96,9 @@ impl Widget for StatusFilterChips {
                 b = b.icon(icon, IconLocation::Leading);
             }
             b.variant(if on {
-                ButtonVariant::Tinted
+                ButtonVariant::Filled
             } else {
-                ButtonVariant::Plain
+                ButtonVariant::Ghost
             })
             .on_activate_fn(move |_c| {
                 let mut next = selected.get();
@@ -104,6 +109,11 @@ impl Widget for StatusFilterChips {
                 }
                 selected.set(next);
             })
+            // Last: these wrap the `Button`. A filter chip is a two-state control, not a
+            // command, and a screen reader announcing it as a button would say nothing
+            // about which rungs are actually filtering the table.
+            .access_role(teksilo::core::accesskit::Role::CheckBox)
+            .access_customize(move |b| b.set_toggled(on))
         };
 
         let mut row = Wrap::new().spacing(6.0).line_spacing(6.0);
@@ -119,7 +129,7 @@ impl Widget for StatusFilterChips {
             ));
         }
 
-        let id = ctx.add(Padding::symmetric(14.0, 8.0).child(row));
+        let id = ctx.add(Padding::symmetric(0.0, 4.0).child(row));
         self.root = Some(id);
         vec![id]
     }

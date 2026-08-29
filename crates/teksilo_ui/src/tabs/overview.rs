@@ -45,9 +45,7 @@ mod wire;
 
 use columns::*;
 use header::*;
-use status_filter::*;
 use table::*;
-use tag_filter::*;
 use wire::*;
 
 /// The pane: a wiring child, the header, and the table filling the rest.
@@ -62,11 +60,8 @@ pub fn overview_pane(tab: &super::ContentTab) -> Box<dyn Widget> {
         VStack::new()
             .spacing(0.0)
             .child(WireOverview { vm: vm.clone() })
-            .child(overview_header(&vm))
-            .child(super::Boxed::new(tag_filter_row(&vm, tab.tags())))
-            // Beside the tag row, not merged with it: they are different questions on
-            // different axes, and a single row of mixed chips would read as one set.
-            .child(super::Boxed::new(status_filter_row(&vm, tab.statuses())))
+            // The filter chip rows are inside the header banner, not siblings of it.
+            .child(overview_header(&vm, tab.tags(), tab.statuses()))
             .child(Expand::new().child(OverviewTable {
                 // Seeded here, at the moment the pane is composed, so the first build
                 // already has the right answer; kept current from there by the table's

@@ -7,6 +7,12 @@
 //! exactly as it was: display-only, unsortable. This is the surface that answers
 //! the filter question instead.
 //!
+//! **Flat until it is doing something.** A chip is `Ghost` while off and `Filled` while
+//! on, which is a real difference under every shipped theme — the pair this row used
+//! before (`Plain`/`Tinted`) is not: IntUI maps `Tinted` to `Plain`, so a checked chip and
+//! an unchecked one painted identically and the row could not say what it was filtering
+//! by. It also carries `Role::CheckBox` and a toggled state, because that is what it is.
+//!
 //! **OR, not AND.** Checking two chips shows every row carrying *either* tag:
 //! see [`OverviewFilters::tag_filter`]'s own doc for why that reading, not "every
 //! checked tag on the same row", is the one a chip row visually promises.
@@ -23,7 +29,7 @@
 #[allow(unused_imports)]
 use super::*;
 
-use teksilo::widgets::{Button, Wrap};
+use teksilo::widgets::{Button, IconLocation, Wrap};
 
 use crate::tags::TagsViewModel;
 
@@ -79,10 +85,19 @@ impl Widget for TagFilterChips {
             let selected = self.selected.clone();
             row = row.child(
                 Button::new(lit!(t.name.clone()))
+                    // The tag's own colour, in the leading slot, exactly as the capture
+                    // menu offers it — `icon_keeps_color` is what stops the button
+                    // tinting it to the label's foreground and throwing away the one
+                    // thing the disc carries.
+                    .icon(
+                        crate::tags::tag_chip::swatch(&t.color),
+                        IconLocation::Leading,
+                    )
+                    .icon_keeps_color()
                     .variant(if on {
-                        ButtonVariant::Tinted
+                        ButtonVariant::Filled
                     } else {
-                        ButtonVariant::Plain
+                        ButtonVariant::Ghost
                     })
                     .on_activate_fn(move |_c| {
                         let mut next = selected.get();
@@ -92,7 +107,13 @@ impl Widget for TagFilterChips {
                             next.push(id);
                         }
                         selected.set(next);
-                    }),
+                    })
+                    // Last: these wrap the `Button`, so every `Button` method is above
+                    // them. A filter chip is a two-state control, not a command — a
+                    // screen reader that announced it as a button would say nothing
+                    // about which tags are actually filtering the table.
+                    .access_role(teksilo::core::accesskit::Role::CheckBox)
+                    .access_customize(move |b| b.set_toggled(on)),
             );
         }
         // The padding belongs **inside** the row, not around it: `Padding` reports
@@ -100,7 +121,7 @@ impl Widget for TagFilterChips {
         // table on every project with no palette at all, for a control that is not there.
         // Wrapped here instead, where the "no palette, no row" return above is already
         // the whole answer.
-        let id = ctx.add(Padding::symmetric(14.0, 8.0).child(row));
+        let id = ctx.add(Padding::symmetric(0.0, 4.0).child(row));
         self.root = Some(id);
         vec![id]
     }
@@ -215,9 +236,13 @@ mod tests {
     }
 
     fn chips(tree: &WidgetTree, id: WidgetId) -> usize {
+        // `contains`, not `ends_with`: the chip carries `access_role` /
+        // `access_customize`, which are `WidgetBuilder` methods, so the arena node is a
+        // `WidgetWithHandlers<..::button::Button>` rather than a bare `Button`. The
+        // wrapper does not add a node of its own, so this still counts each chip once.
         let mine = usize::from(
             tree.widget_type_name(id)
-                .is_some_and(|n| n.ends_with("::Button")),
+                .is_some_and(|n| n.contains("button::Button")),
         );
         tree.children(id)
             .into_iter()

@@ -37,7 +37,8 @@ use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::tokens::{BorderRole, CornerRadius};
 use teksilo::widgets::{
-    Center, HStack, MinSize, OverlayTrigger, PopoverWidget, RectWidget, TextWidget, ZStack,
+    Center, HStack, IconWidget, MinSize, OverlayTrigger, PopoverWidget, RectWidget, TextWidget,
+    ZStack,
 };
 
 use crate::models::TagRow;
@@ -265,6 +266,33 @@ fn dot_cell(tag: &TagRow) -> impl Widget {
         child: Some(dot),
         child_id: None,
     }))
+}
+
+/// The tag's own colour as a filled disc, for an **icon slot** — a menu row's icon
+/// column, a filter chip's leading slot.
+///
+/// The writer picked these colours and reads their palette by them everywhere else in the
+/// app: the binder's dots, the corkboard's, the editor's subtitle row. A surface that
+/// named a tag without them would be the one place a tag is named and not recognised, and
+/// both call sites are exactly where a writer is choosing between four tags at speed.
+///
+/// ⚠ **The host must be told to keep the colour** — `MenuItem::icon_keeps_color` /
+/// `Button::icon_keeps_color`. Without it the host tints every icon to its own
+/// foreground, which is right for a glyph that repeats the label and destroys one whose
+/// colour *is* the label.
+///
+/// **No hairline**, unlike [`TagDotsRow`]'s dot, and the difference is what the dot is
+/// doing. There it is alone and carries the whole identity, so a near-white tag has to be
+/// outlined or it is an invisible mark; here the tag's name is right beside it and the
+/// disc is recognition, not identification. An `IconWidget` fills one path in one colour
+/// anyway, so a ring is not on offer without a second widget in a slot that takes an icon.
+pub fn swatch(color: &str) -> IconWidget {
+    // Inset by half a pixel so the disc does not graze the slot's edge at the sizes a
+    // menu row and a chip actually draw at.
+    const SWATCH: f32 = 10.0;
+    let centre = teksilo::canvas::Point::new(SWATCH / 2.0, SWATCH / 2.0);
+    let path = teksilo::canvas::Path::circle(centre, SWATCH / 2.0 - 0.5);
+    IconWidget::from_path(path, SWATCH).color(crate::tags::contrast::parse(color))
 }
 
 /// Pins a dot to an exact square. `MinSize` only floors a size, so inside a row it would

@@ -671,32 +671,6 @@ fn capture_submenu(
     render_capture_menu(item_id, selected_text, menu)
 }
 
-/// The tag's own colour, as the disc that goes in a capture row's icon column.
-///
-/// The writer picked these colours and reads their palette by them everywhere else in
-/// the app — the binder's dots, the corkboard's, the editor's subtitle row. A menu that
-/// dropped them would be the one place a tag is named and not recognised, and this menu
-/// is exactly where a writer is choosing between four tags at speed.
-///
-/// `icon_keeps_color` at the call sites is what makes it a swatch rather than a glyph:
-/// without it the row tints every icon to its own foreground, which is right for an icon
-/// that repeats the label and destroys one whose colour *is* the label.
-///
-/// **No hairline**, unlike [`crate::tags::TagDotsRow`]'s dot, and the difference is what
-/// the dot is doing. There it is alone and carries the whole identity, so a near-white
-/// tag has to be outlined or it is an invisible mark; here the tag's name is right beside
-/// it and the disc is recognition, not identification. An `IconWidget` fills one path in
-/// one colour anyway, so a ring is not on offer without a second widget in a slot that
-/// takes an icon.
-fn tag_swatch(color: &str) -> IconWidget {
-    // Inset by half a pixel so the disc does not graze the column's edge at the
-    // sizes a menu row actually draws at.
-    const SWATCH: f32 = 10.0;
-    let centre = teksilo::canvas::Point::new(SWATCH / 2.0, SWATCH / 2.0);
-    let path = teksilo::canvas::Path::circle(centre, SWATCH / 2.0 - 0.5);
-    IconWidget::from_path(path, SWATCH).color(crate::tags::contrast::parse(color))
-}
-
 /// A tag's own name, safe to hand to a [`MenuItem`].
 ///
 /// `MenuItem` parses **every** label for a mnemonic marker: `parse_mnemonic` runs on the
@@ -738,7 +712,7 @@ fn render_capture_menu(
             CaptureEntry::Separator => list.separator(),
             CaptureEntry::Tag(t) => list.item(
                 MenuItem::new(lit!(menu_safe(&t.name)))
-                    .icon(tag_swatch(&t.color))
+                    .icon(crate::tags::tag_chip::swatch(&t.color))
                     .icon_keeps_color()
                     .on_activate_fn(fire(Some(t.id))),
             ),
@@ -759,7 +733,7 @@ fn render_capture_menu(
                             let (text, tag_id) = (text.clone(), t.id);
                             inner = inner.item(
                                 MenuItem::new(lit!(menu_safe(&t.name)))
-                                    .icon(tag_swatch(&t.color))
+                                    .icon(crate::tags::tag_chip::swatch(&t.color))
                                     .icon_keeps_color()
                                     .on_activate_fn(move |ctx: &mut EventContext| {
                                         ctx.send_intent(AppIntent::AddAsNote {
