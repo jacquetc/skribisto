@@ -39,6 +39,46 @@ number_chapters = true
 manuscript_binder = "Writings"
 book_folder = "Starforgers"
 
+# ── statuses ─────────────────────────────────────────────────────────────────
+# The project's workflow ladder, **in order** — that sequence IS the ladder, and it is
+# what makes one rung less finished than another.
+#
+# Declared, but **no chapter is assigned one**, and that is deliberate. Starforgers is
+# Ken McConnell's novel, in print; the editorial data in this file already carries no
+# authority as to the author's intent, and a rung is a claim about how finished a piece
+# of someone else's published book is. So the example ships the vocabulary — the picker
+# opens, the filter row appears, the Overview column is live — and says nothing about
+# the prose. It is also what a newly created project looks like, which is the honest
+# thing for an example to show.
+#
+# `category` picks from a closed set (Planned / Drafting / NeedsWork / Revised / Final)
+# and is what carries the glyph and the colour; the name and the order are the writer's.
+
+[[status]]
+name = "To do"
+category = "Planned"
+details = "Outlined, not yet written."
+
+[[status]]
+name = "Draft"
+category = "Drafting"
+details = "Written once."
+
+[[status]]
+name = "Needs work"
+category = "NeedsWork"
+details = "Something here has to change before it can be read."
+
+[[status]]
+name = "Revised"
+category = "Revised"
+details = "Reread and corrected."
+
+[[status]]
+name = "Final"
+category = "Final"
+details = "Done."
+
 # ── tags ─────────────────────────────────────────────────────────────────────
 # `discoverable` is what puts an item's title and aliases into the mention index and
 # the point-of-view picker. A story-bible note without it is invisible to the scan.

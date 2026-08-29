@@ -110,33 +110,46 @@ Les résumés, les fiches de personnages, de lieux et d'objets, les étiquettes 
 points de vue sont l'oeuvre du projet Skribisto et non de Jules Verne."""
 
 
+# ── statuts ──────────────────────────────────────────────────────────────────
+# L'échelle d'avancement du projet, **dans l'ordre** : cette séquence EST l'échelle,
+# c'est elle qui dit qu'un échelon est moins avancé qu'un autre.
+#
+# Ces quatre échelons étaient auparavant quatre étiquettes préfixées `statut/…`. Un
+# avancement n'est pas une étiquette : il est unique et ordonné, ce qu'un ensemble
+# d'étiquettes ne sait pas exprimer. Les garder toutes les deux aurait laissé deux
+# vocabulaires identiques à l'écran (une pastille colorée dans les deux cas) et de sens
+# différent — exactement la confusion que cet axe supprime.
+#
+# `category` choisit dans un ensemble fermé (Planned / Drafting / NeedsWork / Revised /
+# Final) : c'est lui qui porte le pictogramme et la couleur, jamais le nom.
+
+[[status]]
+name = "Plan"
+category = "Planned"
+details = "Structure posée, prose à écrire."
+
+[[status]]
+name = "Brouillon"
+category = "Drafting"
+details = "Premier jet."
+
+[[status]]
+# `NeedsWork` et non `Revised` : « en attente de relecture » décrit un texte qui réclame
+# encore un passage, alors que `Revised` désigne un texte déjà relu et corrigé. C'est
+# aussi le seul échelon de cet exemple qui montre le triangle — la catégorie qu'aucune
+# échelle par défaut ne produit.
+name = "À relire"
+category = "NeedsWork"
+details = "Écrit, en attente de relecture."
+
+[[status]]
+name = "Terminé"
+category = "Final"
+details = "Relu et arrêté."
+
 # ── tags ─────────────────────────────────────────────────────────────────────
 # `discoverable` is what puts an item's title and aliases into the mention index and
 # the point-of-view picker. A story-bible note without it is invisible to the scan.
-
-[[tag]]
-name = "statut/plan"
-color = "#95a5a6"
-discoverable = false
-details = "Structure posée, prose à écrire."
-
-[[tag]]
-name = "statut/brouillon"
-color = "#607d8b"
-discoverable = false
-details = "Premier jet."
-
-[[tag]]
-name = "statut/à relire"
-color = "#f39c12"
-discoverable = false
-details = "Écrit, en attente de relecture."
-
-[[tag]]
-name = "statut/terminé"
-color = "#27ae60"
-discoverable = false
-details = "Relu et arrêté."
 
 [[tag]]
 name = "à vérifier"
@@ -462,7 +475,7 @@ note = "Le traîneau de Mudge, qui court sur la neige gelée du Nebraska à quar
 number = 1
 title = "Dans lequel Phileas Fogg et Passepartout s’acceptent réciproquement, l’un comme maître, l’autre comme domestique"
 label = "Londres"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Phileas Fogg"]
 cast = ["Phileas Fogg", "Passepartout", "James Forster"]
 places = ["Saville-row", "Le Reform-Club"]
@@ -473,7 +486,7 @@ synopsis = "Le 2 octobre 1872, au 7 de Saville-row, Phileas Fogg congédie James
 number = 2
 title = "Où Passepartout est convaincu qu’il a enfin trouvé son idéal"
 label = "Londres"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Passepartout"]
 cast = ["Passepartout", "Phileas Fogg"]
 places = ["Saville-row"]
@@ -484,7 +497,8 @@ synopsis = "Resté seul dans la maison, Passepartout l’inspecte, la trouve pro
 number = 3
 title = "Où s’engage une conversation qui pourra coûter cher à Phileas Fogg"
 label = "Londres"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Andrew Stuart", "Gauthier Ralph", "John Sullivan", "Samuel Fallentin", "Thomas Flanagan"]
 places = ["Le Reform-Club"]
@@ -495,7 +509,7 @@ synopsis = "Au whist du Reform-Club, la conversation roule sur le vol de cinquan
 number = 4
 title = "Dans lequel Phileas Fogg stupéfie Passepartout, son domestique"
 label = "Londres"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Passepartout"]
 cast = ["Phileas Fogg", "Passepartout"]
 places = ["Saville-row"]
@@ -506,7 +520,8 @@ synopsis = "À sept heures cinquante, Fogg rentre annoncer qu’ils partent dans
 number = 5
 title = "Dans lequel une nouvelle valeur apparaît sur la place de Londres"
 label = "Londres"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Fix"]
 places = ["Le Reform-Club", "Suez"]
@@ -517,7 +532,7 @@ synopsis = "Le pari occupe Londres et se cote en Bourse comme une valeur nouvell
 number = 6
 title = "Dans lequel l’agent Fix montre une impatience bien légitime"
 label = "Suez"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Fix"]
 cast = ["Fix", "Passepartout"]
 places = ["Suez"]
@@ -528,7 +543,7 @@ synopsis = "À Suez, Fix attend le paquebot en harcelant le consul de questions.
 number = 7
 title = "Qui témoigne une fois de plus de l’inutilité des passe-ports en matière de police"
 label = "Suez"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Fix"]
 cast = ["Fix", "Phileas Fogg", "Passepartout"]
 places = ["Suez", "Bombay"]
@@ -539,7 +554,8 @@ synopsis = "Le consul vise le passeport malgré les objections de Fix, en faisan
 number = 8
 title = "Dans lequel Passepartout parle un peu plus peut-être qu’il ne conviendrait"
 label = "Suez"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = ["Fix"]
 cast = ["Fix", "Passepartout", "Phileas Fogg"]
 places = ["Suez"]
@@ -550,7 +566,8 @@ synopsis = "Sur le quai, Fix fait parler Passepartout, qui, sans défiance, raco
 number = 9
 title = "Où la mer Rouge et la mer des Indes se montrent propices aux desseins de Phileas Fogg"
 label = "Mer Rouge"
-tags = ["statut/terminé", "continuité"]
+tags = ["continuité"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Passepartout", "Fix", "Sir Francis Cromarty"]
 places = ["Bombay"]
@@ -561,7 +578,7 @@ synopsis = "Traversée de la mer Rouge et de l’océan Indien. Fix se fait le c
 number = 10
 title = "Où Passepartout est trop heureux d’en être quitte en perdant sa chaussure"
 label = "Inde"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Passepartout"]
 cast = ["Passepartout", "Fix"]
 places = ["Bombay"]
@@ -572,7 +589,7 @@ synopsis = "À Bombay, Passepartout flâne et entre chaussé dans la pagode de M
 number = 11
 title = "Où Phileas Fogg achète une monture à un prix fabuleux"
 label = "Inde"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Passepartout", "Sir Francis Cromarty", "Kiouni"]
 places = ["Kholby"]
@@ -583,7 +600,7 @@ synopsis = "Au village de Kholby, les voyageurs découvrent que la voie ferrée 
 number = 12
 title = "Où Phileas Fogg et ses compagnons s’aventurent à travers les forêts de l’Inde, et ce qui s’ensuit"
 label = "Inde"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Passepartout", "Sir Francis Cromarty", "Mrs. Aouda", "Kiouni"]
 places = ["Pillaji"]
@@ -594,7 +611,8 @@ synopsis = "Fogg, Passepartout et Sir Francis Cromarty s’enfoncent dans les fo
 number = 13
 title = "Dans lequel Passepartout prouve une fois de plus que la fortune sourit aux audacieux"
 label = "Inde"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = ["Passepartout"]
 cast = ["Passepartout", "Phileas Fogg", "Mrs. Aouda", "Sir Francis Cromarty", "Kiouni"]
 places = ["Pillaji"]
@@ -605,7 +623,7 @@ synopsis = "La nuit se passe à chercher un moyen de sauver la jeune femme, et t
 number = 14
 title = "Dans lequel Phileas Fogg descend toute l’admirable vallée du Gange sans même songer à la voir"
 label = "Inde"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Mrs. Aouda", "Sir Francis Cromarty", "Passepartout"]
 places = ["Bénarès", "Calcutta"]
@@ -616,7 +634,8 @@ synopsis = "Descente de l’admirable vallée du Gange, qu’aucun des voyageurs
 number = 15
 title = "Où le sac aux bank-notes s’allége encore de quelques milliers de livres"
 label = "Inde"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Passepartout", "Fix", "Le juge Obadiah", "Mrs. Aouda"]
 places = ["Calcutta"]
@@ -627,7 +646,7 @@ synopsis = "À Calcutta, Fogg et Passepartout sont arrêtés à la descente du w
 number = 16
 title = "Où Fix n’a pas l’air de connaître du tout les choses dont on lui parle"
 label = "Mers du Sud"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["Fix", "Passepartout", "Mrs. Aouda"]
 places = ["Hong-Kong"]
@@ -638,7 +657,7 @@ synopsis = "Croisé sur le pont, Fix feint la surprise et prétend ne rien savoi
 number = 17
 title = "Où il est question de choses et d’autres pendant la traversée de Singapore à Hong-Kong"
 label = "Mers du Sud"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["Fix", "Passepartout", "Phileas Fogg"]
 places = ["Singapore", "Hong-Kong"]
@@ -649,7 +668,8 @@ synopsis = "De Singapore à Hong-Kong, la traversée se poursuit entre le mauvai
 number = 18
 title = "Dans lequel Phileas Fogg, Passepartout, Fix, chacun de son côté, va à ses affaires"
 label = "Hong-Kong"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Mrs. Aouda", "Fix", "Passepartout"]
 places = ["Hong-Kong"]
@@ -660,7 +680,8 @@ synopsis = "À Hong-Kong, on apprend que le parent d’Aouda a quitté la Chine 
 number = 19
 title = "Où Passepartout prend un trop vif intérêt à son maître, et ce qui s’ensuit"
 label = "Hong-Kong"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = ["Fix"]
 cast = ["Fix", "Passepartout"]
 places = ["Hong-Kong"]
@@ -671,7 +692,8 @@ synopsis = "Fix entraîne Passepartout dans une tabagie, le fait boire, puis lui
 number = 20
 title = "Dans lequel Fix entre directement en relation avec Phileas Fogg"
 label = "Hong-Kong"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Fix", "Mrs. Aouda", "John Bunsby"]
 places = ["Hong-Kong"]
@@ -682,7 +704,7 @@ synopsis = "Le lendemain, Fogg trouve le Carnatic parti et son domestique dispar
 number = 21
 title = "Où le patron de la Tankadère risque fort de perdre une prime de deux cents livres"
 label = "Mers de Chine"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["John Bunsby", "Phileas Fogg", "Fix", "Mrs. Aouda"]
 places = []
@@ -693,7 +715,7 @@ synopsis = "La Tankadère court sur la mer de Chine, portée par une brise qui t
 number = 22
 title = "Où Passepartout voit bien que, même aux antipodes, il est prudent d’avoir quelque argent dans sa poche"
 label = "Japon"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Passepartout"]
 cast = ["Passepartout", "Honorable William Batulcar"]
 places = ["Yokohama"]
@@ -704,7 +726,7 @@ synopsis = "Passepartout se réveille à bord du Carnatic, comprend sa sottise e
 number = 23
 title = "Dans lequel le nez de Passepartout s’allonge démesurément"
 label = "Japon"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Passepartout"]
 cast = ["Passepartout", "Phileas Fogg", "Mrs. Aouda", "Honorable William Batulcar"]
 places = ["Yokohama"]
@@ -715,7 +737,8 @@ synopsis = "Un nez de six pieds au front, Passepartout sert de base à la pyrami
 number = 24
 title = "Pendant lequel s’accomplit la traversée de l’océan Pacifique"
 label = "Pacifique"
-tags = ["statut/terminé", "continuité"]
+tags = ["continuité"]
+status = "Terminé"
 pov = []
 cast = ["Passepartout", "Fix", "Phileas Fogg", "Mrs. Aouda"]
 places = ["San-Francisco"]
@@ -726,7 +749,7 @@ synopsis = "Vingt-deux jours de Pacifique. Passepartout, réconcilié avec son m
 number = 25
 title = "Où l’on donne un léger aperçu de San-Francisco, un jour de meeting"
 label = "Amérique"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Mrs. Aouda", "Colonel Stamp W. Proctor", "Fix"]
 places = ["San-Francisco"]
@@ -737,7 +760,7 @@ synopsis = "San-Francisco un jour de meeting: la rue est prise par une bagarre �
 number = 26
 title = "Dans lequel on prend le train express du chemin de fer du Pacifique"
 label = "Amérique"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Passepartout"]
 places = ["San-Francisco"]
@@ -748,7 +771,7 @@ synopsis = "Le train express du chemin de fer du Pacifique quitte Oakland. Descr
 number = 27
 title = "Dans lequel Passepartout suit, avec une vitesse de vingt milles à l’heure, un cours d’histoire mormone"
 label = "Amérique"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Passepartout"]
 cast = ["Passepartout", "Elder William Hitch"]
 places = ["Salt Lake City"]
@@ -759,7 +782,8 @@ synopsis = "Pris dans un meeting mormon tenu en pleine voie, Passepartout subit 
 number = 28
 title = "Dans lequel Passepartout ne put parvenir à faire entendre le langage de la raison"
 label = "Amérique"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = ["Passepartout"]
 cast = ["Passepartout", "Phileas Fogg", "Colonel Stamp W. Proctor", "Fix"]
 places = ["Medicine-Bow"]
@@ -770,7 +794,8 @@ synopsis = "Passepartout, ayant vu que le pont de Medicine-Bow est prêt à céd
 number = 29
 title = "Où il sera fait le récit d’incidents divers qui ne se rencontrent que sur les rail-roads de l’Union"
 label = "Amérique"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Colonel Stamp W. Proctor", "Phileas Fogg", "Fix", "Passepartout", "Mrs. Aouda"]
 places = ["Le fort Kearney"]
@@ -781,7 +806,8 @@ synopsis = "Une partie de whist ramène le colonel Proctor face à Fogg. Le duel
 number = 30
 title = "Dans lequel Phileas Fogg fait tout simplement son devoir"
 label = "Amérique"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Fix", "Mrs. Aouda", "Passepartout"]
 places = ["Le fort Kearney"]
@@ -792,7 +818,7 @@ synopsis = "Fogg, arrivé au fort Kearney sans son domestique, refuse de reparti
 number = 31
 title = "Dans lequel l’inspecteur Fix prend très-sérieusement les intérêts de Phileas Fogg"
 label = "Amérique"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = ["Fix"]
 cast = ["Fix", "Mudge", "Phileas Fogg", "Passepartout", "Mrs. Aouda"]
 places = ["Le fort Kearney"]
@@ -803,7 +829,8 @@ synopsis = "Fix, qui n’a plus qu’une idée — ramener Fogg à Liverpool —
 number = 32
 title = "Dans lequel Phileas Fogg engage une lutte directe contre la mauvaise chance"
 label = "Amérique"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Capitaine Speedy", "Fix"]
 places = ["New York"]
@@ -814,7 +841,8 @@ synopsis = "À New York, le China vient de larguer ses amarres depuis quarante-c
 number = 33
 title = "Où Phileas Fogg se montre à la hauteur des circonstances"
 label = "Atlantique"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Capitaine Speedy", "Passepartout", "Fix", "Mrs. Aouda"]
 places = ["Liverpool"]
@@ -825,7 +853,8 @@ synopsis = "En pleine mer, Fogg achète l’équipage, fait enfermer Speedy dans
 number = 34
 title = "Qui procure à Passepartout l’occasion de faire un jeu de mots atroce, mais peut-être inédit"
 label = "Retour"
-tags = ["statut/terminé", "noeud dramatique"]
+tags = ["noeud dramatique"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Passepartout", "Fix", "Mrs. Aouda", "James Strand"]
 places = ["Liverpool"]
@@ -836,7 +865,7 @@ synopsis = "Fogg passe la journée au poste de Custom-house pendant que Passepar
 number = 35
 title = "Dans lequel Passepartout ne se fait pas répéter deux fois l’ordre que son maître lui donne"
 label = "Retour"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["Phileas Fogg", "Mrs. Aouda", "Passepartout", "Le révérend Samuel Wilson"]
 places = ["Saville-row"]
@@ -847,7 +876,7 @@ synopsis = "Le lendemain, la maison de Saville-row reste close. Fogg met ses aff
 number = 36
 title = "Dans lequel Phileas Fogg fait de nouveau prime sur le marché"
 label = "Retour"
-tags = ["statut/terminé"]
+status = "Terminé"
 pov = []
 cast = ["James Strand", "Phileas Fogg", "Andrew Stuart", "Gauthier Ralph", "John Sullivan", "Samuel Fallentin", "Thomas Flanagan"]
 places = ["Le Reform-Club"]
@@ -858,7 +887,8 @@ synopsis = "L’arrestation du vrai voleur, James Strand, a retourné une second
 number = 37
 title = "Dans lequel il est prouvé que Phileas Fogg n’a rien gagné à faire ce tour du monde, si ce n’est le bonheur"
 label = "Retour"
-tags = ["statut/terminé", "noeud dramatique", "continuité"]
+tags = ["noeud dramatique", "continuité"]
+status = "Terminé"
 pov = []
 cast = ["Passepartout", "Phileas Fogg", "Mrs. Aouda", "Le révérend Samuel Wilson"]
 places = ["Le Reform-Club", "Saville-row"]

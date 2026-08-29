@@ -89,8 +89,10 @@ Editorial metadata added by the Skribisto project
 -------------------------------------------------
 
 The synopses, the story bible (21 characters, 17 places, 13 objects), the labels,
-the tags and the point-of-view assignments are the work of the Skribisto project and
-not of Jules Verne. They are declared in the TOML beside this file and applied by the
+the tags, the workflow statuses and the point-of-view assignments are the work of the
+Skribisto project and not of Jules Verne. Every chapter is marked "Terminé" on that
+ladder, which is a statement about this transcription being finished — not a judgement
+of the novel. They are declared in the TOML beside this file and applied by the
 same tool's `enrich` subcommand, which asserts on every run that the prose it read
 back is byte-identical to what it writes out.
 

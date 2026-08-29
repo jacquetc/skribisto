@@ -48,6 +48,11 @@ To demonstrate Skribisto's features, the project adds descriptive metadata to th
 example project: scene synopses, tags, labels, character and story-bible notes,
 aliases and point-of-view assignments.
 
+The project also declares a workflow-status vocabulary, so that feature can be seen
+working. No chapter is assigned a status: how finished a piece of Ken McConnell's
+published novel is would be a judgement, not a description, and this metadata carries
+no authority as to the author's intent.
+
 All of it is declared in `starforgers.toml` beside this file, and is applied by
 
     cargo run -p skribisto-skrib-format --example build_example -- enrich \
