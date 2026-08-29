@@ -321,6 +321,52 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
     }
 }
 
+/// Keep [`WorkSession::pace_summary_available`](crate::sessions::WorkSession::pace_summary_available)
+/// — the Work menu's "Writing plan…" `enabled` — in step with the store.
+///
+/// The row is *enabled*, never hidden: a greyed row says the feature exists and, with its
+/// tooltip, what turns it on; a hidden one says nothing at all. Which means the answer has
+/// to be live, because the writer flips `Pace active` and sets the Book's word target from
+/// inside the app and expects the menu to have noticed.
+///
+/// Three families of event can change it. The `Pace` itself (created by "Start planning",
+/// and its `active` flag toggled from the planner), the `BinderItem` that carries the
+/// Book's word target (the goal is a `BinderItem` field, not a `Pace` one, and a plan with
+/// no target has nothing to report), and the project lifecycle — a load or a close swaps
+/// the whole answer out from under the row.
+///
+/// **Coalesced.** `BinderItem(Updated)` arrives once per row in a bulk operation, and this
+/// recomputes by querying the store; the shared coalescer collapses a burst into one
+/// recompute on the next frame. That is also why [`has_active_plan`](crate::pace::panel::has_active_plan)
+/// deliberately does *not* measure any word counts — see its sibling `plan_books`.
+pub(in crate::app) fn install_pace_availability(
+    ctx: &mut BuildContext,
+    app_ctx: Rc<AppContext>,
+    ids: AppIds,
+    available: Signal<bool>,
+) {
+    use frontend::common::event::DirectAccessEntity::{BinderItem, Pace};
+    use frontend::common::event::EntityEvent::{Created, Removed, Updated};
+    let origins = [
+        Origin::DirectAccess(Pace(Created)),
+        Origin::DirectAccess(Pace(Updated)),
+        Origin::DirectAccess(Pace(Removed)),
+        Origin::DirectAccess(BinderItem(Updated)),
+        Origin::DirectAccess(BinderItem(Removed)),
+        Origin::WorkManagement(WorkManagementEvent::LoadWork),
+        Origin::WorkManagement(WorkManagementEvent::NewWork),
+        Origin::WorkManagement(WorkManagementEvent::CloseWork),
+    ];
+    crate::models::coalesced_reload::reload_on_events(ctx, origins, move || {
+        // Read through THIS window's own `ids`, so an event published by a sibling
+        // window's Work resolves against this one's project and changes nothing.
+        let now = crate::pace::panel::has_active_plan(&app_ctx, &ids);
+        if available.get() != now {
+            available.set(now);
+        }
+    });
+}
+
 // ── Load / New / Close / Attach seed ────────────────────────────────────────
 
 /// Deps for the full project lifecycle install (seed, attach, new, dict, close).
@@ -561,6 +607,14 @@ pub(in crate::app) fn install_lifecycle(
             pace_show_on_open: ctx.settings().signal(crate::PACE_SUMMARY_ON_OPEN_KEY, true),
             editors: deps.editors.clone(),
         },
+    );
+
+    // ── The Work menu's "Writing plan…" row, kept in step ──────────────────
+    install_pace_availability(
+        ctx,
+        deps.app_ctx.clone(),
+        deps.ids.clone(),
+        deps.session.pace_summary_available.clone(),
     );
 
     // ── NewWork seed ───────────────────────────────────────────────────────

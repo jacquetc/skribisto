@@ -109,6 +109,10 @@ pub(crate) struct ProjectMenuParts {
     pub focus: FocusViewModel,
     /// Live window placement for the fullscreen checkmark (View ▸ Fullscreen).
     pub placement: Signal<WindowPlacement>,
+    /// Whether this project has an active writing plan — Work ▸ "Writing plan…" greys out
+    /// without one. Read off the `WorkSession` (Tier 2: it is a fact about the project,
+    /// not about this window), and kept in step by `app::wiring::project_events`.
+    pub pace_available: Signal<bool>,
 }
 
 /// Refill the Document ▸ **Insert template** submenu from the current catalogue.
@@ -672,6 +676,7 @@ mod tests {
             outline: OutlineViewModel::new_default(app_ctx, ids),
             focus: FocusViewModel::new(),
             placement: Signal::new(teksilo::core::WindowPlacement::default()),
+            pace_available: Signal::new(false),
         }
     }
 

@@ -71,6 +71,10 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     let can_save = crate::app::can_save(&menu_unsaved, &menu_backup_mode);
     // "Back up now" shows only for an open, non-backup project.
     let show_backup_now = show_open.zip(&menu_backup_mode).map(|(o, bm)| *o && !*bm);
+    // Whether this project has an active writing plan — the summary row's `enabled`.
+    // A concrete `Signal<bool>`, not a derived one: `App::build`'s recompute writes it,
+    // and `MenuEntry::enabled` wants somewhere real to read.
+    let pace_available = parts.pace_available.clone();
 
     // ── 1. Open / create ─────────────────────────────
     // New / Open route through the global `work.new` /
@@ -278,6 +282,20 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
         MenuEntry::new(tr!(status_completion_open()))
             .visible(show_open.clone())
             .intent("statuses.completion"),
+    )
+    // …and the plan summary itself, likewise on demand. It used to have exactly one
+    // door — the opening of a project — behind its own "Do not show this when opening"
+    // checkbox, so turning the greeting off made the card unreachable.
+    //
+    // `enabled`, not `visible`: with no active plan the row greys rather than vanishing,
+    // which still names the feature and, through its tooltip, says what turns it on. The
+    // same rule the Go menu's rows follow (see `GoAvailability::signal`). It does hide
+    // with no project at all — there is nothing to plan.
+    .item(
+        MenuEntry::new(tr!(pace_summary_menu()))
+            .visible(show_open.clone())
+            .enabled(pace_available)
+            .intent("pace.summary"),
     )
     .separator()
     // ── 4. Leave this work ───────────────────────────

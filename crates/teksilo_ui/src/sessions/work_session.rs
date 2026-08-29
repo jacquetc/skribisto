@@ -184,6 +184,18 @@ pub struct WorkSession {
     /// never runs the `LoadWork` subscriber at all — and cheap insurance against a future
     /// door that does.
     pub pace_summary_shown: Signal<bool>,
+    /// Does this open project have a writing plan worth summarising — an active `Pace` on
+    /// a Book that carries a word target?
+    ///
+    /// The Work menu's "Writing plan…" row binds its `enabled` straight to this. Tier 2
+    /// for the plainest of reasons: it is a fact about the *project*, identical in every
+    /// window open on it, and a per-window copy would let one window's answer be computed
+    /// while another's went stale. `App::build` keeps it in step off the backend's own
+    /// `Pace`/`BinderItem`/`Work` events — see `app::wiring::project_events`.
+    ///
+    /// Seeded `false` and never assumed: a project is loaded *after* the window is built,
+    /// so the row starts greyed and lights up when the load lands.
+    pub pace_summary_available: Signal<bool>,
 }
 
 impl WorkSession {
@@ -285,6 +297,7 @@ impl WorkSession {
 
         Self {
             pace_summary_shown: Signal::new(false),
+            pace_summary_available: Signal::new(false),
             ids,
             single_work,
             single_work_info,

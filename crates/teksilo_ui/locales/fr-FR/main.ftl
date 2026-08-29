@@ -2286,6 +2286,7 @@ pace-summary-remaining = Il reste { $words }
 pace-summary-open = Ouvrir le plan
 pace-summary-close = Fermer
 pace-summary-dont-show = Ne plus afficher à l’ouverture
+pace-summary-menu = Plan d’écriture…
 
 # ── Aide ─────────────────────────────────────────────────────────────────────
 # Voir en-US/main.ftl pour le contexte. Les corps des rubriques ne sont pas ici :

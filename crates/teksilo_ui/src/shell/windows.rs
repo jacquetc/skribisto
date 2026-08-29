@@ -653,6 +653,7 @@ impl ProjectWindowFactory {
                                 outline: outline.clone(),
                                 focus: focus.clone(),
                                 placement: state.placement().clone(),
+                                pace_available: session.pace_summary_available.clone(),
                             },
                         );
                         // Fill the template submenu once now, so a window opened on a

@@ -2299,6 +2299,9 @@ pace-summary-remaining = { $words } to go
 pace-summary-open = Open the plan
 pace-summary-close = Close
 pace-summary-dont-show = Do not show this when opening
+# Work menu row that opens the same card on demand — greyed out when the project has
+# no active writing plan.
+pace-summary-menu = Writing plan…
 
 # ── Help ─────────────────────────────────────────────────────────────────────
 # The Help window (crates/teksilo_ui/src/help/), its table of contents and the

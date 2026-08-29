@@ -1977,6 +1977,41 @@ impl Widget for App {
                 },
             ));
         }
+        // `pace.summary` — the writing-plan summary, on demand.
+        //
+        // The same card the load wiring greets a planned project with, opened because the
+        // writer asked. Without this row the card had exactly one door — the opening of a
+        // project — and its own "Do not show this when opening" checkbox bricked it: there
+        // was no way back. The Work menu greys the row out (never hides it) when the
+        // project has no active plan, off `session.pace_summary_available`.
+        //
+        // The setting signal is read here rather than threaded in so that the checkbox in
+        // the card writes the same key whichever door opened it; `ctx.settings()` hands
+        // back one shared store, so the two `signal(..)` calls are the same signal.
+        {
+            let app_ctx = self.app_ctx.clone();
+            let ids = ids.clone();
+            let statuses = statuses.clone();
+            let editors = editors.clone();
+            let show_on_open = ctx.settings().signal(crate::PACE_SUMMARY_ON_OPEN_KEY, true);
+            ctx.register_action_global(Action::new("pace.summary").on_invoke(move |_i, c| {
+                let editors = editors.clone();
+                crate::pace::panel::present(
+                    c,
+                    app_ctx.clone(),
+                    ids.clone(),
+                    show_on_open.clone(),
+                    statuses.clone(),
+                    Rc::new(move |book_item_id, _c: &mut EventContext| {
+                        // The card's one forward action, identical to the on-open path's:
+                        // open the Book, where every number it showed can be edited. The
+                        // empty title only seeds the tab caption — the editors model
+                        // re-reads the item's own name as it opens.
+                        editors.open_or_focus(book_item_id, "");
+                    }),
+                );
+            }));
+        }
         // `backups.show` — open the browsable list of this project's backup files.
         {
             let single_work = single_work.clone();
