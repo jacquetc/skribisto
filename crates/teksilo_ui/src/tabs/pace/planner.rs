@@ -43,6 +43,48 @@ impl std::fmt::Debug for WeekdayChips {
     }
 }
 
+/// A chip's floor width. Measured, not guessed: with [`CHIP_PADDING_H`] the
+/// widest en-US abbreviation ("Wed") asks for 43.7 dp and the narrowest ("Fri")
+/// for 31.5, so 50 dp is above every one of them — which is what makes the seven
+/// chips *uniform* — while 7 × 50 + 6 × 6 dp of spacing still fits one line of a
+/// dashboard column at any width above roughly 390 dp. Narrower than that (the
+/// `ColumnFlow`'s 300 dp floor, three columns in a small window) the `Wrap`
+/// breaks the row onto two lines, which is the point of it: no label is ever
+/// truncated to make the row fit.
+const CHIP_MIN_WIDTH: f32 = 50.0;
+const CHIP_HEIGHT: f32 = 30.0;
+/// Breathing room around the label. Well under the stock button's 14 dp, which
+/// is sized for "Cancel", not for "Wed".
+const CHIP_PADDING_H: f32 = 8.0;
+
+/// The chip's chrome: the stock recipes with one thing changed — their footprint.
+///
+/// **This is the fix for a real truncation bug, not a nicety.** The chip used to be
+/// a `Button` inside `FixedSize::new().width(46.0)`, and a `Button` is rigid: it does
+/// not shrink to a smaller proposal, it *truncates its label*. Every stock recipe
+/// carries `padding: 14 dp each side`, so 46 dp left 18 dp for the text — enough for
+/// "Fri" and nothing else, which is exactly what shipped: six chips reading "…" and
+/// one reading "Fri".
+///
+/// Trimming the padding and moving the 46 dp from an outer `FixedSize` (a hard cap)
+/// into the recipe's own `min_size` (a floor) fixes both halves. Seven three-letter
+/// abbreviations now measure the same and stay aligned, and a locale whose weekday
+/// names are longer gets a wider chip rather than a truncated one — the failure mode
+/// degrades to ragged, never to unreadable.
+///
+/// Every variant is trimmed, not just the two in use: `RecipeButtonStyle` falls back
+/// to `Plain` for variants it has no entry for, and a style whose footprint depended
+/// on which variant a caller happened to pass would be a trap for the next edit.
+fn weekday_chip_style() -> RecipeButtonStyle {
+    let mut style = RecipeButtonStyle::intui();
+    for recipe in style.recipes.values_mut() {
+        // `EdgeInsets::symmetric` takes (horizontal, vertical).
+        recipe.padding = EdgeInsets::symmetric(CHIP_PADDING_H, 0.0);
+        recipe.min_size = Size::new(CHIP_MIN_WIDTH, CHIP_HEIGHT);
+    }
+    style
+}
+
 /// One weekday chip: a toggle button over a single bit of the `weekday_mask`.
 ///
 /// Split out of the loop so its keyboard and accessibility contract can be
@@ -53,7 +95,7 @@ fn weekday_chip(
     on: bool,
     toggle: impl Fn(&mut EventContext) + 'static,
 ) -> impl Widget + 'static {
-    let chip = Button::new(label)
+    Button::new(label)
         // Filled reads as "counted", Plain as "skipped" — the same accent-fill /
         // neutral pair the hand-drawn chip painted, now resolved by the theme so
         // it follows light and dark, and picks up the button's own hover, press
@@ -63,11 +105,14 @@ fn weekday_chip(
         } else {
             ButtonVariant::Plain
         })
+        // The chip's own footprint — see `weekday_chip_style`. Nothing wraps this
+        // button: the floor lives in the recipe, so a label that needs more room
+        // gets it.
+        .style(weekday_chip_style())
         .on_activate_fn(toggle)
         // Last: these wrap the `Button`, so every `Button` method is above them.
         .access_role(teksilo::core::accesskit::Role::CheckBox)
-        .access_customize(move |b| b.set_toggled(on));
-    FixedSize::new().width(46.0).height(30.0).child(chip)
+        .access_customize(move |b| b.set_toggled(on))
 }
 
 impl Widget for WeekdayChips {
@@ -275,6 +320,65 @@ mod tests {
         t.focus(button);
         t.press_key(Key::Enter, Modifiers::NONE);
         assert!(fired.get(), "Enter must toggle the day");
+    }
+
+    /// A tree with a real text metric — without one the fallback reports a rigid
+    /// size and a truncated label measures exactly as a fitting one does, so the
+    /// two tests below would pass against the bug they exist for.
+    fn measuring_tree() -> WidgetTree {
+        tree().with_text_backend(StdRc::new(std::cell::RefCell::new(
+            teksilo::canvas::MockTextBackend::new(),
+        )))
+    }
+
+    /// Lay one chip out on its own and report the width it took.
+    fn chip_width(label: &str) -> f32 {
+        let mut t = measuring_tree();
+        let id = t.add_boxed(Box::new(weekday_chip(lit!(label), false, |_c| {})));
+        // `unspecified`, never `exact`: the root of a tree is placed at whatever the
+        // proposal says, so an exact box would report the box back and measure nothing.
+        // Unspecified asks the chip what it actually wants.
+        t.layout(SizeProposal::unspecified());
+        t.bounds(id).size().width
+    }
+
+    /// **The truncation bug.** The chip used to be a `Button` capped by
+    /// `FixedSize::new().width(46.0)`, and a `Button` does not shrink — it
+    /// truncates. Every weekday but "Fri" rendered as "…".
+    ///
+    /// The guard is that a chip is a *floor*, not a cap: a label wider than the
+    /// floor must make the chip wider, never make the text shorter. A reinstated
+    /// `FixedSize` fails this immediately.
+    #[test]
+    fn a_chip_grows_for_a_label_too_wide_for_its_floor() {
+        let short = chip_width("Fri");
+        let long = chip_width("Wednesday-ish");
+        assert_eq!(
+            short, CHIP_MIN_WIDTH,
+            "a short label sits at the floor, so every abbreviation lines up"
+        );
+        assert!(
+            long > CHIP_MIN_WIDTH,
+            "a label past the floor must widen the chip (got {long} for a floor of \
+             {CHIP_MIN_WIDTH}) — a cap would truncate it instead"
+        );
+    }
+
+    /// …and the floor is above every weekday the app ships, in every locale it
+    /// ships, so the seven chips are the same width and stay aligned.
+    #[test]
+    fn every_shipped_weekday_fits_the_floor() {
+        for label in [
+            // en-US
+            "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", // fr-FR
+            "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim",
+        ] {
+            assert_eq!(
+                chip_width(label),
+                CHIP_MIN_WIDTH,
+                "{label:?} must fit the floor, or the row goes ragged"
+            );
+        }
     }
 
     /// A multi-select chip is a check box carrying its state, not a bare button:
