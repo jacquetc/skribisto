@@ -36,7 +36,9 @@ use teksilo::core::overlay::TooltipPlacement;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::tokens::{BorderRole, CornerRadius};
-use teksilo::widgets::{Center, HStack, MinSize, Popover, RectWidget, TextWidget, ZStack};
+use teksilo::widgets::{
+    Center, HStack, MinSize, OverlayTrigger, PopoverWidget, RectWidget, TextWidget, ZStack,
+};
 
 use crate::models::TagRow;
 use crate::tags::contrast;
@@ -377,10 +379,15 @@ impl Widget for TagDotsRow {
             root_child: None,
         };
         let picker = TagPicker::new(self.value.clone(), self.set.clone(), vm);
+        // The dot row itself is the trigger, so it goes through `OverlayTrigger`
+        // — the framework's adapter for a popover trigger that is not a button.
+        // (It was the standalone `Popover` widget, which existed only to accept
+        // a non-button trigger and has been folded into `PopoverWidget`.)
         let id = ctx.add(
-            Popover::new(tr!(tags_pill_list()))
-                .trigger(chips)
-                .content(picker),
+            PopoverWidget::new(
+                OverlayTrigger::around(chips).named(tr!(tags_pill_list()).resolve_now()),
+            )
+            .content(picker),
         );
         self.root_child = Some(id);
         vec![id]
