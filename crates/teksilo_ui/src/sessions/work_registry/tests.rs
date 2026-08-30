@@ -115,16 +115,21 @@ fn tracked_stack_teardown() -> (StackTeardown, Rc<RefCell<Vec<bool>>>) {
     )
 }
 
-/// A `WindowTeardown` that counts how many times it ran, plus a handle to
-/// read the count back.
-fn tracked_window_teardown() -> (WindowTeardown, Rc<RefCell<u32>>) {
-    let calls = Rc::new(RefCell::new(0));
+/// A `WindowTeardown` that records every `is_last` it was called with, plus a
+/// handle to read them back — the same shape as the stack one above, because
+/// the window teardown now takes that answer too (it performs the project's
+/// close-out on the last window standing).
+fn tracked_window_teardown() -> (WindowTeardown, Rc<RefCell<Vec<bool>>>) {
+    let calls = Rc::new(RefCell::new(Vec::new()));
     let seen = calls.clone();
-    (Rc::new(move || *seen.borrow_mut() += 1), calls)
+    (
+        Rc::new(move |is_last| seen.borrow_mut().push(is_last)),
+        calls,
+    )
 }
 
 fn inert_window_teardown() -> WindowTeardown {
-    Rc::new(|| {})
+    Rc::new(|_| {})
 }
 
 #[test]
@@ -150,8 +155,9 @@ fn removing_a_works_only_window_runs_teardown_as_last_and_drops_the_session() {
     );
     assert_eq!(
         *window_calls.borrow(),
-        1,
-        "a real close must run the window's own teardown"
+        vec![true],
+        "a real close must run the window's own teardown, told it was the last one — \
+             which is what makes it perform the project's close-out"
     );
     assert!(
         reg.session_for(1).is_none(),
@@ -268,7 +274,7 @@ fn removing_a_window_twice_is_a_safe_no_op_the_second_time() {
 
     assert_eq!(
         *window_calls.borrow(),
-        1,
+        vec![true],
         "the second removal of the same window must not re-run its teardown"
     );
 }
@@ -315,9 +321,8 @@ fn switching_a_windows_only_work_in_place_tears_down_the_old_session_and_stack()
         reg.session_for(2).is_some(),
         "Work 2 must now be the window's live session"
     );
-    assert_eq!(
-        *old_window_calls.borrow(),
-        0,
+    assert!(
+        old_window_calls.borrow().is_empty(),
         "an in-place switch must NOT run the window's own teardown — its EditorsViewModel \
              and backup flush hook survive to serve whatever Work it shows next"
     );

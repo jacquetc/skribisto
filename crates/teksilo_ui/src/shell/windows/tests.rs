@@ -230,7 +230,7 @@ fn a_second_window_shares_the_works_session_and_takes_its_own_identity() {
         1,
         None,
         Rc::new(|_| {}),
-        Rc::new(|| {}),
+        Rc::new(|_| {}),
     );
     let factory = test_factory(app_ctx, registry.clone());
 
@@ -271,7 +271,7 @@ fn a_third_window_does_not_reuse_the_seconds_identity() {
         1,
         None,
         Rc::new(|_| {}),
-        Rc::new(|| {}),
+        Rc::new(|_| {}),
     );
     let factory = test_factory(app_ctx, registry.clone());
 

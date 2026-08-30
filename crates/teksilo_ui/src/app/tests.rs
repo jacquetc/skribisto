@@ -336,8 +336,12 @@ fn window_teardown_forgets_the_toast_registry_entry_too() {
         Some(registry.clone()),
         window_id,
         None,
+        Rc::new(|| {}),
     );
-    teardown();
+    // `false`: not the last window, so this exercises the window-scoped half
+    // alone. Whether the close-out fires on the right side of that flag is the
+    // next test's question.
+    teardown(false);
 
     assert_eq!(
         registry.window_audience_signal(window_id).get(),
@@ -352,6 +356,51 @@ fn window_teardown_forgets_the_toast_registry_entry_too() {
 /// instance to pass through `build_window_teardown` — mirrors
 /// `editors.rs`'s own private test helper (not reachable from here), kept
 /// deliberately small since nothing here exercises editor behaviour.
+/// **The project's close-out runs on the last window standing, and only there.**
+///
+/// `ProjectLifecycleViewModel::on_close` is subscribed to `CloseWork` with
+/// `subscribe_event_with_ctx`, and `close_work` only *queues* that event — every
+/// path that closes a project force-closes its windows in the same dispatch, so
+/// the handler is never delivered (no live tree, no `EventContext`) and the
+/// close-out simply did not happen on a real close. Most visibly it left the
+/// open-registry claim held, so a project closed back to the Launcher stayed
+/// advertised as open to every peer instance for the rest of the process's life.
+///
+/// It now rides on the window teardown, which `on_removed` does guarantee. Both
+/// halves of the condition matter and both are checked here: closing one window
+/// of a Work that still has another must NOT tear the project down under the
+/// survivor, and the last one must.
+#[test]
+fn the_project_close_out_runs_only_on_the_last_window() {
+    let app_ctx = Rc::new(frontend::AppContext::new());
+    let session = crate::sessions::WorkSession::for_test();
+    let window_id = TeksiloWindowId::new(1);
+
+    let ran = Rc::new(std::cell::Cell::new(0u32));
+    let teardown = {
+        let ran = ran.clone();
+        build_window_teardown(
+            test_editors_view_model(&app_ctx),
+            session.backup_scheduler.clone(),
+            None,
+            window_id,
+            None,
+            Rc::new(move || ran.set(ran.get() + 1)),
+        )
+    };
+
+    teardown(false);
+    assert_eq!(
+        ran.get(),
+        0,
+        "a sibling window still shows this Work — closing the project under it would \
+             drop its documents and release a claim it still needs"
+    );
+
+    teardown(true);
+    assert_eq!(ran.get(), 1, "the last window performs the close-out");
+}
+
 fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewModel {
     let bundle = || crate::settings::EditorTypography {
         font_family: Signal::new("Literata".to_string()),

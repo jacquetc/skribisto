@@ -82,7 +82,21 @@ pub type StackTeardown = Rc<dyn Fn(bool)>;
 /// keeps needing its buffers flushed for whatever Work it shows next), so
 /// releasing them mid-switch would silently break flushing/doc-tracking for
 /// the *new* Work the window goes on to show.
-pub type WindowTeardown = Rc<dyn Fn()>;
+///
+/// The `bool` is the same "was this the last window on this Work" answer
+/// [`StackTeardown`] gets, and it carries a second job: **the project's own
+/// close-out**. `close_work` only *queues* its `CloseWork`, and the paths that
+/// close a project force-close its windows in the same dispatch, so the
+/// `subscribe_event_with_ctx` subscriber that runs
+/// `ProjectLifecycleViewModel::on_close` never fires for any of them — the
+/// event needs a live tree to build its `EventContext` from and there is none
+/// left. Everything that close-out does then simply did not happen, and the
+/// most visible casualty was the open-registry claim: a project closed back to
+/// the Launcher stayed advertised as open to every other instance for the rest
+/// of the process's life. Running it from here is the one place that is
+/// guaranteed to happen exactly once, on a real close, per Work — see
+/// `crate::app::build_window_teardown`.
+pub type WindowTeardown = Rc<dyn Fn(bool)>;
 
 /// One window's binding to the Work it is showing, plus what to run when it
 /// stops showing that particular Work ([`StackTeardown`]) and what to run only
@@ -415,13 +429,19 @@ impl WorkRegistry {
     }
 
     /// teksilo's `on_removed` hook fired for `window_id`: this window is really
-    /// gone. Removes its own binding, runs the window's own `WindowTeardown`
-    /// unconditionally (its `OpenDoc`s/flush hook belong to the window
-    /// instance, and the window instance really is gone now), then decrements
-    /// its Work's session refcount ([`unregister`](Self::unregister)) and runs
-    /// the `StackTeardown` with whether this was the *last* window on that
-    /// Work — so it tears down the Work-scoped resources (its undo stack) only
-    /// when nothing else still shows it.
+    /// gone. Removes its own binding, decrements its Work's session refcount
+    /// ([`unregister`](Self::unregister)), then runs both teardowns with
+    /// whether this was the *last* window on that Work — the window-scoped one
+    /// always (its `OpenDoc`s/flush hook belong to the window instance, and the
+    /// window instance really is gone now), which additionally performs the
+    /// project's close-out when nothing else still shows it, and the
+    /// stack-scoped one, which tears down the Work's undo stack on the same
+    /// condition.
+    ///
+    /// `unregister` runs **first** so both teardowns get the answer. Neither
+    /// reads the session back out of this registry — each was built over its
+    /// own owned handles at `LoadWork`/`NewWork` time — so dropping the
+    /// session entry before they run takes nothing away from them.
     ///
     /// A safe no-op for a window that never registered one — the Launcher (which
     /// shows no Work at all), or a project window force-closed before its own
@@ -430,8 +450,8 @@ impl WorkRegistry {
         let Some(entry) = self.windows.borrow_mut().remove(&window_id) else {
             return;
         };
-        (entry.window_teardown)();
         let is_last = self.unregister(entry.work_id);
+        (entry.window_teardown)(is_last);
         (entry.stack_teardown)(is_last);
     }
 }

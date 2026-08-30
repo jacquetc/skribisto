@@ -1237,20 +1237,68 @@ pub(crate) fn build_stack_teardown(
 /// forever, so every window ever opened over a session would otherwise leak
 /// one entry in each map. `None` only in a headless/off-screen build context
 /// (no `install_toast_default()` ever ran) — a safe no-op there.
+///
+/// **And, on the last window standing, the project's own close-out.**
+/// [`ProjectLifecycleViewModel::on_close`](crate::project::ProjectLifecycleViewModel::on_close)
+/// is subscribed to `CloseWork` with `subscribe_event_with_ctx`, and that event
+/// is only *queued* by `close_work`: every path that closes a project
+/// force-closes its windows in the same dispatch, so by the time the event is
+/// delivered there is no live tree to build an `EventContext` from and the
+/// handler is skipped. (The plain `subscribe_event` handlers on the same event
+/// still run, which is why this went unnoticed.) The close-out therefore never
+/// happened on a real close — leaving, most visibly, the **open-registry claim
+/// held**: a project closed back to the Launcher stayed advertised as open to
+/// every peer instance, which would then offer to raise a window that no longer
+/// exists. It also left this Work's `SpellcheckService` personal-word/mute entry
+/// resident and its ids un-cleared.
+///
+/// Here instead, where it is guaranteed to run — a window really being gone is
+/// exactly what `on_removed` reports — and to run **once per Work**: `is_last`
+/// is [`WorkRegistry`]'s own refcount answer, so with several windows on one
+/// Work only the last one performs it. The in-place-switch path is untouched
+/// and still reaches `on_close` through the subscriber, because there the
+/// window survives; this teardown does not run at all for it (see
+/// [`WindowTeardown`]).
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn build_window_teardown(
     editors: EditorsViewModel,
     backup_scheduler: BackupSchedulerViewModel,
     toast_registry: Option<ToastRegistry>,
     window_id: TeksiloWindowId,
     stack_id: Option<u64>,
+    close_out: ProjectCloseOut,
 ) -> WindowTeardown {
-    Rc::new(move || {
+    Rc::new(move |is_last: bool| {
         editors.release_own_open_docs(stack_id);
         backup_scheduler.unregister_flush_hook(window_id);
         if let Some(reg) = &toast_registry {
             reg.forget_window(window_id);
         }
+        // Ordered after the release above, which reads this window's tab list —
+        // the close-out empties it.
+        if is_last {
+            close_out();
+        }
     })
+}
+
+/// The project's own close-out, as one callable — what
+/// [`build_window_teardown`] runs on the last window standing.
+///
+/// A closure rather than the [`ProjectLifecycleViewModel`](crate::project::ProjectLifecycleViewModel)
+/// itself so the seam can be exercised for what it is: "does the teardown call
+/// this exactly when it is the last window, and never otherwise" is a question
+/// about the teardown, and answering it should not require standing up an
+/// outline, a trash dock and a spell-checker first.
+pub(crate) type ProjectCloseOut = Rc<dyn Fn()>;
+
+/// The real close-out: `ProjectLifecycleViewModel::on_close`, the handler that
+/// `CloseWork` can no longer deliver on a real close (see
+/// [`build_window_teardown`]'s doc for why).
+pub(crate) fn build_project_close_out(
+    lifecycle: crate::project::ProjectLifecycleViewModel,
+) -> ProjectCloseOut {
+    Rc::new(move || lifecycle.on_close())
 }
 
 /// Present the shared Export modal over an already-`prepare`d [`ExportViewModel`]. Both the

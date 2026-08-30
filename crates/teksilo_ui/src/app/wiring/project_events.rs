@@ -521,6 +521,7 @@ pub(in crate::app) fn install_lifecycle(
                             toast_registry_for_load.clone(),
                             window_id,
                             my_ids.stack_id.get(),
+                            crate::app::build_project_close_out(lifecycle_load.clone()),
                         );
                         bind_window_to_work(
                             &registry_for_load,
@@ -551,6 +552,7 @@ pub(in crate::app) fn install_lifecycle(
         let window_ordinal = deps.window_ordinal.clone();
         let search = deps.search.clone();
         let tree_expansion = deps.tree_expansion.clone();
+        let lifecycle = deps.lifecycle.clone();
         Rc::new(move |work_id: u64, ordinal: usize| {
             outline.set_binder_filter(None);
             outline.clear_search();
@@ -570,6 +572,7 @@ pub(in crate::app) fn install_lifecycle(
                     toast_registry.clone(),
                     window_id,
                     ids.stack_id.get(),
+                    crate::app::build_project_close_out(lifecycle.clone()),
                 );
                 bind_window_to_work(
                     &registry,
@@ -672,6 +675,7 @@ pub(in crate::app) fn install_lifecycle(
                             toast_registry_for_new.clone(),
                             window_id,
                             my_ids.stack_id.get(),
+                            crate::app::build_project_close_out(lifecycle_new.clone()),
                         );
                         bind_window_to_work(
                             &registry_for_new,
