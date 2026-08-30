@@ -89,6 +89,15 @@ if xdg:
     except FileNotFoundError:
         pass
     print(f"isolated XDG root: {xdg}")
+# Like its sibling automation_versions.py, this probe is about a project's
+# recorded past, so it needs one: launched bare it lands on the Launcher, where
+# there is no View menu at all, and the first check failed as "could not reach
+# View ▸ Go back in time" — a sentence about a menu, for a missing argument.
+if project is None:
+    sys.exit(f"usage: {os.path.basename(__file__)} PROJECT.skrib\n"
+             "This probe needs a project with recorded versions — backups beside "
+             "the file or in the backup root, or an in-project history log.")
+
 app = subprocess.Popen([SKRIBISTO] + ([project] if project else []),
                        stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
 
@@ -255,8 +264,12 @@ def open_timeline():
     call("invoke_action", {"action": "click", "node": view[0]["id"]})
     time.sleep(0.9)
     settle()
-    row = [i for i in menu_items() if menu_label(i) in ("Timeline", "Chronologie")]
+    # `menu-timeline` in the locales — the dock kept the internal name "Timeline"
+    # while the menu row got the writer-facing one.
+    row = [i for i in menu_items()
+           if menu_label(i) in ("Go back in time", "Remonter le temps")]
     if not row:
+        print("  rows under View:", [menu_label(i) for i in menu_items()])
         return False
     call("invoke_action", {"action": "click", "node": row[0]["id"]})
     # The scan opens every archive the project has, which outruns `settle`.

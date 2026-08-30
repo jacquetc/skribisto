@@ -475,15 +475,25 @@ def advance():
 
 advance()
 combos = s.by_role("ComboBox")
+radios = s.by_role("RadioButton")
 print(f"step 2 structure: ComboBox x{len(combos)} "
-      f"-> {[c.get('label') for c in combos]}")
+      f"-> {[c.get('label') for c in combos]}, RadioButton x{len(radios)}")
 # Two: the writing language, and the paratext ("Book structure") preset.
 if len(combos) < 2:
     s.dump("step 2")
     fail("expected the language and paratext ComboBoxes on step 2", s.app, s.mcp, s.log)
-if s.by_role("RadioGroup"):
-    fail("the Template RadioGroup belongs to step 3, not step 2", s.app, s.mcp, s.log)
-print("PASS: step 2 shows language + book structure")
+# Step 2 has a RadioGroup of its own — the goal unit, Words vs Characters — so
+# "is a RadioGroup present" no longer tells the two pages apart. Their *sizes*
+# do, and by cardinality rather than by label, which keeps this locale-blind:
+# the unit control offers two choices, the template tiles five.
+if len(radios) >= 5:
+    s.dump("step 2")
+    fail(f"the Template tiles belong to step 3, not step 2 (RadioButton x{len(radios)})",
+         s.app, s.mcp, s.log)
+if len(radios) != 2:
+    fail(f"expected the two-choice goal-unit control on step 2, got {len(radios)} "
+         f"radio buttons: {[r.get('label') for r in radios]}", s.app, s.mcp, s.log)
+print("PASS: step 2 shows language, book structure and the goal unit")
 s.shot("/tmp/sk-new-work-step2.png")
 
 
@@ -518,7 +528,7 @@ time.sleep(1.0)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# The Launcher's "From documents…" — the same wizard, a different purpose.
+# The Launcher's "Create from… ▸ Documents" — the same wizard, a different purpose.
 # ══════════════════════════════════════════════════════════════════════════════
 # This door used to open a bare file picker first and then ask for the very same
 # files again in the import wizard afterwards. It now goes straight to this
@@ -536,11 +546,30 @@ s.tools()
 if not s.wait_label("welcome sections"):
     fail("the Launcher window did not appear", s.app, s.mcp, s.log)
 
-docs_btn = next((n for n in s.nodes() if n.get("role") == "Button"
-                 and "from documents" in (n.get("label") or "").lower()), None)
-if not docs_btn:
-    fail("no 'From documents…' button on the Launcher", s.app, s.mcp, s.log)
-s.call("invoke_action", {"node": docs_btn["id"], "action": "click"})
+# Two clicks, not one: the Launcher's direct "From documents…" button became a
+# "Create from…" popover when the Plume importer joined it there — one door for
+# "start a project from something I already have", listing what that something
+# may be. The row is matched on "document", which is the word both its own label
+# and the wizard's title share.
+create_from = next((n for n in s.nodes() if n.get("role") == "Button"
+                    and "create from" in (n.get("label") or "").lower()), None)
+if not create_from:
+    fail(f"no 'Create from…' button on the Launcher: "
+         f"{[n.get('label') for n in s.by_role('Button')]}", s.app, s.mcp, s.log)
+s.call("invoke_action", {"node": create_from["id"], "action": "click"})
+time.sleep(1.0)
+docs_row = None
+deadline = time.time() + 8
+while time.time() < deadline and not docs_row:
+    docs_row = next((n for n in s.nodes() if n.get("role") == "MenuItem"
+                     and "document" in (n.get("label") or "").lower()), None)
+    if not docs_row:
+        time.sleep(0.3)
+if not docs_row:
+    fail(f"the 'Create from…' popover has no documents row: "
+         f"{[n.get('label') for n in s.nodes() if n.get('role') == 'MenuItem']}",
+         s.app, s.mcp, s.log)
+s.call("invoke_action", {"node": docs_row["id"], "action": "click"})
 time.sleep(1.2)
 
 # No file picker: the wizard itself is what the click opens. (A native picker is

@@ -69,6 +69,12 @@ SANDBOX_ENV = {
     "XDG_DATA_HOME": os.path.join(sandbox, "data"),
     "HOME": sandbox,
 }
+# Every label this probe matches is written in English, so the language has to be
+# SET rather than inherited: an unset `ui.locale` is not "English", it is the
+# operator's OS language (`startup.rs`'s `auto_detect_os_locale`). Without this
+# the probe passed on an English desktop and failed on a French one, reporting
+# "the 'Work' menu did not open" — it had opened, as `Œuvre`.
+fixture.write_settings(SANDBOX_ENV["XDG_CONFIG_HOME"])
 WORK = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, WORK)
 
@@ -275,8 +281,15 @@ def open_work_menu(s, window_id=None):
     if not ham:
         fail("no title-bar 'Menu' (hamburger) button in the AT tree", s.app, s.mcp, s.log)
     s.activate(ham, window_id)
-    time.sleep(0.9)
-    work = s.find_exact("Work", role="MenuItem", window_id=window_id)
+    # Polled, not slept at: the bar is built when the button fires, and how long
+    # that takes varies with what the window is doing (a fixed wait made this the
+    # probe's flakiest line).
+    work = None
+    deadline = time.time() + 8
+    while time.time() < deadline and not work:
+        work = s.find_exact("Work", role="MenuItem", window_id=window_id)
+        if not work:
+            time.sleep(0.3)
     if not work:
         fail("the 'Work' menu did not open", s.app, s.mcp, s.log)
     s.activate(work, window_id)
@@ -480,8 +493,13 @@ while time.time() < deadline:
         break
     time.sleep(0.4)
 if not discard:
+    # Name what IS on screen: "no Discard button" reads as "the guard is missing",
+    # but the same symptom is produced by a guard that never got as far as being
+    # asked for (a menu click swallowed by a stale overlay, say).
+    on_screen = [n.get("label") for n in s.nodes() if n.get("role") == "Button"]
     fail("Close Work over unsaved edits did not raise the guard — it must never "
-         "discard a writer's edits without asking", s.app, s.mcp, s.log)
+         f"discard a writer's edits without asking (buttons on screen: {on_screen})",
+         s.app, s.mcp, s.log)
 prompts = [n for n in s.nodes()
            if n.get("role") == "Button"
            and (n.get("label") or "").strip().lower() in ("discard", "ignorer")]

@@ -28,10 +28,11 @@ What this asserts, in one Launcher session seeded with three recents
 
 Recents are seeded on disk (a sandbox `recents.toml` pointing at 3 real .skrib
 copies) rather than by opening projects, exactly as automation_welcome_keyboard.py
-does: the list only shows *reachable* paths. XDG_RUNTIME_DIR is sandboxed too, so
-the lock files read in step 5 are this run's and nobody else's.
+does: the list only shows *reachable* paths. XDG_RUNTIME_DIR is deliberately NOT
+sandboxed (it holds the Wayland socket), so step 5 keeps only the locks naming a
+path inside this run's sandbox — see `claimed_paths`.
 """
-import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, glob, json, os, re, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -57,6 +58,11 @@ SANDBOX_ENV = {
     "XDG_DATA_HOME": os.path.join(_sandbox, "data"),
     "HOME": _sandbox,
 }
+# Every label this probe matches is written in English, so the language has to be
+# SET rather than inherited: an unset `ui.locale` is not "English", it is the
+# operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
+# passed on an English desktop and failed on a French one.
+fixture.write_settings(SANDBOX_ENV["XDG_CONFIG_HOME"])
 
 # 3 reachable projects. They are copies of the same example, so all three carry
 # the title "Starforgers" *inside* the .skrib — which is precisely why step 5
@@ -292,18 +298,28 @@ def claimed_paths():
     """Project paths claimed as open (open-registry lock files), scoped to this
     run's sandbox — the shared runtime dir also holds the locks of any other
     Skribisto instance on this machine, and stale ones from earlier runs (whose
-    sandbox path differs, so they cannot be confused with this run's)."""
-    d = os.path.join(RUNTIME, "skribisto")
+    sandbox path differs, so they cannot be confused with this run's).
+
+    **Every** `skribisto-*` directory, not `skribisto`: the registry directory is
+    namespaced by installation identity (a blake3 of the config dir) so that two
+    installations do not read each other's locks — and this probe's sandboxed
+    `XDG_CONFIG_HOME` gives it a namespace of its own by construction. Looking in
+    the un-suffixed name found nothing, ever, which reads here as "the click did
+    not open anything" — the failure this step exists to report.
+    """
     found = []
-    for f in os.listdir(d) if os.path.isdir(d) else []:
-        if not f.endswith(".lock"):
+    for d in glob.glob(os.path.join(RUNTIME, "skribisto*")):
+        if not os.path.isdir(d):
             continue
-        try:
-            p = json.load(open(os.path.join(d, f)))["path"]
-        except Exception:
-            continue
-        if p.startswith(_works):
-            found.append(p)
+        for f in os.listdir(d):
+            if not f.endswith(".lock"):
+                continue
+            try:
+                p = json.load(open(os.path.join(d, f)))["path"]
+            except Exception:
+                continue
+            if p.startswith(_works):
+                found.append(p)
     return found
 
 

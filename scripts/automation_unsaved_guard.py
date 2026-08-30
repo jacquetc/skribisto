@@ -40,7 +40,11 @@ and it fires the very same global `work.new` action; that Ctrl+N is bound to tha
 action is asserted separately, from `get_shortcuts`.
 
 Assertions favour locale-independent anchors (AccessKit roles, geometry, the
-button set) so this passes whatever UI language is persisted.
+button set) — the guard is found by its `AlertDialog` role and its buttons by
+where they sit inside it, never by their labels. Getting *to* the guard is the
+exception: a menu row can only be picked out by its name, so the probe pins
+`ui.locale` in a sandbox of its own rather than reading whatever the operator
+has persisted.
 
 Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
 automation_*.py scripts.
@@ -78,10 +82,10 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args):
+    def __init__(self, args, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
+                                    stderr=subprocess.STDOUT, env=env)
         sock = tok = None
         deadline = time.time() + 20
         while time.time() < deadline:
@@ -208,7 +212,16 @@ print("== launch with a scratch copy of the Starforgers example ==")
 scratch = tempfile.mkdtemp(prefix="skribisto-guard-check-")
 project = os.path.join(scratch, "Starforgers.skrib")
 shutil.copy2(EXAMPLE, project)
-s = Session([project])
+# An isolated config, not the operator's own, and it pins the two settings this
+# probe's whole subject depends on. `ui.locale` because three of the steps do
+# reach for a menu row by its English name (the docstring's claim above is about
+# the *assertions*, not about getting to them). `editor.autosave` off because
+# with it on there is no guard to test at all: `unsaved_decision` answers
+# `SaveThenProceed` and the switch proceeds silently, which is correct
+# behaviour and a false failure here.
+env = fixture.isolated_config(locale="en-US", label="unsaved-guard",
+                              pins={"editor.autosave": False})
+s = Session([project], env=env)
 if not s.wait_label("starforgers", timeout=30):
     fail("the example work did not load", s.app, s.mcp, s.log)
 print(f"  loaded {project}")
@@ -229,23 +242,42 @@ def click(n):
     return True
 
 
+def guard_box():
+    """The unsaved-changes message box, or `None` when it is not up.
+
+    Matched on the **`AlertDialog`** role alone, which is the one thing that
+    tells it from the other modal in this flow. A `MessageBox` surfaces as *two*
+    nodes — a `Dialog` host and an `AlertDialog` inside it — while the New Work
+    form surfaces as a plain `Dialog`. Accepting either role therefore could not
+    tell "the guard is still up" from "the guard stepped aside and let the form
+    through", and reported the failure at the exact moment the guard had done
+    its job: `Dialog 'New Work'` with `Cancel`/`Next`/… inside it read as a
+    still-open prompt with the wrong buttons.
+
+    The smallest one, for the reason the two-role version gave: nothing here has
+    parent links, so an outer container that also carried the role would swallow
+    the whole window.
+    """
+    alerts = [n for n in s.nodes()
+              if n.get("role") == "AlertDialog" and (n.get("bounds") or {}).get("width")]
+    if not alerts:
+        return None
+    return min(alerts, key=lambda n: n["bounds"]["width"] * n["bounds"]["height"])
+
+
 def dialog_buttons():
     """The message box's buttons, left-to-right, as `(label, node)` — `[]` when no
     message box is up.
 
-    A `MessageBox` surfaces as an `AlertDialog`. The bridge's `snapshot_tree`
-    carries no parent links, so the buttons are matched to it **geometrically**:
-    a Button whose centre lies inside the alert's bounds belongs to it. That also
-    keeps this locale-independent — no label is hard-coded.
+    The bridge's `snapshot_tree` carries no parent links, so the buttons are
+    matched to the box **geometrically**: a Button whose centre lies inside its
+    bounds belongs to it. That also keeps this locale-independent — no label is
+    hard-coded.
     """
-    nodes = s.nodes()
-    alerts = [n for n in nodes
-              if n.get("role") in ("AlertDialog", "Dialog") and (n.get("bounds") or {}).get("width")]
-    if not alerts:
+    box = guard_box()
+    if not box:
         return []
-    # The innermost box (the app's root Window is also a Dialog-ish container in
-    # some builds; the message box is the smallest one).
-    box = min(alerts, key=lambda n: n["bounds"]["width"] * n["bounds"]["height"])
+    nodes = s.nodes()
     b = box["bounds"]
     found = []
     for n in nodes:
@@ -468,7 +500,8 @@ click(discard)
 time.sleep(2.5)
 
 if dialog_buttons():
-    fail("the guard is still up after Discard", s.app, s.mcp, s.log)
+    fail(f"the guard is still up after Discard: {[l for l, _ in dialog_buttons()]}",
+         s.app, s.mcp, s.log)
 if not new_work_form_present():
     s.shot("/tmp/guard-after-discard.png")
     fail("Discard dismissed the guard but the New Work form never opened — "

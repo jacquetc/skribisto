@@ -50,7 +50,7 @@ Checks:
 
 The app is deliberately **left running** so a screenshot can be taken.
 """
-import json, os, re, select, shutil, subprocess, sys, tempfile, time, zipfile
+import collections, json, os, re, select, shutil, subprocess, sys, tempfile, time, zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -100,16 +100,38 @@ def build_fixture():
     project = os.path.join(root, "Starforgers.skrib")
 
     src = zipfile.ZipFile(os.path.join(EXAMPLES, OLDER))
-    # The row to give a recorded history to: the first Item/Scene there is.
+    # The row to give a recorded history to: the first **uniquely titled**
+    # Item/Scene there is, and its title is handed back so the probe reaches for
+    # the row the fixture actually prepared instead of naming one by hand.
+    #
+    # Unique, because the only handle the probe has on a binder row is its name,
+    # and an example may carry the same one twice (a "Copyright" paratext beside
+    # a "Copyright" scene, say). Picking the first Item/Scene regardless would let
+    # the fixture hang the history on one row while the probe opened the other,
+    # and the dock's honest "No earlier version of this yet" for a row that never
+    # had a history would read as the dock being broken.
     items = [n for n in src.namelist() if n.endswith("items.ron")]
     text = src.read(items[0]).decode("utf-8")
-    uid = None
-    for block in re.findall(r"BinderItemFile\((.*?)\n        \),", text, re.S):
+    blocks = re.findall(r"BinderItemFile\((.*?)\n        \),", text, re.S)
+
+    def title_of(block):
+        m = re.search(r'title:\s*"((?:[^"\\]|\\.)*)"', block)
+        return m.group(1) if m else None
+
+    seen = collections.Counter(t for t in map(title_of, blocks) if t)
+
+    uid = title = None
+    for block in blocks:
+        t = title_of(block)
+        if not t or seen[t] != 1:
+            continue
         if "role: Item," in block and "sub_role: Scene," in block:
             uid = re.search(r'uid:\s*"([0-9a-f-]{36})"', block).group(1)
+            title = t
             break
-    if uid is None:
-        raise SystemExit(f"{OLDER} has no Item/Scene row to hang a history on")
+    if uid is None or not title:
+        raise SystemExit(
+            f"{OLDER} has no uniquely-titled Item/Scene row to hang a history on")
 
     index = f"""[
     (
@@ -151,11 +173,11 @@ def build_fixture():
     shutil.copy2(os.path.join(EXAMPLES, NEWER), os.path.join(root, NEWER))
     for p in (project, os.path.join(root, NEWER)):
         os.chmod(p, 0o644)
-    return root, project
+    return root, project, title
 
 
-root, project = build_fixture()
-print(f"fixture: {project}")
+root, project, HISTORY_ROW = build_fixture()
+print(f"fixture: {project} (history on {HISTORY_ROW!r})")
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
 print(f"app log: {log}")
@@ -183,6 +205,12 @@ os.makedirs(os.path.join(sandbox, "config"), exist_ok=True)
 os.makedirs(os.path.join(sandbox, "data", "skribisto"), exist_ok=True)
 env["XDG_CONFIG_HOME"] = os.path.join(sandbox, "config")
 env["XDG_DATA_HOME"] = os.path.join(sandbox, "data")
+# …and pinned to English, because the segments and rows this probe clicks are
+# matched by their labels. An unset `ui.locale` is not "English", it is the
+# operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so leaving it
+# out made the probe pass on an English desktop and fail on a French one ("the
+# scope bar offers no Text segment" — it was there, as `Texte`).
+fixture.write_settings(env["XDG_CONFIG_HOME"])
 
 app = subprocess.Popen([SKRIBISTO, project], stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
@@ -292,10 +320,29 @@ def rendered_text():
 
 
 def click_at(node):
+    """Click `node` — its AccessKit action when it advertises one, else a
+    synthetic tap at its centre.
+
+    The action first, because the pointer path has a hazard this probe kept
+    losing to: it *hovers* before it clicks, and a hover raises the tooltip of
+    whatever is under it, which then sits between the cursor and the control.
+    The rail's Versions tab is one such control — the tap landed on its tooltip,
+    the dock never opened, and the failure surfaced two steps later as "the scope
+    bar offers no Text segment". The tap is kept for the nodes that advertise no
+    action.
+    """
+    if "click" in ((node or {}).get("actions") or []):
+        res, _ = call("invoke_action", {"action": "click", "node": node["id"]})
+        if not (isinstance(res, dict) and res.get("isError")):
+            time.sleep(0.5)
+            return True
     b = (node or {}).get("bounds") or {}
     if not b.get("width"):
         return False
     x, y = b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
+    # The hover before the press is deliberate and load-bearing: steps 2-4 read
+    # tooltips back out of the AT tree, and a tooltip only exists once something
+    # has dwelt on its control.
     call("inject_pointer", {"action": "move", "x": x, "y": y})
     time.sleep(0.15)
     call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "left"})
@@ -341,26 +388,33 @@ def mlabel(n):
 
 
 def open_menu(top, row, wait=1.0):
-    """The title-bar menu is an overlay: address its rows by id, never by pointer."""
+    """The title-bar menu is an overlay: address its rows by id, never by pointer.
+
+    The hamburger is opened by **firing its own action**, not by focusing it and
+    sending Enter: a synthetic key only reaches the app while the window holds OS
+    keyboard focus, which a freshly-launched window on this compositor often does
+    not — and a dropped Enter left the bar closed, reported here as "could not
+    reach View ▸ …" as though the menu had no such row.
+    """
     for _ in range(4):
         if any(mlabel(i) == top for i in menu_items()):
             break
         h = [n for n in nodes() if n.get("label") == "Menu"]
         if not h:
             return False
-        call("focus_node", {"node": h[0]["id"]})
-        time.sleep(0.3)
-        call("inject_key", {"key": "Enter"})
+        call("invoke_action", {"action": "click", "node": h[0]["id"]})
         time.sleep(0.9)
         settle()
     t = [i for i in menu_items() if mlabel(i) == top]
     if not t:
+        print(f"  no {top!r} in the menu bar:", [mlabel(i) for i in menu_items()])
         return False
     call("invoke_action", {"action": "click", "node": t[0]["id"]})
     time.sleep(0.9)
     settle()
     r = [i for i in menu_items() if mlabel(i) == row]
     if not r:
+        print(f"  no {row!r} under {top!r}:", [mlabel(i) for i in menu_items()])
         return False
     call("invoke_action", {"action": "click", "node": r[0]["id"]})
     time.sleep(wait)
@@ -375,20 +429,30 @@ if not fixture.wait_for_load(nodes, ["Starforgers"], timeout=45):
 # ── 1–4. the Versions dock ─────────────────────────────────────────────────────
 
 print("1. the Versions dock, on the row whose history was thinned")
-row = tree_rows("Copyright")
+row = tree_rows(HISTORY_ROW)
 if not row:
-    die("the fixture's first scene row is not in the binder", app, mcp)
+    die(f"the row the fixture gave a history to ({HISTORY_ROW!r}) is not in the binder",
+        app, mcp)
 open_row(row[0])
 
 tab = [n for n in nodes() if n.get("role") == "Tab" and "Version" in (n.get("label") or "")]
 if not tab:
     die("no Versions tab on the trailing rail", app, mcp)
 click_at(tab[0])
-time.sleep(3.0)
-settle(2.5)
 
 # The dock opens on Synopsis; the recorded history here is of the body.
-body = [n for n in nodes() if n.get("role") == "RadioButton" and (n.get("label") or "") == "Text"]
+#
+# Polled rather than slept at: opening this dock scans every archive the project
+# has, so how long it takes before the scope bar exists is a property of the
+# fixture, not a constant. A fixed wait reported "the scope bar offers no Text
+# segment" — a sentence about the UI — for what was only a dock that had not
+# finished opening.
+body = []
+deadline = time.time() + 20
+while time.time() < deadline and not body:
+    settle(0.5)
+    body = [n for n in nodes()
+            if n.get("role") == "RadioButton" and (n.get("label") or "") == "Text"]
 if not body:
     die("the scope bar offers no Text segment", app, mcp)
 click_at(body[0])
@@ -427,17 +491,44 @@ check(bool(lines),
 # ── 5–7. bringing a deleted row back ───────────────────────────────────────────
 
 print("5. a deleted row offers a way back")
-if not open_menu("View", "Timeline", wait=4.0):
-    die("could not reach View ▸ Timeline", app, mcp)
+# The row is "Go back in time", not "Timeline": the dock kept its internal name
+# and the menu got the writer-facing one (`menu-timeline` in the locales).
+if not open_menu("View", "Go back in time", wait=4.0):
+    die("could not reach View ▸ Go back in time", app, mcp)
 time.sleep(5.0)
 settle(2.0)
 
-backup_bar = [n for n in nodes()
-              if n.get("role") == "GraphicsObject" and "09:30" in (n.get("label") or "")]
-if not backup_bar:
+if not [n for n in nodes()
+        if n.get("role") == "GraphicsObject" and "09:30" in (n.get("label") or "")]:
     die("the band drew no bar for the backup moment", app, mcp)
-click_at(backup_bar[0])
-time.sleep(2.0)
+
+# Select that moment through the band's **slider**, not by clicking its bar.
+#
+# A bar is a `GraphicsObject` painted by the chart: it advertises no action, so
+# it can only be aimed at with a synthetic tap, and a tap that misses is
+# indistinguishable here from one that lands — the panel simply goes on showing
+# the moment it already had (the newest, 10:00), and the step fails several
+# assertions later as "no removed row", which is a sentence about the app rather
+# than about the click. The slider is the same selection the writer has, it
+# advertises `decrement`, and the panel's own "differs between …" line says which
+# moment it settled on, so this asks for a moment and then checks it got it.
+def select_moment(stamp, tries=6):
+    slider = [n for n in nodes() if n.get("role") == "Slider"]
+    if not slider:
+        return False
+    call("focus_node", {"node": slider[0]["id"]})
+    for _ in range(tries):
+        if any(f"between {stamp}" in t for t in rendered_text()):
+            return True
+        call("invoke_action", {"action": "decrement", "node": slider[0]["id"]})
+        time.sleep(0.8)
+        settle(0.6)
+    return any(f"between {stamp}" in t for t in rendered_text())
+
+
+if not select_moment("2026-08-06 09:30"):
+    die("the band would not settle on the backup moment", app, mcp)
+time.sleep(1.0)
 settle(1.5)
 
 # The band sits at the bottom; the Versions dock's own list is above it, and both

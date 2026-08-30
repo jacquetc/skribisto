@@ -112,6 +112,45 @@ def toml_pins(pins):
     return "".join(f"{key} = {toml_scalar(value)}\n" for key, value in sorted(pins.items()))
 
 
+def write_settings(config_home, locale="en-US", dark=False, show_welcome=True, pins=None):
+    """Write `general.toml` into a sandbox **you** already built. Returns its path.
+
+    The other half of [`isolated_config`], for the probes that roll their own
+    sandbox because they need more than `XDG_CONFIG_HOME` — an `XDG_DATA_HOME`
+    and a `HOME` of their own, usually. Those hand-built sandboxes used to write
+    no settings at all, which is not the neutral choice it looks like: with
+    `startup.rs`'s `auto_detect_os_locale` on, an unset `ui.locale` is not
+    "English", it is *the operator's OS language*. Every probe matching an
+    English label passed on an English desktop and failed on a French one, with
+    a symptom that named the widget rather than the language ("the 'Work' menu
+    did not open" — it had opened, as `Œuvre`).
+
+    So the language is written on every call here for the same reason
+    `isolated_config` writes it: a probe that reads labels must **set** the
+    language, never inherit it. `en-US` by default because that is what the
+    label literals in these scripts are written in; pass `locale=` to assert on
+    a translation deliberately.
+
+    `config_home` is the directory the probe puts in `XDG_CONFIG_HOME`;
+    `AppPaths::new("eu", "skribisto", "Skribisto")` resolves to `skribisto`
+    under it and `config_file("general")` appends `.toml` — hence the layout
+    written here. Nothing validates the keys — see `isolated_config`'s note on
+    pairing this with `config_pins_file` where that matters.
+    """
+    settings = {
+        "ui.dark": bool(dark),
+        "ui.locale": locale,
+        "ui.show_welcome": bool(show_welcome),
+    }
+    settings.update(pins or {})
+    cfg = os.path.join(config_home, "skribisto")
+    os.makedirs(cfg, exist_ok=True)
+    path = os.path.join(cfg, "general.toml")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(toml_pins(settings))
+    return path
+
+
 def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True, pins=None):
     """A private `XDG_CONFIG_HOME` with the app's settings pinned. Returns an env dict.
 
@@ -146,23 +185,13 @@ def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True, 
     start on an unknown one. Use both together — this for the sandbox, the flag
     for the pins.
 
-    `AppPaths::new("eu", "skribisto", "Skribisto")` resolves to
-    `$XDG_CONFIG_HOME/skribisto` on Linux, and `config_file("general")` appends
-    `.toml` — hence the layout written here.
+    The settings themselves are written by [`write_settings`], which a probe that
+    builds its own sandbox calls directly — this is that plus the scratch
+    directory and the env dict.
     """
-    settings = {
-        "ui.dark": bool(dark),
-        "ui.locale": locale,
-        "ui.show_welcome": bool(show_welcome),
-    }
-    settings.update(pins or {})
-
     base = SCRATCH if os.path.isdir(SCRATCH) else tempfile.gettempdir()
     root = os.path.join(base, f"probe-config-{label}-{os.getpid()}")
-    cfg = os.path.join(root, "skribisto")
-    os.makedirs(cfg, exist_ok=True)
-    with open(os.path.join(cfg, "general.toml"), "w", encoding="utf-8") as fh:
-        fh.write(toml_pins(settings))
+    write_settings(root, locale=locale, dark=dark, show_welcome=show_welcome, pins=pins)
     env = dict(os.environ)
     env["XDG_CONFIG_HOME"] = root
     return env

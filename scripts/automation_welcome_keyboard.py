@@ -27,7 +27,7 @@ Recents are seeded on disk (a sandbox `recents.toml` pointing at 3 real .skrib
 copies) rather than by opening projects: the list only shows *reachable* paths,
 and clicking a row would open it (ActivateOn::SingleClick).
 """
-import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, glob, json, os, re, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -42,13 +42,25 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 # recents.toml we fully control).
 _sandbox = tempfile.mkdtemp(prefix="skribisto_kbd_test_")
 CONFIG = os.path.join(_sandbox, "config")
+RUNTIME = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
 SANDBOX_ENV = {
     "XDG_CONFIG_HOME": CONFIG,
     "XDG_DATA_HOME": os.path.join(_sandbox, "data"),
     "HOME": _sandbox,
 }
+# Every label this probe matches is written in English, so the language has to be
+# SET rather than inherited: an unset `ui.locale` is not "English", it is the
+# operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
+# passed on an English desktop and failed on a French one.
+fixture.write_settings(SANDBOX_ENV["XDG_CONFIG_HOME"])
 
 # 3 reachable projects, so an arrow-key cursor has somewhere to go.
+#
+# They are copies of one example, so all three carry the title "Starforgers"
+# *inside* the bundle. The seeded `title` here is only what the row shows until
+# the app has opened that project — the first open replaces it with the real one
+# — so nothing below may identify a project by the name in this list. Phase 0
+# asks the open-registry lock which *path* was loaded instead.
 PROJECTS = []
 _works = os.path.join(_sandbox, "works")
 os.makedirs(_works, exist_ok=True)
@@ -228,6 +240,60 @@ def selected_index(s):
     return None
 
 
+def claimed_paths():
+    """Project paths this run has claimed as open, read from the open-registry
+    lock files — the only oracle that names *which* project was opened.
+
+    The on-screen title cannot answer it: the three fixtures are copies of one
+    example, so once a project has been opened its recents row is relabelled
+    with the real title inside the bundle ("Starforgers"), and both projects
+    would then look alike. That relabelling is correct app behaviour, and it is
+    what made this probe fail on its own second phase.
+
+    Every `skribisto-*` directory, because the registry directory is namespaced
+    by installation identity (a blake3 of the config dir), and the sandboxed
+    `XDG_CONFIG_HOME` above gives this run a namespace of its own. The runtime
+    dir itself is deliberately NOT sandboxed — it holds the Wayland socket — so
+    the results are filtered to paths inside this run's own works directory.
+    """
+    found = []
+    for d in glob.glob(os.path.join(RUNTIME, "skribisto*")):
+        if not os.path.isdir(d):
+            continue
+        for f in os.listdir(d):
+            if not f.endswith(".lock"):
+                continue
+            try:
+                claimed = json.load(open(os.path.join(d, f)))["path"]
+            except Exception:
+                continue
+            if claimed.startswith(_works):
+                found.append(claimed)
+    return found
+
+
+def wait_claim(timeout=20):
+    """Poll for a claim: opening a project is asynchronous (window, then load,
+    then the claim), so a fixed sleep either flakes or wastes time."""
+    end = time.time() + timeout
+    while time.time() < end:
+        got = claimed_paths()
+        if got:
+            return got
+        time.sleep(0.4)
+    return []
+
+
+def wait_rows(s, count=3, timeout=8):
+    """Poll for `count` recents rows. By count, never by label: see `PROJECTS`."""
+    end = time.time() + timeout
+    while time.time() < end:
+        if len(list_items(s)) >= count:
+            return True
+        time.sleep(0.3)
+    return False
+
+
 failures = []
 
 # ── Phase 0: Enter, straight off the launch, opens the highlighted project ──
@@ -239,14 +305,16 @@ print("== Phase 0: Enter at launch opens the top recent (no click, no Tab) ==")
 s0 = Session([])
 if not s0.wait_label("welcome sections"):
     fail("the Launcher window did not appear", s0.app, s0.mcp, s0.log)
-if not s0.wait_label("alpha", timeout=8):
+if not wait_rows(s0):
     fail("the seeded recents never appeared", s0.app, s0.mcp, s0.log)
 lb0 = next((n for n in s0.nodes() if n.get("role") == "ListBox"), None)
 print(f"AT `focused` on the recents ListBox at open: {lb0.get('focused') if lb0 else 'no ListBox'}")
 
 s0.key("Enter")
 opened_at_launch = s0.wait_label("binder", timeout=15)
-loaded_alpha = s0.wait_label("alpha", timeout=10) if opened_at_launch else False
+opened = wait_claim() if opened_at_launch else []
+loaded_alpha = any(p.endswith("Alpha.skrib") for p in opened)
+print(f"  opened: {opened}")
 s0.shot("/tmp/sk-kbd-enter-at-launch.png")
 if not opened_at_launch:
     failures.append("FOCUS: pressing Enter right after the Launcher opens did nothing — the "
@@ -266,7 +334,7 @@ if not s.wait_label("welcome sections"):
     fail("the Launcher window did not appear", s.app, s.mcp, s.log)
 
 # ── Recent Works ────────────────────────────────────────────────────────────
-if not s.wait_label("alpha", timeout=8):
+if not wait_rows(s):
     fail("the seeded recents never appeared in the Works pane", s.app, s.mcp, s.log)
 rows = list_items(s)
 print(f"recent rows (ListBoxOption): {[(n.get('id'), n.get('selected')) for n in rows]}")

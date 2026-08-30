@@ -45,6 +45,11 @@ SANDBOX_ENV = {
     "XDG_DATA_HOME": os.path.join(_sandbox, "data"),
     "HOME": _sandbox,
 }
+# Every label this probe matches is written in English, so the language has to be
+# SET rather than inherited: an unset `ui.locale` is not "English", it is the
+# operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
+# passed on an English desktop and failed on a French one.
+fixture.write_settings(SANDBOX_ENV["XDG_CONFIG_HOME"])
 
 
 def fail(msg, app=None, mcp=None, log=None):
