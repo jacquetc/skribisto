@@ -46,6 +46,9 @@ tags-preset-period-detail = period detail
 ## The tag pill field (Inspector) and its "+" picker
 tags-pill-list = Tags
 tags-pill-add = Add a tag
+# The Overview's Tags cell on a row with no tags yet: the cell IS the picker, so
+# it stays a target rather than rendering nothing. Names the muted "+" placeholder.
+tags-none-yet = No tags
 # The picker's own list of pickable tags, announced apart from the
 # `tags-pill-list` row of tags already assigned.
 tags-pick-list = Tags to pick from

@@ -537,6 +537,18 @@ impl OverviewViewModel {
         crate::statuses::StatusesViewModel::new(self.inner.app_ctx.clone(), self.inner.ids.clone())
     }
 
+    /// This project's tag palette, on the same terms as [`statuses`](Self::statuses):
+    /// a fresh handle over this tab's own `app_ctx` + `ids`, caching nothing.
+    ///
+    /// Exists so the Tags column can hand `TagDotsRow` a palette rather than let it
+    /// reach `app_state`, which on the launcher-first startup path answers with a
+    /// throwaway session's model scoped to no Work at all — every dot missing, for the
+    /// whole session. Same hole `crate::tabs::ContentTab::tags` was added to close for
+    /// the filter chip row.
+    pub fn tags(&self) -> crate::tags::TagsViewModel {
+        crate::tags::TagsViewModel::detached(self.inner.app_ctx.clone(), self.inner.ids.clone())
+    }
+
     pub fn set_tags(&self, item_id: u64, tags: &[u64]) {
         let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
         probe.set_id(Some(item_id));

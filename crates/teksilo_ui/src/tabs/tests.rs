@@ -530,14 +530,11 @@ fn the_overview_shows_tag_dots_for_tagged_rows_only() {
     let id = tree.add_boxed(tab_pane(&tab));
     tree.layout(teksilo::prelude::SizeProposal::exact(1200.0, 700.0));
 
-    // The fixture tags scenes 201 and 202 and leaves the rest untagged, so a correctly
-    // wired column mounts *some* dot rows but not one per row.
-    let mut dot_rows = 0;
-    count_containing(&tree, id, "TagDotsRow", &mut dot_rows);
-    assert!(
-        dot_rows > 0,
-        "no TagDotsRow in the Overview - the tags column is not wired"
-    );
+    // Every row now hosts a `TagDotsRow` — the cell IS the picker, and an untagged one
+    // has to stay clickable or a first tag can never be added from the Overview. What
+    // still distinguishes tagged from untagged is one level down: only a tagged row
+    // builds a `TagChipRow` of real dots; an untagged one draws the muted `+`
+    // placeholder. See `TagDotsRow::offering_when_empty`.
     let rows = {
         use teksilo::data::TreeDataSource;
         tab.overview()
@@ -545,10 +542,24 @@ fn the_overview_shows_tag_dots_for_tagged_rows_only() {
             .rows()
             .visible_count()
     };
+    let mut dot_rows = 0;
+    count_containing(&tree, id, "TagDotsRow", &mut dot_rows);
+    assert_eq!(
+        dot_rows, rows,
+        "every row must host the picker, tagged or not ({dot_rows} of {rows})"
+    );
+
+    // The fixture tags scenes 201 and 202 and leaves the rest untagged.
+    let mut chip_rows = 0;
+    count_containing(&tree, id, "TagChipRow", &mut chip_rows);
     assert!(
-        dot_rows < rows,
-        "every one of the {rows} rows mounted a dot row ({dot_rows}); an untagged row \
-             must render an empty cell, or the column stops distinguishing tagged from not"
+        chip_rows > 0,
+        "no TagChipRow in the Overview - the tags column is not wired"
+    );
+    assert!(
+        chip_rows < rows,
+        "every one of the {rows} rows drew dots ({chip_rows}); an untagged row must draw \
+             the placeholder, or the column stops distinguishing tagged from not"
     );
 }
 
@@ -4243,4 +4254,384 @@ fn a_chapter_folders_own_page_carries_the_banner_ctrl_f_opens() {
         book.active_find().is_none(),
         "no prose on a Book's own page, so Ctrl+F is a no-op there"
     );
+}
+
+/// **An open cell editor holds the keyboard, so Escape cancels and Enter commits.**
+///
+/// `TreeTableView` never moved focus into the editor a cell delegate swapped in
+/// (`TableView` always did; the line was left behind when the tree table was split out
+/// of it). Focus stayed on the table, so every keystroke went to the table's own key
+/// handler: Escape cancelled nothing, Enter *activated the row* — opening the item in an
+/// editor tab in the middle of a rename — and the character that type-to-edit was
+/// supposed to seed the field with was swallowed too. It only ever looked like it worked
+/// because clicking into the field focuses it by hand.
+///
+/// Fixed in teksilo's `TreeBodyPane` (`ctx.focus_into` on the editing cell). This pins
+/// the app-side half: the `on_key` Escape handler in `columns::cell_editor` is the thing
+/// that finally receives a key, and `cancel_edit` is what it does.
+#[cfg(feature = "mocks")]
+#[test]
+fn escape_cancels_an_open_overview_cell_editor() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    use teksilo::core::event::{Key, Modifiers};
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        101,
+        &Folder,
+        &Book,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    tab.segment
+        .set(Some(crate::tabs::shared::segments::segment_id(
+            crate::tabs::shared::segments::SEG_OVERVIEW,
+        )));
+
+    let vm = tab.overview().unwrap().clone();
+    let uid = common::uid::fixture_uid(201);
+    vm.begin_edit(uid, crate::models::COL_TITLE);
+
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(1200.0, 700.0));
+
+    // No `tree.focus(..)` anywhere: mounting the editor is what must move the keyboard
+    // into it. Focusing it by hand here would test the mouse path and pass on the bug.
+    let focused = tree.focused().expect("something holds focus");
+    // Inside the *table*, specifically: the header above it carries a `SearchField`,
+    // which is itself a `TextInputField`, so "focus is on a text field" would pass with
+    // the keyboard sitting in the filter box.
+    // `contains`, not `first_of_type`'s `ends_with`: the node's type name is
+    // `TreeTableView<..::OverviewRow>`.
+    fn find(tree: &WidgetTree, id: WidgetId, needle: &str) -> Option<WidgetId> {
+        if tree
+            .widget_type_name(id)
+            .is_some_and(|t| t.contains(needle))
+        {
+            return Some(id);
+        }
+        tree.children(id)
+            .into_iter()
+            .find_map(|c| find(tree, c, needle))
+    }
+    let table = find(&tree, root, "TreeTableView").expect("the Overview's table");
+    assert!(
+        tree.is_descendant_of(focused, table),
+        "the cell editor never took the keyboard; focus sits on {:?} outside the table",
+        tree.widget_type_name(focused)
+    );
+    assert!(
+        tree.widget_type_name(focused)
+            .is_some_and(|t| t.contains("TextInput")),
+        "focus landed in the table but not in the editor: {:?}",
+        tree.widget_type_name(focused)
+    );
+
+    tree.press_key(Key::Escape, Modifiers::NONE);
+    assert_eq!(
+        vm.editing_cell().get(),
+        Option::None,
+        "Escape must cancel the edit and close the editor"
+    );
+
+    // **And the keyboard must land somewhere.** Closing the editor destroys the widget
+    // that was holding focus, so this is where focus can silently go nowhere — after
+    // which Tab and the arrow keys reach nothing and the table is unusable without a
+    // mouse (WCAG 2.4.3). It belongs back on the table the writer was working in.
+    tree.layout(teksilo::prelude::SizeProposal::exact(1200.0, 700.0));
+    // Re-resolved, not reused: closing the editor rebuilds `OverviewTable`, which mints
+    // a fresh node — the id from before the keystroke is stale by now.
+    let table = find(&tree, root, "TreeTableView").expect("the table survived the cancel");
+    let after = tree
+        .focused()
+        .expect("focus was lost when the editor closed");
+    assert!(
+        after == table || tree.is_descendant_of(after, table),
+        "focus left the table when the editor closed; it is on {:?}",
+        tree.widget_type_name(after)
+    );
+}
+
+/// **Clicking away from an open cell editor closes it, keeping what was typed.**
+///
+/// This is the "focus loss commits" half of the editing contract, and it had never once
+/// run. It was written as `TextInput::new(..).on_focus(..)`, which compiles, reads
+/// correctly and fires *never*: the focusable node is the inner `TextInputField`, which
+/// registers an `on_focus` of its own for its caret, and a handler that fires answers
+/// `Handled` — so the bubble stops one node below the wrapper the app's closure hangs on.
+/// Neither gain nor loss ever arrived.
+///
+/// The visible result was an editor that could not be dismissed by clicking anywhere,
+/// and, because it went on holding the keyboard, one that swallowed everything after it.
+#[cfg(feature = "mocks")]
+#[test]
+fn clicking_another_row_closes_the_open_cell_editor() {
+    let (mut tree, root, vm, p) = overview_with_open_label_editor();
+
+    let table = find_containing(&tree, root, "TreeTableView").expect("the table");
+    let target = a_cell_on_a_later_row(&tree, root, table);
+    tree.click(target);
+    tree.layout(p);
+
+    assert_eq!(
+        vm.editing_cell().get(),
+        Option::None,
+        "clicking another row left the editor open — and holding the keyboard, so every \
+         later click and keystroke went to it instead of the table"
+    );
+}
+
+/// ...but an **unrelated rebuild does not**.
+///
+/// The pane rebuilds constantly — a selection change, the other pane's autosave firing
+/// `Content(Updated)`, an undo, a rename elsewhere — and each one destroys and re-creates
+/// the editor widget. If "the editor lost focus" were read as "the writer left", every
+/// one of those would commit and close a half-typed rename: exactly the loss
+/// `edit_buffer`'s own doc says the buffer lives on the view-model to prevent.
+///
+/// Driven through a selection change made on the **model**, not with a click: a click
+/// legitimately moves focus, which is the case above.
+#[cfg(feature = "mocks")]
+#[test]
+fn an_unrelated_rebuild_leaves_the_open_editor_alone() {
+    let (mut tree, _root, vm, p) = overview_with_open_label_editor();
+    let before = vm.editing_cell().get();
+    assert!(before.is_some(), "the editor is open to begin with");
+
+    vm.edit_buffer().text.set("half-typed".to_string());
+    for i in 0..3 {
+        vm.selection().select(common::uid::fixture_uid(201 + i));
+        tree.layout(p);
+    }
+
+    assert_eq!(
+        vm.editing_cell().get(),
+        before,
+        "an unrelated rebuild closed the editor"
+    );
+    assert_eq!(
+        vm.edit_buffer().text.get(),
+        "half-typed",
+        "an unrelated rebuild discarded what was typed"
+    );
+}
+
+/// A mounted Overview with the Label editor open on the first fixture row, plus the
+/// proposal the tree was laid out under.
+#[cfg(feature = "mocks")]
+fn overview_with_open_label_editor() -> (
+    WidgetTree,
+    WidgetId,
+    crate::overview::OverviewViewModel,
+    teksilo::prelude::SizeProposal,
+) {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        101,
+        &Folder,
+        &Book,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    tab.segment
+        .set(Some(crate::tabs::shared::segments::segment_id(
+            crate::tabs::shared::segments::SEG_OVERVIEW,
+        )));
+
+    let vm = tab.overview().unwrap().clone();
+    vm.begin_edit(common::uid::fixture_uid(201), crate::models::COL_LABEL);
+
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    let p = teksilo::prelude::SizeProposal::exact(1200.0, 700.0);
+    tree.layout(p);
+    (tree, root, vm, p)
+}
+
+/// First node at/under `root` whose type name *contains* `needle` — `first_of_type`'s
+/// `ends_with` misses every generic (`TreeTableView<..::OverviewRow>`).
+fn find_containing(tree: &WidgetTree, id: WidgetId, needle: &str) -> Option<WidgetId> {
+    if tree
+        .widget_type_name(id)
+        .is_some_and(|t| t.contains(needle))
+    {
+        return Some(id);
+    }
+    tree.children(id)
+        .into_iter()
+        .find_map(|c| find_containing(tree, c, needle))
+}
+
+/// A wide cell on a row below the first one, well right of the tree column — somewhere a
+/// click means "select that row" and nothing else.
+#[cfg(feature = "mocks")]
+fn a_cell_on_a_later_row(tree: &WidgetTree, root: WidgetId, table: WidgetId) -> WidgetId {
+    fn collect(tree: &WidgetTree, id: WidgetId, out: &mut Vec<WidgetId>) {
+        if tree
+            .widget_type_name(id)
+            .is_some_and(|t| t.contains("CellA11y"))
+        {
+            out.push(id);
+        }
+        for c in tree.children(id) {
+            collect(tree, c, out);
+        }
+    }
+    let mut cells = Vec::new();
+    collect(tree, root, &mut cells);
+    let top = cells
+        .iter()
+        .map(|c| tree.bounds(*c).y)
+        .fold(f32::INFINITY, f32::min);
+    let left = tree.bounds(table).x;
+    cells
+        .into_iter()
+        .find(|c| {
+            let b = tree.bounds(*c);
+            b.y > top + 40.0 && b.x > left + 130.0 && b.width > 40.0
+        })
+        .expect("a cell on a later row")
+}
+
+/// **A press on the empty band below the rows closes the editor too.**
+///
+/// Not covered by the per-cell rule: there is no cell down there to carry it, so the
+/// dismissal is mounted on the table root as well. The band is most of the pane on a
+/// short container, and it is where a writer clicks to mean "never mind".
+#[cfg(feature = "mocks")]
+#[test]
+fn clicking_the_empty_band_below_the_rows_closes_the_open_cell_editor() {
+    let (mut tree, root, vm, p) = overview_with_open_label_editor();
+    let table = find_containing(&tree, root, "TreeTableView").expect("the table");
+    let b = tree.bounds(table);
+
+    // Well below the last row, still inside the table.
+    let empty = teksilo::canvas::Point::new(b.x + b.width * 0.5, b.y + b.height - 8.0);
+    press_at(&mut tree, empty);
+    tree.layout(p);
+
+    assert_eq!(
+        vm.editing_cell().get(),
+        Option::None,
+        "clicking the empty band below the rows left the editor open"
+    );
+}
+
+/// ...but a press **inside the open editor** does not.
+///
+/// The counter-case that keeps the rule honest: moving the caret, selecting a word and
+/// dragging over text are all presses on the field, and every one of them would close the
+/// editor under the pointer if the dismissal did not exempt them. This is what
+/// `press_claimed_by_interactive_child` buys at the table root.
+#[cfg(feature = "mocks")]
+#[test]
+fn clicking_inside_the_open_editor_keeps_it_open() {
+    let (mut tree, root, vm, p) = overview_with_open_label_editor();
+    let before = vm.editing_cell().get();
+    assert!(before.is_some(), "the editor is open to begin with");
+
+    let field = find_containing(&tree, root, "TextInputField").expect("a text field");
+    // The header's search box is a `TextInputField` too; take the one in the table.
+    let table = find_containing(&tree, root, "TreeTableView").expect("the table");
+    let field = if tree.is_descendant_of(field, table) {
+        field
+    } else {
+        fn collect(tree: &WidgetTree, id: WidgetId, out: &mut Vec<WidgetId>) {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|t| t.contains("TextInputField"))
+            {
+                out.push(id);
+            }
+            for c in tree.children(id) {
+                collect(tree, c, out);
+            }
+        }
+        let mut all = Vec::new();
+        collect(&tree, root, &mut all);
+        all.into_iter()
+            .find(|f| tree.is_descendant_of(*f, table))
+            .expect("the cell editor's field")
+    };
+
+    let at = tree.bounds(field).center();
+    press_at(&mut tree, at);
+    tree.layout(p);
+
+    assert_eq!(
+        vm.editing_cell().get(),
+        before,
+        "clicking into the open editor closed it — the caret can never be moved"
+    );
+}
+
+/// A primary press + release at an absolute point.
+fn press_at(tree: &mut WidgetTree, at: teksilo::canvas::Point) {
+    use teksilo::core::event::{Modifiers, PointerButton, WidgetEvent};
+    tree.dispatch_event(WidgetEvent::PointerDown {
+        position: at,
+        button: PointerButton::Primary,
+        modifiers: Modifiers::NONE,
+    });
+    tree.dispatch_event(WidgetEvent::PointerUp {
+        position: at,
+        button: PointerButton::Primary,
+        modifiers: Modifiers::NONE,
+    });
+}
+
+/// **Escape still cancels after the writer has clicked into the field.**
+///
+/// The path a person actually takes — open the cell, click to place the caret, change
+/// their mind — and the one reported as broken. Headlessly it always worked; live it did
+/// not, because a tooltip was up and *consumed* the keystroke before the editor ever saw
+/// it (fixed in teksilo: `WidgetTree::tooltip_escape_pressed` retires the tip without
+/// swallowing the key). This pins the app-side half of that path, which the tooltip bug
+/// was hiding: focus stays in the field across the click, so the editor's own `on_key`
+/// is still the thing Escape reaches.
+#[cfg(feature = "mocks")]
+#[test]
+fn escape_cancels_after_clicking_into_the_open_editor() {
+    use teksilo::core::event::{Key, Modifiers};
+    let (mut tree, root, vm, p) = overview_with_open_label_editor();
+    let table = find_containing(&tree, root, "TreeTableView").expect("the table");
+
+    fn collect(tree: &WidgetTree, id: WidgetId, needle: &str, out: &mut Vec<WidgetId>) {
+        if tree
+            .widget_type_name(id)
+            .is_some_and(|t| t.contains(needle))
+        {
+            out.push(id);
+        }
+        for c in tree.children(id) {
+            collect(tree, c, needle, out);
+        }
+    }
+    let mut fields = Vec::new();
+    collect(&tree, root, "TextInputField", &mut fields);
+    let field = fields
+        .into_iter()
+        .find(|f| tree.is_descendant_of(*f, table))
+        .expect("the cell editor's field");
+
+    let at = tree.bounds(field).center();
+    press_at(&mut tree, at);
+    tree.layout(p);
+
+    tree.press_key(Key::Escape, Modifiers::NONE);
+    tree.layout(p);
+    assert_eq!(vm.editing_cell().get(), Option::None, "Escape did nothing");
 }

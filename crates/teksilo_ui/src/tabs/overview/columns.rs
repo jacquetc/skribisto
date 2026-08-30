@@ -4,9 +4,30 @@
 //! The Overview table's columns.
 //!
 //! Eight: **Title** (the tree column — twist, indent, icon), **Type**, **Label**, **Tags**,
-//! **Own words**, **Total words**, **Comments** (open) and **Total comments**. Title and
-//! Label are editable in place; Tags is edited through its own picker; the derived columns
-//! are read-only, because a word count is not something you type.
+//! **Own words**, **Total words**, **Comments** (open) and **Total comments**. Title, Label
+//! and Target are editable in place; Status and Tags are edited through their own pickers;
+//! the derived columns are read-only, because a word count is not something you type.
+//!
+//! ## One rule for the mouse
+//!
+//! **Every editable cell answers a single click, except the tree column, where selection
+//! has to win.** Status and Tags have always worked that way (their cell *is* the picker),
+//! so Label and Target join them: [`EditTriggers::SINGLE_CLICK`] on those two columns, and
+//! the writer never has to know a key to change a value.
+//!
+//! Title is the exception and stays as it was — a click selects, a double-click opens the
+//! item — because it is the row's own column: the one you click to pick a row and
+//! double-click to go and write in it. It renames from **F2** (a click already moves the
+//! cell cursor there, so a click then F2 works with no keyboard navigation at all) and from
+//! the context menu's Rename.
+//!
+//! The table therefore takes [`EditTriggers::F2`] as its own set, which switches **two**
+//! defaults off deliberately:
+//! * `DOUBLE_CLICK`, which would fight `on_row_activate` on the Title column, and
+//! * `ANY_KEY` (type-to-edit), which does not survive contact with this table: the keystroke
+//!   that opens the editor is lost (the editor is not built until the next frame), so typing
+//!   `N` over a scene left the *old* title with no `N` in it — and it shadowed type-ahead on
+//!   the one column where jumping to a row by title is worth having.
 //!
 //! Every column id is a constant from `crate::models`, beside the comparator it selects —
 //! a column whose id drifted from its comparator would render fine and silently stop
@@ -17,7 +38,8 @@ use super::*;
 
 use std::rc::Rc;
 use teksilo::widgets::{
-    CellContext, Column, ColumnWidth, PinnedSide, TableAlignment, TextInput, TruncationPolicy,
+    CellContext, Column, ColumnWidth, EditTriggers, PinnedSide, TableAlignment, TextInput,
+    TruncationPolicy,
 };
 
 use uuid::Uuid;
@@ -167,6 +189,10 @@ fn title_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     .reorderable(false)
     .sortable(true)
     .editable(true)
+    // Inherits the table's `F2` — deliberately no click trigger. This is the
+    // column you click to select a row and double-click to open it; a click
+    // that renamed instead would make the table unusable for its main job, and
+    // a click trigger also *claims the press*, so the row would stop selecting.
     .truncation(TruncationPolicy::Ellipsis)
 }
 
@@ -219,6 +245,10 @@ fn label_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     .min_width(72.0)
     .sortable(true)
     .editable(true)
+    // One click edits: a label is nothing but its value, so there is no other
+    // meaning for a click on it to have. See the module doc's "One rule for the
+    // mouse".
+    .edit_triggers(EditTriggers::F2 | EditTriggers::SINGLE_CLICK)
     .truncation(TruncationPolicy::Ellipsis)
 }
 
@@ -301,6 +331,18 @@ fn status_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// away from the place you *manage* tags, the job is passive awareness — noticing a scene
 /// is still a draft without having asked — and a table row has no width to spend on names.
 ///
+/// **An untagged row gets a muted `+`, not an empty cell** — a reversal of what this
+/// column used to say, and worth recording. The reasoning was "the whole point of the
+/// column is that a glance distinguishes tagged from untagged", which is right; what it
+/// missed is that the cell *is* the picker here, so a blank cell was not a restrained
+/// empty state but a **dead one**: there was no route to a first tag anywhere in the
+/// Overview, which is precisely the surface a writer opens to go down the rows filling
+/// things in. The Status column beside it had already made the same concession for the
+/// same reason (`statuses::picker::trigger_icon` draws unset in `TextRole::Disabled`
+/// rather than nothing), and the tint is what keeps the original goal: a column of
+/// untagged rows still recedes at a glance, and a tagged one still pops. The other three
+/// dot-row surfaces keep the blank — see [`TagDotsRow::offering_when_empty`].
+///
 /// **Not sortable.** A set of dots has no natural order: by count is not a question anyone
 /// asks, and by "first tag" would depend on an order the writer never chose. Finding
 /// tagged rows is a filter question, not a sort one.
@@ -316,11 +358,6 @@ fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
         COL_TAGS,
         tr!(overview_col_tags()),
         move |row: &OverviewRow, _cx| {
-            if row.tags.is_empty() {
-                // An untagged row gets an empty cell, not an empty dot row — the whole point
-                // of the column is that a glance distinguishes tagged from untagged.
-                return with_row_menu(&vm, row, TextWidget::new(lit!(String::new())));
-            }
             let value = Signal::new(row.tags.clone());
             let set: crate::tags::tag_pill_field::SetTags = {
                 let vm = vm.clone();
@@ -331,11 +368,15 @@ fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
                     mirror.set(ids); // optimistic; the reload re-seeds from the backend
                 })
             };
-            Box::new(crate::tags::TagDotsRow::new(
-                value,
-                set,
-                crate::tags::tag_chip::MAX_VISIBLE_OVERVIEW,
-            ))
+            Box::new(
+                crate::tags::TagDotsRow::new(
+                    value,
+                    set,
+                    crate::tags::tag_chip::MAX_VISIBLE_OVERVIEW,
+                )
+                .offering_when_empty()
+                .with_palette(vm.tags()),
+            )
         },
     )
     .width(ColumnWidth::Fixed(72.0))
@@ -514,6 +555,10 @@ fn goal_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     .alignment(TableAlignment::Trailing)
     .sortable(true)
     .editable(true)
+    // One click edits, as on Label — and here it matters more: an unset target
+    // renders as a muted dash, so without a click route the writer would have
+    // to guess that the empty-looking cell was typeable at all.
+    .edit_triggers(EditTriggers::F2 | EditTriggers::SINGLE_CLICK)
 }
 
 /// A right-aligned count, or a muted dash when there is nothing to count.
@@ -542,7 +587,7 @@ fn excluded_word_cell(words: Option<usize>) -> impl Widget {
 }
 
 /// The in-place cell editor: a text input over the **view-model's** buffer, committing on
-/// Enter and on focus loss, abandoning on Esc.
+/// Enter, abandoning on Esc.
 ///
 /// The buffer is `vm.edit_buffer().text`, deliberately **not** a `Signal` created here.
 /// A cell delegate re-runs on every table rebuild, and this table rebuilds on any reload
@@ -551,24 +596,25 @@ fn excluded_word_cell(words: Option<usize>) -> impl Widget {
 /// half-typed name would vanish with no warning. Owned by the view-model, it survives
 /// every rebuild.
 ///
-/// **Focus loss commits.** A text field that disappears without writing is the writer's
-/// edit thrown away; clicking another cell, switching segment, or closing the tab all
-/// reach `commit_open_edit`. The view-model decides whether anything is actually written
-/// (an unchanged value, or a blank title, writes nothing), so no path leaves a stray undo
-/// entry.
+/// **Clicking away commits too**, and that arrives from the table
+/// (`on_cell_edit_dismissed`, wired in [`OverviewTable`](super::table::OverviewTable)),
+/// not from here. It used to be an `on_focus` handler on this very `TextInput` — which
+/// compiles, reads correctly, and **never fires**: the focusable node is the inner
+/// `TextInputField`, which registers an `on_focus` of its own, and a handler that fires
+/// answers `Handled`, so the bubble stops one node below this wrapper. For as long as
+/// that was the mechanism, an open editor could not be dismissed by clicking anywhere at
+/// all — and, still holding the keyboard, it swallowed every click and keystroke after
+/// it, which is what made double-click-to-open and the row context menu look broken too.
+///
+/// The view-model decides whether anything is actually written (an unchanged value, or a
+/// blank title, writes nothing), so no path leaves a stray undo entry.
 fn cell_editor(vm: &OverviewViewModel, uid: Uuid, col_id: &'static str) -> impl Widget {
     let buffer = vm.edit_buffer();
     let commit_vm = vm.clone();
     let commit_text = buffer.text.clone();
-    let blur_vm = vm.clone();
     let cancel_vm = vm.clone();
     TextInput::new(buffer.text)
         .on_submit_fn(move |_ctx| commit_vm.commit_edit(uid, col_id, &commit_text.get()))
-        .on_focus(move |focused, _ctx| {
-            if !focused {
-                blur_vm.commit_open_edit();
-            }
-        })
         .on_key(move |ev, _ctx| {
             if let WidgetEvent::KeyDown {
                 key: Key::Escape, ..
@@ -597,6 +643,94 @@ mod tests {
         assert_eq!(format_count(1_000), "1\u{202F}000");
         assert_eq!(format_count(12_345), "12\u{202F}345");
         assert_eq!(format_count(1_234_567), "1\u{202F}234\u{202F}567");
+    }
+
+    /// **One rule for the mouse**, pinned as a table rather than as prose.
+    ///
+    /// Every editable cell answers a single click except the tree column, where
+    /// selection has to win. The row this exists to stop coming back is the Title
+    /// one: a click trigger there *claims the press*, so the row would stop
+    /// selecting and double-click would stop opening the item — the two things the
+    /// Overview is mostly used for.
+    ///
+    /// Reading `effective_edit_triggers` and not the column's own field on purpose:
+    /// that is the answer the body pane and the key handler actually act on, and it
+    /// folds in both the table's set and the `editable` flag, so a column that
+    /// forgot `editable(true)` fails here rather than looking configured.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn only_the_non_tree_value_columns_edit_on_a_single_click() {
+        use teksilo::widgets::EditTriggers;
+
+        let vm = crate::overview::OverviewViewModel::new(
+            std::rc::Rc::new(frontend::AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            101,
+            &frontend::common::entities::BinderItemRole::Folder,
+            &frontend::common::entities::BinderItemSubRole::Book,
+            Signal::new(Default::default()),
+            crate::settings::TreeExpansionViewModel::new(
+                std::rc::Rc::new(frontend::AppContext::new()),
+                crate::app_ids::AppIds::new(),
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+            Signal::new(Default::default()),
+        )
+        .expect("a Book is overview-capable");
+
+        // The set `OverviewTable::build` gives the table. Named here rather than
+        // read back, so a change to it has to be made in both places on purpose.
+        let table_set = EditTriggers::F2;
+        let columns = overview_columns(&vm, &live_book_titles(&vm.app_ctx(), &vm.ids()));
+
+        let triggers = |id: &str| {
+            columns
+                .iter()
+                .find(|c| c.id() == id)
+                .unwrap_or_else(|| panic!("no {id} column"))
+                .effective_edit_triggers(table_set)
+        };
+
+        for id in [COL_LABEL, COL_GOAL] {
+            assert!(
+                triggers(id).contains(EditTriggers::SINGLE_CLICK),
+                "{id} must open its editor on one click"
+            );
+        }
+
+        assert!(
+            !triggers(COL_TITLE).contains(EditTriggers::SINGLE_CLICK),
+            "the tree column must not edit on a click: it would claim the press, and \
+             clicking a row to select it (or double-clicking to open it) would stop working"
+        );
+        assert!(
+            triggers(COL_TITLE).contains(EditTriggers::F2),
+            "the tree column still renames from F2"
+        );
+
+        // ...and nothing anywhere edits on a double-click, which is what keeps
+        // `on_row_activate` — open this scene — reachable on every column.
+        for col in &columns {
+            assert!(
+                !col.effective_edit_triggers(table_set)
+                    .contains(EditTriggers::DOUBLE_CLICK),
+                "{} edits on double-click, which takes that gesture away from opening \
+                 the row",
+                col.id()
+            );
+        }
+
+        // Type-to-edit is off everywhere: the keystroke that opens the editor is lost
+        // (it is not built until the next frame), so it left the old value unchanged
+        // *and* shadowed type-ahead on the Title column.
+        for col in &columns {
+            assert!(
+                !col.effective_edit_triggers(table_set)
+                    .contains(EditTriggers::ANY_KEY),
+                "{} still type-to-edits, which eats the keystroke and kills type-ahead",
+                col.id()
+            );
+        }
     }
 
     /// The Target column exists, sits with the other counts, and every column id has a

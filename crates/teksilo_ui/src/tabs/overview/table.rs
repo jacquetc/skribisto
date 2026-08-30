@@ -8,7 +8,7 @@ use super::*;
 
 use frontend::common::event::Origin;
 use teksilo::data::{SortDirection, TreeDataSource};
-use teksilo::widgets::{DragTransferMode, TreeTableView};
+use teksilo::widgets::{DragTransferMode, EditTriggers, TreeTableView};
 
 use crate::models::COL_TITLE;
 
@@ -114,6 +114,18 @@ impl Widget for OverviewTable {
         let table = TreeTableView::from_source_keyed(self.vm.rows(), self.vm.selection())
             .columns(overview_columns(&vm, &self.books.get()))
             .tree_column(COL_TITLE)
+            // **F2 as the table's set, not the default.** The columns that want
+            // a mouse route ask for it themselves (`columns.rs`' "One rule for
+            // the mouse"); what this turns off is the two defaults that fight
+            // this table. `DOUBLE_CLICK` would collide with `on_row_activate`
+            // below on the Title column — the cell's own gesture arena stops
+            // the press before the row ever sees it, so opening a scene by
+            // double-click would simply stop working. `ANY_KEY` is worse than
+            // absent: the character that opens the editor is lost (the editor
+            // is not built until the next frame), so typing over a title left
+            // the old one unchanged — and it shadowed type-ahead, which is how
+            // you jump to a row by name in a long book.
+            .edit_triggers(EditTriggers::F2)
             .auto_row_height(26.0)
             .alternating_rows(true)
             .a11y_label(tr!(overview_table_label()));
@@ -158,6 +170,7 @@ impl Widget for OverviewTable {
 
         let activate_vm = self.vm.clone();
         let edit_vm = self.vm.clone();
+        let dismiss_vm = self.vm.clone();
         let keys_vm = self.vm.clone();
         let empty_vm = self.vm.clone();
 
@@ -175,6 +188,20 @@ impl Widget for OverviewTable {
                     edit_vm.begin_edit(uid, col_id);
                 }
             })
+            // **Clicking any other cell ends the edit, keeping what was typed.** The
+            // third way out, beside Enter and Escape, and the one a writer reaches for
+            // without thinking.
+            //
+            // It is the table that reports this, not a focus handler, and both halves of
+            // that are load-bearing. `TextInput::new(..).on_focus(..)` — the obvious
+            // spelling, and what this used to be — compiles, reads correctly and **never
+            // fires**: the focusable node is the inner `TextInputField`, which registers
+            // an `on_focus` of its own, and a handler that fires answers `Handled`, so
+            // the bubble stops one node below the wrapper the closure hangs on. And even
+            // a working focus signal would be the wrong question, because this pane
+            // rebuilds constantly and every rebuild destroys and re-creates the open
+            // editor: focus leaves it many times during an edit nobody interrupted.
+            .on_cell_edit_dismissed(move |_idx, _col_id, _ctx| dismiss_vm.commit_open_edit())
             // Type-ahead jumps by title. The delegate is handed the row itself, so there
             // is nothing to resolve and the closure captures nothing.
             .type_ahead_label(|row: &OverviewRow| row.title.clone())

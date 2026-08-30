@@ -368,6 +368,10 @@ pub struct TagDotsRow {
     value: Signal<Vec<u64>>,
     set: SetTags,
     max_visible: usize,
+    offer_when_empty: bool,
+    /// The palette to resolve ids against, when the caller has one to give.
+    /// `None` falls back to `app_state` — see [`TagDotsRow::with_palette`].
+    palette: Option<crate::tags::TagsViewModel>,
     root_child: Option<WidgetId>,
 }
 
@@ -377,8 +381,53 @@ impl TagDotsRow {
             value,
             set,
             max_visible,
+            offer_when_empty: false,
+            palette: None,
             root_child: None,
         }
+    }
+
+    /// Resolve tag ids against **this** palette instead of the one in
+    /// `app_state`.
+    ///
+    /// `app_state` is right for the three composition-function call sites (the
+    /// stream row header, the corkboard card, the editor subtitle): they have
+    /// no `BuildContext` and no view-model to thread one from, which is what
+    /// the type doc below explains.
+    ///
+    /// It is wrong wherever the caller *does* have a palette, and the Overview
+    /// is that caller. `app_state` resolves to whichever window's session
+    /// registered one last, which on the ordinary launcher-first startup path
+    /// is `startup.rs`'s throwaway `WorkSession` on a never-seeded `AppIds` —
+    /// and it cannot be re-registered afterwards. Its `WorkTagsListModel` is
+    /// scoped to a `work_id` of `None`, so every id resolves to nothing and
+    /// every cell draws no dots however many tags the row carries. The tag
+    /// *filter* row above the table carries the same note, for the same bug.
+    pub fn with_palette(mut self, palette: crate::tags::TagsViewModel) -> Self {
+        self.palette = Some(palette);
+        self
+    }
+
+    /// Draw a muted placeholder — and so keep the picker reachable — on an item
+    /// with **no tags yet**.
+    ///
+    /// Off by default, because on the three dense surfaces (binder stream,
+    /// corkboard card, editor subtitle) most items are untagged and a
+    /// permanent 18 dp affordance on each of them is chrome for a question
+    /// nobody asked.
+    ///
+    /// The Overview's Tags column turns it on, because there the cell *is* the
+    /// picker and there is no other route: an untagged row rendered nothing at
+    /// all, so a first tag could never be added from the table — the one
+    /// surface built for going through every row and filling things in.
+    ///
+    /// Same concession, for the same reason, as the Status column's faint
+    /// dashed ring on an unset row (`statuses::picker::trigger_icon`): a
+    /// target the writer cannot aim at is not a target, and the muted tint is
+    /// what keeps a column of untagged rows still reading as empty.
+    pub fn offering_when_empty(mut self) -> Self {
+        self.offer_when_empty = true;
+        self
     }
 }
 
@@ -390,10 +439,16 @@ impl std::fmt::Debug for TagDotsRow {
 
 impl Widget for TagDotsRow {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let Some(vm) = ctx.app_state::<crate::tags::TagsViewModel>().cloned() else {
-            // No work open: nothing to resolve ids against.
-            self.root_child = None;
-            return Vec::new();
+        let vm = match self.palette.clone() {
+            Some(vm) => vm,
+            None => {
+                let Some(vm) = ctx.app_state::<crate::tags::TagsViewModel>().cloned() else {
+                    // No work open: nothing to resolve ids against.
+                    self.root_child = None;
+                    return Vec::new();
+                };
+                vm
+            }
         };
 
         // Deliberately binds NOTHING. This widget owns the `Popover`, and a rebuild here
@@ -404,6 +459,7 @@ impl Widget for TagDotsRow {
             value: self.value.clone(),
             vm: vm.clone(),
             max_visible: self.max_visible,
+            offer_when_empty: self.offer_when_empty,
             root_child: None,
         };
         let picker = TagPicker::new(self.value.clone(), self.set.clone(), vm);
@@ -459,6 +515,7 @@ struct ChipDots {
     value: Signal<Vec<u64>>,
     vm: crate::tags::TagsViewModel,
     max_visible: usize,
+    offer_when_empty: bool,
     root_child: Option<WidgetId>,
 }
 
@@ -500,8 +557,44 @@ impl Widget for ChipDots {
         // would be a second ordering.
         crate::models::sort_rows(&mut rows);
         if rows.is_empty() {
-            self.root_child = None;
-            return Vec::new();
+            if !self.offer_when_empty {
+                self.root_child = None;
+                return Vec::new();
+            }
+            // A target to aim the picker at. `MinSize(HIT, HIT)` so it matches
+            // one dot's hit cell exactly — the popover then opens from the same
+            // place whether the row has tags or not.
+            //
+            // **`Secondary`, not `Disabled`** — the tint has to recede without
+            // lying. This is a live control: `TextRole::Disabled` is the role
+            // whose contrast WCAG 1.4.3 exempts *because* it marks something
+            // you cannot use, and painting an interactive target in it both
+            // fails 1.4.11 for a real UI component and tells the reader the
+            // opposite of the truth. `Secondary` is the muted-but-legible role
+            // the rest of this table's soft text uses.
+            //
+            // The a11y node mirrors [`TagChipRow::accessibility`] exactly — a
+            // `Label` naming what the row holds, inside the button the
+            // `OverlayTrigger` above contributes — so an untagged cell
+            // announces "No tags" rather than the empty name a missing branch
+            // would leave. The glyph itself is hidden from the tree: a screen
+            // reader reading "plus" adds nothing the button's own name and
+            // this label do not already say.
+            let id = ctx.add(
+                MinSize::new(HIT, HIT)
+                    .child(
+                        Center::new().child(
+                            TextWidget::new(lit!("+".to_string()))
+                                .style(TextStyleRole::Tiny)
+                                .color(TextRole::Secondary)
+                                .access_hidden(true),
+                        ),
+                    )
+                    .access_role(Role::Label)
+                    .access_label(tr!(tags_none_yet()).resolve_now()),
+            );
+            self.root_child = Some(id);
+            return vec![id];
         }
 
         let id = ctx.add(TagChipRow::new(rows, self.max_visible));

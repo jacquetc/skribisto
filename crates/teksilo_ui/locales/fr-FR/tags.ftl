@@ -46,6 +46,9 @@ tags-preset-period-detail = détail d’époque
 ## Le champ d'étiquettes (inspecteur) et son sélecteur « + »
 tags-pill-list = Étiquettes
 tags-pill-add = Ajouter une étiquette
+# La cellule Étiquettes de la Vue d'ensemble sur une ligne encore sans étiquette :
+# la cellule EST le sélecteur, elle reste donc une cible au lieu de ne rien afficher.
+tags-none-yet = Aucune étiquette
 # La liste des étiquettes proposées par le sélecteur, annoncée séparément
 # de « tags-pill-list », qui est la rangée des étiquettes déjà attribuées.
 tags-pick-list = Étiquettes proposées
