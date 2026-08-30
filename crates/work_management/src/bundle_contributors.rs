@@ -290,20 +290,55 @@ mod tests {
     use super::*;
     use crate::lifecycle::SaveKind;
 
-    struct Fixed(Vec<(&'static str, &'static [u8])>);
+    /// A contributor that always writes the same files — **for one project id
+    /// only**.
+    ///
+    /// The scoping is the same rule [`Recording`] below spells out, and it is
+    /// not tidiness either: the registry is process-wide, every one of these
+    /// tests runs in the same binary on parallel threads, and every *other*
+    /// test in this crate that saves a project runs contributors too. An
+    /// unscoped `Fixed` therefore quietly slips its files into a sibling's
+    /// bundle — which is what made `save_load_test`'s cross-project isolation
+    /// test fail with two different manuscript hashes, once in a while, in a
+    /// crate that had nothing to do with extensions.
+    struct Fixed {
+        uid: &'static str,
+        files: Vec<(&'static str, &'static [u8])>,
+    }
+    impl Fixed {
+        fn for_uid(uid: &'static str, files: Vec<(&'static str, &'static [u8])>) -> Arc<Self> {
+            Arc::new(Self { uid, files })
+        }
+    }
     impl BundleContributor for Fixed {
-        fn files(&self, _ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+        fn files(&self, ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+            if ctx.work_unique_id != self.uid {
+                return Ok(BTreeMap::new());
+            }
             Ok(self
-                .0
+                .files
                 .iter()
                 .map(|(p, b)| ((*p).to_string(), b.to_vec()))
                 .collect())
         }
     }
 
-    struct Broken;
+    /// Fails for its own project and stays out of everyone else's — see
+    /// [`Fixed`]. An unscoped version would make every concurrent save in this
+    /// binary log a contributor failure.
+    struct Broken {
+        uid: &'static str,
+    }
+    impl Broken {
+        fn for_uid(uid: &'static str) -> Arc<Self> {
+            Arc::new(Self { uid })
+        }
+    }
     impl BundleContributor for Broken {
-        fn files(&self, _ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+        fn files(&self, ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+            if ctx.work_unique_id != self.uid {
+                return Ok(BTreeMap::new());
+            }
             Err(anyhow::anyhow!("deliberately broken"))
         }
     }
@@ -363,10 +398,10 @@ mod tests {
         // ones a careless extension could plausibly pick.
         let _h = register(
             "test.manuscript-guard",
-            Arc::new(Fixed(vec![
-                ("project.skrib", b"hijacked"),
-                ("guard/ok.ron", b"fine"),
-            ])),
+            Fixed::for_uid(
+                "uid-guard",
+                vec![("project.skrib", b"hijacked"), ("guard/ok.ron", b"fine")],
+            ),
         );
         let got = collect(&bundle("guard"), "uid-guard", SaveKind::Save);
         assert!(
@@ -381,10 +416,10 @@ mod tests {
 
     #[test]
     fn a_failing_contributor_does_not_break_the_save() {
-        let _broken = register("test.broken", Arc::new(Broken));
+        let _broken = register("test.broken", Broken::for_uid("uid-broken"));
         let _ok = register(
             "test.still-works",
-            Arc::new(Fixed(vec![("broken/ok.ron", b"x")])),
+            Fixed::for_uid("uid-broken", vec![("broken/ok.ron", b"x")]),
         );
         // No panic, no error type at all — and the healthy contributor still
         // gets its file in, because one bad extension may not silence another.
@@ -393,10 +428,49 @@ mod tests {
         );
     }
 
+    /// A contributor answering for one project must put nothing in another's
+    /// bundle.
+    ///
+    /// This is the rule the test helpers in this module are built on, and it is
+    /// worth a test of its own because breaking it does not fail *here* — it
+    /// fails somewhere else, intermittently. The registry is process-wide and
+    /// the whole crate's tests share one binary, so a contributor that answers
+    /// for every project silently adds its files to every concurrent save in
+    /// the suite. That is what made `save_load_test`'s cross-project isolation
+    /// test compare two different manuscript hashes, roughly once in a full
+    /// run, in a crate with no connection to extensions.
+    ///
+    /// It is also the production rule, not merely a test convenience: a real
+    /// contributor is keyed by `Work.unique_id`, because several projects are
+    /// open at once and one that answers for all of them writes the first
+    /// project's data into the second's file.
+    #[test]
+    fn a_contributor_scoped_to_one_project_stays_out_of_another() {
+        let _h = register(
+            "test.foreign",
+            Fixed::for_uid("uid-mine", vec![("foreign/a.ron", b"x")]),
+        );
+        assert!(
+            collect(&bundle("mine"), "uid-mine", SaveKind::Save).contains_key("foreign/a.ron"),
+            "positive control: it does contribute to the project it answers for"
+        );
+        assert!(
+            collect(&bundle("theirs"), "uid-theirs", SaveKind::Save).is_empty(),
+            "a neighbouring project's bundle must come back untouched — an \
+             unscoped contributor here is a flake somewhere else"
+        );
+    }
+
     #[test]
     fn re_registering_a_namespace_replaces_rather_than_stacks() {
-        let _first = register("test.dup", Arc::new(Fixed(vec![("dup/a.ron", b"first")])));
-        let _second = register("test.dup", Arc::new(Fixed(vec![("dup/a.ron", b"second")])));
+        let _first = register(
+            "test.dup",
+            Fixed::for_uid("uid-dup", vec![("dup/a.ron", b"first")]),
+        );
+        let _second = register(
+            "test.dup",
+            Fixed::for_uid("uid-dup", vec![("dup/a.ron", b"second")]),
+        );
         assert_eq!(
             collect(&bundle("dup"), "uid-dup", SaveKind::Save)
                 .get("dup/a.ron")
@@ -409,7 +483,10 @@ mod tests {
     #[test]
     fn dropping_the_handle_unregisters() {
         {
-            let _h = register("test.scoped", Arc::new(Fixed(vec![("scoped/a.ron", b"y")])));
+            let _h = register(
+                "test.scoped",
+                Fixed::for_uid("uid-scoped", vec![("scoped/a.ron", b"y")]),
+            );
             assert!(
                 collect(&bundle("scoped"), "uid-scoped", SaveKind::Save)
                     .contains_key("scoped/a.ron")
@@ -439,7 +516,10 @@ mod tests {
     /// contributors too.
     #[test]
     fn has_contributors_sees_a_live_registration() {
-        let _h = register("test.gate", Arc::new(Fixed(vec![("gate/a.ron", b"x")])));
+        let _h = register(
+            "test.gate",
+            Fixed::for_uid("uid-gate", vec![("gate/a.ron", b"x")]),
+        );
         assert!(has_contributors(), "a live registration must be visible");
     }
 
