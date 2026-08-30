@@ -62,7 +62,7 @@ use super::{ContentTab, shared};
 /// function is called unconditionally by its caller (the `Item/Note` tab's own segment
 /// bar), which gates whether the writer can ever *reach* this segment on the note
 /// carrying a discoverable tag, the way every other composite pane in
-/// [`shared::panes`] trusts the constraint matrix rather than re-checking its own
+/// [`crate::tabs::shared`] trusts the constraint matrix rather than re-checking its own
 /// applicability. That gate lives on the segment's chip, not on whether this function
 /// runs at all: `Switcher` mounts a page lazily, on first selection, and a hidden chip
 /// is never selectable, so building this `Box<dyn Widget>` for a note with no

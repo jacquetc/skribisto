@@ -7,7 +7,7 @@
 //! bible, rather than clicked through as rows in a table or entries in a folder
 //! that looks like every other folder.
 //!
-//! **Ordinary community code, hardcoded into [`super::shared::panes::folder_synopsis_with_overview`]
+//! **Ordinary community code, hardcoded into [`super::shared::folder_synopsis_with_overview`]
 //! the same way `SEG_NOTES` and `SEG_OVERVIEW` are.** It does not go through
 //! [`super::shared::segments::register_container_segment`]: that door is for an
 //! out-of-tree extension; this is the community edition finishing a feature it
@@ -85,8 +85,7 @@ use crate::tags::cast_add::CastCandidate;
 /// One bible entry read off the binder: everything a card needs that does **not**
 /// depend on the mention index. Cheap, non-reactive: read fresh on every build,
 /// the same way [`crate::docks::inspector::live_books`] and
-/// [`crate::story_bible::modal::EntryPanel::book_candidates`] read their own
-/// candidate tables.
+/// [`crate::story_bible::modal`] read their own candidate tables.
 #[derive(Clone, Debug, PartialEq)]
 struct BibleEntry {
     item_id: u64,

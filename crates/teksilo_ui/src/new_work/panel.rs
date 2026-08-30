@@ -360,7 +360,7 @@ struct TemplateTile {
     trailing: LocalizedString,
 }
 
-/// Every Template tile, in the order [`template_from_index`] reads.
+/// Every Template tile, in the order [`super::new_work_vm::template_from_index`] reads.
 ///
 /// **The return type is the drift guard.** `[TemplateTile; TEMPLATE_TILE_COUNT]` makes a
 /// tile added without the matching mapping — or a count changed without a tile — a

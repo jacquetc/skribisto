@@ -185,7 +185,7 @@ impl PreviewBody {
 
 /// The preview band, with the margin lane beside it.
 ///
-/// The same shape [`panes::laned`](crate::tabs::shared::panes) uses, and for the
+/// The same shape [`crate::tabs::shared::laned`] uses, and for the
 /// same reasons: the lane is the scroll area's *sibling* because it maps the extent
 /// the area scrolls, `Expand` on the prose side so the strip cannot narrow the
 /// measure, and the content reports where it landed so the lane hears about a

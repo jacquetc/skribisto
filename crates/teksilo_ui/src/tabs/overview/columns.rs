@@ -101,7 +101,7 @@ pub(super) fn overview_columns(
 /// [`crate::docks::inspector::live_books`] answered as-is, so the Overview cannot drift
 /// from the Inspector's own candidate table about which rows count as a Book or which of
 /// them are still live. Reduced to a plain, comparable pair so
-/// [`OverviewTable`](super::table::OverviewTable) can hold it in a `Signal` and rebuild
+/// [`OverviewTable`] can hold it in a `Signal` and rebuild
 /// only when the answer actually changes - a `CastCandidate` is not `PartialEq`, and a
 /// rebuild per unrelated binder event would tear down the table under the writer.
 pub(super) fn live_book_titles(
@@ -341,7 +341,7 @@ fn status_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// same reason (`statuses::picker::trigger_icon` draws unset in `TextRole::Disabled`
 /// rather than nothing), and the tint is what keeps the original goal: a column of
 /// untagged rows still recedes at a glance, and a tagged one still pops. The other three
-/// dot-row surfaces keep the blank — see [`TagDotsRow::offering_when_empty`].
+/// dot-row surfaces keep the blank — see [`crate::tags::TagDotsRow::offering_when_empty`].
 ///
 /// **Not sortable.** A set of dots has no natural order: by count is not a question anyone
 /// asks, and by "first tag" would depend on an order the writer never chose. Finding
@@ -352,7 +352,7 @@ fn status_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// state*: the picker's commit writes through to the backend and the resulting reload
 /// re-seeds it from the truth, so a rebuild re-seeding it is correct. The edit buffer
 /// holds **uncommitted input**, which a rebuild would destroy.
-fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
+pub(super) fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     let vm = vm.clone();
     Column::new(
         COL_TAGS,
@@ -396,7 +396,7 @@ fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// unsortable: which Book or Books a row answers to is a fact you narrow by, the
 /// filter chip row does exactly that job for tags, not one you'd ever want the
 /// table's own row order to follow.
-fn books_column(vm: &OverviewViewModel, books: &[(u64, String)]) -> Column<OverviewRow> {
+pub(super) fn books_column(vm: &OverviewViewModel, books: &[(u64, String)]) -> Column<OverviewRow> {
     let vm = vm.clone();
     let titles: std::collections::HashMap<u64, String> = books.iter().cloned().collect();
     Column::new(
@@ -597,7 +597,7 @@ fn excluded_word_cell(words: Option<usize>) -> impl Widget {
 /// every rebuild.
 ///
 /// **Clicking away commits too**, and that arrives from the table
-/// (`on_cell_edit_dismissed`, wired in [`OverviewTable`](super::table::OverviewTable)),
+/// (`on_cell_edit_dismissed`, wired in [`OverviewTable`]),
 /// not from here. It used to be an `on_focus` handler on this very `TextInput` — which
 /// compiles, reads correctly, and **never fires**: the focusable node is the inner
 /// `TextInputField`, which registers an `on_focus` of its own, and a handler that fires

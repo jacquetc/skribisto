@@ -388,7 +388,7 @@ pub(super) struct LaneSwitch {
 ///
 /// **Every flag comes from `SettingsStore::signal`, which is get-or-create**:
 /// the same key returns clones of one signal, so this menu, the Margin marks
-/// settings page and the per-provider gate in [`resolve`](super::resolve) are
+/// settings page and the per-provider gate in [`resolve`] are
 /// three views of one flag rather than three copies of a value. That is the
 /// whole reason this is safe to offer in two places at once, and it is why the
 /// test below flips one and reads the other.
@@ -530,7 +530,7 @@ struct LaneHost {
     /// repaint, not rebuild**, so `build` never ran again and the strip kept the
     /// previous theme's palette for as long as the tab was open. Light-to-dark left
     /// every mark in the light theme's colours, which is exactly the failure
-    /// [`resolve`](super::resolve)'s own doc says the host takes the colour back to
+    /// [`resolve`]'s own doc says the host takes the colour back to
     /// prevent: "a mark that fails contrast on a theme it never saw".
     ///
     /// Two things had to change together, and neither alone was enough: the theme's
@@ -857,7 +857,7 @@ impl LaneHost {
     /// much of the book it is, not how tall it happened to render.
     ///
     /// Within a row the conversion still goes through the editor's own geometry —
-    /// see [`locate`](super::locate), whose reasoning against character fractions
+    /// see [`locate`], whose reasoning against character fractions
     /// applies *inside* a document, where a heading or a scene break takes height
     /// without taking characters. Across whole scenes of prose that distortion
     /// averages out, and stability is worth incomparably more than it.
@@ -911,7 +911,7 @@ impl LaneHost {
     /// Narrow a row's slice to the part of it the prose actually occupies.
     ///
     /// The composition is affine, which is why this is a change to the *extent* and
-    /// not to [`locate`](super::locate). A mark at fraction `y` of the text lands at
+    /// not to [`locate`]. A mark at fraction `y` of the text lands at
     ///
     /// ```text
     /// extent.place((text_top + y * text_height) / row_height)

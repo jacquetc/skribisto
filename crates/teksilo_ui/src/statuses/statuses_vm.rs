@@ -9,9 +9,9 @@
 //! ## Why the ladder is read, not cached
 //!
 //! A project has a handful of rungs and they change about as often as a writer renames a
-//! tag, so [`ladder`](Self::ladder) reads through the relationship each time rather than
+//! tag, so [`StatusesViewModel::ladder`] reads through the relationship each time rather than
 //! holding a mirror that four surfaces would each have to invalidate. The one piece of
-//! state here is [`revision`](Self::revision) — bumped when the ladder itself changes — so
+//! state here is [`StatusesViewModel::revision`] — bumped when the ladder itself changes — so
 //! a view can rebind without any of them knowing how the others found out.
 
 use std::rc::Rc;

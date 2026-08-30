@@ -1036,7 +1036,7 @@ pub fn item_note_segmented(tab: &ContentTab) -> Box<dyn Widget> {
 /// A note carries at most a handful of tags, so each recompute is one small batched
 /// read (`get_binder_tag_multi` over just *this item's* tag ids), never a scan of the
 /// project's whole palette, the same shape
-/// [`crate::tabs::story_bible_place::scene_mention_counts`] already uses for its own
+/// [`crate::tabs::story_bible_place`] already uses for its own
 /// small batched lookup. Reads are bounded by how often the bar itself rebuilds (a real
 /// tag edit, or the tab's own first build), not by frame rate: see [`Signal::map`]'s own
 /// docs for why a derived signal recomputing on every *read* is not the same as
@@ -1052,7 +1052,7 @@ fn note_discoverable_signal(tab: &ContentTab) -> Signal<bool> {
 /// [`note_discoverable_signal`] purely so the actual decision is testable against a
 /// real backend fixture without having to stand up a whole [`ContentTab`] (let alone a
 /// live `Signal`) just to reach it, the same shape
-/// [`crate::tabs::story_bible_place::scene_mention_counts`] is tested at.
+/// [`crate::tabs::story_bible_place`] is tested at.
 fn any_tag_discoverable(ctx: &frontend::AppContext, tag_ids: &[u64]) -> bool {
     if tag_ids.is_empty() {
         return false;

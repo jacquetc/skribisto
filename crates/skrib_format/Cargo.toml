@@ -36,7 +36,7 @@ unicode-normalization = "0.1"
 # Used only by the `build_example` tool, which reads each bundled example's
 # editorial-metadata spec.
 [dev-dependencies]
-toml = "1.1.3+spec-1.1.0"
+toml = "1.1.3"
 
 [lints]
 workspace = true

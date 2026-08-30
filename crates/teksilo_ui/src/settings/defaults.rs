@@ -21,7 +21,7 @@
 //! Three things are deliberately **not** rows, because they are not this
 //! view-model's to hold: the theme, the interface language and the interface
 //! text scale are ambient app state, applied through an `EventContext` and
-//! restored by [`crate::settings::reset_appearance`]. They are compared inline
+//! restored by [`super::settings_vm::reset_appearance`]. They are compared inline
 //! at the bottom of [`build_not_defaults`].
 
 use skribisto_model::counting::CountingMethodSetting;

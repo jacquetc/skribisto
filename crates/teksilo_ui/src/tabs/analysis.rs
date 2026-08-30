@@ -456,7 +456,7 @@ fn prose(text: impl Into<LocalizedString>) -> impl Widget {
 ///
 /// An untitled chapter is "Chapter 3" in the outline, generated from its position in the
 /// manuscript, and the axis of a chart of that same manuscript has to agree: a column of
-/// bars all labelled with the same blank is not an axis. [`NameContext`] is the one place
+/// bars all labelled with the same blank is not an axis. [`crate::models::NameContext`] is the one place
 /// that question is answered, and the outline, the search tree and this chart all ask it.
 ///
 /// Falls back to the row's own title when there is no context to ask (a test, or a project

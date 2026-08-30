@@ -193,7 +193,7 @@ impl SaveStateViewModel {
             || self.external_generation() > self.inner.external_saved.get()
     }
 
-    /// This Work's [`work_management::external_changes`] generation.
+    /// This Work's [`frontend::work_management::external_changes`] generation.
     ///
     /// `0` when the Work has no durable id yet, which is what an **unsaved**
     /// project carries: there is nothing on disk for an extension to be

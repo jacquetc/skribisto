@@ -14,7 +14,7 @@
 //! by. It also carries `Role::CheckBox` and a toggled state, because that is what it is.
 //!
 //! **OR, not AND.** Checking two chips shows every row carrying *either* tag:
-//! see [`OverviewFilters::tag_filter`]'s own doc for why that reading, not "every
+//! see [`crate::models::OverviewFilters::tag_filter`]'s own doc for why that reading, not "every
 //! checked tag on the same row", is the one a chip row visually promises.
 //!
 //! The palette is **threaded from the tab**, not read from `ctx.app_state`. It was read

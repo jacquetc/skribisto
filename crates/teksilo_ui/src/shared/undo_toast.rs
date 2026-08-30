@@ -18,8 +18,8 @@
 //! bounded its toast to ten seconds to shrink the window, which narrows the
 //! race without closing it.
 //!
-//! Naming the operation closes it. [`stamp`] records the sequence number the
-//! command landed on; [`undo_action`] hands it back to `undo_if_head`, which
+//! Naming the operation closes it. [`crate::shared::undo_toast::stamp()`] records the sequence number the
+//! command landed on; [`crate::shared::undo_toast::undo_action()`] hands it back to `undo_if_head`, which
 //! undoes that command **or refuses**, and the refusal is a message rather than
 //! the wrong thing silently happening.
 

@@ -57,7 +57,7 @@ serde_json = "1.0"
 # type would otherwise fail-load the whole file for every project — so its blob is
 # parsed via a `toml::Value` and dropped to `None` on error. Matches the version
 # teksilo-settings already resolves.
-toml = "1.1.3+spec-1.1.0"
+toml = "1.1.3"
 frontend = { workspace = true }
 skribisto_model = { workspace = true }
 # The import review tree binds to `document_ingest`'s plan directly: the panel

@@ -309,7 +309,7 @@ struct RegisteredEditor {
     ///
     /// `None` for the editors the widget tests build with no surface around
     /// them, which is also the only case
-    /// [`handle_for_item`](Self::handle_for_item) still answers by order.
+    /// [`FormatViewModel::handle_for_item`] still answers by order.
     scope: Option<crate::margin_lane::LaneScope>,
 }
 

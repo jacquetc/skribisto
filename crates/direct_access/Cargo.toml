@@ -26,7 +26,7 @@ name = "direct_access"
 thiserror = { workspace = true }
 common = { workspace = true }
 anyhow = { workspace = true }
-serde = { version = "1", features = ["derive"], workspace = true }
+serde = { workspace = true }
 macros = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }

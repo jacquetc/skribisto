@@ -19,7 +19,7 @@ mod language;
 mod milestone;
 mod numbering;
 mod status;
-mod story_bible;
+pub(crate) mod story_bible;
 
 #[cfg(test)]
 mod tests;

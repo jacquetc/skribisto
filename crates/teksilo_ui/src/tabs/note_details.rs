@@ -18,14 +18,14 @@
 //!
 //! ## What the dock's plumbing does not need to be built twice here
 //!
-//! [`crate::docks::inspector::Inspector`] rebuilds itself for **whichever item
+//! [`crate::docks::inspector`] rebuilds itself for **whichever item
 //! currently has focus**, which is why its own probe re-targets on every
 //! rebuild (`if self.probe.id() != item_id`) and its cast section runs a
 //! debounced, frame-ticked [`crate::tags::LiveCastOverlay`] to catch a
 //! keystroke without re-exporting the focused document on every one of them. A
-//! `ContentTab` never re-targets: [`note_details_pane`] is built once per tab,
+//! `ContentTab` never re-targets: [`crate::tabs::note_details::note_details_pane()`] is built once per tab,
 //! against the one item that tab already is, for as long as that tab exists. So
-//! [`NoteDetailsPane`] points its single [`SingleBinderItem`] probe at
+//! the pane points its single [`SingleBinderItem`] probe at
 //! [`ContentTab::item_id`] once, at construction, and never again, and reads
 //! this item's own live prose straight off [`crate::tabs::ProseField::djot`]
 //! (the same `to_djot` a debounced overlay would eventually produce anyway) each
@@ -44,7 +44,7 @@
 //! actually drives its rebuild, so a successful write on one of them would not,
 //! by itself, be seen until the next external `BinderItem::Updated` event came
 //! back around. Here every write and the one rebuild-triggering read
-//! ([`Self::probe`]'s own `dto_signal`) go through the **same** probe, whose
+//! (`probe`'s own `dto_signal`) go through the **same** probe, whose
 //! setters already refresh that signal synchronously on success. So the next
 //! frame's rebuild reads the field straight back out of the DTO, correctly,
 //! with no separate mirror to keep in step or fail to echo when a write is
@@ -56,10 +56,10 @@
 //!
 //! ## What is new: "Appears in the manuscript" does not reuse `MentionList`
 //!
-//! [`crate::tags::MentionList`] renders [`MentionRow::title`] as the row's own
+//! [`crate::tags::MentionList`] renders [`crate::mentions::MentionRow::title`] as the row's own
 //! headline, which is correct for the *cast* direction (there, `title` is the
 //! target character's name, exactly what a cast row should say) and wrong for
-//! *this* direction. [`MentionIndex::backlinks_for`] returns rows whose
+//! *this* direction. [`crate::mentions::MentionIndex::backlinks_for`] returns rows whose
 //! `target_id` is always this same note, so `title` is always resolved against
 //! this note's own name too. Every row would show the same headline, and the
 //! one thing this section exists to say (*which* scene or note wrote it) would
@@ -119,7 +119,7 @@ use super::{ContentTab, TitlePart, shared, title_field};
 /// is `startup.rs`'s throwaway `WorkSession` on a fresh, never-seeded
 /// `AppIds`, so the "+" popover's `TagsViewModel::create`, which needs a real
 /// `work_id`, silently created nothing. [`ContentTab::tags`] is threaded from
-/// the same `WorkSession` [`docks::inspector::Inspector`](crate::docks::inspector::Inspector)
+/// the same `WorkSession` [`crate::docks::inspector`]
 /// already receives through its own constructor, so this pane's handle is
 /// bound to the tab's actual, open Work regardless of what (if anything) is
 /// registered as `app_state`.
@@ -660,7 +660,7 @@ struct BacklinkRow {
 /// Pair `rows` with the title of the document each was found in, falling back
 /// to `untitled` for a document whose title is blank or that no longer
 /// resolves at all (trashed or deleted between the scan and this read). Same
-/// "named, not left blank" reasoning [`MentionList`]'s own doc gives for an
+/// "named, not left blank" reasoning [`crate::tags::MentionList`]'s own doc gives for an
 /// unresolved pin.
 ///
 /// Pure: the backend read that builds `titles` lives in
@@ -890,7 +890,7 @@ fn backlinks_empty_hint() -> VStack {
 ///
 /// A row that is a confirmed cast pin or a declared point of view on the
 /// *mentioning* scene reads plain, not ghosted, the same "the writer's own
-/// declaration, not the scanner's guess" rule [`MentionList`]'s own doc states:
+/// declaration, not the scanner's guess" rule [`crate::tags::MentionList`]'s own doc states:
 /// `MentionRow::is_confirmed`/`is_point_of_view` mean exactly the same thing
 /// here as they do in the cast direction, just read from the other end: "that
 /// scene has *this note* pinned", not "this note has pinned *it*".

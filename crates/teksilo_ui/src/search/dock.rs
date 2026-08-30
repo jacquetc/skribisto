@@ -514,8 +514,8 @@ fn results_list(vm: SearchReplaceViewModel) -> impl Widget {
 /// toggle* uses. The toggles answer "search here as well" and legitimately gate
 /// epigraphs with the prose and replies with their threads; this answers "your hit
 /// is here", and collapsing either pair would make the column stop doing the one
-/// thing it is for. See [`icons::find::epigraph_icon`] and
-/// [`icons::find::comment_reply_icon`].
+/// thing it is for. See [`crate::icons::find::epigraph_icon`] and
+/// [`crate::icons::find::comment_reply_icon`].
 fn field_icon(field: &MatchField) -> IconWidget {
     use crate::icons::activity;
     use crate::icons::find as ic;

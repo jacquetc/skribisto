@@ -3,7 +3,7 @@
 
 //! Bringing a **deleted** row back: the guarded sequence around the create.
 //!
-//! The sibling of [`super::restore_version`], and deliberately not part of it.
+//! The sibling of [`super::restore_version()`], and deliberately not part of it.
 //! A restore overwrites text the writer still has; this adds a row they no
 //! longer do. The two differ at every step that matters, so folding them into
 //! one function would mean a chain of "unless we are recreating" branches
@@ -18,7 +18,7 @@
 //!   create + write    ─┘  one composite      → then: one Undo takes it all back
 //! ```
 //!
-//! **No safety copy.** [`super::restore_version`] takes one because it destroys
+//! **No safety copy.** [`super::restore_version()`] takes one because it destroys
 //! text; this only adds, inside one `begin_composite`/`end_composite` pair, so
 //! the whole thing comes back out in one step. Asking for a backup here would
 //! make a purely additive action fail on the three conditions `backup_now`
@@ -97,7 +97,7 @@ const UNDO_GRACE: std::time::Duration = std::time::Duration::from_secs(10);
 pub enum RecreateRefusal {
     /// This window is showing a **backup**, not the writer's project.
     ///
-    /// The same refusal [`super::restore_version`] makes through
+    /// The same refusal [`super::restore_version()`] makes through
     /// `SafetyBlocker::BackupFileOpen`, and for a sharper reason: a restore into
     /// a backup window merely edits a copy, while a *create* there mints a row
     /// with the recorded uid inside a bundle that is about to be swept by
