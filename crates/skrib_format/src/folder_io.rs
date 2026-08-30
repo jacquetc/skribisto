@@ -95,7 +95,13 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
     // file whose bytes did not change is not rewritten, so it stays out of the
     // git diff exactly like modelled content.
     for (rel, file) in &bundle.carried {
-        write_if_changed(&root.join(rel), &file.bytes)
+        // A carried path is a zip entry name this build did not recognise, so it
+        // is the least trusted string in the whole bundle — `carry` keeps it
+        // verbatim by design. `read_zip` already refuses an escaping entry, but
+        // a `WorkBundle` can also be built by hand (both project importers do),
+        // so the write side checks rather than assuming.
+        let target = crate::safe_path::join_checked(root, rel, "carried file")?;
+        write_if_changed(&target, &file.bytes)
             .with_context(|| format!("writing carried file {rel}"))?;
     }
 
@@ -167,7 +173,10 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
             .note_template_bodies
             .get(&t.file_id)
             .ok_or_else(|| anyhow::anyhow!("missing body blob for note template {}", t.file_id))?;
-        write_if_changed(&root.join(rel), body.as_bytes())?;
+        write_if_changed(
+            &crate::safe_path::join_checked(root, &t.path, "note-template body")?,
+            body.as_bytes(),
+        )?;
         expected_templates.insert(fname);
     }
     prune_dir(&templates_dir, &expected_templates, "djot", &carried)?;
@@ -206,7 +215,10 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
                 a.content_hash
             )
         })?;
-        write_if_changed(&root.join(rel), bytes)?;
+        write_if_changed(
+            &crate::safe_path::join_checked(root, &a.path, "asset")?,
+            bytes,
+        )?;
         expected_assets.insert(fname);
     }
     prune_assets_dir(&assets_dir, &expected_assets, &carried)?;
@@ -272,7 +284,10 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
                 let data = item.prose.get(&pr.file_id).ok_or_else(|| {
                     anyhow::anyhow!("missing prose blob for content {}", pr.file_id)
                 })?;
-                write_if_changed(&root.join(rel), data.as_bytes())?;
+                write_if_changed(
+                    &crate::safe_path::join_checked(root, &pr.path, "prose")?,
+                    data.as_bytes(),
+                )?;
                 expected_prose.insert(fname.clone());
 
                 if let Some(comments) = item.comments.get(&pr.file_id)
@@ -445,8 +460,11 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         read_ron_vec(&root.join("templates.ron"), "templates.ron")?;
     let mut note_template_bodies = std::collections::BTreeMap::new();
     for t in &note_templates {
-        let text = fs::read_to_string(root.join(&t.path))
+        let path = crate::safe_path::join_checked(root, &t.path, "note-template body")?;
+        let text = fs::read_to_string(&path)
             .with_context(|| format!("reading note-template body {}", t.path))?;
+        crate::djot_depth::check(&text)
+            .with_context(|| format!("note-template body {}", t.path))?;
         note_template_bodies.insert(t.file_id, text);
     }
 
@@ -481,7 +499,14 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
             if blobs.contains_key(&hash) {
                 continue;
             }
-            if let Ok(text) = fs::read_to_string(root.join(blob_relpath(&hash))) {
+            // Bounded like every other prose blob: the Versions pane parses
+            // these, so an unbounded one aborts the process from there.
+            // Dropping the blob rather than failing the open matches the rest of
+            // the history reader, which treats a missing blob as a thinned entry
+            // — a convenience file must not lock a writer out of their book.
+            if let Ok(text) = fs::read_to_string(root.join(blob_relpath(&hash)))
+                && crate::djot_depth::check(&text).is_ok()
+            {
                 blobs.insert(hash, text);
             }
         }
@@ -502,7 +527,8 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     let statuses: Vec<BinderStatusFile> = read_ron_vec(&root.join("statuses.ron"), "statuses.ron")?;
     let mut asset_bytes = std::collections::BTreeMap::new();
     for a in &assets {
-        let bytes = fs::read(root.join(&a.path))
+        let path = crate::safe_path::join_checked(root, &a.path, "asset")?;
+        let bytes = fs::read(&path)
             .with_context(|| format!("reading asset {} ({})", a.file_name, a.path))?;
         asset_bytes.insert(a.content_hash.clone(), bytes);
     }
@@ -534,9 +560,13 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
             let mut comments = std::collections::BTreeMap::new();
             let mut footnotes = std::collections::BTreeMap::new();
             for pr in &item.prose_refs {
-                let prose_path = root.join(&pr.path);
+                let prose_path = crate::safe_path::join_checked(root, &pr.path, "prose")?;
                 let text = fs::read_to_string(&prose_path)
                     .with_context(|| format!("reading prose {}", pr.path))?;
+                // Refuse before the prose can reach an editor or an exporter: the
+                // Djot parser's recursion is unbounded and a stack overflow is an
+                // abort, not a panic, so there is no later place to catch this.
+                crate::djot_depth::check(&text).with_context(|| format!("prose {}", pr.path))?;
                 prose.insert(pr.file_id, text);
 
                 // Additive and optional: a bundle written before comments existed —

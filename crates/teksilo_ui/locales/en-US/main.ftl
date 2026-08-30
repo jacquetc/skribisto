@@ -2047,6 +2047,7 @@ import-document-step-destination = Destination
 import-document-step-reconcile = Merge
 import-document-reconcile-hint = Some of these rows are ones you already have. Say what should happen to each.
 import-document-reconcile-all-new = Nothing in this file matches your project — every row will be added as new.
+import-document-duplicate-returns = These files are more than one copy of the same manuscript coming back. Import them one at a time: matching only lines up one returning copy against your project, so importing several together would add a second copy of the book instead of merging it.
 import-document-col-stray-prose = Its text
 import-document-stray-as-paratext = Keep as paratext
 import-document-stray-discard = Drop the text

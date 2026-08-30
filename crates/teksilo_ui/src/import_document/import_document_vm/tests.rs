@@ -1108,6 +1108,65 @@ fn a_docx_import_saved_as_a_project() {
 }
 // ── the merge, and what it makes of the plan ────────────────────────────────────────
 
+/// Three beta readers send their copies back and the writer adds all three to the
+/// wizard at once — the obvious gesture, and the one that used to duplicate the
+/// book twice with nothing said.
+///
+/// `reconcile::pair` claims each existing row at most once, so the first file's
+/// rows match and every later file's rows fall through to `New`, whose default
+/// action is `CreateNew`.
+#[test]
+fn several_returns_of_one_manuscript_block_the_import() {
+    let vm = ImportDocumentViewModel::new(Rc::new(AppContext::new()), AppIds::default());
+    let tagged = |indent: i64, title: &str, kind: CreateType, tag: &str| PlannedRow {
+        source_uid_tag: Some(tag.into()),
+        source_digest: Some("aaaaaaaaaaaa".into()),
+        ..planned(indent, title, kind)
+    };
+    // Two files, each carrying the same two rows of the same project.
+    let plan = ImportPlan {
+        rows: vec![
+            container(0, "Book", CreateType::Book),
+            tagged(1, "Chapter One", CreateType::Chapter, "tag-one"),
+            tagged(2, "Scene A", CreateType::Scene, "tag-a"),
+            tagged(1, "Chapter One", CreateType::Chapter, "tag-one"),
+            tagged(2, "Scene A", CreateType::Scene, "tag-a"),
+        ],
+        diagnostics: Vec::new(),
+    };
+    vm.on_plan_ready(
+        &plan,
+        vec![1, 2, 3, 2, 3],
+        vec![
+            (1, CreateType::Book),
+            (2, CreateType::Chapter),
+            (3, CreateType::Scene),
+        ],
+    );
+
+    let dupes = vm.duplicate_return_titles();
+    assert_eq!(
+        dupes,
+        vec!["Chapter One".to_string(), "Scene A".to_string()],
+        "both repeated rows must be reported"
+    );
+    assert!(
+        !vm.can_apply(),
+        "the import must be blocked, not silently doubled"
+    );
+}
+
+/// One return of one manuscript is the ordinary case and must stay unblocked —
+/// the guard keys on the round-trip tag, which is unique per row within a file.
+#[test]
+fn a_single_returning_file_is_not_mistaken_for_duplicates() {
+    let vm = vm_from_a_returning_file();
+    assert!(
+        vm.duplicate_return_titles().is_empty(),
+        "one copy of each row is not a duplicate return"
+    );
+}
+
 /// The same shape as [`vm`], but every row carrying the round-trip mark a returning file
 /// would have brought — which is what makes an `Update` possible at all.
 fn vm_from_a_returning_file() -> ImportDocumentViewModel {

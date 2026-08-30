@@ -32,6 +32,11 @@ mod carry_tests;
 /// Which versions of a row are worth showing, and where its timeline begins and ends.
 pub mod changes;
 pub mod convert;
+/// A ceiling on Djot nesting, so a hostile bundle cannot abort the process
+/// through the parser's unbounded recursion. `pub` because the boundary it
+/// guards is the format's, and a caller reading prose from anywhere else wants
+/// the same check.
+pub mod djot_depth;
 mod errors;
 mod fingerprint;
 mod folder_io;
@@ -40,12 +45,19 @@ mod folder_io;
 pub mod history;
 #[cfg(test)]
 mod history_tests;
+/// A bundle that did not come from the person opening it.
+#[cfg(test)]
+mod hostile_tests;
 mod loaded;
 mod mapping;
 pub mod media;
 mod migration;
 mod reader;
 pub mod retention;
+/// Turning a path that came out of a bundle into a path on this machine, safely.
+/// `pub` because every reader and writer of bundle-supplied paths has to go
+/// through it, including the zip extractor and the carry-through set.
+pub mod safe_path;
 mod shape;
 /// Filesystem-safe name shaping. `pub` because the UI's template export needs the same
 /// `slugify` the bundle writer uses — a name the writer typed must land on one safe path
@@ -85,6 +97,7 @@ pub use convert::{
     djot_plain_text, html_to_djot, html_to_djot_and_text, markdown_to_djot,
     markdown_to_djot_and_text, markdown_to_html,
 };
+pub use djot_depth::{MAX_DEPTH as MAX_DJOT_DEPTH, TooDeep};
 pub use errors::SkribFormatError;
 pub use fingerprint::content_fingerprint;
 pub use loaded::{
@@ -93,6 +106,7 @@ pub use loaded::{
 };
 pub use mapping::{bundle_to_loaded, from_entities, mark_as_backup};
 pub use reader::{peek_manifest, read_bundle};
+pub use safe_path::{UnsafePath, bundle_relative, join_checked};
 pub use shape::{SkribShape, detect_shape};
 pub use slug::{
     binder_dir_name, nearest_titled_ancestor, nearest_titled_ancestors, prose_file_name,

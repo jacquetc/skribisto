@@ -12,12 +12,14 @@ on:
     paths:
       - "eu.skribisto.skribisto.metainfo.xml"
       - "resources/unix/applications/*.desktop"
+      - "resources/unix/mime/*.xml"
       - "package/flatpak/**"
   push:
     branches: [master]
     paths:
       - "eu.skribisto.skribisto.metainfo.xml"
       - "resources/unix/applications/*.desktop"
+      - "resources/unix/mime/*.xml"
       - "package/flatpak/**"
 
 permissions:
@@ -34,10 +36,50 @@ jobs:
       - name: Install validators
         run: |
           sudo apt-get update
-          sudo apt-get install -y appstream desktop-file-utils
+          # shared-mime-info provides `update-mime-database`, which is the only
+          # thing that actually validates the MIME XML against its schema.
+          sudo apt-get install -y appstream desktop-file-utils shared-mime-info
 
       - name: Validate .desktop entry
         run: desktop-file-validate resources/unix/applications/eu.skribisto.skribisto.desktop
+
+      # `update-mime-database` is the only thing that actually parses the MIME
+      # XML against the shared-mime-info schema; a typo there is otherwise
+      # invisible until a user's file manager silently ignores the type.
+      - name: Validate MIME package
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          install -Dm644 resources/unix/mime/eu.skribisto.skribisto.xml \
+            "$tmp/packages/eu.skribisto.skribisto.xml"
+          update-mime-database "$tmp"
+
+      # The bug this exists to prevent: the .desktop advertised a MIME type no
+      # installed XML defined, and the Flatpak — the only shipped Linux artifact
+      # — never installed the MIME package at all, so `.skrib` was associated
+      # with nothing. Neither desktop-file-validate nor appstreamcli notices,
+      # because each only ever sees one file.
+      - name: Every advertised MIME type is defined and installed
+        run: |
+          set -euo pipefail
+          desktop=resources/unix/applications/eu.skribisto.skribisto.desktop
+          mime_xml=resources/unix/mime/eu.skribisto.skribisto.xml
+          flatpak=package/flatpak/eu.skribisto.skribisto.yml
+
+          grep -q "share/mime/packages" "$flatpak" || {
+            echo "::error file=$flatpak::the Flatpak never installs $mime_xml, so the .desktop MimeType= associates with nothing"
+            exit 1
+          }
+
+          status=0
+          types=$(sed -n 's/^MimeType=//p' "$desktop" | tr ';' '\n' | grep -v '^$')
+          for t in $types; do
+            if ! grep -qF "\"$t\"" "$mime_xml"; then
+              echo "::error file=$desktop::MimeType=$t is not defined (as a <mime-type> or <alias>) in $mime_xml"
+              status=1
+            fi
+          done
+          exit $status
 
       # Informational for now: the metainfo predates the Rust rewrite (stale
       # <releases>, legacy license string) and would fail a strict validation.

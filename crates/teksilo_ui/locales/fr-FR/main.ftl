@@ -2041,6 +2041,7 @@ import-document-step-destination = Destination
 import-document-step-reconcile = Fusion
 import-document-reconcile-hint = Certaines de ces lignes sont des lignes que vous avez déjà. Indiquez ce qu’il faut faire de chacune.
 import-document-reconcile-all-new = Rien dans ce fichier ne correspond à votre projet — chaque ligne sera ajoutée comme nouvelle.
+import-document-duplicate-returns = Ces fichiers sont plusieurs exemplaires du même manuscrit qui reviennent. Importez-les un par un : la mise en correspondance ne confronte qu’un seul exemplaire à votre projet, si bien qu’en importer plusieurs ensemble ajouterait une seconde copie du livre au lieu de la fusionner.
 import-document-col-stray-prose = Son texte
 import-document-stray-as-paratext = Garder comme paratexte
 import-document-stray-discard = Supprimer le texte

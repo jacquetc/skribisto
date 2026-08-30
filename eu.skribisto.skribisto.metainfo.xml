@@ -31,6 +31,7 @@
     <category>Office</category>
   </categories>
   <provides>
+    <mediatype>application/vnd.skribisto.project+zip</mediatype>
     <mediatype>application/x-skribisto</mediatype>
     <binary>skribisto</binary>
   </provides>

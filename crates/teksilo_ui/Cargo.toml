@@ -36,8 +36,24 @@ icons = [
     "../../resources/unix/icons/icons/hicolor/512x512/apps/skribisto.png",
 ]
 
+# What a double-click on a .skrib opens. The packager turns this into the
+# bundle's CFBundleDocumentTypes (macOS) and the association metadata of the
+# formats it builds; the Windows installer (package/windows/setup.nsi) and the
+# Linux MIME entry (resources/unix/mime/) declare the same pairing by hand,
+# because neither is produced by the packager here.
+[[package.metadata.packager.file-associations]]
+extensions = ["skrib"]
+mime-type = "application/vnd.skribisto.project+zip"
+name = "Skribisto project"
+description = "Skribisto project"
+role = "Editor"
+
 [package.metadata.packager.macos]
 minimum-system-version = "11.0"
+# Adds the exported UTI and re-declares the document types with LSItemContentTypes
+# and LSHandlerRank, neither of which the packager emits. See that file's header
+# for the merge semantics — every key it names replaces the generated one.
+info-plist-path = "../../package/macos/Info.plist"
 
 [package.metadata.packager.dmg]
 window-size = { width = 660, height = 400 }

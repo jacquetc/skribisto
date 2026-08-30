@@ -482,9 +482,20 @@ fn reconcile_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
         .style(TextStyleRole::Small)
         .color(TextRole::Secondary);
 
+    // Several returns of one manuscript at once. Blocking, and said here rather
+    // than only greying Import, because this is the page the writer is on and
+    // the fix — go back and drop the extra files — is a step behind them.
+    let duplicates = TextWidget::new(tr!(import_document_duplicate_returns()))
+        .style(TextStyleRole::Small)
+        .color(TextRole::Error);
+
     let body = VStack::new()
         .spacing(8.0)
         .child(header)
+        .child(crate::tabs::shared::VisibleWhen::new(
+            vm.has_duplicate_returns(),
+            duplicates,
+        ))
         .child(Expand::vertical().child(merge_tree(vm, source)));
 
     Padding::symmetric(16.0, 12.0).child(

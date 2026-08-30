@@ -303,7 +303,12 @@ impl VersionSource for BackupVersions {
     }
 
     fn prose(&self, v: &VersionRef, blob_path: &str) -> Result<String> {
-        read_entry(&v.path, blob_path)
+        let text = read_entry(&v.path, blob_path)?;
+        // The diff pane parses this, so it reaches the same unbounded Djot
+        // recursion the live editor does — and a past version comes out of a
+        // backup, which travels exactly as a project does.
+        crate::djot_depth::check(&text).with_context(|| format!("version blob {blob_path}"))?;
+        Ok(text)
     }
 
     fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>> {
@@ -328,7 +333,10 @@ fn read_entry(bundle: &Path, rel: &str) -> Result<String> {
     let path = bundle.to_string_lossy().into_owned();
     match detect_shape(&path)? {
         SkribShape::ExplodedFolder => {
-            let full = folder_root(&path).join(rel);
+            // Same rule as every other bundle-supplied path: `rel` comes out of
+            // a backup's own `items.ron`/history index, and a backup is a file
+            // like any other. See `crate::safe_path`.
+            let full = crate::safe_path::join_checked(&folder_root(&path), rel, "version blob")?;
             std::fs::read_to_string(&full).with_context(|| format!("reading {}", full.display()))
         }
         SkribShape::ZipFile => {
@@ -369,7 +377,11 @@ fn folder_rows(root: &Path) -> Result<Vec<VersionRow>> {
                 .prose_refs
                 .iter()
                 .map(|pr| {
-                    let bytes = std::fs::metadata(root.join(&pr.path))
+                    // `metadata`, not a read — but on a path out of the bundle
+                    // all the same, so it is checked like every other one.
+                    let bytes = crate::safe_path::join_checked(root, &pr.path, "version prose")
+                        .ok()
+                        .and_then(|p| std::fs::metadata(p).ok())
                         .map(|m| m.len())
                         .unwrap_or(0);
                     (pr.role.clone(), pr.path.clone(), BlobStamp { bytes })

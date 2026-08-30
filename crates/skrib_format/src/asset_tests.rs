@@ -17,7 +17,7 @@ use super::media::{asset_relpath, extension_for};
 
 /// A bundle with two images, built directly rather than through `from_entities`
 /// so a test can state exactly what it is round-tripping.
-fn bundle_with_assets() -> WorkBundle {
+pub(crate) fn bundle_with_assets() -> WorkBundle {
     let mut b = super::tests::build_bundle(ShapeTag::Folder);
     let png = vec![0x89, b'P', b'N', b'G', 1, 2, 3, 4];
     let jpg = vec![0xff, 0xd8, 0xff, 9, 9];

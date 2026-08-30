@@ -62,6 +62,9 @@ ManifestDPIAware true
 !define APP_ICO       "skribisto.ico"
 !define APP_PROGID    "Skribisto"
 !define APP_EXT       ".skrib"
+; The IANA vendor-tree media type, matching the Linux MIME entry and the macOS
+; UTTypeTagSpecification. One canonical string, declared in four places.
+!define APP_MIME      "application/vnd.skribisto.project+zip"
 
 !ifndef SRC_EXE
   !define SRC_EXE     "..\..\target\release\skribisto.exe"
@@ -282,10 +285,26 @@ Section "!${APP_NAME}" SecApp
   ; half, and takes precedence for that user. SHCTX picks whichever matches
   ; the scope, so a per-user install claims .skrib without touching HKLM.
   WriteRegStr SHCTX "Software\Classes\${APP_EXT}" "" "${APP_PROGID}"
+  ; The media type and perceived class. Explorer shows "Document" rather than
+  ; "SKRIB File" in the Type column, and a mail client attaching a project
+  ; declares the same string the Linux MIME entry and the macOS UTI declare.
+  WriteRegStr SHCTX "Software\Classes\${APP_EXT}" "Content Type"  "${APP_MIME}"
+  WriteRegStr SHCTX "Software\Classes\${APP_EXT}" "PerceivedType" "document"
+  ; "Open with" needs the ProgID listed here as well as in the default value:
+  ; the default is what a double-click uses, OpenWithProgids is what the
+  ; picker enumerates, and an app present in only one of the two is the
+  ; classic "it opens but it is not in the list" report.
+  WriteRegStr SHCTX "Software\Classes\${APP_EXT}\OpenWithProgids" "${APP_PROGID}" ""
   WriteRegStr SHCTX "Software\Classes\${APP_PROGID}" "" "$(DESC_ProgId)"
+  WriteRegStr SHCTX "Software\Classes\${APP_PROGID}" "FriendlyTypeName" "$(DESC_ProgId)"
+  ; The application artwork stands in for a document icon. A distinct drawing
+  ; would be better — a .skrib currently renders in Explorer as a copy of the
+  ; app — but shipping the app icon is what the Linux MIME entry does too, and
+  ; the two should not disagree about what a project looks like.
   WriteRegStr SHCTX "Software\Classes\${APP_PROGID}\DefaultIcon" "" "$INSTDIR\${APP_ICO},0"
   WriteRegStr SHCTX "Software\Classes\${APP_PROGID}\shell\open\command" "" \
     '"$INSTDIR\${APP_EXE}" "%1"'
+  WriteRegStr SHCTX "Software\Classes\Applications\${APP_EXE}\SupportedTypes" "${APP_EXT}" ""
   ${NotifyShell_AssocChanged}
 
   WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -486,8 +505,14 @@ Section "Uninstall"
   ReadRegStr $0 SHCTX "Software\Classes\${APP_EXT}" ""
   ${If} $0 == "${APP_PROGID}"
     DeleteRegKey SHCTX "Software\Classes\${APP_EXT}"
+  ${Else}
+    ; Another app owns the default now, so the key stays — but our entry in its
+    ; "Open with" list is still ours to remove, and leaving it behind offers the
+    ; user an application that is no longer installed.
+    DeleteRegValue SHCTX "Software\Classes\${APP_EXT}\OpenWithProgids" "${APP_PROGID}"
   ${EndIf}
   DeleteRegKey SHCTX "Software\Classes\${APP_PROGID}"
+  DeleteRegKey SHCTX "Software\Classes\Applications\${APP_EXE}"
   ${NotifyShell_AssocChanged}
 
   DeleteRegKey SHCTX "${UNINST_KEY}"

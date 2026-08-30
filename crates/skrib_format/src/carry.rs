@@ -132,6 +132,16 @@ fn load_folder(root: &std::path::Path) -> BTreeMap<String, CarriedFile> {
         if is_modelled(&rel) {
             continue;
         }
+        // The same filter the zip side applies, for the same reason and with the
+        // same consequence: `write_folder` checks every carried path before
+        // writing it, so a name carried here that the writer would refuse turns
+        // every later save of this project into a failure — over a file nothing
+        // reads. A directory walk cannot produce an escaping path, so in
+        // practice this only ever catches a control character in a filename.
+        if let Err(e) = crate::safe_path::bundle_relative(&rel) {
+            eprintln!("skrib: not carrying {e}");
+            continue;
+        }
         if let Ok(bytes) = std::fs::read(entry.path()) {
             out.insert(rel, CarriedFile::new(bytes));
         }
@@ -149,9 +159,24 @@ fn load_zip(path: &std::path::Path) -> BTreeMap<String, CarriedFile> {
     };
     // Names first, from the central directory, so the decision of what to
     // inflate is made without inflating anything.
+    // The names are taken verbatim — that is the point of carrying — so they are
+    // filtered here rather than trusted. An entry that would not survive
+    // `bundle_relative` is not carried at all: it cannot be written back out
+    // (`write_folder` checks the same predicate), so keeping it would only turn
+    // a refusal at read time into a failed save later, on a file the writer
+    // never asked for. Silently dropping is right for exactly this set, because
+    // by construction this build does not model it and nothing downstream reads
+    // it.
     let unmodelled: Vec<String> = archive
         .file_names()
         .filter(|n| !n.ends_with('/') && !is_modelled(n))
+        .filter(|n| match crate::safe_path::bundle_relative(n) {
+            Ok(_) => true,
+            Err(e) => {
+                eprintln!("skrib: not carrying {e}");
+                false
+            }
+        })
         .map(str::to_string)
         .collect();
 

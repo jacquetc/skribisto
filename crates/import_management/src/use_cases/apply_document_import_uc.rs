@@ -997,7 +997,19 @@ fn create_or_update_comment(
                 author_name: author_name.clone(),
                 author_initials: author_initials.clone(),
                 body: body.clone(),
-                resolved: *resolved,
+                // **Monotone, unlike every other file-authoritative field.** A
+                // returning file was cut at some moment in the past, so its
+                // "unresolved" is not a claim that the thread is open *now* —
+                // only that it was open when that copy left. Taking it verbatim
+                // re-opens every thread the writer settled while the file was
+                // out, and with several readers holding copies at once that
+                // happens on every return after the first.
+                //
+                // Resolution is also the writer's workflow state rather than the
+                // reader's: an editor marking a thread done is information worth
+                // taking, an editor's stale copy un-marking one is not. So the
+                // file may only ever resolve.
+                resolved: existing.resolved || *resolved,
                 orphaned: *orphaned,
                 orphan_reason: orphan_reason_of(orphan_reason),
                 range_start: (*range_start).max(0) as u64,

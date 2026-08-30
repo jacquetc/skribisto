@@ -53,12 +53,27 @@ modules:
       - install -Dm755 target/release/skribisto /app/bin/skribisto
       - install -Dm644 eu.skribisto.skribisto.metainfo.xml /app/share/metainfo/eu.skribisto.skribisto.metainfo.xml
       - install -Dm644 resources/unix/applications/eu.skribisto.skribisto.desktop /app/share/applications/eu.skribisto.skribisto.desktop
+      # Without this the .desktop's MimeType= names a type no installed XML
+      # defines, so the only shipped Linux artifact has no .skrib association at
+      # all — double-clicking a project opens nothing. `packaging-lint.yml` now
+      # fails the build when the two disagree.
+      - install -Dm644 resources/unix/mime/eu.skribisto.skribisto.xml /app/share/mime/packages/eu.skribisto.skribisto.xml
       # AppStream/Flatpak require the icon to be named after the app-id.
       - install -Dm644 resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg /app/share/icons/hicolor/scalable/apps/eu.skribisto.skribisto.svg
       - |
         for s in 16 32 64 72 96 192 256 512; do
           src="resources/unix/icons/icons/hicolor/${s}x${s}/apps/skribisto.png"
           [ -f "$src" ] && install -Dm644 "$src" "/app/share/icons/hicolor/${s}x${s}/apps/eu.skribisto.skribisto.png"
+        done
+      # The document icon the MIME entry names. It is the application artwork
+      # rather than a second drawing: a wrong-looking icon is a cosmetic bug, but
+      # a *missing* one makes every .skrib render as a generic archive, which is
+      # what the <generic-icon> fallback would otherwise give.
+      - install -Dm644 resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg /app/share/icons/hicolor/scalable/mimetypes/application-vnd.skribisto.project.svg
+      - |
+        for s in 16 32 64 72 96 192 256 512; do
+          src="resources/unix/icons/icons/hicolor/${s}x${s}/apps/skribisto.png"
+          [ -f "$src" ] && install -Dm644 "$src" "/app/share/icons/hicolor/${s}x${s}/mimetypes/application-vnd.skribisto.project.png"
         done
     sources:
       - type: dir

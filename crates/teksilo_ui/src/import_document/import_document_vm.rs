@@ -1305,6 +1305,58 @@ impl ImportDocumentViewModel {
             .collect()
     }
 
+    /// The row titles that appear **twice or more** in the included set under the
+    /// same round-trip identity.
+    ///
+    /// A returning `.docx`/`.odt` carries a `skrb_r<uid tag>_<digest>` bookmark
+    /// per row, and [`reconcile::pair`] claims each existing row at most once. So
+    /// handing the wizard several returns of the *same* manuscript at once — the
+    /// obvious gesture when three beta readers send their copies back — pairs the
+    /// first file's rows and reports every later file's rows as `New`, whose
+    /// default action is `CreateNew`. The result is the book duplicated once per
+    /// extra reader, with nothing said.
+    ///
+    /// Detecting it is exact rather than heuristic: two rows carrying the same
+    /// uid tag *are* the same row of the same project, whichever file they came
+    /// in. Blocking is the right answer rather than merging them, because
+    /// `reconcile` is a two-list function by construction and there is no
+    /// meaningful three-way of three readers' prose — merging one file at a time
+    /// is both the supported flow and the one whose result the writer can read.
+    pub fn duplicate_return_titles(&self) -> Vec<String> {
+        use std::collections::HashMap;
+        let mut seen: HashMap<String, Vec<String>> = HashMap::new();
+        for key in self.plan.keys_in_order() {
+            if !self.is_included(key) {
+                continue;
+            }
+            let Some(row) = self.plan.row(key) else {
+                continue;
+            };
+            // `None` on a first arrival, a file from another tool, or a row the
+            // editor added inside the file — none of which can collide with
+            // anything, because there is no identity to collide on.
+            let Some(tag) = row.source_uid_tag.clone().filter(|t| !t.is_empty()) else {
+                continue;
+            };
+            seen.entry(tag).or_default().push(row.title.clone());
+        }
+        let mut out: Vec<String> = seen
+            .into_values()
+            .filter(|titles| titles.len() > 1)
+            .map(|titles| titles[0].clone())
+            .collect();
+        out.sort();
+        out
+    }
+
+    /// Whether the included files are two or more returns of one manuscript.
+    pub fn has_duplicate_returns(&self) -> Signal<bool> {
+        let me = self.clone();
+        self.plan
+            .version_signal()
+            .map(move |_| !me.duplicate_return_titles().is_empty())
+    }
+
     /// What will happen to this row's stray prose, or `None` if it has none.
     ///
     /// `Some` for every row that needs it, because there is always a resolution: the writer's
@@ -1382,6 +1434,9 @@ impl ImportDocumentViewModel {
             && self.ids.work_id.get().is_some()
             && self.destination.selected().is_some()
             && self.blocking_rows().is_empty()
+            // Two returns of one manuscript would each be applied in full, and
+            // the second's rows all read as new. See `duplicate_return_titles`.
+            && self.duplicate_return_titles().is_empty()
     }
 
     // ── commit ──────────────────────────────────────────────────────────────

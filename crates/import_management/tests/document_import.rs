@@ -1397,6 +1397,48 @@ fn returning_docx_for(comment_uid: uuid::Uuid, reply_uid: uuid::Uuid, resolved: 
     })
 }
 
+/// A second reader's copy, cut before the writer settled the thread, must not
+/// re-open it.
+///
+/// `resolved` is the one file-authoritative field that is monotone. Every other
+/// one describes what the passage *says*, which the returning file is the best
+/// authority on; this one describes where the writer has got to, which a copy
+/// taken in the past cannot know. With several readers holding copies at once,
+/// taking it verbatim re-opens settled threads on every return after the first.
+#[test]
+fn a_stale_returning_file_cannot_reopen_a_thread_the_writer_resolved() {
+    let mut ctx = Ctx::new();
+
+    let first_path = ctx.write_bytes("returned-1.docx", &first_returning_docx());
+    let rows = ctx.analyse(vec![first_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let before = ctx.comments();
+    let (comment, replies) = &before[0];
+    let (uid, reply_uid) = (comment.uid, replies[0].uid);
+
+    // A reader resolves it.
+    let resolving = ctx.write_bytes("returned-2.docx", &returning_docx_for(uid, reply_uid, true));
+    let rows = ctx.analyse(vec![resolving], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+    assert!(ctx.comments()[0].0.resolved, "the resolve must land");
+
+    // Another reader's copy, cut before that, still says open.
+    let stale = ctx.write_bytes(
+        "returned-3.docx",
+        &returning_docx_for(uid, reply_uid, false),
+    );
+    let rows = ctx.analyse(vec![stale], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(after.len(), 1, "still one thread: {after:#?}");
+    assert!(
+        after[0].0.resolved,
+        "a copy cut before the resolution re-opened the thread"
+    );
+}
+
 /// The decisive proof, for DOCX: a returning file carrying an already-recognised
 /// comment's real uid updates that row in place — same id, same uid, refreshed
 /// body/resolved state — and repoints it at the NEW import's own `Content` row,

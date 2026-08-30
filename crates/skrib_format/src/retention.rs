@@ -91,6 +91,15 @@ pub struct BackupCandidate {
     pub path: PathBuf,
     pub timestamp: DateTime<Utc>,
     pub work_unique_id: String,
+    /// The source project's path when this backup was taken
+    /// ([`ProjectManifest::backup_of`](crate::ProjectManifest::backup_of)).
+    ///
+    /// Kept because `work_unique_id` is **not unique across files**: `save_as`
+    /// and a plain file-manager copy both produce a second bundle carrying the
+    /// same uid, and every backup either of them takes lands in this same
+    /// candidate set. Correlating on the uid alone is what let one project's
+    /// sweep delete another's backups. See `belongs_to_another_live_project`.
+    pub backup_of: Option<String>,
 }
 
 /// Outcome of an [`apply_retention`] sweep.
@@ -131,6 +140,7 @@ pub fn scan_destination(
         out.push(BackupCandidate {
             timestamp: candidate_timestamp(&manifest, &path),
             work_unique_id: manifest.work.unique_id.clone(),
+            backup_of: manifest.backup_of.clone(),
             path,
         });
     }
@@ -355,6 +365,48 @@ fn keep_one_per_bucket<B, E>(
     }
 }
 
+/// Whether `candidate` demonstrably belongs to a *different* project that still
+/// exists on disk.
+///
+/// `Work.unique_id` identifies a project, not a file, and nothing re-mints it:
+/// `save_as` carries it into the copy (and `verify_backup_at` positively asserts
+/// a backup shares it), so duplicating a `.skrib` — in the app or in a file
+/// manager — yields two live bundles with one uid. Both back up, both scan the
+/// same destination, and before this each swept the other's history away.
+///
+/// The test is deliberately asymmetric, because the two ways to be wrong are not
+/// equally bad. Deleting someone's only copy of a chapter is unrecoverable;
+/// keeping a backup that could have been pruned costs disk. So a candidate is
+/// spared **only** on positive evidence — its recorded origin names a path that
+/// is not this project and that is still a readable bundle today. A project that
+/// merely *moved* leaves a `backup_of` pointing at a path that no longer exists,
+/// which is not evidence of anything and prunes as it always did.
+fn belongs_to_another_live_project(candidate: &BackupCandidate, current_path: &str) -> bool {
+    let Some(origin) = candidate.backup_of.as_deref() else {
+        // Written before the field existed. No evidence either way.
+        return false;
+    };
+    if origin.is_empty() || same_file(origin, current_path) {
+        return false;
+    }
+    // A bundle is a zip file or a folder holding `project.skrib`; anything else
+    // at that path is not a project and tells us nothing.
+    let p = Path::new(origin);
+    p.is_file() || (p.is_dir() && p.join(crate::shape::MANIFEST_NAME).is_file())
+}
+
+/// Compare two paths as the filesystem sees them, falling back to a textual
+/// compare when either cannot be canonicalised (it may not exist).
+fn same_file(a: &str, b: &str) -> bool {
+    if a == b {
+        return true;
+    }
+    match (std::fs::canonicalize(a), std::fs::canonicalize(b)) {
+        (Ok(x), Ok(y)) => x == y,
+        _ => false,
+    }
+}
+
 /// Scan `dir`, plan deletions, and delete — best-effort: a failed delete is
 /// collected, never panics, and never aborts the rest of the sweep.
 ///
@@ -369,7 +421,12 @@ pub fn apply_retention(
     min_keep: u32,
     protected: &[PathBuf],
 ) -> Result<RetentionReport> {
-    let candidates = scan_destination(dir, current_unique_id, current_path_fallback)?;
+    let mut candidates = scan_destination(dir, current_unique_id, current_path_fallback)?;
+    // Drop anything that demonstrably belongs to another project sharing this
+    // uid *before* planning, not after: a foreign backup left in the candidate
+    // set would otherwise occupy one of the policy's buckets and push a real
+    // backup of this project over the edge.
+    candidates.retain(|c| !belongs_to_another_live_project(c, current_path_fallback));
     let to_delete = plan_deletions(&candidates, policy, min_keep, protected, Utc::now());
 
     let mut report = RetentionReport::default();
@@ -400,6 +457,7 @@ mod tests {
                 .unwrap()
                 .with_timezone(&Utc),
             work_unique_id: "uid".into(),
+            backup_of: None,
         }
     }
 
@@ -550,6 +608,116 @@ mod tests {
         assert!(del.contains(&PathBuf::from("/b/a-20260615-090000.skrib")));
         assert!(del.contains(&PathBuf::from("/b/a-20260401-090000.skrib")));
         assert_eq!(del.len(), 2);
+    }
+
+    // --- two live projects sharing one `unique_id` ---
+    //
+    // `save_as` carries the uid into the copy and `verify_backup_at` asserts a
+    // backup shares it, so "one uid, one project" is a property nothing enforces
+    // — a file-manager duplicate is enough to break it. Before the guard, each
+    // project's sweep pruned the other's history.
+
+    /// Build a minimal live bundle at `path` so `belongs_to_another_live_project`
+    /// can see that the other project still exists.
+    fn live_project_at(path: &Path) {
+        std::fs::create_dir_all(path).unwrap();
+        std::fs::write(
+            path.join(crate::shape::MANIFEST_NAME),
+            b"(format_version: 14)",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn a_sweep_never_deletes_a_backup_whose_origin_is_another_live_project() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("backups");
+        std::fs::create_dir_all(&dest).unwrap();
+
+        let mine = tmp.path().join("Mine");
+        let theirs = tmp.path().join("Theirs");
+        live_project_at(&mine);
+        live_project_at(&theirs);
+
+        // Four backups under one uid: two from each project, theirs older.
+        for (stamp, origin) in [
+            ("2026-06-12T10:00:00Z", &theirs),
+            ("2026-06-13T10:00:00Z", &theirs),
+            ("2026-06-14T10:00:00Z", &mine),
+            ("2026-06-15T10:00:00Z", &mine),
+        ] {
+            let name = format!("b-{}.skrib", stamp.replace([':', '-'], ""));
+            write_backup_zip(
+                &dest,
+                &name,
+                BundleKind::Backup,
+                "shared-uid",
+                Some(&origin.to_string_lossy()),
+                stamp,
+            );
+        }
+
+        let report = apply_retention(
+            &dest,
+            "shared-uid",
+            &mine.to_string_lossy(),
+            &RetentionPolicy::KeepLastN { n: 1 },
+            0,
+            &[],
+        )
+        .unwrap();
+
+        for deleted in &report.deleted {
+            let text = deleted.to_string_lossy();
+            assert!(
+                !text.contains("20260612") && !text.contains("20260613"),
+                "the other project's backup was deleted: {text}"
+            );
+        }
+        // And the sweep still did its job on this project's own history.
+        assert_eq!(report.deleted.len(), 1, "{:?}", report.deleted);
+    }
+
+    /// A project that merely moved leaves a `backup_of` pointing at a path that
+    /// no longer exists. That is not evidence of a second project, and pruning
+    /// must carry on — otherwise a single rename would make backups accumulate
+    /// for ever.
+    #[test]
+    fn a_moved_project_still_prunes_its_own_history() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("backups");
+        std::fs::create_dir_all(&dest).unwrap();
+
+        let now_at = tmp.path().join("Novel-renamed");
+        live_project_at(&now_at);
+        let gone = tmp.path().join("Novel-old");
+
+        for stamp in [
+            "2026-06-12T10:00:00Z",
+            "2026-06-13T10:00:00Z",
+            "2026-06-14T10:00:00Z",
+        ] {
+            let name = format!("b-{}.skrib", stamp.replace([':', '-'], ""));
+            write_backup_zip(
+                &dest,
+                &name,
+                BundleKind::Backup,
+                "uid",
+                Some(&gone.to_string_lossy()),
+                stamp,
+            );
+        }
+
+        let report = apply_retention(
+            &dest,
+            "uid",
+            &now_at.to_string_lossy(),
+            &RetentionPolicy::KeepLastN { n: 1 },
+            0,
+            &[],
+        )
+        .unwrap();
+        assert_eq!(report.deleted.len(), 2, "{:?}", report.deleted);
     }
 
     // --- scan_destination cross-project isolation (real zips with a manifest) ---
