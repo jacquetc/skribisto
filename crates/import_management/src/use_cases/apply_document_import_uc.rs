@@ -876,7 +876,12 @@ fn create_or_update_comment(
     // comment it brought.
     let resolved_uid: Option<uuid::Uuid> = uid
         .filter(|u| existing_comments.contains_key(u))
-        .or_else(|| Some(*by_tag.get(uid_tag.as_str())?).filter(|_| !uid_tag.is_empty()));
+        .or_else(|| {
+            if uid_tag.is_empty() {
+                return None;
+            }
+            by_tag.get(uid_tag.as_str()).copied()
+        });
     let existing_comment = resolved_uid.and_then(|u| existing_comments.get(&u));
     let existing_id: Option<EntityId> = existing_comment.map(|c| c.id);
 

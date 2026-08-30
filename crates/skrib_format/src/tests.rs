@@ -2785,7 +2785,7 @@ fn an_absent_floor_falls_back_to_format_version() {
     let end = start + text[start..].find(',').unwrap() + 1;
     fs::write(
         &manifest_path,
-        format!("{}{}", &text[..start], &text[end..].trim_start()),
+        format!("{}{}", &text[..start], text[end..].trim_start()),
     )
     .unwrap();
     assert!(
