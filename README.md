@@ -19,6 +19,7 @@
     + [Building and running](#building-and-running)
     + [Linux (Flatpak)](#linux-flatpak)
     + [Windows](#windows)
+      - [Building it from Linux](#building-it-from-linux)
     + [macOS](#macos)
   * [Translation](#translation)
   * [To contact me](#to-contact-me)
@@ -44,36 +45,60 @@ PDF, HTML, Markdown, Djot, LaTeX or plain text, so the final formatting can happ
 word processor.
 
 Accessibility is too often forgotten. The interface exposes an accessibility tree (AccessKit),
-so screen readers can drive it; JAWS and NVDA are the ones used for testing. Please get in
-touch if you hit a glaring gap.
+so screen readers can drive it; JAWS and NVDA are the ones used for testing, sometimes with a
+braille display. Please get in touch if you hit a glaring gap.
 
 ## What it does today
 
 - Binder tree with full editing: create, rename, duplicate, move, indent, outdent, promote
-- Dual editor pane (prose plus synopsis), with split panes and tabs
+- Dual editor pane (prose plus synopsis), with split panes, tabs, and tabs you can pin
 - Manuscript streams: read a whole Chapter, Part or Book, or every synopsis, as one document
-- Corkboard, writing sessions, live word count, pace tracking
-- An Analysis tab for the Book: pacing and shape — words per scene, dialogue share, footnote
-  words — always measured against the manuscript's own numbers, never a norm
+- Corkboard, and an overview table of any subtree you can sort and filter
+- Book, part and chapter numbers that follow the manuscript, so an untitled chapter is still
+  "Chapter 7" everywhere you meet it
+- Writing sessions, live word count, and pace tracking against a deadline and a weekday
+  schedule
+- Word or character targets on any item, with a way to spread a container's target across
+  what is inside it
+- A status ladder you name yourself ("zero draft", "needs a pass", "final"), shown on the row,
+  in the overview table's filters, and in a readout of where the book stands
+- An Analysis tab for the Book: its shape (words per scene, dialogue share, footnote words),
+  always measured against the manuscript's own numbers, never a norm; and how the text of this
+  session arrived, typed, pasted, dictated or imported
+- A story bible: notes for the people, places and things in the book, with aliases, and every
+  scene each one is named in
 - Anchored comments in the margin (LibreOffice-style), with threaded replies and both a
   project-wide and a per-document comments dock
+- Footnotes, numbered by the book rather than stored, so inserting one renumbers the rest
 - Note templates: built-in presets (character sheet, location, object, beat sheet, faction,
   research note) or save your own
-- Images in the prose — a map, a character reference, a photograph of a street — carried
+- Images in the prose, a map or a character reference or a photograph of a street, carried
   inside the project and through every export, with a book cover
 - Colour tags per project, with curated genre presets, and point-of-view marking on scenes
 - Replace-while-typing: a custom lexicon plus locale-aware smart punctuation (curly quotes,
   dashes, ellipsis, French spacing…)
+- Margin marks: a strip beside the scroll bar saying where the comments, the search hits and
+  the document boundaries are
 - Distraction-free writing mode, with its own colour themes
-- Search and replace across the project
-- Trash and restore, with undo
+- "Always forward", a mode that refuses every way of taking back what you have already
+  written, so a first draft can only grow
+- One Undo for the whole application. Ctrl+Z takes back whatever you were looking at, and the
+  Edit menu names it first, as in "Undo trashing «Chapter 3»"
+- Search and replace across the project (prose, titles, synopses, comments and footnotes),
+  down to the single occurrence
+- Trash and restore
 - Autosave, manual save, save-as, and backups (retention policy, multiple destinations,
   scheduler, and opening a backup read-only)
+- Version history built out of those backups: read what a scene said last week, set it against
+  what it says now, put it back, or bring back a row you deleted months ago
 - Opens legacy `.skrib` SQLite projects, upgrading them on load
 - Imports whole projects from Manuskript (`.msk`, folder or single file) and Plume
   Creator (`.plume`)
-- Exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live
-  preview
+- Imports documents (Markdown, plain text, ODT and DOCX), showing you every row it would
+  create before anything is
+- Sends a chapter out to an editor as DOCX or ODT and takes it back: their comments arrive as
+  real comments, anchored to the words they were about
+- Exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text
 - Spell checking with downloadable dictionaries
 - Light and dark themes, per-editor typography, adjustable text scale
 - English and French user interface, for now
@@ -87,8 +112,10 @@ shortcut window beside them, and Ctrl+Shift+P opens a command palette that finds
 by name. Because it is part of the binary, it describes the version you are running rather
 than the version somebody last wrote about.
 
-The topics are translated like the rest of the interface (see the
-[Translation](#translation) section).
+The topics are translated alongside the interface, though they are not `.ftl` files: the
+longer pages are Djot, under [crates/teksilo_ui/help/](crates/teksilo_ui/help/), one directory
+per locale. The shorter ones are the same text the tooltips use, so they are translated once
+and read in both places. See the [Translation](#translation) section for both.
 
 ## Discussions
 
@@ -145,10 +172,18 @@ either as a single zip (the default) or as an exploded folder that is comfortabl
 git. Legacy SQLite `.skrib` files from the C++ era are detected and upgraded when opened.
 
 Images live in `assets/` inside the bundle, named by the blake3 hash of their bytes, and the
-prose references them as ordinary Djot — `![alt](assets/<hash>.png){width=… height=…}`. So the
+prose references them as ordinary Djot: `![alt](assets/<hash>.png){width=… height=…}`. So the
 same picture inserted twice costs one copy, an exploded-folder project resolves its own images
-on disk, and a plain Markdown viewer pointed at the folder shows them. A project that carries
-images requires format version 8; one that does not still opens in an older build.
+on disk, and a plain Markdown viewer pointed at the folder shows them.
+
+The format version a project *requires* is decided by what it actually carries, not by the
+version that wrote it. A bundle claims a floor only where an older build would get it wrong
+rather than merely ignore it, either because that build's first save would silently destroy
+something (note templates need 5, images 8, footnotes 9, a status ladder 14) or because it
+cannot parse the file at all (epigraphs 6, paratexts 7). Delete every image and the next save
+lowers the floor again. A project using none of them opens in any build back to version 4, and
+one that does is refused **by name**, with a message that says "needs format 7 or newer",
+rather than being opened and quietly stripped of what the reader could not represent.
 
 ### Workspace layout
 
@@ -159,6 +194,7 @@ A cargo workspace under `crates/`:
 - `skrib_format`, the `.skrib` bundle reader and writer
 - `document_ingest`, the format-agnostic scanner behind Markdown/DOCX/ODT import
 - `manuskript_import` and `plume_import`, the whole-project converters
+- `spellcheck_engine`, the pure-Rust Hunspell-compatible checker
 - `skribisto_compiler` and `skribisto-fonts`, the export pipeline and its bundled typefaces
 - `work_management`, `binder_item_management`, `trash_management`, `search_management`,
   `import_management`, `export_management`, `handling_app_lifecycle`, `progress_management`,
@@ -197,8 +233,8 @@ repositories: workflows (and jobs) that need to resolve the Rust dependency grap
 workflow files: `audit.yml`, `ci.yml`, `release-macos.yml`, `release.yml`, `rust-next.yml`),
 which drops the `path = "../…"` attribute from each external dependency so that the `version =`
 beside it resolves from crates.io instead. Internal `crates/…` paths are left untouched. Jobs
-that never touch Cargo — `packaging-lint.yml`, `generate-release-in-appdata.yml`,
-`spelling.yml`, and `ci.yml`'s rustfmt/spdx/locales jobs — skip this step entirely, and
+that never touch Cargo (`packaging-lint.yml`, `generate-release-in-appdata.yml`,
+`spelling.yml`, and `ci.yml`'s rustfmt/spdx/locales jobs) skip this step entirely, and
 `release.yml`'s `flatpak` job strips paths via its own
 [package/flatpak/gen-cargo-sources.sh](package/flatpak/gen-cargo-sources.sh) script (which
 duplicates the same sed logic) rather than via this composite action.
@@ -263,8 +299,8 @@ the working directory, so any path passed with `/D` should be absolute.
 
 #### Building it from Linux
 
-[package/windows/build.py](package/windows/build.py) does the whole job — compile, verify, zip,
-installer — on either host, which is useful when you have no Windows machine to hand. The release
+[package/windows/build.py](package/windows/build.py) does the whole job (compile, verify, zip,
+installer) on either host, which is useful when you have no Windows machine to hand. The release
 is not built this way; it stays native so a real Windows machine remains in the release path.
 
 ```bash
@@ -278,7 +314,7 @@ python3 package/windows/build.py --version 3.0.0
 That writes `dist/skribisto.exe`, `dist/Skribisto-portable.zip` and `dist/Skribisto-setup.exe`.
 The target stays `x86_64-pc-windows-msvc` (not mingw): `cargo-xwin` supplies the MSVC CRT and
 Windows SDK and links with `lld-link`. On first use it downloads those from Microsoft and asks
-you to accept their licence — export `XWIN_ACCEPT_LICENSE=1` to answer ahead of time.
+you to accept their licence; export `XWIN_ACCEPT_LICENSE=1` to answer ahead of time.
 
 Since a cross-build never executes the binary it produces, the script inspects the finished exe
 for the two failures that are otherwise silent: a dropped `+crt-static` flag, and an icon or
@@ -291,23 +327,49 @@ build, including one CI produced.
 [cargo-packager](https://github.com/crabnebula-dev/cargo-packager); its configuration lives in
 `[package.metadata.packager]` in [crates/teksilo_ui/Cargo.toml](crates/teksilo_ui/Cargo.toml).
 
+**No macOS build ships with a release yet.**
+[.github/workflows/release-macos.yml](.github/workflows/release-macos.yml) is written and
+works, but runs on manual dispatch only, so tagging a version builds Linux and Windows and
+never macOS. What it produces is unsigned, because signing needs an Apple Developer Program
+enrolment this project does not have. The workflow's own header says what to do to turn it on.
+
 ## Translation
 
 The interface is translated with [Fluent](https://projectfluent.org). The catalogues are plain
 `.ftl` files under [crates/teksilo_ui/locales/](crates/teksilo_ui/locales/), one directory per
-locale, split into four files each (`main.ftl`, `tooltips.ftl`, `tags.ftl`, `templates.ftl`):
+locale, split into five files each:
 
 ```
-crates/teksilo_ui/locales/en-US/{main,tooltips,tags,templates}.ftl
-crates/teksilo_ui/locales/fr-FR/{main,tooltips,tags,templates}.ftl
+crates/teksilo_ui/locales/en-US/{main,tooltips,tags,templates,story_bible}.ftl
+crates/teksilo_ui/locales/fr-FR/{main,tooltips,tags,templates,story_bible}.ftl
+```
+
+The longer help pages are separate, and are Djot rather than Fluent. There are ten pages per
+locale, under [crates/teksilo_ui/help/](crates/teksilo_ui/help/):
+
+```
+crates/teksilo_ui/help/en-US/*.djot
+crates/teksilo_ui/help/fr-FR/*.djot
 ```
 
 `en-US` is the source language and the one keys are validated against at compile time; other
-locales fall back to it at runtime for anything missing. To add a language, copy the `en-US`
-directory to your locale code and translate the values. No build-system change is needed.
+locales fall back to it at runtime for anything missing, and a help page served in a language
+you did not ask for says so in a banner rather than passing itself off.
+
+To add a language, copy both `en-US` directories to your locale code, translate the values,
+and then register the locale in three places. The strings are compiled into the binary rather
+than discovered on disk, so a new directory on its own is never loaded:
+
+- `SUPPORTED_LOCALES` in [crates/teksilo_ui/src/startup.rs](crates/teksilo_ui/src/startup.rs)
+- the `.compile_in(…)` block in the same file, which needs one `include_str!` line per `.ftl`
+- the `djot_page!` rows in [crates/teksilo_ui/src/help.rs](crates/teksilo_ui/src/help.rs), one
+  per help page
+
+That is three source edits and no build-system change; nothing else in the build has to move,
+and a locale nobody has translated yet costs the ones that exist nothing.
 
 There is no Transifex, no `lupdate` or `lrelease`, and no `.ts`/`.qm` step any more. Edit the
-`.ftl` files directly and open a pull request.
+`.ftl` and `.djot` files directly and open a pull request.
 
 ## To contact me
 
@@ -360,5 +422,22 @@ Skribisto™ is a trademark of FernTech. The GPL source license does **not** gra
 trademark rights. Forks and derivative works may use the source code under the GPL but must
 adopt a **distinct name and distinct branding** when distributed (compare Firefox and
 Iceweasel, or Chromium and Chrome). Nominative use is fine, as in "built on Skribisto", "a
-Skribisto import filter", or articles describing Skribisto. For other uses, contact
-<trademarks@ferntech.eu>.
+Skribisto import filter", or articles describing Skribisto.
+
+**Distribution packagers may keep the Skribisto name.** Packagers for operating-system
+distributions and ecosystems (Debian, Fedora, Arch, Nixpkgs, Homebrew, Guix and the like) may
+ship a package called Skribisto, as long as it tracks upstream releases. That includes the
+changes packaging normally requires:
+
+- backported security and bug fixes;
+- adjusted dependency bounds, de-vendoring, unbundling;
+- build-system, path and packaging-metadata changes;
+- patches carried while an upstream release is pending.
+
+The line is provenance, not patching. What needs a distinct name is a package that changes
+Skribisto's behaviour, adds or removes features, or ships from a fork rather than from
+upstream releases. If you maintain a package and are not sure which side of that line your
+patch set falls on, write to <trademarks@ferntech.eu> rather than renaming preemptively. We
+would rather answer the question than lose the package.
+
+For anything not covered here, contact <trademarks@ferntech.eu>.
