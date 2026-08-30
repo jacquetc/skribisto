@@ -6,8 +6,6 @@
 //! All three are the *same* form over a different [`EditorTypography`] bundle, so the page
 //! title is a parameter rather than three near-identical bodies.
 
-use teksilo::prelude::*;
-
 #[allow(unused_imports)]
 use super::super::*;
 
@@ -30,11 +28,14 @@ pub(in crate::settings) fn font_picker(
         });
     }
     let write_back = persisted.clone();
-    FixedSize::new().width(240.0).child(
-        FontPicker::new(selection)
-            .placeholder(tr!(settings_field_typeface()))
-            .on_select(move |f: &str, _ctx| write_back.set(f.to_string())),
-    )
+    // No `FixedSize::width` around it: this picker is only ever a `FormLayout`
+    // field, and that layout places its field slot at `field_col_width`
+    // unconditionally — a `FixedSize` there hands the slot's width straight back
+    // out, so the 240 px it used to declare was never once honoured. See
+    // `fields::slider_field` for the one place that is written down.
+    FontPicker::new(selection)
+        .placeholder(tr!(settings_field_typeface()))
+        .on_select(move |f: &str, _ctx| write_back.set(f.to_string()))
 }
 
 /// Append the Typography group's rows to `form`, bound to `typo`'s live signals.
@@ -96,18 +97,18 @@ pub(crate) fn typography_rows(
 }
 
 /// One per-editor-type typography page (Scene / Synopsis / Notes): nothing but
-/// [`typography_rows`] under its own page heading. Distraction-free appends the same
-/// rows into a page of its own alongside other fields; Corkboard reimplements them
-/// by hand rather than sharing the helper.
+/// [`typography_rows`] under its own page heading. Distraction-free and Corkboard
+/// append the same rows into pages of their own alongside other fields.
 pub(in crate::settings) fn typography_pane(
     ctx: &mut BuildContext,
-    page: LocalizedString,
+    crumbs: &Crumbs,
+    pane: Pane,
     typo: &EditorTypography,
 ) -> impl Widget {
     let form = FormLayout::new()
-        .label(page.clone())
+        .label(pane.label())
         .label_gap(16.0)
         .row_spacing(14.0);
     let form = typography_rows(ctx, form, typo);
-    pane_frame(crumb(Some(tr!(settings_sec_editor())), page), form)
+    pane_frame(crumbs.of(pane), form)
 }

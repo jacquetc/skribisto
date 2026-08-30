@@ -433,3 +433,79 @@ fn a_dump_of_a_missing_file_is_all_defaults() {
     assert!(!text.contains("— set"), "nothing can have been set");
     assert!(text.contains(&format!("{} = false", crate::DARK_KEY)));
 }
+
+// ── ui.theme_mode ────────────────────────────────────────────────────────────
+
+/// The three answers, and only those three. `ui.theme_mode` is the one string
+/// key here whose value set is closed, and it has to be validated rather than
+/// merely type-checked: an unrecognised value falls through every arm of the
+/// startup match into the legacy `ui.dark` path, so a typo would pin a theme
+/// that is not the one the pins file names — silently, which is the failure
+/// this whole module exists to remove.
+#[test]
+fn a_theme_mode_is_one_of_exactly_three_answers() {
+    let spec = spec(crate::THEME_MODE_KEY).expect("ui.theme_mode must be registered");
+
+    for mode in crate::THEME_MODES {
+        assert!(
+            (spec.check)(&toml::Value::String(mode.to_string())).is_ok(),
+            "{mode} is a legal theme mode"
+        );
+    }
+    for bad in ["System", "auto", "", "dark "] {
+        assert!(
+            (spec.check)(&toml::Value::String(bad.to_string())).is_err(),
+            "{bad:?} must be rejected, not silently ignored at startup"
+        );
+    }
+    assert!(
+        (spec.check)(&toml::Value::Boolean(true)).is_err(),
+        "the key that replaced a bool must not still accept one"
+    );
+}
+
+/// Following the desktop is what the app does when nobody has said — the fact
+/// the Reset gate compares against, so a change here changes when that button
+/// lights up.
+#[test]
+fn the_default_theme_mode_is_to_follow_the_desktop() {
+    let spec = spec(crate::THEME_MODE_KEY).expect("ui.theme_mode must be registered");
+    assert_eq!(
+        (spec.default)(),
+        toml::Value::String(crate::THEME_MODE_SYSTEM.to_string())
+    );
+    assert_eq!(crate::THEME_MODE_DEFAULT, crate::THEME_MODE_SYSTEM);
+}
+
+/// The mapping the startup seed, the Reset gate and the app's theme mirror all
+/// read. A theme teksilo resolved from the OS says so in its id whichever way
+/// the desktop is set — which is the only thing separating "System, and the
+/// desktop is dark" from "Dark, chosen by hand".
+#[test]
+fn a_theme_reports_the_mode_it_came_from() {
+    for base in [crate::style::light(), crate::style::dark()] {
+        let followed = base.clone().with_id(crate::SYSTEM_THEME_ID);
+        assert_eq!(theme_mode_of(&followed), crate::THEME_MODE_SYSTEM);
+    }
+    assert_eq!(
+        theme_mode_of(&crate::style::light()),
+        crate::THEME_MODE_LIGHT
+    );
+    assert_eq!(theme_mode_of(&crate::style::dark()), crate::THEME_MODE_DARK);
+}
+
+/// Whatever it answers is one of the three the key accepts — otherwise the
+/// mirror that writes it back would produce a value the next launch rejects.
+#[test]
+fn the_mode_a_theme_reports_is_always_a_legal_value() {
+    let spec = spec(crate::THEME_MODE_KEY).expect("ui.theme_mode must be registered");
+    for theme in [
+        crate::style::light(),
+        crate::style::dark(),
+        crate::style::light().with_id(crate::SYSTEM_THEME_ID),
+    ] {
+        let mode = theme_mode_of(&theme);
+        assert!(crate::THEME_MODES.contains(&mode));
+        assert!((spec.check)(&toml::Value::String(mode.to_string())).is_ok());
+    }
+}

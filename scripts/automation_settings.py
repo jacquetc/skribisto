@@ -9,24 +9,34 @@ Launches with the bundled example loaded (a project path on argv skips the
 Launcher entirely under the launcher-window model — see `teksilo_ui::main`'s
 module docs), opens Settings (Ctrl+, with a menu fallback), then asserts:
 
-  1. the category TreeView holds every section + page (Appearance & Behaviour,
-     Editor ▸ Scene/Synopsis/Notes/Editor Behavior/Goals/Corkboard, Spelling,
-     Backup & Sync, Compile & Export, Keymap), and each row is AT-drivable:
-     role + name + level + actions all on ONE node, and an action nothing
-     handles comes back as an error rather than a silent success;
-  2. the default pane (Editor ▸ Scene, a typography form) shows its controls
-     (the font-family ComboBox + the typography sliders);
-  3. selecting the Appearance page switches the pane (Interface language, the
-     Theme ComboBox — moved here from the old Manuscript & Fonts page — and
-     the "show the launcher at startup" checkbox, formerly worded "show the
-     Welcome screen"; it now also governs whether a bare launch reopens the
-     last project instead);
-  4. expanding Backup & Sync and selecting Autosave reveals the autosave setting;
-  5. a per-project page below the scrolled rail's fold still scrolls into view
-     and activates;
-  6. selecting the empty Keymap page shows the "no settings yet" placeholder;
-  7. the SearchField accepts a query;
-  8. Done dismisses the window.
+   1. the category TreeView holds every section + page (Appearance & Behavior,
+      Editor ▸ Scene/Synopsis/Notes/Editor Behavior/Goals/Corkboard, Spelling,
+      Backup & Sync, Compile & Export, Keymap), and each row is AT-drivable:
+      role + name + level + actions all on ONE node, and an action nothing
+      handles comes back as an error rather than a silent success;
+   2. the window opens on **Appearance & Behavior ▸ Appearance** and that pane's
+      own controls are on screen (Interface language, the Theme ComboBox — moved
+      here from the old Manuscript & Fonts page — and the interface text scale);
+   3. the rail it opens with shows the `Work: <title>` section **without
+      scrolling**. That is the whole reason the landing page moved: Editor and
+      its nested Typography group start collapsed, and a landing page underneath
+      them re-expands both on open, which puts the rail back at 33 rows against
+      a ~519 px viewport and buries the one section nothing else in the app
+      links to (the tag palette, the status ladder, the template library);
+   4. selecting an item in a ComboBox dropdown does not close the window;
+   5. Editor really does start collapsed, and expanding it, then its Typography
+      group, then selecting Scene reaches the typography form (the font-family
+      ComboBox + at least five sliders). Reaching it the long way is the point:
+      nothing else exercises the collapsed-by-default Editor section;
+   6. selecting the Keymap page really switches the pane (its own controls come
+      from Teksilo, so the assertion is that neither the Appearance pane's
+      controls nor Scene's typography form survive it);
+   7. expanding Backup & Sync and selecting Autosave reveals the autosave setting;
+   8. a per-project page below the scrolled rail's fold still scrolls into view
+      and activates;
+   9. the SearchField accepts a query;
+  10. the footer is instant-apply — Reset to defaults + Done, no Apply/Cancel/OK;
+  11. Done dismisses the window.
 
 Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
 automation_*.py scripts.
@@ -231,25 +241,33 @@ print("example loaded.")
 # model) — "Manuscript & Fonts" no longer exists as a single page. Editor ▸
 # Scene/Synopsis/Notes now each carry their own typography form, Editor ▸
 # Editor Behavior carries the synopsis-pane/typewriter/highlight toggles, and
-# the Theme/Interface-text-size controls moved to Appearance & Behaviour ▸
-# Appearance. The default pane on open is now Scene.
+# the Theme/Interface-text-size controls moved to Appearance & Behavior ▸
+# Appearance — which is also where the window now *lands* (it used to land on
+# Editor ▸ Scene; see step 3's comment for why that had to stop).
+#
+# `scene` is asserted here only as a ROW of the tree. It is a leaf of the
+# Typography group under Editor, both of which start collapsed, so it is
+# addressed through `settings_tree_rows` (which sees unrealized rows the joined
+# label scrape does not) rather than through `SECTIONS`.
 SECTIONS = {
-    "appearance_behaviour": ["appearance & behaviour", "apparence et comportement"],
+    "appearance_behaviour": ["appearance & behavior", "apparence et comportement"],
     "editor": ["editor", "éditeur"],
-    "scene": ["scene", "scène"],
     "spelling": ["spelling", "orthographe"],
     "backup": ["backup & sync", "sauvegarde et synchronisation"],
     "compile": ["compile & export", "compilation et export"],
     "keymap": ["keymap", "raccourcis clavier"],
 }
 # GroupHeaders and FormLayout field labels are decorative (not AccessKit
-# labels), so assert on the controls the AT tree actually surfaces. The
-# default (Scene) pane is a typography form: a font-family ComboBox plus five
-# sliders (size, line height, first-line indent, paragraph spacing before/after).
+# labels), so assert on the controls the AT tree actually surfaces. The Scene
+# pane is a typography form: a font-family ComboBox plus five sliders (size,
+# line height, first-line indent, paragraph spacing before/after).
 SCENE_MIN_SLIDERS = 5
 # (page label variants) for clicking a tree leaf — exact match, not substring, so
-# "Appearance" never matches the "Appearance & Behaviour" section.
+# "Appearance" never matches the "Appearance & Behavior" section.
 APPEARANCE_PAGE = ["appearance", "apparence"]
+EDITOR_SECTION = ["editor", "éditeur"]
+TYPOGRAPHY_GROUP = ["typography", "typographie"]
+SCENE_PAGE = ["scene", "scène"]
 BACKUP_SECTION = ["backup & sync", "sauvegarde et synchronisation"]
 AUTOSAVE_PAGE = ["autosave", "enregistrement automatique"]
 KEYMAP_PAGE = ["keymap", "raccourcis clavier"]
@@ -257,14 +275,33 @@ KEYMAP_PAGE = ["keymap", "raccourcis clavier"]
 COMPILE_SECTION = ["compile & export", "compilation et export"]
 # A per-project page, near the bottom of the rail and below the fold at any
 # ordinary window height — the case that used to be unreachable entirely.
-# ("Punctuation" would not do: the rail has two of those.)
+# (The rail carries two punctuation pages — "Punctuation defaults" under Editor
+# and "Punctuation" under Work — but neither is below the fold. "Smart
+# punctuation" is a *group heading inside* the Work page, not a rail row.)
 BELOW_FOLD_PAGE = ["text replacements", "remplacements de texte"]
-APPEARANCE_BITS = {
-    # Reworded for the launcher-window model: the checkbox now describes
-    # "show the launcher at startup (otherwise, reopen the last project)",
-    # not "show the Welcome screen" (there's no modal to show any more).
-    "welcome checkbox": ["show the launcher", "afficher le lanceur"],
-}
+# The Appearance pane's own controls, as `(role, label variants)`.
+#
+# Asserting on controls rather than on prose is this script's standing doctrine
+# (see the note above `SCENE_MIN_SLIDERS`), and the launcher toggle is now the
+# reason it exists: it used to be a `Toggle::label("Show the launcher at
+# startup")`, whose text WAS its accessible name, and it is now a
+# `FormLayout::line` pairing a decorative `field_label` with a
+# `Toggle::labelled_externally()`. `FormLayout::line` wires an AccessKit
+# `labelled_by` relation, so a screen reader still announces it — but the
+# relation is not a `name`, and this bridge scrapes names. The toggle is
+# therefore a NAMELESS `Switch` here however plainly the pixels read, and any
+# assertion on its words is asserting on a decoration.
+#
+# These three carry real accessible names, are Appearance-only, and are absent
+# from every other pane — so they also serve as step 4's "the pane really
+# switched" signal. `Language` and `Text scale` are literals inside Teksilo's
+# own widgets (never localized, hence no French variant); `Theme` comes from
+# Teksilo's catalogue (`theme-switcher-label`) and does get translated.
+APPEARANCE_CONTROLS = [
+    ("ComboBox", ["language"]),
+    ("ComboBox", ["theme", "th\u00e8me"]),
+    ("SpinButton", ["text scale"]),
+]
 AUTOSAVE_BIT = ["autosave to disk", "sur le disque"]
 EMPTY_BIT = ["no settings here yet", "aucun paramètre ici"]
 
@@ -284,6 +321,46 @@ def require_all(concepts, where):
         if not any(v in j for v in variants):
             print("  current labels:", j[:700])
             fail(f"expected '{name}' in {where}", s.app, s.mcp, s.log)
+
+
+def controls_present(spec):
+    """Which of `spec`'s `(role, label variants)` are on screen right now.
+
+    Matches role AND name on ONE node, so "theme" cannot be satisfied by the
+    "Distraction-free themes" rail row — which a `joined()` substring test
+    would happily accept.
+    """
+    found = []
+    for role, variants in spec:
+        for n in s.nodes():
+            if n.get("role") != role:
+                continue
+            lbl = (n.get("label") or "").strip().lower()
+            if any(v in lbl for v in variants):
+                found.append((role, variants))
+                break
+    return found
+
+
+def require_controls(spec, where):
+    got = controls_present(spec)
+    missing = [f"{r} {v[0]!r}" for r, v in spec if (r, v) not in got]
+    if missing:
+        s.dump(where)
+        fail(f"{where}: missing {missing}", s.app, s.mcp, s.log)
+    print(f"  {where}: all {len(spec)} controls present")
+
+
+def scene_font_combo():
+    """The Scene pane's font-family picker, or None.
+
+    Its accessible name comes from Teksilo's `FontPicker`, so "font" is matched
+    as a substring of a ComboBox's name rather than as an exact label — the same
+    doctrine as `APPEARANCE_CONTROLS`: role AND name, on one node."""
+    return next(
+        (n for n in s.by_role("ComboBox") if "font" in (n.get("label") or "").lower()),
+        None,
+    )
 
 
 def node_match(variants, exact=False):
@@ -412,6 +489,15 @@ def rail_row(variants):
     return None
 
 
+def scene_row_present():
+    """Is the Scene row realized in the rail *right now*?
+
+    Deliberately the unscrolled snapshot rather than `rail_row`: this answers
+    "did a collapsed section leak its children", and wheeling the rail looking
+    for a row that should not exist would just burn 24 scrolls per call."""
+    return _row_in(settings_tree_rows(), SCENE_PAGE) is not None
+
+
 def require_row(variants, what):
     row = rail_row(variants)
     if not row:
@@ -471,7 +557,7 @@ if not how:
     fail("could not open the Settings window", s.app, s.mcp, s.log)
 print(f"Settings opened via {how}.")
 s.dump("Settings window (default pane)")
-s.shot("/tmp/sk-settings-scene.png")
+s.shot("/tmp/sk-settings-default.png")
 
 # ── 1. The category tree holds every section + page ───────────────────────────
 require_all(SECTIONS, "the category tree")
@@ -518,30 +604,62 @@ if not (isinstance(res, dict) and res.get("isError")):
          s.app, s.mcp, s.log)
 print("PASS: an unsupported AT action on a row is reported, not silently ignored")
 
-# ── 2. Default pane (Editor ▸ Scene) shows its typography controls ───────────
-font_combo = next(
-    (n for n in s.by_role("ComboBox") if "font" in (n.get("label") or "").lower()), None
-)
-if not font_combo:
-    print("  labels:", joined()[:700])
-    fail("expected the Scene pane's font-family ComboBox", s.app, s.mcp, s.log)
-sliders = s.by_role("Slider")
-print(f"  font ComboBox present; {len(sliders)} Slider nodes")
-if len(sliders) < SCENE_MIN_SLIDERS:
-    fail(f"expected >= {SCENE_MIN_SLIDERS} sliders on the Scene typography pane "
-         f"(size, line height, first-line indent, paragraph spacing before/after), "
-         f"got {len(sliders)}", s.app, s.mcp, s.log)
-print("PASS: Scene pane (the new default) shows its typography controls "
-      "(font ComboBox + typography sliders)")
-
-# ── 3. Selecting the Appearance page switches the pane ────────────────────────
-select_page(APPEARANCE_PAGE, "Appearance")
-require_all(APPEARANCE_BITS, "the Appearance pane")
-print("PASS: Appearance page switched the pane (language switcher + 'show the launcher "
-      "at startup' checkbox)")
+# ── 2. The window lands on Appearance & Behavior ▸ Appearance ────────────────
+# Nothing has been clicked yet, so this is the pane the panel opened at.
+require_controls(APPEARANCE_CONTROLS, "the default pane")
+appearance_row = _row_in(rows, set(APPEARANCE_PAGE))
+if not (appearance_row and appearance_row.get("selected")):
+    print("  rail rows:", [(r.get("label"), r.get("selected")) for r in rows])
+    fail("the Appearance row is not the one selected on open — the rail and the "
+         "pane disagree about where the window landed", s.app, s.mcp, s.log)
+print("PASS: the window opens on Appearance & Behavior ▸ Appearance "
+      "(language switcher, theme picker and interface text size)")
 s.shot("/tmp/sk-settings-appearance.png")
 
-# ── 3b. Regression: selecting a ComboBox item must NOT close the window ──────
+# ── 3. …and the rail it opens with shows the `Work:` section, unscrolled ─────
+# The point of the landing page moving off Editor ▸ Typography ▸ Scene. Scene is
+# two levels down, so revealing it re-expands both ancestors; the rail goes back
+# to 33 rows against a ~519 px viewport and the whole `Work: <title>` section
+# lands below the fold on every single open — and the Work pages (the tag
+# palette, the status ladder, the template library) have no other door in the
+# app.
+#
+# Asserted against the UNSCROLLED `settings_tree_rows()` snapshot on purpose:
+# `rail_row()` wheels the rail until a row materializes, which is exactly the
+# scrolling this step exists to prove is unnecessary. `rows` above is that
+# snapshot, taken before anything touched the tree.
+#
+# The Work row is matched by the project's own title rather than by the word
+# "Work": the label is `format!("{}: {}", tr!(settings-sec-work), title)`, so it
+# reads "Work: Starforgers" in English and "Œuvre: Starforgers" in French, and
+# it is the only rail row that can carry the title at all.
+work_row = next((r for r in rows if "starforgers" in (r.get("label") or "").lower()), None)
+if not work_row:
+    print("  unscrolled rail rows:", [r.get("label") for r in rows])
+    fail("the `Work: <title>` section is not in the rail's unscrolled snapshot — "
+         "the Settings window is landing on a page deep enough to re-expand the "
+         "sections that are collapsed to keep it visible (defect #04)",
+         s.app, s.mcp, s.log)
+# Realized is not the same as visible: a TreeView materializes a little past its
+# viewport, so a row can have a widget and still sit under the bottom edge. Check
+# the geometry too.
+tree_node = settings_tree()[0]
+tb, wb = (tree_node or {}).get("bounds") or {}, work_row.get("bounds") or {}
+if "y" in tb and "y" in wb:
+    rail_bottom = tb["y"] + tb.get("height", 0)
+    row_bottom = wb["y"] + wb.get("height", 0)
+    if row_bottom > rail_bottom + 1.0:
+        fail(f"the `Work:` row is realized but clipped: its bottom is {row_bottom:.1f} "
+             f"and the rail's viewport ends at {rail_bottom:.1f} — it is below the "
+             f"fold on open (defect #04)", s.app, s.mcp, s.log)
+    print(f"  `{work_row.get('label')}` sits at y={wb['y']:.1f}..{row_bottom:.1f} "
+          f"inside a rail ending at {rail_bottom:.1f}")
+else:
+    fail("the rail or its `Work:` row reported no bounds, so 'visible without "
+         "scrolling' cannot be checked", s.app, s.mcp, s.log)
+print("PASS: the default rail shows the `Work: <title>` section without scrolling")
+
+# ── 4. Regression: selecting a ComboBox item must NOT close the window ──────
 # (The dropdown floats in a child overlay of the modal; a host-surface fix in
 # teksilo keeps the modal alive when the dropdown dismisses on select.) The
 # Theme control lives on this (Appearance) pane now — it moved off the old
@@ -578,35 +696,104 @@ if theme_combo:
             fail("selecting a ComboBox item CLOSED the Settings window (overlay-host bug)",
                  s.app, s.mcp, s.log)
         print("PASS: selecting a ComboBox dropdown item kept the Settings window open")
+        # Selecting an item already dismissed the dropdown, so there is nothing
+        # left to close. Sending Escape here would be caught by the modal
+        # instead and close SETTINGS — one of its three documented ways out —
+        # leaving every later step hunting a rail that is no longer on screen.
+        # That is exactly what it did while step 3 was failing ahead of it and
+        # this branch never ran.
     else:
         # Still a useful signal: opening the dropdown must not close the modal.
         if not settings_open():
             fail("opening a ComboBox dropdown CLOSED the Settings window", s.app, s.mcp, s.log)
         print("NOTE: dropdown option not addressable; opening it kept the window open")
-    # Close any lingering dropdown before continuing.
-    s.call("inject_key", {"key": "Escape"})
-    time.sleep(0.3)
+        # Here the dropdown IS still open, and Escape is aimed at it.
+        s.call("inject_key", {"key": "Escape"})
+        time.sleep(0.3)
+    # Whichever branch ran, the rest of the script needs the window: assert it
+    # rather than discovering it as an empty rail eighty lines later.
+    if not settings_open():
+        fail("the Settings window did not survive the ComboBox regression step",
+             s.app, s.mcp, s.log)
 else:
     print("NOTE: theme ComboBox not surfaced; skipping combo regression")
 
-# ── 4. The empty Keymap page shows the placeholder ───────────────────────────
+# ── 5. Editor ▸ Typography ▸ Scene, reached the long way ─────────────────────
+# The Scene typography form used to be what the window opened at, so this
+# assertion cost nothing and proved nothing about the rail. Reaching it now
+# means walking the two rows that are collapsed by design — which is the only
+# coverage that collapsed-by-default state has, and the state that keeps step 3
+# true. If either row silently starts expanded again, `expand_section` fails at
+# the `expand` action (a row already expanded advertises `collapse` instead).
+editor_row = require_row(EDITOR_SECTION, "Editor")
+if editor_row.get("expanded"):
+    fail("the Editor section starts EXPANDED — the twelve rows under it are what "
+         "push the `Work:` section below the fold, and step 3 only passes by "
+         "accident while that is true", s.app, s.mcp, s.log)
+if scene_row_present():
+    fail("Scene is in the rail before Editor was expanded — a collapsed section "
+         "must not realize its children", s.app, s.mcp, s.log)
+expand_section(EDITOR_SECTION, "Editor")
+after_editor = rail_row(EDITOR_SECTION)
+if not (after_editor and after_editor.get("expanded")):
+    fail("Editor did not report itself expanded after the expand action",
+         s.app, s.mcp, s.log)
+typo_row = require_row(TYPOGRAPHY_GROUP, "Typography")
+if typo_row.get("expanded"):
+    fail("the nested Typography group starts EXPANDED — six more rows than the "
+         "rail budget assumes", s.app, s.mcp, s.log)
+expand_section(TYPOGRAPHY_GROUP, "Typography")
+after_typo = rail_row(TYPOGRAPHY_GROUP)
+if not (after_typo and after_typo.get("expanded")):
+    fail("the Typography group did not report itself expanded after the expand "
+         "action", s.app, s.mcp, s.log)
+select_page(SCENE_PAGE, "Editor ▸ Typography ▸ Scene")
+scene_selected = rail_row(SCENE_PAGE)
+if not (scene_selected and scene_selected.get("selected")):
+    fail("the Scene row did not become selected", s.app, s.mcp, s.log)
+if not scene_font_combo():
+    print("  labels:", joined()[:700])
+    fail("expected the Scene pane's font-family ComboBox", s.app, s.mcp, s.log)
+sliders = s.by_role("Slider")
+print(f"  font ComboBox present; {len(sliders)} Slider nodes")
+if len(sliders) < SCENE_MIN_SLIDERS:
+    fail(f"expected >= {SCENE_MIN_SLIDERS} sliders on the Scene typography pane "
+         f"(size, line height, first-line indent, paragraph spacing before/after), "
+         f"got {len(sliders)}", s.app, s.mcp, s.log)
+s.shot("/tmp/sk-settings-scene.png")
+print("PASS: Editor and its Typography group start collapsed, both expand, and "
+      "Scene shows its typography controls (font ComboBox + typography sliders)")
+
+# ── 6. Selecting Keymap switches the pane ────────────────────────────────────
 # Row order no longer matters: the row is addressed by identity and revealed by
 # its own `scroll_into_view`, so an expand elsewhere can't shift it out from
 # under the step. (It used to have to run before any expansion, and its centre
 # still landed within a pixel of the viewport's bottom edge.)
 select_page(KEYMAP_PAGE, "Keymap")
 s.shot("/tmp/sk-settings-keymap.png")
-# The empty pane carries no form controls, so the previously-shown Appearance
-# checkbox must be gone — a robust "switched to a settings-less pane" signal.
-if has_any(APPEARANCE_BITS["welcome checkbox"]):
-    fail("selecting the empty Keymap page did not switch the pane", s.app, s.mcp, s.log)
+# Keymap carries neither the Appearance pane's controls nor Scene's typography
+# form (it is a filter field and the framework's shortcut list), so both must be
+# gone — a robust "the pane actually switched" signal that does not depend on
+# Keymap's own strings, which come from Teksilo rather than from this repo's
+# `.ftl`. Scene is the pane it actually replaces, so it is the half that matters;
+# Appearance is kept because it is the pane the window opened at.
+still_there = controls_present(APPEARANCE_CONTROLS)
+if still_there:
+    fail(f"selecting the Keymap page did not switch the pane "
+         f"(Appearance still shows {[r for r, _ in still_there]})", s.app, s.mcp, s.log)
+if scene_font_combo():
+    fail("selecting the Keymap page left the Scene pane's font-family ComboBox on "
+         "screen — the pane did not switch", s.app, s.mcp, s.log)
+if len(s.by_role("Slider")) >= SCENE_MIN_SLIDERS:
+    fail("selecting the Keymap page left the Scene typography sliders on screen — "
+         "the pane did not switch", s.app, s.mcp, s.log)
 if has_any(EMPTY_BIT):
-    print("PASS: empty category shows the placeholder content")
+    print("PASS: the placeholder pane is showing")
 else:
-    print("PASS: empty category switched to a control-less pane "
-          "(placeholder text is not AT-surfaced; see /tmp/sk-settings-keymap.png)")
+    print("PASS: Keymap switched in without the previous panes' controls "
+          "(see /tmp/sk-settings-keymap.png)")
 
-# ── 5. Expand Backup & Sync, then select Autosave ────────────────────────────
+# ── 7. Expand Backup & Sync, then select Autosave ────────────────────────────
 # Driven through the section's own `expand` action. This step used to be a soft
 # "NOTE:" that gave up, because the only expand target was a nameless 16 px
 # chevron whose x depends on the row's indent — which the AT tree did not
@@ -622,7 +809,7 @@ if not has_any(AUTOSAVE_BIT):
     fail("Autosave pane did not show the migrated autosave setting", s.app, s.mcp, s.log)
 print("PASS: Backup & Sync expands and Autosave reveals the migrated autosave setting")
 
-# ── 5b. A row below the fold is reachable ────────────────────────────────────
+# ── 8. A row below the fold is reachable ─────────────────────────────────────
 # The per-project pages sit past the bottom of the scrolled rail; their reported
 # bounds are content coordinates below the window's own edge, so a synthetic
 # pointer click at them hits nothing. `scroll_into_view` + `click` is the route,
@@ -642,7 +829,7 @@ else:
     print(f"PASS: a row below the fold scrolls into view (y {before_y} → {after_y}) "
           f"and activates")
 
-# ── 6. The SearchField accepts a query ───────────────────────────────────────
+# ── 9. The SearchField accepts a query ───────────────────────────────────────
 search = next(iter(s.by_role("SearchInput")), None) or s.find_contains("search")
 if search:
     res, _ = s.call("set_value", {"node": search["id"], "value": "theme"})
@@ -655,7 +842,7 @@ if search:
 else:
     print("NOTE: SearchField node not surfaced in the AT tree (non-fatal)")
 
-# ── 7. Footer is instant-apply: Reset + Done only (no Apply/Cancel/OK) ────────
+# ── 10. Footer is instant-apply: Reset + Done only (no Apply/Cancel/OK) ──────
 def footer_btn(labels):
     for n in s.nodes():
         if n.get("role") == "Button" and (n.get("label") or "").strip().lower() in labels \
@@ -670,7 +857,7 @@ if not footer_btn({"done", "terminé"}):
     fail("instant-apply footer missing the Done button", s.app, s.mcp, s.log)
 print("PASS: footer is instant-apply (Reset to defaults + Done, no Apply/Cancel/OK)")
 
-# ── 8. Done dismisses the window ─────────────────────────────────────────────
+# ── 11. Done dismisses the window ────────────────────────────────────────────
 done = footer_btn({"done", "terminé"})
 if done:
     click_node(done)

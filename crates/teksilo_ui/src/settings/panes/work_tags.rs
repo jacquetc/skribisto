@@ -42,11 +42,55 @@ use frontend::common::entities::BinderItemRole;
 
 const NAME_COL: &str = "name";
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;
-const LIST_MIN_HEIGHT: f32 = 320.0;
 /// `ComboBox`'s own minimum width, mirrored here as the floor the row's two dropdowns
 /// compress to. Below it the combo clamps anyway, so shrinking further would only make the
 /// row lie about how much room it needs.
 const COMBO_MIN_WIDTH: f32 = 120.0;
+/// How far the row's two lower lines hang under the swatch + colour well above them.
+const PICKERS_INDENT: f32 = 26.0;
+
+/// The tag row's third line: *Creates in* ⟨folder⟩ · *Starting template* ⟨template⟩.
+///
+/// **Both dropdowns take an equal share of the leftover width**, rather than each
+/// asking for its own content and then being compressed. Both are sized by words
+/// the writer chose — a folder called "Personnages secondaires et lieux" makes the
+/// first combo as wide as that title — and a `ComboBox` is rigid by default, so
+/// the row used to overflow and push the trailing picker out of reach. `Shrinkable`
+/// fixed the overflow but not the outcome: at the width this row is *actually*
+/// given (about 561 px, see the tests below) two natural widths of a few hundred
+/// pixels each leave a deficit large enough that both combos land on
+/// `COMBO_MIN_WIDTH` — clamped at 120 px, truncating exactly the folder titles the
+/// compression was introduced to protect, and worse in French.
+///
+/// An `Expand` with the default zero basis takes the labels out of the competition
+/// and splits what is left in half, so each picker gets ~193 px instead of 120 and
+/// the two agree on a width whatever the titles say. The `Shrinkable` stays inside
+/// it as the floor for a pane narrower than this one.
+fn pickers_line(
+    creates_in: impl Widget + 'static,
+    template: impl Widget + 'static,
+) -> impl Widget + 'static {
+    let label = |text: LocalizedString| {
+        TextWidget::new(text)
+            .style(TextStyleRole::Tiny)
+            .color(TextRole::Secondary)
+    };
+    HStack::new()
+        .spacing(8.0)
+        .child(label(tr!(settings_tags_creates_in())))
+        .child(
+            Expand::horizontal().child(
+                Shrinkable::new()
+                    .min_width(COMBO_MIN_WIDTH)
+                    .child(creates_in),
+            ),
+        )
+        .child(label(tr!(settings_tags_template())))
+        .child(
+            Expand::horizontal()
+                .child(Shrinkable::new().min_width(COMBO_MIN_WIDTH).child(template)),
+        )
+}
 const SWATCH_SIZE: f32 = 12.0;
 
 /// Colour offered for a tag created here before the writer picks one. Mid-slate: legible in
@@ -101,7 +145,14 @@ pub fn work_tags_pane(
         .spacing(16.0)
         .child(add_row(ctx, vm))
         .child(toolbar_row(vm, query))
-        .child(Expand::horizontal().child(list_card))
+        // `list_box`: the leftover height of the pane goes to the list, so one
+        // scroll region replaces two. The floor it carries is the shared one — the
+        // 300–320 px constants that used to live here were taller than the pane's
+        // whole viewport, so the page scrolled at *minimum* content while the list
+        // scrolled inside it.
+        .child(crate::settings::fields::list_box(
+            Expand::horizontal().child(list_card),
+        ))
 }
 
 /// The prominent add row: name field with a leading `+`, and a filled button.
@@ -406,7 +457,7 @@ impl Widget for TagList {
                 // The floor goes on the card, not the list: a `Switcher` reports its active
                 // child's size, and a virtualised `ListView` given unbounded height inside the
                 // pane's own scroll reports ~nothing.
-                MinSize::new(0.0, LIST_MIN_HEIGHT).child(
+                MinSize::new(0.0, crate::settings::fields::LIST_MIN_HEIGHT).child(
                     Switcher::new(empty_idx)
                         .child(Expand::vertical().child(list))
                         .child(empty_state(&self.vm)),
@@ -641,34 +692,8 @@ impl Widget for TagRowView {
                 )
                 .child(Padding::new(0.0, 0.0, 0.0, 26.0).child(details_field))
                 .child(
-                    // Both dropdowns are `Shrinkable`, because both are sized by words the
-                    // writer chose: a folder they called "Personnages secondaires et lieux"
-                    // makes the first combo as wide as that title, and a `ComboBox` is
-                    // rigid by default, so the row simply overflowed and pushed the
-                    // trailing "Starting template" control out of reach. `COMBO_MIN_WIDTH`
-                    // is the combo's own floor, so compression stops exactly where the
-                    // widget would clamp anyway. Same failure, and the same reasoning, as
-                    // this pane's toolbar records above: French would still have clipped.
-                    Padding::new(0.0, 0.0, 0.0, 26.0).child(
-                        HStack::new()
-                            .spacing(8.0)
-                            .child(
-                                TextWidget::new(tr!(settings_tags_creates_in()))
-                                    .style(TextStyleRole::Tiny)
-                                    .color(TextRole::Secondary),
-                            )
-                            .child(
-                                Shrinkable::new()
-                                    .min_width(COMBO_MIN_WIDTH)
-                                    .child(creates_in),
-                            )
-                            .child(
-                                TextWidget::new(tr!(settings_tags_template()))
-                                    .style(TextStyleRole::Tiny)
-                                    .color(TextRole::Secondary),
-                            )
-                            .child(Shrinkable::new().min_width(COMBO_MIN_WIDTH).child(template)),
-                    ),
+                    Padding::new(0.0, 0.0, 0.0, PICKERS_INDENT)
+                        .child(pickers_line(creates_in, template)),
                 ),
         );
         let root = ctx.add(body);
@@ -1074,18 +1099,19 @@ mod tests {
         assert_eq!(unset.map(|o| o.id), Some(None), "and still reads as unset");
     }
 
-    /// A folder title is whatever the writer typed, and the combo showing it is rigid by
-    /// default, so the row's natural width follows that title without limit. Rigid, the
-    /// row overflows and the trailing "Starting template" control is pushed out of reach;
-    /// the writer cannot get at the control that chooses the tag's note template at all.
+    /// The width one tag row is **actually** offered by the shipping window.
     ///
-    /// The width offered here is comfortably above the two labels plus two floors, so what
-    /// the assertion measures is the dropdowns' compressibility and not the labels'.
-    #[test]
-    fn a_long_folder_title_does_not_push_the_template_picker_out_of_the_row() {
-        let (app_ctx, vm, _templates) = view_models();
-        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
-        tree.add_boxed(Box::new(TagRowView {
+    /// Derived, never typed: the pane column is
+    /// [`crate::settings::fields::PANE_W`], and the list card spends 1 px of it on
+    /// each side for its border. The constant this replaces was `760.0`, which is
+    /// 151 px more than this window has ever had — so the assertion below passed
+    /// against headroom that does not exist, while in the real pane both of the
+    /// row's dropdowns sat clamped at [`COMBO_MIN_WIDTH`].
+    const ROW_W: f32 = crate::settings::fields::PANE_W - 2.0;
+
+    /// A row with the longest titles the pane has to survive.
+    fn crowded_row(vm: TagsViewModel) -> TagRowView {
+        TagRowView {
             vm,
             row: TagRow {
                 id: 1,
@@ -1104,8 +1130,18 @@ mod tests {
             ],
             templates: vec![option(None, "None"), option(Some(3), "Fiche personnage")],
             root_child: None,
-        }));
-        const ROW_W: f32 = 760.0;
+        }
+    }
+
+    /// A folder title is whatever the writer typed, and the combo showing it is rigid by
+    /// default, so the row's natural width follows that title without limit. Rigid, the
+    /// row overflows and the trailing "Starting template" control is pushed out of reach;
+    /// the writer cannot get at the control that chooses the tag's note template at all.
+    #[test]
+    fn a_long_folder_title_does_not_push_the_template_picker_out_of_the_row() {
+        let (app_ctx, vm, _templates) = view_models();
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        tree.add_boxed(Box::new(crowded_row(vm)));
         tree.layout(SizeProposal::with_width(ROW_W));
         let wanted = tree
             .measure_root_intrinsic(SizeProposal::with_width(ROW_W))
@@ -1114,6 +1150,48 @@ mod tests {
             wanted.width <= ROW_W + 0.5,
             "the row wants {} px inside {ROW_W}: the trailing picker is pushed out of it",
             wanted.width
+        );
+    }
+
+    /// Fitting is not the same as being usable.
+    ///
+    /// With both pickers rigid-then-compressed, the row *fitted* at 609 px and both
+    /// dropdowns sat on their 120 px floor — truncating exactly the folder titles
+    /// the compression exists to protect. The share the two now take is what this
+    /// asserts, at the width the window really offers.
+    #[test]
+    fn both_pickers_get_a_real_share_of_the_row_not_their_floor() {
+        let (app_ctx, vm, _templates) = view_models();
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        let row = tree.add_boxed(Box::new(crowded_row(vm)));
+        tree.layout(SizeProposal::with_width(ROW_W));
+
+        // Descend the row: TagRowView → Padding → VStack → the third line's
+        // Padding → the pickers `HStack`. Spelled out rather than searched for,
+        // so a change to the row's shape fails here loudly instead of silently
+        // measuring the wrong widget.
+        let only = |tree: &teksilo::core::widget_tree::WidgetTree, id: WidgetId| {
+            let kids = tree.children(id);
+            assert_eq!(kids.len(), 1, "expected exactly one child of {id:?}");
+            kids[0]
+        };
+        let body = only(&tree, only(&tree, row));
+        let third_line = tree.children(body)[2];
+        let pickers = tree.children(only(&tree, third_line));
+        assert_eq!(pickers.len(), 4, "label, picker, label, picker");
+
+        for slot in [pickers[1], pickers[3]] {
+            let w = tree.bounds(slot).width;
+            assert!(
+                w > COMBO_MIN_WIDTH + 1.0,
+                "a picker got {w} px inside {ROW_W}, i.e. its {COMBO_MIN_WIDTH} px floor: \
+                 the folder title it shows is truncated in the shipping window"
+            );
+        }
+        let (a, b) = (tree.bounds(pickers[1]).width, tree.bounds(pickers[3]).width);
+        assert!(
+            (a - b).abs() < 1.0,
+            "the two pickers should share the leftover evenly, got {a} and {b}"
         );
     }
 }

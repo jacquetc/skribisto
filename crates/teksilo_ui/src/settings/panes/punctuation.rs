@@ -3,7 +3,6 @@
 
 //! Editor ▸ Punctuation — the application-level smart-punctuation preference.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{Segment, SegmentedControl};
 
@@ -23,6 +22,7 @@ use super::work_punctuation::{QUOTE_STYLES, language_sample, quote_style_label};
 /// travelling inside the `.skrib` to whoever opens it next.
 pub(in crate::settings) fn punctuation_pane(
     ctx: &mut BuildContext,
+    crumbs: &Crumbs,
     vm: &SettingsViewModel,
 ) -> impl Widget {
     // The sample needs a language to resolve against, and this tier has no
@@ -74,16 +74,29 @@ pub(in crate::settings) fn punctuation_pane(
             crate::tooltip_registry::CONCEPT_SMART_PUNCTUATION,
             group(tr!(settings_group_punctuation())),
         ))
-        .full_width(
+        // In the label column with every other field on this page. A `full_width`
+        // row starts at the pane's own left edge while a `.line` field starts at
+        // `label_col + gap`, so mixing the two gives one page two left edges;
+        // `export_styles`' editor settled this the same way. `FormLayout::line`
+        // wires `access_labelled_by` itself, so `labelled_externally` only tells
+        // the toggle's own assertion so.
+        .line(
+            field_label(tr!(settings_punctuation_dashes())),
             Toggle::new(vm.punct_dashes())
-                .label(tr!(settings_punctuation_dashes()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.punct_app",
                     tr!(settings_punctuation_app_hint()),
                 )),
         )
-        .full_width(Toggle::new(vm.punct_ellipsis()).label(tr!(settings_punctuation_ellipsis())))
-        .full_width(Toggle::new(vm.punct_quotes()).label(tr!(settings_punctuation_quotes())))
+        .line(
+            field_label(tr!(settings_punctuation_ellipsis())),
+            Toggle::new(vm.punct_ellipsis()).labelled_externally(),
+        )
+        .line(
+            field_label(tr!(settings_punctuation_quotes())),
+            Toggle::new(vm.punct_quotes()).labelled_externally(),
+        )
         .line(
             field_label(tr!(settings_quote_style())),
             QUOTE_STYLES
@@ -101,30 +114,26 @@ pub(in crate::settings) fn punctuation_pane(
             )))
             .text(sample),
         )
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_spacing())),
             Toggle::new(vm.punct_spacing())
-                .label(tr!(settings_punctuation_spacing()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.punct_spacing",
                     tr!(settings_punctuation_spacing_hint()),
                 )),
         )
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_dialogue())),
             Toggle::new(vm.punct_dialogue())
-                .label(tr!(settings_punctuation_dialogue()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.punct_dialogue",
                     tr!(settings_punctuation_dialogue_hint()),
                 )),
         );
 
-    pane_frame(
-        crumb(
-            Some(tr!(settings_sec_editor())),
-            tr!(settings_page_punctuation()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::Punctuation), form)
 }
 
 #[cfg(test)]
@@ -145,7 +154,12 @@ mod tests {
     impl Widget for PaneHost {
         fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
             let vm = self.vm.take().expect("built once");
-            let body = punctuation_pane(ctx, &vm);
+            let crumbs = Crumbs::new(
+                std::rc::Rc::new(crate::settings::tree_spec(false, &[])),
+                "",
+                None,
+            );
+            let body = punctuation_pane(ctx, &crumbs, &vm);
             let root = ctx.add(body);
             self.root_child = Some(root);
             vec![root]
@@ -178,7 +192,7 @@ mod tests {
             vm: Some(SettingsViewModel::new(&store)),
             root_child: None,
         });
-        tree.layout(SizeProposal::exact(760.0, 620.0));
+        tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 620.0));
         tree.sync_accessibility();
     }
 }

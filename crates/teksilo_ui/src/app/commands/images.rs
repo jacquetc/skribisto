@@ -40,8 +40,10 @@ fn stored_policy(ctx: &EventContext) -> Option<SizePolicy> {
 }
 
 fn policy_signal(ctx: &EventContext) -> Signal<String> {
-    ctx.settings()
-        .signal::<String>(crate::IMAGE_SIZE_POLICY_KEY, "ask".to_string())
+    ctx.settings().signal::<String>(
+        crate::IMAGE_SIZE_POLICY_KEY,
+        crate::IMAGE_SIZE_POLICY_DEFAULT.to_string(),
+    )
 }
 
 /// `work.set_cover` and `work.clear_cover` — the book's front.

@@ -3,7 +3,6 @@
 
 //! Work: `<name>` ▸ Author — the writer's name for this project.
 
-use teksilo::prelude::*;
 use teksilo::widgets::TextInput;
 use teksilo::widgets::tooltip::TooltipContent;
 
@@ -25,7 +24,7 @@ use super::super::*;
 pub(in crate::settings) fn work_author_pane(
     ctx: &mut BuildContext,
     vm: &WorkSettingsViewModel,
-    work_title: String,
+    crumbs: &Crumbs,
 ) -> impl Widget {
     let typed = Signal::new(vm.author_name().get());
 
@@ -64,15 +63,5 @@ pub(in crate::settings) fn work_author_pane(
         .row_spacing(14.0)
         .line(field_label(tr!(settings_field_author_name())), field);
 
-    pane_frame(
-        crumb(
-            Some(lit!(format!(
-                "{}: {}",
-                tr!(settings_sec_work()).resolve_now(),
-                work_title
-            ))),
-            tr!(settings_page_author()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::WorkAuthor), form)
 }

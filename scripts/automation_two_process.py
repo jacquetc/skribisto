@@ -24,7 +24,7 @@ not two, until that flag is added to instance B's launch.
   (b) changing the theme in instance A is durably and correctly written to
       the SHARED `general.toml` (both processes' writes must coexist, never
       clobber each other) — driven live through the real Settings ▸
-      Appearance & Behaviour ▸ Theme control, not faked. Whether instance B's
+      Appearance & Behavior ▸ Theme control, not faked. Whether instance B's
       *rendered* window repaints live in response is also checked and
       reported honestly (see the script's own NOTE/FAIL output and the
       task's final report for why this one is expected to still show a gap).
@@ -244,7 +244,7 @@ class Session:
 
     def goto_appearance(self):
         """Select the "Appearance" leaf page (exact match — not "Appearance
-        & Behaviour", its enclosing section header, which is a substring
+        & Behavior", its enclosing section header, which is a substring
         match away). The Theme control lives there."""
         node = self.node_match(["appearance", "apparence"], exact=True)
         if not node:

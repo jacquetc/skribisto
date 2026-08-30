@@ -226,7 +226,7 @@ print("labels:", " | ".join(labels)[:400])
 for needed in ("works", "examples", "learn", "about", "open", "new work"):
     if needed not in joined:
         fail(f"expected '{needed}' in the Launcher window; got: {joined[:300]}", s.app, s.mcp, s.log)
-# The "show at startup" control lives only in Settings ▸ Appearance & Behaviour
+# The "show at startup" control lives only in Settings ▸ Appearance & Behavior
 # now — a launcher-local copy would hide the very screen it's on. Assert its
 # ABSENCE here instead (regression guard for that removal).
 if "show at startup" in joined:

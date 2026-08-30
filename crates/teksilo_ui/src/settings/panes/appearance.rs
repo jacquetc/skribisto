@@ -3,7 +3,6 @@
 
 //! Appearance & Behaviour ▸ Appearance — interface language, theme, text size, welcome-at-startup.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
@@ -14,6 +13,7 @@ use super::super::*;
 /// Manuscript pane, where "Editor theme"/"Text size" were misnomers for
 /// app-wide controls), and the "show welcome at startup" preference.
 pub(in crate::settings) fn appearance_pane(
+    crumbs: &Crumbs,
     vm: &SettingsViewModel,
     scale: Signal<f32>,
 ) -> impl Widget {
@@ -24,50 +24,47 @@ pub(in crate::settings) fn appearance_pane(
         .full_width(group(tr!(settings_group_language())))
         .line(
             field_label(tr!(settings_field_language())),
-            FixedSize::new().width(240.0).child(LanguageSwitcher::new()),
+            LanguageSwitcher::new(),
         )
         .full_width(group(tr!(settings_group_theme())))
-        .line(
-            field_label(tr!(settings_field_app_theme())),
-            FixedSize::new().width(240.0).child(
-                // Light / Dark / System — the same three entries as ever, but
-                // built from the run's own design language rather than from
-                // `ThemeSwitcher::new()`'s hardcoded IntUI pair. Under
-                // `--style fluent` those defaults would match no active theme
-                // (the combo shows nothing, since it matches by `ThemeId`) and
-                // picking Light would drop the window out of Fluent for good.
-                //
-                // `.system(true)` keeps the follow-OS entry, which is the one
-                // that does leave the style by design — see `crate::style`.
-                ThemeSwitcher::new()
-                    .themes([
-                        (tr!(settings_theme_light()), crate::style::light()),
-                        (tr!(settings_theme_dark()), crate::style::dark()),
-                    ])
-                    .system(true),
-            ),
-        )
+        .line(field_label(tr!(settings_field_app_theme())), {
+            // Light / Dark / System — the same three entries as ever, but
+            // built from the run's own design language rather than from
+            // `ThemeSwitcher::new()`'s hardcoded IntUI pair. Under
+            // `--style fluent` those defaults would match no active theme
+            // (the combo shows nothing, since it matches by `ThemeId`) and
+            // picking Light would drop the window out of Fluent for good.
+            //
+            // `.system(true)` keeps the follow-OS entry, which is the one
+            // that does leave the style by design — see `crate::style`.
+            ThemeSwitcher::new()
+                .themes([
+                    (tr!(settings_theme_light()), crate::style::light()),
+                    (tr!(settings_theme_dark()), crate::style::dark()),
+                ])
+                .system(true)
+        })
         .line(
             field_label(tr!(settings_field_text_scale())),
-            FixedSize::new()
-                .width(300.0)
-                .child(TextScaleControl::new(scale)),
+            TextScaleControl::new(scale),
         )
         .full_width(group(tr!(settings_group_startup())))
-        .full_width(
+        // In the label column with every other field on the page, not spanning
+        // both. A `full_width` row starts at the pane's own left edge while a
+        // `.line` field starts at `label_col + gap`, so mixing the two gives one
+        // page two left edges; `export_styles`' editor already settled this the
+        // same way. `FormLayout::line` wires `access_labelled_by` itself, so
+        // `labelled_externally` only tells the toggle's own assertion so — the
+        // relation is pushed after `accessibility()` has already run.
+        .line(
+            field_label(tr!(settings_show_welcome())),
             Toggle::new(vm.show_welcome())
-                .label(tr!(settings_show_welcome()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.show_welcome",
                     tr!(settings_show_welcome_tip()),
                 )),
         );
 
-    pane_frame(
-        crumb(
-            Some(tr!(settings_sec_appearance_behaviour())),
-            tr!(settings_page_appearance()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::Appearance), form)
 }

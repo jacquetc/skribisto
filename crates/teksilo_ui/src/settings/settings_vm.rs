@@ -51,17 +51,19 @@ use crate::{
     DISTRACTION_FREE_WORD_COUNT_DEFAULT, DISTRACTION_FREE_WORD_COUNT_KEY, EDITOR_WIDTH_DEFAULT,
     EDITOR_WIDTH_KEY, GAMES_FORWARD_PROSE_KEY, GAMES_FORWARD_SYNOPSIS_KEY,
     GOALS_COUNTING_METHOD_KEY, GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY,
-    HIGHLIGHT_SCOPE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FIRST_LINE_INDENT_KEY,
+    HIGHLIGHT_SCOPE_KEY, IMAGE_SIZE_POLICY_DEFAULT, IMAGE_SIZE_POLICY_KEY, LOCALE_KEY,
+    MARGIN_LANE_ENABLED_DEFAULT, MARGIN_LANE_ENABLED_KEY, MARGIN_LANE_TEXTURE_DEFAULT,
+    MARGIN_LANE_TEXTURE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FIRST_LINE_INDENT_KEY,
     NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY, NOTES_LINE_HEIGHT_DEFAULT,
     NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_AFTER_KEY,
     NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_PARA_SPACING_BEFORE_KEY, NOTES_SIZE_DEFAULT,
-    NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT, PREVIEW_WIDTH_KEY, PUNCT_DASHES_DEFAULT,
-    PUNCT_DASHES_KEY, PUNCT_DIALOGUE_DEFAULT, PUNCT_DIALOGUE_KEY, PUNCT_ELLIPSIS_DEFAULT,
-    PUNCT_ELLIPSIS_KEY, PUNCT_QUOTE_STYLE_KEY, PUNCT_QUOTES_DEFAULT, PUNCT_QUOTES_KEY,
-    PUNCT_SPACING_DEFAULT, PUNCT_SPACING_KEY, REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY,
-    SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT,
-    SCENE_FONT_FAMILY_KEY, SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY,
-    SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_AFTER_KEY,
+    NOTES_SIZE_KEY, PACE_SUMMARY_ON_OPEN_KEY, PREVIEW_WIDTH_DEFAULT, PREVIEW_WIDTH_KEY,
+    PUNCT_DASHES_DEFAULT, PUNCT_DASHES_KEY, PUNCT_DIALOGUE_DEFAULT, PUNCT_DIALOGUE_KEY,
+    PUNCT_ELLIPSIS_DEFAULT, PUNCT_ELLIPSIS_KEY, PUNCT_QUOTE_STYLE_KEY, PUNCT_QUOTES_DEFAULT,
+    PUNCT_QUOTES_KEY, PUNCT_SPACING_DEFAULT, PUNCT_SPACING_KEY, REMEMBER_VIEW_DEFAULT,
+    REMEMBER_VIEW_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FIRST_LINE_INDENT_KEY,
+    SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY, SCENE_LINE_HEIGHT_DEFAULT,
+    SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_AFTER_KEY,
     SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY, SCENE_SIZE_DEFAULT,
     SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY,
     SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY,
@@ -70,6 +72,7 @@ use crate::{
     SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
     SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_PLACEMENT_KEY,
     SYNOPSIS_SIDE_WIDTH_DEFAULT, SYNOPSIS_SIDE_WIDTH_KEY, SYNOPSIS_SIZE_DEFAULT, SYNOPSIS_SIZE_KEY,
+    THEME_MODE_DARK, THEME_MODE_DEFAULT, THEME_MODE_KEY, THEME_MODE_LIGHT, THEME_MODE_SYSTEM,
     TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY, USER_INITIALS_KEY, USER_NAME_KEY,
 };
 
@@ -350,6 +353,13 @@ impl CorkboardDefaults {
 
 #[derive(Clone)]
 pub struct SettingsViewModel {
+    /// The store every signal above is cached in, kept so the handful of keys
+    /// that are *synthesised* at runtime — one per margin-lane surface, one per
+    /// registered lane provider — can be reached the same way. A field rather
+    /// than a re-open: `SettingsStore` is `Rc`-backed, so this is the very same
+    /// store, and a second `open` of the same path would be a second live copy
+    /// of one file.
+    store: SettingsStore,
     dark: Signal<bool>,
     locale: Signal<String>,
     /// Who is using this installation — see [`crate::USER_NAME_KEY`]. App-level
@@ -419,6 +429,7 @@ pub struct SettingsViewModel {
 impl SettingsViewModel {
     pub fn new(store: &SettingsStore) -> Self {
         Self {
+            store: store.clone(),
             dark: store.signal(DARK_KEY, false),
             // Deliberately a flat "en-US" rather than `startup::os_default_locale()`,
             // unlike every other reading of this key. This signal is the *persisted*
@@ -638,6 +649,92 @@ impl SettingsViewModel {
         self.show_welcome.clone()
     }
 
+    // ── Reached through the store rather than held as fields ─────────────
+    //
+    // `store.signal(key, default)` *seeds* a missing key, and the store writes
+    // its whole table back to disk — so a field here is a key written into
+    // every install the moment a view-model is constructed, which `App::build`
+    // does on every launch. For the keys below that is either pointless (they
+    // already have owners that seed them where they are actually used) or
+    // actively wrong (see [`Self::theme_mode`]). Reaching them on demand keeps
+    // the footprint of merely *having* a view-model at zero and costs nothing:
+    // the store caches one cell per key, so these hand back the same live
+    // signal every other reader holds.
+
+    /// What to do with an over-large image on insert: `"ask"`, `"keep"` or
+    /// `"downscale"`. The same cached [`crate::IMAGE_SIZE_POLICY_KEY`] signal the
+    /// insert path reads, so a control bound here changes the next insert.
+    pub fn image_size_policy(&self) -> Signal<String> {
+        self.store
+            .signal(IMAGE_SIZE_POLICY_KEY, IMAGE_SIZE_POLICY_DEFAULT.to_string())
+    }
+
+    /// Show where the book stands when a project with an active writing plan
+    /// opens. Projects without a plan never show it, whatever this says.
+    pub fn pace_summary_on_open(&self) -> Signal<bool> {
+        self.store.signal(PACE_SUMMARY_ON_OPEN_KEY, true)
+    }
+
+    /// The margin lane's master switch.
+    pub fn margin_lane_enabled(&self) -> Signal<bool> {
+        self.store
+            .signal(MARGIN_LANE_ENABLED_KEY, MARGIN_LANE_ENABLED_DEFAULT)
+    }
+
+    /// The margin lane's texture column.
+    pub fn margin_lane_texture(&self) -> Signal<bool> {
+        self.store
+            .signal(MARGIN_LANE_TEXTURE_KEY, MARGIN_LANE_TEXTURE_DEFAULT)
+    }
+
+    /// Whether the lane appears on one surface.
+    ///
+    /// Its key is synthesised from the surface (see
+    /// [`crate::margin_lane_surface_key`]), so it cannot be a field — but it is
+    /// the same cached signal every reader of that key holds, and the settings
+    /// page writes it through the same door.
+    pub fn margin_lane_surface(&self, surface: crate::margin_lane::LaneSurface) -> Signal<bool> {
+        self.store.signal(
+            &crate::margin_lane_surface_key(surface),
+            crate::margin_lane_surface_default(surface),
+        )
+    }
+
+    /// Whether one registered lane provider draws its marks.
+    ///
+    /// Synthesised from the registration's id, so — unlike every other setting
+    /// here — the *set* of them is not known until every extension has
+    /// registered. Read through the registry, never guessed.
+    pub fn margin_lane_provider(
+        &self,
+        provider: &crate::margin_lane::LaneProviderSpec,
+    ) -> Signal<bool> {
+        self.store
+            .signal(&provider.settings_key(), provider.default_on)
+    }
+
+    /// Which of the three answers the theme picker holds — `"light"`, `"dark"`
+    /// or `"system"`. See [`crate::THEME_MODE_KEY`] for why [`Self::dark`]
+    /// cannot stand in for it.
+    ///
+    /// ⚠ **Read this only where you are about to write it** — today that is
+    /// [`Self::set_theme_mode`] and the effect in `App::build` that mirrors the
+    /// live theme back into the store. Touching it *seeds* it, and a key seeded
+    /// with `"system"` on an install that predates it is not a harmless
+    /// default: the next launch would hand the desktop a vote the writer never
+    /// gave it, and someone who had pinned Dark on a light desktop would come
+    /// back to a light one. That is exactly why
+    /// [`crate::startup::theme_for`] reads an absent key as "fall back to
+    /// `ui.dark`", and why `cli::persisted_theme_mode` reads the file directly
+    /// — an upgrade path that depends on a key staying absent cannot have a
+    /// reader that creates it. The Reset gate deliberately reads the *live
+    /// theme's* id instead ([`crate::settings_keys::theme_mode_of`]), so
+    /// nothing has to be on disk for it to be right.
+    pub fn theme_mode(&self) -> Signal<String> {
+        self.store
+            .signal(THEME_MODE_KEY, THEME_MODE_DEFAULT.to_string())
+    }
+
     // ── reactive accessors for binding ──
     pub fn column_width(&self) -> Signal<f32> {
         self.column_width.clone()
@@ -844,9 +941,52 @@ impl SettingsViewModel {
     // ── business API ──
 
     /// Switch theme live and persist the choice.
+    ///
+    /// Records the *mode* as well as the resulting light/dark state: "the writer
+    /// asked for dark" is an answer `ui.dark` alone cannot hold, because a
+    /// writer following a dark desktop stores the same `true`.
     pub fn set_dark(&self, ctx: &mut EventContext, dark: bool) {
-        ctx.set_theme(crate::style::theme(dark));
+        self.set_theme_mode(
+            ctx,
+            if dark {
+                THEME_MODE_DARK
+            } else {
+                THEME_MODE_LIGHT
+            },
+        );
         self.dark.set(dark); // same cached signal → persisted
+    }
+
+    /// Apply one of the three theme answers live, and persist it.
+    ///
+    /// `"system"` hands the desktop the decision (and keeps handing it over, as
+    /// the desktop changes) rather than resolving it once here — which is the
+    /// whole difference between this and [`Self::set_dark`], and the reason the
+    /// mode is stored at all.
+    ///
+    /// An unrecognised mode is ignored rather than guessed at: the three answers
+    /// are validated at every door the value can come through
+    /// (`crate::settings_keys`' spec, `cli::persisted_theme_mode`), so reaching
+    /// here with a fourth means a caller invented one.
+    pub fn set_theme_mode(&self, ctx: &mut EventContext, mode: &str) {
+        match mode {
+            THEME_MODE_LIGHT => ctx.set_theme(crate::style::light()),
+            THEME_MODE_DARK => ctx.set_theme(crate::style::dark()),
+            THEME_MODE_SYSTEM => ctx.follow_system_theme(),
+            _ => {
+                eprintln!("settings: ignoring unknown theme mode {mode:?}");
+                return;
+            }
+        }
+        let persisted = self.theme_mode();
+        if persisted.get() != mode {
+            persisted.set(mode.to_string());
+        }
+        // `dark` is the *resolved* state and is mirrored from the live theme by
+        // `App`'s theme effect, which runs whichever route the change took
+        // (here, or the Settings window's `ThemeSwitcher`). Deliberately not
+        // written here too: under `"system"` this function does not yet know
+        // what the desktop will answer.
     }
 
     /// Switch locale live and persist the choice.
@@ -866,139 +1006,58 @@ impl SettingsViewModel {
         self.preview_width.set(w);
     }
 
-    /// Reset every setting this VM owns to its default (used by the Settings
-    /// window's "Reset to defaults"). Theme / locale / text-scale live outside
-    /// this VM, so the panel resets those alongside this call.
+    /// Reset every setting this view-model owns to its default (the Settings
+    /// window's *Reset to defaults*).
+    ///
+    /// One loop over [`super::defaults::reset_targets`], and that is the whole
+    /// implementation on purpose. This used to be 64 hand-written `set` calls
+    /// with a *separate* 42-comparison list deciding whether the button that
+    /// calls it was even enabled, and the 25 in the gap could differ from
+    /// factory while the button sat greyed out. The list is now the single
+    /// source both readings come from, so:
+    ///
+    /// ⚠ **A new setting is a new row in `reset_targets`, never a `set` here.**
+    /// A line added to this function would restore a knob the enable-gate
+    /// cannot see, which is exactly the defect the list replaced.
+    ///
+    /// The theme, the interface language and the interface text scale are *not*
+    /// here: they are ambient app state rather than settings this view-model
+    /// holds, and are restored by [`reset_appearance`] and the footer's own
+    /// scale reset.
     pub fn reset_editor_defaults(&self) {
-        self.column_width.set(EDITOR_WIDTH_DEFAULT);
-        self.preview_width.set(PREVIEW_WIDTH_DEFAULT);
-        self.autosave.set(false);
-        self.spellcheck_enabled.set(SPELLCHECK_ENABLED_DEFAULT);
-        self.comments_visible.set(COMMENTS_VISIBLE_DEFAULT);
-        self.show_welcome.set(true);
-        // Scene
-        self.scene_typo
-            .font_family
-            .set(SCENE_FONT_FAMILY_DEFAULT.to_string());
-        self.scene_typo.size.set(SCENE_SIZE_DEFAULT);
-        self.scene_typo.line_height.set(SCENE_LINE_HEIGHT_DEFAULT);
-        self.scene_typo
-            .first_line_indent
-            .set(SCENE_FIRST_LINE_INDENT_DEFAULT);
-        self.scene_typo
-            .para_spacing_before
-            .set(SCENE_PARA_SPACING_BEFORE_DEFAULT);
-        self.scene_typo
-            .para_spacing_after
-            .set(SCENE_PARA_SPACING_AFTER_DEFAULT);
-        // Synopsis
-        self.synopsis_typo
-            .font_family
-            .set(SYNOPSIS_FONT_FAMILY_DEFAULT.to_string());
-        self.synopsis_typo.size.set(SYNOPSIS_SIZE_DEFAULT);
-        self.synopsis_typo
-            .line_height
-            .set(SYNOPSIS_LINE_HEIGHT_DEFAULT);
-        self.synopsis_typo
-            .first_line_indent
-            .set(SYNOPSIS_FIRST_LINE_INDENT_DEFAULT);
-        self.synopsis_typo
-            .para_spacing_before
-            .set(SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT);
-        self.synopsis_typo
-            .para_spacing_after
-            .set(SYNOPSIS_PARA_SPACING_AFTER_DEFAULT);
-        // Notes
-        self.notes_typo
-            .font_family
-            .set(NOTES_FONT_FAMILY_DEFAULT.to_string());
-        self.notes_typo.size.set(NOTES_SIZE_DEFAULT);
-        self.notes_typo.line_height.set(NOTES_LINE_HEIGHT_DEFAULT);
-        self.notes_typo
-            .first_line_indent
-            .set(NOTES_FIRST_LINE_INDENT_DEFAULT);
-        self.notes_typo
-            .para_spacing_before
-            .set(NOTES_PARA_SPACING_BEFORE_DEFAULT);
-        self.notes_typo
-            .para_spacing_after
-            .set(NOTES_PARA_SPACING_AFTER_DEFAULT);
-        // Corkboard card synopsis
-        self.corkboard_typo
-            .font_family
-            .set(CORKBOARD_FONT_FAMILY_DEFAULT.to_string());
-        self.corkboard_typo.size.set(CORKBOARD_SIZE_DEFAULT);
-        self.corkboard_typo
-            .line_height
-            .set(CORKBOARD_LINE_HEIGHT_DEFAULT);
-        self.corkboard_typo
-            .first_line_indent
-            .set(CORKBOARD_FIRST_LINE_INDENT_DEFAULT);
-        self.corkboard_typo
-            .para_spacing_before
-            .set(CORKBOARD_PARA_SPACING_BEFORE_DEFAULT);
-        self.corkboard_typo
-            .para_spacing_after
-            .set(CORKBOARD_PARA_SPACING_AFTER_DEFAULT);
-        // Distraction-free
-        self.distraction_free_typo
-            .font_family
-            .set(DISTRACTION_FREE_FONT_FAMILY_DEFAULT.to_string());
-        self.distraction_free_typo
-            .size
-            .set(DISTRACTION_FREE_SIZE_DEFAULT);
-        self.distraction_free_typo
-            .line_height
-            .set(DISTRACTION_FREE_LINE_HEIGHT_DEFAULT);
-        self.distraction_free_typo
-            .first_line_indent
-            .set(DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT);
-        self.distraction_free_typo
-            .para_spacing_before
-            .set(DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT);
-        self.distraction_free_typo
-            .para_spacing_after
-            .set(DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT);
-        self.distraction_free_width
-            .set(DISTRACTION_FREE_WIDTH_DEFAULT);
-        self.distraction_free_theme
-            .set(DISTRACTION_FREE_THEME_DEFAULT.to_string());
-        self.distraction_free_title
-            .set(DISTRACTION_FREE_TITLE_DEFAULT);
-        self.distraction_free_word_count
-            .set(DISTRACTION_FREE_WORD_COUNT_DEFAULT);
-        self.distraction_free_session
-            .set(DISTRACTION_FREE_SESSION_DEFAULT);
-        self.distraction_free_go.set(DISTRACTION_FREE_GO_DEFAULT);
-        self.distraction_free_go_to
-            .set(DISTRACTION_FREE_GO_TO_DEFAULT);
-        self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
-        self.synopsis_placement.set(SynopsisPlacement::default());
-        self.synopsis_side_width.set(SYNOPSIS_SIDE_WIDTH_DEFAULT);
-        self.punct_dashes.set(PUNCT_DASHES_DEFAULT);
-        self.punct_ellipsis.set(PUNCT_ELLIPSIS_DEFAULT);
-        self.punct_quotes.set(PUNCT_QUOTES_DEFAULT);
-        self.punct_quote_style.set(QuoteStyle::default());
-        self.punct_spacing.set(PUNCT_SPACING_DEFAULT);
-        self.punct_dialogue.set(PUNCT_DIALOGUE_DEFAULT);
-        self.typewriter.set(TYPEWRITER_DEFAULT);
-        self.typewriter_anchor
-            .set(Some(TypewriterAnchor::default()));
-        self.highlight_scope.set(HighlightScope::default());
-        self.counting_method.set(CountingMethodSetting::default());
-        self.show_characters.set(GOALS_SHOW_CHARACTERS_DEFAULT);
-        self.games_forward_prose
-            .set(crate::writing_session::FORWARD_PROSE_DEFAULT);
-        self.games_forward_synopsis
-            .set(crate::writing_session::FORWARD_SYNOPSIS_DEFAULT);
-        self.corkboard_nested.set(CORKBOARD_NESTED_DEFAULT);
-        self.corkboard_card_size.set(CORKBOARD_CARD_SIZE_DEFAULT);
-        self.corkboard_show_word_count
-            .set(CORKBOARD_SHOW_WORD_COUNT_DEFAULT);
-        self.corkboard_show_card_numbers
-            .set(CORKBOARD_SHOW_CARD_NUMBERS_DEFAULT);
-        self.corkboard_modal_size.set(CORKBOARD_MODAL_SIZE_DEFAULT);
+        for target in super::defaults::reset_targets(self) {
+            target.reset();
+        }
     }
+}
+
+/// Restore the application's *appearance* to factory state: follow the
+/// desktop's light/dark preference again, and speak the language a fresh
+/// install on this machine would have picked.
+///
+/// A free function rather than a method because neither half is state this
+/// view-model owns — both are ambient app state that only an `EventContext` can
+/// reach. It sits here so the answer to "what is the factory appearance?" is
+/// beside the answer to "what are the factory settings?".
+///
+/// ⚠ It replaces `ctx.set_theme(crate::style::light())`, which was wrong twice
+/// over. Light is not the factory theme — the factory answer is *follow the
+/// desktop*, which on a dark desktop is dark. And setting a theme explicitly
+/// puts teksilo into `ThemeMode::Manual`, so the OS could never move it again:
+/// a "reset" that took a choice away from the writer instead of giving one
+/// back, and then left the Reset button lit on every dark desktop, because the
+/// enable-gate could see the mismatch the reset had just created.
+///
+/// Neither value is written to the store here. Both are mirrored out of the
+/// live theme and locale by `App`'s own effects — the same route the Settings
+/// window's `ThemeSwitcher` and `LanguageSwitcher` take — so persisting them a
+/// second time here would be a second writer for one fact.
+pub(crate) fn reset_appearance(ctx: &mut EventContext) {
+    ctx.follow_system_theme();
+    // The factory language is "whatever a fresh install on this machine would
+    // have picked", not a flat en-US — resetting a French account to English
+    // would be restoring somebody else's default.
+    ctx.set_locale(crate::startup::os_default_locale());
 }
 
 #[cfg(test)]
@@ -1020,6 +1079,41 @@ mod tests {
         ));
         let _ = std::fs::remove_file(&path);
         SettingsStore::open(path).expect("open temp settings store")
+    }
+
+    /// Merely *having* a view-model must not decide the writer's theme for
+    /// them.
+    ///
+    /// `store.signal(key, default)` seeds a missing key, and `App::build`
+    /// constructs one of these on every launch — so a `theme_mode` field would
+    /// write `ui.theme_mode = "system"` into every install that predates the
+    /// key. The launch after that would hand the desktop a vote nobody gave
+    /// it, and a writer who had pinned Dark on a light desktop would come back
+    /// to a light one. The upgrade path in `startup::theme_for` depends on the
+    /// key staying absent until something deliberately writes it, and this is
+    /// what keeps it absent.
+    #[test]
+    fn constructing_the_view_model_does_not_choose_a_theme_mode() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        assert!(
+            !store.has(THEME_MODE_KEY),
+            "constructing a SettingsViewModel must not create {THEME_MODE_KEY}"
+        );
+
+        // Resetting the editor settings must not create it either: the theme is
+        // `reset_appearance`'s to restore, live, and the mirror records what
+        // that produced.
+        vm.reset_editor_defaults();
+        assert!(
+            !store.has(THEME_MODE_KEY),
+            "Reset to defaults must not write a theme mode"
+        );
+
+        // Reaching for it is the act of writing it, and that is the only route
+        // by which it ever appears.
+        assert_eq!(vm.theme_mode().get(), THEME_MODE_DEFAULT);
+        assert!(store.has(THEME_MODE_KEY));
     }
 
     /// Reset restores every per-type typography signal (the biggest, most

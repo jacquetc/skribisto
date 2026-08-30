@@ -3,13 +3,12 @@
 
 //! Backup & Sync ▸ Autosave.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
 use super::super::*;
 
-pub(in crate::settings) fn autosave_pane(vm: &SettingsViewModel) -> impl Widget {
+pub(in crate::settings) fn autosave_pane(crumbs: &Crumbs, vm: &SettingsViewModel) -> impl Widget {
     let form = FormLayout::new()
         .label(tr!(settings_page_autosave()))
         .label_gap(16.0)
@@ -24,11 +23,5 @@ pub(in crate::settings) fn autosave_pane(vm: &SettingsViewModel) -> impl Widget 
                 )),
         );
 
-    pane_frame(
-        crumb(
-            Some(tr!(settings_sec_backup())),
-            tr!(settings_page_autosave()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::Autosave), form)
 }

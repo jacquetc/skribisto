@@ -329,7 +329,12 @@ impl Widget for ChooseTreeWidget {
                 Box::new(item) as Box<dyn Widget>
             },
         )
-        .item_height(28.0);
+        // Rows measure themselves rather than sitting at a constant: a row's
+        // natural height passes 28px well before the interface text scale reaches
+        // its 200% ceiling, and a uniform height clips every title vertically from
+        // about 115% up. The 28.0 is the estimate for rows not yet realized. Same
+        // reason as `binder::dock` and the settings rail.
+        .auto_item_height(28.0);
 
         let id = ctx.add(view);
         // Fire the captured `expand_all` once, on the first frame after a row populated the

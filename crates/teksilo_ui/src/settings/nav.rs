@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use teksilo::canvas::svg::SvgIcon;
-use teksilo::data::{KeyedSelectionModel, NodeId};
+use teksilo::data::{KeyedSelectionModel, NodeId, TreeSliceHandle};
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::res;
@@ -58,7 +58,6 @@ pub(crate) enum Pane {
     /// per-module ones (Writer, Calc, …), and this app has no modules.
     User,
     Appearance,
-    MenusToolbars,
     Notifications,
     SceneTypography,
     SynopsisTypography,
@@ -80,10 +79,20 @@ pub(crate) enum Pane {
     Keymap,
     /// Per-project "Work: `<name>` ▸ Structure" — chapter mode (folder vs flat).
     WorkStructure,
-    /// Per-project "Work: `<name>` ▸ Punctuation" — the smart-punctuation house style.
+    /// Per-project "Work: `<name>` ▸ Punctuation" — the house style this
+    /// project's prose follows. ("Smart punctuation" is the *group heading*
+    /// inside the page, not the page's own label.)
+    ///
+    /// ⚠ Its label is deliberately **not** `settings-page-punctuation`: that key
+    /// names the application-level [`Pane::Punctuation`] below, and while the two
+    /// shared it the rail carried two rows reading the same word one section
+    /// apart — Scrivener's Preferences-vs-Project-Settings confusion reproduced
+    /// inside a single tree, and the one place the single-tree decision leaked.
+    /// The distinguishing descriptions existed but render only on a parent's
+    /// landing page, never on the row itself.
     WorkPunctuation,
-    /// Application-level "Editor ▸ Punctuation" — the tier every project follows
-    /// unless it takes an override of its own.
+    /// Application-level "Editor ▸ Punctuation defaults" — the tier every project
+    /// follows unless it takes an override of its own.
     Punctuation,
     /// General backup ("Copies de secours") policy (under Backup & Sync).
     Backup,
@@ -141,7 +150,6 @@ impl Pane {
             Pane::Group(g) => g.id(),
             Pane::User => "user",
             Pane::Appearance => "appearance",
-            Pane::MenusToolbars => "menus-toolbars",
             Pane::Notifications => "notifications",
             Pane::SceneTypography => "scene-typography",
             Pane::SynopsisTypography => "synopsis-typography",
@@ -186,7 +194,6 @@ impl Pane {
             Pane::Group(g) => g.label(),
             Pane::User => tr!(settings_page_user()),
             Pane::Appearance => tr!(settings_page_appearance()),
-            Pane::MenusToolbars => tr!(settings_page_menus()),
             Pane::Notifications => tr!(settings_page_notifications()),
             Pane::SceneTypography => tr!(settings_page_scene()),
             Pane::SynopsisTypography => tr!(settings_page_synopsis()),
@@ -202,7 +209,13 @@ impl Pane {
             Pane::Paratext => tr!(settings_page_paratext()),
             Pane::Keymap => tr!(settings_page_keymap()),
             Pane::WorkStructure => tr!(settings_page_structure()),
-            Pane::WorkPunctuation => tr!(settings_page_punctuation()),
+            // Not `settings-page-punctuation` — that is the app-level page's
+            // ("Punctuation defaults") — and not `settings-group-punctuation`
+            // either, which is the *group* heading inside this very page
+            // ("Smart punctuation") and read as a second app-level page in the
+            // rail. This page has a label of its own. See this variant's own
+            // doc comment.
+            Pane::WorkPunctuation => tr!(settings_page_work_punctuation()),
             Pane::Punctuation => tr!(settings_page_punctuation()),
             Pane::Backup => tr!(settings_page_backup()),
             Pane::WorkBackup => tr!(settings_page_work_backup()),
@@ -241,7 +254,6 @@ impl Pane {
             Pane::Group(g) => g.description(),
             Pane::User => tr!(settings_desc_user()),
             Pane::Appearance => tr!(settings_desc_appearance()),
-            Pane::MenusToolbars => tr!(settings_desc_menus()),
             Pane::Notifications => tr!(settings_desc_notifications()),
             Pane::SceneTypography => tr!(settings_desc_scene()),
             Pane::SynopsisTypography => tr!(settings_desc_synopsis()),
@@ -449,7 +461,6 @@ pub(crate) fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec
             Sec::AppearanceBehaviour,
             vec![
                 Branch::Page(Pane::Appearance),
-                Branch::Page(Pane::MenusToolbars),
                 Branch::Page(Pane::Notifications),
             ],
         ),
@@ -636,19 +647,56 @@ pub(crate) fn all_panes(spec: &[Root]) -> Vec<Pane> {
 /// Jumping to a page from somewhere other than its own tree row: a search
 /// suggestion, or a link on a parent's page.
 ///
-/// Both have to do the same two things — move the tree's highlight and switch the
-/// right-hand pane — and a per-project page resolves to no tree node at all when
-/// nothing is open, in which case the pane still switches, landing on that page's
-/// "no project" placeholder. Correct either way.
+/// All three have to do the same three things — **reveal** the target's row,
+/// move the tree's highlight onto it and switch the right-hand pane — and a
+/// per-project page resolves to no tree node at all when nothing is open, in
+/// which case the pane still switches, landing on that page's "no project"
+/// placeholder. Correct either way.
 #[derive(Clone)]
 pub(crate) struct Navigator {
     pub(crate) selection: KeyedSelectionModel<NodeId>,
     pub(crate) nodes: Rc<HashMap<Pane, NodeId>>,
     pub(crate) selected_pane: Signal<Pane>,
+    /// The rail's own expand/collapse set, so a jump can open the rows its
+    /// target hides behind.
+    ///
+    /// A **handle onto the `TreeView`'s slice**, not a slice of its own: two
+    /// slices over one `TreeModel` keep completely independent expand state, so
+    /// a fresh one would fold and unfold a tree nobody is looking at. `None`
+    /// only on `TreeView::from_source` (which owns its expand state elsewhere)
+    /// — the rail is not built that way, and a `None` here costs the reveal
+    /// rather than correctness.
+    pub(crate) reveal: Option<TreeSliceHandle<Pane>>,
+    /// The shape the ancestors are read out of — the same `Rc` the rail, the
+    /// breadcrumbs and the search index share.
+    pub(crate) spec: Rc<Vec<Root>>,
 }
 
 impl Navigator {
+    /// Reveal, highlight, switch — in that order.
+    ///
+    /// **The reveal is not a nicety.** Editor and its nested Typography group
+    /// start collapsed (see `tree::DEFAULT_COLLAPSED`), and so do Spelling,
+    /// Backup & Sync and Compile & Export. Selecting a node inside a collapsed
+    /// branch used to leave the highlight on a row that is not rendered: the
+    /// pane switched, the rail went on showing the section, and the window
+    /// disagreed with its own tree — the exact failure the parents' landing
+    /// pages were added to end. It reached every one of this type's callers:
+    /// a search suggestion for "Scene", the `Typography` link on the Editor
+    /// page, and the ancestor crumbs above a typography page.
+    ///
+    /// It became reachable on *every* window when the panel stopped opening at
+    /// Editor ▸ Typography ▸ Scene — landing there had been expanding those two
+    /// rows on open as a side effect, which hid the bug behind the one branch
+    /// people navigate most.
     pub(crate) fn go(&self, pane: Pane) {
+        if let Some(reveal) = &self.reveal {
+            for ancestor in ancestors_of(&self.spec, pane) {
+                if let Some(id) = self.nodes.get(&ancestor) {
+                    reveal.expand(*id);
+                }
+            }
+        }
         if let Some(id) = self.nodes.get(&pane) {
             self.selection.select(*id);
         }

@@ -40,7 +40,6 @@ use crate::toast_scope::ToastWorkExt;
 
 const NAME_COL: &str = "name";
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;
-const LIST_MIN_HEIGHT: f32 = 320.0;
 
 fn import_glyph() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/settings/import.svg")).icon_size(15.0)
@@ -103,7 +102,7 @@ pub fn work_templates_pane(ctx: &mut BuildContext, vm: &NoteTemplatesViewModel) 
             // The floor goes on the card, not the list — see the tag pane's own note: a
             // `Switcher` reports its active child's size, and a virtualised `ListView`
             // given unbounded height inside the pane's scroll reports ~nothing.
-            MinSize::new(0.0, LIST_MIN_HEIGHT).child(
+            MinSize::new(0.0, crate::settings::fields::LIST_MIN_HEIGHT).child(
                 Switcher::new(empty_idx)
                     .child(Expand::vertical().child(list))
                     .child(empty_state()),
@@ -117,7 +116,14 @@ pub fn work_templates_pane(ctx: &mut BuildContext, vm: &NoteTemplatesViewModel) 
             TextWidget::new(tr!(settings_templates_description())).color(TextRole::Secondary),
         ))
         .child(toolbar_row(vm, query))
-        .child(Expand::horizontal().child(list_card))
+        // `list_box`: the leftover height of the pane goes to the list, so one
+        // scroll region replaces two. The floor it carries is the shared one — the
+        // 300–320 px constants that used to live here were taller than the pane's
+        // whole viewport, so the page scrolled at *minimum* content while the list
+        // scrolled inside it.
+        .child(crate::settings::fields::list_box(
+            Expand::horizontal().child(list_card),
+        ))
 }
 
 /// Filter + live count on the left; the three creating/exporting controls pushed right.

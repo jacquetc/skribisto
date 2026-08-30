@@ -19,7 +19,6 @@
 //! which is what the effect in `App::build` is watching for.
 
 use teksilo::core::BindingLevel;
-use teksilo::prelude::*;
 use teksilo::widgets::TextInput;
 use teksilo::widgets::tooltip::TooltipContent;
 
@@ -29,20 +28,18 @@ use super::super::*;
 /// Settings ▸ User — the signing name and initials.
 ///
 /// Shaped like every other pane in the window: a `group` header opening the
-/// rows, `field_label` + a 240 px control cell per line, and a `full_width` hint
-/// closing it. (`FormLayout` currently stretches the control cell to the pane
-/// regardless of that `FixedSize` — Appearance's language dropdown renders full
-/// width for the same reason — so the wrapper is here to match how the sibling
-/// panes are *written*, not because it changes what is drawn today.)
-pub(in crate::settings) fn user_pane(vm: &SettingsViewModel) -> impl Widget {
-    let name = FixedSize::new().width(240.0).child(
-        TextInput::new(vm.user_name())
-            .placeholder(tr!(settings_field_user_name_placeholder()))
-            .rich_tooltip_content(TooltipContent::new(
-                "settings.user_name",
-                tr!(settings_field_user_name_hint()),
-            )),
-    );
+/// rows, `field_label` + a control per line, and a `full_width` hint closing it.
+/// The controls carry no width of their own — `FormLayout` places its field slot
+/// at `field_col_width` unconditionally, so the 240 px cells this pane used to
+/// wrap them in were discarded on the way through, here and at eight sibling
+/// sites. See `fields::slider_field` for the note that records it once.
+pub(in crate::settings) fn user_pane(crumbs: &Crumbs, vm: &SettingsViewModel) -> impl Widget {
+    let name = TextInput::new(vm.user_name())
+        .placeholder(tr!(settings_field_user_name_placeholder()))
+        .rich_tooltip_content(TooltipContent::new(
+            "settings.user_name",
+            tr!(settings_field_user_name_hint()),
+        ));
 
     let form = FormLayout::new()
         .label(tr!(settings_page_user()))
@@ -52,13 +49,11 @@ pub(in crate::settings) fn user_pane(vm: &SettingsViewModel) -> impl Widget {
         .line(field_label(tr!(settings_field_user_name())), name)
         .line(
             field_label(tr!(settings_field_user_initials())),
-            FixedSize::new()
-                .width(240.0)
-                .child(InitialsField::new(vm.user_name(), vm.user_initials())),
+            InitialsField::new(vm.user_name(), vm.user_initials()),
         )
         .full_width(hint(tr!(settings_field_user_hint())));
 
-    pane_frame(crumb(None, tr!(settings_page_user())), form)
+    pane_frame(crumbs.of(Pane::User), form)
 }
 
 /// The initials field, showing what would be **derived** from the name as ghost

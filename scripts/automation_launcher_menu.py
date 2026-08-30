@@ -23,8 +23,8 @@ What it asserts, in order:
   1. **The hamburger is in the Launcher's title bar** and opens onto exactly one
      menu, Work. (The App and Window standard menus are macOS-only and invisible
      to the in-window bar — if one ever leaked into it, it would show up here.)
-  2. **Work lists the four ways in and the way out**: New Work, Open Work,
-     Create from ▸, Quit.
+  2. **Work lists the four ways in, the preferences and the way out**: New
+     Work, Open Work, Create from ▸, Settings, Quit.
   3. **Create from ▸ offers Document and Plume Creator**, and neither is a dead
      row: activating Plume Creator opens the Import Plume Creator modal, which
      is the whole point — that flow needs no open project, and until now the
@@ -34,7 +34,13 @@ What it asserts, in order:
   5. **Ctrl+N reaches New Work from the Launcher.** The window registers
      `work.new`/`work.open` shortcuts of its own now; a writer arriving from a
      project window already has those chords.
-  6. **Quit really quits.** The Launcher's `app.quit` runs the shared
+  6. **Settings opens from the Launcher**, by its menu row *and* by Ctrl+, —
+     and opens in its no-project shape (every app-level section reachable, no
+     Work section). This is where the app starts on Linux and Windows, so while
+     the row was withheld the theme, the text scale, the dictionaries, the
+     keybindings and the backup defaults could not be changed until a project
+     had been created or opened.
+  7. **Quit really quits.** The Launcher's `app.quit` runs the shared
      `QuitSequencer` rather than closing its own window — it used to do the
      latter, which under single-instance left the app running with project
      windows still up.
@@ -302,7 +308,7 @@ if not s.activate(work):
 time.sleep(1.0)
 rows = [r for r in menu_labels(s) if r != "Work"]
 print("  Work ▸", rows)
-for want in ("New Work", "Open Work…", "Create from", "Quit"):
+for want in ("New Work", "Open Work…", "Create from", "Settings", "Quit"):
     if not any(want.lower() in (r or "").lower() for r in rows):
         s.dump("Work menu")
         fail(f"the Work menu is missing a {want!r} row (saw {rows!r})", s.app, s.mcp, s.log)
@@ -378,7 +384,105 @@ s.shot("07-ctrl-n-new-work.png")
 if not dismiss_modal(s):
     fail("the New Work wizard would not close", s.app, s.mcp, s.log)
 
-# ── 6. Quit really quits ─────────────────────────────────────────────────────
+# ── 6. Settings reaches the preferences window from the Launcher ─────────────
+# The row that was withheld the longest, and the one with the most room to be
+# dead: `app.settings` opens `SettingsPanel`, which used to demand a Tier-2
+# `WorkSession` this window has none of. On Linux and Windows the app *starts*
+# here, so while it was withheld the theme, the interface text scale, the
+# dictionaries, the keybindings and the backup defaults could not be reached at
+# all before a project existed.
+#
+# Both halves are checked, because they are registered separately and either can
+# rot alone: the menu row (which fires the *named action*, and would open
+# nothing at all had `WelcomePanel::build` used `register_action` instead of
+# `register_action_global` — the intent walks source-widget → root and this menu
+# renders in an overlay that is a sibling of the window root) and Ctrl+, (a
+# `register_shortcut_global` on this window's own registry, since the Launcher
+# never builds an `App` and so cannot reach `app/commands/file.rs`).
+
+
+def open_settings(s, via):
+    """Wait for the Settings dialog, whichever door was just used."""
+    end = time.time() + 10
+    while time.time() < end:
+        for n in s.nodes():
+            if (n.get("role") == "Dialog"
+                    and (n.get("label") or "").strip() == "Settings"):
+                return n
+        time.sleep(0.4)
+    s.dump(f"after {via}")
+    fail(f"{via} opened no Settings window", s.app, s.mcp, s.log)
+
+
+def close_settings(s, timeout=8):
+    """Escape until the dialog is gone — it is an `EscapeKey` modal, but the
+    rail's search field takes the initial focus and may eat the first press."""
+    end = time.time() + timeout
+    while time.time() < end:
+        if not any(n.get("role") == "Dialog"
+                   and (n.get("label") or "").strip() == "Settings" for n in s.nodes()):
+            return True
+        s.key("Escape")
+        time.sleep(0.6)
+    return False
+
+
+time.sleep(0.6)
+settings_row = None
+for _ in range(4):
+    ham = s.find_exact("Menu", role="Button")
+    if ham:
+        s.activate(ham)
+        time.sleep(0.8)
+    work = s.find_exact("Work", role="MenuItem")
+    if work:
+        s.activate(work)
+        time.sleep(1.0)
+    settings_row = s.find_exact("Settings", role="MenuItem")
+    if settings_row:
+        break
+    dismiss_menu(s)
+if not settings_row:
+    s.dump("looking for Settings")
+    fail("no Settings row in the Launcher's Work menu", s.app, s.mcp, s.log)
+s.activate(settings_row)
+open_settings(s, "Work \u25b8 Settings")
+print("Work \u25b8 Settings opens the preferences window from the Launcher.")
+s.shot("08-settings-from-launcher.png")
+
+# The no-project shape, live: every app-level section is there and the Work
+# section is not. `tree_spec(false, ..)` is unit-tested, but only the running
+# window proves the panel really was built in its no-project variant rather
+# than refusing, half-building, or panicking behind the modal.
+rail = [(n.get("label") or "").strip() for n in s.nodes()]
+for want in ("Appearance", "Spelling"):
+    if not any(want.lower() in r.lower() for r in rail):
+        s.dump("settings rail")
+        fail(f"the app-level {want!r} section is unreachable from the Launcher",
+             s.app, s.mcp, s.log)
+# The menus are dismissed by now, so a bare "Work" row can only be the settings
+# tree's own section — which must not be there with no project open.
+stray = [n for n in s.nodes()
+         if (n.get("label") or "").strip() == "Work" and n.get("role") != "MenuItem"]
+if stray:
+    s.dump("settings rail")
+    fail("the settings tree offers a Work section with no project open "
+         f"(roles: {[n.get('role') for n in stray]!r})", s.app, s.mcp, s.log)
+print("  app-level sections present; no Work section, as with no project open.")
+if not close_settings(s):
+    fail("the Settings window would not close", s.app, s.mcp, s.log)
+
+# Ctrl+, — the same command by its chord, registered on this window's own
+# shortcut registry.
+time.sleep(0.6)
+s.key(",", ctrl=True)
+open_settings(s, "Ctrl+,")
+print("Ctrl+, opens Settings from the Launcher.")
+s.shot("09-settings-ctrl-comma.png")
+if not close_settings(s):
+    fail("the Settings window would not close after Ctrl+,", s.app, s.mcp, s.log)
+
+# ── 7. Quit really quits ─────────────────────────────────────────────────────
 # The Launcher's `app.quit` runs the shared `QuitSequencer` now, not a bare
 # `close_window()`. With nothing open the queue drains at once and `finish`
 # force-closes every window including this one — teksilo exits when its window

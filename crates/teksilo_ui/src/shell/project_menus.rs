@@ -251,11 +251,19 @@ pub(crate) const NOT_ON_MACOS: bool = !cfg!(target_os = "macos");
 /// first, carrying About / Hide / Quit on the standard responder-chain
 /// selectors.
 ///
-/// The **shared** half: everything every window agrees on. The project window
-/// layers Settings on top ([`app_standard_menu`]); the Launcher
-/// ([`crate::shell::launcher_menu`]) takes it as it stands, so the two editions
-/// of the App menu cannot drift apart on the app name, the About/Hide labels or
-/// the guarded quit route.
+/// **Every** window's App menu, the Launcher's included
+/// ([`crate::shell::launcher_menu`]) — so the two cannot drift apart on the app
+/// name, the About/Hide labels, the guarded quit route or the ⌘, that reaches
+/// Settings.
+///
+/// Settings used to be layered on top of this by a project-window-only
+/// `app_standard_menu()`, on the reasoning that `app.settings` opens
+/// `SettingsPanel` over a `WorkSession` the Launcher has none of. That is no
+/// longer true — `SettingsPanel::without_project` is exactly the window with no
+/// session — and the reasoning cost the Launcher the one menu a first-run reader
+/// needs: on Linux and Windows the app *starts* there, so theme, interface text
+/// scale, dictionaries, keybindings and the backup defaults were unreachable
+/// until a project had been created or opened.
 ///
 /// Declared rather than left to Teksilo's auto-injection: the bridge adds a
 /// default App menu when the model declares none, but with English `lit!`
@@ -290,23 +298,14 @@ pub(crate) fn app_standard_menu_base() -> teksilo::widgets::StandardMenu {
         // they moved it — a main-menu key equivalent is dispatched before the
         // responder chain, so the new chord would never reach the app.
         .quit_shortcut("app.quit")
-}
-
-/// The project window's application menu: [`app_standard_menu_base`] plus the
-/// Settings row.
-///
-/// Settings belongs in the App menu on a Mac, at ⌘, — a placement no `MenuEntry`
-/// can reach, since the platform fills this menu in. Same intent and same
-/// registered shortcut as Work ▸ Settings, so the two are one command with one
-/// chord rather than two that can disagree.
-///
-/// The Launcher deliberately does **not** add it: `app.settings` opens
-/// `SettingsPanel` over a `WorkSession`, which is Tier-2 state a window with no
-/// project does not have. An unrouted `settings_intent` is not a greyed row but
-/// no row at all (`settings_route: None` omits the item), which is the honest
-/// answer there — rather than a ⌘, that reaches nothing.
-fn app_standard_menu() -> teksilo::widgets::StandardMenu {
-    app_standard_menu_base()
+        // Settings belongs in the App menu on a Mac, at ⌘, — a placement no
+        // `MenuEntry` can reach, since the platform fills this menu in. Same
+        // intent and same registered shortcut as the in-window Work ▸ Settings
+        // row, so the two are one command with one chord rather than two that
+        // can disagree. Both windows register the `app.settings` action on
+        // their own tree (`app/commands/file.rs` for a project window,
+        // `welcome::panel` for the Launcher), because each `WidgetTree` owns its
+        // own `global_actions`/`shortcut_registry`.
         .settings(tr!(native_menu_settings()))
         .settings_intent("app.settings")
         .settings_shortcut("app.settings")
@@ -345,7 +344,7 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     let menu_go = parts.go.clone();
 
     MenuModel::new()
-        .standard_menu(app_standard_menu())
+        .standard_menu(app_standard_menu_base())
         .menu(tr!(menu_work()), |m| work::menu(m, &parts))
         .menu(tr!(menu_view()), |m| view::menu(m, &parts))
         // Format — marks the author places in the prose itself, as
@@ -735,7 +734,7 @@ mod tests {
     #[test]
     fn the_macos_quit_is_routed_through_the_guarded_action() {
         assert_eq!(
-            app_standard_menu().quit_intent_name(),
+            app_standard_menu_base().quit_intent_name(),
             Some("app.quit"),
             "the App menu's Quit must fire the same guarded action as Work > Quit"
         );
@@ -758,18 +757,21 @@ mod tests {
     /// so the new chord never reaches the app at all.
     #[test]
     fn the_routed_rows_take_their_chords_from_the_registry() {
-        let app = app_standard_menu();
+        let app = app_standard_menu_base();
         assert_eq!(app.quit_shortcut_id(), Some("app.quit"));
         assert_eq!(app.settings_shortcut_id(), Some("app.settings"));
     }
 
     /// Settings belongs in the App menu on a Mac. Routed to the same intent as
     /// Work ▸ Settings, so the two are one command rather than two that can
-    /// drift apart.
+    /// drift apart — and routed on the **shared** base, so the Launcher's App
+    /// menu carries it too. It did not, and on Linux and Windows the Launcher is
+    /// where the app starts: every app-level preference was unreachable in the
+    /// first-run state.
     #[test]
-    fn settings_is_routed_into_the_application_menu() {
+    fn settings_is_routed_into_every_windows_application_menu() {
         assert_eq!(
-            app_standard_menu().settings_intent_name(),
+            app_standard_menu_base().settings_intent_name(),
             Some("app.settings")
         );
     }

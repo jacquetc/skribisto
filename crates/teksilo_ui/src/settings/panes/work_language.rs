@@ -3,8 +3,6 @@
 
 //! Work: `<name>` ▸ Language — the open project's default spell-check language(s).
 
-use teksilo::prelude::*;
-
 #[allow(unused_imports)]
 use super::super::*;
 
@@ -14,7 +12,7 @@ use super::super::*;
 pub(in crate::settings) fn work_language_pane(
     ctx: &mut BuildContext,
     vm: &WorkSettingsViewModel,
-    work_title: String,
+    crumbs: &Crumbs,
     open_docs: crate::models::OpenDocsStore,
 ) -> impl Widget {
     // Build the whole form per branch so the pill field is added through FormLayout's own
@@ -52,15 +50,5 @@ pub(in crate::settings) fn work_language_pane(
         _ => base.full_width(TextWidget::new(tr!(settings_field_dict_language()))),
     };
 
-    pane_frame(
-        crumb(
-            Some(lit!(format!(
-                "{}: {}",
-                tr!(settings_sec_work()).resolve_now(),
-                work_title
-            ))),
-            tr!(settings_page_language()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::WorkLanguage), form)
 }

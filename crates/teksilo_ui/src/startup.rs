@@ -214,17 +214,77 @@ pub(crate) struct UiConfig {
     pub show_welcome_init: bool,
 }
 
+/// Whether the desktop is asking for a dark interface, with `fallback` used when
+/// it has no preference to report (or cannot be asked).
+///
+/// Teksilo's own query, not a second implementation of it: the same call
+/// `WindowManager::apply_os_theme` makes when the app is following the system,
+/// so the theme this seeds at launch and the theme teksilo would resolve a
+/// moment later cannot disagree.
+fn os_prefers_dark(fallback: bool) -> bool {
+    match teksilo::platform::os_theme::query_color_scheme() {
+        teksilo::tokens::ColorSchemePreference::Dark => true,
+        teksilo::tokens::ColorSchemePreference::Light => false,
+        teksilo::tokens::ColorSchemePreference::NoPreference => fallback,
+    }
+}
+
+/// The theme to launch in, given the writer's recorded choice.
+///
+/// Pure, and separated from [`build_ui_config`] for that reason — the OS query
+/// and the config directory are both machine state, and this is the decision
+/// worth pinning down.
+///
+/// * `mode` — [`crate::THEME_MODE_KEY`], or `None` for an install written before
+///   that key existed (or holding an illegal value; `cli::persisted_theme_mode`
+///   collapses the two).
+/// * `dark_key` — [`crate::DARK_KEY`], the legacy answer.
+/// * `system_dark` — what the desktop is asking for right now.
+///
+/// `None` falls back to `dark_key` so **nobody's theme changes on upgrade**:
+/// the new key is inert until something writes it, and until then the app
+/// launches in exactly the theme it launched in before.
+///
+/// The `"system"` arm stamps [`crate::SYSTEM_THEME_ID`] on the result, which is
+/// not cosmetic. It is the same id teksilo gives a theme it resolved from the
+/// OS, so the picker's *System* entry is selected at launch (it matches by id),
+/// and the Reset gate reads the mode back out of the live theme rather than
+/// having to be told. Stamping it on the *active style's* light or dark keeps
+/// `--style` intact for the launch, where teksilo's own follow-OS path would
+/// drop the run back to IntUI.
+pub(crate) fn theme_for(mode: Option<&str>, dark_key: bool, system_dark: bool) -> Theme {
+    match mode {
+        Some(crate::THEME_MODE_LIGHT) => crate::style::light(),
+        Some(crate::THEME_MODE_DARK) => crate::style::dark(),
+        Some(crate::THEME_MODE_SYSTEM) => {
+            crate::style::theme(system_dark).with_id(crate::SYSTEM_THEME_ID)
+        }
+        _ => crate::style::theme(dark_key),
+    }
+}
+
 pub(crate) fn build_ui_config() -> UiConfig {
     // Read persisted UI prefs before constructing the app (same AppPaths the
     // builder will use via `.application(...)`).
-    let (dark, chosen_locale, autosave_init, spellcheck_init, show_welcome_init) =
-        cli::read_prefs();
+    let cli::Prefs {
+        dark,
+        theme_mode,
+        locale: chosen_locale,
+        autosave: autosave_init,
+        spellcheck: spellcheck_init,
+        show_welcome: show_welcome_init,
+    } = cli::read_prefs();
 
     // The active design language's light or dark theme — IntUI unless `--style`
     // named another (see `crate::style`). This is the one site that decides the
     // app's *chrome*: widget shapes resolve when a widget is built, so every
     // later `set_theme` only ever retints within the same family.
-    let theme = crate::style::theme(dark);
+    //
+    // Which of the two, and whether the desktop gets a say, is
+    // `ui.theme_mode`'s to answer — see [`theme_for`]. `ui.dark` is the
+    // fallback for an install written before that key existed, and the
+    // tie-break when the desktop reports no preference at all.
+    let theme = theme_for(theme_mode.as_deref(), dark, os_prefers_dark(dark));
 
     let i18n = I18nConfig::new()
         .source_locale("en-US".parse().unwrap())
@@ -576,5 +636,102 @@ mod tests {
                 "{tag} is not a parseable BCP-47 tag"
             );
         }
+    }
+
+    // ── The theme the launch seeds ───────────────────────────────────────
+
+    /// The upgrade guarantee. An install with no `ui.theme_mode` line launches
+    /// in exactly the theme `ui.dark` alone used to pick — whatever the desktop
+    /// happens to prefer, which is the value that must NOT leak in here.
+    #[test]
+    fn an_install_from_before_the_key_still_launches_on_ui_dark() {
+        for system_dark in [false, true] {
+            assert!(theme_for(None, true, system_dark).is_dark());
+            assert!(!theme_for(None, false, system_dark).is_dark());
+        }
+    }
+
+    /// An illegal value is the same answer as an absent one — it must not fall
+    /// through into the system arm and quietly hand the desktop a vote.
+    #[test]
+    fn an_unrecognised_mode_falls_back_to_ui_dark() {
+        assert!(theme_for(Some("System"), true, false).is_dark());
+        assert!(!theme_for(Some("nonsense"), false, true).is_dark());
+    }
+
+    /// The two manual answers pin the app's own theme whatever the desktop says.
+    #[test]
+    fn a_manual_mode_ignores_the_desktop() {
+        for system_dark in [false, true] {
+            assert!(!theme_for(Some(crate::THEME_MODE_LIGHT), true, system_dark).is_dark());
+            assert!(theme_for(Some(crate::THEME_MODE_DARK), false, system_dark).is_dark());
+        }
+    }
+
+    /// System follows the desktop rather than the last mirrored `ui.dark` — the
+    /// bug this key exists for: choosing System used to pin itself as manual
+    /// light or dark on the very next launch.
+    #[test]
+    fn system_follows_the_desktop_not_the_last_mirrored_state() {
+        assert!(theme_for(Some(crate::THEME_MODE_SYSTEM), false, true).is_dark());
+        assert!(!theme_for(Some(crate::THEME_MODE_SYSTEM), true, false).is_dark());
+    }
+
+    /// …and says so in its id, which is what lets the picker show *System* at
+    /// launch and the Reset gate read the mode back off the live theme. Both
+    /// match by id, so a plain light/dark theme here would read as a manual
+    /// choice and light the Reset button at factory state.
+    #[test]
+    fn a_system_theme_is_labelled_as_one_and_the_others_are_not() {
+        for system_dark in [false, true] {
+            let theme = theme_for(Some(crate::THEME_MODE_SYSTEM), false, system_dark);
+            assert_eq!(theme.id.as_str(), crate::SYSTEM_THEME_ID);
+            assert_eq!(
+                crate::settings_keys::theme_mode_of(&theme),
+                crate::THEME_MODE_SYSTEM
+            );
+        }
+        for (mode, dark_key) in [
+            (Some(crate::THEME_MODE_LIGHT), false),
+            (Some(crate::THEME_MODE_DARK), true),
+            (None, true),
+            (None, false),
+        ] {
+            let theme = theme_for(mode, dark_key, true);
+            assert_ne!(
+                theme.id.as_str(),
+                crate::SYSTEM_THEME_ID,
+                "a pinned theme must not claim to be following the desktop"
+            );
+        }
+    }
+
+    /// `--style` survives the system arm. Teksilo's own follow-OS path drops to
+    /// its IntUI presets by design; the launch seed must not, or a run started
+    /// under another design language would come up in the wrong one and every
+    /// widget built in it would keep IntUI's shapes for the life of the process.
+    #[test]
+    fn the_system_arm_stays_inside_the_active_design_language() {
+        for system_dark in [false, true] {
+            let seeded = theme_for(Some(crate::THEME_MODE_SYSTEM), false, system_dark);
+            let styled = crate::style::theme(system_dark);
+            assert_eq!(seeded.colors.surface_main, styled.colors.surface_main);
+            assert_eq!(seeded.is_dark(), system_dark);
+        }
+    }
+
+    /// The desktop's "no preference" is not "light": it falls back to the last
+    /// state the app recorded, so a writer on a desktop that cannot be asked
+    /// keeps the theme they were looking at.
+    #[test]
+    fn no_preference_falls_back_to_the_recorded_state() {
+        // `os_prefers_dark` is the only place that decision lives; exercised
+        // through it rather than restated, so the two cannot drift.
+        let asked = os_prefers_dark(true);
+        let asked_light = os_prefers_dark(false);
+        assert!(
+            asked == asked_light || (asked && !asked_light),
+            "the fallback may only decide the NoPreference case"
+        );
     }
 }

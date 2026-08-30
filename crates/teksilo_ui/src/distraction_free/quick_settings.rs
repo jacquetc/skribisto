@@ -132,9 +132,13 @@ fn themes_tab(
     // Ghost for the same reason Exit is: a `Plain` fill is `SurfaceRole::Main`,
     // which on this surface is the theme's general background, not the surface
     // the button actually sits on.
+    // `app.settings.df_themes`, not the generic `app.settings`: that one lands on
+    // Editor ▸ Scene typography, so the button this popover offers *instead of*
+    // opening the whole preferences window opened the whole preferences window,
+    // over the manuscript, on a page that is not the one it named.
     let manage = Button::new(tr!(statusbar_focus_manage_themes()))
         .variant(ButtonVariant::Ghost)
-        .on_activate_fn(|ctx| ctx.send_intent(Intent::new("app.settings")));
+        .on_activate_fn(|ctx| ctx.send_intent(Intent::new("app.settings.df_themes")));
 
     VStack::new()
         .spacing(6.0)

@@ -5,7 +5,6 @@
 //! mode's own settings (typography, column width, strip toggles) live on
 //! `panes::distraction_free` instead, so its quick-access popover has one body to reuse.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{ComboBox, Segment, SegmentedControl};
 
@@ -42,6 +41,35 @@ fn synopsis_choice_label(choice: Option<SynopsisPlacement>) -> LocalizedString {
         Some(SynopsisPlacement::Top) => tr!(settings_synopsis_placement_top()),
         Some(SynopsisPlacement::Side) => tr!(settings_synopsis_placement_side()),
     }
+}
+
+/// The three values `editor.image_size_policy` takes, in the order they are
+/// offered. The strings are the setting's own storage vocabulary — the same three
+/// `app::commands::images::stored_policy` reads back — so they are literals here
+/// rather than an enum: an enum would be a fourth place the vocabulary is written
+/// down, and the two sides could then disagree silently.
+const IMAGE_SIZE_POLICIES: [&str; 3] = ["ask", "keep", "downscale"];
+
+/// Display name for each large-image policy.
+fn image_policy_label(value: &str) -> LocalizedString {
+    match value {
+        "keep" => tr!(settings_image_policy_keep()),
+        "downscale" => tr!(settings_image_policy_downscale()),
+        _ => tr!(settings_image_policy_ask()),
+    }
+}
+
+/// Which segment a stored policy selects.
+///
+/// Anything unrecognised lands on "Ask each time" — the same fallback
+/// `app::commands::images::stored_policy` applies when it reads the key back, so
+/// a value hand-written into `general.toml` cannot make the control disagree with
+/// what the insert path will actually do.
+fn image_policy_index(value: &str) -> usize {
+    IMAGE_SIZE_POLICIES
+        .iter()
+        .position(|p| *p == value)
+        .unwrap_or(0)
 }
 
 /// Display name for each caret-band scope.
@@ -139,11 +167,47 @@ fn bridge_synopsis_choice(
     choice_index
 }
 
+/// Bridge the stored `editor.image_size_policy` string to the
+/// `SegmentedControl`'s `usize`, and return the index signal.
+///
+/// Two guarded effects, the same shape as the caret band's bridge: the `!=`
+/// guards are what stop the two signals from writing each other back and forth
+/// for ever. The stored form stays a string because it is the vocabulary the
+/// *insert* path reads (`app::commands::images`), and a settings page must not
+/// invent a second one.
+fn bridge_image_policy(ctx: &mut BuildContext, policy: Signal<String>) -> Signal<usize> {
+    let index: Signal<usize> = Signal::new(image_policy_index(&policy.get()));
+    {
+        let index = index.clone();
+        ctx.effect(&policy, move |v: &String| {
+            let i = image_policy_index(v);
+            if index.get() != i {
+                index.set(i);
+            }
+        });
+    }
+    {
+        let policy = policy.clone();
+        ctx.effect(&index, move |i| {
+            let want = IMAGE_SIZE_POLICIES
+                .get(*i)
+                .copied()
+                .unwrap_or(IMAGE_SIZE_POLICIES[0])
+                .to_string();
+            if policy.get() != want {
+                policy.set(want);
+            }
+        });
+    }
+    index
+}
+
 /// Editor ▸ Editor Behavior — the non-typographic writing settings: the
 /// centered-column width, the writing-view toggles, and the container-view
 /// memory.
 pub(in crate::settings) fn editor_behavior_pane(
     ctx: &mut BuildContext,
+    crumbs: &Crumbs,
     vm: &SettingsViewModel,
 ) -> impl Widget {
     // The caret band's scope ⟷ the `SegmentedControl`'s `usize` selection, bridged by two
@@ -170,6 +234,20 @@ pub(in crate::settings) fn editor_behavior_pane(
             }
         });
     }
+    // Through the view-model, not `ctx.settings()` directly: this row and the
+    // Reset button must move the *same* signal, or a reset would put the store
+    // back to `ask` while the segmented control kept showing what it had. The
+    // accessor is lazy on purpose (it seeds the key only where it is about to be
+    // written), so reading it here — inside a pane the writer opened — is the
+    // moment it is meant to be read.
+    let image_policy = vm.image_size_policy();
+    let policy_index = bridge_image_policy(ctx, image_policy);
+    let image_policy_control = IMAGE_SIZE_POLICIES
+        .iter()
+        .fold(SegmentedControl::indexed(policy_index), |control, value| {
+            control.segment(Segment::new(image_policy_label(value)))
+        });
+
     let choice_index = bridge_synopsis_choice(ctx, vm.synopsis_pane(), vm.synopsis_placement());
     let synopsis_control = SYNOPSIS_CHOICES.into_iter().fold(
         SegmentedControl::indexed(choice_index),
@@ -209,9 +287,16 @@ pub(in crate::settings) fn editor_behavior_pane(
             field_label(tr!(settings_synopsis_placement())),
             synopsis_control,
         )
-        .full_width(
+        // In the label column with every other field on this page, not spanning
+        // both: a `full_width` row starts at the pane's own left edge while a
+        // `.line` field starts at `label_col + gap`, and mixing the two gives one
+        // page two left edges. `export_styles`' editor settled this the same way.
+        // `FormLayout::line` wires `access_labelled_by` itself, so
+        // `labelled_externally` only tells the toggle's own assertion so.
+        .line(
+            field_label(tr!(settings_typewriter())),
             Toggle::new(vm.typewriter())
-                .label(tr!(settings_typewriter()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.typewriter",
                     tr!(settings_typewriter_tip()),
@@ -223,14 +308,12 @@ pub(in crate::settings) fn editor_behavior_pane(
         // feature offers instead of appearing out of nowhere when it is enabled.
         .line(
             field_label(tr!(settings_typewriter_position())),
-            FixedSize::new().width(240.0).child(
-                ComboBox::from_items(
-                    TypewriterAnchor::all(),
-                    vm.typewriter_anchor(),
-                    typewriter_anchor_label,
-                )
-                .enabled(vm.typewriter()),
-            ),
+            ComboBox::from_items(
+                TypewriterAnchor::all(),
+                vm.typewriter_anchor(),
+                typewriter_anchor_label,
+            )
+            .enabled(vm.typewriter()),
         )
         // How much of the text around the caret is shaded while you write. A three-way choice
         // rather than a toggle: a sentence is the unit you shape word by word, a paragraph the
@@ -239,10 +322,21 @@ pub(in crate::settings) fn editor_behavior_pane(
             field_label(tr!(settings_highlight_scope())),
             highlight_control,
         )
+        // The way back out of a one-way door. The insert-an-image prompt offers
+        // "don't ask again", and ticking it writes `keep` or `downscale` into
+        // `editor.image_size_policy` for good — after which every later insert is
+        // silently handled that way and *no page in the window said so*, which
+        // left hand-editing `general.toml` as the only undo.
+        .line(
+            field_label(tr!(settings_field_image_size_policy())),
+            image_policy_control,
+        )
+        .full_width(hint(tr!(settings_hint_image_size_policy())))
         .full_width(group(tr!(settings_group_container_views())))
-        .full_width(
+        .line(
+            field_label(tr!(settings_remember_view())),
             Toggle::new(vm.remember_view())
-                .label(tr!(settings_remember_view()))
+                .labelled_externally()
                 .rich_tooltip_content(
                     TooltipContent::new(
                         "settings.remember_view",
@@ -252,13 +346,7 @@ pub(in crate::settings) fn editor_behavior_pane(
                 ),
         );
 
-    pane_frame(
-        crumb(
-            Some(tr!(settings_sec_editor())),
-            tr!(settings_page_editor_behavior()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::EditorBehavior), form)
 }
 
 #[cfg(test)]
@@ -268,6 +356,93 @@ mod tests {
     use std::rc::Rc;
     use teksilo::core::widget_tree::WidgetTree;
     use teksilo::core::{LayoutContext, LayoutResponse, Widget, WidgetId};
+
+    /// Hosts [`bridge_image_policy`] in a real `BuildContext` and hands the index
+    /// signal back, so a test can act as the `SegmentedControl` does.
+    struct PolicyHost {
+        policy: Signal<String>,
+        out: Rc<std::cell::RefCell<Option<Signal<usize>>>>,
+    }
+    impl std::fmt::Debug for PolicyHost {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("PolicyHost").finish()
+        }
+    }
+    impl Widget for PolicyHost {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            *self.out.borrow_mut() = Some(bridge_image_policy(ctx, self.policy.clone()));
+            Vec::new()
+        }
+        fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            proposal.resolve(0.0, 0.0).into()
+        }
+    }
+
+    /// A live policy bridge. The tree is kept alive deliberately: `ctx.effect`'s
+    /// observers are owned by it, and dropping it would unregister the bridge
+    /// under test and leave every assertion passing against nothing.
+    struct Policy {
+        policy: Signal<String>,
+        index: Signal<usize>,
+        _tree: WidgetTree,
+    }
+
+    fn policy_bridge(stored: &str) -> Policy {
+        let policy = Signal::new(stored.to_string());
+        let out = Rc::new(std::cell::RefCell::new(None));
+        let mut tree = WidgetTree::new();
+        tree.add(PolicyHost {
+            policy: policy.clone(),
+            out: out.clone(),
+        });
+        tree.layout(SizeProposal::exact(100.0, 100.0));
+        let index = out.borrow().clone().expect("the bridge was built");
+        Policy {
+            policy,
+            index,
+            _tree: tree,
+        }
+    }
+
+    /// The vocabulary this page writes is the one the *insert* path reads.
+    ///
+    /// `editor.image_size_policy` had no page at all: the insert prompt's "don't
+    /// ask again" box wrote `keep` or `downscale` and nothing in the window could
+    /// write it back. A page that offered its own spelling of those three would
+    /// have been worse than none — it would look like an undo and change nothing.
+    #[test]
+    fn the_offered_policies_are_the_ones_the_insert_path_stores() {
+        assert_eq!(IMAGE_SIZE_POLICIES, ["ask", "keep", "downscale"]);
+    }
+
+    /// Picking a segment writes the stored string, in both directions.
+    #[test]
+    fn the_large_image_policy_round_trips_through_the_control() {
+        let b = policy_bridge("ask");
+        assert_eq!(b.index.get(), 0);
+
+        b.index.set(2); // the writer picks "Optimise"
+        assert_eq!(b.policy.get(), "downscale");
+
+        b.index.set(1);
+        assert_eq!(b.policy.get(), "keep");
+
+        // …and a value written from elsewhere (the insert prompt's "don't ask
+        // again" box) moves the control.
+        b.policy.set("ask".to_string());
+        assert_eq!(b.index.get(), 0, "the control must follow the setting");
+    }
+
+    /// A value nothing recognises reads as "ask" — the same fallback
+    /// `stored_policy` applies — so a hand-edited `general.toml` cannot make the
+    /// page disagree with what an insert will actually do.
+    #[test]
+    fn an_unrecognised_stored_policy_shows_as_ask() {
+        assert_eq!(image_policy_index("shrink-a-bit"), 0);
+        assert_eq!(image_policy_index(""), 0);
+        let b = policy_bridge("shrink-a-bit");
+        assert_eq!(b.index.get(), 0);
+    }
 
     /// Registers the bridge inside a real `BuildContext` and hands the index signal back,
     /// so a test can act as the `SegmentedControl` does: write the index, observe the pair.

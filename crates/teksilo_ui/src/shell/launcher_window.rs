@@ -38,12 +38,25 @@ use crate::welcome::panel::WelcomePanel;
 /// always succeeds — and since it is Skribisto's other-than-a-project window,
 /// closing it while it is the only window quits the process. That is the
 /// intended "close the launcher to exit" behaviour.
+/// The Launcher's fixed size — width.
+///
+/// Module-level, and `pub(crate)`, because it is no longer only this window's
+/// business: the Launcher is the **one** window in the app that cannot be
+/// resized (`min == max` below), and since it now hosts the Settings window
+/// ([`crate::shell::launcher_menu`]) this pair is the smallest viewport that
+/// card will ever be given — with no way for the writer to grow it. `settings`'
+/// own `the_card_fits_the_launchers_fixed_window` measures against these, so
+/// shrinking the Launcher cannot silently clip the largest surface in the app.
+pub(crate) const LAUNCHER_W: u32 = 820;
+/// The Launcher's fixed size — height. See [`LAUNCHER_W`].
+pub(crate) const LAUNCHER_H: u32 = 590;
+
 pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
     // The Launcher is deliberately not resizable (min == max): `WelcomePanel`
     // fills it edge to edge, so this is the one place its proportions — the
     // 264 dp sidebar against the recents list — are decided.
-    const W: u32 = 820;
-    const H: u32 = 590;
+    const W: u32 = LAUNCHER_W;
+    const H: u32 = LAUNCHER_H;
     WindowConfig::new()
         .id(LAUNCHER_WINDOW_ID)
         // The OS-level title (taskbar, alt-tab, window list) stays the app's

@@ -26,20 +26,32 @@
 //!
 //! Every label is a key the project window's menu bar already carries — `menu-work`,
 //! `menu-new-work`, `menu-open-work`, `menu-import-document`, `menu-import-plume`,
-//! `menu-quit`. One row, one name, wherever the writer meets it, and no second
-//! translation of a string that already exists in both locales. The single
-//! exception is the wrapper `menu-create-from`, which exists precisely because it
-//! is *not* the project window's "Import from": these two rows produce a brand-new
+//! `menu-settings`, `menu-quit`. One row, one name, wherever the writer meets it,
+//! and no second translation of a string that already exists in both locales. The
+//! single exception is the wrapper `menu-create-from`, which exists precisely because
+//! it is *not* the project window's "Import from": these two rows produce a brand-new
 //! project, where that menu's importers land content **in** the one already open.
 //!
 //! ## What it is deliberately *not*
 //!
 //! Not a shorter copy of the project menu. Every row here has to mean something
 //! with **no project open**, which rules out most of Work (Save, Export, Close,
-//! New Window), all of View/Document/Format/Go, and Settings — `app.settings`
-//! opens `SettingsPanel` over a `WorkSession`, Tier-2 state this window has
-//! none of. What is left is the four ways *into* a project — New, Open, and the
-//! two Create-from importers — and the way out.
+//! New Window) and all of View/Document/Format/Go. What is left is the four ways
+//! *into* a project — New, Open, and the two Create-from importers — the app's
+//! preferences, and the way out.
+//!
+//! ## Settings, and why it is here
+//!
+//! It was withheld, on the reasoning that `app.settings` opens `SettingsPanel`
+//! over a `WorkSession` this window has none of. That was true of the panel and
+//! wrong about the app: on Linux and Windows this window is where Skribisto
+//! *starts*, so theme, interface text scale, dictionaries, keybindings and the
+//! backup defaults were all unreachable until the writer had created or opened a
+//! project — every one of them a thing a first-run reader is likely to want
+//! *first*. `SettingsPanel::without_project` is the window with no session: every
+//! app-level page live, the Work section absent from its tree. The row fires the
+//! same `app.settings` action name the project window's Work ▸ Settings does,
+//! registered here on this window's own tree by `WelcomePanel::build`.
 //!
 //! New Work and Open Work are buttons on the Welcome content as well, and
 //! deliberately so: the menu is where a keyboard user and a screen reader look
@@ -78,6 +90,16 @@ pub(crate) const ACTION_NEW_FROM_DOCUMENTS: &str = "work.new_from_documents";
 /// project window's Work ▸ Import from ▸ Plume Creator uses, registered
 /// separately on each window's own tree (see [`build_launcher_menu`]).
 pub(crate) const ACTION_IMPORT_PLUME: &str = "work.import_plume";
+
+/// "Open the preferences window" — the same action name the project window's
+/// Work ▸ Settings row and the App menu's ⌘, both fire, over a body that opens
+/// [`SettingsPanel::without_project`](crate::settings::SettingsPanel::without_project)
+/// instead of one over this window's session, because this window has none.
+///
+/// A constant for the same reason [`ACTION_NEW_FROM_DOCUMENTS`] is: two places
+/// here name it (this module's row, `WelcomePanel::build`'s registration) and a
+/// typo in either is a row that silently opens nothing.
+pub(crate) const ACTION_SETTINGS: &str = "app.settings";
 
 /// Build the Launcher's menu model — one Work menu between the two
 /// platform-standard ones.
@@ -125,6 +147,18 @@ pub(crate) fn build_launcher_menu() -> MenuModel {
                 )
                 .item(MenuEntry::new(tr!(menu_import_plume())).intent(ACTION_IMPORT_PLUME))
             })
+            .separator()
+            // App preferences — in the same slot the project window's Work menu
+            // puts them, just above Quit, and hidden on macOS for the same
+            // reason: the App menu carries Settings at ⌘, there, and two items
+            // claiming one key equivalent leave AppKit to pick by traversal
+            // order.
+            .item(
+                MenuEntry::new(tr!(menu_settings()))
+                    .visible(NOT_ON_MACOS)
+                    .intent(ACTION_SETTINGS)
+                    .shortcut(ACTION_SETTINGS),
+            )
             .separator()
             // Hidden on macOS: Quit lives in the App menu there, and two items
             // claiming ⌘Q leave AppKit to pick by traversal order. Same rule and
@@ -200,7 +234,8 @@ mod tests {
         );
     }
 
-    /// The Work menu's shape: New Work, Open Work, the Create-from submenu, Quit.
+    /// The Work menu's shape: New Work, Open Work, the Create-from submenu,
+    /// Settings, Quit.
     ///
     /// `MenuEntry`'s title and intent are `pub(crate)` to teksilo, so a test here
     /// can see a row's *kind* and *position* but not its label or the action it
@@ -210,7 +245,7 @@ mod tests {
     /// and every label is a `tr!` key the project window's own menu already uses,
     /// so a row cannot disagree with either its action or its twin.
     #[test]
-    fn the_work_menu_offers_four_ways_in_and_one_way_out() {
+    fn the_work_menu_offers_four_ways_in_the_preferences_and_one_way_out() {
         let model = build_launcher_menu();
         let nodes = model.nodes();
         let MenuNode::Submenu {
@@ -229,10 +264,13 @@ mod tests {
                     MenuNode::Separator,
                     MenuNode::Submenu { .. },
                     MenuNode::Separator,
+                    MenuNode::Item(_),
+                    MenuNode::Separator,
                     MenuNode::Item(_)
                 ]
             ),
-            "New Work · Open Work · separator · Create from ▸ … · separator · Quit"
+            "New Work · Open Work · separator · Create from ▸ … · separator · \
+             Settings · separator · Quit"
         );
         let MenuNode::Submenu {
             title, children, ..
@@ -264,12 +302,23 @@ mod tests {
         assert_eq!(app.quit_shortcut_id(), Some("app.quit"));
     }
 
-    /// No Settings row: `app.settings` opens `SettingsPanel` over a
-    /// `WorkSession`, which a window with no project does not have. An unrouted
-    /// `settings_intent` omits the item outright rather than greying it, which
-    /// is the honest answer — a ⌘, that reaches nothing is worse than no ⌘,.
+    /// ⌘, on macOS reaches the preferences window from the Launcher too.
+    ///
+    /// It did not: the App menu's Settings row was layered on by a
+    /// project-window-only variant, on the reasoning that `SettingsPanel` needs
+    /// a `WorkSession`. On Linux and Windows that left every app-level
+    /// preference unreachable in the state the app *starts* in; on macOS it left
+    /// the App menu without its standard ⌘, whenever the Launcher held focus.
+    /// The route is now on the shared base, so neither window can lose it
+    /// without the other noticing.
     #[test]
-    fn the_launcher_app_menu_offers_no_settings() {
-        assert_eq!(app_standard_menu_base().settings_intent_name(), None);
+    fn the_launcher_app_menu_reaches_settings() {
+        let app = app_standard_menu_base();
+        assert_eq!(app.settings_intent_name(), Some("app.settings"));
+        assert_eq!(
+            app.settings_shortcut_id(),
+            Some("app.settings"),
+            "the chord comes from the registry, so the row follows a rebind"
+        );
     }
 }

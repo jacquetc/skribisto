@@ -13,16 +13,22 @@ Asserts, against the live AT tree:
 
   1. selecting the **Editor** section shows a page whose links are exactly its
      children — Typography (the nested group, as ONE link, not its six pages),
-     Editor Behavior, Punctuation, Goals & Word Count, Writing games;
+     Editor Behavior, Margin marks, Punctuation defaults, Goals & Word Count,
+     Writing games;
   2. following the **Typography** link lands on the group's own page, whose links
      are its six typography pages — so a parent's page is reachable from its
      parent's page, two levels deep;
   3. following the **Scene** link from there opens the real Scene typography form
      *and moves the tree's highlight to the Scene row*. Switching the pane while
      the tree went on highlighting something else is the exact disagreement these
-     pages were added to end, so the highlight is asserted, not assumed;
+     pages were added to end, so the highlight is asserted, not assumed.
+     Since the window stopped landing on Scene, steps 2 and 3 also prove the
+     **reveal**: Editor and its Typography group start collapsed, so a row this
+     walk highlights has no widget at all unless the jump unfolded its ancestors
+     (`Navigator::go`). "Highlighted" and "on screen" are one assertion here
+     because a `rail_row` lookup only sees realized rows;
   4. the **Work: `<title>`** section's page carries the open project's name in its
-     title and links to that project's nine pages;
+     title and links to that project's ten pages;
   5. every link on every parent's page carries a description line under it (the
      one thing a link has that the tree row above it doesn't).
 
@@ -368,7 +374,8 @@ select_row("Editor")
 if not row_is_selected("Editor"):
     fail("the Editor row did not take the selection", s.app, s.mcp, s.log)
 require_links(
-    ["Typography", "Editor Behavior", "Punctuation", "Goals & Word Count", "Writing games"],
+    ["Typography", "Editor Behavior", "Margin marks", "Punctuation defaults",
+     "Goals & Word Count", "Writing games"],
     "Editor section page",
 )
 # The nested group is ONE entry: flattening it would undo the reason it exists.
@@ -414,9 +421,13 @@ if not work_row:
     fail("no 'Work: <title>' section — the example did not open?", s.app, s.mcp, s.log)
 work_label = (work_row.get("label") or "").strip()
 select_row(work_label)
+# `Punctuation` last, NOT "Smart punctuation": that string is the *group heading*
+# inside this page, and the page's own label is `settings-page-work-punctuation`
+# ("Punctuation") — a key of its own precisely so the rail stops carrying two rows
+# that read alike. The app-level page one section up is "Punctuation defaults".
 require_links(
     ["Author", "Structure", "Language", "Backups", "Personal dictionary", "Tags",
-     "Templates", "Text replacements", "Punctuation"],
+     "Statuses", "Templates", "Text replacements", "Punctuation"],
     "Work section page",
 )
 if joined().count(work_label.lower()) < 2:
@@ -425,16 +436,16 @@ if joined().count(work_label.lower()) < 2:
 shots.append(s.shot("/tmp/settings-parent-work.png"))
 
 # 5 ── every remaining section, including the collapsed ones ─────────────────
-# The three sections that start collapsed are the ones a writer is most likely to
+# The four sections that start collapsed are the ones a writer is most likely to
 # select without expanding — which is precisely when the pane used to keep
 # showing the previous page. Selecting a section does not expand it
 # (`row_click_expands(false)`), so its page is the only thing that says what is
 # inside.
 print("== 5. every other section's page ==")
 for section, children in [
-    ("Appearance & Behaviour", ["Appearance", "Menus & Toolbars", "Notifications"]),
+    ("Appearance & Behavior", ["Appearance", "Notifications"]),
     ("Spelling", ["Spell-checking", "Dictionaries"]),
-    ("Backup & Sync", ["Autosave", "Backups"]),
+    ("Backup & Sync", ["Autosave", "Backup defaults"]),
     ("Compile & Export", ["Export Formats", "Paratext Structures"]),
 ]:
     select_row(section)

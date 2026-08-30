@@ -6,7 +6,7 @@
 //! ## Why this page iterates a registry rather than listing switches
 //!
 //! Every row under "What it marks" comes from
-//! [`margin_lane::registered`](crate::margin_lane::registered), including rows
+//! [`crate::margin_lane::registered`], including rows
 //! this crate did not write. An extension registers a provider and its row
 //! appears here, with its own label, its own hint and its own swatch, without
 //! the community edition knowing what it is.
@@ -30,7 +30,6 @@
 //! Nothing is lost to a screen reader by that: a tooltip's text is harvested as
 //! the control's accessible description whether or not it is showing.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{Center, FixedSize, HStack, RectWidget, VStack};
 
@@ -44,27 +43,41 @@ use super::super::*;
 /// Resolved through [`margin_lane::resolve_slot`] rather than from the spec, for
 /// the same reason the lane resolves it: a provider names a palette slot, and
 /// the theme decides what that looks like.
-fn swatch(colors: &teksilo::tokens::ColorTokens, slot: u8) -> impl Widget {
-    let fill = margin_lane::resolve_slot(colors, slot);
+///
+/// **Bound to the theme signal, never resolved at build time.** `WidgetTree::set_theme`
+/// deliberately does not rebuild, so a colour cloned out of `ctx.theme()` in `build`
+/// is frozen at whatever palette happened to be in force when the page was
+/// constructed. On *this* page that is the likeliest failure in the whole window:
+/// the reader flips Light ⇄ Dark on the Appearance page one click away and comes
+/// back to swatches still painted in the old palette, and only reopening Settings
+/// clears it.
+fn swatch(theme: &Signal<teksilo::core::styles::Theme>, slot: u8) -> impl Widget {
+    let fill = theme.map(move |t| margin_lane::resolve_slot(&t.colors, slot));
     // The same shape a tag's swatch uses, and for the same recorded reason: the
     // hairline is derived from the fill rather than taken from a border token,
     // because no token clears 1.4.11's 3:1 against an arbitrary fill. `FixedSize`
     // inside a `Center` rather than a minimum, or the greedy rect stretches to
     // the row's full height instead of staying a dot.
+    let outline = theme.map(move |t| {
+        crate::tags::contrast::outline_on(margin_lane::resolve_slot(&t.colors, slot))
+    });
     Center::new().child(
         FixedSize::new().width(10.0).height(10.0).child(
             RectWidget::new()
                 .background(fill)
                 .corner_radius(teksilo::tokens::CornerRadius::uniform(2.0))
-                .border_color(crate::tags::contrast::outline_on(fill))
+                .border_color(outline)
                 .border_width(1.0),
         ),
     )
 }
 
-pub(in crate::settings) fn margin_lane_pane(ctx: &mut BuildContext) -> impl Widget {
+pub(in crate::settings) fn margin_lane_pane(
+    ctx: &mut BuildContext,
+    crumbs: &Crumbs,
+) -> impl Widget {
     let store = ctx.settings();
-    let colors = ctx.theme().colors.clone();
+    let theme = ctx.theme_signal().clone();
 
     let enabled = store.signal(
         crate::MARGIN_LANE_ENABLED_KEY,
@@ -112,7 +125,7 @@ pub(in crate::settings) fn margin_lane_pane(ctx: &mut BuildContext) -> impl Widg
             form = form.full_width(
                 HStack::new()
                     .spacing(8.0)
-                    .child(swatch(&colors, spec.palette_slot))
+                    .child(swatch(&theme, spec.palette_slot))
                     .child(
                         Toggle::new(signal)
                             .label((spec.label)())
@@ -150,13 +163,7 @@ pub(in crate::settings) fn margin_lane_pane(ctx: &mut BuildContext) -> impl Widg
         form = form.full_width(Toggle::new(signal).label(surface_label(surface)));
     }
 
-    pane_frame(
-        crumb(
-            Some(tr!(settings_sec_editor())),
-            tr!(settings_page_margin_lane()),
-        ),
-        VStack::new().child(form),
-    )
+    pane_frame(crumbs.of(Pane::MarginLane), VStack::new().child(form))
 }
 
 fn surface_label(surface: LaneSurface) -> teksilo::i18n::LocalizedString {
@@ -164,5 +171,41 @@ fn surface_label(surface: LaneSurface) -> teksilo::i18n::LocalizedString {
         LaneSurface::Editor => tr!(settings_margin_lane_surface_editor()),
         LaneSurface::Stream => tr!(settings_margin_lane_surface_stream()),
         LaneSurface::SearchPreview => tr!(settings_margin_lane_surface_search_preview()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use teksilo::core::widget_tree::WidgetTree;
+
+    /// Flipping Light ⇄ Dark must move the swatches.
+    ///
+    /// `WidgetTree::set_theme` deliberately does not rebuild, so a colour taken
+    /// from `ctx.theme().colors` in `build` is frozen for the life of the page —
+    /// and the Appearance page that flips the theme is one click away from this
+    /// one, which made this the likeliest stale paint in the window. The contrast
+    /// is the point of the assertion: the cloned palette below is what the page
+    /// used to hold, and it does not move.
+    #[test]
+    fn a_swatch_colour_follows_a_theme_change_with_no_rebuild() {
+        let mut tree = WidgetTree::new().with_theme(crate::style::light());
+        let theme = tree.theme_signal().clone();
+
+        // What the page used to capture at build time…
+        let frozen = margin_lane::resolve_slot(&tree.theme().colors, 0);
+        // …and what it binds now.
+        let bound = theme.map(|t| margin_lane::resolve_slot(&t.colors, 0));
+        let before = bound.get();
+        assert_eq!(before, frozen, "the two must start out agreeing");
+
+        tree.set_theme(crate::style::dark());
+
+        assert_ne!(
+            bound.get(),
+            frozen,
+            "the swatch must repaint in the new palette; a build-time clone would \
+             still be showing {frozen:?}"
+        );
     }
 }

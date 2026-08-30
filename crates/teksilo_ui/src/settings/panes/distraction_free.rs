@@ -10,7 +10,6 @@
 //! window — which is why the shared unit is a `FormLayout` you append to and not
 //! a finished widget.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
@@ -74,6 +73,7 @@ pub(in crate::settings) fn distraction_free_form(
 /// The settings page.
 pub(in crate::settings) fn distraction_free_pane(
     ctx: &mut BuildContext,
+    crumbs: &Crumbs,
     vm: &SettingsViewModel,
     typo: &EditorTypography,
 ) -> impl Widget {
@@ -83,5 +83,5 @@ pub(in crate::settings) fn distraction_free_pane(
         .label_gap(16.0)
         .row_spacing(14.0);
     let form = distraction_free_form(ctx, form, vm, typo);
-    pane_frame(crumb(Some(tr!(settings_sec_editor())), page), form)
+    pane_frame(crumbs.of(Pane::DistractionFree), form)
 }

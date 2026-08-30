@@ -22,9 +22,9 @@ use teksilo::core::widget::WidgetPlacement;
 use teksilo::data::ListModel;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Badge, Button, ButtonVariant, ComboBox, FixedSize, FontPicker, FormLayout, HStack, ListView,
-    MaxSize, Padding, Segment, SegmentedControl, Spacer, StandardListItem, TextInput, TextWidget,
-    Toast, Toggle, VStack,
+    Badge, Button, ButtonVariant, ComboBox, FontPicker, FormLayout, HStack, ListView, Padding,
+    Segment, SegmentedControl, Spacer, StandardListItem, Switcher, TextInput, TextWidget, Toast,
+    Toggle, VStack,
 };
 
 use skribisto_compiler::{
@@ -43,6 +43,10 @@ struct StyleRow {
     name: String,
     /// A one-line summary (the font — plain data).
     subtitle: String,
+    /// Whether this is a shipped preset. Carried on the row rather than inferred
+    /// from its position, because the two kinds now share one `ListView` and the
+    /// row builder has nothing else to tell them apart by.
+    builtin: bool,
 }
 
 fn row_of(p: &Preset) -> StyleRow {
@@ -50,6 +54,14 @@ fn row_of(p: &Preset) -> StyleRow {
         id: p.id.clone(),
         name: p.name.clone(),
         subtitle: p.font_family.clone(),
+        builtin: false,
+    }
+}
+
+fn builtin_row_of(p: &Preset) -> StyleRow {
+    StyleRow {
+        builtin: true,
+        ..row_of(p)
     }
 }
 
@@ -58,44 +70,58 @@ pub fn export_styles_pane(ctx: &mut BuildContext, vm: &ExportStylesViewModel) ->
     // The user style currently loaded in the editor (by id).
     let selected: Signal<Option<String>> = Signal::new(None);
 
-    // ── Built-in styles (static) ──
-    let builtin_model = ListModel::from_vec(vm.builtin_presets().iter().map(row_of).collect());
-    let bvm = vm.clone();
-    // Captured once: the built-ins never change, so the per-row parameter sheet
-    // does not need rebuilding them on every render.
+    // ── One list, not two ──
+    //
+    // The pane used to stack a built-in list capped at 200 px over a user list
+    // capped at 150, each scrolling on its own, above an editor — three scroll
+    // regions and about four screens of page. Two lists were never a distinction
+    // the reader had to make in *layout*: every built-in row already carries the
+    // `Built-in` badge that says which kind it is, and offers Duplicate where a
+    // user row offers Edit / Export… / Delete. Merging them reclaims a heading, a
+    // cap and a whole second scroll region.
+    //
+    // Built-ins are captured once — they are Rust values and never change — and
+    // always lead, so "the shipped ones, then mine" survives the merge as order.
     let builtin_sheets = vm.builtin_presets();
-    let builtin_list = ListView::new(builtin_model, move |_i, row: &StyleRow, _sel| {
-        let sheet = builtin_sheets.iter().find(|p| p.id == row.id).cloned();
-        Box::new(builtin_row(&bvm, row, sheet))
-    })
-    .auto_item_height(52.0);
+    let builtin_rows: Vec<StyleRow> = builtin_sheets.iter().map(builtin_row_of).collect();
 
-    // ── User styles (live: repopulated on every styles-changed bump) ──
-    let user_model = ListModel::from_vec(vm.user_presets().iter().map(row_of).collect());
+    let rows = |vm: &ExportStylesViewModel, builtin: &[StyleRow]| -> Vec<StyleRow> {
+        let mut all = builtin.to_vec();
+        all.extend(vm.user_presets().iter().map(row_of));
+        all
+    };
+
+    let model = ListModel::from_vec(rows(vm, &builtin_rows));
     {
-        let model = user_model.clone();
+        let model = model.clone();
         let vm = vm.clone();
         let selected = selected.clone();
+        let builtin_rows = builtin_rows.clone();
         ctx.effect(&vm.changed_signal(), move |_| {
-            let rows: Vec<StyleRow> = vm.user_presets().iter().map(row_of).collect();
+            let all = rows(&vm, &builtin_rows);
             // If the edited style was deleted, drop the editor selection.
             if let Some(cur) = selected.get()
-                && !rows.iter().any(|r| r.id == cur)
+                && !all.iter().any(|r| r.id == cur && !r.builtin)
             {
                 selected.set(None);
             }
-            model.replace_all(rows);
+            model.replace_all(all);
         });
     }
-    let uvm = vm.clone();
-    let usel = selected.clone();
-    let user_list = ListView::new(user_model, move |_i, row: &StyleRow, _sel| {
-        // `user_preset(id)` looks one style up; `user_presets()` cloned the whole
-        // vector per row, which is O(N²) `Preset` clones for an N-row list. Still
-        // a live read, not a captured copy — a user style is editable, so a
-        // snapshot would show stale values in the sheet after every edit.
-        let sheet = uvm.user_preset(&row.id);
-        Box::new(user_row(&uvm, row, usel.clone(), sheet))
+    let lvm = vm.clone();
+    let lsel = selected.clone();
+    let list = ListView::new(model, move |_i, row: &StyleRow, _sel| {
+        if row.builtin {
+            let sheet = builtin_sheets.iter().find(|p| p.id == row.id).cloned();
+            Box::new(builtin_row(&lvm, row, sheet)) as Box<dyn Widget>
+        } else {
+            // `user_preset(id)` looks one style up; `user_presets()` cloned the whole
+            // vector per row, which is O(N²) `Preset` clones for an N-row list. Still
+            // a live read, not a captured copy — a user style is editable, so a
+            // snapshot would show stale values in the sheet after every edit.
+            let sheet = lvm.user_preset(&row.id);
+            Box::new(user_row(&lvm, row, lsel.clone(), sheet)) as Box<dyn Widget>
+        }
     })
     .auto_item_height(52.0);
 
@@ -114,18 +140,15 @@ pub fn export_styles_pane(ctx: &mut BuildContext, vm: &ExportStylesViewModel) ->
         // (SmallBold + Secondary), not a bare unstyled `GroupHeader::new`.
         .child(crate::widgets::tip::RichTip::new(
             crate::tooltip_registry::CONCEPT_EXPORT_STYLE,
-            group(tr!(settings_styles_builtin())),
+            group(tr!(settings_page_export())),
         ))
-        // `MaxSize::height`, not `MinSize`: as a *minimum* the list grew to fit
-        // its content, and at ten built-in styles it swallowed the whole pane,
-        // pushing "My styles" and the editor below it out of the modal. A
-        // height-only `FixedSize` is not the fix either — it proposes
-        // `width: None`, which collapses the rows to the left. `MaxSize` caps
-        // the height and leaves the width to fill; each list scrolls internally.
-        .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(200.0).child(builtin_list)))
-        .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_user()))))
         .child(Padding::symmetric(6.0, 4.0).child(toolbar))
-        .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(150.0).child(user_list)))
+        // `list_box`, not a hand-tuned `MaxSize::height`: the caps this replaces
+        // (200 and 150) were chosen against no measurement at all, and the sum of
+        // them plus the editor was four screens. The list now takes whatever the
+        // pane has left, so the page scrolls only when there is genuinely more
+        // than a pane's worth here.
+        .child(Padding::symmetric(4.0, 0.0).child(crate::settings::fields::list_box(list)))
         .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_editor_group()))))
         .child(StyleEditor::new(vm.clone(), selected))
 }
@@ -312,6 +335,10 @@ use crate::shared::slug::slugify;
 struct StyleEditor {
     vm: ExportStylesViewModel,
     selected: Signal<Option<String>>,
+    /// Which of the editor's three pages is showing. Owned by the widget rather
+    /// than minted inside `build`, so switching styles does not throw the reader
+    /// back to the first page — `build` re-runs on every `selected` change.
+    segment: Signal<usize>,
     child_id: Option<WidgetId>,
 }
 
@@ -320,6 +347,7 @@ impl StyleEditor {
         Self {
             vm,
             selected,
+            segment: Signal::new(0),
             child_id: None,
         }
     }
@@ -366,11 +394,11 @@ fn font_picker(ctx: &mut BuildContext, persisted: Signal<String>) -> impl Widget
         });
     }
     let write_back = persisted.clone();
-    FixedSize::new().width(240.0).child(
-        FontPicker::new(selection)
-            .placeholder(tr!(settings_field_typeface()))
-            .on_select(move |f: &str, _ctx| write_back.set(f.to_string())),
-    )
+    // No `FixedSize::width`: this is a `FormLayout` field, and that layout places
+    // its field slot at `field_col_width` regardless — see `fields::slider_field`.
+    FontPicker::new(selection)
+        .placeholder(tr!(settings_field_typeface()))
+        .on_select(move |f: &str, _ctx| write_back.set(f.to_string()))
 }
 
 fn heading_label(scheme: &HeadingScheme) -> LocalizedString {
@@ -949,7 +977,16 @@ impl Widget for StyleEditor {
         let word_count_on = has_title_page.clone();
         let books_break_on = title_page.map(|on| !on);
 
-        let form = FormLayout::new()
+        // Three forms behind a `SegmentedControl`, not one 29-row column.
+        //
+        // The editor sat under two independently-scrolling lists at the bottom of
+        // the tallest page in the window — roughly four screens of it — so a
+        // control near the end could only be reached by scrolling past everything
+        // before it, with the style it edits long since off screen. The split
+        // takes the form's own two `group()` headers as the boundaries, so the
+        // segments are the groups this form already had rather than a new grouping
+        // invented for the bar.
+        let layout_form = FormLayout::new()
             .label(tr!(settings_styles_editor_title()))
             .label_gap(16.0)
             .row_spacing(14.0)
@@ -1015,13 +1052,12 @@ impl Widget for StyleEditor {
                 field_label(tr!(settings_styles_field_paratexts())),
                 Toggle::new(paratexts).labelled_externally(),
             )
-            .line(field_label(tr!(settings_styles_field_images())), images)
-            // Spanning both columns, with the file's own section-header idiom and its
-            // breathing room above.
-            .full_width(
-                Padding::new(14.0, 0.0, 0.0, 0.0)
-                    .child(group(tr!(settings_styles_group_round_trip()))),
-            )
+            .line(field_label(tr!(settings_styles_field_images())), images);
+
+        let round_trip_form = FormLayout::new()
+            .label(tr!(settings_styles_group_round_trip()))
+            .label_gap(16.0)
+            .row_spacing(14.0)
             .line(
                 field_label(tr!(settings_styles_field_comments())),
                 Toggle::new(comments).labelled_externally(),
@@ -1033,10 +1069,12 @@ impl Widget for StyleEditor {
                 ),
                 Toggle::new(round_trip_marks).labelled_externally(),
             )
-            .full_width(hint(tr!(settings_styles_round_trip_hint())))
-            .full_width(
-                Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_group_pages()))),
-            )
+            .full_width(hint(tr!(settings_styles_round_trip_hint())));
+
+        let pages_form = FormLayout::new()
+            .label(tr!(settings_styles_group_pages()))
+            .label_gap(16.0)
+            .row_spacing(14.0)
             .line(
                 field_label(tr!(settings_styles_field_cover())),
                 Toggle::new(cover).labelled_externally(),
@@ -1070,7 +1108,21 @@ impl Widget for StyleEditor {
                 Toggle::new(page_paratexts).labelled_externally(),
             );
 
-        let child = ctx.add(Padding::new(16.0, 0.0, 0.0, 0.0).child(form));
+        // One ordered list feeds the bar and the `Switcher` both, so the two
+        // cannot disagree about which page a segment shows.
+        let bar = SegmentedControl::indexed(self.segment.clone())
+            .segment(Segment::new(tr!(settings_styles_editor_title())))
+            .segment(Segment::new(tr!(settings_styles_group_round_trip())))
+            .segment(Segment::new(tr!(settings_styles_group_pages())));
+        let pages = Switcher::new(self.segment.clone())
+            .child(layout_form)
+            .child(round_trip_form)
+            .child(pages_form);
+
+        let child = ctx.add(
+            Padding::new(16.0, 0.0, 0.0, 0.0)
+                .child(VStack::new().spacing(14.0).child(bar).child(pages)),
+        );
         self.child_id = Some(child);
         vec![child]
     }
@@ -1119,6 +1171,114 @@ mod tests {
         let base = vm.builtin_presets().into_iter().next().expect("a built-in");
         let mine = vm.duplicate(&base, "copy").expect("duplicate");
         (vm, mine.id, dir)
+    }
+
+    /// Hosts the whole pane the way `settings::content::build` does.
+    struct PaneHost {
+        vm: Option<ExportStylesViewModel>,
+        root: Option<WidgetId>,
+    }
+    impl std::fmt::Debug for PaneHost {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("PaneHost").finish()
+        }
+    }
+    impl Widget for PaneHost {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let vm = self.vm.take().expect("built once");
+            let body = export_styles_pane(ctx, &vm);
+            let id = ctx.add(body);
+            self.root = Some(id);
+            vec![id]
+        }
+        fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+            self.root
+                .and_then(|id| ctx.child_size(id, proposal))
+                .map(LayoutResponse::from)
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        }
+        fn children(&self) -> Vec<WidgetId> {
+            self.root.into_iter().collect()
+        }
+    }
+
+    /// Built-ins and the writer's own copies are **one** list.
+    ///
+    /// Nothing distinguishes them in layout any more, so the flag that tells the
+    /// row builder which chrome to render is carried on the row itself. If
+    /// `row_of` ever starts claiming `builtin: true`, every user style loses Edit
+    /// / Export… / Delete and gains a Duplicate button that copies it onto itself.
+    #[test]
+    fn a_row_knows_which_kind_it_is() {
+        let (vm, mine, dir) = vm_with_a_user_style();
+        let builtin = vm.builtin_presets();
+        let first = builtin.first().expect("a built-in");
+        assert!(builtin_row_of(first).builtin);
+        let user = vm.user_preset(&mine).expect("the duplicate");
+        assert!(!row_of(&user).builtin);
+        // The duplicate carries a *different* id, or the merged list would show
+        // one row where there are two.
+        assert_ne!(row_of(&user).id, builtin_row_of(first).id);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The whole pane fits in something like a screen instead of four.
+    ///
+    /// It was the tallest page in the window by a wide margin: two independently
+    /// scrolling lists (capped at 200 and 150) stacked over a 29-row form, about
+    /// 1600–1800 px against a 431 px viewport. One list plus a segmented editor
+    /// is the fix, and this is what stops either half creeping back.
+    #[test]
+    fn the_pane_is_no_longer_four_screens_tall() {
+        let (vm, _mine, dir) = vm_with_a_user_style();
+        let mut tree = WidgetTree::new();
+        tree.add(PaneHost {
+            vm: Some(vm),
+            root: None,
+        });
+        let wanted = tree
+            .measure_root_intrinsic(SizeProposal::with_width(crate::settings::fields::PANE_W))
+            .expect("the pane is the tree's only root");
+        assert!(
+            wanted.height < 900.0,
+            "the pane wants {} px; it used to want ~1700, and the viewport is ~431",
+            wanted.height
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The editor shows one of its three groups at a time.
+    ///
+    /// A style's 29 controls in one column meant the last of them sat about three
+    /// screens below the list that chooses which style is being edited.
+    #[test]
+    fn the_editor_shows_one_group_at_a_time() {
+        let (vm, id, dir) = vm_with_a_user_style();
+        let editor = StyleEditor::new(vm, Signal::new(Some(id)));
+        let segment = editor.segment.clone();
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(Box::new(editor));
+
+        let height_of = |tree: &mut WidgetTree| {
+            tree.layout(SizeProposal::with_width(crate::settings::fields::PANE_W));
+            tree.measure_root_intrinsic(SizeProposal::with_width(crate::settings::fields::PANE_W))
+                .expect("the editor is the tree's only root")
+                .height
+        };
+
+        let layout_page = height_of(&mut tree);
+        segment.set(2); // "Pages" — seven switches
+        let pages_page = height_of(&mut tree);
+        assert!(
+            pages_page < layout_page,
+            "each segment must show its own rows only; got {pages_page} for Pages \
+             against {layout_page} for the first page"
+        );
+        assert!(
+            layout_page < 800.0,
+            "the tallest of the three pages still wants {layout_page} px"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// The editor builds and lays out with every row, including the pagination group. A

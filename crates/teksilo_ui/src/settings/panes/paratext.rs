@@ -36,8 +36,8 @@ use teksilo::prelude::*;
 use teksilo::text_document::TextDocument;
 use teksilo::tokens::{BorderRole, SurfaceRole};
 use teksilo::widgets::{
-    Button, ButtonVariant, CodeEditor, Divider, FixedSize, GroupHeader, HStack, Padding, Panel,
-    ScrollArea, Spacer, TextWidget, VStack,
+    Button, ButtonVariant, CodeEditor, Divider, FixedSize, GroupHeader, HStack, MaxSize, Padding,
+    Panel, ScrollArea, Spacer, TextWidget, VStack,
 };
 
 use crate::export::{ParatextPresetsViewModel, PresetRow};
@@ -252,10 +252,19 @@ impl Widget for PresetEditorModal {
                 .child(
                     VStack::new()
                         .spacing(10.0)
+                        // Capped at the editor's own width. This modal is presented
+                        // `InTree`, outside the pane column that bounds every other
+                        // wrapping paragraph in this window, so its `VStack`'s cross
+                        // axis is `max(EDITOR_W, the hint's natural one-line width)` —
+                        // and a 190-character hint measured unbounded is ~700 px, a
+                        // modal wider than the editor it explains and plausibly wider
+                        // than the card behind it.
                         .child(
-                            TextWidget::new(tr!(settings_paratext_editor_hint()))
-                                .style(TextStyleRole::Small)
-                                .color(TextRole::Secondary),
+                            MaxSize::width(EDITOR_W).child(
+                                TextWidget::new(tr!(settings_paratext_editor_hint()))
+                                    .style(TextStyleRole::Small)
+                                    .color(TextRole::Secondary),
+                            ),
                         )
                         // A bounded box, so the greedy editor learns a height to fill and
                         // scrolls inside it rather than overflowing the modal.

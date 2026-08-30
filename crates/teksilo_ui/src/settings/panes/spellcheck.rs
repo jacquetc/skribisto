@@ -3,7 +3,6 @@
 
 //! Spelling ▸ Spell-checking — the app-wide master switch.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
@@ -14,7 +13,7 @@ use super::super::*;
 /// store-backed `Toggle`: writing the signal persists, and `App::build`'s effect turns it
 /// into `set_enabled` + a re-attach. No per-language controls here — those live on the
 /// Work's / an item's Language field (the toggle tip says so).
-pub(in crate::settings) fn spellcheck_pane(vm: &SettingsViewModel) -> impl Widget {
+pub(in crate::settings) fn spellcheck_pane(crumbs: &Crumbs, vm: &SettingsViewModel) -> impl Widget {
     let form = FormLayout::new()
         .label(tr!(settings_page_spellcheck()))
         .label_gap(16.0)
@@ -32,11 +31,5 @@ pub(in crate::settings) fn spellcheck_pane(vm: &SettingsViewModel) -> impl Widge
                 )),
         );
 
-    pane_frame(
-        crumb(
-            Some(tr!(settings_sec_spelling())),
-            tr!(settings_page_spellcheck()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::Spellcheck), form)
 }

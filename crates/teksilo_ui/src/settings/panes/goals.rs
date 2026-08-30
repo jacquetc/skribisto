@@ -3,7 +3,6 @@
 
 //! Editor ▸ Goals — word/character targets and how they are counted.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
@@ -16,6 +15,7 @@ use super::super::*;
 /// guarded effects — the shape `work_structure_pane` uses for `ChapterMode`.
 pub(in crate::settings) fn goals_pane(
     ctx: &mut BuildContext,
+    crumbs: &Crumbs,
     vm: &SettingsViewModel,
 ) -> impl Widget {
     let method = vm.counting_method();
@@ -68,8 +68,5 @@ pub(in crate::settings) fn goals_pane(
         .full_width(group(tr!(settings_group_goals_display())))
         .full_width(Toggle::new(vm.show_characters()).label(tr!(settings_show_characters())));
 
-    pane_frame(
-        crumb(Some(tr!(settings_sec_editor())), tr!(settings_page_goals())),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::Goals), form)
 }

@@ -10,7 +10,6 @@
 //! pane says so in as many words rather than leaving the writer to discover it
 //! when the game is gone after a restart.
 
-use teksilo::prelude::*;
 use teksilo::widgets::VStack;
 
 use crate::tabs::shared::VisibleWhen;
@@ -24,9 +23,18 @@ use super::super::*;
 /// rather than four loose signals: the "is it bound to nothing" warning is a
 /// question about the combination, and answering it here would duplicate a rule
 /// the view-model already owns.
+/// `playable` is whether there is a project to play *in*. The settings window
+/// opens over the Launcher too, where there is no `WorkSession` and so no
+/// activation signal any editor reads: the switch is disabled there rather than
+/// bound to a detached signal, which would report a game as being played in a
+/// window holding no manuscript to enforce it in. The two scope boxes below it
+/// are app settings and stay live either way — they are what a writer would come
+/// to this page for before opening anything.
 pub(in crate::settings) fn games_pane(
     ctx: &mut BuildContext,
+    crumbs: &Crumbs,
     games: &crate::writing_session::WritingGamesViewModel,
+    playable: bool,
 ) -> impl Widget {
     // `is_inert` reads three signals, so it needs re-evaluating whenever any of
     // them moves. A derived signal would recompute on every read (and panics
@@ -57,7 +65,11 @@ pub(in crate::settings) fn games_pane(
         .label_gap(16.0)
         .row_spacing(14.0)
         .full_width(group(tr!(settings_group_games_forward())))
-        .full_width(Toggle::new(games.always_forward()).label(tr!(settings_games_forward_toggle())))
+        .full_width(
+            Toggle::new(games.always_forward())
+                .label(tr!(settings_games_forward_toggle()))
+                .enabled(playable),
+        )
         .full_width(hint(tr!(settings_games_forward_hint())))
         // The session warning is the whole reason this pane reads differently
         // from every other one: everything else in this window is remembered.
@@ -83,8 +95,5 @@ pub(in crate::settings) fn games_pane(
                 .color(TextRole::Warning),
         ));
 
-    pane_frame(
-        crumb(Some(tr!(settings_sec_editor())), tr!(settings_page_games())),
-        VStack::new().child(form),
-    )
+    pane_frame(crumbs.of(Pane::Games), VStack::new().child(form))
 }

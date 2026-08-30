@@ -51,8 +51,9 @@ use teksilo::widgets::{
 use frontend::AppContext;
 
 use crate::models::ExamplesListModel;
+use crate::settings::SettingsPanel;
 use crate::shell::launcher_menu::{
-    ACTION_IMPORT_PLUME, ACTION_NEW, ACTION_NEW_FROM_DOCUMENTS, ACTION_OPEN,
+    ACTION_IMPORT_PLUME, ACTION_NEW, ACTION_NEW_FROM_DOCUMENTS, ACTION_OPEN, ACTION_SETTINGS,
 };
 use crate::welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 
@@ -820,6 +821,37 @@ impl Widget for WelcomePanel {
                 Action::new(ACTION_OPEN).on_invoke(move |_i, c| open_vm.pick_open(c)),
             );
         }
+
+        // Settings (Ctrl+, / the Launcher menu's Settings row / macOS's ⌘,).
+        //
+        // Registered here for the same reason `app.quit` is: each `WidgetTree`
+        // (one per OS window) owns its `global_actions`/`shortcut_registry`, and
+        // this window never builds an `App`, so `app/commands/file.rs`'s
+        // registration is unreachable from it.
+        //
+        // It has to reach here. On Linux and Windows the app *starts* at this
+        // window, so until this landed the theme, the interface text scale, the
+        // dictionaries, the keybindings and the backup defaults could not be
+        // changed at all without first creating or opening a project — the
+        // first-run state being exactly where a reader is most likely to want
+        // them. `SettingsPanel::without_project` is the same window the project
+        // one opens, minus the Work section its tree cannot fill in.
+        //
+        // `register_action_global`, never `register_action`: an intent walks
+        // source-widget → root and the title-bar menu renders in an overlay that
+        // is a sibling of this window's root, so a plain registration here would
+        // never be reached by the menu row that fires it.
+        ctx.register_shortcut_global(
+            Shortcut::new(ACTION_SETTINGS)
+                .name(tr!(shortcut_name_app_settings()))
+                .primary(KeyStroke::ctrl(Key::Character(',')))
+                .build(),
+        );
+        ctx.register_action_global(Action::new(ACTION_SETTINGS).on_invoke(|_i, c| {
+            // One door for every entry point — presentation, title and close
+            // behaviour are stated once, in `settings::present`.
+            crate::settings::present(c, SettingsPanel::without_project);
+        }));
 
         // The two "start a project from something that is not a `.skrib`"
         // commands. Named actions and not two closures, because two surfaces

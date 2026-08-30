@@ -607,7 +607,7 @@ fn every_menu_bar_entry_declares_a_mnemonic() {
 }
 
 /// The labels of the platform-standard (macOS) menus, which are declared in
-/// `project_menus::{app_standard_menu, window_standard_menu}`.
+/// `project_menus::{app_standard_menu_base, window_standard_menu}`.
 const NATIVE_MENU_LABELS: &[&str] = &[
     "native-menu-about",
     "native-menu-hide",

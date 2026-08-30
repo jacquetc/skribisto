@@ -117,15 +117,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let session = deps.session.clone();
         ctx.register_action_global(Action::new("app.settings.keymap").on_invoke(move |_i, c| {
             let session = session.clone();
-            c.present_modal(
-                teksilo::core::modal::ModalRequest::deferred(move |t| {
-                    t.add(crate::settings::SettingsPanel::open_to_keymap(session))
-                })
-                .presentation(teksilo::core::modal::ModalPresentation::InTree)
-                .title(tr!(settings_title()))
-                .size(920, 620)
-                .close_behavior(teksilo::core::modal::ModalCloseBehavior::Manual),
-            );
+            crate::settings::present(c, move || {
+                crate::settings::SettingsPanel::open_to_keymap(session)
+            });
         }));
     }
 }

@@ -82,8 +82,10 @@ except ImportError:
 # user-visible string matched below carries both spellings.
 SETTINGS_RESET = ("reset to defaults", "réinitialiser")            # main.ftl `settings-reset`
 SETTINGS_DONE = ("done", "terminé")                                 # main.ftl `settings-done`
-SEC_APPEARANCE_BEHAVIOUR = ("appearance & behaviour",
+SEC_APPEARANCE_BEHAVIOUR = ("appearance & behavior",
                              "apparence et comportement")           # `settings-sec-appearance-behaviour`
+# (British key, American value: `f1f0a1774` Americanized the English catalogue
+#  and left every key spelt as it was.)
 PAGE_APPEARANCE = ("appearance", "apparence")                       # main.ftl `settings-page-appearance`
 # The accessible NAME on the Theme ComboBox itself comes from teksilo-widgets'
 # own bundle (`theme_switcher_label`, set in `ThemeSwitcher::build`), not the
@@ -379,7 +381,7 @@ def theme_combo(s):
 
 def open_appearance_pane(s):
     """Reach Settings ▸ Appearance ▸ Theme. Cheap fast path first (the
-    Appearance & Behaviour section is expanded unconditionally, unlike
+    Appearance & Behavior section is expanded unconditionally, unlike
     Work/Spelling/Backup which start collapsed); a keyboard-walk fallback in
     case the row's bounds sit below the rail's scroll viewport, where a click
     at its reported bounds does nothing.

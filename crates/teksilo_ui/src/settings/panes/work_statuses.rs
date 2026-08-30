@@ -46,7 +46,6 @@ use crate::models::LadderRow;
 use crate::statuses::{Preset, StatusesViewModel};
 use crate::toast_scope::ToastWorkExt;
 
-const LIST_MIN_HEIGHT: f32 = 300.0;
 const ROW_HEIGHT: f32 = 62.0;
 const CATEGORY_MIN_WIDTH: f32 = 140.0;
 /// Wide enough for a two-digit rung — Plume's ladder is eight, and a project that grew
@@ -90,10 +89,17 @@ pub fn work_statuses_pane(ctx: &mut BuildContext, vm: &StatusesViewModel) -> imp
     VStack::new()
         .spacing(16.0)
         .child(add_row(ctx, vm))
-        .child(Expand::horizontal().child(LadderList {
-            vm: vm.clone(),
-            root_child: None,
-        }))
+        // `list_box`: the leftover height of the pane goes to the list, so one
+        // scroll region replaces two. The floor it carries is the shared one — the
+        // 300–320 px constants that used to live here were taller than the pane's
+        // whole viewport, so the page scrolled at *minimum* content while the list
+        // scrolled inside it.
+        .child(crate::settings::fields::list_box(
+            Expand::horizontal().child(LadderList {
+                vm: vm.clone(),
+                root_child: None,
+            }),
+        ))
 }
 
 /// Name field + category + "Apply a preset…" + Add.
@@ -301,7 +307,7 @@ impl Widget for LadderList {
                 // The floor goes on the card, not the list: a `Switcher` reports its active
                 // child's size, and a virtualised `ListView` given unbounded height inside
                 // the pane's own scroll reports ~nothing.
-                MinSize::new(0.0, LIST_MIN_HEIGHT).child(
+                MinSize::new(0.0, crate::settings::fields::LIST_MIN_HEIGHT).child(
                     Switcher::new(empty_idx)
                         .child(Expand::vertical().child(list))
                         .child(empty_state()),

@@ -195,17 +195,20 @@ def main():
                 and any(l.strip() in ("done", "terminé") for l in ls))
 
     # Settings is a centered modal — that is the whole point of this probe.
-    opened_via = None
-    for args in ({"key": ",", "ctrl": True},
-                 {"key": ",", "modifiers": ["ctrl"]},
-                 {"key": "Comma", "modifiers": ["ctrl"]}):
-        res, _ = sess.call("inject_key", args)
-        if isinstance(res, dict) and res.get("isError"):
-            continue
-        time.sleep(1.2)
-        if settings_open():
-            opened_via = args
-            break
+    def open_settings():
+        """Ctrl+, in whichever spelling the bridge accepts, or None."""
+        for args in ({"key": ",", "ctrl": True},
+                     {"key": ",", "modifiers": ["ctrl"]},
+                     {"key": "Comma", "modifiers": ["ctrl"]}):
+            res, _ = sess.call("inject_key", args)
+            if isinstance(res, dict) and res.get("isError"):
+                continue
+            time.sleep(1.2)
+            if settings_open():
+                return args
+        return None
+
+    opened_via = open_settings()
     if not opened_via:
         sess.shot("/tmp/combo-in-modal-noopen.png")
         die("could not open the Settings window", sess)
@@ -306,13 +309,74 @@ def main():
         time.sleep(0.8)
         return True
 
+    def expand_row(label):
+        """Open a collapsed section/group, and prove it opened.
+
+        The bridge has a dedicated `expand` tool; `invoke_action` with an
+        `"expand"` action is NOT the same call. A row already open reports
+        `expanded=True` and advertises `collapse` instead, so this is
+        idempotent — and it fails loudly rather than degrading, because a silent
+        no-op here is what let the walk below shrink to a single page while
+        still printing PASS."""
+        row = rail_row(label)
+        if not row:
+            die(f"no {label!r} row in the Settings rail", sess)
+        if not row.get("expanded"):
+            res, _ = sess.call("expand", {"node": row["id"]})
+            if isinstance(res, dict) and res.get("isError"):
+                txt = "".join(c.get("text", "") for c in res.get("content", [])
+                              if c.get("type") == "text")
+                die(f"expanding {label!r} was rejected — {txt[:200]}", sess)
+            time.sleep(0.6)
+        again = rail_row(label)
+        if not (again and again.get("expanded")):
+            die(f"{label!r} did not report itself expanded after the expand action",
+                sess)
+
+    # Editor and its nested Typography group start COLLAPSED — the rail is sized
+    # so that the `Work: <title>` section clears the fold — and the window lands
+    # on Appearance & Behavior ▸ Appearance, which is not underneath either of
+    # them. So two of the four pages below have no row at all until this runs
+    # (and "Punctuation" would resolve to the Work section's page rather than
+    # Editor's "Punctuation defaults"). Without it the walk silently degraded to
+    # Appearance alone and still printed PASS.
+    def prepare_rail():
+        """The rail as this walk needs it: open, with Editor ▸ Typography
+        unfolded.
+
+        Called before every page rather than once, because the walk itself
+        closes the window: `exercise` ends each combo with Escape, and Escape
+        is one of the modal's three documented ways out — so a combo whose
+        dropdown had already dismissed hands the keystroke to Settings. That is
+        how this probe quietly shrank to its first page while still printing
+        PASS."""
+        if not settings_open() and not open_settings():
+            die("the Settings window closed mid-walk and would not reopen", sess)
+        for section in ("Editor", "Typography"):
+            expand_row(section)
+
+    prepare_rail()
+
     results = []
-    for page in ("Appearance", "Editor Behavior", "Scene", "Punctuation"):
+    # Four settings pages, each of which really does carry a ComboBox — that is
+    # the whole selection rule, and it is asserted below rather than hoped for.
+    # ("Punctuation" used to be the fourth and carries none: `panes/punctuation`
+    # is toggles and radio groups, so that slot silently exercised nothing.
+    # Corkboard shares `typography_rows`, so it has the same `FontPicker` Scene
+    # does, and it sits in the Typography group this walk already unfolds.)
+    pages = ("Appearance", "Editor Behavior", "Scene", "Corkboard")
+    for page in pages:
+        prepare_rail()
         if not select_page(page):
-            print(f"  (no {page!r} row)")
-            continue
+            print("  rail rows:", sorted(
+                {(n.get("label") or "") for n in sess.nodes()
+                 if n.get("role") == "TreeItem"}))
+            die(f"no {page!r} row in the Settings rail", sess)
         found = combos()
         print(f"  {page}: {[c.get('label') for c in found]}")
+        if not found:
+            die(f"{page!r} carries no ComboBox any more — this walk is only "
+                f"meaningful over pages that have one", sess)
         for t in found:
             verdict, detail = exercise(t, page)
             if verdict != "skip":
@@ -321,8 +385,9 @@ def main():
             key(sess, "Escape")
             time.sleep(0.2)
 
-    if not results:
-        die("no ComboBox was exercised on any settings page", sess)
+    if len(results) < len(pages):
+        die(f"only {len(results)} ComboBox(es) exercised across {len(pages)} pages — "
+            f"each of them carries at least one", sess)
     bad = [r for r in results if r[0] != "ok"]
     print(f"\n  {len(results)} combo(s) exercised, {len(bad)} bad")
     sess.shot("/tmp/combo-in-modal-after-tab.png")

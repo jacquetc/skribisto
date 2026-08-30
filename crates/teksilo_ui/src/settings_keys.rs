@@ -58,7 +58,66 @@ pub use toml;
 // still reads them from.
 
 /// Persisted-setting keys (also read at startup in `main`).
+///
+/// The *resolved* light/dark state, mirrored from the live theme. It is the
+/// answer, never the question: with [`THEME_MODE_KEY`] on `"system"` this holds
+/// whatever the desktop was reporting when it was last written, which is why it
+/// cannot stand in for the writer's choice — see that key.
 pub const DARK_KEY: &str = "ui.dark";
+
+/// Which of the three answers the writer gave the theme picker: `"light"`,
+/// `"dark"` or `"system"` — follow the desktop, and the default.
+///
+/// [`DARK_KEY`] used to carry this alone, and could not. It records the theme
+/// that ended up on screen, so "System, and the desktop is dark" and "Dark,
+/// chosen by hand" are the same byte on disk. Two things broke on that:
+/// picking *System* pinned itself as manual dark on the next launch (the OS
+/// could never move it again), and *Reset to defaults* compared `is_dark()`
+/// against a hardcoded light, so on a dark desktop the button was lit at
+/// factory state and pressing it changed nothing the gate could see.
+///
+/// A separate key because the two facts are separate: this is the question,
+/// `ui.dark` is the answer. Absent means an install written before this key
+/// existed — [`crate::startup::theme_for`] falls back to `ui.dark` for exactly
+/// that case, so nobody's theme changes on upgrade.
+pub const THEME_MODE_KEY: &str = "ui.theme_mode";
+/// Always the app's own light theme, whatever the desktop does.
+pub const THEME_MODE_LIGHT: &str = "light";
+/// Always the app's own dark theme.
+pub const THEME_MODE_DARK: &str = "dark";
+/// Follow the desktop's light/dark preference. The factory answer.
+pub const THEME_MODE_SYSTEM: &str = "system";
+/// What the app does when nobody has chosen: follow the desktop.
+pub const THEME_MODE_DEFAULT: &str = THEME_MODE_SYSTEM;
+/// The three legal values of [`THEME_MODE_KEY`], in picker order.
+pub const THEME_MODES: [&str; 3] = [THEME_MODE_LIGHT, THEME_MODE_DARK, THEME_MODE_SYSTEM];
+
+/// The [`ThemeId`](teksilo::core::styles::ThemeId) teksilo stamps on a theme it
+/// resolved from the OS.
+///
+/// Teksilo's own contract, not ours: `EventContext::follow_system_theme` ends in
+/// `WindowManager::apply_os_theme`, which gives both of its OS-derived results
+/// the id `"system"` (see `teksilo-widgets`' `ThemeSwitcher`, which matches its
+/// follow-OS entry by exactly this id). That is what makes the live theme
+/// self-describing: [`theme_mode_of`] can tell "following the desktop" from
+/// "manually dark" without a side table, which is the whole reason the Reset
+/// gate can be right before anything has been persisted.
+pub const SYSTEM_THEME_ID: &str = "system";
+
+/// Which [`THEME_MODE_KEY`] answer the live `theme` represents.
+///
+/// The one place the mapping lives, so the startup seed, the Reset gate and the
+/// effect that mirrors the live theme back into the store cannot disagree about
+/// what "System" looks like.
+pub fn theme_mode_of(theme: &teksilo::core::styles::Theme) -> &'static str {
+    if theme.id.as_str() == SYSTEM_THEME_ID {
+        THEME_MODE_SYSTEM
+    } else if theme.is_dark() {
+        THEME_MODE_DARK
+    } else {
+        THEME_MODE_LIGHT
+    }
+}
 
 /// What to do with a large image on insert: `"ask"` (default), `"keep"` or
 /// `"downscale"`.
@@ -68,6 +127,8 @@ pub const DARK_KEY: &str = "ui.dark";
 /// in the prompt. Storing "ask" separately from the two decisions is what lets
 /// the prompt come back if they ever want it to.
 pub const IMAGE_SIZE_POLICY_KEY: &str = "editor.image_size_policy";
+/// Ask, every time, until the writer says otherwise.
+pub const IMAGE_SIZE_POLICY_DEFAULT: &str = "ask";
 pub const LOCALE_KEY: &str = "ui.locale";
 /// Who is using this installation — the name a comment or reply is signed with.
 ///
@@ -535,6 +596,25 @@ fn val<T: Serialize>(v: T) -> toml::Value {
     toml::Value::try_from(v).expect("a settings default must be TOML-representable")
 }
 
+/// Accept only the three answers [`THEME_MODE_KEY`] has.
+///
+/// A stricter check than [`check`], and deliberately: the store reads this key as
+/// a plain `String`, so a typo would deserialize happily and then fall through
+/// every arm of the startup match into the legacy `ui.dark` path — a pinned theme
+/// that silently is not the theme, which is the exact silence this module exists
+/// to remove.
+fn check_theme_mode(v: &toml::Value) -> Result<(), String> {
+    check::<String>(v)?;
+    match v.as_str() {
+        Some(s) if THEME_MODES.contains(&s) => Ok(()),
+        Some(s) => Err(format!(
+            "{s:?} is not a theme mode (expected one of {})",
+            THEME_MODES.join(" | ")
+        )),
+        None => Err("expected a string".to_string()),
+    }
+}
+
 /// Validate by round-tripping through the very deserialization the settings store runs.
 fn check<T: DeserializeOwned>(v: &toml::Value) -> Result<(), String> {
     match v.clone().try_into::<T>() {
@@ -570,7 +650,7 @@ pub static SETTINGS: &[SettingSpec] = &[
     SettingSpec {
         key: crate::IMAGE_SIZE_POLICY_KEY,
         ty: "string (\"ask\" | \"keep\" | \"downscale\")",
-        default: || val("ask"),
+        default: || val(crate::IMAGE_SIZE_POLICY_DEFAULT),
         check: check::<String>,
         doc: "What to do with a large image on insert. \"ask\" prompts once per \
               image; the prompt's \"don't ask again\" box writes \"keep\" or \
@@ -581,7 +661,19 @@ pub static SETTINGS: &[SettingSpec] = &[
         ty: "bool",
         default: || val(false),
         check: check::<bool>,
-        doc: "Dark theme.",
+        doc: "The light/dark state currently on screen, mirrored from the live theme. \
+              Under `ui.theme_mode = \"system\"` this is whatever the desktop last \
+              reported, so pin `ui.theme_mode` — not this — to force a theme.",
+    },
+    SettingSpec {
+        key: crate::THEME_MODE_KEY,
+        ty: "string (\"light\" | \"dark\" | \"system\")",
+        default: || val(crate::THEME_MODE_DEFAULT),
+        check: check_theme_mode,
+        doc: "Which answer the theme picker holds. \"system\" (the default) follows the \
+              desktop's light/dark preference; the other two pin the app's own theme \
+              whatever the desktop does. Absent means an install written before this key \
+              existed, which falls back to `ui.dark`.",
     },
     SettingSpec {
         key: crate::LOCALE_KEY,

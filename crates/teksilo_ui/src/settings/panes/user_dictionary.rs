@@ -34,10 +34,6 @@ const WORD_COL: &str = "word";
 /// The filter field caps here so it reads as a compact search box, not a second full-width field.
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;
 
-/// The list box's minimum height — enough to show several rows and scroll internally rather than
-/// collapsing inside the settings pane's own scroll.
-const LIST_MIN_HEIGHT: f32 = 320.0;
-
 fn add_glyph() -> IconWidget {
     (BuiltInIcons::defaults().add)().icon_size(15.0)
 }
@@ -92,7 +88,7 @@ pub fn user_dictionary_pane(ctx: &mut BuildContext, vm: &UserDictionaryViewModel
             // its active child's size, and a virtualised `ListView` given unbounded height in the
             // settings pane's own scroll reports ~nothing — so the floor must be imposed on the
             // card, giving the list a bounded height to fill.
-            MinSize::new(0.0, LIST_MIN_HEIGHT).child(
+            MinSize::new(0.0, crate::settings::fields::LIST_MIN_HEIGHT).child(
                 Switcher::new(empty_idx)
                     .child(Expand::vertical().child(list))
                     .child(empty_state()),
@@ -106,7 +102,14 @@ pub fn user_dictionary_pane(ctx: &mut BuildContext, vm: &UserDictionaryViewModel
         .child(toolbar_row(vm, query))
         // Fill the content width — a `Panel` sizes to its child, so without this the card would
         // shrink to its widest row rather than span the pane like the rows above it.
-        .child(Expand::horizontal().child(list_card))
+        // `list_box`: the leftover height of the pane goes to the list, so one
+        // scroll region replaces two. The floor it carries is the shared one — the
+        // 300–320 px constants that used to live here were taller than the pane's
+        // whole viewport, so the page scrolled at *minimum* content while the list
+        // scrolled inside it.
+        .child(crate::settings::fields::list_box(
+            Expand::horizontal().child(list_card),
+        ))
 }
 
 /// The prominent add-a-word row: a field with a leading `+`, and a filled accent button. Enter in

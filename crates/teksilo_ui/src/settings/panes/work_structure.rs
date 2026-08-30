@@ -4,7 +4,6 @@
 //! Work: `<name>` ▸ Structure — the open project's chapter encoding.
 
 use frontend::common::entities::GoalUnit;
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton};
 
@@ -16,7 +15,7 @@ use super::super::*;
 pub(in crate::settings) fn work_structure_pane(
     ctx: &mut BuildContext,
     vm: &WorkSettingsViewModel,
-    work_title: String,
+    crumbs: &Crumbs,
 ) -> impl Widget {
     // The `Toggle` is bridged to the entity's `chapter_mode` (checked = flat) with two
     // guarded effects — one mirrors external changes (refresh/undo) in, the other pushes a
@@ -79,18 +78,26 @@ pub(in crate::settings) fn work_structure_pane(
             crate::tooltip_registry::CONCEPT_CHAPTER_MODE,
             group(tr!(settings_group_chapters())),
         ))
-        .full_width(
+        // In the label column with every other field on this page. A `full_width`
+        // row starts at the pane's own left edge while a `.line` field starts at
+        // `label_col + gap`, so mixing the two gives one page two left edges;
+        // `export_styles`' editor settled this the same way. `FormLayout::line`
+        // wires `access_labelled_by` itself, so `labelled_externally` only tells
+        // the toggle's own assertion so.
+        .line(
+            field_label(tr!(settings_chapter_flat())),
             Toggle::new(flat)
-                .label(tr!(settings_chapter_flat()))
+                .labelled_externally()
                 .rich_tooltip_content(
                     TooltipContent::new("settings.chapter_flat", tr!(new_work_chapter_scene_tip()))
                         .with_more(tr!(new_work_chapter_scene_tip_more())),
                 ),
         )
         .full_width(group(tr!(settings_group_numbering())))
-        .full_width(
+        .line(
+            field_label(tr!(settings_number_chapters())),
             Toggle::new(numbered)
-                .label(tr!(settings_number_chapters()))
+                .labelled_externally()
                 .rich_tooltip_content(
                     TooltipContent::new(
                         "settings.number_chapters",
@@ -113,9 +120,10 @@ pub(in crate::settings) fn work_structure_pane(
                 }
             }),
         ))
-        .full_width(
+        .line(
+            field_label(tr!(settings_part_resets_chapter())),
             Toggle::new(part_resets)
-                .label(tr!(settings_part_resets_chapter()))
+                .labelled_externally()
                 .rich_tooltip_content(
                     TooltipContent::new(
                         "settings.part_resets_chapter",
@@ -125,17 +133,7 @@ pub(in crate::settings) fn work_structure_pane(
                 ),
         );
 
-    pane_frame(
-        crumb(
-            Some(lit!(format!(
-                "{}: {}",
-                tr!(settings_sec_work()).resolve_now(),
-                work_title
-            ))),
-            tr!(settings_page_structure()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::WorkStructure), form)
 }
 
 /// Ask before switching the unit, and revert the control if the answer is no.

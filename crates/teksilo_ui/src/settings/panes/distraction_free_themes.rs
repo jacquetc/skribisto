@@ -14,11 +14,10 @@
 
 use teksilo::core::binding::BindingLevel;
 use teksilo::data::ListModel;
-use teksilo::prelude::*;
 use teksilo::tokens::Color;
 use teksilo::widgets::{
-    Badge, Button, ButtonVariant, ColorEdit, HStack, ListView, MaxSize, Padding, Spacer,
-    StandardListItem, TextInput, Toast, VStack,
+    Badge, Button, ButtonVariant, ColorEdit, HStack, ListView, Padding, Spacer, StandardListItem,
+    TextInput, Toast, VStack,
 };
 
 use crate::distraction_free::DistractionFreeThemesViewModel;
@@ -36,37 +35,56 @@ pub(in crate::settings) fn distraction_free_themes_pane(
     // The user theme loaded in the editor below (by id).
     let selected: Signal<Option<String>> = Signal::new(None);
 
-    // ── Built-in themes (static) ──
-    let builtin_model = ListModel::from_vec(vm.builtin_themes());
-    let bvm = vm.clone();
-    let bcur = current.clone();
-    let builtin_list = ListView::new(builtin_model, move |_i, t: &DistractionFreeTheme, _sel| {
-        Box::new(builtin_row(&bvm, t, bcur.clone()))
-    })
-    .auto_item_height(52.0);
+    // ── One list, not two ──
+    //
+    // Verbatim the merge `export_styles` makes next door, for the same reason:
+    // a built-in list capped at 180 px over a user list capped at 150, each
+    // scrolling on its own above an editor, is three scroll regions where the
+    // rows already say which kind they are. Every built-in row carries the
+    // `Built-in` badge and offers only Duplicate; a user row offers Edit /
+    // Export… / Delete. Built-ins are Rust values, so they are captured once and
+    // always lead.
+    let builtin_themes = vm.builtin_themes();
+    let builtin_ids: std::collections::HashSet<String> =
+        builtin_themes.iter().map(|t| t.id.clone()).collect();
 
-    // ── User themes (live: repopulated on every library bump) ──
-    let user_model = ListModel::from_vec(vm.user_themes());
+    let all_themes = |vm: &DistractionFreeThemesViewModel,
+                      builtin: &[DistractionFreeTheme]|
+     -> Vec<DistractionFreeTheme> {
+        let mut all = builtin.to_vec();
+        all.extend(vm.user_themes());
+        all
+    };
+
+    let model = ListModel::from_vec(all_themes(vm, &builtin_themes));
     {
-        let model = user_model.clone();
+        let model = model.clone();
         let vm = vm.clone();
         let selected = selected.clone();
+        let builtin_themes = builtin_themes.clone();
+        let builtin_ids = builtin_ids.clone();
         ctx.effect(&vm.changed_signal(), move |_| {
-            let rows = vm.user_themes();
+            let all = all_themes(&vm, &builtin_themes);
             // If the theme being edited was deleted, drop the editor selection.
             if let Some(cur) = selected.get()
-                && !rows.iter().any(|t| t.id == cur)
+                && !all
+                    .iter()
+                    .any(|t| t.id == cur && !builtin_ids.contains(&t.id))
             {
                 selected.set(None);
             }
-            model.replace_all(rows);
+            model.replace_all(all);
         });
     }
-    let uvm = vm.clone();
-    let usel = selected.clone();
-    let ucur = current.clone();
-    let user_list = ListView::new(user_model, move |_i, t: &DistractionFreeTheme, _sel| {
-        Box::new(user_row(&uvm, t, usel.clone(), ucur.clone()))
+    let lvm = vm.clone();
+    let lsel = selected.clone();
+    let lcur = current.clone();
+    let list = ListView::new(model, move |_i, t: &DistractionFreeTheme, _sel| {
+        if builtin_ids.contains(&t.id) {
+            Box::new(builtin_row(&lvm, t, lcur.clone())) as Box<dyn Widget>
+        } else {
+            Box::new(user_row(&lvm, t, lsel.clone(), lcur.clone())) as Box<dyn Widget>
+        }
     })
     .auto_item_height(52.0);
 
@@ -80,13 +98,12 @@ pub(in crate::settings) fn distraction_free_themes_pane(
 
     VStack::new()
         .spacing(6.0)
-        .child(group(tr!(settings_themes_builtin())))
-        // `MaxSize::height`, not `MinSize`: as a minimum the list grows to fit
-        // and swallows the pane — the same trap `export_styles` documents.
-        .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(180.0).child(builtin_list)))
-        .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_themes_user()))))
+        .child(group(tr!(settings_page_distraction_free_themes())))
         .child(Padding::symmetric(6.0, 4.0).child(toolbar))
-        .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(150.0).child(user_list)))
+        // `list_box`, not a hand-tuned `MaxSize::height`: the caps this replaces
+        // had no relation to the height the pane actually offers, so the page
+        // scrolled while the lists scrolled inside it.
+        .child(Padding::symmetric(4.0, 0.0).child(crate::settings::fields::list_box(list)))
         .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_themes_editor_group()))))
         .child(ThemeEditor::new(vm.clone(), selected))
 }
@@ -461,11 +478,20 @@ impl Widget for ThemeEditor {
         let band_label = ctx.add(field_label(tr!(settings_themes_field_caret_band())));
 
         let form = FormLayout::new()
+            // Named, so the form emits the `Role::Form` landmark assistive
+            // technology navigates by — every sibling pane's form is named, and
+            // an unnamed one demotes to a presentational group with no way in.
+            .label(tr!(settings_themes_editor_group()))
             .label_gap(16.0)
-            .row_spacing(12.0)
+            // 14, like the twenty-two other panes in this window. 12 here was the
+            // only row rhythm in the settings tree that did not match its
+            // neighbours.
+            .row_spacing(14.0)
             .line(
                 field_label(tr!(settings_themes_field_name())),
-                FixedSize::new().width(240.0).child(TextInput::new(name)),
+                // No `FixedSize::width`: a `FormLayout` places its field slot at
+                // `field_col_width` regardless — see `fields::slider_field`.
+                TextInput::new(name),
             )
             .line_ids(paper_label, paper_id)
             .line_ids(ink_label, ink_id)
@@ -488,6 +514,102 @@ impl Widget for ThemeEditor {
 mod tests {
     use super::*;
     use crate::distraction_free::theme::builtin_themes;
+
+    use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::core::{LayoutContext, LayoutResponse, WidgetId};
+
+    /// A private theme library per call, so the tests do not race each other's
+    /// writes.
+    static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+    fn vm_with_a_user_theme() -> (DistractionFreeThemesViewModel, std::path::PathBuf) {
+        let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("skrib-dfthemes-{}-{n}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("a scratch directory");
+        let svc = crate::models::DistractionFreeThemesService::open_at(dir.join("themes.toml"))
+            .expect("a fresh library");
+        let vm = DistractionFreeThemesViewModel::new(svc);
+        let base = vm.builtin_themes().into_iter().next().expect("a built-in");
+        vm.duplicate(&base, "copy").expect("duplicate");
+        (vm, dir)
+    }
+
+    struct PaneHost {
+        vm: Option<DistractionFreeThemesViewModel>,
+        root: Option<WidgetId>,
+    }
+    impl std::fmt::Debug for PaneHost {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("PaneHost").finish()
+        }
+    }
+    impl Widget for PaneHost {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let vm = self.vm.take().expect("built once");
+            let body = distraction_free_themes_pane(
+                ctx,
+                &vm,
+                Signal::new(vm.builtin_themes()[0].id.clone()),
+            );
+            let id = ctx.add(body);
+            self.root = Some(id);
+            vec![id]
+        }
+        fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+            self.root
+                .and_then(|id| ctx.child_size(id, proposal))
+                .map(LayoutResponse::from)
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        }
+        fn children(&self) -> Vec<WidgetId> {
+            self.root.into_iter().collect()
+        }
+    }
+
+    /// One list carries both kinds, shipped ones first.
+    ///
+    /// The pane used to stack a built-in list capped at 180 px over a user list
+    /// capped at 150, each scrolling inside a page that also scrolled. The merge
+    /// is only sound while the two kinds stay tellable apart *by id*, which is
+    /// what the row builder switches on.
+    #[test]
+    fn one_list_carries_the_shipped_themes_and_then_mine() {
+        let (vm, dir) = vm_with_a_user_theme();
+        let builtin = vm.builtin_themes();
+        let all = vm.all_themes();
+        assert!(
+            all.len() > builtin.len(),
+            "the merged list must hold the writer's copies too"
+        );
+        let ids: std::collections::HashSet<String> = builtin.iter().map(|t| t.id.clone()).collect();
+        assert!(
+            vm.user_themes().iter().all(|t| !ids.contains(&t.id)),
+            "a duplicate must not answer to a built-in's id, or the merged list \
+             would render it with Duplicate instead of Edit / Export… / Delete"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The pane fits in something like a pane.
+    #[test]
+    fn the_pane_fits_without_stacking_three_scroll_regions() {
+        let (vm, dir) = vm_with_a_user_theme();
+        let mut tree = WidgetTree::new();
+        tree.add(PaneHost {
+            vm: Some(vm),
+            root: None,
+        });
+        let wanted = tree
+            .measure_root_intrinsic(SizeProposal::with_width(crate::settings::fields::PANE_W))
+            .expect("the pane is the tree's only root");
+        assert!(
+            wanted.height < 700.0,
+            "the pane wants {} px against a ~431 px viewport",
+            wanted.height
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn a_shipped_theme_earns_no_warning() {

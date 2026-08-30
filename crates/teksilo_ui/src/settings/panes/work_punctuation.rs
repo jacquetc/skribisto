@@ -4,7 +4,6 @@
 //! Work: `<name>` ▸ Punctuation — the project's typographic house style.
 
 use frontend::common::entities::QuoteStyle;
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{Segment, SegmentedControl};
 
@@ -137,7 +136,7 @@ fn bridge(
 pub(in crate::settings) fn work_punctuation_pane(
     ctx: &mut BuildContext,
     vm: &WorkSettingsViewModel,
-    work_title: String,
+    crumbs: &Crumbs,
 ) -> impl Widget {
     let over = bridge(ctx, vm.punctuation_override(), {
         let vm = vm.clone();
@@ -260,17 +259,7 @@ pub(in crate::settings) fn work_punctuation_pane(
                 )),
         );
 
-    pane_frame(
-        crumb(
-            Some(lit!(format!(
-                "{}: {}",
-                tr!(settings_sec_work()).resolve_now(),
-                work_title
-            ))),
-            tr!(settings_page_punctuation()),
-        ),
-        form,
-    )
+    pane_frame(crumbs.of(Pane::WorkPunctuation), form)
 }
 
 #[cfg(all(test, feature = "mocks"))]
@@ -306,7 +295,12 @@ mod tests {
     impl Widget for PaneHost {
         fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
             let vm = self.vm.take().expect("built once");
-            let body = work_punctuation_pane(ctx, &vm, "Starforgers".to_string());
+            let crumbs = Crumbs::new(
+                std::rc::Rc::new(crate::settings::tree_spec(true, &[])),
+                "Starforgers",
+                None,
+            );
+            let body = work_punctuation_pane(ctx, &vm, &crumbs);
             let root = ctx.add(body);
             self.root_child = Some(root);
             vec![root]
@@ -330,7 +324,7 @@ mod tests {
             vm: Some(vm),
             root_child: None,
         });
-        tree.layout(SizeProposal::exact(760.0, 620.0));
+        tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 620.0));
         // The a11y assertions live in each widget's `accessibility`, which only
         // runs when the AccessKit tree is built — laying out alone never reaches
         // them, which is exactly how a `Toggle` shipped with no accessible label

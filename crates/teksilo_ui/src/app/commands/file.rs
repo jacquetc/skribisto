@@ -217,17 +217,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let session = deps.session.clone();
         ctx.register_action_global(Action::new("app.settings").on_invoke(move |_i, c| {
             let session = session.clone();
-            c.present_modal(
-                ModalRequest::deferred(move |t| t.add(SettingsPanel::new(session)))
-                    .presentation(ModalPresentation::InTree)
-                    .title("Settings")
-                    .size(920, 620)
-                    // Not easily dismissable — like a critical MessageBox. Only the panel's own
-                    // close button / Cancel / OK close it (each calls `ctx.dismiss_modal()`);
-                    // Escape and outside clicks do not, so a stray click never discards a
-                    // settings session.
-                    .close_behavior(ModalCloseBehavior::Manual),
-            );
+            // One door for every entry point — presentation, title and close
+            // behaviour are stated once, in `settings::present`.
+            crate::settings::present(c, move || SettingsPanel::new(session));
         }));
     }
 
@@ -239,14 +231,24 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let session = deps.session.clone();
         ctx.register_action_global(Action::new("app.settings.games").on_invoke(move |_i, c| {
             let session = session.clone();
-            c.present_modal(
-                ModalRequest::deferred(move |t| t.add(SettingsPanel::open_to_games(session)))
-                    .presentation(ModalPresentation::InTree)
-                    .title("Settings")
-                    .size(920, 620)
-                    .close_behavior(ModalCloseBehavior::Manual),
-            );
+            crate::settings::present(c, move || SettingsPanel::open_to_games(session));
         }));
+    }
+
+    // Settings, opened straight at Editor ▸ Typography ▸ Distraction-free themes —
+    // what the focus-mode quick-settings popover's "Manage themes…" button fires.
+    // Same shape as `app.settings.games` above, and for the same reason: that
+    // popover exists so a writer in focus mode is not made to open the whole
+    // preferences window and go hunting, and firing the generic `app.settings`
+    // landed them on Editor ▸ Scene typography, which is exactly the hunt.
+    {
+        let session = deps.session.clone();
+        ctx.register_action_global(Action::new("app.settings.df_themes").on_invoke(
+            move |_i, c| {
+                let session = session.clone();
+                crate::settings::present(c, move || SettingsPanel::open_to_df_themes(session));
+            },
+        ));
     }
 
     // Quit (Ctrl+Q): really terminates the process, accounting for **every** open Work

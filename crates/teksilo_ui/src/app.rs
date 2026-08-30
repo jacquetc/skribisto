@@ -584,15 +584,9 @@ pub(crate) fn offer_missing_dictionaries(
                 tr!(dict_missing_action()),
                 move |c| {
                     let session = session.clone();
-                    c.present_modal(
-                        ModalRequest::deferred(move |t| {
-                            t.add(SettingsPanel::open_to_dictionaries(session))
-                        })
-                        .presentation(ModalPresentation::InTree)
-                        .title("Settings")
-                        .size(920, 620)
-                        .close_behavior(ModalCloseBehavior::Manual),
-                    );
+                    crate::settings::present(c, move || {
+                        SettingsPanel::open_to_dictionaries(session)
+                    });
                 },
             )),
     );
@@ -630,15 +624,7 @@ pub(crate) fn warn_unsigned_comments(
                 tr!(comments_unsigned_action()),
                 move |c| {
                     let session = session.clone();
-                    c.present_modal(
-                        ModalRequest::deferred(move |t| {
-                            t.add(SettingsPanel::open_to_user(session))
-                        })
-                        .presentation(ModalPresentation::InTree)
-                        .title("Settings")
-                        .size(920, 620)
-                        .close_behavior(ModalCloseBehavior::Manual),
-                    );
+                    crate::settings::present(c, move || SettingsPanel::open_to_user(session));
                 },
             )),
     );
@@ -1508,11 +1494,30 @@ impl Widget for App {
         // `LOCALE_KEY` so it restores next launch (see `main::read_prefs`).
         {
             let dark = settings.dark();
+            // Mirrored beside `ui.dark`, not instead of it: `ui.dark` is what an
+            // install written before `ui.theme_mode` existed still boots from, so
+            // it has to keep tracking the live theme for ever. The *mode* is the
+            // finer answer — it is the only one that can say "follow the desktop"
+            // — and without this half it would be written solely by an explicit
+            // `set_theme_mode`, so a pick made in the ThemeSwitcher would come
+            // back next launch as a frozen light/dark rather than the mode it was.
+            //
+            // The signal is fetched inside the closure, never at build time:
+            // `store.signal()` seeds a missing key, and seeding this one on every
+            // launch would hand the desktop a vote nobody cast (see
+            // `SettingsViewModel::theme_mode`). Here it is only ever reached with
+            // a theme in hand, which is the moment the key is about to be written.
+            let mode_owner = settings.clone();
             let theme_sig = ctx.theme_signal().clone();
             ctx.effect(&theme_sig, move |t| {
                 let is_dark = t.is_dark();
                 if dark.get() != is_dark {
                     dark.set(is_dark);
+                }
+                let mode = mode_owner.theme_mode();
+                let m = crate::settings_keys::theme_mode_of(t);
+                if mode.get() != m {
+                    mode.set(m.to_string());
                 }
             });
         }

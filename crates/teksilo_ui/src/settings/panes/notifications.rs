@@ -13,21 +13,17 @@
 
 use std::rc::Rc;
 
-use teksilo::prelude::*;
-use teksilo::widgets::{Expand, MinSize, NotificationArchiveModel, NotificationLog};
+use teksilo::widgets::{Expand, NotificationArchiveModel, NotificationLog};
 
 #[allow(unused_imports)]
 use super::super::*;
 
-/// Floor height for the log so its internal `ScrollArea` has a bounded slot
-/// to fill inside the settings pane's own scroll (same trap `user_dictionary`
-/// documents for a virtualised list).
-const LOG_MIN_HEIGHT: f32 = 360.0;
-
 /// Settings ▸ Notifications — the archive log, or an empty placeholder when
 /// the toast subsystem was never installed (headless / off-screen builds).
-pub(in crate::settings) fn notifications_pane(ctx: &mut BuildContext) -> Box<dyn Widget> {
-    let ab = tr!(settings_sec_appearance_behaviour());
+pub(in crate::settings) fn notifications_pane(
+    ctx: &mut BuildContext,
+    crumbs: &Crumbs,
+) -> Box<dyn Widget> {
     match ctx.app_state::<Rc<NotificationArchiveModel>>().cloned() {
         Some(archive) => {
             // Unscoped: this is the settings-level manager, not a per-window
@@ -38,14 +34,19 @@ pub(in crate::settings) fn notifications_pane(ctx: &mut BuildContext) -> Box<dyn
             // starts carrying a static intent name, wire the known ones here.
             let log = NotificationLog::new(archive);
             Box::new(pane_frame(
-                crumb(Some(ab), tr!(settings_page_notifications())),
-                Expand::horizontal()
-                    .child(MinSize::new(0.0, LOG_MIN_HEIGHT).child(Expand::vertical().child(log))),
+                crumbs.of(Pane::Notifications),
+                // The log takes whatever the pane has left, floored by the shared
+                // list floor. It used to declare 360 px of its own — 84% of the
+                // viewport, so the page scrolled around a log that was itself
+                // scrolling.
+                crate::settings::fields::list_box(
+                    Expand::horizontal().child(Expand::vertical().child(log)),
+                ),
             ))
         }
         None => Box::new(empty_pane(
-            Some(ab),
-            tr!(settings_page_notifications()),
+            crumbs,
+            Pane::Notifications,
             Sec::AppearanceBehaviour.icon_svg(),
         )),
     }

@@ -3,7 +3,6 @@
 
 //! Editor ▸ Corkboard — card size, what a card shows, and how the grid behaves.
 
-use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
@@ -15,6 +14,7 @@ use super::super::*;
 /// `corkboard_nested` bool via two guarded effects — the shape `goals_pane` uses.
 pub(in crate::settings) fn corkboard_pane(
     ctx: &mut BuildContext,
+    crumbs: &Crumbs,
     vm: &SettingsViewModel,
 ) -> impl Widget {
     let nested = vm.corkboard_nested();
@@ -99,54 +99,14 @@ pub(in crate::settings) fn corkboard_pane(
                 crate::EDITOR_TYPO_SIZE_STEP,
                 |v| format!("{:.0}%", v * 100.0),
             ),
-        )
-        // The card's own synopsis typography — mirrors the Scene / Synopsis / Notes
-        // pages, so cards can read distinctly from the Full-Synopsis pane.
-        .full_width(group(tr!(settings_group_typography())))
-        .line(
-            field_label(tr!(settings_field_typeface())),
-            super::typography::font_picker(ctx, typo.font_family.clone()),
-        )
-        .line(
-            field_label(tr!(settings_field_size())),
-            slider_field(
-                typo.size.clone(),
-                typo.size_range.min,
-                typo.size_range.max,
-                typo.size_range.step,
-                |v| format!("{:.0}%", v * 100.0),
-            ),
-        )
-        .line(
-            field_label(tr!(settings_field_line_height())),
-            slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| {
-                format!("{v:.2}")
-            }),
-        )
-        .line(
-            field_label(tr!(settings_field_first_line_indent())),
-            slider_field(typo.first_line_indent.clone(), 0.0, 60.0, 2.0, |v| {
-                format!("{} px", v.round() as i32)
-            }),
-        )
-        .line(
-            field_label(tr!(settings_field_paragraph_spacing_before())),
-            slider_field(typo.para_spacing_before.clone(), 0.0, 40.0, 2.0, |v| {
-                format!("{} px", v.round() as i32)
-            }),
-        )
-        .line(
-            field_label(tr!(settings_field_paragraph_spacing_after())),
-            slider_field(typo.para_spacing_after.clone(), 0.0, 40.0, 2.0, |v| {
-                format!("{} px", v.round() as i32)
-            }),
         );
 
-    pane_frame(
-        crumb(
-            Some(tr!(settings_sec_editor())),
-            tr!(settings_page_corkboard()),
-        ),
-        form,
-    )
+    // The card's own synopsis typography — mirrors the Scene / Synopsis / Notes
+    // pages, so cards can read distinctly from the Full-Synopsis pane. Through the
+    // shared helper, not a copy of its six rows: the copy that used to live here
+    // meant six settings were maintained in two places, and `typography_pane`'s own
+    // doc comment had to admit it.
+    let form = super::typography::typography_rows(ctx, form, &typo);
+
+    pane_frame(crumbs.of(Pane::Corkboard), form)
 }

@@ -34,7 +34,6 @@ use crate::toast_scope::ToastWorkExt;
 const TRIGGER_COL: &str = "trigger";
 const TRIGGER_FIELD_WIDTH: f32 = 140.0;
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;
-const LIST_MIN_HEIGHT: f32 = 320.0;
 
 fn add_glyph() -> IconWidget {
     (BuiltInIcons::defaults().add)().icon_size(15.0)
@@ -141,7 +140,7 @@ fn active_body(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> im
             // The floor goes on the card, not the list: a `Switcher` reports its active
             // child's size, and a virtualised `ListView` given unbounded height inside the
             // pane's own scroll reports ~nothing.
-            MinSize::new(0.0, LIST_MIN_HEIGHT).child(
+            MinSize::new(0.0, crate::settings::fields::LIST_MIN_HEIGHT).child(
                 Switcher::new(empty_idx)
                     .child(Expand::vertical().child(list))
                     .child(empty_state()),
@@ -152,7 +151,14 @@ fn active_body(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> im
         .spacing(16.0)
         .child(add_row(ctx, vm))
         .child(toolbar_row(vm, query))
-        .child(Expand::horizontal().child(list_card))
+        // `list_box`: the leftover height of the pane goes to the list, so one
+        // scroll region replaces two. The floor it carries is the shared one — the
+        // 300–320 px constants that used to live here were taller than the pane's
+        // whole viewport, so the page scrolled at *minimum* content while the list
+        // scrolled inside it.
+        .child(crate::settings::fields::list_box(
+            Expand::horizontal().child(list_card),
+        ))
 }
 
 /// The prominent add row: trigger field, an arrow, the replacement field, and a filled button.
@@ -591,7 +597,7 @@ mod tests {
             row,
             root_child: None,
         });
-        tree.layout(SizeProposal::exact(760.0, 46.0));
+        tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 46.0));
         // The assertion lives in `Toggle::accessibility`, which only runs when
         // the AccessKit tree is built — laying out alone would not reach it.
         tree.sync_accessibility();
@@ -609,7 +615,7 @@ mod tests {
                 row: row.clone(),
                 root_child: None,
             });
-            tree.layout(SizeProposal::exact(760.0, 46.0));
+            tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 46.0));
             tree.sync_accessibility();
         }
     }
@@ -659,7 +665,7 @@ mod tests {
             vm: Some(vm),
             root_child: None,
         });
-        tree.layout(SizeProposal::exact(760.0, 520.0));
+        tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 520.0));
         let update = tree.sync_accessibility();
         update
             .nodes
@@ -687,7 +693,7 @@ mod tests {
             vm: Some(vm.clone()),
             root_child: None,
         });
-        tree.layout(SizeProposal::exact(760.0, 520.0));
+        tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 520.0));
 
         let inputs = |tree: &mut teksilo::core::widget_tree::WidgetTree| {
             tree.sync_accessibility()
@@ -702,7 +708,7 @@ mod tests {
         );
 
         vm.set_enabled(false);
-        tree.layout(SizeProposal::exact(760.0, 520.0));
+        tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 520.0));
         assert_eq!(
             inputs(&mut tree),
             0,
@@ -710,7 +716,7 @@ mod tests {
         );
 
         vm.set_enabled(true);
-        tree.layout(SizeProposal::exact(760.0, 520.0));
+        tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 520.0));
         assert!(
             inputs(&mut tree) >= 2,
             "switching back on must bring the add row back"

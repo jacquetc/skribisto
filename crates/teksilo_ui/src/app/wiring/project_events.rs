@@ -242,17 +242,9 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                                         tr!(backup_nudge_action()),
                                         move |c| {
                                             let session_for_action = session_for_action.clone();
-                                            c.present_modal(
-                                                ModalRequest::deferred(move |t| {
-                                                    t.add(SettingsPanel::open_to_backup(
-                                                        session_for_action,
-                                                    ))
-                                                })
-                                                .presentation(ModalPresentation::InTree)
-                                                .title("Settings")
-                                                .size(920, 620)
-                                                .close_behavior(ModalCloseBehavior::Manual),
-                                            );
+                                            crate::settings::present(c, move || {
+                                                SettingsPanel::open_to_backup(session_for_action)
+                                            });
                                         },
                                     )),
                             );

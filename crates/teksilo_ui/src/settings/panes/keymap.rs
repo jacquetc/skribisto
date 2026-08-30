@@ -10,14 +10,13 @@
 //! drives `with_filter` so the writer can find a chord without scrolling the
 //! whole catalogue.
 
-use teksilo::prelude::*;
 use teksilo::widgets::{Expand, SearchField, ShortcutSettings, VStack};
 
 #[allow(unused_imports)]
 use super::super::*;
 
 /// Settings ▸ Keymap — filter + the framework's shortcut rebind panel.
-pub(in crate::settings) fn keymap_pane(_ctx: &mut BuildContext) -> impl Widget {
+pub(in crate::settings) fn keymap_pane(_ctx: &mut BuildContext, crumbs: &Crumbs) -> impl Widget {
     let filter = Signal::new(String::new());
     // Conflict confirmation is on: rebinding a chord already used elsewhere
     // shows an inline "already assigned to X — Reassign / Cancel" prompt on
@@ -33,5 +32,5 @@ pub(in crate::settings) fn keymap_pane(_ctx: &mut BuildContext) -> impl Widget {
             ),
         );
 
-    pane_frame(crumb(None, tr!(settings_page_keymap())), body)
+    pane_frame(crumbs.of(Pane::Keymap), body)
 }
