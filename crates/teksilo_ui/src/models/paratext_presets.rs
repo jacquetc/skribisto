@@ -20,7 +20,11 @@
 //! What *is* translated is the pair of folders the items land in ("Front matter" / "Back
 //! matter"), because those are organisational scaffolding common to every preset — and
 //! because a `Folder/Paratext` emits nothing into the export, so its name never reaches
-//! the book. Only the leaves get printed, and those are verbatim.
+//! the book. Neither, in fact, does a leaf's *title*: `render.rs` gives a paratext no
+//! heading of its own — "its title is a binder label, not a line of the book" — and prints
+//! only its `ParatextText` prose. So the reason to keep the titles verbatim is not that
+//! they are printed; it is that *Achevé d'imprimer* has no English that means anything, and
+//! a writer who wants it renamed knows better than we do what to call it.
 //!
 //! ## `[front]` and `[back]` are not a model concept
 //!

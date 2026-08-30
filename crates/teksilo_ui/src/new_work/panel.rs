@@ -321,9 +321,10 @@ fn paratext_combo(vm: &NewWorkViewModel) -> ComboBox<String> {
 /// and a real answer: a project whose writer has not decided they are keeping a story
 /// bible works exactly as well, and "Add as note" still files under **Untagged**.
 ///
-/// The preset names are `tr!`'d rather than data, so a French writer applying "Basic"
-/// gets `personnage` / `lieu` — see [`crate::tags::presets`] for why the palettes are
-/// generated in code.
+/// The preset names are `tr!`'d rather than data, so applying "Basic" lands in the
+/// language of the interface — `personnage` / `lieu` on a French UI — see
+/// [`crate::tags::presets`] for why the palettes are generated in code, and why the
+/// interface's locale rather than the project's is the right one for a tag name.
 fn tag_preset_combo(vm: &NewWorkViewModel) -> ComboBox<crate::tags::Preset> {
     ComboBox::from_items(
         crate::tags::Preset::ALL.to_vec(),
@@ -425,8 +426,10 @@ fn template_tiles(vm: &NewWorkViewModel) -> RadioTileGroup {
 /// applied later from Settings ▸ Work ▸ Templates.
 ///
 /// Like the tag palette beside it, the bodies are assembled from `tr!`'d field labels
-/// rather than shipped as data, so a French writer gets a French character sheet — see
-/// [`crate::note_templates::presets`].
+/// rather than shipped as data, so the sheet arrives in the language of the interface —
+/// see [`crate::note_templates::presets`]. All three starter pickers on this page (tags,
+/// statuses, templates) resolve the same way, which is the point: a project's starting
+/// vocabulary must not be assembled from two locale authorities at once.
 fn template_set_combo(vm: &NewWorkViewModel) -> ComboBox<crate::note_templates::StarterSet> {
     ComboBox::from_items(
         crate::note_templates::StarterSet::ALL.to_vec(),

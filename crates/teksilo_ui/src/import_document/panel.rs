@@ -987,11 +987,31 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     )
     .width(ColumnWidth::Fixed(64.0));
 
+    let title_source = source.clone();
     let title = Column::new(
         "title",
         tr!(import_document_col_title()),
-        move |row: &PlanRowView, _cx: &CellContext| {
-            Box::new(TextWidget::new(lit!(row.title.clone()))) as Box<dyn Widget>
+        move |row: &PlanRowView, cx: &CellContext| {
+            // A row that came from a document heading always has a title. The one that
+            // does not is the synthetic root "Add a top-level header" prepends, which is
+            // stored untitled on purpose (`create_labels::initial_title`) — a structural
+            // title is printed into the exported book. Name it here instead, from its
+            // live type signal so retyping the row renames the cell with it: the label is
+            // chrome, in the interface locale, and reaches no file.
+            if !row.title.trim().is_empty() {
+                return Box::new(TextWidget::new(lit!(row.title.clone()))) as Box<dyn Widget>;
+            }
+            let label = title_source
+                .key_at(cx.row_index)
+                .and_then(|key| title_source.type_signal(key))
+                .and_then(|kind| kind.get())
+                .map(recommendation_label)
+                .unwrap_or_else(|| tr!(import_document_col_title()));
+            Box::new(
+                TextWidget::new(label)
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            ) as Box<dyn Widget>
         },
     );
 

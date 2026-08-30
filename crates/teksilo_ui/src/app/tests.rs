@@ -466,7 +466,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
 #[test]
 fn every_non_editor_edit_surface_is_a_dirty_marking_event() {
     let origins = mutation_origins();
-    use DirectAccessEntity::{Comment, CommentReply, Footnote};
+    use DirectAccessEntity::{Comment, CommentReply, Footnote, NoteTemplate};
     for ent in [
         Comment(EntityEvent::Created),
         Comment(EntityEvent::Updated),
@@ -477,6 +477,11 @@ fn every_non_editor_edit_surface_is_a_dirty_marking_event() {
         Footnote(EntityEvent::Created),
         Footnote(EntityEvent::Updated),
         Footnote(EntityEvent::Removed),
+        // The fourth to arrive missing: applying a preset from Settings ▸ Work ▸
+        // Templates created six rows that Close then discarded without asking.
+        NoteTemplate(EntityEvent::Created),
+        NoteTemplate(EntityEvent::Updated),
+        NoteTemplate(EntityEvent::Removed),
     ] {
         assert!(
             origins.contains(&Origin::DirectAccess(ent.clone())),

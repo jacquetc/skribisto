@@ -6,9 +6,12 @@
 #
 # Les NOMS des modèles fournis et les intitulés de section/champ dont leur corps est
 # assemblé sont traduits à dessein : les modèles sont construits dans le code plutôt que
-# livrés comme fichiers `.djot`, précisément pour qu'un projet français obtienne une fiche
-# de personnage en français — et pour qu'une amélioration ultérieure de la formulation
-# touche toutes les langues au lieu d'être figée dans les projets déjà créés.
+# livrés comme fichiers `.djot`, afin qu'en appliquer un aboutisse dans la langue de
+# l'INTERFACE en cours d'utilisation — et pour qu'une amélioration ultérieure de la
+# formulation touche toutes les langues au lieu d'être figée dans les projets déjà créés.
+# Celle de l'interface, et non celle du projet : un modèle est un formulaire que l'auteur
+# remplit puis réécrit, et une fois appliquées ses lignes sont stockées telles quelles et
+# lui appartiennent.
 
 ## Paramètres ▸ Projet ▸ Modèles
 settings-page-templates = Modèles

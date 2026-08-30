@@ -3,8 +3,12 @@
 
 # Étiquettes — la palette du projet, la section de l'inspecteur et les préréglages.
 # Les NOMS des étiquettes des préréglages sont traduits volontairement : les préréglages
-# sont générés dans le code plutôt que livrés comme données, précisément pour qu'un projet
-# français obtienne des noms français.
+# sont générés dans le code plutôt que livrés comme données, afin qu'en appliquer un
+# aboutisse dans la langue de l'INTERFACE que l'auteur a sous les yeux, et non dans l'unique
+# langue qu'un fichier de données aurait dû figer. Celle de l'interface, et non le
+# `dict_language` du projet : un nom d'étiquette est une puce de filtre et une ligne
+# d'inspecteur, le compilateur ne le lit jamais, et seule la personne au clavier le lit.
+# Une fois appliquées, les lignes sont stockées telles quelles et lui appartiennent.
 
 ## Menu des préréglages
 tags-preset-basic = Basique

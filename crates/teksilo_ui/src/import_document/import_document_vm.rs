@@ -1050,7 +1050,12 @@ impl ImportDocumentViewModel {
         if self.plan.is_empty() {
             return;
         }
-        let title = crate::binder::create_labels::default_title(kind).resolve_now();
+        // Empty for a Book/Part/Chapter root, which is every root this can add today:
+        // the plan's title is applied verbatim as the created row's `BinderItem.title`,
+        // and a stored structural title is printed into the exported book. The review
+        // tree's Title cell falls back to the type's name for the writer's benefit —
+        // chrome there, nothing in the data. See `create_labels::initial_title`.
+        let title = crate::binder::create_labels::initial_title(kind);
         self.plan.prepend_root(kind, title);
         // Synthetic root is not from a document heading — level 0 never matches
         // a level-rule retype. Existing rows shift one index.

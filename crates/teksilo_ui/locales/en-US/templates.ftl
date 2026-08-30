@@ -5,10 +5,12 @@
 # insert submenu, and the built-in presets.
 #
 # Preset NAMES and the section/field labels their bodies are built from are translated
-# deliberately: presets are assembled in code rather than shipped as `.djot` assets
-# precisely so a French project gets a French character sheet — and so improving the
-# English wording later reaches every locale instead of being frozen into whatever
-# projects had already applied it.
+# deliberately: presets are assembled in code rather than shipped as `.djot` assets so that
+# applying one lands in the language of the INTERFACE in use at that moment — and so
+# improving the English wording later reaches every locale instead of being frozen into
+# whatever projects had already applied it. The interface's locale and not the project's:
+# a template is a form the writer fills in and then overwrites, and once applied its rows
+# are stored literally and are theirs to edit.
 
 ## Settings ▸ Work ▸ Templates
 settings-page-templates = Templates

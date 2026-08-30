@@ -361,7 +361,8 @@ impl OutlineViewModel {
     /// `title` is passed in already resolved rather than derived from `role` here:
     /// the caller knows the logical `CreateType` (Chapter, Scene, Note…), which
     /// `role` alone cannot recover — `Folder` covers books, parts, chapters and note
-    /// folders alike. See [`crate::binder::create_labels::default_title`].
+    /// folders alike. See [`crate::binder::create_labels::initial_title`], which is
+    /// also where a structural row's title comes back **empty** on purpose.
     ///
     /// Revealing is not cosmetic. Creating the *first* child of a container puts the
     /// new row under a parent that, having had no children, has never been expanded —
@@ -477,8 +478,10 @@ impl OutlineViewModel {
         }
         let (binder, index, indent) = self.insertion_point_for(anchor, rec.relation)?;
         // Resolve the localized default to owned data here — this call is the
-        // chrome/data boundary (see `create_labels::default_title`).
-        let title: String = crate::binder::create_labels::default_title(rec.create_type).into();
+        // chrome/data boundary (see `create_labels::default_title`). `initial_title`,
+        // not `default_title`: a Book/Part/Chapter is born untitled because a stored
+        // structural title is printed into the exported book, placeholder and all.
+        let title: String = crate::binder::create_labels::initial_title(rec.create_type);
         self.create_item_at_returning_id(binder, index, indent, role, sub_role, title)
     }
 

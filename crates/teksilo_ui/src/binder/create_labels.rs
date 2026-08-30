@@ -40,21 +40,29 @@ pub fn recommendation_label(create_type: CreateType) -> LocalizedString {
     }
 }
 
-/// The **title** a freshly created row is given, per type — "New chapter" for a
+/// The per-type **placeholder name** for a freshly created row — "New chapter" for a
 /// chapter, "New scene" for a scene, and so on, rather than one generic "New Item"
 /// for everything that is not a folder.
 ///
-/// This is the one place in the create vocabulary that produces *data*, not chrome.
-/// An entity title is persisted to the `.skrib` file and is the writer's to edit, so
-/// it must be resolved to an owned `String` **once, at creation time**, in whatever
-/// language is active then — and never re-translated afterwards. Switching the app to
-/// French must not silently retitle chapters the writer created in English, any more
-/// than it should retitle ones they named themselves.
+/// ⚠ **Not, by itself, the title a row is stored with.** Every creation path calls
+/// [`initial_title`] instead, which returns this for the types the writer names and
+/// **nothing** for the three that open a structural level — because a stored
+/// structural title is printed into the exported book, placeholder and all. The two
+/// split apart the day that came to light; this half is the vocabulary, that half is
+/// the decision.
+///
+/// Where it *is* stored, it produces *data*, not chrome. An entity title is persisted
+/// to the `.skrib` file and is the writer's to edit, so it must be resolved to an
+/// owned `String` **once, at creation time**, in whatever language is active then —
+/// and never re-translated afterwards. Switching the app to French must not silently
+/// retitle notes the writer created in English, any more than it should retitle ones
+/// they named themselves.
 ///
 /// That is why this returns a `LocalizedString` and the caller resolves it
-/// immediately (`.into()`): the boundary between chrome and data is exactly the
-/// `create_item_at` call. Contrast [`recommendation_label`], which stays localized all
-/// the way to the widget precisely because a menu label *is* chrome.
+/// immediately: the boundary between chrome and data is exactly the `create_item_at`
+/// call. Contrast [`recommendation_label`], which stays localized all the way to the
+/// widget precisely because a menu label *is* chrome — and which is what the import
+/// wizard's review tree shows in the Title cell of a row stored untitled.
 ///
 /// `EndOfBook` reuses the type name: it is a singleton structural marker the writer
 /// does not name, so "New end of book" would be noise.
@@ -73,6 +81,48 @@ pub fn default_title(create_type: CreateType) -> LocalizedString {
         CreateType::ParatextFolder => tr!(new_item_paratext_folder()),
         CreateType::EndOfBook => tr!(create_book_end()),
         CreateType::StoryBibleEntry => tr!(new_item_story_bible_entry()),
+    }
+}
+
+/// The title a freshly created row is **stored** with: [`default_title`] for every
+/// row the writer names, and **nothing at all** for one that opens a structural
+/// level (Book, Part, Chapter).
+///
+/// # Why a structural row is born untitled
+///
+/// A stored title is not private to the app: `heading_text` feeds it to
+/// `HeadingScheme::NumberAndTitle`, the default scheme of every built-in export
+/// preset, so whatever sits in that field is **printed into the finished book**.
+/// A placeholder there reads, in a French project:
+///
+/// ```text
+/// Chapitre 1 — New Chapter
+/// ```
+///
+/// and `headings::is_redundant_number_title` cannot suppress it: that guard folds a
+/// title against `"{word} {n}"` and the bare numeral only, so it sees no relation
+/// between "New Chapter" and "Chapitre 1". Note this is **not** a locale bug — a
+/// French interface fails identically, printing `Chapitre 1 — Nouveau chapitre`. The
+/// defect is storing a placeholder in a field the exporter prints at all.
+///
+/// Nothing is lost by leaving it empty. `models::numbering::fallback_label_for` names
+/// the row on every binder surface and `NumberAndTitle`'s number-only arm names it in
+/// the book — both from the *manuscript's* language and the same numbering pass, so
+/// the binder and the book agree. That is the whole reason that function exists.
+///
+/// This is the fix `new_work_uc::templates::manuscript_binder` already made for the
+/// project-template path (its retired label slot 4 held the word "Chapter" and printed
+/// `Chapter 1 — Chapitre 1`), carried across at last to the two live doors onto the
+/// same field: ＋Create and the import wizard's synthetic root.
+///
+/// Every other type keeps its placeholder: a scene, note, folder or paratext title is
+/// never composed into a generated heading, and `fallback_label_for` deliberately
+/// returns `None` for them — so blanking those would leave genuinely nameless rows in
+/// the binder.
+pub fn initial_title(create_type: CreateType) -> String {
+    match create_type {
+        CreateType::Book | CreateType::Part | CreateType::Chapter => String::new(),
+        other => default_title(other).into(),
     }
 }
 

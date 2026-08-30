@@ -25,6 +25,16 @@
 //! re-applying is safe: `import_note_templates` suffixes a colliding name rather than
 //! duplicating or skipping it.
 //!
+//! **The body does leave the app, and the interface locale is still the right one.**
+//! Everything here resolves in the interface locale, which is what a form the writer fills
+//! in wants — but `editor.insert_template` pastes the body at the caret into whatever has
+//! focus, and if that is a Scene the skeleton is exported like any other prose. It stops
+//! being ours at the paste: from that instant it is the writer's own text, in the language
+//! they were working in, and it is scaffolding they overwrite. The *entity* is never read
+//! by the exporter — `export_work_uc`'s `note_template_multi` returns an empty vec — so a
+//! template name and a template row can no more reach the book than a tag can. See
+//! `crate::tags::presets` for the rule all three preset catalogs follow.
+//!
 //! **Djot, not Markdown.** Bodies here use Djot's own inline syntax, which differs from GFM
 //! where it counts: strong is `*x*` (not `**x**`), emphasis is `_x_`. Headings and `-`
 //! bullets are shared. `every_preset_body_round_trips_through_djot` pins that these parse.

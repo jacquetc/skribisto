@@ -2,20 +2,22 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 use super::*;
-use frontend::commands::{comment_reply_commands, footnote_commands, smart_punctuation_commands};
+use frontend::commands::{
+    comment_reply_commands, footnote_commands, note_template_commands, smart_punctuation_commands,
+};
 use frontend::common::entities::{CommentAnchorKind, CommentOrphanReason, QuoteStyle};
 use frontend::direct_access::{
     CommentRelationshipDto, CreateCommentDto, CreateCommentReplyDto, CreateFootnoteDto,
-    CreateSmartPunctuationDto, CreateWorkDto, WorkRelationshipDto,
+    CreateNoteTemplateDto, CreateSmartPunctuationDto, CreateWorkDto, WorkRelationshipDto,
 };
 
 fn now() -> chrono::DateTime<chrono::Utc> {
     chrono::Utc::now()
 }
 
-/// A Work with one comment (with one reply) and one footnote, wired exactly
-/// as the live models wire them.
-fn work_with_annotations(ctx: &AppContext) -> (u64, u64, u64, u64) {
+/// A Work with one comment (with one reply), one footnote and one note
+/// template, wired exactly as the live models wire them.
+fn work_with_annotations(ctx: &AppContext) -> (u64, u64, u64, u64, u64) {
     // Each Work owns exactly one SmartPunctuation (one_to_one, strong), so
     // the `0` placeholder a defaulted DTO carries would collide on this
     // helper's second call under the generated uniqueness check — the same
@@ -140,18 +142,47 @@ fn work_with_annotations(ctx: &AppContext) -> (u64, u64, u64, u64) {
     )
     .expect("wire footnote onto work");
 
-    (work, comment, reply, footnote)
+    // A template is the fourth kind edited entirely outside the manuscript
+    // editors, and the fourth to need its own attribution arm: without one the
+    // `_ => true` fallback would let a preset applied in one project dirty every
+    // other open project.
+    let note_template = note_template_commands::create_orphan_note_template(
+        ctx,
+        None,
+        &CreateNoteTemplateDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            name: "Character sheet".into(),
+            body: "# Character sheet\n".into(),
+            starred: false,
+        },
+    )
+    .expect("create note template")
+    .id;
+    work_commands::set_work_relationship(
+        ctx,
+        None,
+        &WorkRelationshipDto {
+            id: work,
+            field: WorkRelationshipField::NoteTemplates,
+            right_ids: vec![note_template],
+        },
+    )
+    .expect("wire note template onto work");
+
+    (work, comment, reply, footnote, note_template)
 }
 
-/// The positive half: my own comment, reply and footnote events all
-/// attribute to my Work — through the direct read for the first and third,
-/// and the two-hop walk for the reply.
+/// The positive half: my own comment, reply, footnote and note-template
+/// events all attribute to my Work — through the direct read for all but the
+/// reply, and the two-hop walk for that one.
 #[test]
 fn my_own_annotation_events_belong_to_my_work() {
     let ctx = AppContext::new();
-    let (work, comment, reply, footnote) = work_with_annotations(&ctx);
+    let (work, comment, reply, footnote, note_template) = work_with_annotations(&ctx);
 
-    use DirectAccessEntity::{Comment, CommentReply, Footnote};
+    use DirectAccessEntity::{Comment, CommentReply, Footnote, NoteTemplate};
     assert!(mutation_ids_belong_to_work(
         &ctx,
         work,
@@ -170,6 +201,12 @@ fn my_own_annotation_events_belong_to_my_work() {
         Footnote(EntityEvent::Updated),
         &[footnote]
     ));
+    assert!(mutation_ids_belong_to_work(
+        &ctx,
+        work,
+        NoteTemplate(EntityEvent::Updated),
+        &[note_template]
+    ));
 }
 
 /// The guarding half: a sibling Work's events must not mark mine dirty —
@@ -179,9 +216,10 @@ fn my_own_annotation_events_belong_to_my_work() {
 fn a_sibling_works_annotation_events_do_not_belong_to_mine() {
     let ctx = AppContext::new();
     let (mine, ..) = work_with_annotations(&ctx);
-    let (_, their_comment, their_reply, their_footnote) = work_with_annotations(&ctx);
+    let (_, their_comment, their_reply, their_footnote, their_template) =
+        work_with_annotations(&ctx);
 
-    use DirectAccessEntity::{Comment, CommentReply, Footnote};
+    use DirectAccessEntity::{Comment, CommentReply, Footnote, NoteTemplate};
     assert!(!mutation_ids_belong_to_work(
         &ctx,
         mine,
@@ -199,5 +237,11 @@ fn a_sibling_works_annotation_events_do_not_belong_to_mine() {
         mine,
         Footnote(EntityEvent::Updated),
         &[their_footnote]
+    ));
+    assert!(!mutation_ids_belong_to_work(
+        &ctx,
+        mine,
+        NoteTemplate(EntityEvent::Updated),
+        &[their_template]
     ));
 }

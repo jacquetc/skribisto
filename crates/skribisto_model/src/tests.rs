@@ -749,3 +749,24 @@ fn chapter_promote_is_content_lossless() {
         );
     }
 }
+
+/// The two exhaustive lists of [`CreateType`] must agree on membership.
+///
+/// [`CreateType::ALL`] is the set; `CANONICAL` is the ordered tail the "＋ Create"
+/// menu appends after an anchor's own recommendations. A variant added to the enum
+/// and to `ALL` but forgotten in `CANONICAL` is invisible in the UI — creatable by
+/// no menu row anywhere — which is a silent failure the compiler cannot catch,
+/// because both are hand-written arrays rather than matches.
+#[test]
+fn canonical_tail_covers_every_create_type() {
+    let mut all = CreateType::ALL.to_vec();
+    let mut canonical = super::CANONICAL.to_vec();
+    let sort_key = |c: &CreateType| format!("{c:?}");
+    all.sort_by_key(sort_key);
+    canonical.sort_by_key(sort_key);
+    assert_eq!(
+        canonical, all,
+        "CANONICAL (the create menu's tail) and CreateType::ALL have drifted apart — \
+         a type in ALL but not CANONICAL cannot be created from any menu"
+    );
+}

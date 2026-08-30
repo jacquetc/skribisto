@@ -4,12 +4,20 @@
 //! The workflow ladders a project can start from, **generated in code rather than shipped
 //! as data** — the same trick, for the same reason, as [`crate::tags::presets`].
 //!
-//! A rung's name is *project data*: it goes through `tr!` once, here, at the moment the
-//! ladder is seeded, and is stored literally from then on. That is the difference between
-//! this and the anti-pattern yWriter and Plume Creator both shipped, where the names are UI
-//! strings over a stored integer — so the same project reads "1st draft" to one writer and
-//! "1er brouillon" to another, and neither can rename a rung without editing a locale file.
-//! Here the French writer gets French rungs *and* can rename them.
+//! A rung's name is *project data*: it goes through `tr!` once, here, in the locale of the
+//! interface that seeded the ladder, and is stored literally from then on. That is the
+//! difference between this and the anti-pattern yWriter and Plume Creator both shipped,
+//! where the names are UI strings over a stored integer — so the same project reads
+//! "1st draft" to one writer and "1er brouillon" to another, and neither can rename a rung
+//! without editing a locale file. Here the ladder is one fixed vocabulary the project owns,
+//! and every rung of it is renameable (Settings ▸ Work ▸ Statuses).
+//!
+//! **The seeding locale is the interface's, not the manuscript's.** A rung is a picker row
+//! and a filter chip: the compiler never reads a Work's ladder, and the export reader
+//! refuses to load it at all (`export_work_uc`'s `status_multi` returns an empty vec), so
+//! no rung name can reach a reader of the book. What the choice does decide is *who* fixes
+//! the vocabulary — whoever created the project. See `crate::tags::presets` for the rule
+//! both catalogs follow and the line it draws against generated headings.
 //!
 //! Unlike the tag palette, a ladder is seeded **unconditionally** when a project is
 //! created. An empty tag palette is a project that simply has no tags yet; an empty ladder

@@ -3544,3 +3544,65 @@ fn an_unreferenced_note_is_not_printed_in_a_scoped_export() {
         "a note nothing in this export references was printed: {out}"
     );
 }
+
+/// An untitled chapter opens the book with its generated word alone, in the
+/// **manuscript's** language — which is the whole reason a structural row is created
+/// untitled (`teksilo_ui::binder::create_labels::initial_title`).
+///
+/// The defect this guards: `＋Create` stored the interface locale's placeholder in
+/// `BinderItem.title`, `NumberAndTitle` composed it with the generated word, and a
+/// French project exported `Chapitre 1 — New Chapter`. It is **not** a locale bug —
+/// the third case below shows a matching interface printing
+/// `Chapitre 1 — Nouveau chapitre` just as wrongly. `is_redundant_number_title` folds
+/// a title against `"{word} {n}"` and the bare numeral only, so no placeholder in any
+/// language is recognised; the fix is to store none.
+#[test]
+fn an_untitled_chapter_is_named_by_the_manuscripts_own_language() {
+    let cases = [
+        ("", "Chapitre 1", true),
+        // Both placeholders survive the redundancy guard and reach the reader, which
+        // is exactly why neither may be stored.
+        ("New Chapter", "Chapitre 1 — New Chapter", false),
+        ("Nouveau chapitre", "Chapitre 1 — Nouveau chapitre", false),
+        // A real title the writer typed is theirs and must be printed.
+        ("La tempête", "Chapitre 1 — La tempête", false),
+    ];
+    for (title, want, is_clean) in cases {
+        let mut g = gathered(
+            vec![
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "fr",
+                    vec![c(1, ContentRole::BookTitle, "Mon roman")],
+                ),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "fr",
+                    vec![c(3, ContentRole::SceneText, "Le vent se leva.")],
+                ),
+            ],
+            "fr",
+        );
+        g.binders[0].items[1].item.title = title.to_string();
+        let p = preset("neutral");
+        let mut r = req(&g, &[100, 101], &p, ExportFormat::PlainText);
+        r.work_lang = "fr";
+        let out = render_to_string(&r).unwrap();
+        let heading = out
+            .lines()
+            .map(str::trim)
+            .find(|l| l.starts_with("Chapitre"))
+            .unwrap_or_else(|| panic!("no chapter heading in {out:?}"));
+        assert_eq!(
+            heading, want,
+            "a chapter stored with title {title:?} must export as {want:?}"
+        );
+        assert_eq!(
+            heading == "Chapitre 1",
+            is_clean,
+            "only an untitled chapter may print the generated word alone"
+        );
+    }
+}

@@ -481,6 +481,27 @@ pub enum CreateType {
 }
 
 impl CreateType {
+    /// Every variant, once — for callers that must answer a question about the whole
+    /// vocabulary rather than about one anchor's offers.
+    ///
+    /// Distinct from this module's private `CANONICAL`, which is also exhaustive but is
+    /// *ordered* for the create menu's tail (biggest container first, book-end last) and
+    /// exists to be read by a writer. This one is a set;
+    /// `canonical_tail_covers_every_create_type` pins that the two never drift apart.
+    pub const ALL: [CreateType; 11] = [
+        CreateType::Book,
+        CreateType::Part,
+        CreateType::Chapter,
+        CreateType::Scene,
+        CreateType::Note,
+        CreateType::NoteFolder,
+        CreateType::Folder,
+        CreateType::Paratext,
+        CreateType::ParatextFolder,
+        CreateType::EndOfBook,
+        CreateType::StoryBibleEntry,
+    ];
+
     /// Resolve to a concrete `(role, sub_role)` for creation. Only `Chapter`
     /// depends on the project's `ChapterMode`; every other type is fixed.
     pub fn combo(self, mode: ChapterMode) -> (Role, SubRole) {

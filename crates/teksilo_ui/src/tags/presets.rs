@@ -3,9 +3,23 @@
 
 //! Named tag presets, **generated in code rather than shipped as data**.
 //!
-//! That is the whole point: a preset built here goes through `tr!`, so a French writer
-//! applying "Basic" gets `personnage` / `lieu`, not English strings imported verbatim.
-//! A data file would have to pick one language at authoring time.
+//! That is the whole point: a preset built here goes through `tr!`, so applying "Basic"
+//! lands in the language of the interface the writer is looking at *at that moment* —
+//! `personnage` / `lieu` on a French UI — instead of the one language a data file would
+//! have had to pick at authoring time.
+//!
+//! **The interface's locale, deliberately, and not the project's `dict_language`.** A tag
+//! name is a filter chip, an inspector row and a coloured dot; the compiler holds no
+//! reference to a Work's tags at all, so a tag name is structurally unreachable from the
+//! export and no reader of the finished book can ever see one. It is read by the person at
+//! the keyboard, who chose the app's language — and who chose their spell-check dictionary
+//! to have typos flagged, not to be addressed in that language. Resolved once here, stored
+//! literally, renameable from Settings ▸ Work ▸ Tags from that moment on.
+//!
+//! The general rule, which this is one instance of: a string the app writes into an entity
+//! follows the interface, and one the *exporter prints* is generated from the manuscript's
+//! language and never stored at all (`skribisto_compiler::headings`, and
+//! `crate::binder::create_labels::initial_title` for the field where the two collide).
 //!
 //! A new project starts with an *empty* palette — nothing is seeded — and the writer picks
 //! a preset if they want one. (The workflow *ladder* is the opposite: it is seeded on every
@@ -67,12 +81,11 @@ impl Preset {
         }
     }
 
-    /// The rows to hand to `import_tags`, resolved in the active locale.
+    /// The rows to hand to `import_tags`, resolved in the **interface** locale — see this
+    /// module's own header for why that, and not the manuscript's language.
     ///
-    /// Ids are zero — `import_tags` assigns real ones. The `status/…` prefix is a naming
-    /// convention, not a hierarchy: no parent/child entity, no tree UI, nothing parses it.
-    /// Alphabetical ordering alone makes those four cluster in every list, which is the
-    /// entire reason the prefix is worth having.
+    /// Ids are zero: `import_tags` assigns real ones. (The `status/…` prefix this doc used
+    /// to explain is gone with the four rungs that carried it — see [`basic_rows`].)
     pub fn rows(self) -> Vec<TagRow> {
         let mut rows = basic_rows();
         match self {

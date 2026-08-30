@@ -6,14 +6,17 @@
 tag presets apply, translate, dedupe, and (attempt to) undo in one step.
 
 `crates/teksilo_ui/src/tags/presets.rs` builds every preset row IN CODE,
-through `tr!()`, so a French project gets French tag names ("personnage",
-"lieu", "statut/brouillon", ...) rather than an English wordlist imported
-once at authoring time. presets.rs and models/work_tags_list_model.rs already
-unit-test the pure logic (extends-Basic, no repeated name, the `status/`
-prefix clusters when sorted, `import_tags` skips names already present); this
-probe covers what those tests cannot see: a French build's actual rendered
-palette, including the virtualised/lazy-mounted `ListView` path and the
-undo/redo command shared between a fresh apply and a re-apply.
+through `tr!()`, so applying a preset lands in the language of the INTERFACE
+("personnage", "lieu", ...) rather than in an English wordlist imported once
+at authoring time. Note the axis: this probe pins the *interface* locale
+(`isolated_config(locale="fr-FR")`) because that is the one the preset follows
+— a tag name is a filter chip the compiler never reads, so it does not, and
+should not, track the project's `dict_language`. presets.rs and
+models/work_tags_list_model.rs already unit-test the pure logic (extends-Basic,
+no repeated name, `import_tags` skips names already present); this probe covers
+what those tests cannot see: a French build's actual rendered palette, including
+the virtualised/lazy-mounted `ListView` path and the undo/redo command shared
+between a fresh apply and a re-apply.
 
 Asserts (every expected string/count is read from `presets.rs` and both
 `tags.ftl` files, not guessed — see the constants below):
@@ -23,14 +26,15 @@ Asserts (every expected string/count is read from `presets.rs` and both
      an EMPTY palette: "Aucune étiquette pour le moment." AND zero rows,
      checked independently so a broken `Switcher` branch can't hide behind
      the other;
-  2. applying "Basique" adds exactly its 10 rows, all in FRENCH, confirmed
-     both by the toast's own numbers (10 added, 0 skipped) and by reading
+  2. applying "Basique" adds exactly its 6 rows, all in FRENCH, confirmed
+     both by the toast's own numbers (6 added, 0 skipped) and by reading
      every row back off its delete control;
-  3. those 10 rows form a run of exactly 4 `statut/…` names, ADJACENT in
-     alphabetical order, through the real `ListView` +
-     `WorkTagsListModel::sort_rows`;
+  3. those 6 rows come back in the exact alphabetical order
+     `WorkTagsListModel::sort_rows` produces, through the real `ListView` —
+     which is where the accented names ('à', 'é' sorting after every ASCII
+     letter) are actually exercised;
   4. applying "Science-fiction" afterwards adds ONLY its 3 extras (vaisseau,
-     planète, organisation) — 13 rows total, no name repeated, Basic's 10
+     planète, organisation) — 9 rows total, no name repeated, Basic's 6
      exactly as they were;
   5. NOT asserted pass/fail — see the KNOWN GAP block printed at the end of
      the run.
@@ -112,34 +116,40 @@ BASIC_LABEL = ("basic", "basique")  # tags-preset-basic
 SCIFI_LABEL = ("science fiction", "science-fiction")  # tags-preset-scifi — fr has a hyphen, en does not
 # settings-tags-preset-applied is a flat interpolation, not a plural-select,
 # so it is safe to match exactly for a specific (added, skipped) pair.
-BASIC_TOAST = ("added 10, skipped 0 already present",
-               "10 ajoutée(s), 0 déjà présente(s) ignorée(s)")
-SCIFI_TOAST = ("added 3, skipped 10 already present",
-               "3 ajoutée(s), 10 déjà présente(s) ignorée(s)")
-TAGS_COUNT_10 = ("10 tags", "10 étiquettes")  # settings-tags-count [other]
-TAGS_COUNT_13 = ("13 tags", "13 étiquettes")  # settings-tags-count [other]
+# Wording taken from settings-tags-preset-applied in both .ftl files — a Fluent
+# plural selector, so the French arms differ by number and the "(s)" spelling an
+# earlier version of this file guessed at never existed.
+BASIC_TOAST = ("added 6, skipped 0 already present",
+               "6 ajoutées, 0 déjà présentes ignorées")
+SCIFI_TOAST = ("added 3, skipped 6 already present",
+               "3 ajoutées, 6 déjà présentes ignorées")
+TAGS_COUNT_BASIC = ("6 tags", "6 étiquettes")  # settings-tags-count [other]
+TAGS_COUNT_SCIFI = ("9 tags", "9 étiquettes")  # settings-tags-count [other]
 DELETE_PREFIXES = (("delete ", "Delete "), ("supprimer ", "Supprimer "))  # settings-tags-delete = Delete { $name } / Supprimer { $name }
 
-# Basic's 10 rows, French, in the EXACT order `WorkTagsListModel::sort_rows`
+# Basic's 6 rows, French, in the EXACT order `WorkTagsListModel::sort_rows`
 # renders them (case-insensitive compare, then exact — see
 # models/work_tags_list_model.rs). Hand-derived from fr-FR/tags.ftl, not
-# guessed: 'à'/'é' (U+00E0/U+00E9) sort after every ASCII letter, which is
-# what pulls "statut/à relire" to the end of its own run and "vérifier la
-# continuité" to the very end of the list.
+# guessed: 'à'/'é' (U+00E0/U+00E9) sort after every ASCII letter, which is what
+# pulls "vérifier la continuité" to the very end of the list.
+#
+# The four-rung "statut/…" ladder this list used to open with is GONE — a
+# workflow stage is single-valued and ordered, so it became its own entity
+# (`crate::statuses`) and left `basic_rows()` at six. Note the apostrophe in
+# "point d’intrigue" is U+2019, exactly as fr-FR/tags.ftl spells it; the ASCII
+# one does not compare equal and this list is matched exactly.
 EXPECTED_BASIC_ORDER = [
-    "lieu", "objet", "personnage", "point d'intrigue", "recherches à faire",
-    "statut/brouillon", "statut/plan", "statut/terminé", "statut/à relire",
-    "vérifier la continuité",
+    "lieu", "objet", "personnage", "point d’intrigue",
+    "recherches à faire", "vérifier la continuité",
 ]
 EXPECTED_BASIC_SET = set(EXPECTED_BASIC_ORDER)
 
-# The 13-row order after Sci-fi is applied on top: "organisation" slots
-# between objet/personnage, "planète" between personnage/point d'intrigue,
-# "vaisseau" immediately before "vérifier..." ('a' < 'é').
+# The 9-row order after Sci-fi is applied on top: "organisation" slots between
+# objet/personnage, "planète" between personnage/point d’intrigue, "vaisseau"
+# immediately before "vérifier..." ('a' < 'é').
 EXPECTED_SCIFI_ORDER = [
     "lieu", "objet", "organisation", "personnage", "planète",
-    "point d'intrigue", "recherches à faire",
-    "statut/brouillon", "statut/plan", "statut/terminé", "statut/à relire",
+    "point d’intrigue", "recherches à faire",
     "vaisseau", "vérifier la continuité",
 ]
 SCIFI_EXTRA = {"vaisseau", "planète", "organisation"}
@@ -844,43 +854,47 @@ if rows0:
 print(f"  confirmed: {TAGS_EMPTY[1]!r} shown, and independently, 0 rows read")
 s.shot("/tmp/tag-presets-empty.png")
 
-# ── 2. Applying "Basique" adds its 10 tags, in FRENCH ────────────────────────
-print("\n== 2. applying 'Basique' adds its 10 tags, in FRENCH ==")
+# ── 2. Applying "Basique" adds its 6 tags, in FRENCH ─────────────────────────
+print("\n== 2. applying 'Basique' adds its 6 tags, in FRENCH ==")
 apply_preset(s, BASIC_LABEL, BASIC_TOAST, "Basic/Basique")
 rows_basic = read_all_tag_rows(s)
 print(f"  rows after Basic: {rows_basic}")
-if len(rows_basic) != 10:
-    fail(f"expected exactly 10 rows after Basic, got {len(rows_basic)}: {rows_basic}", s)
+if len(rows_basic) != 6:
+    fail(f"expected exactly 6 rows after Basic, got {len(rows_basic)}: {rows_basic}", s)
 got_set = {r.lower() for r in rows_basic}
 if got_set != EXPECTED_BASIC_SET:
     fail(f"Basic's tag set does not match — missing={EXPECTED_BASIC_SET - got_set} "
          f"unexpected={got_set - EXPECTED_BASIC_SET}", s)
-if not has_any(s, TAGS_COUNT_10):
-    fail(f"toolbar count did not update to 10 (looked for {TAGS_COUNT_10})", s)
-print(f"  all 10 French names present: {sorted(got_set)}")
+if not has_any(s, TAGS_COUNT_BASIC):
+    fail(f"toolbar count did not update to 6 (looked for {TAGS_COUNT_BASIC})", s)
+print(f"  all 6 French names present: {sorted(got_set)}")
 s.shot("/tmp/tag-presets-basic.png")
 
-# ── 3. The four "statut/…" rows are adjacent, alphabetically ────────────────
-print("\n== 3. the four 'statut/…' rows are adjacent, alphabetically ==")
-if len(rows_basic) != 10:
-    fail(f"cannot check adjacency: expected 10 rows, have {len(rows_basic)}", s)
+# ── 3. Basic's rows come back in sort_rows' exact order ─────────────────────
+#
+# This used to assert that four "statut/…" rows formed a contiguous run — the
+# whole reason that prefix existed. The ladder is its own entity now
+# (`crate::statuses`), so what is left to check here is the ordering itself,
+# which is not trivial: three of the six names carry accents, and 'à'/'é'
+# (U+00E0/U+00E9) sort after every ASCII letter under `sort_rows`'
+# case-insensitive compare.
+print("\n== 3. Basic's rows are in sort_rows' exact alphabetical order ==")
 if rows_basic != EXPECTED_BASIC_ORDER:
     fail("Basic's rendered order does not match the expected alphabetical "
          f"order.\n  got:      {rows_basic}\n  expected: {EXPECTED_BASIC_ORDER}", s)
-status_slice = rows_basic[5:9]
-if not all(name.startswith("statut/") for name in status_slice):
-    fail(f"rows[5:9] should be the four 'statut/…' rows, got {status_slice}", s)
-if any(name.startswith("statut/") for name in rows_basic[:5] + rows_basic[9:]):
-    fail(f"a 'statut/…' row exists outside the contiguous run: {rows_basic}", s)
-print(f"  statut/… run is contiguous at positions 6-9: {status_slice}")
+if not any(name.startswith("statut/") for name in rows_basic):
+    print("  confirmed: no 'statut/…' row — the ladder is its own axis now")
+else:
+    fail(f"a 'statut/…' tag is back in the Basic palette: {rows_basic}", s)
+print(f"  accented names sort last, as expected: {rows_basic}")
 
 # ── 4. Applying "Science-fiction" adds ONLY its 3 extras ────────────────────
 print("\n== 4. applying 'Science-fiction' adds ONLY its 3 extras ==")
 apply_preset(s, SCIFI_LABEL, SCIFI_TOAST, "Sci-fi/Science-fiction")
 rows_scifi = read_all_tag_rows(s)
 print(f"  rows after Sci-fi: {rows_scifi}")
-if len(rows_scifi) != 13:
-    fail(f"expected exactly 13 rows after Sci-fi, got {len(rows_scifi)}: {rows_scifi}", s)
+if len(rows_scifi) != 9:
+    fail(f"expected exactly 9 rows after Sci-fi, got {len(rows_scifi)}: {rows_scifi}", s)
 if len(rows_scifi) != len(set(r.lower() for r in rows_scifi)):
     dupes = sorted({r for r in rows_scifi if rows_scifi.count(r) > 1})
     fail(f"re-applying produced a duplicate — {dupes}", s)
@@ -890,8 +904,8 @@ if added != SCIFI_EXTRA:
 if rows_scifi != EXPECTED_SCIFI_ORDER:
     fail("Sci-fi's rendered order does not match.\n"
          f"  got:      {rows_scifi}\n  expected: {EXPECTED_SCIFI_ORDER}", s)
-if not has_any(s, TAGS_COUNT_13):
-    fail(f"toolbar count did not update to 13 (looked for {TAGS_COUNT_13})", s)
+if not has_any(s, TAGS_COUNT_SCIFI):
+    fail(f"toolbar count did not update to 9 (looked for {TAGS_COUNT_SCIFI})", s)
 print(f"  exactly the 3 extras were added: {sorted(SCIFI_EXTRA)}; Basic's 10 untouched")
 s.shot("/tmp/tag-presets-scifi.png")
 
@@ -914,7 +928,7 @@ print(
 # docstring). Clicking the (non-interactive) toolbar count label moves focus
 # there without activating anything.
 count_lbl = next((n for n in s.nodes() if n.get("role") == "Label"
-                  and any(v in node_text(n).lower() for v in TAGS_COUNT_13)), None)
+                  and any(v in node_text(n).lower() for v in TAGS_COUNT_SCIFI)), None)
 if count_lbl:
     click(s, count_lbl.get("bounds") or {})
     s.settle()

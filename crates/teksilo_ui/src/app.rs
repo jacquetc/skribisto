@@ -1034,7 +1034,7 @@ fn open_search_settings() -> crate::models::SearchSettingsService {
 fn mutation_origins() -> Vec<Origin> {
     use DirectAccessEntity::{
         Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, DictWord, Footnote,
-        Work,
+        NoteTemplate, Work,
     };
     let mut v = Vec::new();
     for ent in [
@@ -1069,6 +1069,23 @@ fn mutation_origins() -> Vec<Origin> {
         Footnote(EntityEvent::Created),
         Footnote(EntityEvent::Updated),
         Footnote(EntityEvent::Removed),
+        // The fourth kind to arrive missing, and the same failure each time: a preset
+        // applied from Settings ▸ Work ▸ Templates created six rows, `unsaved` stayed
+        // false, and Ctrl+W discarded them with no prompt. Templates are edited only
+        // from the settings pane and from Document ▸ Save as template — never from a
+        // manuscript editor — so like the three above, their events are the only signal
+        // that an edit happened at all.
+        //
+        // Checked against the precondition this doc sets: the three write paths
+        // (`WorkNoteTemplatesListModel::{create, update, remove_all}`) are reached only
+        // from those two writer-driven surfaces plus the `NewWork` starter set; nothing
+        // writes a template at flush or on open, so there is no unconditional write to
+        // loop the debounce. `load_work`'s own rows are dispatched before this window's
+        // `work_id` is seeded and are dropped by the guard below — see the note where
+        // the status-ladder heal used to live in `wiring::project_events`.
+        NoteTemplate(EntityEvent::Created),
+        NoteTemplate(EntityEvent::Updated),
+        NoteTemplate(EntityEvent::Removed),
     ] {
         v.push(Origin::DirectAccess(ent));
     }
@@ -1155,6 +1172,18 @@ fn mutation_ids_belong_to_work(
                 ctx,
                 &my_work_id,
                 &WorkRelationshipField::DictWords,
+            )
+            .unwrap_or_default();
+            event_ids.iter().any(|id| mine.contains(id))
+        }
+        // Same shape again, and needed for the same reason `BinderStatus` states: without
+        // this arm the `_ => true` fallback would decide, and applying a template preset
+        // in one open project would mark every other open project dirty.
+        DirectAccessEntity::NoteTemplate(_) => {
+            let mine = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::NoteTemplates,
             )
             .unwrap_or_default();
             event_ids.iter().any(|id| mine.contains(id))

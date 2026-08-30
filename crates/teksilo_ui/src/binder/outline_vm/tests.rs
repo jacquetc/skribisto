@@ -886,17 +886,18 @@ mod recommend {
 
     use teksilo::data::TreeDataSource;
 
-    /// Every creatable type gets its own default title. The bug this pins:
-    /// the title used to be derived from `role` alone, which cannot tell a
+    /// Every creatable type the writer *names* gets its own default title. The bug
+    /// this pins: the title used to be derived from `role` alone, which cannot tell a
     /// chapter from a book from a note folder — they are all `Folder` — so
     /// six of the eight types came out as the same "New Folder".
+    ///
+    /// Book/Part/Chapter are deliberately absent: they are born untitled, which
+    /// `a_structural_row_is_born_untitled` below pins. The two halves are one rule —
+    /// `create_labels::initial_title`.
     #[test]
     fn a_created_row_is_titled_for_its_type_not_generically() {
         let mut seen: Vec<String> = Vec::new();
         for create_type in [
-            CreateType::Book,
-            CreateType::Part,
-            CreateType::Chapter,
             CreateType::Scene,
             CreateType::Note,
             CreateType::NoteFolder,
@@ -939,6 +940,62 @@ mod recommend {
             seen.len(),
             "each type needs its own title, got duplicates in {seen:?}"
         );
+    }
+
+    /// A row whose stored title the **exporter prints** is born untitled — and one
+    /// whose title it never prints is born named. Derived from the writing model
+    /// rather than from a hand-kept list, so a `CreateType` added later fails here
+    /// instead of shipping a placeholder into somebody's book.
+    ///
+    /// The defect this pins: a chapter created with ＋Create stored "New Chapter",
+    /// `HeadingScheme::NumberAndTitle` composed it with the generated word, and a
+    /// French project exported `Chapitre 1 — New Chapter`. Not a locale bug — a
+    /// French interface printed `Chapitre 1 — Nouveau chapitre` just the same, and
+    /// `headings::is_redundant_number_title` folds against `"{word} {n}"` and the
+    /// bare numeral only, so it cannot recognise either.
+    #[test]
+    fn a_structural_row_is_born_untitled() {
+        use frontend::common::entities::ChapterMode;
+        use skribisto_model::numbering::level_of;
+
+        for create_type in CreateType::ALL {
+            // Both encodings: only `Chapter` differs between them, and it must be
+            // untitled under either, since `level_of` is `role`-agnostic.
+            for mode in [ChapterMode::Folder, ChapterMode::Flat] {
+                let (_role, sub_role) = create_type.combo(mode.clone());
+                let printed = level_of(&sub_role).is_some();
+                let stored = crate::binder::create_labels::initial_title(create_type);
+                assert_eq!(
+                    stored.is_empty(),
+                    printed,
+                    "{create_type:?} ({mode:?}): a stored title is printed by the exporter \
+                     iff the row opens a structural level, so exactly those must be born \
+                     untitled — got {stored:?}"
+                );
+            }
+        }
+    }
+
+    /// The other half of the same rule, through the real creation path rather than
+    /// the pure function: the row that lands in the binder carries no title.
+    #[test]
+    fn creating_a_chapter_lands_an_untitled_row() {
+        for create_type in [CreateType::Book, CreateType::Part, CreateType::Chapter] {
+            let (outline, binder) = seed();
+            outline.add_recommended(None, &rec(create_type, Relation::Child));
+            let created = order_of(&outline, binder);
+            assert_eq!(
+                created.len(),
+                1,
+                "{create_type:?} must create exactly one row"
+            );
+            let title = outline.item_dto(created[0]).unwrap().title;
+            assert!(
+                title.is_empty(),
+                "{create_type:?} must be born untitled — the exporter prints this field \
+                 into the book, so a placeholder here reaches the reader; got {title:?}"
+            );
+        }
     }
 
     /// **C1a: the story-bible entry vocabulary item creates its row immediately,

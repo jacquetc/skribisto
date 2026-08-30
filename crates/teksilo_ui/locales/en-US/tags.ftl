@@ -3,7 +3,11 @@
 
 # Tags — the per-project palette, the inspector section, and the preset catalog.
 # Preset tag NAMES are translated deliberately: presets are generated in code rather than
-# shipped as data precisely so a French project gets French tag names.
+# shipped as data so that applying one lands in the language of the INTERFACE the writer is
+# looking at, instead of the single language a data file would have had to pick at authoring
+# time. The interface's locale and not the project's `dict_language`: a tag name is a filter
+# chip and an inspector row, the compiler never reads one, and it is read only by the person
+# at the keyboard. Applied rows are stored literally and are theirs to rename.
 
 ## Preset menu
 tags-preset-basic = Basic
