@@ -45,9 +45,10 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let editors = deps.editors.clone();
         let comments = deps.comments.clone();
         let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
         ctx.register_action_global(Action::new("comments.add").on_invoke(move |_i, c| {
             if editors.add_comment_at_selection(c) {
-                crate::app::warn_unsigned_comments(&comments, &session, c);
+                crate::app::warn_unsigned_comments(&comments, &session, &undo, c);
             }
         }));
     }
@@ -55,10 +56,11 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let editors = deps.editors.clone();
         let comments = deps.comments.clone();
         let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
         ctx.register_action_global(Action::new("comments.add_paragraph").on_invoke(
             move |_i, c| {
                 if editors.add_paragraph_comment(c) {
-                    crate::app::warn_unsigned_comments(&comments, &session, c);
+                    crate::app::warn_unsigned_comments(&comments, &session, &undo, c);
                 }
             },
         ));

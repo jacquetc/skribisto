@@ -224,11 +224,13 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     {
         let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
         ctx.register_action_global(Action::new("app.settings").on_invoke(move |_i, c| {
             let session = session.clone();
             // One door for every entry point — presentation, title and close
             // behaviour are stated once, in `settings::present`.
-            crate::settings::present(c, move || SettingsPanel::new(session));
+            let undo = undo.clone();
+            crate::settings::present(c, move || SettingsPanel::new(session, &undo));
         }));
     }
 
@@ -238,9 +240,11 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // settings page (see `SettingsPanel::open_to_dictionaries`/`open_to_backup`).
     {
         let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
         ctx.register_action_global(Action::new("app.settings.games").on_invoke(move |_i, c| {
             let session = session.clone();
-            crate::settings::present(c, move || SettingsPanel::open_to_games(session));
+            let undo = undo.clone();
+            crate::settings::present(c, move || SettingsPanel::open_to_games(session, &undo));
         }));
     }
 
@@ -252,10 +256,14 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // landed them on Editor ▸ Scene typography, which is exactly the hunt.
     {
         let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
         ctx.register_action_global(Action::new("app.settings.df_themes").on_invoke(
             move |_i, c| {
                 let session = session.clone();
-                crate::settings::present(c, move || SettingsPanel::open_to_df_themes(session));
+                let undo = undo.clone();
+                crate::settings::present(c, move || {
+                    SettingsPanel::open_to_df_themes(session, &undo)
+                });
             },
         ));
     }

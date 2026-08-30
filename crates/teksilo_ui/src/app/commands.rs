@@ -51,6 +51,7 @@ use crate::trash::TrashViewModel;
 
 mod binder;
 mod comments;
+mod edit;
 mod editor;
 mod export;
 mod file;
@@ -100,6 +101,8 @@ pub(super) struct CommandDeps {
     /// the handle it resolves, so they reach every registered editor rather than only the
     /// ones a tab happens to own.
     pub format: crate::format::FormatViewModel,
+    /// Which history Ctrl+Z means in this window — see [`crate::edit`].
+    pub undo_group: crate::edit::UndoGroupViewModel,
     /// This window's own "was I maximized/floating before I went fullscreen"
     /// memory — minted fresh per window (never a `ctx.app_state` lookup, see
     /// `FullscreenViewModel`'s own doc for why a shared instance would answer
@@ -158,6 +161,7 @@ pub(super) struct CommandDeps {
 /// framework resolves an intent against the whole set. Grouped calls, not one flat list, so
 /// each feature's commands stay findable.
 pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
+    edit::register(ctx, deps);
     view::register(ctx, deps);
     trash::register(ctx, deps);
     editor::register(ctx, deps);

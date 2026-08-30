@@ -808,13 +808,32 @@ impl App {
         // Escape-to-leave-the-mode lives on the surface itself
         // (`distraction_free::surface`), not here: this subtree is dormant while
         // the mode is up, and a dormant widget receives no events at all.
+        // One claim for the whole project surface, not one per panel.
+        //
+        // The rule the undo group applies is "a focused text surface first,
+        // then the project" — editors and text fields answer for themselves
+        // before this is consulted — so what is left to say here is exactly
+        // *"the caret is somewhere in this project's own content"*. Binding it
+        // once, on the content root, is both the smallest wiring and the most
+        // honest: it is true for the outline, the corkboard, the overview,
+        // every dock and every panel, and it stays true for one added
+        // tomorrow, which a per-panel list would not.
+        //
+        // Deliberately not the whole window: the title bar and its menu overlay
+        // sit outside this subtree, so opening the Edit menu does not re-point
+        // the group — the latch keeps the last real answer, which is the whole
+        // reason the latch exists.
+        let in_project = Signal::new(false);
+        self.undo_claim
+            .replace(Some(self.undo_group.claim_entity(in_project.clone())));
         ctx.add(
             VStack::new()
                 .spacing(0.0)
                 .child(backup_banner)
                 .child(Divider::new())
                 .child(Expand::new().child(layout))
-                .child(status),
+                .child(status)
+                .focus_within(in_project),
         )
     }
 }

@@ -32,6 +32,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let docs = deps.spell_docs.clone();
         let dicts = deps.dictionaries.clone();
         let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
         ctx.register_action_global(Action::new("spellcheck.toggle").on_invoke(
             move |_i, c: &mut EventContext| {
                 let now_on = !enabled.get();
@@ -40,7 +41,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 // symptom this switch exists to end: a silent absence of squiggles.
                 // `offer_missing_dictionaries` otherwise only ever fires on Load/New.
                 if now_on {
-                    offer_missing_dictionaries(&docs, &dicts, &session, c);
+                    offer_missing_dictionaries(&docs, &dicts, &session, &undo, c);
                 }
             },
         ));

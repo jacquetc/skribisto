@@ -3860,13 +3860,11 @@ fn rebuilding_a_pane_carries_the_caret_over() {
     );
 }
 
-/// `is_stale` distinguishes "flushed and quiet" from "flushed, then edited
-/// again" — the exact gap `OpenDoc::dirty`/`doc.is_modified()` leaves, since
-/// both are booleans a flush clears unconditionally with no memory of which
-/// edit they were cleared against.
+/// A real (non-mock) `AppContext` holding one Work → Binder → Scene, plus that
+/// scene's freshly loaded prose field. Shared by the two flush-gating tests
+/// below, which both need a genuine `Content` row to write to and read back.
 #[cfg(not(feature = "mocks"))]
-#[test]
-fn is_stale_distinguishes_a_later_edit_from_flushed_and_quiet() {
+fn scene_prose_field() -> (Rc<AppContext>, ProseField) {
     use frontend::commands::binder_commands;
     use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
 
@@ -3906,6 +3904,17 @@ fn is_stale_distinguishes_a_later_edit_from_flushed_and_quiet() {
     .unwrap();
 
     let field = prose_field(&ctx, item.id, ContentRole::SceneText, None);
+    (ctx, field)
+}
+
+/// `is_stale` distinguishes "flushed and quiet" from "flushed, then edited
+/// again" — the exact gap `OpenDoc::dirty`/`doc.is_modified()` leaves, since
+/// both are booleans a flush clears unconditionally with no memory of which
+/// edit they were cleared against.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn is_stale_distinguishes_a_later_edit_from_flushed_and_quiet() {
+    let (_ctx, field) = scene_prose_field();
     assert!(!field.is_stale(), "a freshly loaded field is never stale");
 
     // A first edit — `TextCursor::insert_text`, the same primitive live typing
@@ -3914,7 +3923,7 @@ fn is_stale_distinguishes_a_later_edit_from_flushed_and_quiet() {
     // and never touch either `content_revision` or `is_modified`).
     field.doc.cursor_at(0).insert_text("First draft.").unwrap();
     assert!(field.is_stale(), "an edit must show stale");
-    field.flush(None).expect("flush a real item's field");
+    field.flush().expect("flush a real item's field");
     assert!(!field.is_stale(), "flush must clear staleness");
     assert!(
         !field.doc.is_modified(),
@@ -3936,6 +3945,121 @@ fn is_stale_distinguishes_a_later_edit_from_flushed_and_quiet() {
              right after any flush it looks identical to 'flushed and quiet' from \
              `is_modified()`'s point of view"
     );
+}
+
+/// An editor undo made *after* a flush must still reach the store.
+///
+/// The regression this pins lost work silently. `flush` used to gate on
+/// `doc.is_modified()`, a flag it clears itself, and `TextDocument::undo` never
+/// set it — so: type, autosave (flag cleared), Ctrl+Z (buffer reverts, flag
+/// stays false), and every later flush returned early. The screen showed the
+/// undone text while the `.skrib` kept the pre-undo version, and the next time
+/// the tab was rebuilt it re-read the stale row and the undo was gone for good.
+///
+/// Both halves of the fix are exercised here at once: `TextDocument::undo` now
+/// marks the document modified, and `flush` gates on the exact revision
+/// comparison rather than the flag.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn an_undo_after_a_flush_still_reaches_the_store() {
+    use frontend::commands::content_commands;
+
+    let (ctx, field) = scene_prose_field();
+
+    field.doc.cursor_at(0).insert_text("First draft.").unwrap();
+    field.flush().expect("the first flush persists the typing");
+    let content_id = field
+        .content_id()
+        .expect("flushing a field creates its Content row");
+    let persisted = |id: u64| -> String {
+        content_commands::get_content(&ctx, &id)
+            .expect("the row reads back")
+            .expect("the row exists")
+            .data
+    };
+    assert!(
+        persisted(content_id).contains("First draft."),
+        "the typing reached the store"
+    );
+
+    // Stand exactly where autosave leaves the field: flushed, flag cleared.
+    assert!(!field.doc.is_modified());
+    assert!(!field.is_stale());
+
+    field.doc.undo().expect("undo the typing");
+    assert_eq!(
+        field.doc.to_plain_text().unwrap().trim(),
+        "",
+        "the buffer really did revert"
+    );
+    assert!(
+        field.is_stale(),
+        "the store is now a revision behind the buffer"
+    );
+
+    field.flush().expect("the second flush persists the undo");
+    assert!(
+        !persisted(content_id).contains("First draft."),
+        "the undone text must not survive in the store — this is the silent \
+         data loss the flag-based gate caused"
+    );
+}
+
+/// Autosaving prose must not put anything on the project's undo history.
+///
+/// It used to put a whole-Djot `Content::update` there every few seconds, so
+/// the structural history was mostly prose snapshots interleaved with the
+/// commands a writer would actually want back — which is what let a toast's
+/// Undo pop a flush instead of the trash it named, and what made a
+/// project-wide Ctrl+Z unsafe to offer. The buffer's own word-level history is
+/// this text's undo; the mirror write is a timer going off.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn flushing_prose_records_nothing_on_the_project_history() {
+    use frontend::commands::undo_redo_commands;
+
+    let (ctx, field) = scene_prose_field();
+    let stack = undo_redo_commands::create_new_stack(&ctx);
+    let depth = || undo_redo_commands::get_stack_size(&ctx, stack);
+    // Measured as a *delta*, not against zero: the fixture builds a Work, a
+    // Binder and an item with `stack_id: None`, and `None` is stack 0 — which
+    // is precisely the trap being pinned here, so the baseline is not empty.
+    let global_before = undo_redo_commands::get_stack_size(&ctx, 0);
+    assert_eq!(depth(), 0);
+
+    // Ten autosave cycles' worth of typing and flushing.
+    for i in 0..10 {
+        field
+            .doc
+            .cursor_at(0)
+            .insert_text(&format!("Sentence {i}. "))
+            .unwrap();
+        field.flush().expect("flush");
+    }
+
+    assert_eq!(
+        depth(),
+        0,
+        "ten flushes must leave the history exactly as they found it"
+    );
+    assert!(
+        !undo_redo_commands::can_undo(&ctx, Some(stack)),
+        "and nothing to undo"
+    );
+    assert_eq!(
+        undo_redo_commands::get_stack_size(&ctx, 0),
+        global_before,
+        "nor may it leak into the global stack 0, which is undeletable and \
+         which nothing ever clears — `stack_id: None` reroutes there rather \
+         than opting out, which is the trap this fix exists to close"
+    );
+    // The prose still reached the store — untracked means unrecorded, not unwritten.
+    let id = field.content_id().expect("the row exists");
+    let stored = frontend::commands::content_commands::get_content(&ctx, &id)
+        .unwrap()
+        .unwrap()
+        .data;
+    assert!(stored.contains("Sentence 9."), "the text was persisted");
 }
 
 // ── The epigraph's attribution line ─────────────────────────────────────────

@@ -11,11 +11,18 @@
 //! `DockingModel` (the leading rail hosts several tabs — one model owns them all)
 //! and holds a distinct `dock_id`; it is not registered as `app_state`.
 //!
-//! **Destructive ops keep their undo, then commit on a grace timer.** Empty Trash
-//! and Delete Forever run the (undoable) backend op, then raise a warning toast
-//! with an *Undo* action; if the toast times out (or the user dismisses it) the
-//! project's undo history is cleared — the point of no return described in
-//! `qleany docs undo`. The backend op itself never clears any stack.
+//! **Destructive ops stay undoable; the toast is a notification, not a commit
+//! point.** Empty Trash and Delete Forever run the (undoable) backend op, then
+//! raise a warning toast whose *Undo* reverses **that** op by sequence number
+//! rather than popping whatever is on top.
+//!
+//! The toast's timer used to clear the project's entire undo history, on the
+//! reading that a lapsed grace window is a point of no return. That was
+//! invisible while these toasts were the only door onto the stack; with Edit ▸
+//! Undo on it, it is silent data loss — a writer who empties the trash and
+//! carries on would lose every earlier step too. "Forever" was never a promise
+//! about the undo stack; it is a promise about the Trash panel, and the panel
+//! keeps it. The backend op never clears any stack either.
 
 use std::cell::RefCell;
 use std::collections::{HashSet, VecDeque};
@@ -26,14 +33,12 @@ use teksilo::data::{KeyedSelectionModel, SelectionMode};
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    DockWidgetId, DockingModel, MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction,
-    ToastDismissCause, ToastPriority,
+    DockWidgetId, DockingModel, MessageBox, MessageBoxButtons, StandardButton, Toast, ToastPriority,
 };
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_item_commands, trash_info_commands, trash_management_commands, undo_redo_commands,
-    work_commands,
+    binder_item_commands, trash_info_commands, trash_management_commands, work_commands,
 };
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::trash_management::{
@@ -380,10 +385,17 @@ impl TrashViewModel {
         );
     }
 
-    /// Run a destructive (but undoable) op, then raise a warning toast with an
-    /// **Undo** action and a grace window. On the window lapsing (timeout / the
-    /// user dismissing it) the project undo history is cleared — the commit point.
-    /// The Undo action reverses the op; eviction / shutdown never force-commit.
+    /// Run a destructive (but undoable) op, then raise a warning toast whose
+    /// **Undo** reverses *that* op.
+    ///
+    /// The toast's window is a window on the **notification**, not on the
+    /// undoability: nothing is committed when it lapses. It used to clear the
+    /// project's entire undo history on timeout, which was invisible while the
+    /// toasts were the only door onto the stack and is silent data loss now
+    /// that Ctrl+Z is one — a writer who empties the trash and keeps working
+    /// would have lost every earlier step too. "Forever" was never a promise
+    /// about the undo stack; it is a promise about the Trash panel, and the
+    /// panel keeps it.
     fn run_with_undo_toast(
         &self,
         ctx: &mut EventContext,
@@ -399,9 +411,14 @@ impl TrashViewModel {
             );
             return;
         }
+        // Stamped before anything else can push: this is the sequence the
+        // toast's Undo names, so that a later autosave, a rename committed on
+        // blur, or a second window on this same `Work` cannot make the button
+        // reverse something the writer never asked about.
+        let seq = crate::shared::undo_toast::stamp(&self.app_ctx);
         self.reload();
         let undo_ctx = self.app_ctx.clone();
-        let clear_ctx = self.app_ctx.clone();
+        let me = self.clone();
         ctx.show_toast(
             Toast::warning(title)
                 .body(body)
@@ -418,34 +435,13 @@ impl TrashViewModel {
                 .scoped_id("trash.commit", work_id)
                 .auto_dismiss_after(TRASH_UNDO_GRACE)
                 .target_work(work_id)
-                .action(ToastAction::primary(tr!(trash_undo()), move |_c| {
-                    let _ = undo_redo_commands::undo(&undo_ctx, stack);
-                }))
-                .on_dismiss(move |cause, _c| {
-                    // Only the grace timer expiring is the point of no return: it
-                    // clears the project's undo history so the deletion can't be
-                    // reverted. Every other dismissal — Undo clicked, the user
-                    // closing the toast (✕/Esc), eviction, shutdown — leaves the op
-                    // undoable. (Dismissing a notification must not silently wipe
-                    // the undo history; and clear only THIS work's stack, not every
-                    // stack.)
-                    //
-                    // Deliberately no `clear_all_stacks` fallback for a `None` stack
-                    // (the multi-Work migration removed it): with several Works open
-                    // at once, each with its own stack, "clear every stack because
-                    // this one couldn't be resolved" would wipe every *other* open
-                    // Work's undo history too — a correctness regression far worse
-                    // than leaving this one op's history alone. A live `TrashViewModel`
-                    // always has a seeded `stack_id` once a Work is open (`AppIds::open_stack`
-                    // runs on every `LoadWork`/`NewWork`), so `None` here means no Work
-                    // is open at all — nothing to clear, and the op above could not
-                    // have succeeded either.
-                    if cause == ToastDismissCause::Timeout
-                        && let Some(sid) = stack
-                    {
-                        undo_redo_commands::clear_stack(&clear_ctx, sid);
-                    }
-                }),
+                .action(crate::shared::undo_toast::undo_action(
+                    undo_ctx,
+                    stack,
+                    seq,
+                    tr!(trash_undo()),
+                    move |_c| me.reload(),
+                )),
         );
     }
 }

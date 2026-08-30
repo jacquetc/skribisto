@@ -17,9 +17,7 @@
 //! — never `Ctrl+Z`.
 
 use teksilo::prelude::*;
-use teksilo::widgets::{
-    MessageBox, MessageBoxButtons, MessageBoxResult, StandardButton, Toast, ToastAction,
-};
+use teksilo::widgets::{MessageBox, MessageBoxButtons, MessageBoxResult, StandardButton, Toast};
 
 use crate::app_ids::HasWorkId;
 use crate::search::SearchReplaceViewModel;
@@ -63,6 +61,10 @@ fn execute(vm: &SearchReplaceViewModel, ctx: &mut EventContext) {
     let touched = vm.touched_item_ids();
     match vm.replace_all() {
         Ok(res) => {
+            // Stamped before anything else runs. A project-wide replace is the
+            // one command a writer is most likely to want back, and the most
+            // likely to be followed by something else within the toast's life.
+            let seq = crate::shared::undo_toast::stamp(&vm.app_ctx());
             reload_and_rescan(vm, &touched, ctx);
 
             let occurrences = res.occurrences_replaced;
@@ -73,11 +75,12 @@ fn execute(vm: &SearchReplaceViewModel, ctx: &mut EventContext) {
             let undo_touched = touched.clone();
             let mut toast = Toast::success(tr!(search_replace_done_title()))
                 .body(done_body(occurrences, items, skipped))
-                .action(ToastAction::primary(
+                .action(crate::shared::undo_toast::undo_action(
+                    vm.app_ctx(),
+                    vm.stack(),
+                    seq,
                     tr!(search_replace_undo()),
-                    move |ctx| {
-                        undo(&vm_undo, &undo_touched, ctx);
-                    },
+                    move |ctx| reload_and_rescan(&vm_undo, &undo_touched, ctx),
                 ));
             // Keep it up a little longer than a default toast — the Undo is the
             // only path back, so the writer must have time to reach for it.
@@ -95,22 +98,6 @@ fn execute(vm: &SearchReplaceViewModel, ctx: &mut EventContext) {
             ctx.show_toast(
                 Toast::error(tr!(search_replace_failed_title()))
                     .scoped_id("search-replace-result", vm.work_id())
-                    .body(lit!(e.to_string()))
-                    .target_work(vm.work_id()),
-            );
-        }
-    }
-}
-
-/// Undo the last Replace All (the toast's action): reverse it on the project's
-/// stack, then reload the touched open docs and re-run the search so the panel
-/// and any open editors reflect the restored prose.
-fn undo(vm: &SearchReplaceViewModel, touched: &[u64], ctx: &mut EventContext) {
-    match vm.undo_last_replace() {
-        Ok(()) => reload_and_rescan(vm, touched, ctx),
-        Err(e) => {
-            ctx.show_toast(
-                Toast::error(tr!(search_replace_undo_failed_title()))
                     .body(lit!(e.to_string()))
                     .target_work(vm.work_id()),
             );

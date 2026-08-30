@@ -106,6 +106,7 @@ pub mod crash_report;
 pub mod date_convert;
 pub mod distraction_free;
 pub mod docks;
+pub mod edit;
 pub mod editors;
 pub mod export;
 pub mod ext;

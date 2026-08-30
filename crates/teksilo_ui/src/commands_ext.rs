@@ -253,6 +253,7 @@ const APP_INTENT_NAMESPACES: &[&str] = &[
     "backups.",
     "binder.",
     "comments.",
+    "edit.",
     "editor.",
     "export.",
     "footnotes.",

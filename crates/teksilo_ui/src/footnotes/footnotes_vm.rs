@@ -35,8 +35,8 @@ use std::time::Duration;
 
 use teksilo::prelude::*;
 use teksilo::text_document::TextDocument;
+use teksilo::widgets::Toast;
 use teksilo::widgets::rich_text::EditorHandle;
-use teksilo::widgets::{Toast, ToastAction};
 
 use crate::models::{FootnoteRow, FootnotesListModel, OpenDocsStore};
 use crate::toast_scope::ToastWorkExt;
@@ -325,13 +325,16 @@ impl FootnotesViewModel {
     /// id was already gone (a stale row), so there is nothing to offer a toast
     /// for at all.
     pub fn delete(&self, ctx: &mut EventContext, id: u64) {
-        let undo = self.inner.model.delete(id, self.stack());
+        let seq = self.inner.model.delete(id, self.stack());
+        let stack = self.stack();
         self.forget_body_doc(id);
         if self.inner.editing.get() == Some(id) {
             self.inner.editing.set(None);
         }
         self.push_markers();
-        let Some(undo) = undo else { return };
+        // `None` means the row was already gone, so there is nothing to offer.
+        let Some(seq) = seq else { return };
+        let me = self.clone();
         ctx.show_toast(
             Toast::warning(tr!(footnotes_deleted_toast()))
                 // One toast for the whole feature, like the comment margin's —
@@ -339,11 +342,12 @@ impl FootnotesViewModel {
                 // stacking a tower of them.
                 .scoped_id("footnotes.deleted", 0)
                 .auto_dismiss_after(FOOTNOTE_DELETE_UNDO_GRACE)
-                .action(ToastAction::primary(
+                .action(crate::shared::undo_toast::undo_action(
+                    self.inner.model.app_ctx(),
+                    stack,
+                    Some(seq),
                     tr!(footnotes_undo_delete()),
-                    move |_c| {
-                        undo();
-                    },
+                    move |_c| me.push_markers(),
                 )),
         );
     }

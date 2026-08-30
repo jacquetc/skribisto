@@ -13,9 +13,15 @@
 //! and beat sheets are written.
 //!
 //! So the dock reflows exactly once between a scene and its synopsis, by one
-//! group. Everything else — history, marks, lists, block, tables — stays put
-//! wherever there is anywhere to type, and moving between the two never makes
-//! it flicker.
+//! group. Everything else — marks, lists, block, tables — stays put wherever
+//! there is anywhere to type, and moving between the two never makes it
+//! flicker.
+//!
+//! **There is no History group.** Undo lives in the Edit menu and on Ctrl+Z,
+//! and nowhere else: it is not formatting, and an icon-only button cannot do
+//! what `UndoGroupViewModel::route` requires of an Undo affordance — name what
+//! it is about to take back before it is pressed. See that function's third
+//! bounding property.
 //!
 //! Layout is one `Wrap` per group inside a `ScrollArea`. `Wrap` needs a bounded
 //! width proposal to break lines at all, and a `ScrollArea`'s content slot
@@ -261,24 +267,6 @@ impl std::fmt::Debug for FormatDock {
 fn controls(vm: &FormatViewModel) -> Padding {
     let g = vm.groups().clone();
 
-    let history = group(
-        g.history.clone(),
-        tr!(format_group_history()),
-        row()
-            .child(command_button(
-                glyph::undo(),
-                tr!(format_undo()),
-                vm.clone(),
-                |vm| vm.undo(),
-            ))
-            .child(command_button(
-                glyph::redo(),
-                tr!(format_redo()),
-                vm.clone(),
-                |vm| vm.redo(),
-            )),
-    );
-
     let marks = group(
         g.marks.clone(),
         tr!(format_group_marks()),
@@ -518,7 +506,6 @@ fn controls(vm: &FormatViewModel) -> Padding {
             VStack {
                 spacing: 0.0
                 child: empty
-                child: history
                 child: marks
                 child: block
                 child: lists
@@ -721,20 +708,20 @@ mod tests {
         );
     }
 
-    /// The group gates follow the surface, and the two high-frequency groups
-    /// stay put across the switch a writer makes most often — scene to synopsis
-    /// and back. That is what keeps the dock from flickering under the cursor.
+    /// The group gates follow the surface, and the high-frequency groups stay
+    /// put across the switch a writer makes most often — scene to synopsis and
+    /// back. That is what keeps the dock from flickering under the cursor.
     #[test]
-    fn history_and_marks_survive_the_scene_to_synopsis_switch() {
+    fn marks_and_lists_survive_the_scene_to_synopsis_switch() {
         let vm = vm();
         let g = vm.groups().clone();
 
         vm.set_surface(FormatSurface::Scene);
-        assert!(g.history.get() && g.marks.get() && g.block.get() && g.scene_breaks.get());
+        assert!(g.marks.get() && g.lists.get() && g.block.get() && g.scene_breaks.get());
 
         vm.set_surface(FormatSurface::Synopsis);
         assert!(
-            g.history.get() && g.marks.get() && g.block.get() && g.tables.get(),
+            g.marks.get() && g.lists.get() && g.block.get() && g.tables.get(),
             "a synopsis is prose like any other: only the scene breaks go, so \
              nothing else may blink out when focus moves into it"
         );
@@ -747,7 +734,58 @@ mod tests {
 
         vm.set_surface(FormatSurface::None);
         assert!(g.empty.get());
-        assert!(!g.history.get() && !g.marks.get() && !g.lists.get());
+        assert!(!g.marks.get() && !g.lists.get());
+    }
+
+    /// **The dock offers no Undo.** There is exactly one Undo in the
+    /// application — the Edit menu and Ctrl+Z, both of which name their target
+    /// before they act.
+    ///
+    /// A regression here is not cosmetic. `UndoGroupViewModel::route` falls
+    /// through from an exhausted prose history to the project's structural one,
+    /// and the third property that makes that fall-through safe is that *the
+    /// writer was told first*: the row already reads "Undo trashing «Chapter
+    /// 3»" before anything is pressed. An icon-only button computes no label
+    /// and carries only a static tooltip, so an Undo button in this dock is an
+    /// affordance that can take back a chapter without saying so — which is
+    /// precisely what a Format palette must never do.
+    ///
+    /// Walked through the accessibility tree rather than by inspecting the
+    /// widget list, because that is what answers "is it reachable on screen":
+    /// the walk skips dormant subtrees, so a re-added group hidden behind a
+    /// `VisibleWhen` would still be caught the moment its surface is live.
+    #[test]
+    fn the_format_dock_offers_no_undo() {
+        let vm = vm();
+        vm.set_surface(FormatSurface::Scene);
+        let mut tree = WidgetTree::new();
+        tree.add(controls(&vm));
+        tree.layout(SizeProposal::exact(300.0, 900.0));
+        let labels: Vec<String> = tree
+            .sync_accessibility()
+            .nodes
+            .iter()
+            .filter_map(|(_, n)| n.label().map(|s| s.to_lowercase()))
+            .collect();
+
+        // Positive control: the walk really did reach the dock's buttons, so a
+        // vacuously empty tree cannot pass this test.
+        assert!(
+            labels.iter().any(|l| l.contains("bold")),
+            "the accessibility walk found no formatting buttons at all, so it \
+             proves nothing about Undo; got {labels:?}"
+        );
+        // Matched on the substring so this holds under both renderings: the
+        // en-US tooltip ("Undo") and the raw Fluent key a headless test falls
+        // back to ("format-undo").
+        for dead in ["undo", "redo"] {
+            assert!(
+                !labels.iter().any(|l| l.contains(dead)),
+                "the Format dock is offering {dead:?} again — see this test's \
+                 doc comment for why that is a data-loss affordance, not a \
+                 convenience; got {labels:?}"
+            );
+        }
     }
 
     /// Widths the dock body has to survive.

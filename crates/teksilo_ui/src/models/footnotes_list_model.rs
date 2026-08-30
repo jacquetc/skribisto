@@ -217,6 +217,13 @@ mod imp {
     }
 
     impl FootnotesListModel {
+        /// The backend handle this model was built with — for a caller that
+        /// must reach the undo manager to offer one of this model's own
+        /// commands back (see [`delete`](Self::delete)).
+        pub fn app_ctx(&self) -> Rc<AppContext> {
+            self.inner.ctx.clone()
+        }
+
         pub fn new(ctx: Rc<AppContext>, ids: AppIds, docs: OpenDocsStore) -> Self {
             let me = Self {
                 inner: Rc::new(Inner {
@@ -492,7 +499,12 @@ mod imp {
         /// The caller (`FootnotesViewModel::delete`) hands the closure to a
         /// grace-window "Undo" toast — see its own doc comment for why a toast
         /// and not a confirmation dialog.
-        pub fn delete(&self, id: u64, stack_id: Option<u64>) -> Option<Box<dyn Fn()>> {
+        /// Delete one note and every reference to it, as **one** undo entry.
+        ///
+        /// Returns that entry's sequence number, for a caller offering to take
+        /// it back — not a ready-made undo closure, which could only ever have
+        /// popped whatever was on top by the time it ran.
+        pub fn delete(&self, id: u64, stack_id: Option<u64>) -> Option<u64> {
             let Ok(Some(dto)) = footnote_commands::get_footnote(&self.inner.ctx, &id) else {
                 return None;
             };
@@ -525,6 +537,10 @@ mod imp {
                 eprintln!("footnotes: delete failed: {e}");
             }
             undo_redo_commands::end_composite(&self.inner.ctx);
+            // Stamped the instant the group closes: `reload_open` below writes
+            // nothing, but a caller that reordered these lines would otherwise
+            // silently hand its toast somebody else's command.
+            let seq = crate::shared::undo_toast::stamp(&self.inner.ctx);
 
             // Re-read the documents whose prose just changed under them, from the
             // ids captured *before* the write. The caller pumps a frame;
@@ -535,15 +551,13 @@ mod imp {
                 ids.dedup();
                 ids
             };
-            self.inner.docs.reload_open(&items);
+            // Only the fields that genuinely moved: an unconditional reload
+            // clears each document's undo history, and most of these rows are
+            // untouched by a note's deletion.
+            self.inner.docs.reload_if_diverged(&items);
             self.refresh();
 
-            let ctx = self.inner.ctx.clone();
-            Some(Box::new(move || {
-                if let Err(e) = undo_redo_commands::undo(&ctx, stack_id) {
-                    eprintln!("footnotes: undo failed: {e}");
-                }
-            }))
+            seq
         }
 
         /// Every `Content` row naming `label`, paired with its prose minus that
@@ -825,6 +839,11 @@ mod imp {
     }
 
     struct Inner {
+        /// Kept even though a mocks build has no backend behind it: handing a
+        /// caller a *freshly minted* `AppContext` instead would be a second,
+        /// permanently empty store — the trap the extension-seam rules name —
+        /// and it would look like it worked.
+        ctx: Rc<AppContext>,
         model: ListModel<FootnoteRow>,
         version: Signal<u64>,
         /// Mirrors the real model's: bumped on a shape change, not on a body
@@ -839,9 +858,17 @@ mod imp {
     }
 
     impl FootnotesListModel {
-        pub fn new(_ctx: Rc<AppContext>, _ids: AppIds, _docs: OpenDocsStore) -> Self {
+        /// The backend handle this model was built with — for a caller that
+        /// must reach the undo manager to offer one of this model's own
+        /// commands back (see [`delete`](Self::delete)).
+        pub fn app_ctx(&self) -> Rc<AppContext> {
+            self.inner.ctx.clone()
+        }
+
+        pub fn new(ctx: Rc<AppContext>, _ids: AppIds, _docs: OpenDocsStore) -> Self {
             Self {
                 inner: Rc::new(Inner {
+                    ctx,
                     model: ListModel::from_vec(fabricated()),
                     version: Signal::new(0),
                     structure: Signal::new(0),
@@ -959,7 +986,9 @@ mod imp {
         /// `imp` variants stay swappable, but a mocks build has no backend
         /// undo/redo stack behind the fabricated list — there is nothing a
         /// toast's Undo button could call, so this always returns `None`.
-        pub fn delete(&self, id: u64, _stack_id: Option<u64>) -> Option<Box<dyn Fn()>> {
+        /// Mock twin of the real [`delete`]: same signature, and `None` because
+        /// a fabricated store records no command for a toast to name.
+        pub fn delete(&self, id: u64, _stack_id: Option<u64>) -> Option<u64> {
             let keep: Vec<FootnoteRow> = self.rows().into_iter().filter(|r| r.id != id).collect();
             self.inner.model.replace_all(keep);
             self.bump();
@@ -1325,9 +1354,9 @@ mod real_backend_tests {
         let docs = OpenDocsStore::new(app_ctx.clone());
         let model = FootnotesListModel::new(app_ctx.clone(), ids.clone(), docs);
 
-        let undo = model
+        let seq = model
             .delete(created.id, stack)
-            .expect("a real delete must hand back a way to reverse it");
+            .expect("a real delete must hand back the sequence that names it");
 
         assert!(
             footnote_commands::get_footnote(&app_ctx, &created.id)
@@ -1343,7 +1372,14 @@ mod real_backend_tests {
             "the reference must be stripped from the prose right after delete"
         );
 
-        undo();
+        // Reversed **by name**, the way the toast now does it: `undo_if_head`
+        // refuses if anything else has landed since, so this also proves the
+        // sequence the model handed back really is the delete's own.
+        assert_eq!(
+            frontend::commands::undo_redo_commands::undo_if_head(&app_ctx, stack, seq)
+                .expect("undo_if_head"),
+            common::undo_redo::UndoStatus::Undone,
+        );
 
         assert!(
             footnote_commands::get_footnote(&app_ctx, &created.id)

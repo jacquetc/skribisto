@@ -195,6 +195,26 @@ mod imp {
             Ok(())
         }
 
+        /// Persist staged content **without recording it in the undo history**.
+        ///
+        /// For a write the application reconstructs from a source of truth it
+        /// already undoes: prose is mirrored here from the live `TextDocument`
+        /// on a timer, and that document owns the writer's typing history at
+        /// word granularity. Recording the mirror as well put whole-Djot
+        /// `Content::update` entries on the project's stack every few seconds,
+        /// interleaved with the structural commands — which is what let a
+        /// toast's Undo pop a prose flush instead of the thing it named, and
+        /// what made a project-wide Ctrl+Z unsafe to offer at all.
+        ///
+        /// Per Qleany's own doctrine for a not-undoable command: it goes to a
+        /// throwaway stack. [`common::undo_redo::UNTRACKED_STACK_ID`] is that
+        /// idea taken to its limit — the command is dropped at the door, so
+        /// there is nothing left to clear afterwards, which is the half nobody
+        /// remembers to do.
+        pub fn save_untracked(&self) -> anyhow::Result<()> {
+            self.save(Some(common::undo_redo::UNTRACKED_STACK_ID))
+        }
+
         /// Re-fetch this field's row **by `(item_id, role)`**, not by cached row id
         /// — for a field another use case rewrote out from under this handle (a merge
         /// absorbing a neighbour, a split cutting the source in two).
@@ -452,6 +472,12 @@ mod imp {
         pub fn save(&self, _stack: Option<u64>) -> anyhow::Result<()> {
             self.inner.dirty.set(false);
             Ok(())
+        }
+
+        /// Mock twin of the real [`save_untracked`]: nothing is recorded there
+        /// either, so there is nothing to diverge from.
+        pub fn save_untracked(&self) -> anyhow::Result<()> {
+            self.save(None)
         }
 
         /// No backend to re-read: the fabricated data stands.

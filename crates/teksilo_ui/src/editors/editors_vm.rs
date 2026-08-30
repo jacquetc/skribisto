@@ -1934,6 +1934,12 @@ impl EditorsViewModel {
 
     /// Persist every open document's edits back to its `Content` rows (changed
     /// fields only), through the per-Work undo stack. Each shared doc flushed once.
+    /// The store of open documents this window edits — for a caller that must
+    /// react to a `Content` row changing underneath an open tab.
+    pub fn open_docs(&self) -> OpenDocsStore {
+        self.docs.clone()
+    }
+
     pub fn flush_all(&self) {
         self.docs.flush_all(self.ids.stack_id.get());
     }

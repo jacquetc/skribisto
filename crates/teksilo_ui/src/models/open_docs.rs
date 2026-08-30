@@ -313,6 +313,11 @@ impl OpenDoc {
     /// an exact per-document staleness check, sharper than the `dirty` flag this
     /// method clears unconditionally below.
     pub fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
+        // The two name fields stay on the history and the three prose fields
+        // leave it, and that asymmetry is the point. A committed rename **is**
+        // a user action — it fires once, on blur, and is exactly the "Undo
+        // renaming «Chapter 3»" a writer reaches for. A prose flush is a timer
+        // going off; its undo lives in the document's own word-level history.
         if let Some(f) = &self.title {
             f.flush(stack)?;
         }
@@ -320,13 +325,13 @@ impl OpenDoc {
             f.flush(stack)?;
         }
         if let Some(f) = &self.main {
-            f.flush(stack)?;
+            f.flush()?;
         }
         if let Some(f) = &self.synopsis {
-            f.flush(stack)?;
+            f.flush()?;
         }
         if let Some(f) = &self.epigraph {
-            f.flush(stack)?;
+            f.flush()?;
         }
         self.dirty.set(false);
         Ok(())
@@ -359,6 +364,57 @@ impl OpenDoc {
     ///
     /// The caller flushes first, so nothing unsaved is lost; it must also pump a
     /// frame afterwards, since `set_djot` only queues a document event.
+    /// The `Content` row ids this doc's prose fields read and write.
+    pub fn content_ids(&self) -> Vec<u64> {
+        [&self.main, &self.synopsis, &self.epigraph]
+            .into_iter()
+            .flatten()
+            .filter_map(|f| f.content_id())
+            .collect()
+    }
+
+    /// Does every prose field still agree with its stored row?
+    ///
+    /// Asked before a remembered document is handed back to a reopened tab: if
+    /// anything rewrote the prose while the tab was closed — a Replace All, an
+    /// undo, another window — the remembered buffer *and its history* describe
+    /// text that no longer exists, and restoring them would quietly resurrect
+    /// it. See [`crate::models::OpenDocsStore::release`].
+    pub fn agrees_with_store(&self) -> bool {
+        [&self.main, &self.synopsis, &self.epigraph]
+            .into_iter()
+            .flatten()
+            .all(ProseField::agrees_with_store)
+    }
+
+    /// Has anything been typed into this document that could still be undone?
+    ///
+    /// Remembering a document nobody edited would spend memory to preserve an
+    /// empty history.
+    pub fn has_history(&self) -> bool {
+        [&self.main, &self.synopsis, &self.epigraph]
+            .into_iter()
+            .flatten()
+            .any(ProseField::has_history)
+    }
+
+    /// Re-read only the prose fields that have genuinely diverged. Returns
+    /// whether anything did — see [`ProseField::reload_if_diverged`].
+    ///
+    /// The name fields are deliberately not included: they are `TitleField`s,
+    /// whose value is a `Signal<String>` the tree and the tab bar are already
+    /// bound to, and which follow their entity's own `Updated` event.
+    pub fn reload_if_diverged(&self) -> bool {
+        let mut any = false;
+        for f in [&self.main, &self.synopsis, &self.epigraph]
+            .into_iter()
+            .flatten()
+        {
+            any |= f.reload_if_diverged();
+        }
+        any
+    }
+
     pub fn reload(&self) {
         if let Some(f) = &self.title {
             f.reload();
@@ -658,8 +714,40 @@ struct Entry {
 /// fingerprint — recomputed whenever that fingerprint moves.
 type LangCache = (LangFingerprint, HashMap<u64, Vec<String>>);
 
+/// How many closed documents keep their typing history.
+///
+/// Obsidian's precedent — it remembers "the last 20 files" — and VS Code's is a
+/// 20 MB budget rather than a count. A count is the honest unit here: what is
+/// retained is a whole `OpenDoc`, whose cost is dominated by its rope and its
+/// own undo stack, and neither is something this layer can measure cheaply.
+///
+/// Not a setting. The number nobody would tune is a worse knob than the one
+/// switch that matters, which is whether to remember at all.
+const REMEMBERED_CAPACITY: usize = 20;
+
 struct Inner {
     open: RefCell<HashMap<u64, Entry>>,
+    /// Documents whose last tab closed, newest first, kept so reopening one
+    /// restores the typing history that was in it.
+    ///
+    /// The alternative — dropping the document with its tab — is what Bear does,
+    /// and its forum is the loudest source of data-loss reports in this market:
+    /// *"if you accidentally back out of the note and return to it, there's no
+    /// way for you to undo whatever changes you made"*. VS Code and Obsidian both
+    /// switched to remembering, and the reasoning VS Code gave is exactly this
+    /// application's case — it is *"very useful if you limit the number of open
+    /// editors"*, and closing a tab here is casual navigation rather than the
+    /// deliberate "I am done with this document" of a word processor.
+    ///
+    /// Handing one back is gated on the stored prose still being what the
+    /// document last wrote; see [`OpenDocsStore::open`].
+    remembered: RefCell<std::collections::VecDeque<(u64, Rc<OpenDoc>)>>,
+    /// Whether to remember at all — `editor.restore_undo_on_reopen`.
+    ///
+    /// VS Code shipped this feature without a switch and added one a month
+    /// later, *"because not everyone wanted this new feature"*. Taking that
+    /// lesson rather than re-learning it.
+    remember_history: Cell<bool>,
     app_ctx: Rc<AppContext>,
     /// Reactive read handle re-pointed at an item to fetch its `(role, sub_role)`.
     item_probe: SingleBinderItem,
@@ -773,6 +861,8 @@ impl OpenDocsStore {
         Self {
             inner: Rc::new(Inner {
                 open: RefCell::new(HashMap::new()),
+                remembered: RefCell::new(std::collections::VecDeque::new()),
+                remember_history: Cell::new(true),
                 item_probe: SingleBinderItem::new(app_ctx.clone()),
                 app_ctx,
                 edited: Signal::new(0),
@@ -1270,6 +1360,38 @@ impl OpenDocsStore {
         // the allowed content rows.
         self.inner.item_probe.set_id(Some(item_id));
         let item = self.inner.item_probe.dto()?;
+
+        // A remembered document comes back only if it still describes the text
+        // that is actually stored, and only if the item is still the same shape.
+        //
+        // Both halves matter. Prose can move while a tab is closed — an undo, a
+        // Replace All, another window — and handing back the old buffer would
+        // resurrect text the writer had already taken away, with its history
+        // intact to make it look deliberate. And `promote` retypes an item in
+        // place, so a document built for the old `(role, sub_role)` may hold a
+        // field the new type has no room for.
+        if let Some(doc) = self.take_remembered(item_id)
+            && doc.role == item.role
+            && doc.sub_role == item.sub_role
+            && doc.agrees_with_store()
+        {
+            doc.trashed.set(!item.activated);
+            doc.tags.set(item.tags.clone());
+            self.inner.open.borrow_mut().insert(
+                item_id,
+                Entry {
+                    doc: doc.clone(),
+                    refs: 1,
+                },
+            );
+            self.attach_one(&doc);
+            return Some(doc);
+        }
+        // A remembered document that failed either check has already been taken
+        // out of the pool by the `if let` above and is dropped here — deliberately.
+        // Rebuilding from the rows below is the right answer, and putting it back
+        // would only offer the same wrong document again next time.
+
         let contents = self.load_contents(item_id, &item.role, &item.sub_role);
         let doc = Rc::new(OpenDoc::build(
             &self.inner.app_ctx,
@@ -1305,6 +1427,9 @@ impl OpenDocsStore {
     ///
     /// Returns the fresh doc, or `None` if the item isn't open (or can't be read).
     pub fn rebuild(&self, item_id: u64, stack: Option<u64>) -> Option<Rc<OpenDoc>> {
+        // The item has been retyped; any remembered copy is built for the shape
+        // it no longer has.
+        self.forget(item_id);
         let old = self
             .inner
             .open
@@ -1370,6 +1495,7 @@ impl OpenDocsStore {
             if let Err(e) = doc.flush(stack) {
                 eprintln!("open docs: release flush failed for item {item_id}: {e}");
             }
+            self.remember(item_id, doc);
         }
     }
 
@@ -1404,6 +1530,56 @@ impl OpenDocsStore {
         )
     }
 
+    /// Keep a just-closed document's typing history, in case its tab comes back.
+    ///
+    /// Flushed first by the caller, so what is retained agrees with the store —
+    /// which is the precondition [`open`](Self::open) re-checks before handing
+    /// it back.
+    fn remember(&self, item_id: u64, doc: Rc<OpenDoc>) {
+        if !self.inner.remember_history.get() || !doc.has_history() {
+            return;
+        }
+        let mut pool = self.inner.remembered.borrow_mut();
+        pool.retain(|(id, _)| *id != item_id);
+        pool.push_front((item_id, doc));
+        // Oldest first: the far end of a session is the part nobody reaches for.
+        while pool.len() > REMEMBERED_CAPACITY {
+            pool.pop_back();
+        }
+    }
+
+    /// Take `item_id`'s remembered document, if one is being kept.
+    fn take_remembered(&self, item_id: u64) -> Option<Rc<OpenDoc>> {
+        let mut pool = self.inner.remembered.borrow_mut();
+        let i = pool.iter().position(|(id, _)| *id == item_id)?;
+        pool.remove(i).map(|(_, doc)| doc)
+    }
+
+    /// Stop remembering `item_id` — its document describes text that has moved on.
+    fn forget(&self, item_id: u64) {
+        self.inner
+            .remembered
+            .borrow_mut()
+            .retain(|(id, _)| *id != item_id);
+    }
+
+    /// Whether a closed tab's typing history is kept for its return
+    /// (`editor.restore_undo_on_reopen`). Turning it off also drops whatever is
+    /// already held, so the setting takes effect immediately rather than at the
+    /// next close.
+    pub fn set_remember_history(&self, remember: bool) {
+        self.inner.remember_history.set(remember);
+        if !remember {
+            self.inner.remembered.borrow_mut().clear();
+        }
+    }
+
+    /// How many closed documents are currently being remembered — for tests and
+    /// diagnostics.
+    pub fn remembered_count(&self) -> usize {
+        self.inner.remembered.borrow().len()
+    }
+
     /// Flush every open doc once (changed fields only).
     pub fn flush_all(&self, stack: Option<u64>) {
         let docs: Vec<Rc<OpenDoc>> = self
@@ -1426,6 +1602,10 @@ impl OpenDocsStore {
     /// outgoing work is already saved (or discarded) by the close/load flow.
     pub fn clear(&self) {
         self.inner.open.borrow_mut().clear();
+        // A different project's items are addressed by the same `EntityId`s —
+        // `load_work` re-mints them — so a remembered document from the outgoing
+        // Work would be handed to whatever happens to share its id.
+        self.inner.remembered.borrow_mut().clear();
         // The incoming project re-resolves from scratch; don't hold the old map's
         // strings until then.
         self.invalidate_language_cache();
@@ -1443,6 +1623,49 @@ impl OpenDocsStore {
     /// it keeps the same `Rc<OpenDoc>` (the `(role, sub_role)` didn't change, only
     /// the text) so live tab views stay bound. The caller must pump a frame after
     /// (`set_djot` only queues a document event).
+    /// Which **open** items own any of these `Content` rows.
+    ///
+    /// Answered from the open documents themselves rather than by asking the
+    /// backend: the docs already hold the row ids they read and write, and a
+    /// subscriber that fires on every content change should not issue a query
+    /// per event to discover that none of them is open.
+    pub fn items_owning_contents(&self, content_ids: &[u64]) -> Vec<u64> {
+        self.inner
+            .open
+            .borrow()
+            .iter()
+            .filter(|(_, entry)| {
+                entry
+                    .doc
+                    .content_ids()
+                    .iter()
+                    .any(|c| content_ids.contains(c))
+            })
+            .map(|(item, _)| *item)
+            .collect()
+    }
+
+    /// Re-read only the fields whose stored prose has genuinely diverged from
+    /// what this window last wrote, for the items among `item_ids` that are
+    /// open. Returns the items that actually reloaded.
+    ///
+    /// The difference from [`reload_open`](Self::reload_open) is the whole
+    /// point: that one reloads unconditionally, and `set_djot` clears the
+    /// document's undo history. Called from a subscriber on *every*
+    /// `Content(Updated)` — including this window's own autosave — it would
+    /// wipe the writer's typing history every few seconds.
+    pub fn reload_if_diverged(&self, item_ids: &[u64]) -> Vec<u64> {
+        let map = self.inner.open.borrow();
+        item_ids
+            .iter()
+            .filter(|id| {
+                map.get(id)
+                    .is_some_and(|entry| entry.doc.reload_if_diverged())
+            })
+            .copied()
+            .collect()
+    }
+
     pub fn reload_open(&self, item_ids: &[u64]) {
         let map = self.inner.open.borrow();
         for id in item_ids {
@@ -1797,14 +2020,25 @@ mod tests {
             .main
             .as_ref()
             .expect("a Scene owns a main text document");
-        // Synchronous, and then modified by hand: `set_djot` only *queues* a
-        // document event (there is no frame to pump here), and loading text into
-        // a document is not by itself an edit — `flush` gates on `is_modified`,
-        // which is what a keystroke sets.
-        main.doc
-            .set_djot_sync(text)
+        // Staged the way a keystroke stages it, and that matters: `ProseField::
+        // flush` gates on `content_revision`, and the whole-document setters
+        // (`set_djot_sync`, `set_plain_text`) *reset* a document rather than
+        // edit it — they move neither `content_revision` nor `is_modified`. An
+        // edit faked with a setter plus `set_modified(true)` therefore satisfies
+        // the coarse flag and nothing else, and the flush correctly declines to
+        // write text no edit produced. `remove_selected_text` + `insert_text`
+        // are the primitives live typing goes through.
+        let cursor = main.doc.cursor_at(0);
+        cursor.set_position(
+            main.doc.character_count(),
+            teksilo::text_document::MoveMode::KeepAnchor,
+        );
+        cursor
+            .remove_selected_text()
+            .expect("clearing the loaded text must succeed");
+        cursor
+            .insert_text(text)
             .expect("staging the edit itself must succeed");
-        main.doc.set_modified(true);
         store.insert_for_test(doc.clone());
         doc
     }
@@ -1980,5 +2214,240 @@ mod tests {
         assert!(doc.dirty.get());
         assert_eq!(edited.get(), before + 1);
         assert_eq!(doc.edit_gen.get(), gen_before + 1);
+    }
+}
+
+/// Remembering a closed tab's typing history — the M9 half of undo unification.
+///
+/// The behaviour these pin is the one the market gets wrong. Bear drops a note's
+/// undo buffer the moment you navigate away, and its forum is the loudest source
+/// of data-loss reports in this field; VS Code and Obsidian both switched to
+/// remembering, and VS Code's stated reason is this application's exact case —
+/// closing a tab here is casual navigation, not "I am done with this document".
+#[cfg(all(test, not(feature = "mocks")))]
+mod remembered_history_tests {
+    use super::*;
+    use frontend::commands::content_commands;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+    use frontend::direct_access::{
+        CreateBinderDto, CreateBinderItemDto, CreateWorkDto, UpdateContentDto,
+    };
+
+    /// A real store over a real project holding `count` scenes.
+    fn store_with_scenes(count: usize) -> (Rc<AppContext>, OpenDocsStore, Vec<u64>) {
+        let ctx = Rc::new(AppContext::new());
+        let work = frontend::commands::work_commands::create_orphan_work(
+            &ctx,
+            None,
+            &CreateWorkDto::default(),
+        )
+        .unwrap();
+        let binder = frontend::commands::binder_commands::create_binder(
+            &ctx,
+            None,
+            &CreateBinderDto {
+                name: "B".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .unwrap();
+        let items = (0..count)
+            .map(|i| {
+                frontend::commands::binder_item_commands::create_binder_item(
+                    &ctx,
+                    None,
+                    &CreateBinderItemDto {
+                        status: None,
+                        title: format!("Scene {i}"),
+                        role: BinderItemRole::Item,
+                        sub_role: BinderItemSubRole::Scene,
+                        activated: true,
+                        ..Default::default()
+                    },
+                    binder.id,
+                    -1,
+                )
+                .unwrap()
+                .id
+            })
+            .collect();
+        let store = OpenDocsStore::new(ctx.clone());
+        (ctx, store, items)
+    }
+
+    /// Type into an open doc's prose, the way live typing does — `insert_text`
+    /// bumps `content_revision` and records an undo entry, where `set_djot` would
+    /// only reset the document.
+    fn type_into(doc: &OpenDoc, text: &str) {
+        doc.main
+            .as_ref()
+            .expect("a scene has prose")
+            .doc
+            .cursor_at(0)
+            .insert_text(text)
+            .unwrap();
+    }
+
+    #[test]
+    fn a_reopened_tab_gets_its_typing_history_back() {
+        let (_ctx, store, items) = store_with_scenes(1);
+        let id = items[0];
+
+        let doc = store.open(id).expect("open");
+        type_into(&doc, "First draft.");
+        assert!(doc.has_history());
+        drop(doc);
+        store.release(id, None);
+        assert_eq!(store.remembered_count(), 1);
+
+        let doc = store.open(id).expect("reopen");
+        let prose = doc.main.as_ref().unwrap();
+        assert!(
+            prose.doc.can_undo(),
+            "the typing history must come back with the tab — losing it is the \
+             single most-reported undo failure in this market"
+        );
+        prose.doc.undo().unwrap();
+        assert_eq!(
+            prose.doc.to_plain_text().unwrap().trim(),
+            "",
+            "and it must actually work, not merely report that it could"
+        );
+        assert_eq!(
+            store.remembered_count(),
+            0,
+            "taken out of the pool, not copied"
+        );
+    }
+
+    #[test]
+    fn a_document_rewritten_while_closed_is_not_restored() {
+        let (ctx, store, items) = store_with_scenes(1);
+        let id = items[0];
+
+        let doc = store.open(id).expect("open");
+        type_into(&doc, "First draft.");
+        drop(doc);
+        // After the release, not before: a `Content` row is created on the first
+        // flush, so an untouched scene has no row to name yet.
+        store.release(id, None);
+        assert_eq!(store.remembered_count(), 1);
+        let content_id = store
+            .open(id)
+            .expect("peek")
+            .main
+            .as_ref()
+            .unwrap()
+            .content_id()
+            .expect("flushing created the row");
+        store.release(id, None);
+
+        // Something else rewrites the row while the tab is closed — an undo, a
+        // Replace All, another window.
+        let stored = content_commands::get_content(&ctx, &content_id)
+            .unwrap()
+            .unwrap();
+        content_commands::update_content(
+            &ctx,
+            None,
+            &UpdateContentDto {
+                uid: stored.uid,
+                id: content_id,
+                created_at: stored.created_at,
+                updated_at: chrono::Utc::now(),
+                activated: true,
+                role: stored.role,
+                data: "Someone else's words.".into(),
+            },
+        )
+        .unwrap();
+
+        let doc = store.open(id).expect("reopen");
+        let prose = doc.main.as_ref().unwrap();
+        assert!(
+            prose.doc.to_plain_text().unwrap().contains("Someone else"),
+            "the reopened tab must show what is actually stored"
+        );
+        assert!(
+            !prose.doc.can_undo(),
+            "and must not carry a history describing words that are no longer \
+             in the file — restoring it would resurrect them, with the history \
+             making it look deliberate"
+        );
+    }
+
+    #[test]
+    fn a_document_nobody_edited_is_not_remembered() {
+        let (_ctx, store, items) = store_with_scenes(1);
+        let doc = store.open(items[0]).expect("open");
+        drop(doc);
+        store.release(items[0], None);
+        assert_eq!(
+            store.remembered_count(),
+            0,
+            "keeping an empty history would spend memory on nothing"
+        );
+    }
+
+    #[test]
+    fn the_pool_is_bounded_and_drops_the_oldest() {
+        let n = REMEMBERED_CAPACITY + 5;
+        let (_ctx, store, items) = store_with_scenes(n);
+        for id in &items {
+            let doc = store.open(*id).expect("open");
+            type_into(&doc, "words");
+            drop(doc);
+            store.release(*id, None);
+        }
+        assert_eq!(store.remembered_count(), REMEMBERED_CAPACITY);
+
+        // The five oldest were dropped; the newest are still there.
+        let doc = store.open(items[0]).expect("reopen the oldest");
+        assert!(
+            !doc.main.as_ref().unwrap().doc.can_undo(),
+            "the oldest closed document is the one to forget first"
+        );
+        let doc = store
+            .open(*items.last().unwrap())
+            .expect("reopen the newest");
+        assert!(doc.main.as_ref().unwrap().doc.can_undo());
+    }
+
+    #[test]
+    fn the_off_switch_forgets_what_is_already_held() {
+        let (_ctx, store, items) = store_with_scenes(1);
+        let doc = store.open(items[0]).expect("open");
+        type_into(&doc, "words");
+        drop(doc);
+        store.release(items[0], None);
+        assert_eq!(store.remembered_count(), 1);
+
+        store.set_remember_history(false);
+        assert_eq!(
+            store.remembered_count(),
+            0,
+            "the switch must take effect now, not at the next close"
+        );
+
+        let doc = store.open(items[0]).expect("reopen");
+        assert!(!doc.main.as_ref().unwrap().doc.can_undo());
+    }
+
+    #[test]
+    fn closing_a_project_forgets_every_remembered_document() {
+        let (_ctx, store, items) = store_with_scenes(1);
+        let doc = store.open(items[0]).expect("open");
+        type_into(&doc, "words");
+        drop(doc);
+        store.release(items[0], None);
+        assert_eq!(store.remembered_count(), 1);
+
+        // `EntityId`s are re-minted by the next `load_work`, so a document held
+        // across a project switch would be handed to whatever inherits its id.
+        store.clear();
+        assert_eq!(store.remembered_count(), 0);
     }
 }

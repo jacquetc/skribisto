@@ -390,6 +390,19 @@ impl ProjectWindowFactory {
         // when it lands (see `BackupSchedulerViewModel::do_close`'s
         // `PendingExit::Quit` arm).
         session.backup_scheduler.set_quit_sequencer(quit.clone());
+        // Per WINDOW, for the same reason `format` is: "which surface has the
+        // caret" is a property of a window, and two windows on one project can
+        // have it in different places. The entity half is Tier 2 underneath —
+        // one structural history per `Work`, shared by its windows — which is
+        // exactly right: undoing a rename in either window undoes the rename.
+        let undo_group = crate::edit::UndoGroupViewModel::new(
+            format.clone(),
+            crate::edit::EntityDomain::new(
+                app_ctx_root.clone(),
+                session.ids.stack_id.clone(),
+                session.save_state.clone(),
+            ),
+        );
         let single_work = session.single_work.clone();
         let single_work_info = session.single_work_info.clone();
         // Scope D — window titles. For a Load/New window this is `1` until
@@ -639,6 +652,7 @@ impl ProjectWindowFactory {
                         let menu = super::project_menus::build_project_menu(
                             super::project_menus::ProjectMenuParts {
                                 app_ctx: app_ctx_root.clone(),
+                                undo_group: undo_group.clone(),
                                 export: export.clone(),
                                 single_work: single_work.clone(),
                                 single_work_info: single_work_info.clone(),
@@ -817,6 +831,7 @@ impl ProjectWindowFactory {
                     save_as_vm.clone(),
                     restore_vm.clone(),
                     format.clone(),
+                    undo_group.clone(),
                     project_switch.clone(),
                     title_text.clone(),
                     window_ordinal.clone(),

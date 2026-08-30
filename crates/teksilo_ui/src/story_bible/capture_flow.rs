@@ -120,7 +120,11 @@ pub fn capture(
         return;
     }
     match remembered_folder(deps, tag_id) {
-        Some(folder) => commit(deps, &prefill, tag_id, folder, ctx),
+        Some(folder) => {
+            if let Some(item_id) = commit(deps, &prefill, tag_id, folder, ctx) {
+                announce(deps, &prefill, item_id, ctx);
+            }
+        }
         // Never filed under this tag before: ask, once.
         None => ask_destination(deps.clone(), prefill, tag_id, ctx),
     }
@@ -233,13 +237,19 @@ fn item_id_of_uid(ctx: &AppContext, work_id: u64, uid: uuid::Uuid) -> Option<u64
 }
 
 /// Create the note, remember the tag, and say so.
+/// Do the writes. Returns the note that landed, for the caller to announce.
+///
+/// Deliberately does **not** show the toast: on the ask-where path the caller
+/// still has a composite open here, so the capture has not been given its
+/// sequence number yet and a toast built now could not name it. The caller
+/// closes its group first, then calls [`announce`].
 fn commit(
     deps: &CaptureDeps,
     prefill: &modal::Prefill,
     tag_id: Option<u64>,
     folder: u64,
     ctx: &mut EventContext,
-) {
+) -> Option<u64> {
     let work_id = deps.ids.work_id.get();
     let draft = draft_for(prefill, tag_id, template_body(deps, tag_id));
     let Some(landed) =
@@ -261,22 +271,30 @@ fn commit(
                     .target_work(work_id),
             );
         }
-        return;
+        return None;
     };
     remember_tag(deps, tag_id);
+    Some(landed.item_id)
+}
+
+/// Say the note was filed, and offer to open it or take it back.
+fn announce(deps: &CaptureDeps, prefill: &modal::Prefill, item_id: u64, ctx: &mut EventContext) {
+    let work_id = deps.ids.work_id.get();
     let stack = deps.ids.stack_id.get();
     let app_ctx = deps.app_ctx.clone();
+    // Stamped once every group is closed, so this names the whole capture —
+    // the note and, on the ask-where path, the tag's new home with it.
+    let seq = crate::shared::undo_toast::stamp(&app_ctx);
     let editors = deps.editors.clone();
     let title = prefill.name.clone();
-    let item_id = landed.item_id;
     ctx.show_toast(
         Toast::success(tr!(story_bible_capture_toast(name = prefill.name.clone())))
             .target_work(work_id)
             .scoped_id("story_bible.captured", work_id)
-            // `undo` pops whatever is on top of the shared stack, which is this capture
-            // only until the writer does something else. The affordance therefore lives
-            // exactly as long as it means what it says, the same grace
-            // `app::recreate_row`'s own snackbar keeps for the identical reason.
+            // The Undo names this capture by sequence number, so it either takes
+            // back the capture or says it can no longer be the one — it can never
+            // reverse whatever happens to be on top instead. The window is now
+            // about the notification's welcome, not about correctness.
             .auto_dismiss_after(UNDO_GRACE)
             .action(ToastAction::primary(
                 tr!(story_bible_capture_open()),
@@ -286,9 +304,7 @@ fn commit(
             ))
             .action(ToastAction::new(
                 tr!(story_bible_capture_undo()),
-                move |_c| {
-                    let _ = undo_redo_commands::undo(&app_ctx, stack);
-                },
+                crate::shared::undo_toast::undo_handler(app_ctx, stack, seq, |_c| {}),
             )),
     );
     ctx.request_frame();
@@ -499,8 +515,11 @@ impl Widget for WherePanel {
                     return;
                 }
                 c.dismiss_modal();
-                commit(&deps, &prefill, tag_id, folder, c);
+                let landed = commit(&deps, &prefill, tag_id, folder, c);
                 undo_redo_commands::end_composite(&deps.app_ctx);
+                if let Some(item_id) = landed {
+                    announce(&deps, &prefill, item_id, c);
+                }
             }
         };
         let col = VStack::new()

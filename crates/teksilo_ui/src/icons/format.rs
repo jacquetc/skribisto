@@ -23,18 +23,6 @@ use teksilo::widgets::IconWidget;
 /// Icon-button glyph size (dp), matching the rest of the app's chrome.
 const ICON_SIZE: f32 = 16.0;
 
-// -- History -------------------------------------------------------------
-
-/// Undo — the editor's own edit history, not the app's Work-level trunk.
-pub fn undo() -> IconWidget {
-    IconWidget::from_svg_icon(res!("assets/icons/format/undo.svg")).icon_size(ICON_SIZE)
-}
-
-/// Redo — undo's mirror.
-pub fn redo() -> IconWidget {
-    IconWidget::from_svg_icon(res!("assets/icons/format/redo.svg")).icon_size(ICON_SIZE)
-}
-
 // -- Character marks -----------------------------------------------------
 
 /// Bold.
@@ -203,8 +191,6 @@ mod tests {
     #[test]
     fn every_format_icon_parses_and_lays_out() {
         let icons: Vec<(&str, IconWidget)> = vec![
-            ("undo", undo()),
-            ("redo", redo()),
             ("bold", bold()),
             ("italic", italic()),
             ("underline", underline()),
@@ -231,7 +217,7 @@ mod tests {
             ("scene_break_minor", scene_break_minor()),
             ("scene_break_major", scene_break_major()),
         ];
-        assert_eq!(icons.len(), 27, "the dock's full control set");
+        assert_eq!(icons.len(), 25, "the dock's full control set");
 
         for (name, icon) in icons {
             let mut tree = WidgetTree::new();

@@ -157,6 +157,7 @@ pub enum FlatEventKind {
     // Undo/redo
     UndoPerformed,
     RedoPerformed,
+    UndoStackChanged,
     CompositeBegin,
     CompositeEnd,
     CompositeCancelled,
@@ -466,6 +467,7 @@ impl From<Event> for FlatEvent {
             Origin::UndoRedo(ur) => match ur {
                 UndoRedoEvent::Undone => FlatEventKind::UndoPerformed,
                 UndoRedoEvent::Redone => FlatEventKind::RedoPerformed,
+                UndoRedoEvent::StackChanged => FlatEventKind::UndoStackChanged,
                 UndoRedoEvent::BeginComposite => FlatEventKind::CompositeBegin,
                 UndoRedoEvent::EndComposite => FlatEventKind::CompositeEnd,
                 UndoRedoEvent::CancelComposite => FlatEventKind::CompositeCancelled,

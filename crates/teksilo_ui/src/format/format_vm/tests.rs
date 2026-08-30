@@ -592,8 +592,8 @@ fn commands_are_inert_when_no_editor_is_focused() {
     vm.insert_table(3, 3);
     vm.insert_row_above();
     vm.remove_table();
-    vm.undo();
-    vm.redo();
+    vm.undo_editor();
+    vm.redo_editor();
     vm.refresh();
 
     assert!(!vm.bold().get(), "no editor means no state to mirror");
@@ -892,8 +892,8 @@ fn a_synopsis_is_a_formattable_target_of_its_own_kind() {
 
     let g = vm.groups();
     assert!(
-        g.marks.get() && g.lists.get() && g.history.get(),
-        "a synopsis is prose: marks, lists and history all apply"
+        g.marks.get() && g.lists.get(),
+        "a synopsis is prose: marks and lists both apply"
     );
     assert!(
         g.block.get() && g.tables.get(),
@@ -958,11 +958,10 @@ fn surface_decides_which_groups_appear() {
         assert!(surface.shows_tables());
     }
 
-    // History and marks are the high-frequency groups: they never vanish
-    // while there is anywhere to type, so moving between a scene and its
-    // synopsis does not make the dock flicker.
+    // Marks and lists are the high-frequency groups: they never vanish while
+    // there is anywhere to type, so moving between a scene and its synopsis
+    // does not make the dock flicker.
     for surface in [Scene, Note, Synopsis] {
-        assert!(surface.shows_history());
         assert!(surface.shows_marks());
         assert!(surface.shows_lists());
         assert!(!surface.is_empty());
@@ -970,7 +969,6 @@ fn surface_decides_which_groups_appear() {
 
     // And nothing focused shows nothing at all.
     assert!(None.is_empty());
-    assert!(!None.shows_history());
     assert!(!None.shows_marks());
     assert!(!None.shows_lists());
 }
@@ -1467,4 +1465,40 @@ fn the_document_lookup_is_scope_free_and_the_position_one_is_not() {
     // Nothing registered: both answer `None`, and neither invents a handle.
     assert!(vm.document_view(1, EditorKind::Prose).is_none());
     assert!(vm.handle_for_item(1, EditorKind::Prose, None).is_none());
+}
+
+/// The writing game is not escapable through the view-model.
+///
+/// `undo_editor` is now the **only** door this view-model has onto undo — the
+/// dock's History buttons are gone and `undo`/`redo` with them — so the
+/// `command_filter` gate inside it stopped being belt-and-braces and became the
+/// thing that makes `ProseDomain::frozen()` mean something. "Always forward"
+/// switches that filter while the caret and the document both stand still, so
+/// nothing else in the chain would notice.
+#[test]
+fn undo_editor_refuses_a_frozen_editor() {
+    use teksilo::widgets::rich_text::CommandFilter;
+
+    let (vm, editor) = vm_over("one");
+    let handle = editor.handle();
+    editor.select_all();
+    handle.set_bold(true);
+    assert!(handle.is_bold());
+    assert!(!vm.history_frozen(), "nothing is frozen yet");
+
+    handle.set_command_filter(CommandFilter::ForwardOnly);
+    assert!(vm.history_frozen(), "the game freezes this editor");
+    vm.undo_editor();
+    assert!(
+        handle.is_bold(),
+        "the writing game is not escapable through the view-model"
+    );
+
+    handle.set_command_filter(CommandFilter::All);
+    assert!(!vm.history_frozen());
+    vm.undo_editor();
+    assert!(
+        !handle.is_bold(),
+        "positive control: with the game off the same call really does step back"
+    );
 }

@@ -35,7 +35,7 @@ use teksilo::prelude::*;
 use teksilo::widgets::{MessageBox, MessageBoxButtons, StepperController, Toast, ToastAction};
 
 use frontend::AppContext;
-use frontend::commands::{long_operation_commands, undo_redo_commands};
+use frontend::commands::long_operation_commands;
 use frontend::common::event::Event;
 use frontend::import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyImportRow, ApplyImportRows,
@@ -1776,16 +1776,18 @@ impl ImportDocumentViewModel {
         let work_id = self.work_id();
         let app_ctx = self.app_ctx.clone();
         let stack = self.ids.stack_id.get();
+        let seq = crate::shared::undo_toast::stamp(&app_ctx);
         ctx.show_toast(
             Toast::success(tr!(import_document_done(count = created as i64)))
                 .scoped_id(IMPORT_TOAST_ID, work_id)
                 .target_work(work_id)
                 .auto_dismiss_after(UNDO_GRACE)
-                .action(ToastAction::primary(
+                .action(crate::shared::undo_toast::undo_action(
+                    app_ctx,
+                    stack,
+                    seq,
                     tr!(import_document_undo()),
-                    move |_c| {
-                        let _ = undo_redo_commands::undo(&app_ctx, stack);
-                    },
+                    |_c| {},
                 )),
         );
     }

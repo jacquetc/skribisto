@@ -31,12 +31,11 @@ use std::time::Duration;
 
 use teksilo::prelude::*;
 use teksilo::text_document::TextDocument;
-use teksilo::widgets::{Toast, ToastAction};
+use teksilo::widgets::Toast;
 
 use crate::toast_scope::ToastWorkExt;
 
 use frontend::AppContext;
-use frontend::commands::undo_redo_commands;
 
 /// How long the "deleted — Undo" snackbar stays up.
 const UNDO_GRACE: Duration = Duration::from_secs(6);
@@ -741,7 +740,13 @@ impl CommentsViewModel {
     }
 
     /// The shared "deleted — Undo" snackbar.
+    ///
+    /// **Call it immediately after the delete.** The sequence is stamped here,
+    /// and it names the command that has just run — anything pushed in between
+    /// would be what the button reversed instead. Every caller does the delete
+    /// on the line above.
     fn offer_undo(&self, ctx: &mut EventContext, message: LocalizedString, stack: Option<u64>) {
+        let seq = crate::shared::undo_toast::stamp(&self.app_ctx);
         let app_ctx = self.app_ctx.clone();
         ctx.show_toast(
             Toast::info(message)
@@ -749,9 +754,13 @@ impl CommentsViewModel {
                 // snackbar rather than stacking a tower of them.
                 .scoped_id("comments.deleted", 0)
                 .auto_dismiss_after(UNDO_GRACE)
-                .action(ToastAction::primary(tr!(comments_undo()), move |_c| {
-                    let _ = undo_redo_commands::undo(&app_ctx, stack);
-                })),
+                .action(crate::shared::undo_toast::undo_action(
+                    app_ctx,
+                    stack,
+                    seq,
+                    tr!(comments_undo()),
+                    |_c| {},
+                )),
         );
     }
 

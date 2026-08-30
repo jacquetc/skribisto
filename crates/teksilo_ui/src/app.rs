@@ -584,8 +584,10 @@ pub(crate) fn offer_missing_dictionaries(
     docs: &crate::models::OpenDocsStore,
     dictionaries: &crate::spellcheck::DictionariesViewModel,
     session: &WorkSession,
+    undo: &crate::edit::UndoGroupViewModel,
     ctx: &mut EventContext,
 ) {
+    let undo = undo.clone();
     let missing = dictionaries.missing_for(&docs.project_languages());
     if missing.is_empty() {
         return;
@@ -607,8 +609,9 @@ pub(crate) fn offer_missing_dictionaries(
                 tr!(dict_missing_action()),
                 move |c| {
                     let session = session.clone();
+                    let undo = undo.clone();
                     crate::settings::present(c, move || {
-                        SettingsPanel::open_to_dictionaries(session)
+                        SettingsPanel::open_to_dictionaries(session, &undo)
                     });
                 },
             )),
@@ -628,8 +631,10 @@ pub(crate) fn offer_missing_dictionaries(
 pub(crate) fn warn_unsigned_comments(
     comments: &crate::comments::CommentsViewModel,
     session: &WorkSession,
+    undo: &crate::edit::UndoGroupViewModel,
     ctx: &mut EventContext,
 ) {
+    let undo = undo.clone();
     if !comments.signature().is_anonymous() {
         return;
     }
@@ -647,7 +652,10 @@ pub(crate) fn warn_unsigned_comments(
                 tr!(comments_unsigned_action()),
                 move |c| {
                     let session = session.clone();
-                    crate::settings::present(c, move || SettingsPanel::open_to_user(session));
+                    let undo = undo.clone();
+                    crate::settings::present(c, move || {
+                        SettingsPanel::open_to_user(session, &undo)
+                    });
                 },
             )),
     );
@@ -713,6 +721,13 @@ pub struct App {
     /// Never shared — a shared instance made the last-built window win the
     /// Format dock's live target.
     format: crate::format::FormatViewModel,
+    /// Which history Ctrl+Z means, and what it would take back. Tier 3 for the
+    /// same reason `format` is — see [`crate::edit`].
+    undo_group: crate::edit::UndoGroupViewModel,
+    /// Holds this window's structural undo claim alive for as long as the shell
+    /// is mounted. Dropped and re-made on every rebuild, which is correct: the
+    /// claim names a `focus_within` signal, and a rebuild mints a new one.
+    undo_claim: std::cell::RefCell<Option<crate::edit::UndoClaim>>,
     /// This window's own in-place project-switch guard, with *this* Work's
     /// `unsaved`/`backup_mode`.
     project_switch: ProjectSwitchViewModel,
@@ -909,6 +924,7 @@ impl App {
         save_as_vm: SaveAsViewModel,
         restore_vm: crate::backup::BackupRestoreViewModel,
         format: crate::format::FormatViewModel,
+        undo_group: crate::edit::UndoGroupViewModel,
         project_switch: ProjectSwitchViewModel,
         title_text: Signal<String>,
         window_ordinal: Signal<usize>,
@@ -933,6 +949,8 @@ impl App {
             save_as_vm,
             restore_vm,
             format,
+            undo_group,
+            undo_claim: std::cell::RefCell::new(None),
             project_switch,
             title_text,
             window_ordinal,
@@ -1760,6 +1778,7 @@ impl Widget for App {
             quit: self.quit.clone(),
             outline: outline.clone(),
             format: self.format.clone(),
+            undo_group: self.undo_group.clone(),
             fullscreen: self.fullscreen.clone(),
             focus: self.focus.clone(),
             editors: editors.clone(),
@@ -1856,6 +1875,7 @@ impl Widget for App {
             wiring::project_events::LifecycleDeps {
                 app_ctx: self.app_ctx.clone(),
                 session: session.clone(),
+                undo_group: self.undo_group.clone(),
                 ids: session.ids.clone(),
                 registry: self.registry.clone(),
                 lifecycle: lifecycle.clone(),

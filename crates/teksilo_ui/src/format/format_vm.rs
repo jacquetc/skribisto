@@ -106,8 +106,8 @@ const MAX_BLOCKQUOTE_UNWRAP: usize = 16;
 /// The third component is "may this editor step through its history" — the
 /// editor's command filter, folded in because a writing game switches it while
 /// the document and the caret both stand still. Without it the dedup gate below
-/// skips the only sync that mattered and the dock keeps offering an Undo button
-/// that does nothing.
+/// skips the only sync that mattered, and the Edit menu keeps offering an Undo
+/// row that does nothing.
 const NEVER_SEEN: (u64, usize, bool) = (u64::MAX, usize::MAX, false);
 
 /// May this editor step back through its own history?
@@ -158,11 +158,6 @@ pub enum FormatSurface {
 }
 
 impl FormatSurface {
-    /// Undo / redo.
-    pub fn shows_history(self) -> bool {
-        self != Self::None
-    }
-
     /// Bold, italic, underline, strikethrough, clear formatting.
     pub fn shows_marks(self) -> bool {
         self != Self::None
@@ -350,7 +345,6 @@ pub struct LinkRequest {
 
 #[derive(Clone, Debug)]
 pub struct GroupVisibility {
-    pub history: Signal<bool>,
     pub marks: Signal<bool>,
     pub block: Signal<bool>,
     pub lists: Signal<bool>,
@@ -363,7 +357,6 @@ pub struct GroupVisibility {
 impl GroupVisibility {
     fn new(surface: FormatSurface) -> Self {
         Self {
-            history: Signal::new(surface.shows_history()),
             marks: Signal::new(surface.shows_marks()),
             block: Signal::new(surface.shows_block()),
             lists: Signal::new(surface.shows_lists()),
@@ -374,7 +367,6 @@ impl GroupVisibility {
     }
 
     fn apply(&self, surface: FormatSurface) {
-        set_if_changed(&self.history, surface.shows_history());
         set_if_changed(&self.marks, surface.shows_marks());
         set_if_changed(&self.block, surface.shows_block());
         set_if_changed(&self.lists, surface.shows_lists());
@@ -1001,6 +993,28 @@ impl FormatViewModel {
     pub fn align_center(&self) -> Signal<bool> {
         self.align_center.clone()
     }
+    /// Is a registered editor holding the keyboard focus **right now**?
+    ///
+    /// Deliberately the live answer, not [`has_caret_target`](Self::has_caret_target)'s
+    /// latched one. The latch exists so a *command* still knows what to act on
+    /// after opening a menu blurs the editor; deciding which undo domain is
+    /// active is the opposite question, and a latch there would keep routing
+    /// Ctrl+Z to prose after the writer has clicked into the binder.
+    pub fn editor_focused(&self) -> bool {
+        self.focused_registered().is_some()
+    }
+
+    /// Is the target editor refusing to step through its history — the
+    /// "Always forward" writing game?
+    ///
+    /// Distinct from `!can_undo()`, which folds this together with "there is
+    /// nothing to undo". A router has to tell them apart: an empty history may
+    /// fall through to another domain, a frozen one must not, or the game would
+    /// simply redirect Ctrl+Z instead of refusing it.
+    pub fn history_frozen(&self) -> bool {
+        self.handle().is_some_and(|h| !history_allowed(&h))
+    }
+
     pub fn can_undo(&self) -> Signal<bool> {
         self.can_undo.clone()
     }
@@ -1143,11 +1157,11 @@ impl FormatViewModel {
         set_if_changed(&self.dir_rtl, direction == DIR_RTL);
         // Undo/redo are gated on the editor's own command filter as well as on
         // whether there is history to step through: a writing game
-        // ("Always forward") refuses them, and these buttons reach
-        // `EditorHandle::undo` directly — a path that never passes the keyboard
-        // layer. Folding the rule in here rather than at the two call sites means
-        // the Format dock's buttons and the Format menu's entries cannot disagree,
-        // and both go quiet the moment the focused editor is frozen.
+        // ("Always forward") refuses them. These two mirrors are read by
+        // `edit::ProseDomain`, and through it by the Edit menu's rows and the
+        // Ctrl+Z router — so folding the rule in here is what makes the menu go
+        // quiet the moment the focused editor is frozen, rather than offering a
+        // step the editor will silently refuse.
         let history = history_allowed(handle);
         set_if_changed(&self.can_undo, handle.can_undo().get() && history);
         set_if_changed(&self.can_redo, handle.can_redo().get() && history);
@@ -1512,7 +1526,18 @@ impl FormatViewModel {
     // The editor's own undo stack, not the app's Work-level trunk: these step
     // through the prose edits in the focused document.
 
-    pub fn undo(&self) {
+    /// Step the **focused editor's own** history.
+    ///
+    /// `edit::ProseDomain`'s implementation, and the **only** door this
+    /// view-model has onto undo. Nothing in the Format surfaces offers Undo of
+    /// its own: routing is the undo group's job, because only a surface that
+    /// can render a label may take a fall-through step (see
+    /// `UndoGroupViewModel::route`).
+    ///
+    /// The `command_filter` gate is therefore load-bearing rather than
+    /// belt-and-braces: it is what makes `ProseDomain::frozen()` mean something,
+    /// and what stops the writing game being escapable through the router.
+    pub fn undo_editor(&self) {
         self.with_editor(|h| {
             if h.command_filter()
                 .accepts(teksilo::widgets::rich_text::EditCommandKind::Undo)
@@ -1521,7 +1546,9 @@ impl FormatViewModel {
             }
         });
     }
-    pub fn redo(&self) {
+
+    /// See [`undo_editor`](Self::undo_editor).
+    pub fn redo_editor(&self) {
         self.with_editor(|h| {
             if h.command_filter()
                 .accepts(teksilo::widgets::rich_text::EditCommandKind::Redo)

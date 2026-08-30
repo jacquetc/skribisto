@@ -36,6 +36,7 @@ pub(super) mod footnotes;
 pub(super) mod guards;
 pub(super) mod long_ops;
 pub(super) mod project_events;
+pub(super) mod prose_repair;
 pub(super) mod punctuation;
 pub(super) mod save_and_exit;
 pub(super) mod shared_view_models;

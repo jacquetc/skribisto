@@ -238,6 +238,96 @@ impl App {
             ctx.effect(&tick, move |_| format.refresh());
         }
 
+        // The Edit menu's Undo/Redo, on the same tick and for the same reasons:
+        // focus, the editor's command filter and the document's own history all
+        // move without one event a menu could subscribe to, and `refresh`
+        // short-circuits when nothing has. The project's history *does* have
+        // one — see `UndoGroupViewModel::refresh` for why it is still polled
+        // alongside the other five, and what `StackChanged` is used for instead
+        // (the subscription just below).
+        //
+        // The editors are handed over here, not at construction: this window's
+        // menu bar (and therefore its undo group) is built before
+        // `EditorsViewModel` exists, exactly as `format.attach` above works
+        // around. Idempotent on every rebuild.
+        {
+            let group = self.undo_group.clone();
+            group.attach_editors(editors.clone());
+            // The framework's own registry of text-editing widgets. This is what
+            // lets the Edit commands take Ctrl+Z, Ctrl+C and friends globally
+            // without breaking every text widget the application did not
+            // personally build a handle for.
+            group.attach_surfaces(ctx.text_surfaces());
+            let tick = ctx.frame_tick();
+            ctx.effect(&tick, move |_| group.refresh());
+        }
+
+        // A structural command landing is a dividing line the document engine
+        // cannot see.
+        //
+        // text-document coalesces contiguous typing into one undo entry, on
+        // shape alone — adjacent, seconds apart. It has no way to know the
+        // writer renamed a chapter in between, so *type, rename, type* leaves
+        // one entry spanning both bursts and a single Ctrl+Z in the editor takes
+        // back text from before the rename. `break_undo_merge` exists to say the
+        // line was crossed; this is what says it.
+        //
+        // `StackChanged` is emitted once per entry the entity history gains — so
+        // a bulk import of fifty tags, which is one composite, seals once when
+        // the group closes rather than fifty times. Filtered to this Work's own
+        // stack: another open project's history is not this writer's dividing
+        // line. (Undoing or redoing a structural command is also one, and that
+        // half is already covered inside the group, off `Undone`/`Redone`.)
+        {
+            let group = self.undo_group.clone();
+            let ids = self.session.ids.clone();
+            ctx.subscribe_event(
+                frontend::common::event::Origin::UndoRedo(
+                    frontend::common::event::UndoRedoEvent::StackChanged,
+                ),
+                move |event: &frontend::common::event::Event| {
+                    let Some(stack) = ids.stack_id.get() else {
+                        return;
+                    };
+                    if event.data.as_deref() != Some(stack.to_string().as_str()) {
+                        return;
+                    }
+                    group.seal_prose_merge();
+                },
+            );
+        }
+
+        // How deep the project's history goes, from the writer's setting.
+        //
+        // Applied to the manager rather than to one stack because that is where
+        // the bound lives, and re-applied whenever the setting changes so a
+        // writer who lowers it does not have to reopen the project. Zero means
+        // unlimited — the historical behaviour, kept reachable, since every
+        // entry can pin a snapshot of the rows it changed and someone with a
+        // very large machine may genuinely want no ceiling.
+        {
+            let app_ctx = self.app_ctx.clone();
+            let depth = ctx.settings().signal(crate::UNDO_DEPTH_KEY, 200_i64);
+            let apply = move |v: i64| {
+                let limit = (v > 0).then_some(v as usize);
+                frontend::commands::undo_redo_commands::set_undo_limit(&app_ctx, limit);
+            };
+            apply(depth.get());
+            ctx.effect(&depth, move |v| apply(*v));
+        }
+
+        // Whether a closed tab's typing history comes back with it. Applied
+        // live: turning it off drops what is already held rather than waiting
+        // for the next close, so the switch means what it says.
+        {
+            let docs = editors.open_docs();
+            let remember = ctx
+                .settings()
+                .signal(crate::RESTORE_UNDO_ON_REOPEN_KEY, true);
+            docs.set_remember_history(remember.get());
+            ctx.effect(&remember, move |v| docs.set_remember_history(*v));
+        }
+
         // Hand the editors to the per-work workspace-layout restore. It was created
         // in `main` (inside the `WorkSession` bundle, before any `ctx.settings()`),
         // so it starts editor-less and is wired here, on every build — idempotent

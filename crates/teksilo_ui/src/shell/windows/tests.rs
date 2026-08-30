@@ -449,6 +449,27 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
         ],
     ),
     (
+        "Edit",
+        &[
+            // Undo and Redo carry no key here: their labels are computed from
+            // what the command would actually reach, so the row's text is
+            // "Undo trashing “Chapter 3”" rather than one fixed string. The
+            // uniqueness check skips them for the same reason it skips the
+            // export scopes.
+            "menu-edit-cut",
+            "menu-edit-copy",
+            "menu-edit-paste",
+            "menu-edit-paste-plain",
+            "menu-edit-select-all",
+            "menu-edit-find",
+            "menu-edit-find-next",
+            "menu-edit-find-prev",
+            "menu-edit-replace",
+            "menu-edit-find-in-project",
+            "menu-edit-replace-in-project",
+        ],
+    ),
+    (
         "View",
         &[
             "menu-outline",
@@ -474,8 +495,6 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
             "menu-format-blockquote",
             "menu-format-lists",
             "menu-format-table",
-            "menu-format-undo",
-            "menu-format-redo",
             "menu-scene-break",
             "menu-major-scene-break",
         ],

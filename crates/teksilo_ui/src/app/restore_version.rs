@@ -30,10 +30,9 @@
 use std::rc::Rc;
 
 use teksilo::prelude::*;
-use teksilo::widgets::{MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction};
+use teksilo::widgets::{MessageBox, MessageBoxButtons, StandardButton, Toast};
 
 use frontend::AppContext;
-use frontend::commands::undo_redo_commands;
 
 use crate::backup::{BackupSchedulerViewModel, SafetyBlocker};
 use crate::editors::EditorsViewModel;
@@ -155,6 +154,7 @@ pub fn restore_version(
                     ) {
                         return refuse(c, e);
                     }
+                    let seq = crate::shared::undo_toast::stamp(&app_ctx);
                     // Immediately, not on the autosave debounce.
                     editors.request_save();
                     let app_ctx = app_ctx.clone();
@@ -162,9 +162,13 @@ pub fn restore_version(
                         Toast::success(tr!(versions_restored_toast(date = when.clone())))
                             .scoped_id(RESTORE_TOAST_ID, 0)
                             .auto_dismiss_after(UNDO_GRACE)
-                            .action(ToastAction::primary(tr!(versions_undo()), move |_c| {
-                                let _ = undo_redo_commands::undo(&app_ctx, stack);
-                            })),
+                            .action(crate::shared::undo_toast::undo_action(
+                                app_ctx,
+                                stack,
+                                seq,
+                                tr!(versions_undo()),
+                                |_c| {},
+                            )),
                     );
                 }),
             );

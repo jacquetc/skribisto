@@ -62,7 +62,7 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use teksilo::prelude::*;
-use teksilo::widgets::{MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction};
+use teksilo::widgets::{MessageBox, MessageBoxButtons, StandardButton, Toast};
 
 use frontend::AppContext;
 use frontend::commands::{
@@ -336,6 +336,11 @@ fn commit(
         }
     }
     undo_redo_commands::end_composite(&cx.app_ctx);
+    // Stamped here, between closing the group and saving — not later, beside
+    // the toast. `request_save` flushes the open editors, and a title committed
+    // by that flush is itself an undoable command, so a sequence read after it
+    // would name the rename rather than the row this toast is about.
+    let seq = crate::shared::undo_toast::stamp(&cx.app_ctx);
     // Immediately, not on the autosave debounce: the row and its prose are one
     // large undo entry, and leaving the window with it unsaved means a crash
     // loses the recovery.
@@ -355,9 +360,13 @@ fn commit(
             .target_work(cx.ids.work_id.get())
             .scoped_id(RECREATE_TOAST_ID, cx.ids.work_id.get())
             .auto_dismiss_after(UNDO_GRACE)
-            .action(ToastAction::primary(tr!(versions_undo()), move |_c| {
-                let _ = undo_redo_commands::undo(&app_ctx, stack);
-            })),
+            .action(crate::shared::undo_toast::undo_action(
+                app_ctx,
+                stack,
+                seq,
+                tr!(versions_undo()),
+                |_c| {},
+            )),
     );
 }
 

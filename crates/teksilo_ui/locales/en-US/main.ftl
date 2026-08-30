@@ -1467,6 +1467,70 @@ editor-dict-added-multi = { $count ->
 }
 toast-undo = Undo
 
+## Taking one operation back
+##
+## The Undo on a notification is offered for one specific thing. If anything
+## else has happened since, it says so rather than taking back whatever now
+## happens to be last.
+undo-superseded-title = That step is no longer the last one
+undo-superseded-body = Something else has changed in this project since. Undo would take that back instead, so it hasn’t. Nothing this step did has been reversed — use Edit ▸ Undo to step back through the history yourself.
+undo-failed = Undo failed: { $error }
+
+## The Edit menu
+##
+## The Undo row names what it will take back, because on a stack where prose and
+## structure both appear a bare "Undo" leaves the writer guessing whether the
+## next press retypes a word or resurrects a chapter.
+menu-edit = &Edit
+menu-edit-undo = &Undo
+menu-edit-redo = &Redo
+menu-edit-undo-target = &Undo { $target }
+menu-edit-redo-target = &Redo { $target }
+shortcut-name-edit-undo = Undo
+shortcut-name-edit-redo = Redo
+undo-target-typing = typing
+undo-target-project = the last change to this project
+prose-history-reset-title = Typing history reset
+prose-history-reset-body = { $count ->
+    [one] One open scene was restored from an earlier state, so its typing history no longer applies.
+   *[other] { $count } open scenes were restored from an earlier state, so their typing history no longer applies.
+}
+undo-target-trash = moving to the trash
+undo-target-restore = restoring from the trash
+undo-target-delete-forever = deleting for good
+undo-target-replace-all = replacing across the project
+undo-target-import = the document import
+undo-target-duplicate = duplicating
+undo-target-move = moving
+undo-target-merge = merging two scenes
+undo-target-split = splitting a scene
+undo-target-promote = changing the type
+undo-target-tidy-titles = tidying the chapter titles
+undo-target-import-tags = importing labels
+undo-target-import-templates = importing note templates
+undo-target-create = creating
+undo-target-remove = deleting
+undo-target-rename = renaming
+undo-target-edit = that edit
+menu-edit-find = &Find…
+menu-edit-find-next = Find &next
+menu-edit-find-prev = Find pre&vious
+menu-edit-replace = Find and rep&lace…
+menu-edit-find-in-project = Find in pro&ject…
+menu-edit-replace-in-project = Replace &in project…
+undo-frozen = Undo (“Always forward” is on)
+redo-frozen = Redo (“Always forward” is on)
+menu-edit-cut = Cu&t
+menu-edit-copy = &Copy
+menu-edit-paste = &Paste
+menu-edit-paste-plain = Paste &without formatting
+menu-edit-select-all = Select &all
+shortcut-name-edit-cut = Cut
+shortcut-name-edit-copy = Copy
+shortcut-name-edit-paste = Paste
+shortcut-name-edit-paste-plain = Paste without formatting
+shortcut-name-edit-select-all = Select all
+
 ## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
 titlebar-spellcheck-on = Spell-checking is on. Click to stop checking (F7)
 titlebar-spellcheck-off = Spell-checking is off. Click to check again (F7)
@@ -1494,7 +1558,7 @@ trash-empty-confirm-title = Empty the trash?
 trash-empty-confirm-text = { $count ->
     [one] { $count } trashed entry will be permanently deleted.
    *[other] { $count } trashed entries will be permanently deleted.
-} This can't be undone (a short grace period lets you undo right after).
+} They leave the trash for good. Undo can still bring them back until you do something else.
 trash-emptied-title = Trash emptied
 trash-emptied-body = Everything in the trash was permanently deleted.
 trash-empty-no-project = No project is open, so there is no trash to empty.
@@ -1502,7 +1566,7 @@ trash-delete-forever-confirm-title = Delete forever?
 trash-delete-forever-confirm-text = { $count ->
     [one] { $count } item will be permanently deleted.
    *[other] { $count } items will be permanently deleted.
-} This can't be undone (a short grace period lets you undo right after).
+} They leave the trash for good. Undo can still bring them back until you do something else.
 trash-deleted-title = Deleted forever
 trash-deleted-body = { $count } permanently deleted.
 trash-undo = Undo
@@ -1546,7 +1610,6 @@ settings-styles-direction-rtl = Right to left
 format-dock-title = Format
 format-panel-empty = Place your cursor in a scene, note, or synopsis to see formatting options.
 # Group headers.
-format-group-history = History
 format-group-marks = Text
 format-group-block = Paragraph
 format-group-lists = Lists
@@ -1554,8 +1617,6 @@ format-group-tables = Table
 format-group-breaks = Scene breaks
 # Button tooltips. Icon-only buttons, so each tooltip is that button's only
 # accessible name — not decoration.
-format-undo = Undo
-format-redo = Redo
 format-superscript = Superscript
 format-subscript = Subscript
 format-link = Link…
@@ -1641,8 +1702,6 @@ menu-format-table-col-after = Insert Column Af&ter
 menu-format-table-row-delete = &Delete Row
 menu-format-table-col-delete = Delete &Column
 menu-format-table-remove = &Remove Table
-menu-format-undo = Und&o
-menu-format-redo = &Redo
 
 ## About panel
 

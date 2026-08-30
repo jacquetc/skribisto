@@ -28,6 +28,7 @@
 /// Shared binder plumbing for the item-editing view-models (outline, stream,
 /// corkboard, overview) — crate-internal, not exposed past the extension seam.
 pub(crate) mod binder_ops;
+
 mod caret_highlight;
 pub mod editor_size;
 pub mod external_link;
@@ -48,6 +49,9 @@ pub mod stamps;
 mod synopsis_placement;
 pub mod text;
 mod typewriter;
+/// The **Undo** button a toast offers for one specific operation — shared by
+/// the eight destructive-op toasts so they cannot drift apart again.
+pub(crate) mod undo_toast;
 mod view_state;
 
 pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};

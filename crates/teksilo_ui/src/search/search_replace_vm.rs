@@ -33,7 +33,7 @@ use teksilo::prelude::*;
 use teksilo::widgets::{DockWidgetId, DockingModel};
 
 use frontend::AppContext;
-use frontend::commands::{search_management_commands, undo_redo_commands, work_commands};
+use frontend::commands::{search_management_commands, work_commands};
 use frontend::common::entities::MatchField;
 use frontend::direct_access::SearchResultDto;
 use frontend::search_management::{ReplaceInProjectDto, ReplaceInProjectResultDto, RunSearchDto};
@@ -1097,6 +1097,13 @@ impl SearchReplaceViewModel {
             only_occurrence_rows,
             only_occurrence_starts,
         };
+        // Push every open buffer into the store first, exactly as an entity
+        // undo does. Two things go wrong without it. The replace reads stored
+        // `Content`, so unflushed keystrokes are simply not searched; and
+        // `reload_touched` below re-reads only fields that are *not* stale, so
+        // a tab holding unflushed typing is skipped — its next autosave then
+        // writes the pre-replace prose back over the replacement, silently.
+        self.docs.flush_all(self.ids.stack_id.get());
         let result = search_management_commands::replace_in_project(
             &self.app_ctx,
             self.ids.stack_id.get(),
@@ -1113,13 +1120,21 @@ impl SearchReplaceViewModel {
 
     /// Reload the docs among `item_ids` that are open in a tab, so an open editor
     /// of a just-replaced item shows the new text instead of the stale prose.
+    ///
+    /// Only *diverged* fields are re-read. The unconditional reload this used to
+    /// do clears the document's undo history — `set_djot` does, by
+    /// text-document's contract — which is right after a replace and wrong when
+    /// nothing about the row actually moved. `app::wiring::prose_repair` covers
+    /// the same ground from the row's own change event; this call keeps the
+    /// panel's own ordering (reload, then re-run the search) explicit.
     pub fn reload_touched(&self, item_ids: &[u64]) {
-        self.docs.reload_open(item_ids);
+        self.docs.reload_if_diverged(item_ids);
     }
 
-    /// Undo the last Replace All (the toast's action), on the project's undo stack.
-    pub fn undo_last_replace(&self) -> anyhow::Result<()> {
-        undo_redo_commands::undo(&self.app_ctx, self.ids.stack_id.get())
+    /// The project's undo stack, for a caller offering one of this
+    /// view-model's own commands back by name.
+    pub fn stack(&self) -> Option<u64> {
+        self.ids.stack_id.get()
     }
 
     // ── project lifecycle ───────────────────────────────────────────────────

@@ -61,6 +61,8 @@ pub(in crate::app) struct BackupSniffDeps {
     pub outline: OutlineViewModel,
     pub trash_dock: DockWidgetId,
     pub session: WorkSession,
+    /// This window's undo group — a modal opened from here suspends it.
+    pub undo_group: crate::edit::UndoGroupViewModel,
     /// Fires `count_words` so the plan summary reads a current number.
     pub progress_recorder: crate::shared::ProgressRecorder,
     /// Set when a count has been fired *for* the summary, cleared when it is shown. Keeps
@@ -110,6 +112,7 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
         let trash_dock = deps.trash_dock;
         let outline_dock = outline.dock_id();
         let session_for_nudge = deps.session;
+        let undo_for_nudge = deps.undo_group;
         ctx.subscribe_event_with_ctx(
             Origin::WorkManagement(WorkManagementEvent::LoadWork),
             move |e: &Event, c: &mut EventContext| {
@@ -234,6 +237,7 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                                 backup_settings.mark_nudged(&uid, p);
                             }
                             let session_for_action = session_for_nudge.clone();
+                            let undo_for_action = undo_for_nudge.clone();
                             // Work-scoped: this project's own backup policy.
                             c.show_toast(
                                 Toast::warning(tr!(backup_nudge_text()))
@@ -242,8 +246,12 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                                         tr!(backup_nudge_action()),
                                         move |c| {
                                             let session_for_action = session_for_action.clone();
+                                            let undo_for_action = undo_for_action.clone();
                                             crate::settings::present(c, move || {
-                                                SettingsPanel::open_to_backup(session_for_action)
+                                                SettingsPanel::open_to_backup(
+                                                    session_for_action,
+                                                    &undo_for_action,
+                                                )
                                             });
                                         },
                                     )),
@@ -365,6 +373,8 @@ pub(in crate::app) fn install_pace_availability(
 pub(in crate::app) struct LifecycleDeps {
     pub app_ctx: Rc<AppContext>,
     pub session: WorkSession,
+    /// This window's undo group — a modal opened from here suspends it.
+    pub undo_group: crate::edit::UndoGroupViewModel,
     pub ids: AppIds,
     pub registry: WorkRegistry,
     pub lifecycle: ProjectLifecycleViewModel,
@@ -614,6 +624,7 @@ pub(in crate::app) fn install_lifecycle(
             outline: deps.outline.clone(),
             trash_dock: deps.trash_dock,
             session: deps.session.clone(),
+            undo_group: deps.undo_group.clone(),
             progress_recorder: deps.session.progress_recorder.clone(),
             pace_pending: Signal::new(false),
             pace_show_on_open: ctx.settings().signal(crate::PACE_SUMMARY_ON_OPEN_KEY, true),
@@ -810,6 +821,7 @@ pub(in crate::app) fn install_lifecycle(
         let dictionaries = deps.dictionaries.clone();
         let my_ids = deps.ids.clone();
         let session_for_toast = deps.session.clone();
+        let undo_for_toast = deps.undo_group.clone();
         ctx.subscribe_event_with_ctx(
             Origin::WorkManagement(event),
             move |e: &Event, c: &mut EventContext| {
@@ -818,6 +830,7 @@ pub(in crate::app) fn install_lifecycle(
                         &docs,
                         &dictionaries,
                         &session_for_toast,
+                        &undo_for_toast,
                         c,
                     );
                 }

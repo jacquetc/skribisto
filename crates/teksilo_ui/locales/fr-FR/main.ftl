@@ -1482,6 +1482,70 @@ editor-dict-added-multi = { $count ->
 }
 toast-undo = Annuler
 
+## Revenir sur une opération précise
+##
+## Le bouton Annuler d’une notification porte sur une opération précise. Si
+## autre chose s’est produit depuis, il le dit plutôt que de défaire ce qui se
+## trouve désormais en dernier.
+undo-superseded-title = Cette étape n’est plus la dernière
+undo-superseded-body = Autre chose a changé dans ce projet depuis. Annuler reviendrait sur cette autre modification : rien n’a donc été fait. Cette étape reste en place — utilisez Édition ▸ Annuler pour remonter l’historique vous-même.
+undo-failed = Échec de l’annulation : { $error }
+
+## Le menu Édition
+##
+## La ligne Annuler nomme ce qu’elle va reprendre : sur un historique où la prose
+## et la structure se côtoient, un simple « Annuler » laisse deviner si la
+## prochaine pression va retaper un mot ou ressusciter un chapitre.
+menu-edit = Édi&tion
+menu-edit-undo = A&nnuler
+menu-edit-redo = &Rétablir
+menu-edit-undo-target = A&nnuler { $target }
+menu-edit-redo-target = &Rétablir { $target }
+shortcut-name-edit-undo = Annuler
+shortcut-name-edit-redo = Rétablir
+undo-target-typing = la saisie
+undo-target-project = la dernière modification du projet
+prose-history-reset-title = Historique de saisie réinitialisé
+prose-history-reset-body = { $count ->
+    [one] Une scène ouverte a été restaurée depuis un état antérieur : son historique de saisie ne s’applique plus.
+   *[other] { $count } scènes ouvertes ont été restaurées depuis un état antérieur : leur historique de saisie ne s’applique plus.
+}
+undo-target-trash = la mise à la corbeille
+undo-target-restore = la restauration depuis la corbeille
+undo-target-delete-forever = la suppression définitive
+undo-target-replace-all = le remplacement dans tout le projet
+undo-target-import = l’import de document
+undo-target-duplicate = la duplication
+undo-target-move = le déplacement
+undo-target-merge = la fusion de deux scènes
+undo-target-split = la division d’une scène
+undo-target-promote = le changement de type
+undo-target-tidy-titles = le nettoyage des titres de chapitre
+undo-target-import-tags = l’import d’étiquettes
+undo-target-import-templates = l’import de modèles de note
+undo-target-create = la création
+undo-target-remove = la suppression
+undo-target-rename = le renommage
+undo-target-edit = cette modification
+menu-edit-find = Rec&hercher…
+menu-edit-find-next = Occurrence s&uivante
+menu-edit-find-prev = Occurrence précéden&te
+menu-edit-replace = Rechercher et remp&lacer…
+menu-edit-find-in-project = Rechercher &dans le projet…
+menu-edit-replace-in-project = Remplacer dans le pro&jet…
+undo-frozen = Annuler (« Toujours en avant » est actif)
+redo-frozen = Rétablir (« Toujours en avant » est actif)
+menu-edit-cut = Cou&per
+menu-edit-copy = &Copier
+menu-edit-paste = C&oller
+menu-edit-paste-plain = Coller sans &mise en forme
+menu-edit-select-all = Tout &sélectionner
+shortcut-name-edit-cut = Couper
+shortcut-name-edit-copy = Copier
+shortcut-name-edit-paste = Coller
+shortcut-name-edit-paste-plain = Coller sans mise en forme
+shortcut-name-edit-select-all = Tout sélectionner
+
 ## Orthographe: l'interrupteur principal (barre de titre / menu Affichage / F7 / Paramètres ▸ Orthographe)
 titlebar-spellcheck-on = La vérification orthographique est active. Cliquez pour l’arrêter (F7)
 titlebar-spellcheck-off = La vérification orthographique est désactivée. Cliquez pour la réactiver (F7)
@@ -1512,7 +1576,7 @@ trash-empty-confirm-title = Vider la corbeille ?
 trash-empty-confirm-text = { $count ->
     [one] L’élément de la corbeille sera définitivement supprimé.
    *[other] Les { $count } éléments de la corbeille seront définitivement supprimés.
-} Action irréversible (une courte période de grâce permet d’annuler juste après).
+} Ils quittent définitivement la corbeille. Annuler peut encore les rétablir, tant que vous n’avez rien fait d’autre.
 trash-emptied-title = Corbeille vidée
 trash-emptied-body = Tout le contenu de la corbeille a été définitivement supprimé.
 trash-empty-no-project = Aucun projet n’est ouvert, il n’y a donc aucune corbeille à vider.
@@ -1520,7 +1584,7 @@ trash-delete-forever-confirm-title = Supprimer définitivement ?
 trash-delete-forever-confirm-text = { $count ->
     [one] { $count } élément sera définitivement supprimé.
    *[other] { $count } éléments seront définitivement supprimés.
-} Action irréversible (une courte période de grâce permet d’annuler juste après).
+} Ils quittent définitivement la corbeille. Annuler peut encore les rétablir, tant que vous n’avez rien fait d’autre.
 trash-deleted-title = Supprimé définitivement
 trash-deleted-body = { $count ->
     [one] { $count } élément définitivement supprimé.
@@ -1567,7 +1631,6 @@ settings-styles-direction-rtl = De droite à gauche
 format-dock-title = Mise en forme
 format-panel-empty = Placez le curseur dans une scène, une note ou un synopsis pour voir les options de mise en forme.
 # En-têtes de groupe.
-format-group-history = Historique
 format-group-marks = Texte
 format-group-block = Paragraphe
 format-group-lists = Listes
@@ -1575,8 +1638,6 @@ format-group-tables = Tableau
 format-group-breaks = Sauts de scène
 # Infobulles des boutons. Boutons sans libellé : l'infobulle est leur seul nom
 # accessible, pas une décoration.
-format-undo = Annuler
-format-redo = Rétablir
 format-superscript = Exposant
 format-subscript = Indice
 format-link = Lien…
@@ -1662,8 +1723,6 @@ menu-format-table-col-after = Insérer une colonne a&près
 menu-format-table-row-delete = Supprimer la &ligne
 menu-format-table-col-delete = Supprimer la &colonne
 menu-format-table-remove = Supprimer le &tableau
-menu-format-undo = A&nnuler
-menu-format-redo = &Rétablir
 
 ## Fenêtre « À propos »
 

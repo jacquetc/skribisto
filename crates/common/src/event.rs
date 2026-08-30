@@ -27,6 +27,15 @@ pub enum AllEvent {
 pub enum UndoRedoEvent {
     Undone,
     Redone,
+    /// A stack's history changed other than by undoing or redoing it — a
+    /// command pushed, a command merged into the one below it, a stack cleared.
+    ///
+    /// Without this a UI cannot know that "can undo" just became true: the
+    /// manager announced only the *consumption* of history, never its creation,
+    /// so an Undo menu row had nothing to react to and had to be polled.
+    /// Carries the stack id in `Event::data`, like every other variant here, so
+    /// a process holding several stacks can tell whose history moved.
+    StackChanged,
     BeginComposite,
     EndComposite,
     CancelComposite,

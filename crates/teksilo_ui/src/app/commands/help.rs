@@ -115,10 +115,12 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // which promises that page by name.
     {
         let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
         ctx.register_action_global(Action::new("app.settings.keymap").on_invoke(move |_i, c| {
             let session = session.clone();
+            let undo = undo.clone();
             crate::settings::present(c, move || {
-                crate::settings::SettingsPanel::open_to_keymap(session)
+                crate::settings::SettingsPanel::open_to_keymap(session, &undo)
             });
         }));
     }

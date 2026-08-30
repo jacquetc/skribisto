@@ -102,6 +102,8 @@ pub(crate) struct ProjectMenuParts {
     pub templates_submenu_id: MenuItemId,
     pub go: GoAvailability,
     pub format: FormatViewModel,
+    /// Which history Ctrl+Z means in this window, and what it would take back.
+    pub undo_group: crate::edit::UndoGroupViewModel,
     pub save_as: SaveAsViewModel,
     pub backup_mode: Signal<bool>,
     pub unsaved: Signal<bool>,
@@ -163,7 +165,8 @@ pub(crate) fn sync_insert_template_submenu(
 }
 
 /// Where the Image menu slots in among the top-level menus, counting from zero:
-/// **App**, Work, View, Document, Format, **Image**, Go, Tools, Window, Help.
+/// **App**, Work, **Edit**, View, Document, Format, **Image**, Go, Tools, Window,
+/// Help.
 ///
 /// The two platform-standard menus (App leading, Window before Help) are
 /// top-level nodes like any other and therefore count here, even though neither
@@ -172,7 +175,7 @@ pub(crate) fn sync_insert_template_submenu(
 /// the position is right there in the hamburger either way. Pinned by
 /// `the_image_menu_lands_between_format_and_go`, which reads the built model
 /// rather than trusting this number.
-const IMAGE_MENU_INDEX: usize = 5;
+const IMAGE_MENU_INDEX: usize = 6;
 
 /// Show or hide the whole **Image** menu, following the selection.
 ///
@@ -232,6 +235,7 @@ fn find_submenu_children(nodes: &mut [MenuNode], id: MenuItemId) -> Option<&mut 
 }
 
 mod document;
+mod edit;
 mod format;
 mod view;
 mod work;
@@ -346,6 +350,7 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     MenuModel::new()
         .standard_menu(app_standard_menu_base())
         .menu(tr!(menu_work()), |m| work::menu(m, &parts))
+        .menu(tr!(menu_edit()), |m| edit::menu(m, &parts))
         .menu(tr!(menu_view()), |m| view::menu(m, &parts))
         // Format — marks the author places in the prose itself, as
         // opposed to Tools, which processes the manuscript. A scene
@@ -648,8 +653,17 @@ mod tests {
         let ids = crate::app_ids::AppIds::new();
         let single_work = SingleWork::new(app_ctx.clone());
         let backup_mode = Signal::new(false);
+        let format = FormatViewModel::detached();
         ProjectMenuParts {
             app_ctx: app_ctx.clone(),
+            undo_group: crate::edit::UndoGroupViewModel::new(
+                format.clone(),
+                crate::edit::EntityDomain::new(
+                    app_ctx.clone(),
+                    ids.stack_id.clone(),
+                    crate::save::SaveStateViewModel::new(app_ctx.clone(), ids.clone()),
+                ),
+            ),
             export: ExportViewModel::new(app_ctx.clone(), ids.clone()),
             single_work: single_work.clone(),
             single_work_info: SingleWorkInfo::new(app_ctx.clone()),
@@ -662,7 +676,7 @@ mod tests {
             binder_has_selection: Signal::new(false),
             templates_submenu_id: MenuItemId::next(),
             go: crate::go::GoAvailability::new(),
-            format: FormatViewModel::detached(),
+            format: format.clone(),
             save_as: SaveAsViewModel::new(
                 app_ctx.clone(),
                 ids.clone(),
@@ -813,6 +827,35 @@ mod tests {
                     .all(|n| matches!(n, MenuNode::Submenu { .. })),
                 "a bare item or separator at top level renders in neither bar"
             );
+        });
+    }
+
+    /// Edit sits where every desktop application puts it — right after the
+    /// file menu — and everything after it shifts by one.
+    ///
+    /// Worth pinning for the same reason the Image test is: `IMAGE_MENU_INDEX`
+    /// is a raw index into the top-level vector and the two platform-standard
+    /// menus count toward it, so inserting a menu anywhere silently moves the
+    /// Image menu one place off on macOS and out of sight on Linux.
+    #[test]
+    fn the_edit_menu_lands_between_work_and_view() {
+        let model = build_project_menu(empty_parts());
+        model.modify(|nodes| {
+            let title_at = |nodes: &[MenuNode], i: usize| match &nodes[i] {
+                MenuNode::Submenu { title, .. } => title.resolve_now(),
+                _ => panic!("top-level node {i} is not an ordinary submenu"),
+            };
+            let edit = nodes
+                .iter()
+                .position(|n| match n {
+                    MenuNode::Submenu { title, .. } => {
+                        title.resolve_now() == tr!(menu_edit()).resolve_now()
+                    }
+                    _ => false,
+                })
+                .expect("the Edit menu is in the model");
+            assert_eq!(title_at(nodes, edit - 1), tr!(menu_work()).resolve_now());
+            assert_eq!(title_at(nodes, edit + 1), tr!(menu_view()).resolve_now());
         });
     }
 

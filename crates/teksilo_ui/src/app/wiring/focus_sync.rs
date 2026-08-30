@@ -84,6 +84,11 @@ pub(in crate::app) fn install(
     // restore, the progress recorder) reports through the same four events and filters
     // by its own op id. Grouped in `app::wiring::long_ops`; the editors' own save
     // routing stays below, since it also drives the deferred close/switch resumption.
+    // Keep an open tab honest when an entity command — or an undo of one —
+    // rewrites its prose underneath. One subscriber, so every such command past
+    // and future is covered; see `app::wiring::prose_repair`.
+    super::prose_repair::install(ctx, deps.editors.open_docs());
+
     super::long_ops::install(
         ctx,
         &deps.save_as_vm,

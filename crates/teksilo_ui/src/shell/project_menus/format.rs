@@ -319,19 +319,10 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                     ))
             }
         })
-        .separator()
-        .item(command(
-            &f,
-            tr!(menu_format_undo()),
-            f.can_undo(),
-            FormatViewModel::undo,
-        ))
-        .item(command(
-            &f,
-            tr!(menu_format_redo()),
-            f.can_redo(),
-            FormatViewModel::redo,
-        ))
+        // Undo and Redo used to sit here, acting on the focused editor's own
+        // history. They now live in **Edit**, where they act on whichever
+        // history the caret is in. Two Undo rows in two menus, meaning
+        // different things, is exactly the confusion that work removed.
         .separator();
 
     m.item(

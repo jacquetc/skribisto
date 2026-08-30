@@ -17,7 +17,7 @@ list with it. Pressing Heading level blanked the whole dock.
 
 Asserts, against the live app, with a scene open and the caret in its prose:
 
-  1. the Format dock shows its groups — Bold / Undo / Heading level and friends;
+  1. the Format dock shows its groups — Bold / Italic / Heading level and friends;
   2. clicking **Heading level** opens the list — all seven levels are reachable;
   3. and the dock is *still standing behind it*: every one of those buttons;
   4. picking a level applies it and leaves the dock live, i.e. focus came back.
@@ -307,7 +307,7 @@ if placed is None:
 print(f"scene open, caret in the prose at {placed[0]:.0f},{placed[1]:.0f}")
 
 failures = []
-BUTTONS = ["Undo", "Bold", "Italic", "Heading level", "Align left", "Bulleted list"]
+BUTTONS = ["Bold", "Italic", "Underline", "Heading level", "Align left", "Bulleted list"]
 LEVELS = ["Normal text", "Heading 1", "Heading 2", "Heading 3",
           "Heading 4", "Heading 5", "Heading 6"]
 

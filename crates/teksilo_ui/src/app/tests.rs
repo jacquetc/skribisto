@@ -502,3 +502,63 @@ fn content_events_stay_off_the_dirty_marking_whitelist() {
         );
     }
 }
+
+// ── The undo history announces itself ───────────────────────────────────
+
+/// A freshly-built `AppContext` must deliver `UndoRedoEvent::StackChanged`.
+///
+/// This is the wiring the whole "seal the prose merge when a structural
+/// command lands" path stands on, and it was silently dead. The hub used to be
+/// injected into the undo manager lazily, by whichever of `undo`/`redo`/
+/// `begin_composite`/`end_composite`/`cancel_composite` ran first — and none of
+/// those is how a command gets *pushed*. So on a context where the writer had
+/// only ever edited, every `StackChanged` went into a `None` hub and was
+/// dropped, and a subscriber could not learn that history had grown until after
+/// the first undo. Nothing failed loudly; the seal simply never happened.
+#[test]
+fn a_fresh_app_context_announces_that_its_history_grew() {
+    use frontend::common::event::{Origin, UndoRedoEvent};
+    use frontend::common::undo_redo::UndoRedoCommand;
+
+    struct Noop;
+    impl UndoRedoCommand for Noop {
+        fn undo(&mut self) -> anyhow::Result<()> {
+            Ok(())
+        }
+        fn redo(&mut self) -> anyhow::Result<()> {
+            Ok(())
+        }
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+    }
+
+    let app_ctx = AppContext::new();
+    let rx = app_ctx.event_hub.subscribe_receiver();
+
+    let stack = {
+        let mut mgr = frontend::common::long_operation::lock_or_recover(&app_ctx.undo_redo_manager);
+        let stack = mgr.create_new_stack();
+        mgr.add_command_to_stack(Box::new(Noop), Some(stack))
+            .unwrap();
+        stack
+    };
+
+    let mut saw_growth = false;
+    while let Ok(ev) = rx.try_recv() {
+        if ev.origin == Origin::UndoRedo(UndoRedoEvent::StackChanged) {
+            assert_eq!(
+                ev.data.as_deref(),
+                Some(stack.to_string().as_str()),
+                "the event must name whose history moved — several Works are \
+                 open at once, each with its own stack"
+            );
+            saw_growth = true;
+        }
+    }
+    assert!(
+        saw_growth,
+        "pushing a command grew the history, and nothing said so — the hub is \
+         not reaching the undo manager"
+    );
+}

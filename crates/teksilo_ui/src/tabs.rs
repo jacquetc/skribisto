@@ -120,6 +120,17 @@ pub struct ProseField {
     /// `doc.content_revision()` as of the last successful [`flush`](Self::flush)
     /// (or the load that built this field) — see [`Self::is_stale`].
     flushed_revision: Cell<u64>,
+    /// The exact Djot this field last wrote to — or read from — its `Content`
+    /// row.
+    ///
+    /// The discriminator for [`reload_if_diverged`](Self::reload_if_diverged):
+    /// it separates *"the row changed because I flushed it"* from *"the row
+    /// changed because something else rewrote it"*. Without it, reloading on
+    /// the row's own change event would call `set_djot`, and every
+    /// whole-document setter in text-document clears that document's undo
+    /// history — so the writer's typing history would be deleted on every
+    /// autosave.
+    last_written: RefCell<String>,
 }
 
 /// The dynamic-tab payload: a thin per-tab **view** over a shared [`OpenDoc`]
@@ -414,10 +425,12 @@ pub(crate) fn prose_field(
     let _ = doc.set_djot_sync(&content.data().get());
     doc.set_modified(false);
     let flushed_revision = Cell::new(doc.content_revision());
+    let loaded = content.data().get();
     ProseField {
         doc,
         content,
         flushed_revision,
+        last_written: RefCell::new(loaded),
     }
 }
 
@@ -1533,14 +1546,34 @@ impl ProseField {
         self.content.clone()
     }
 
-    pub(crate) fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
-        if !self.doc.is_modified() {
+    /// Persist the buffer. **Records nothing in the project's undo history** —
+    /// see [`SingleContent::save_untracked`]. The buffer's own history *is*
+    /// this text's undo, at word granularity; a whole-Djot copy of it on the
+    /// project stack every few seconds was duplication that made both wrong.
+    ///
+    /// Takes no `stack` for that reason: a parameter accepted and ignored is
+    /// how prose finds its way back onto the history.
+    pub(crate) fn flush(&self) -> anyhow::Result<()> {
+        // Gated on [`is_stale`](Self::is_stale), **not** `is_modified()`.
+        //
+        // `is_modified()` is a flag this function itself clears, with no memory
+        // of which edit it was cleared against, so anything that changes the
+        // buffer without setting it strands the store one revision behind and
+        // every later flush returns early here. An editor undo used to do
+        // exactly that: type, autosave, Ctrl+Z, and the reverted text never
+        // reached disk while the screen showed it. That has been fixed at the
+        // root (`TextDocument::undo` now marks the document modified), and this
+        // is the belt beside those braces — the revision comparison cannot be
+        // fooled by a writer that forgets the flag.
+        if !self.is_stale() {
             return Ok(());
         }
-        self.content.set_data(self.doc.to_djot()?);
-        self.content.save(stack)?;
+        let djot = self.doc.to_djot()?;
+        self.content.set_data(djot.clone());
+        self.content.save_untracked()?;
         self.doc.set_modified(false);
         self.flushed_revision.set(self.doc.content_revision());
+        *self.last_written.borrow_mut() = djot;
         Ok(())
     }
 
@@ -1553,6 +1586,53 @@ impl ProseField {
         let _ = self.doc.set_djot_sync(&data);
         self.doc.set_modified(false);
         self.flushed_revision.set(self.doc.content_revision());
+        *self.last_written.borrow_mut() = data;
+    }
+
+    /// Does the stored row still hold exactly what this field last wrote?
+    ///
+    /// The gate for restoring a closed document's undo history. VS Code stores a
+    /// sha1 per retained stack and restores only on a match; this is the same
+    /// rule with the text itself, which is cheaper here because the field
+    /// already remembers what it wrote. Re-reads the row, because the whole
+    /// question is whether *something else* has touched it in the meantime.
+    pub(crate) fn agrees_with_store(&self) -> bool {
+        self.content.reload();
+        self.content.data().get() == *self.last_written.borrow()
+    }
+
+    /// Is there anything in this field's own history to step back through?
+    pub(crate) fn has_history(&self) -> bool {
+        self.doc.can_undo()
+    }
+
+    /// Re-read from the store **only if** the store now disagrees with what this
+    /// field last wrote. Returns whether it reloaded.
+    ///
+    /// The condition is the whole point. This field's own flush also changes the
+    /// row, and reloading on that would call `set_djot_sync`, which clears the
+    /// document's undo stack by text-document's own contract — deleting the
+    /// writer's typing history every few seconds. Comparing against
+    /// [`last_written`](Self::last_written) is exact where a flag would guess.
+    ///
+    /// A field with unflushed local edits is left alone: the caller flushes
+    /// before it touches the store, so a field that is *still* stale afterwards
+    /// is one this window is actively editing, and overwriting it would lose
+    /// keystrokes to fix a divergence that is about to be flushed away anyway.
+    pub(crate) fn reload_if_diverged(&self) -> bool {
+        if self.is_stale() {
+            return false;
+        }
+        self.content.reload();
+        let stored = self.content.data().get();
+        if stored == *self.last_written.borrow() {
+            return false;
+        }
+        let _ = self.doc.set_djot_sync(&stored);
+        self.doc.set_modified(false);
+        self.flushed_revision.set(self.doc.content_revision());
+        *self.last_written.borrow_mut() = stored;
+        true
     }
 
     /// Exact "has this field changed since it was last flushed (or reloaded)"
@@ -1573,9 +1653,8 @@ impl ProseField {
     /// bumps on undo too (see `text_document::TextDocument::content_revision`'s
     /// docs), so undoing back to the exact saved text still reports stale here.
     ///
-    /// Called by `OpenDoc::is_stale` (currently also `#[allow(dead_code)]` —
-    /// see its doc), plus this module's own test proving the property below.
-    #[allow(dead_code)]
+    /// This is what [`flush`](Self::flush) gates on, and it is also called by
+    /// `OpenDoc::is_stale`.
     pub(crate) fn is_stale(&self) -> bool {
         self.doc.content_revision() != self.flushed_revision.get()
     }

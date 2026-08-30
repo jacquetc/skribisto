@@ -138,6 +138,10 @@ pub const LOCALE_KEY: &str = "ui.locale";
 /// per-installation, so it stays right whoever holds the file. Empty is the
 /// ordinary unset state — see [`crate::comments::signature`] for the fallback.
 pub const USER_NAME_KEY: &str = "user.name";
+/// How many steps of project history Edit ▸ Undo keeps. See its `SettingSpec`.
+pub const UNDO_DEPTH_KEY: &str = "edit.undo_depth";
+/// Whether a closed tab's typing history comes back with it. See its `SettingSpec`.
+pub const RESTORE_UNDO_ON_REOPEN_KEY: &str = "editor.restore_undo_on_reopen";
 /// The initials shown beside a comment in Word (`w:initials`), overriding what
 /// would otherwise be derived from [`USER_NAME_KEY`].
 ///
@@ -1172,6 +1176,32 @@ pub static SETTINGS: &[SettingSpec] = &[
         default: || val(0_i64),
         check: check::<i64>,
         doc: "Remembered writing-session time limit.",
+    },
+    // ── Undo ──────────────────────────────────────────────────────────────────
+    SettingSpec {
+        key: crate::UNDO_DEPTH_KEY,
+        ty: "integer (steps; 0 = unlimited)",
+        default: || val(200_i64),
+        check: check::<i64>,
+        doc: "How many steps of *project* history Edit ▸ Undo keeps — trashing, \
+              renaming, moving, Replace All. Each step can hold a snapshot of the \
+              rows it changed, so an unbounded history has no ceiling over a \
+              day-long session; the oldest steps are dropped past this number. \
+              A scene's own typing history is separate and is not affected. For \
+              scale: LibreOffice's default is 100 and its maximum 1000, and \
+              Plottr caps a whole project at 40.",
+    },
+    SettingSpec {
+        key: crate::RESTORE_UNDO_ON_REOPEN_KEY,
+        ty: "bool",
+        default: || val(true),
+        check: check::<bool>,
+        doc: "Closing a scene's tab keeps its typing history, so reopening it can \
+              still undo what you typed there. The history is dropped anyway if \
+              anything changed that text while the tab was closed — an undo, a \
+              Replace All, another window — because it would then describe words \
+              that are no longer in the file. Off, and closing a tab forgets its \
+              typing history immediately.",
     },
     // ── Corkboard ─────────────────────────────────────────────────────────────
     SettingSpec {

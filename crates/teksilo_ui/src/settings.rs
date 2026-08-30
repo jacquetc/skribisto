@@ -196,6 +196,20 @@ pub struct SettingsPanel {
     /// (`tree_spec(has_work: false, ..)`) and its pages render their existing
     /// no-project placeholder.
     session: Option<WorkSession>,
+    /// Held for as long as this panel is presented, which takes the window's
+    /// Undo out of play.
+    ///
+    /// Ctrl+Z over a Settings checkbox must not reach the manuscript. A text
+    /// *field* in here answers for itself — the framework's text-surface
+    /// registry sees it like any other — but the rest of the panel is not a
+    /// text surface at all, so without this the group would fall back to
+    /// whatever the writer was last doing in the project behind the modal.
+    ///
+    /// `None` for the Launcher's window, which has no project behind it and so
+    /// no undo group to suspend.
+    ///
+    /// Dropped with the panel, which is when the modal closes.
+    _undo_suspend: Option<crate::edit::UndoSuspend>,
 }
 
 /// Where the window lands when nobody asked for a particular page:
@@ -223,8 +237,8 @@ pub(crate) const DEFAULT_PANE: Pane = Pane::Appearance;
 
 impl SettingsPanel {
     /// Opens on [`DEFAULT_PANE`] — Appearance & Behavior ▸ Appearance.
-    pub fn new(session: WorkSession) -> Self {
-        Self::opening_at(DEFAULT_PANE, Some(session))
+    pub fn new(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
+        Self::opening_at(DEFAULT_PANE, Some(session), Some(undo))
     }
 
     /// The Launcher's settings window — every app-level page, no Work section.
@@ -238,41 +252,44 @@ impl SettingsPanel {
     /// consistency: Appearance is the one page that is fully live with no
     /// project open.
     pub fn without_project() -> Self {
-        Self::opening_at(DEFAULT_PANE, None)
+        Self::opening_at(DEFAULT_PANE, None, None)
     }
 
     /// Open straight to Spelling ▸ Dictionaries — the target of the "install the
     /// missing dictionaries" toast (`offer_missing_dictionaries`). The tree seeds
     /// its selection to that page and expands the owning section on open.
-    pub fn open_to_dictionaries(session: WorkSession) -> Self {
-        Self::opening_at(Pane::Dictionaries, Some(session))
+    pub fn open_to_dictionaries(
+        session: WorkSession,
+        undo: &crate::edit::UndoGroupViewModel,
+    ) -> Self {
+        Self::opening_at(Pane::Dictionaries, Some(session), Some(undo))
     }
 
     /// Open straight to Editor ▸ Writing games — the target of the games dock's
     /// own "Writing game settings…" button, which promises that page by name.
-    pub fn open_to_games(session: WorkSession) -> Self {
-        Self::opening_at(Pane::Games, Some(session))
+    pub fn open_to_games(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
+        Self::opening_at(Pane::Games, Some(session), Some(undo))
     }
 
     /// Open straight to Backup & Sync ▸ Backup — the target of the
     /// "no backups configured" nudge toast.
-    pub fn open_to_backup(session: WorkSession) -> Self {
-        Self::opening_at(Pane::Backup, Some(session))
+    pub fn open_to_backup(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
+        Self::opening_at(Pane::Backup, Some(session), Some(undo))
     }
 
     /// Open straight to Settings ▸ User — the target of the "your comments are
     /// unsigned" toast (`crate::app::warn_unsigned_comments`), which promises
     /// that page by name.
-    pub fn open_to_user(session: WorkSession) -> Self {
-        Self::opening_at(Pane::User, Some(session))
+    pub fn open_to_user(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
+        Self::opening_at(Pane::User, Some(session), Some(undo))
     }
 
     /// Open straight to Keymap — the target of the Help ▸ Keyboard shortcuts sheet's
     /// own "Change shortcuts…" button, which promises that page by name. The sheet
     /// itself is read-only, so this is where a reader who wanted to *change* a chord
     /// rather than look one up ends up.
-    pub fn open_to_keymap(session: WorkSession) -> Self {
-        Self::opening_at(Pane::Keymap, Some(session))
+    pub fn open_to_keymap(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
+        Self::opening_at(Pane::Keymap, Some(session), Some(undo))
     }
 
     /// Open straight to Editor ▸ Typography ▸ Distraction-free themes — the target
@@ -283,16 +300,21 @@ impl SettingsPanel {
     /// fired the generic `app.settings` all the same, which lands on Editor ▸
     /// Scene typography — the full modal, on the wrong page, from inside the one
     /// surface built to avoid it.
-    pub fn open_to_df_themes(session: WorkSession) -> Self {
-        Self::opening_at(Pane::DistractionFreeThemes, Some(session))
+    pub fn open_to_df_themes(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
+        Self::opening_at(Pane::DistractionFreeThemes, Some(session), Some(undo))
     }
 
-    fn opening_at(pane: Pane, session: Option<WorkSession>) -> Self {
+    fn opening_at(
+        pane: Pane,
+        session: Option<WorkSession>,
+        undo: Option<&crate::edit::UndoGroupViewModel>,
+    ) -> Self {
         Self {
             selected_pane: Signal::new(pane),
             search_field: None,
             pane_w: Signal::new(pane_width(CARD_W)),
             session,
+            _undo_suspend: undo.map(|g| g.suspend()),
         }
     }
 
