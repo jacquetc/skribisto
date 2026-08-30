@@ -20,11 +20,15 @@ fn sample(uid: &str) -> PerProjectLayout {
         primary: PaneLayout {
             tabs: vec![u(3), u(7), u(1)],
             selected: Some(u(7)),
+            // A genuine pinned *prefix*: the head of `tabs`, in tab order, which
+            // is the invariant `PaneLayout::pinned` documents.
+            pinned: vec![u(3)],
             view_states: Vec::new(),
         },
         secondary: PaneLayout {
             tabs: vec![u(9)],
             selected: Some(u(9)),
+            pinned: Vec::new(),
             view_states: Vec::new(),
         },
         focus_secondary: false,
@@ -200,12 +204,17 @@ fn the_v5_migration_stamps_the_v4_roster_and_keeps_the_saved_docks() {
         }],
     };
     f.projects[0].known_docks.clear();
+    // The same surgery for the v8 key: `pinned` did not exist at v4 either, and a
+    // fixture carrying a key from the future proves nothing about a real v4 file.
+    f.projects[0].primary.pinned.clear();
+    f.projects[0].secondary.pinned.clear();
     let text = toml::to_string(&f)
         .unwrap()
-        .replace("known_docks = []\n", "");
+        .replace("known_docks = []\n", "")
+        .replace("pinned = []\n", "");
     assert!(
-        !text.contains("known_docks"),
-        "the fixture must be a real v4 file — no v5 key"
+        !text.contains("known_docks") && !text.contains("pinned"),
+        "the fixture must be a real v4 file — no v5 or v8 key"
     );
     std::fs::write(&path, text).unwrap();
 
@@ -575,6 +584,210 @@ fn segment_and_item_view_states_round_trip_through_disk() {
     assert_eq!(got.item_view_states[0].segment, "overview");
     assert_eq!(got.item_view_states[1].uid, u(1));
     assert_eq!(got.item_view_states[1].segment, "");
+}
+
+/// **v7 → v8 is additive and keeps every tab, pin and caret.** Same shape as v4,
+/// v6 and v7: [`PaneLayout::pinned`] is a brand-new field with a serde default, so
+/// a v7 document loads whole and merely gains an empty pin list on each pane. The
+/// step exists so an *older* build meeting a v8 file is refused rather than
+/// silently rewriting it and unpinning every tab.
+#[test]
+fn the_v8_migration_is_additive_and_keeps_every_tab_pin_and_caret() {
+    let d = tempdir().unwrap();
+    let path = d.path().join("workspace.toml");
+    // A genuine v7 document, serialized by the real types (a hand-written partial
+    // one would be at the mercy of `lenient_docks`, which would make this test
+    // pass for the wrong reason) and then stripped of the one key v7 had never
+    // heard of. Everything a v7 build could write is present: tabs, selection,
+    // caret + scroll + board + segment, the dock blob and its roster, and the
+    // per-item roster.
+    let mut rec = sample("uid-A");
+    rec.focus_secondary = true;
+    rec.primary.view_states = vec![TabViewState {
+        uid: u(3),
+        caret: 412,
+        scroll: 96.5,
+        corkboard: CorkboardTabState {
+            trail: vec![u(3)],
+            query: "ferry".into(),
+        },
+        segment: "corkboard".into(),
+    }];
+    rec.item_view_states = vec![TabViewState {
+        uid: u(7),
+        caret: 20,
+        scroll: 15.0,
+        corkboard: CorkboardTabState::default(),
+        segment: "overview".into(),
+    }];
+    rec.primary.pinned.clear();
+    rec.secondary.pinned.clear();
+    let f = WorkspaceLayoutFile {
+        version: 7,
+        projects: vec![rec],
+    };
+    let text = toml::to_string(&f).unwrap().replace("pinned = []\n", "");
+    assert!(
+        !text.contains("pinned"),
+        "the fixture must be a real v7 file — no v8 key"
+    );
+    std::fs::write(&path, text).unwrap();
+
+    let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+    let got = s.get("uid-A").expect("the row survived the migration");
+    assert_eq!(
+        got.primary.tabs,
+        vec![u(3), u(7), u(1)],
+        "a v7 file keeps its tabs, in order"
+    );
+    assert_eq!(got.primary.selected, Some(u(7)));
+    assert_eq!(got.secondary.tabs, vec![u(9)], "both panes");
+    assert!(got.focus_secondary, "and the focused pane");
+    assert!(got.docks.is_some(), "and the saved dock arrangement");
+    assert_eq!(
+        got.known_docks,
+        vec![1, 2, 3],
+        "and the roster its author knew — the v4 → v5 stamp must not re-fire"
+    );
+    let vs = got.primary.view_states.first().expect("the caret survived");
+    assert_eq!(vs.caret, 412);
+    assert_eq!(vs.scroll, 96.5);
+    assert_eq!(vs.segment, "corkboard", "and the page it was showing");
+    assert_eq!(
+        vs.corkboard.query, "ferry",
+        "and the board's own navigation"
+    );
+    assert_eq!(
+        got.item_view_states.len(),
+        1,
+        "and the per-item roster v7 introduced"
+    );
+    assert!(
+        got.primary.pinned.is_empty() && got.secondary.pinned.is_empty(),
+        "nothing pinned yet, but the field must exist rather than fail the load"
+    );
+}
+
+/// A pane's pins survive a real write and re-read, per pane and in tab order —
+/// the half of the round trip the view-model's in-memory capture test cannot
+/// cover.
+#[test]
+fn pinned_tabs_round_trip_through_disk() {
+    let d = tempdir().unwrap();
+    let mut rec = sample("uid-A");
+    rec.primary.pinned = vec![u(3), u(7)];
+    rec.secondary.pinned = vec![u(9)];
+    {
+        let s = svc(d.path());
+        s.set(rec).unwrap();
+        s.flush_now().unwrap();
+    }
+    let s = svc(d.path());
+    let got = s.get("uid-A").expect("row");
+    assert_eq!(
+        got.primary.pinned,
+        vec![u(3), u(7)],
+        "in tab order, and still a prefix of `tabs`"
+    );
+    assert_eq!(
+        got.secondary.pinned,
+        vec![u(9)],
+        "the side pane keeps its own pins — a pin belongs to a tab in a pane, \
+         not to the item"
+    );
+    assert_eq!(
+        got.primary.tabs,
+        vec![u(3), u(7), u(1)],
+        "and the tab list itself is untouched by the sidecar"
+    );
+}
+
+/// **The `PartialEq` fast path must be able to see a pin.**
+/// [`WorkspaceLayoutService::set`] returns early when the stored row already
+/// equals the new one — which is what keeps an autosave tick from rewriting an
+/// unchanged desk. Pinning is the one gesture that changes *nothing else*: same
+/// tabs (the pinned prefix is already the head here), same selection, same
+/// carets, same docks. So a `pinned` field left out of that comparison — a
+/// hand-written `PartialEq`, a `#[serde(skip)]`, a field added to a struct that
+/// had stopped deriving it — would make every pin toggle a silently dropped
+/// write, and the pin would be gone at the next launch with nothing to show why.
+#[test]
+fn a_pin_only_change_is_not_skipped_as_a_no_op_write() {
+    let d = tempdir().unwrap();
+    let s = svc(d.path());
+    let mut rec = sample("uid-A");
+    rec.primary.pinned.clear();
+    s.set(rec.clone()).unwrap();
+    assert!(s.get("uid-A").unwrap().primary.pinned.is_empty());
+
+    // The writer pins the first tab, and does nothing else at all.
+    rec.primary.pinned = vec![u(3)];
+    s.set(rec.clone()).unwrap();
+    assert_eq!(
+        s.get("uid-A").unwrap().primary.pinned,
+        vec![u(3)],
+        "a pin is the whole change, so the write must not be taken for a no-op"
+    );
+    assert_eq!(
+        s.file.borrow().projects.len(),
+        1,
+        "…and it is an upsert, not a second row for the same project"
+    );
+
+    // Unpinning is equally a change, and equally must not be swallowed.
+    rec.primary.pinned.clear();
+    s.set(rec.clone()).unwrap();
+    assert!(
+        s.get("uid-A").unwrap().primary.pinned.is_empty(),
+        "and unpinning writes too — otherwise a pin could never be removed"
+    );
+
+    // The fast path itself still works: re-setting the identical row is skipped.
+    s.set(rec.clone()).unwrap();
+    s.set(rec).unwrap();
+    assert_eq!(s.file.borrow().projects.len(), 1);
+}
+
+/// A file with **no `version` key** is treated as **v1**, not as current:
+/// `Migrator::run` peeks the raw key and falls back to 1
+/// (`peek_version(&raw).unwrap_or(1)`), then walks every step from there — so the
+/// v1 → v2 tab drop fires even on a file shaped like a modern one.
+///
+/// Pinned here because [`default_version`]'s doc claimed the exact opposite for
+/// five schema versions ("assumed already current, so no migration runs for it")
+/// and nothing tested it: `the_v1_migration_drops_ordinal_tabs_and_keeps_the_rest`
+/// only ever exercised a fixture that stamps `version = 1` by hand.
+#[test]
+fn a_versionless_file_is_treated_as_v1_not_as_current() {
+    let d = tempdir().unwrap();
+    let path = d.path().join("workspace.toml");
+    // Modern in shape (uid tabs, not v1 ordinals) but missing the stamp — a
+    // hand-edited config, or one truncated mid-write.
+    std::fs::write(
+        &path,
+        r#"[[projects]]
+work_uid = "uid-A"
+last_path = "/x/a.skrib"
+focus_secondary = true
+[projects.primary]
+tabs = ["00000000-0000-0000-0000-000000000003"]
+selected = "00000000-0000-0000-0000-000000000003"
+"#,
+    )
+    .unwrap();
+
+    let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+    let got = s.get("uid-A").expect("the row itself survives");
+    assert!(
+        got.primary.tabs.is_empty() && got.primary.selected.is_none(),
+        "read as v1, so the v1 → v2 step dropped the tab list — the cost of a \
+         stamp that is not there to read"
+    );
+    assert_eq!(
+        got.last_path, "/x/a.skrib",
+        "everything the steps do not touch is kept"
+    );
+    assert!(got.focus_secondary);
 }
 
 /// `touch` upserts by uid (a re-touched item does not appear twice) and always

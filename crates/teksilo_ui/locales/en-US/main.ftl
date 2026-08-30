@@ -75,6 +75,36 @@ ctx-reveal-in-outline = Reveal in Out&line
 ctx-move-up = Move &Up
 ctx-move-down = Move Dow&n
 
+## Editor tab context menu
+# Fresh `ctx-tab-*` keys, never a reuse of the `ctx-*` rows above: those double as
+# menu-BAR rows (shell/project_menus/document.rs), so retuning one of their
+# mnemonics to fit this menu would break the bar's own per-locale uniqueness.
+# Three rows are either/or — the split, the move and the pin each build exactly
+# one of their pair — so a letter may repeat across a pair but never within one
+# built menu, which is a debug_assert! panic in MenuList::build, not a warning.
+ctx-tab-close = &Close
+ctx-tab-close-others = Close &others
+ctx-tab-close-all = Close a&ll
+# The split rows read directionally, from the pane the tab is already in, so the
+# writer never has to work out which half "the side" means. They duplicate: the
+# item ends up open in both panes over one shared document.
+ctx-tab-open-to-side = Open to the &Side
+ctx-tab-open-in-main = Open &in the main pane
+# The move rows read the same way, but the tab leaves the pane it came from.
+ctx-tab-move-to-side = &Move to the side
+ctx-tab-move-to-main = &Move to the main pane
+ctx-tab-move-to-new-window = Move into a &new window
+# Why that last row is unavailable. A second window is opened onto the project's
+# file, so a project that has never been saved has nothing for it to open — a
+# tooltip on the disabled row, not a menu label, hence no mnemonic.
+ctx-tab-move-window-unsaved = Save this project first — a second window opens onto a file on disk
+ctx-tab-pin = &Pin this tab
+ctx-tab-unpin = &Unpin this tab
+# Tab tooltip, not a menu row: no mnemonic. It names the two commands a pin
+# actually protects against, because the tab itself shows only a glyph and a
+# missing close button — neither of which says what the pin is for.
+tab-pinned-tooltip = Pinned — "Close others" and "Close all" leave it open
+
 ## Create recommendations: logical type labels (SplitButton title + Add ▸ rows)
 create-book = Book
 create-part = Part
@@ -2368,6 +2398,8 @@ shortcut-name-binder-duplicate = Duplicate
 shortcut-name-comments-add = Add Comment
 shortcut-name-comments-add-paragraph = Comment on Paragraph
 shortcut-name-spellcheck-toggle = Check Spelling
+shortcut-name-editor-tab-close = Close Tab
+shortcut-name-editor-tab-pin = Pin or Unpin Tab
 shortcut-name-editor-save = Save
 shortcut-name-work-export = Export…
 shortcut-name-work-new = New Work

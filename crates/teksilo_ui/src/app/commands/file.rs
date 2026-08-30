@@ -147,7 +147,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             else {
                 return;
             };
-            if let Some((config, _state)) = factory.attached_window_config(work_id, &path) {
+            // `None`: Work ▸ New Window opens the project, not one document —
+            // the tab-strip menu's "Move into a new window" is what names an item.
+            if let Some((config, _state)) = factory.attached_window_config(work_id, &path, None) {
                 c.open_window(config);
             }
         }));

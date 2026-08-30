@@ -479,7 +479,7 @@ impl PendingStarters {
 pub(in crate::app) fn install_lifecycle(
     ctx: &mut BuildContext,
     deps: LifecycleDeps,
-) -> Rc<dyn Fn(u64, usize)> {
+) -> Rc<dyn Fn(u64, usize, Option<u64>)> {
     let window_id = deps.window_id;
 
     // ── LoadWork seed (must be the first LoadWork subscriber) ──────────────
@@ -532,7 +532,7 @@ pub(in crate::app) fn install_lifecycle(
     }
 
     // ── Attach seed (Work ▸ New Window — no LoadWork will fire) ─────────────
-    let attach_seed: Rc<dyn Fn(u64, usize)> = {
+    let attach_seed: Rc<dyn Fn(u64, usize, Option<u64>)> = {
         let outline = deps.outline.clone();
         let trash = deps.trash.clone();
         let registry = deps.registry.clone();
@@ -545,39 +545,56 @@ pub(in crate::app) fn install_lifecycle(
         let search = deps.search.clone();
         let tree_expansion = deps.tree_expansion.clone();
         let lifecycle = deps.lifecycle.clone();
-        Rc::new(move |work_id: u64, ordinal: usize| {
-            outline.set_binder_filter(None);
-            outline.clear_search();
-            outline.reload();
-            trash.reload();
-            let remembered = tree_expansion.outline_expanded();
-            if !remembered.is_empty() {
-                outline.model().set_expanded_keys(&remembered);
-            }
-            search.restore_for_project();
-            if let Some(window_id) = window_id {
-                let stack_teardown =
-                    crate::app::build_stack_teardown(app_ctx.clone(), ids.stack_id.get());
-                let window_teardown = crate::app::build_window_teardown(
-                    editors.clone(),
-                    backup_scheduler.clone(),
-                    toast_registry.clone(),
-                    window_id,
-                    ids.stack_id.get(),
-                    crate::app::build_project_close_out(lifecycle.clone()),
-                );
-                bind_window_to_work(
-                    &registry,
-                    window_id,
-                    work_id,
-                    Some(ordinal),
-                    stack_teardown,
-                    window_teardown,
-                    &window_ordinal,
-                    &toast_registry,
-                );
-            }
-        })
+        Rc::new(
+            move |work_id: u64, ordinal: usize, open_item: Option<u64>| {
+                outline.set_binder_filter(None);
+                outline.clear_search();
+                outline.reload();
+                trash.reload();
+                let remembered = tree_expansion.outline_expanded();
+                if !remembered.is_empty() {
+                    outline.model().set_expanded_keys(&remembered);
+                }
+                search.restore_for_project();
+                if let Some(window_id) = window_id {
+                    let stack_teardown =
+                        crate::app::build_stack_teardown(app_ctx.clone(), ids.stack_id.get());
+                    let window_teardown = crate::app::build_window_teardown(
+                        editors.clone(),
+                        backup_scheduler.clone(),
+                        toast_registry.clone(),
+                        window_id,
+                        ids.stack_id.get(),
+                        crate::app::build_project_close_out(lifecycle.clone()),
+                    );
+                    bind_window_to_work(
+                        &registry,
+                        window_id,
+                        work_id,
+                        Some(ordinal),
+                        stack_teardown,
+                        window_teardown,
+                        &window_ordinal,
+                        &toast_registry,
+                    );
+                }
+                // The visible payload, last: the tab-strip menu's "Move into a new
+                // window" names the one item this window is being opened *for*.
+                //
+                // Here, and not in the caller, because this is the only point at
+                // which this window's own `EditorsViewModel` exists with its
+                // subscriptions live — and after the teardown wiring above, so a
+                // window that opens a tab is already able to give it back.
+                //
+                // An attached window restores no desk of its own (it is
+                // `WindowRole::Attached`, so nothing calls `layout.restore`), which
+                // is exactly what makes this work: the tab arrives alone instead of
+                // being joined by every other tab the project remembers.
+                if let Some(item_id) = open_item {
+                    editors.open_by_id(crate::editors::Side::Primary, item_id);
+                }
+            },
+        )
     };
 
     // ── Second LoadWork: backup sniff (after seed) ─────────────────────────

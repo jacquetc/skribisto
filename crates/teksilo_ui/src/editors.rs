@@ -11,6 +11,19 @@
 //! resolve their target document through it. [`Side`] is which of the two
 //! panes (`Primary` / `Secondary`).
 
-mod editors_vm;
+//! The tab strip's own context menu lives beside them, one layer up:
+//! [`TabMenuViewModel`] owns which rows a tab is offered (as plain data, so the
+//! policy is unit-testable), and [`tab_menu`] renders them. `EditorsViewModel`
+//! never names either — it receives a [`TabMenuInstaller`] instead, so the
+//! dependency runs one way.
 
-pub use editors_vm::{EditorsViewModel, Side};
+mod editors_vm;
+pub mod tab_menu;
+mod tab_menu_vm;
+
+pub use editors_vm::{EditorsViewModel, Side, TabMenuInstaller};
+pub use tab_menu_vm::{TabMenuItem, TabMenuRow, TabMenuViewModel};
+
+/// Fixtures shared by this feature's tests — see [`editors_vm::test_support`].
+#[cfg(test)]
+pub(crate) use editors_vm::test_support;

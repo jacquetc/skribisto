@@ -1,118 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
+use super::test_support::{
+    editors, editors_with, push_tab, seed_doc, test_typography, with_event_context,
+};
 use super::*;
-use crate::settings::EditorTypography;
 use crate::tabs;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
-
-fn test_typography() -> EditorTypographySet {
-    let bundle = |family: &str| EditorTypography {
-        font_family: Signal::new(family.to_string()),
-        size: Signal::new(1.0),
-        line_height: Signal::new(1.5),
-        first_line_indent: Signal::new(0.0),
-        para_spacing_before: Signal::new(0.0),
-        para_spacing_after: Signal::new(0.0),
-        size_range: crate::settings::TypographySizeRange::default(),
-    };
-    EditorTypographySet {
-        scene: bundle("Literata"),
-        synopsis: bundle("Literata"),
-        notes: bundle("Inter"),
-        corkboard: bundle("Literata"),
-        distraction_free: bundle("Literata"),
-    }
-}
-
-fn editors() -> EditorsViewModel {
-    let app_ctx = Rc::new(AppContext::new());
-    let save_state = SaveStateViewModel::new(app_ctx.clone(), AppIds::new());
-    editors_with(app_ctx, save_state)
-}
-
-/// Build an `EditorsViewModel` over a caller-supplied `app_ctx` + save state,
-/// so a test can construct **two** instances sharing the same
-/// `SaveStateViewModel` — modelling two windows onto one project.
-fn editors_with(app_ctx: Rc<AppContext>, save_state: SaveStateViewModel) -> EditorsViewModel {
-    let ids = AppIds::new();
-    // Built before the call: the arguments it needs are moved into earlier parameters.
-    let mention_index = crate::mentions::MentionIndex::new(app_ctx.clone(), ids.clone());
-    let docs = OpenDocsStore::new(app_ctx.clone());
-    let tree_expansion = crate::settings::TreeExpansionViewModel::new(
-        app_ctx.clone(),
-        ids.clone(),
-        crate::models::TreeExpansionService::in_memory_default(),
-    );
-    let tags = crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone());
-    let statuses = crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone());
-    EditorsViewModel::new(
-        app_ctx,
-        Signal::new(700.0),
-        Signal::new(true),
-        Signal::new(crate::shared::SynopsisPlacement::default()),
-        Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
-        test_typography(),
-        crate::shared::TypewriterSettings::off(),
-        crate::shared::CaretHighlightSettings::off(),
-        crate::settings::EditorViewMemory::detached(false),
-        crate::settings::CorkboardDefaults::detached(),
-        ids,
-        docs,
-        Signal::new(false),
-        save_state,
-        Signal::new(false),
-        tree_expansion,
-        Signal::new(false),
-        Signal::new(620.0),
-        crate::go::GoAvailability::new(),
-        crate::format::FormatViewModel::detached(),
-        crate::writing_session::WritingGamesViewModel::detached(),
-        Signal::new(GoalUnit::default()),
-        tags,
-        statuses,
-        mention_index,
-    )
-}
-
-/// Push a tab directly into `side` (bypassing the backend / store) so tab
-/// management can be tested without a loaded project.
-fn push_tab(vm: &EditorsViewModel, side: Side, item_id: u64) -> TabId {
-    let id = TabId::fresh();
-    let tab = tabs::tab_for(
-        &vm.app_ctx,
-        item_id,
-        &BinderItemRole::Item,
-        &BinderItemSubRole::Scene,
-        &[],
-        vm.column_width.clone(),
-        vm.show_synopsis.clone(),
-        vm.typography.clone(),
-        vm.view_memory.clone(),
-        &vm.ids,
-    );
-    vm.pane(side).tabs.push(TabHandle::dynamic(
-        id,
-        "editor",
-        TabInfo::new().closable(true),
-        tab,
-    ));
-    id
-}
-
-/// Seed the store with a Scene document for `item_id`, bypassing the backend.
-fn seed_doc(vm: &EditorsViewModel, item_id: u64) {
-    use crate::models::OpenDoc;
-    vm.docs.insert_for_test(Rc::new(OpenDoc::build(
-        &vm.app_ctx,
-        item_id,
-        &BinderItemRole::Item,
-        &BinderItemSubRole::Scene,
-        &[],
-        Signal::new(0),
-        std::path::Path::new(""),
-    )));
-}
 
 /// The pane tab and the surface tab differ on exactly one axis, and it is the
 /// one that decides which typography bundle and which column width the
@@ -876,20 +770,6 @@ fn open_or_focus_dedupes_within_the_primary_pane() {
     assert_eq!(vm.selected(Side::Primary).get(), Some(id));
 }
 
-/// Drive `f` with a real `&mut EventContext`, the same way a click in the outline
-/// or an Overview row reaches `activate`/`activate_to_side` in production, never a
-/// bypassing direct call. Neither method subscribes to backend events, so a bare
-/// `WidgetTree` (no event source registered) is enough to host the trigger.
-fn with_event_context(f: impl Fn(&mut EventContext) + 'static) {
-    use teksilo::core::widget_tree::WidgetTree;
-    use teksilo::widgets::Button;
-
-    let mut tree = WidgetTree::new();
-    let trigger = tree.add(Button::new(lit!("go")).on_activate_fn(f));
-    tree.layout(SizeProposal::exact(200.0, 60.0));
-    crate::test_support::click(&mut tree, trigger);
-}
-
 /// **The writer asked to go here.** `activate` on a tab that is already open but
 /// whose pane was never mounted (no live `EditorHandle` published through
 /// `ViewStatePorts`) must park a focus request rather than silently doing
@@ -1388,4 +1268,633 @@ fn for_window_bridges_the_seam_to_this_windows_editors() {
 
     vm.set_focused(Side::Primary);
     assert_eq!(cx.active_pane().get(), ActivePane::Primary);
+}
+
+// ── The tab-strip context menu's verbs ──────────────────────────────────────
+//
+// Top level, not inside `mod captions` / `mod item_memory` (which are
+// `#[cfg(not(feature = "mocks"))]`) nor `mod tab_segment` (which is the
+// opposite): every test below has to run in BOTH halves, because the bug each
+// one guards is in plain tab bookkeeping that neither feature set changes.
+
+/// "Close others" spares exactly two things: the tab that was right-clicked, and
+/// every pinned tab. The pinned half is the whole point of a pin — a writer pins
+/// a reference note precisely so a bulk close cannot take it.
+#[test]
+fn close_others_leaves_the_clicked_tab_and_every_pinned_one() {
+    let vm = editors();
+    for id in [1, 2, 3, 4] {
+        seed_doc(&vm, id);
+    }
+    let a = push_tab(&vm, Side::Primary, 1);
+    let b = push_tab(&vm, Side::Primary, 2);
+    let _c = push_tab(&vm, Side::Primary, 3);
+    let _d = push_tab(&vm, Side::Primary, 4);
+    vm.pin(Side::Primary, b);
+
+    vm.close_others_in(Side::Primary, a);
+
+    let left = vm.tab_item_ids(Side::Primary);
+    assert!(left.contains(&1), "the right-clicked tab was closed");
+    assert!(
+        left.contains(&2),
+        "a pinned tab was closed by 'Close others'"
+    );
+    assert_eq!(left.len(), 2, "unpinned others survived: {left:?}");
+}
+
+/// "Close all" is per pane and spares pins.
+///
+/// The regression this guards is reaching for `close_all()`, which empties
+/// **both** panes and calls `docs.clear()` **without flushing** — dropping a
+/// sibling window's live documents along with any keystroke not yet written back.
+#[test]
+fn close_all_in_a_pane_spares_the_pinned_tabs_and_never_touches_the_other_pane() {
+    let vm = editors();
+    for id in [1, 2, 3] {
+        seed_doc(&vm, id);
+    }
+    let a = push_tab(&vm, Side::Primary, 1);
+    let _b = push_tab(&vm, Side::Primary, 2);
+    vm.set_split(true);
+    let _c = push_tab(&vm, Side::Secondary, 3);
+    vm.pin(Side::Primary, a);
+
+    vm.close_all_in(Side::Primary);
+
+    assert_eq!(
+        vm.tab_item_ids(Side::Primary),
+        vec![1],
+        "'Close all' did not spare the pinned tab"
+    );
+    assert_eq!(
+        vm.tab_item_ids(Side::Secondary),
+        vec![3],
+        "'Close all' in one pane reached into the other"
+    );
+}
+
+/// Closing the side pane's last unpinned tab collapses the split — but only when
+/// nothing survives. A pinned side tab keeps the pane alive.
+#[test]
+fn close_all_in_the_side_pane_collapses_the_split_only_when_nothing_survives() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    seed_doc(&vm, 2);
+    vm.set_split(true);
+    let pinned = push_tab(&vm, Side::Secondary, 1);
+    let _other = push_tab(&vm, Side::Secondary, 2);
+    vm.pin(Side::Secondary, pinned);
+
+    vm.close_all_in(Side::Secondary);
+    assert!(
+        vm.split_active().get(),
+        "a surviving pinned side tab must keep the split open"
+    );
+
+    vm.unpin(Side::Secondary, pinned);
+    vm.close_all_in(Side::Secondary);
+    assert!(
+        !vm.split_active().get(),
+        "an emptied side pane must collapse the split"
+    );
+}
+
+/// A bulk close writes the pane's selection **once**.
+///
+/// Not a micro-optimisation: every `selected.set` synchronously re-fires `App`'s
+/// per-pane effect, which runs `flush_all` over the whole store. An
+/// N-iteration `close_in` loop over a twelve-tab pane is eleven full-store
+/// flushes, and an emptying side pane would trip `set_split(false)` — hence
+/// `drain_pane` — part-way through the very list being walked.
+#[test]
+fn closing_many_tabs_fires_one_selection_change() {
+    use std::cell::Cell;
+
+    let vm = editors();
+    for id in [1, 2, 3, 4] {
+        seed_doc(&vm, id);
+    }
+    let keep = push_tab(&vm, Side::Primary, 1);
+    for id in [2, 3, 4] {
+        push_tab(&vm, Side::Primary, id);
+    }
+    vm.select_item(Side::Primary, 4);
+
+    let fires = Rc::new(Cell::new(0usize));
+    let counter = fires.clone();
+    let _sub = vm
+        .selected(Side::Primary)
+        .observe(move |_| counter.set(counter.get() + 1));
+
+    vm.close_others_in(Side::Primary, keep);
+
+    assert_eq!(
+        fires.get(),
+        1,
+        "a bulk close must move the selection once, not once per closed tab"
+    );
+    assert_eq!(vm.selected_item(Side::Primary), Some(1));
+}
+
+/// The survivors keep their `TabId`s, so the `TabWidget`'s per-id pane
+/// memoization keeps every surviving editor mounted — caret, scroll and all —
+/// across the single `replace_all` a bulk close performs.
+#[test]
+fn a_bulk_close_keeps_every_survivors_tab_id() {
+    let vm = editors();
+    for id in [1, 2, 3] {
+        seed_doc(&vm, id);
+    }
+    let keep = push_tab(&vm, Side::Primary, 1);
+    let pinned = push_tab(&vm, Side::Primary, 2);
+    let _doomed = push_tab(&vm, Side::Primary, 3);
+    vm.pin(Side::Primary, pinned);
+
+    vm.close_others_in(Side::Primary, keep);
+
+    let ids: Vec<TabId> = (0..vm.pane(Side::Primary).tabs.len())
+        .filter_map(|i| vm.pane(Side::Primary).tabs.with_item(i, |h| h.id))
+        .collect();
+    assert!(ids.contains(&keep) && ids.contains(&pinned), "{ids:?}");
+}
+
+/// Pinning moves the tab to the head of its pane and takes its close button away.
+///
+/// `closable` is read back through `TabInfo`'s `Debug` output because its fields
+/// are `pub(crate)` to teksilo — that is the only route from this crate.
+#[test]
+fn pinning_moves_a_tab_to_the_head_of_its_pane_and_takes_its_close_button_away() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    seed_doc(&vm, 2);
+    let _first = push_tab(&vm, Side::Primary, 1);
+    let second = push_tab(&vm, Side::Primary, 2);
+
+    vm.pin(Side::Primary, second);
+
+    assert_eq!(
+        vm.tab_item_ids(Side::Primary),
+        vec![2, 1],
+        "a pinned tab must sort to the head of its pane"
+    );
+    assert_eq!(vm.pinned_item_ids(Side::Primary), vec![2]);
+    assert!(vm.is_pinned(Side::Primary, second));
+    assert!(
+        tab_info_debug(&vm, Side::Primary, second).contains("closable: false"),
+        "a pinned tab must lose its close button, its middle-click close and its Delete key"
+    );
+
+    vm.unpin(Side::Primary, second);
+    assert!(
+        tab_info_debug(&vm, Side::Primary, second).contains("closable: true"),
+        "unpinning must give the cross back"
+    );
+}
+
+/// `TabInfo`'s `Debug` line for one tab — it prints `closable`, `pinned` and
+/// `has_context_menu`, which is the only way this crate can observe any of them.
+fn tab_info_debug(vm: &EditorsViewModel, side: Side, tab_id: TabId) -> String {
+    let pane = vm.pane(side);
+    (0..pane.tabs.len())
+        .find_map(|i| {
+            pane.tabs
+                .with_item(i, |h| (h.id == tab_id).then(|| format!("{:?}", h.info)))
+                .flatten()
+        })
+        .unwrap_or_default()
+}
+
+/// Unpinning parks the tab immediately after whatever pinned tabs remain — not
+/// at index 0, and not at the end.
+#[test]
+fn unpinning_parks_a_tab_just_after_the_remaining_pinned_block() {
+    let vm = editors();
+    for id in [1, 2, 3, 4] {
+        seed_doc(&vm, id);
+    }
+    let a = push_tab(&vm, Side::Primary, 1);
+    let b = push_tab(&vm, Side::Primary, 2);
+    let c = push_tab(&vm, Side::Primary, 3);
+    let _d = push_tab(&vm, Side::Primary, 4);
+    vm.pin(Side::Primary, a);
+    vm.pin(Side::Primary, b);
+    vm.pin(Side::Primary, c);
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![1, 2, 3, 4]);
+
+    vm.unpin(Side::Primary, b);
+
+    assert_eq!(
+        vm.tab_item_ids(Side::Primary),
+        vec![1, 3, 2, 4],
+        "an unpinned tab must land just past the remaining pinned run"
+    );
+}
+
+/// A second pin lands behind the first rather than displacing it.
+#[test]
+fn a_second_pin_lands_behind_the_first_and_does_not_shuffle_it() {
+    let vm = editors();
+    for id in [1, 2, 3] {
+        seed_doc(&vm, id);
+    }
+    let _a = push_tab(&vm, Side::Primary, 1);
+    let b = push_tab(&vm, Side::Primary, 2);
+    let c = push_tab(&vm, Side::Primary, 3);
+
+    vm.pin(Side::Primary, c);
+    vm.pin(Side::Primary, b);
+
+    assert_eq!(vm.pinned_item_ids(Side::Primary), vec![3, 2]);
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![3, 2, 1]);
+}
+
+/// A drag may not carry a pinned tab out of the pinned run, nor an unpinned one
+/// into it — the invariant that keeps model order equal to visual order, which
+/// the workspace capture and teksilo's arrow-key tab navigation both read.
+#[test]
+fn a_drag_cannot_cross_the_pinned_boundary_in_either_direction() {
+    let vm = editors();
+    for id in [1, 2, 3] {
+        seed_doc(&vm, id);
+    }
+    let a = push_tab(&vm, Side::Primary, 1);
+    let _b = push_tab(&vm, Side::Primary, 2);
+    let c = push_tab(&vm, Side::Primary, 3);
+    vm.pin(Side::Primary, a);
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![1, 2, 3]);
+
+    // Drag the pinned tab to the far end: clamped to the end of the pinned run.
+    vm.reorder_in(Side::Primary, a, 2);
+    assert_eq!(
+        vm.tab_item_ids(Side::Primary),
+        vec![1, 2, 3],
+        "a pinned tab escaped the pinned run"
+    );
+
+    // Drag an unpinned tab to the front: clamped to just past the run.
+    vm.reorder_in(Side::Primary, c, 0);
+    assert_eq!(
+        vm.tab_item_ids(Side::Primary),
+        vec![1, 3, 2],
+        "an unpinned tab was let into the pinned run"
+    );
+}
+
+/// Installing `on_reorder` replaces teksilo's default `model.move_item`, so an
+/// ordinary reorder has to keep working — the silent failure a clamp-only
+/// handler would ship.
+#[test]
+fn an_ordinary_reorder_still_moves_the_tab() {
+    let vm = editors();
+    for id in [1, 2, 3] {
+        seed_doc(&vm, id);
+    }
+    let a = push_tab(&vm, Side::Primary, 1);
+    let _b = push_tab(&vm, Side::Primary, 2);
+    let _c = push_tab(&vm, Side::Primary, 3);
+
+    vm.reorder_in(Side::Primary, a, 2);
+
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![2, 3, 1]);
+}
+
+/// A cross-pane move must not touch the document's refcount: the handle it moves
+/// already holds the one reference. Calling `docs.open` anywhere in the move
+/// would leak a reference nothing gives back, keeping the document resident —
+/// and its edits unflushed — for the rest of the session.
+#[test]
+fn moving_a_tab_across_panes_leaks_no_document_reference() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    let tab = push_tab(&vm, Side::Primary, 1);
+
+    vm.move_tab_to(Side::Primary, Side::Secondary, tab);
+    assert_eq!(vm.tab_item_ids(Side::Primary), Vec::<u64>::new());
+    assert_eq!(vm.tab_item_ids(Side::Secondary), vec![1]);
+
+    let moved = vm.tab_item_ids(Side::Secondary);
+    assert_eq!(moved, vec![1]);
+    let side_tab = vm.selected(Side::Secondary).get().expect("a selected tab");
+    vm.close_in(Side::Secondary, side_tab);
+
+    assert!(
+        vm.docs.peek(1).is_none(),
+        "the document is still resident after its only tab closed — a reference leaked"
+    );
+}
+
+/// Moving into the side pane reveals the split first. `receive_tab` does not do
+/// this, so a tab moved into a hidden pane would simply vanish from view.
+#[test]
+fn moving_a_tab_to_the_side_reveals_the_split() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    let tab = push_tab(&vm, Side::Primary, 1);
+    assert!(!vm.split_active().get());
+
+    vm.move_tab_to(Side::Primary, Side::Secondary, tab);
+
+    assert!(
+        vm.split_active().get(),
+        "the moved tab landed in a hidden pane"
+    );
+}
+
+/// Moving the side pane's last tab back to the main pane collapses the split.
+#[test]
+fn moving_the_last_side_tab_back_to_the_main_pane_collapses_the_split() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    vm.set_split(true);
+    let tab = push_tab(&vm, Side::Secondary, 1);
+
+    vm.move_tab_to(Side::Secondary, Side::Primary, tab);
+
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![1]);
+    assert!(!vm.split_active().get());
+}
+
+/// A pin rides along with its tab across a pane move — and, because the carry
+/// lives in `receive_tab`/`transfer_out`, a *dragged* tab behaves identically.
+#[test]
+fn a_pinned_tab_stays_pinned_when_it_moves_to_the_other_pane() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    seed_doc(&vm, 2);
+    let _other = push_tab(&vm, Side::Primary, 2);
+    let tab = push_tab(&vm, Side::Primary, 1);
+    vm.pin(Side::Primary, tab);
+
+    vm.move_tab_to(Side::Primary, Side::Secondary, tab);
+
+    assert_eq!(vm.pinned_item_ids(Side::Secondary), vec![1]);
+    assert_eq!(
+        vm.pinned_item_ids(Side::Primary),
+        Vec::<u64>::new(),
+        "the source pane kept a stale pin entry"
+    );
+    assert!(
+        tab_info_debug(&vm, Side::Secondary, tab).contains("closable: false"),
+        "the moved tab lost its pinned presentation"
+    );
+}
+
+/// When the target pane already shows the item, `receive_tab` dedups — and the
+/// surviving tab's own pin state is its own business, not the arrival's.
+#[test]
+fn a_pinned_tab_that_dedups_into_an_existing_one_leaves_that_tabs_pin_alone() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    vm.set_split(true);
+    let existing = push_tab(&vm, Side::Secondary, 1);
+    let moving = push_tab(&vm, Side::Primary, 1);
+    vm.pin(Side::Primary, moving);
+
+    vm.move_tab_to(Side::Primary, Side::Secondary, moving);
+
+    assert_eq!(vm.tab_item_ids(Side::Secondary), vec![1]);
+    assert_eq!(
+        vm.pinned_item_ids(Side::Secondary),
+        Vec::<u64>::new(),
+        "the arrival overwrote the surviving tab's pin state"
+    );
+    assert_eq!(vm.selected(Side::Secondary).get(), Some(existing));
+    assert_eq!(vm.tab_item_ids(Side::Primary), Vec::<u64>::new());
+}
+
+/// `side_of` follows a tab across a move.
+///
+/// The direct guard on the sharpest trap in this feature: the menu factory is
+/// baked into the `TabHandle`, and `receive_tab` pushes that very handle into
+/// the other pane — so a `Side` captured when the tab was built would make
+/// "Close others" empty the pane the tab came from.
+#[test]
+fn side_of_follows_a_tab_across_a_move() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    let tab = push_tab(&vm, Side::Primary, 1);
+    assert_eq!(vm.side_of(tab), Some(Side::Primary));
+
+    vm.move_tab_to(Side::Primary, Side::Secondary, tab);
+
+    assert_eq!(
+        vm.side_of(tab),
+        Some(Side::Secondary),
+        "the menu would still act on the pane the tab left"
+    );
+}
+
+/// `pinned_item_ids` reads the tab model, never the membership set — so an entry
+/// for an item that is not open here is inert and can never reach the workspace
+/// capture.
+#[test]
+fn pinned_item_ids_reads_tab_order_not_the_membership_set() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    let tab = push_tab(&vm, Side::Primary, 1);
+    vm.pin(Side::Primary, tab);
+    // An id that was never open in this pane at all.
+    vm.pane(Side::Primary).pinned.borrow_mut().insert(999);
+
+    assert_eq!(
+        vm.pinned_item_ids(Side::Primary),
+        vec![1],
+        "a stale membership entry reached the capture"
+    );
+}
+
+/// `seed_pinned` is the workspace restore's door: it ignores ids that are not
+/// open, and it re-establishes the pinned prefix in one pass.
+#[test]
+fn seed_pinned_ignores_items_that_are_not_open_and_sorts_the_rest_to_the_front() {
+    let vm = editors();
+    for id in [1, 2, 3] {
+        seed_doc(&vm, id);
+    }
+    push_tab(&vm, Side::Primary, 1);
+    push_tab(&vm, Side::Primary, 2);
+    push_tab(&vm, Side::Primary, 3);
+
+    vm.seed_pinned(Side::Primary, &[3, 404]);
+
+    assert_eq!(vm.pinned_item_ids(Side::Primary), vec![3]);
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![3, 1, 2]);
+}
+
+/// **A restored pin looks pinned.** Membership alone is not the pin: a tab
+/// reopened by the workspace restore was built as an ordinary one, and
+/// `enforce_pin_order` only moves handles. Before `seed_pinned` repainted them, a
+/// remembered pin came back with its close cross, its middle-click close and its
+/// Delete key — while the menu and both bulk closes still spared it — so one
+/// click on a cross that should not have been there destroyed the pin for good.
+#[test]
+fn a_restored_pin_loses_its_close_button_like_a_freshly_pinned_one() {
+    let vm = editors();
+    for id in [1, 2, 3] {
+        seed_doc(&vm, id);
+    }
+    push_tab(&vm, Side::Primary, 1);
+    push_tab(&vm, Side::Primary, 2);
+    let three = push_tab(&vm, Side::Primary, 3);
+
+    vm.seed_pinned(Side::Primary, &[3]);
+
+    assert!(vm.is_pinned(Side::Primary, three));
+    assert!(
+        tab_info_debug(&vm, Side::Primary, three).contains("closable: false"),
+        "a restored pin kept its close button, so the strip and the menu disagree"
+    );
+}
+
+/// A restore seeds several pins at once, and they must come back in the order
+/// they were captured in — the reason `seed_pinned` repaints with `redraw_pin`
+/// (which does not move) and settles the order once, rather than calling
+/// `repin_tab` per id (which moves each to a boundary computed from the whole
+/// set, swapping them).
+#[test]
+fn restoring_several_pins_keeps_their_captured_order() {
+    let vm = editors();
+    for id in [1, 2, 3, 4] {
+        seed_doc(&vm, id);
+    }
+    for id in [1, 2, 3, 4] {
+        push_tab(&vm, Side::Primary, id);
+    }
+
+    vm.seed_pinned(Side::Primary, &[1, 3]);
+
+    assert_eq!(vm.pinned_item_ids(Side::Primary), vec![1, 3]);
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![1, 3, 2, 4]);
+}
+
+/// **Unpinning is the exact inverse of pinning.** `TabInfo` offers no way to
+/// clear a tooltip, so an unpin that patched a clone of the pinned info carried
+/// "Pinned — …" onto a tab that now has a cross and is closable by every route.
+/// Rebuilding the whole info through `tab_info` is what makes the two symmetric.
+///
+/// Needs a live store: with no manuscript behind it `redraw_pin` cannot re-derive
+/// a caption to rebuild with and falls back to patching, which is precisely the
+/// path that cannot clear a tooltip. So this does not run under `--features
+/// mocks`, and the fallback deliberately sets no tooltip at all rather than one
+/// it could never remove.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn unpinning_clears_the_pinned_tooltip() {
+    use crate::editors::test_support::{seed_item, seed_work};
+
+    let vm = editors();
+    let binder = seed_work(&vm);
+    let a = seed_item(&vm, binder, "The Storm", BinderItemSubRole::Scene);
+    let b = seed_item(&vm, binder, "The Calm", BinderItemSubRole::Scene);
+    vm.open_in(Side::Primary, a, "The Storm");
+    vm.open_in(Side::Primary, b, "The Calm");
+    let tab = vm
+        .tab_id_of_item(Side::Primary, b)
+        .expect("the second tab is open");
+
+    vm.pin(Side::Primary, tab);
+    let pinned = tab_info_debug(&vm, Side::Primary, tab);
+    assert!(
+        pinned.contains("tooltip: Some"),
+        "a pinned tab must say on hover why it has no cross: {pinned}"
+    );
+    assert!(pinned.contains("closable: false"), "{pinned}");
+
+    vm.unpin(Side::Primary, tab);
+
+    let unpinned = tab_info_debug(&vm, Side::Primary, tab);
+    assert!(
+        unpinned.contains("tooltip: None"),
+        "an unpinned tab still claims to be pinned on hover: {unpinned}"
+    );
+    assert!(unpinned.contains("closable: true"), "{unpinned}");
+}
+
+/// Repainting a pin keeps the tab's caption — the rebuild goes through the same
+/// `caption_of` the tab was opened with, so a chapter does not lose its name (or
+/// gain a second copy of its generated number) on the way in and out of a pin.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn pinning_and_unpinning_leave_the_caption_alone() {
+    use crate::editors::test_support::{seed_item, seed_work};
+
+    let vm = editors();
+    let binder = seed_work(&vm);
+    let id = seed_item(&vm, binder, "The Storm", BinderItemSubRole::Scene);
+    vm.open_in(Side::Primary, id, "The Storm");
+    let tab = vm.tab_id_of_item(Side::Primary, id).expect("open");
+
+    vm.pin(Side::Primary, tab);
+    assert!(tab_info_debug(&vm, Side::Primary, tab).contains("The Storm"));
+    vm.unpin(Side::Primary, tab);
+    assert!(tab_info_debug(&vm, Side::Primary, tab).contains("The Storm"));
+}
+
+/// **A moved tab takes the focus with it.** `transfer_out` rewrites the *source*
+/// pane's selection, which synchronously re-fires the per-pane focus effect — so
+/// without re-asserting afterwards the writer ended up looking at the moved
+/// document while the binder's open-item marker, Format and the Go menu all still
+/// answered about the pane it had left.
+#[test]
+fn moving_a_tab_leaves_the_focus_on_the_destination_pane() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    seed_doc(&vm, 2);
+    let _stay = push_tab(&vm, Side::Primary, 1);
+    let moving = push_tab(&vm, Side::Primary, 2);
+    vm.select_item(Side::Primary, 2);
+
+    vm.move_tab_to(Side::Primary, Side::Secondary, moving);
+
+    assert_eq!(vm.focused_side(), Side::Secondary);
+    assert_eq!(vm.selected_item(Side::Secondary), Some(2));
+    assert_eq!(
+        vm.active_item().get(),
+        Some(2),
+        "the moved document is on screen but nothing considers it active"
+    );
+}
+
+/// Moving the *last* tab out of a pane still focuses the destination, and does
+/// not leave the focused side pointing at a pane with nothing in it.
+#[test]
+fn moving_the_only_tab_out_of_a_pane_focuses_the_destination() {
+    let vm = editors();
+    seed_doc(&vm, 1);
+    let only = push_tab(&vm, Side::Primary, 1);
+
+    vm.move_tab_to(Side::Primary, Side::Secondary, only);
+
+    assert_eq!(vm.focused_side(), Side::Secondary);
+    assert_eq!(vm.tab_item_ids(Side::Primary), Vec::<u64>::new());
+    assert_eq!(vm.selected_item(Side::Secondary), Some(1));
+}
+
+/// The workspace restore's exact shape: real items, opened with `open_in` (not
+/// the bare fixture push), then pinned by uid through `seed_pinned`. The
+/// fixture-only version of this test cannot see a `tab_info` regression, because
+/// with no manuscript behind it `redraw_pin` takes its fallback branch instead.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn seed_pinned_repaints_a_tab_that_was_opened_the_way_a_restore_opens_it() {
+    use crate::editors::test_support::{seed_item, seed_work};
+
+    let vm = editors();
+    let binder = seed_work(&vm);
+    let a = seed_item(&vm, binder, "The Storm", BinderItemSubRole::Scene);
+    let b = seed_item(&vm, binder, "The Calm", BinderItemSubRole::Scene);
+    vm.open_in(Side::Primary, a, "The Storm");
+    vm.open_in(Side::Primary, b, "The Calm");
+
+    vm.seed_pinned(Side::Primary, &[b]);
+
+    let tab = vm.tab_id_of_item(Side::Primary, b).expect("still open");
+    assert!(vm.is_pinned(Side::Primary, tab));
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![b, a]);
+    let info = tab_info_debug(&vm, Side::Primary, tab);
+    assert!(
+        info.contains("closable: false"),
+        "a restored pin kept every close affordance it should have lost: {info}"
+    );
 }

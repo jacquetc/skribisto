@@ -262,6 +262,20 @@ impl App {
         // writer closes one, which is the feature silently absent in exactly the
         // second window.
         editors.set_item_view_states(session.item_view_states.clone());
+        // This window's tab-strip context menu, wired in both directions — the
+        // same two-phase shape as the roster above and as `layout.set_editors`
+        // below. The menu view-model must exist before the editors, so its
+        // installer can be baked into every tab as that tab is created, and must
+        // point back at them to act on one; the installer holds a `Weak`, which
+        // is what keeps that from being a reference cycle (see
+        // `tab_menu::installer`). Both calls are idempotent re-points, so a
+        // rebuild costs nothing.
+        //
+        // Outside the `owns_desk` gate, deliberately: an attached window's tabs
+        // need the menu exactly as much as an owner's do. Only the *persistence*
+        // of a pin is a desk concern, and that is gated below.
+        self.tab_menu.set_editors(editors.clone());
+        editors.set_tab_menu(crate::editors::tab_menu::installer(&self.tab_menu));
         if let Some(layout) = &workspace_layout {
             layout.set_editors(editors.clone());
             // Same idempotent re-point, for `capture_tree_expansion`'s own use of

@@ -71,6 +71,33 @@ pub struct PaneLayout {
     /// empty.
     #[serde(default)]
     pub selected: Option<Uuid>,
+    /// The **pinned** tabs' durable uids, in tab order — always a prefix of
+    /// [`Self::tabs`], because a pin is an ordering claim: pinned tabs sort to the
+    /// head of the pane and the bulk-close commands skip them.
+    ///
+    /// A **sidecar list**, not a `pinned` flag on [`TabViewState`], for three
+    /// independent reasons — each of which has already caught someone here:
+    ///
+    /// * `TabViewState` is reused verbatim for the project-wide
+    ///   [`PerProjectLayout::item_view_states`] roster, where a *per-pane* pin means
+    ///   nothing at all: the roster knows items, not tabs, and the same item can be
+    ///   open pinned in one pane and unpinned in the other. That is exactly the trap
+    ///   [`corkboard`](TabViewState::corkboard) already hits, which is why
+    ///   [`capture`](crate::workspace_layout::WorkspaceLayoutViewModel::capture)
+    ///   zeroes that field by hand on every row it folds into the roster.
+    /// * [`Self::view_states`] is built by a `filter_map` that needs **both** a
+    ///   resolvable uid **and** a live view state — a strictly narrower set than
+    ///   [`Self::tabs`]. A flag carried there would silently vanish for a tab that
+    ///   is in `tabs`, and that tab would come back unpinned with nothing to show
+    ///   why.
+    /// * Restore applies `view_states` in a seeding pass that runs *after*
+    ///   `set_split` and after both `open_in` loops — too late to influence
+    ///   ordering, which is the one thing a pin has to influence.
+    ///
+    /// Additive, with a serde default, so every v7 file carries forward with no
+    /// pins rather than failing to load.
+    #[serde(default)]
+    pub pinned: Vec<Uuid>,
     /// Where the writer was in each tab: caret offset and page scroll.
     ///
     /// A **sidecar** rather than a richer [`Self::tabs`] element, and keyed by
@@ -290,19 +317,25 @@ pub struct WorkspaceLayoutFile {
     pub projects: Vec<PerProjectLayout>,
 }
 
-/// A file with no `version` key is assumed already current, so **no migration
-/// runs for it**.
+/// The `version` field's serde default, for a `WorkspaceLayoutFile`
+/// deserialized **outside** `SettingsFile`'s load path. It is not what decides
+/// how a versionless file on disk is read.
 ///
-/// That is the long-standing behaviour and it stays, because the two cases it
-/// conflates are indistinguishable from here: a hand-edited current file and a
-/// legacy one written before the field existed. Assuming *old* instead would
-/// re-run every step against files that are already correct, which for v1 means
-/// silently dropping their tab lists.
+/// **A file with no `version` key is treated as v1, not as current**, and every
+/// migration step runs against it — including v1 → v2, which drops its tab lists.
+/// That is `Migrator::run`'s own rule (`peek_version(&raw).unwrap_or(1)`, then
+/// walk to `CURRENT_VERSION`), and every load here goes through it
+/// (`SettingsFile::load`). The walk also stamps a `version` into the raw table
+/// after each step, so on that path this default is never even reached; it exists
+/// so a value built straight from a `toml::Value` still carries a coherent
+/// version rather than 0.
 ///
-/// The cost is now user-visible rather than theoretical: such a file keeps its
-/// stale `docks` blob, so a dock added later (Format, in v3) never appears for
-/// it. If that is ever reported, the fix is a repair pass keyed on content —
-/// "no `docks` entry mentions the format dock" — not a change to this default.
+/// This doc claimed the exact opposite until v8 — "assumed already current, so no
+/// migration runs for it" — and reasoned at length from that. Nothing in the tree
+/// ever behaved that way: `the_v1_migration_drops_ordinal_tabs_and_keeps_the_rest`
+/// passes because its fixture stamps `version = 1` by hand, so the claim was
+/// never under test. Believing it would mislead the next schema bump into
+/// thinking a legacy file is safe from its own steps.
 fn default_version() -> u32 {
     WorkspaceLayoutFile::CURRENT_VERSION
 }
@@ -343,7 +376,14 @@ impl Versioned for WorkspaceLayoutFile {
     /// correctly, and the step exists only to stamp the version so an older build
     /// is *refused* by the `Migrator` rather than silently rewriting the file and
     /// dropping the roster.
-    const CURRENT_VERSION: u32 = 7;
+    ///
+    /// **v8** records which of a pane's tabs were **pinned**
+    /// ([`PaneLayout::pinned`]). Additive, with a serde default, exactly like v4's
+    /// `view_states`, v6's `corkboard` and v7's roster: a v7 document already
+    /// deserializes correctly under v8 and there is nothing to transform. The step
+    /// exists only to stamp the version so an older build is *refused* by the
+    /// `Migrator` rather than silently rewriting the file and unpinning every tab.
+    const CURRENT_VERSION: u32 = 8;
     fn version(&self) -> u32 {
         self.version
     }
@@ -475,6 +515,16 @@ fn migrator() -> Migrator<WorkspaceLayoutFile> {
         // older build meeting a v7 file is refused by the `Migrator` rather than
         // silently rewriting it and dropping the per-item roster.
         .step(6, Ok)
+        // **v7 → v8 is the identity**, for the same reason v3 → v4, v5 → v6 and
+        // v6 → v7 were: `PaneLayout::pinned` is a brand-new field with a serde
+        // default, so a v7 document already deserializes correctly under v8 and
+        // there is nothing to transform. What the step buys is the *stamp*, which
+        // is the only **downgrade** protection there is: an older build meeting a
+        // v8 file is refused outright by the `Migrator`
+        // (`MigrationError::NewerThanCurrent`) instead of reading it, ignoring a
+        // field it has never heard of, and unpinning every tab on its next
+        // capture.
+        .step(7, Ok)
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the

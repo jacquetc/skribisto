@@ -72,6 +72,34 @@ ctx-reveal-in-outline = Afficher dans le &plan
 ctx-move-up = Déplacer vers le &haut
 ctx-move-down = Déplacer vers le &bas
 
+## Menu contextuel des onglets de l'éditeur
+# Des clés `ctx-tab-*` neuves, jamais une réutilisation des lignes `ctx-*`
+# ci-dessus : celles-ci servent aussi de lignes de la barre de menus, si bien que
+# retoucher l'un de leurs mnémoniques pour ce menu casserait l'unicité de la barre.
+# Trois lignes sont exclusives deux à deux — la division, le déplacement et
+# l'épinglage n'en construisent qu'une chacun — d'où des lettres qui peuvent se
+# répéter d'une paire à l'autre, mais jamais dans un même menu construit.
+ctx-tab-close = &Fermer
+ctx-tab-close-others = Fermer les &autres
+ctx-tab-close-all = Fermer &tout
+# Les lignes de division se lisent depuis le volet où se trouve déjà l'onglet, et
+# elles dupliquent : l'élément finit ouvert dans les deux volets sur un seul et
+# même document partagé.
+ctx-tab-open-to-side = Ouvrir &sur le côté
+ctx-tab-open-in-main = Ouvrir dans le volet &principal
+# Les lignes de déplacement se lisent pareil, mais l'onglet quitte son volet.
+ctx-tab-move-to-side = &Déplacer sur le côté
+ctx-tab-move-to-main = &Déplacer dans le volet principal
+ctx-tab-move-to-new-window = Déplacer dans une &nouvelle fenêtre
+# Pourquoi cette dernière ligne est indisponible. La seconde fenêtre s'ouvre sur
+# le fichier du projet : un projet jamais enregistré n'a donc rien à lui ouvrir.
+# Infobulle de la ligne désactivée, pas un libellé de menu, donc aucun mnémonique.
+ctx-tab-move-window-unsaved = Enregistrez d’abord ce projet — une seconde fenêtre s’ouvre sur un fichier du disque
+ctx-tab-pin = Épin&gler cet onglet
+ctx-tab-unpin = Désépin&gler cet onglet
+# Infobulle de l'onglet, pas une ligne de menu : aucun mnémonique.
+tab-pinned-tooltip = Épinglé — « Fermer les autres » et « Fermer tout » le laissent ouvert
+
 ## Recommandations de création: libellés de types (titre du SplitButton + Ajouter ▸)
 create-book = Livre
 create-part = Partie
@@ -2347,6 +2375,8 @@ shortcut-name-binder-duplicate = Dupliquer
 shortcut-name-comments-add = Ajouter un commentaire
 shortcut-name-comments-add-paragraph = Commenter ce paragraphe
 shortcut-name-spellcheck-toggle = Vérifier l’orthographe
+shortcut-name-editor-tab-close = Fermer l’onglet
+shortcut-name-editor-tab-pin = Épingler ou désépingler l’onglet
 shortcut-name-editor-save = Enregistrer
 shortcut-name-work-export = Exporter…
 shortcut-name-work-new = Nouvelle œuvre

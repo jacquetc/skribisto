@@ -182,6 +182,14 @@ impl WorkspaceLayoutViewModel {
             selected: editors
                 .selected_item(side)
                 .and_then(|id| uid_of.get(&id).copied()),
+            // Which of them were pinned, in the same tab order — translated
+            // through the **same** `to_uids` filter the tab list itself uses, and
+            // deliberately not a second one. A pin whose item has left the binder
+            // (or that is still nil-identified) then drops exactly as its tab
+            // does, so the two lists cannot rot apart into a `pinned` entry naming
+            // a tab that was never written: `pinned` is a prefix of `tabs` on
+            // disk only for as long as both are filtered alike.
+            pinned: to_uids(&uid_of, &editors.pinned_item_ids(side)),
             // Where the writer was in each tab. Captured from the live editors,
             // falling back to whatever a never-visited tab was seeded with, so a
             // save right after a restore does not erase the positions it just
@@ -392,6 +400,33 @@ impl WorkspaceLayoutViewModel {
             if let Some(sp) = &rec.editor_splitter {
                 editors.splitter().import_state(sp);
             }
+        }
+
+        // Pins — the **last** step that rewrites the tab order, and the last one
+        // before anything merely reads it.
+        //
+        // After the `open_in` loops, which is load-bearing: `seed_pinned` ignores
+        // an id that is not open in the pane, so running it any earlier would
+        // silently pin nothing and the desk would come back with its pinned tabs
+        // scattered through the strip. Before the seeding pass and `select_item`
+        // below, so every rewrite of the pane's tab model happens before the two
+        // passes that only address tabs by item id: `enforce_pin_order` deliberately
+        // leaves the selection signal alone today, and keeping the phases in this
+        // order is what stops the persisted selection from depending on that.
+        //
+        // Uids resolve through `resolve_uids`, the same filter the tab list itself
+        // uses — symmetric with capture's shared `to_uids` — so a pin whose item
+        // was trashed or deleted since capture drops exactly as its tab did,
+        // rather than asking `seed_pinned` to pin an id this load never minted.
+        let pinned_ids = |p: &PaneLayout| -> Vec<u64> {
+            resolve_uids(&order, &p.pinned)
+                .into_iter()
+                .map(|(id, _)| id)
+                .collect()
+        };
+        editors.seed_pinned(Side::Primary, &pinned_ids(&rec.primary));
+        if split {
+            editors.seed_pinned(Side::Secondary, &pinned_ids(&rec.secondary));
         }
 
         // Put each tab's caret and page scroll back. `open_in` only pushes a
@@ -952,14 +987,20 @@ mod tests {
     //
     // The precedence between `PaneLayout::view_states` and the per-item roster,
     // the roster load-before-open ordering, the fold-and-prune in `capture`, the
-    // segment round trip, and the backup guards are all properties of `capture`
-    // and `restore` *themselves*, not of the pure helpers above, so they need a
-    // real seeded `Work` (for `ordered_binder_items` to resolve real uids) and a
-    // real `EditorsViewModel` (for `open_in`/`seed_view_state`/`segment_of` to do
-    // anything). `--features mocks` answers `ordered_binder_items` with an empty
-    // stream (see that function's own doc), which would make `restore` a no-op
-    // for tabs, so this crate's default (non-mocks) test run is what exercises
-    // them; there is no lighter fixture that could.
+    // segment and pin round trips, and the backup guards are all properties of
+    // `capture` and `restore` *themselves*, not of the pure helpers above, so they
+    // need a real seeded `Work` (for `ordered_binder_items` to resolve real uids)
+    // and a real `EditorsViewModel` (for `open_in`/`seed_view_state`/`segment_of`/
+    // `seed_pinned` to do anything). There is no lighter fixture that could.
+    //
+    // **They run under both feature sets**, and this note used to say the
+    // opposite: that `--features mocks` answered `ordered_binder_items` with an
+    // empty stream, making `restore` a no-op for tabs. That seam is gone (see
+    // `models::binder_stream`'s module doc — `mocks` is a feature of this crate
+    // alone and never reaches `frontend`, so the commands below are the real ones
+    // in either build, and the arm was not making a mock build inert, it was
+    // making it answer wrongly). Believing the old note would mean writing a test
+    // here and never noticing it fails on the mocks half.
 
     fn test_typography() -> crate::settings::EditorTypographySet {
         let bundle = |family: &str| crate::settings::EditorTypography {
@@ -1205,6 +1246,7 @@ mod tests {
                 primary: PaneLayout {
                     tabs: vec![uid],
                     selected: Some(uid),
+                    pinned: Vec::new(),
                     view_states: vec![TabViewState {
                         uid,
                         caret: 42,
@@ -1255,6 +1297,7 @@ mod tests {
                 primary: PaneLayout {
                     tabs: vec![uid],
                     selected: Some(uid),
+                    pinned: Vec::new(),
                     view_states: vec![],
                 },
                 item_view_states: vec![TabViewState {
@@ -1482,6 +1525,7 @@ mod tests {
                 primary: PaneLayout {
                     tabs: vec![uid],
                     selected: Some(uid),
+                    pinned: Vec::new(),
                     view_states: vec![TabViewState {
                         uid,
                         caret: 10,
@@ -1507,6 +1551,133 @@ mod tests {
         assert!(
             p.item_view_states.snapshot().is_empty(),
             "and must not inherit the source project's per-item roster either"
+        );
+    }
+
+    /// **The pin round trip.** `capture` records which of a pane's tabs were
+    /// pinned, and `restore` pins them again in a **second** window over the same
+    /// project — proving the uids travel through `PerProjectLayout`, not through
+    /// the live `EditorsViewModel` the capturing window still holds open. The
+    /// restored pin is also asserted to be the *head* of the pane —
+    /// `seed_pinned`'s documented contract ("re-establish the pinned prefix"),
+    /// end to end from one window's pin gesture to another window's strip.
+    ///
+    /// Live-store group (see the note above it): this test seeds real items and
+    /// expects them back, so it needs `ordered_binder_items` to answer for real —
+    /// which it does in **both** feature sets, the group's own note explains why.
+    #[test]
+    fn capture_records_the_pinned_tabs_and_restore_pins_them_in_a_fresh_window() {
+        let p = live_project(3);
+        p.single_work.unique_id().set("pins".to_string());
+        for (i, item) in p.items.iter().enumerate() {
+            p.editors.open_in(Side::Primary, item.id, &format!("S{i}"));
+        }
+        // Pin the tab that was opened *last*, so "it comes back first" cannot be
+        // an accident of the order the tabs were reopened in.
+        p.editors.seed_pinned(Side::Primary, &[p.items[2].id]);
+
+        p.vm.capture();
+
+        let saved = p
+            .service
+            .get("pins")
+            .expect("capture must have written a row");
+        assert_eq!(
+            saved.primary.pinned,
+            vec![p.items[2].uid],
+            "the pinned tab is persisted as its durable uid"
+        );
+        assert!(
+            saved.secondary.pinned.is_empty(),
+            "a pin belongs to one pane — the empty side pane has none"
+        );
+        assert_eq!(
+            saved.primary.tabs.len(),
+            3,
+            "and every tab is still in the tab list, pinned or not"
+        );
+
+        // A second window on the same project, reopening from scratch.
+        let (vm2, editors2, _states2, single_work2, _backup2) =
+            wire_window(p.app_ctx.clone(), p.work_id, p.service.clone());
+        single_work2.unique_id().set("pins".to_string());
+        vm2.restore(false);
+
+        assert_eq!(
+            editors2.pinned_item_ids(Side::Primary),
+            vec![p.items[2].id],
+            "restore must pin the same item again, resolved to this load's store id"
+        );
+        assert_eq!(
+            editors2.tab_item_ids(Side::Primary).first().copied(),
+            Some(p.items[2].id),
+            "…and at the head of the pane: the pin sorted the tab in the capturing \
+             window, the capture wrote that order, and the restored strip agrees \
+             (the disagreeing case is the next test's job)"
+        );
+        assert_eq!(
+            editors2.tab_item_ids(Side::Primary).len(),
+            3,
+            "the unpinned tabs are still there, behind it"
+        );
+    }
+
+    /// **The three things restore's pin pass has to get right**, in one fixture
+    /// whose saved order deliberately disagrees with the pinned one:
+    ///
+    /// * a pin whose item was trashed or deleted since capture is **dropped**,
+    ///   exactly as its tab would be — both sides go through `resolve_uids`, so
+    ///   the pinned list can never ask `seed_pinned` to pin an id this load never
+    ///   minted;
+    /// * the live pin is re-established as the **head** of the pane even though it
+    ///   was saved last in `tabs`, which is the ordering claim a `pinned` flag on
+    ///   `TabViewState` could never have made (that pass runs later);
+    /// * the **saved selection survives** the reorder, which is why the pin pass
+    ///   sits before `select_item` rather than after it.
+    ///
+    /// Live-store group: see the note above it — it runs under both feature sets.
+    #[test]
+    fn restore_drops_a_stale_pin_heads_the_live_one_and_keeps_the_saved_selection() {
+        let p = live_project(3);
+        let uid = |i: usize| p.items[i].uid;
+        let id = |i: usize| p.items[i].id;
+
+        p.single_work.unique_id().set("stale-pin".to_string());
+        p.service
+            .set(PerProjectLayout {
+                work_uid: "stale-pin".to_string(),
+                primary: PaneLayout {
+                    tabs: vec![uid(0), uid(1), uid(2)],
+                    // Not the tab the pin heads, so the reorder is observable.
+                    selected: Some(uid(0)),
+                    // The first pin names an item that is no longer in the binder;
+                    // the second is saved *last* in `tabs`.
+                    pinned: vec![u(0xDEAD), uid(2)],
+                    view_states: Vec::new(),
+                },
+                ..Default::default()
+            })
+            .unwrap();
+
+        p.vm.restore(false);
+
+        assert_eq!(
+            p.editors.pinned_item_ids(Side::Primary),
+            vec![id(2)],
+            "the live pin survives and the dead one is dropped, not carried \
+             through as an id this load never minted"
+        );
+        assert_eq!(
+            p.editors.tab_item_ids(Side::Primary),
+            vec![id(2), id(0), id(1)],
+            "the pinned tab is re-established as the head of the pane, and the \
+             rest keep their saved order behind it"
+        );
+        assert_eq!(
+            p.editors.selected_item(Side::Primary),
+            Some(id(0)),
+            "and the saved selection is still the saved selection — the pin pass \
+             runs before it, never over it"
         );
     }
 }

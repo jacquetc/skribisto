@@ -305,10 +305,14 @@ impl ProjectWindowFactory {
     /// The refcount `attach` bumps is released symmetrically by
     /// `WorkRegistry::remove_window`, driven by this window's own `on_removed`
     /// hook — the same path every other window's release already takes.
+    /// `open_item` is the one `BinderItem` the new window opens on arrival — the
+    /// tab-strip menu's "Move into a new window". `None` for a plain Work ▸ New
+    /// Window, which keeps the empty desk an attached window starts with.
     pub fn attached_window_config(
         &self,
         work_id: u64,
         path: &str,
+        open_item: Option<u64>,
     ) -> Option<(WindowConfig, InitialWindowState)> {
         let session = self.registry.attach(work_id)?;
         let ordinal = self.registry.reserve_window_ordinal(work_id);
@@ -317,6 +321,7 @@ impl ProjectWindowFactory {
                 work_id,
                 path: path.to_string(),
                 ordinal,
+                open_item,
             },
             Some(session),
         ))

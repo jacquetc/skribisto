@@ -93,13 +93,20 @@ fn build_pane_tabs(
     let close = editors.clone();
     let recv = editors.clone();
     let out = editors.clone();
+    let reorder = editors.clone();
     TabWidget::new(editors.selected(side))
         .dynamic_tab::<ContentTab>("editor", |_handle, state| tab_pane(state))
         .dynamic_model(editors.tabs(side))
         .on_close(move |tab_id, _ctx| close.close_in(side, tab_id))
         .on_tab_received(move |handle, _idx, _ctx| recv.receive_tab(side, handle))
         .on_transfer_out(move |tab_id, _ctx| out.transfer_out(side, tab_id))
-        .reorderable(true)
+        // Not `.reorderable(true)`: installing a handler **replaces** teksilo's
+        // default (a bare `model.move_item`), so `reorder_in` performs the move
+        // itself. It is installed for one reason — a drag must not be able to
+        // carry a tab across the pinned boundary, which is the invariant that
+        // keeps model order equal to visual order and so keeps the workspace
+        // capture and the arrow-key tab navigation honest.
+        .on_reorder(move |tab_id, to, _ctx| reorder.reorder_in(side, tab_id, to))
         .accept_external_tabs(true)
         .bar_visibility(bar_visibility)
         .compact_bar()
@@ -225,6 +232,22 @@ pub enum PendingAction {
         /// The ordinal reserved for this window on `work_id` (see
         /// [`crate::sessions::WorkRegistry::reserve_window_ordinal`]).
         ordinal: usize,
+        /// The one `BinderItem` this window opens on arrival — the tab-strip
+        /// menu's "Move into a new window". `None` for a plain Work ▸ New
+        /// Window, which keeps its empty desk.
+        ///
+        /// A store `EntityId` rather than a durable `uid`, which does **not**
+        /// break the "persist by uid" rule: nothing here is persisted. The
+        /// action lives for milliseconds inside one process over the one live
+        /// store, `ctx.open_window` builds the new window synchronously so no
+        /// reload can re-mint ids in between, and the variant already carries a
+        /// `work_id: u64` on exactly the same terms.
+        ///
+        /// Carried on the action rather than parked on the factory for the
+        /// reason [`Self::New`]'s `then_import` gives: a field on the factory
+        /// would mean "the next window this creates", an ordering assumption
+        /// nothing enforces, where this names the one window that asked.
+        open_item: Option<u64>,
     },
 }
 
@@ -845,6 +868,13 @@ pub struct App {
     /// Keeps the user export-styles store's `Reloadable` registration alive in the shared
     /// `SettingsRegistry` (mirrors `dictionary_settings_reloadable`).
     export_styles_reloadable: Option<Rc<dyn Reloadable>>,
+    /// This window's editor tab-strip context menu (Tier 3).
+    ///
+    /// An `Rc` created **once per window** in [`App::new`], not per build: every
+    /// open tab's menu factory holds a `Weak` to it, so a handle re-minted on a
+    /// rebuild would leave every tab built before it with a menu that silently
+    /// declines to open.
+    tab_menu: Rc<crate::editors::TabMenuViewModel>,
 }
 
 impl App {
@@ -884,7 +914,12 @@ impl App {
         window_ordinal: Signal<usize>,
         df_surface: crate::distraction_free::DistractionFreeSurfaceViewModel,
     ) -> Self {
+        let tab_menu = Rc::new(crate::editors::TabMenuViewModel::new(
+            app_ctx.clone(),
+            session.ids.clone(),
+        ));
         Self {
+            tab_menu,
             df_surface,
             app_ctx,
             session,
@@ -2197,8 +2232,11 @@ impl Widget for App {
                 // See `attach_seed`'s own comment for the per-Work/per-window
                 // split it implements.
                 Some(PendingAction::AttachExisting {
-                    work_id, ordinal, ..
-                }) => attach_seed(work_id, ordinal),
+                    work_id,
+                    ordinal,
+                    open_item,
+                    ..
+                }) => attach_seed(work_id, ordinal, open_item),
                 None => {}
             }
         }

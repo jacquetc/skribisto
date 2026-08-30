@@ -112,4 +112,51 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 .on_invoke(move |_i, _c| editors.save_to_disk()),
         );
     }
+
+    // ── The focused tab: close it, pin it ──────────────────────────────────
+    //
+    // Both act on the **focused pane's selected tab** — deliberately a different
+    // target from the tab-strip context menu, which acts on the tab that was
+    // right-clicked. A keystroke has no pointer behind it, so "the tab in front
+    // of me" is the only target it can mean.
+    //
+    // Ctrl+F4 rather than Ctrl+W: Ctrl+W is registered globally as `work.close`
+    // (close the whole project) and a global shortcut resolves before the focused
+    // widget sees the key, so binding it here would shadow project close. Ctrl+F4
+    // is the long-standing "close this document, not the application" chord and
+    // collides with nothing in the app.
+    //
+    // Close others / Close all / the two move rows stay menu-only: they are rare
+    // and destructive, and every additional global chord is another thing that can
+    // shadow a `RichTextEditor` built-in.
+    ctx.register_shortcut_global(
+        Shortcut::new("editor.tab.close")
+            .name(tr!(shortcut_name_editor_tab_close()))
+            .primary(KeyStroke::ctrl(Key::F4))
+            .build(),
+    );
+    {
+        let editors = deps.editors.clone();
+        ctx.register_action_global(Action::new("editor.tab.close").on_invoke(move |_i, _c| {
+            let side = editors.focused_side();
+            if let Some(tab) = editors.selected(side).get() {
+                editors.close_in(side, tab);
+            }
+        }));
+    }
+    ctx.register_shortcut_global(
+        Shortcut::new("editor.tab.pin")
+            .name(tr!(shortcut_name_editor_tab_pin()))
+            .primary(KeyStroke::new(Key::P, Modifiers::CTRL | Modifiers::ALT))
+            .build(),
+    );
+    {
+        let editors = deps.editors.clone();
+        ctx.register_action_global(Action::new("editor.tab.pin").on_invoke(move |_i, _c| {
+            let side = editors.focused_side();
+            if let Some(tab) = editors.selected(side).get() {
+                editors.toggle_pin(side, tab);
+            }
+        }));
+    }
 }

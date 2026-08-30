@@ -111,6 +111,7 @@ fn an_attached_window_may_never_switch_in_place_even_when_left_alone() {
 #[test]
 fn only_an_attaching_action_names_a_work_up_front() {
     let attach = PendingAction::AttachExisting {
+        open_item: None,
         work_id: 7,
         path: "/tmp/x.skrib".into(),
         ordinal: 2,

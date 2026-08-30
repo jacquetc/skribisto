@@ -11,6 +11,7 @@
 //! live document.
 
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use uuid::Uuid;
@@ -61,6 +62,35 @@ impl Side {
 struct Pane {
     tabs: ListModel<TabHandle>,
     selected: Signal<Option<TabId>>,
+    /// Which of this pane's tabs the writer has pinned, by `BinderItem` **store
+    /// id**.
+    ///
+    /// Keyed by item id rather than by any of the three obvious alternatives,
+    /// each of which fails:
+    ///
+    /// * **`TabInfo::pinned`** — its fields are `pub(crate)` to teksilo, so the
+    ///   app can write the flag but never read it back; and
+    ///   [`EditorsViewModel::rebuild_tabs_for`] builds a brand-new `TabInfo`, so
+    ///   it is destroyed by every Promote and every trash-restore.
+    /// * **`ContentTab`** — destroyed by the same rebuild, which is what
+    ///   `updating_an_item_does_not_rebuild_a_differently_typed_open_tab` already
+    ///   pins for the segment.
+    /// * **`TabId`** — that rebuild mints a *fresh* one, so a `TabId`-keyed pin
+    ///   would need an explicit carry at that site. An item id survives it for
+    ///   free, which makes the Promote case correct by construction rather than
+    ///   by remembering.
+    ///
+    /// Not a `Uuid` either: pin checks run inside the close and reorder loops,
+    /// and a `binder_ops::item_dto` read per check is both wasteful and awkward
+    /// inside a `with_item` borrow. The one uid translation persistence needs
+    /// happens exactly once, in the workspace capture.
+    ///
+    /// **A membership oracle only.** Order and liveness come from `tabs`, which
+    /// is already the truth (`delegate, don't reimplement`): [`EditorsViewModel::pinned_item_ids`]
+    /// walks the model and keeps the members, so an entry for an item that is not
+    /// open here is inert and can never reach the capture. Entries are pruned on
+    /// close for hygiene, not for correctness.
+    pinned: Rc<RefCell<HashSet<u64>>>,
 }
 
 impl Pane {
@@ -68,12 +98,26 @@ impl Pane {
         Self {
             tabs: ListModel::from_vec(Vec::new()),
             selected: Signal::new(None),
+            pinned: Rc::new(RefCell::new(HashSet::new())),
         }
     }
 }
 
 /// Minimum width of a pane, so the splitter can't crush an editor to nothing.
 const PANE_MIN_WIDTH: f32 = 320.0;
+
+/// Given a new tab's id and the [`TabInfo`] it is about to wear, return that info
+/// with this window's tab-strip context menu attached.
+///
+/// Injected after construction ([`EditorsViewModel::set_tab_menu`]) rather than
+/// taken as a constructor argument, the same two-phase shape
+/// `set_item_view_states` and `WorkspaceLayoutViewModel::set_editors` take: the
+/// menu is a surface *above* this view-model, so naming
+/// [`crate::editors::tab_menu`] from in here would point a DAG edge the wrong way
+/// up. `None` — a headless test, or any build before the injection — simply means
+/// the tabs carry no menu, which is graceful and is what the existing fixtures in
+/// `editors_vm/tests.rs` want.
+pub type TabMenuInstaller = Rc<dyn Fn(TabId, TabInfo) -> TabInfo>;
 
 #[derive(Clone)]
 pub struct EditorsViewModel {
@@ -84,6 +128,9 @@ pub struct EditorsViewModel {
     /// takes this view-model by: it is Tier 2 and this is Tier 3, so the handle is
     /// created first and pointed at afterwards.
     item_view_states: Rc<RefCell<Option<crate::shared::ItemViewStates>>>,
+    /// Attaches this window's tab-strip context menu to every tab as it is built.
+    /// See [`TabMenuInstaller`] for why it is injected rather than constructed.
+    tab_menu: Rc<RefCell<Option<TabMenuInstaller>>>,
     primary: Pane,
     secondary: Pane,
     /// `true` when the side pane is shown. Drives the split button visual, the
@@ -235,6 +282,7 @@ impl EditorsViewModel {
         Self {
             app_ctx,
             item_view_states: Rc::new(RefCell::new(None)),
+            tab_menu: Rc::new(RefCell::new(None)),
             primary: Pane::new(),
             secondary: Pane::new(),
             split_active: Signal::new(false),
@@ -680,15 +728,7 @@ impl EditorsViewModel {
             return;
         };
         let sub_role = doc.sub_role.clone();
-        // A trashed item can be open (from the trash dock) — tint its tab icon
-        // warning-orange, reactively (flips live on trash/restore, no rebuild).
-        let icon_color = doc.trashed.map(|t| {
-            if *t {
-                TextRole::Warning
-            } else {
-                TextRole::Primary
-            }
-        });
+        let trashed = doc.trashed.clone();
         let tab = self.make_tab(
             doc,
             self.distraction_free.clone(),
@@ -698,17 +738,13 @@ impl EditorsViewModel {
         );
         let tab_title = self.caption(item_id, title);
         let id = TabId::fresh();
-        self.pane(side).tabs.push(TabHandle::dynamic(
-            id,
-            "editor",
-            TabInfo::new()
-                .title(tab_title)
-                .closable(true)
-                .icon(move || {
-                    crate::binder::icons::sub_role_icon(&sub_role).color(icon_color.clone())
-                }),
-            tab,
-        ));
+        // A freshly opened tab is never pinned: pinning is a gesture on a tab
+        // that is already there, and the workspace restore re-applies a
+        // remembered pin through `seed_pinned` once every tab has landed.
+        let info = self.tab_info(id, tab_title, &sub_role, &trashed, false);
+        self.pane(side)
+            .tabs
+            .push(TabHandle::dynamic(id, "editor", info, tab));
         self.pane(side).selected.set(Some(id));
         self.set_focused(side);
         // Where the writer was in this item last time, if this project remembers.
@@ -722,6 +758,81 @@ impl EditorsViewModel {
     /// built with. The distraction-free surface passes its own instead.
     pub fn show_synopsis(&self) -> Signal<bool> {
         self.show_synopsis.clone()
+    }
+
+    /// The whole `TabInfo` an editor tab wears: caption, leading glyph, close
+    /// affordance, tooltip and this window's context menu.
+    ///
+    /// **The one place it is assembled**, so [`Self::open_in`] and
+    /// [`Self::rebuild_tabs_for`] cannot drift — which they already had. The
+    /// rebuild (run on every Promote and every trash-restore) built a bare
+    /// `sub_role_icon` and silently dropped the reactive warning-orange tint
+    /// `open_in` sets, so a trashed open tab lost its tint the moment it was
+    /// retyped. Anything added here — the menu factory above all — would have
+    /// gone the same way. `refresh_captions` is the opposite and is deliberately
+    /// left alone: it clones the existing info and overwrites only the title, so
+    /// it preserves every field this builds without knowing any of them.
+    ///
+    /// `pinned` drives presentation only; the truth lives in [`Pane::pinned`].
+    /// It is expressed as `closable(false)` plus a drawing-pin glyph rather than
+    /// teksilo's own `TabInfo::pinned`, which would render the tab icon-only at a
+    /// fixed 32 dp with its title demoted to a tooltip — for a manuscript that
+    /// turns three pinned scenes into three identical glyphs, the exact failure
+    /// `MIN_EDITOR_TAB_WIDTH` exists to prevent. `closable(false)` removes the
+    /// close button, the middle-click close *and* the Delete key together
+    /// (teksilo builds `on_close` only when closable), while icon-only rendering
+    /// branches on `pinned` alone — so this is teksilo's pin semantics without
+    /// teksilo's pin presentation, and the context menu's Close row becomes the
+    /// only way to close a pinned tab.
+    fn tab_info(
+        &self,
+        id: TabId,
+        caption: LocalizedString,
+        sub_role: &frontend::common::entities::BinderItemSubRole,
+        trashed: &Signal<bool>,
+        pinned: bool,
+    ) -> TabInfo {
+        // A trashed item can be open (from the trash dock) — tint its tab icon
+        // warning-orange, reactively (flips live on trash/restore, no rebuild).
+        let icon_color = trashed.map(|t| {
+            if *t {
+                TextRole::Warning
+            } else {
+                TextRole::Primary
+            }
+        });
+        let sub_role = sub_role.clone();
+        let mut info = TabInfo::new()
+            .title(caption)
+            .closable(!pinned)
+            .icon(move || {
+                if pinned {
+                    crate::icons::editor::pinned_tab().color(icon_color.clone())
+                } else {
+                    crate::binder::icons::sub_role_icon(&sub_role).color(icon_color.clone())
+                }
+            });
+        if pinned {
+            // The glyph replaced the sub-role icon, so hovering is the only way
+            // left to learn *why* this tab has no cross.
+            info = info.tooltip(tr!(tab_pinned_tooltip()));
+        }
+        // Bound to a local first, deliberately: a `match` keeps its scrutinee's
+        // temporaries alive for the whole arm, so `match self.tab_menu.borrow()…`
+        // would hold the `Ref` across the installer call. Nothing re-enters today,
+        // but an installer that ever touched this cell would panic rather than
+        // fail visibly, and this costs nothing.
+        let installer = self.tab_menu.borrow().clone();
+        match installer {
+            Some(install) => install(id, info),
+            None => info,
+        }
+    }
+
+    /// Point this view-model's tabs at the window's tab-strip context menu.
+    /// See [`TabMenuInstaller`] for why this is injected rather than constructed.
+    pub fn set_tab_menu(&self, installer: TabMenuInstaller) {
+        *self.tab_menu.borrow_mut() = Some(installer);
     }
 
     /// Build a `ContentTab` over `doc` with this window's shared settings
@@ -1130,6 +1241,7 @@ impl EditorsViewModel {
             })
             .collect();
         pane.tabs.clear();
+        pane.pinned.borrow_mut().clear();
         for id in items {
             self.docs.release(id, stack); // flushes + evicts on the last reference
         }
@@ -1152,6 +1264,528 @@ impl EditorsViewModel {
     /// document. Closing the **last** side tab auto-collapses the split.
     pub fn close_in(&self, side: Side, tab_id: TabId) {
         self.close_tab(side, tab_id, true, true);
+    }
+
+    // ── Tab identity (the context menu's questions) ──────────────────────────
+
+    /// Which pane holds `tab_id`, if either still does.
+    ///
+    /// The tab-strip context menu resolves the side through this **at the moment
+    /// it opens**, never at the moment the tab was created. A `Side` captured in
+    /// the menu factory goes stale the instant the tab is dragged across:
+    /// [`Self::receive_tab`] pushes the *same* `TabHandle` — payload, info and
+    /// menu factory intact — into the other pane, so "Close others" on a migrated
+    /// tab would silently empty the pane it came from.
+    pub fn side_of(&self, tab_id: TabId) -> Option<Side> {
+        [Side::Primary, Side::Secondary]
+            .into_iter()
+            .find(|&side| self.index_of(side, tab_id).is_some())
+    }
+
+    /// The `BinderItem` id behind a tab in `side`, if it is an editor tab.
+    pub fn item_of(&self, side: Side, tab_id: TabId) -> Option<u64> {
+        self.item_of_tab(side, tab_id)
+    }
+
+    /// The reverse: the tab showing `item_id` in `side`, if one is open.
+    pub fn tab_id_of_item(&self, side: Side, item_id: u64) -> Option<TabId> {
+        self.find_open(side, item_id)
+    }
+
+    /// The item id behind a tab **plus its stored title** — what the "open it
+    /// over there" rows need, since [`Self::open_in`] takes a title to caption the
+    /// new tab with. Read from the store rather than from the tab's own caption,
+    /// which may already carry a generated chapter number that `caption` would
+    /// then apply a second time.
+    pub fn tab_target(&self, side: Side, tab_id: TabId) -> Option<(u64, String)> {
+        let item_id = self.item_of_tab(side, tab_id)?;
+        let dto = binder_ops::item_dto(&self.app_ctx, item_id)?;
+        Some((item_id, dto.title))
+    }
+
+    /// The caption a tab is currently showing, for the menu's header row.
+    ///
+    /// Mirrors [`Self::caption_of`] — a named item shows its name, an unnamed one
+    /// its generated chapter label, and anything else "Untitled" — so the row can
+    /// never disagree with the tab it names.
+    pub fn tab_caption(&self, side: Side, tab_id: TabId) -> Option<String> {
+        let item_id = self.item_of_tab(side, tab_id)?;
+        let dto = binder_ops::item_dto(&self.app_ctx, item_id)?;
+        if !dto.title.trim().is_empty() {
+            return Some(dto.title);
+        }
+        Some(match self.names().and_then(|n| n.generated_name(&dto)) {
+            Some(generated) => generated,
+            // Resolved eagerly: the caller renders it as `lit!` data (a document
+            // title is never translated), and the menu is rebuilt from scratch on
+            // every right-click, so it can never outlive a locale change.
+            None => tr!(untitled()).resolve_now(),
+        })
+    }
+
+    // ── Pinning ─────────────────────────────────────────────────────────────
+
+    /// Is this tab pinned?
+    pub fn is_pinned(&self, side: Side, tab_id: TabId) -> bool {
+        self.item_of_tab(side, tab_id)
+            .is_some_and(|item_id| self.pane(side).pinned.borrow().contains(&item_id))
+    }
+
+    /// The `BinderItem` **store ids** of `side`'s pinned tabs, in tab order.
+    ///
+    /// Walks the tab model and keeps the members, rather than reading the set
+    /// out: the model is the truth for order and for liveness, so a stale entry
+    /// for an item that is no longer open here can never reach the workspace
+    /// capture. Always a prefix of [`Self::tab_item_ids`].
+    pub fn pinned_item_ids(&self, side: Side) -> Vec<u64> {
+        let pinned = self.pane(side).pinned.borrow();
+        self.tab_item_ids(side)
+            .into_iter()
+            .filter(|id| pinned.contains(id))
+            .collect()
+    }
+
+    /// Mark these items pinned in `side` and re-establish the pinned prefix.
+    /// Ids that are not open in the pane are ignored — the workspace restore
+    /// hands over what it remembered, which may name an item that no longer opens.
+    pub fn seed_pinned(&self, side: Side, item_ids: &[u64]) {
+        let open: HashSet<u64> = self.tab_item_ids(side).into_iter().collect();
+        let mut added: Vec<u64> = Vec::new();
+        {
+            let mut pinned = self.pane(side).pinned.borrow_mut();
+            for id in item_ids {
+                if open.contains(id) && pinned.insert(*id) {
+                    added.push(*id);
+                }
+            }
+        }
+        // The **presentation**, which membership alone does not carry: a restored
+        // tab was opened by `open_in` as an ordinary one, and `enforce_pin_order`
+        // only moves handles — it never rewrites a `TabInfo`. Without this a
+        // remembered pin came back with its close cross, its middle-click close
+        // and its Delete key, while the menu and both bulk closes still treated it
+        // as pinned; one careless click then destroyed the pin for good.
+        //
+        // `redraw_pin`, not `repin_tab`: repainting must not move anything here.
+        // Each `repin_tab` moves its tab to the boundary computed from the *whole*
+        // seeded set, which reorders the restored pins relative to the order they
+        // were captured in. The single `enforce_pin_order` below settles the order
+        // once, preserving it. Also strictly after the `borrow_mut` above ends —
+        // `redraw_pin` reads the same cell.
+        for id in added {
+            if let Some(tab_id) = self.find_open(side, id) {
+                self.redraw_pin(side, tab_id, true);
+            }
+        }
+        self.enforce_pin_order(side);
+    }
+
+    /// Pin a tab: it loses its close affordances, takes the drawing-pin glyph, and
+    /// moves to the end of its pane's pinned run.
+    pub fn pin(&self, side: Side, tab_id: TabId) {
+        let Some(item_id) = self.item_of_tab(side, tab_id) else {
+            return;
+        };
+        if !self.pane(side).pinned.borrow_mut().insert(item_id) {
+            return; // already pinned — nothing to redraw, nothing to move
+        }
+        self.repin_tab(side, tab_id, true);
+    }
+
+    /// Unpin a tab: it gets its cross back and parks immediately after whatever
+    /// pinned tabs remain.
+    pub fn unpin(&self, side: Side, tab_id: TabId) {
+        let Some(item_id) = self.item_of_tab(side, tab_id) else {
+            return;
+        };
+        if !self.pane(side).pinned.borrow_mut().remove(&item_id) {
+            return;
+        }
+        self.repin_tab(side, tab_id, false);
+    }
+
+    /// Flip a tab's pin — the single context-menu row, which shows whichever of
+    /// Pin/Unpin applies.
+    pub fn toggle_pin(&self, side: Side, tab_id: TabId) {
+        if self.is_pinned(side, tab_id) {
+            self.unpin(side, tab_id);
+        } else {
+            self.pin(side, tab_id);
+        }
+    }
+
+    /// Repaint one tab for its pin state, **without moving it**.
+    ///
+    /// Rebuilds the whole `TabInfo` through [`Self::tab_info`] rather than
+    /// patching a clone, so that pinning and unpinning are exact inverses.
+    /// Patching cannot be: `TabInfo` offers no way to *clear* a tooltip (its
+    /// three tooltip setters only clear one another), so an unpin that patched a
+    /// clone would carry the "Pinned — Close others and Close all leave it open"
+    /// tooltip onto a tab that is no longer pinned and does have a cross.
+    ///
+    /// The `TabId` is kept, so the `TabWidget`'s per-id pane memoization keeps
+    /// the live editor — its caret, its scroll, its segment — mounted throughout.
+    ///
+    /// The caption is re-derived exactly as [`Self::refresh_captions`] does. When
+    /// the store cannot answer for the item — mid-teardown, or a fixture with no
+    /// manuscript behind it — this falls back to patching the clone, on the same
+    /// principle that function states: only ever *correct* a caption, never blank
+    /// one. The stale-tooltip case is the price, and it is unreachable in a live
+    /// project.
+    fn redraw_pin(&self, side: Side, tab_id: TabId, pinned: bool) {
+        let pane = self.pane(side);
+        let Some(idx) = self.index_of(side, tab_id) else {
+            return;
+        };
+        let Some(mut handle) = pane.tabs.with_item(idx, |h| h.clone()) else {
+            return;
+        };
+        let Some(Some((item_id, sub_role, trashed))) = pane.tabs.with_item(idx, |h| {
+            h.payload.downcast_ref::<ContentTab>().map(|t| {
+                (
+                    t.item_id(),
+                    t.sub_role().clone(),
+                    t.open_doc.trashed.clone(),
+                )
+            })
+        }) else {
+            return;
+        };
+        let caption = self
+            .names()
+            .zip(binder_ops::item_dto(&self.app_ctx, item_id))
+            .map(|(names, it)| Self::caption_of(&it.title, names.generated_name(&it)));
+        handle.info = match caption {
+            Some(caption) => self.tab_info(tab_id, caption, &sub_role, &trashed, pinned),
+            None => {
+                // No caption to rebuild with: keep the one on screen and patch the
+                // two fields that are safe to patch.
+                let icon_color = trashed.map(|t| {
+                    if *t {
+                        TextRole::Warning
+                    } else {
+                        TextRole::Primary
+                    }
+                });
+                handle.info.clone().closable(!pinned).icon(move || {
+                    if pinned {
+                        crate::icons::editor::pinned_tab().color(icon_color.clone())
+                    } else {
+                        crate::binder::icons::sub_role_icon(&sub_role).color(icon_color.clone())
+                    }
+                })
+            }
+        };
+        pane.tabs.set(idx, handle);
+    }
+
+    /// Repaint a tab for its new pin state **and** move it to the pinned
+    /// boundary — what the Pin/Unpin menu row and the shortcut do.
+    ///
+    /// Split from [`Self::redraw_pin`] because the workspace restore needs the
+    /// repaint half alone: it seeds every remembered pin at once and then settles
+    /// the order in a single [`Self::enforce_pin_order`], where moving each tab to
+    /// the boundary as it is repainted would shuffle the restored pins out of the
+    /// order they were captured in.
+    fn repin_tab(&self, side: Side, tab_id: TabId, pinned: bool) {
+        self.redraw_pin(side, tab_id, pinned);
+        // Where it belongs now. Pinning inserts at the end of the run *as it was
+        // before this tab joined it*; unpinning parks just past whatever is left.
+        let target = if pinned {
+            self.pin_count(side).saturating_sub(1)
+        } else {
+            self.pin_count(side)
+        };
+        if let Some(from) = self.index_of(side, tab_id)
+            && from != target
+        {
+            self.pane(side).tabs.move_item(from, target);
+        }
+    }
+
+    /// How many of `side`'s open tabs are pinned.
+    fn pin_count(&self, side: Side) -> usize {
+        self.pinned_item_ids(side).len()
+    }
+
+    /// Re-establish "pinned tabs are a prefix of the pane's tab list" in one
+    /// `replace_all`, preserving the relative order within each group.
+    ///
+    /// The invariant matters for two reasons that have nothing to do with looks.
+    /// The workspace capture persists `tab_item_ids`, i.e. **model** order, and
+    /// teksilo's arrow-key tab navigation walks the model too — so a pinned tab
+    /// sitting in the middle of the model would be remembered in the wrong place
+    /// and would send keyboard focus backwards. (Teksilo's own pinned strip
+    /// re-partitions at render time and makes model order diverge from visual
+    /// order; not setting `TabInfo::pinned` is what keeps the two identical here.)
+    fn enforce_pin_order(&self, side: Side) {
+        let pane = self.pane(side);
+        let pinned = pane.pinned.borrow().clone();
+        let mut head: Vec<TabHandle> = Vec::new();
+        let mut tail: Vec<TabHandle> = Vec::new();
+        for i in 0..pane.tabs.len() {
+            let Some((handle, item)) = pane.tabs.with_item(i, |h| {
+                (
+                    h.clone(),
+                    h.payload.downcast_ref::<ContentTab>().map(|t| t.item_id()),
+                )
+            }) else {
+                continue;
+            };
+            if item.is_some_and(|id| pinned.contains(&id)) {
+                head.push(handle);
+            } else {
+                tail.push(handle);
+            }
+        }
+        if head.is_empty() {
+            return;
+        }
+        // One `replace_all` (a single `Reset`), not N `move_item`s: the surviving
+        // handles keep their `TabId`s, so the `TabWidget`'s per-id pane
+        // memoization keeps every mounted editor exactly where it was.
+        head.extend(tail);
+        pane.tabs.replace_all(head);
+        // A pin change never changes which tab is selected, and `replace_all`
+        // leaves the selection signal alone, so there is deliberately no
+        // `selected.set` here.
+    }
+
+    /// A pane's `TabWidget::on_reorder` hook, clamping a drag to the correct side
+    /// of the pinned boundary.
+    ///
+    /// Installing this **replaces** teksilo's default handler, which is a bare
+    /// `model.move_item` — so the move has to be performed here or drag-reorder
+    /// silently stops working altogether.
+    pub fn reorder_in(&self, side: Side, tab_id: TabId, to: usize) {
+        let pane = self.pane(side);
+        let Some(from) = self.index_of(side, tab_id) else {
+            return;
+        };
+        let pins = self.pin_count(side);
+        let pinned = self.is_pinned(side, tab_id);
+        // A pinned tab may be reordered within the pinned run and an unpinned one
+        // within the rest; neither may cross. Clamping (rather than refusing)
+        // keeps the drag feeling live: the tab follows the pointer and stops at
+        // the boundary instead of snapping back.
+        let to = if pinned {
+            to.min(pins.saturating_sub(1))
+        } else {
+            to.max(pins)
+        };
+        let to = to.min(pane.tabs.len().saturating_sub(1));
+        if from != to {
+            pane.tabs.move_item(from, to);
+        }
+    }
+
+    // ── Bulk close ──────────────────────────────────────────────────────────
+
+    /// Close every tab in `side` except `keep` — and except every pinned tab.
+    pub fn close_others_in(&self, side: Side, keep: TabId) {
+        self.close_many(side, |tab_id, _| tab_id == keep);
+    }
+
+    /// Close every tab in `side` except the pinned ones.
+    ///
+    /// Deliberately **not** [`Self::close_all`], which empties *both* panes and
+    /// calls `docs.clear()` without flushing — that is the project-teardown path,
+    /// and pointing a menu row at it would drop a sibling window's live documents
+    /// along with any keystroke not yet written back.
+    pub fn close_all_in(&self, side: Side) {
+        self.close_many(side, |_, _| false);
+    }
+
+    /// The shared body of the two bulk closes: flush and release everything the
+    /// `keep` predicate rejects, in **one** model write and **one** selection fire.
+    ///
+    /// Not an N-iteration `close_in` loop, for the reasons [`Self::drain_pane`]
+    /// spells out: every `selected.set` synchronously re-fires `App`'s per-pane
+    /// effect, which runs `flush_all` over the whole store — so closing eleven
+    /// tabs would mean eleven full-store flushes — and an emptying side pane would
+    /// trip `set_split(false)` (hence `drain_pane`) part-way through, destroying
+    /// the very list being walked.
+    ///
+    /// `keep` is also handed the item id so a caller can reason about the
+    /// document rather than the tab; a pinned tab is spared before it is asked.
+    fn close_many(&self, side: Side, keep: impl Fn(TabId, Option<u64>) -> bool) {
+        let stack = self.ids.stack_id.get();
+        let pane = self.pane(side);
+        let pinned = pane.pinned.borrow().clone();
+        // Collect first, mutate after: `with_item` holds the model's `borrow()`
+        // for the whole call, so any write from inside it is an immediate
+        // `RefCell` panic.
+        let mut survivors: Vec<TabHandle> = Vec::new();
+        let mut closing: Vec<u64> = Vec::new();
+        for i in 0..pane.tabs.len() {
+            let Some((handle, item)) = pane.tabs.with_item(i, |h| {
+                (
+                    h.clone(),
+                    h.payload.downcast_ref::<ContentTab>().map(|t| t.item_id()),
+                )
+            }) else {
+                continue;
+            };
+            let is_pinned = item.is_some_and(|id| pinned.contains(&id));
+            if is_pinned || keep(handle.id, item) {
+                survivors.push(handle);
+                continue;
+            }
+            // Flush and write down where the writer was *before* the handle goes:
+            // the `ContentTab` is unreachable once the model is replaced, and a
+            // bulk close is a close the writer performed exactly as clicking a
+            // cross is — the gap `collapsing_the_split_records_the_side_tabs_position`
+            // was written for.
+            pane.tabs.with_item(i, |h| {
+                if let Some(t) = h.payload.downcast_ref::<ContentTab>() {
+                    let _ = t.flush(stack);
+                    self.remember_position(t);
+                }
+            });
+            if let Some(id) = item {
+                closing.push(id);
+            }
+        }
+        if closing.is_empty() {
+            return;
+        }
+        let selected = pane.selected.get();
+        let survives = survivors.iter().any(|h| Some(h.id) == selected);
+        let next = if survives {
+            selected
+        } else {
+            survivors.first().map(|h| h.id)
+        };
+        pane.tabs.replace_all(survivors);
+        for id in &closing {
+            pane.pinned.borrow_mut().remove(id);
+        }
+        // One selection write, and only when it actually changes.
+        if next != selected {
+            pane.selected.set(next);
+        }
+        for id in closing {
+            self.docs.release(id, stack); // flushes + evicts on the last reference
+        }
+        if side == Side::Secondary && self.secondary.tabs.is_empty() {
+            self.set_split(false);
+        }
+        self.sync_active_item();
+    }
+
+    // ── Move / open across panes ────────────────────────────────────────────
+
+    /// Open this tab's item in the *other* pane as well, leaving this one alone —
+    /// the menu's "Open to the Side" / "Open in the main pane" row.
+    ///
+    /// A duplicate, not a move: the store hands both tabs one live document, so
+    /// the two panes show the same prose side by side. That is why this goes
+    /// through `activate*` (which take a second `docs.open` reference) and
+    /// [`Self::move_tab_to`] pointedly does not.
+    pub fn open_other_side(
+        &self,
+        side: Side,
+        tab_id: TabId,
+        ctx: &mut teksilo::prelude::EventContext,
+    ) {
+        let Some((item_id, title)) = self.tab_target(side, tab_id) else {
+            return;
+        };
+        match side {
+            Side::Primary => self.activate_to_side(item_id, &title, ctx),
+            Side::Secondary => self.activate(item_id, &title, ctx),
+        }
+    }
+
+    /// Move a tab from one pane to the other — the menu's "Move to the side" /
+    /// "Move to the main pane" row.
+    ///
+    /// Composes the framework's own two drag hooks in the framework's own order
+    /// (receive, then remove), so the menu path and the drag path cannot diverge:
+    /// [`Self::receive_tab`] takes the existing handle — which already holds the
+    /// document reference — and [`Self::transfer_out`] removes it here **without**
+    /// releasing. Calling `docs.open` anywhere in here would leak a reference that
+    /// nothing gives back, keeping the document resident and its edits unflushed
+    /// for the rest of the session.
+    pub fn move_tab_to(&self, from: Side, to: Side, tab_id: TabId) {
+        if from == to {
+            return;
+        }
+        let Some(handle) = self.handle_of(from, tab_id) else {
+            return;
+        };
+        // Reveal the split first: `receive_tab` does not, so a tab moved into a
+        // hidden side pane would simply vanish from the writer's view.
+        if to == Side::Secondary {
+            self.set_split(true);
+        }
+        // Remember where the writer was before the handle changes panes — a
+        // `receive_tab` that dedups drops this tab, and its position with it.
+        self.remember_position_of(from, tab_id);
+        // The pin carry and the stale-entry prune live in these two, so that the
+        // drag path gets both for free.
+        self.receive_tab(to, handle);
+        self.transfer_out(from, tab_id);
+        self.enforce_pin_order(to);
+        // Focus lands on the destination, and has to be re-asserted **after**
+        // `transfer_out`: removing the tab from the source pane rewrites that
+        // pane's `selected`, which synchronously re-fires `focus_sync`'s per-pane
+        // effect and hands the focused side back to the pane the tab just left.
+        // The writer would then be looking at the moved document while every
+        // focus-following surface — the binder's open-item marker, Format, the
+        // Go menu — still answered about the other pane, and an emptied source
+        // pane would leave `active_item` at `None` with a document plainly on
+        // screen.
+        // Guarded on the tab actually being there: `receive_tab` *dedups* when the
+        // destination already showed this item, dropping the incoming handle and
+        // selecting the existing tab — selecting `tab_id` then would name a tab
+        // that no longer exists anywhere. Its own selection is already right, so
+        // only the focused side needs re-asserting.
+        if self.index_of(to, tab_id).is_some() {
+            self.pane(to).selected.set(Some(tab_id));
+        }
+        if !self.pane(to).tabs.is_empty() {
+            self.set_focused(to);
+        }
+    }
+
+    /// Write down where the writer is in one tab, by tab id — what the cross-pane
+    /// and cross-window moves call before the tab stops existing.
+    pub fn remember_position_of(&self, side: Side, tab_id: TabId) {
+        let pane = self.pane(side);
+        let Some(idx) = self.index_of(side, tab_id) else {
+            return;
+        };
+        pane.tabs.with_item(idx, |h| {
+            if let Some(t) = h.payload.downcast_ref::<ContentTab>() {
+                self.remember_position(t);
+            }
+        });
+    }
+
+    /// Open an item by id alone, resolving its title from the store — the entry
+    /// point a freshly attached window uses to open the one tab it was told to
+    /// show, where no caller is around to supply a title.
+    pub fn open_by_id(&self, side: Side, item_id: u64) {
+        let Some(dto) = binder_ops::item_dto(&self.app_ctx, item_id) else {
+            return;
+        };
+        if side == Side::Secondary {
+            self.set_split(true);
+        }
+        self.open_in(side, item_id, &dto.title);
+    }
+
+    /// A clone of the handle at `tab_id` in `side`.
+    fn handle_of(&self, side: Side, tab_id: TabId) -> Option<TabHandle> {
+        let idx = self.index_of(side, tab_id)?;
+        self.pane(side).tabs.with_item(idx, |h| h.clone())
+    }
+
+    /// The model index of `tab_id` in `side`.
+    fn index_of(&self, side: Side, tab_id: TabId) -> Option<usize> {
+        let pane = self.pane(side);
+        (0..pane.tabs.len()).find(|&i| pane.tabs.with_item(i, |h| h.id) == Some(tab_id))
     }
 
     /// Flush + remove `tab_id` from `side`, reselect within the pane, and release
@@ -1210,6 +1844,11 @@ impl EditorsViewModel {
             pane.selected.set(next);
         }
         if let Some(item_id) = item {
+            // Hygiene, not correctness: `pinned_item_ids` reads the tab model, so
+            // an entry left behind here could never reach the workspace capture
+            // anyway — but it *would* silently re-pin the tab if the same item
+            // were reopened in this pane later.
+            pane.pinned.borrow_mut().remove(&item_id);
             self.docs.release(item_id, stack);
         }
         if auto_collapse && side == Side::Secondary && self.secondary.tabs.is_empty() {
@@ -1233,6 +1872,15 @@ impl EditorsViewModel {
             }
         }
         if let Some(p) = pos {
+            // Before the removal, while the payload is still reachable: the pin
+            // has already been carried to the receiving pane by `receive_tab`, so
+            // what is left here is a stale entry that would silently re-pin this
+            // item if it were ever reopened in this pane.
+            if let Some(Some(item_id)) = pane.tabs.with_item(p, |h| {
+                h.payload.downcast_ref::<ContentTab>().map(|t| t.item_id())
+            }) {
+                pane.pinned.borrow_mut().remove(&item_id);
+            }
             pane.tabs.remove(p);
         }
         if pane.selected.get() == Some(tab_id) {
@@ -1253,9 +1901,20 @@ impl EditorsViewModel {
             .payload
             .downcast_ref::<ContentTab>()
             .map(|t| t.item_id());
+        // Read the pin off the pane it is leaving **now**, while that entry is
+        // still populated — `transfer_out` runs after this, per teksilo's own
+        // receive-then-remove order. Doing the carry here rather than in
+        // [`Self::move_tab_to`] is what makes a dragged tab and a menu-moved tab
+        // behave identically; there are only two panes, so "the other one" is the
+        // source by construction.
+        let was_pinned =
+            item_id.is_some_and(|id| self.pane(side.other()).pinned.borrow().contains(&id));
         if let Some(item_id) = item_id
             && let Some(existing) = self.find_open(side, item_id)
         {
+            // Dedup: this pane already shows the item, so the incoming tab is
+            // dropped. Its pin goes with it — the surviving tab's own pin state is
+            // its own business and must not be overwritten by the arrival.
             self.docs.release(item_id, self.ids.stack_id.get());
             self.pane(side).selected.set(Some(existing));
             self.set_focused(side);
@@ -1263,6 +1922,10 @@ impl EditorsViewModel {
         }
         let id = handle.id;
         self.pane(side).tabs.push(handle);
+        if was_pinned && let Some(item_id) = item_id {
+            self.pane(side).pinned.borrow_mut().insert(item_id);
+            self.repin_tab(side, id, true);
+        }
         self.pane(side).selected.set(Some(id));
         self.set_focused(side);
     }
@@ -1418,6 +2081,8 @@ impl EditorsViewModel {
     pub fn close_all(&self) {
         self.primary.tabs.clear();
         self.secondary.tabs.clear();
+        self.primary.pinned.borrow_mut().clear();
+        self.secondary.pinned.borrow_mut().clear();
         // Drop the documents *before* clearing selection: `selected.set(None)`
         // synchronously re-fires App's per-pane effect (which calls `flush_all`),
         // so emptying the store first keeps that a cheap no-op and honors this
@@ -1629,22 +2294,19 @@ impl EditorsViewModel {
                     self.caret_highlight.clone(),
                 );
                 let caption = self.caption(item_id, &it.title);
-                let sub_role = it.sub_role.clone();
                 let was_selected = pane.selected.get() == Some(h.id);
                 let new_id = TabId::fresh();
+                // The pin is keyed by item id precisely so it survives here: a
+                // retype mints a fresh `TabId` and a fresh `ContentTab`, and
+                // anything keyed on either would have to be carried by hand.
+                let pinned = pane.pinned.borrow().contains(&item_id);
+                // `it.sub_role`, not `doc.sub_role`: a Promote is exactly the case
+                // where the document's cached type is the *old* one, and the
+                // freshly read DTO is the whole reason this rebuild is happening.
+                let info = self.tab_info(new_id, caption, &it.sub_role, &doc.trashed, pinned);
                 pane.tabs.remove(i);
-                pane.tabs.insert(
-                    i,
-                    TabHandle::dynamic(
-                        new_id,
-                        "editor",
-                        TabInfo::new()
-                            .title(caption)
-                            .closable(true)
-                            .icon(move || crate::binder::icons::sub_role_icon(&sub_role)),
-                        tab,
-                    ),
-                );
+                pane.tabs
+                    .insert(i, TabHandle::dynamic(new_id, "editor", info, tab));
                 if was_selected {
                     pane.selected.set(Some(new_id));
                 }
@@ -1828,6 +2490,234 @@ impl EditorsViewModel {
             }
         }
         None
+    }
+}
+
+/// Test-only fixtures for an `EditorsViewModel` with no backend behind it.
+///
+/// They live **inside** this module rather than in a sibling file because they
+/// reach `EditorsViewModel`'s private innards (`pane`, `docs`, `app_ctx`, the
+/// settings signals) to push a tab or seed a document without a loaded project.
+/// `pub(crate)` so the tab-strip menu's own tests can build the same fixture
+/// instead of copying forty lines of constructor.
+#[cfg(test)]
+pub(crate) mod test_support {
+    use super::*;
+    use crate::save::SaveStateViewModel;
+    use crate::settings::EditorTypography;
+    use crate::tabs;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+
+    pub(crate) fn test_typography() -> EditorTypographySet {
+        let bundle = |family: &str| EditorTypography {
+            font_family: Signal::new(family.to_string()),
+            size: Signal::new(1.0),
+            line_height: Signal::new(1.5),
+            first_line_indent: Signal::new(0.0),
+            para_spacing_before: Signal::new(0.0),
+            para_spacing_after: Signal::new(0.0),
+            size_range: crate::settings::TypographySizeRange::default(),
+        };
+        EditorTypographySet {
+            scene: bundle("Literata"),
+            synopsis: bundle("Literata"),
+            notes: bundle("Inter"),
+            corkboard: bundle("Literata"),
+            distraction_free: bundle("Literata"),
+        }
+    }
+
+    pub(crate) fn editors() -> EditorsViewModel {
+        let app_ctx = Rc::new(AppContext::new());
+        let save_state = SaveStateViewModel::new(app_ctx.clone(), AppIds::new());
+        editors_with(app_ctx, save_state)
+    }
+
+    /// Build an `EditorsViewModel` over a caller-supplied `app_ctx` + save state,
+    /// so a test can construct **two** instances sharing the same
+    /// `SaveStateViewModel` — modelling two windows onto one project.
+    pub(crate) fn editors_with(
+        app_ctx: Rc<AppContext>,
+        save_state: SaveStateViewModel,
+    ) -> EditorsViewModel {
+        let ids = AppIds::new();
+        // Built before the call: the arguments it needs are moved into earlier parameters.
+        let mention_index = crate::mentions::MentionIndex::new(app_ctx.clone(), ids.clone());
+        let docs = OpenDocsStore::new(app_ctx.clone());
+        let tree_expansion = crate::settings::TreeExpansionViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        );
+        let tags = crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone());
+        let statuses = crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone());
+        EditorsViewModel::new(
+            app_ctx,
+            Signal::new(700.0),
+            Signal::new(true),
+            Signal::new(crate::shared::SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+            test_typography(),
+            crate::shared::TypewriterSettings::off(),
+            crate::shared::CaretHighlightSettings::off(),
+            crate::settings::EditorViewMemory::detached(false),
+            crate::settings::CorkboardDefaults::detached(),
+            ids,
+            docs,
+            Signal::new(false),
+            save_state,
+            Signal::new(false),
+            tree_expansion,
+            Signal::new(false),
+            Signal::new(620.0),
+            crate::go::GoAvailability::new(),
+            crate::format::FormatViewModel::detached(),
+            crate::writing_session::WritingGamesViewModel::detached(),
+            Signal::new(GoalUnit::default()),
+            tags,
+            statuses,
+            mention_index,
+        )
+    }
+
+    /// Push a tab directly into `side` (bypassing the backend / store) so tab
+    /// management can be tested without a loaded project.
+    pub(crate) fn push_tab(vm: &EditorsViewModel, side: Side, item_id: u64) -> TabId {
+        let id = TabId::fresh();
+        let tab = tabs::tab_for(
+            &vm.app_ctx,
+            item_id,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            vm.column_width.clone(),
+            vm.show_synopsis.clone(),
+            vm.typography.clone(),
+            vm.view_memory.clone(),
+            &vm.ids,
+        );
+        vm.pane(side).tabs.push(TabHandle::dynamic(
+            id,
+            "editor",
+            TabInfo::new().closable(true),
+            tab,
+        ));
+        id
+    }
+
+    /// Seed the store with a Scene document for `item_id`, bypassing the backend.
+    pub(crate) fn seed_doc(vm: &EditorsViewModel, item_id: u64) {
+        use crate::models::OpenDoc;
+        vm.docs.insert_for_test(Rc::new(OpenDoc::build(
+            &vm.app_ctx,
+            item_id,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            Signal::new(0),
+            std::path::Path::new(""),
+        )));
+    }
+
+    /// The `AppContext` a fixture view-model was built over.
+    pub(crate) fn app_ctx_of(vm: &EditorsViewModel) -> Rc<AppContext> {
+        vm.app_ctx.clone()
+    }
+
+    /// The `AppIds` a fixture view-model was built over.
+    pub(crate) fn ids_of(vm: &EditorsViewModel) -> AppIds {
+        vm.ids.clone()
+    }
+
+    /// Push a Scene tab and seed its document in one step — what a menu test
+    /// wants, since every row it exercises acts on a real open document.
+    pub(crate) fn push_scene_tab(vm: &EditorsViewModel, side: Side, item_id: u64) -> TabId {
+        seed_doc(vm, item_id);
+        push_tab(vm, side, item_id)
+    }
+
+    /// A numbering manuscript with one binder, and `vm` pointed at it.
+    ///
+    /// Not available under `--features mocks`: the mock models answer from
+    /// fabricated data with no store behind them, so there is nothing to create
+    /// a `Work` in. Every test that calls this is gated the same way, and says so.
+    #[cfg(not(feature = "mocks"))]
+    pub(crate) fn seed_work(vm: &EditorsViewModel) -> u64 {
+        use frontend::commands::{binder_commands, work_commands};
+        use frontend::direct_access::{CreateBinderDto, CreateWorkDto};
+
+        let work = work_commands::create_orphan_work(
+            &vm.app_ctx,
+            None,
+            &CreateWorkDto {
+                statuses: Vec::new(),
+                number_chapters: true,
+                dict_language: vec!["en".into()],
+                ..Default::default()
+            },
+        )
+        .expect("the in-memory store always accepts an orphan Work");
+        vm.ids.work_id.set(Some(work.id));
+        binder_commands::create_binder(
+            &vm.app_ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("the in-memory store always accepts a binder")
+        .id
+    }
+
+    /// Append an item into `binder`. See [`seed_work`] for the mocks gate.
+    #[cfg(not(feature = "mocks"))]
+    pub(crate) fn seed_item(
+        vm: &EditorsViewModel,
+        binder: u64,
+        title: &str,
+        sub_role: frontend::common::entities::BinderItemSubRole,
+    ) -> u64 {
+        use frontend::commands::binder_item_commands;
+        use frontend::direct_access::CreateBinderItemDto;
+
+        binder_item_commands::create_binder_item(
+            &vm.app_ctx,
+            None,
+            &CreateBinderItemDto {
+                status: None,
+                title: title.into(),
+                role: BinderItemRole::Item,
+                sub_role,
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            binder,
+            -1,
+        )
+        .expect("the in-memory store always accepts a binder item")
+        .id
+    }
+
+    /// Drive `f` with a real `&mut EventContext`, the same way a click in the
+    /// outline or an Overview row reaches `activate`/`activate_to_side` in
+    /// production, never a bypassing direct call.
+    ///
+    /// Hanging the closure off a button and clicking it is the only way to get an
+    /// `EventContext` headlessly. Neither method subscribes to backend events, so
+    /// a bare `WidgetTree` (no event source registered) is enough to host it.
+    pub(crate) fn with_event_context(f: impl Fn(&mut teksilo::prelude::EventContext) + 'static) {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::widgets::Button;
+
+        let mut tree = WidgetTree::new();
+        let trigger = tree.add(Button::new(lit!("go")).on_activate_fn(f));
+        tree.layout(teksilo::prelude::SizeProposal::exact(200.0, 60.0));
+        crate::test_support::click(&mut tree, trigger);
     }
 }
 

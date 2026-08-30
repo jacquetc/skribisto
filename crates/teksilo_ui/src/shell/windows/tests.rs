@@ -207,7 +207,7 @@ fn attaching_to_a_work_that_is_not_open_yields_no_window() {
 
     assert!(
         factory
-            .attached_window_config(404, "/tmp/skribisto-attach-test.skrib")
+            .attached_window_config(404, "/tmp/skribisto-attach-test.skrib", None)
             .is_none()
     );
 }
@@ -236,7 +236,7 @@ fn a_second_window_shares_the_works_session_and_takes_its_own_identity() {
 
     let path = "/tmp/skribisto-attach-test.skrib";
     let (config, state) = factory
-        .attached_window_config(1, path)
+        .attached_window_config(1, path, None)
         .expect("the Work is open, so a second window on it must be buildable");
 
     assert_eq!(
@@ -277,10 +277,10 @@ fn a_third_window_does_not_reuse_the_seconds_identity() {
 
     let path = "/tmp/skribisto-attach-test.skrib";
     let (second, _) = factory
-        .attached_window_config(1, path)
+        .attached_window_config(1, path, None)
         .expect("second window");
     let (third, _) = factory
-        .attached_window_config(1, path)
+        .attached_window_config(1, path, None)
         .expect("third window");
 
     assert_eq!(
@@ -339,6 +339,65 @@ fn a_loading_window_keeps_the_plain_project_id() {
 /// own set of rows. So the Launcher's menus are their own scopes, and a letter
 /// may be reused freely between the two.
 const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
+    // The editor tab strip's context menu. Not a menu-bar scope, but it is a
+    // `MenuList` like every other and a duplicate mnemonic inside one is a
+    // debug-build `debug_assert!` **panic**, not a warning — so leaving it out
+    // would mean the only guard was crashing the dev build.
+    //
+    // Four scopes rather than one: three rows are either/or pairs chosen from the
+    // pane the menu was opened in and from the tab's pin state, so only one of
+    // each ever appears at a time and the four combinations are the four menus a
+    // writer can actually see. "Close / Close others / Close all" is the reason
+    // this matters — all three start with C in English and with F(ermer) in
+    // French.
+    (
+        "editor tab (main pane, unpinned)",
+        &[
+            "ctx-tab-close",
+            "ctx-tab-close-others",
+            "ctx-tab-close-all",
+            "ctx-tab-open-to-side",
+            "ctx-tab-move-to-side",
+            "ctx-tab-move-to-new-window",
+            "ctx-tab-pin",
+        ],
+    ),
+    (
+        "editor tab (main pane, pinned)",
+        &[
+            "ctx-tab-close",
+            "ctx-tab-close-others",
+            "ctx-tab-close-all",
+            "ctx-tab-open-to-side",
+            "ctx-tab-move-to-side",
+            "ctx-tab-move-to-new-window",
+            "ctx-tab-unpin",
+        ],
+    ),
+    (
+        "editor tab (side pane, unpinned)",
+        &[
+            "ctx-tab-close",
+            "ctx-tab-close-others",
+            "ctx-tab-close-all",
+            "ctx-tab-open-in-main",
+            "ctx-tab-move-to-main",
+            "ctx-tab-move-to-new-window",
+            "ctx-tab-pin",
+        ],
+    ),
+    (
+        "editor tab (side pane, pinned)",
+        &[
+            "ctx-tab-close",
+            "ctx-tab-close-others",
+            "ctx-tab-close-all",
+            "ctx-tab-open-in-main",
+            "ctx-tab-move-to-main",
+            "ctx-tab-move-to-new-window",
+            "ctx-tab-unpin",
+        ],
+    ),
     (
         "menu bar",
         &[
