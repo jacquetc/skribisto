@@ -1,0 +1,5 @@
+Idée:                #ffff00
+Note:                #00ff00
+Chapitre:            #0000ff
+Scène:               #ff0000
+Documentation:       #00ffff

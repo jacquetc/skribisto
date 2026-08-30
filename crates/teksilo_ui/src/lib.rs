@@ -118,6 +118,7 @@ pub mod help;
 pub mod icons;
 pub mod identity;
 pub mod import_document;
+pub mod import_manuskript;
 pub mod import_plume;
 pub mod intents;
 pub mod ipc_serve;
@@ -361,6 +362,7 @@ pub fn run() {
         dictionaries,
         workspace_layout_service,
         tree_expansion_service,
+        import_manuskript,
         import_plume,
         folder_memory,
         import_prefs,
@@ -662,6 +664,7 @@ pub fn run() {
         .app_state(initial_state.session.tree_expansion.clone())
         .app_state(initial_state.session.mention_index.clone())
         .app_state(initial_state.session.progress_recorder.clone())
+        .app_state(import_manuskript.clone())
         .app_state(import_plume.clone())
         .app_state(export_styles.clone())
         .app_state(paratext_presets.clone())

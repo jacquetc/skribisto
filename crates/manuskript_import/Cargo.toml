@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+[package]
+name = "skribisto-manuskript-import"
+description = "Converts a Manuskript project of any historical format to the newest .skrib"
+authors.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+readme = "../../README.md"
+publish = true
+
+[lib]
+name = "manuskript_import"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+# Only for `LongOperationProgress`/cancellation — no store, no repository.
+common = { workspace = true }
+skribisto_model = { workspace = true }
+# The output format. This crate reads a Manuskript project and writes the newest
+# .skrib; it never touches an entity store, which is what lets it sit below the
+# backend.
+skrib_format = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+# Reading zipped `.msk` containers.
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+# `world.opml`, `plots.xml`, `revisions.xml`, and every format-0 member.
+roxmltree = "0.21.1"
+# `settings.txt` is JSON. (`settings.pickle`, the format-0 sibling, is never
+# deserialized — see this crate's `source` module docs.)
+serde_json = "1.0"
+# The content hash a `HistoryEntry` is keyed by, matching
+# `skrib_format::history::record`'s `blake3::hash(..).to_hex()`.
+blake3 = "1"
+
+[dev-dependencies]
+# The round-trip tests build Manuskript fixtures (zip + loose folder) in a scratch dir.
+tempfile = "3"
+# The end-to-end tests read their own output back through the real reader.
+skrib_format = { workspace = true }
+common = { workspace = true }

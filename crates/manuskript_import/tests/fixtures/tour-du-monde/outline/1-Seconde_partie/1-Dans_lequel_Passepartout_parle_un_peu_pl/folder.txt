@@ -1,0 +1,12 @@
+title:          Chapitre 8
+ID:             116
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         2
+summarySentence:Dans lequel Passepartout parle un peu plus peut-être qu’il ne conviendrait
+summaryFull:    Sur le quai, Fix fait parler Passepartout, qui, sans défiance, raconte le pari, la fortune emportée en bank-notes et la précipitation du départ. Chaque détail confirme au détective qu’il tient son voleur.
+POV:            0
+
+

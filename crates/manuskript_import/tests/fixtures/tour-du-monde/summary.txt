@@ -1,0 +1,3 @@
+Situation:   Un pari tenu pour impossible.
+Sentence:    Un gentleman de Londres dont personne ne sait rien parie la moitié de sa fortune qu'il fera le tour de la Terre en quatre-vingts jours, et part le soir même avec un domestique engagé le matin.
+Paragraph:   Un gentleman de Londres dont personne ne sait rien parie la moitié de sa fortune qu'il fera le tour de la Terre en quatre-vingts jours, et part le soir même avec un domestique engagé le matin. Le voyage se joue sur des correspondances de quelques minutes, sur un éléphant acheté deux mille livres et sur un navire brûlé jusqu'à la coque — et se décide, à la dernière seconde, sur un jour que personne n'avait compté.

@@ -146,6 +146,7 @@ pub enum FlatEventKind {
     HandlingAppLifecycleCleanUpBeforeExit,
 
     ImportManagementImportPlumeCreatorFile,
+    ImportManagementImportManuskriptProject,
     ImportManagementAnalyzeDocumentImport,
     ImportManagementApplyDocumentImport,
 
@@ -442,6 +443,9 @@ impl From<Event> for FlatEvent {
             Origin::ImportManagement(fe) => match fe {
                 ImportManagementEvent::ImportPlumeCreatorFile => {
                     FlatEventKind::ImportManagementImportPlumeCreatorFile
+                }
+                ImportManagementEvent::ImportManuskriptProject => {
+                    FlatEventKind::ImportManagementImportManuskriptProject
                 }
                 ImportManagementEvent::AnalyzeDocumentImport => {
                     FlatEventKind::ImportManagementAnalyzeDocumentImport

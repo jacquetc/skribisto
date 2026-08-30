@@ -23,6 +23,7 @@ use crate::backup::BackupSettingsViewModel;
 use crate::cli;
 use crate::export::{ExportStylesViewModel, ParatextPresetsViewModel};
 use crate::first_run;
+use crate::import_manuskript::ImportManuskriptViewModel;
 use crate::import_plume::ImportPlumeViewModel;
 use crate::locales;
 use crate::models;
@@ -363,6 +364,7 @@ pub(crate) struct Tier1Services {
     pub dictionaries: spellcheck::DictionariesViewModel,
     pub workspace_layout_service: WorkspaceLayoutService,
     pub tree_expansion_service: TreeExpansionService,
+    pub import_manuskript: ImportManuskriptViewModel,
     pub import_plume: ImportPlumeViewModel,
     pub folder_memory: models::FolderMemoryService,
     pub import_prefs: models::ImportPrefsService,
@@ -461,6 +463,7 @@ pub(crate) fn open_tier1_services(
     // The Import-Plume view-model is a singleton (form + in-flight job + progress
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
+    let import_manuskript = ImportManuskriptViewModel::new(app_ctx.clone());
     let import_plume = ImportPlumeViewModel::new(app_ctx.clone());
     // Export styles ("Compile & Export" formats) — the user's editable style presets, opened
     // eagerly here so the Settings pane and the Export panel's picker both read one instance.
@@ -554,6 +557,7 @@ pub(crate) fn open_tier1_services(
         dictionaries,
         workspace_layout_service,
         tree_expansion_service,
+        import_manuskript,
         import_plume,
         folder_memory,
         import_prefs,

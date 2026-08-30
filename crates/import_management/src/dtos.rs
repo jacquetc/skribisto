@@ -23,6 +23,11 @@
 //    so the gap costs nothing measurable.
 //    (`DocumentImportRow` joined the list when it gained `epigraph` — one more `String`
 //    was what carried `Found` past the lint's threshold. Nothing about it is new in kind.)
+//
+// 4. `ImportManuskriptProjectDto` and its result are declared by hand rather than
+//    regenerated in. They are exactly what the generator emits for the manifest's
+//    `import_manuskript_project`, and adding them by hand is what keeps the three
+//    corrections above from having to be re-applied for the sake of two structs.
 
 use serde::{Deserialize, Serialize};
 
@@ -40,6 +45,27 @@ pub struct ImportPlumeCreatorFileResultDto {
     pub output_path: String,
     pub imported_items: i64,
     pub skipped_trashed: i64,
+    pub warnings: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct ImportManuskriptProjectDto {
+    pub source_path: String,
+    pub output_path: String,
+    pub overwrite: bool,
+    pub manuscript_binder_name: String,
+    pub story_bible_binder_name: String,
+    pub characters_group_name: String,
+    pub world_group_name: String,
+    pub plots_group_name: String,
+    pub project_info_note_name: String,
+    pub summary_note_name: String,
+    pub importance_names: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct ImportManuskriptProjectResultDto {
+    pub output_path: String,
+    pub imported_items: i64,
+    pub imported_revisions: i64,
     pub warnings: Vec<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

@@ -1,0 +1,12 @@
+title:          Chapitre 5
+ID:             109
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         1
+summarySentence:Dans lequel une nouvelle valeur apparaît sur la place de Londres
+summaryFull:    Le pari occupe Londres et se cote en Bourse comme une valeur nouvelle, puis s’effondre: le signalement du voleur de la Banque, publié par la police, ressemble trait pour trait à Phileas Fogg. L’opinion se retourne en un jour, et l’inspecteur Fix reçoit à Suez l’ordre de guetter le Mongolia.
+POV:            0
+
+

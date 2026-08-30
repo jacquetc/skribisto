@@ -541,6 +541,12 @@ pub fn builtin_topics() -> Vec<HelpTopicSpec> {
             body: djot_topic!("import-documents"),
         },
         HelpTopicSpec {
+            key: "help-import-projects",
+            section: HelpSection::Exchanging,
+            title: Rc::new(|| tr!(help_topic_import_projects())),
+            body: djot_topic!("import-projects"),
+        },
+        HelpTopicSpec {
             key: "help-backups-and-versions",
             section: HelpSection::Keeping,
             title: Rc::new(|| tr!(help_topic_backups_and_versions())),

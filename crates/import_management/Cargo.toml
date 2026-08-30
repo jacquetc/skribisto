@@ -38,6 +38,8 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 # The .plume -> .skrib conversion, a store-free crate of its own.
 plume_import = { workspace = true }
+# The Manuskript -> .skrib conversion, likewise a store-free crate of its own.
+manuskript_import = { workspace = true }
 
 [dev-dependencies]
 # The ANALYSE->APPLY integration test builds a real store through direct_access.

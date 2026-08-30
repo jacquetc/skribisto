@@ -1,0 +1,8 @@
+Name:                Andrew Stuart
+ID:                  5
+Importance:          0
+POV:                 False
+Phrase Summary:      Ingénieur, joueur de whist au Reform-Club et le plus acharné des cinq à tenir le pari contre Fogg.
+Paragraph Summary:   Ingénieur, joueur de whist au Reform-Club et le plus acharné des cinq à tenir le pari contre Fogg.
+Notes:               Aussi appelé : Stuart
+Color:               #16a085

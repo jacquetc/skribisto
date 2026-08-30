@@ -53,7 +53,8 @@ use frontend::AppContext;
 use crate::models::ExamplesListModel;
 use crate::settings::SettingsPanel;
 use crate::shell::launcher_menu::{
-    ACTION_IMPORT_PLUME, ACTION_NEW, ACTION_NEW_FROM_DOCUMENTS, ACTION_OPEN, ACTION_SETTINGS,
+    ACTION_IMPORT_MANUSKRIPT, ACTION_IMPORT_PLUME, ACTION_NEW, ACTION_NEW_FROM_DOCUMENTS,
+    ACTION_OPEN, ACTION_SETTINGS,
 };
 use crate::welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 
@@ -597,9 +598,9 @@ fn link_button(
 /// `bare()`: the popover's content is a `MenuList`, which brings its own themed
 /// surface; the popover's default one would draw a second frame around it.
 fn create_from_button() -> impl Widget + 'static {
-    // The same two labels the menu's Create from ▸ submenu carries, which are in
+    // The same labels the menu's Create from ▸ submenu carries, which are in
     // turn the project window's own Work ▸ Import from rows — three surfaces
-    // naming one pair of importers.
+    // naming one set of importers.
     let menu = MenuList::new()
         .item(
             MenuItem::new(tr!(menu_import_document()))
@@ -608,6 +609,10 @@ fn create_from_button() -> impl Widget + 'static {
         .item(
             MenuItem::new(tr!(menu_import_plume()))
                 .on_activate_fn(|ctx| ctx.send_intent(Intent::new(ACTION_IMPORT_PLUME))),
+        )
+        .item(
+            MenuItem::new(tr!(menu_import_manuskript()))
+                .on_activate_fn(|ctx| ctx.send_intent(Intent::new(ACTION_IMPORT_MANUSKRIPT))),
         );
     PopoverButton::new(Button::new(tr!(welcome_create_from())).variant(ButtonVariant::Plain))
         .bare()
@@ -874,6 +879,10 @@ impl Widget for WelcomePanel {
             Action::new(ACTION_IMPORT_PLUME)
                 .on_invoke(|_i, c| crate::import_plume::panel::present_import_plume(c)),
         );
+        ctx.register_action_global(
+            Action::new(ACTION_IMPORT_MANUSKRIPT)
+                .on_invoke(|_i, c| crate::import_manuskript::panel::present_import_manuskript(c)),
+        );
 
         // The import's toast is `broadcast()`, so its **Open now** button reaches
         // this window too — and fires `work.open_path`, which nothing in the
@@ -900,6 +909,12 @@ impl Widget for WelcomePanel {
             .cloned()
         {
             plume.wire_long_operation(ctx);
+        }
+        if let Some(manuskript) = ctx
+            .app_state::<crate::import_manuskript::ImportManuskriptViewModel>()
+            .cloned()
+        {
+            manuskript.wire_long_operation(ctx);
         }
 
         // Help, on the Launcher's own registry for the same reason `app.quit` is: each

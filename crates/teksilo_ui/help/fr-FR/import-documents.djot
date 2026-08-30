@@ -1,7 +1,9 @@
 Faire entrer dans un projet, pour la première fois, une écriture que vous n’avez pas créée
 dans Skribisto passe par l’assistant *Importer des documents*. Si vous ramenez plutôt un
 fichier que vous avez envoyé hors de Skribisto pour que quelqu’un d’autre l’annote, c’est une
-autre question, à la réponse plus précise : voir [l’aller-retour](:help-round-trip).
+autre question, à la réponse plus précise : voir [l’aller-retour](:help-round-trip). Et si ce que
+vous avez est un projet entier réalisé dans une autre application d’écriture, c’est encore une
+autre tâche : voir [faire venir un projet entier](:help-import-projects).
 
 ## Le lancer
 

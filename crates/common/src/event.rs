@@ -146,6 +146,7 @@ pub enum HandlingAppLifecycleEvent {
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum ImportManagementEvent {
     ImportPlumeCreatorFile,
+    ImportManuskriptProject,
     AnalyzeDocumentImport,
     ApplyDocumentImport,
 }

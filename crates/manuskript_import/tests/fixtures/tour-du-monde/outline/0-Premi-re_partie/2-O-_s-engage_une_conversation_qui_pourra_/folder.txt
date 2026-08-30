@@ -1,0 +1,12 @@
+title:          Chapitre 3
+ID:             105
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         3
+summarySentence:Où s’engage une conversation qui pourra coûter cher à Phileas Fogg
+summaryFull:    Au whist du Reform-Club, la conversation roule sur le vol de cinquante-cinq mille livres commis à la Banque d’Angleterre, puis sur un article du Morning-Chronicle qui calcule qu’on peut désormais faire le tour du monde en quatre-vingts jours. Fogg soutient que le compte est juste et parie vingt mille livres qu’il en fera l’épreuve, en partant le soir même.
+POV:            0
+
+

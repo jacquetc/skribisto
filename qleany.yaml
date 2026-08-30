@@ -2290,6 +2290,76 @@ features:
         type: string
         is_list: true
 
+  # Manuskript import. The same shape as the Plume converter above and for the
+  # same reasons: a pure file->file transform that reads a foreign project and
+  # writes a brand-new `.skrib`, touching no entity at all (`entities: []`), run
+  # as a long operation because the IO is on the UI's own thread otherwise.
+  #
+  # The conversion itself is `manuskript_import`, a crate of its own. What stays
+  # here is the use case: progress, cancellation, and the event the UI listens for.
+  - name: import_manuskript_project
+    entities: []
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: ImportManuskriptProjectDto
+      fields:
+      # A zipped `.msk`, the one-byte `.msk` beside a project folder, or the
+      # folder itself. All three are real ways a writer holds a Manuskript
+      # project, and the panel offers a file picker and a folder picker for
+      # exactly that reason.
+      - name: source_path
+        type: string
+      - name: output_path
+        type: string
+      - name: overwrite
+        type: boolean
+      # The names the app resolves in the writer's own language and passes down,
+      # exactly as the Plume importer does its two binder names. Manuskript has
+      # no binders and no story-bible groups, so it stores none of these.
+      #
+      # Note what is NOT here: the field headings inside an imported character
+      # sheet. Those are Manuskript's own on-disk key names, which are hard-coded
+      # English in every project whatever the writer's language, so reproducing
+      # them is what lets a writer recognise their own sheet.
+      - name: manuscript_binder_name
+        type: string
+      - name: story_bible_binder_name
+        type: string
+      - name: characters_group_name
+        type: string
+      - name: world_group_name
+        type: string
+      - name: plots_group_name
+        type: string
+      - name: project_info_note_name
+        type: string
+      - name: summary_note_name
+        type: string
+      # Manuskript's importance scale is three integers whose names live in its
+      # UI and are translated at display time, so the file carries no names at
+      # all -- the same shape as Plume's status ladder. Lowest rung first; a
+      # short list simply leaves the rungs past its end unnamed.
+      - name: importance_names
+        type: string
+        is_list: true
+    dto_out:
+      name: ImportManuskriptProjectResultDto
+      fields:
+      - name: output_path
+        type: string
+      - name: imported_items
+        type: integer
+      # Manuskript keeps whole-document snapshots with a timestamp, which is what
+      # a history entry already is here, so an imported project can open with a
+      # Versions panel that is not empty.
+      - name: imported_revisions
+        type: integer
+      - name: warnings
+        type: string
+        is_list: true
+
   # Document import, part one of two: read the chosen files and work out what
   # tree they would make. Writes nothing.
   #

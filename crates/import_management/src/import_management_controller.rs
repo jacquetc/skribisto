@@ -7,13 +7,17 @@ use crate::AnalyzeDocumentImportDto;
 use crate::ApplyDocumentImportDto;
 use crate::ApplyDocumentImportResultDto;
 use crate::DocumentImportPlanDto;
+use crate::ImportManuskriptProjectDto;
+use crate::ImportManuskriptProjectResultDto;
 use crate::ImportPlumeCreatorFileDto;
 use crate::ImportPlumeCreatorFileResultDto;
 use crate::units_of_work::analyze_document_import_uow::AnalyzeDocumentImportUnitOfWorkFactory;
 use crate::units_of_work::apply_document_import_uow::ApplyDocumentImportUnitOfWorkFactory;
+use crate::units_of_work::import_manuskript_project_uow::ImportManuskriptProjectUnitOfWorkFactory;
 use crate::units_of_work::import_plume_creator_file_uow::ImportPlumeCreatorFileUnitOfWorkFactory;
 use crate::use_cases::analyze_document_import_uc::AnalyzeDocumentImportUseCase;
 use crate::use_cases::apply_document_import_uc::ApplyDocumentImportUseCase;
+use crate::use_cases::import_manuskript_project_uc::ImportManuskriptProjectUseCase;
 use crate::use_cases::import_plume_creator_file_uc::ImportPlumeCreatorFileUseCase;
 use anyhow::Result;
 
@@ -54,6 +58,42 @@ pub fn get_import_plume_creator_file_result(
     }
     // Parse the JSON string into a ImportPlumeCreatorFileResultDto
     let result_dto: ImportPlumeCreatorFileResultDto = serde_json::from_str(&result_json.unwrap())?;
+
+    Ok(Some(result_dto))
+}
+
+pub fn import_manuskript_project(
+    db_context: &DbContext,
+    event_hub: &Arc<EventHub>,
+    long_operation_manager: &mut LongOperationManager,
+    dto: &ImportManuskriptProjectDto,
+) -> Result<String> {
+    let uow_context = ImportManuskriptProjectUnitOfWorkFactory::new(db_context, event_hub);
+    let uc = ImportManuskriptProjectUseCase::new(Box::new(uow_context), dto);
+    let operation_id = long_operation_manager.start_operation(uc);
+    Ok(operation_id)
+}
+
+pub fn get_import_manuskript_project_progress(
+    long_operation_manager: &LongOperationManager,
+    operation_id: &str,
+) -> Option<OperationProgress> {
+    long_operation_manager.get_operation_progress(operation_id)
+}
+
+pub fn get_import_manuskript_project_result(
+    long_operation_manager: &LongOperationManager,
+    operation_id: &str,
+) -> Result<Option<ImportManuskriptProjectResultDto>> {
+    // Get the operation result as a JSON string
+    let result_json = long_operation_manager.get_operation_result(operation_id);
+
+    // If there's no result, return None
+    if result_json.is_none() {
+        return Ok(None);
+    }
+    // Parse the JSON string into a ImportManuskriptProjectResultDto
+    let result_dto: ImportManuskriptProjectResultDto = serde_json::from_str(&result_json.unwrap())?;
 
     Ok(Some(result_dto))
 }

@@ -1,0 +1,7 @@
+Title:          Le Tour du monde en quatre-vingts jours
+Subtitle:       Les Voyages extraordinaires
+Serie:          Les Voyages extraordinaires
+Volume:         11
+Genre:          Roman d’aventures
+License:        Domaine public
+Author:         Jules Verne

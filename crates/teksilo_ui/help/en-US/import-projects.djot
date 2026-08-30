@@ -1,0 +1,93 @@
+Some writing arrives as a set of files. Some arrives as a whole project, made in another
+writing application, with its chapters and its cast and its notes already sorted. Those are two
+different jobs, and Skribisto does them in two different places.
+
+This page is about the second one: bringing a project across from Manuskript or from Plume
+Creator. If what you have is a folder of documents instead, see
+[importing documents](:help-import-documents).
+
+A project import always makes a **new** Skribisto project. It reads the one you point at and
+never writes to it, so the original is exactly as you left it whatever happens, and you can try
+the import twice if the first result is not what you wanted.
+
+## Starting it
+
+With a project open, use *Work ▸ Import from* and pick the application you are coming from.
+From the launcher window, the same two rows are under *Create from…*, because a project import
+needs nothing open to import into.
+
+Either way you choose the project, then a destination folder and a file name for the Skribisto
+`.skrib` it will create. Nothing is written until you press *Import*, and a large project shows
+its progress with a *Cancel* button that leaves nothing behind.
+
+## Coming from Manuskript
+
+Manuskript stores a project in one of two ways, and the wizard takes either. In its usual mode
+a project is a small `.msk` file **plus a folder of the same name beside it**, and you need
+both: the `.msk` on its own is one byte long and only points at the folder. In its single-file
+mode the whole project is inside the `.msk`. There is a *Choose file…* button and a *Choose
+folder…* button, so you can point at whichever half you have in front of you.
+
+Your manuscript comes across with its text, both of its summaries per row, its notes, its word
+goals, and the "compile" tick that decides what belongs in the finished book. A row you had
+switched off stays switched off, and so does everything inside it.
+
+Your cast, your world entries and your plots become notes in a **Story bible** binder beside
+the manuscript, each in its own group. A scene's point of view points at the character it names.
+Plots keep their beats and their links to the characters they are about. Labels become tags,
+keeping the colours you gave them, and your status list becomes Skribisto's workflow ladder
+with your own names on the rungs, in your own language.
+
+Where you mentioned a character, a place or a plot inside your prose, Manuskript stored a
+marker. Those markers become the words they stood for, and the row gains a link to what it
+named, so the text reads as prose and the connection is still there.
+
+If your project kept a revision history, it comes too, and the *Versions* panel opens with your
+own past in it. A long history is thinned the same way Skribisto thins its own.
+
+### What does not come across, and why
+
+A few things have no home here, and the import says so rather than dropping them quietly:
+
+- **Per-row icons.** In Skribisto a row's icon comes from what the row is, so there is nothing
+  to set.
+- **The colour beside a character's name.** Skribisto colours tags rather than rows. The
+  characters themselves all arrive.
+- **The five nested summaries** of the whole book (situation, sentence, paragraph, page, full).
+  Skribisto keeps one synopsis per row, so the longest of the five becomes the book's, and all
+  five are kept together in a *Summary* note so none is lost.
+- Details with no field of their own, such as the series and volume, land in a *Project
+  information* note for the same reason.
+
+## Coming from Manuskript: how the shape is worked out
+
+Manuskript has folders and text files, and nothing in a project says which folders are parts
+and which are chapters. Skribisto needs to know, so it reads the depth: if your folders are one
+level deep they are chapters; if there are folders inside folders, the outer ones are parts and
+the inner ones chapters. Everything is wrapped in one Book, which is what Skribisto's writing
+plan, its analysis and its export scopes are built around.
+
+It is a starting point, not a verdict. Any row can be retyped afterwards from the binder, and
+nothing is lost by doing so. See [the writing model](:help-writing-model) for what each type
+means.
+
+## Coming from Plume Creator
+
+Choose a `.plume` or `.plume_backup` file, of any Plume version. Books, acts, chapters and
+scenes arrive with their text, their synopses and their notes; scene separators become scene
+breaks in the prose above them; and the story bible's characters, places and items become notes
+with their own group tags. Plume's eight revision stages arrive as your workflow ladder.
+
+Items you had put in Plume's rubbish bin are **not** migrated. Empty the bin or restore what
+you want to keep before importing.
+
+## After the import
+
+The import offers *Open now*, which opens the new project. If anything could not be carried
+across exactly, a second notice appears with a *Details* button listing every one of them, in
+plain language, with nothing hidden.
+
+The new project is a single `.skrib` file. If you kept your Manuskript project in a folder so
+you could put it in version control, use *Work ▸ Save as folder* afterwards: that is the same
+arrangement, in Skribisto's own format. See
+[backups and versions](:help-backups-and-versions) for the rest of what keeps your work safe.

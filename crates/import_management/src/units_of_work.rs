@@ -5,4 +5,5 @@
 
 pub(crate) mod analyze_document_import_uow;
 pub(crate) mod apply_document_import_uow;
+pub(crate) mod import_manuskript_project_uow;
 pub(crate) mod import_plume_creator_file_uow;

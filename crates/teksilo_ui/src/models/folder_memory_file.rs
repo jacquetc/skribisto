@@ -55,6 +55,10 @@ pub enum FolderPurpose {
     ImportDocuments,
     /// Picking a Plume Creator project to convert.
     ImportPlume,
+    /// Picking a Manuskript project to convert. Its own purpose rather than a
+    /// shared one with Plume: a writer arriving from Manuskript is not the same
+    /// writer arriving from Plume, and their projects do not live in one place.
+    ImportManuskript,
     /// Inserting a picture into the manuscript, and choosing a cover.
     InsertImage,
     /// Where an exported book is written.
@@ -78,6 +82,7 @@ impl FolderPurpose {
         FolderPurpose::NewProjectLocation,
         FolderPurpose::ImportDocuments,
         FolderPurpose::ImportPlume,
+        FolderPurpose::ImportManuskript,
         FolderPurpose::InsertImage,
         FolderPurpose::Export,
         FolderPurpose::SaveAs,

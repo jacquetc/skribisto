@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+  <plot name="Le pari" ID="0" importance="2" characters="0,1" description="Fogg parie vingt mille livres." result="Il gagne d’un jour.">
+    <step name="Le pari est tenu" ID="0" meta="ouverture" summary="Au Reform-Club."/>
+    <step name="Le jour gagné" ID="1" meta="dénouement" summary="La ligne de changement de date."/>
+  </plot>
+  <plot name="La poursuite de Fix" ID="1" importance="1" characters="2"/>
+</root>

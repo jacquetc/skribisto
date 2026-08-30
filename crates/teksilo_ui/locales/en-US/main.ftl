@@ -16,6 +16,7 @@ menu-import-from = &Import from
 menu-create-from = &Create from
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = &Documents (Markdown, Word, ODT)…
+menu-import-manuskript = &Manuskript (.msk)…
 menu-export = E&xport
 menu-export-book = Export Book
 menu-export-part = Export Part
@@ -1032,6 +1033,71 @@ import-plume-warnings-title = Import warnings
 # Error toast: a short reason in the body, the full technical chain behind Details
 import-plume-error-title = Could not import the project
 import-plume-error-details = Details
+
+## Import Manuskript project dialog
+import-manuskript-title = Import Manuskript project
+import-manuskript-close = Close
+import-manuskript-source = Manuskript project
+# A Manuskript project is a .msk file plus, in its usual mode, a folder of the
+# same name beside it. Either one gets you there, and so does the folder itself.
+import-manuskript-source-hint = Choose the .msk file or the project folder (any Manuskript version).
+import-manuskript-source-file = Choose file…
+import-manuskript-source-folder = Choose folder…
+import-manuskript-location = Destination folder
+import-manuskript-name = File name
+import-manuskript-name-placeholder = Project name
+import-manuskript-will-create = Will create
+import-manuskript-cancel = Cancel
+import-manuskript-import = Import
+# Field validation
+import-manuskript-source-required = Choose a Manuskript project
+import-manuskript-source-missing = This file or folder does not exist
+import-manuskript-location-required = Choose a destination folder
+import-manuskript-location-missing = This folder does not exist
+import-manuskript-location-not-folder = This path is not a folder
+import-manuskript-location-readonly = This folder is not writable
+import-manuskript-name-required = Enter a file name
+import-manuskript-name-exists = A file with this name already exists here. Import will confirm overwrite
+# Overwrite confirmation
+import-manuskript-overwrite-title = Replace existing file?
+import-manuskript-overwrite-text = “{ $name }” already exists. Replace it with the imported project?
+# Names passed to the backend (which can't do i18n). Manuskript stores none of
+# these: it has no binders, no story-bible groups, and its importance scale is
+# three numbers whose names live in its own interface.
+import-manuskript-manuscript-binder = Manuscript
+import-manuskript-story-bible-binder = Story bible
+import-manuskript-characters-group = Characters
+import-manuskript-world-group = World
+import-manuskript-plots-group = Plots
+import-manuskript-project-info-note = Project information
+import-manuskript-summary-note = Summary
+import-manuskript-importance-minor = Minor
+import-manuskript-importance-secondary = Secondary
+import-manuskript-importance-main = Main
+# Progress toast (the import is a long operation)
+import-manuskript-progress-title = Importing Manuskript project…
+import-manuskript-cancel-import = Cancel
+import-manuskript-cancelled = Import canceled
+# Result
+import-manuskript-done = { $imported ->
+    [one] { $imported } item imported.
+   *[other] { $imported } items imported.
+} { $revisions ->
+    [0] { "" }
+    [one] { $revisions } earlier version came with it.
+   *[other] { $revisions } earlier versions came with them.
+}
+import-manuskript-open-now = Open now
+# Shown when the importer could not carry everything across as it was.
+import-manuskript-warnings = { $count ->
+    [one] 1 thing to know about this import
+   *[other] { $count } things to know about this import
+}
+import-manuskript-details = Details
+import-manuskript-warnings-title = About this import
+# Error toast: short reason in the body, full technical chain behind “Details”
+import-manuskript-error-title = Could not import the project
+import-manuskript-error-details = Details
 
 ## Export dialog
 export-title = Export
@@ -2376,6 +2442,7 @@ help-topic-comments = Comments
 help-topic-round-trip = Sending your book to a reader
 help-topic-export = Exporting
 help-topic-import-documents = Importing documents
+help-topic-import-projects = Bringing a whole project across
 help-topic-backups-and-versions = Backups and versions
 
 help-shortcuts-title = Keyboard shortcuts

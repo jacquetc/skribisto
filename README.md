@@ -70,7 +70,8 @@ touch if you hit a glaring gap.
 - Autosave, manual save, save-as, and backups (retention policy, multiple destinations,
   scheduler, and opening a backup read-only)
 - Opens legacy `.skrib` SQLite projects, upgrading them on load
-- Imports from Plume Creator (`.plume`)
+- Imports whole projects from Manuskript (`.msk`, folder or single file) and Plume
+  Creator (`.plume`)
 - Exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live
   preview
 - Spell checking with downloadable dictionaries
@@ -157,6 +158,7 @@ A cargo workspace under `crates/`:
 - `skribisto_model`, the writing-model constraint matrix
 - `skrib_format`, the `.skrib` bundle reader and writer
 - `document_ingest`, the format-agnostic scanner behind Markdown/DOCX/ODT import
+- `manuskript_import` and `plume_import`, the whole-project converters
 - `skribisto_compiler` and `skribisto-fonts`, the export pipeline and its bundled typefaces
 - `work_management`, `binder_item_management`, `trash_management`, `search_management`,
   `import_management`, `export_management`, `handling_app_lifecycle`, `progress_management`,

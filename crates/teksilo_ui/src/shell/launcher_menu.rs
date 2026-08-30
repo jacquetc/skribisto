@@ -91,6 +91,11 @@ pub(crate) const ACTION_NEW_FROM_DOCUMENTS: &str = "work.new_from_documents";
 /// separately on each window's own tree (see [`build_launcher_menu`]).
 pub(crate) const ACTION_IMPORT_PLUME: &str = "work.import_plume";
 
+/// "Create a project from a Manuskript project" — the same action name the
+/// project window's Work ▸ Import from ▸ Manuskript uses, registered separately
+/// on each window's own tree (see [`build_launcher_menu`]).
+pub(crate) const ACTION_IMPORT_MANUSKRIPT: &str = "work.import_manuskript";
+
 /// "Open the preferences window" — the same action name the project window's
 /// Work ▸ Settings row and the App menu's ⌘, both fire, over a body that opens
 /// [`SettingsPanel::without_project`](crate::settings::SettingsPanel::without_project)
@@ -117,7 +122,7 @@ pub(crate) fn build_launcher_menu() -> MenuModel {
     MenuModel::new()
         .standard_menu(app_standard_menu_base())
         // Named "Work" like the project window's, and holding the same kind of
-        // thing: what you can do to a project. Here that is the four ways in and
+        // thing: what you can do to a project. Here that is the five ways in and
         // the way out — blank project first, exactly as the project window's own
         // Work menu opens.
         .menu(tr!(menu_work()), |m| {
@@ -146,6 +151,9 @@ pub(crate) fn build_launcher_menu() -> MenuModel {
                     MenuEntry::new(tr!(menu_import_document())).intent(ACTION_NEW_FROM_DOCUMENTS),
                 )
                 .item(MenuEntry::new(tr!(menu_import_plume())).intent(ACTION_IMPORT_PLUME))
+                .item(
+                    MenuEntry::new(tr!(menu_import_manuskript())).intent(ACTION_IMPORT_MANUSKRIPT),
+                )
             })
             .separator()
             // App preferences — in the same slot the project window's Work menu
@@ -245,7 +253,7 @@ mod tests {
     /// and every label is a `tr!` key the project window's own menu already uses,
     /// so a row cannot disagree with either its action or its twin.
     #[test]
-    fn the_work_menu_offers_four_ways_in_the_preferences_and_one_way_out() {
+    fn the_work_menu_offers_five_ways_in_the_preferences_and_one_way_out() {
         let model = build_launcher_menu();
         let nodes = model.nodes();
         let MenuNode::Submenu {
@@ -281,8 +289,8 @@ mod tests {
         assert_eq!(title.resolve_now(), tr!(menu_create_from()).resolve_now());
         assert_eq!(
             children.len(),
-            2,
-            "two ways in — a document set, and a Plume Creator project"
+            3,
+            "three ways in — a document set, a Plume Creator project, a Manuskript project"
         );
         assert!(
             children.iter().all(|n| matches!(n, MenuNode::Item(_))),

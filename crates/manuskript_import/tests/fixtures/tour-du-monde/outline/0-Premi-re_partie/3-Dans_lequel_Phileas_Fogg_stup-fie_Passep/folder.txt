@@ -1,0 +1,12 @@
+title:          Chapitre 4
+ID:             107
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         4
+summarySentence:Dans lequel Phileas Fogg stupéfie Passepartout, son domestique
+summaryFull:    À sept heures cinquante, Fogg rentre annoncer qu’ils partent dans dix minutes pour Douvres et Calais. Passepartout, abasourdi, boucle un sac de nuit où passent vingt mille livres en bank-notes; le train quitte Charing-Cross à huit heures quarante-cinq. En route, le domestique se souvient qu’il a laissé brûler le bec de gaz de sa chambre — et que la dépense courra à ses frais.
+POV:            0
+
+

@@ -23,6 +23,7 @@ use frontend::common::event::{Event, LongOperationEvent, Origin, WorkManagementE
 use crate::backup::{BackupRestoreViewModel, BackupSchedulerViewModel};
 use crate::export::ExportViewModel;
 use crate::import_document::ImportDocumentViewModel;
+use crate::import_manuskript::ImportManuskriptViewModel;
 use crate::import_plume::ImportPlumeViewModel;
 use crate::mentions::MentionIndex;
 use crate::save::SaveAsViewModel;
@@ -67,6 +68,12 @@ pub(in crate::app) fn install(
     // `ImportPlumeViewModel::wire_long_operation`) and one of the two windows
     // that can start this import must not carry a private copy of its wiring.
     if let Some(vm) = ctx.app_state::<ImportPlumeViewModel>().cloned() {
+        vm.wire_long_operation(ctx);
+    }
+
+    // Import from Manuskript — the same arrangement, for the same reason: the
+    // Launcher can start one too, and subscribes on its own widget tree.
+    if let Some(vm) = ctx.app_state::<ImportManuskriptViewModel>().cloned() {
         vm.wire_long_operation(ctx);
     }
 

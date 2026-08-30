@@ -38,6 +38,13 @@ extend-exclude = [
     # Paratext presets ship in the language they set text in — a German novel's
     # preset says "Autor", and translating it would break the preset.
     "resources/paratext/*.toml",
+    # The Manuskript import fixture: a French project, generated from the Verne
+    # example beside it, so its prose is the same public-domain French. Scoped to
+    # the generated tree, deliberately: `generate.py` and the tests around it are
+    # English and stay checked, and a slip in either is exactly what this should
+    # still catch. The `.msk` archives are zips.
+    "crates/manuskript_import/tests/fixtures/tour-du-monde/**",
+    "crates/manuskript_import/tests/fixtures/*.msk",
     # The Verne example's spec: forty kilobytes of French — thirty-seven chapter
     # synopses and a story bible, written in the language of the book they
     # describe. Scoped to that one example rather than to `resources/examples/`,
@@ -83,6 +90,20 @@ datas = "datas"
 #    beside it; the word is wrong everywhere else and stays flagged there.
 portugese = "portugese"
 
+# ── Manuskript's own on-disk key names, which are not ours to correct either.
+#    `Serie` is what its `infos.txt` writes and has never been spelled `Series`
+#    in any release; `Sentance` is the pre-0.3.0 misspelling of `summarySentence`
+#    and is still what a 2016 project on disk carries. An importer has to name
+#    both exactly as the file does or it reads nothing, so the allowance is for
+#    the reader and the fixture; the words stay flagged everywhere else.
+Serie = "Serie"
+serie = "serie"
+Sentance = "Sentance"
+
+# ── French in the bilingual UI-automation scripts, which assert on both the
+#    en-US and the fr-FR label of the same control.
+maintenant = "maintenant"
+
 # ── Real English the dictionary does not carry. "afterwords" is the plural of
 #    *afterword* and belongs in a book app; "unparseable" and "invokable" are
 #    the standard variants in this codebase; "mis" is only ever a hyphenated
@@ -120,8 +141,13 @@ celle = "celle"
 bord = "bord"
 complet = "complet"
 objet = "objet"
+Objets = "Objets"
 ponctuation = "ponctuation"
 Registre = "Registre"
+# French for "statuses", in the settings-tree search test that asserts a query
+# for one label does NOT match another ("statuts" must not find "Étiquettes").
+# Unrelated to `statuss` above, which is qleany's pluralisation of an entity name.
+statuts = "statuts"
 # The French dictionary's own variant names, quoted verbatim in the registry's
 # prose because they are what the writer picks between ("Toutes variantes").
 variantes = "variantes"

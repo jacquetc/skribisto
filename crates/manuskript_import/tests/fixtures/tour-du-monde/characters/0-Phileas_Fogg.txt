@@ -1,0 +1,11 @@
+Name:                Phileas Fogg
+ID:                  0
+Importance:          2
+POV:                 True
+Motivation:          Tenir le pari.
+Phrase Summary:      Gentleman du Reform-Club, seul habitant du 7 de Saville-row avec son domestique.
+Paragraph Summary:   Gentleman du Reform-Club, seul habitant du 7 de Saville-row avec son domestique. On ne sait de lui ni métier, ni famille, ni origine, seulement qu’il vit avec la régularité d’un chronomètre. Parie vingt mille livres — la moitié de sa fortune — qu’il fera le tour du monde en quatre-vingts jours.
+Notes:               Aussi appelé : Fogg, Mr. Fogg
+Color:               #ff0000
+Ville d’origine:     Londres
+Color:               yeux gris

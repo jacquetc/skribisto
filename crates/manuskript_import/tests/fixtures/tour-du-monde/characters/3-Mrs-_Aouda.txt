@@ -1,0 +1,8 @@
+Name:                Mrs. Aouda
+ID:                  3
+Importance:          0
+POV:                 False
+Phrase Summary:      Jeune veuve parsie du rajah de Bundelkund, élevée à Bombay, promise au bûcher de Pillaji et enlevée par Passepartout.
+Paragraph Summary:   Jeune veuve parsie du rajah de Bundelkund, élevée à Bombay, promise au bûcher de Pillaji et enlevée par Passepartout. Voyage avec Fogg jusqu’à Londres.
+Notes:               Aussi appelé : Aouda
+Color:               #c0392b

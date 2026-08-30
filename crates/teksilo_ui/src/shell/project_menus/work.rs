@@ -212,6 +212,9 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
         move |s| {
             s.item(MenuEntry::new(tr!(menu_import_plume())).intent("work.import_plume"))
                 .item(
+                    MenuEntry::new(tr!(menu_import_manuskript())).intent("work.import_manuskript"),
+                )
+                .item(
                     MenuEntry::new(tr!(menu_import_document()))
                         .visible(show_docs)
                         .intent("work.import_document"),

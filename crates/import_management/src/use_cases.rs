@@ -5,4 +5,5 @@
 
 pub mod analyze_document_import_uc;
 pub(crate) mod apply_document_import_uc;
+pub(crate) mod import_manuskript_project_uc;
 pub(crate) mod import_plume_creator_file_uc;

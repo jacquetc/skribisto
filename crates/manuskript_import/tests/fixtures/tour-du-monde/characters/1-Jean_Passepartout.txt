@@ -1,0 +1,8 @@
+Name:                Jean Passepartout
+ID:                  1
+Importance:          1
+POV:                 True
+Phrase Summary:      Domestique français de Phileas Fogg, engagé le 2 octobre 1872.
+Paragraph Summary:   Domestique français de Phileas Fogg, engagé le 2 octobre 1872. Ancien chanteur ambulant, écuyer de cirque, professeur de gymnastique et sergent de pompiers, venu en Angleterre chercher une vie tranquille. C’est par lui que tout arrive.
+Notes:               Aussi appelé : Passepartout
+Color:               #00ff00

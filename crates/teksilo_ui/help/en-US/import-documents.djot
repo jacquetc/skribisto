@@ -1,7 +1,9 @@
 Bringing writing you did not create in Skribisto into a project, for the first time, uses the
 *Import documents* wizard. If instead you are bringing back a file you sent out of Skribisto for
 someone else to mark up, that is a different question with a more exact answer: see
-[the round trip](:help-round-trip).
+[the round trip](:help-round-trip). And if what you have is a whole project made in
+another writing application, that is a different job again: see
+[bringing a whole project across](:help-import-projects).
 
 ## Starting it
 

@@ -13,6 +13,7 @@ menu-import-from = &Importer depuis
 menu-create-from = &Créer depuis
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = &Documents (Markdown, Word, ODT)…
+menu-import-manuskript = &Manuskript (.msk)…
 menu-export = E&xporter
 menu-export-book = Exporter le livre
 menu-export-part = Exporter la partie
@@ -1030,6 +1031,71 @@ import-plume-warnings-title = Avertissements d’importation
 # Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
 import-plume-error-title = Impossible d’importer le projet
 import-plume-error-details = Détails
+
+## Boîte de dialogue d'import de projet Manuskript
+import-manuskript-title = Importer un projet Manuskript
+import-manuskript-close = Fermer
+import-manuskript-source = Projet Manuskript
+# Un projet Manuskript est un fichier .msk plus, dans son mode habituel, un
+# dossier du même nom à côté. L'un ou l'autre convient, le dossier aussi.
+import-manuskript-source-hint = Choisissez le fichier .msk ou le dossier du projet (n’importe quelle version de Manuskript).
+import-manuskript-source-file = Choisir un fichier…
+import-manuskript-source-folder = Choisir un dossier…
+import-manuskript-location = Dossier de destination
+import-manuskript-name = Nom du fichier
+import-manuskript-name-placeholder = Nom du projet
+import-manuskript-will-create = Créera
+import-manuskript-cancel = Annuler
+import-manuskript-import = Importer
+# Validation des champs
+import-manuskript-source-required = Choisissez un projet Manuskript
+import-manuskript-source-missing = Ce fichier ou ce dossier n’existe pas
+import-manuskript-location-required = Choisissez un dossier de destination
+import-manuskript-location-missing = Ce dossier n’existe pas
+import-manuskript-location-not-folder = Ce chemin n’est pas un dossier
+import-manuskript-location-readonly = Ce dossier n’est pas accessible en écriture
+import-manuskript-name-required = Saisissez un nom de fichier
+import-manuskript-name-exists = Un fichier de ce nom existe déjà ici. L’import demandera confirmation du remplacement
+# Confirmation de remplacement
+import-manuskript-overwrite-title = Remplacer le fichier existant ?
+import-manuskript-overwrite-text = « { $name } » existe déjà. Le remplacer par le projet importé ?
+# Noms transmis au backend (qui ne fait pas d'i18n). Manuskript n'en stocke
+# aucun : il n'a ni classeurs ni groupes de bible, et son échelle d'importance
+# est faite de trois nombres dont les noms vivent dans son interface.
+import-manuskript-manuscript-binder = Manuscrit
+import-manuskript-story-bible-binder = Bible de l’histoire
+import-manuskript-characters-group = Personnages
+import-manuskript-world-group = Univers
+import-manuskript-plots-group = Intrigues
+import-manuskript-project-info-note = Informations du projet
+import-manuskript-summary-note = Résumé
+import-manuskript-importance-minor = Mineur
+import-manuskript-importance-secondary = Secondaire
+import-manuskript-importance-main = Principal
+# Toast de progression (l'import est une opération longue)
+import-manuskript-progress-title = Importation du projet Manuskript…
+import-manuskript-cancel-import = Annuler
+import-manuskript-cancelled = Importation annulée
+# Résultat
+import-manuskript-done = { $imported ->
+    [one] { $imported } élément importé.
+   *[other] { $imported } éléments importés.
+} { $revisions ->
+    [0] { "" }
+    [one] { $revisions } version antérieure a suivi.
+   *[other] { $revisions } versions antérieures ont suivi.
+}
+import-manuskript-open-now = Ouvrir maintenant
+# Affiché quand l'importateur n'a pas pu tout reprendre à l'identique.
+import-manuskript-warnings = { $count ->
+    [one] 1 chose à savoir sur cet import
+   *[other] { $count } choses à savoir sur cet import
+}
+import-manuskript-details = Détails
+import-manuskript-warnings-title = À propos de cet import
+# Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
+import-manuskript-error-title = Impossible d’importer le projet
+import-manuskript-error-details = Détails
 
 ## Dialogue d'exportation
 export-title = Exporter
@@ -2357,6 +2423,7 @@ help-topic-comments = Commentaires
 help-topic-round-trip = Envoyer votre livre à un lecteur
 help-topic-export = Exporter
 help-topic-import-documents = Importer des documents
+help-topic-import-projects = Faire venir un projet entier
 help-topic-backups-and-versions = Copies de secours et versions
 
 help-shortcuts-title = Raccourcis clavier

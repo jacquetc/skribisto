@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<opml version="1.0">
+  <body>
+    <outline name="Lieux" ID="1" passion="Le tour du monde tient dans ces noms.">
+      <outline name="Saville-row" ID="10" description="La maison de Phileas Fogg, au numéro 7, celle où Shéridan mourut en 1814. Close, silencieuse, réglée comme un service d’horlogerie."/>
+      <outline name="Le Reform-Club" ID="11" description="Pall-Mall. Fogg y prend tous ses repas et y joue son whist; c’est là que le pari se conclut et là qu’il doit être gagné, le samedi 21 décembre à huit heures quarante-cinq du soir."/>
+      <outline name="Suez" ID="12" description="Première échelle du voyage et poste de guet de Fix, qui y attend le Mongolia avec le signalement du voleur en poche."/>
+      <outline name="Bombay" ID="13" description="Atteinte avec deux jours d’avance. La pagode de Malebar-Hill y fournit à Fix le délit dont il fera plus tard usage à Calcutta."/>
+      <outline name="Kholby" ID="14" description="Village du Bundelkund où la voie ferrée s’interrompt: cinquante milles manquent entre Kholby et Allahabad, et les journaux de Londres l’ignoraient."/>
+    </outline>
+    <outline name="Objets" ID="2"/>
+  </body>
+</opml>

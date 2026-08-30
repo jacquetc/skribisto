@@ -5562,6 +5562,7 @@ dependencies = [
  "skribisto-direct-access",
  "skribisto-document-ingest",
  "skribisto-macros",
+ "skribisto-manuskript-import",
  "skribisto-model",
  "skribisto-plume-import",
  "skribisto-skrib-format",
@@ -5578,6 +5579,23 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.2",
+]
+
+[[package]]
+name = "skribisto-manuskript-import"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "chrono",
+ "roxmltree 0.21.1",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-model",
+ "skribisto-skrib-format",
+ "tempfile",
+ "uuid",
+ "zip 8.6.0",
 ]
 
 [[package]]

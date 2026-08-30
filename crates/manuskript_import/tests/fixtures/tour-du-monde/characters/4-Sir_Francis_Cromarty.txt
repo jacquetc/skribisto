@@ -1,0 +1,8 @@
+Name:                Sir Francis Cromarty
+ID:                  4
+Importance:          0
+POV:                 False
+Phrase Summary:      Brigadier général de l’armée des Indes, partenaire de whist de Fogg à bord du Mongolia, puis son compagnon de Bombay à Bénarès.
+Paragraph Summary:   Brigadier général de l’armée des Indes, partenaire de whist de Fogg à bord du Mongolia, puis son compagnon de Bombay à Bénarès.
+Notes:               Aussi appelé : Cromarty
+Color:               #8e44ad

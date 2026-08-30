@@ -15,6 +15,7 @@ use teksilo::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use teksilo::prelude::*;
 
 use crate::import_document::panel::{ImportDocumentOptions, present_import_document};
+use crate::import_manuskript::panel::present_import_manuskript;
 use crate::import_plume::panel::present_import_plume;
 use crate::intents::AppIntent;
 use crate::new_work::panel::NewWorkPanel;
@@ -161,6 +162,12 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // widget tree (see `welcome::panel`), and one command must not have two implementations.
     ctx.register_action_global(
         Action::new("work.import_plume").on_invoke(|_i, c| present_import_plume(c)),
+    );
+    // Same shape as the Plume row above, and registered the same way: the body
+    // lives in `import_manuskript::panel` because the Launcher registers this
+    // same action on its own tree.
+    ctx.register_action_global(
+        Action::new("work.import_manuskript").on_invoke(|_i, c| present_import_manuskript(c)),
     );
 
     // Import documents (Markdown / plain text) INTO the open project: presents the wizard.

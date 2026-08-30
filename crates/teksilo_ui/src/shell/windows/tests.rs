@@ -428,7 +428,10 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
             "menu-quit",
         ],
     ),
-    ("Work > Import from", &["menu-import-plume"]),
+    (
+        "Work > Import from",
+        &["menu-import-plume", "menu-import-manuskript"],
+    ),
     // The export scopes are labelled from `ExportScopeKind` at runtime and
     // deliberately carry no mnemonics; they are listed so the table stays a
     // complete picture of the menu, and the uniqueness check skips them.

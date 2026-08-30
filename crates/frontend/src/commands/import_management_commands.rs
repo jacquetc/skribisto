@@ -9,8 +9,8 @@ use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyDocumentImportResultDto,
-    DocumentImportPlanDto, ImportPlumeCreatorFileDto, ImportPlumeCreatorFileResultDto,
-    import_management_controller,
+    DocumentImportPlanDto, ImportManuskriptProjectDto, ImportManuskriptProjectResultDto,
+    ImportPlumeCreatorFileDto, ImportPlumeCreatorFileResultDto, import_management_controller,
 };
 
 use common::long_operation::OperationProgress;
@@ -50,6 +50,43 @@ pub fn get_import_plume_creator_file_result(
         operation_id,
     )
     .context("getting import_plume_creator_file result")
+}
+
+/// import_manuskript_project (long operation)
+pub fn import_manuskript_project(
+    ctx: &AppContext,
+    dto: &ImportManuskriptProjectDto,
+) -> Result<String> {
+    import_management_controller::import_manuskript_project(
+        &ctx.db_context,
+        &ctx.event_hub,
+        &mut common::long_operation::lock_or_recover(&ctx.long_operation_manager),
+        dto,
+    )
+    .context("import_manuskript_project")
+}
+
+/// Get the progress of a import_manuskript_project operation
+pub fn get_import_manuskript_project_progress(
+    ctx: &AppContext,
+    operation_id: &str,
+) -> Option<OperationProgress> {
+    import_management_controller::get_import_manuskript_project_progress(
+        &common::long_operation::lock_or_recover(&ctx.long_operation_manager),
+        operation_id,
+    )
+}
+
+/// Get the result of a import_manuskript_project operation
+pub fn get_import_manuskript_project_result(
+    ctx: &AppContext,
+    operation_id: &str,
+) -> Result<Option<ImportManuskriptProjectResultDto>> {
+    import_management_controller::get_import_manuskript_project_result(
+        &common::long_operation::lock_or_recover(&ctx.long_operation_manager),
+        operation_id,
+    )
+    .context("getting import_manuskript_project result")
 }
 
 /// analyze_document_import (long operation)

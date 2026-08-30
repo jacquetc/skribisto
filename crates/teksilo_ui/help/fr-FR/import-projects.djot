@@ -1,0 +1,103 @@
+Certains textes arrivent sous forme d’un lot de fichiers. D’autres arrivent sous forme de projet
+entier, réalisé dans une autre application d’écriture, avec ses chapitres, ses personnages et
+ses notes déjà rangés. Ce sont deux tâches différentes, et Skribisto les traite à deux endroits
+différents.
+
+Cette page parle de la seconde : faire venir un projet depuis Manuskript ou depuis Plume
+Creator. Si ce que vous avez est plutôt un dossier de documents, voir
+[importer des documents](:help-import-documents).
+
+Un import de projet crée toujours un **nouveau** projet Skribisto. Il lit celui que vous
+désignez et n’y écrit jamais : l’original reste exactement tel que vous l’avez laissé, quoi
+qu’il arrive, et vous pouvez recommencer l’import si le premier résultat ne vous convient pas.
+
+## Le lancer
+
+Avec un projet ouvert, utilisez *Œuvre ▸ Importer depuis* et choisissez l’application d’où vous
+venez. Depuis la fenêtre d’accueil, les mêmes lignes se trouvent sous *Créer depuis*, car un
+import de projet n’a besoin de rien d’ouvert pour se dérouler.
+
+Dans les deux cas, vous choisissez le projet, puis un dossier de destination et un nom de
+fichier pour le `.skrib` qui sera créé. Rien n’est écrit avant que vous n’appuyiez sur
+*Importer*, et un gros projet affiche sa progression avec un bouton *Annuler* qui ne laisse
+rien derrière lui.
+
+## Venir de Manuskript
+
+Manuskript enregistre un projet de deux façons, et l’assistant accepte les deux. Dans son mode
+habituel, un projet est un petit fichier `.msk` **plus un dossier du même nom à côté**, et il
+vous faut les deux : le `.msk` seul fait un octet et ne fait que désigner le dossier. Dans son
+mode fichier unique, tout le projet est à l’intérieur du `.msk`. Il y a un bouton *Choisir un
+fichier…* et un bouton *Choisir un dossier…*, pour que vous puissiez désigner la moitié que
+vous avez sous les yeux.
+
+Votre manuscrit arrive avec son texte, ses deux résumés par ligne, ses notes, ses objectifs de
+mots et la case « compile » qui décide de ce qui appartient au livre fini. Une ligne que vous
+aviez désactivée reste désactivée, et tout ce qu’elle contient aussi.
+
+Vos personnages, vos entrées d’univers et vos intrigues deviennent des notes dans un classeur
+**Bible de l’histoire** à côté du manuscrit, chacun dans son groupe. Le point de vue d’une scène
+désigne le personnage qu’il nomme. Les intrigues gardent leurs étapes et leurs liens vers les
+personnages qu’elles concernent. Les étiquettes deviennent des tags, avec les couleurs que vous
+leur aviez données, et votre liste de statuts devient l’échelle de progression de Skribisto,
+avec vos propres noms sur les barreaux, dans votre propre langue.
+
+Là où vous mentionniez un personnage, un lieu ou une intrigue dans votre prose, Manuskript
+plaçait un marqueur. Ces marqueurs deviennent les mots qu’ils représentaient, et la ligne gagne
+un lien vers ce qu’ils désignaient : le texte se lit comme de la prose et la relation est
+toujours là.
+
+Si votre projet conservait un historique de révisions, il vient aussi, et le panneau *Versions*
+s’ouvre avec votre propre passé dedans. Un long historique est allégé de la même façon que
+Skribisto allège le sien.
+
+### Ce qui ne suit pas, et pourquoi
+
+Quelques éléments n’ont pas de place ici, et l’import le dit plutôt que de les abandonner en
+silence :
+
+- **Les icônes par ligne.** Dans Skribisto, l’icône d’une ligne vient de ce qu’elle est : il n’y
+  a rien à régler.
+- **La couleur à côté du nom d’un personnage.** Skribisto colore les tags plutôt que les lignes.
+  Les personnages eux-mêmes arrivent tous.
+- **Les cinq résumés emboîtés** du livre entier (situation, phrase, paragraphe, page, complet).
+  Skribisto garde un résumé par ligne : le plus long des cinq devient celui du livre, et les
+  cinq sont conservés ensemble dans une note *Résumé*, pour qu’aucun ne soit perdu.
+- Les détails sans champ propre, comme la série et le volume, arrivent dans une note
+  *Informations du projet*, pour la même raison.
+
+## Venir de Manuskript : comment la forme est déduite
+
+Manuskript a des dossiers et des fichiers texte, et rien dans un projet ne dit quels dossiers
+sont des parties et lesquels sont des chapitres. Skribisto a besoin de le savoir, alors il lit
+la profondeur : si vos dossiers sont sur un seul niveau, ce sont des chapitres ; s’il y a des
+dossiers dans des dossiers, ceux du dehors sont des parties et ceux du dedans des chapitres.
+Tout est enveloppé dans un Livre, autour duquel sont construits le plan d’écriture de Skribisto,
+son analyse et ses portées d’export.
+
+C’est un point de départ, pas un verdict. N’importe quelle ligne peut être retypée ensuite
+depuis le classeur, sans rien perdre. Voir [le modèle d’écriture](:help-writing-model) pour ce
+que chaque type représente.
+
+## Venir de Plume Creator
+
+Choisissez un fichier `.plume` ou `.plume_backup`, de n’importe quelle version de Plume. Les
+livres, actes, chapitres et scènes arrivent avec leur texte, leurs synopsis et leurs notes ; les
+séparateurs de scène deviennent des coupures de scène dans la prose au-dessus d’eux ; et les
+personnages, lieux et objets de la bible deviennent des notes avec leurs propres tags de groupe.
+Les huit étapes de révision de Plume arrivent comme votre échelle de progression.
+
+Les éléments que vous aviez mis à la corbeille de Plume ne sont **pas** migrés. Videz la
+corbeille, ou restaurez ce que vous voulez garder, avant d’importer.
+
+## Après l’import
+
+L’import propose *Ouvrir maintenant*, qui ouvre le nouveau projet. Si quelque chose n’a pas pu
+être repris à l’identique, un second avis apparaît avec un bouton *Détails* qui les énumère
+tous, en clair, sans rien cacher.
+
+Le nouveau projet est un unique fichier `.skrib`. Si vous gardiez votre projet Manuskript sous
+forme de dossier pour pouvoir le suivre en gestion de versions, utilisez ensuite *Œuvre ▸
+Enregistrer comme dossier* : c’est la même disposition, dans le format de Skribisto. Voir
+[les sauvegardes et les versions](:help-backups-and-versions) pour le reste de ce qui protège
+votre travail.

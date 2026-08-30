@@ -1,0 +1,12 @@
+title:          Chapitre 6
+ID:             111
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         2
+summarySentence:Dans lequel l’agent Fix montre une impatience bien légitime
+summaryFull:    À Suez, Fix attend le paquebot en harcelant le consul de questions. Le Mongolia mouille avec deux heures d’avance, et Fix voit descendre non pas le gentleman mais son domestique, venu faire viser un passeport.
+POV:            0
+
+

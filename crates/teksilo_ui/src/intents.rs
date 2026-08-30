@@ -87,6 +87,10 @@ pub enum AppIntent {
     /// `work.import_plume` action in `App::build`.
     #[name = "work.import_plume"]
     ImportPlumeCreator,
+    /// Open the Import Manuskript panel. Backed by the global
+    /// `work.import_manuskript` action in `App::build`.
+    #[name = "work.import_manuskript"]
+    ImportManuskript,
 
     /// Import Markdown / plain-text documents **into the open project** —
     /// presents the Import documents wizard. Fired from Work ▸ Import from ▸

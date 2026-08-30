@@ -1,0 +1,12 @@
+title:          Chapitre 1
+ID:             101
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         1
+summarySentence:Dans lequel Phileas Fogg et Passepartout s’acceptent réciproquement, l’un comme maître, l’autre comme domestique
+summaryFull:    Le 2 octobre 1872, au 7 de Saville-row, Phileas Fogg congédie James Forster pour lui avoir apporté de l’eau à barbe à quatre-vingt-quatre degrés au lieu de quatre-vingt-six, et engage à sa place un Français, Jean Passepartout, ancien saltimbanque et pompier venu chercher une existence tranquille. Portrait d’un gentleman dont on ne sait rien, sinon qu’il vit entre sa maison et son club avec la régularité d’une horloge.
+POV:            0
+
+
