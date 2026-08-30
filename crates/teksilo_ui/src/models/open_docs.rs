@@ -1342,7 +1342,9 @@ impl OpenDocsStore {
     }
 
     /// Release one reference to `item_id`. On the **last** reference, flush the
-    /// doc (persisting any unsaved edits) and evict it.
+    /// doc (persisting any unsaved edits) and evict it — unless the item is no
+    /// longer in the store, in which case there is nothing to write back to and
+    /// the doc is simply dropped (see [`Self::item_is_live`]).
     pub fn release(&self, item_id: u64, stack: Option<u64>) {
         let evicted = {
             let mut map = self.inner.open.borrow_mut();
@@ -1357,6 +1359,9 @@ impl OpenDocsStore {
             }
         };
         if let Some(doc) = evicted {
+            if !self.item_is_live(item_id) {
+                return;
+            }
             // The entry is already gone from `open` by this point (`map.remove`
             // above), so a failed flush here is a genuine, unrecoverable loss of
             // whatever was still unsaved — there is no live entry left to retry
@@ -1366,6 +1371,37 @@ impl OpenDocsStore {
                 eprintln!("open docs: release flush failed for item {item_id}: {e}");
             }
         }
+    }
+
+    /// Is `item_id` still a row in the store — i.e. is there anything for a
+    /// write-back to land in?
+    ///
+    /// A released document is normally flushed on its way out, because the
+    /// writer's last keystrokes may not have reached their `Content` rows yet.
+    /// Two paths release a document whose rows are already **gone**, and for
+    /// both of them a flush is not a rescue but an impossible write:
+    ///
+    /// * **Closing the project.** `close_work` tears the whole `Work` subtree
+    ///   out of the store and only *queues* its `CloseWork` event; the window is
+    ///   force-closed in the same dispatch, so that window's own `CloseWork`
+    ///   subscriber (which would have dropped these documents un-flushed, the
+    ///   close flow having already saved or discarded them) never runs. Its
+    ///   `WindowTeardown` then releases every tab it held — against a `Work`
+    ///   that no longer exists. Every field's `update_content` failed, one
+    ///   `open docs: release flush failed for item N: updating content` per open
+    ///   tab, on a *discard* the writer had explicitly asked for.
+    /// * **Delete Forever.** `close_tab` already special-cases the hard-removal
+    ///   path with a `flush: false`; this is the same fact, checked rather than
+    ///   passed down, so a release that arrives by any other route is safe too.
+    ///
+    /// A store read, not a guess: the item table is an in-memory `HashMap`, so
+    /// this costs a lookup, and "the row is gone" is exactly the question a
+    /// write-back has to answer before attempting one.
+    fn item_is_live(&self, item_id: u64) -> bool {
+        matches!(
+            binder_item_commands::get_binder_item(&self.inner.app_ctx, &item_id),
+            Ok(Some(_))
+        )
     }
 
     /// Flush every open doc once (changed fields only).
@@ -1636,6 +1672,148 @@ mod tests {
             !healthy.dirty.get(),
             "flush_all must still reach the doc after the first one"
         );
+    }
+
+    /// **A released document whose item is gone is dropped, not written back.**
+    ///
+    /// The close flow tears the whole `Work` subtree out of the store and then
+    /// force-closes the window in the same dispatch, so the window's own
+    /// `CloseWork` subscriber — the one that would have dropped these documents
+    /// un-flushed — never runs; its `WindowTeardown` releases every tab it held
+    /// against a `Work` that no longer exists. Each field's `update_content` then
+    /// failed with `open docs: release flush failed for item N: updating
+    /// content`, once per open tab, on a discard the writer had asked for.
+    ///
+    /// Modelled here the way the real thing happens: the row the field was
+    /// editing outlives the item (an orphan row stands in for "the write would
+    /// have landed somewhere"), so a write-back that *did* run would be visible
+    /// in it. It must not have run.
+    ///
+    /// Real backend only, like its sibling below: under `mocks` a `SingleContent`
+    /// write never reaches the store, so the row reads `"before"` whether the
+    /// guard fired or not and the test would pass without testing anything.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn releasing_a_doc_whose_item_is_gone_writes_nothing() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx.clone());
+        let (item_id, row) = live_scene(&ctx, "before");
+
+        let doc = open_edited(&ctx, &store, item_id, row.clone(), "after");
+        // Exactly what `close_work` does to every item in the subtree.
+        binder_item_commands::remove_binder_item(&ctx, None, &item_id).expect("removing the item");
+
+        store.release(item_id, None);
+
+        assert_eq!(
+            stored_data(&ctx, row.id).as_deref(),
+            Some("before"),
+            "nothing may be written back through an item that is gone"
+        );
+        assert!(
+            doc.main
+                .as_ref()
+                .expect("a Scene owns a main text document")
+                .doc
+                .is_modified(),
+            "the edit is dropped with the doc, not silently marked flushed"
+        );
+    }
+
+    /// …and the release of a doc whose item is **still there** flushes as it
+    /// always did — the other half of the guard above, so it cannot be widened
+    /// into "releases never write" without a test saying so.
+    ///
+    /// Real backend only: this asserts that a write **landed**, and the `mocks`
+    /// `SingleContent` deliberately writes nowhere.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn releasing_a_doc_whose_item_is_live_still_flushes() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx.clone());
+        let (item_id, row) = live_scene(&ctx, "before");
+
+        open_edited(&ctx, &store, item_id, row.clone(), "after");
+        store.release(item_id, None);
+
+        assert_eq!(
+            stored_data(&ctx, row.id).as_deref(),
+            Some("after"),
+            "a live item's last keystrokes must still reach its row"
+        );
+    }
+
+    /// A real `BinderItem` plus the `Content` row a Scene tab would be editing.
+    ///
+    /// The row is created **orphan** on purpose: removing the item cascades its
+    /// own children away, and a row that vanished with the item could not show
+    /// whether a write-back was attempted.
+    #[cfg(not(feature = "mocks"))]
+    fn live_scene(ctx: &Rc<AppContext>, data: &str) -> (u64, ContentDto) {
+        let item = binder_item_commands::create_orphan_binder_item(
+            ctx,
+            None,
+            &frontend::direct_access::CreateBinderItemDto {
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                ..Default::default()
+            },
+        )
+        .expect("creating the item");
+        let row = content_commands::create_orphan_content(
+            ctx,
+            None,
+            &frontend::direct_access::CreateContentDto {
+                role: ContentRole::SceneText,
+                data: data.to_string(),
+                ..Default::default()
+            },
+        )
+        .expect("creating the row");
+        (item.id, row)
+    }
+
+    /// Open `row` as `item_id`'s Scene document, type `text` into it and hand it
+    /// to the store with one reference — the state a tab is in when its window
+    /// goes away.
+    #[cfg(not(feature = "mocks"))]
+    fn open_edited(
+        ctx: &Rc<AppContext>,
+        store: &OpenDocsStore,
+        item_id: u64,
+        row: ContentDto,
+        text: &str,
+    ) -> Rc<OpenDoc> {
+        let doc = Rc::new(OpenDoc::build(
+            ctx,
+            item_id,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[row],
+            store.edited_any(),
+            std::path::Path::new(""),
+        ));
+        let main = doc
+            .main
+            .as_ref()
+            .expect("a Scene owns a main text document");
+        // Synchronous, and then modified by hand: `set_djot` only *queues* a
+        // document event (there is no frame to pump here), and loading text into
+        // a document is not by itself an edit — `flush` gates on `is_modified`,
+        // which is what a keystroke sets.
+        main.doc
+            .set_djot_sync(text)
+            .expect("staging the edit itself must succeed");
+        main.doc.set_modified(true);
+        store.insert_for_test(doc.clone());
+        doc
+    }
+
+    #[cfg(not(feature = "mocks"))]
+    fn stored_data(ctx: &Rc<AppContext>, content_id: u64) -> Option<String> {
+        content_commands::get_content(ctx, &content_id)
+            .expect("reading the row back")
+            .map(|c| c.data)
     }
 
     /// Changing the project's default language must reach an item that has no

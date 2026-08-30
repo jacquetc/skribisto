@@ -119,7 +119,15 @@ fn build(
         }
         menu = menu.item(row);
     }
-    menu = menu.separator();
+    // Only when there is something to separate *from*. A project can genuinely have
+    // no ladder — nothing seeds one on load any more (see `project_events`' note on
+    // why a load-time heal cannot live in a subscriber), so a project written before
+    // the ladder existed opens with an empty one until Settings ▸ Work ▸ Statuses
+    // applies a preset. A trailing rule under the only row reads as a menu whose
+    // second half failed to render.
+    if !ladder.is_empty() {
+        menu = menu.separator();
+    }
 
     for rung in &ladder {
         let set = set.clone();

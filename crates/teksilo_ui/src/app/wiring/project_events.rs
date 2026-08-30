@@ -730,37 +730,26 @@ pub(in crate::app) fn install_lifecycle(
     // the fresh project's own stack alongside everything else the template laid down,
     // and a writer who wants a different palette changes it in Settings rather than
     // pressing Ctrl+Z on a project they have not typed in yet.
-    // ── A loaded project with no ladder gets the default one ────────────────
+    // ── Nothing seeds a ladder on LOAD, deliberately ────────────────────────
     //
-    // Not cosmetic, and not the same question as seeding a NEW project. `seed` is the
-    // only path that creates a rung and, until a ladder editor exists, the only one there
-    // is — so a project that arrives without a ladder has the status feature permanently
-    // dead: the picker opens on nothing, the filter row never mounts, and there is no
-    // door anywhere in the app to build one. That is every project written before v14,
-    // which is every project that exists today.
+    // A `LoadWork` subscriber used to heal a project that arrived without a ladder,
+    // on the grounds that a pre-v14 project would otherwise have the status feature
+    // dead. It cannot live here, and the reason generalises to anything else tempted
+    // to write on load:
     //
-    // A heal, in the same spirit as the uid and punctuation heals `load_work` already
-    // performs: absent state that has exactly one sensible value gets it. `seed` refuses
-    // to run over a non-empty ladder, so this is idempotent and cannot touch a project
-    // that has one.
+    // Every entity `load_work` itself creates is invisible to the dirty flag, because
+    // those events are dispatched before the `LoadWork` subscriber that seeds this
+    // window's `work_id` — and `App::mutation_origins`' guard drops a mutation it
+    // cannot attribute to an open Work. A *subscriber* runs on the other side of that
+    // line: its writes are attributed, so they are counted. The heal created four
+    // `BinderStatus` rows and so bumped `dirty_seq` twice (`Work(Updated)` for the
+    // junction, then `BinderStatus(Created)`), and every project opened, untouched,
+    // reading "unsaved changes" — the same "open-driven unconditional write" failure
+    // `mutation_origins`' own doc warns a new whitelisted kind about.
     //
-    // ⚠ Revisit when a ladder editor lands: at that point "empty" stops being
-    // indistinguishable from "pre-v14" and starts being a choice the writer could have
-    // made, which this would silently overturn.
-    {
-        let session = deps.session.clone();
-        let my_ids = deps.ids.clone();
-        ctx.subscribe_event(
-            Origin::WorkManagement(WorkManagementEvent::LoadWork),
-            move |event: &Event| {
-                if !my_ids.is_bootstrap_or_own(&event.ids) {
-                    return;
-                }
-                session.statuses.seed(crate::statuses::Preset::DEFAULT);
-            },
-        );
-    }
-
+    // Seeding therefore belongs to `NewWork` (below), which every project goes
+    // through, and to Settings ▸ Work ▸ Statuses ▸ Apply preset for one that somehow
+    // has none. A load-time heal would have to move inside `load_work` to be silent.
     {
         let pending = deps.starters.clone();
         let session = deps.session.clone();
