@@ -10,6 +10,15 @@
 //! It reuses the shared
 //! [`promote_with_guard`](crate::binder::dock::promote_with_guard) so the button behaves exactly like
 //! the outline context menu (incl. the demote-empty MessageBox).
+//!
+//! **The body scrolls.** Unlike every other dock in the app, this one is a plain
+//! column of sections rather than a list: nothing under it scrolls on its own, and
+//! a dock panel clips what does not fit (`DockPanel::clips_children`). A Book with
+//! no tag, no goal and no milestone already lays out 410 dp of sections, in a
+//! trailing rail that is routinely shorter than that — and every dp past the edge
+//! was simply unreachable, with no bar, no wheel and no keyboard. So the whole
+//! body goes in a [`ScrollArea`], which also supplies the bounded width the `Wrap`s
+//! in here (tags, Books chips) need to break at all.
 
 use std::rc::Rc;
 
@@ -28,7 +37,7 @@ use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     Button, ButtonVariant, DockOpenLocation, DockSide, DockWidget, DockWidgetId, HStack, Padding,
-    PopoverButton, TextWidget, VStack,
+    PopoverButton, ScrollArea, TextWidget, VStack,
 };
 
 use frontend::AppContext;
@@ -227,6 +236,21 @@ pub(super) struct Inspector {
     /// The project's target unit — Tier 2, from this window's own `WorkSession`'s
     /// `SingleWork`, for the same reason the handles below are threaded in.
     goal_unit: Signal<GoalUnit>,
+    /// The live scroll offset of the [`ScrollArea`] this build produced, so the
+    /// next build can hand it back.
+    ///
+    /// The panel rebuilds on far more than a focus change: every section in here
+    /// writes to the focused `BinderItem`, and that write's `Updated` event is
+    /// exactly what refreshes `probe` and rebuilds — see `exportable`'s own note
+    /// on the echo. A fresh `ScrollArea` starts at 0, so without this, setting a
+    /// status or a goal near the bottom of a Book's panel threw the writer back to
+    /// the top: the write undoing the scroll that reached the control.
+    scroll_kept: Option<Signal<f32>>,
+    /// Which item [`Inspector::scroll_kept`] was measured against. A genuine focus
+    /// change still opens the new row at its own top — carrying an offset across
+    /// two different items would land wherever the previous one happened to be
+    /// tall enough to reach.
+    scrolled_item: Option<u64>,
     /// Tier-2 (per-open-Work) handles, threaded in from the owning window's own
     /// `sessions::WorkSession` — **not** looked up via `ctx.app_state::<T>()`, the
     /// multi-Work migration's whole point (see `sessions::WorkSession`'s module
@@ -267,6 +291,8 @@ impl Inspector {
             goal_unit,
             moves: Signal::new(0),
             root_child: None,
+            scroll_kept: None,
+            scrolled_item: None,
             tags,
             mention_index,
             open_docs,
@@ -320,6 +346,13 @@ impl Widget for Inspector {
         if self.probe.id() != item_id {
             self.probe.set_id(item_id);
         }
+        // Carry the scroll offset across this rebuild, but only within one item —
+        // see `scroll_kept`. Read before the body is built, because building it is
+        // what replaces the `ScrollArea` the offset is being read off.
+        let restore = match self.scroll_kept.as_ref() {
+            Some(kept) if self.scrolled_item == item_id => kept.get(),
+            _ => 0.0,
+        };
         let dto = item_id.and_then(|_| self.probe.dto());
 
         let body: Box<dyn Widget> = match dto {
@@ -430,7 +463,16 @@ impl Widget for Inspector {
             }
         };
 
-        let id = ctx.add_boxed(body);
+        // The panel is taller than the rail it lives in, and a dock panel clips
+        // rather than scrolls — see the module docs. The `ScrollArea` is greedy
+        // (it fills the side and reports that height whatever it holds), which is
+        // exactly what turns an over-tall column into something a writer can
+        // reach the bottom of.
+        let content = ctx.add_boxed(body);
+        let area = ScrollArea::from_id(content).restore_scroll_y(restore);
+        self.scroll_kept = Some(area.scroll_y_signal().clone());
+        self.scrolled_item = item_id;
+        let id = ctx.add(area);
         self.root_child = Some(id);
         vec![id]
     }

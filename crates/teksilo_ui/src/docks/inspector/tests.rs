@@ -147,6 +147,10 @@ fn add_book(ctx: &Rc<AppContext>, binder_id: u64, title: &str) -> u64 {
 /// `tree_with_events`, never a bare `WidgetTree`: the panel calls
 /// `ctx.subscribe_event` on every build, which *panics* with no event source
 /// registered (see `crate::test_support`).
+///
+/// 4000 dp tall on purpose: these tests are about what the panel *contains*, so
+/// they give it more room than any section could want. The two that are about
+/// what happens when it does **not** fit lay it out at [`SLOT_H`] instead.
 fn laid_out(
     ctx: &Rc<AppContext>,
     work_id: u64,
@@ -158,15 +162,60 @@ fn laid_out(
     (tree, id)
 }
 
-/// Every widget in the subtree that has no children of its own.
+/// A realistic trailing-rail slot: the rail's own width, and a height a second
+/// dock sharing the side leaves it. `INSPECTOR_DOCK_ID` mounts with
+/// `own_tab: false` (see `crate::docks::APP_DOCKS`), so sharing the side
+/// vertically is the arrangement it ships with, not an extreme.
+const SLOT_W: f32 = 300.0;
+const SLOT_H: f32 = 300.0;
+
+/// The vertical offset a mounted `ScrollArea` currently sits at.
+///
+/// Read through `Widget::as_any`, the same introspection the Overview table and
+/// the margin lane are asserted with: the offset resolves during layout and the
+/// area is mounted deep inside a panel nobody holds a reference to.
+fn scroll_offset(tree: &teksilo::core::widget_tree::WidgetTree, area: WidgetId) -> &Signal<f32> {
+    tree.widget_as_any(area)
+        .and_then(|a| a.downcast_ref::<teksilo::widgets::ScrollArea>())
+        .expect("the widget found by type name is a ScrollArea")
+        .scroll_y_signal()
+}
+
+/// The first widget in the subtree whose type name contains `needle`.
+fn find(
+    tree: &teksilo::core::widget_tree::WidgetTree,
+    id: WidgetId,
+    needle: &str,
+) -> Option<WidgetId> {
+    if tree
+        .widget_type_name(id)
+        .is_some_and(|t| t.contains(needle))
+    {
+        return Some(id);
+    }
+    tree.children(id)
+        .into_iter()
+        .find_map(|c| find(tree, c, needle))
+}
+
+/// Every widget in the panel's **content** that has no children of its own.
 ///
 /// The panel fills whatever height it is given (`layout_response` defers to the
 /// proposal), so the *panel's* bounds say nothing about how much is in it —
 /// measuring it was the first version of these tests and it passed on an empty
 /// panel. What is actually in it is the leaves.
+///
+/// Walked from inside the `ScrollArea`, not from the panel root: an area mounts
+/// two scroll bars of its own, and those are leaves. Counted from the root, an
+/// empty panel has four of them — enough to satisfy every `is_empty` guard here
+/// on its own, and enough to make every count that compares two panels differ by
+/// a constant nobody would think to look for.
 fn leaves(tree: &teksilo::core::widget_tree::WidgetTree, root: WidgetId) -> Vec<(WidgetId, Rect)> {
+    let content = find(tree, root, "ScrollArea")
+        .and_then(|area| tree.children(area).first().copied())
+        .expect("the panel body is mounted inside a ScrollArea");
     let mut out = Vec::new();
-    let mut stack = vec![root];
+    let mut stack = vec![content];
     while let Some(id) = stack.pop() {
         let kids = tree.children(id);
         if kids.is_empty() {
@@ -404,5 +453,107 @@ fn setting_a_book_filing_writes_it_and_it_reads_back() {
     assert!(
         probe.dto().unwrap().books.is_empty(),
         "an empty filing is a legitimate write, not a no-op"
+    );
+}
+
+/// **The panel scrolls, because it does not fit.**
+///
+/// This is a plain column of sections — no `TreeView`, no `ListView`, nothing
+/// under it that scrolls on its own — and `DockPanel::clips_children()` is
+/// `true`. Before the `ScrollArea`, a Book's panel laid out 410 dp of sections
+/// into whatever slot it was given and the remainder was unreachable: no bar, no
+/// wheel, no keyboard, and no sign anything was missing.
+///
+/// Asserted from both ends, because either half alone passes against the bug.
+/// The content really is taller than the slot (so the guard is not vacuous the
+/// day a section is removed), *and* a `ScrollArea` fills the slot around it.
+#[test]
+fn the_panel_scrolls_rather_than_clipping_what_does_not_fit() {
+    let ctx = Rc::new(AppContext::new());
+    let (work_id, item_id) = work_with_item(&ctx, BinderItemSubRole::Book);
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(Box::new(panel(&ctx, work_id, Signal::new(Some(item_id)))));
+    tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
+
+    let area = find(&tree, root, "ScrollArea").expect("the inspector body scrolls");
+    let slot = tree.bounds(area);
+    assert!(
+        (slot.height - SLOT_H).abs() < 1.0 && (slot.width - SLOT_W).abs() < 1.0,
+        "the ScrollArea must fill the dock, got {:.1}x{:.1}",
+        slot.width,
+        slot.height
+    );
+
+    let content = tree
+        .children(area)
+        .first()
+        .copied()
+        .expect("a ScrollArea places its content first");
+    let content = tree.bounds(content);
+    assert!(
+        content.height > SLOT_H + 1.0,
+        "a bare Book measured {:.1} dp in a {SLOT_H:.0} dp slot, so this test no longer \
+         exercises overflow — give it a taller item or a shorter slot",
+        content.height
+    );
+    // Vertically only. A `ScrollArea` offers its content bounded width and
+    // unconstrained height, which is what the `Wrap`s in here (tags, Books chips)
+    // need to break at all — so anything wider than the rail is a section that
+    // refused to wrap, and a sideways bar in a 300 dp dock is the symptom, not the
+    // fix.
+    assert!(
+        content.width <= SLOT_W + 0.5,
+        "the body measured {:.1} dp wide in a {SLOT_W:.0} dp rail — a section is not wrapping",
+        content.width
+    );
+}
+
+/// A write from inside the panel must not throw the writer back to the top.
+///
+/// Every section here writes to the focused `BinderItem`, and that write's
+/// `Updated` event is what rebuilds the panel — so setting a status or a goal
+/// near the bottom of a Book is precisely the moment a fresh `ScrollArea` at
+/// offset 0 would undo the scroll that reached the control. A rebuild on the
+/// *same* item carries the offset over; a genuine focus change does not.
+#[test]
+fn the_scroll_offset_survives_a_rebuild_but_not_a_focus_change() {
+    let ctx = Rc::new(AppContext::new());
+    let (work_id, book) = work_with_item(&ctx, BinderItemSubRole::Book);
+    let second = add_book(&ctx, binder_of(&ctx, work_id), "Book Two");
+    let focus = Signal::new(Some(book));
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(Box::new(panel(&ctx, work_id, focus.clone())));
+    tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
+
+    let scrolled_to = {
+        let area = find(&tree, root, "ScrollArea").expect("the inspector body scrolls");
+        let offset = tree.bounds(area).height / 4.0;
+        scroll_offset(&tree, area).set(offset);
+        tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
+        scroll_offset(&tree, area).get()
+    };
+    assert!(
+        scrolled_to > 0.0,
+        "the panel would not scroll at all, so the rest of this proves nothing"
+    );
+
+    // `Signal::set` fans out unconditionally, so re-setting the same focus is a
+    // rebuild on the same item — what a section's own write produces.
+    focus.set(Some(book));
+    tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
+    let after_rebuild = find(&tree, root, "ScrollArea").expect("still scrolls");
+    let kept = scroll_offset(&tree, after_rebuild).get();
+    assert!(
+        (kept - scrolled_to).abs() < 1.0,
+        "a rebuild on the same item threw the panel back to {kept:.1} from {scrolled_to:.1}"
+    );
+
+    focus.set(Some(second));
+    tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
+    let after_focus = find(&tree, root, "ScrollArea").expect("still scrolls");
+    let reset = scroll_offset(&tree, after_focus).get();
+    assert!(
+        reset.abs() < 1.0,
+        "a different item opened at {reset:.1} dp down, not at its own top"
     );
 }
