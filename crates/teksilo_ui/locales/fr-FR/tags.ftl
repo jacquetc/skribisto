@@ -135,7 +135,10 @@ cast-empty = Personne n’est encore épinglé — ajoutez ou conservez une sugg
 cast-unresolved = Ne fait plus partie de la bible narrative
 
 ## Rétroliens sur une entrée de bible narrative
-mentions-backlinks = Apparaît dans
+# Plus de clé `mentions-backlinks` : la liste « Apparaît dans » de l’inspecteur a
+# été retirée, et la page Détails de l’entrée nomme la sienne
+# `note-details-backlinks`. Les clés ci-dessous sont les commandes de ligne, que
+# cette page utilise toujours.
 # Le bouton d’une suggestion de rétrolien : l’autrice confirme que c’est bien elle,
 # et l’entrée est inscrite dans la présence de ce document. Confirmation seule : il
 # n’y a pas de « ce n’est pas elle » à enregistrer.

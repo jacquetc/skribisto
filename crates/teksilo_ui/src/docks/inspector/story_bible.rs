@@ -364,7 +364,7 @@ pub(super) fn section(
                         crate::tags::MentionNaming::Target,
                         Some(pin.clone()),
                         Some(unpin),
-                        open.clone(),
+                        open,
                     ));
 
                 if cast_empty {
@@ -484,73 +484,16 @@ pub(super) fn section(
                     ));
                 }
 
-                // Backlinks, on a discoverable item: where this character appears.
-                // No *pin* — keyed on the row's target, it would write this entry's own
-                // references and record the claim backwards. Confirm is the same
-                // relationship written from this end, keyed on the row's owner instead.
-                if tag_value.get().iter().any(|id| discoverable.contains(id)) {
-                    let backlinks = index.backlinks_for(d.id);
-                    if !backlinks.is_empty() {
-                        let (backlinks, naming) = crate::tags::documents_in_manuscript_order(
-                            &panel.app_ctx,
-                            panel.outline.ids().work_id.get().unwrap_or_default(),
-                            backlinks,
-                        );
-                        col = col
-                            .child(
-                                TextWidget::new(tr!(mentions_backlinks()))
-                                    .style(TextStyleRole::Tiny)
-                                    .color(TextRole::Secondary),
-                            )
-                            .child(
-                                crate::tags::MentionList::new(backlinks, naming, None, None, open)
-                                    .confirm(confirm_presence(&panel.app_ctx, d.id, stack)),
-                            );
-                    }
-                }
-            } else if tag_value.get().iter().any(|id| discoverable.contains(id)) {
-                // Out of cast scope but still story-bible: show Appears in only.
-                let open: crate::tags::mention_list::OpenTarget =
-                    Rc::new(move |item_id, title, c: &mut EventContext| {
-                        c.send_intent(crate::intents::AppIntent::OpenItemToSide { item_id, title });
-                    });
-                let backlinks = index.backlinks_for(d.id);
-                if !backlinks.is_empty() {
-                    let (backlinks, naming) = crate::tags::documents_in_manuscript_order(
-                        &panel.app_ctx,
-                        panel.outline.ids().work_id.get().unwrap_or_default(),
-                        backlinks,
-                    );
-                    col = col
-                        .child(
-                            TextWidget::new(tr!(mentions_backlinks()))
-                                .style(TextStyleRole::Tiny)
-                                .color(TextRole::Secondary),
-                        )
-                        .child(
-                            crate::tags::MentionList::new(backlinks, naming, None, None, open)
-                                .confirm(confirm_presence(&panel.app_ctx, d.id, stack)),
-                        );
-                }
+                // **No backlinks list here.** "Appears in" belongs to the entry's own
+                // Details page (`tabs::note_details`), which has the width to show a
+                // document, its matched name and the sentence it was found in. In a
+                // 300 dp rail it was a column of ellipsised titles, and it is the one
+                // thing the Inspector showed that the writer was not looking *at*: this
+                // panel is about the focused row, and a backlink list is about
+                // everything else. `MentionList`'s confirm control keeps working there,
+                // which is the direction that write was always meant to be made from.
             }
         }
     }
     col
-}
-
-/// The backlink direction's confirm control, for `entry`'s own "Appears in" list.
-///
-/// Built here rather than inside [`crate::tags::MentionList`] for the same reason pin and
-/// unpin are: the widget has no `AppContext`, and which relationship a control writes is
-/// the caller's claim to make. `entry` is the story-bible item the list belongs to; the
-/// id the closure receives is the *document* that mentions it.
-fn confirm_presence(
-    app_ctx: &Rc<frontend::AppContext>,
-    entry: u64,
-    stack: Option<u64>,
-) -> crate::tags::mention_list::ConfirmPresence {
-    let app_ctx = app_ctx.clone();
-    Rc::new(move |owner, _c| {
-        let _ = crate::mentions::confirm_presence(&app_ctx, &[owner], entry, stack);
-    })
 }

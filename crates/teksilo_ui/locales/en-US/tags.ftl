@@ -123,7 +123,10 @@ cast-empty = No one pinned yet — add or keep a suggestion
 cast-unresolved = No longer in the story bible
 
 ## Backlinks on a story-bible item
-mentions-backlinks = Appears in
+# There is no `mentions-backlinks` heading any more: the Inspector's "Appears in"
+# list was removed, and the entry's own Details page names its list
+# `note-details-backlinks`. The keys below are the row controls, which that page
+# still uses.
 # The control on a suggested backlink row: the writer says yes, this really is her,
 # and the entry is written into that document's cast. Named after what it does rather
 # than after the agreement, and worded to mirror `cast-pin`, which is the same write
@@ -136,7 +139,7 @@ mentions-hit-count = { $n ->
 }
 # The badge on a row whose target is the owner's declared point of view (see
 # `point_of_view`, distinct from `references`). Shown on both the Cast list and the
-# backlinks ("Appears in") list, since a point of view can appear in either direction.
+# backlinks list, since a point of view can appear in either direction.
 mentions-point-of-view-badge = Point of view
 mentions-point-of-view-badge-tooltip = Declared as the point of view here, set by hand, not detected in the prose.
 
