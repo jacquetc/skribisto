@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Writing games — a pen nib travelling right along a rule, with the arrow
+       ahead of it. The forward arrow is the family's whole idea (the one game
+       today is "Always forward"), and the baseline says the subject is prose
+       rather than motion in general. Deliberately not a die or a game pad: these
+       are constraints a writer sets themselves, not entertainment. -->
+  <path d="M1.8 12.4 H10.2"/>
+  <path d="M4.2 9.8 L9.6 3.1"/>
+  <path d="M6.9 9.8 L4.2 9.8"/>
+  <path d="M11.6 6.2 L14.2 8.8 L11.6 11.4"/>
+</svg>

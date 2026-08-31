@@ -1,0 +1,121 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+name: Release (macOS)
+
+# DEACTIVATED for now. This workflow is written and ready but runs ONLY on
+# manual dispatch — it deliberately does NOT trigger on version tags, so tagging
+# a release builds Linux + Windows (release.yml) but never macOS.
+#
+# To activate later:
+#   1. Enrol in the Apple Developer Program ($99/yr) and obtain a Developer ID
+#      Application certificate (nothing signs without this).
+#   2. Add the secrets referenced below (MACOS_CERTIFICATE, ...).
+#   3. Uncomment the `push: tags:` trigger and add this job to release.yml's
+#      final `release` aggregation (or let it attach on its own).
+#
+# Until then it produces an UNSIGNED universal .dmg on manual dispatch. macOS 15+
+# removed the Control-click "Open" bypass, so users of an unsigned build must go
+# to System Settings -> Privacy & Security -> "Open Anyway", or run
+# `xattr -cr /Applications/Skribisto.app`.
+
+on:
+  workflow_dispatch:
+  # push:
+  #   tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  APP_NAME: skribisto
+  CARGO_PACKAGE: teksilo_ui
+
+jobs:
+  macos-universal:
+    name: Build universal .dmg
+    runs-on: macos-14 # Apple Silicon; cross-links x86_64 via Xcode CLT
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: release-macos
+
+      - name: Install cargo-packager
+        run: cargo install cargo-packager --locked --version "^0.11"
+
+      - name: Build both architectures (release, pdf)
+        run: |
+          cargo build --release --target aarch64-apple-darwin -p "$CARGO_PACKAGE" --features pdf
+          cargo build --release --target x86_64-apple-darwin  -p "$CARGO_PACKAGE" --features pdf
+
+      - name: Merge into a universal binary (lipo)
+        run: |
+          mkdir -p target/universal-apple-darwin/release
+          lipo -create -output "target/universal-apple-darwin/release/$APP_NAME" \
+            "target/aarch64-apple-darwin/release/$APP_NAME" \
+            "target/x86_64-apple-darwin/release/$APP_NAME"
+          lipo -info "target/universal-apple-darwin/release/$APP_NAME"
+
+      # Secrets cannot be used directly in `if:` — promote to an env var, then
+      # branch on a step output.
+      - name: Determine signing mode
+        id: sign
+        env:
+          HAS_CERT: ${{ secrets.MACOS_CERTIFICATE }}
+        run: |
+          if [ -n "$HAS_CERT" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else echo "enabled=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Package .app + .dmg (unsigned)
+        if: steps.sign.outputs.enabled == 'false'
+        run: |
+          cargo packager --release --target universal-apple-darwin \
+            --formats app,dmg -p "$CARGO_PACKAGE"
+          # Ad-hoc re-seal so the bundle launches on Apple Silicon (the kernel
+          # requires a valid signature at every bundle layer). This does NOT
+          # satisfy Gatekeeper's quarantine check on a downloaded file.
+          APP=$(find target/universal-apple-darwin/release -maxdepth 1 -name "*.app" | head -n1)
+          [ -n "$APP" ] && codesign --force --deep --sign - "$APP"
+
+      - name: Package, sign & notarize .app + .dmg
+        if: steps.sign.outputs.enabled == 'true'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }} # base64 .p12
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_PATH: ${{ github.workspace }}/AuthKey.p8
+        run: |
+          echo "${{ secrets.APPLE_API_KEY_P8 }}" | base64 --decode > "$APPLE_API_KEY_PATH"
+          cargo packager --release --target universal-apple-darwin \
+            --formats app,dmg -p "$CARGO_PACKAGE" \
+            --config "{\"macos\":{\"signingIdentity\":\"${{ secrets.MACOS_SIGNING_IDENTITY }}\"}}"
+          rm -f "$APPLE_API_KEY_PATH"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: skribisto-macos-universal
+          path: |
+            target/universal-apple-darwin/release/*.dmg
+          if-no-files-found: error
+
+      # Enable together with the `push: tags:` trigger above.
+      # - name: Attach to GitHub Release
+      #   if: startsWith(github.ref, 'refs/tags/v')
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     files: target/universal-apple-darwin/release/*.dmg

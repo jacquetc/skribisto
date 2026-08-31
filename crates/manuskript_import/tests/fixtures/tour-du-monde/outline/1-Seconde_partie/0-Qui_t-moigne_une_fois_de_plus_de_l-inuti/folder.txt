@@ -1,0 +1,12 @@
+title:          Chapitre 7
+ID:             114
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         1
+summarySentence:Qui témoigne une fois de plus de l’inutilité des passe-ports en matière de police
+summaryFull:    Le consul vise le passeport malgré les objections de Fix, en faisant observer qu’un passeport n’a jamais servi qu’à gêner les honnêtes gens et n’a jamais arrêté un coquin. Fix, resté seul, décide de suivre le suspect jusqu’à Bombay, où le mandat pourra le rejoindre.
+POV:            0
+
+

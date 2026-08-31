@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Item/BookBegin — a start pennant on a pole.
+       This was an open book with a bracket down its left edge, and BookEnd was
+       the same drawing mirrored. Two problems at 16px: the bracket landed in the
+       same pixel column as the book's own cover, so it read as a slightly thicker
+       edge rather than a bracket; and a left/right mirrored pair is the hardest
+       kind to tell apart at a glance (and flips again under RTL layout). Both
+       markers are now unmirrored shapes that share nothing with `book.svg`.
+       Pole on the half-grid; pennant filled, on integer bounds. -->
+  <path d="M4.5 2V13.5"/>
+  <path d="M5 3H12L10.3 5.5 12 8H5Z" fill="currentColor" stroke="none"/>
+</svg>

@@ -1,436 +1,471 @@
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md) 
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- SPDX-FileCopyrightText: 2015 Cyril Jacquet -->
+
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 - [Skribisto](#skribisto)
-  * [Goals](#goals)
-  * [User manual](#user-manual)
+  * [What it does today](#what-it-does-today)
+  * [Help](#help)
+  * [Discussions](#discussions)
   * [Support](#support)
   * [Help is always appreciated](#help-is-always-appreciated)
     + [Easier tasks for beginners](#easier-tasks-for-beginners)
-  * [For tech people, under the hood](#for-tech-people--under-the-hood)
-    + [Parts](#parts)
-    + [Languages used](#languages-used)
-    + [Plugins](#plugins)
-      - [Interfaces](#interfaces)
-      - [Existing plugins](#existing-plugins)
-  * [Build it, test it](#build-it--test-it)
-    + [The quickest and the easiest for development](#the-quickest-and-the-easiest-for-development)
-      - [Building prerequisites](#building-prerequisites)
-      - [Building](#building)
-      - [Running it](#running-it)
+  * [For tech people, under the hood](#for-tech-people-under-the-hood)
+    + [The writing model](#the-writing-model)
+    + [The project format](#the-project-format)
+    + [Workspace layout](#workspace-layout)
+  * [Build it, test it](#build-it-test-it)
+    + [Prerequisites](#prerequisites)
+    + [Building and running](#building-and-running)
+    + [Linux (Flatpak)](#linux-flatpak)
     + [Windows](#windows)
-        * [Automated building & packaging](#automated-building---packaging)
-    + [Linux](#linux)
-      - [By hand, for development but not the easiest](#by-hand--for-development-but-not-the-easiest)
-      - [Flatpak](#flatpak)
-        * [Flatpak prerequisites](#flatpak-prerequisites)
-        * [Flatpak from GitHub master branch](#flatpak-from-github-master-branch)
-        * [Flatpak from local source code](#flatpak-from-local-source-code)
-    + [MacOS](#macos)
+      - [Building it from Linux](#building-it-from-linux)
+    + [macOS](#macos)
   * [Translation](#translation)
-    + [Transifex integration with Skribisto](#transifex-integration-with-skribisto)
   * [To contact me](#to-contact-me)
-  
+  * [License](#license)
+    + [The manuscript is always free](#the-manuscript-is-always-free)
+  * [Contributing](#contributing)
+  * [Commercial support](#commercial-support)
+  * [Trademark](#trademark)
+
 # Skribisto
 
-**Skribisto** is born from the ashes of **Plume Creator**, keeping the goals while adopting more recent ways to think an application.
+**Skribisto** is born from the ashes of **Plume Creator**, keeping the goals of its ancestor
+while adopting more recent ways to think an application.
 
-Where its ancestor was geared toward writing novels, Skribisto aims to be more generic. The user can organize his project with items and folders. Each item displays a 'page' and
-can be of a different type : 
+Where Plume Creator was geared toward writing novels, Skribisto aims to be more generic. You
+organise a project in a **binder** tree of folders and items, but the book's actual structure
+does not come from where a row sits in that tree: it comes from the *role* you give the row,
+whether Book, Part, Chapter, Scene, Note or plain Text. Every writing row owns both its prose
+and a synopsis, which is why the editor has two panes.
 
-- Text
+What Skribisto is not: LibreOffice, Calligra or Word. A project exports to DOCX, ODT, EPUB,
+PDF, HTML, Markdown, Djot, LaTeX or plain text, so the final formatting can happen in a full
+word processor.
 
-   Dedicated to writing. Texts can have its own plan and can be linked to other items, or create them on the fly while writing.
-   
-- Folder
+Accessibility is too often forgotten. The interface exposes an accessibility tree (AccessKit),
+so screen readers can drive it; JAWS and NVDA are the ones used for testing, sometimes with a
+braille display. Please get in touch if you hit a glaring gap.
 
-   Can contain child items or folders.
-   
-- Whiteboard (to be implemented)
+## What it does today
 
-   Think "OneNote". Write wherever you want on a white board, insert images, tables, lists... Then, you can modify, move and resize elements on the board.
-   
-- Section (to be implemented)
+- Binder tree with full editing: create, rename, duplicate, move, indent, outdent, promote
+- Dual editor pane (prose plus synopsis), with split panes, tabs, and tabs you can pin
+- Manuscript streams: read a whole Chapter, Part or Book, or every synopsis, as one document
+- Corkboard, and an overview table of any subtree you can sort and filter
+- Book, part and chapter numbers that follow the manuscript, so an untitled chapter is still
+  "Chapter 7" everywhere you meet it
+- Writing sessions, live word count, and pace tracking against a deadline and a weekday
+  schedule
+- Word or character targets on any item, with a way to spread a container's target across
+  what is inside it
+- A status ladder you name yourself ("zero draft", "needs a pass", "final"), shown on the row,
+  in the overview table's filters, and in a readout of where the book stands
+- An Analysis tab for the Book: its shape (words per scene, dialogue share, footnote words),
+  always measured against the manuscript's own numbers, never a norm; and how the text of this
+  session arrived, typed, pasted, dictated or imported
+- A story bible: notes for the people, places and things in the book, with aliases, and every
+  scene each one is named in
+- Anchored comments in the margin (LibreOffice-style), with threaded replies and both a
+  project-wide and a per-document comments dock
+- Footnotes, numbered by the book rather than stored, so inserting one renumbers the rest
+- Note templates: built-in presets (character sheet, location, object, beat sheet, faction,
+  research note) or save your own
+- Images in the prose, a map or a character reference or a photograph of a street, carried
+  inside the project and through every export, with a book cover
+- Colour tags per project, with curated genre presets, and point-of-view marking on scenes
+- Replace-while-typing: a custom lexicon plus locale-aware smart punctuation (curly quotes,
+  dashes, ellipsis, French spacing…)
+- Margin marks: a strip beside the scroll bar saying where the comments, the search hits and
+  the document boundaries are
+- Distraction-free writing mode, with its own colour themes
+- "Always forward", a mode that refuses every way of taking back what you have already
+  written, so a first draft can only grow
+- One Undo for the whole application. Ctrl+Z takes back whatever you were looking at, and the
+  Edit menu names it first, as in "Undo trashing «Chapter 3»"
+- Search and replace across the project (prose, titles, synopses, comments and footnotes),
+  down to the single occurrence
+- Trash and restore
+- Autosave, manual save, save-as, and backups (retention policy, multiple destinations,
+  scheduler, and opening a backup read-only)
+- Version history built out of those backups: read what a scene said last week, set it against
+  what it says now, put it back, or bring back a row you deleted months ago
+- Opens legacy `.skrib` SQLite projects, upgrading them on load
+- Imports whole projects from Manuskript (`.msk`, folder or single file) and Plume
+  Creator (`.plume`)
+- Imports documents (Markdown, plain text, ODT and DOCX), showing you every row it would
+  create before anything is
+- Sends a chapter out to an editor as DOCX or ODT and takes it back: their comments arrive as
+  real comments, anchored to the words they were about
+- Exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text
+- Spell checking with downloadable dictionaries
+- Light and dark themes, per-editor typography, adjustable text scale
+- English and French user interface, for now
+- Single instance: several projects can be open at once, each in its own window, without
+  spawning a new process per project
 
-   Visible separations (book, act, chapter, end of book)
+## Help
 
-- Folder-Section (to be implemented)
+The help ships with the application: **F1** opens the help topics, there is a keyboard
+shortcut window beside them, and Ctrl+Shift+P opens a command palette that finds any command
+by name. Because it is part of the binary, it describes the version you are running rather
+than the version somebody last wrote about.
 
-  Folder with a section role.
-  
-Other types can be added in the future.  
-
-The user is free to use tags to define any item. 
-
-What Skribisto is not : LibreOffice, Calligra or Word. Any project can be exported to .odt so as to make use of these complete text processors formatting abilities before printing.
-
-Accessibility is too often forgotten. I'm trying to keep the interface accessible for screen readers, as much as Qt let me implement it. Jaws and NVDA are my screen readers for testing. 
-Please contact me if there is a glaring lack in the accessibility. Some technical choices have already been made so as to not hinder accessibility, 
-like the seemingly strange choice of a classic drop-down menu on the top left of the window.
-
-## Goals
-
-Short term goal is to rejoin its ancestor Plume Creator feature-wise. A few outstanding features are below. Bold means this feature is already implemented
-
-- **navigating between texts**
-- **distraction-free mode**
-- **e-ink friendly**
-- **rich text (bold/italic/underline/strikeout)**
-- **synopsis**
-- **label (named 'tag' in Plume) next to each text title**
-- **autosave**
-- **spellcheking**
-- **color themes**
-- **overview of all texts**
-- **character/word count**
-- **exporting to .txt/.odt/.PDF**
-- **printing**
-- **display quickly the end of the previous text**
-- advanced search/replace
-- character/word goal
-
-Skribisto will add to these features with :
-
-- **dynamic layouts adaptating to all devices (like a phone)**
-- **tagging system**
-- **touch-friendly**
-- **navigating between notes**
-- **a text can have several notes in addition of the synopsis**
-- **manual save**
-- **backup with mutliple paths**
-- **accessible for screen readers (NVDA or JAWS)**
-- **Open texts in a new window**
-- **Open texts in tabs**
-- **Linux (Flatpak) support**
-- **Windows 10/11 support**
-- **Examples**
-- **Help page**
-- project management
-- each item can take snapshots
-- on-the-fly notes from the context menu
-
-Medium term goals are :
-- Adjoining documents to texts (without insertion)
-- Insert images into the text
-- Sort of gallery to manage all external documents/images
-- Android support
-
-Other features will be implemented more for fun. Thanks to the plugin system, Skribisto can accomodate other goals than writing. I added the "Writing Games" plugin for fun.
-
-
-## User manual
-
-The dedicated website for the user manual is [here](https://manual.skribisto.eu/en_US/manual.html)
-
-The dedicated website for the FAQ is [here](https://manual.skribisto.eu/en_US/faq.html)
-
-Each one can be translated (see [Translation](#translation) section)
+The topics are translated alongside the interface, though they are not `.ftl` files: the
+longer pages are Djot, under [crates/teksilo_ui/help/](crates/teksilo_ui/help/), one directory
+per locale. The shorter ones are the same text the tooltips use, so they are translated once
+and read in both places. See the [Translation](#translation) section for both.
 
 ## Discussions
 
-A Discord server is available. Do you need help, offer suggestions or talk ? Join us [here](https://discord.gg/5BSkvQmyVH)
+A Discord server is available. Do you need help, want to offer suggestions, or just talk?
+Join us [here](https://discord.gg/5BSkvQmyVH).
 
 ## Support
 
-This is a GPL v3 project, so support is on a voluntary basis. Personally, I'll only accept bug issues from users if this user runs Skribisto using theses packaging methods :
+This is a GPL v3 project, so support is on a voluntary basis. Personally, I will only accept
+bug issues from users running Skribisto through these packaging methods:
+
 - on Linux: Flatpak only
-- on Windows: from a InnoSetup setup package generated by the PowerShell script
+- on Windows: the NSIS installer published with a release
 
 ## Help is always appreciated
 
-If this project takes your interest, if you want to help or wish for more details, you can contact me or create issues. 
+If this project takes your interest, if you want to help or wish for more details, you can
+contact me or create issues.
 
 ### Easier tasks for beginners
 
-- Solve one of the [good first issue](https://github.com/jacquetc/skribisto/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-- Comment whatever function you understand. C++ is obviously better organized than QML.
-- Translate the software, the User manual or the FAQ (see [Translation](#translation) section)
-- Complete the FAQ or the User Manual in the dedicated repositroy [here](https://github.com/jacquetc/skribisto-help-website/tree/develop)
-
+- Solve one of the [good first issue](https://github.com/jacquetc/skribisto/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) tickets
+- Translate the software, help topics included (see the [Translation](#translation) section)
+- Improve a help topic that explains the wrong thing, or write one that does not exist yet
 
 ## For tech people, under the hood
 
-All the application is rewritten from scratch using C++ Qt for back-end and QML for the front-end. The QML allows for a touch friendly and dynamic interface.
+Skribisto is written in **Rust** (edition 2024), end to end. The desktop UI is built on
+**[Teksilo](https://github.com/ferntech-eu/teksilo)**, a pure-Rust GUI framework, so there is
+no Qt, no QML and no C++ in the build. The backend is generated by **Qleany**, a Clean
+Architecture code generator, from [qleany.yaml](qleany.yaml). Dependencies run one way: UI to
+controllers, controllers to use cases, use cases to repositories, repositories to an in-memory
+store, with undo/redo and an event bus alongside.
 
-Each project is a SQLite3 file, more robust than the zipped projects in Plume.
+> The original C++/Qt6 implementation was removed once the Rust app reached parity. It is
+> preserved under the `cpp-final` tag if you need to consult it.
 
-### Parts
+### The writing model
 
-- app
+The binder tree is **organisational only**. A book's real structure is a state machine over
+the flat, ordered stream of items, driven by two typed axes: a `role` (Folder or Item, purely
+a UI concern) and a composable `sub_role` (Book, Part, Scene, ChapterScene, Note, Text,
+Paratext, BookBegin, BookEnd and None). There is no `Chapter` variant: a chapter is a
+UI-level composite that resolves to a folder or a flat row depending on
+`Work.chapter_mode`. Text is explicit: each content row carries its own role, be it scene
+text, note text, synopsis or title. The valid combinations live in a single table, in
+`crates/skribisto_model`, which drives backend validation, the "＋ Create" menu and the
+editor panes alike. Anything absent from that table is invalid by construction.
 
-    QML UI, main.cpp and other C++ files dedicated to the UI
-    
-- libskribisto-data
+### The project format
 
-    Back-end. Manage project files and offer an interface for all operations on a project, an item, plugins...
+A project is a `.skrib` **bundle**: RON manifests plus [Djot](https://djot.net) prose, stored
+either as a single zip (the default) or as an exploded folder that is comfortable to keep in
+git. Legacy SQLite `.skrib` files from the C++ era are detected and upgraded when opened.
 
-- plugins
+Images live in `assets/` inside the bundle, named by the blake3 hash of their bytes, and the
+prose references them as ordinary Djot: `![alt](assets/<hash>.png){width=… height=…}`. So the
+same picture inserted twice costs one copy, an exploded-folder project resolves its own images
+on disk, and a plain Markdown viewer pointed at the folder shows them.
 
-   Contains all Qt-style C++ plugins.     
+The format version a project *requires* is decided by what it actually carries, not by the
+version that wrote it. A bundle claims a floor only where an older build would get it wrong
+rather than merely ignore it, either because that build's first save would silently destroy
+something (note templates need 5, images 8, footnotes 9, a status ladder 14) or because it
+cannot parse the file at all (epigraphs 6, paratexts 7). Delete every image and the next save
+lowers the floor again. A project using none of them opens in any build back to version 4, and
+one that does is refused **by name**, with a message that says "needs format 7 or newer",
+rather than being opened and quietly stripped of what the reader could not represent.
 
-- translations
+### Workspace layout
 
-   Contains all the translation sources. DO NOT TOUCH directly. See the [Translation](#translation) section for details.
+A cargo workspace under `crates/`:
 
-### Languages used
-- C++ with Qt 6.2.2
-- QML and Qt Quick
-- Qt's Javascript
-- SQL basics with SQLite3 only for the skribisto-data library.
-
-C++/QML bindings are extensively used.
-
-### Plugins
-
-#### Interfaces
-
-More and more, Skribisto allows to be extended with plugins. For now, plugins allow:
-
-- add new pages types, combining theses interfaces: 
-  - SKRCoreInterface, mandatory to allow activition/deactivation of plugins
-  - SKRPageInterface, gives the details of a page, its QML view and the necessary to be an item in the navigation
-  - SKRPageExporterInterface, allow a page to export their content to be exported/printed
-  - SKRPageToolboxInterface, add a toolbox on the right dock for a specific page
-  - SKRProjectToolboxInterface, add a toolbox on the left dock which will always stay
-
-Plugin interfaces to come soon :
-- exemples
-- project templates
-- import
-- export
-
-#### Existing plugins
-
-- TextPage
-- ThemePage
+- `teksilo_ui`, the desktop app (the binary is named `skribisto`)
+- `skribisto_model`, the writing-model constraint matrix
+- `skrib_format`, the `.skrib` bundle reader and writer
+- `document_ingest`, the format-agnostic scanner behind Markdown/DOCX/ODT import
+- `manuskript_import` and `plume_import`, the whole-project converters
+- `spellcheck_engine`, the pure-Rust Hunspell-compatible checker
+- `skribisto_compiler` and `skribisto-fonts`, the export pipeline and its bundled typefaces
+- `work_management`, `binder_item_management`, `trash_management`, `search_management`,
+  `import_management`, `export_management`, `handling_app_lifecycle`, `progress_management`,
+  `analysis_management`, `mention_management`, `note_template_management` and
+  `tag_management`, the Qleany features
+- `common`, `direct_access`, `frontend`, `macros` and `binder_ordering`, the shared backend
+  layers
 
 ## Build it, test it
 
-### The quickest and the easiest for development
+### Prerequisites
 
-Tested on Ubuntu 20.04, Fedora 33/34, Windows 10, MacOS Big Sur
+A recent stable Rust toolchain (edition 2024). Install it from [rustup.rs](https://rustup.rs).
 
-Minimum Qt : 5.15
-If you have not Qt 5.15, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)
-Install 5.15 Desktop or superior and Qt Creator
+On Linux you also need the usual desktop development libraries. The exact package list CI
+installs is in
+[.github/actions/install-linux-deps/action.yml](.github/actions/install-linux-deps/action.yml).
 
-#### Building prerequisites 
+Skribisto is built from path dependencies on sibling repositories, so clone them all into the
+same parent directory:
 
-- Download the latest from GitHub, then you can use Qt Creator to open the superbuild at *cmake/Superbuild/CMakeLists.txt* in the project. 
-- Configure against Qt 6.2 minimum to be sure.
-- **Before** compiling it, set the build directory (in Projects tab) to *build_skribisto_Release* just outside the skribisto folder
-    - Example:
-    
-       Git repo: /home/cyril/Devel/skribisto
-       
-       Superbuild's CMakeLists.txt: /home/cyril/Devel/skribisto/cmake/Superbuild/CMakeLists.txt
-       
-       Superbuild's build directory: /home/cyril/Devel/build_skribisto_Release
+```
+~/Devel/skribisto
+~/Devel/teksilo         # the GUI framework
+~/Devel/text-document   # the rich-text document model
+~/Devel/text-typeset    # the typesetter under Teksilo's text layer
+```
 
-- add the CMake variable QT_VERSION_MAJOR and set its value to 5 or 6 depending of your Qt version, apply the change
-- Compile it
-- Ignore errors about Skribisto, we only want to build dependencies
-- After compiling it, close the Skribisto-Superbuild project
+Skribisto points at `teksilo` and `text-document` itself; `teksilo` in turn resolves
+`text-typeset` and `text-document` the same way, so all four checkouts have to be present, and
+side by side.
 
-#### Building 
+This sibling layout is a **local-development requirement only**. CI never clones the other
+repositories: workflows (and jobs) that need to resolve the Rust dependency graph first run
+[.github/actions/strip-path-deps](.github/actions/strip-path-deps/action.yml) (5 of the 8
+workflow files: `audit.yml`, `ci.yml`, `release-macos.yml`, `release.yml`, `rust-next.yml`),
+which drops the `path = "../…"` attribute from each external dependency so that the `version =`
+beside it resolves from crates.io instead. Internal `crates/…` paths are left untouched. Jobs
+that never touch Cargo (`packaging-lint.yml`, `generate-release-in-appdata.yml`,
+`spelling.yml`, and `ci.yml`'s rustfmt/spdx/locales jobs) skip this step entirely, and
+`release.yml`'s `flatpak` job strips paths via its own
+[package/flatpak/gen-cargo-sources.sh](package/flatpak/gen-cargo-sources.sh) script (which
+duplicates the same sed logic) rather than via this composite action.
 
-- Open CMakeLists.txt at the root of the project
-- In Qt Creator, in Projects tab, in the build subsection, add the CMake variable SKR_DEV (bool) and set its value to "ON", apply the change
-- Compile it
+### Building and running
 
-#### Running it
+```bash
+cargo build                                  # the whole workspace
+cargo build -p teksilo_ui                    # just the app
+cargo build -p teksilo_ui --features mocks   # the app with fabricated data, no backend
+cargo run   -p teksilo_ui                    # run it
+cargo run   -p teksilo_ui -- path/to/project.skrib
+cargo test                                   # backend and UI tests
+```
 
-- Run skribisto, optionally with --testProject
+PDF export sits behind an opt-in feature, because it pulls in a large typesetting dependency:
 
+```bash
+cargo build -p teksilo_ui --features pdf
+```
 
+### Linux (Flatpak)
+
+Make sure `flatpak` and `flatpak-builder` are installed, then add Flathub and the runtime (see
+the [Flathub setup guide](https://flatpak.org/setup/)). The exact runtime version is declared
+in the manifest,
+[package/flatpak/eu.skribisto.skribisto.yml](package/flatpak/eu.skribisto.skribisto.yml).
+
+```bash
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+```
+
+Build and install from your local checkout. The manifest builds the repository directory it
+sits in:
+
+```bash
+flatpak-builder --user --repo=local-repo build-dir \
+    package/flatpak/eu.skribisto.skribisto.yml --force-clean
+flatpak build-update-repo local-repo
+flatpak --user remote-add --no-gpg-verify local-repo local-repo   # once
+flatpak install local-repo eu.skribisto.skribisto -y --reinstall
+flatpak run eu.skribisto.skribisto
+```
+
+To remove it: `flatpak remove eu.skribisto.skribisto`.
 
 ### Windows
 
-##### Automated building & packaging
-- install Inno Setup found at https://jrsoftware.org/isdl.php
-- unlock running Powershell scripts by running in admin Powershell :  *set-ExecutionPolicy RemoteSigned*
-- Open PowerShell
-	- cd skribisto\package\windows\
-	- run .\packaging.ps1
+The installer is built with [NSIS](https://nsis.sourceforge.io) from
+[package/windows/setup.nsi](package/windows/setup.nsi):
 
-### Linux
-
-#### By hand, for development but not the easiest
-
-Needed sources and libs :
-- hunspell (devel)
-
-Minimum Qt : 6.2.2
-If you have not Qt 6.2.2, use the Qt installer found at [Qt website](https://www.qt.io/download-open-source)
-Install 6.2.2 Desktop or superior and Qt Creator
-Open the project using the CMakeLists.txt file
-Build and run it, optionally with --testProject
-
-
-#### Flatpak
-
-##### Flatpak prerequisites
-
-- make sure to have *flatpak* and *flatpak-builder* installed on your system
-
-Prerequisites (>1Go):
-```
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak install flathub org.kde.Sdk//6.4
-flatpak install flathub org.kde.Platform//6.4
-```
-You can follow the setup guide for Flathub at https://flatpak.org/setup/ .
-
-Older flatpak-builder doesn't support YAML manifest files. Convert it to JSON using one of the online website easily found, then place the new file by eu.skribisto.skribisto.yml. Adapt the flatpak commands to point to this new file instead of the .yml file.
-
-##### Flatpak from GitHub master branch
-
-- type in a terminal :
-
-
-
-Compile :
-```
-mkdir ~/Devel
-cd ~/Devel
-git clone https://github.com/jacquetc/skribisto.git
-flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/eu.skribisto.skribisto.yml --force-clean
+```powershell
+cargo build --release --target x86_64-pc-windows-msvc -p teksilo_ui --features pdf
+makensis package\windows\setup.nsi
 ```
 
-Run only once :
-```
-flatpak build-update-repo local-repo
-flatpak --user remote-add --no-gpg-verify local-repo local-repo
+CI runs an equivalent (but not verbatim) sequence natively on `windows-latest`: the same
+`cargo build` line, followed by a fuller `makensis` invocation passing `/DAPP_VERSION`,
+`/DSRC_EXE` and `/DOUT_FILE`. See [.github/workflows/release.yml](.github/workflows/release.yml).
+Note that `makensis` resolves relative paths against the directory holding the script rather than
+the working directory, so any path passed with `/D` should be absolute.
+
+#### Building it from Linux
+
+[package/windows/build.py](package/windows/build.py) does the whole job (compile, verify, zip,
+installer) on either host, which is useful when you have no Windows machine to hand. The release
+is not built this way; it stays native so a real Windows machine remains in the release path.
+
+```bash
+sudo apt-get install -y nsis clang lld llvm   # once
+rustup target add x86_64-pc-windows-msvc      # once
+cargo install --locked cargo-xwin             # once
+
+python3 package/windows/build.py --version 3.0.0
 ```
 
-Install :
+That writes `dist/skribisto.exe`, `dist/Skribisto-portable.zip` and `dist/Skribisto-setup.exe`.
+The target stays `x86_64-pc-windows-msvc` (not mingw): `cargo-xwin` supplies the MSVC CRT and
+Windows SDK and links with `lld-link`. On first use it downloads those from Microsoft and asks
+you to accept their licence; export `XWIN_ACCEPT_LICENSE=1` to answer ahead of time.
 
-```
-flatpak install local-repo eu.skribisto.skribisto -y --reinstall
-```
+Since a cross-build never executes the binary it produces, the script inspects the finished exe
+for the two failures that are otherwise silent: a dropped `+crt-static` flag, and an icon or
+VERSIONINFO that failed to embed. `--check-only --exe <path>` runs just those checks against any
+build, including one CI produced.
 
-Later, when a new version is online, you can update with this single line:
-```
-cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/eu.skribisto.skribisto.yml --force-clean && flatpak install local-repo eu.skribisto.skribisto -y --reinstall
-```
+### macOS
 
-To run this installation of Skribisto :
-```
-flatpak run --branch=master eu.skribisto.skribisto
-```
+`cargo build -p teksilo_ui` works. A `.dmg` is produced with
+[cargo-packager](https://github.com/crabnebula-dev/cargo-packager); its configuration lives in
+`[package.metadata.packager]` in [crates/teksilo_ui/Cargo.toml](crates/teksilo_ui/Cargo.toml).
 
-To list the installations :
-```
-flatpak list
-```
-
-To run the older but stable Skribisto :
-```
-flatpak run --branch=stable eu.skribisto.skribisto
-```
-
-To remove it:
-```
-flatpak remove eu.skribisto.skribisto
-```
-and you select the "master" skribisto so as to remove it
-
-##### Flatpak from local source code
-
-You can copy/paste in ~/Devel/ the file *eu.skribisto.skribisto* found in \[skribisto-repo\]/package/flatpak/local/
-
-Near the end of the file, in **skribisto** build module, adapt **path:** to your local repository (ex: path: /home/cyril/Devel/skribisto)
-
-
-
-```
-mkdir ~/Devel
-cd ~/Devel
-git clone https://github.com/jacquetc/skribisto.git
-flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/local/eu.skribisto.skribisto.yml --force-clean
-```
-
-Run only once :
-```
-flatpak build-update-repo local-repo
-flatpak --user remote-add --no-gpg-verify local-repo local-repo
-```
-
-Install :
-```
-flatpak install local-repo eu.skribisto.skribisto -y --reinstall
-```
-
-
-After you modified the code you want in whichever git branch you want, type this command :
-
-```
-cd ~/Devel && flatpak-builder --user --repo=local-repo build-dir skribisto/package/flatpak/local/eu.skribisto.skribisto.yml --force-clean && flatpak install local-repo eu.skribisto.skribisto -y --reinstall
-```
-
-To run this installation of Skribisto :
-```
-flatpak run --branch=master eu.skribisto.skribisto
-```
-
-To list the installations :
-```
-flatpak list
-```
-
-To run the older but stable Skribisto :
-```
-flatpak run --branch=stable eu.skribisto.skribisto
-```
-
-To remove it:
-```
-flatpak remove eu.skribisto.skribisto
-```
-and you select the "master" skribisto so as to remove it
-
-### MacOS
-
-Using the Linux Superbuild instructions, it runs.
+**No macOS build ships with a release yet.**
+[.github/workflows/release-macos.yml](.github/workflows/release-macos.yml) is written and
+works, but runs on manual dispatch only, so tagging a version builds Linux and Windows and
+never macOS. What it produces is unsigned, because signing needs an Apple Developer Program
+enrolment this project does not have. The workflow's own header says what to do to turn it on.
 
 ## Translation
 
-![alt text](https://www.transifex.com/_/charts/redirects/skribisto/skribisto/image_png/ "Translation advancement")
+The interface is translated with [Fluent](https://projectfluent.org). The catalogues are plain
+`.ftl` files under [crates/teksilo_ui/locales/](crates/teksilo_ui/locales/), one directory per
+locale, split into five files each:
 
-As you can see in the chart, all the main languages are translated. That's not the reality ! A first pass of translation was done with Google Translate, 
-so if you find errors or a distinct lack of logic in a few words, you know the culprit ! You are invited to fix such mistakes by following the below instructions.
+```
+crates/teksilo_ui/locales/en-US/{main,tooltips,tags,templates,story_bible}.ftl
+crates/teksilo_ui/locales/fr-FR/{main,tooltips,tags,templates,story_bible}.ftl
+```
 
-SKribisto uses Transifex to manage translation from english to any language. 
+The longer help pages are separate, and are Djot rather than Fluent. There are ten pages per
+locale, under [crates/teksilo_ui/help/](crates/teksilo_ui/help/):
 
-[https://www.transifex.com/skribisto/skribisto/](https://www.transifex.com/skribisto/skribisto/)
+```
+crates/teksilo_ui/help/en-US/*.djot
+crates/teksilo_ui/help/fr-FR/*.djot
+```
 
+`en-US` is the source language and the one keys are validated against at compile time; other
+locales fall back to it at runtime for anything missing, and a help page served in a language
+you did not ask for says so in a banner rather than passing itself off.
 
-To help with translation, go [here](https://www.transifex.com/skribisto/skribisto/) and click on the "Help translate" button. It's free. No tool required, nothing to install.
+To add a language, copy both `en-US` directories to your locale code, translate the values,
+and then register the locale in three places. The strings are compiled into the binary rather
+than discovered on disk, so a new directory on its own is never loaded:
 
-If your language isn't listed and you want to translate it, please create an (issue)[https://github.com/jacquetc/skribisto/issues] or send me an email at cyril.jacquet@skribisto.eu and I'll add it.
+- `SUPPORTED_LOCALES` in [crates/teksilo_ui/src/startup.rs](crates/teksilo_ui/src/startup.rs)
+- the `locales = […]` list of `app_locales()` in the same file. One entry, not one line per
+  `.ftl`: `compile_in_locales!` expands the `locales × files` cross-product for you, and a
+  file you forgot to create is a compile error naming it
+- the `djot_page!` rows in [crates/teksilo_ui/src/help.rs](crates/teksilo_ui/src/help.rs), one
+  per help page
 
-### Transifex integration with Skribisto
+That is three source edits and no build-system change; nothing else in the build has to move,
+and a locale nobody has translated yet costs the ones that exist nothing. The first two lists
+are held in step by a test, so a locale added to one and forgotten in the other fails the
+build rather than shipping a language the picker offers and the app has no strings for.
 
-The source language is en_US (american english), the file is [src/translations/skribisto_en_US.ts](https://github.com/jacquetc/skribisto/blob/master/src/translations/skribisto_en_US.ts) from the "develop" branch. The en_US translation file is the only translation updated when a new to-be-translated sentence is added on the source code. 
+### Seeing your edits without rebuilding
 
-There is no need to manualy use Qt's lupdate or lrelease. Any push request with any translation file other than skribisto_en_US.ts will be rejected.
+A debug build can watch a locale directory and reload it on every save, so you can keep the
+app open beside your editor:
 
-Each time the project is built, skribisto_en_US.ts is automatically updated. Moreover, all the languages are compiled in ".qm" files at build time.
+```
+cargo run -p teksilo_ui -- --translation-dev fr-FR=crates/teksilo_ui/locales/fr-FR
+```
 
-Any new language is detected without any declaration in the source code.
+Save any `.ftl` in that directory and the running window re-renders. The flag is repeatable
+(once per locale), and it prints the directory it is watching at startup.
 
-Transifex updates all languages with the new sentences without intervention.
+Point it at the **directory**, not at one file inside it. It will refuse a file rather than
+let you find out the hard way. A locale's strings are the merge of all five `.ftl` files, and
+a reload rebuilds the whole bundle: reloading `main.ftl` alone would drop every key the other
+four define, so most of the interface would silently revert to English and look like your
+translation had been deleted.
 
-The process is written in this [CMakeLists.txt](https://github.com/jacquetc/skribisto/blob/master/src/translations/skribisto_de_DE.ts)
+Two consequences follow. The flag skips the single-instance election, because bundles are
+built once at startup and a run handed off to an already-running window would register no
+watcher at all. And while it is in use the watched locale is exactly what is in that
+directory, so an extension's strings for it are gone until you restart without the flag. It
+is a development flag; release builds refuse it.
 
-Thank you to the Scribus project to have written a clean way to automatise translation. [See here](https://github.com/scribusproject/scribus/blob/master/resources/translations/CMakeLists.txt). I learnt a lot from it.
+There is no Transifex, no `lupdate` or `lrelease`, and no `.ts`/`.qm` step any more. Edit the
+`.ftl` and `.djot` files directly and open a pull request.
 
 ## To contact me
 
-cyril.jacquet@skribisto.eu (UTC+1)
+cyril.jacquet@ferntech.eu (UTC+1)
 
+## License
 
+Skribisto is free software under the **GNU General Public License v3.0**. See
+[LICENSE](LICENSE). It is developed as **open core**: the community edition is, and will
+remain, GPLv3, while a separate commercial edition with additional features
+may be offered under proprietary terms.
 
+### The manuscript is always free
 
+Open core draws a line through a project. This is where Skribisto's line runs, and it does not
+move: everything you need to write a book stays under the GPL, permanently.
 
+- **Writing is community-edition work.** Creating, editing, opening, saving and exporting a
+  manuscript, in every format Skribisto supports, belongs to the free edition.
+- **Your project stays readable.** The `.skrib` bundle format stays open and documented, and a
+  project touched by a commercial edition remains readable, editable and exportable by the
+  community edition.
+- **Nothing is taken back.** No feature that has shipped in the community edition will ever be
+  moved out of it.
+- **No key, no server, no permission.** Skribisto will never require a licence key, an
+  activation step or a network connection to open or edit your own work.
 
+A commercial edition adds capability *around* the manuscript, and services that genuinely need
+a server to exist at all. It will never stand between you and your book.
 
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first. Because
+Skribisto is developed open-core, contributions are accepted under a **Contributor License
+Agreement** ([CLA.md](CLA.md)) rather than a bare sign-off: you keep the copyright to your
+work, you let it serve both the community and commercial editions, and in return your
+contribution is guaranteed to always remain available under the GPL. You agree by signing off
+your commits (`git commit -s`).
+
+## Commercial support
+
+A commercial edition is planned. For commercial-licensing or
+priority-support enquiries, contact <support@ferntech.eu>. For everyone else, the
+[issue tracker](https://github.com/jacquetc/skribisto/issues) and the
+[Discord](https://discord.gg/5BSkvQmyVH) are the right places.
+
+## Trademark
+
+Skribisto™ is a trademark of FernTech. The GPL source license does **not** grant
+trademark rights. Forks and derivative works may use the source code under the GPL but must
+adopt a **distinct name and distinct branding** when distributed (compare Firefox and
+Iceweasel, or Chromium and Chrome). Nominative use is fine, as in "built on Skribisto", "a
+Skribisto import filter", or articles describing Skribisto.
+
+**Distribution packagers may keep the Skribisto name.** Packagers for operating-system
+distributions and ecosystems (Debian, Fedora, Arch, Nixpkgs, Homebrew, Guix and the like) may
+ship a package called Skribisto, as long as it tracks upstream releases. That includes the
+changes packaging normally requires:
+
+- backported security and bug fixes;
+- adjusted dependency bounds, de-vendoring, unbundling;
+- build-system, path and packaging-metadata changes;
+- patches carried while an upstream release is pending.
+
+The line is provenance, not patching. What needs a distinct name is a package that changes
+Skribisto's behaviour, adds or removes features, or ships from a fork rather than from
+upstream releases. If you maintain a package and are not sure which side of that line your
+patch set falls on, write to <trademarks@ferntech.eu> rather than renaming preemptively. We
+would rather answer the question than lose the package.
+
+For anything not covered here, contact <trademarks@ferntech.eu>.

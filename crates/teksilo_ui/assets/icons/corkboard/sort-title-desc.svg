@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Title Z–A — long line to short, with an upward arrow: descending -->
+  <path d="M2.4 3.6 H10.6"/>
+  <path d="M2.4 8.0 H9.0"/>
+  <path d="M2.4 12.4 H7.4"/>
+  <path d="M13.0 12.4 V3.8"/>
+  <path d="M11.4 5.4 L13.0 3.6 L14.6 5.4"/>
+</svg>

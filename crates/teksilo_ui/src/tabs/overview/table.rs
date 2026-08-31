@@ -1,0 +1,403 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! The `TreeTableView` itself.
+
+#[allow(unused_imports)]
+use super::*;
+
+use frontend::common::event::Origin;
+use teksilo::data::{SortDirection, TreeDataSource};
+use teksilo::widgets::{DragTransferMode, EditTriggers, TreeTableView};
+
+use crate::models::COL_TITLE;
+
+/// The table wrapper.
+///
+/// Built over `from_source_keyed`, so the rows come **straight from the
+/// `TreeDataSlice`** — no `TreeModel` mirror — and the selection is keyed by durable uid.
+/// That is what lets a selection (and the expand state) survive a full re-source, which
+/// every backend event triggers: a `TreeModel` mirror reassigns its `NodeId`s on rebuild
+/// and cannot promise it.
+///
+/// Sorting is pushed **down into the source** (the view-model rebuilds the slice's
+/// `TreeRowFilter`) rather than layered over it, so it stays per-sibling and the
+/// hierarchy is preserved. The widget's own sort signal is therefore an *input* here, not
+/// the mechanism.
+pub(super) struct OverviewTable {
+    pub(super) vm: OverviewViewModel,
+    /// Every live Book in the Work, as `(id, title)`: what the **Books** column's own
+    /// gate and its id-to-title map are built from.
+    ///
+    /// A signal rather than a read inside [`Widget::build`], because this widget rebuilds
+    /// for the edit cursor and the projection flag and for nothing else: a Book created
+    /// or renamed from the binder never reached the column, which stayed absent (or kept
+    /// printing the old title) until the writer closed and reopened the tab. Refreshed
+    /// from the binder events that can change it, and bound at `Rebuild`, so the table is
+    /// rebuilt when the Books actually change and not once per unrelated row edit.
+    pub(super) books: Signal<Vec<(u64, String)>>,
+    pub(super) root: Option<WidgetId>,
+}
+
+/// The events that can add, rename, trash or restore a `Folder/Book`.
+///
+/// The same set the Overview's own row source listens to, minus the reorder-only ones:
+/// what the Books column reads is which Books exist and what they are called, and a
+/// project being loaded or replaced changes both.
+fn book_origins() -> Vec<Origin> {
+    use frontend::common::event::{
+        DirectAccessEntity, EntityEvent, TrashManagementEvent, WorkManagementEvent,
+    };
+    let item = |e: EntityEvent| Origin::DirectAccess(DirectAccessEntity::BinderItem(e));
+    vec![
+        item(EntityEvent::Created),
+        item(EntityEvent::Updated),
+        item(EntityEvent::Removed),
+        Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+        Origin::TrashManagement(TrashManagementEvent::TrashBinder),
+        Origin::TrashManagement(TrashManagementEvent::RestoreItems),
+        Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
+        Origin::WorkManagement(WorkManagementEvent::LoadWork),
+        Origin::WorkManagement(WorkManagementEvent::NewWork),
+    ]
+}
+
+/// Re-read the live Books and publish them, changing the signal only when the answer
+/// actually differs. Named so a test can drive exactly what the event closure calls.
+pub(super) fn refresh_books(
+    app_ctx: &std::rc::Rc<frontend::AppContext>,
+    ids: &crate::app_ids::AppIds,
+    books: &Signal<Vec<(u64, String)>>,
+) {
+    let _ = books.set_if_changed(live_book_titles(app_ctx, ids));
+}
+
+impl std::fmt::Debug for OverviewTable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OverviewTable").finish()
+    }
+}
+
+impl Widget for OverviewTable {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Rebuild the cells when the inline-edit cursor moves: `is_editing` is read per
+        // cell at build time, so the editor appears (and disappears) on a rebuild.
+        self.vm.editing_cell().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        // Rebuild when search/sort toggles: `reorderable` is a build-time flag, and a
+        // projected table must not be draggable (see below).
+        self.vm.is_projecting().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        // Rebuild when the Work's Books change: the Books column's gate and its
+        // id-to-title map are resolved at build time, and nothing else here would ever
+        // ask again. Coalesced to one read per frame (a 200-row import fires 200 events),
+        // and published through `set_if_changed`, so an event that leaves the Books alone
+        // costs one read and no rebuild at all.
+        self.books
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        {
+            let books = self.books.clone();
+            let app_ctx = self.vm.app_ctx();
+            let ids = self.vm.ids();
+            crate::models::coalesced_reload::reload_on_events(ctx, book_origins(), move || {
+                refresh_books(&app_ctx, &ids, &books);
+            });
+        }
+
+        let vm = self.vm.clone();
+        let table = TreeTableView::from_source_keyed(self.vm.rows(), self.vm.selection())
+            .columns(overview_columns(&vm, &self.books.get()))
+            .tree_column(COL_TITLE)
+            // **F2 as the table's set, not the default.** The columns that want
+            // a mouse route ask for it themselves (`columns.rs`' "One rule for
+            // the mouse"); what this turns off is the two defaults that fight
+            // this table. `DOUBLE_CLICK` would collide with `on_row_activate`
+            // below on the Title column — the cell's own gesture arena stops
+            // the press before the row ever sees it, so opening a scene by
+            // double-click would simply stop working. `ANY_KEY` is worse than
+            // absent: the character that opens the editor is lost (the editor
+            // is not built until the next frame), so typing over a title left
+            // the old one unchanged — and it shadowed type-ahead, which is how
+            // you jump to a row by name in a long book.
+            .edit_triggers(EditTriggers::F2)
+            .auto_row_height(26.0)
+            .alternating_rows(true)
+            .a11y_label(tr!(overview_table_label()));
+
+        // Sort: the header writes the widget's signal; we mirror it into the view-model,
+        // which reshapes the source. Guarded both ways so the two cannot ping-pong.
+        {
+            let target = self.vm.sort_signal();
+            ctx.effect(table.sort_signal(), move |s| {
+                if target.get() != *s {
+                    target.set(s.clone());
+                }
+            });
+        }
+        // ...and seed the widget from any sort the view-model already holds (a rebuild
+        // must not silently drop it).
+        {
+            let current: Option<(String, SortDirection)> = self.vm.sort_signal().get();
+            match current {
+                Some((col, dir)) => table.set_sort(Some(&col), dir),
+                None => table.clear_sort(),
+            }
+        }
+        // Seed the **editing cell** the same way, and for the same reason.
+        //
+        // `CellContext::is_editing` — the only thing the cell delegates consult to swap
+        // in an editor — is computed from the *widget's* own `editing_cell`, addressed by
+        // (row index, display column). The view-model addresses the edit by (uid, column
+        // id), because a durable key is what survives the re-sources this table does
+        // constantly. Nothing bridged the two, so "Rename" set the view-model's intent and
+        // no cell ever noticed: the menu item did nothing at all.
+        //
+        // It has to be re-seeded on **every** build, not once: this widget rebuilds
+        // whenever the edit cursor moves, and each rebuild constructs a brand-new
+        // `TreeTableView` whose `editing_cell` starts at `None`. That is exactly why the
+        // sort seed above exists too.
+        if let Some((uid, col_id)) = self.vm.editing_cell().get()
+            && let Some(row) = self.vm.rows().flat_index_of(&uid)
+        {
+            table.begin_edit(row, &col_id);
+        }
+
+        let activate_vm = self.vm.clone();
+        let edit_vm = self.vm.clone();
+        let dismiss_vm = self.vm.clone();
+        let keys_vm = self.vm.clone();
+        let empty_vm = self.vm.clone();
+
+        let table = table
+            // Double-click / Enter opens the row in the editor. Single-click would fight
+            // the inline editors and the twist — an outliner is a place you *work in*,
+            // not only a launcher (which is why the outline dock, whose whole job is
+            // launching, uses single-click and this does not).
+            .on_row_activate(move |idx, ctx| activate_vm.activate(ctx, idx))
+            .on_cell_edit_request(move |idx, col_id, _ctx| {
+                // The request arrives positionally; resolve it to the row's durable uid
+                // immediately, so the edit stays attached to the *row* even if a
+                // concurrent reload shifts the indices under it.
+                if let Some(uid) = edit_vm.rows().key_at(idx) {
+                    edit_vm.begin_edit(uid, col_id);
+                }
+            })
+            // **Clicking any other cell ends the edit, keeping what was typed.** The
+            // third way out, beside Enter and Escape, and the one a writer reaches for
+            // without thinking.
+            //
+            // It is the table that reports this, not a focus handler, and both halves of
+            // that are load-bearing. `TextInput::new(..).on_focus(..)` — the obvious
+            // spelling, and what this used to be — compiles, reads correctly and **never
+            // fires**: the focusable node is the inner `TextInputField`, which registers
+            // an `on_focus` of its own, and a handler that fires answers `Handled`, so
+            // the bubble stops one node below the wrapper the closure hangs on. And even
+            // a working focus signal would be the wrong question, because this pane
+            // rebuilds constantly and every rebuild destroys and re-creates the open
+            // editor: focus leaves it many times during an edit nobody interrupted.
+            .on_cell_edit_dismissed(move |_idx, _col_id, _ctx| dismiss_vm.commit_open_edit())
+            // Type-ahead jumps by title. The delegate is handed the row itself, so there
+            // is nothing to resolve and the closure captures nothing.
+            .type_ahead_label(|row: &OverviewRow| row.title.clone())
+            // Reorder by drag, exactly as in the outline tree: the source owns the
+            // commit, so a drop is one `move_items` call with undo.
+            //
+            // **Off while projecting.** The slice being drawn *is* the sorted/filtered
+            // tree, so a drop would resolve its neighbour in projected order and write a
+            // manuscript order the writer never chose. Same call the Corkboard makes.
+            .reorderable(!self.vm.is_projecting().get())
+            // Rows can also be dragged OUT onto an editor pane, which opens them.
+            // `Copy` leaves the row in place, so one drag can mean either.
+            .exportable(DragTransferMode::Copy)
+            .empty_view(move || {
+                Box::new(OverviewEmpty {
+                    vm: empty_vm.clone(),
+                    root: None,
+                })
+            })
+            // Delete trashes the selection. Attached last: this is a `WidgetBuilder`
+            // hook, so no table-specific call may follow.
+            //
+            // **F2 is deliberately not handled here.** The table's own key handler already
+            // implements it (`EditTrigger::F2OrTypeOrDoubleClick` is the default): it sets
+            // the widget's `editing_cell` and fires `on_cell_edit_request`, which is wired
+            // above into `begin_edit`. A second F2 handler would not override that —
+            // teksilo fires the external and the widget's own handler *both*, with no
+            // short-circuit on `Handled` — it would only run a second, different action
+            // (rename the first *selected* row rather than the focused cell) on top.
+            .on_key(move |ev, _ctx| match ev {
+                WidgetEvent::KeyDown {
+                    key: Key::Delete, ..
+                } => {
+                    keys_vm.trash_selected();
+                    EventResponse::Handled
+                }
+                _ => EventResponse::Ignored,
+            });
+        // The row context menu is attached **per cell** (see `columns::with_row_menu`),
+        // not to the table: a menu on the table would only know where the pointer was,
+        // and would have to hit-test its own rows to find out what was clicked. A cell
+        // already knows its row.
+
+        let id = ctx.add(table);
+        self.root = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, p: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, p))
+            .unwrap_or_else(|| p.resolve(0.0, 0.0))
+            .into()
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root.into_iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use frontend::AppContext;
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+    use crate::app_ids::AppIds;
+    use crate::models::COL_BOOKS;
+
+    /// A Work with one binder holding one `Folder/Book`, which is also the container the
+    /// Overview is built against.
+    fn seed() -> (std::rc::Rc<AppContext>, AppIds, u64, u64) {
+        let app_ctx = std::rc::Rc::new(AppContext::new());
+        let work = work_commands::create_orphan_work(&app_ctx, None, &CreateWorkDto::default())
+            .expect("create work");
+        let binder = binder_commands::create_binder(
+            &app_ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("create binder");
+        let book = binder_item_commands::create_binder_item(
+            &app_ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "Book One".into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            binder.id,
+            0,
+        )
+        .expect("create Book One")
+        .id;
+        let ids = AppIds::new();
+        ids.work_id.set(Some(work.id));
+        (app_ctx, ids, binder.id, book)
+    }
+
+    fn view_model(
+        app_ctx: &std::rc::Rc<AppContext>,
+        ids: &AppIds,
+        container: u64,
+    ) -> OverviewViewModel {
+        crate::overview::OverviewViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            container,
+            &BinderItemRole::Folder,
+            &BinderItemSubRole::Book,
+            Signal::new(Default::default()),
+            crate::settings::TreeExpansionViewModel::new(
+                app_ctx.clone(),
+                ids.clone(),
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+            Signal::new(Default::default()),
+        )
+        .expect("a Book is overview-capable")
+    }
+
+    /// **The Books column follows the binder instead of the build that mounted the
+    /// table.** Both halves used to be frozen: the gate (`live_books` read inside
+    /// `overview_columns`) and the id-to-title map the cells resolve through. This table
+    /// only rebuilds for the edit cursor and the projection flag, so a second Book
+    /// created from the binder never grew the column and a rename left every Books cell
+    /// printing the old title, both until the writer closed and reopened the tab.
+    ///
+    /// What is driven here is [`refresh_books`] - exactly the closure the event wiring in
+    /// `build` calls - and the column set built from what it publishes. A headless tree
+    /// drops backend events (`test_support`'s `NullPoster`), so the delivery of the event
+    /// itself is not what this can prove; the re-read and the gate reading it are.
+    #[test]
+    fn the_books_column_follows_the_binder_rather_than_the_mounting_build() {
+        let (app_ctx, ids, binder, book_one) = seed();
+        let vm = view_model(&app_ctx, &ids, book_one);
+        let books = Signal::new(live_book_titles(&app_ctx, &ids));
+
+        let column_ids = |books: &Signal<Vec<(u64, String)>>| -> Vec<String> {
+            overview_columns(&vm, &books.get())
+                .iter()
+                .map(|c| c.id().to_string())
+                .collect()
+        };
+        assert!(
+            !column_ids(&books).contains(&COL_BOOKS.to_string()),
+            "one Book: no Books column"
+        );
+
+        // A second Book arrives from the binder, with this tab open.
+        let book_two = binder_item_commands::create_binder_item(
+            &app_ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "Book Two".into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                activated: true,
+                is_exportable: true,
+                ..Default::default()
+            },
+            binder,
+            1,
+        )
+        .expect("create Book Two")
+        .id;
+        refresh_books(&app_ctx, &ids, &books);
+        assert!(
+            column_ids(&books).contains(&COL_BOOKS.to_string()),
+            "the column must appear without reopening the tab"
+        );
+
+        // ...and a rename reaches the map the cells print from.
+        let it = binder_item_commands::get_binder_item(&app_ctx, &book_two)
+            .expect("read Book Two")
+            .expect("Book Two exists");
+        let mut dto = crate::shared::binder_ops::update_item_dto(&it);
+        dto.title = "The Crossing".into();
+        binder_item_commands::update_binder_item(&app_ctx, None, &dto).expect("rename");
+        refresh_books(&app_ctx, &ids, &books);
+        assert!(
+            books.get().iter().any(|(_, t)| t == "The Crossing"),
+            "the titles the Books cells resolve through must be the current ones: {:?}",
+            books.get()
+        );
+    }
+}

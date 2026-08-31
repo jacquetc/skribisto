@@ -1,9 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shared MIME database entry for the Skribisto project bundle.
+
+  The canonical type is in the IANA vendor tree. `application/x-skribisto` is the
+  name earlier builds used; RFC 6648 retired the `x-` space, so it stays only as
+  an <alias> and every consumer (the .desktop MimeType, the AppStream
+  <mediatype>, the Windows "Content Type", the macOS UTTypeTagSpecification)
+  names the vendor type instead. Keeping the alias costs nothing and means a
+  desktop database that already learned the old string keeps working.
+
+  A .skrib is a zip, hence <sub-class-of>: a file manager that only knows about
+  archives can still say something useful about it. The glob is the only reliable
+  discriminator — the bundle has no magic, because zip_io writes its entries
+  alphabetically and the first one is `assets.ron`, so content sniffing sees a
+  plain archive. (EPUB solves this with a stored, uncompressed `mimetype` first
+  entry; doing the same here would be a format change, so it is deliberately not
+  done.)
+
+  <icon> is spelled out rather than left to the derived name: the automatic
+  mapping only rewrites '/' to '-', so the derived name for this type would
+  contain a literal '+' and no theme ships that file.
+-->
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
-    <mime-type type="application/x-skribisto">
-	<comment xml:lang="en">Skribisto Project</comment>
+    <mime-type type="application/vnd.skribisto.project+zip">
+	<comment xml:lang="en">Skribisto project</comment>
 	<comment xml:lang="fr">Projet Skribisto</comment>
-	<generic-icon name="eu.skribisto.skribisto" />
+	<alias type="application/x-skribisto" />
+	<sub-class-of type="application/zip" />
+	<icon name="application-vnd.skribisto.project" />
+	<generic-icon name="x-office-document" />
 	<glob pattern="*.skrib" />
     </mime-type>
 </mime-info>

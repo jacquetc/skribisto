@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Go to: jump to a precise place — a target/crosshair. Deliberately not a
+       magnifier: this navigates to a known item, it does not search content
+       (that is the Find dock's glyph, and the two must not read alike). -->
+  <circle cx="8" cy="8" r="4.1"/>
+  <path d="M8 1.3 V3.1"/>
+  <path d="M8 12.9 V14.7"/>
+  <path d="M1.3 8 H3.1"/>
+  <path d="M12.9 8 H14.7"/>
+</svg>

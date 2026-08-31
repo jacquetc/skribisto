@@ -1,0 +1,197 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+# Configuration for `typos` — https://github.com/crate-ci/typos
+#
+# The app lives under `crates/` (Rust). Only asset files that are data rather
+# than prose are excluded here, so they don't bury real findings under false
+# positives. Run with:
+#
+#     typos --config .github/typos.toml
+#
+# ## Why this file is unusually long
+#
+# Skribisto is a **writing app**, so misspellings are its subject matter, not
+# only its defects. Its spell-checker and its replace-while-typing engine are
+# tested with prose that is deliberately wrong ("teh", "helo", "wrld"), and a
+# checker that cannot be told the difference reports every fixture as a bug —
+# 200 of them, which is exactly how a linter stops being read. Each allowance
+# below says which of those it is, so the next person can tell a fixture from a
+# genuine slip without opening the file.
+
+[files]
+extend-exclude = [
+    # Vector artwork / icon path data — not prose.
+    "*.svg",
+    # Non-English UI translations (the en-US/ locale stays spell-checked).
+    "crates/teksilo_ui/locales/fr-FR/*.ftl",
+    # Non-English help topics, for the same reason and more of it: these are
+    # pages of French prose, not labels. The en-US/ topics stay spell-checked,
+    # which is where a real slip in the help set would be.
+    "crates/teksilo_ui/help/fr-FR/*.djot",
+    # Third-party licence texts, shipped verbatim with the bundled
+    # dictionaries. Their wording is not ours to correct.
+    "crates/teksilo_ui/assets/dictionaries/licenses/*",
+    # The dictionary registry names each language and its variants **in that
+    # language** ("variantes", "Deutsch"), which is the whole point of it.
+    "crates/teksilo_ui/assets/dictionaries/registry.ron",
+    # Paratext presets ship in the language they set text in — a German novel's
+    # preset says "Autor", and translating it would break the preset.
+    "resources/paratext/*.toml",
+    # The Manuskript import fixture: a French project, generated from the Verne
+    # example beside it, so its prose is the same public-domain French. Scoped to
+    # the generated tree, deliberately: `generate.py` and the tests around it are
+    # English and stay checked, and a slip in either is exactly what this should
+    # still catch. The `.msk` archives are zips.
+    "crates/manuskript_import/tests/fixtures/tour-du-monde/**",
+    "crates/manuskript_import/tests/fixtures/*.msk",
+    # The Verne example's spec: forty kilobytes of French — thirty-seven chapter
+    # synopses and a story bible, written in the language of the book they
+    # describe. Scoped to that one example rather than to `resources/examples/`,
+    # so the English Starforgers spec beside it stays checked; a French example
+    # added later needs its own line here, deliberately. The two `NOTICE` files
+    # are English and are NOT excluded — a slip in a rights statement is exactly
+    # what this checker should still catch.
+    "resources/examples/le_tour_du_monde_en_80_jours/*.toml",
+]
+
+[default.extend-words]
+# ── Deliberate misspellings: the fixtures the spell-checker and the
+#    replace-while-typing engine exist to correct. Wrong on purpose, and a test
+#    that spelled them right would test nothing.
+helo = "helo"
+Helo = "Helo"
+teh = "teh"
+Teh = "Teh"
+TEH = "TEH"
+hte = "hte"
+abd = "abd"
+thiss = "thiss"
+missspelled = "missspelled"
+nam = "nam"
+caf = "caf"
+
+# ── Rust identifiers, including Qleany-generated ones. The generator pluralises
+#    an entity name by appending `s`, so `Search`/`Reply`/`Entry`/`BinderStatus`
+#    become `searchs`/`replys`/`entrys`/`binder_statuss` in every generated table and
+#    accessor; renaming
+#    them by hand would be undone by the next regeneration. `datas` is ours: a
+#    vector of `Content.data` values, where the singular would read as one.
+searchs = "searchs"
+replys = "replys"
+entrys = "entrys"
+statuss = "statuss"
+datas = "datas"
+
+# ── A dependency's own spelling, which is not ours to correct. `text2num` 2.8.0
+#    renamed `Language::portuguese()` to `Language::portugese()`, one `u`, under
+#    a minor version bump. `document_ingest` has to spell it the way the crate
+#    does or it does not compile, so the allowance is for that call and the test
+#    beside it; the word is wrong everywhere else and stays flagged there.
+portugese = "portugese"
+
+# ── Manuskript's own on-disk key names, which are not ours to correct either.
+#    `Serie` is what its `infos.txt` writes and has never been spelled `Series`
+#    in any release; `Sentance` is the pre-0.3.0 misspelling of `summarySentence`
+#    and is still what a 2016 project on disk carries. An importer has to name
+#    both exactly as the file does or it reads nothing, so the allowance is for
+#    the reader and the fixture; the words stay flagged everywhere else.
+Serie = "Serie"
+serie = "serie"
+Sentance = "Sentance"
+
+# ── French in the bilingual UI-automation scripts, which assert on both the
+#    en-US and the fr-FR label of the same control.
+maintenant = "maintenant"
+
+# ── Real English the dictionary does not carry. "afterwords" is the plural of
+#    *afterword* and belongs in a book app; "unparseable" and "invokable" are
+#    the standard variants in this codebase; "mis" is only ever a hyphenated
+#    prefix ("mis-set", "mis-routing"); "nd" is `chrono`'s `NaiveDate` binding.
+afterwords = "afterwords"
+unparseable = "unparseable"
+unparented = "unparented"
+invokable = "invokable"
+mis = "mis"
+nd = "nd"
+
+# ── Fragments the checker cuts out of longer identifiers and literals: `pn`
+#    from a `.png` path, `anc` from `isinstance`, `Fo` from the mnemonic test's
+#    `"Fo&rmat"`, `ist` from a German replacement fixture, `tru` from a
+#    deliberately invalid BCP-47 tag, `paeth` the PNG predictor filter.
+pn = "pn"
+anc = "anc"
+Fo = "Fo"
+ist = "ist"
+tru = "tru"
+paeth = "paeth"
+
+# ── French and German in fixtures, packaging metadata, the CLA, and the
+#    bilingual UI-automation scripts (which match on both en-US and fr-FR
+#    labels, so their assertions are half French by construction).
+projet = "projet"
+projets = "projets"
+copie = "copie"
+apparence = "apparence"
+exemple = "exemple"
+exemples = "exemples"
+portait = "portait"
+seconde = "seconde"
+celle = "celle"
+bord = "bord"
+complet = "complet"
+objet = "objet"
+Objets = "Objets"
+ponctuation = "ponctuation"
+Registre = "Registre"
+# French for "statuses", in the settings-tree search test that asserts a query
+# for one label does NOT match another ("statuts" must not find "Étiquettes").
+# Unrelated to `statuss` above, which is qleany's pluralisation of an entity name.
+statuts = "statuts"
+# The French dictionary's own variant names, quoted verbatim in the registry's
+# prose because they are what the writer picks between ("Toutes variantes").
+variantes = "variantes"
+
+# "Big Sur" — macOS release name in the README.
+Sur = "Sur"
+
+# ── Words the checker only started flagging after its dictionary grew past the
+#    version CI pins (`crate-ci/typos@v1.44.0` in `spelling.yml`). Each was
+#    checked by hand and is deliberate; they are listed here so the tree stays
+#    green when that pin is bumped, rather than the bump arriving as 73 findings.
+#
+#    `ODF` is the OpenDocument Format, named ~60 times across the import/export
+#    code because that code is written against what real producers of the format
+#    emit. The rest are single sites: `capitulo` is the unaccented Spanish and
+#    Portuguese spelling, offered beside `capítulo` in the title-word vocabulary
+#    on purpose; `signes`/`espaces` are French (*signes espaces compris*, the
+#    feuillet's own definition) quoted beside the German and Japanese ones;
+#    `seeked` is the past tense this codebase uses for the verb *seek*.
+ODF = "ODF"
+odf = "odf"
+capitulo = "capitulo"
+signes = "signes"
+espaces = "espaces"
+seeked = "seeked"
+
+# ── Deliberately wrong strings, like the fixtures at the top of this file, but
+#    reached by the newer dictionary: `Secon` is a block truncated mid-word by a
+#    test asserting exactly that; `goin` is a UI string quoted in a comment
+#    *after* it ellipsised ("300 versions recorded, goin…"), which is the bug
+#    the comment describes; `tolerence` is a misspelled settings key written by
+#    the test that proves an unknown key is refused with a did-you-mean.
+Secon = "Secon"
+goin = "goin"
+tolerence = "tolerence"
+
+# ── The Windows installer script and the README passage that documents it.
+#    `DOUT`/`Cpy` are fragments of NSIS syntax, not words: `/DOUT_FILE` is the
+#    `/D<name>=<value>` define flag with `OUT_FILE` after it, and `Cpy` comes
+#    out of `CopyFiles`/`SetOverwrite` handling. `cours` (*en cours
+#    d'exécution*), `Sie` and `Programm` are the French and German installer
+#    strings, which are translations rather than prose of ours to correct.
+DOUT = "DOUT"
+Cpy = "Cpy"
+cours = "cours"
+Sie = "Sie"
+Programm = "Programm"

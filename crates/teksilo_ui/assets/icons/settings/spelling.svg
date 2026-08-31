@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Spelling — a letter over the wavy underline that marks a misspelling, the
+       same metaphor as `editor/spellcheck.svg`. Not a star: that glyph is already
+       spoken for by `templates/star.svg`, and a five-point star drawn from
+       relative line-tos drifts off-axis at this size. Three humps of 3.6 rather
+       than the editor glyph's five of 2.4 — a shorter wavelength flattens into a
+       plain rule at 16px. -->
+  <path d="M4.2 9.2 L8 2.6 L11.8 9.2"/>
+  <path d="M5.7 6.7 H10.3"/>
+  <path stroke-width="1.15" d="M2.6 12.5 q1.8 -2 3.6 0 t3.6 0 t3.6 0"/>
+</svg>

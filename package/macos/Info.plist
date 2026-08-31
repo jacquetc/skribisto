@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Extra Info.plist keys for the macOS .app, merged by cargo-packager.
+
+  MERGE SEMANTICS, and why this file declares CFBundleDocumentTypes even though
+  cargo-packager can generate it: the packager builds its plist first, then walks
+  this file's top-level dictionary and `insert`s each key, so every key here
+  REPLACES the generated one wholesale and every key absent here is left alone.
+  It generates CFBundleDocumentTypes from [[package.metadata.packager.file-associations]]
+  but emits only CFBundleTypeExtensions / CFBundleTypeName / CFBundleTypeRole —
+  no LSItemContentTypes and no LSHandlerRank. Extension-only association is the
+  weaker form and leaves the app unranked against anything else claiming .skrib,
+  so the document types are restated here in full, keyed on the exported UTI.
+
+  Keep the extensions and the media type here in step with the
+  `file-associations` block in crates/teksilo_ui/Cargo.toml, the <glob> and type
+  in resources/unix/mime/eu.skribisto.skribisto.xml, and APP_MIME in
+  package/windows/setup.nsi. Four declarations, one string.
+
+  UTTypeConformsTo says public.zip-archive because a .skrib is a zip: Quick Look
+  and the Finder can then say something sensible about a project even where
+  Skribisto is not installed.
+-->
+<plist version="1.0">
+<dict>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>eu.skribisto.project</string>
+			<key>UTTypeDescription</key>
+			<string>Skribisto project</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.zip-archive</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeIconFile</key>
+			<string>icon.icns</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>skrib</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.skribisto.project+zip</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Skribisto project</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>eu.skribisto.project</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>icon.icns</string>
+		</dict>
+	</array>
+</dict>
+</plist>

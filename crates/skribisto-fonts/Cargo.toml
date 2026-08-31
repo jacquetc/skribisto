@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+[package]
+name = "skribisto-fonts"
+description = "The app's bundled OFL writing serifs (Literata, EB Garamond, Source Serif 4), as raw font bytes shared by the editor and the PDF exporter"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+readme = "../../README.md"
+publish = false
+
+[lib]
+name = "skribisto_fonts"
+path = "src/lib.rs"
+
+[dependencies]

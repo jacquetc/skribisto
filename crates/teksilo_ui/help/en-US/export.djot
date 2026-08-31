@@ -1,0 +1,68 @@
+## Opening the Export dialog
+
+Press `Ctrl+Shift+E`, or open *Work ▸ Export*. The submenu names what you have open:
+*Export Book*, *Export Part*, *Export Chapter*, *Export Scene*, *Export Note*,
+*Export Folder*. Each opens the dialog set to that container. *Choose…*, and
+`Ctrl+Shift+E` itself, open it on a checkbox tree of your whole binder instead.
+
+## Choosing what to export
+
+The *What to export* column offers the container you arrived with, or *Custom selection*:
+a checkbox tree of your whole binder.
+
+- The tree opens with your prose already checked. Uncheck what you want left out.
+- Checking a chapter checks its scenes. A partly checked chapter shows a dash.
+- Items whose Inspector *Include in exports* switch is off are hidden.
+  *Show non-exportable* reveals them, and checking one there counts for this export only.
+
+## Picking a format
+
+*Format* offers:
+
+- *Word* (`.docx`) and *LibreOffice* (`.odt`), which carry comments
+- *PDF* and *EPUB*, for a finished book
+- *HTML*, *Markdown*, *Djot*, *Text* and *LaTeX*, all plain files
+
+## Choosing a style
+
+*Style* is a saved bundle of choices that shapes the output whichever format you pick:
+
+- chapter and part headings, numbered or not
+- scene breaks, line spacing and justification
+- which of notes, synopses, scene titles, epigraphs and paratexts go in
+- footnotes: whether they go in, and how they are numbered
+- whether your comments go out with the file
+- where a new page starts
+
+A style applies wherever the format can honour it.
+
+## Making a style of your own
+
+Built-in styles cannot be edited. To make your own, open
+*Settings ▸ Compile & Export ▸ Export Formats* and choose *Duplicate* on a built-in. The
+copy appears in the same list, after the built-in ones, and *Edit* opens it.
+
+## Where the file goes
+
+*Destination* is the file to write. Type a path, or pick one with the folder button beside
+it. Changing the format changes the extension for you. If that file already exists,
+Skribisto asks before replacing it.
+
+## Running the export
+
+Click *Export*.
+
+The export runs in the background, and a message follows it:
+
+- While it runs, a *Cancel* button stops it.
+- When the file lands, the message names it and offers *Open* and *Show in folder*.
+
+## Getting a document back
+
+- With the style's *Include comments* on, `.docx` and `.odt` carry each comment out
+  anchored to its passage.
+- Re-importing that file returns the comments to their places. That relies on the style's
+  *Include round-trip markers*, which starts on. See [the round trip](:help-round-trip) for how
+  that works.
+- Markdown and plain text come back through [importing documents](:help-import-documents),
+  but with no comments.

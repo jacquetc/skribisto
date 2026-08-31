@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+[package]
+name = "skribisto-spellcheck-engine"
+description = "Hunspell-backed misspelling predicate and suggestion ranking, free of any UI"
+authors.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+readme = "../../README.md"
+publish = true
+
+[lib]
+name = "spellcheck_engine"
+path = "src/lib.rs"
+
+[dependencies]
+spellbook = "0.4"
+# `.aff` files declare their own encoding (`SET ISO8859-1`); spellbook takes
+# `&str` and does not transcode, so the pair is decoded before it is handed over.
+encoding_rs = "0.8"
+# UAX#29 word segmentation — spellbook delegates tokenisation to the caller, and
+# the same tokenizer has to answer "what is flagged" and "what is addable".
+unicode-segmentation = "1"

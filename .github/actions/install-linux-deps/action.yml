@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+name: "Install Linux system dependencies"
+description: "Install the Wayland / X11 / keyboard libraries that winit and wgpu need to build Skribisto on Linux"
+
+# Skribisto is a lean winit/wgpu app: it does NOT enable teksilo's `web-view`
+# feature (no webkit2gtk/gtk), and its file dialogs go through rfd's `xdg-portal`
+# backend (D-Bus via pure-Rust zbus — no libdbus, no GTK). So this deliberately
+# installs only the winit/wgpu display-server libraries, not the full GTK/webkit
+# stack that teksilo's own CI needs for its webview demos.
+runs:
+  using: "composite"
+  steps:
+    - name: Install apt packages
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          build-essential \
+          pkg-config \
+          libxkbcommon-dev \
+          libwayland-dev \
+          libxcb1-dev \
+          libx11-dev

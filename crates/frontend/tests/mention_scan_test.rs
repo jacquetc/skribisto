@@ -1,0 +1,884 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Integration tests for `mention_management::scan_mentions`, pinning the one property the
+//! whole feature rests on: **a scan writes nothing.**
+//!
+//! The scan runs on every prose edit (throttled) and on every tag change. The design says a
+//! *suggestion* is derived, and only becomes persisted when the writer pins it. If a scan
+//! ever wrote — even something as innocent as touching `updated_at` — the consequence is not
+//! a wrong roster, it is that **merely opening a project and typing marks it permanently
+//! unsaved**, autosave fires forever, and every scan lands an entry on the undo stack that
+//! the writer did not ask for and cannot explain. `teksilo_ui::app::mutation_origins()` turns
+//! any `DirectAccess` entity event into exactly that.
+//!
+//! `read_only: true`, `undoable: false` and `QueryUnitOfWork` express the intent, but none of
+//! them is enforced at compile time against a future edit that adds a write action to the
+//! uow trait — the macros would happily generate it. This file is that guard.
+//!
+//! The assertion is stated as **no `DirectAccess` event of any kind**, deliberately broader
+//! than the UI's mutation allowlist: mirroring that list here would mean maintaining a second
+//! copy of it, and a scan has no business emitting an entity event even of a kind the UI
+//! currently ignores.
+
+use direct_access::binder_item::dtos::UpdateBinderItemDto;
+use frontend::AppContext;
+use frontend::commands::{
+    binder_item_commands, binder_tag_commands, content_commands, mention_management_commands,
+    trash_management_commands, undo_redo_commands, work_commands,
+};
+use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+use frontend::common::direct_access::work::WorkRelationshipField;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use frontend::common::event::{Event, Origin};
+use frontend::common::types::EntityId;
+use frontend::direct_access::{
+    BinderItemRelationshipDto, CreateBinderItemDto, CreateBinderTagDto, CreateContentDto,
+};
+use frontend::trash_management::TrashBinderItemsDto;
+use mention_management::{MentionHit, MentionHits, ScanMentionsDto};
+use work_management::{NewWorkDto, NewWorkTemplate};
+
+/// The character the fixture is about. Capitalised, because the matcher is case-sensitive by
+/// design — a lowercase needle would be a different test.
+const CHARACTER: &str = "Elena";
+
+fn now() -> chrono::DateTime<chrono::Utc> {
+    chrono::Utc::now()
+}
+
+fn item(sub_role: BinderItemSubRole, title: &str) -> CreateBinderItemDto {
+    CreateBinderItemDto {
+        status: None,
+        uid: common::uid::fixture_uid(
+            title.len() as u64 * 1000 + title.chars().map(|c| c as u64).sum::<u64>(),
+        ),
+        created_at: now(),
+        updated_at: now(),
+        title: title.to_string(),
+        sub_title: String::new(),
+        role: BinderItemRole::Item,
+        sub_role,
+        label: String::new(),
+        activated: true,
+        is_favorite: false,
+        is_exportable: true,
+        exclude_from_numbering: false,
+        indent: 0,
+        word_count_goal: 0,
+        char_count_goal: 0,
+        dict_language: Vec::new(),
+        aliases: Vec::new(),
+        contents: vec![],
+        references: vec![],
+        point_of_view: vec![],
+        books: vec![],
+        tags: vec![],
+    }
+}
+
+struct Fixture {
+    ctx: AppContext,
+    setup: u64,
+    work: EntityId,
+    /// The note the scan should find mentions *of*.
+    character: EntityId,
+    /// The scene the scan should find mentions *in*.
+    scene: EntityId,
+}
+
+/// A project with a discoverable character note and a scene that names them — the smallest
+/// shape for which a scan has anything at all to report.
+fn fixture() -> Fixture {
+    let ctx = AppContext::new();
+    let setup = undo_redo_commands::create_new_stack(&ctx);
+
+    let dir = std::env::temp_dir().join(format!("skrib-mention-scan-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    work_management_new(&ctx, &dir);
+    let _ = std::fs::remove_dir_all(&dir);
+
+    let work = work_commands::get_all_work(&ctx).unwrap().pop().unwrap().id;
+    let binder = work_commands::get_work_relationship(&ctx, &work, &WorkRelationshipField::Binders)
+        .unwrap()
+        .pop()
+        .unwrap();
+
+    // The note's *title* is the full name; `Elena` alone is an alias. That split is the point
+    // — the scan matches whole declared names, so a scene saying "Elena" is found through the
+    // alias and not by fragment-matching the title. It is also exactly the shape the Plume
+    // importer produces, where `PlumeObj.aliases` lands in this field.
+    let mut character_dto = item(BinderItemSubRole::Note, &format!("{CHARACTER} Sarraute"));
+    character_dto.aliases = vec![CHARACTER.to_string()];
+    let created = binder_item_commands::create_binder_item_multi(
+        &ctx,
+        Some(setup),
+        &[
+            character_dto,
+            item(BinderItemSubRole::Scene, "The lighthouse"),
+        ],
+        binder,
+        -1,
+    )
+    .unwrap();
+    let character = created[0].id;
+    let scene = created[1].id;
+
+    // A discoverable tag, on the note only: that flag is what puts the note's name into the
+    // alias table at all.
+    let tag = binder_tag_commands::create_orphan_binder_tag(
+        &ctx,
+        Some(setup),
+        &CreateBinderTagDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            name: "character".into(),
+            color: "#4477aa".into(),
+            details: String::new(),
+            discoverable: true,
+            creates_in: None,
+            note_template: None,
+        },
+    )
+    .unwrap()
+    .id;
+    work_commands::set_work_relationship(
+        &ctx,
+        Some(setup),
+        &frontend::direct_access::WorkRelationshipDto {
+            id: work,
+            field: WorkRelationshipField::Tags,
+            right_ids: vec![tag],
+        },
+    )
+    .unwrap();
+    binder_item_commands::set_binder_item_relationship(
+        &ctx,
+        Some(setup),
+        &BinderItemRelationshipDto {
+            id: character,
+            field: BinderItemRelationshipField::Tags,
+            right_ids: vec![tag],
+        },
+    )
+    .unwrap();
+
+    content_commands::create_content_multi(
+        &ctx,
+        Some(setup),
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role: ContentRole::SceneText,
+            data: format!("{CHARACTER} climbed the stair. The lamp was already lit."),
+        }],
+        scene,
+        -1,
+    )
+    .unwrap();
+
+    Fixture {
+        ctx,
+        setup,
+        work,
+        character,
+        scene,
+    }
+}
+
+/// A second scene beside the fixture's own: written in deep third person, naming the
+/// character nowhere in its own prose, and bound to them only through `point_of_view`. The
+/// fold under test is the only thing that can make this scene appear in the character's
+/// backlinks at all: nothing textual ever will, by construction.
+fn add_pov_scene(fx: &Fixture) -> EntityId {
+    let binder =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
+    let created = binder_item_commands::create_binder_item_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[item(BinderItemSubRole::Scene, "The letter")],
+        binder,
+        -1,
+    )
+    .unwrap();
+    let scene = created[0].id;
+    content_commands::create_content_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role: ContentRole::SceneText,
+            data: "She stared out at the grey water long after the ferry had gone.".to_string(),
+        }],
+        scene,
+        -1,
+    )
+    .unwrap();
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: scene,
+            field: BinderItemRelationshipField::PointOfView,
+            right_ids: vec![fx.character],
+        },
+    )
+    .unwrap();
+    scene
+}
+
+fn work_management_new(ctx: &AppContext, dir: &std::path::Path) {
+    frontend::commands::work_management_commands::new_work(
+        ctx,
+        &NewWorkDto {
+            goal_unit: Default::default(),
+            file_name: dir.to_string_lossy().to_string(),
+            title: String::new(),
+            is_folder: true,
+            template_kind: NewWorkTemplate::EmptyNovel,
+            labels: vec![],
+            language: vec!["en-US".to_string()],
+            author_name: String::new(),
+            chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
+        },
+    )
+    .expect("new_work");
+}
+
+/// Run a scan to completion and return its hits.
+///
+/// `AppContext::new()` never starts the event-hub loop, so nothing competes with the test for
+/// delivery and events simply accumulate in the channel — which is what makes draining it a
+/// reliable record of what the scan emitted rather than a race.
+fn scan(fx: &Fixture) -> Vec<MentionHit> {
+    let id =
+        mention_management_commands::scan_mentions(&fx.ctx, &ScanMentionsDto { work_id: fx.work })
+            .expect("start scan");
+    // Take the completion signal and release the manager lock before blocking — waiting
+    // while holding it would stall every other operation query for the scan's whole
+    // duration (see the qleany 1.9.0 migration guide's long-operation section).
+    let completion = fx
+        .ctx
+        .long_operation_manager
+        .lock()
+        .unwrap()
+        .completion_signal();
+    let finished = completion.wait_for(&id, Some(std::time::Duration::from_secs(30)));
+    assert!(finished, "the scan did not finish within 30s");
+
+    let dto = mention_management_commands::get_scan_mentions_result(&fx.ctx, &id)
+        .expect("scan result")
+        .expect("a finished scan has a result");
+    match dto.hits {
+        MentionHits::Found(hits) => hits,
+        MentionHits::Empty => vec![],
+    }
+}
+
+fn drain(ctx: &AppContext) -> Vec<Event> {
+    ctx.event_hub.subscribe_receiver().try_iter().collect()
+}
+
+fn hit_targets(hits: &[MentionHit]) -> Vec<(EntityId, EntityId)> {
+    hits.iter()
+        .filter_map(|h| match h {
+            MentionHit::Found {
+                owner_id,
+                target_id,
+                ..
+            } => Some((*owner_id, *target_id)),
+            MentionHit::Empty => None,
+        })
+        .collect()
+}
+
+/// The guarantee named in `scan_mentions_uc`'s header.
+///
+/// Note the first assertion: without it the test would pass vacuously on a scan that found
+/// nothing at all — and "wrote nothing" is trivially true of a scan that did nothing. The
+/// fixture is built so there is exactly one thing to find, and the test insists on finding it
+/// before it is willing to conclude anything about writes.
+#[test]
+fn scan_writes_no_entities() {
+    let fx = fixture();
+    let before_stack = undo_redo_commands::get_stack_size(&fx.ctx, fx.setup);
+    let before_items =
+        binder_item_commands::get_binder_item_multi(&fx.ctx, &[fx.character, fx.scene])
+            .expect("read items before");
+
+    // Discard everything the fixture itself emitted, so the drain below sees only the scan.
+    let _ = drain(&fx.ctx);
+
+    let hits = scan(&fx);
+
+    assert_eq!(
+        hit_targets(&hits),
+        vec![(fx.scene, fx.character)],
+        "the scene names the character exactly once, so there is exactly one hit to find — \
+         if this fails the rest of the test proves nothing"
+    );
+    // Found through the alias, not the title — so this fixture exercises the path an imported
+    // Plume project depends on, and a regression that dropped aliases would fail here rather
+    // than silently reduce the scan to title-only matching.
+    match &hits[0] {
+        MentionHit::Found {
+            matched_names,
+            is_title_match,
+            hit_count,
+            evidence,
+            ..
+        } => {
+            assert_eq!(
+                matched_names,
+                &vec![CHARACTER.to_string()],
+                "matched via the alias"
+            );
+            assert!(!is_title_match, "the title is the full name, not the alias");
+            assert_eq!(*hit_count, 1);
+            assert!(
+                evidence.contains(CHARACTER),
+                "the evidence sentence is what lets a writer judge a suggestion; got {evidence:?}"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted non-empty above"),
+    }
+
+    // The actual guarantee. A write of any entity — even one the UI currently ignores —
+    // announces itself here.
+    let emitted = drain(&fx.ctx);
+    let entity_events: Vec<&Event> = emitted
+        .iter()
+        .filter(|e| matches!(e.origin, Origin::DirectAccess(_)))
+        .collect();
+    assert!(
+        entity_events.is_empty(),
+        "a scan must write nothing, but it emitted: {:?}",
+        entity_events
+            .iter()
+            .map(|e| e.origin_string())
+            .collect::<Vec<_>>()
+    );
+
+    assert_eq!(
+        undo_redo_commands::get_stack_size(&fx.ctx, fx.setup),
+        before_stack,
+        "a scan must not land an undo entry the writer cannot explain"
+    );
+
+    // `updated_at` is the field a careless write touches even when the payload is unchanged,
+    // and it is what `content_fingerprint` reads — so a scan that bumped it would make every
+    // backup think the project had changed.
+    let after_items =
+        binder_item_commands::get_binder_item_multi(&fx.ctx, &[fx.character, fx.scene])
+            .expect("read items after");
+    let stamps = |v: &Vec<Option<frontend::direct_access::BinderItemDto>>| {
+        v.iter()
+            .map(|i| i.as_ref().map(|i| i.updated_at))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        stamps(&after_items),
+        stamps(&before_items),
+        "a scan must not touch updated_at — backup's skip-if-unchanged reads it"
+    );
+
+    // Prove the detector is armed. Everything above is an assertion that something did *not*
+    // happen, which would also hold if `drain` were watching the wrong channel or if entity
+    // writes stopped emitting events — either would turn this whole test green and useless.
+    // So: do a real write and require that it *is* seen.
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: fx.scene,
+            field: BinderItemRelationshipField::References,
+            right_ids: vec![fx.character],
+        },
+    )
+    .expect("a write the detector must catch");
+    assert!(
+        drain(&fx.ctx)
+            .iter()
+            .any(|e| matches!(e.origin, Origin::DirectAccess(_))),
+        "the no-write assertions above only mean something if a real write would have \
+         tripped them — this one did not, so they prove nothing"
+    );
+}
+
+/// Pinning is what *does* write, and it is the writer's decision — so the same scan that must
+/// not write on its own must report an already-pinned reference as confirmed.
+///
+/// This is the other half of the contract: proving a scan writes nothing is only reassuring
+/// if a scan still reflects what the writer has persisted.
+#[test]
+fn a_pinned_reference_comes_back_confirmed() {
+    let fx = fixture();
+
+    // Stated as "exactly one row, and it is a suggestion" rather than "no confirmed rows":
+    // the latter is also true of an empty scan, which would let this test pass while proving
+    // nothing — the trap the sibling test's first assertion exists to catch.
+    let before = scan(&fx);
+    assert_eq!(
+        hit_targets(&before),
+        vec![(fx.scene, fx.character)],
+        "one row before pinning"
+    );
+    assert!(
+        matches!(
+            before[0],
+            MentionHit::Found {
+                is_confirmed: false,
+                ..
+            }
+        ),
+        "nothing is pinned yet, so the row must be a suggestion"
+    );
+
+    // What the pin control does: a plain, undoable relationship write.
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(stack),
+        &BinderItemRelationshipDto {
+            id: fx.scene,
+            field: BinderItemRelationshipField::References,
+            right_ids: vec![fx.character],
+        },
+    )
+    .expect("pin");
+
+    let hits = scan(&fx);
+    assert_eq!(
+        hits.iter()
+            .filter(|h| matches!(
+                h,
+                MentionHit::Found {
+                    is_confirmed: true,
+                    ..
+                }
+            ))
+            .count(),
+        1,
+        "the pinned reference must come back confirmed, not as a fresh suggestion"
+    );
+    assert_eq!(
+        hit_targets(&hits),
+        vec![(fx.scene, fx.character)],
+        "confirmed and suggested are the same row seen twice, not two rows"
+    );
+}
+
+/// **The defect this feature closes.** A scene told in deep POV, naming its viewpoint
+/// character nowhere in its own prose, must still appear in that character's backlinks:
+/// the writer declared the relationship on `point_of_view`, and the union this scan builds
+/// is what surfaces it. `is_confirmed` stays false: nothing wrote `references` for this row.
+#[test]
+fn a_deep_pov_scene_appears_even_though_it_never_names_its_viewpoint_character() {
+    let fx = fixture();
+    let pov_scene = add_pov_scene(&fx);
+
+    let hits = scan(&fx);
+    let pov_hit = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == pov_scene))
+        .expect(
+            "the point-of-view scene must produce a row of its own even though it names \
+             nobody: this is the exact case the fold exists to cover",
+        );
+    match pov_hit {
+        MentionHit::Found {
+            target_id,
+            is_point_of_view,
+            is_confirmed,
+            hit_count,
+            evidence,
+            ..
+        } => {
+            assert_eq!(*target_id, fx.character);
+            assert!(
+                *is_point_of_view,
+                "the scene's declared point of view must be flagged"
+            );
+            assert!(
+                !is_confirmed,
+                "nothing pinned this scene's character into `references`"
+            );
+            assert_eq!(
+                *hit_count, 0,
+                "the name was never written, so there is nothing to count"
+            );
+            assert!(
+                evidence.is_empty(),
+                "there is no sentence to show for a name the prose never wrote"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+}
+
+/// **A declaration is named by the entry's title, and says so.**
+///
+/// A row with no textual hit is named by the entry's own title, because that is the only
+/// name in play. The backlink surfaces print a name beside the document only when it is
+/// *not* the title, and that parenthetical means "this is the name that matched in that
+/// document's prose". A declaration-only row matched no prose at all, so `is_title_match`
+/// has to be true or the entry's "Appears in" list claims a hit the scene's own Inspector,
+/// built from the same relationship, correctly denies.
+#[test]
+fn a_declaration_only_row_is_named_by_the_title_and_flagged_as_the_title() {
+    let fx = fixture();
+    let pov_scene = add_pov_scene(&fx);
+
+    let hits = scan(&fx);
+    let pov_hit = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == pov_scene))
+        .expect("the point-of-view scene produces a row");
+    match pov_hit {
+        MentionHit::Found {
+            matched_names,
+            is_title_match,
+            hit_count,
+            ..
+        } => {
+            assert_eq!(*hit_count, 0, "nothing was found in the prose");
+            assert_eq!(
+                matched_names.as_slice(),
+                &[format!("{CHARACTER} Sarraute")],
+                "the entry's own title is the only name in play"
+            );
+            assert!(
+                *is_title_match,
+                "and it is the title, so no surface may render it as a name found in the prose"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+}
+
+/// A cast pin and a declared point of view are two independent relationships, and the scan
+/// must keep them on two independent flags: pinning one scene into `references` must not
+/// mark a *different* scene's `point_of_view` row as confirmed, and a point-of-view row
+/// must not read as though it were pinned just because something else in the project was.
+#[test]
+fn a_cast_pin_and_a_point_of_view_stay_on_separate_rows_and_separate_flags() {
+    let fx = fixture();
+    let pov_scene = add_pov_scene(&fx);
+
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: fx.scene,
+            field: BinderItemRelationshipField::References,
+            right_ids: vec![fx.character],
+        },
+    )
+    .expect("pin the fixture's own scene");
+
+    let hits = scan(&fx);
+
+    let pinned_row = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == fx.scene))
+        .expect("the pinned scene's row");
+    match pinned_row {
+        MentionHit::Found {
+            is_confirmed,
+            is_point_of_view,
+            ..
+        } => {
+            assert!(*is_confirmed, "this scene's reference was pinned");
+            assert!(
+                !is_point_of_view,
+                "this scene was never declared as the character's point of view"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+
+    let pov_row = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == pov_scene))
+        .expect("the point-of-view scene's row");
+    match pov_row {
+        MentionHit::Found {
+            is_confirmed,
+            is_point_of_view,
+            ..
+        } => {
+            assert!(
+                !is_confirmed,
+                "a point of view was never pinned into this scene's `references`"
+            );
+            assert!(*is_point_of_view);
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+}
+
+/// One scene can be both at once: pinned into the cast *and* declared as the character's
+/// point of view. The row must carry both flags together, never collapsing to one or
+/// silently dropping the other.
+#[test]
+fn a_scene_that_is_both_pinned_and_point_of_view_sets_both_flags() {
+    let fx = fixture();
+    let pov_scene = add_pov_scene(&fx);
+
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: pov_scene,
+            field: BinderItemRelationshipField::References,
+            right_ids: vec![fx.character],
+        },
+    )
+    .expect("also pin the point-of-view scene's character into references");
+
+    let hits = scan(&fx);
+    let row = hits
+        .iter()
+        .find(|h| matches!(h, MentionHit::Found { owner_id, .. } if *owner_id == pov_scene))
+        .expect("the doubly-declared scene's row");
+    match row {
+        MentionHit::Found {
+            is_confirmed,
+            is_point_of_view,
+            ..
+        } => {
+            assert!(*is_confirmed, "the pin must still set is_confirmed");
+            assert!(
+                *is_point_of_view,
+                "pinning the reference must not clear the point-of-view flag the same row \
+                 already carried"
+            );
+        }
+        MentionHit::Empty => unreachable!("asserted Found above"),
+    }
+}
+
+/// A scan of a project with no discoverable tag has nothing to match against — and must still
+/// write nothing rather than, say, clearing stale state.
+#[test]
+fn a_project_with_nothing_discoverable_scans_clean() {
+    let fx = fixture();
+    // Un-discover the only tag.
+    let work = work_commands::get_all_work(&fx.ctx)
+        .unwrap()
+        .pop()
+        .unwrap()
+        .id;
+    let tag = work_commands::get_work_relationship(&fx.ctx, &work, &WorkRelationshipField::Tags)
+        .unwrap()
+        .pop()
+        .unwrap();
+    let row = binder_tag_commands::get_binder_tag(&fx.ctx, &tag)
+        .expect("read tag")
+        .expect("the fixture's tag is still there");
+    let mut dto: frontend::direct_access::UpdateBinderTagDto = row.into();
+    dto.discoverable = false;
+    binder_tag_commands::update_binder_tag(&fx.ctx, Some(fx.setup), &dto).expect("update");
+
+    let _ = drain(&fx.ctx);
+    assert!(
+        scan(&fx).is_empty(),
+        "no discoverable tag means no alias table means no hits"
+    );
+    let emitted = drain(&fx.ctx);
+    assert!(
+        emitted
+            .iter()
+            .all(|e| !matches!(e.origin, Origin::DirectAccess(_))),
+        "an empty scan must be as write-free as a full one"
+    );
+}
+
+/// A scene that names the character **both** ways: through the alias and through the
+/// full title. One document, two of her names.
+fn add_two_name_scene(fx: &Fixture) -> EntityId {
+    let binder =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
+    let created = binder_item_commands::create_binder_item_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[item(BinderItemSubRole::Scene, "The introduction")],
+        binder,
+        -1,
+    )
+    .unwrap();
+    let scene = created[0].id;
+    content_commands::create_content_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role: ContentRole::SceneText,
+            data: format!(
+                "{CHARACTER} Sarraute offered her hand. Nobody called her that; \
+                 to the whole street she was only {CHARACTER}."
+            ),
+        }],
+        scene,
+        -1,
+    )
+    .unwrap();
+    scene
+}
+
+/// **Every name that matched, not just the first.**
+///
+/// A scene that writes both "Elena" and "Elena Sarraute" is telling the writer something
+/// a single `matched_name` had to throw away: which of her names this scene actually
+/// reaches for. The surfaces render them merged, "(Elena, Elena Sarraute)", which is what
+/// makes a second level of detail unnecessary to show the same fact.
+#[test]
+fn a_document_naming_the_character_two_ways_keeps_both_names() {
+    let fx = fixture();
+    let scene = add_two_name_scene(&fx);
+    let hits = scan(&fx);
+
+    let row = hits
+        .iter()
+        .find_map(|h| match h {
+            MentionHit::Found {
+                owner_id,
+                matched_names,
+                hit_count,
+                ..
+            } if *owner_id == scene => Some((matched_names.clone(), *hit_count)),
+            _ => None,
+        })
+        .expect("the two-name scene must produce a row");
+
+    let (mut names, hit_count) = row;
+    names.sort();
+    assert_eq!(
+        names,
+        vec![CHARACTER.to_string(), format!("{CHARACTER} Sarraute")],
+        "both of her names are kept, deduplicated"
+    );
+    assert!(
+        hit_count >= 2,
+        "and the count still counts every hit, not every distinct name"
+    );
+}
+
+/// **A note excluded from the export is still findable.**
+///
+/// Every note is created with `is_exportable: false` now: a character page is the writer's
+/// own workings, not part of the book. That flag says whether a row's prose is *compiled*,
+/// and it must never say whether the row can be *found*. Those are two different questions
+/// about two different roles a row plays, and the scan is the place they would be confused.
+///
+/// If someone gates the alias table on `is_exportable`, every story-bible entry in every
+/// project disappears from the roster, from "Appears in the manuscript", and from every
+/// downstream edition's own reading of the same table, silently and with nothing on screen
+/// to say why. This test is what turns that from a quiet catastrophe into a red build.
+#[test]
+fn a_note_excluded_from_the_export_is_still_a_mention_target() {
+    let fx = fixture();
+
+    // Exactly the shape the app now creates: discoverable, and out of the export.
+    let it = binder_item_commands::get_binder_item(&fx.ctx, &fx.character)
+        .expect("read")
+        .expect("the character exists");
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &UpdateBinderItemDto {
+            id: it.id,
+            created_at: it.created_at,
+            updated_at: now(),
+            uid: it.uid,
+            title: it.title.clone(),
+            sub_title: it.sub_title.clone(),
+            role: it.role.clone(),
+            sub_role: it.sub_role.clone(),
+            label: it.label.clone(),
+            activated: it.activated,
+            is_favorite: it.is_favorite,
+            is_exportable: false,
+            exclude_from_numbering: it.exclude_from_numbering,
+            indent: it.indent,
+            word_count_goal: it.word_count_goal,
+            char_count_goal: it.char_count_goal,
+            dict_language: it.dict_language.clone(),
+            aliases: it.aliases.clone(),
+        },
+    )
+    .expect("take the character out of the export");
+
+    let hits = scan(&fx);
+    assert_eq!(
+        hit_targets(&hits),
+        vec![(fx.scene, fx.character)],
+        "the scene still names her, and she is still someone the scan can find"
+    );
+}
+
+/// **A note in the trash is nobody.**
+///
+/// Not a mention target, so nothing can be found as it; not a mention source, so its own
+/// body stops being scanned; and not a candidate the writer can pin anywhere, since every
+/// picker in the app builds its list from the same table this scan produces (the cast
+/// roster and the point-of-view list through `discoverable_table`, the note Links field
+/// through `ordered_flat_items`, the Books field through `live_books`, all of which drop a
+/// deactivated row).
+///
+/// The scan already did the right thing here; this is the test that says so, because
+/// "trashed" and "not exported" are two different absences and only one of them is allowed
+/// to reach the discovery path. The sibling test above pins the other half.
+#[test]
+fn a_trashed_note_is_neither_found_nor_offered() {
+    let fx = fixture();
+
+    // The character is named in the scene's prose, so before trashing there is exactly one
+    // hit to lose. Without this the test would pass on a scan that found nothing at all.
+    assert_eq!(
+        hit_targets(&scan(&fx)),
+        vec![(fx.scene, fx.character)],
+        "the fixture must have something to find before it is taken away"
+    );
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(stack),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.character as i64],
+            origin_binder_id: work_commands::get_work_relationship(
+                &fx.ctx,
+                &fx.work,
+                &WorkRelationshipField::Binders,
+            )
+            .unwrap()
+            .pop()
+            .unwrap() as i64,
+        },
+    )
+    .expect("trash the character");
+
+    assert!(
+        hit_targets(&scan(&fx)).is_empty(),
+        "a trashed note is not a name the scan can find, even where the prose still writes it"
+    );
+}

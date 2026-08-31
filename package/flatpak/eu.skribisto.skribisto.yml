@@ -1,25 +1,90 @@
+# Flatpak manifest for the Rust + Teksilo Skribisto.
+#
+# This is the canonical manifest used by CI (.github/workflows/release.yml) and
+# by local `flatpak-builder` runs. It builds the `skribisto` binary from the
+# checked-out repository (`dir` source) against the minimal freedesktop runtime.
+#
+# IMPORTANT — offline cargo vendoring: flatpak-builder's module build has NO
+# network. Before building, `cargo-sources.json` must exist next to this file
+# (the vendored crate registry) AND the checkout's Cargo.toml must have its
+# external `../` path deps stripped so teksilo*/text-document resolve from
+# crates.io. Both are produced by `package/flatpak/gen-cargo-sources.sh`, which
+# CI runs before flatpak-builder. See that script's header for the exact recipe.
 app-id: eu.skribisto.skribisto
-runtime: org.kde.Platform
-runtime-version: '6.10'
-sdk: org.kde.Sdk
-command: SkribistoDesktop
-finish-args:
-  - --share=ipc
-  - --share=network
-  - --socket=fallback-x11
-  - --filesystem=home
-  - --device=dri
-  - --own-name=com.druide.antidote.*
-  - --talk-name=org.freedesktop.Flatpak
-separate-locales: false
-modules:
+runtime: org.freedesktop.Platform
+runtime-version: "25.08"
+sdk: org.freedesktop.Sdk
+# The base SDK has no Rust toolchain; this extension adds cargo/rustc (+ mold).
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: skribisto
 
+finish-args:
+  # winit is Wayland-native; fall back to X11 only when there is no Wayland socket.
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  # wgpu Vulkan/GL rendering. The GL/Vulkan driver comes from the
+  # org.freedesktop.Platform.GL.* extension, pulled automatically at install.
+  - --device=dri
+  # ureq/rustls dictionary downloads (rustls uses webpki roots — no cert grant needed).
+  - --share=network
+  # Persistent, Home-scoped read/write. Files are still PICKED via the
+  # xdg-desktop-portal FileChooser (rfd's xdg-portal backend), but the backup
+  # scheduler writes remembered destination paths directly with no portal
+  # round-trip at write time, and the default "backup next to the project" writes
+  # a sibling file — neither is covered by a per-file portal token, so a broad
+  # Home grant is required. (Backup destinations on external media outside $HOME
+  # are intentionally out of scope.)
+  - --filesystem=home
+
+modules:
   - name: skribisto
-    buildsystem: cmake-ninja
-    builddir: true
-    config-opts:
-      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/skribisto/cargo
+        CARGO_NET_OFFLINE: "true"
+    build-commands:
+      # The checkout is already path-stripped by gen-cargo-sources.sh; build
+      # fully offline from the vendored registry.
+      - cargo --offline build --release -p teksilo_ui --features pdf
+      - install -Dm755 target/release/skribisto /app/bin/skribisto
+      - install -Dm644 eu.skribisto.skribisto.metainfo.xml /app/share/metainfo/eu.skribisto.skribisto.metainfo.xml
+      - install -Dm644 resources/unix/applications/eu.skribisto.skribisto.desktop /app/share/applications/eu.skribisto.skribisto.desktop
+      # Without this the .desktop's MimeType= names a type no installed XML
+      # defines, so the only shipped Linux artifact has no .skrib association at
+      # all — double-clicking a project opens nothing. `packaging-lint.yml` now
+      # fails the build when the two disagree.
+      - install -Dm644 resources/unix/mime/eu.skribisto.skribisto.xml /app/share/mime/packages/eu.skribisto.skribisto.xml
+      # AppStream/Flatpak require the icon to be named after the app-id.
+      - install -Dm644 resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg /app/share/icons/hicolor/scalable/apps/eu.skribisto.skribisto.svg
+      - |
+        for s in 16 32 64 72 96 192 256 512; do
+          src="resources/unix/icons/icons/hicolor/${s}x${s}/apps/skribisto.png"
+          [ -f "$src" ] && install -Dm644 "$src" "/app/share/icons/hicolor/${s}x${s}/apps/eu.skribisto.skribisto.png"
+        done
+      # The document icon the MIME entry names. It is the application artwork
+      # rather than a second drawing: a wrong-looking icon is a cosmetic bug, but
+      # a *missing* one makes every .skrib render as a generic archive, which is
+      # what the <generic-icon> fallback would otherwise give.
+      - install -Dm644 resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg /app/share/icons/hicolor/scalable/mimetypes/application-vnd.skribisto.project.svg
+      - |
+        for s in 16 32 64 72 96 192 256 512; do
+          src="resources/unix/icons/icons/hicolor/${s}x${s}/apps/skribisto.png"
+          [ -f "$src" ] && install -Dm644 "$src" "/app/share/icons/hicolor/${s}x${s}/mimetypes/application-vnd.skribisto.project.png"
+        done
     sources:
-      - type: git
-        url: https://github.com/jacquetc/skribisto.git
-        branch: master
+      - type: dir
+        path: ../..
+        # Skip the huge C++ reference tree and build artifacts — the Rust build
+        # needs none of them, and copying them into the sandbox is slow.
+        skip:
+          - .git
+          - target
+          - src
+          - 3rdparty
+          - build
+      # Vendored crate registry generated from a crates.io-resolved Cargo.lock.
+      - cargo-sources.json

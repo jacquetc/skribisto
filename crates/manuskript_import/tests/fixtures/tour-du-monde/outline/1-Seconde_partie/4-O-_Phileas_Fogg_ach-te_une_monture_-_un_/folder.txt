@@ -1,0 +1,12 @@
+title:          Chapitre 11
+ID:             122
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         1
+summarySentence:Où Phileas Fogg achète une monture à un prix fabuleux
+summaryFull:    Au village de Kholby, les voyageurs découvrent que la voie ferrée n’est pas achevée et qu’il reste cinquante milles à franchir. Fogg achète pour deux mille livres l’éléphant Kiouni, engage un jeune Parsi pour le conduire, et le voyage repart à travers la jungle.
+POV:            0
+
+

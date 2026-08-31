@@ -1,0 +1,76 @@
+Skribisto protège votre travail de deux manières différentes, et il est utile de savoir
+laquelle vous cherchez.
+
+Une *copie de secours* est une copie du projet entier, enregistrée dans un fichier à part.
+Elle sert quand le fichier du projet est perdu ou abîmé.
+
+L’*historique des versions* garde la trace d’[une scène, d’une note ou d’un
+synopsis](:help-writing-model) au fil de vos modifications. Il sert à retrouver une
+formulation antérieure, ou quelque chose que vous avez supprimé.
+
+## Copies de secours
+
+Skribisto en crée tout seul : à la fermeture du projet, et toutes les deux heures pendant que
+vous travaillez.
+
+Pour en créer une maintenant, choisissez *Œuvre ▸ Créer une copie de secours*.
+
+Pour voir celles que vous avez déjà, choisissez *Œuvre ▸ Liste des copies de secours…*. La
+liste montre toutes les copies de ce projet, et vous pouvez en ouvrir, en localiser ou en
+supprimer une.
+
+### Où elles vont, et combien sont gardées
+
+Les copies vont dans un dossier géré par Skribisto. Vous pouvez ajouter vos propres dossiers.
+
+Les anciennes copies sont éclaircies pour ne pas remplir votre disque. À vous de choisir
+comment :
+
+- *Par paliers* garde environ une copie par heure pendant un jour, une par jour pendant une
+  semaine, une par semaine pendant un mois, puis une par mois.
+- *Garder les N dernières* en garde ce nombre, les plus récentes d’abord.
+
+Tout cela se trouve dans *Paramètres ▸ Sauvegardes et synchro ▸ Réglages de sauvegarde*, et
+vaut pour tous les projets.
+
+### Ouvrir une copie de secours
+
+Ouvrir une copie de secours ne touche jamais au projet sur lequel vous travaillez. Elle
+s’ouvre dans sa propre fenêtre, que vous ne pouvez pas enregistrer par-dessus, et un bandeau
+reste visible pour vous le rappeler.
+
+Depuis cette fenêtre :
+
+- *Enregistrer sous…* conserve le contenu de la copie dans un projet distinct.
+- *Restaurer…* remet la copie à la place de l’original.
+
+*Restaurer* est la seule action qui modifie votre vrai projet. Avant de le faire, elle met
+votre projet actuel de côté comme copie de secours, donc rien n’est perdu dans un sens ni dans
+l’autre.
+
+## Historique des versions
+
+L’historique des versions suit une scène, une note ou un synopsis à la fois. Il vient de deux
+endroits, et chaque entrée vous dit lequel :
+
+- *L’historique interne du projet* enregistre le texte chaque fois que vous enregistrez.
+- *Les copies de secours* remontent plus loin, aussi anciennes soient-elles.
+
+### Regarder en arrière, et remettre un texte
+
+Le panneau *Versions* se trouve à droite de la fenêtre, à côté de Commentaires et Mise en
+forme.
+
+*Restaurer cette version* remet l’ancien texte en place. Skribisto crée d’abord une copie de
+sécurité, et `Ctrl+Z` annule l’opération.
+
+Épinglez une version issue d’une copie de secours et le nettoyage ne supprimera jamais ce
+fichier.
+
+### Quelque chose que vous avez supprimé
+
+*Restaurer cette version* ne fonctionne que sur ce qui existe encore. Pour une scène ou une
+note supprimée, choisissez *Affichage ▸ Remonter le temps*.
+
+*Rétablir cet élément…* le recrée avec le texte qu’il avait, à l’endroit du classeur que vous
+voulez. Pour annuler, utilisez le bouton du message qui apparaît.

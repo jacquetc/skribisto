@@ -1,0 +1,100 @@
+A project import brings a whole project across from Manuskript or from Plume Creator: its
+chapters, its cast, its notes. If what you have is a folder of documents instead, see
+[importing documents](:help-import-documents).
+
+An import creates a **new** Skribisto project.
+
+## Starting an import
+
+With a project open, choose *Work ▸ Import from*, then *Manuskript (.msk)…* or *Plume Creator
+(.plume)…*. In the Launcher, the same importers sit behind *Create from…*.
+
+The panel asks for:
+
+- the project to read;
+- a destination folder;
+- a file name for the `.skrib` it will create.
+
+Nothing is written until you press *Import*. The import shows its progress, and *Cancel* leaves
+nothing behind.
+
+## Pointing at a Manuskript project
+
+Manuskript saves a project in either of these shapes, and both are accepted:
+
+- **Folder mode**, the usual one: a tiny `.msk` file plus a folder of the same name beside it.
+  The folder holds the project and the `.msk` just points at it, so keep the two together.
+- **Single-file mode**: the whole project sits inside the `.msk`.
+
+Use *Choose file…* for a `.msk` and *Choose folder…* for the folder; in folder mode either one
+works. The import tells you which copy it read.
+
+## What Manuskript brings with it
+
+- Your text, your notes and your word goals.
+- The "compile" tick, which becomes *Include in exports*. An item switched off stays off, with
+  everything inside it.
+- An item's summaries, joined into its one synopsis: the one-sentence summary first, then the
+  fuller one.
+- Your cast, your world entries and your plots, as notes in a *Story bible* binder beside the
+  manuscript, one group each. A scene's point of view points at the character it names; plots
+  keep their steps and their links.
+- Your labels, as coloured tags.
+- Your status list, as the project's own statuses, under your names.
+- Your revision history: open a scene, and its earlier versions are in the *Versions* panel.
+
+In your prose, Manuskript stored a marker for a character, a world entry, a plot or another
+item. Those markers are put back as the words they stood for, with a link to what they named.
+
+## What has no home here
+
+A few Manuskript things have no matching field in Skribisto:
+
+- **Per-item icons.**
+- **The colour beside a character's name.** Skribisto colours tags instead.
+- **The nested summaries of the whole book** (situation, sentence, paragraph, page, full). The
+  longest becomes the book's synopsis, and they are kept together in a *Summary* note in the
+  *Story bible* binder.
+- **Details with no field of their own**, such as the series and the volume. They land beside
+  it, in a *Project information* note.
+
+## How parts and chapters are worked out
+
+Skribisto reads the depth of the whole outline and picks one ladder for all of it:
+
+- If no folder holds another folder, folders become chapters.
+- If a folder anywhere holds another, the outermost folders become parts, and the folders
+  inside them chapters.
+
+Everything is wrapped in one Book, which the writing plan, the analysis and the export scopes
+are built around.
+
+It is a starting point: any item can be retyped afterwards from the binder. See
+[the writing model](:help-writing-model) for what each type is.
+
+## Coming from Plume Creator
+
+Choose a `.plume` or `.plume_backup` file, from any version of Plume.
+
+- Books, acts, chapters and scenes arrive with their text, their synopses and their notes.
+- A scene separator becomes a scene break in the prose above it.
+- Plume's groups of characters and places become folders of notes, each group with its own tag.
+  An entry's other names arrive as its *Also known as* list.
+- The entries a scene featured become links on that scene.
+- Plume's revision stages become the project's statuses.
+- Your personal dictionary comes too.
+
+Items in Plume's rubbish bin are **not** migrated. Empty the bin, or restore what you want to
+keep, before importing. Plume carries no author name, so set yours in *Settings ▸ Work:
+<project> ▸ Author*.
+
+## After the import
+
+A message offers *Open now*, which opens the new project.
+
+The import's notes come in their own message, in plain language behind a *Details* button. It
+names what could not be carried across exactly.
+
+The new project is a single `.skrib` file. If you kept your old one as a folder for version
+control, use *Work ▸ Save as folder…* afterwards. See
+[backups and versions](:help-backups-and-versions).

@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+name: Rust Next
+
+# Early-warning canary against beta/nightly Rust. winit / wgpu / naga are the
+# crates most likely to break on a toolchain bump — catching it here beats
+# catching it on release day. Non-stable legs are advisory (continue-on-error).
+
+on:
+  schedule:
+    - cron: "3 3 3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: Test (${{ matrix.name }} - ${{ matrix.rust }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: stable
+            os: ubuntu-latest
+            rust: stable
+          - name: linux-beta
+            os: ubuntu-latest
+            rust: beta
+          - name: windows-beta
+            os: windows-latest
+            rust: beta
+          - name: mac-beta
+            os: macos-latest
+            rust: beta
+          - name: nightly
+            os: ubuntu-latest
+            rust: nightly
+    continue-on-error: ${{ matrix.rust != 'stable' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        uses: ./.github/actions/install-linux-deps
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: next-${{ matrix.name }}
+
+      - name: Build
+        run: cargo build --workspace --all-targets
+
+      - name: Test
+        run: cargo test --workspace

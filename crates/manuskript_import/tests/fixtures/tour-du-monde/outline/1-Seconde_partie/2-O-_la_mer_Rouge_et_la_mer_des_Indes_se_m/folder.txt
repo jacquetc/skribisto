@@ -1,0 +1,12 @@
+title:          Chapitre 9
+ID:             118
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         3
+summarySentence:Où la mer Rouge et la mer des Indes se montrent propices aux desseins de Phileas Fogg
+summaryFull:    Traversée de la mer Rouge et de l’océan Indien. Fix se fait le compagnon de Passepartout tandis que Fogg, invisible, joue au whist et tient son carnet. Le Mongolia gagne sur son horaire et touche Bombay le 20 octobre, avec deux jours d’avance.
+POV:            0
+
+

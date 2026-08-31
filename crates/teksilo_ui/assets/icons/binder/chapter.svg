@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Chapter (Item or Folder) — framed document under one solid heading band.
+       The band is a *fill*, not a stroke, and deliberately the heaviest mark
+       inside any page glyph: it is what tells a chapter from a scene at 16px,
+       where the two frames are identical. See `scene.svg` for why the pair is
+       separated by ink mass rather than by how many bars sit inside.
+       Filled rects take integer bounds — a half-grid x would soften both ends. -->
+  <path d="M9.5 2.5H4.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5.5Z"/>
+  <path d="M9.5 2.5V5.5H12.5"/>
+  <rect x="5" y="8" width="6" height="2" fill="currentColor" stroke="none"/>
+</svg>

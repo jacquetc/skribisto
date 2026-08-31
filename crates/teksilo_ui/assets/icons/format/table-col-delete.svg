@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Delete column — the struck-out column is the one that goes -->
+  <path d="M8 3 V13"/>
+  <path d="M4.8 6.8 L7.2 9.2"/>
+  <path d="M7.2 6.8 L4.8 9.2"/>
+  <rect x="4" y="3" width="8" height="10" rx="1.1"/>
+</svg>

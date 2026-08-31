@@ -1,0 +1,896 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+#
+# The bundled example "Le Tour du monde en quatre-vingts jours", end to end.
+#
+# The prose is Jules Verne's and is in the public domain; everything in THIS file
+# is editorial description written by the Skribisto project — synopses, story
+# bible, labels, tags, points of view. See the NOTICE beside it.
+#
+# Regenerate the bundle with:
+#
+#   cargo run -p skribisto-skrib-format --example build_example -- convert \
+#       resources/examples/le_tour_du_monde_en_80_jours/le-tour-du-monde-en-quatre-vingts-jours.toml \
+#       <the stripped source text> \
+#       resources/examples/le_tour_du_monde_en_80_jours/le-tour-du-monde-en-quatre-vingts-jours.skrib
+#   cargo run -p skribisto-skrib-format --example build_example -- enrich \
+#       resources/examples/le_tour_du_monde_en_80_jours/le-tour-du-monde-en-quatre-vingts-jours.toml \
+#       resources/examples/le_tour_du_monde_en_80_jours/le-tour-du-monde-en-quatre-vingts-jours.skrib
+
+[book]
+title = "Le Tour du monde en quatre-vingts jours"
+author = "Jules Verne"
+
+# Pinned, never minted: this is what every per-project settings file keys on, so a
+# fresh one on each regeneration would orphan the reader's remembered desk, their
+# expand state and their backups. It is the id the scaffold for this example was
+# first created with.
+unique_id = "0a20e2a1-d144-4303-8e79-8355041dea91"
+
+# `x-classique` selects the pre-1990 spelling, which is what an 1873 Hetzel text is
+# set in: without it the spell-checker underlines the book's own orthography.
+language = ["fr-FR-x-classique"]
+
+# Fixed, so regenerating an unchanged example produces an unchanged file. The date
+# is the Hetzel volume's, not today's.
+timestamp = "1873-01-30T00:00:00+00:00"
+
+chapter_flat = true
+number_chapters = true
+
+manuscript_binder = "Manuscrit"
+book_folder = "Le Tour du monde en quatre-vingts jours"
+front_matter = "Pages liminaires"
+
+synopsis = """
+Un gentleman de Londres dont personne ne sait rien parie la moitié de sa fortune \
+qu'il fera le tour de la Terre en quatre-vingts jours, et part le soir même avec un \
+domestique engagé le matin. Le voyage se joue sur des correspondances de quelques \
+minutes, sur un éléphant acheté deux mille livres et sur un navire brûlé jusqu'à la \
+coque — et se décide, à la dernière seconde, sur un jour que personne n'avait \
+compté."""
+
+[source]
+# Project Gutenberg's illustration markers, which run to two lines when the caption
+# wraps. The bundle carries no engravings, so they would otherwise land in the prose
+# as stage directions.
+drop_blocks_starting_with = ["[Illustration"]
+
+# Everything from the first of these is back matter: the volume's own table of
+# contents, the printer's mark and the transcriber's list of corrections. None of it
+# is the book, and the corrections list in particular quotes misprints that would
+# then be searchable as if Verne had written them.
+stop_at_lines_starting_with = ["TABLE DES MATIÈRES", "FIN", "Paris.—Imp.", "Corrections."]
+
+# This transcription spells the em dash correctly already, so there is nothing to
+# substitute; the key is here, empty, because the sibling Leroux text needs it.
+replace = []
+
+curly_apostrophes = true
+footnotes = true
+
+
+# ── paratext ─────────────────────────────────────────────────────────────────
+# Not part of the book body: excluded from every word count and statistic, exported
+# in stream order like a scene.
+
+[[paratext]]
+section = "front"
+title = "Page de titre"
+body = """
+# Le Tour du monde en quatre-vingts jours
+
+Jules Verne
+
+*Les Voyages extraordinaires*, couronnés par l'Académie.
+Bibliothèque d'éducation et de récréation, J. Hetzel et Cie, Paris, 1873.
+Dessins de MM. de Neuville et L. Benett."""
+
+[[paratext]]
+section = "front"
+title = "À propos de cette édition"
+body = """
+Le texte reproduit ici est celui de l'édition Hetzel de 1873. Jules Verne est mort \
+le 24 mars 1905: l'oeuvre est dans le domaine public en France depuis 1975, et aux \
+États-Unis depuis bien avant cela.
+
+La transcription vient de Project Gutenberg (livre n° 46541), établie par des \
+relecteurs bénévoles à partir de fac-similés de l'Internet Archive. L'en-tête et le \
+pied de page de Project Gutenberg ont été retirés, comme leur licence le prévoit \
+pour un texte du domaine public.
+
+Ce que la conversion a changé, et rien d'autre: les blocs d'illustration ont été \
+retirés, l'apostrophe droite est devenue une apostrophe typographique, les \
+paragraphes coupés à la ligne par la transcription ont été rejoints, et la table des \
+matières comme la liste des corrections du transcripteur ont été écartées du corps \
+du livre. L'orthographe de 1873 est conservée telle quelle — «collége», \
+«très-sérieusement», «A» sans accent: ce ne sont pas des fautes de frappe.
+
+Les résumés, les fiches de personnages, de lieux et d'objets, les étiquettes et les \
+points de vue sont l'oeuvre du projet Skribisto et non de Jules Verne."""
+
+
+# ── statuts ──────────────────────────────────────────────────────────────────
+# L'échelle d'avancement du projet, **dans l'ordre** : cette séquence EST l'échelle,
+# c'est elle qui dit qu'un échelon est moins avancé qu'un autre.
+#
+# Ces quatre échelons étaient auparavant quatre étiquettes préfixées `statut/…`. Un
+# avancement n'est pas une étiquette : il est unique et ordonné, ce qu'un ensemble
+# d'étiquettes ne sait pas exprimer. Les garder toutes les deux aurait laissé deux
+# vocabulaires identiques à l'écran (une pastille colorée dans les deux cas) et de sens
+# différent — exactement la confusion que cet axe supprime.
+#
+# `category` choisit dans un ensemble fermé (Planned / Drafting / NeedsWork / Revised /
+# Final) : c'est lui qui porte le pictogramme et la couleur, jamais le nom.
+
+[[status]]
+name = "Plan"
+category = "Planned"
+details = "Structure posée, prose à écrire."
+
+[[status]]
+name = "Brouillon"
+category = "Drafting"
+details = "Premier jet."
+
+[[status]]
+# `NeedsWork` et non `Revised` : « en attente de relecture » décrit un texte qui réclame
+# encore un passage, alors que `Revised` désigne un texte déjà relu et corrigé. C'est
+# aussi le seul échelon de cet exemple qui montre le triangle — la catégorie qu'aucune
+# échelle par défaut ne produit.
+name = "À relire"
+category = "NeedsWork"
+details = "Écrit, en attente de relecture."
+
+[[status]]
+name = "Terminé"
+category = "Final"
+details = "Relu et arrêté."
+
+# ── tags ─────────────────────────────────────────────────────────────────────
+# `discoverable` is what puts an item's title and aliases into the mention index and
+# the point-of-view picker. A story-bible note without it is invisible to the scan.
+
+[[tag]]
+name = "à vérifier"
+color = "#d35400"
+discoverable = false
+details = "Un point de documentation reste à confirmer."
+
+[[tag]]
+name = "continuité"
+color = "#c0392b"
+discoverable = false
+details = "Une date, une heure ou un fuseau dont dépend la suite du livre."
+
+[[tag]]
+name = "noeud dramatique"
+color = "#c2185b"
+discoverable = false
+details = "Le chapitre fait basculer l'intrigue."
+
+[[tag]]
+name = "personnage"
+color = "#2980b9"
+discoverable = true
+details = "Fiche de personnage."
+
+[[tag]]
+name = "lieu"
+color = "#8e44ad"
+discoverable = true
+details = "Fiche de lieu."
+
+[[tag]]
+name = "objet"
+color = "#795548"
+discoverable = true
+details = "Fiche d'objet ou de véhicule."
+
+
+# ── the story bible ──────────────────────────────────────────────────────────
+# Its own binder, not notes appended to the manuscript: binders exist to separate the
+# book from the material about the book, and burying character notes in the
+# manuscript would put them in the analysis scope and in every whole-project export.
+
+[bible]
+binder = "Bible"
+character_folder = "Personnages"
+place_folder = "Lieux"
+object_folder = "Objets"
+character_tag = "personnage"
+place_tag = "lieu"
+object_tag = "objet"
+
+
+[[character]]
+name = "Phileas Fogg"
+aliases = ["Fogg", "Mr. Fogg"]
+note = "Gentleman du Reform-Club, seul habitant du 7 de Saville-row avec son domestique. On ne sait de lui ni métier, ni famille, ni origine, seulement qu’il vit avec la régularité d’un chronomètre. Parie vingt mille livres — la moitié de sa fortune — qu’il fera le tour du monde en quatre-vingts jours."
+
+[[character]]
+name = "Jean Passepartout"
+aliases = ["Passepartout"]
+note = "Domestique français de Phileas Fogg, engagé le 2 octobre 1872. Ancien chanteur ambulant, écuyer de cirque, professeur de gymnastique et sergent de pompiers, venu en Angleterre chercher une vie tranquille. C’est par lui que tout arrive."
+
+[[character]]
+name = "Fix"
+aliases = ["l’inspecteur Fix"]
+note = "Inspecteur de police détaché à Suez pour surveiller les passagers du canal. Convaincu que Fogg est le voleur de la Banque d’Angleterre, il le suit autour du monde en attendant un mandat qui arrive toujours trop tard."
+
+[[character]]
+name = "Mrs. Aouda"
+aliases = ["Aouda"]
+note = "Jeune veuve parsie du rajah de Bundelkund, élevée à Bombay, promise au bûcher de Pillaji et enlevée par Passepartout. Voyage avec Fogg jusqu’à Londres."
+
+[[character]]
+name = "Sir Francis Cromarty"
+aliases = ["Cromarty"]
+note = "Brigadier général de l’armée des Indes, partenaire de whist de Fogg à bord du Mongolia, puis son compagnon de Bombay à Bénarès."
+
+[[character]]
+name = "Andrew Stuart"
+aliases = ["Stuart"]
+note = "Ingénieur, joueur de whist au Reform-Club et le plus acharné des cinq à tenir le pari contre Fogg."
+
+[[character]]
+name = "Gauthier Ralph"
+aliases = ["Ralph"]
+note = "Un des administrateurs de la Banque d’Angleterre, dont les cinquante-cinq mille livres volées ouvrent le livre. Parieur."
+
+[[character]]
+name = "John Sullivan"
+aliases = ["Sullivan"]
+note = "Banquier, l’un des cinq parieurs du Reform-Club."
+
+[[character]]
+name = "Samuel Fallentin"
+aliases = ["Fallentin"]
+note = "Banquier, l’un des cinq parieurs du Reform-Club."
+
+[[character]]
+name = "Thomas Flanagan"
+aliases = ["Flanagan"]
+note = "Brasseur, l’un des cinq parieurs du Reform-Club."
+
+[[character]]
+name = "John Bunsby"
+aliases = ["Bunsby"]
+note = "Patron de la Tankadère, quarante-cinq ans, qui mène sa goélette de Hong-Kong à Shangaï dans la tempête pour une prime de deux cents livres."
+
+[[character]]
+name = "Colonel Stamp W. Proctor"
+aliases = ["Proctor", "Stamp W. Proctor"]
+note = "Américain rencontré dans une bagarre électorale à San-Francisco, retrouvé dans le train du Pacifique. Sa querelle avec Fogg coûte au voyage les heures que l’attaque des Sioux interrompt."
+
+[[character]]
+name = "Capitaine Speedy"
+aliases = ["Speedy"]
+note = "Capitaine et propriétaire de l’Henrietta, enfermé dans sa propre cabine par un passager qui finit par lui acheter son navire pour le brûler."
+
+[[character]]
+name = "Kiouni"
+aliases = []
+note = "Éléphant acheté deux mille livres au village de Kholby pour franchir les cinquante milles que la voie ferrée n’a pas encore couverts. Donné au jeune Parsi à Allahabad."
+
+[[character]]
+name = "Le juge Obadiah"
+aliases = ["Obadiah"]
+note = "Magistrat de Calcutta devant qui Fogg et Passepartout comparaissent pour la profanation de la pagode de Malebar-Hill."
+
+[[character]]
+name = "Honorable William Batulcar"
+aliases = ["Batulcar"]
+note = "Directeur de la troupe acrobatique des Longs-Nez à Yokohama, qui engage Passepartout sans savoir qu’il perdra sa pyramide humaine le soir même."
+
+[[character]]
+name = "Elder William Hitch"
+aliases = ["William Hitch", "Hitch"]
+note = "Missionnaire mormon dont le cours d’histoire, tenu dans un wagon lancé à vingt milles à l’heure, ne garde à la fin qu’un auditeur."
+
+[[character]]
+name = "Le révérend Samuel Wilson"
+aliases = ["Samuel Wilson", "Wilson"]
+note = "Ministre de Mary-le-Bone, chez qui Passepartout court commander un mariage — et apprend le jour de la semaine."
+
+[[character]]
+name = "James Forster"
+aliases = ["Forster"]
+note = "Domestique congédié à la première page pour avoir apporté l’eau à barbe à quatre-vingt-quatre degrés au lieu de quatre-vingt-six."
+
+[[character]]
+name = "James Strand"
+aliases = ["Strand"]
+note = "Le vrai voleur de la Banque d’Angleterre, arrêté à Édimbourg le 17 décembre — trois jours avant que Fix ne mette la main sur Phileas Fogg."
+
+[[character]]
+name = "Mudge"
+aliases = []
+note = "Propriétaire du traîneau à voiles qui porte les voyageurs de Fort-Kearney à Omaha sur la neige gelée."
+
+
+[[place]]
+name = "Saville-row"
+aliases = ["Saville-row, 7"]
+note = "La maison de Phileas Fogg, au numéro 7, celle où Shéridan mourut en 1814. Close, silencieuse, réglée comme un service d’horlogerie."
+
+[[place]]
+name = "Le Reform-Club"
+aliases = ["Reform-Club"]
+note = "Pall-Mall. Fogg y prend tous ses repas et y joue son whist; c’est là que le pari se conclut et là qu’il doit être gagné, le samedi 21 décembre à huit heures quarante-cinq du soir."
+
+[[place]]
+name = "Suez"
+aliases = []
+note = "Première échelle du voyage et poste de guet de Fix, qui y attend le Mongolia avec le signalement du voleur en poche."
+
+[[place]]
+name = "Bombay"
+aliases = []
+note = "Atteinte avec deux jours d’avance. La pagode de Malebar-Hill y fournit à Fix le délit dont il fera plus tard usage à Calcutta."
+
+[[place]]
+name = "Kholby"
+aliases = []
+note = "Village du Bundelkund où la voie ferrée s’interrompt: cinquante milles manquent entre Kholby et Allahabad, et les journaux de Londres l’ignoraient."
+
+[[place]]
+name = "Pillaji"
+aliases = []
+note = "La pagode et le bûcher où la veuve du rajah doit être brûlée à l’aube."
+
+[[place]]
+name = "Bénarès"
+aliases = []
+note = "L’Athènes de l’Inde, traversée sans que personne y regarde. Sir Francis Cromarty y quitte les voyageurs."
+
+[[place]]
+name = "Calcutta"
+aliases = []
+note = "Terme du chemin de fer indien. Le procès devant le juge Obadiah y coûte deux mille livres de caution abandonnées."
+
+[[place]]
+name = "Singapore"
+aliases = []
+note = "Escale du Rangoon, où l’on gagne une demi-journée que la tempête reprendra."
+
+[[place]]
+name = "Hong-Kong"
+aliases = []
+note = "Dernier sol anglais du voyage, donc dernier endroit où le mandat de Fix aurait pu servir. Le Carnatic en part un soir plus tôt que prévu."
+
+[[place]]
+name = "Yokohama"
+aliases = []
+note = "Où Passepartout, seul et sans argent, se retrouve homme-tronc dans une troupe d’acrobates."
+
+[[place]]
+name = "San-Francisco"
+aliases = []
+note = "Débarquement en Amérique un jour de meeting électoral, et première rencontre avec le colonel Proctor."
+
+[[place]]
+name = "Salt Lake City"
+aliases = ["la Cité des Saints"]
+note = "Capitale mormone au bord du Grand Lac Salé, vue d’un wagon entre deux stations."
+
+[[place]]
+name = "Medicine-Bow"
+aliases = ["le pont de Medicine-Bow"]
+note = "Pont suspendu dont les câbles cèdent, franchi à toute vapeur parce qu’on n’a pas voulu écouter Passepartout. Il s’écroule derrière le train."
+
+[[place]]
+name = "Le fort Kearney"
+aliases = ["Fort-Kearney"]
+note = "Poste militaire du Nebraska d’où Fogg repart avec trente soldats chercher son domestique aux mains des Sioux — et où il perd vingt heures."
+
+[[place]]
+name = "New York"
+aliases = []
+note = "Le China levé l’ancre depuis quarante-cinq minutes. C’est là que le voyage cesse d’être un horaire pour devenir une lutte."
+
+[[place]]
+name = "Liverpool"
+aliases = []
+note = "Arrivée le 21 décembre à midi moins vingt, avec neuf heures d’avance sur l’échéance — et l’arrestation sur le quai."
+
+
+[[object]]
+name = "Le sac aux bank-notes"
+aliases = ["sac aux bank-notes", "sac de nuit"]
+note = "Le sac de voyage où Passepartout enferme vingt mille livres en bank-notes au départ de Charing-Cross. Tout le livre se lit dans son épaisseur qui diminue."
+
+[[object]]
+name = "Le pari"
+aliases = []
+note = "Vingt mille livres déposées chez Baring frères contre les cinq collègues du Reform-Club, payables si Fogg n’est pas de retour le samedi 21 décembre 1872 à huit heures quarante-cinq du soir."
+
+[[object]]
+name = "Le carnet de route"
+aliases = ["l’itinéraire"]
+note = "La feuille où Fogg inscrit, colonne par colonne, la date prévue et la date réelle de chaque échelle, avec le gain ou la perte en jours."
+
+[[object]]
+name = "Le Bradshaw"
+aliases = ["Bradshaw’s Continental Railway Steam Transit and General Guide"]
+note = "L’indicateur des chemins de fer et des paquebots, seule lecture de voyage de Phileas Fogg."
+
+[[object]]
+name = "La montre de Passepartout"
+aliases = ["sa montre"]
+note = "Montre de famille réglée sur le méridien de Greenwich, que son propriétaire refuse obstinément de mettre à l’heure des pays traversés — et qui, seule de tout le voyage, finit par avoir raison."
+
+[[object]]
+name = "Le bec de gaz"
+aliases = []
+note = "Le bec laissé allumé dans la chambre de Passepartout à Saville-row, et qui brûle aux frais du domestique pendant quatre-vingts jours."
+
+[[object]]
+name = "Le Mongolia"
+aliases = ["Mongolia"]
+note = "Paquebot de la Compagnie péninsulaire, Brindisi–Suez–Bombay."
+
+[[object]]
+name = "Le Rangoon"
+aliases = ["Rangoon"]
+note = "Paquebot de Calcutta à Hong-Kong, par Singapore."
+
+[[object]]
+name = "La Tankadère"
+aliases = ["Tankadère"]
+note = "Goélette-pilote de vingt tonneaux affrétée à Hong-Kong pour gagner Shangaï à la voile."
+
+[[object]]
+name = "Le Carnatic"
+aliases = ["Carnatic"]
+note = "Paquebot de Hong-Kong à Yokohama, parti un soir plus tôt que prévu avec Passepartout à bord et sans son maître."
+
+[[object]]
+name = "Le General Grant"
+aliases = ["General Grant"]
+note = "Steamer de la Pacific Mail, Yokohama–San-Francisco, vingt-deux jours de traversée."
+
+[[object]]
+name = "L’Henrietta"
+aliases = ["Henrietta"]
+note = "Steamer de commerce acheté au capitaine Speedy et brûlé jusqu’à la coque pour tenir la vapeur jusqu’à Liverpool."
+
+[[object]]
+name = "Le traîneau à voiles"
+aliases = []
+note = "Le traîneau de Mudge, qui court sur la neige gelée du Nebraska à quarante milles à l’heure."
+
+
+# ── the manuscript, chapter by chapter ───────────────────────────────────────
+# `number` is the nth prose row of the manuscript in stream order. `title` is checked
+# against the heading actually found in the source text, so a chapter that landed one
+# slot out is a hard error rather than thirty-seven quietly mismatched synopses.
+#
+# `pov` is deliberately left empty wherever the chapter is authorial rather than
+# following one person. Inventing a viewpoint for those would be worse than leaving
+# them unassigned — the unassigned bucket exists for exactly this, and an example
+# that never exercised it would hide it.
+
+[[chapter]]
+number = 1
+title = "Dans lequel Phileas Fogg et Passepartout s’acceptent réciproquement, l’un comme maître, l’autre comme domestique"
+label = "Londres"
+status = "Terminé"
+pov = ["Phileas Fogg"]
+cast = ["Phileas Fogg", "Passepartout", "James Forster"]
+places = ["Saville-row", "Le Reform-Club"]
+objects = []
+synopsis = "Le 2 octobre 1872, au 7 de Saville-row, Phileas Fogg congédie James Forster pour lui avoir apporté de l’eau à barbe à quatre-vingt-quatre degrés au lieu de quatre-vingt-six, et engage à sa place un Français, Jean Passepartout, ancien saltimbanque et pompier venu chercher une existence tranquille. Portrait d’un gentleman dont on ne sait rien, sinon qu’il vit entre sa maison et son club avec la régularité d’une horloge."
+
+[[chapter]]
+number = 2
+title = "Où Passepartout est convaincu qu’il a enfin trouvé son idéal"
+label = "Londres"
+status = "Terminé"
+pov = ["Passepartout"]
+cast = ["Passepartout", "Phileas Fogg"]
+places = ["Saville-row"]
+objects = ["Le bec de gaz"]
+synopsis = "Resté seul dans la maison, Passepartout l’inspecte, la trouve propre et silencieuse comme un couvent, et lit avec ravissement le programme du service affiché au mur. Il se croit enfin arrivé chez le maître calme et casanier qu’il cherchait."
+
+[[chapter]]
+number = 3
+title = "Où s’engage une conversation qui pourra coûter cher à Phileas Fogg"
+label = "Londres"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Andrew Stuart", "Gauthier Ralph", "John Sullivan", "Samuel Fallentin", "Thomas Flanagan"]
+places = ["Le Reform-Club"]
+objects = ["Le pari"]
+synopsis = "Au whist du Reform-Club, la conversation roule sur le vol de cinquante-cinq mille livres commis à la Banque d’Angleterre, puis sur un article du Morning-Chronicle qui calcule qu’on peut désormais faire le tour du monde en quatre-vingts jours. Fogg soutient que le compte est juste et parie vingt mille livres qu’il en fera l’épreuve, en partant le soir même."
+
+[[chapter]]
+number = 4
+title = "Dans lequel Phileas Fogg stupéfie Passepartout, son domestique"
+label = "Londres"
+status = "Terminé"
+pov = ["Passepartout"]
+cast = ["Phileas Fogg", "Passepartout"]
+places = ["Saville-row"]
+objects = ["Le sac aux bank-notes", "Le bec de gaz"]
+synopsis = "À sept heures cinquante, Fogg rentre annoncer qu’ils partent dans dix minutes pour Douvres et Calais. Passepartout, abasourdi, boucle un sac de nuit où passent vingt mille livres en bank-notes; le train quitte Charing-Cross à huit heures quarante-cinq. En route, le domestique se souvient qu’il a laissé brûler le bec de gaz de sa chambre — et que la dépense courra à ses frais."
+
+[[chapter]]
+number = 5
+title = "Dans lequel une nouvelle valeur apparaît sur la place de Londres"
+label = "Londres"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Fix"]
+places = ["Le Reform-Club", "Suez"]
+objects = ["Le pari"]
+synopsis = "Le pari occupe Londres et se cote en Bourse comme une valeur nouvelle, puis s’effondre: le signalement du voleur de la Banque, publié par la police, ressemble trait pour trait à Phileas Fogg. L’opinion se retourne en un jour, et l’inspecteur Fix reçoit à Suez l’ordre de guetter le Mongolia."
+
+[[chapter]]
+number = 6
+title = "Dans lequel l’agent Fix montre une impatience bien légitime"
+label = "Suez"
+status = "Terminé"
+pov = ["Fix"]
+cast = ["Fix", "Passepartout"]
+places = ["Suez"]
+objects = ["Le Mongolia"]
+synopsis = "À Suez, Fix attend le paquebot en harcelant le consul de questions. Le Mongolia mouille avec deux heures d’avance, et Fix voit descendre non pas le gentleman mais son domestique, venu faire viser un passeport."
+
+[[chapter]]
+number = 7
+title = "Qui témoigne une fois de plus de l’inutilité des passe-ports en matière de police"
+label = "Suez"
+status = "Terminé"
+pov = ["Fix"]
+cast = ["Fix", "Phileas Fogg", "Passepartout"]
+places = ["Suez", "Bombay"]
+objects = []
+synopsis = "Le consul vise le passeport malgré les objections de Fix, en faisant observer qu’un passeport n’a jamais servi qu’à gêner les honnêtes gens et n’a jamais arrêté un coquin. Fix, resté seul, décide de suivre le suspect jusqu’à Bombay, où le mandat pourra le rejoindre."
+
+[[chapter]]
+number = 8
+title = "Dans lequel Passepartout parle un peu plus peut-être qu’il ne conviendrait"
+label = "Suez"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = ["Fix"]
+cast = ["Fix", "Passepartout", "Phileas Fogg"]
+places = ["Suez"]
+objects = ["Le sac aux bank-notes", "Le pari"]
+synopsis = "Sur le quai, Fix fait parler Passepartout, qui, sans défiance, raconte le pari, la fortune emportée en bank-notes et la précipitation du départ. Chaque détail confirme au détective qu’il tient son voleur."
+
+[[chapter]]
+number = 9
+title = "Où la mer Rouge et la mer des Indes se montrent propices aux desseins de Phileas Fogg"
+label = "Mer Rouge"
+tags = ["continuité"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Passepartout", "Fix", "Sir Francis Cromarty"]
+places = ["Bombay"]
+objects = ["Le Mongolia", "Le carnet de route"]
+synopsis = "Traversée de la mer Rouge et de l’océan Indien. Fix se fait le compagnon de Passepartout tandis que Fogg, invisible, joue au whist et tient son carnet. Le Mongolia gagne sur son horaire et touche Bombay le 20 octobre, avec deux jours d’avance."
+
+[[chapter]]
+number = 10
+title = "Où Passepartout est trop heureux d’en être quitte en perdant sa chaussure"
+label = "Inde"
+status = "Terminé"
+pov = ["Passepartout"]
+cast = ["Passepartout", "Fix"]
+places = ["Bombay"]
+objects = []
+synopsis = "À Bombay, Passepartout flâne et entre chaussé dans la pagode de Malebar-Hill. Roué de coups par les prêtres, il s’échappe et rejoint le train de Calcutta en chaussettes, trop heureux d’en être quitte à ce prix — sans se douter qu’il vient de fournir à Fix le moyen de faire arrêter son maître en territoire anglais."
+
+[[chapter]]
+number = 11
+title = "Où Phileas Fogg achète une monture à un prix fabuleux"
+label = "Inde"
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Passepartout", "Sir Francis Cromarty", "Kiouni"]
+places = ["Kholby"]
+objects = ["Le sac aux bank-notes"]
+synopsis = "Au village de Kholby, les voyageurs découvrent que la voie ferrée n’est pas achevée et qu’il reste cinquante milles à franchir. Fogg achète pour deux mille livres l’éléphant Kiouni, engage un jeune Parsi pour le conduire, et le voyage repart à travers la jungle."
+
+[[chapter]]
+number = 12
+title = "Où Phileas Fogg et ses compagnons s’aventurent à travers les forêts de l’Inde, et ce qui s’ensuit"
+label = "Inde"
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Passepartout", "Sir Francis Cromarty", "Mrs. Aouda", "Kiouni"]
+places = ["Pillaji"]
+objects = []
+synopsis = "Fogg, Passepartout et Sir Francis Cromarty s’enfoncent dans les forêts du Bundelkund. À la nuit, ils croisent le cortège d’un sutty: la jeune veuve du rajah de Bundelkund doit être brûlée vive à l’aube sur le bûcher de Pillaji."
+
+[[chapter]]
+number = 13
+title = "Dans lequel Passepartout prouve une fois de plus que la fortune sourit aux audacieux"
+label = "Inde"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = ["Passepartout"]
+cast = ["Passepartout", "Phileas Fogg", "Mrs. Aouda", "Sir Francis Cromarty", "Kiouni"]
+places = ["Pillaji"]
+objects = []
+synopsis = "La nuit se passe à chercher un moyen de sauver la jeune femme, et toutes les tentatives échouent. Au petit jour, Passepartout, glissé sous le bûcher à la place du mort, se dresse dans la fumée: les prêtres se prosternent, et il emporte Aouda tandis que le vieux rajah paraît ressusciter."
+
+[[chapter]]
+number = 14
+title = "Dans lequel Phileas Fogg descend toute l’admirable vallée du Gange sans même songer à la voir"
+label = "Inde"
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Mrs. Aouda", "Sir Francis Cromarty", "Passepartout"]
+places = ["Bénarès", "Calcutta"]
+objects = ["Kiouni"]
+synopsis = "Descente de l’admirable vallée du Gange, qu’aucun des voyageurs ne songe à regarder. Kiouni est donné au jeune Parsi; Sir Francis Cromarty quitte le train à Bénarès; Aouda, revenue à elle, apprend à qui elle doit la vie. On atteint Calcutta dans les délais."
+
+[[chapter]]
+number = 15
+title = "Où le sac aux bank-notes s’allége encore de quelques milliers de livres"
+label = "Inde"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Passepartout", "Fix", "Le juge Obadiah", "Mrs. Aouda"]
+places = ["Calcutta"]
+objects = ["Le sac aux bank-notes", "Le Rangoon"]
+synopsis = "À Calcutta, Fogg et Passepartout sont arrêtés à la descente du wagon: les prêtres de Malebar-Hill ont porté plainte. Le juge Obadiah condamne le domestique à quinze jours de prison; Fogg dépose deux mille livres de caution, les abandonne sur-le-champ, et le sac aux bank-notes s’allége d’autant. Le Rangoon appareille pour Hong-Kong avec, à bord, un Fix furieux."
+
+[[chapter]]
+number = 16
+title = "Où Fix n’a pas l’air de connaître du tout les choses dont on lui parle"
+label = "Mers du Sud"
+status = "Terminé"
+pov = []
+cast = ["Fix", "Passepartout", "Mrs. Aouda"]
+places = ["Hong-Kong"]
+objects = ["Le Rangoon"]
+synopsis = "Croisé sur le pont, Fix feint la surprise et prétend ne rien savoir de l’affaire de la pagode. Passepartout, qui commence à trouver ces rencontres singulières, se tait. Aouda espère retrouver à Hong-Kong un parent, le riche Jejeeh, qui la mettrait à l’abri."
+
+[[chapter]]
+number = 17
+title = "Où il est question de choses et d’autres pendant la traversée de Singapore à Hong-Kong"
+label = "Mers du Sud"
+status = "Terminé"
+pov = []
+cast = ["Fix", "Passepartout", "Phileas Fogg"]
+places = ["Singapore", "Hong-Kong"]
+objects = ["Le Rangoon", "Le carnet de route"]
+synopsis = "De Singapore à Hong-Kong, la traversée se poursuit entre le mauvais temps et les conversations de Fix, qui parle de tout — de l’opium, des Anglais aux Indes — pour ne rien dire. Le Rangoon perd dans la tempête les heures gagnées dans l’Inde."
+
+[[chapter]]
+number = 18
+title = "Dans lequel Phileas Fogg, Passepartout, Fix, chacun de son côté, va à ses affaires"
+label = "Hong-Kong"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Mrs. Aouda", "Fix", "Passepartout"]
+places = ["Hong-Kong"]
+objects = ["Le Carnatic"]
+synopsis = "À Hong-Kong, on apprend que le parent d’Aouda a quitté la Chine pour la Hollande. Fogg offre simplement de la conduire en Europe. Fix, dont le mandat n’est toujours pas arrivé et qui perdra tout pouvoir dès que Fogg quittera le sol anglais, joue son dernier coup; et le Carnatic, réparé plus vite que prévu, avance son départ d’une soirée."
+
+[[chapter]]
+number = 19
+title = "Où Passepartout prend un trop vif intérêt à son maître, et ce qui s’ensuit"
+label = "Hong-Kong"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = ["Fix"]
+cast = ["Fix", "Passepartout"]
+places = ["Hong-Kong"]
+objects = ["Le Carnatic"]
+synopsis = "Fix entraîne Passepartout dans une tabagie, le fait boire, puis lui fait fumer une pipe d’opium pour l’empêcher de prévenir son maître du départ avancé. Le Français, à demi conscient, se traîne pourtant jusqu’au Carnatic et s’y endort — seul."
+
+[[chapter]]
+number = 20
+title = "Dans lequel Fix entre directement en relation avec Phileas Fogg"
+label = "Hong-Kong"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Fix", "Mrs. Aouda", "John Bunsby"]
+places = ["Hong-Kong"]
+objects = ["La Tankadère", "Le Carnatic"]
+synopsis = "Le lendemain, Fogg trouve le Carnatic parti et son domestique disparu. Il cherche un navire pour Yokohama, finit par affréter la Tankadère, goélette-pilote de vingt tonneaux, et prend John Bunsby pour patron. Fix, qui n’a plus rien à espérer d’un mandat, s’embarque avec eux et entre pour la première fois directement en relation avec Phileas Fogg."
+
+[[chapter]]
+number = 21
+title = "Où le patron de la Tankadère risque fort de perdre une prime de deux cents livres"
+label = "Mers de Chine"
+status = "Terminé"
+pov = []
+cast = ["John Bunsby", "Phileas Fogg", "Fix", "Mrs. Aouda"]
+places = []
+objects = ["La Tankadère"]
+synopsis = "La Tankadère court sur la mer de Chine, portée par une brise qui tourne à la tempête. Bunsby veut relâcher; Fogg lui promet deux cents livres de prime et fait tenir la mer. On atteint Shangaï juste à temps pour hisser le pavillon de détresse et se faire prendre par le paquebot américain."
+
+[[chapter]]
+number = 22
+title = "Où Passepartout voit bien que, même aux antipodes, il est prudent d’avoir quelque argent dans sa poche"
+label = "Japon"
+status = "Terminé"
+pov = ["Passepartout"]
+cast = ["Passepartout", "Honorable William Batulcar"]
+places = ["Yokohama"]
+objects = ["Le Carnatic"]
+synopsis = "Passepartout se réveille à bord du Carnatic, comprend sa sottise et débarque à Yokohama sans un sou. Après une matinée de jeûne, il vend ses vêtements européens, s’affuble d’une vieille robe japonaise et se fait engager par l’honorable Batulcar, directeur d’une troupe d’acrobates, comme homme-tronc des Longs-Nez."
+
+[[chapter]]
+number = 23
+title = "Dans lequel le nez de Passepartout s’allonge démesurément"
+label = "Japon"
+status = "Terminé"
+pov = ["Passepartout"]
+cast = ["Passepartout", "Phileas Fogg", "Mrs. Aouda", "Honorable William Batulcar"]
+places = ["Yokohama"]
+objects = ["Le General Grant"]
+synopsis = "Un nez de six pieds au front, Passepartout sert de base à la pyramide humaine des Longs-Nez lorsqu’il aperçoit son maître dans la salle. Il se précipite, la pyramide s’écroule, et le domestique retrouve Fogg et Aouda à l’instant où ils s’embarquent sur le General Grant."
+
+[[chapter]]
+number = 24
+title = "Pendant lequel s’accomplit la traversée de l’océan Pacifique"
+label = "Pacifique"
+tags = ["continuité"]
+status = "Terminé"
+pov = []
+cast = ["Passepartout", "Fix", "Phileas Fogg", "Mrs. Aouda"]
+places = ["San-Francisco"]
+objects = ["Le General Grant", "La montre de Passepartout"]
+synopsis = "Vingt-deux jours de Pacifique. Passepartout, réconcilié avec son maître, rencontre Fix sur le pont et lui administre la volée qu’il lui doit; puis les deux hommes concluent une trêve, le détective n’ayant plus qu’un intérêt: ramener Fogg en Angleterre au plus vite. Passepartout constate au passage que sa montre est d’accord avec les horloges du bord, et en tire la conclusion qui l’arrange."
+
+[[chapter]]
+number = 25
+title = "Où l’on donne un léger aperçu de San-Francisco, un jour de meeting"
+label = "Amérique"
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Mrs. Aouda", "Colonel Stamp W. Proctor", "Fix"]
+places = ["San-Francisco"]
+objects = []
+synopsis = "San-Francisco un jour de meeting: la rue est prise par une bagarre électorale où Fogg et Aouda manquent d’être écrasés. Le gentleman en sort le vêtement en lambeaux et une querelle sur les bras avec le colonel Stamp W. Proctor, qu’il se promet de retrouver."
+
+[[chapter]]
+number = 26
+title = "Dans lequel on prend le train express du chemin de fer du Pacifique"
+label = "Amérique"
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Passepartout"]
+places = ["San-Francisco"]
+objects = []
+synopsis = "Le train express du chemin de fer du Pacifique quitte Oakland. Description de la voie, de Sacramento à la Sierra Nevada, et de ce continent qu’on traverse en sept jours quand il en fallait six mois."
+
+[[chapter]]
+number = 27
+title = "Dans lequel Passepartout suit, avec une vitesse de vingt milles à l’heure, un cours d’histoire mormone"
+label = "Amérique"
+status = "Terminé"
+pov = ["Passepartout"]
+cast = ["Passepartout", "Elder William Hitch"]
+places = ["Salt Lake City"]
+objects = []
+synopsis = "Pris dans un meeting mormon tenu en pleine voie, Passepartout subit le cours d’histoire de l’elder William Hitch et s’en échappe de justesse. Le train longe le Grand Lac Salé, touche Ogden et repart vers les montagnes Rocheuses."
+
+[[chapter]]
+number = 28
+title = "Dans lequel Passepartout ne put parvenir à faire entendre le langage de la raison"
+label = "Amérique"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = ["Passepartout"]
+cast = ["Passepartout", "Phileas Fogg", "Colonel Stamp W. Proctor", "Fix"]
+places = ["Medicine-Bow"]
+objects = []
+synopsis = "Passepartout, ayant vu que le pont de Medicine-Bow est prêt à céder, ne parvient pas à faire entendre le langage de la raison: on décide de le franchir à toute vapeur. Le train passe; le pont s’abîme derrière lui."
+
+[[chapter]]
+number = 29
+title = "Où il sera fait le récit d’incidents divers qui ne se rencontrent que sur les rail-roads de l’Union"
+label = "Amérique"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Colonel Stamp W. Proctor", "Phileas Fogg", "Fix", "Passepartout", "Mrs. Aouda"]
+places = ["Le fort Kearney"]
+objects = []
+synopsis = "Une partie de whist ramène le colonel Proctor face à Fogg. Le duel s’organise dans le dernier wagon quand les Sioux attaquent le train. Passepartout se glisse sous les voitures pour décrocher la locomotive et sauve les voyageurs, mais il est enlevé par les Indiens avec deux autres passagers."
+
+[[chapter]]
+number = 30
+title = "Dans lequel Phileas Fogg fait tout simplement son devoir"
+label = "Amérique"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Fix", "Mrs. Aouda", "Passepartout"]
+places = ["Le fort Kearney"]
+objects = ["Le carnet de route"]
+synopsis = "Fogg, arrivé au fort Kearney sans son domestique, refuse de repartir sans lui. Il obtient trente soldats, s’enfonce dans la neige, ramène les prisonniers — et trouve le train parti. Il a fait tout simplement son devoir, et il a perdu vingt heures."
+
+[[chapter]]
+number = 31
+title = "Dans lequel l’inspecteur Fix prend très-sérieusement les intérêts de Phileas Fogg"
+label = "Amérique"
+status = "Terminé"
+pov = ["Fix"]
+cast = ["Fix", "Mudge", "Phileas Fogg", "Passepartout", "Mrs. Aouda"]
+places = ["Le fort Kearney"]
+objects = ["Le traîneau à voiles"]
+synopsis = "Fix, qui n’a plus qu’une idée — ramener Fogg à Liverpool —, prend très-sérieusement les intérêts de son suspect: il découvre le traîneau à voiles de Mudge et le propose. On file sur la neige gelée jusqu’à Omaha, et le train de New York est repris."
+
+[[chapter]]
+number = 32
+title = "Dans lequel Phileas Fogg engage une lutte directe contre la mauvaise chance"
+label = "Amérique"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Capitaine Speedy", "Fix"]
+places = ["New York"]
+objects = ["L’Henrietta"]
+synopsis = "À New York, le China vient de larguer ses amarres depuis quarante-cinq minutes. Fogg parcourt le port, ne trouve que des navires à voiles, et finit par offrir au capitaine Speedy, de l’Henrietta, deux mille dollars par personne pour Bordeaux."
+
+[[chapter]]
+number = 33
+title = "Où Phileas Fogg se montre à la hauteur des circonstances"
+label = "Atlantique"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Capitaine Speedy", "Passepartout", "Fix", "Mrs. Aouda"]
+places = ["Liverpool"]
+objects = ["L’Henrietta", "Le sac aux bank-notes"]
+synopsis = "En pleine mer, Fogg achète l’équipage, fait enfermer Speedy dans sa cabine et met le cap sur Liverpool. Le charbon manque: il achète le navire lui-même au capitaine et fait brûler les superstructures, les mâts et les rouffles. L’Henrietta, réduite à sa coque, entre dans la Mersey le 21 décembre à midi moins vingt — et Fix arrête Phileas Fogg."
+
+[[chapter]]
+number = 34
+title = "Qui procure à Passepartout l’occasion de faire un jeu de mots atroce, mais peut-être inédit"
+label = "Retour"
+tags = ["noeud dramatique"]
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Passepartout", "Fix", "Mrs. Aouda", "James Strand"]
+places = ["Liverpool"]
+objects = ["Le pari"]
+synopsis = "Fogg passe la journée au poste de Custom-house pendant que Passepartout, désespéré, se reproche de n’avoir rien dit. À deux heures trente-trois, Fix reparaît: le vrai voleur est pris depuis trois jours. Fogg, libre, abat le détective d’un coup de poing, et Passepartout salue d’un jeu de mots atroce cette belle application de poings d’Angleterre. Le train spécial arrive à Londres avec cinq minutes de retard: le pari est perdu."
+
+[[chapter]]
+number = 35
+title = "Dans lequel Passepartout ne se fait pas répéter deux fois l’ordre que son maître lui donne"
+label = "Retour"
+status = "Terminé"
+pov = []
+cast = ["Phileas Fogg", "Mrs. Aouda", "Passepartout", "Le révérend Samuel Wilson"]
+places = ["Saville-row"]
+objects = []
+synopsis = "Le lendemain, la maison de Saville-row reste close. Fogg met ses affaires en ordre, partage entre Passepartout et Fix ce qui lui reste, et s’apprête à la ruine. Le soir, Aouda lui offre de l’épouser; il accepte. Passepartout, envoyé chez le révérend Samuel Wilson, ne se fait pas répéter l’ordre deux fois — il sort en courant."
+
+[[chapter]]
+number = 36
+title = "Dans lequel Phileas Fogg fait de nouveau prime sur le marché"
+label = "Retour"
+status = "Terminé"
+pov = []
+cast = ["James Strand", "Phileas Fogg", "Andrew Stuart", "Gauthier Ralph", "John Sullivan", "Samuel Fallentin", "Thomas Flanagan"]
+places = ["Le Reform-Club"]
+objects = ["Le pari"]
+synopsis = "L’arrestation du vrai voleur, James Strand, a retourné une seconde fois l’opinion: Phileas Fogg fait de nouveau prime sur le marché, et le samedi soir la foule se presse dans Pall-Mall. Ses cinq collègues attendent au Reform-Club, sans y croire, l’échéance de huit heures quarante-cinq."
+
+[[chapter]]
+number = 37
+title = "Dans lequel il est prouvé que Phileas Fogg n’a rien gagné à faire ce tour du monde, si ce n’est le bonheur"
+label = "Retour"
+tags = ["noeud dramatique", "continuité"]
+status = "Terminé"
+pov = []
+cast = ["Passepartout", "Phileas Fogg", "Mrs. Aouda", "Le révérend Samuel Wilson"]
+places = ["Le Reform-Club", "Saville-row"]
+objects = ["La montre de Passepartout", "Le pari"]
+synopsis = "Passepartout revient en trombe: le révérend n’est pas libre, car on n’est pas dimanche mais samedi. En marchant vers l’est, les voyageurs ont vu le soleil se lever quatre-vingts fois quatre minutes plus tôt, et gagné un jour entier sans s’en apercevoir — la montre de Passepartout, jamais remise à l’heure, était la seule à le savoir. Fogg court au Reform-Club et y entre à la seconde. Il a gagné son pari sans rien gagner d’autre, sinon une charmante femme, et le bonheur."

@@ -1,0 +1,79 @@
+Send your manuscript out for someone to mark up in Word or LibreOffice, then bring their
+comments and edits back into the project instead of a second, disconnected copy.
+
+## Send a Word or LibreOffice file
+
+Export with `Ctrl+Shift+E`, and under *Format* choose *Word* (`.docx`) or *LibreOffice*
+(`.odt`). Those two carry your comments out.
+
+## Check the export style
+
+Each export style has a *Sending to an editor* page of its own:
+
+- *Include comments* writes your comment threads into the file.
+- *Include round-trip markers* writes the identifiers that let a returning file update this
+  project instead of landing beside it as a second copy.
+
+To reach them, open *Settings ▸ Compile & Export ▸ Export Formats*. A built-in style cannot be
+edited, so press *Duplicate*, then *Edit* on your copy, then *Sending to an editor*.
+
+## What your reader does
+
+Nothing special. They comment and edit in Word or LibreOffice as usual, then send the file
+back.
+
+## Bringing the file back
+
+*Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…* opens the import wizard. See
+[Import documents](:help-import-documents) for the steps before *Merge*. The round trip
+happens on *Merge*.
+
+Import one returning copy at a time: matching lines up a single copy against your project, so
+several at once would add a second book rather than merge one.
+
+## Reading the Merge step
+
+Skribisto pairs each item in the file with the items inside the Destination you chose: first by
+its round-trip marker, then by type and title.
+
+The *Status* column says what happened:
+
+- *Same*, *They edited it*, *You edited it* or *Both edited it*, when the file carries the
+  original wording to compare both sides against.
+- *Same* or *Differs*, when it does not.
+- *New* for an item only the file has, *Not in this file* for one only you have.
+- *Moved* takes the place of those when the file puts a paired item somewhere else, so use
+  *Compare* to see whether the text changed as well.
+
+If your reader moved a chapter, move it yourself in the outline.
+
+*What to do* offers *Comments only* (their notes, your wording), *Take this version*, *Keep
+mine*, *Add as new* and *Skip*. The safest is preselected, and some statuses narrow the list:
+
+- *New* offers *Add as new* or *Skip*.
+- *Not in this file* offers *Keep mine* alone: a chapter missing from their copy is no reason
+  to delete yours.
+
+## Taking part of a rewrite
+
+*Compare* shows one item's two versions as one marked-up text: struck through is what they
+removed, underlined what they added. Below it sits a tick box per changed paragraph, each
+saying what it does: *Take this new paragraph*, *Take this rewrite* or *Drop this paragraph*.
+Tick the ones you accept, and every paragraph you leave keeps your wording.
+
+Ticks count under *Comments only* and *Take this version*. To keep none of their wording,
+choose *Keep mine*.
+
+## Tracked changes
+
+A file that comes back mid-revision arrives with its changes already accepted: insertions kept,
+deletions dropped. The *Review* step reports it, naming who made the changes when the file
+records it.
+
+Accepting or rejecting them is what *Compare* is for, a paragraph at a time: you cannot take
+one person's edit and refuse another's inside the same paragraph.
+
+## Limits
+
+- A file from another tool, or one exported with markers off, falls back to title matching,
+  which cannot recognize a renamed chapter.

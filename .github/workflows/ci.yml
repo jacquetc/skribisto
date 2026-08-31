@@ -1,0 +1,297 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - "**"
+      - "!**.md"
+      - "!/docs/**"
+      - "!/LICENSE"
+      - "!/COPYING"
+      - "!/README*"
+  push:
+    branches:
+      - master
+    paths:
+      - "**"
+      - "!**.md"
+      - "!/docs/**"
+      - "!/LICENSE"
+      - "!/COPYING"
+      - "!/README*"
+  schedule:
+    - cron: "3 3 3 * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Aggregate gate: a single required status that is green only when every leg
+  # passed. Set branch protection to require this "CI" job, not each leg.
+  ci:
+    name: CI
+    needs: [test-linux, test-cross, check, rustfmt, clippy, docs, spdx, locales]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.test-linux.result }}" != "success" ]] || \
+             [[ "${{ needs.test-cross.result }}" != "success" ]] || \
+             [[ "${{ needs.check.result }}" != "success" ]] || \
+             [[ "${{ needs.rustfmt.result }}" != "success" ]] || \
+             [[ "${{ needs.clippy.result }}" != "success" ]] || \
+             [[ "${{ needs.docs.result }}" != "success" ]] || \
+             [[ "${{ needs.spdx.result }}" != "success" ]] || \
+             [[ "${{ needs.locales.result }}" != "success" ]]; then
+            echo "One or more jobs failed"
+            exit 1
+          fi
+          echo "All jobs passed"
+
+  # Linux runs first; Windows/macOS only start once Linux passes (saves runner
+  # minutes on a Linux failure and gives a deterministic order).
+  test-linux:
+    name: Test (linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Linux system dependencies
+        uses: ./.github/actions/install-linux-deps
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: linux
+
+      - name: Build (default)
+        run: cargo build --workspace --all-targets
+
+      - name: Test (default)
+        run: cargo test --workspace
+
+      # `cargo test` builds examples but does not run their tests. `build_example`
+      # is where the bundled example projects come from, and its parser and its
+      # Markdown-to-Djot round-trip assumptions are covered — so they need their
+      # own line here or they are covered by tests nothing runs.
+      - name: Test (examples)
+        run: cargo test --workspace --examples
+
+      # The app ships in two blessed configurations. `mocks` is a real alternate
+      # `mod imp` (fabricated backend) with its own logic — it must be built AND
+      # tested, not merely `cargo check`ed. Scoped to `-p teksilo_ui` (the only
+      # crate that declares the feature); never combine with `--workspace`.
+      - name: Build (mocks)
+        run: cargo build -p teksilo_ui --features mocks --all-targets
+
+      - name: Test (mocks)
+        run: cargo test -p teksilo_ui --features mocks
+
+      # clippy only lints the `#[cfg]` arm actually compiled, so the mock arm
+      # needs its own lint pass or it silently rots.
+      - name: Clippy (mocks)
+        run: cargo clippy -p teksilo_ui --features mocks --all-targets -- -D warnings -A deprecated
+
+  test-cross:
+    name: Test (${{ matrix.name }})
+    needs: test-linux
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+          - name: mac
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.name }}
+
+      - name: Build
+        run: cargo build --workspace --all-targets
+
+      - name: Test
+        run: cargo test --workspace
+
+  check:
+    name: Check (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: debug
+            cmd: cargo check --workspace --all-targets
+          - name: release
+            cmd: cargo check --workspace --all-targets --release
+          # mocks + pdf are teksilo_ui-only features → `-p`, not `--workspace`.
+          - name: mocks
+            cmd: cargo check -p teksilo_ui --features mocks --all-targets
+          # Catch a PDF-breaking change before a release build needs it. `pdf`
+          # forwards to text-document's Typst exporter (heavier compile).
+          - name: pdf
+            cmd: cargo check -p teksilo_ui --features pdf --all-targets
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Linux system dependencies
+        uses: ./.github/actions/install-linux-deps
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: check-${{ matrix.name }}
+
+      - name: Check
+        run: ${{ matrix.cmd }}
+
+  rustfmt:
+    name: Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Linux system dependencies
+        uses: ./.github/actions/install-linux-deps
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: clippy
+
+      - name: Lint
+        run: cargo clippy --workspace --all-targets -- -D warnings -A deprecated
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Linux system dependencies
+        uses: ./.github/actions/install-linux-deps
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: docs
+
+      # Intentionally NOT `-D warnings` yet: the Qleany-generated crates carry
+      # little doc coverage and would trip broken-intra-doc-link lints on day
+      # one. This still fails on a real `cargo doc` error. Tighten to
+      # RUSTDOCFLAGS: -D warnings once the tree is known-clean.
+      - name: Build documentation
+        run: cargo doc --workspace --no-deps
+
+  spdx:
+    name: SPDX headers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          # The checker derives each file's copyright year from its first
+          # commit (`git log --diff-filter=A`); a shallow clone would lose
+          # that history and report every file as outdated.
+          fetch-depth: 0
+
+      - name: Check SPDX headers
+        run: python3 tools/check_spdx_headers.py --check
+
+  locales:
+    name: Locales
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # `tr!` validates keys against en-US only — a translation locale is
+      # loaded at runtime and falls back per key, so a missing, extra or
+      # renamed-variable string in fr-FR compiles and tests green and only
+      # shows up as English text (or a broken interpolation) in the app.
+      # Nothing else in this workflow can catch that.
+      - name: Check translations against en-US
+        run: python3 tools/check_locales.py --format github
+
+      # The checker is the gate, so its own checks have to be exercised —
+      # a parser bug would otherwise turn the job above into a no-op that
+      # reports "in sync" forever.
+      - name: Test the locale checker
+        run: python3 -m unittest discover -s tools -p "test_*.py" -v

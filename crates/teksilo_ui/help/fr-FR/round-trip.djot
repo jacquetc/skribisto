@@ -1,0 +1,86 @@
+Envoyez votre manuscrit à quelqu’un pour qu’il l’annote dans Word ou LibreOffice, puis
+récupérez ses commentaires et ses modifications dans le projet au lieu d’une seconde copie
+déconnectée.
+
+## Envoyer un fichier Word ou LibreOffice
+
+Exportez avec `Ctrl+Shift+E`, et choisissez sous *Format* le format *Word* (`.docx`) ou
+*LibreOffice* (`.odt`). Ces deux formats emportent vos commentaires.
+
+## Vérifier le style d’export
+
+Chaque style d’export a sa propre page *Envoi à un éditeur* :
+
+- *Inclure les commentaires* écrit vos fils de commentaires dans le fichier.
+- *Inclure les marqueurs d’aller-retour* écrit les identifiants qui permettent à un fichier de
+  retour de mettre à jour ce projet au lieu de s’y ajouter en double.
+
+Pour les atteindre, ouvrez *Paramètres ▸ Compilation et export ▸ Formats d’export*. Un style
+intégré n’est pas modifiable : faites *Dupliquer*, puis *Modifier* sur votre copie, puis *Envoi
+à un éditeur*.
+
+## Ce que fait votre lecteur
+
+Rien de particulier. Il commente et modifie dans Word ou LibreOffice comme d’habitude, puis
+renvoie le fichier.
+
+## Ramener le fichier
+
+*Œuvre ▸ Importer depuis ▸ Documents (Markdown, Word, ODT)…* ouvre l’assistant d’import. Voir
+[Importer des documents](:help-import-documents) pour les étapes qui précèdent *Fusion*.
+L’aller-retour se joue sur *Fusion*.
+
+Importez un seul exemplaire de retour à la fois. La mise en correspondance ne confronte qu’un
+exemplaire à votre projet : plusieurs ensemble ajouteraient un second livre au lieu d’en
+fusionner un.
+
+## Lire l’étape Fusion
+
+Skribisto associe chaque élément du fichier aux éléments présents dans la Destination que vous
+avez choisie : d’abord par son marqueur d’aller-retour, puis par le type et le titre.
+
+La colonne *État* dit ce qui s’est passé :
+
+- *Identique*, *Modifié par l’éditeur*, *Modifié par vous* ou *Modifié des deux côtés*, quand
+  le fichier porte le texte d’origine auquel comparer les deux côtés.
+- *Identique* ou *Différent*, quand il ne le porte pas.
+- *Nouveau* pour un élément que seul le fichier possède, *Absent de ce fichier* pour un élément
+  que vous êtes seul à avoir.
+- *Déplacé* prend la place des précédents quand le fichier place ailleurs un élément apparié :
+  ouvrez *Comparer* pour voir si le texte a changé aussi.
+
+Si votre lecteur a déplacé un chapitre, déplacez-le vous-même dans le plan.
+
+*Que faire* propose *Commentaires seulement* (ses remarques, votre texte), *Prendre cette
+version*, *Garder la mienne*, *Ajouter comme nouveau* et *Ignorer*. Le plus sûr est
+présélectionné, et certains états réduisent la liste :
+
+- *Nouveau* propose *Ajouter comme nouveau* ou *Ignorer*.
+- *Absent de ce fichier* ne propose que *Garder la mienne* : un chapitre absent de son
+  exemplaire n’est pas une raison de supprimer le vôtre.
+
+## Ne prendre qu’une partie d’une réécriture
+
+*Comparer* montre les deux versions d’un élément en un seul texte annoté : barré ce qu’il a
+retiré, souligné ce qu’il a ajouté. En dessous se trouve une case à cocher par paragraphe
+modifié, chacune disant ce qu’elle fait : *Prendre ce nouveau paragraphe*, *Prendre cette
+réécriture* ou *Supprimer ce paragraphe*. Cochez celles que vous acceptez, et chaque paragraphe
+laissé de côté garde votre formulation.
+
+Les cases comptent sous *Commentaires seulement* et *Prendre cette version*. Pour ne rien
+garder de sa formulation, choisissez *Garder la mienne*.
+
+## Modifications suivies
+
+Un fichier qui revient en cours de révision arrive avec ses modifications déjà acceptées : les
+insertions conservées, les suppressions écartées. L’étape *Vérifier* le signale, en nommant qui
+les a faites quand le fichier l’enregistre.
+
+Les accepter ou les refuser, c’est le rôle de *Comparer*, paragraphe par paragraphe. Vous ne
+pouvez pas prendre la modification d’une personne et refuser celle d’une autre dans le même
+paragraphe.
+
+## Limites
+
+- Un fichier venu d’un autre outil, ou exporté sans marqueurs, retombe sur la correspondance
+  par titre, qui ne reconnaîtra pas un chapitre renommé.

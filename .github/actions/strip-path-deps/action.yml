@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+name: "Strip external path dependencies"
+description: "Remove ../ (external sibling) path attributes from every crate manifest so teksilo* / text-document resolve from crates.io, leaving internal workspace paths intact"
+
+# Unlike teksilo's own action (which only edits the root Cargo.toml, because
+# teksilo declares its external siblings in [workspace.dependencies]), Skribisto
+# declares its external sibling deps — `teksilo`, `teksilo-charts`,
+# `teksilo-text`, `text-document` — in the LEAF crate manifests. So this sweeps
+# every crate manifest.
+#
+# Only path attrs whose value starts with `..` (external siblings, one directory
+# above the workspace) are stripped; each such dep also carries a `version =`
+# (added in the crate manifests), so after the path is removed cargo resolves it
+# from crates.io. Internal crates use root-relative `crates/...` paths (no
+# leading `..`) and are left untouched — the workspace is `publish = false`, so a
+# crates.io fallback for those would fail.
+runs:
+  using: "composite"
+  steps:
+    - name: Strip external path dependencies from every Cargo.toml
+      shell: bash
+      run: |
+        shopt -s nullglob
+        for f in Cargo.toml crates/*/Cargo.toml; do
+          sed -i.bak -E \
+            -e 's#, *path = "\.\.[^"]*"##g' \
+            -e 's#path = "\.\.[^"]*", *##g' \
+            "$f"
+          rm -f "$f.bak"
+        done
+        echo "External sibling deps after strip (must show a version=, no path=):"
+        grep -rnE '^(teksilo|teksilo-charts|teksilo-text|text-document) =' crates/*/Cargo.toml || true

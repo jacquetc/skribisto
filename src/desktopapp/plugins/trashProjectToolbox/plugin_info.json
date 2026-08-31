@@ -1,9 +1,0 @@
-{
-    "type" :            "projectToolbox",
-    "shortname" :       "TrashProjectToolbox",
-    "longname" :        "Trash Project Toolbox",
-    "version" :         "1.0",
-    "mandatory" :    true,
-    "activatedByDefault" :    true,
-    "dependencies" :    []
-}

@@ -1,0 +1,12 @@
+title:          Chapitre 2
+ID:             103
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         2
+summarySentence:Où Passepartout est convaincu qu’il a enfin trouvé son idéal
+summaryFull:    Resté seul dans la maison, Passepartout l’inspecte, la trouve propre et silencieuse comme un couvent, et lit avec ravissement le programme du service affiché au mur. Il se croit enfin arrivé chez le maître calme et casanier qu’il cherchait.
+POV:            0
+
+

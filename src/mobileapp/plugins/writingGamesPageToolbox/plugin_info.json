@@ -1,9 +1,0 @@
-{
-    "type" :            "pageToolbox",
-    "shortname" :       "WritingGamesPageToolbox",
-    "longname" :        "Skribisto Writing Games Page Toolbox",
-    "version" :         "1.0",
-    "mandatory" :    false,
-    "activatedByDefault" :    true,
-    "dependencies" :    ["textPage"]
-}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- In document order — lines of prose read top to bottom, with a down arrow -->
+  <path d="M2.4 3.4 H9.6"/>
+  <path d="M2.4 6.4 H8.2"/>
+  <path d="M2.4 9.4 H9.6"/>
+  <path d="M2.4 12.4 H7.2"/>
+  <path d="M12.6 3.6 V12.2"/>
+  <path d="M10.9 10.5 L12.6 12.4 L14.3 10.5"/>
+</svg>

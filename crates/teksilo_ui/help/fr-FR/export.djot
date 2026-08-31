@@ -1,0 +1,73 @@
+## Ouvrir la boîte de dialogue Exporter
+
+Appuyez sur `Ctrl+Maj+E`, ou ouvrez *Œuvre ▸ Exporter*. Le sous-menu nomme ce que vous avez
+ouvert : *Exporter le livre*, *Exporter la partie*, *Exporter le chapitre*,
+*Exporter la scène*, *Exporter la note*, *Exporter le dossier*. Chacune ouvre la boîte de
+dialogue cadrée sur ce conteneur. *Choisir…*, comme `Ctrl+Maj+E`, l’ouvre plutôt sur un
+arbre à cases à cocher de tout votre classeur.
+
+## Choisir quoi exporter
+
+La colonne *Quoi exporter* propose le conteneur avec lequel vous êtes arrivé, ou
+*Sélection personnalisée* : un arbre à cases à cocher de tout votre classeur.
+
+- L’arbre s’ouvre avec votre prose déjà cochée. Décochez ce que vous voulez laisser de côté.
+- Cocher un chapitre coche ses scènes. Un chapitre à moitié coché affiche un tiret.
+- Les éléments dont l’interrupteur *Inclure dans les exports* de l’Inspecteur est désactivé
+  sont masqués. *Afficher les non-exportables* les révèle, et en cocher un là ne vaut que
+  pour cet export.
+
+## Choisir un format
+
+*Format* propose :
+
+- *Word* (`.docx`) et *LibreOffice* (`.odt`), qui emportent les commentaires
+- *PDF* et *EPUB*, pour un livre fini
+- *HTML*, *Markdown*, *Djot*, *Texte* et *LaTeX*, tous en texte simple
+
+## Choisir un style
+
+*Style* est un ensemble de choix enregistré qui façonne le résultat quel que soit le format
+retenu :
+
+- les titres de chapitre et de partie, numérotés ou non
+- les coupures de scène, l’interligne et la justification
+- l’inclusion des notes, synopsis, titres de scène, épigraphes et paratextes
+- les notes de bas de page : leur inclusion, et leur numérotation
+- si vos commentaires partent avec le fichier
+- où commence une nouvelle page
+
+Un style s’applique partout où le format peut l’honorer.
+
+## Créer votre propre style
+
+Les styles intégrés ne se modifient pas. Pour créer le vôtre, ouvrez
+*Paramètres ▸ Compilation et export ▸ Formats d’export* et choisissez *Dupliquer* sur un
+intégré. La copie apparaît dans la même liste, après les styles intégrés, et *Modifier*
+l’ouvre.
+
+## Où va le fichier
+
+*Destination* est le fichier à écrire. Saisissez un chemin, ou choisissez-en un avec le
+bouton dossier à côté. Changer de format change l’extension pour vous. Si ce fichier existe
+déjà, Skribisto demande confirmation avant de le remplacer.
+
+## Lancer l’export
+
+Cliquez sur *Exporter*.
+
+L’export s’exécute en arrière-plan, et un message le suit :
+
+- Pendant l’export, un bouton *Annuler* l’interrompt.
+- Quand le fichier est écrit, le message le nomme et propose *Ouvrir* et
+  *Afficher dans le dossier*.
+
+## Récupérer un document
+
+- Avec *Inclure les commentaires* actif dans le style, `.docx` et `.odt` emportent chaque
+  commentaire ancré à son passage.
+- Réimporter ce fichier remet les commentaires à leur place. Cela dépend de l’option
+  *Inclure les marqueurs d’aller-retour* du style, active d’origine. Voir
+  [l’aller-retour](:help-round-trip) pour son fonctionnement.
+- Le Markdown et le texte simple reviennent via [l’import de documents](:help-import-documents),
+  mais sans aucun commentaire.

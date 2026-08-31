@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt">
+  <!-- Not started: an open ring, dashed. Empty of ink, which is the "nothing has happened
+       here yet" end of the completeness ramp. The dash period is tuned for 16px: 8 dashes
+       over a 34.6-unit circumference reads as a dashed ring, while the 11 a finer period
+       would give closes up into a solid one on the dark theme, where light-on-dark blooms. -->
+  <circle cx="8" cy="8" r="5.5" stroke-dasharray="2.4 1.92"/>
+</svg>

@@ -1,0 +1,12 @@
+title:          Chapitre 12
+ID:             124
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         2
+summarySentence:Où Phileas Fogg et ses compagnons s’aventurent à travers les forêts de l’Inde, et ce qui s’ensuit
+summaryFull:    Fogg, Passepartout et Sir Francis Cromarty s’enfoncent dans les forêts du Bundelkund. À la nuit, ils croisent le cortège d’un sutty: la jeune veuve du rajah de Bundelkund doit être brûlée vive à l’aube sur le bûcher de Pillaji.
+POV:            0
+
+

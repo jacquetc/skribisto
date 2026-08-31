@@ -1,0 +1,8 @@
+Name:                Fix
+ID:                  2
+Importance:          1
+POV:                 True
+Phrase Summary:      Inspecteur de police détaché à Suez pour surveiller les passagers du canal.
+Paragraph Summary:   Inspecteur de police détaché à Suez pour surveiller les passagers du canal. Convaincu que Fogg est le voleur de la Banque d’Angleterre, il le suit autour du monde en attendant un mandat qui arrive toujours trop tard.
+Notes:               Aussi appelé : l’inspecteur Fix
+Color:               #0000ff

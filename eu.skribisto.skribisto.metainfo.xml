@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component type="desktop-application">
+  <id>eu.skribisto.skribisto</id>
+  <name>Skribisto</name>
+  <summary>Software for writing</summary>
+  <summary xml:lang="fr">Logiciel d'écriture</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <description>
+    <p>Skribisto helps you write anything, from a novel to course notes, without fighting formatting along the way. Organise a project in a binder tree of folders and items; the book's structure — Part, Chapter, Scene, Note — comes from the role you give each row, not from where it sits in the tree. Every writing row keeps its prose and its synopsis side by side.</p>
+    <p>Skribisto is not a word processor: a project exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX or plain text, so the final formatting happens in whichever program you prefer.</p>
+    <ul>
+      <li>Dual editor pane (prose and synopsis), with split panes and tabs</li>
+      <li>Read a whole chapter, part or book as one continuous document, or every synopsis at once</li>
+      <li>Corkboard, writing sessions, pace tracking and manuscript analysis</li>
+      <li>Search and replace across the project, trash with restore and undo, autosave and backups</li>
+      <li>Spell checking with downloadable dictionaries, light and dark themes, per-editor typography</li>
+      <li>Open several projects at once, each in its own window</li>
+    </ul>
+  </description>
+  <developer>
+    <name>Cyril Jacquet</name>
+  </developer>
+  <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>
+  <url type="homepage">https://github.com/jacquetc/skribisto</url>
+  <url type="bugtracker">https://github.com/jacquetc/skribisto/issues</url>
+  <url type="help">https://www.skribisto.eu/help/</url>
+  <url type="translate">https://github.com/jacquetc/skribisto#translation</url>
+  <url type="contact">https://github.com/jacquetc/skribisto#to-contact-me</url>
+  <categories>
+    <category>Office</category>
+  </categories>
+  <provides>
+    <mediatype>application/vnd.skribisto.project+zip</mediatype>
+    <mediatype>application/x-skribisto</mediatype>
+    <binary>skribisto</binary>
+  </provides>
+  <screenshots>
+    <screenshot type="default">
+      <caption>The binder and the editor, with prose and its synopsis side by side</caption>
+      <caption xml:lang="fr">Le classeur et l'éditeur, avec le texte et son synopsis côte à côte</caption>
+      <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot1.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Exporting, with a live preview of the compiled manuscript</caption>
+      <caption xml:lang="fr">L'export, avec un aperçu en direct du manuscrit compilé</caption>
+      <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot2.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>The launcher, listing recent projects and bundled examples</caption>
+      <caption xml:lang="fr">Le lanceur, avec les projets récents et les exemples fournis</caption>
+      <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot3.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release type="stable" version="3.0.0" date="2026-07-19T00:00:00Z">
+      <description>
+        <ul>
+          <li>Skribisto has been rewritten from scratch in Rust, with a new interface</li>
+          <li>New project format: a .skrib bundle holding plain-text prose, kept as a single file or as a folder you can put under version control</li>
+          <li>Projects from Skribisto 2.x are upgraded automatically when you open them</li>
+          <li>Write prose and its synopsis side by side, in split panes and tabs</li>
+          <li>Read a whole chapter, part or book as one continuous document, or all synopses at once</li>
+          <li>Corkboard, writing sessions, live word count and pace tracking</li>
+          <li>Search and replace across the whole project</li>
+          <li>Trash with restore and undo</li>
+          <li>Backups with a retention policy, several destinations, a scheduler, and read-only opening</li>
+          <li>Import projects from Plume Creator</li>
+          <li>Export to Word (DOCX), OpenDocument (ODT), EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live preview</li>
+          <li>Spell checking with downloadable dictionaries</li>
+          <li>Light and dark themes, and per-editor typography</li>
+          <li>Open several projects side by side, each in its own window</li>
+          <li>English and French interface</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

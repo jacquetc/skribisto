@@ -1,6 +1,0 @@
-<RCC>
-    <qresource prefix="/examples">
-        <file>Starforgers.skrib</file>
-        <file>Starforgers.jpg</file>
-    </qresource>
-</RCC>

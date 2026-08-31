@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Dismiss — a cross, for taking one result out of the list.
+       Not a bin: nothing is deleted. The hit stays in the manuscript and the row
+       comes back with one undo; what it leaves is the review. -->
+  <path d="M4.6 4.6 11.4 11.4"/>
+  <path d="M11.4 4.6 4.6 11.4"/>
+</svg>

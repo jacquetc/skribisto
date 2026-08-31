@@ -1,0 +1,1 @@
+{"saveToZip": false, "defaultTextType": "md", "dict": "fr_FR", "revisions": {"keep": true}}

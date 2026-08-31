@@ -1,0 +1,20 @@
+[paratext]
+name = "Deutscher Roman"
+country = ["DE", "AT"]
+language = "de"
+
+[front]
+items = [
+    "Schmutztitel",
+    "Titelseite",
+    "Impressum",
+    "Widmung",
+    "Motto",
+    "Inhaltsverzeichnis",
+]
+
+[back]
+items = [
+    "Danksagung",
+    "Über den Autor",
+]

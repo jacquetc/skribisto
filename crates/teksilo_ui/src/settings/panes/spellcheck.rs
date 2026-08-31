@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Spelling ▸ Spell-checking — the app-wide master switch.
+
+use teksilo::widgets::tooltip::TooltipContent;
+
+#[allow(unused_imports)]
+use super::super::*;
+
+/// Settings ▸ Spelling ▸ Spell-checking — the app-wide master switch, the same
+/// `SPELLCHECK_ENABLED_KEY` the title-bar toggle / View menu / F7 drive. A plain
+/// store-backed `Toggle`: writing the signal persists, and `App::build`'s effect turns it
+/// into `set_enabled` + a re-attach. No per-language controls here — those live on the
+/// Work's / an item's Language field (the toggle tip says so).
+pub(in crate::settings) fn spellcheck_pane(crumbs: &Crumbs, vm: &SettingsViewModel) -> impl Widget {
+    let form = FormLayout::new()
+        .label(tr!(settings_page_spellcheck()))
+        .label_gap(16.0)
+        .row_spacing(14.0)
+        .full_width(crate::widgets::tip::RichTip::new(
+            crate::tooltip_registry::CONCEPT_SPELLCHECK,
+            group(tr!(settings_group_spellcheck())),
+        ))
+        .full_width(
+            Toggle::new(vm.spellcheck_enabled())
+                .label(tr!(settings_spellcheck_enabled()))
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.spellcheck",
+                    tr!(settings_spellcheck_hint()),
+                )),
+        );
+
+    pane_frame(crumbs.of(Pane::Spellcheck), form)
+}

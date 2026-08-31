@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Item/BookEnd — prose running out into a solid end mark (the ∎ that closes a
+       text). See `book-begin.svg` for why the mirrored-book pair was abandoned.
+       The solid square is the whole point: it is the only filled block in the
+       set that isn't inside a frame, so this never collapses into `text.svg`'s
+       bare lines the way a third stroke would. Bars on the half-grid; the square
+       on integer bounds, sharing the bars' right edge. -->
+  <path d="M3 4.5H13"/>
+  <path d="M3 7.5H13"/>
+  <path d="M3 10.5H7"/>
+  <rect x="9" y="9" width="4" height="4" fill="currentColor" stroke="none"/>
+</svg>

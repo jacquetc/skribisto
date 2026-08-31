@@ -1,0 +1,58 @@
+A Skribisto project holds everything you write: the manuscript's structure, every scene's text
+and synopsis, and the project's own settings. The Launcher opens one, and starts a new one.
+
+## The Launcher
+
+The sidebar has four sections: *Works*, *Examples*, *Learn* and *About*. Across the top of
+*Works*:
+
+- *Search works* filters the list below as you type.
+- *Open* asks for an existing `.skrib` file.
+- *Create from…* starts a project from what you already have: *Documents (Markdown, Word,
+  ODT)…*, *Plume Creator (.plume)…*, or *Manuskript (.msk)…*. See
+  [importing documents](:help-import-documents) and
+  [importing projects](:help-import-projects).
+- *New Work* opens the New Work wizard.
+
+*Recent Works*, below, lists the projects you have opened recently.
+
+## Starting a new project
+
+The wizard has three steps. *Next* and *Back* move between them; *Create Work* makes the
+project and opens it.
+
+- *Details*: the *Work name*, an optional *Author*, a *Format*, and the *Location* to save in.
+  *Single file* is one `.skrib` archive, *Bundle* a folder holding every text and asset.
+- *Language & structure*: the *Default language* for new texts and spellchecking, and whether
+  to *Count in* words or characters. The *Book structure* sets the front and back matter.
+- *Template*: *None*, *Empty Novel*, *Light Novel*, *Novel*, *Novel in parts* or *Notebook*,
+  from an empty binder to three parts and twenty-four chapters. *Flat chapters* makes each
+  chapter one text with no scenes under it.
+
+## Examples
+
+*Examples* lists the sample projects that ship with Skribisto.
+
+## The Binder panel
+
+The *Binder* panel sits on the left of the window and shows the project as a tree of parts,
+chapters, scenes and notes. Press `F9`, or use *View ▸ Outline*, to show or hide it.
+
+- Click an item, or press `Enter` on a highlighted one, to open it in the editor.
+- Press `Ctrl+Enter` to open it in the other editor pane instead.
+- Right-click an item for *Rename*, *Duplicate*, *Convert to* and *Move to Trash*.
+
+## Text and synopsis
+
+Every scene and every note holds two texts: its main text and its *Synopsis*, a short summary
+kept beside it. Both are visible as you write, unless you hide the synopsis in
+*Settings ▸ Editor ▸ Editor Behavior*.
+
+## Adding items
+
+The *Binder* panel's header carries a create button naming the type it recommends where you
+stand, "＋ Scene" when a scene is selected. Its dropdown lists everything else you could add:
+chapters, notes, folders and the rest.
+
+That is enough to start writing. For how the pieces of a book fit together, see
+[the writing model](:help-writing-model).

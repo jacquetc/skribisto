@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt">
+  <!-- In progress: the same ring, now solid, with a quadrant filled from 12 o'clock.
+       Differentiated from `planned` by INK MASS, not by counting strokes — the rule
+       `binder/icons.rs` sets out, because a raster at 16px preserves mass and destroys
+       stroke counts. The wedge is a filled path rather than a heavy dashed stroke so it
+       survives downscaling. -->
+  <circle cx="8" cy="8" r="5.5"/>
+  <path d="M8 8 L8 2.5 A5.5 5.5 0 0 1 13.5 8 Z" fill="currentColor" stroke="none"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- "Always forward" is being played: a one-way arrow with the way back
+       struck out. The status bar needs a glyph readable at 16 dp with no label,
+       so this states the rule (forward yes, back no) rather than depicting a
+       pen. -->
+  <path d="M2.2 6 H12.2"/>
+  <path d="M9.6 3.2 L12.6 6 L9.6 8.8"/>
+  <path d="M13.6 11.6 H4.6"/>
+  <path d="M3.2 9.6 L6.2 13.6"/>
+</svg>

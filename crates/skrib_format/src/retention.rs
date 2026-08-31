@@ -1,0 +1,817 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Backup rotation: decide which of a destination's backup files to delete.
+//!
+//! Two policies — keep-last-N and tiered/GFS (grandfather-father-son) — over the
+//! set of a project's backups in one directory. Backups are correlated **on
+//! `Work.unique_id`** (survives rename/move), and only files the manifest marks
+//! `kind: Backup` are ever considered — a co-located regular `.skrib`, or another
+//! project's backups sharing the folder, are never touched. `min_keep` is an
+//! absolute floor: the newest `min_keep` are never deleted whatever the policy math.
+
+use anyhow::Result;
+use chrono::{DateTime, Datelike, Duration, NaiveDateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
+
+use super::bundle::{BundleKind, ProjectManifest};
+use super::reader::peek_manifest;
+
+/// How many backups to retain, and by what shape. Persisted in the app's backup
+/// settings, so it is (de)serializable.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RetentionPolicy {
+    /// Keep the `n` most recent backups.
+    KeepLastN { n: u32 },
+    /// Tiered: keep 1 per bucket for the most recent `hourly` hours, `daily` days,
+    /// `weekly` weeks, `monthly` months (buckets thin out as they age).
+    Gfs {
+        hourly: u32,
+        daily: u32,
+        weekly: u32,
+        monthly: u32,
+    },
+}
+
+/// The calendar unit two moments can share.
+///
+/// Extracted from the GFS sweep below, which is the only place this app has ever
+/// had to answer "is that the same week", so that the surfaces which *show* a
+/// project's past group it exactly the way retention *thins* it. Two definitions
+/// of "same week" would put a bar in one place and delete a backup from another.
+///
+/// Weeks are a rolling 604,800 seconds from the Unix epoch, not ISO weeks
+/// starting on a Monday. That is what retention has always done; a calendar week
+/// would be a nicer label and a different — and silently disagreeing — grouping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum BucketUnit {
+    Hour,
+    Day,
+    Week,
+    Month,
+}
+
+impl BucketUnit {
+    /// The bucket `at` belongs to. Two instants share a bucket exactly when this
+    /// returns the same number for both.
+    pub fn key(self, at: &DateTime<Utc>) -> i64 {
+        match self {
+            BucketUnit::Hour => at.timestamp().div_euclid(3600),
+            BucketUnit::Day => at.timestamp().div_euclid(86_400),
+            BucketUnit::Week => at.timestamp().div_euclid(604_800),
+            BucketUnit::Month => at.year() as i64 * 12 + at.month0() as i64,
+        }
+    }
+
+    /// Roughly how long one bucket lasts. For choosing a unit against a span, not
+    /// for arithmetic on real dates — months are not all the same length.
+    pub fn approx_seconds(self) -> i64 {
+        match self {
+            BucketUnit::Hour => 3600,
+            BucketUnit::Day => 86_400,
+            BucketUnit::Week => 604_800,
+            BucketUnit::Month => 2_629_746, // the mean Gregorian month
+        }
+    }
+
+    /// Coarsest last, so a caller can walk up until the buckets fit.
+    pub const ASCENDING: [BucketUnit; 4] = [
+        BucketUnit::Hour,
+        BucketUnit::Day,
+        BucketUnit::Week,
+        BucketUnit::Month,
+    ];
+}
+
+/// A backup file belonging to the project being pruned.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackupCandidate {
+    pub path: PathBuf,
+    pub timestamp: DateTime<Utc>,
+    pub work_unique_id: String,
+    /// The source project's path when this backup was taken
+    /// ([`ProjectManifest::backup_of`](crate::ProjectManifest::backup_of)).
+    ///
+    /// Kept because `work_unique_id` is **not unique across files**: `save_as`
+    /// and a plain file-manager copy both produce a second bundle carrying the
+    /// same uid, and every backup either of them takes lands in this same
+    /// candidate set. Correlating on the uid alone is what let one project's
+    /// sweep delete another's backups. See `belongs_to_another_live_project`.
+    pub backup_of: Option<String>,
+}
+
+/// Outcome of an [`apply_retention`] sweep.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct RetentionReport {
+    pub deleted: Vec<PathBuf>,
+    pub delete_errors: Vec<(PathBuf, String)>,
+}
+
+/// List the backups in `dir` that belong to this project (by `unique_id`, or —
+/// only when the current project has none — by a `backup_of == current_path`
+/// match). Non-backup `.skrib` files and other projects' backups are skipped.
+pub fn scan_destination(
+    dir: &Path,
+    current_unique_id: &str,
+    current_path_fallback: &str,
+) -> Result<Vec<BackupCandidate>> {
+    let mut out = Vec::new();
+    let entries = std::fs::read_dir(dir)
+        .map_err(|e| anyhow::anyhow!("reading backup directory {}: {}", dir.display(), e))?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let is_zip = path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("skrib");
+        let is_folder_bundle = path.is_dir() && path.join("project.skrib").is_file();
+        if !is_zip && !is_folder_bundle {
+            continue;
+        }
+        let Some(path_str) = path.to_str() else {
+            continue;
+        };
+        let Ok(manifest) = peek_manifest(path_str) else {
+            continue; // unreadable / not a bundle → ignore
+        };
+        if !manifest_matches(&manifest, current_unique_id, current_path_fallback) {
+            continue;
+        }
+        out.push(BackupCandidate {
+            timestamp: candidate_timestamp(&manifest, &path),
+            work_unique_id: manifest.work.unique_id.clone(),
+            backup_of: manifest.backup_of.clone(),
+            path,
+        });
+    }
+    Ok(out)
+}
+
+fn manifest_matches(m: &ProjectManifest, uid: &str, path_fallback: &str) -> bool {
+    if m.kind != BundleKind::Backup {
+        return false;
+    }
+    // Prefer the stable UUID. Never match on an empty uid (would collide across
+    // unrelated projects) — fall back to the recorded original path only then.
+    if !uid.is_empty() && m.work.unique_id == uid {
+        return true;
+    }
+    if m.work.unique_id.is_empty()
+        && !path_fallback.is_empty()
+        && m.backup_of.as_deref() == Some(path_fallback)
+    {
+        return true;
+    }
+    false
+}
+
+fn candidate_timestamp(m: &ProjectManifest, path: &Path) -> DateTime<Utc> {
+    if let Some(s) = &m.backup_created_at
+        && let Ok(dt) = DateTime::parse_from_rfc3339(s)
+    {
+        return dt.with_timezone(&Utc);
+    }
+    if let Some(dt) = parse_stamp_from_filename(path) {
+        return dt;
+    }
+    // Last resort: file mtime, or the epoch (treated as oldest) if even that fails.
+    file_mtime(path).unwrap_or_default()
+}
+
+/// Parse a UTC timestamp out of a `…-YYYYMMDD-HHMMSS[-N].skrib` file name.
+///
+/// `pub` because the settings pane's "oldest backup" summary needs exactly this
+/// rule and nothing looser. A second, more permissive reading of the same names —
+/// one that accepted any eight digits without checking a six-digit time followed —
+/// dated a file `foo-12345678-1.skrib` from a segment that was never a timestamp.
+pub fn parse_stamp_from_filename(path: &Path) -> Option<DateTime<Utc>> {
+    let file = path.file_name()?.to_str()?;
+    let stem = file.strip_suffix(".skrib").unwrap_or(file);
+    let parts: Vec<&str> = stem.split('-').collect();
+    let n = parts.len();
+    for tail_len in [2usize, 3usize] {
+        if n <= tail_len {
+            continue;
+        }
+        let (date, time) = if tail_len == 2 {
+            (parts[n - 2], parts[n - 1])
+        } else {
+            let extra = parts[n - 1];
+            if extra.is_empty() || !extra.bytes().all(|b| b.is_ascii_digit()) {
+                continue;
+            }
+            (parts[n - 3], parts[n - 2])
+        };
+        if date.len() == 8
+            && time.len() == 6
+            && date.bytes().all(|b| b.is_ascii_digit())
+            && time.bytes().all(|b| b.is_ascii_digit())
+            && let Ok(ndt) = NaiveDateTime::parse_from_str(&format!("{date}{time}"), "%Y%m%d%H%M%S")
+        {
+            return Some(DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc));
+        }
+    }
+    None
+}
+
+fn file_mtime(path: &Path) -> Option<DateTime<Utc>> {
+    let modified = std::fs::metadata(path).ok()?.modified().ok()?;
+    Some(DateTime::<Utc>::from(modified))
+}
+
+/// Pure: given candidates + policy + `min_keep` floor + `protected` + `now`,
+/// return which paths to delete. No filesystem access — fully unit-testable.
+///
+/// Two guarantees hold **whatever** the policy, the `min_keep` floor, or the
+/// system clock say, because a backup system that can delete every copy is worse
+/// than no backup system at all:
+///
+/// 1. **At least one backup always survives** — the newest candidate is kept
+///    unconditionally, before any policy math runs. A policy that resolves to an
+///    empty keep-set (all-zero GFS tiers, `KeepLastN { n: 0 }`, `min_keep = 0`)
+///    would otherwise return *every* candidate for deletion.
+/// 2. **`protected` paths are never deleted**, by identity rather than by
+///    timestamp. This is what survives a backwards clock correction (NTP, a
+///    dual-boot RTC, a VM resume): a backup written *now* can carry an *older*
+///    stamp than its predecessors, so it sorts as oldest and neither the newest-
+///    first rule nor `min_keep` (which reads the same corrupted order) would save
+///    it. Callers pass the paths this very run just wrote.
+pub fn plan_deletions(
+    candidates: &[BackupCandidate],
+    policy: &RetentionPolicy,
+    min_keep: u32,
+    protected: &[PathBuf],
+    now: DateTime<Utc>,
+) -> Vec<PathBuf> {
+    let mut sorted = candidates.to_vec();
+    sorted.sort_by(|a, b| b.timestamp.cmp(&a.timestamp).then(a.path.cmp(&b.path)));
+
+    let mut keep: HashSet<PathBuf> = HashSet::new();
+    // Guarantee 1: never leave a project with zero backups, whatever the policy.
+    if let Some(newest) = sorted.first() {
+        keep.insert(newest.path.clone());
+    }
+    // Guarantee 2: whatever this run just wrote survives, regardless of its stamp.
+    keep.extend(protected.iter().cloned());
+
+    // The policy math itself (and the `min_keep` floor) is shared with the
+    // in-project history log — see `policy_keep_indices`.
+    let stamps: Vec<DateTime<Utc>> = sorted.iter().map(|c| c.timestamp).collect();
+    for i in policy_keep_indices(&stamps, policy, min_keep, now) {
+        keep.insert(sorted[i].path.clone());
+    }
+
+    sorted
+        .into_iter()
+        .filter(|c| !keep.contains(&c.path))
+        .map(|c| c.path)
+        .collect()
+}
+
+/// Which of `sorted` (a **newest-first** timestamp list) a policy keeps, as
+/// indices into it, including the `min_keep` newest whatever the policy says.
+///
+/// The GFS calendar math lives here, once, because two things thin on it: this
+/// module's backup sweep, and [`crate::history`]'s in-project log. A second copy
+/// of "hourly for a day, daily for a week, weekly for a month, monthly beyond"
+/// would be two policies a writer has no way to tell apart.
+///
+/// Indices rather than a payload type so neither caller has to be modelled here —
+/// backups are keyed by path, history entries by `(uid, role)` position.
+/// Caller-specific guarantees (never leave zero backups; never delete what this
+/// run just wrote; never delete a pinned entry) stay with their callers.
+pub(crate) fn policy_keep_indices(
+    sorted: &[DateTime<Utc>],
+    policy: &RetentionPolicy,
+    min_keep: u32,
+    now: DateTime<Utc>,
+) -> HashSet<usize> {
+    let mut keep: HashSet<usize> = (0..sorted.len().min(min_keep as usize)).collect();
+    match policy {
+        RetentionPolicy::KeepLastN { n } => {
+            keep.extend(0..sorted.len().min(*n as usize));
+        }
+        RetentionPolicy::Gfs {
+            hourly,
+            daily,
+            weekly,
+            monthly,
+        } => {
+            // The bucket keys are [`BucketUnit`]'s, not a second copy: the
+            // Timeline band groups a project's past into the same buckets this
+            // thins it into, and the two must not be able to disagree.
+            keep_one_per_bucket(
+                sorted,
+                |ts| BucketUnit::Hour.key(ts),
+                |ts| now.signed_duration_since(*ts) < Duration::hours(24),
+                *hourly,
+                &mut keep,
+            );
+            keep_one_per_bucket(
+                sorted,
+                |ts| BucketUnit::Day.key(ts),
+                |ts| now.signed_duration_since(*ts) < Duration::days(7),
+                *daily,
+                &mut keep,
+            );
+            keep_one_per_bucket(
+                sorted,
+                |ts| BucketUnit::Week.key(ts),
+                |ts| now.signed_duration_since(*ts) < Duration::weeks(4),
+                *weekly,
+                &mut keep,
+            );
+            keep_one_per_bucket(
+                sorted,
+                |ts| BucketUnit::Month.key(ts),
+                |_| true,
+                *monthly,
+                &mut keep,
+            );
+        }
+    }
+    keep
+}
+
+/// Keep the newest entry in each of the most recent `count` distinct buckets
+/// (among those matching `eligible`). `sorted` must be newest-first.
+fn keep_one_per_bucket<B, E>(
+    sorted: &[DateTime<Utc>],
+    bucket: B,
+    eligible: E,
+    count: u32,
+    keep: &mut HashSet<usize>,
+) where
+    B: Fn(&DateTime<Utc>) -> i64,
+    E: Fn(&DateTime<Utc>) -> bool,
+{
+    if count == 0 {
+        return;
+    }
+    let mut seen: HashSet<i64> = HashSet::new();
+    for (i, ts) in sorted.iter().enumerate() {
+        if !eligible(ts) {
+            continue;
+        }
+        let key = bucket(ts);
+        if seen.contains(&key) {
+            continue; // an already-kept bucket keeps only its newest
+        }
+        if seen.len() as u32 >= count {
+            break; // have the `count` most-recent buckets already (newest-first)
+        }
+        seen.insert(key);
+        keep.insert(i);
+    }
+}
+
+/// Whether `candidate` demonstrably belongs to a *different* project that still
+/// exists on disk.
+///
+/// `Work.unique_id` identifies a project, not a file, and nothing re-mints it:
+/// `save_as` carries it into the copy (and `verify_backup_at` positively asserts
+/// a backup shares it), so duplicating a `.skrib` — in the app or in a file
+/// manager — yields two live bundles with one uid. Both back up, both scan the
+/// same destination, and before this each swept the other's history away.
+///
+/// The test is deliberately asymmetric, because the two ways to be wrong are not
+/// equally bad. Deleting someone's only copy of a chapter is unrecoverable;
+/// keeping a backup that could have been pruned costs disk. So a candidate is
+/// spared **only** on positive evidence — its recorded origin names a path that
+/// is not this project and that is still a readable bundle today. A project that
+/// merely *moved* leaves a `backup_of` pointing at a path that no longer exists,
+/// which is not evidence of anything and prunes as it always did.
+fn belongs_to_another_live_project(candidate: &BackupCandidate, current_path: &str) -> bool {
+    let Some(origin) = candidate.backup_of.as_deref() else {
+        // Written before the field existed. No evidence either way.
+        return false;
+    };
+    if origin.is_empty() || same_file(origin, current_path) {
+        return false;
+    }
+    // A bundle is a zip file or a folder holding `project.skrib`; anything else
+    // at that path is not a project and tells us nothing.
+    let p = Path::new(origin);
+    p.is_file() || (p.is_dir() && p.join(crate::shape::MANIFEST_NAME).is_file())
+}
+
+/// Compare two paths as the filesystem sees them, falling back to a textual
+/// compare when either cannot be canonicalised (it may not exist).
+fn same_file(a: &str, b: &str) -> bool {
+    if a == b {
+        return true;
+    }
+    match (std::fs::canonicalize(a), std::fs::canonicalize(b)) {
+        (Ok(x), Ok(y)) => x == y,
+        _ => false,
+    }
+}
+
+/// Scan `dir`, plan deletions, and delete — best-effort: a failed delete is
+/// collected, never panics, and never aborts the rest of the sweep.
+///
+/// `protected` holds paths that must never be deleted (in practice: the backups
+/// this very run just wrote). See [`plan_deletions`] for why identity, not
+/// timestamp, is what protects them.
+pub fn apply_retention(
+    dir: &Path,
+    current_unique_id: &str,
+    current_path_fallback: &str,
+    policy: &RetentionPolicy,
+    min_keep: u32,
+    protected: &[PathBuf],
+) -> Result<RetentionReport> {
+    let mut candidates = scan_destination(dir, current_unique_id, current_path_fallback)?;
+    // Drop anything that demonstrably belongs to another project sharing this
+    // uid *before* planning, not after: a foreign backup left in the candidate
+    // set would otherwise occupy one of the policy's buckets and push a real
+    // backup of this project over the edge.
+    candidates.retain(|c| !belongs_to_another_live_project(c, current_path_fallback));
+    let to_delete = plan_deletions(&candidates, policy, min_keep, protected, Utc::now());
+
+    let mut report = RetentionReport::default();
+    for p in to_delete {
+        let result = if p.is_dir() {
+            std::fs::remove_dir_all(&p)
+        } else {
+            std::fs::remove_file(&p)
+        };
+        match result {
+            Ok(()) => report.deleted.push(p),
+            Err(e) => report.delete_errors.push((p, e.to_string())),
+        }
+    }
+    Ok(report)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::bundle::{FORMAT_VERSION, ProjectManifest, ShapeTag, WorkFile};
+    use std::io::Write;
+
+    fn cand(path: &str, ts: &str) -> BackupCandidate {
+        BackupCandidate {
+            path: PathBuf::from(path),
+            timestamp: DateTime::parse_from_rfc3339(ts)
+                .unwrap()
+                .with_timezone(&Utc),
+            work_unique_id: "uid".into(),
+            backup_of: None,
+        }
+    }
+
+    fn now() -> DateTime<Utc> {
+        DateTime::parse_from_rfc3339("2026-06-15T12:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc)
+    }
+
+    #[test]
+    fn keep_last_n_deletes_the_rest() {
+        let c = vec![
+            cand("/b/a-20260615-100000.skrib", "2026-06-15T10:00:00Z"),
+            cand("/b/a-20260614-100000.skrib", "2026-06-14T10:00:00Z"),
+            cand("/b/a-20260613-100000.skrib", "2026-06-13T10:00:00Z"),
+            cand("/b/a-20260612-100000.skrib", "2026-06-12T10:00:00Z"),
+        ];
+        let del = plan_deletions(&c, &RetentionPolicy::KeepLastN { n: 2 }, 0, &[], now());
+        assert_eq!(
+            del,
+            vec![
+                PathBuf::from("/b/a-20260613-100000.skrib"),
+                PathBuf::from("/b/a-20260612-100000.skrib"),
+            ]
+        );
+    }
+
+    #[test]
+    fn min_keep_floor_overrides_a_smaller_policy() {
+        let c = vec![
+            cand("/b/a-20260615-100000.skrib", "2026-06-15T10:00:00Z"),
+            cand("/b/a-20260614-100000.skrib", "2026-06-14T10:00:00Z"),
+            cand("/b/a-20260613-100000.skrib", "2026-06-13T10:00:00Z"),
+        ];
+        // Policy says keep 1, floor says keep 3 → nothing deleted.
+        let del = plan_deletions(&c, &RetentionPolicy::KeepLastN { n: 1 }, 3, &[], now());
+        assert!(del.is_empty());
+    }
+
+    // ── the newest backup always survives, whatever the policy says ──────────
+    //
+    // Every one of these configurations used to return *every* candidate for
+    // deletion: nothing was ever inserted into `keep`, so a project was left with
+    // zero backups seconds after a "backup complete" toast.
+
+    fn three() -> Vec<BackupCandidate> {
+        vec![
+            cand("/b/a-20260615-100000.skrib", "2026-06-15T10:00:00Z"),
+            cand("/b/a-20260614-100000.skrib", "2026-06-14T10:00:00Z"),
+            cand("/b/a-20260613-100000.skrib", "2026-06-13T10:00:00Z"),
+        ]
+    }
+
+    fn newest() -> PathBuf {
+        PathBuf::from("/b/a-20260615-100000.skrib")
+    }
+
+    #[test]
+    fn all_zero_gfs_tiers_still_keep_the_newest() {
+        let policy = RetentionPolicy::Gfs {
+            hourly: 0,
+            daily: 0,
+            weekly: 0,
+            monthly: 0,
+        };
+        let del = plan_deletions(&three(), &policy, 0, &[], now());
+        assert!(!del.contains(&newest()), "the newest backup must survive");
+        assert_eq!(del.len(), 2, "the two older ones may go");
+    }
+
+    #[test]
+    fn keep_last_zero_still_keeps_the_newest() {
+        let del = plan_deletions(
+            &three(),
+            &RetentionPolicy::KeepLastN { n: 0 },
+            0,
+            &[],
+            now(),
+        );
+        assert!(!del.contains(&newest()));
+        assert_eq!(del.len(), 2);
+    }
+
+    #[test]
+    fn an_empty_candidate_set_deletes_nothing() {
+        let policy = RetentionPolicy::Gfs {
+            hourly: 0,
+            daily: 0,
+            weekly: 0,
+            monthly: 0,
+        };
+        assert!(plan_deletions(&[], &policy, 0, &[], now()).is_empty());
+    }
+
+    #[test]
+    fn a_protected_path_survives_a_backwards_clock() {
+        // The backup we just wrote (`fresh`) carries an *older* stamp than its
+        // predecessors — exactly what a backwards clock correction produces. It
+        // therefore sorts as the oldest, so neither the newest-first rule nor
+        // `min_keep` (which reads that same corrupted order) would save it.
+        // Only protecting it by identity does.
+        let fresh = PathBuf::from("/b/a-20260101-000000.skrib");
+        let mut c = three();
+        c.push(cand("/b/a-20260101-000000.skrib", "2026-01-01T00:00:00Z"));
+
+        let unprotected = plan_deletions(&c, &RetentionPolicy::KeepLastN { n: 1 }, 0, &[], now());
+        assert!(
+            unprotected.contains(&fresh),
+            "precondition: the clock-skewed backup is otherwise the first to die"
+        );
+
+        let protected = plan_deletions(
+            &c,
+            &RetentionPolicy::KeepLastN { n: 1 },
+            0,
+            std::slice::from_ref(&fresh),
+            now(),
+        );
+        assert!(
+            !protected.contains(&fresh),
+            "a backup this run just wrote is never deleted, whatever its timestamp"
+        );
+    }
+
+    #[test]
+    fn gfs_thins_older_buckets() {
+        // Three today (same day, different hours), plus older days/weeks/months.
+        let c = vec![
+            cand("/b/a-20260615-110000.skrib", "2026-06-15T11:00:00Z"),
+            cand("/b/a-20260615-100000.skrib", "2026-06-15T10:00:00Z"),
+            cand("/b/a-20260615-090000.skrib", "2026-06-15T09:00:00Z"),
+            cand("/b/a-20260610-090000.skrib", "2026-06-10T09:00:00Z"), // this week, older day
+            cand("/b/a-20260501-090000.skrib", "2026-05-01T09:00:00Z"), // last month
+            cand("/b/a-20260401-090000.skrib", "2026-04-01T09:00:00Z"), // two months ago
+        ];
+        let policy = RetentionPolicy::Gfs {
+            hourly: 2,
+            daily: 3,
+            weekly: 2,
+            monthly: 2,
+        };
+        let del = plan_deletions(&c, &policy, 0, &[], now());
+        // hourly (2 most-recent hour-buckets today) keeps 11:00 & 10:00; today's 09:00
+        // falls to the daily tier but that day-bucket is already covered by 11:00, so
+        // 09:00 is dropped. daily also keeps 06-10. weekly adds nothing new. monthly=2
+        // keeps the two most-recent months (June via 11:00, May via 05-01), so April's
+        // 04-01 is dropped. Net deletions: today's 09:00 and 04-01.
+        assert!(del.contains(&PathBuf::from("/b/a-20260615-090000.skrib")));
+        assert!(del.contains(&PathBuf::from("/b/a-20260401-090000.skrib")));
+        assert_eq!(del.len(), 2);
+    }
+
+    // --- two live projects sharing one `unique_id` ---
+    //
+    // `save_as` carries the uid into the copy and `verify_backup_at` asserts a
+    // backup shares it, so "one uid, one project" is a property nothing enforces
+    // — a file-manager duplicate is enough to break it. Before the guard, each
+    // project's sweep pruned the other's history.
+
+    /// Build a minimal live bundle at `path` so `belongs_to_another_live_project`
+    /// can see that the other project still exists.
+    fn live_project_at(path: &Path) {
+        std::fs::create_dir_all(path).unwrap();
+        std::fs::write(
+            path.join(crate::shape::MANIFEST_NAME),
+            b"(format_version: 14)",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn a_sweep_never_deletes_a_backup_whose_origin_is_another_live_project() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("backups");
+        std::fs::create_dir_all(&dest).unwrap();
+
+        let mine = tmp.path().join("Mine");
+        let theirs = tmp.path().join("Theirs");
+        live_project_at(&mine);
+        live_project_at(&theirs);
+
+        // Four backups under one uid: two from each project, theirs older.
+        for (stamp, origin) in [
+            ("2026-06-12T10:00:00Z", &theirs),
+            ("2026-06-13T10:00:00Z", &theirs),
+            ("2026-06-14T10:00:00Z", &mine),
+            ("2026-06-15T10:00:00Z", &mine),
+        ] {
+            let name = format!("b-{}.skrib", stamp.replace([':', '-'], ""));
+            write_backup_zip(
+                &dest,
+                &name,
+                BundleKind::Backup,
+                "shared-uid",
+                Some(&origin.to_string_lossy()),
+                stamp,
+            );
+        }
+
+        let report = apply_retention(
+            &dest,
+            "shared-uid",
+            &mine.to_string_lossy(),
+            &RetentionPolicy::KeepLastN { n: 1 },
+            0,
+            &[],
+        )
+        .unwrap();
+
+        for deleted in &report.deleted {
+            let text = deleted.to_string_lossy();
+            assert!(
+                !text.contains("20260612") && !text.contains("20260613"),
+                "the other project's backup was deleted: {text}"
+            );
+        }
+        // And the sweep still did its job on this project's own history.
+        assert_eq!(report.deleted.len(), 1, "{:?}", report.deleted);
+    }
+
+    /// A project that merely moved leaves a `backup_of` pointing at a path that
+    /// no longer exists. That is not evidence of a second project, and pruning
+    /// must carry on — otherwise a single rename would make backups accumulate
+    /// for ever.
+    #[test]
+    fn a_moved_project_still_prunes_its_own_history() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("backups");
+        std::fs::create_dir_all(&dest).unwrap();
+
+        let now_at = tmp.path().join("Novel-renamed");
+        live_project_at(&now_at);
+        let gone = tmp.path().join("Novel-old");
+
+        for stamp in [
+            "2026-06-12T10:00:00Z",
+            "2026-06-13T10:00:00Z",
+            "2026-06-14T10:00:00Z",
+        ] {
+            let name = format!("b-{}.skrib", stamp.replace([':', '-'], ""));
+            write_backup_zip(
+                &dest,
+                &name,
+                BundleKind::Backup,
+                "uid",
+                Some(&gone.to_string_lossy()),
+                stamp,
+            );
+        }
+
+        let report = apply_retention(
+            &dest,
+            "uid",
+            &now_at.to_string_lossy(),
+            &RetentionPolicy::KeepLastN { n: 1 },
+            0,
+            &[],
+        )
+        .unwrap();
+        assert_eq!(report.deleted.len(), 2, "{:?}", report.deleted);
+    }
+
+    // --- scan_destination cross-project isolation (real zips with a manifest) ---
+
+    fn write_backup_zip(
+        dir: &Path,
+        name: &str,
+        kind: BundleKind,
+        uid: &str,
+        backup_of: Option<&str>,
+        stamp: &str,
+    ) -> PathBuf {
+        let manifest = ProjectManifest {
+            format_version: FORMAT_VERSION,
+            format_min_read_version: None,
+            shape: ShapeTag::Zip,
+            work: WorkFile {
+                goal_unit: Default::default(),
+                file_id: 1,
+                created_at: String::new(),
+                updated_at: String::new(),
+                title: "T".into(),
+                author_name: String::new(),
+                dict_language: Vec::new(),
+                tag_ids: vec![],
+                dict_word_ids: vec![],
+                unique_id: uid.into(),
+                chapter_flat: false,
+                text_replacement_rule_ids: vec![],
+                custom_replacement_rules_enabled: false,
+                number_chapters: true,
+                part_resets_chapter: false,
+                smart_punctuation: None,
+            },
+            binder_order: vec![],
+            kind,
+            backup_of: backup_of.map(String::from),
+            backup_created_at: Some(stamp.to_string()),
+        };
+        let ron = ron::ser::to_string(&manifest).unwrap();
+        let path = dir.join(name);
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zw = zip::ZipWriter::new(file);
+        zw.start_file("project.skrib", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        zw.write_all(ron.as_bytes()).unwrap();
+        zw.finish().unwrap();
+        path
+    }
+
+    #[test]
+    fn scan_isolates_by_unique_id_in_a_shared_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        // Two backups for project A, one for project B (same stem "novel"),
+        // plus a regular (non-backup) file that shares the naming.
+        write_backup_zip(
+            dir.path(),
+            "novel-20260615-100000.skrib",
+            BundleKind::Backup,
+            "A",
+            Some("/x/novel.skrib"),
+            "2026-06-15T10:00:00Z",
+        );
+        write_backup_zip(
+            dir.path(),
+            "novel-20260614-100000.skrib",
+            BundleKind::Backup,
+            "A",
+            Some("/x/novel.skrib"),
+            "2026-06-14T10:00:00Z",
+        );
+        write_backup_zip(
+            dir.path(),
+            "novel-20260613-100000.skrib",
+            BundleKind::Backup,
+            "B",
+            Some("/y/novel.skrib"),
+            "2026-06-13T10:00:00Z",
+        );
+        write_backup_zip(
+            dir.path(),
+            "novel-20260612-100000.skrib",
+            BundleKind::Regular,
+            "A",
+            None,
+            "2026-06-12T10:00:00Z",
+        );
+
+        let found = scan_destination(dir.path(), "A", "/x/novel.skrib").unwrap();
+        assert_eq!(found.len(), 2, "only project A's two backups");
+        assert!(found.iter().all(|c| c.work_unique_id == "A"));
+
+        // keep-last-1 deletes the older A backup, never B's or the regular file.
+        let del = plan_deletions(&found, &RetentionPolicy::KeepLastN { n: 1 }, 0, &[], now());
+        assert_eq!(del, vec![dir.path().join("novel-20260614-100000.skrib")]);
+    }
+}

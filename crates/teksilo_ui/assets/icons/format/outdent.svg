@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Outdent — a line pulled back left past an arrow -->
+  <path d="M3 4 H13"/>
+  <path d="M3 12 H13"/>
+  <path d="M8 8 H13"/>
+  <path d="M6.4 8 H3.2"/>
+  <path d="M4.8 6.6 L3.3 8 L4.8 9.4"/>
+</svg>

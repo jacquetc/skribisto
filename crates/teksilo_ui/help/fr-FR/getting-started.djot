@@ -1,0 +1,64 @@
+Un projet Skribisto contient tout ce que vous écrivez : la structure du manuscrit, le texte et
+le synopsis de chaque scène, et les paramètres propres au projet. Le Lanceur ouvre un projet,
+et en commence un nouveau.
+
+## Le Lanceur
+
+La barre latérale comporte quatre sections : *Œuvres*, *Exemples*, *Apprendre* et *À propos*.
+En haut de la section *Œuvres* :
+
+- *Rechercher des œuvres* filtre la liste au fur et à mesure que vous tapez.
+- *Ouvrir* demande un fichier `.skrib` existant.
+- *Créer depuis…* démarre un projet à partir de ce que vous avez déjà : *Documents (Markdown,
+  Word, ODT)…*, *Plume Creator (.plume)…* ou *Manuskript (.msk)…*. Voir
+  [l’importation de documents](:help-import-documents) et
+  [l’importation de projets](:help-import-projects).
+- *Nouvelle œuvre* ouvre l’assistant Nouvelle œuvre.
+
+En dessous, *Œuvres récentes* liste les projets que vous avez ouverts récemment.
+
+## Commencer un nouveau projet
+
+L’assistant compte trois étapes. *Suivant* et *Précédent* passent de l’une à l’autre ;
+*Créer l’œuvre* crée le projet et l’ouvre.
+
+- *Détails* : le *Nom de l’œuvre*, un *Auteur* facultatif, un *Format* et l’*Emplacement* où
+  enregistrer. *Fichier unique* est une archive `.skrib`, *Dossier* un dossier contenant chaque
+  texte et chaque ressource.
+- *Langue et structure* : la *Langue par défaut* des nouveaux textes et de la correction
+  orthographique, et *Compter en* mots ou en caractères. La *Structure du livre* pose les pages
+  liminaires et les annexes.
+- *Modèle* : *Aucun*, *Roman vide*, *Roman court*, *Roman*, *Roman en parties* ou *Carnet*, du
+  classeur vide jusqu’à trois parties et vingt-quatre chapitres. *Chapitres à plat* fait de
+  chaque chapitre un texte unique, sans scène en dessous.
+
+## Exemples
+
+*Exemples* liste les projets d’exemple fournis avec Skribisto.
+
+## Le panneau Classeur
+
+Le panneau *Classeur* se trouve à gauche de la fenêtre et affiche le projet sous forme
+d’arborescence : parties, chapitres, scènes et notes. Appuyez sur `F9`, ou utilisez
+*Affichage ▸ Plan*, pour l’afficher ou le masquer.
+
+- Cliquez sur un élément, ou appuyez sur `Entrée` quand il est en surbrillance, pour l’ouvrir
+  dans l’éditeur.
+- Appuyez sur `Ctrl+Entrée` pour l’ouvrir dans l’autre volet d’édition.
+- Faites un clic droit sur un élément pour *Renommer*, *Dupliquer*, *Convertir en* et
+  *Mettre à la corbeille*.
+
+## Texte et synopsis
+
+Chaque scène et chaque note contient deux textes : son texte principal et son *Synopsis*, un
+court résumé gardé à côté. Les deux sont visibles pendant que vous écrivez, sauf si vous
+masquez le synopsis dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*.
+
+## Ajouter des éléments
+
+L’en-tête du panneau *Classeur* porte un bouton de création qui nomme le type recommandé là où
+vous êtes, « ＋ Scène » lorsqu’une scène est sélectionnée. Son menu déroulant liste tout ce que
+vous pourriez ajouter d’autre : chapitres, notes, dossiers et le reste.
+
+Cela suffit pour commencer à écrire. Pour savoir comment les éléments d’un livre s’articulent,
+voir [le modèle d’écriture](:help-writing-model).

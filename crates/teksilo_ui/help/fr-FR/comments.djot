@@ -1,0 +1,85 @@
+Un commentaire est une note dans la marge, attachée à une expression, une phrase ou tout un
+paragraphe. Il suit les mots pendant que vous continuez à écrire.
+
+## Ajouter un commentaire
+
+Depuis le texte que vous écrivez :
+
+- Sélectionnez les mots à commenter et appuyez sur `Ctrl+Alt+M`.
+- Placez le curseur dans un paragraphe et appuyez sur `Ctrl+Alt+Maj+M` pour commenter tout le
+  paragraphe.
+- Faites un clic droit dans le texte pour *Commenter ce paragraphe*. *Ajouter un commentaire*
+  s’y ajoute dès que vous avez sélectionné quelque chose.
+
+Les deux mêmes commandes sont dans le menu *Format*.
+
+Une nouvelle fiche s’ouvre dans la marge, avec une zone vide et le curseur déjà dedans.
+
+## Signer vos commentaires
+
+Si aucun nom n’est défini pour vous sur cet ordinateur, un message signale que vos commentaires
+ne sont pas signés. Son bouton *Définir votre nom* ouvre *Paramètres ▸ Utilisateur*.
+
+## Répondre, résoudre, supprimer
+
+Chaque fiche dans la marge porte un bouton en chevron. Derrière :
+
+- *Répondre* ajoute un tour au fil.
+- *Résoudre* marque le point comme réglé. La fiche quitte la marge et le commentaire reste dans
+  les panneaux.
+- *Supprimer* efface un commentaire, *Supprimer la réponse* une seule réponse, et *Supprimer
+  tous les commentaires ici* tout un lot d’un coup. Un bref message suit, avec un bouton
+  *Annuler*.
+
+Un clic droit sur une entrée de l’un des panneaux permet d’agir dessus sur place. C’est ainsi
+que vous rouvrez un commentaire résolu : sa fiche a quitté la marge.
+
+Chaque commentaire et chaque réponse se modifie sur place. Le gras et l’italique sont dans le
+menu contextuel de la zone où vous tapez.
+
+## Où apparaissent les commentaires
+
+Les mêmes fils apparaissent à plusieurs endroits :
+
+- Dans la marge, à côté du texte que vous écrivez. Une expression commentée est teintée, un
+  commentaire de paragraphe reçoit un crochet, et un trait pointillé relie chaque marque à sa
+  fiche.
+- Dans le panneau *Commentaires*, à gauche de la fenêtre, qui liste les commentaires du projet.
+- Dans le panneau *Ce document*, à droite, qui liste les commentaires de l’élément que vous
+  modifiez.
+
+Cliquer sur un commentaire dans l’un des panneaux ouvre son élément. Si le commentaire a encore
+son texte, le curseur se pose sur les mots concernés. *Outils ▸ Commentaires* affiche ou masque
+les marques et la marge.
+
+## Filtrer et trier
+
+Les deux panneaux partagent un seul jeu de filtres : *Tous*, *Ouverts*, *Résolus* et
+*Orphelins*. Changez le filtre dans l’un, l’autre suit.
+
+À côté, un bouton fait défiler l’ordre, partagé de la même façon : *Dans l’ordre du document*,
+*Les plus récents d’abord*, *Groupés par lecteur*.
+
+## Les notes de plusieurs lecteurs
+
+*Groupés par lecteur* sert à un manuscrit revenu de plusieurs personnes. Le groupement réunit
+les notes de chaque lecteur, celles de chacun restant dans l’ordre du document, avec le nom sur
+la gauche.
+
+Dans l’un ou l’autre panneau, un commentaire indique aussi combien de lecteurs ont commenté le
+même passage (« 3 lecteurs ») quand il y en a plus d’un.
+
+## Quand un commentaire perd son texte
+
+Un commentaire mémorise les mots auxquels il était attaché, pas une position dans le fichier.
+
+Si ces mots sont supprimés ou réécrits au point d’être méconnaissables, le commentaire est
+marqué *Texte introuvable* au lieu d’être attaché à la mauvaise phrase. Le filtre *Orphelins*
+les retrouve.
+
+## Envoyer les commentaires et les récupérer
+
+Les fichiers Word et LibreOffice emportent vos commentaires et ramènent ceux de votre lecteur.
+Le style d’export propose pour cela *Inclure les commentaires* et *Inclure les marqueurs
+d’aller-retour*. Voir [l’aller-retour](:help-round-trip) pour envoyer un manuscrit et lire ce
+qui revient.

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Appearance & Behaviour — the light/dark contrast disc. A sun with detached
+       rays (the previous artwork) is the same mistake `activities/settings.svg`
+       documents for the cog: a 1.6-long ray under a 1.3 round cap is a *dot*, and
+       eight of them around a ring turn to mush at 16px. Two shapes, both larger
+       than the stroke, survive the size instead. -->
+  <circle cx="8" cy="8" r="5.6"/>
+  <path d="M8 2.4 a5.6 5.6 0 0 1 0 11.2 z" fill="currentColor" stroke="none"/>
+</svg>

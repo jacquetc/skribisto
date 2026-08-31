@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <!-- Needs attention: a filled triangle with a knocked-out exclamation. ISO 7010 fixes the
+       equilateral triangle as WARNING, so this is the one rung with a genuinely
+       cross-cultural silhouette — and the only non-round shape in the set, which is what
+       makes it pop out of a column of rings at a glance.
+       ONE path with `fill-rule="evenodd"`, never a light shape laid on top: teksilo renders
+       an icon as an ALPHA MASK and tints it, so anything painted over the triangle would
+       simply join the mask and the "knockout" would vanish. The holes have to be real. -->
+  <path fill-rule="evenodd" clip-rule="evenodd" fill="currentColor"
+        d="M8 1.6 L15 14.4 H1 Z
+           M7.5 5.9 H8.5 V10.1 H7.5 Z
+           M8 10.85 A0.8 0.8 0 1 1 8 12.45 A0.8 0.8 0 1 1 8 10.85 Z"/>
+</svg>

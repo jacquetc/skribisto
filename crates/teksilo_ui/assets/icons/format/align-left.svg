@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Align left — text lines flush left, ragged right -->
+  <path d="M3 3.5 H13"/>
+  <path d="M3 6.5 H10"/>
+  <path d="M3 9.5 H13"/>
+  <path d="M3 12.5 H8"/>
+</svg>

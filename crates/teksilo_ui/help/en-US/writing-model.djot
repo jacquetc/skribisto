@@ -1,0 +1,62 @@
+## The binder organizes, the type decides structure
+
+The binder, on the left of the window, arranges your project the way that suits you. It
+does not decide what the compiled book looks like. That job belongs to each item's *type*.
+
+Every item that carries prose has a main text and a synopsis side by side: plan in one
+pane, draft in the other. Books, parts, note folders and plain folders carry a synopsis
+but no main text.
+
+## The types you can create
+
+Right-click an item in the binder and choose *Add*.
+
+- *Book*: as layered as you like, from a few scenes to nested parts and chapters.
+- *Part*: gathers chapters under one heading.
+- *Chapter*: runs until the next chapter, the next part, or the end of the book.
+- *Scene*: your writing, with its own synopsis.
+- *Note*: text and a synopsis, for research, asides or reminders.
+- *Story bible entry…*: a note for a character, a place or an object, created with its
+  tags and aliases already filled in.
+- *Note folder*: a note that holds other notes.
+- *Folder*: a plain container with a synopsis and no prose of its own.
+
+## Two shapes of chapter
+
+- A *Chapter folder* holds scenes underneath it in the binder.
+- A *Flat chapter* is a single item you write straight into, with no scenes below.
+
+To choose the shape *new* chapters take, open *Settings ▸ Work: <project> ▸ Structure* and
+set *Flat chapters*. On means single items, off means folders.
+
+## Changing an item's type
+
+Right-click the item in the binder and open *Convert to*.
+
+- A plain folder, a chapter folder, a part, a book or a note folder into any other of
+  those five.
+- A chapter folder into a flat chapter, and back.
+- A scene into a flat chapter or a note, and back.
+
+A conversion keeps the title and the prose wherever the new type has room.
+
+- A folder must be empty before it can become a single item. Move or trash its contents
+  first.
+- A conversion with nowhere to put existing text is refused, and says what would be lost.
+
+## Where one book ends
+
+A project can hold several books, one after another in the same binder. A book runs from
+where it starts until the first of three things: an *End of Book* item, the start of the
+next book, or the edge of its binder.
+
+## Paratext: in the book, not in the story
+
+A *Paratext* belongs to the book but not to its story: a preface, a dedication, an
+afterword, a colophon. It exports where you put it, and never counts towards the word
+count.
+
+A *Paratext folder* keeps paratexts clear of the rest of the binder.
+
+New to Skribisto? [Getting started](:help-getting-started) covers opening and saving a
+project first.

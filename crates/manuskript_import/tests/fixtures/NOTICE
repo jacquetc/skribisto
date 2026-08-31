@@ -1,0 +1,65 @@
+MANUSKRIPT IMPORT FIXTURES — RIGHTS AND PROVENANCE
+==================================================
+
+Skribisto's own source code is licensed GPL-3.0-only (see COPYING at the repository
+root). That licence governs the application. This note is about the fixture projects
+in this directory and where their content comes from.
+
+
+What these files are
+--------------------
+
+Manuskript projects, written by `generate.py` beside them, in the shape Manuskript's
+own save code produces. They exist so this crate's tests can read a realistic
+project tree: the modern folder layout, the single-file zip, and a zip written with
+Windows path separators.
+
+They are NOT files produced by Manuskript, and no file from the Manuskript project
+is included here.
+
+
+Why not a real Manuskript project
+---------------------------------
+
+Manuskript is free software under the GNU General Public License, version 3 or
+later. Its shipped sample projects are part of that work, and FernTech does not hold
+their copyright.
+
+Everything in this repository has to be relicensable by FernTech: a commercial
+edition links these crates as a path dependency, which is lawful only because
+FernTech owns, or has been assigned under the CLA, every line here. Third-party
+GPL material would break that, even material a test only reads. So the fixtures are
+written rather than borrowed.
+
+The importer itself was likewise written from Manuskript's file format as observed
+in its source, not adapted from any existing reader of it.
+
+Tests can still be run against genuine Manuskript projects, and should be. Point
+SKRIBISTO_MANUSKRIPT_CORPUS at a Manuskript checkout and `tests/corpus.rs` reads
+whatever it finds there. Nothing is copied into this tree by doing so.
+
+
+The content inside the fixtures
+-------------------------------
+
+Chapter titles, synopses, characters and places are taken from the bundled example
+`resources/examples/le_tour_du_monde_en_80_jours/`, whose own NOTICE covers it in
+full. In short:
+
+  Work:       LE TOUR DU MONDE EN QUATRE-VINGTS JOURS
+  Author:     Jules Verne (8 February 1828 - 24 March 1905)
+  Published:  1873, J. Hetzel et Cie, Paris
+  Status:     public domain worldwide
+
+The editorial text around it - the synopses, the story bible entries, the labels and
+statuses - was written by the Skribisto project and is covered by the repository's
+own licence.
+
+
+Regenerating
+------------
+
+    python3 crates/manuskript_import/tests/fixtures/generate.py
+
+Run from the repository root. The output is committed so a checkout can run the
+tests without Python.

@@ -1,0 +1,3384 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Round-trip, validation, and diff-minimal tests for the `.skrib` serializer.
+
+use super::bundle::{BinderWithItems, CommentWithReplies, ItemWithContents};
+use super::*;
+use chrono::{DateTime, Utc};
+use common::entities::{
+    Asset, Binder, BinderItem, BinderItemRole, BinderItemSubRole, BinderTag, Comment,
+    CommentAnchorKind, CommentOrphanReason, CommentReply, Content, ContentRole, DictWord, GoalUnit,
+    MilestoneKind, TrashInfo, Work,
+};
+use skribisto_model::{allowed_content, validate_item};
+use std::collections::BTreeMap;
+use std::fs;
+use std::path::Path;
+
+fn ts() -> DateTime<Utc> {
+    DateTime::from_timestamp(1_700_000_000, 0).unwrap()
+}
+
+/// Assert a write→read cycle preserved everything, allowing for the **one** field the
+/// writer legitimately computes rather than copies.
+///
+/// `folder_io::write_folder` stamps `format_min_read_version` from the bundle's real
+/// content at the manifest commit (see [`crate::version_gate`]), which is why neither
+/// producer sets it — so a bundle handed in with `None` reads back carrying its actual
+/// floor. That difference is the feature working, not loss, so this asserts the stamp is
+/// right and then compares everything else exactly.
+fn assert_round_trip(input: &WorkBundle, read: &WorkBundle) {
+    assert_eq!(
+        read.manifest.format_min_read_version,
+        Some(crate::version_gate::compute_min_read_version(input)),
+        "the writer must stamp the content-derived read floor"
+    );
+    let mut normalized = read.clone();
+    normalized.manifest.format_min_read_version = input.manifest.format_min_read_version;
+    assert_eq!(
+        input, &normalized,
+        "everything but the computed floor must round-trip unchanged"
+    );
+}
+
+/// Every valid (role, sub_role) combination in the constraint matrix.
+fn all_combinations() -> Vec<(BinderItemRole, BinderItemSubRole)> {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    vec![
+        (Item, BookBegin),
+        (Item, BookEnd),
+        (Item, Scene),
+        (Item, ChapterScene),
+        (Item, Part),
+        (Item, Note),
+        (Item, Text),
+        (Folder, None),
+        (Folder, ChapterScene),
+        (Folder, Part),
+        (Folder, Book),
+        (Folder, Note),
+    ]
+}
+
+fn prose_text(role: &ContentRole) -> String {
+    match role {
+        ContentRole::SceneText => "Scene prose with *emphasis* and ^super^.".to_string(),
+        ContentRole::NoteText => "A note about the lighthouse keeper.".to_string(),
+        ContentRole::SynopsisText => "They arrive; the storm is coming.".to_string(),
+        ContentRole::BookTitle => "The Lighthouse".to_string(),
+        ContentRole::BookSubtitle => "A Novel".to_string(),
+        ContentRole::PartTitle => "Part One — Arrival".to_string(),
+        ContentRole::ChapterTitle => "Chapter One".to_string(),
+        ContentRole::ParatextText => {
+            "Every place in this book is real. Every person in it is not.".to_string()
+        }
+        // Two quotations in one row, separated by a genuine blank line — a `>`-only
+        // continuation would fold them into a single blockquote. The round-trip test
+        // is what pins that they stay two.
+        ContentRole::EpigraphText => {
+            "> The sea is not a place; it is a going.\n>\n> {alignment=right}\n> — Anon., *Tidewater*\n\n> Salt is the only honest preservative.\n>\n> {alignment=right}\n> — M. Ferrand"
+                .to_string()
+        }
+    }
+}
+
+/// A two-rung ladder, deliberately spanning two different categories so a round trip
+/// proves the enum survives too, not just the strings.
+///
+/// A helper rather than part of `sample_inputs`, because a project that HAS a ladder floors
+/// at read version 14 and most tests here assert the lower floors a project without one
+/// keeps. `a_status_ladder_round_trips_through_the_bundle` opts in explicitly.
+fn sample_statuses() -> Vec<common::entities::BinderStatus> {
+    let now = ts();
+    vec![
+        common::entities::BinderStatus {
+            id: 90,
+            uid: common::uid::fixture_uid(90),
+            created_at: now,
+            updated_at: now,
+            name: "Draft".into(),
+            category: common::entities::StatusCategory::Drafting,
+            details: "Written once, not yet reread.".into(),
+        },
+        common::entities::BinderStatus {
+            id: 91,
+            uid: common::uid::fixture_uid(91),
+            created_at: now,
+            updated_at: now,
+            name: "Final".into(),
+            category: common::entities::StatusCategory::Final,
+            details: String::new(),
+        },
+    ]
+}
+
+/// Build a fixture covering every combination, with each item carrying exactly
+/// its allowed content roles. `content_id` is bumped to keep ids unique.
+struct SampleInputs {
+    work: Work,
+    tags: Vec<BinderTag>,
+    dict_words: Vec<DictWord>,
+    note_templates: Vec<common::entities::NoteTemplate>,
+    statuses: Vec<common::entities::BinderStatus>,
+    assets: Vec<Asset>,
+    smart_punctuation: common::entities::SmartPunctuation,
+    trash: Vec<TrashInfo>,
+    binders: Vec<BinderWithItems>,
+}
+
+fn sample_inputs() -> SampleInputs {
+    let now = ts();
+    let work = Work {
+        // Deliberately NOT the default: a lossless round trip has to prove it carries the
+        // field, and a fixture stamped `Words` would pass whether or not it did.
+        goal_unit: common::entities::GoalUnit::Characters,
+        id: 1,
+        created_at: now,
+        updated_at: now,
+        title: "My Novel".into(),
+        author_name: "Jane".into(),
+        dict_language: vec!["en-US".to_string()],
+        unique_id: "test-unique-id-abc".into(),
+        chapter_mode: common::entities::ChapterMode::Flat,
+        custom_replacement_rules_enabled: false,
+        number_chapters: true,
+        part_resets_chapter: false,
+        tags: vec![10, 11],
+        dict_words: vec![20, 21],
+        text_replacement_rules: vec![],
+        note_templates: vec![40, 41],
+        // No ladder by default — see `statuses` below for why.
+        statuses: vec![],
+        assets: vec![50, 51],
+        smart_punctuation: 30,
+        binders: vec![100],
+        trash_infos: vec![],
+        paces: vec![],
+        comments: vec![],
+        footnotes: vec![],
+    };
+    // Every field deliberately OFF-default, for the reason spelled out on the
+    // tags below: the round-trip tests compare whole bundles, and a row left at
+    // its derived defaults would compare equal even if the field were dropped
+    // end to end. That is exactly how `chapter_mode` was silently lost.
+    // Two templates, both off-default (starred differs between them, bodies are
+    // non-empty multi-block Djot) for the reason the comment above gives: a row left
+    // at its defaults would compare equal even if the field were dropped end to end.
+    // These ride the whole-bundle round-trip assertions below, which is what makes
+    // "someone forgot the `gather()` fetch" a failing test rather than silent data loss.
+    let note_templates = vec![
+        common::entities::NoteTemplate {
+            id: 40,
+            uid: common::uid::fixture_uid(40),
+            created_at: now,
+            updated_at: now,
+            name: "Character sheet".into(),
+            body: "# Character sheet\n\n## Identity\n\n- Full name:\n- Age:\n".into(),
+            starred: true,
+        },
+        common::entities::NoteTemplate {
+            id: 41,
+            uid: common::uid::fixture_uid(41),
+            created_at: now,
+            updated_at: now,
+            name: "Location".into(),
+            body: "# Location\n\nSensory detail:\n".into(),
+            starred: false,
+        },
+    ];
+    let statuses = Vec::new();
+    let smart_punctuation = common::entities::SmartPunctuation {
+        id: 30,
+        created_at: now,
+        updated_at: now,
+        override_app_default: true,
+        dashes: true,
+        ellipsis: true,
+        quotes: true,
+        quote_style: common::entities::QuoteStyle::Guillemets,
+        pre_punctuation_spacing: true,
+        dialogue_marker: true,
+    };
+    let tags = vec![
+        // Non-default `details`/`discoverable` on purpose: the folder and zip
+        // round-trip tests compare whole bundles, so these two rows are what proves
+        // the new fields actually survive a write/read cycle.
+        BinderTag {
+            id: 10,
+            uid: common::uid::fixture_uid(10),
+            created_at: now,
+            updated_at: now,
+            name: "Important".into(),
+            color: "#f00".into(),
+            details: "Needs a second pass before the beta read".into(),
+            discoverable: false,
+            creates_in: None,
+            note_template: None,
+        },
+        BinderTag {
+            id: 11,
+            uid: common::uid::fixture_uid(11),
+            created_at: now,
+            updated_at: now,
+            name: "Idea".into(),
+            color: "#0f0".into(),
+            details: String::new(),
+            discoverable: true,
+            creates_in: None,
+            note_template: None,
+        },
+    ];
+    let dict_words = vec![
+        DictWord {
+            id: 20,
+            created_at: now,
+            updated_at: now,
+            word: "Skribisto".into(),
+        },
+        DictWord {
+            id: 21,
+            created_at: now,
+            updated_at: now,
+            word: "Teksilo".into(),
+        },
+    ];
+
+    let mut items = Vec::new();
+    let mut content_id = 1000u64;
+    for (i, (role, sub_role)) in all_combinations().into_iter().enumerate() {
+        let item_id = 300 + i as u64;
+        let mut contents = Vec::new();
+        for cr in allowed_content(&role, &sub_role) {
+            contents.push(Content {
+                id: content_id,
+                uid: common::uid::fixture_uid(0),
+                created_at: now,
+                updated_at: now,
+                activated: true,
+                role: cr.clone(),
+                data: prose_text(cr),
+            });
+            content_id += 1;
+        }
+        let item = BinderItem {
+            // Distinct per row: this is inside the `for … enumerate()` above, so a
+            // single literal would give every item the SAME identity.
+            uid: common::uid::fixture_uid(item_id),
+            // No status by default, for the same reason the ladder above is empty.
+            status: None,
+            id: item_id,
+            created_at: now,
+            updated_at: now,
+            title: format!("Item {i}"),
+            sub_title: String::new(),
+            role,
+            sub_role,
+            label: "1st plot point".into(),
+            activated: true,
+            is_favorite: i % 2 == 0,
+            is_exportable: true,
+            exclude_from_numbering: false,
+            indent: (i % 3) as i64,
+            word_count_goal: 1000,
+            char_count_goal: 5000,
+            dict_language: vec!["en-US".to_string()],
+            // One item carries multi-word aliases and the rest carry none, so the
+            // round-trip covers both the populated and the empty case. Multi-word is
+            // the point of `Vec<String>`: a space-separated string could not hold
+            // "Miss Bennet" as one alias.
+            aliases: if i == 0 {
+                vec!["Lizzy".into(), "Miss Bennet".into()]
+            } else {
+                Vec::new()
+            },
+            contents: Vec::new(),
+            references: Vec::new(),
+            point_of_view: Vec::new(),
+            books: Vec::new(),
+            tags: vec![10],
+        };
+        items.push(ItemWithContents { item, contents });
+    }
+    // A cross-reference: first item -> second item.
+    items[0].item.references = vec![301];
+    // ...and a point of view on the same pair, which is a different question
+    // (who appears here vs. whose eyes this is told through) travelling the same road.
+    items[0].item.point_of_view = vec![301];
+    // ...and a Book filing on a *third* item, deliberately a different target than
+    // both relationships above, so a copy-paste slip between any of the three would
+    // show up as cross-contamination rather than passing by coincidence.
+    items[0].item.books = vec![302];
+
+    let binders = vec![BinderWithItems {
+        binder: Binder {
+            uid: common::uid::fixture_uid(2),
+            id: 100,
+            created_at: now,
+            updated_at: now,
+            name: "Manuscript".into(),
+            activated: true,
+            binder_items: Vec::new(),
+        },
+        items,
+    }];
+
+    let trash = vec![
+        TrashInfo {
+            id: 200,
+            created_at: now,
+            updated_at: now,
+            trashed_at: now,
+            origin_binder_id: 100,
+            trashed_binder: Option::None,
+            trashed_binder_item: Some(305),
+        },
+        TrashInfo {
+            id: 201,
+            created_at: now,
+            updated_at: now,
+            trashed_at: now,
+            origin_binder_id: 0,
+            trashed_binder: Some(999),
+            trashed_binder_item: Option::None,
+        },
+    ];
+
+    // Two image rows, matching the ids the `Work` literal above claims. Their
+    // bytes are supplied separately by whichever test needs them — a metadata
+    // row with no blob is exactly the "asset the media directory lost" case the
+    // bundle writer is expected to drop rather than fail on.
+    let assets = vec![
+        Asset {
+            id: 50,
+            created_at: now,
+            updated_at: now,
+            content_hash: "hash-of-cover".into(),
+            file_name: "cover.png".into(),
+            mime_type: "image/png".into(),
+            width: 640,
+            height: 480,
+            byte_size: 12,
+            alt: "the cover".into(),
+            is_cover: false,
+        },
+        Asset {
+            id: 51,
+            created_at: now,
+            updated_at: now,
+            content_hash: "hash-of-map".into(),
+            file_name: "map.jpg".into(),
+            mime_type: "image/jpeg".into(),
+            width: 800,
+            height: 600,
+            byte_size: 9,
+            alt: String::new(),
+            is_cover: false,
+        },
+    ];
+
+    SampleInputs {
+        assets,
+        work,
+        tags,
+        dict_words,
+        note_templates,
+        statuses,
+        smart_punctuation,
+        trash,
+        binders,
+    }
+}
+
+/// The `SceneText` content id of the fixture's Item/Scene row (`items[2]`) — the
+/// same row `writes_are_diff_minimal` edits.
+fn scene_text_content_id(binders: &[BinderWithItems]) -> u64 {
+    binders[0].items[2]
+        .contents
+        .iter()
+        .find(|c| c.role == ContentRole::SceneText)
+        .expect("the Item/Scene fixture row has SceneText")
+        .id
+}
+
+/// The bundle-relative path the written bundle records for one Content's prose
+/// blob.
+///
+/// Tests resolve a prose file this way — through the manifest's own `ProseRef`,
+/// exactly as the reader does (`folder_io::read_folder` joins `pr.path` verbatim)
+/// — rather than by guessing at the file name. Guessing is what coupled three
+/// tests to the old `<content_id>-…` scheme and let the reopen-renames-everything
+/// bug live undetected: a name is presentation, the manifest is the contract.
+fn prose_path_for_content(bundle: &WorkBundle, content_id: u64) -> String {
+    bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .flat_map(|i| i.item.prose_refs.iter())
+        .find(|pr| pr.file_id == content_id)
+        .unwrap_or_else(|| panic!("no prose ref for content {content_id}"))
+        .path
+        .clone()
+}
+
+/// Comment fixtures with **no field left at its default**, deliberately: an
+/// all-default row round-trips equal even when a field has been dropped somewhere
+/// in the mapping, which is exactly how a persistence bug hides. Same reasoning the
+/// `chapter_mode` / `smart_punctuation` fixtures above already record.
+///
+/// Covers all three shapes that persist differently: an anchored `Range` comment
+/// with a reply thread, an anchored `Paragraph` comment, and an **orphan**
+/// (`content: None`) which has no sidecar to live in and must survive via the
+/// bundle-root orphanage.
+/// One anchored note and one orphan, so both halves of the persistence path are
+/// exercised: the per-Content sidecar and the bundle-root orphanage.
+fn sample_footnotes(binders: &[BinderWithItems]) -> Vec<FootnoteWithContent> {
+    let now = ts();
+    let scene = scene_text_content_id(binders);
+    vec![
+        FootnoteWithContent {
+            footnote: common::entities::Footnote {
+                id: 7000,
+                uid: common::uid::fixture_uid(7000),
+                created_at: now,
+                updated_at: now,
+                content: Some(scene),
+                label: "fn-a1b2".into(),
+                body: "A note with *emphasis* in it.".into(),
+            },
+        },
+        FootnoteWithContent {
+            footnote: common::entities::Footnote {
+                id: 7001,
+                uid: common::uid::fixture_uid(7001),
+                created_at: now,
+                updated_at: now,
+                content: None,
+                label: "fn-lost".into(),
+                body: "Its reference is gone, its words are not.".into(),
+            },
+        },
+    ]
+}
+
+fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
+    let now = ts();
+    let scene = scene_text_content_id(binders);
+    vec![
+        CommentWithReplies {
+            comment: Comment {
+                id: 5000,
+                uid: common::uid::fixture_uid(5000),
+                created_at: now,
+                updated_at: now,
+                content: Some(scene),
+                kind: CommentAnchorKind::Range,
+                author_name: "Jane".into(),
+                author_initials: "J".into(),
+                body: "Is this too on-the-nose?".into(),
+                resolved: false,
+                orphaned: false,
+                orphan_reason: CommentOrphanReason::NotOrphaned,
+                range_start: 6,
+                range_length: 5,
+                quote_prefix: "Scene ".into(),
+                quote_exact: "prose".into(),
+                quote_exact_truncated: false,
+                quote_suffix: " with ".into(),
+                block_ordinal_hint: 0,
+                replies: vec![5001, 5002],
+            },
+            replies: vec![
+                CommentReply {
+                    id: 5001,
+                    uid: common::uid::fixture_uid(5001),
+                    created_at: now,
+                    updated_at: now,
+                    author_name: "Jane".into(),
+                    author_initials: "J".into(),
+                    body: "Maybe. Sleep on it.".into(),
+                },
+                CommentReply {
+                    id: 5002,
+                    uid: common::uid::fixture_uid(5002),
+                    created_at: now,
+                    updated_at: now,
+                    author_name: "Marc".into(),
+                    author_initials: "M".into(),
+                    body: "Keep it — it lands.".into(),
+                },
+            ],
+        },
+        CommentWithReplies {
+            comment: Comment {
+                id: 5010,
+                uid: common::uid::fixture_uid(5010),
+                created_at: now,
+                updated_at: now,
+                content: Some(scene),
+                kind: CommentAnchorKind::Paragraph,
+                author_name: "Jane".into(),
+                author_initials: "J".into(),
+                body: "This whole paragraph drags.".into(),
+                resolved: true,
+                orphaned: false,
+                orphan_reason: CommentOrphanReason::NotOrphaned,
+                range_start: 0,
+                range_length: 0,
+                quote_prefix: String::new(),
+                quote_exact: "Scene prose with *emphasis*".into(),
+                quote_exact_truncated: true,
+                quote_suffix: String::new(),
+                block_ordinal_hint: 1,
+                replies: vec![],
+            },
+            replies: vec![],
+        },
+        CommentWithReplies {
+            comment: Comment {
+                id: 5020,
+                uid: common::uid::fixture_uid(5020),
+                created_at: now,
+                updated_at: now,
+                // No anchor: the Content this once pointed at is gone. Without the
+                // orphanage this row would be silently destroyed by a save.
+                content: None,
+                kind: CommentAnchorKind::Range,
+                author_name: "Marc".into(),
+                author_initials: "M".into(),
+                body: "Whatever this was about, it is gone now.".into(),
+                resolved: false,
+                orphaned: true,
+                orphan_reason: CommentOrphanReason::TargetDeleted,
+                range_start: 42,
+                range_length: 7,
+                quote_prefix: "the ".into(),
+                quote_exact: "vanished".into(),
+                quote_exact_truncated: false,
+                quote_suffix: " line".into(),
+                block_ordinal_hint: 3,
+                replies: vec![],
+            },
+            replies: vec![],
+        },
+    ]
+}
+
+/// `build_bundle` plus footnotes.
+///
+/// Kept separate rather than folded into the shared fixture: the floor tests all
+/// assert on a bundle that carries only what they put in it, and a fixture that
+/// always had a note would move every one of them to v9 for a reason that has
+/// nothing to do with what they are testing.
+pub(crate) fn build_bundle_with_footnotes(shape: ShapeTag) -> WorkBundle {
+    let s = sample_inputs();
+    let comments = sample_comments(&s.binders);
+    let footnotes = sample_footnotes(&s.binders);
+    from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &s.statuses,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &comments,
+        &footnotes,
+        &s.binders,
+        shape,
+    )
+}
+
+/// Build a bundle from a caller-mutated copy of the fixture inputs.
+///
+/// Exists so the naming tests below can do the two things a real session does —
+/// remap every entity id (what `load_work` does on open) and edit titles or
+/// order — without duplicating `build_bundle`'s fifteen-argument call.
+fn build_bundle_with(shape: ShapeTag, tweak: impl FnOnce(&mut SampleInputs)) -> WorkBundle {
+    let mut s = sample_inputs();
+    tweak(&mut s);
+    let comments = sample_comments(&s.binders);
+    from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &s.statuses,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &comments,
+        &[],
+        &s.binders,
+        shape,
+    )
+}
+
+/// Every prose path the bundle records, sorted — the set a git diff would see.
+fn prose_paths(bundle: &WorkBundle) -> Vec<String> {
+    let mut paths: Vec<String> = bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .flat_map(|i| i.item.prose_refs.iter())
+        .map(|pr| pr.path.clone())
+        .collect();
+    paths.sort();
+    paths
+}
+
+pub(crate) fn build_bundle(shape: ShapeTag) -> WorkBundle {
+    let s = sample_inputs();
+    let comments = sample_comments(&s.binders);
+    from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &s.statuses,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &comments,
+        &[],
+        &s.binders,
+        shape,
+    )
+}
+
+#[test]
+fn folder_round_trip_is_lossless() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    assert_round_trip(&bundle, &read);
+}
+
+/// Point of view survives a save→load, and stays distinct from `references`.
+///
+/// `folder_round_trip_is_lossless` covers this too, by whole-bundle equality — but it would
+/// report a regression as a diff of two large structures. This one names the property, and
+/// in particular pins that the two relationships do not bleed into each other: they travel
+/// the same road through the format and answer different questions, so a copy-paste slip in
+/// the mapping layer would otherwise show up as "POV works" while silently writing it into
+/// the cast list.
+#[test]
+fn point_of_view_round_trips_and_stays_distinct_from_references() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("PovNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    let written = &bundle.binders[0].items[0].item;
+    let loaded = &read.binders[0].items[0].item;
+    assert_eq!(
+        written.point_of_view_ids,
+        vec![301],
+        "the fixture sets a POV to begin with"
+    );
+    assert_eq!(
+        loaded.point_of_view_ids, written.point_of_view_ids,
+        "point of view must survive the round trip"
+    );
+    assert_eq!(
+        loaded.reference_ids, written.reference_ids,
+        "references must survive it independently"
+    );
+
+    // An item with no POV must come back with none, not with its cast copied in.
+    let unassigned = read.binders[0]
+        .items
+        .iter()
+        .map(|b| &b.item)
+        .find(|i| i.file_id != written.file_id)
+        .expect("the fixture has more than one item");
+    assert!(
+        unassigned.point_of_view_ids.is_empty(),
+        "an unassigned scene must stay unassigned; got {:?}",
+        unassigned.point_of_view_ids
+    );
+}
+
+/// A Book filing survives a save→load, and stays distinct from both `references`
+/// and `point_of_view`.
+///
+/// A declaration, never an observation: `books` states which Book or Books the
+/// writer has filed this entry under, and travels the same M2M road through the
+/// format as the other two self-relationships without answering either of their
+/// questions. The fixture deliberately points it at a *third* item, so a
+/// copy-paste slip in the mapping layer between any of the three would show up as
+/// cross-contamination rather than passing by coincidence.
+#[test]
+fn books_round_trips_and_stays_distinct_from_point_of_view_and_references() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("BooksNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    let written = &bundle.binders[0].items[0].item;
+    let loaded = &read.binders[0].items[0].item;
+    assert_eq!(
+        written.book_ids,
+        vec![302],
+        "the fixture files the item under a Book to begin with"
+    );
+    assert_eq!(
+        loaded.book_ids, written.book_ids,
+        "the Book filing must survive the round trip"
+    );
+    assert_eq!(
+        loaded.reference_ids, written.reference_ids,
+        "references must survive it independently"
+    );
+    assert_eq!(
+        loaded.point_of_view_ids, written.point_of_view_ids,
+        "point of view must survive it independently"
+    );
+    assert_ne!(
+        loaded.book_ids, loaded.point_of_view_ids,
+        "filing under a Book must never be conflated with point of view"
+    );
+
+    // An item never filed must come back unfiled, not with a Book copied in.
+    let unfiled = read.binders[0]
+        .items
+        .iter()
+        .map(|b| &b.item)
+        .find(|i| i.file_id != written.file_id)
+        .expect("the fixture has more than one item");
+    assert!(
+        unfiled.book_ids.is_empty(),
+        "an unfiled entry must stay unfiled; got {:?}",
+        unfiled.book_ids
+    );
+}
+
+#[test]
+fn folder_save_creates_named_subfolder_not_parent() {
+    // Bug 1 regression: "Save as folder" passes `<picked>/<name>` as the target;
+    // the bundle must land in that named subfolder, never loose in the picked
+    // parent. `folder_root` returns a non-existent target as-is, so `write_folder`
+    // creates it.
+    let bundle = build_bundle(ShapeTag::Folder);
+    let parent = tempfile::tempdir().unwrap();
+    let target = parent.path().join("My Novel");
+    write_bundle(
+        target.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle,
+    )
+    .unwrap();
+    assert!(
+        target.join("project.skrib").exists(),
+        "manifest must be in the named subfolder"
+    );
+    assert!(
+        !parent.path().join("project.skrib").exists(),
+        "bundle must NOT be written loose in the picked parent"
+    );
+}
+
+#[test]
+fn zip_round_trip_matches_folder() {
+    let bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("MyNovel.skrib");
+    write_bundle(target.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+    assert_eq!(
+        detect_shape(target.to_str().unwrap()).unwrap(),
+        SkribShape::ZipFile
+    );
+    let read = read_bundle(target.to_str().unwrap()).unwrap();
+    assert_round_trip(&bundle, &read);
+}
+
+#[test]
+fn every_item_validates() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    for bb in &bundle.binders {
+        for bi in &bb.items {
+            let present: Vec<ContentRole> = bi
+                .item
+                .inline_contents
+                .iter()
+                .map(|c| c.role.clone())
+                .chain(bi.item.prose_refs.iter().map(|p| p.role.clone()))
+                .collect();
+            validate_item(&bi.item.role, &bi.item.sub_role, &present).unwrap_or_else(|e| {
+                panic!(
+                    "{:?}/{:?} failed validation: {e:?}",
+                    bi.item.role, bi.item.sub_role
+                )
+            });
+        }
+    }
+}
+
+#[test]
+fn disallowed_content_is_dropped() {
+    let now = ts();
+    // An Item/Scene carrying an illegal NoteText row.
+    let item = BinderItem {
+        id: 300,
+        created_at: now,
+        updated_at: now,
+        title: "Scene".into(),
+        role: BinderItemRole::Item,
+        sub_role: BinderItemSubRole::Scene,
+        is_exportable: true,
+        exclude_from_numbering: false,
+        ..Default::default()
+    };
+    let contents = vec![
+        Content {
+            id: 1,
+            uid: common::uid::fixture_uid(1),
+            created_at: now,
+            updated_at: now,
+            activated: true,
+            role: ContentRole::SceneText,
+            data: "ok".into(),
+        },
+        Content {
+            id: 2,
+            uid: common::uid::fixture_uid(2),
+            created_at: now,
+            updated_at: now,
+            activated: true,
+            role: ContentRole::NoteText,
+            data: "illegal".into(),
+        },
+    ];
+    let work = Work {
+        statuses: Vec::new(),
+        id: 1,
+        created_at: now,
+        updated_at: now,
+        binders: vec![100],
+        ..Default::default()
+    };
+    let binders = vec![BinderWithItems {
+        binder: Binder {
+            uid: common::uid::fixture_uid(1),
+            id: 100,
+            created_at: now,
+            updated_at: now,
+            name: "M".into(),
+            activated: true,
+            binder_items: Vec::new(),
+        },
+        items: vec![ItemWithContents { item, contents }],
+    }];
+    let bundle = from_entities(
+        &work,
+        &[],
+        &[],
+        &[],
+        &[],
+        // statuses — this project has no ladder.
+        &[],
+        &[],
+        Default::default(),
+        None,
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &binders,
+        ShapeTag::Folder,
+    );
+    let f = &bundle.binders[0].items[0].item;
+    assert!(
+        f.prose_refs
+            .iter()
+            .all(|p| p.role == ContentRole::SceneText)
+    );
+    assert!(f.inline_contents.is_empty());
+    assert_eq!(
+        f.prose_refs.len(),
+        1,
+        "NoteText must be dropped for a Scene"
+    );
+}
+
+/// Recursively snapshot every file's bytes + mtime under `root`.
+fn snapshot(root: &Path) -> BTreeMap<String, (std::time::SystemTime, Vec<u8>)> {
+    let mut map = BTreeMap::new();
+    for entry in walkdir::WalkDir::new(root) {
+        let entry = entry.unwrap();
+        if entry.file_type().is_file() {
+            let rel = entry
+                .path()
+                .strip_prefix(root)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+            let meta = entry.metadata().unwrap();
+            map.insert(
+                rel,
+                (meta.modified().unwrap(), fs::read(entry.path()).unwrap()),
+            );
+        }
+    }
+    map
+}
+
+#[test]
+fn writes_are_diff_minimal() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    let rs = root.to_str().unwrap();
+
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    let before = snapshot(&root);
+
+    // Re-writing the identical bundle must touch nothing (no mtime change).
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    let after_noop = snapshot(&root);
+    for (rel, (mtime, _)) in &before {
+        assert_eq!(*mtime, after_noop[rel].0, "no-op save rewrote {rel}");
+    }
+
+    // Edit exactly one scene's prose; only that .djot blob may change.
+    let target_id = {
+        let item = &mut bundle.binders[0].items[2]; // Item/Scene
+        let (cid, text) = item.prose.iter_mut().next().unwrap();
+        *text = "Completely rewritten scene prose.".to_string();
+        *cid
+    };
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    let after_edit = snapshot(&root);
+
+    let changed: Vec<&String> = before
+        .keys()
+        .filter(|rel| before[*rel].1 != after_edit[*rel].1)
+        .collect();
+    assert_eq!(
+        changed.len(),
+        1,
+        "exactly one file should change, got {changed:?}"
+    );
+    assert_eq!(
+        *changed[0],
+        prose_path_for_content(&bundle, target_id),
+        "the changed file should be the edited scene's .djot"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Prose file naming: stable across a reopen, stable across a reorder
+// ---------------------------------------------------------------------------
+
+/// The bug this naming scheme exists to prevent.
+///
+/// `load_work` remaps every `file_id` to a fresh store id, and `next_id` is a
+/// process-lifetime counter that is never reset — so closing a project and
+/// reopening it in the same session hands every row a different number. When the
+/// prose file name embedded that number, the next save renamed *every* file, and
+/// a git commit showed the whole manuscript deleted and re-added instead of one
+/// edited scene. Simulated here by shifting every entity id while keeping every
+/// `uid`, which is exactly what a reload does.
+#[test]
+fn reopening_a_project_renames_no_prose_file() {
+    const RELOAD_SHIFT: u64 = 10_000;
+
+    let before = prose_paths(&build_bundle(ShapeTag::Folder));
+    let after = prose_paths(&build_bundle_with(ShapeTag::Folder, |s| {
+        for b in &mut s.binders {
+            b.binder.id += RELOAD_SHIFT;
+            for i in &mut b.items {
+                i.item.id += RELOAD_SHIFT;
+                for c in &mut i.contents {
+                    c.id += RELOAD_SHIFT;
+                }
+            }
+        }
+    }));
+
+    assert_eq!(
+        before, after,
+        "a reload must not rename a single prose file"
+    );
+    assert!(
+        !before.is_empty(),
+        "the fixture must contain prose to compare"
+    );
+}
+
+/// Reordering is the other half: moving a scene must not rename its neighbours,
+/// which is why the slug falls back to an *ancestor's* title and never to a
+/// sibling or a position.
+///
+/// Titles are cleared first so the fallback path is the one under test — with the
+/// fixture's distinct per-row titles a name depends on nothing but its own row,
+/// and the assertion would hold trivially without proving anything. Rows 3 and 6
+/// both sit at indent 0, so swapping them is a genuine same-parent move; row 2 is
+/// left alone because `scene_text_content_id` pins the Item/Scene fixture there.
+#[test]
+fn reordering_items_renames_no_prose_file() {
+    let clear_titles = |s: &mut SampleInputs| {
+        for i in &mut s.binders[0].items {
+            i.item.title.clear();
+        }
+    };
+
+    let before = prose_paths(&build_bundle_with(ShapeTag::Folder, clear_titles));
+    let after = prose_paths(&build_bundle_with(ShapeTag::Folder, |s| {
+        clear_titles(s);
+        s.binders[0].items.swap(3, 6);
+    }));
+
+    assert_eq!(before, after, "reordering must not rename any prose file");
+}
+
+/// Renaming an item *should* rename its own blob — the file name is the title,
+/// and git records that as a rename — but only its own.
+#[test]
+fn renaming_an_item_renames_only_its_own_prose() {
+    let before = prose_paths(&build_bundle(ShapeTag::Folder));
+    let after = prose_paths(&build_bundle_with(ShapeTag::Folder, |s| {
+        s.binders[0].items[2].item.title = "A Completely Different Title".to_string();
+    }));
+
+    let vanished: Vec<_> = before.iter().filter(|p| !after.contains(p)).collect();
+    let appeared: Vec<_> = after.iter().filter(|p| !before.contains(p)).collect();
+    assert_eq!(
+        vanished.len(),
+        appeared.len(),
+        "a rename must not change how many prose files exist"
+    );
+    assert!(
+        appeared
+            .iter()
+            .all(|p| p.contains("a-completely-different-title")),
+        "only the renamed item's blobs may move, got {appeared:?}"
+    );
+}
+
+/// The second bug: 93 of the 120 prose files in the shipped `Starforgers.skrib`
+/// were named `item`, because most scenes in a continuous manuscript have no
+/// title and `slugify("")` fell back to that one word. An untitled row now
+/// borrows the name of the chapter it sits under.
+#[test]
+fn an_untitled_row_is_never_named_item() {
+    let bundle = build_bundle_with(ShapeTag::Folder, |s| {
+        for i in &mut s.binders[0].items {
+            i.item.title.clear();
+        }
+    });
+
+    for path in prose_paths(&bundle) {
+        let name = path.rsplit('/').next().unwrap();
+        assert!(
+            !name.contains("-item."),
+            "an untitled row fell back to the anonymous slug: {path}"
+        );
+    }
+}
+
+/// `short_id` must hash the uid rather than slice it. `common::uid::fixture_uid`
+/// is `Uuid::from_u128(n)`, whose entropy sits in the *low* bytes — a raw hex
+/// prefix would be `"00000000"` for every fixture row in this crate, silently
+/// collapsing every test project onto one file name and hiding real collisions.
+#[test]
+fn short_id_distinguishes_sequential_fixture_uids() {
+    let ids: Vec<String> = (1u64..=64)
+        .map(|n| crate::slug::short_id(common::uid::fixture_uid(n)))
+        .collect();
+
+    let unique: std::collections::BTreeSet<&String> = ids.iter().collect();
+    assert_eq!(unique.len(), ids.len(), "fixture uids collided: {ids:?}");
+    assert!(ids.iter().all(|s| s.len() == 8));
+}
+
+// ---------------------------------------------------------------------------
+// Comments: per-Content sidecars, the orphanage, and diff-minimality
+// ---------------------------------------------------------------------------
+
+#[test]
+fn a_comment_lands_in_a_sidecar_beside_the_prose_it_annotates() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    // Find the prose blob for the annotated scene, then assert its sidecar sits
+    // right next to it — that adjacency is what identifies the owning Content, and
+    // is why `Content` needs no `uid`.
+    let binders = sample_inputs().binders;
+    let scene = scene_text_content_id(&binders);
+    let prose = root.join(prose_path_for_content(&bundle, scene));
+    assert!(prose.is_file(), "expected the scene's .djot at {prose:?}");
+
+    let sidecar = prose.with_extension("").to_string_lossy().to_string() + ".comments.ron";
+    let sidecar = std::path::Path::new(&sidecar);
+    assert!(
+        sidecar.is_file(),
+        "expected a comments sidecar at {}",
+        sidecar.display()
+    );
+    let text = fs::read_to_string(sidecar).unwrap();
+    assert!(text.contains("Is this too on-the-nose?"));
+    assert!(
+        text.contains("Keep it — it lands."),
+        "replies must round-trip"
+    );
+}
+
+#[test]
+fn an_uncommented_project_writes_no_comment_files_at_all() {
+    let s = sample_inputs();
+    let bundle = from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &s.statuses,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &[], // no comments
+        &[], // no footnotes
+        &s.binders,
+        ShapeTag::Folder,
+    );
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let stray: Vec<String> = walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .map(|e| e.path().to_string_lossy().to_string())
+        .filter(|p| p.contains("comments"))
+        .collect();
+    assert!(
+        stray.is_empty(),
+        "a project with no comments should grow no comment files, found {stray:?}"
+    );
+}
+
+#[test]
+fn an_orphaned_comment_survives_a_round_trip_via_the_orphanage() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    assert_eq!(
+        bundle.orphan_comments.len(),
+        1,
+        "the fixture's anchorless comment belongs in the orphanage, not a sidecar"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert!(root.join("orphan_comments.ron").is_file());
+
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    assert_eq!(read.orphan_comments.len(), 1);
+    let o = &read.orphan_comments[0];
+    assert_eq!(o.body, "Whatever this was about, it is gone now.");
+    assert!(o.orphaned);
+    assert_eq!(o.orphan_reason, CommentOrphanReason::TargetDeleted);
+    // The quote is the only thing that could ever re-anchor it, so it must survive
+    // even though the anchor itself is dead.
+    assert_eq!(o.quote_exact, "vanished");
+}
+
+/// **M-S4.** `Comment.body`/`CommentReply.body` are Djot now, and a body
+/// carrying real markup — including a backslash, Djot's own escape character,
+/// and a literal quote mark — must come back byte-for-byte identical. RON is a
+/// text format with its own quoting and escaping rules; a body that collided
+/// with them would be exactly the kind of corruption a round-trip test on a
+/// plain, markup-free body could never catch.
+#[test]
+fn a_formatted_comment_and_reply_body_round_trips_byte_for_byte() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+
+    let formatted_comment = "Is this *really* the _right_ word? Maybe \\*not\\*.";
+    let formatted_reply = "Keep the {-strikethrough-} and the \"quotes\" too.";
+
+    let mut touched = false;
+    for item in &mut bundle.binders[0].items {
+        for list in item.comments.values_mut() {
+            if let Some(c) = list.first_mut()
+                && let Some(r) = c.replies.first_mut()
+            {
+                c.body = formatted_comment.to_string();
+                r.body = formatted_reply.to_string();
+                touched = true;
+            }
+        }
+    }
+    assert!(
+        touched,
+        "the fixture must carry a comment with at least one reply, or this test \
+         proves nothing"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    let mut found_comment = false;
+    let mut found_reply = false;
+    for item in &read.binders[0].items {
+        for list in item.comments.values() {
+            for c in list {
+                if c.body == formatted_comment {
+                    found_comment = true;
+                }
+                for r in &c.replies {
+                    if r.body == formatted_reply {
+                        found_reply = true;
+                    }
+                }
+            }
+        }
+    }
+    assert!(
+        found_comment,
+        "the formatted comment body did not round-trip byte-for-byte"
+    );
+    assert!(
+        found_reply,
+        "the formatted reply body did not round-trip byte-for-byte"
+    );
+}
+
+#[test]
+fn the_orphanage_file_disappears_once_the_last_orphan_is_gone() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert!(root.join("orphan_comments.ron").is_file());
+
+    // The writer deletes the orphan. An empty list must remove the file rather than
+    // leave `[]` behind, so a project that has never lost an anchor and one that has
+    // recovered look identical on disk.
+    bundle.orphan_comments.clear();
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert!(!root.join("orphan_comments.ron").exists());
+}
+
+#[test]
+fn deleting_the_last_comment_prunes_its_sidecar() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    let rs = root.to_str().unwrap();
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let sidecars = |root: &std::path::Path| -> usize {
+        walkdir::WalkDir::new(root)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().to_string_lossy().ends_with(".comments.ron"))
+            .count()
+    };
+    assert_eq!(sidecars(&root), 1);
+
+    for item in &mut bundle.binders[0].items {
+        item.comments.clear();
+    }
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert_eq!(
+        sidecars(&root),
+        0,
+        "a sidecar whose last comment was deleted must be pruned, not left stale"
+    );
+}
+
+#[test]
+fn editing_one_comment_touches_only_its_own_sidecar() {
+    // The comment counterpart of `writes_are_diff_minimal`: this is the property
+    // that forced per-Content sidecars instead of one project-wide comments.ron.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    let rs = root.to_str().unwrap();
+
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    let before = snapshot(&root);
+
+    // Re-writing an identical bundle must still touch nothing, comments included.
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    for (rel, (mtime, _)) in &before {
+        assert_eq!(*mtime, snapshot(&root)[rel].0, "no-op save rewrote {rel}");
+    }
+
+    for item in &mut bundle.binders[0].items {
+        for list in item.comments.values_mut() {
+            for c in list {
+                c.body = "Rewritten note.".into();
+            }
+        }
+    }
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    let after = snapshot(&root);
+
+    let changed: Vec<&String> = before
+        .keys()
+        .filter(|rel| before[*rel].1 != after[*rel].1)
+        .collect();
+    assert_eq!(
+        changed.len(),
+        1,
+        "editing one comment should rewrite exactly one file, got {changed:?}"
+    );
+    assert!(
+        changed[0].ends_with(".comments.ron"),
+        "the changed file should be the sidecar, got {}",
+        changed[0]
+    );
+}
+
+#[test]
+fn a_bundle_written_before_comments_existed_still_reads() {
+    // Additive-and-optional is what lets this ship without a FORMAT_VERSION bump:
+    // deleting every comment artefact must read back as "no comments", not as an error.
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    fs::remove_file(root.join("orphan_comments.ron")).unwrap();
+    for entry in walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        if entry.path().to_string_lossy().ends_with(".comments.ron") {
+            fs::remove_file(entry.path()).unwrap();
+        }
+    }
+
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    assert!(read.orphan_comments.is_empty());
+    assert!(
+        read.binders[0].items.iter().all(|i| i.comments.is_empty()),
+        "a pre-feature bundle must load with zero comments rather than failing"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// T2-1: durable persist (fsync before rename)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn persist_durably_writes_a_readable_fsynced_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("durable.bin");
+    let mut tmp = tempfile::NamedTempFile::new_in(dir.path()).unwrap();
+    {
+        use std::io::Write;
+        tmp.write_all(b"durable payload").unwrap();
+    }
+    super::writer::persist_durably(tmp, &target).unwrap();
+    assert_eq!(fs::read(&target).unwrap(), b"durable payload");
+}
+
+#[test]
+fn write_zip_round_trips_through_the_durable_persist_path() {
+    // write_zip now writes through the NamedTempFile's own fd and fsyncs
+    // before/after rename (persist_durably) rather than a second independent
+    // File::create handle on the same path; the round trip must still be
+    // lossless.
+    let bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("Durable.skrib");
+    write_bundle(target.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+    assert!(target.exists());
+    let read = read_bundle(target.to_str().unwrap()).unwrap();
+    assert_round_trip(&bundle, &read);
+}
+
+// ---------------------------------------------------------------------------
+// T2-2: verify_backup_at
+// ---------------------------------------------------------------------------
+
+#[test]
+fn verify_backup_at_accepts_real_backup_and_rejects_the_rest() {
+    let mut bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+
+    // A plain Regular save must be rejected (not a backup at all).
+    let regular_path = dir.path().join("Regular.skrib");
+    write_bundle(regular_path.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+    assert!(verify_backup_at(regular_path.to_str().unwrap(), "").is_err());
+
+    // Mark + rewrite as a real backup: must be accepted, with no expected
+    // unique_id and with the correct one.
+    let backup_path = dir.path().join("Regular-20260101-120000.skrib");
+    mark_as_backup(
+        &mut bundle,
+        regular_path.to_string_lossy().into_owned(),
+        ts(),
+    );
+    write_bundle(backup_path.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+    verify_backup_at(backup_path.to_str().unwrap(), "").unwrap();
+    verify_backup_at(backup_path.to_str().unwrap(), "test-unique-id-abc").unwrap();
+
+    // Wrong expected unique_id must be rejected.
+    assert!(verify_backup_at(backup_path.to_str().unwrap(), "some-other-project").is_err());
+
+    // Garbage (unparseable, not even a real zip) must be rejected.
+    let garbage_path = dir.path().join("garbage.skrib");
+    fs::write(&garbage_path, b"not a skrib file at all").unwrap();
+    assert!(verify_backup_at(garbage_path.to_str().unwrap(), "").is_err());
+}
+
+// ---------------------------------------------------------------------------
+// T2-5: filename-fallback sniff must not hijack a legacy project
+// ---------------------------------------------------------------------------
+
+#[test]
+fn sniff_backup_filename_fallback_requires_the_original_to_exist() {
+    let bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+
+    // Stamped-looking name, unreadable "manifest" (garbage bytes), but its
+    // guessed original ("ghost.skrib") does NOT exist on disk -> must NOT be
+    // treated as a backup (the legacy-project-genuinely-named-like-a-backup
+    // case).
+    let orphan_stamp_path = dir.path().join("ghost-20260101-120000.skrib");
+    fs::write(&orphan_stamp_path, b"not a parseable skrib file").unwrap();
+    let sniff = sniff_backup(orphan_stamp_path.to_str().unwrap());
+    assert!(
+        !sniff.is_backup,
+        "a stamped file whose guessed original doesn't exist must not be a backup"
+    );
+
+    // Same unreadable file, but now its guessed original DOES exist on disk
+    // -> accepted as a non-authoritative backup guess.
+    let original_path = dir.path().join("ghost.skrib");
+    write_bundle(
+        original_path.to_str().unwrap(),
+        SkribShape::ZipFile,
+        &bundle,
+    )
+    .unwrap();
+    let sniff2 = sniff_backup(orphan_stamp_path.to_str().unwrap());
+    assert!(sniff2.is_backup);
+    assert!(!sniff2.authoritative);
+    assert_eq!(
+        sniff2.backup_of.as_deref(),
+        Some(original_path.to_str().unwrap())
+    );
+
+    // A readable `Regular` manifest always wins, even when the filename also
+    // matches the stamp pattern.
+    let regular_stamped_path = dir.path().join("mynovel-20260101-120000.skrib");
+    write_bundle(
+        regular_stamped_path.to_str().unwrap(),
+        SkribShape::ZipFile,
+        &bundle,
+    )
+    .unwrap();
+    let sniff3 = sniff_backup(regular_stamped_path.to_str().unwrap());
+    assert!(!sniff3.is_backup);
+    assert!(sniff3.authoritative);
+}
+
+// ---------------------------------------------------------------------------
+// T2-7: mark_existing_as_backup
+// ---------------------------------------------------------------------------
+
+#[test]
+fn mark_existing_as_backup_turns_a_regular_bundle_into_a_backup_in_place() {
+    let bundle = build_bundle(ShapeTag::Zip);
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("Project.skrib");
+    write_bundle(path.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
+
+    let before = peek_manifest(path.to_str().unwrap()).unwrap();
+    assert_eq!(before.kind, BundleKind::Regular);
+
+    mark_existing_as_backup(path.to_str().unwrap(), "/orig/Project.skrib", ts()).unwrap();
+
+    let after = peek_manifest(path.to_str().unwrap()).unwrap();
+    assert_eq!(after.kind, BundleKind::Backup);
+    assert_eq!(after.backup_of.as_deref(), Some("/orig/Project.skrib"));
+    // The work's identity must be preserved, not reset.
+    assert_eq!(after.work.unique_id, "test-unique-id-abc");
+
+    // Content preserved (shape + data round trip through read/write).
+    let reread = read_bundle(path.to_str().unwrap()).unwrap();
+    assert_eq!(reread.binders.len(), bundle.binders.len());
+    assert_eq!(reread.manifest.work.title, bundle.manifest.work.title);
+    assert_eq!(reread.tags, bundle.tags);
+}
+
+// ── uid: durable per-row identity (format v3) ───────────────────────────────
+
+#[test]
+fn uids_survive_a_write_read_round_trip_unchanged() {
+    // The whole point: unlike `file_id` (the store id at save time, re-minted on
+    // the next save), a uid written to disk must come back identical.
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    let before: Vec<uuid::Uuid> = bundle
+        .binders
+        .iter()
+        .flat_map(|b| std::iter::once(b.binder.uid).chain(b.items.iter().map(|i| i.item.uid)))
+        .collect();
+    let after: Vec<uuid::Uuid> = read
+        .binders
+        .iter()
+        .flat_map(|b| std::iter::once(b.binder.uid).chain(b.items.iter().map(|i| i.item.uid)))
+        .collect();
+    assert!(!before.is_empty(), "fixture must carry uids");
+    assert_eq!(before, after, "every uid must round-trip byte-identical");
+}
+
+/// v11 → v12, uid half: every **reply** gains a durable identity.
+///
+/// v11 gave the thread one and stopped there. A thread that can be recognised while its
+/// replies cannot is not enough for an editorial round trip: an editor answering in the
+/// middle of a conversation shifts every later reply by one, so position-matching
+/// re-imports the tail as duplicates.
+#[test]
+fn migrating_a_pre_v12_bundle_mints_a_uid_for_every_comment_reply() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 11;
+    for b in &mut bundle.binders {
+        for i in &mut b.items {
+            for list in i.comments.values_mut() {
+                for c in list {
+                    for r in &mut c.replies {
+                        r.uid = uuid::Uuid::nil();
+                    }
+                }
+            }
+        }
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    let mut seen = std::collections::HashSet::new();
+    let mut replies_checked = 0usize;
+    for b in &bundle.binders {
+        for i in &b.items {
+            for list in i.comments.values() {
+                for c in list {
+                    for r in &c.replies {
+                        assert!(!r.uid.is_nil(), "reply left without a uid");
+                        assert!(seen.insert(r.uid), "duplicate reply uid minted");
+                        replies_checked += 1;
+                    }
+                }
+            }
+        }
+    }
+    assert!(
+        replies_checked > 0,
+        "the fixture must actually carry replies, or this test proves nothing"
+    );
+}
+
+/// v11 → v12, body half: a stored plain-text body that *reads* as markup is escaped, and
+/// one that does not is left byte-identical.
+///
+/// The second half matters as much as the first. Rewriting every body would make an older
+/// build show backslashes in remarks that never needed them, so only genuinely ambiguous
+/// text is touched.
+#[test]
+fn migrating_a_pre_v12_bundle_escapes_only_the_bodies_that_would_change_meaning() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 11;
+
+    let ambiguous = "*not* emphasis, and snake_case too";
+    let ordinary = "An ordinary remark.";
+
+    // Two bodies with known shapes, so the assertion is about this step rather than about
+    // whatever the shared fixture happened to contain.
+    {
+        let list = bundle
+            .binders
+            .iter_mut()
+            .flat_map(|b| b.items.iter_mut())
+            .flat_map(|i| i.comments.values_mut())
+            .find(|l| l.len() >= 2)
+            .expect("the fixture must carry a Content with at least two comments");
+        list[0].body = ambiguous.to_string();
+        list[1].body = ordinary.to_string();
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let list = bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .flat_map(|i| i.comments.values())
+        .find(|l| l.len() >= 2)
+        .expect("the same list must still be there");
+
+    assert_ne!(
+        list[0].body, ambiguous,
+        "a body that would re-read as markup must be escaped"
+    );
+    assert_eq!(
+        text_document::djot_to_plain_text(&list[0].body, &Default::default()),
+        ambiguous,
+        "…and the escaped form must parse back to exactly the text the writer typed"
+    );
+    assert_eq!(
+        list[1].body, ordinary,
+        "a body that already means itself must be left byte-identical, so an older build \
+         still reads it unchanged"
+    );
+}
+
+/// v13's `goal_unit` step reads the only signal a v12 file carries: which of the two
+/// per-item targets a project actually used. A project keeping character targets and no
+/// word targets meant characters.
+#[test]
+fn migrating_a_pre_v13_bundle_reads_a_character_only_project_as_characters() {
+    let mut bundle = build_bundle_with(ShapeTag::Folder, |s| {
+        for b in &mut s.binders {
+            for it in &mut b.items {
+                it.item.word_count_goal = 0;
+                it.item.char_count_goal = 9_000;
+            }
+        }
+        s.work.goal_unit = GoalUnit::Words;
+    });
+    bundle.manifest.format_version = 12;
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    assert_eq!(bundle.manifest.work.goal_unit, GoalUnit::Characters);
+}
+
+/// Everything else reads as words: a project with no targets at all (nearly all of them),
+/// and the pathological one carrying both because the pre-Rust app's global display toggle
+/// was flipped mid-draft. `Words` is the safe answer because it is what a fresh project
+/// gets and what most of the market uses.
+#[test]
+fn migrating_a_pre_v13_bundle_reads_every_other_shape_as_words() {
+    for (words, chars) in [(0i64, 0i64), (1_000, 5_000), (1_000, 0)] {
+        let mut bundle = build_bundle_with(ShapeTag::Folder, |s| {
+            for b in &mut s.binders {
+                for it in &mut b.items {
+                    it.item.word_count_goal = words;
+                    it.item.char_count_goal = chars;
+                }
+            }
+            s.work.goal_unit = GoalUnit::Characters;
+        });
+        bundle.manifest.format_version = 12;
+
+        migration::migrate_bundle(&mut bundle).unwrap();
+
+        assert_eq!(
+            bundle.manifest.work.goal_unit,
+            GoalUnit::Words,
+            "targets {words}/{chars} should read as words"
+        );
+    }
+}
+
+/// The v13 fields carry **no floor arm**, so an older build can resave a v13 bundle and
+/// drop them. Re-deriving has to land on the same answer every time, or a project would
+/// change unit each time it passed through an older build.
+#[test]
+fn the_v13_goal_unit_step_is_idempotent() {
+    let build = || {
+        let mut b = build_bundle_with(ShapeTag::Folder, |s| {
+            for bb in &mut s.binders {
+                for it in &mut bb.items {
+                    it.item.word_count_goal = 0;
+                    it.item.char_count_goal = 400;
+                }
+            }
+        });
+        b.manifest.format_version = 12;
+        b
+    };
+    let mut once = build();
+    migration::migrate_bundle(&mut once).unwrap();
+    let mut twice = once.clone();
+    twice.manifest.format_version = 12;
+    migration::migrate_bundle(&mut twice).unwrap();
+
+    assert_eq!(once.manifest.work.goal_unit, GoalUnit::Characters);
+    assert_eq!(
+        twice.manifest.work.goal_unit, once.manifest.work.goal_unit,
+        "re-deriving must not flip the unit"
+    );
+}
+
+/// The milestone half of v13: a waypoint naming an item is an `Item` one, a waypoint
+/// naming none is `BookCumulative`. That is exactly the rule the code applied implicitly
+/// before the field existed -- applied here once, so a later deleted target item cannot
+/// silently reclassify the milestone.
+#[test]
+fn migrating_a_pre_v13_bundle_classifies_milestones_by_whether_they_name_an_item() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 12;
+    let ms = |file_id: u64, target_item: Option<u64>| bundle::MilestoneFile {
+        file_id,
+        created_at: "2020-01-01T00:00:00+00:00".into(),
+        updated_at: "2020-01-01T00:00:00+00:00".into(),
+        label: "waypoint".into(),
+        target_item,
+        target_date: "2020-04-01T00:00:00+00:00".into(),
+        target_word_count: Some(20_000),
+        // What a v12 file deserializes as, before the step corrects it.
+        kind: MilestoneKind::default(),
+    };
+    bundle.paces = vec![bundle::PaceFile {
+        file_id: 400,
+        created_at: "2020-01-01T00:00:00+00:00".into(),
+        updated_at: "2020-01-01T00:00:00+00:00".into(),
+        book_item: None,
+        start_date: "2020-02-01T00:00:00+00:00".into(),
+        end_date: "2020-06-01T00:00:00+00:00".into(),
+        weekday_mask: 31,
+        active: true,
+        holidays: vec![],
+        milestones: vec![ms(420, Some(7)), ms(421, None)],
+    }];
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let m = &bundle.paces[0].milestones;
+    assert_eq!(m[0].kind, MilestoneKind::Item, "it names a target item");
+    assert_eq!(
+        m[1].kind,
+        MilestoneKind::BookCumulative,
+        "it names none, so its number is the Book's own"
+    );
+}
+
+#[test]
+fn migrating_a_pre_v3_bundle_mints_a_uid_for_every_row() {
+    // A v2 bundle has no uids at all. `migrate_bundle` must fill in every row --
+    // one missed row is an empty key that collides with every other empty key.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 2;
+    for b in &mut bundle.binders {
+        b.binder.uid = uuid::Uuid::nil();
+        for i in &mut b.items {
+            i.item.uid = uuid::Uuid::nil();
+        }
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    let mut seen = std::collections::HashSet::new();
+    for b in &bundle.binders {
+        assert!(!b.binder.uid.is_nil(), "binder left without a uid");
+        assert!(seen.insert(b.binder.uid), "duplicate uid minted");
+        for i in &b.items {
+            assert!(!i.item.uid.is_nil(), "item left without a uid");
+            assert!(seen.insert(i.item.uid), "duplicate uid minted");
+        }
+    }
+}
+
+#[test]
+fn migration_is_idempotent_and_never_re_mints_an_existing_uid() {
+    // Re-running the step (or meeting a partially-migrated bundle) must not
+    // change identities that already exist -- that would orphan every
+    // reference to them.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 2;
+    // Only the FIRST item loses its uid: the rest must survive untouched.
+    let kept: Vec<uuid::Uuid> = bundle.binders[0].items.iter().map(|i| i.item.uid).collect();
+    bundle.binders[0].items[0].item.uid = uuid::Uuid::nil();
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let after: Vec<uuid::Uuid> = bundle.binders[0].items.iter().map(|i| i.item.uid).collect();
+    assert!(!after[0].is_nil(), "the nil one was filled");
+    assert_ne!(after[0], kept[0], "…with a fresh value");
+    assert_eq!(
+        after[1..],
+        kept[1..],
+        "every already-identified row must keep its uid"
+    );
+}
+
+/// A bundle needing a format newer than ours must be refused, not silently downgraded.
+///
+/// **Retargeted from `migrate_bundle` to the gate**, deliberately. The refusal moved:
+/// `migrate_bundle` ran after the whole bundle was parsed, which made it unreachable for
+/// the only forward-incompatible change this project actually makes (a new enum variant
+/// blows up in `ron::from_str` several frames earlier), and it compared the raw writer
+/// stamp rather than the content floor — so it would have refused exactly the files the
+/// floor scheme exists to keep openable. The coverage is kept; only its target changed.
+#[test]
+fn a_bundle_from_a_newer_format_is_refused_not_silently_migrated() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("FromTheFuture");
+    let bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    set_manifest_floor(&root.join("project.skrib"), FORMAT_VERSION + 1);
+
+    let err = read_bundle(root.to_str().unwrap()).expect_err("a newer .skrib must be refused");
+    assert!(
+        matches!(err, SkribFormatError::TooNew { .. }),
+        "expected TooNew, got: {err:?}"
+    );
+}
+
+/// Rewrite an already-written manifest's read floor to `floor`, in place.
+///
+/// A too-new bundle **cannot** be produced through `write_bundle` — the writer computes
+/// the floor from content, so by construction it never emits a file it could not read
+/// back. That is the right property, and it means every "from the future" test has to
+/// doctor the manifest afterwards. Textual rather than parse-edit-reserialize, because
+/// several tests below deliberately hand the reader a manifest it *cannot* fully parse,
+/// and going through `ProjectManifest` would defeat them.
+fn set_manifest_floor(manifest_path: &Path, floor: u32) {
+    let text = fs::read_to_string(manifest_path).unwrap();
+    let start = text
+        .find("format_min_read_version:")
+        .expect("the writer must have stamped a floor");
+    let end = start
+        + text[start..]
+            .find(',')
+            .expect("the field must be comma-terminated");
+    let replaced = format!(
+        "{}format_min_read_version: Some({floor}){}",
+        &text[..start],
+        &text[end..]
+    );
+    fs::write(manifest_path, replaced).unwrap();
+}
+
+#[test]
+fn migrating_a_v1_bundle_walks_the_whole_chain() {
+    // The v1 path is the one with non-obvious control flow: two loop
+    // iterations, v1→v2 then v2→v3. Only v2 was covered, so a regression that
+    // broke the oldest files -- the ones most likely still in the wild --
+    // would have passed.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 1;
+    for b in &mut bundle.binders {
+        b.binder.uid = uuid::Uuid::nil();
+        for i in &mut b.items {
+            i.item.uid = uuid::Uuid::nil();
+        }
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    for b in &bundle.binders {
+        assert!(!b.binder.uid.is_nil(), "v1 binder left unidentified");
+        for i in &b.items {
+            assert!(!i.item.uid.is_nil(), "v1 item left unidentified");
+        }
+    }
+}
+
+/// A `work.ron` written before `author_name` existed must still parse.
+///
+/// `author_name` was added to `WorkFile` without `#[serde(default)]`, unlike every
+/// other additive field on that struct — which made it *required*, so every project
+/// saved before it landed became unopenable. Nothing caught it because the four
+/// hand-written "this is what an older build emitted" fixtures below had each been
+/// given an `author_name:` line an old file could not possibly contain.
+///
+/// The failure is a parse error, not a migration gap: serde runs before
+/// `migration`, so a manifest that will not deserialize never reaches a step that
+/// could heal it. That is why the fix is `default`, not a version bump.
+#[test]
+fn a_work_written_before_author_name_existed_still_parses() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "Old Novel",
+        dict_language: ["fr-FR"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+    )"#;
+    let w: WorkFile = ron::from_str(old).expect("a work.ron without author_name must still parse");
+    assert_eq!(w.title, "Old Novel");
+    // Absent means unset, which is a legal state — the field is optional.
+    assert_eq!(w.author_name, "");
+}
+
+/// A `work.ron` written before the punctuation house style existed must still parse.
+///
+/// Same hazard as `author_name` above, and the same one-line guard: without
+/// `#[serde(default)]` on `WorkFile.smart_punctuation`, every project saved before
+/// this feature landed would fail to deserialize — before `migration` ever runs, so
+/// no step could heal it.
+#[test]
+fn a_work_written_before_smart_punctuation_existed_still_parses() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "Old Novel",
+        author_name: "Jane",
+        dict_language: ["fr-FR"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+    )"#;
+    let w: WorkFile =
+        ron::from_str(old).expect("a work.ron without smart_punctuation must still parse");
+    assert_eq!(w.title, "Old Novel");
+    // `None`, and deliberately not an all-false row: absent means "this project
+    // was never asked", which the loader turns into "follow the app default".
+    // An all-false row would instead mean "the writer switched everything off".
+    assert!(w.smart_punctuation.is_none());
+}
+
+/// Every `QuoteStyle` survives the name mapping in both directions.
+///
+/// The mapping is two hand-written `match` arms in different functions, so a
+/// variant added to one and forgotten in the other would write a name that reads
+/// back as `LocaleDefault` — silently losing the writer's house style on the next
+/// open, with nothing failing to point at it.
+#[test]
+fn every_quote_style_round_trips_through_its_name() {
+    use common::entities::QuoteStyle;
+    for style in [
+        QuoteStyle::LocaleDefault,
+        QuoteStyle::CurlyDouble,
+        QuoteStyle::CurlySingle,
+        QuoteStyle::Guillemets,
+        QuoteStyle::LowHigh,
+    ] {
+        let name = crate::mapping::quote_style_name(&style);
+        assert_eq!(
+            crate::mapping::quote_style_from_name(name),
+            style,
+            "{style:?} wrote {name:?}, which did not read back as itself"
+        );
+    }
+}
+
+/// An unknown quote style degrades to the locale default rather than failing.
+///
+/// The style is written as a string precisely so a bundle from a build that knows
+/// a style this one does not stays readable. Reading it back as `LocaleDefault` is
+/// the honest fallback: it is what the locale would have picked anyway.
+#[test]
+fn an_unrecognised_quote_style_falls_back_instead_of_failing() {
+    let future = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "From The Future",
+        author_name: "Jane",
+        dict_language: ["en-US"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+        smart_punctuation: Some(SmartPunctuationFile(
+            created_at: "2023-11-14T22:13:20Z",
+            updated_at: "2023-11-14T22:13:20Z",
+            override_app_default: true,
+            dashes: true,
+            ellipsis: true,
+            quotes: true,
+            quote_style: "corner_brackets",
+            pre_punctuation_spacing: false,
+            dialogue_marker: false,
+        )),
+    )"#;
+    let w: WorkFile = ron::from_str(future).expect("an unknown quote style must not break parsing");
+    let sp = w.smart_punctuation.expect("the row is present");
+    assert_eq!(sp.quote_style, "corner_brackets", "stored verbatim");
+    // The rest of the row still round-trips — one unknown value must not
+    // discard the settings around it.
+    assert!(sp.override_app_default);
+    assert!(sp.dashes);
+}
+
+/// A bundle written before `details`/`discoverable`/`aliases` existed must still parse.
+///
+/// The round-trip tests above always write with the current code, so they can never
+/// exercise the `#[serde(default)]` attributes those three fields carry — a dropped
+/// `default` would sail through them and only fail on a real pre-existing project. The
+/// RON below is hand-written to match exactly what an older build emitted: `struct_names`
+/// on, `BinderTagFile.text_color` present (now unknown, and silently ignored because this
+/// crate sets `deny_unknown_fields` nowhere), and the three new fields absent.
+#[test]
+fn parses_a_bundle_written_before_these_fields_existed() {
+    // `r##"…"##`: the colour literals contain `"#`, which would close an `r#"…"#`.
+    let old_tags = r##"[
+        BinderTagFile(
+            file_id: 10,
+            created_at: "2023-11-14T22:13:20Z",
+            updated_at: "2023-11-14T22:13:20Z",
+            name: "Important",
+            color: "#f00",
+            text_color: "#fff",
+        ),
+    ]"##;
+    let tags: Vec<BinderTagFile> = ron::from_str(old_tags).expect("old tags.ron must parse");
+    assert_eq!(tags.len(), 1);
+    assert_eq!(tags[0].name, "Important");
+    assert_eq!(tags[0].color, "#f00");
+    // Defaulted, not carried over from the dropped `text_color`.
+    assert_eq!(tags[0].details, "");
+    assert!(!tags[0].discoverable);
+
+    let old_items = r##"[
+        BinderItemFile(
+            file_id: 300,
+            created_at: "2023-11-14T22:13:20Z",
+            updated_at: "2023-11-14T22:13:20Z",
+            title: "The ferry",
+            sub_title: "",
+            role: Item,
+            sub_role: Scene,
+            label: "",
+            activated: true,
+            is_favorite: false,
+            is_exportable: true,
+            indent: 0,
+            word_count_goal: 0,
+            char_count_goal: 0,
+            dict_language: "en-US",
+            inline_contents: [],
+            prose_refs: [],
+            reference_ids: [301],
+            tag_ids: [10],
+        ),
+    ]"##;
+    let items: Vec<BinderItemFile> = ron::from_str(old_items).expect("old items.ron must parse");
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0].title, "The ferry");
+    // The pre-existing relationships must survive untouched...
+    assert_eq!(items[0].reference_ids, vec![301]);
+    assert_eq!(items[0].tag_ids, vec![10]);
+    // ...and the new fields default rather than failing the parse. This is what
+    // justifies leaving FORMAT_VERSION alone for `point_of_view_ids`: an empty POV
+    // is an ordinary, legal state (an unassigned scene), so `default` reads a v4
+    // file back correctly. Contrast `uid`, where nil was never valid and the
+    // addition therefore needed both a version bump and a heal step.
+    assert!(items[0].aliases.is_empty());
+    assert!(items[0].point_of_view_ids.is_empty());
+    // `book_ids` is the identical shape, added later: an empty filing is exactly as
+    // ordinary as an empty POV, so it defaults the same way for the same reason.
+    assert!(items[0].book_ids.is_empty());
+    // Same reasoning for the numbering opt-out, and the polarity is the whole point:
+    // every row of every project that predates the field was numbered, and `false` — the
+    // exception not being taken — is exactly what a bare `#[serde(default)]` yields. Had
+    // the field been spelled `numbered: bool`, this line would be asserting that an
+    // existing manuscript silently stopped numbering.
+    assert!(!items[0].exclude_from_numbering);
+}
+
+/// **The one field in this format whose safe legacy default is `true`.**
+///
+/// `WorkFile::number_chapters` carries `#[serde(default = "default_true")]` rather than the
+/// bare shorthand every other additive field here uses, because `bool::default()` is
+/// `false`: with the shorthand, the first load under a build that has this field would
+/// switch numbering off for every manuscript in existence — silently, and visibly only in
+/// the exported file. The round-trip tests cannot catch that (they always write with the
+/// current code, so the field is always present), so it is pinned here against RON
+/// hand-written as an older build emitted it.
+#[test]
+fn a_bundle_written_before_the_numbering_fields_still_numbers_its_chapters() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "My Novel",
+        author_name: "A. Writer",
+        dict_language: ["en-US"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "uid-1",
+        chapter_flat: false,
+    )"#;
+    let work: WorkFile = ron::from_str(old).expect("a pre-numbering work.ron must parse");
+    assert!(
+        work.number_chapters,
+        "a manuscript written before the switch existed was numbered, and must stay numbered"
+    );
+    // Its companion takes the ordinary shorthand: continuous chapters across parts is both
+    // the trade convention and what every older bundle meant.
+    assert!(!work.part_resets_chapter);
+}
+
+// ── dict_language: the pre-v4 string form (format v4) ───────────────────────
+
+/// A project written before `dict_language` became a list must still open.
+///
+/// This is the one guarantee standing between the change and every existing project being
+/// unopenable, and it cannot be covered by the round-trip tests above: those always write
+/// with the current code, so they only ever produce the list form. A type change also cannot
+/// be handled by `migration`, which runs *after* serde — a v3 file would fail to parse long
+/// before reaching it. So the tolerance lives in the deserializer, and this pins it with RON
+/// hand-written to match exactly what an older build emitted.
+#[test]
+fn a_pre_v4_space_separated_language_still_parses_as_a_list() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "Old Novel",
+        dict_language: "fr-FR en-US",
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+    )"#;
+    let w: WorkFile = ron::from_str(old).expect("a pre-v4 work must still parse");
+    assert_eq!(
+        w.dict_language,
+        vec!["fr-FR".to_string(), "en-US".to_string()],
+        "the space-separated grammar is split into the list it always meant"
+    );
+}
+
+/// A single tag — by far the common case — becomes a one-element list, not one element
+/// containing a space-padded string.
+#[test]
+fn a_pre_v4_single_language_becomes_one_element() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        dict_language: "  fr-FR  ",
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    )"#;
+    let w: WorkFile = ron::from_str(old).expect("must parse");
+    assert_eq!(w.dict_language, vec!["fr-FR".to_string()]);
+}
+
+/// An untagged pre-v4 project yields no tags at all, rather than one empty string — which
+/// would make `primary` return "" while looking like a real entry.
+#[test]
+fn a_pre_v4_empty_language_yields_no_tags() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        dict_language: "",
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    )"#;
+    let w: WorkFile = ron::from_str(old).expect("must parse");
+    assert!(w.dict_language.is_empty());
+}
+
+/// …and the current form round-trips as itself.
+#[test]
+fn the_v4_list_form_parses_unchanged() {
+    let current = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        author_name: "A",
+        dict_language: ["fr-FR", "en-US"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    )"#;
+    let w: WorkFile = ron::from_str(current).expect("must parse");
+    assert_eq!(
+        w.dict_language,
+        vec!["fr-FR".to_string(), "en-US".to_string()]
+    );
+}
+
+/// The shipped fixture — a real project written long before this change — opens through the
+/// real read path, and its pre-v4 language survives as a list.
+///
+/// `read_bundle` migrates internally (reader.rs), so this asserts the *post-migration* state:
+/// an old project arrives fully current. An earlier version of this test called
+/// `migrate_bundle` afterwards and asserted "before migration", which was never true and
+/// would have passed even if the split had been moved into the migration step — breaking
+/// `peek_manifest`, which does not migrate. That path is covered separately below.
+///
+/// Note what this deliberately does **not** assert: the fixture's on-disk `format_version`.
+/// That number moves whenever the app legitimately re-saves the project (it went 2 → 3
+/// exactly that way), and a test pinning it fails for a reason that has nothing to do with
+/// what it checks. What matters is that whatever version ships, it opens and arrives current.
+const FIXTURE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../resources/test/skribisto_test_project.skrib"
+);
+
+#[test]
+fn the_shipped_fixture_opens_and_keeps_its_language() {
+    let on_disk = peek_manifest(FIXTURE).expect("the fixture must have a readable manifest");
+    assert!(
+        on_disk.format_version < FORMAT_VERSION,
+        "this fixture earns its keep by being OLD — at v{} it no longer exercises migration, \
+         so either keep an older copy or retire this test",
+        on_disk.format_version
+    );
+
+    let bundle = read_bundle(FIXTURE).expect("an old project must still open");
+    assert_eq!(
+        bundle.manifest.format_version, FORMAT_VERSION,
+        "read_bundle migrates, so what comes back is current"
+    );
+    assert_eq!(
+        bundle.manifest.work.dict_language,
+        vec!["fr".to_string()],
+        "the pre-v4 string \"fr\" arrives as a one-element list"
+    );
+}
+
+/// …and `peek_manifest`, which deliberately does **not** migrate, still gets a usable list.
+///
+/// This is the path the backup sniff and the retention scan take over many files. If the
+/// string-to-list split ever moved out of the deserializer and into `migrate_bundle`, this is
+/// the test that would fail — the one above would not.
+///
+/// It writes its own manifest rather than reading the shipped project, because the property
+/// under test is "peek does not migrate", and borrowing a shared file to check that couples
+/// the test to a version number that legitimately changes underneath it.
+#[test]
+fn peek_manifest_parses_a_pre_v4_language_without_migrating() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Old Novel");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join(crate::shape::MANIFEST_NAME),
+        r#"ProjectManifest(
+    format_version: 2,
+    shape: Folder,
+    work: WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        dict_language: "fr-FR en-US",
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    ),
+    binder_order: [],
+)"#,
+    )
+    .unwrap();
+
+    let manifest = peek_manifest(root.to_str().unwrap()).expect("must parse unmigrated");
+    assert_eq!(
+        manifest.format_version, 2,
+        "peek must report what is on disk, not bump it"
+    );
+    assert_eq!(
+        manifest.work.dict_language,
+        vec!["fr-FR".to_string(), "en-US".to_string()],
+        "the split happens at parse time, so a caller that never migrates still gets a list"
+    );
+}
+
+/// A malformed value says what was expected instead of naming an internal enum.
+///
+/// The exploded-folder shape is meant to be hand-edited and diffed, so a typo there has to
+/// be legible. `#[serde(untagged)]` reported every such value as "data did not match any
+/// variant of untagged enum Either", which tells the writer nothing.
+#[test]
+fn a_malformed_language_names_what_was_expected() {
+    let bad = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        author_name: "A",
+        dict_language: 42,
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    )"#;
+    let err = ron::from_str::<WorkFile>(bad).expect_err("42 is not a language");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("language tags"),
+        "the error should say what was expected, got: {msg}"
+    );
+    assert!(
+        !msg.contains("untagged"),
+        "and should not leak an internal enum, got: {msg}"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Note templates
+// ---------------------------------------------------------------------------
+
+/// Every template blob's path, sorted — the template counterpart of [`prose_paths`].
+fn template_paths(bundle: &WorkBundle) -> Vec<String> {
+    let mut paths: Vec<String> = bundle
+        .note_templates
+        .iter()
+        .map(|t| t.path.clone())
+        .collect();
+    paths.sort();
+    paths
+}
+
+/// The same bug [`reopening_a_project_renames_no_prose_file`] guards, one row type
+/// further down.
+///
+/// A template's blob used to be named after its `file_id`, and `load_work` re-mints
+/// every one of those. So closing a folder-shape project and reopening it renamed every
+/// template file on the next save, `prune_dir` deleted the old names, and git showed the
+/// whole `templates/` directory replaced. Simulated the same way: shift every entity id
+/// while keeping every `uid`, which is exactly what a reload does.
+#[test]
+fn reopening_a_project_renames_no_template_file() {
+    const RELOAD_SHIFT: u64 = 10_000;
+
+    let before = template_paths(&build_bundle(ShapeTag::Folder));
+    let after = template_paths(&build_bundle_with(ShapeTag::Folder, |s| {
+        for t in &mut s.note_templates {
+            t.id += RELOAD_SHIFT;
+        }
+        s.work.note_templates = s.note_templates.iter().map(|t| t.id).collect();
+    }));
+
+    assert_eq!(
+        before, after,
+        "a reload must not rename a single template file"
+    );
+    assert!(
+        !before.is_empty(),
+        "the fixture must contain templates to compare"
+    );
+}
+
+/// Two templates the writer happened to name the same thing still land on two files.
+///
+/// The slug alone cannot separate them — only the `short_id` prefix can — so this is the
+/// guard for the collision path the hash exists to make reliable.
+#[test]
+fn two_templates_with_the_same_name_do_not_collide() {
+    let bundle = build_bundle_with(ShapeTag::Folder, |s| {
+        let name = s.note_templates[0].name.clone();
+        s.note_templates[1].name = name;
+    });
+
+    let paths = template_paths(&bundle);
+    assert_eq!(paths.len(), 2, "the fixture must carry two templates");
+    assert_ne!(
+        paths[0], paths[1],
+        "two same-named templates must still be two files, got {paths:?}"
+    );
+}
+
+/// A bundle written before v10 carries no template uids. The migration mints them once,
+/// and re-running it never re-mints — a second mint would rename the blob again and undo
+/// the whole point of the field.
+#[test]
+fn a_template_with_no_uid_is_healed_once_and_never_again() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 9;
+    for t in &mut bundle.note_templates {
+        t.uid = uuid::Uuid::nil();
+    }
+
+    crate::migration::migrate_bundle(&mut bundle).unwrap();
+    let healed: Vec<uuid::Uuid> = bundle.note_templates.iter().map(|t| t.uid).collect();
+    assert!(
+        healed.iter().all(|u| !u.is_nil()),
+        "every template must come out of the migration with an identity"
+    );
+
+    bundle.manifest.format_version = 9;
+    crate::migration::migrate_bundle(&mut bundle).unwrap();
+    let again: Vec<uuid::Uuid> = bundle.note_templates.iter().map(|t| t.uid).collect();
+    assert_eq!(healed, again, "healing must be idempotent, never a re-mint");
+}
+
+/// The bodies live in `templates/`, not inline in `templates.ron` — the split that makes
+/// a template edit diff as a prose change in an exploded project.
+#[test]
+fn template_bodies_are_written_as_sibling_djot_blobs() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let bundle = build_bundle(ShapeTag::Folder);
+    let short = crate::slug::short_id(bundle.note_templates[0].uid);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let index = std::fs::read_to_string(root.join("templates.ron")).unwrap();
+    assert!(
+        index.contains("Character sheet"),
+        "the index carries the name"
+    );
+    assert!(
+        !index.contains("## Identity"),
+        "but never the body — that belongs in the blob, got:\n{index}"
+    );
+
+    let blob = root.join(format!("templates/{short}-character-sheet.djot"));
+    assert!(blob.is_file(), "expected a blob at {}", blob.display());
+    assert!(
+        std::fs::read_to_string(&blob)
+            .unwrap()
+            .contains("## Identity"),
+        "the body is the blob's content"
+    );
+}
+
+/// A rename changes the slug and therefore the blob's filename. Without the prune in
+/// `write_folder` the old file would survive forever, so this is the regression guard
+/// for that specific omission.
+#[test]
+fn renaming_a_template_prunes_its_old_blob() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let path = root.to_str().unwrap();
+
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let uid = bundle.note_templates[0].uid;
+    let short = crate::slug::short_id(uid);
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert!(
+        root.join(format!("templates/{short}-character-sheet.djot"))
+            .is_file()
+    );
+
+    bundle.note_templates[0].name = "Dramatis persona".into();
+    bundle.note_templates[0].path = crate::slug::note_template_relpath(uid, "Dramatis persona");
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    assert!(
+        !root
+            .join(format!("templates/{short}-character-sheet.djot"))
+            .exists(),
+        "the pre-rename blob must be pruned, not orphaned"
+    );
+    assert!(
+        root.join(format!("templates/{short}-dramatis-persona.djot"))
+            .is_file()
+    );
+}
+
+/// Deleting the last template leaves no orphan blobs behind.
+#[test]
+fn deleting_templates_prunes_every_blob() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let path = root.to_str().unwrap();
+
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    bundle.note_templates.clear();
+    bundle.note_template_bodies.clear();
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let leftovers: Vec<_> = std::fs::read_dir(root.join("templates"))
+        .map(|d| {
+            d.flatten()
+                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .collect()
+        })
+        .unwrap_or_default();
+    assert!(
+        leftovers.is_empty(),
+        "expected no orphan blobs, found {leftovers:?}"
+    );
+}
+
+/// A name that is not a legal file name still lands on one safe path segment — the
+/// export/import surfaces take user-typed names, so this must not be able to escape.
+#[test]
+fn a_hostile_template_name_still_yields_one_safe_path_segment() {
+    for hostile in ["../../etc/passwd", "CON", "a/b\\c", "  ..  ", "Fiche/perso"] {
+        let rel = crate::slug::note_template_relpath(common::uid::fixture_uid(7), hostile);
+        assert_eq!(
+            std::path::Path::new(&rel).components().count(),
+            2,
+            "'{hostile}' must stay `templates/<one-segment>`, got '{rel}'"
+        );
+        assert!(rel.starts_with("templates/"), "got '{rel}'");
+        assert!(!rel.contains(".."), "got '{rel}'");
+    }
+}
+
+/// A project with no `templates.ron` at all (every bundle written before v5) loads as
+/// zero templates rather than failing — the additive half of the format change.
+#[test]
+fn a_bundle_without_templates_ron_loads_as_empty() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    std::fs::remove_file(root.join("templates.ron")).unwrap();
+    std::fs::remove_dir_all(root.join("templates")).unwrap();
+
+    let reread = read_bundle(path).expect("a pre-v5 project must still open");
+    assert!(reread.note_templates.is_empty());
+}
+
+/// A listed template whose blob has gone missing is a **hard error**, never a silently
+/// empty body. Degrading quietly would let autosave rewrite `templates.ron` from that
+/// empty state seconds later and destroy the text for good.
+#[test]
+fn a_missing_template_blob_fails_the_load_rather_than_emptying_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let path = root.to_str().unwrap();
+    let bundle = build_bundle(ShapeTag::Folder);
+    let blob = format!(
+        "{}-character-sheet.djot",
+        crate::slug::short_id(bundle.note_templates[0].uid)
+    );
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    std::fs::remove_file(root.join("templates").join(&blob)).unwrap();
+
+    let err = read_bundle(path).expect_err("a missing body blob must not load as empty");
+    let msg = format!("{err:#}");
+    assert!(
+        msg.contains(&blob),
+        "the error should name the missing blob, got: {msg}"
+    );
+}
+
+/// The v5 bump exists so an older build refuses the file instead of silently dropping
+/// its templates on the next save. Guard the refusal itself.
+///
+/// Retargeted at the gate for the reasons on
+/// `a_bundle_from_a_newer_format_is_refused_not_silently_migrated`, and rephrased in the
+/// terms the gate actually judges: a template-bearing bundle's *floor* is what makes it
+/// unopenable by a pre-v5 build, so that is what this asserts.
+#[test]
+fn a_bundle_from_a_newer_format_is_refused() {
+    // Isolated to the template axis: the fixture also carries epigraphs, which would
+    // hold the floor at 6 and stop this asserting the v5 case it is named for.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    strip_epigraphs(&mut bundle);
+    assert!(
+        !bundle.note_templates.is_empty(),
+        "the fixture must carry templates for this to be the v5 case"
+    );
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&bundle),
+        5,
+        "templates are what raise the floor to 5"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("HasTemplates");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    // Stand in for a build older than the floor by raising the floor above ours instead
+    // — the comparison the gate makes is identical either way.
+    set_manifest_floor(&root.join("project.skrib"), FORMAT_VERSION + 1);
+
+    let err = read_bundle(root.to_str().unwrap()).expect_err("newer must be refused");
+    assert!(
+        matches!(err, SkribFormatError::TooNew { requires_at_least, supported, .. }
+                 if requires_at_least == FORMAT_VERSION + 1 && supported == FORMAT_VERSION),
+        "got: {err:?}"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// The pre-flight version gate (`version_gate`)
+// ---------------------------------------------------------------------------
+
+/// The gate must fire **before** the binder manifests are parsed.
+///
+/// This is the whole bug: `migrate_bundle` owned the refusal and ran last, so a bundle
+/// from a future format — which in practice means one carrying an enum variant we do not
+/// know — died in `ron::from_str` on `items.ron` with a raw `Unexpected variant named
+/// "…"`, several call frames before any version was compared. Simulated here with an
+/// `items.ron` that cannot parse at all: if the ordering ever regresses, this reports a
+/// RON error instead of `TooNew`.
+#[test]
+fn the_gate_refuses_a_too_new_folder_bundle_without_parsing_its_binders() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("FromTheFuture");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    set_manifest_floor(&root.join("project.skrib"), FORMAT_VERSION + 1);
+    for entry in fs::read_dir(root.join("binders")).unwrap() {
+        fs::write(
+            entry.unwrap().path().join("items.ron"),
+            "ItemsFile(binder: NotAThing(sub_role: EpigraphFromTheFuture))",
+        )
+        .unwrap();
+    }
+
+    let err = read_bundle(path).expect_err("a too-new bundle must be refused");
+    assert!(
+        matches!(err, SkribFormatError::TooNew { .. }),
+        "expected the version refusal to win over the parse error, got: {err:?}"
+    );
+}
+
+/// Same for the zip shape, and one step stronger: the archive here **cannot be
+/// extracted**, so reaching `TooNew` proves the gate never called `extract`.
+///
+/// That matters beyond ordering. `read_zip` unpacks the entire archive — every `.djot`
+/// blob — into a tempdir before a single field is read, so gating afterwards means paying
+/// the full cost of a read that was always going to be refused. The gate's zip arm
+/// streams only the `project.skrib` entry via `by_name`.
+#[test]
+fn the_gate_refuses_a_too_new_zip_without_extracting_it() {
+    use std::io::Write as _;
+
+    let dir = tempfile::tempdir().unwrap();
+
+    // Start from a manifest the writer really produced, then raise its floor — so this
+    // exercises the actual on-disk spelling rather than a hand-written approximation.
+    let staging = dir.path().join("staging");
+    write_bundle(
+        staging.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Zip),
+    )
+    .unwrap();
+    set_manifest_floor(&staging.join("project.skrib"), FORMAT_VERSION + 3);
+    let manifest_text = fs::read_to_string(staging.join("project.skrib")).unwrap();
+
+    // Hand-build an archive whose one non-manifest entry is *stored* (uncompressed) and
+    // then overwritten in place with the same number of bytes: the zip stays structurally
+    // valid and `by_name` still works, but the recorded CRC32 no longer matches, so any
+    // attempt to extract fails.
+    let target = dir.path().join("FromTheFuture.skrib");
+    let payload = b"AAAAAAAAAAAAAAAA";
+    {
+        let f = fs::File::create(&target).unwrap();
+        let mut zw = zip::ZipWriter::new(f);
+        let stored = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        zw.start_file("project.skrib", stored).unwrap();
+        zw.write_all(manifest_text.as_bytes()).unwrap();
+        zw.start_file("binders/00-b/items.ron", stored).unwrap();
+        zw.write_all(payload).unwrap();
+        zw.finish().unwrap();
+    }
+    let mut bytes = fs::read(&target).unwrap();
+    let at = bytes
+        .windows(payload.len())
+        .position(|w| w == payload)
+        .expect("the stored payload must be findable verbatim");
+    bytes[at..at + payload.len()].fill(b'B');
+    fs::write(&target, &bytes).unwrap();
+
+    // Control: extraction really is fatal for this fixture, so the assertion below is
+    // about the gate's behaviour and not about a lenient reader.
+    assert!(
+        zip::ZipArchive::new(fs::File::open(&target).unwrap())
+            .unwrap()
+            .extract(dir.path().join("control"))
+            .is_err(),
+        "the fixture must be an archive that cannot be extracted"
+    );
+
+    let err = read_bundle(target.to_str().unwrap()).expect_err("a too-new zip must be refused");
+    assert!(
+        matches!(err, SkribFormatError::TooNew { requires_at_least, .. }
+                 if requires_at_least == FORMAT_VERSION + 3),
+        "expected TooNew without extracting, got: {err:?}"
+    );
+}
+
+/// The direct regression test for the ceiling deletion.
+///
+/// A newer build that saves a project containing nothing new stamps `format_version`
+/// above ours but a floor we understand. That file must open. While `migrate_bundle`
+/// kept its own `v > FORMAT_VERSION` check it would have refused exactly this file —
+/// *after* the gate admitted it and the whole bundle was parsed.
+#[test]
+fn a_floor_we_understand_opens_even_when_format_version_is_ahead() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("NewerWriterOldContent");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    let manifest_path = root.join("project.skrib");
+    let text = fs::read_to_string(&manifest_path).unwrap();
+    fs::write(
+        &manifest_path,
+        text.replacen(
+            &format!("format_version: {FORMAT_VERSION}"),
+            &format!("format_version: {}", FORMAT_VERSION + 1),
+            1,
+        ),
+    )
+    .unwrap();
+    // Floor stays at what the writer computed, i.e. something this build implements.
+
+    let bundle = read_bundle(path).expect("a floor we understand must open");
+    assert_eq!(
+        bundle.manifest.format_version,
+        FORMAT_VERSION + 1,
+        "migration must leave a from-the-future stamp alone rather than downgrade it"
+    );
+}
+
+/// Every `.skrib` in a real user's hands predates this field. Absent → fall back to
+/// `format_version`, which is precisely the refuse-if-greater rule the crate always had.
+#[test]
+fn an_absent_floor_falls_back_to_format_version() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Legacyish");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    // Strip the field entirely, exactly as a pre-scheme manifest has it.
+    let manifest_path = root.join("project.skrib");
+    let text = fs::read_to_string(&manifest_path).unwrap();
+    let start = text.find("format_min_read_version:").unwrap();
+    let end = start + text[start..].find(',').unwrap() + 1;
+    fs::write(
+        &manifest_path,
+        format!("{}{}", &text[..start], text[end..].trim_start()),
+    )
+    .unwrap();
+    assert!(
+        !fs::read_to_string(&manifest_path)
+            .unwrap()
+            .contains("format_min_read_version")
+    );
+
+    read_bundle(path).expect("a manifest without the field must open exactly as before");
+}
+
+/// `format_version: 0` is refused before anything else is parsed.
+#[test]
+fn format_version_zero_is_refused_pre_parse() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Bogus");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    let manifest_path = root.join("project.skrib");
+    let text = fs::read_to_string(&manifest_path).unwrap();
+    fs::write(
+        &manifest_path,
+        text.replacen(
+            &format!("format_version: {FORMAT_VERSION}"),
+            "format_version: 0",
+            1,
+        ),
+    )
+    .unwrap();
+    for entry in fs::read_dir(root.join("binders")).unwrap() {
+        fs::write(entry.unwrap().path().join("items.ron"), "not ron at all").unwrap();
+    }
+
+    let err = read_bundle(path).expect_err("format_version 0 must be refused");
+    assert!(
+        matches!(err, SkribFormatError::InvalidVersion),
+        "expected InvalidVersion before any binder parsing, got: {err:?}"
+    );
+}
+
+/// The probe must survive a manifest from an arbitrarily distant future — and this is the
+/// test that would have caught reusing `peek_manifest` for it.
+///
+/// `peek_manifest` parses the whole `ProjectManifest`, including `shape: ShapeTag` and
+/// `kind: BundleKind` — plain derived enums with no `#[serde(other)]`. A future third
+/// `ShapeTag` would hard-fail *the probe itself*, reopening the very bug the gate closes,
+/// one level up. The control assertion pins that difference rather than describing it.
+#[test]
+fn the_probe_survives_an_unrecognised_shape_tag_variant() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("FutureShape");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    let manifest_path = root.join("project.skrib");
+    let text = fs::read_to_string(&manifest_path).unwrap();
+    let doctored = text.replacen("shape: Folder", "shape: HolographicCrystal", 1);
+    assert_ne!(doctored, text, "the shape field must have been rewritten");
+    fs::write(&manifest_path, &doctored).unwrap();
+
+    // Control: the full-manifest reader cannot cope with it…
+    assert!(
+        peek_manifest(path).is_err(),
+        "peek_manifest must choke on an unknown ShapeTag — that is why it is not the probe"
+    );
+    // …while the gate reads its two integers regardless. (The full read still fails
+    // afterwards, as it must; what matters is that the *gate* got its answer.)
+    assert!(
+        crate::version_gate::check_version_gate(path, SkribShape::ExplodedFolder).is_ok(),
+        "the narrow probe must be immune to unknown enum values elsewhere in the manifest"
+    );
+}
+
+/// The probe is coupled to `ProjectManifest`'s **type name**, because `to_ron` writes
+/// with `struct_names(true)` and RON checks that name before any field. Round-trip a real
+/// serialized manifest rather than a hand-written string, so a rename of the manifest
+/// type breaks this test rather than every project open.
+#[test]
+fn the_probe_reads_a_real_serialized_manifest() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Real");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    assert!(
+        fs::read_to_string(root.join("project.skrib"))
+            .unwrap()
+            .starts_with("ProjectManifest("),
+        "the writer emits the struct name; the probe's rename depends on it"
+    );
+    assert!(crate::version_gate::check_version_gate(path, SkribShape::ExplodedFolder).is_ok());
+}
+
+/// `migrate_bundle`'s narrowed contract: a stamp above ours is no longer its business.
+#[test]
+fn migrate_bundle_no_longer_bails_on_a_stamp_above_current() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = FORMAT_VERSION + 1;
+    crate::migration::migrate_bundle(&mut bundle)
+        .expect("the gate, not the migration chain, judges what is too new");
+    assert_eq!(
+        bundle.manifest.format_version,
+        FORMAT_VERSION + 1,
+        "the chain must no-op rather than downgrade"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// The content-derived floor (`compute_min_read_version`)
+// ---------------------------------------------------------------------------
+
+/// Drop every epigraph row (and its blob) from a bundle, so a test can isolate one
+/// floor axis from the other. Epigraph text is prose-role, so it lives in `prose_refs`
+/// with its body in `BundledItem::prose`, keyed by the same `file_id`.
+fn strip_epigraphs(bundle: &mut WorkBundle) {
+    for binder in &mut bundle.binders {
+        for item in &mut binder.items {
+            let dropped: Vec<u64> = item
+                .item
+                .prose_refs
+                .iter()
+                .filter(|p| p.role == ContentRole::EpigraphText)
+                .map(|p| p.file_id)
+                .collect();
+            item.item
+                .prose_refs
+                .retain(|p| p.role != ContentRole::EpigraphText);
+            for id in dropped {
+                item.prose.remove(&id);
+            }
+        }
+    }
+}
+
+/// Each content kind raises the floor only when actually present, and each axis is
+/// independent of the others. This is the payoff of the two-number scheme:
+/// `format_version` is stamped unconditionally on every write, autosave included, so a
+/// single number would lock a plain project out of the previous build the instant one
+/// tick landed.
+///
+/// Peeled one axis at a time — epigraphs (v6) then templates (v5) — because the axes
+/// have to be separable to be worth anything: a project with templates but no epigraph
+/// must still claim 5, not 6, or every v5 build loses files it can read perfectly well.
+#[test]
+fn the_floor_rises_only_for_content_that_needs_it() {
+    let everything = build_bundle(ShapeTag::Folder);
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&everything),
+        6,
+        "epigraphs are the v6 axis and the fixture carries them"
+    );
+
+    let mut no_epigraphs = build_bundle(ShapeTag::Folder);
+    strip_epigraphs(&mut no_epigraphs);
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&no_epigraphs),
+        5,
+        "templates still hold the floor at 5 once the epigraphs are gone"
+    );
+
+    let mut without = build_bundle(ShapeTag::Folder);
+    strip_epigraphs(&mut without);
+    without.note_templates.clear();
+    without.note_template_bodies.clear();
+    assert_eq!(crate::version_gate::compute_min_read_version(&without), 4);
+}
+
+/// The floor is recomputed from content at every write, never carried over from what was
+/// loaded — otherwise deleting the content that justified it would leave the project
+/// permanently pinned to a version it no longer needs.
+#[test]
+fn the_floor_is_recomputed_at_every_write_not_carried_over() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Shedding");
+    let path = root.to_str().unwrap();
+
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+    assert_eq!(
+        peek_manifest(path).unwrap().format_min_read_version,
+        Some(6),
+        "epigraphs must have raised the stamped floor"
+    );
+
+    let mut shed = read_bundle(path).unwrap();
+    assert_eq!(shed.manifest.format_min_read_version, Some(6));
+    strip_epigraphs(&mut shed);
+    shed.note_templates.clear();
+    shed.note_template_bodies.clear();
+    write_bundle(path, SkribShape::ExplodedFolder, &shed).unwrap();
+
+    assert_eq!(
+        peek_manifest(path).unwrap().format_min_read_version,
+        Some(4),
+        "dropping the templates must drop the floor back — nothing is sticky"
+    );
+}
+
+/// The floor must be scored on what actually reaches disk. `from_entities` drops content
+/// failing `content_allowed` before bundling it, so scoring the pre-filter store entities
+/// would count rows that were never written and needlessly refuse readers.
+#[test]
+fn the_floor_ignores_content_dropped_by_content_allowed() {
+    let mut s = sample_inputs();
+
+    // A Folder/Book may not carry SceneText — `from_entities` filters it out.
+    assert!(
+        !allowed_content(&BinderItemRole::Folder, &BinderItemSubRole::Book)
+            .contains(&ContentRole::SceneText),
+        "the fixture must actually be an invalid triple"
+    );
+    let victim = &mut s.binders[0].items[0];
+    victim.item.role = BinderItemRole::Folder;
+    victim.item.sub_role = BinderItemSubRole::Book;
+    victim.contents = vec![Content {
+        id: 9001,
+        uid: common::uid::fixture_uid(9001),
+        created_at: ts(),
+        updated_at: ts(),
+        activated: true,
+        role: ContentRole::SceneText,
+        data: "should never be written".into(),
+    }];
+
+    let bundle = from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &s.statuses,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &[], // no comments
+        &[], // no footnotes
+        &s.binders,
+        ShapeTag::Folder,
+    );
+
+    let written = &bundle.binders[0].items[0].item;
+    assert!(
+        written.inline_contents.is_empty() && written.prose_refs.is_empty(),
+        "the filter must have dropped the invalid content before it could be scored"
+    );
+    // Walking the bundle rather than the pre-filter store input is what makes that hold:
+    // the dropped row is simply not there to score.
+    crate::version_gate::compute_min_read_version(&bundle);
+}
+
+/// The floor is a pure function of content already hashed elsewhere in the same bundle,
+/// so it must not participate in the fingerprint. Otherwise every future refinement of
+/// the scoring logic — with not one word of prose edited — re-triggers a backup cascade
+/// on the next save of every project.
+#[test]
+fn the_content_fingerprint_ignores_the_floor() {
+    let a = build_bundle(ShapeTag::Folder);
+    let mut b = a.clone();
+    b.manifest.format_min_read_version = Some(FORMAT_VERSION + 7);
+    assert_eq!(content_fingerprint(&a), content_fingerprint(&b));
+}
+
+/// A v4 bundle migrates forward to v5 with no templates and no complaint.
+#[test]
+fn a_v4_bundle_migrates_to_v5() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 4;
+    bundle.note_templates.clear();
+    bundle.note_template_bodies.clear();
+    crate::migration::migrate_bundle(&mut bundle).expect("v4 must migrate");
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+}
+
+/// A footnote lands in a sidecar beside the prose that references it.
+///
+/// The adjacency is what identifies the owning `Content` — the same reason a
+/// comment sidecar sits there and the same reason `Content` needs no `uid`.
+#[test]
+fn a_footnote_lands_in_a_sidecar_beside_the_prose_it_annotates() {
+    let bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let scene = scene_text_content_id(&sample_inputs().binders);
+    let prose = root.join(prose_path_for_content(&bundle, scene));
+    assert!(prose.is_file(), "expected the scene's .djot at {prose:?}");
+
+    let sidecar = prose.with_extension("").to_string_lossy().to_string() + ".footnotes.ron";
+    assert!(
+        std::path::Path::new(&sidecar).is_file(),
+        "expected a footnotes sidecar at {sidecar}"
+    );
+    let text = std::fs::read_to_string(&sidecar).unwrap();
+    assert!(text.contains("fn-a1b2"), "the label is missing: {text}");
+    assert!(text.contains("emphasis"), "the body is missing: {text}");
+}
+
+/// **The prune hazard.** `prune_dir` matches by bare extension, so writing the two
+/// sidecar kinds with separate expected-sets would have each delete the other's
+/// files. A project with both must keep both.
+#[test]
+fn saving_a_project_with_both_sidecar_kinds_prunes_neither() {
+    let bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    // Write twice: the prune only runs against an already-populated directory.
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let names: Vec<String> = walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .collect();
+    assert!(
+        names.iter().any(|n| n.ends_with(".comments.ron")),
+        "the comment sidecars were pruned away: {names:?}"
+    );
+    assert!(
+        names.iter().any(|n| n.ends_with(".footnotes.ron")),
+        "the footnote sidecars were pruned away: {names:?}"
+    );
+}
+
+/// A note whose annotated Content is gone keeps its words in the orphanage.
+#[test]
+fn an_orphaned_footnote_survives_a_round_trip_via_the_orphanage() {
+    let bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    assert_eq!(read.orphan_footnotes.len(), 1);
+    assert_eq!(read.orphan_footnotes[0].label, "fn-lost");
+    assert!(read.orphan_footnotes[0].body.contains("words are not"));
+}
+
+/// The floor rises only for a project that actually has a footnote, and falls
+/// again when the last one goes — so a project without notes stays openable by
+/// every older build.
+#[test]
+fn the_version_floor_tracks_whether_footnotes_are_present() {
+    let mut bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&bundle),
+        9,
+        "a bundle carrying footnotes must claim the v9 floor"
+    );
+
+    bundle.orphan_footnotes.clear();
+    for bb in &mut bundle.binders {
+        for bi in &mut bb.items {
+            bi.footnotes.clear();
+        }
+    }
+    assert!(
+        crate::version_gate::compute_min_read_version(&bundle) < 9,
+        "removing every footnote must drop the floor again"
+    );
+}
+
+/// v11 mints a uid for every row an out-of-tree consumer can name.
+///
+/// The v3 test above covers binders and items; this covers the four kinds added in v11,
+/// and it is the one that matters for anything holding references from *outside* the
+/// core entity tree — a nil uid there is not merely missing, it is a key every other
+/// nil-identified row collides on.
+#[test]
+fn migrating_a_pre_v11_bundle_mints_a_uid_for_tags_comments_footnotes_and_contents() {
+    let mut bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    bundle.manifest.format_version = 10;
+    for t in &mut bundle.tags {
+        t.uid = uuid::Uuid::nil();
+    }
+    for b in &mut bundle.binders {
+        for i in &mut b.items {
+            for pr in &mut i.item.prose_refs {
+                pr.uid = uuid::Uuid::nil();
+            }
+            for ic in &mut i.item.inline_contents {
+                ic.uid = uuid::Uuid::nil();
+            }
+            for list in i.comments.values_mut() {
+                for c in list {
+                    c.uid = uuid::Uuid::nil();
+                }
+            }
+            for list in i.footnotes.values_mut() {
+                for f in list {
+                    f.uid = uuid::Uuid::nil();
+                }
+            }
+        }
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+
+    // Every uid distinct as well as present: minting them all from one shared value
+    // would satisfy "not nil" and still collapse every reference onto one key.
+    let mut seen = std::collections::HashSet::new();
+    let mut checked = 0usize;
+    let mut check = |uid: uuid::Uuid, what: &str| {
+        assert!(!uid.is_nil(), "{what} left without a uid");
+        assert!(seen.insert(uid), "{what} got a duplicate uid");
+    };
+    for t in &bundle.tags {
+        check(t.uid, "tag");
+        checked += 1;
+    }
+    for b in &bundle.binders {
+        for i in &b.items {
+            for pr in &i.item.prose_refs {
+                check(pr.uid, "prose content");
+                checked += 1;
+            }
+            for ic in &i.item.inline_contents {
+                check(ic.uid, "inline content");
+                checked += 1;
+            }
+            for list in i.comments.values() {
+                for c in list {
+                    check(c.uid, "comment");
+                    checked += 1;
+                }
+            }
+            for list in i.footnotes.values() {
+                for f in list {
+                    check(f.uid, "footnote");
+                    checked += 1;
+                }
+            }
+        }
+    }
+    assert!(
+        checked > 0,
+        "the fixture must actually contain rows of these kinds, or this test proves nothing"
+    );
+}
+
+/// The v11 step keeps identities it did not mint, exactly like its v3 counterpart.
+#[test]
+fn the_v11_step_never_re_mints_an_existing_uid() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 10;
+    let kept: Vec<uuid::Uuid> = bundle.tags.iter().map(|t| t.uid).collect();
+    assert!(
+        kept.len() > 1,
+        "needs at least two tags to tell 'kept' from 'all re-minted'"
+    );
+    bundle.tags[0].uid = uuid::Uuid::nil();
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let after: Vec<uuid::Uuid> = bundle.tags.iter().map(|t| t.uid).collect();
+    assert!(!after[0].is_nil(), "the nil one was filled");
+    assert_ne!(after[0], kept[0], "…with a fresh value");
+    assert_eq!(after[1..], kept[1..], "identified tags must keep their uid");
+}
+
+/// The whole point of the format change: a ladder, and an item's rung, must survive a write
+/// and a read. Both halves matter — `mapping.rs` writes and reads through two *independent*
+/// exhaustive lists, so updating one and not the other is a live possibility that would
+/// look correct all session and lose the data on the next open.
+#[test]
+fn a_status_ladder_round_trips_through_the_bundle() {
+    let mut s = sample_inputs();
+    let statuses = sample_statuses();
+    let draft = statuses[0].id;
+    s.work.statuses = statuses.iter().map(|st| st.id).collect();
+    // One item wearing a rung and the rest bare, so "no status" is covered too.
+    s.binders[0].items[0].item.status = Some(draft);
+
+    let bundle = from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &statuses,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &[],
+        &[],
+        &s.binders,
+        ShapeTag::Folder,
+    );
+
+    // Written: the ladder in order, and the reference on the right row.
+    assert_eq!(
+        bundle
+            .statuses
+            .iter()
+            .map(|st| st.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Draft", "Final"],
+        "the ladder is written in ladder order — that order IS the ladder"
+    );
+    assert_eq!(
+        bundle.statuses[0].category,
+        common::entities::StatusCategory::Drafting
+    );
+    assert_eq!(
+        bundle.statuses[1].category,
+        common::entities::StatusCategory::Final
+    );
+    assert_eq!(bundle.binders[0].items[0].item.status_id, Some(draft));
+    assert_eq!(
+        bundle.binders[0].items[1].item.status_id, None,
+        "an unmarked row stays unmarked"
+    );
+
+    // A project with a ladder cannot be opened by a build that would delete it.
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&bundle),
+        14,
+        "a ladder raises the read floor, exactly as templates and images do"
+    );
+
+    // Read back.
+    let loaded = bundle_to_loaded(bundle.clone(), "/tmp/x.skrib").expect("round trip");
+    assert_eq!(
+        loaded
+            .statuses
+            .iter()
+            .map(|st| st.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Draft", "Final"]
+    );
+    assert_eq!(loaded.statuses[0].details, "Written once, not yet reread.");
+    assert_eq!(
+        loaded.binders[0].items[0].status_id,
+        Some(draft),
+        "the rung reference survives the read — carried on LoadedItem beside tag_ids"
+    );
+    assert_eq!(loaded.binders[0].items[1].status_id, None);
+}
+
+/// A ladder-free project must keep the floor it had. Stated separately because the floor is
+/// gated on *having* statuses, and a gate that silently always fired would be invisible.
+#[test]
+fn a_project_without_a_ladder_keeps_its_lower_floor() {
+    let s = sample_inputs();
+    let bundle = from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &[],
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &[],
+        &[],
+        &s.binders,
+        ShapeTag::Folder,
+    );
+    assert!(bundle.statuses.is_empty());
+    assert!(
+        crate::version_gate::compute_min_read_version(&bundle) < 14,
+        "a project with no ladder should still open in an older build"
+    );
+}

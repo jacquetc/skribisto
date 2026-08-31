@@ -1,0 +1,100 @@
+LE TOUR DU MONDE EN QUATRE-VINGTS JOURS — RIGHTS AND PROVENANCE
+===============================================================
+
+Skribisto's own source code is licensed GPL-3.0-only (see COPYING at the repository
+root). That licence governs the application. It does not govern the novel in this
+directory, which needs no licence: it is in the public domain worldwide.
+
+
+The work
+--------
+
+Work:       LE TOUR DU MONDE EN QUATRE-VINGTS JOURS
+Author:     Jules Verne (8 February 1828 – 24 March 1905)
+Published:  Serialised in Le Temps, November–December 1872; in volume,
+            J. Hetzel et Cie, Paris, 1873, in Les Voyages extraordinaires
+Illustrators: Alphonse de Neuville (1835–1885) and Léon Benett (1839–1916)
+
+Copyright status
+~~~~~~~~~~~~~~~~
+
+Public domain everywhere this application is distributed.
+
+  * France (droit d'auteur, vie de l'auteur + 70 ans): entered the public domain in
+    1975. Jules Verne was not "Mort pour la France", so the +30-year extension of
+    art. L123-10 CPI does not apply — the extension that keeps Le Petit Prince under
+    copyright in France to this day, and the reason this book is the example and that
+    one is not.
+  * United States (published before 1929): public domain, with no renewal question to
+    ask.
+  * Everywhere else on a life+70 or shorter term: 1975 or earlier.
+
+The engravings are not bundled — the source text carries only Project Gutenberg's
+`[Illustration: …]` markers, which the converter drops — but both illustrators are
+likewise long in the public domain, so adding them later raises no new question.
+
+Source of the text
+~~~~~~~~~~~~~~~~~~
+
+Project Gutenberg eBook #46541, produced by Claudine Corbasson, Hans Pieterse and the
+Online Distributed Proofreading Team from scans held by the Internet Archive /
+Canadian Libraries.
+
+Project Gutenberg's header and footer have been removed and no reference to Project
+Gutenberg remains in the bundle. This is what their own licence provides for a work
+not protected by copyright: the trademark and the licence attach to the branded file,
+not to the public-domain text inside it. Nothing is owed to them for this use, and
+the credit above is given because it is deserved, not because it is required.
+
+A faithful transcription of a public-domain text acquires no copyright of its own,
+in France (no originality) or in the United States (Feist).
+
+
+What the conversion changed
+---------------------------
+
+The prose is Verne's, and only the following was done to it. Every rule is declared
+in `le-tour-du-monde-en-quatre-vingts-jours.toml`, under `[source]`, and applied by
+
+    cargo run -p skribisto-skrib-format --example build_example -- convert \
+        resources/examples/le_tour_du_monde_en_80_jours/le-tour-du-monde-en-quatre-vingts-jours.toml \
+        <the stripped source text> \
+        resources/examples/le_tour_du_monde_en_80_jours/le-tour-du-monde-en-quatre-vingts-jours.skrib
+
+  * The Hetzel title page, the volume's own table of contents, the printer's mark and
+    the transcriber's list of corrections were dropped. None of them is the book, and
+    the corrections list in particular quotes misprints that would otherwise be
+    searchable as though Verne had written them.
+  * `[Illustration: …]` markers were removed.
+  * Paragraphs hard-wrapped at 72 columns by the transcription were rejoined into
+    single paragraphs. The wrap is a property of a terminal, not of the prose, and
+    Verne's italics span it.
+  * The typewriter apostrophe (') became the typographic apostrophe (’).
+  * The 37 chapter headings moved from the prose into the rows' titles, where the
+    application shows and numbers them.
+  * The one footnote in chapter IX became a real footnote row rather than a paragraph
+    beginning "[1]".
+
+The 1873 spelling is kept exactly as it stands — "collége", "très-sérieusement", "A"
+without its accent, "Saville-row" for Savile Row. These are not typing errors and
+must not be "fixed": the dictionary is set to fr-FR-x-classique so the spell-checker
+does not underline the book's own orthography.
+
+The converter checks all 37 chapter titles against the headings it finds in the
+source, so a chapter landing one slot out is a hard error rather than thirty-seven
+quietly mismatched synopses.
+
+
+Editorial metadata added by the Skribisto project
+-------------------------------------------------
+
+The synopses, the story bible (21 characters, 17 places, 13 objects), the labels,
+the tags, the workflow statuses and the point-of-view assignments are the work of the
+Skribisto project and not of Jules Verne. Every chapter is marked "Terminé" on that
+ladder, which is a statement about this transcription being finished — not a judgement
+of the novel. They are declared in the TOML beside this file and applied by the
+same tool's `enrich` subcommand, which asserts on every run that the prose it read
+back is byte-identical to what it writes out.
+
+They are editorial description of the novel, not part of it. Any error in them is the
+project's.

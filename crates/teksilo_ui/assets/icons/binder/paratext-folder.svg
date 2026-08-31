@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Folder/Paratext — the same brackets holding a solid band instead of a line.
+       The pair reads by INK MASS, not by counting strokes: one 1-unit line for the
+       leaf, one solid 2-unit band for the container. That is the same device Scene
+       and Chapter already use to separate themselves (two thin bars against one
+       band), and it is what a 16px raster preserves — a difference in stroke count
+       is the first thing it destroys.
+       The band is a filled rect, not a thick stroke, so it keeps crisp edges on the
+       whole-pixel grid instead of straddling two rows at half opacity. -->
+  <path d="M6 3.5H4.5V12.5H6"/>
+  <path d="M10 3.5H11.5V12.5H10"/>
+  <rect x="6.5" y="7" width="3" height="2" fill="currentColor" stroke="none"/>
+</svg>

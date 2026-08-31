@@ -1,0 +1,32 @@
+{
+  "name": "Skribisto (Rust + Teksilo)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind",
+  "workspaceFolder": "/workspaces/skribisto",
+  "runArgs": [
+    "--net=host",
+    "-e",
+    "DISPLAY=${localEnv:DISPLAY}",
+    "-e",
+    "WAYLAND_DISPLAY=${localEnv:WAYLAND_DISPLAY}",
+    "-e",
+    "XDG_RUNTIME_DIR=${localEnv:XDG_RUNTIME_DIR}",
+    "-v",
+    "/tmp/.X11-unix:/tmp/.X11-unix:rw",
+    "-v",
+    "${localEnv:XDG_RUNTIME_DIR}:${localEnv:XDG_RUNTIME_DIR}:rw"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "tamasfe.even-better-toml"
+      ]
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "shutdownAction": "none"
+}

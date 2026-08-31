@@ -1,9 +1,0 @@
-{
-    "type" :            "importer",
-    "shortname" :       "PlumeCreatorImporter",
-    "longname" :        "Plume Creator Importer",
-    "version" :         "1.0",
-    "mandatory" :    true,
-    "activatedByDefault" :    true,
-    "dependencies" :    []
-}

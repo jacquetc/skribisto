@@ -1,0 +1,48 @@
+## Where an old chapter goes
+
+You have rewritten a chapter and you want the old one where you can still read it.
+
+Put it in another binder.
+
+## Making the copy
+
+- Select the chapter in the *Binder* panel. Press `Ctrl+D`, or choose *Document ▸
+  Duplicate*. The copy keeps the same title and lands after the original and everything
+  under it.
+- Select the copy, the second of the two. Duplicating leaves your selection on the
+  original, so rename the copy only once you have picked it, with *Document ▸ Rename*.
+- A project started from a novel template already has a *Notes* binder. If yours has none,
+  the button at the top of the *Binder* panel holds *New binder…*.
+- Drag the copy onto that binder. If the button names a single binder rather than *All
+  Binders*, choose *Show all binders* first, so both ends of the drag show.
+
+That is all. If the rewrite turns out to be the worse of the two, drag it back.
+
+## Why another binder is enough
+
+A book runs from its own marker to the next one, inside the binder it lives in. See
+[how a book is put together](:help-writing-model).
+
+So an old chapter in another binder is outside the book. The word count, your targets and
+pace, and the export leave it out.
+
+## What still works on it
+
+Everything about reading and editing. The old chapter keeps its title and its place in the
+binder you chose. It is still found by search, still spellchecked, still backed up.
+
+Your story bible still works there. If a character is named in the old draft, her entry
+still counts those scenes.
+
+## The other ways, and when they fit
+
+- *Trash* is for something you have decided against. A trashed item leaves the *Binder*
+  panel and stops counting, and stays recoverable. You can still open one from the *Trash*
+  panel to read it, but it is filed as discarded, not kept.
+- The *Versions* panel keeps what one piece of text said before, and can put an older state
+  back. Reach for it to answer "what did this paragraph say yesterday". It works one item
+  at a time, and restoring replaces what is there now. See
+  [backups and versions](:help-backups-and-versions).
+- *Include in exports*, in the Inspector, decides whether an item reaches the finished
+  book. Switch it off and the item is left out when you export the book, and out of your
+  word counts.

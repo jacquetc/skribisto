@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    - id: check-yaml
+      # NEWS.yml is a multi-document stream (one YAML document per release), so
+      # the default single-document load rejects it.
+      args: [--allow-multiple-documents]
+      stages: [commit]
+    - id: check-json
+      stages: [commit]
+    - id: check-toml
+      stages: [commit]
+    - id: check-merge-conflict
+      stages: [commit]
+    - id: check-case-conflict
+      stages: [commit]
+    - id: detect-private-key
+      stages: [commit]
+  - repo: https://github.com/crate-ci/committed
+    rev: v1.1.11
+    hooks:
+    - id: committed
+      stages: [commit-msg]
+  - repo: local
+    hooks:
+    - id: spdx-headers
+      name: SPDX headers
+      entry: python3 tools/check_spdx_headers.py --check
+      language: system
+      pass_filenames: false
+      stages: [commit]

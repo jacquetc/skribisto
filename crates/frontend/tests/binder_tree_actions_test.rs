@@ -1,0 +1,2924 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Integration tests for the binder-tree action use cases: move_items,
+//! duplicate, and the four trash_management use cases — plus their undo/redo.
+//!
+//! Fixtures are built synthetically via the direct-access create commands (no
+//! `.skrib` file needed). The fixture is created on a dedicated `setup` undo
+//! stack; each action runs on its own fresh stack so `undo`/`redo` touch only
+//! the action under test.
+
+use frontend::AppContext;
+use frontend::commands::{
+    binder_commands, binder_item_commands, binder_item_management_commands, binder_tag_commands,
+    content_commands, root_commands, system_commands, trash_info_commands,
+    trash_management_commands, undo_redo_commands, work_commands,
+};
+use frontend::common::direct_access::binder::BinderRelationshipField;
+use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+use frontend::common::direct_access::work::WorkRelationshipField;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use frontend::common::types::EntityId;
+use frontend::direct_access::{
+    BinderItemRelationshipDto, BinderRelationshipDto, CreateBinderDto, CreateBinderItemDto,
+    CreateBinderTagDto, CreateContentDto, CreateRootDto, CreateSystemDto, CreateWorkDto,
+    WorkRelationshipDto,
+};
+
+use binder_item_management::{
+    DuplicateDto, MergeTwoScenesDto, MoveDto, MovePlace, PromoteDto, SplitSceneDto,
+};
+use skribisto_model::PromoteTarget;
+use trash_management::{
+    DeleteTrashEntriesDto, DropPosition, EmptyTrashDto, RestoreItemsDto, RestoreItemsToDto,
+    TrashBinderDto, TrashBinderItemsDto,
+};
+
+// ───────────────────────────── fixture helpers ─────────────────────────────
+
+struct Fixture {
+    ctx: AppContext,
+    setup: u64,
+    work: EntityId,
+    binder1: EntityId,
+    binder2: EntityId,
+    // binder1 items, in order:  a, a1, a2, b, b1, c  (indents 0,1,1,0,1,0)
+    a: EntityId,
+    a1: EntityId,
+    a2: EntityId,
+    b: EntityId,
+    b1: EntityId,
+    c: EntityId,
+}
+
+fn now() -> chrono::DateTime<chrono::Utc> {
+    chrono::Utc::now()
+}
+
+fn mk_item(
+    ctx: &AppContext,
+    stack: u64,
+    title: &str,
+    indent: i64,
+    role: BinderItemRole,
+) -> EntityId {
+    let dto = CreateBinderItemDto {
+        status: None,
+        created_at: now(),
+        updated_at: now(),
+        title: title.to_string(),
+        role,
+        sub_role: BinderItemSubRole::Text,
+        activated: true,
+        is_exportable: true,
+        exclude_from_numbering: false,
+        indent,
+        ..Default::default()
+    };
+    binder_item_commands::create_orphan_binder_item(ctx, Some(stack), &dto)
+        .expect("create item")
+        .id
+}
+
+/// As [`mk_item`], but naming the `sub_role` explicitly: needed only by the
+/// Book-nesting-guard tests, which are the one place in this file that cares
+/// about anything other than `BinderItemSubRole::Text`.
+fn mk_item_sub_role(
+    ctx: &AppContext,
+    stack: u64,
+    title: &str,
+    indent: i64,
+    role: BinderItemRole,
+    sub_role: BinderItemSubRole,
+) -> EntityId {
+    let dto = CreateBinderItemDto {
+        status: None,
+        created_at: now(),
+        updated_at: now(),
+        title: title.to_string(),
+        role,
+        sub_role,
+        activated: true,
+        is_exportable: true,
+        exclude_from_numbering: false,
+        indent,
+        ..Default::default()
+    };
+    binder_item_commands::create_orphan_binder_item(ctx, Some(stack), &dto)
+        .expect("create item")
+        .id
+}
+
+fn wire_binder(ctx: &AppContext, stack: u64, binder: EntityId, items: &[EntityId]) {
+    binder_commands::set_binder_relationship(
+        ctx,
+        Some(stack),
+        &BinderRelationshipDto {
+            id: binder,
+            field: BinderRelationshipField::BinderItems,
+            right_ids: items.to_vec(),
+        },
+    )
+    .expect("wire binder");
+}
+
+fn order(ctx: &AppContext, binder: EntityId) -> Vec<EntityId> {
+    binder_commands::get_binder_relationship(ctx, &binder, &BinderRelationshipField::BinderItems)
+        .expect("order")
+}
+
+fn item(ctx: &AppContext, id: EntityId) -> frontend::direct_access::BinderItemDto {
+    binder_item_commands::get_binder_item(ctx, &id)
+        .expect("get item")
+        .expect("item exists")
+}
+
+fn indent(ctx: &AppContext, id: EntityId) -> i64 {
+    item(ctx, id).indent
+}
+
+fn make_fixture() -> Fixture {
+    let ctx = AppContext::new();
+    let setup = undo_redo_commands::create_new_stack(&ctx);
+
+    let system = system_commands::create_orphan_system(
+        &ctx,
+        &CreateSystemDto {
+            created_at: now(),
+            updated_at: now(),
+            ..Default::default()
+        },
+    )
+    .expect("create system")
+    .id;
+
+    let work = work_commands::create_orphan_work(
+        &ctx,
+        Some(setup),
+        &CreateWorkDto {
+            statuses: Vec::new(),
+            created_at: now(),
+            updated_at: now(),
+            title: "Test".into(),
+            ..Default::default()
+        },
+    )
+    .expect("create work")
+    .id;
+
+    let binder1 = binder_commands::create_orphan_binder(
+        &ctx,
+        Some(setup),
+        &CreateBinderDto {
+            uid: common::uid::fixture_uid(3),
+            created_at: now(),
+            updated_at: now(),
+            name: "Manuscript".into(),
+            activated: true,
+            binder_items: vec![],
+        },
+    )
+    .expect("create binder1")
+    .id;
+    let binder2 = binder_commands::create_orphan_binder(
+        &ctx,
+        Some(setup),
+        &CreateBinderDto {
+            uid: common::uid::fixture_uid(2),
+            created_at: now(),
+            updated_at: now(),
+            name: "Notes".into(),
+            activated: true,
+            binder_items: vec![],
+        },
+    )
+    .expect("create binder2")
+    .id;
+
+    let a = mk_item(&ctx, setup, "A", 0, BinderItemRole::Folder);
+    let a1 = mk_item(&ctx, setup, "A1", 1, BinderItemRole::Item);
+    let a2 = mk_item(&ctx, setup, "A2", 1, BinderItemRole::Item);
+    let b = mk_item(&ctx, setup, "B", 0, BinderItemRole::Folder);
+    let b1 = mk_item(&ctx, setup, "B1", 1, BinderItemRole::Item);
+    let c = mk_item(&ctx, setup, "C", 0, BinderItemRole::Item);
+
+    wire_binder(&ctx, setup, binder1, &[a, a1, a2, b, b1, c]);
+    work_commands::set_work_relationship(
+        &ctx,
+        Some(setup),
+        &WorkRelationshipDto {
+            id: work,
+            field: WorkRelationshipField::Binders,
+            right_ids: vec![binder1, binder2],
+        },
+    )
+    .expect("wire work");
+
+    // A Root owning the System + Work, matching what initialize_app seeds in the
+    // real app (empty_trash's undo restores the Root-scoped subtree).
+    root_commands::create_orphan_root(
+        &ctx,
+        &CreateRootDto {
+            created_at: now(),
+            updated_at: now(),
+            system,
+            works: vec![work],
+        },
+    )
+    .expect("create root");
+
+    Fixture {
+        ctx,
+        setup,
+        work,
+        binder1,
+        binder2,
+        a,
+        a1,
+        a2,
+        b,
+        b1,
+        c,
+    }
+}
+
+/// Link a new `Content` row onto `item_id`, **keeping** the rows already there —
+/// an item legitimately carries several roles at once (prose + synopsis), so this
+/// appends rather than replacing the relationship.
+fn add_content(fx: &Fixture, item_id: EntityId, role: ContentRole, data: &str) -> EntityId {
+    let cid = content_commands::create_orphan_content(
+        &fx.ctx,
+        Some(fx.setup),
+        &CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role,
+            data: data.to_string(),
+        },
+    )
+    .expect("create content")
+    .id;
+    let mut right_ids = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("contents");
+    right_ids.push(cid);
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::BinderItemRelationshipDto {
+            id: item_id,
+            field: BinderItemRelationshipField::Contents,
+            right_ids,
+        },
+    )
+    .expect("set contents");
+    cid
+}
+
+// ───────────────────────────────── move ─────────────────────────────────
+
+#[test]
+fn move_before_sibling() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.c],
+            target_id: Some(fx.a),
+            target_is_binder: false,
+            move_place: MovePlace::Before,
+        },
+    )
+    .expect("move");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.c, fx.a, fx.a1, fx.a2, fx.b, fx.b1]
+    );
+    assert_eq!(indent(&fx.ctx, fx.c), 0);
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.c, fx.a, fx.a1, fx.a2, fx.b, fx.b1]
+    );
+}
+
+#[test]
+fn move_after_folder_lands_past_its_subtree() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.c],
+            target_id: Some(fx.a),
+            target_is_binder: false,
+            move_place: MovePlace::After,
+        },
+    )
+    .expect("move");
+    // After folder A (subtree A,A1,A2) → before B.
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.c, fx.b, fx.b1]
+    );
+    assert_eq!(indent(&fx.ctx, fx.c), 0);
+}
+
+#[test]
+fn move_into_folder_reindents() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.c],
+            target_id: Some(fx.a),
+            target_is_binder: false,
+            move_place: MovePlace::Into,
+        },
+    )
+    .expect("move");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.c, fx.b, fx.b1]
+    );
+    assert_eq!(indent(&fx.ctx, fx.c), 1, "C becomes a child of folder A");
+}
+
+#[test]
+fn move_into_leaf_redirects_to_after() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.c],
+            target_id: Some(fx.a1), // a leaf
+            target_is_binder: false,
+            move_place: MovePlace::Into,
+        },
+    )
+    .expect("move");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.c, fx.a2, fx.b, fx.b1]
+    );
+    assert_eq!(
+        indent(&fx.ctx, fx.c),
+        1,
+        "Into a leaf == After it (sibling indent)"
+    );
+}
+
+#[test]
+fn move_into_folder_propagates_indent_delta_to_subtree() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    // Move folder A (with A1,A2) Into folder B.
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.a],
+            target_id: Some(fx.b),
+            target_is_binder: false,
+            move_place: MovePlace::Into,
+        },
+    )
+    .expect("move");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.b, fx.b1, fx.a, fx.a1, fx.a2, fx.c]
+    );
+    assert_eq!(indent(&fx.ctx, fx.a), 1);
+    assert_eq!(indent(&fx.ctx, fx.a1), 2);
+    assert_eq!(indent(&fx.ctx, fx.a2), 2);
+}
+
+#[test]
+fn move_folder_subtree_cross_binder_into_empty_binder() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.a],
+            target_id: Some(fx.binder2),
+            target_is_binder: true,
+            move_place: MovePlace::Into,
+        },
+    )
+    .expect("move");
+    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.b, fx.b1, fx.c]);
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.a, fx.a1, fx.a2]);
+    // Indents preserved (delta 0).
+    assert_eq!(indent(&fx.ctx, fx.a), 0);
+    assert_eq!(indent(&fx.ctx, fx.a1), 1);
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    assert!(order(&fx.ctx, fx.binder2).is_empty());
+}
+
+#[test]
+fn move_into_own_subtree_is_rejected() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let err = binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.a],
+            target_id: Some(fx.a1), // a1 is inside a's subtree
+            target_is_binder: false,
+            move_place: MovePlace::Into,
+        },
+    );
+    assert!(err.is_err(), "moving a subtree into itself must fail");
+    // Tree unchanged.
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+}
+
+// ───────────────────────── the Book-in-Book guard ─────────────────────────
+//
+// `subtree_of` (and every other `binder_ordering` primitive) computes containment
+// from indent alone; nothing about a `Folder/Book` stops it being read as a
+// descendant of another one. Left unguarded, `move_items` would place one Book
+// inside another Book's subtree with no error anywhere, and every book-scoped
+// measurement that folds the flat item stream by its `opens_book`/`closes_book`
+// markers (`skribisto_model::compile`, `progress_management::count_words_uc`)
+// would silently misattribute prose from that point on. This is the fixture and
+// tests for the guard that refuses it.
+
+struct BookFixture {
+    ctx: AppContext,
+    work: EntityId,
+    binder: EntityId,
+    // book_a > part_a > scene_a ; book_b > scene_b: two sibling Books, each
+    // with its own subtree, indents 0/1/2 and 0/1.
+    book_a: EntityId,
+    part_a: EntityId,
+    scene_a: EntityId,
+    book_b: EntityId,
+    scene_b: EntityId,
+}
+
+fn make_book_fixture() -> BookFixture {
+    let ctx = AppContext::new();
+    let setup = undo_redo_commands::create_new_stack(&ctx);
+
+    let system = system_commands::create_orphan_system(
+        &ctx,
+        &CreateSystemDto {
+            created_at: now(),
+            updated_at: now(),
+            ..Default::default()
+        },
+    )
+    .expect("create system")
+    .id;
+
+    let work = work_commands::create_orphan_work(
+        &ctx,
+        Some(setup),
+        &CreateWorkDto {
+            statuses: Vec::new(),
+            created_at: now(),
+            updated_at: now(),
+            title: "Test".into(),
+            ..Default::default()
+        },
+    )
+    .expect("create work")
+    .id;
+
+    let binder = binder_commands::create_orphan_binder(
+        &ctx,
+        Some(setup),
+        &CreateBinderDto {
+            uid: common::uid::fixture_uid(4),
+            created_at: now(),
+            updated_at: now(),
+            name: "Manuscript".into(),
+            activated: true,
+            binder_items: vec![],
+        },
+    )
+    .expect("create binder")
+    .id;
+
+    let book_a = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Book A",
+        0,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Book,
+    );
+    let part_a = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Part A.1",
+        1,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Part,
+    );
+    let scene_a = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Scene A.1.1",
+        2,
+        BinderItemRole::Item,
+        BinderItemSubRole::Scene,
+    );
+    let book_b = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Book B",
+        0,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Book,
+    );
+    let scene_b = mk_item_sub_role(
+        &ctx,
+        setup,
+        "Scene B.1",
+        1,
+        BinderItemRole::Item,
+        BinderItemSubRole::Scene,
+    );
+
+    wire_binder(
+        &ctx,
+        setup,
+        binder,
+        &[book_a, part_a, scene_a, book_b, scene_b],
+    );
+    work_commands::set_work_relationship(
+        &ctx,
+        Some(setup),
+        &WorkRelationshipDto {
+            id: work,
+            field: WorkRelationshipField::Binders,
+            right_ids: vec![binder],
+        },
+    )
+    .expect("wire work");
+
+    root_commands::create_orphan_root(
+        &ctx,
+        &CreateRootDto {
+            created_at: now(),
+            updated_at: now(),
+            system,
+            works: vec![work],
+        },
+    )
+    .expect("create root");
+
+    BookFixture {
+        ctx,
+        work,
+        binder,
+        book_a,
+        part_a,
+        scene_a,
+        book_b,
+        scene_b,
+    }
+}
+
+/// **A Book dropped inside another Book is allowed, and starts a book there.**
+///
+/// A book runs from its own marker to the next one; indent is how the writer arranged
+/// the tree and never feeds the compiler. So a `Folder/Book` nested by indent is not
+/// contained by anything, it simply opens the next book at that point, exactly as it
+/// would at the top level. This used to be refused, on reasoning that mistook the flat
+/// fold's correct answer for a fault.
+#[test]
+fn a_book_may_be_moved_inside_another_book() {
+    let fx = make_book_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.book_b],
+            target_id: Some(fx.book_a),
+            target_is_binder: false,
+            move_place: MovePlace::Into,
+        },
+    )
+    .expect("nesting a Book inside a Book is the writer's business, not an error");
+
+    let after = order(&fx.ctx, fx.binder);
+    assert!(
+        after.contains(&fx.book_b),
+        "the moved Book is still in the binder"
+    );
+    let pos_a = after.iter().position(|&x| x == fx.book_a).expect("book a");
+    let pos_b = after.iter().position(|&x| x == fx.book_b).expect("book b");
+    assert!(
+        pos_b > pos_a,
+        "it lands inside Book A's run, after its marker"
+    );
+}
+
+/// The same, arrived at the other way: dropping a Book beside a row that already sits
+/// deep inside another Book's subtree. There was a guard here reading the resulting
+/// ancestor chain; there is nothing for it to catch any more.
+#[test]
+fn a_book_may_be_moved_beside_a_row_already_inside_a_book() {
+    let fx = make_book_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.book_b],
+            target_id: Some(fx.scene_a), // inside book_a's subtree, at indent 2
+            target_is_binder: false,
+            move_place: MovePlace::Before,
+        },
+    )
+    .expect("a Book beside a nested row is allowed");
+
+    assert!(
+        order(&fx.ctx, fx.binder).contains(&fx.book_b),
+        "the Book is still there, wherever the writer put it"
+    );
+}
+
+/// The guard is about containment, not about Books existing near each other:
+/// two Books staying siblings at the top level must keep working exactly as
+/// any other reorder does.
+#[test]
+fn moving_a_book_to_top_level_still_succeeds() {
+    let fx = make_book_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.book_b],
+            target_id: Some(fx.book_a), // sibling placement, not Into
+            target_is_binder: false,
+            move_place: MovePlace::Before,
+        },
+    )
+    .expect("two top-level Books swapping order is a legal move");
+
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        vec![fx.book_b, fx.scene_b, fx.book_a, fx.part_a, fx.scene_a]
+    );
+    assert_eq!(indent(&fx.ctx, fx.book_b), 0, "still a top-level Book");
+}
+
+/// The guard is scoped to Books: a Scene relocating into a Book is the
+/// ordinary, everyday move and must be entirely unaffected by it.
+#[test]
+fn moving_a_non_book_into_a_book_is_unaffected() {
+    let fx = make_book_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![fx.scene_b],
+            target_id: Some(fx.book_a),
+            target_is_binder: false,
+            move_place: MovePlace::Into,
+        },
+    )
+    .expect("a Scene moving into a Book is an ordinary move");
+
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        vec![fx.book_a, fx.part_a, fx.scene_a, fx.scene_b, fx.book_b]
+    );
+    assert_eq!(
+        indent(&fx.ctx, fx.scene_b),
+        1,
+        "a direct child of Book A now"
+    );
+}
+
+/// The flat-marker encoding behaves the same as the folder one, which is the point:
+/// `Item/BookBegin` opens a book exactly as `Folder/Book` does, per
+/// `SubRoleExt::opens_book`, so it is allowed inside another Book for exactly the same
+/// reason and starts a book where it lands. This used to be refused, and the test that
+/// pinned the refusal was right to insist the two encodings agree; they still do.
+#[test]
+fn a_book_begin_marker_may_be_moved_inside_a_book() {
+    let fx = make_book_fixture();
+    let setup = undo_redo_commands::create_new_stack(&fx.ctx);
+    let book_begin = mk_item_sub_role(
+        &fx.ctx,
+        setup,
+        "Legacy Book C",
+        0,
+        BinderItemRole::Item,
+        BinderItemSubRole::BookBegin,
+    );
+    wire_binder(
+        &fx.ctx,
+        setup,
+        fx.binder,
+        &[
+            fx.book_a, fx.part_a, fx.scene_a, fx.book_b, fx.scene_b, book_begin,
+        ],
+    );
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::move_items(
+        &fx.ctx,
+        Some(stack),
+        &MoveDto {
+            item_ids: vec![book_begin],
+            target_id: Some(fx.scene_a), // inside book_a's subtree, at indent 2
+            target_is_binder: false,
+            move_place: MovePlace::Before,
+        },
+    )
+    .expect("a flat book marker is allowed wherever a Folder/Book is");
+
+    assert!(
+        order(&fx.ctx, fx.binder).contains(&book_begin),
+        "the marker is still in the binder"
+    );
+}
+
+// ─────────────────────────────── duplicate ───────────────────────────────
+#[test]
+fn duplicate_mints_a_fresh_uid_and_never_inherits_the_source_s() {
+    // A duplicate is a NEW row. If it copied the source's uid the two would be
+    // indistinguishable to anything keyed by identity -- remembered expand
+    // state, bookmarks, cross-links -- which is the whole reason uids exist.
+    let fx = make_fixture();
+    let src = binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
+        .expect("source item")
+        .expect("source item present");
+    assert!(!src.uid.is_nil(), "the fixture item must carry a uid");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let ret = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![fx.a],
+        },
+    )
+    .expect("duplicate");
+
+    let clone = binder_item_commands::get_binder_item(&fx.ctx, &ret.new_item_ids[0])
+        .expect("cloned item")
+        .expect("cloned item present");
+    assert!(!clone.uid.is_nil(), "the clone must be given an identity");
+    assert_ne!(
+        clone.uid, src.uid,
+        "the clone must NOT inherit the source's identity"
+    );
+
+    // And no two rows anywhere share one -- the backstop that catches any
+    // creation path that forgot to mint.
+    let all = binder_item_commands::get_all_binder_item(&fx.ctx).unwrap();
+    let mut seen = std::collections::HashSet::new();
+    for it in &all {
+        assert!(!it.uid.is_nil(), "item {} has no uid", it.id);
+        assert!(seen.insert(it.uid), "two items share the uid {}", it.uid);
+    }
+}
+
+#[test]
+fn duplicate_folder_subtree_clones_items_and_content() {
+    let fx = make_fixture();
+    add_content(&fx, fx.a1, ContentRole::SceneText, "hello scene");
+    let before_items = binder_item_commands::get_all_binder_item(&fx.ctx)
+        .unwrap()
+        .len();
+    let before_contents = content_commands::get_all_content(&fx.ctx).unwrap().len();
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let ret = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![fx.a],
+        },
+    )
+    .expect("duplicate");
+
+    assert_eq!(ret.new_item_ids.len(), 1, "one new subtree root");
+    // 3 new items (A,A1,A2 clones) and 1 new content (A1's clone).
+    let after_items = binder_item_commands::get_all_binder_item(&fx.ctx)
+        .unwrap()
+        .len();
+    let after_contents = content_commands::get_all_content(&fx.ctx).unwrap().len();
+    assert_eq!(after_items, before_items + 3);
+    assert_eq!(after_contents, before_contents + 1);
+
+    // New subtree is spliced directly after the source subtree.
+    let ord = order(&fx.ctx, fx.binder1);
+    let new_root = ret.new_item_ids[0];
+    let src_end = ord.iter().position(|&x| x == fx.a2).unwrap();
+    assert_eq!(
+        ord[src_end + 1],
+        new_root,
+        "clone follows the source subtree"
+    );
+    // The clone's content is a *new* Content entity (not aliased).
+    let new_a1 = ord[src_end + 2];
+    let new_contents = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &new_a1,
+        &BinderItemRelationshipField::Contents,
+    )
+    .unwrap();
+    let orig_contents = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &fx.a1,
+        &BinderItemRelationshipField::Contents,
+    )
+    .unwrap();
+    assert_eq!(new_contents.len(), 1);
+    assert_ne!(
+        new_contents[0], orig_contents[0],
+        "content must be deep-copied"
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(
+        binder_item_commands::get_all_binder_item(&fx.ctx)
+            .unwrap()
+            .len(),
+        before_items
+    );
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+}
+
+// ───────────────────────────────── trash ─────────────────────────────────
+
+fn activated(ctx: &AppContext, id: EntityId) -> bool {
+    item(ctx, id).activated
+}
+
+#[test]
+fn trash_items_cascades_and_indexes_trash_info() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(stack),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.a as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+
+    // Cascade: A and its subtree deactivated; B/C untouched.
+    assert!(!activated(&fx.ctx, fx.a));
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert!(!activated(&fx.ctx, fx.a2));
+    assert!(activated(&fx.ctx, fx.b));
+    assert!(activated(&fx.ctx, fx.c));
+    // Items stay in place.
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    // Exactly one TrashInfo, pointing at the root.
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder_item, Some(fx.a));
+    let indexed =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+            .unwrap_or_default();
+    assert_eq!(indexed, vec![infos[0].id]);
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert!(activated(&fx.ctx, fx.a));
+    assert!(activated(&fx.ctx, fx.a1));
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
+
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert!(!activated(&fx.ctx, fx.a));
+    assert_eq!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn restore_items_round_trip() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.c as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+    let info = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap()[0].id;
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info as i64],
+        },
+    )
+    .expect("restore");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+    assert!(activated(&fx.ctx, fx.c));
+    // Index emptied.
+    let indexed =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+            .unwrap_or_default();
+    assert!(indexed.is_empty());
+}
+
+#[test]
+fn restore_reports_orphaned_when_binder_lost_the_item() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.c as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+    let info = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap()[0].id;
+    // Simulate the item's binder losing it (e.g. binder removed elsewhere).
+    wire_binder(
+        &fx.ctx,
+        fx.setup,
+        fx.binder1,
+        &[fx.a, fx.a1, fx.a2, fx.b, fx.b1],
+    );
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info as i64],
+        },
+    )
+    .expect("restore");
+    assert!(res.orphaned, "an item with no binder is orphaned");
+    assert_eq!(res.restored_count, 0);
+}
+
+#[test]
+fn trash_binder_deactivates_binder_and_items() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder(
+        &fx.ctx,
+        Some(stack),
+        &TrashBinderDto {
+            work_id: fx.work,
+            binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash binder");
+
+    assert!(
+        !binder_commands::get_binder(&fx.ctx, &fx.binder1)
+            .unwrap()
+            .unwrap()
+            .activated
+    );
+    assert!(!activated(&fx.ctx, fx.a));
+    assert!(!activated(&fx.ctx, fx.c));
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder, Some(fx.binder1));
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert!(
+        binder_commands::get_binder(&fx.ctx, &fx.binder1)
+            .unwrap()
+            .unwrap()
+            .activated
+    );
+    assert!(activated(&fx.ctx, fx.a));
+}
+
+#[test]
+fn empty_trash_hard_removes_item_subtree_and_contents() {
+    let fx = make_fixture();
+    add_content(&fx, fx.a1, ContentRole::SceneText, "doomed");
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.a as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::empty_trash(&fx.ctx, Some(s2), &EmptyTrashDto { work_id: fx.work })
+        .expect("empty");
+
+    // A subtree gone from the store and the binder order.
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a1)
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.b, fx.b1, fx.c]);
+    // Their content gone too.
+    assert!(
+        content_commands::get_all_content(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
+    // Index cleared.
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo empty");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+}
+
+#[test]
+fn empty_trash_removes_trashed_binder_from_work() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderDto {
+            work_id: fx.work,
+            binder_id: fx.binder2 as i64,
+        },
+    )
+    .expect("trash binder");
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::empty_trash(&fx.ctx, Some(s2), &EmptyTrashDto { work_id: fx.work })
+        .expect("empty");
+
+    assert!(
+        binder_commands::get_binder(&fx.ctx, &fx.binder2)
+            .unwrap()
+            .is_none()
+    );
+    let binders =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Binders)
+            .unwrap();
+    assert_eq!(
+        binders,
+        vec![fx.binder1],
+        "trashed binder dropped from work"
+    );
+}
+
+// ──────────────────────── restore + merge undo/redo ────────────────────────
+
+fn system_trash_index(fx: &Fixture) -> Vec<EntityId> {
+    work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+        .unwrap_or_default()
+}
+
+fn mk_scene(fx: &Fixture, title: &str) -> EntityId {
+    let dto = CreateBinderItemDto {
+        status: None,
+        created_at: now(),
+        updated_at: now(),
+        title: title.to_string(),
+        role: BinderItemRole::Item,
+        sub_role: BinderItemSubRole::Scene,
+        activated: true,
+        is_exportable: true,
+        exclude_from_numbering: false,
+        indent: 0,
+        ..Default::default()
+    };
+    binder_item_commands::create_orphan_binder_item(&fx.ctx, Some(fx.setup), &dto)
+        .expect("create scene")
+        .id
+}
+
+fn scene_text(fx: &Fixture, item_id: EntityId) -> String {
+    content_data(fx, item_id, ContentRole::SceneText)
+}
+
+fn synopsis_text(fx: &Fixture, item_id: EntityId) -> String {
+    content_data(fx, item_id, ContentRole::SynopsisText)
+}
+
+fn content_data(fx: &Fixture, item_id: EntityId, role: ContentRole) -> String {
+    let cids = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("contents");
+    for cid in cids {
+        if let Some(c) = content_commands::get_content(&fx.ctx, &cid).expect("get content")
+            && c.role == role
+        {
+            return c.data;
+        }
+    }
+    String::new()
+}
+
+/// The targeted inverse of `restore_items`: undo re-trashes and re-links the
+/// index; redo restores again.
+#[test]
+fn restore_items_undo_redo() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.c as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+    let info = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap()[0].id;
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info as i64],
+        },
+    )
+    .expect("restore");
+    assert!(activated(&fx.ctx, fx.c));
+    assert!(system_trash_index(&fx).is_empty());
+
+    // Undo restore → c re-trashed, the index re-links the TrashInfo.
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo restore");
+    assert!(!activated(&fx.ctx, fx.c));
+    assert_eq!(system_trash_index(&fx), vec![info]);
+
+    // Redo restore → c active again, index emptied.
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo restore");
+    assert!(activated(&fx.ctx, fx.c));
+    assert!(system_trash_index(&fx).is_empty());
+}
+
+/// merge_two_scenes appends B's text into A and trashes B; the targeted inverse
+/// must restore A's content exactly, reactivate B, and drop the TrashInfo.
+#[test]
+fn merge_two_scenes_round_trip() {
+    let fx = make_fixture();
+    let a = mk_scene(&fx, "SceneA");
+    let b = mk_scene(&fx, "SceneB");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[a, b]);
+    add_content(&fx, a, ContentRole::SceneText, "Alpha.");
+    add_content(&fx, b, ContentRole::SceneText, "Bravo.");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::merge_two_scenes(
+        &fx.ctx,
+        Some(stack),
+        &MergeTwoScenesDto {
+            work_id: fx.work,
+            target_id: a,
+            source_id: b,
+        },
+    )
+    .expect("merge");
+
+    // A absorbed B's text; B is trashed and indexed.
+    assert_eq!(scene_text(&fx, a), "Alpha.\n\nBravo.");
+    assert!(!activated(&fx.ctx, b));
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder_item, Some(b));
+
+    // Undo → A's content restored exactly, B reactivated, TrashInfo gone.
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo merge");
+    assert_eq!(scene_text(&fx, a), "Alpha.");
+    assert!(activated(&fx.ctx, b));
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
+
+    // Redo → merged again.
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo merge");
+    assert_eq!(scene_text(&fx, a), "Alpha.\n\nBravo.");
+    assert!(!activated(&fx.ctx, b));
+    assert_eq!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+// ─────────────────────── promote + split_scene undo/redo ───────────────────────
+
+fn has_content_role(fx: &Fixture, item_id: EntityId, role: ContentRole) -> bool {
+    let cids = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("contents");
+    cids.iter().any(|cid| {
+        content_commands::get_content(&fx.ctx, cid)
+            .ok()
+            .flatten()
+            .map(|c| c.role == role)
+            .unwrap_or(false)
+    })
+}
+
+/// promote toggles Scene<->Note and remaps SceneText<->NoteText; the scoped
+/// (item-rooted) snapshot must revert both on undo and redo.
+#[test]
+fn promote_undo_redo() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Scene");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "prose");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Note.code(),
+        },
+    )
+    .expect("promote");
+
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert!(has_content_role(&fx, s, ContentRole::NoteText));
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Scene);
+    assert!(has_content_role(&fx, s, ContentRole::SceneText));
+
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert!(has_content_role(&fx, s, ContentRole::NoteText));
+}
+
+/// The headline of multi-target promote: a plain folder becomes any other kind of
+/// folder. It carries only a synopsis, which every folder type allows, so nothing is
+/// lost and its text comes along.
+#[test]
+fn a_plain_folder_becomes_any_other_kind_of_folder() {
+    for (target, want) in [
+        (
+            PromoteTarget::ChapterFolder,
+            BinderItemSubRole::ChapterScene,
+        ),
+        (PromoteTarget::PartFolder, BinderItemSubRole::Part),
+        (PromoteTarget::BookFolder, BinderItemSubRole::Book),
+        (PromoteTarget::NoteFolder, BinderItemSubRole::Note),
+    ] {
+        let fx = make_fixture();
+        // A plain grouping folder — `Folder/None`, the shape you outline in.
+        let f = mk_item(&fx.ctx, fx.setup, "Draft", 0, BinderItemRole::Folder);
+        set_sub_role(&fx, f, BinderItemSubRole::None);
+        wire_binder(&fx.ctx, fx.setup, fx.binder2, &[f]);
+        add_content(&fx, f, ContentRole::SynopsisText, "what happens here");
+
+        binder_item_management_commands::promote(
+            &fx.ctx,
+            None,
+            &PromoteDto {
+                item_id: f,
+                target: target.code(),
+            },
+        )
+        .unwrap_or_else(|e| panic!("promote to {target:?}: {e}"));
+
+        let dto = item(&fx.ctx, f);
+        assert_eq!(dto.role, BinderItemRole::Folder);
+        assert_eq!(dto.sub_role, want, "promoting to {target:?}");
+        assert_eq!(
+            content_data(&fx, f, ContentRole::SynopsisText),
+            "what happens here",
+            "the synopsis must survive the conversion to {target:?}"
+        );
+    }
+}
+
+/// A name outlives the kind of thing it names: a chapter that becomes a part keeps its
+/// title, remapped into the part's vocabulary.
+#[test]
+fn a_title_is_carried_across_a_type_change() {
+    let fx = make_fixture();
+    let ch = mk_item(
+        &fx.ctx,
+        fx.setup,
+        "The Long Road",
+        0,
+        BinderItemRole::Folder,
+    );
+    set_sub_role(&fx, ch, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[ch]);
+    add_content(&fx, ch, ContentRole::ChapterTitle, "The Long Road");
+
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        None,
+        &PromoteDto {
+            item_id: ch,
+            target: PromoteTarget::PartFolder.code(),
+        },
+    )
+    .expect("an empty chapter becomes a part");
+
+    assert_eq!(item(&fx.ctx, ch).sub_role, BinderItemSubRole::Part);
+    assert_eq!(
+        content_data(&fx, ch, ContentRole::PartTitle),
+        "The Long Road",
+        "the chapter title became the part title"
+    );
+}
+
+/// A conversion that has nowhere to keep the writer's text is refused outright, not
+/// quietly performed with the prose dropped. A Part carries no scene prose.
+#[test]
+fn promote_refuses_to_discard_text() {
+    let fx = make_fixture();
+    let ch = mk_item(&fx.ctx, fx.setup, "Chapter", 0, BinderItemRole::Folder);
+    set_sub_role(&fx, ch, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[ch]);
+    add_content(&fx, ch, ContentRole::SceneText, "words the writer typed");
+
+    let res = binder_item_management_commands::promote(
+        &fx.ctx,
+        None,
+        &PromoteDto {
+            item_id: ch,
+            target: PromoteTarget::PartFolder.code(),
+        },
+    );
+    assert!(res.is_err(), "a Part has nowhere to keep scene prose");
+    // Nothing moved.
+    assert_eq!(item(&fx.ctx, ch).sub_role, BinderItemSubRole::ChapterScene);
+    assert_eq!(
+        content_data(&fx, ch, ContentRole::SceneText),
+        "words the writer typed"
+    );
+
+    // An *empty* prose row never blocks the conversion.
+    let fx2 = make_fixture();
+    let ch2 = mk_item(&fx2.ctx, fx2.setup, "Chapter", 0, BinderItemRole::Folder);
+    set_sub_role(&fx2, ch2, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx2.ctx, fx2.setup, fx2.binder2, &[ch2]);
+    add_content(&fx2, ch2, ContentRole::SceneText, "");
+    binder_item_management_commands::promote(
+        &fx2.ctx,
+        None,
+        &PromoteDto {
+            item_id: ch2,
+            target: PromoteTarget::PartFolder.code(),
+        },
+    )
+    .expect("an empty prose row must not block the conversion");
+    assert_eq!(item(&fx2.ctx, ch2).sub_role, BinderItemSubRole::Part);
+}
+
+/// The DTO carries a stable *code*, not a menu index, and the use case re-derives the
+/// legal targets from the item's current type: a target that was never offered for this
+/// item is refused.
+#[test]
+fn promote_refuses_a_target_that_was_never_offered() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Scene");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+
+    // A Scene may only become a Note.
+    let res = binder_item_management_commands::promote(
+        &fx.ctx,
+        None,
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::BookFolder.code(),
+        },
+    );
+    assert!(res.is_err(), "a Scene cannot become a Book folder");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Scene);
+
+    // An unknown code is rejected too.
+    assert!(
+        binder_item_management_commands::promote(
+            &fx.ctx,
+            None,
+            &PromoteDto {
+                item_id: s,
+                target: 9999,
+            },
+        )
+        .is_err()
+    );
+}
+
+/// An item's name lives in two places: `BinderItem.title`, which the outline tree and
+/// the tab show, and a title `Content` row, which is what compiles into the manuscript.
+/// They are one title with two homes. This pins the promote path's half of that: a
+/// conversion carries the name across *and* keeps both homes in step.
+#[test]
+fn a_rename_keeps_both_homes_of_the_title_in_step() {
+    let fx = make_fixture();
+    let ch = mk_item(&fx.ctx, fx.setup, "Old name", 0, BinderItemRole::Folder);
+    set_sub_role(&fx, ch, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[ch]);
+    add_content(&fx, ch, ContentRole::ChapterTitle, "Old name");
+
+    // Converting to a Book must carry the name into the *book's* title role, and the
+    // entity field must still agree with it.
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        None,
+        &PromoteDto {
+            item_id: ch,
+            target: PromoteTarget::BookFolder.code(),
+        },
+    )
+    .expect("an empty chapter becomes a book");
+
+    assert_eq!(item(&fx.ctx, ch).sub_role, BinderItemSubRole::Book);
+    assert_eq!(
+        content_data(&fx, ch, ContentRole::BookTitle),
+        "Old name",
+        "the chapter title became the book title"
+    );
+    assert_eq!(
+        item(&fx.ctx, ch).title,
+        "Old name",
+        "the entity field the tree shows is unchanged by the conversion"
+    );
+    assert_eq!(
+        content_data(&fx, ch, ContentRole::ChapterTitle),
+        "",
+        "the old title role is gone"
+    );
+}
+
+/// Set an item's sub_role directly (the fixture helper builds Text items).
+fn set_sub_role(fx: &Fixture, item_id: EntityId, sub_role: BinderItemSubRole) {
+    let mut dto = item(&fx.ctx, item_id);
+    dto.sub_role = sub_role;
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            uid: common::uid::fixture_uid(1),
+            id: dto.id,
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            title: dto.title,
+            sub_title: dto.sub_title,
+            role: dto.role,
+            sub_role: dto.sub_role,
+            label: dto.label,
+            activated: dto.activated,
+            is_favorite: dto.is_favorite,
+            is_exportable: dto.is_exportable,
+            exclude_from_numbering: false,
+            indent: dto.indent,
+            word_count_goal: dto.word_count_goal,
+            char_count_goal: dto.char_count_goal,
+            dict_language: dto.dict_language,
+            aliases: dto.aliases,
+        },
+    )
+    .expect("set sub_role");
+}
+
+/// split_scene creates a new scene after the source; the scoped (binder-rooted)
+/// snapshot must delete it on undo (restoring the source text) and re-add it on redo.
+#[test]
+fn split_scene_undo_redo() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Full");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "AB");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::split_scene(
+        &fx.ctx,
+        Some(stack),
+        &SplitSceneDto {
+            source_id: s,
+            before_text: "A".into(),
+            after_text: "B".into(),
+            before_synopsis: String::new(),
+            after_synopsis: String::new(),
+            new_title: "Second".into(),
+        },
+    )
+    .expect("split");
+
+    // Source keeps "A"; a new scene follows carrying "B".
+    assert_eq!(scene_text(&fx, s), "A");
+    let after = order(&fx.ctx, fx.binder2);
+    assert_eq!(after.len(), 2);
+    assert_eq!(after[0], s);
+    let new_scene = after[1];
+    assert_eq!(scene_text(&fx, new_scene), "B");
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(scene_text(&fx, s), "AB");
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![s]);
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &new_scene)
+            .unwrap()
+            .is_none()
+    );
+
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert_eq!(scene_text(&fx, s), "A");
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![s, new_scene]);
+    assert_eq!(scene_text(&fx, new_scene), "B");
+}
+
+/// Splitting from the **synopsis** editor: the synopsis is cut at the caret, the
+/// prose stays whole on the source, and the whole thing undoes/redoes cleanly —
+/// the scoped snapshot must cover the `SynopsisText` rows too, including the one
+/// created on the new scene.
+#[test]
+fn split_scene_from_synopsis_undo_redo() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Full");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "the whole prose");
+    add_content(&fx, s, ContentRole::SynopsisText, "AB");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::split_scene(
+        &fx.ctx,
+        Some(stack),
+        &SplitSceneDto {
+            source_id: s,
+            // The untouched role goes whole to the source, empty to the new scene.
+            before_text: "the whole prose".into(),
+            after_text: String::new(),
+            before_synopsis: "A".into(),
+            after_synopsis: "B".into(),
+            new_title: "Second".into(),
+        },
+    )
+    .expect("split");
+
+    let after = order(&fx.ctx, fx.binder2);
+    assert_eq!(after.len(), 2);
+    let new_scene = after[1];
+    assert_eq!(scene_text(&fx, s), "the whole prose");
+    assert_eq!(synopsis_text(&fx, s), "A");
+    assert_eq!(scene_text(&fx, new_scene), "");
+    assert_eq!(synopsis_text(&fx, new_scene), "B");
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(scene_text(&fx, s), "the whole prose");
+    assert_eq!(
+        synopsis_text(&fx, s),
+        "AB",
+        "undo restores the whole synopsis"
+    );
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![s]);
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &new_scene)
+            .unwrap()
+            .is_none()
+    );
+
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert_eq!(synopsis_text(&fx, s), "A");
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![s, new_scene]);
+    assert_eq!(synopsis_text(&fx, new_scene), "B");
+    assert_eq!(scene_text(&fx, new_scene), "");
+}
+
+fn item_tags(fx: &Fixture, item_id: EntityId) -> Vec<EntityId> {
+    binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Tags,
+    )
+    .expect("tags")
+}
+
+/// duplicate copies M2M tag links; undo (scoped restore) must delete the clone AND
+/// its tag junction while leaving the shared BinderTag itself intact.
+#[test]
+fn duplicate_reverts_cloned_tag_links() {
+    let fx = make_fixture();
+    let tag = binder_tag_commands::create_orphan_binder_tag(
+        &fx.ctx,
+        Some(fx.setup),
+        &CreateBinderTagDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            name: "Important".into(),
+            color: "#f00".into(),
+            details: String::new(),
+            discoverable: false,
+            creates_in: None,
+            note_template: None,
+        },
+    )
+    .expect("create tag")
+    .id;
+    let source = mk_scene(&fx, "Tagged");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source]);
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: source,
+            field: BinderItemRelationshipField::Tags,
+            right_ids: vec![tag],
+        },
+    )
+    .expect("tag the item");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    // The clone shares the tag link.
+    assert_eq!(item_tags(&fx, clone), vec![tag]);
+
+    // Undo removes the clone and its tag junction; the shared tag entity survives.
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &clone)
+            .unwrap()
+            .is_none()
+    );
+    assert!(item_tags(&fx, clone).is_empty(), "no dangling tag junction");
+    assert!(
+        binder_tag_commands::get_binder_tag(&fx.ctx, &tag)
+            .unwrap()
+            .is_some(),
+        "shared tag must not be deleted"
+    );
+    assert_eq!(item_tags(&fx, source), vec![tag], "source keeps its tag");
+}
+
+/// Set an item's aliases through the scalar patch DTO (a read-modify-write, exactly as
+/// the Inspector does it).
+fn set_aliases(fx: &Fixture, item_id: EntityId, aliases: &[&str]) {
+    let dto = item(&fx.ctx, item_id);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            id: dto.id,
+            // Carried through unchanged: this is an update, and re-minting the uid would
+            // hand the row a new durable identity.
+            uid: dto.uid,
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            title: dto.title,
+            sub_title: dto.sub_title,
+            role: dto.role,
+            sub_role: dto.sub_role,
+            label: dto.label,
+            activated: dto.activated,
+            is_favorite: dto.is_favorite,
+            is_exportable: dto.is_exportable,
+            exclude_from_numbering: false,
+            indent: dto.indent,
+            word_count_goal: dto.word_count_goal,
+            char_count_goal: dto.char_count_goal,
+            dict_language: dto.dict_language,
+            aliases: aliases.iter().map(|s| s.to_string()).collect(),
+        },
+    )
+    .expect("set aliases");
+}
+
+/// `duplicate` copies aliases along with the rest of the item's scalars.
+///
+/// Regression: the construction uses `..Default::default()`, so omitting `aliases`
+/// compiles fine and silently blanks them. Because duplicate *does* copy the Tags M2M,
+/// the clone would keep a `discoverable` tag while losing every name the mention index
+/// matches on — a story-bible note that can never be detected.
+#[test]
+fn duplicate_copies_aliases() {
+    let fx = make_fixture();
+    let source = mk_scene(&fx, "Elizabeth Bennet");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source]);
+    set_aliases(&fx, source, &["Lizzy", "Miss Bennet"]);
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    assert_eq!(
+        item(&fx.ctx, clone).aliases,
+        vec!["Lizzy".to_string(), "Miss Bennet".to_string()],
+        "the clone must answer to the same names as its source"
+    );
+    // Multi-word aliases must survive as single entries, not be split on whitespace.
+    assert_eq!(item(&fx.ctx, clone).aliases.len(), 2);
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(
+        item(&fx.ctx, source).aliases,
+        vec!["Lizzy".to_string(), "Miss Bennet".to_string()],
+        "undo must leave the source's aliases untouched"
+    );
+}
+
+/// `duplicate` copies the numbering opt-out, for the same reason it copies aliases.
+///
+/// Regression: the construction uses `..Default::default()`, and the default here is
+/// "numbered". A prologue the writer took out of the chapter numbering, duplicated to start
+/// a variant, would silently rejoin it: the copy becomes "Chapter 1" and every real chapter
+/// after it shifts by one, in the binder badges and in the export.
+#[test]
+fn duplicate_copies_the_numbering_opt_out() {
+    let fx = make_fixture();
+    let source = mk_scene(&fx, "Prologue");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source]);
+
+    let dto = item(&fx.ctx, source);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            exclude_from_numbering: true,
+            ..frontend::direct_access::UpdateBinderItemDto::from(dto)
+        },
+    )
+    .expect("take it out of the numbering");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    assert!(
+        item(&fx.ctx, clone).exclude_from_numbering,
+        "the clone must stay out of the numbering its source was taken out of"
+    );
+}
+
+fn item_references(fx: &Fixture, item_id: EntityId) -> Vec<EntityId> {
+    binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::References,
+    )
+    .expect("references")
+}
+
+/// `duplicate` copies confirmed references (cast pins), the same M2M shape as tags.
+///
+/// A clone of a scene keeps the writer's cast; dropping them would make "Duplicate"
+/// lose planning work that is as intentional as the tag list.
+#[test]
+fn duplicate_copies_references() {
+    let fx = make_fixture();
+    let source = mk_scene(&fx, "Scene with cast");
+    let character = mk_scene(&fx, "Elena");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source, character]);
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: source,
+            field: BinderItemRelationshipField::References,
+            right_ids: vec![character],
+        },
+    )
+    .expect("pin cast");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    assert_eq!(
+        item_references(&fx, clone),
+        vec![character],
+        "the clone must keep the same cast pins as its source"
+    );
+    assert_eq!(
+        item_references(&fx, source),
+        vec![character],
+        "source cast is untouched"
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &clone)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        item_references(&fx, clone).is_empty(),
+        "no dangling cast junction on the removed clone"
+    );
+    assert_eq!(
+        item_references(&fx, source),
+        vec![character],
+        "undo must leave the source's cast untouched"
+    );
+}
+
+fn mk_book(fx: &Fixture, title: &str) -> EntityId {
+    let dto = CreateBinderItemDto {
+        status: None,
+        created_at: now(),
+        updated_at: now(),
+        title: title.to_string(),
+        role: BinderItemRole::Folder,
+        sub_role: BinderItemSubRole::Book,
+        activated: true,
+        is_exportable: true,
+        exclude_from_numbering: false,
+        indent: 0,
+        ..Default::default()
+    };
+    binder_item_commands::create_orphan_binder_item(&fx.ctx, Some(fx.setup), &dto)
+        .expect("create book")
+        .id
+}
+
+fn item_books(fx: &Fixture, item_id: EntityId) -> Vec<EntityId> {
+    binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::Books,
+    )
+    .expect("books")
+}
+
+/// `duplicate` copies the Book filing (`books`), the same M2M shape as References and
+/// Point of view.
+///
+/// A declaration, not derived: the clone keeps the source's filing until the writer
+/// revisits it, matching how the brainstorm names this exact risk rather than leaving it
+/// to be discovered later -- a bible entry cloned as a template for a different Book
+/// silently carries the source's old filing.
+#[test]
+fn duplicate_copies_books() {
+    let fx = make_fixture();
+    let source = mk_scene(&fx, "Note filed under a Book");
+    let book = mk_book(&fx, "Book One");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source, book]);
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: source,
+            field: BinderItemRelationshipField::Books,
+            right_ids: vec![book],
+        },
+    )
+    .expect("file under book");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    assert_eq!(
+        item_books(&fx, clone),
+        vec![book],
+        "the clone must keep the same Book filing as its source"
+    );
+    assert_eq!(
+        item_books(&fx, source),
+        vec![book],
+        "source filing is untouched"
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &clone)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        item_books(&fx, clone).is_empty(),
+        "no dangling books junction on the removed clone"
+    );
+    assert_eq!(
+        item_books(&fx, source),
+        vec![book],
+        "undo must leave the source's filing untouched"
+    );
+}
+
+/// Deleting a Book that entries are filed under must leave no id without a row behind
+/// it -- `books` is a declaration, and a stale one pointing at a row that no longer
+/// exists is exactly the "broken chip" every reader of this field is required to skip.
+/// The generated `reconcile_backref_binder_item_books` runs in the same real-delete
+/// chain as its `point_of_view`/`references` siblings
+/// (`binder_item_repository.rs:886-935`), so a permanently deleted Book strips the
+/// dangling id from every entry that named it -- falling back to empty, "not filed",
+/// never to "relevant everywhere".
+#[test]
+fn deleting_a_book_in_use_leaves_no_dangling_book_id() {
+    let fx = make_fixture();
+    let doomed = mk_book(&fx, "Book One");
+    let keeper = mk_book(&fx, "Book Two");
+    let a = mk_scene(&fx, "Filed under both");
+    let b = mk_scene(&fx, "Filed only under the doomed one");
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: a,
+            field: BinderItemRelationshipField::Books,
+            right_ids: vec![doomed, keeper],
+        },
+    )
+    .expect("file a under both books");
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: b,
+            field: BinderItemRelationshipField::Books,
+            right_ids: vec![doomed],
+        },
+    )
+    .expect("file b under the doomed book");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_commands::remove_binder_item_multi(&fx.ctx, Some(stack), &[doomed])
+        .expect("remove book");
+
+    assert_eq!(
+        item_books(&fx, a),
+        vec![keeper],
+        "the surviving Book is untouched"
+    );
+    assert!(
+        item_books(&fx, b).is_empty(),
+        "an entry filed only under the deleted Book falls back to not-filed, never to \
+         relevant-everywhere"
+    );
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &doomed)
+            .unwrap()
+            .is_none(),
+        "the Book row itself is gone"
+    );
+    // The real assertion: no item references a Book id with no row behind it.
+    for item in [a, b] {
+        for id in item_books(&fx, item) {
+            assert!(
+                binder_item_commands::get_binder_item(&fx.ctx, &id)
+                    .unwrap()
+                    .is_some(),
+                "item {item} still references deleted book {id}"
+            );
+        }
+    }
+}
+
+/// `split_scene` carries the source's per-item language onto the new half.
+///
+/// Regression: the new scene is built with `..Default::default()`, so an explicit
+/// override (a French passage inside an English project) silently reverted to the Work
+/// language for spell-checking and search folding. Aliases are deliberately *not*
+/// carried — splitting makes a new scene, not a second copy of the same entity.
+#[test]
+fn split_scene_carries_dict_language_but_not_aliases() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Full");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "AB");
+    set_aliases(&fx, s, &["Lizzy"]);
+
+    // An explicit per-item override, different from the Work language.
+    let dto = item(&fx.ctx, s);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            dict_language: vec!["fr-FR".to_string()],
+            ..frontend::direct_access::UpdateBinderItemDto::from(dto)
+        },
+    )
+    .expect("set language");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::split_scene(
+        &fx.ctx,
+        Some(stack),
+        &SplitSceneDto {
+            source_id: s,
+            before_text: "A".into(),
+            after_text: "B".into(),
+            before_synopsis: String::new(),
+            after_synopsis: String::new(),
+            new_title: "Second".into(),
+        },
+    )
+    .expect("split");
+
+    let new_scene = order(&fx.ctx, fx.binder2)[1];
+    assert_eq!(
+        item(&fx.ctx, new_scene).dict_language,
+        vec!["fr-FR".to_string()],
+        "the new half is the same prose in the same language"
+    );
+    assert!(
+        item(&fx.ctx, new_scene).aliases.is_empty(),
+        "a split produces a new scene, not a second item answering to the same name"
+    );
+}
+
+// ──────────────────── restore_items_to (item-keyed relocate) ────────────────────
+
+/// The live trash index for the fixture's Work (`restore_items`/`restore_items_to`
+/// unlink consumed entries here but leave the orphan entity in the store, so this
+/// — not `get_all_trash_info()` — is the source of truth for "what's in the trash",
+/// exactly as the trash UI reads it).
+fn indexed_trash(fx: &Fixture) -> Vec<EntityId> {
+    work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+        .unwrap_or_default()
+}
+
+/// Trash a subtree rooted at `root` and return the created TrashInfo id.
+fn trash_item(fx: &Fixture, stack: u64, root: EntityId) -> EntityId {
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(stack),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![root as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+    trash_info_commands::get_all_trash_info(&fx.ctx)
+        .unwrap()
+        .into_iter()
+        .find(|i| i.trashed_binder_item == Some(root))
+        .expect("trash info for root")
+        .id
+}
+
+#[test]
+fn restore_descendant_out_of_larger_trashed_subtree_leaves_ancestor_trashed() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.a); // trashes a, a1, a2 (one TrashInfo at a)
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.a2],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+
+    // The descendant is reactivated and relocated; its ancestor stays trashed.
+    assert!(activated(&fx.ctx, fx.a2));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.a2]);
+    assert_eq!(indent(&fx.ctx, fx.a2), 0);
+    assert!(!activated(&fx.ctx, fx.a));
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.b, fx.b1, fx.c]
+    );
+    // The root's TrashInfo survives (only partially peeled).
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder_item, Some(fx.a));
+}
+
+#[test]
+fn restore_whole_root_via_its_own_item_id_consumes_its_trash_info() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.a);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.a],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 1);
+    // Whole subtree relocated together, relative indents preserved.
+    assert!(activated(&fx.ctx, fx.a));
+    assert!(activated(&fx.ctx, fx.a1));
+    assert!(activated(&fx.ctx, fx.a2));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.a, fx.a1, fx.a2]);
+    assert_eq!(indent(&fx.ctx, fx.a), 0);
+    assert_eq!(indent(&fx.ctx, fx.a1), 1);
+    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.b, fx.b1, fx.c]);
+    // Root fully restored → its TrashInfo unlinked from the index.
+    assert!(indexed_trash(&fx).is_empty());
+}
+
+#[test]
+fn restore_items_to_undo_redo() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.c);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.c],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert!(activated(&fx.ctx, fx.c));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+    assert!(indexed_trash(&fx).is_empty());
+
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    assert!(!activated(&fx.ctx, fx.c));
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    assert!(order(&fx.ctx, fx.binder2).is_empty());
+    assert_eq!(indexed_trash(&fx).len(), 1);
+
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo");
+    assert!(activated(&fx.ctx, fx.c));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+}
+
+#[test]
+fn restore_items_to_rejects_a_deactivated_destination_binder() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderDto {
+            work_id: fx.work,
+            binder_id: fx.binder2 as i64,
+        },
+    )
+    .expect("trash binder2");
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s2, fx.c);
+
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s3),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.c],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    );
+    assert!(res.is_err(), "restoring into a trashed binder must fail");
+    // Nothing changed.
+    assert!(!activated(&fx.ctx, fx.c));
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+}
+
+#[test]
+fn restore_items_to_recovers_a_dangling_orphan_singleton() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.c);
+    // Strip c from its binder's order (leaves the entity dangling).
+    wire_binder(
+        &fx.ctx,
+        fx.setup,
+        fx.binder1,
+        &[fx.a, fx.a1, fx.a2, fx.b, fx.b1],
+    );
+    // Plain restore can't place it.
+    let info = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap()[0].id;
+    let plain = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(undo_redo_commands::create_new_stack(&fx.ctx)),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info as i64],
+        },
+    )
+    .expect("restore");
+    assert!(plain.orphaned);
+
+    // restore_items_to recovers it into a chosen destination.
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.c],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+    assert!(activated(&fx.ctx, fx.c));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+}
+
+#[test]
+fn restore_items_to_peels_from_a_wholly_trashed_binder() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderDto {
+            work_id: fx.work,
+            binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash binder1");
+
+    // Peel `c` out of the wholly-trashed binder1 into the active binder2.
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.c],
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+    assert!(activated(&fx.ctx, fx.c));
+    assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+    // binder1 stays trashed, minus the peeled item.
+    assert!(
+        !binder_commands::get_binder(&fx.ctx, &fx.binder1)
+            .unwrap()
+            .unwrap()
+            .activated
+    );
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1]
+    );
+    // The whole-binder TrashInfo is untouched by the sweep.
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder, Some(fx.binder1));
+}
+
+#[test]
+fn restore_items_to_marks_orphaned_for_an_already_active_item() {
+    let fx = make_fixture();
+    let s = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.b], // never trashed
+            destination_binder_id: fx.binder2,
+            anchor_item_id: None,
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("restore_to");
+    assert_eq!(res.restored_count, 0);
+    assert!(res.orphaned);
+    assert!(order(&fx.ctx, fx.binder2).is_empty());
+    assert!(activated(&fx.ctx, fx.b));
+}
+
+// ────────── restore_items_to: the Book-in-Book guard's other half ──────────
+//
+// `restore_items_to` resolves its destination through the very same
+// `resolve_item_target`/`base_indent`/`anchor_id` machinery as `move_items`
+// (see the guard's own fixture and comment above), so restoring a trashed
+// Book into another Book's active subtree reaches exactly the same silent
+// per-book word-count corruption unless it is guarded too. Reuses
+// `make_book_fixture`: the invariant under test is identical, only how the
+// Book gets to its destination (a live move vs. a trash-restore relocate)
+// differs.
+
+/// Trash the subtree rooted at `root` inside `fx.binder`, using `fx.work` as
+/// the owning Work. Every test below uses this shared setup to trash
+/// something before restoring it.
+fn trash_book_item(fx: &BookFixture, stack: u64, root: EntityId) {
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(stack),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![root as i64],
+            origin_binder_id: fx.binder as i64,
+        },
+    )
+    .expect("trash");
+}
+
+/// Restoring `book_b` `Before` a row already sitting inside `book_a`'s active
+/// subtree nests it just as surely as the move guard's equivalent case: the
+/// destination ancestor chain, not a literal `Into` a Book anchor, is what the
+/// guard has to catch.
+#[test]
+fn a_book_may_be_restored_inside_another_book() {
+    let fx = make_book_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_book_item(&fx, s1, fx.book_b); // trashes book_b + scene_b
+
+    let before = order(&fx.ctx, fx.binder);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let err = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.book_b],
+            destination_binder_id: fx.binder,
+            anchor_item_id: Some(fx.scene_a), // inside book_a's subtree, at indent 2
+            drop_position: DropPosition::Before,
+        },
+    );
+
+    err.expect("restoring a Book inside a Book is allowed, as moving one there is");
+    assert_ne!(
+        order(&fx.ctx, fx.binder),
+        before,
+        "the restored Book is back in the binder"
+    );
+    assert!(activated(&fx.ctx, fx.book_b), "book_b is out of the trash");
+    assert!(activated(&fx.ctx, fx.scene_b), "and so is its own scene");
+}
+
+/// The guard is about containment, not about Books existing near each other:
+/// restoring a trashed Book back to the top level, as a sibling of another
+/// top-level Book, must keep working exactly as any other restore does.
+#[test]
+fn restoring_a_book_to_top_level_still_succeeds() {
+    let fx = make_book_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_book_item(&fx, s1, fx.book_b);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.book_b],
+            destination_binder_id: fx.binder,
+            anchor_item_id: Some(fx.book_a), // sibling placement, not nested
+            drop_position: DropPosition::Before,
+        },
+    )
+    .expect("a top-level Book restoring beside another top-level Book is legal");
+
+    assert!(activated(&fx.ctx, fx.book_b));
+    assert!(activated(&fx.ctx, fx.scene_b));
+    assert_eq!(indent(&fx.ctx, fx.book_b), 0, "still a top-level Book");
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        vec![fx.book_b, fx.scene_b, fx.book_a, fx.part_a, fx.scene_a]
+    );
+}
+
+/// The guard is scoped to Books: restoring an ordinary Scene into a Book's
+/// subtree is the everyday case and must be entirely unaffected by it.
+#[test]
+fn restoring_an_ordinary_row_into_a_book_is_unaffected() {
+    let fx = make_book_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_book_item(&fx, s1, fx.scene_b); // scene_b alone; book_b stays active
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.scene_b],
+            destination_binder_id: fx.binder,
+            anchor_item_id: Some(fx.scene_a), // lands inside book_a's subtree
+            drop_position: DropPosition::After,
+        },
+    )
+    .expect("a Scene restoring into a Book is an ordinary restore");
+
+    assert!(activated(&fx.ctx, fx.scene_b));
+    assert_eq!(indent(&fx.ctx, fx.scene_b), 2, "a sibling of scene_a now");
+    assert_eq!(
+        order(&fx.ctx, fx.binder),
+        vec![fx.book_a, fx.part_a, fx.scene_a, fx.scene_b, fx.book_b]
+    );
+}
+
+/// The flat-marker encoding behaves the same as the folder one, which is the whole point
+/// of `SubRoleExt::opens_book`: an `Item/BookBegin` restored inside another Book's subtree
+/// is allowed, and starts a book there, exactly as a `Folder/Book` is.
+#[test]
+fn a_book_begin_marker_may_be_restored_inside_a_book() {
+    let fx = make_book_fixture();
+    let setup = undo_redo_commands::create_new_stack(&fx.ctx);
+    let book_begin = mk_item_sub_role(
+        &fx.ctx,
+        setup,
+        "Legacy Book C",
+        0,
+        BinderItemRole::Item,
+        BinderItemSubRole::BookBegin,
+    );
+    wire_binder(
+        &fx.ctx,
+        setup,
+        fx.binder,
+        &[
+            fx.book_a, fx.part_a, fx.scene_a, fx.book_b, fx.scene_b, book_begin,
+        ],
+    );
+    trash_book_item(&fx, setup, book_begin);
+
+    let before = order(&fx.ctx, fx.binder);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let err = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: vec![book_begin],
+            destination_binder_id: fx.binder,
+            anchor_item_id: Some(fx.scene_a), // inside book_a's subtree
+            drop_position: DropPosition::Before,
+        },
+    );
+
+    err.expect("a flat book marker is allowed wherever a Folder/Book is");
+    assert_ne!(
+        order(&fx.ctx, fx.binder),
+        before,
+        "the marker is back in the binder"
+    );
+}
+
+// ──────────────────── delete_trash_entries (per-entry purge) ────────────────────
+
+#[test]
+fn delete_trash_entries_purges_only_the_requested_subtree() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let info_a = trash_item(&fx, s1, fx.a); // a, a1, a2
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s2, fx.b); // b, b1
+
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s3),
+        &DeleteTrashEntriesDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info_a],
+        },
+    )
+    .expect("delete");
+
+    // a's subtree gone; b's entry + entities survive.
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a)
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(order(&fx.ctx, fx.binder1), vec![fx.b, fx.b1, fx.c]);
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.b1)
+            .unwrap()
+            .is_some()
+    );
+    assert!(!activated(&fx.ctx, fx.b1));
+    let infos = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap();
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].trashed_binder_item, Some(fx.b));
+}
+
+#[test]
+fn delete_trash_entries_removes_content_of_purged_subtree_only() {
+    let fx = make_fixture();
+    add_content(&fx, fx.a1, ContentRole::SceneText, "doomed");
+    add_content(&fx, fx.b1, ContentRole::SceneText, "kept");
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let info_a = trash_item(&fx, s1, fx.a);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s2, fx.b);
+
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s3),
+        &DeleteTrashEntriesDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info_a],
+        },
+    )
+    .expect("delete");
+
+    let contents = content_commands::get_all_content(&fx.ctx).unwrap();
+    assert!(contents.iter().any(|c| c.data == "kept"));
+    assert!(!contents.iter().any(|c| c.data == "doomed"));
+}
+
+#[test]
+fn delete_trash_entries_undo_redo() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let info_c = trash_item(&fx, s1, fx.c);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s2),
+        &DeleteTrashEntriesDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info_c],
+        },
+    )
+    .expect("delete");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.c)
+            .unwrap()
+            .is_none()
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.c)
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    assert_eq!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .len(),
+        1
+    );
+
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.c)
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
+fn delete_trash_entries_sweeps_collateral_stale_entries() {
+    let fx = make_fixture();
+    // Trash a descendant on its own, then trash its ancestor folder separately:
+    // two TrashInfos, one (a1) nested inside the other (a)'s subtree.
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let _info_a1 = trash_item(&fx, s1, fx.a1);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let info_a = trash_item(&fx, s2, fx.a);
+    assert_eq!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .len(),
+        2
+    );
+
+    // Delete forever only the ancestor's entry — a1's entity is hard-removed as
+    // collateral, so a1's now-dangling TrashInfo must be swept too.
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s3),
+        &DeleteTrashEntriesDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info_a],
+        },
+    )
+    .expect("delete");
+
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty(),
+        "both the requested and the collateral TrashInfo are gone"
+    );
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &fx.a1)
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
+fn delete_trash_entries_on_a_stale_id_is_a_noop() {
+    let fx = make_fixture();
+    let s = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::delete_trash_entries(
+        &fx.ctx,
+        Some(s),
+        &DeleteTrashEntriesDto {
+            work_id: fx.work,
+            trash_info_ids: vec![999_999],
+        },
+    )
+    .expect("stale delete is Ok");
+    // Nothing changed.
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+}
+
+/// **Converting carries the export flag, both ways.**
+///
+/// A note is not the book and a scene is, so the flag has to move with the type or the row
+/// says two different things about itself: a Note still marked exportable prints the
+/// writer's own workings into their manuscript, and a Scene converted back from one stays
+/// silently absent from the book it is now part of.
+///
+/// The mirror of the `SceneText` / `NoteText` remap the test above covers, and it rides in
+/// the same update, so undo takes back both at once.
+#[test]
+fn promote_between_scene_and_note_carries_the_export_flag() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Scene");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    assert!(item(&fx.ctx, s).is_exportable, "a scene starts in the book");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Note.code(),
+        },
+    )
+    .expect("promote to Note");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert!(
+        !item(&fx.ctx, s).is_exportable,
+        "and leaves the book on the way to being a note"
+    );
+
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Scene.code(),
+        },
+    )
+    .expect("promote back to Scene");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Scene);
+    assert!(
+        item(&fx.ctx, s).is_exportable,
+        "and rejoins it on the way back"
+    );
+
+    // One step, not two: the flag rides in the same update as the type.
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert!(!item(&fx.ctx, s).is_exportable);
+}
+
+/// **Converting anywhere else leaves the export flag exactly where the writer put it.**
+///
+/// A scene the writer has deliberately kept out of the exported book (an alternative draft,
+/// say) is still their answer to "is this in the book" after they decide that scene *is* the
+/// chapter. Only the Note line moves the flag; the other ten targets are the same row, of a
+/// different type, and overwriting the choice there would discard it with no prompt and
+/// nothing visible changed but the type.
+#[test]
+fn promote_outside_the_note_pair_leaves_the_export_flag_alone() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Alternative chapter 3");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+
+    // The writer's own choice, made in the Inspector's Exportable toggle.
+    let dto = item(&fx.ctx, s);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            is_exportable: false,
+            ..frontend::direct_access::UpdateBinderItemDto::from(dto)
+        },
+    )
+    .expect("leave it out of the book");
+    assert!(!item(&fx.ctx, s).is_exportable);
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::FlatChapter.code(),
+        },
+    )
+    .expect("promote to a flat chapter");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::ChapterScene);
+    assert!(
+        !item(&fx.ctx, s).is_exportable,
+        "the writer's exclusion survives Scene -> flat chapter"
+    );
+
+    // And back down again: still theirs.
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Scene.code(),
+        },
+    )
+    .expect("promote back to a scene");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Scene);
+    assert!(
+        !item(&fx.ctx, s).is_exportable,
+        "and survives flat chapter -> Scene"
+    );
+
+    // A folder-to-folder conversion is the same row too: a part the writer excluded stays
+    // excluded when it becomes a book.
+    let f = mk_item_sub_role(
+        &fx.ctx,
+        fx.setup,
+        "Appendix material",
+        0,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Part,
+    );
+    let fdto = item(&fx.ctx, f);
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &frontend::direct_access::UpdateBinderItemDto {
+            is_exportable: false,
+            ..frontend::direct_access::UpdateBinderItemDto::from(fdto)
+        },
+    )
+    .expect("leave the part out of the book");
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: f,
+            target: PromoteTarget::BookFolder.code(),
+        },
+    )
+    .expect("promote the part to a book");
+    assert_eq!(item(&fx.ctx, f).sub_role, BinderItemSubRole::Book);
+    assert!(!item(&fx.ctx, f).is_exportable, "and survives Part -> Book");
+}

@@ -1,0 +1,437 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Reading the open Work's structural numbering — one mapping, one policy, one default.
+//!
+//! Five row sources need the same two things: turn `BinderItemDto`s into the
+//! [`ItemMeta`] stream [`skribisto_model::numbering`] counts, and decide whether this
+//! manuscript numbers at all. Both used to be copied into each of them, which is how the
+//! outline came to default numbering *on* after a failed `get_work` while the corkboard,
+//! Overview, stream and export tree all defaulted *off* — the same transient error showing
+//! "Chapter 3" in one dock and no badge at all in the next.
+//!
+//! The counting itself is not here. That is
+//! [`skribisto_model::numbering::number_map`], the one function the exporter also calls;
+//! this module only feeds it and gates it.
+
+use std::collections::HashMap;
+
+use teksilo::prelude::*;
+
+use frontend::AppContext;
+use frontend::commands::work_commands;
+use frontend::direct_access::BinderItemDto;
+use skribisto_model::SubRoleExt;
+use skribisto_model::compile::ItemMeta;
+use skribisto_model::numbering::{self, Numbered, NumberingRules};
+
+/// One binder item as the numbering pass sees it.
+///
+/// The single place this mapping lives. It was written out by hand in five row sources, so
+/// adding a field meant editing all five in lockstep — and missing one would have silently
+/// numbered that view against a stale view of the model, with no compiler error, because
+/// every field of `ItemMeta` is default-able.
+///
+/// **`binder_id` is left at zero**, and both callers here are numbering passes, which are
+/// deliberately work-wide: an ordinal counts across the concatenated stream, exactly as the
+/// outline and the exported file do, so a manuscript whose chapters span two binders keeps
+/// counting rather than restarting. Nothing in a numbering pass asks where a book ends, so
+/// nothing here reads the field. A caller that *does* ask that question, anything reaching
+/// `compile::enclosing_head` or `row_indices_in`, must build its metas with the real binder
+/// or it will walk straight out of the manuscript.
+pub fn item_meta_of(it: &BinderItemDto) -> ItemMeta {
+    ItemMeta {
+        id: it.id,
+        binder_id: 0,
+        role: it.role.clone(),
+        sub_role: it.sub_role.clone(),
+        indent: it.indent as i32,
+        activated: it.activated,
+        is_exportable: it.is_exportable,
+        exclude_from_numbering: it.exclude_from_numbering,
+    }
+}
+
+/// Every structural row's ordinal for `work_id`, keyed by item id.
+///
+/// `metas` must be the **whole** Work's ordered stream — every binder, binder-major, in
+/// each binder's stored relationship order. Handing this a scoped or filtered slice is the
+/// one way to misuse it: a chapter's number would then depend on which binder is showing,
+/// what is typed in a search box, or which container a tab happens to be open on.
+///
+/// Returns an empty map when the manuscript does not number (`Work.number_chapters`), and
+/// **also when the Work cannot be read**. Numbering off is the safe failure default:
+/// showing no badge for one rebuild is a smaller lie than showing a number computed from
+/// guessed rules, and it is what every caller but one already did.
+pub fn numbers_for_work(
+    ctx: &AppContext,
+    work_id: u64,
+    metas: &[ItemMeta],
+) -> HashMap<u64, Numbered> {
+    match work_commands::get_work(ctx, &work_id) {
+        Ok(Some(w)) if w.number_chapters => numbering::number_map(
+            metas,
+            NumberingRules {
+                part_resets_chapter: w.part_resets_chapter,
+            },
+        ),
+        _ => HashMap::new(),
+    }
+}
+
+/// The name an untitled structural row falls back to — "Chapter 3", in the row's own
+/// language, or "End of Book" for the marker that closes one — or `None` when the row has
+/// no generated name at all.
+///
+/// Built here rather than in each row source so the language resolution happens once: the
+/// row's own `dict_language` tag wins, else the Work's, which is what the exporter's
+/// `HeadingLanguage::Auto` does per row. The string itself comes from
+/// `skribisto_compiler::headings::numbered`, the very function that writes the heading into
+/// the exported file, so an untitled chapter reads the same in the binder and in the book.
+///
+/// `DigitStyle::Western` unconditionally: the digit style is an *export style*'s choice
+/// (Mashriq vs. Maghreb), and the binder is not an export — a writer's tree should not
+/// change shape because they picked a different preset in a dialog.
+pub fn fallback_label_for(
+    it: &BinderItemDto,
+    numbered: Option<&Numbered>,
+    work_langs: &[String],
+) -> Option<String> {
+    if !it.title.trim().is_empty() {
+        return None; // it has a name of its own
+    }
+    // The end-of-book marker. It opens no level, so `level_of` answers `None` for it and
+    // it can carry no ordinal — and it is contentless by construction, so it can never
+    // have a title either. That combination rendered a row with an icon and no text at
+    // all: not "the end of the book", just a blank line under the last chapter, on every
+    // project the New Work templates have ever made. It is the one row that is *always*
+    // nameless, so it is named after what it is.
+    if it.sub_role.closes_book() {
+        return Some(tr!(create_book_end()).resolve_now());
+    }
+    // Structural rows only. A scene or a note has no generated name to fall back on, and
+    // labelling one "Scene" would be noise rather than information.
+    let level = skribisto_model::numbering::level_of(&it.sub_role)?;
+    let tags: &[String] = if it.dict_language.iter().any(|t| !t.is_empty()) {
+        &it.dict_language
+    } else {
+        work_langs
+    };
+    let lang = skribisto_model::language::primary(tags);
+    Some(match numbered {
+        // Numbered: the full heading, "Chapter 3".
+        Some(n) => skribisto_compiler::headings::numbered(
+            lang,
+            level,
+            n.number(),
+            skribisto_compiler::DigitStyle::Western,
+        ),
+        // **Neither numbered nor titled** — an untitled prologue, the combination Tidy
+        // chapter titles… made reachable. It has no ordinal and no name, and it used to
+        // render as a completely blank row: not "an unnamed chapter", just nothing.
+        // The bare structural word at least says what the row *is*.
+        //
+        // The export deliberately does not do this. A writer who has removed both the
+        // number and the title has said what they want, and synthesising the word
+        // "Chapter" as a heading would put a word in their book that they did not write;
+        // there, the chapter's page break carries the boundary instead.
+        None => skribisto_compiler::headings::word(lang, level).to_string(),
+    })
+}
+
+/// The Work's own language tags, for [`fallback_label_for`]'s per-row resolution.
+pub fn work_language_tags(ctx: &AppContext, work_id: u64) -> Vec<String> {
+    work_commands::get_work(ctx, &work_id)
+        .ok()
+        .flatten()
+        .map(|w| skribisto_model::language::parse_legacy_list(&w.dict_language.join(" ")))
+        .unwrap_or_default()
+}
+
+/// What a row is called on screen, and whether its ordinal badge shows beside it.
+///
+/// One rule, because it has to hold identically in the outline, its three pickers, the
+/// Overview, the stream, the corkboard and the export tree — a writer who clears a chapter's
+/// title must not find it named in one dock and a bare "3." in the next.
+///
+/// * **Titled** → the writer's title, with the badge beside it.
+/// * **Untitled, with a generated name** → that name ("Chapter 3" when numbered, "Chapter"
+///   when not), and **no** badge: showing both gives "3. Chapter 3", the exact duplication
+///   this feature removes. [`fallback_label_for`] decides which.
+/// * **Untitled, with no generated name** → the empty string. Only non-structural rows
+///   reach this: a scene or a note has nothing to be called, and inventing "Scene" would be
+///   noise on every untitled row in the tree.
+///
+/// This mirrors the exporter's own `NumberAndTitle` composition, which renders an untitled
+/// chapter as its number alone and a titled one as number-then-title.
+pub fn label_and_badge(
+    title: &str,
+    fallback: Option<&str>,
+    number: Option<usize>,
+) -> (String, Option<usize>) {
+    if title.trim().is_empty() {
+        match fallback {
+            Some(f) => (f.to_string(), None),
+            None => (String::new(), number),
+        }
+    } else {
+        (title.to_string(), number)
+    }
+}
+
+/// [`numbers_for_work`] straight from a slice of DTOs, for the callers that hold one.
+pub fn numbers_for_items(
+    ctx: &AppContext,
+    work_id: u64,
+    items: &[BinderItemDto],
+) -> HashMap<u64, Numbered> {
+    let metas: Vec<ItemMeta> = items.iter().map(item_meta_of).collect();
+    numbers_for_work(ctx, work_id, &metas)
+}
+
+/// Every binder item of `work_id`, binder-major, in each binder's stored relationship
+/// order — the **whole** stream [`numbers_for_items`] must be handed (see its docs for why a
+/// scoped slice is the one way to misuse it).
+///
+/// Trashed rows included: they stay in place, and the numbering pass filters them itself.
+/// Empty on any backend hiccup, which numbering already treats as "do not number".
+pub fn ordered_item_dtos(ctx: &AppContext, work_id: u64) -> Vec<BinderItemDto> {
+    super::binder_stream::ordered_all_items(ctx, work_id)
+        .into_iter()
+        .map(|(_binder_id, it)| it)
+        .collect()
+}
+
+/// What the manuscript's rows are **called on screen**, read once for a whole batch.
+///
+/// The row sources under `models/` each derive this while building their rows, because they
+/// are re-sourcing the whole view anyway. A caller that names a *handful* of items — the
+/// editor's open tabs — cannot: it has ids, not rows, and the generated name of one untitled
+/// chapter depends on every item before it. This reads that context once so naming N tabs
+/// costs one pass, not N.
+///
+/// Snapshot, not a live handle: read it, use it, drop it. Anything that can change a name
+/// (a rename, a move, a new chapter, the Work's numbering settings) fires a backend event,
+/// and the caller re-reads.
+pub struct NameContext {
+    items: HashMap<u64, BinderItemDto>,
+    numbers: HashMap<u64, Numbered>,
+    langs: Vec<String>,
+}
+
+impl NameContext {
+    /// Read `work_id`'s ordered stream, its numbering and its languages.
+    pub fn read(ctx: &AppContext, work_id: u64) -> Self {
+        let ordered = ordered_item_dtos(ctx, work_id);
+        let numbers = numbers_for_items(ctx, work_id, &ordered);
+        Self {
+            items: ordered.into_iter().map(|it| (it.id, it)).collect(),
+            numbers,
+            langs: work_language_tags(ctx, work_id),
+        }
+    }
+
+    /// `item_id`'s row, or `None` when this Work has no such item.
+    ///
+    /// Kept separate from [`Self::generated_name`] so a caller can tell "the store does not
+    /// know this item" (leave whatever is on screen alone) from "this item has no generated
+    /// name" (an untitled scene) — two answers that a single `Option<String>` would blur
+    /// into one, and the second is the one that must overwrite a stale caption.
+    pub fn item(&self, item_id: u64) -> Option<&BinderItemDto> {
+        self.items.get(&item_id)
+    }
+
+    /// The name an **untitled** structural row is shown under — "Chapter 3", or "Chapter"
+    /// when the manuscript does not number. `None` for a titled row (it has its own name)
+    /// and for a scene or a note (which have none to generate).
+    pub fn generated_name(&self, it: &BinderItemDto) -> Option<String> {
+        fallback_label_for(it, self.numbers.get(&it.id), &self.langs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use frontend::common::entities::BinderItemSubRole;
+    use skribisto_model::compile::StreamLevel;
+
+    fn dto(title: &str, sub_role: BinderItemSubRole) -> BinderItemDto {
+        BinderItemDto {
+            title: title.to_string(),
+            sub_role,
+            ..Default::default()
+        }
+    }
+
+    fn numbered(level: StreamLevel, n: usize) -> Numbered {
+        Numbered {
+            level,
+            book: n,
+            part: n,
+            chapter: n,
+        }
+    }
+
+    /// A titled row is named by its writer, whatever else is true of it.
+    #[test]
+    fn a_titled_row_has_no_fallback() {
+        let it = dto("The Storm", BinderItemSubRole::ChapterScene);
+        let n = numbered(StreamLevel::Chapter, 3);
+        assert_eq!(fallback_label_for(&it, Some(&n), &["en".into()]), None);
+    }
+
+    /// Untitled but numbered: the full heading, exactly what the export prints.
+    #[test]
+    fn an_untitled_numbered_chapter_is_named_by_its_heading() {
+        let it = dto("", BinderItemSubRole::ChapterScene);
+        let n = numbered(StreamLevel::Chapter, 3);
+        assert_eq!(
+            fallback_label_for(&it, Some(&n), &["en".into()]).as_deref(),
+            Some("Chapter 3")
+        );
+        assert_eq!(
+            fallback_label_for(&it, Some(&n), &["fr".into()]).as_deref(),
+            Some("Chapitre 3")
+        );
+    }
+
+    /// **Untitled *and* unnumbered — an untitled prologue.** It has no ordinal and no name,
+    /// and it used to render as a completely blank row. The bare structural word at least
+    /// says what it is.
+    #[test]
+    fn an_untitled_unnumbered_chapter_still_says_what_it_is() {
+        let it = dto("", BinderItemSubRole::ChapterScene);
+        assert_eq!(
+            fallback_label_for(&it, None, &["en".into()]).as_deref(),
+            Some("Chapter")
+        );
+        assert_eq!(
+            fallback_label_for(&it, None, &["fr".into()]).as_deref(),
+            Some("Chapitre")
+        );
+        // And a Part says "Part", not "Chapter".
+        let part = dto("", BinderItemSubRole::Part);
+        assert_eq!(
+            fallback_label_for(&part, None, &["en".into()]).as_deref(),
+            Some("Part")
+        );
+    }
+
+    /// A scene or a note has no generated name, so it stays blank rather than acquiring a
+    /// label like "Scene" that would be noise on every untitled row in the binder.
+    #[test]
+    fn a_non_structural_row_gets_no_fallback() {
+        for sr in [BinderItemSubRole::Scene, BinderItemSubRole::Note] {
+            let it = dto("", sr);
+            assert_eq!(fallback_label_for(&it, None, &["en".into()]), None);
+        }
+    }
+
+    /// **The end-of-book marker is the one row that is always nameless.** It is
+    /// contentless by construction, so it can never be titled, and it opens no level, so
+    /// it can never be numbered — which rendered it as an icon and no text at all, on
+    /// every project a New Work template has ever made. It is named after what it is.
+    #[test]
+    fn the_end_of_book_marker_is_named_after_what_it_is() {
+        let it = dto("", BinderItemSubRole::BookEnd);
+        let label = fallback_label_for(&it, None, &["en".into()]);
+        assert!(
+            label.as_deref().is_some_and(|s| !s.trim().is_empty()),
+            "the end marker must not render as a blank row"
+        );
+        // And `label_and_badge` shows it rather than an empty string with a badge.
+        let (shown, badge) = crate::models::label_and_badge("", label.as_deref(), None);
+        assert_eq!(shown, label.unwrap());
+        assert_eq!(badge, None);
+    }
+
+    /// A marker the writer *did* name keeps their name — the titled check runs first, as
+    /// it does for every other row.
+    #[test]
+    fn a_named_end_marker_keeps_its_name() {
+        let it = dto("Finis", BinderItemSubRole::BookEnd);
+        assert_eq!(fallback_label_for(&it, None, &["en".into()]), None);
+    }
+
+    /// [`ordered_item_dtos`] must answer in the **binder's stored relationship order**, not
+    /// in whatever order the store hands rows back.
+    ///
+    /// `get_binder_item_multi` answers in db-key order, which for a freshly created
+    /// manuscript happens to match creation order — so a version that forgot to re-order by
+    /// `item_ids` looks correct until the writer moves a chapter, and then every chapter
+    /// after it is numbered by where it *was*.
+    #[test]
+    fn the_ordered_stream_follows_the_binders_own_order_not_the_stores() {
+        use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+        use frontend::common::entities::BinderItemRole;
+        use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+        let ctx = AppContext::new();
+        let work =
+            work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default()).unwrap();
+        let binder = binder_commands::create_binder(
+            &ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .unwrap();
+        let make = |title: &str, index: i32| {
+            binder_item_commands::create_binder_item(
+                &ctx,
+                None,
+                &CreateBinderItemDto {
+                    status: None,
+                    title: title.into(),
+                    role: BinderItemRole::Item,
+                    sub_role: BinderItemSubRole::ChapterScene,
+                    activated: true,
+                    is_exportable: true,
+                    ..Default::default()
+                },
+                binder.id,
+                index,
+            )
+            .unwrap()
+            .id
+        };
+        let first = make("first", -1);
+        let second = make("second", -1);
+        // Created last, inserted at the top: creation order and stream order now disagree.
+        let inserted = make("inserted", 0);
+
+        let stream: Vec<u64> = ordered_item_dtos(&ctx, work.id)
+            .iter()
+            .map(|it| it.id)
+            .collect();
+        assert_eq!(stream, vec![inserted, first, second]);
+
+        // And the numbering that reads it agrees: the newest row is chapter 1.
+        let names = NameContext::read(&ctx, work.id);
+        let it = names
+            .item(inserted)
+            .expect("the inserted row is in the stream");
+        assert_eq!(it.title, "inserted");
+        assert_eq!(names.item(u64::MAX).map(|it| it.id), None);
+    }
+
+    /// The display rule: a badge accompanies a real title, and never a generated name —
+    /// "3. Chapter 3" is the duplication the whole feature removes.
+    #[test]
+    fn the_badge_never_doubles_a_generated_name() {
+        assert_eq!(
+            label_and_badge("The Storm", None, Some(3)),
+            ("The Storm".to_string(), Some(3))
+        );
+        assert_eq!(
+            label_and_badge("", Some("Chapter 3"), Some(3)),
+            ("Chapter 3".to_string(), None)
+        );
+        assert_eq!(label_and_badge("", None, None), (String::new(), None));
+    }
+}

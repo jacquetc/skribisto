@@ -1,0 +1,91 @@
+L’assistant *Importer des documents* fait entrer dans un projet une écriture que vous n’avez
+pas créée dans Skribisto. Un fichier envoyé hors de Skribisto pour être annoté revient par
+[l’aller-retour](:help-round-trip). Un projet entier réalisé dans une autre application arrive
+par [faire venir un projet entier](:help-import-projects).
+
+## Ouvrir l’assistant
+
+Choisissez *Œuvre ▸ Importer depuis ▸ Documents (Markdown, Word, ODT)…*. Pour l’ouvrir avec une
+destination déjà choisie, faites un clic droit sur un élément du classeur et choisissez
+*Importer ici…*.
+
+Rien n’est écrit dans votre projet tant que vous n’avez pas appuyé sur *Importer* à la dernière
+étape.
+
+## Choisir les fichiers
+
+Déposez les fichiers sur la page *Fichiers*, ou appuyez sur *Parcourir…* pour les choisir.
+Ces formats sont lus :
+
+- Markdown (`.md`)
+- Word (`.docx`)
+- OpenDocument (`.odt`)
+- texte brut (`.txt`)
+
+Réordonnez-les ou retirez-en, puis appuyez sur *Suivant*.
+
+## Vérifier l’arborescence
+
+*Vérifier* montre l’arborescence que l’assistant construirait, avant qu’elle n’existe. Ses
+colonnes disent ce qu’est chaque élément et ce qu’il apporte :
+
+- le type qui lui a été donné, et le fichier d’où il vient
+- son nombre de mots et ses coupures de scène
+- le nombre de commentaires et de notes de bas de page qu’il porte
+- l’épigraphe qui le précède, quand le fichier en donnait une
+- ce que devient un texte que son type ne peut pas contenir
+
+Changez le type d’un élément dans sa colonne *Type*. Décochez *Importer* pour laisser de côté
+cet élément et tout ce qu’il contient.
+
+## Régler des niveaux de titre entiers
+
+*Niveaux de titre*, au-dessus de l’arborescence, dit ce que devient toute une profondeur de
+titre. Les profondeurs utilisées par vos fichiers sont reprises dans l’ordre le long de Livre,
+Partie, Chapitre, Scène, en partant de Livre.
+
+La profondeur la plus grande reçoit un type capable de porter du texte. Pour des fichiers de
+chapitres sans titre de livre propre, *Ajouter un niveau supérieur* insère un Livre au-dessus
+de tout ce qui a été trouvé.
+
+Les titres deviennent Livre, Partie, Chapitre ou Scène, et s’arrêtent là : rien ne se place à
+l’intérieur d’une scène. Un élément peut aussi être retypé en Note ou en Paratexte, en dehors
+de cette échelle. Voir [le modèle d’écriture](:help-writing-model) pour ce qu’est chaque type.
+
+## Choisir où cela arrive
+
+Sur *Destination*, choisissez un classeur ou un élément. L’import se place à l’intérieur de ce
+que vous avez choisi si c’est un dossier, et juste après sinon.
+
+Une étape *Fusion* suit, mais seulement quand vos fichiers ramènent des éléments que le projet
+contient déjà et qu’au moins l’un d’eux demande une décision. C’est l’aller-retour, et
+[sa propre page](:help-round-trip) explique les choix proposés.
+
+## Terminer
+
+*Importer* écrit tout en une seule fois. Un message indique ensuite combien d’éléments sont
+arrivés et propose *Annuler l’import* pendant quelques secondes. Si l’écriture est refusée,
+l’assistant reste ouvert avec votre plan intact.
+
+## Commentaires et notes de bas de page
+
+Les commentaires d’un fichier Word ou OpenDocument arrivent comme de vrais commentaires
+Skribisto, sur les mots qu’ils annotaient. Un commentaire apporte avec lui son auteur et ses
+réponses. Voir [les commentaires](:help-comments).
+
+Les notes de bas de page arrivent aussi depuis ces deux formats, chacune avec son propre texte,
+appelée depuis le même endroit du texte. Les numéros ne sont pas repris.
+
+Une note dont l’assistant ne peut pas placer l’appel est signalée plutôt qu’inventée.
+
+## Ce que l’assistant signale
+
+Un bandeau sous l’arborescence porte les messages de l’assistant sur l’import.
+
+- Un fichier sans aucun titre arrive en un seul élément.
+- Un fichier qui ne peut pas être lu, ou dont le format n’est reconnu par rien, est ignoré et
+  nommé. Le reste du lot est quand même importé.
+- Un élément peut porter du texte que son type ne peut pas contenir, car un Livre ou une Partie
+  n’en contient aucun. Sa colonne *Son texte* propose alors un choix. *Garder comme paratexte*,
+  le choix par défaut, donne à ce texte un paratexte à lui, juste à l’intérieur de l’élément ;
+  *Supprimer le texte* le laisse de côté.

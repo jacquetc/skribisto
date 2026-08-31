@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+# Clippy configuration — see `[workspace.lints.clippy]` in Cargo.toml.
+#
+# `unwrap_used` / `expect_used` / `panic` are enabled workspace-wide to keep
+# panic paths out of *shipping* code. In a test, `unwrap()` on a value the test
+# just constructed is correct, idiomatic Rust and carries the assertion's
+# meaning; linting it would produce thousands of warnings that say nothing and
+# would push authors toward noisier test bodies. So the three lints are scoped
+# to non-test code here rather than being sprinkled with `#[allow]` per module.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Binder root header — archive box. Square shoulders and a full-width lid
+       seam, against Folder's notched tab: those are the two container glyphs most
+       at risk of collapsing into each other. The handle is a short bar, never a
+       long one — a long one reads as Chapter's heading band. -->
+  <path d="M2.5 5.5H13.5V12.5a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1Z"/>
+  <path d="M2.5 5.5 4 2.5H12l1.5 3"/>
+  <path d="M6 8.5H10"/>
+</svg>

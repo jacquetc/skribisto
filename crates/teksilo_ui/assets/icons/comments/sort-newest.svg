@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Newest first — a clock, because the question is "what did I just leave myself" -->
+  <circle cx="8" cy="8.4" r="5.4"/>
+  <path d="M8 5.2 V8.4 L10.3 9.9"/>
+</svg>

@@ -1,0 +1,2934 @@
+---
+schema:
+  version: 5
+global:
+  language: rust
+  application_name: Skribisto
+  organisation:
+    name: skribisto
+    domain: skribisto.eu
+  prefix_path: crates
+entities:
+- name: EntityBase
+  only_for_heritage: true
+  fields:
+  - name: id
+    type: uinteger
+  - name: created_at
+    type: datetime
+  - name: updated_at
+    type: datetime
+  undoable: true
+- name: Root
+  inherits_from: EntityBase
+  fields:
+  - name: system
+    type: entity
+    entity: System
+    relationship: one_to_one
+    strong: true
+  - name: works
+    type: entity
+    entity: Work
+    relationship: one_to_many
+    strong: true
+  undoable: false
+- name: System
+  inherits_from: EntityBase
+  fields:
+  - name: recent_works
+    type: entity
+    entity: RecentWork
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: title
+  - name: work_infos
+    type: entity
+    entity: WorkInfo
+    relationship: one_to_many
+    strong: true
+  undoable: false
+- name: WorkInfo
+  inherits_from: EntityBase
+  fields:
+  - name: file_name
+    type: string
+    optional: true
+  - name: shape
+    type: enum
+    enum_name: WorkShape
+    enum_values:
+      - Zip
+      - Folder
+  - name: work
+    type: entity
+    entity: Work
+    relationship: many_to_one
+    optional: true
+  - name: search
+    type: entity
+    entity: Search
+    relationship: one_to_one
+    strong: true
+  - name: progress_snapshots
+    type: entity
+    entity: ProgressSnapshot
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: day
+  undoable: false
+# The daily writing-progress history (words per day). Hangs off WorkInfo and is
+# `undoable: false` — you don't Ctrl+Z a fact about what you wrote yesterday, and it must
+# never enter the manuscript's undo history. UNLIKE the search surface, though, this DOES
+# round-trip through the .skrib (a `snapshots.ron`, hydrated onto the fresh WorkInfo on
+# load) so a writer's streak survives moving the project — the first `undoable: false`
+# entity that is also persisted. `day` is truncated to UTC midnight by the writer;
+# `book_item_ids`/`book_word_counts` are index-paired parallel arrays (a per-Book
+# breakdown, almost always length-1).
+- name: ProgressSnapshot
+  inherits_from: EntityBase
+  fields:
+  - name: day
+    type: datetime
+  - name: total_word_count
+    type: integer
+  - name: total_char_count
+    type: integer
+    optional: true
+  - name: book_item_ids
+    type: uinteger
+    is_list: true
+  - name: book_word_counts
+    type: integer
+    is_list: true
+  undoable: false
+# The live search surface. It hangs off WorkInfo (not Work) and is `undoable: false`
+# deliberately: WorkInfo has no per-instance undo stack the way Work does, and a
+# result set that is re-derived on every keystroke must never enter the manuscript's
+# Ctrl+Z history. `undoable: false` also means run_search never snapshots the entity
+# tree, so `remove_multi` genuinely frees the old rows instead of retaining them.
+#
+# It is the *business surface*, not a persistence bet: the store is an ephemeral
+# HashMap and WorkInfo never round-trips through .skrib, so the search PARAMETERS
+# that must survive a restart live in `search.toml` (see models/search_settings_file.rs),
+# not here.
+- name: Search
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: query
+    type: string
+  - name: case_sensitive
+    type: boolean
+  - name: whole_word
+    type: boolean
+  - name: diacritic_sensitive
+    type: boolean
+  # Which KINDS of thing to show results from — the six SearchFacet chips, as
+  # skribisto_model::SearchFacet::code() values.
+  #
+  # EMPTY means no filter (all kinds), which is what a filter with nothing ticked means to a
+  # reader. A code naming no facet is ignored — and if NONE of the codes name a facet, the
+  # whole list is ignored, i.e. it is no filter at all. Dropping unknown codes one at a time
+  # is not enough: a search.toml written by a version whose codes differed would otherwise
+  # leave a non-empty list that matches nothing, and the writer would open the search panel
+  # to zero results with no error anywhere.
+  - name: facets
+    type: integer
+    is_list: true
+  - name: search_body
+    type: boolean
+  - name: search_titles
+    type: boolean
+  - name: search_synopsis
+    type: boolean
+  - name: search_labels
+    type: boolean
+  - name: include_trashed
+    type: boolean
+  - name: truncated
+    type: boolean
+  - name: results
+    type: entity
+    entity: SearchResult
+    relationship: ordered_one_to_many
+    strong: true
+  undoable: false
+# One row per matching FIELD (a scene's body, its synopsis, an item's title…), not
+# per occurrence — `occurrence_count` carries the rest. Per-occurrence review happens
+# in the preview pane, recomputed live from the item's own document.
+#
+# Deliberately carries NO character offsets. There are three distinct offset spaces
+# in play (bytes into raw Djot, chars into parsed plain text, and the editor's own
+# char space); a stored offset from one silently corrupts an operation in another,
+# and it goes stale the moment anything before it is edited. Positions are always
+# re-derived fresh, inside one just-parsed document.
+- name: SearchResult
+  inherits_from: EntityBase
+  fields:
+  # A PLAIN id, deliberately not an `entity` relationship.
+  #
+  # A weak many_to_one would make Qleany generate a reverse join table on BinderItem,
+  # whose backing field lives in the hand-edited `common/src/database/hashmap_store.rs`
+  # — so wiring it would force a regen of a file that carries hand-written changes,
+  # for no benefit. A SearchResult is a *projection*, not a relational citizen: it is
+  # re-derived on every search and every activation re-validates it against the live
+  # document, so a stale id is caught there and costs nothing. Referential integrity
+  # would be machinery guarding a value we never trust anyway.
+  - name: binder_item_id
+    type: uinteger
+  - name: item_title
+    type: string
+  - name: match_field
+    type: enum
+    enum_name: MatchField
+    enum_values:
+      - Body
+      - Title
+      - Synopsis
+      - Label
+      - Epigraph
+      # A comment thread's own body.
+      - Comment
+      # One reply inside a thread. Distinct from `Comment` because the two are
+      # different rows to rewrite and read differently in the list ("a comment on
+      # Scene 1" vs "a reply to it"), not because the text is any different.
+      - CommentReply
+      # A footnote's own prose. Its own field rather than `Body` because a
+      # footnote is not a `Content` row — it is reached by its own walk, and a
+      # replace rewrites a different table.
+      - Footnote
+  # The comment THREAD a `Comment` / `CommentReply` hit belongs to — the opening
+  # `Comment`'s id in both cases, because that is what the margin and the docks
+  # reveal: a thread is one card, replies included. 0 for every other match field.
+  #
+  # A plain id for the same reason `binder_item_id` above is one: a SearchResult is
+  # a projection, re-derived on every search and re-validated on activation, so a
+  # relationship here would be machinery guarding a value we never trust anyway.
+  - name: comment_id
+    type: uinteger
+  # The `CommentReply` row a `CommentReply` hit is in — what a replace rewrites. 0
+  # when the hit is the thread's own body, and for every non-comment match. Kept
+  # separate from `comment_id` rather than overloading it, because a reply hit needs
+  # BOTH: its thread to navigate to, and its own row to edit.
+  - name: reply_id
+    type: uinteger
+  # The `Footnote` row a `Footnote` hit is in — what a replace rewrites. 0 for
+  # every other match field. A plain id for the same reason `binder_item_id` and
+  # `comment_id` above are: a SearchResult is a projection, re-derived on every
+  # search and re-validated on activation.
+  - name: footnote_id
+    type: uinteger
+  - name: occurrence_count
+    type: uinteger
+  - name: snippet_before
+    type: string
+  - name: snippet_match
+    type: string
+  - name: snippet_after
+    type: string
+  - name: trashed
+    type: boolean
+  undoable: false
+- name: RecentWork
+  inherits_from: EntityBase
+  fields:
+  - name: title
+    type: string
+  - name: last_opened_at
+    type: datetime
+  - name: absolute_path
+    type: string
+  undoable: false
+- name: Work
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: title
+    type: string
+  - name: author_name
+    type: string
+  - name: dict_language
+    type: string
+    is_list: true
+  - name: unique_id
+    type: string
+  - name: chapter_mode
+    type: enum
+    enum_name: ChapterMode
+    enum_values:
+      - Folder
+      - Flat
+  - name: custom_replacement_rules_enabled
+    type: boolean
+  # Which of `BinderItem`'s two targets this project's goals are expressed in. Manuscript
+  # data, not a machine preference — a length target is a property of the book and its
+  # market, so a co-author opening the `.skrib` must read the same number in the same unit,
+  # exactly as `chapter_mode` and `number_chapters` do.
+  #
+  # Per *project*, deliberately, and not per item: a length unit follows the manuscript's
+  # language and trade convention (Normseite and feuillet count 1500 signs, a 原稿用紙 sheet
+  # 400 characters, Chinese pays by the 千字), so a writer with a French novel and a
+  # Japanese one needs two answers, and needs only two.
+  #
+  # Switching it points every editor at the *other* stored integer
+  # (`word_count_goal` <-> `char_count_goal`) and converts nothing. Words and characters are
+  # not interchangeable by any ratio worth trusting, so relabelling one number as the other
+  # -- which is what the pre-Rust app effectively did, via a global display toggle that
+  # decided which field the goal dialog wrote -- silently changes what every target means.
+  # Both numbers survive a switch, so switching back restores the original reading.
+  - name: goal_unit
+    type: enum
+    enum_name: GoalUnit
+    enum_values:
+      - Words
+      - Characters
+  # Does this book number its chapters and parts at all? The manuscript-level master
+  # switch, and manuscript data rather than a machine preference — a co-author opening the
+  # `.skrib` gets the same answer, exactly as `chapter_mode` does.
+  #
+  # When off, the compiler clamps the export style's heading schemes to at most
+  # `TitleOnly` before rendering: "off" has to mean off in the exported file, not merely in
+  # a UI the writer might not have opened before hitting Export.
+  #
+  # NOTE for `skrib_format`: this is the one new field whose safe legacy state is `true`,
+  # so its `WorkFile` mirror needs `#[serde(default = "…")]`, never the bare shorthand.
+  - name: number_chapters
+    type: boolean
+  # Whether a new Part restarts chapter numbering at one. Off by default: trade practice
+  # runs chapters continuously across the parts of one book, so "Part Two" opens on
+  # "Chapter Eleven". A setting rather than a constant because the in-world "Book Two,
+  # Chapter One" framing is real and other tools expose the same choice.
+  - name: part_resets_chapter
+    type: boolean
+  - name: binders
+    type: entity
+    entity: Binder
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: name
+  - name: tags
+    type: entity
+    entity: BinderTag
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: name
+  - name: dict_words
+    type: entity
+    entity: DictWord
+    relationship: one_to_many
+    strong: true
+  - name: text_replacement_rules
+    type: entity
+    entity: TextReplacementRule
+    relationship: one_to_many
+    strong: true
+  # Ordered, unlike tags/dict_words/replacements: the writer arranges this list by hand
+  # and the insert menu shows it in that order (starred rows floated to the top).
+  - name: note_templates
+    type: entity
+    entity: NoteTemplate
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: name
+  # The project's workflow vocabulary — the rungs a writer moves a scene along.
+  #
+  # Ordered, unlike `tags`, and that is the whole difference between the two axes: a tag
+  # says what an item IS (many, unordered, a filing vocabulary), a status says what it is
+  # currently AT (one, ordered, and it only ever moves forward). The order is what makes
+  # "sort by status", "everything below Revised" and merge's demote-to-the-lower rule
+  # expressible at all, and `ordered_one_to_many` maintains it — which is why there is no
+  # `position` field on the entity itself, exactly as `note_templates` has none.
+  #
+  # Seeded from a localised preset at `new_work` rather than left empty like `tags`: a
+  # project with no statuses has no feature, whereas a project with no tags still works.
+  - name: statuses
+    type: entity
+    entity: BinderStatus
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: name
+  # Unordered, like tags: an asset's position carries no product meaning — prose
+  # references an asset by content hash, never by index.
+  - name: assets
+    type: entity
+    entity: Asset
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: file_name
+  - name: smart_punctuation
+    type: entity
+    entity: SmartPunctuation
+    relationship: one_to_one
+    strong: true
+  - name: trash_infos
+    type: entity
+    entity: TrashInfo
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: trashed_at
+  - name: paces
+    type: entity
+    entity: Pace
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: start_date
+  # Unordered, unlike binders/paces: a comment's position in this collection carries
+  # no product meaning. Both comment docks sort by their own criteria (document
+  # position, recency, resolved state), so store order is never read. Same shape as
+  # `tags` and `trash_infos` — proof that `list_model` does not imply ordering.
+  - name: comments
+    type: entity
+    entity: Comment
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: body
+  # Unordered for the same reason comments are: a footnote's place in the book is
+  # decided by where its reference sits in the prose, which is read from the
+  # document, never from this collection's order.
+  - name: footnotes
+    type: entity
+    entity: Footnote
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: body
+  undoable: true
+# Per-project smart punctuation: the "-- becomes an em dash, « » get their
+# non-breaking spaces" rules, as the DOCUMENT's house style rather than this
+# machine's preference — so it travels in the .skrib exactly as Pace and the
+# replacement lexicon do (a co-author opening the file gets the same typography).
+#
+# Named for what it does. "Typography" is already taken in this codebase by
+# `EditorTypography`, which means fonts, sizes and spacing — a different thing
+# entirely, and one that legitimately IS a machine preference.
+#
+# `undoable: true`, and not by preference: `qleany check` refuses a non-undoable
+# strong child under an undoable parent, so "owned by Work" and "off the undo
+# stack" are mutually exclusive here. Travelling with the document is the more
+# valuable half, and undoable per-project settings are the house norm anyway —
+# Pace's own comment says as much about editing a deadline. (Nor is there a way
+# round it at runtime: `undoable` is fixed at codegen time, and `stack_id: None`
+# reroutes to the never-cleared global stack 0 rather than skipping the push.)
+#
+# The glyphs themselves are NOT here: they come from the locale ruleset keyed by
+# the item's effective `dict_language`. These fields only say which rules are on,
+# plus a house-style quote override for the locales that genuinely have more than
+# one accepted system (Italian above all).
+- name: SmartPunctuation
+  inherits_from: EntityBase
+  fields:
+  - name: override_app_default
+    type: boolean
+  - name: dashes
+    type: boolean
+  - name: ellipsis
+    type: boolean
+  - name: quotes
+    type: boolean
+  - name: quote_style
+    type: enum
+    enum_name: QuoteStyle
+    enum_values:
+      - LocaleDefault
+      - CurlyDouble
+      - CurlySingle
+      - Guillemets
+      - LowHigh
+  - name: pre_punctuation_spacing
+    type: boolean
+  - name: dialogue_marker
+    type: boolean
+  undoable: true
+- name: TrashInfo
+  inherits_from: EntityBase
+  fields:
+  - name: trashed_at
+    type: datetime
+  - name: origin_binder_id
+    type: integer
+  - name: trashed_binder
+    type: entity
+    entity: Binder
+    relationship: many_to_one
+    optional: true
+  - name: trashed_binder_item
+    type: entity
+    entity: BinderItem
+    relationship: many_to_one
+    optional: true
+  undoable: true
+# The per-Book writing plan ("Pace"): a target word count (read through `book_item`'s
+# `word_count_goal`, never duplicated), a date range, which weekdays count, plus child
+# Holiday (skipped days) and Milestone (per Part/Chapter deadline) collections. On the
+# Work undo trunk, so editing a deadline is undoable and travels in the .skrib.
+- name: Pace
+  inherits_from: EntityBase
+  fields:
+  - name: book_item
+    type: entity
+    entity: BinderItem
+    relationship: many_to_one
+    optional: true
+  - name: start_date
+    type: datetime
+  - name: end_date
+    type: datetime
+  # Bit set of counted weekdays: Mon=1, Tue=2, Wed=4, Thu=8, Fri=16, Sat=32, Sun=64.
+  # The UI sets it explicitly (a fresh Pace defaults to 0 = no writing days).
+  - name: weekday_mask
+    type: integer
+  - name: active
+    type: boolean
+  - name: holidays
+    type: entity
+    entity: Holiday
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: label
+  - name: milestones
+    type: entity
+    entity: Milestone
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: label
+  undoable: true
+# A stretch of days the writer does not write — excluded from the pace schedule.
+- name: Holiday
+  inherits_from: EntityBase
+  fields:
+  - name: label
+    type: string
+  - name: start_date
+    type: datetime
+  - name: end_date
+    type: datetime
+    optional: true
+  undoable: true
+# A dated waypoint on the Book's Pace timeline. Two kinds, told apart by `kind`:
+#
+#   Item            by `target_date`, `target_item` should have reached its OWN target.
+#                   The number is derived live from that item's `word_count_goal` and is
+#                   NOT stored here -- see `target_word_count` below.
+#   BookCumulative  by `target_date`, the whole Book should stand at `target_word_count`
+#                   words. No target item; the number is the writer's, typed directly.
+#
+# Weakly references the target BinderItem (no strong ownership: deleting the item must not
+# cascade-delete the Pace).
+- name: Milestone
+  inherits_from: EntityBase
+  fields:
+  - name: label
+    type: string
+  - name: target_item
+    type: entity
+    entity: BinderItem
+    relationship: many_to_one
+    optional: true
+  - name: target_date
+    type: datetime
+  # Authoritative for `BookCumulative` only. For an `Item` milestone it is left `None` and
+  # never read: the number lives on the target item, and a copy of it here would go stale
+  # the moment that item's goal was edited by any path other than re-saving this milestone
+  # -- which is exactly the bug the `kind` field below exists to end.
+  - name: target_word_count
+    type: integer
+    optional: true
+  # Stored rather than inferred from `target_item.is_some()`, which is how the two kinds
+  # were told apart before this field existed. That inference has a hole: `load_work`
+  # silently drops a weak reference whose target no longer resolves, so a deleted target
+  # item turned an `Item` milestone into something indistinguishable from a genuine
+  # `BookCumulative` one -- freezing a stale number and presenting it as a figure the
+  # writer had typed. With the kind stored, "an Item milestone whose target is gone" is a
+  # state the UI can name and offer to fix.
+  - name: kind
+    type: enum
+    enum_name: MilestoneKind
+    enum_values:
+      - Item
+      - BookCumulative
+  undoable: true
+# One comment thread anchored to one PROSE Content row (SceneText / NoteText /
+# SynopsisText — title rows are plain TextInputs with no document behind them and are
+# deliberately not comment targets).
+#
+# `content` is a weak, optional many_to_one, exactly like Milestone.target_item and
+# TrashInfo.trashed_binder_item: trashing or purging the anchored item must ORPHAN this
+# comment, never cascade-delete it. That is the whole point — a comment outliving its
+# text is a state we render explicitly, not a dangling row we lose.
+#
+# THE ANCHOR. Nothing in this stack has durable text identity: text-document re-mints
+# Block ids from 1 on every reopen, `load_work` re-mints every EntityId, `CharacterFormat`
+# is a closed struct whose runs may not overlap, and the Djot importer discards inline
+# span attributes. The only thing that survives a save→reopen is the prose text itself.
+# So the anchor is a W3C-Web-Annotation-style *selector*: a quote (prefix/exact/suffix,
+# the same shape SearchResult's snippet_* triple already uses) plus a position hint, in
+# document-absolute CHARACTER offsets — the space cursors, FindMatch and ContentsChanged
+# all speak. Never bytes, and never a block id.
+#
+# The position hint alone is right far more often than it sounds: the Djot round-trip is
+# a property-tested fixpoint preserving plain text and block count, so offsets are stable
+# across save→reopen whenever the prose is unedited. The quote is what rescues the case
+# where it was edited — including by git or by hand, outside the app.
+#
+# `undoable: true` is forced, not chosen: `qleany check` refuses a non-undoable strong
+# child under an undoable parent (see SmartPunctuation's note above).
+- name: Comment
+  inherits_from: EntityBase
+  fields:
+  # A durable identity, for the same reason Binder, BinderItem and NoteTemplate carry
+  # one: an `EntityId` is re-minted on every `load_work`, so nothing that outlives a
+  # session can key on it. This is what lets a row be referenced from *outside* the
+  # core entity tree — an extension's own store holds `uid`s, never store ids.
+  # For a comment specifically: an editorial round trip hands remarks to a reader and
+  # collects them back, which has to recognise the same remark across two sessions.
+  - name: uid
+    type: uuid
+  - name: content
+    type: entity
+    entity: Content
+    relationship: many_to_one
+    optional: true
+  - name: kind
+    type: enum
+    enum_name: CommentAnchorKind
+    enum_values:
+      # A character range inside the prose.
+      - Range
+      # A whole paragraph: `range_start` seeds which block, and the extent is
+      # re-derived from that block on every resolve so a growing paragraph stays
+      # wholly covered. `range_length` is not authoritative for this kind.
+      - Paragraph
+      # The Content row as a whole. Carries no text anchor and can never orphan
+      # from text drift.
+      #
+      # Retained for rows already on disk, but NO LONGER MINTED: neither OOXML nor
+      # ODF can express a comment on a document rather than on text, so a kind the
+      # editorial round trip cannot carry must not enter the store. The importer's
+      # former mint sites now emit a Paragraph anchor instead.
+      - Document
+  - name: author_name
+    type: string
+  # The author's initials, as Word shows them beside a comment (`w:initials`). Not
+  # derived from `author_name` on demand: an editor's own initials arrive in the file
+  # and are theirs to choose — "Mary-Jane O'Brien" is as plausibly MO as MJO — so
+  # deriving would quietly overwrite what a real person set. Empty when the source
+  # carried none, and the writers then emit nothing rather than a guess.
+  - name: author_initials
+    type: string
+  # Djot, like `Footnote.body` — an editor's remark arrives from `.docx`/`.odt` with
+  # its own emphasis, and flattening it to plain text lost the writer's meaning on
+  # the way in. Plain text is still valid Djot, so a row written before this became
+  # rich reads back unchanged.
+  - name: body
+    type: string
+  - name: resolved
+    type: boolean
+  # Orphan state is a stored, checkable value with a typed reason — never an implicit
+  # UI glitch. Google Docs' unpurgeable "Original content deleted" and Confluence's
+  # unreopenable "dangling" resolve are precisely what this exists to avoid.
+  - name: orphaned
+    type: boolean
+  - name: orphan_reason
+    type: enum
+    enum_name: CommentOrphanReason
+    enum_values:
+      - NotOrphaned
+      # The quoted text is nowhere in the Content any more.
+      - TextNotFound
+      # The quote occurs several times and the context could not break the tie.
+      # Deliberately distinct from TextNotFound: the text is still there, we just
+      # will not guess which one, because a wrong attachment is worse than an orphan.
+      - Ambiguous
+      # The anchored Content row itself was purged.
+      - TargetDeleted
+  - name: range_start
+    type: uinteger
+  - name: range_length
+    type: uinteger
+  # ~32 chars immediately before the anchored span.
+  - name: quote_prefix
+    type: string
+  # The anchored text itself, verbatim — or, when it is long, head + "…" + tail with
+  # `quote_exact_truncated` set, which tells the matcher to compare the two ends
+  # instead of the whole string.
+  - name: quote_exact
+    type: string
+  - name: quote_exact_truncated
+    type: boolean
+  # ~32 chars immediately after the anchored span.
+  - name: quote_suffix
+    type: string
+  # 0-based index of the block that contained the anchor when it last resolved. A
+  # tie-breaker for ambiguous quotes and the fallback for a Paragraph comment — never
+  # a Block EntityId, which is re-minted on every reopen and would be meaningless.
+  - name: block_ordinal_hint
+    type: uinteger
+  # A FLAT thread: replies are chronological, never nested. Mirrors OOXML, whose
+  # w15:paraIdParent always points at the thread root rather than at a peer reply.
+  # Ordered because chronology is real content here, unlike Work.comments above.
+  - name: replies
+    type: entity
+    entity: CommentReply
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: body
+  undoable: true
+# One reply inside a Comment's thread. `author_name` is free text seeded from
+# Work.author_name at creation — this app has no identity system and this does not
+# invent one (Work.author_name is the BOOK's byline, not a user account).
+# One footnote: the note's own prose, and the label the reference in the manuscript
+# names it by.
+#
+# THERE IS NO ANCHOR HERE, and that is the whole design. A comment has to carry a
+# quote (prefix/exact/suffix) because it points at text it does not own, and text
+# moves. A footnote's reference is *in* the prose — one object character the editor
+# treats as a single unit — so the rope carries it along with every edit, deleting
+# the sentence deletes it, and there is nothing to re-anchor and no orphan state to
+# store. What a comment needs a dozen fields and a three-tier resolver for, a
+# footnote gets from the document holding the reference itself.
+#
+# `content` is a weak, optional many_to_one, exactly like Comment.content: trashing
+# or purging the annotated item must ORPHAN this note, never cascade-delete it. An
+# orphan here is a note whose reference is gone from the prose — visible in the dock
+# and reported before an export, because unlike a stray comment it is *missing text
+# from the book*.
+#
+# `undoable: true` is forced, not chosen: `qleany check` refuses a non-undoable
+# strong child under an undoable parent.
+- name: Footnote
+  inherits_from: EntityBase
+  fields:
+  # A durable identity, for the same reason Binder, BinderItem and NoteTemplate carry
+  # one: an `EntityId` is re-minted on every `load_work`, so nothing that outlives a
+  # session can key on it. This is what lets a row be referenced from *outside* the
+  # core entity tree — an extension's own store holds `uid`s, never store ids.
+  # A footnote is book content — the writer's words — so anything that annotates or
+  # cross-references one must survive a reopen rather than silently rebind.
+  - name: uid
+    type: uuid
+  - name: content
+    type: entity
+    entity: Content
+    relationship: many_to_one
+    optional: true
+  # What `[^label]` in the prose names. Minted once, never shown to the writer, and
+  # never the number: the number is a fact about document order, so storing it would
+  # mean rewriting the author's prose every time a note was inserted above this one.
+  - name: label
+    type: string
+  # Djot, not plain text. A historical novel's footnote carries italics and a
+  # citation, so the body is prose with the same expressive range as the manuscript.
+  - name: body
+    type: string
+  undoable: true
+- name: CommentReply
+  inherits_from: EntityBase
+  fields:
+  # A reply needs its own durable identity for the same reason its thread does, and
+  # it cannot borrow the thread's: an editorial round trip that recognised only the
+  # opening comment would have to reconcile the replies underneath it positionally,
+  # so a reply inserted on the far side would re-import as a duplicate of its
+  # neighbour. Matching by uid is the only reconciliation that survives an editor
+  # answering in the middle of a conversation.
+  - name: uid
+    type: uuid
+  - name: author_name
+    type: string
+  # As on `Comment` — a reply is its own `<w:comment>` in OOXML and its own
+  # `office:annotation` in ODF, each carrying the replier's own initials. Dropping
+  # them here would lose half the round trip's fidelity for no saving.
+  - name: author_initials
+    type: string
+  # Djot, as on `Comment.body`.
+  - name: body
+    type: string
+  undoable: true
+- name: Binder
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: uid
+    type: uuid
+  - name: name
+    type: string
+  - name: activated
+    type: boolean
+  - name: binder_items
+    type: entity
+    entity: BinderItem
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: title
+  undoable: true
+- name: BinderItem
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  - name: uid
+    type: uuid
+  - name: title
+    type: string
+  - name: sub_title
+    type: string
+  - name: role
+    type: enum
+    enum_name: BinderItemRole
+    enum_values:
+      - Item
+      - Folder
+  - name: sub_role
+    type: enum
+    enum_name: BinderItemSubRole
+    # A chapter is `ChapterScene` in both encodings — `Item/ChapterScene` (extent by
+    # marker) and `Folder/ChapterScene` (extent by containment). There is no separate
+    # `Chapter` value: a chapter always carries its own prose slot, so the two
+    # encodings differ only on the UI-only `role` axis.
+    enum_values:
+      - Text
+      - None
+      - Note
+      - Book
+      - Part
+      - Scene
+      - ChapterScene
+      - BookBegin
+      - BookEnd
+      - Paratext
+  - name: label
+    type: string
+  - name: activated
+    type: boolean
+  - name: is_favorite
+    type: boolean
+  - name: is_exportable
+    type: boolean
+  # The prologue lever: this row stays in the book, keeps its heading, its prose and its
+  # word count, but neither prints a structural number nor consumes one — so the chapter
+  # after a prologue is chapter one. Read only by `skribisto_model::numbering`.
+  #
+  # Named as the *exception* rather than `numbered`, on purpose. `false` is the state every
+  # existing project must load with, and `false` is what `bool::default()` — and so a bare
+  # `#[serde(default)]` in `skrib_format` — already gives. The positive spelling would need
+  # a custom `default_true` on every deserializer it reaches, and forgetting one silently
+  # un-numbers a manuscript.
+  - name: exclude_from_numbering
+    type: boolean
+  - name: indent
+    type: integer
+  - name: word_count_goal
+    type: integer
+  - name: char_count_goal
+    type: integer
+  - name: dict_language
+    type: string
+    is_list: true
+  # Other names this item answers to in prose ("Lizzy", "Miss Bennet" for a note
+  # titled "Elizabeth Bennet"). Read by the mention index, which matches an item's
+  # title *and* its aliases against scene/synopsis/note text. Only meaningful on
+  # items carrying a discoverable BinderTag.
+  - name: aliases
+    type: string
+    is_list: true
+  - name: contents
+    type: entity
+    entity: Content
+    relationship: one_to_many
+    strong: true
+  - name: references
+    type: entity
+    entity: BinderItem
+    relationship: many_to_many
+  # Whose eyes this row is told through. A structural twin of `references` --
+  # self-referencing, weak, unordered -- because a point of view IS one of the
+  # story-bible items the Cast/Presence panel already pins here; POV is the
+  # question of which of them holds the camera.
+  #
+  # Many-to-many on purpose. Zero POV is a legal, common state (an unassigned
+  # scene, a front-matter row), and two is the signal a writer most wants: a
+  # two-POV scene is head-hopping, surfaced for free as a by-product of the
+  # shape rather than blocked as an error. Downstream code must therefore never
+  # read the first element of an unordered Vec, and every POV-keyed view needs
+  # an explicit unassigned bucket.
+  #
+  # The model cannot enforce exactly-one-POV, POV-implies-cast, or
+  # POV-restricted-to-discoverable -- Qleany has no primitive for any of them,
+  # and `references` above lacks the third for the same reason. All three stay
+  # UI-layer invariants.
+  - name: point_of_view
+    type: entity
+    entity: BinderItem
+    relationship: many_to_many
+  # Which Book or Books the writer has filed this item under -- a structural twin of
+  # `point_of_view` and `references` above: self-referencing, weak, unordered,
+  # many-to-many. Meaningful only on `Folder/Note` and `Item/Note` rows; every other
+  # row leaves it empty and nothing reads it there.
+  #
+  # A declaration, never an observation. It states what the writer has filed, not
+  # where a row physically sits (that stays `book_containing`/`first_book`, a
+  # positional scan over the ordered binder stream) and not where a name appears in
+  # prose (that stays the mention index). Empty means "not yet filed" and nothing
+  # else -- never "applies to every Book" -- matching how every sibling relationship
+  # on this entity already reads an empty Vec as none. An empty `Vec` was never a
+  # distinguishable "everyone" state and never becomes one: there is no second bit to
+  # add later that would tell the two apart.
+  #
+  # The model cannot enforce that a target actually resolves to a live `Folder/Book`
+  # item, for the same reason `point_of_view` above cannot enforce
+  # POV-restricted-to-discoverable -- Qleany has no primitive for it. Every reader
+  # must silently skip an id that does not currently resolve to one, rather than
+  # render a broken entry.
+  - name: books
+    type: entity
+    entity: BinderItem
+    relationship: many_to_many
+  # Where this row is in the writer's own workflow. Single-valued and optional: "no
+  # status" is a real, selectable state and the default, so a fresh import never paints
+  # a whole binder with a stage the writer never chose.
+  #
+  # Weak, optional, single-valued many_to_one -- the same shape as `BinderTag.creates_in`
+  # and `TrashInfo.trashed_binder_item`, and weak for the same reason: deleting a status
+  # from the vocabulary must not delete the scenes wearing it. Every reader must silently
+  # treat an id that no longer resolves as "no status" rather than render a broken entry.
+  #
+  # Deliberately NOT a scalar enum. The vocabulary has to absorb an arbitrary imported
+  # ladder (Plume ships eight rungs) and has to be renameable into the writer's own idiom,
+  # neither of which a storage enum can do. What stays closed is `BinderStatus.category`,
+  # which is what owns the glyph and the colour.
+  - name: status
+    type: entity
+    entity: BinderStatus
+    relationship: many_to_one
+    optional: true
+  - name: tags
+    type: entity
+    entity: BinderTag
+    relationship: many_to_many
+    list_model: true
+    list_model_displayed_field: name
+  undoable: true
+- name: BinderTag
+  inherits_from: EntityBase
+  fields:
+  # A durable identity, for the same reason Binder, BinderItem and NoteTemplate carry
+  # one: an `EntityId` is re-minted on every `load_work`, so nothing that outlives a
+  # session can key on it. This is what lets a row be referenced from *outside* the
+  # core entity tree — an extension's own store holds `uid`s, never store ids.
+  # A tag is referenced by name today, and a name is editable: renaming "Ambroise"
+  # would silently break every external reference to that tag.
+  - name: uid
+    type: uuid
+  - name: name
+    type: string
+  # Background colour, chosen by the writer. The *text* colour is deliberately not
+  # stored: it is derived at render time from this one via `Color::best_contrast_text`,
+  # which always clears WCAG AA (the worse of black/white is still 4.58:1). Storing it
+  # would be redundant state that five write paths would each have to keep in step.
+  - name: color
+    type: string
+  # A line or two saying what the tag means, shown in its hover tooltip. Tag meaning
+  # decays — "Thread B" is opaque six months later.
+  - name: details
+    type: string
+  # Items carrying this tag are story-bible material: the mention index matches their
+  # title + aliases against prose to build the per-scene roster and per-note backlinks.
+  # A plain topical tag ("needs research") leaves this false.
+  #
+  # NB a workflow *stage* is not a tag at all — it is single-valued and ordered, which a
+  # tag set cannot express, so it lives on `BinderStatus` above.
+  - name: discoverable
+    type: boolean
+  # Where a note created under this tag lands, and what shape it starts in.
+  #
+  # Both are the writer's own filing, set once on the tag and then never asked about
+  # again: "Add as note" picks exactly one tag, and that one choice answers three
+  # questions at once (is this findable in prose, where does it go, what template does
+  # it start from). Deliberately available on *any* tag, not only discoverable ones: a
+  # topical tag like `research` wants a home just as much, and a writer should never
+  # have to learn that some tags configure differently from others. `None` is the
+  # default and costs nothing.
+  #
+  # Relationships rather than raw id fields, and that is not ceremony: there is no
+  # scalar entity-id field type in this manifest, and the relationship is what
+  # generates the back-reference sweep. A plain id would dangle the moment the writer
+  # trashed the folder it names. Same shape as `TrashInfo::trashed_binder_item`: weak,
+  # single-valued, optional.
+  #
+  # Additive, so no `FORMAT_VERSION` bump and no heal step: an unset value was never
+  # an invalid state, the same rule `aliases`, `point_of_view` and `books` were added
+  # under.
+  - name: creates_in
+    type: entity
+    entity: BinderItem
+    relationship: many_to_one
+    optional: true
+  # `note_template`, not `template`: the generator refuses the bare word, which is a
+  # C++ reserved keyword, and it names the entity it points at anyway.
+  - name: note_template
+    type: entity
+    entity: NoteTemplate
+    relationship: many_to_one
+    optional: true
+  undoable: true
+# One rung of the project's workflow ladder.
+#
+# Two levels on purpose, and the split is not cosmetic. The writer owns the `name` and the
+# order; the app owns `category`, and the category -- never the name -- owns the glyph, the
+# colour, the sort bucket and the roll-up. Three unrelated products (Jira, Linear, Notion)
+# converged on exactly this shape, but here it is also forced: a status colour cannot be
+# stored user data at all. Clearing WCAG 1.4.11's 3:1 against Skribisto's own surfaces
+# requires L <= 0.2173 (vs the darkest light surface, `#DFE1E5`) AND L >= 0.2822 (vs the
+# lightest dark one, `#2C4A54`, an inactive-selected row -- a state the outline sits in
+# constantly). That band is EMPTY: no hex satisfies both, and 0 of the 11 colours in the
+# tag palette do either, which is why `tags/contrast.rs` draws a hairline round every dot.
+# So the colour has to come from a theme role, which only the app can own.
+#
+# The consequence to preserve: a French writer's "Relu" and an English writer's "Revised"
+# draw the same glyph, and an imported eight-rung Plume ladder still lands on five shapes.
+- name: BinderStatus
+  inherits_from: EntityBase
+  fields:
+  # A durable identity, for the same reason BinderTag carries one: an `EntityId` is
+  # re-minted on every `load_work`, so the `.skrib` references a status by `uid` and
+  # nothing that outlives a session may key on the store id. Renaming a rung must not
+  # re-point a single item, which is exactly what a positional index would do -- the
+  # mistake Manuskript and Plume both made.
+  - name: uid
+    type: uuid
+  - name: name
+    type: string
+  # Which of the five app-owned buckets this rung belongs to. Drives the glyph and the
+  # per-theme colour, and nothing else may. Several rungs may share a category -- an
+  # eight-rung Plume ladder collapses onto five shapes and stays readable, because the
+  # NAME is what tells two `Drafting` rungs apart and the name is right there beside it.
+  #
+  # Deliberately not user-extensible: the glyph set is drawn, not configured. novelWriter
+  # lets the user pick the shape and consequently ships `New` and `Finished` as the same
+  # star.
+  - name: category
+    type: enum
+    enum_name: StatusCategory
+    enum_values:
+      - Planned
+      - Drafting
+      - NeedsWork
+      - Revised
+      - Final
+  # A line or two saying what this rung means in this project, shown in its tooltip --
+  # the same job `BinderTag.details` does, and for the same reason: "Revised" means
+  # something specific to the writer who added it, and it decays.
+  - name: details
+    type: string
+  undoable: true
+- name: Content
+  single_model: true
+  inherits_from: EntityBase
+  fields:
+  # A durable identity, for the same reason Binder, BinderItem and NoteTemplate carry
+  # one: an `EntityId` is re-minted on every `load_work`, so nothing that outlives a
+  # session can key on it. This is what lets a row be referenced from *outside* the
+  # core entity tree — an extension's own store holds `uid`s, never store ids.
+  # The sharp one. A comment finds its Content by *where its sidecar sits on disk*;
+  # nothing outside this crate has that trick, so without a uid no external row can
+  # name a particular scene text, synopsis or note body at all.
+  - name: uid
+    type: uuid
+  - name: activated
+    type: boolean
+  - name: role
+    type: enum
+    enum_name: ContentRole
+    enum_values:
+      - SceneText
+      - NoteText
+      - SynopsisText
+      - BookTitle
+      - BookSubtitle
+      - PartTitle
+      - ChapterTitle
+      - EpigraphText
+      - ParatextText
+  - name: data
+    type: string
+  undoable: true
+- name: DictWord
+  inherits_from: EntityBase
+  fields:
+  - name: word
+    type: string
+  undoable: true
+- name: TextReplacementRule
+  inherits_from: EntityBase
+  fields:
+  - name: trigger
+    type: string
+  - name: replacement
+    type: string
+  - name: enabled
+    type: boolean
+  undoable: true
+# A reusable body of prose a writer can drop into a Note — a blank character sheet, a
+# location profile, a beat sheet. Per-project (it travels in the .skrib, so a co-author
+# opening the file gets the same scaffolds), which is why it hangs off Work rather than
+# being a machine preference like EditorTypography.
+#
+# `body` is Djot, exactly as `Content.data` is — a template is inserted verbatim at the
+# caret via `TextCursor::insert_djot`, so anything Djot can express (headings, lists,
+# tables) survives the trip. It is deliberately inert text: no placeholder substitution,
+# no field schema. Every comparable tool that tried a fixed character-sheet schema
+# ended up backing off into free text or user-authored field lists,
+# because no two novelists agree on the field set.
+#
+# `starred` floats a template to the top of the insert menu; ordering below that is the
+# relationship's own (`ordered_one_to_many`), so a writer can arrange the list by hand.
+#
+# `undoable: true`, and not by preference: `qleany check` refuses a non-undoable strong
+# child under an undoable parent — the same constraint SmartPunctuation documents above.
+- name: NoteTemplate
+  inherits_from: EntityBase
+  fields:
+  # A durable identity, for the same reason Binder and BinderItem carry one: the `.skrib`
+  # writes each template's body to `templates/<id>-<slug>.djot`, and an `EntityId` is
+  # re-minted on every `load_work`. Keyed by `id`, every template file was renamed on every
+  # reopen — the folder-shape project's whole `templates/` directory replaced in git, with
+  # `prune_dir` deleting the previous names. Keyed by `blake3(uid)[..8]` it is stable.
+  - name: uid
+    type: uuid
+  - name: name
+    type: string
+  - name: body
+    type: string
+  - name: starred
+    type: boolean
+  undoable: true
+# An image (or other binary asset) a writer put in their project.
+#
+# Metadata only, deliberately: Qleany has no blob field type, and stuffing base64 into a
+# `string` would put the whole payload in the store — resident forever, cloned by every
+# `snapshot_work`, and serialized into the backup fingerprint. Every desktop writing tool
+# surveyed keeps image bytes as files in the container and a handle in the model
+# (DOCX `word/media/`, ODT `Pictures/`, and the equivalent inside every app package), and
+# LibreOffice goes further, writing the bytes to a temp file at load so the in-memory
+# `Graphic` can release them. So the bytes live in the project's media directory and in
+# `assets/<hash>.<ext>` inside the `.skrib`, and this row records what they are.
+#
+# `content_hash` is a blake3 of the original bytes and is the asset's real identity: it is
+# what the prose references (`![alt](assets/<hash>.<ext>)`), which makes re-inserting the
+# same picture free and makes an unchanged asset skippable when the archive is rewritten.
+# `file_name` is kept for provenance and for naming the file an export writes beside its
+# output; it is not an identity.
+#
+# `undoable: true` for the same reason NoteTemplate is: `qleany check` refuses a
+# non-undoable strong child under an undoable parent.
+- name: Asset
+  inherits_from: EntityBase
+  fields:
+  - name: content_hash
+    type: string
+  - name: file_name
+    type: string
+  - name: mime_type
+    type: string
+  - name: width
+    type: uinteger
+  - name: height
+    type: uinteger
+  - name: byte_size
+    type: uinteger
+  - name: alt
+    type: string
+  # This picture is the book's cover. A role a picture plays, not a second place
+  # it is stored — which is why it lives here rather than as an id or a hash on
+  # Work. Deleting the asset removes the cover with it, and there is no way to
+  # end up pointing at something that is gone. At most one asset per Work carries
+  # it; the command that sets it clears the others.
+  - name: is_cover
+    type: boolean
+  undoable: true
+features:
+- name: work_management
+  use_cases:
+  - name: load_work
+    entities:
+    - Root
+    - System
+    - RecentWork
+    - WorkInfo
+    - Search
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TextReplacementRule
+    - NoteTemplate
+    - Asset
+    undoable: false
+    dto_in:
+      name: LoadWorkDto
+      fields:
+      - name: file_name
+        type: string
+      # The app's media root — see SaveWorkDto.media_root. At load time the
+      # project's own `unique_id` is still inside the file being opened, so the
+      # per-project directory can only be resolved here, not by the caller.
+      - name: media_root
+        type: string
+  - name: save_work
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TextReplacementRule
+    - NoteTemplate
+    - Asset
+    - TrashInfo
+    - WorkInfo
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: SaveWorkDto
+      fields:
+      # Which open Work to save — Phase 0 of the multi-Work migration: `gather`
+      # no longer picks an arbitrary Work when more than one is open.
+      - name: work_id
+        type: uinteger
+      - name: file_name
+        type: string
+      - name: overwrite
+        type: boolean
+      # The app's media *root*, not this project's directory inside it.
+      #
+      # Assets are metadata-only rows (see the `Asset` entity); their bytes are
+      # files. Which directory holds them depends on the project's shape and on
+      # its `unique_id` — and at load time that id is still inside the file the
+      # caller is asking to open, so only the use case can resolve it. The
+      # caller supplies the root; `skrib_format::media::media_dir` does the rest.
+      - name: media_root
+        type: string
+    dto_out:
+      name: SaveResultDto
+      fields:
+      - name: output_path
+        type: string
+  - name: save_as
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TextReplacementRule
+    - NoteTemplate
+    - Asset
+    - TrashInfo
+    - WorkInfo
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: SaveAsDto
+      fields:
+      # Which open Work to save — see SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      - name: file_name
+        type: string
+      - name: as_folder
+        type: boolean
+      # The app's media *root*, not this project's directory inside it.
+      #
+      # Assets are metadata-only rows (see the `Asset` entity); their bytes are
+      # files. Which directory holds them depends on the project's shape and on
+      # its `unique_id` — and at load time that id is still inside the file the
+      # caller is asking to open, so only the use case can resolve it. The
+      # caller supplies the root; `skrib_format::media::media_dir` does the rest.
+      - name: media_root
+        type: string
+    dto_out:
+      name: SaveAsResultDto
+      fields:
+      - name: output_path
+        type: string
+  - name: backup_now
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TextReplacementRule
+    - NoteTemplate
+    - Asset
+    - TrashInfo
+    - WorkInfo
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: BackupNowDto
+      fields:
+      # Which open Work to back up — see SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      # Destination directories. Empty ⇒ back up next to the project (back-compat).
+      - name: directories
+        type: string
+        is_list: true
+      # Per-destination last-known content hash (parallel to `directories`); an
+      # empty entry means "no known hash" ⇒ never skipped. Enables skip-if-unchanged.
+      - name: last_known_hashes
+        type: string
+        is_list: true
+      # Per-destination last-known written path (parallel to `directories`); a
+      # skip is only honoured when this path still exists on disk — otherwise the
+      # backup is gone (deleted folder, reformatted stick) and must be rewritten
+      # even though the hash still matches.
+      - name: last_known_paths
+        type: string
+        is_list: true
+      # Whether to run retention pruning in this same operation, off the UI thread.
+      - name: prune
+        type: boolean
+      # Flat retention fields (no data-carrying enum DTOs are supported) mirroring
+      # skrib_format::retention::RetentionPolicy / the UI's BackupPolicy.
+      - name: retention_mode
+        type: enum
+        enum_name: RetentionMode
+        enum_values:
+        - Tiered
+        - KeepLastN
+      - name: keep_last_n
+        type: uinteger
+      - name: gfs_hourly
+        type: uinteger
+      - name: gfs_daily
+        type: uinteger
+      - name: gfs_weekly
+        type: uinteger
+      - name: gfs_monthly
+        type: uinteger
+      # Absolute floor: the newest `min_keep` backups per destination are never pruned.
+      - name: min_keep
+        type: uinteger
+      # Backup files the writer asked never to have swept away, as absolute paths.
+      # Joined with the paths this run just wrote and handed to retention's
+      # `protected` argument, which guarantees them by identity rather than by
+      # timestamp — so a pin survives a backwards clock correction too. Retention
+      # is a policy about how much past to keep in general; it has no way to know
+      # that one of those files is the draft that went to an editor.
+      - name: pinned_paths
+        type: string
+        is_list: true
+      # A backup is a copy of the project, images included — see
+      # SaveWorkDto.media_root.
+      - name: media_root
+        type: string
+    dto_out:
+      name: BackupResultDto
+      fields:
+      # The fresh content fingerprint of what was gathered (for skip-if-unchanged).
+      - name: content_hash
+        type: string
+      # Full output paths actually written AND verified.
+      - name: succeeded_paths
+        type: string
+        is_list: true
+      # Destinations skipped because their content matched the last-known hash
+      # AND the previously-written file still exists on disk.
+      - name: skipped_directories
+        type: string
+        is_list: true
+      # Destinations whose write (or post-write verification) failed (parallel to
+      # `failed_reasons`).
+      - name: failed_directories
+        type: string
+        is_list: true
+      - name: failed_reasons
+        type: string
+        is_list: true
+      # Backup files pruned by retention this run (parallel semantics to
+      # `delete_errors`, which records the ones that failed to delete).
+      - name: deleted_paths
+        type: string
+        is_list: true
+      - name: delete_errors
+        type: string
+        is_list: true
+  - name: close_work
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - DictWord
+    - TextReplacementRule
+    - NoteTemplate
+    - TrashInfo
+    - WorkInfo
+    - Search
+    - SearchResult
+    undoable: false
+    dto_in:
+      name: CloseWorkDto
+      fields:
+      # Which open Work to close — Phase 0 of the multi-Work migration: closing
+      # used to tear down the whole store; now it is scoped to one Work by id.
+      - name: work_id
+        type: uinteger
+  - name: new_work
+    entities:
+    - Root
+    - System
+    - WorkInfo
+    - Search
+    - RecentWork
+    - Work
+    - Binder
+    - BinderItem
+    - Content
+    undoable: false
+    dto_in:
+      name: NewWorkDto
+      fields:
+      - name: file_name
+        type: string
+      # The name the writer typed, kept apart from `file_name` — which is a slugified,
+      # lowercased path and makes a poor book title. Blank falls back to the file stem.
+      - name: title
+        type: string
+      - name: is_folder
+        type: boolean
+      - name: template_kind
+        type: enum
+        enum_name: NewWorkTemplate
+        enum_values:
+        - None
+        - EmptyNovel
+        - LightNovel
+        - Novel
+        - NovelInParts
+        - NoteBook
+      - name: labels
+        type: string
+        is_list: true
+      - name: language
+        type: string
+        is_list: true
+      - name: chapter_scene_mode
+        type: boolean
+      - name: author_name
+        type: string
+- name: export_management
+  use_cases:
+  - name: export_work
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    - Asset
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: ExportWorkDto
+      fields:
+      - name: work_id
+        type: integer
+      - name: output_path
+        type: string
+      # This project's *resolved* media directory, not the app root.
+      #
+      # Unlike load/save, the caller here already has the open project in hand —
+      # its path and its `unique_id` — so it can resolve the directory itself,
+      # and the export reader has no reason to read `WorkInfo` just to do it
+      # again. Empty means "no media": every image degrades to its alt text.
+      - name: media_dir
+        type: string
+      - name: format
+        type: enum
+        enum_name: ExportFormat
+        enum_values:
+        - Djot
+        - PlainText
+        - Markdown
+        - Html
+        - Latex
+        - Docx
+        - Epub
+        - Pdf
+      - name: scope_kind
+        type: enum
+        enum_name: ExportScopeKind
+        enum_values:
+        - CurrentBook
+        - CurrentPart
+        - CurrentChapter
+        - CurrentScene
+        - CurrentNote
+        - CurrentParatext
+        - CurrentFolder
+        - Custom
+      - name: preset_json
+        type: string
+      - name: binder_item_ids
+        type: integer
+        is_list: true
+    dto_out:
+      name: ExportResultDto
+      fields:
+      - name: exported_count
+        type: integer
+      - name: output_path
+        type: string
+- name: mention_management
+  use_cases:
+  # Read-only pass over the open Work: match every discoverable item's title and
+  # aliases against the prose of every activated Scene/Synopsis/Note. Writes
+  # nothing -- detection must never touch entities, dirty the project or push an
+  # undo entry. Modelled on count_words (QueryUnitOfWork, long operation).
+  - name: scan_mentions
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: ScanMentionsDto
+      fields:
+      # Which open Work to scan -- see work_management's SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+    dto_out:
+      name: MentionScanResultDto
+      fields:
+      # One flat hit list. A hit is (owner, target): a scene's roster is the hits
+      # whose owner is that scene, an item's backlinks are the hits whose target is
+      # that item -- two views over one list, rather than two row kinds to keep in
+      # step. `is_list` cannot take an enum, so the Vec rides inside a complex
+      # variant; `row` exists to declare the row type that `hits` then references.
+      # `is_confirmed` and `is_point_of_view` are two independent, persisted
+      # relationships folded into the same union (`references` and
+      # `point_of_view` respectively) -- a row can carry either, both, or
+      # neither, and must never collapse the two into one flag: an "unpin"
+      # control keyed off `is_confirmed` alone would otherwise offer to remove
+      # a point of view from a relationship it was never written into.
+      - name: row
+        type: enum
+        enum_name: MentionHit
+        enum_values:
+        - Empty
+        - "Found { owner_id: EntityId, target_id: EntityId, title: String, matched_names: Vec<String>, is_title_match: bool, hit_count: i64, is_confirmed: bool, is_point_of_view: bool, evidence: String }"
+      - name: hits
+        type: enum
+        enum_name: MentionHits
+        enum_values:
+        - Empty
+        - "Found(Vec<MentionHit>)"
+      # The alias table the scan matched against, carried back so the UI can rescan the
+      # focused item's own prose live -- against exactly the same names -- without a
+      # second full pass. Same escape hatch as `hits`: `entity` declares the row type,
+      # `table` carries the Vec of it.
+      - name: entity
+        type: enum
+        enum_name: MentionEntity
+        enum_values:
+        - Empty
+        - "Discoverable { id: EntityId, title: String, aliases: Vec<String> }"
+      - name: table
+        type: enum
+        enum_name: MentionTable
+        enum_values:
+        - Empty
+        - "Entities(Vec<MentionEntity>)"
+- name: analysis_management
+  use_cases:
+  # Read-only pass over one container's subtree (normally a Book): measure every
+  # prose row's shape. Writes nothing -- measurement must never touch entities,
+  # dirty the project or push an undo entry. Modelled on scan_mentions
+  # (QueryUnitOfWork, long operation, same `gather`).
+  #
+  # The measurements themselves live in skribisto_model::analysis, store-free and
+  # unit-tested; this use case only feeds them and shapes the result.
+  #
+  # The result carries the Shape category's rows and nothing else. It used to also
+  # carry within-scene echoes, near-duplicate scene pairs, synopsis-drift rows and
+  # a book-level diversity figure -- the payloads of three Analysis categories this
+  # application no longer has. Producing them cost the heaviest work in the pass
+  # (a whole-scope token interning, then an all-pairs scene comparison) for a
+  # result with no reader, on every run.
+  - name: analyze_book
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    # The project's house quote style decides which glyphs count as speech when
+    # dialogue is measured. Read as an entity rather than passed down the DTO:
+    # the row hangs off Work by a plain id, and a DTO field would generate a
+    # second QuoteStyle enum in this crate, distinct from the entity one every
+    # other consumer uses.
+    - SmartPunctuation
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: AnalyzeBookDto
+      fields:
+      # Which open Work to read -- see mention_management's ScanMentionsDto.
+      - name: work_id
+        type: uinteger
+      # The container the Analysis view is mounted on. Its subtree is the scope;
+      # this is deliberately NOT resolve_scope's export scope, which drops
+      # non-exportable rows -- "analyse everything I wrote" includes them.
+      - name: scope_item_id
+        type: uinteger
+    dto_out:
+      name: BookAnalysisResultDto
+      fields:
+      # One flat list, each row carrying the item it belongs to, rather than a tree
+      # of nested Vecs -- the same shape (and the same `row` + `rows` enum escape
+      # hatch) mention_management's hit list uses. The manifest has no float type
+      # at all, which is the other reason the real payload rides inside a variant:
+      # the variant body is raw Rust.
+      #
+      # Option<f64> throughout is load-bearing, not decoration. A language with no
+      # curated dialogue convention must report "not measurable" -- a 0.0 there
+      # would read as a finding rather than as an absence.
+      - name: scene
+        type: enum
+        enum_name: SceneAnalysis
+        enum_values:
+        - Empty
+        - "Measured { item_id: EntityId, title: String, chapter_title: String, words: i64, sentence_mean: Option<f64>, sentence_stddev: Option<f64>, paragraph_mean: Option<f64>, punctuation_per_1k: f64, dialogue: Option<f64> }"
+      - name: scenes
+        type: enum
+        enum_name: SceneAnalyses
+        enum_values:
+        - Empty
+        - "Measured(Vec<SceneAnalysis>)"
+      # Words of prose across the whole scope, summed from the rows above. Kept as
+      # its own field rather than left to the reader to fold, because a scope with
+      # no measurable row still has an honest answer here (`0`), where an empty
+      # `scenes` list does not distinguish "nothing written" from "not measured".
+      - name: total_words
+        type: uinteger
+- name: progress_management
+  use_cases:
+  # Read-only pass over the open Work: sum SceneText prose of every
+  # activated && is_exportable item, bucketed per Book. Modelled on save_work /
+  # export_work (QueryUnitOfWork, long operation).
+  - name: count_words
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: CountWordsDto
+      fields:
+      # Which open Work to count -- see work_management's SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+    dto_out:
+      name: WordCountResultDto
+      fields:
+      - name: total_word_count
+        type: integer
+      - name: total_char_count
+        type: integer
+      - name: book_item_ids
+        type: uinteger
+        is_list: true
+      - name: book_word_counts
+        type: integer
+        is_list: true
+      # Footnote prose, counted apart and never folded into the totals above.
+      #
+      # A footnote IS authored words, unlike an epigraph's quoted matter — so
+      # discarding the number would be wrong. But folding it into the manuscript
+      # total would be worse: a writer's daily goal and their pace projection are
+      # both built on "words of the book", and a heavily annotated chapter would
+      # start reporting progress the story did not make. Two numbers, one meaning
+      # each.
+      #
+      # Deliberately absent from `RecordProgressSnapshotDto` below: the history
+      # that drives pace goals stays the manuscript's alone.
+      - name: total_footnote_word_count
+        type: integer
+      - name: book_footnote_word_counts
+        type: integer
+        is_list: true
+  # Short synchronous command: upsert today's ProgressSnapshot on the open
+  # WorkInfo (find by day -> update, else create + append).
+  - name: record_progress_snapshot
+    entities:
+    - WorkInfo
+    - ProgressSnapshot
+    undoable: false
+    dto_in:
+      name: RecordProgressSnapshotDto
+      fields:
+      # Which open Work's WorkInfo to record onto -- ProgressSnapshot hangs off
+      # WorkInfo, and WorkInfo.work is how we find it. See
+      # work_management's SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      - name: day
+        type: datetime
+      - name: total_word_count
+        type: integer
+      - name: total_char_count
+        type: integer
+      - name: book_item_ids
+        type: uinteger
+        is_list: true
+      - name: book_word_counts
+        type: integer
+        is_list: true
+- name: trash_management
+  use_cases:
+  - name: trash_binder_items
+    entities:
+    - Work
+    - TrashInfo
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: TrashBinderItemsDto
+      fields:
+      # Which open Work's trash_infos index receives the new entries -- see
+      # SaveWorkDto.work_id. Without it, the entry can land under an unrelated
+      # open Work while the caller's own Work loses the item with no trash-bin
+      # trace of it.
+      - name: work_id
+        type: uinteger
+      - name: binder_item_ids
+        type: integer
+        is_list: true
+      - name: origin_binder_id
+        type: integer
+
+  # Trash a mixed selection -- whole binders and loose items together -- as ONE
+  # undo entry.
+  #
+  # `trash_binder_items` is scoped to a single origin binder, so a caller with a
+  # selection has to resolve each item's owning binder, group by it, and wrap
+  # the resulting calls in a composite. Four view-models were each doing exactly
+  # that (outline, overview, corkboard, stream), and the grouping is not
+  # cosmetic: a flat call with a mixed list files items under the wrong origin
+  # and restores them to the wrong place.
+  #
+  # So the grouping moves here and the caller passes ungrouped ids. It is a
+  # composite in one place instead of four, which also means the undo entry is
+  # the use case's own rather than something the caller has to remember to open
+  # and close.
+  #
+  # Deliberately NOT a replacement for its two neighbours: they remain the
+  # single-purpose operations, and this addresses the case neither covers --
+  # one gesture spanning both kinds and several binders.
+  - name: trash_selection
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: TrashSelectionDto
+      fields:
+      # Which open Work's trash_infos index receives the new entries -- see
+      # SaveWorkDto.work_id. Validated against the open Works, and every binder
+      # and item named below must belong to it.
+      - name: work_id
+        type: uinteger
+      # Whole binders, trashed with everything in them.
+      - name: binder_ids
+        type: uinteger
+        is_list: true
+      # Loose items, in any order and spanning any number of this Work's
+      # binders -- each one's origin is resolved here, not by the caller.
+      - name: binder_item_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: TrashSelectionResultDto
+      fields:
+      - name: trashed_binder_ids
+        type: uinteger
+        is_list: true
+      # The item *roots* that were trashed: an id already covered by a trashed
+      # ancestor's subtree is absorbed rather than filed a second time.
+      - name: trashed_item_ids
+        type: uinteger
+        is_list: true
+  - name: trash_binder
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: TrashBinderDto
+      fields:
+      # Which open Work's trash_infos index receives the new entry -- see
+      # SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      - name: binder_id
+        type: integer
+  - name: restore_items
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: RestoreItemsDto
+      fields:
+      # Which open Work's trash_infos index is being restored from -- see
+      # SaveWorkDto.work_id. Also scopes the undo/redo snapshot: the wrong
+      # Work here means undo can silently roll back an unrelated Work's tree.
+      - name: work_id
+        type: uinteger
+      - name: trash_info_ids
+        type: integer
+        is_list: true
+    dto_out:
+      name: RestoreResultDto
+      fields:
+      - name: restored_count
+        type: integer
+      - name: orphaned
+        type: boolean
+  - name: empty_trash
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: EmptyTrashDto
+      fields:
+      # Which open Work's trash to empty -- see work_management's
+      # SaveWorkDto.work_id. Data-loss-shaped: with two Works open, "empty the
+      # trash" has no defined subject without this.
+      - name: work_id
+        type: uinteger
+  - name: restore_items_to
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: RestoreItemsToDto
+      fields:
+      # Which open Work's trash_infos index is being restored from -- see
+      # SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      - name: binder_item_ids
+        type: uinteger
+        is_list: true
+      - name: destination_binder_id
+        type: uinteger
+      - name: anchor_item_id
+        type: uinteger
+        optional: true
+      - name: drop_position
+        type: enum
+        enum_name: DropPosition
+        enum_values:
+        - Before
+        - After
+        - Into
+    dto_out:
+      name: RestoreItemsToResultDto
+      fields:
+      - name: restored_count
+        type: integer
+      - name: orphaned
+        type: boolean
+  - name: delete_trash_entries
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: DeleteTrashEntriesDto
+      fields:
+      # Which open Work's trash_infos index the ids are looked up against --
+      # see SaveWorkDto.work_id. Without it, a wrong-Work id is just absent
+      # from that Work's index, so this silently no-ops instead of erroring:
+      # "Delete forever" would report success and delete nothing.
+      - name: work_id
+        type: uinteger
+      - name: trash_info_ids
+        type: uinteger
+        is_list: true
+- name: note_template_management
+  use_cases:
+  # One use case, for the same reason `tag_management` has one: the generated
+  # NoteTemplate CRUD already covers create/rename/edit/star/delete, so the only real
+  # gap is batching. Importing five `.md` files, or applying a six-template preset, must
+  # be a single Ctrl+Z rather than five or six — which the per-row create command cannot
+  # give.
+  #
+  # Unlike `import_tags`, a name collision here does NOT skip the row: a skipped tag
+  # loses a label and a colour, but a skipped template silently discards an entire
+  # document the writer explicitly picked a file for, and makes "re-import my edited
+  # character-sheet.md" a permanent no-op. Colliding names are disambiguated with a
+  # numeric suffix instead, and the suffixed names are reported so the UI can say so.
+  - name: import_note_templates
+    entities:
+    - Work
+    - NoteTemplate
+    undoable: true
+    dto_in:
+      name: ImportNoteTemplatesDto
+      fields:
+      # Which open Work's templates to import into -- see work_management's
+      # SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      - name: names
+        type: string
+        is_list: true
+      - name: bodies
+        type: string
+        is_list: true
+      - name: starreds
+        type: boolean
+        is_list: true
+    dto_out:
+      name: ImportNoteTemplatesResultDto
+      fields:
+      - name: created_ids
+        type: uinteger
+        is_list: true
+      # Names that collided and were given a numeric suffix, in the form the row was
+      # actually created under, so the UI can report exactly what it did.
+      - name: renamed_to
+        type: string
+        is_list: true
+- name: tag_management
+  use_cases:
+  # Deliberately only ONE use case. The generated BinderTag CRUD already covers
+  # create/rename/recolour/delete correctly — including the M2M cleanup, because
+  # `impl_leaf_entity_table!` scrubs every declared backward junction on remove
+  # (`jn_binder_tag_from_binder_item_tags` among them) and scoped restore puts them back
+  # on undo. Attach/detach is likewise covered by set_binder_item_relationship. So the
+  # only gap is batching:
+  #
+  # import_tags: bulk-create as ONE undoable action, serving both CSV import and preset
+  # application. Applying a 12-tag preset must be a single Ctrl+Z, not twelve — which the
+  # per-tag create_binder_tag command cannot give.
+  - name: import_tags
+    entities:
+    - Work
+    - BinderTag
+    undoable: true
+    dto_in:
+      name: ImportTagsDto
+      fields:
+      # Which open Work's tags to import into -- see work_management's
+      # SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      - name: names
+        type: string
+        is_list: true
+      - name: colors
+        type: string
+        is_list: true
+      - name: details
+        type: string
+        is_list: true
+      - name: discoverables
+        type: boolean
+        is_list: true
+    dto_out:
+      name: ImportTagsResultDto
+      fields:
+      - name: created_ids
+        type: uinteger
+        is_list: true
+      - name: skipped_names
+        type: string
+        is_list: true
+- name: binder_item_management
+  use_cases:
+  - name: duplicate
+    entities:
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: DuplicateDto
+      fields:
+      - name: item_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: DuplicateReturnDto
+      fields:
+      - name: new_item_ids
+        type: uinteger
+        is_list: true
+  - name: move_items
+    entities:
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: MoveDto
+      fields:
+      - name: item_ids
+        type: uinteger
+        is_list: true
+      - name: target_id
+        type: uinteger
+        optional: true
+      - name: target_is_binder
+        type: boolean
+      - name: move_place
+        type: enum
+        enum_name: MovePlace
+        enum_values:
+        - Before
+        - After
+        - Into
+  - name: merge_two_scenes
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: MergeTwoScenesDto
+      fields:
+      # Which open Work owns the merge -- see SaveWorkDto.work_id. Scopes the
+      # undo/redo snapshot and the TrashInfo the absorbed source scene gets
+      # filed under.
+      - name: work_id
+        type: uinteger
+      - name: target_id
+        type: uinteger
+      - name: source_id
+        type: uinteger
+  - name: split_scene
+    entities:
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: SplitSceneDto
+      fields:
+      - name: source_id
+        type: uinteger
+      - name: before_text
+        type: string
+      - name: after_text
+        type: string
+      - name: before_synopsis
+        type: string
+      - name: after_synopsis
+        type: string
+      - name: new_title
+        type: string
+  - name: promote
+    entities:
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: PromoteDto
+      fields:
+      - name: item_id
+        type: uinteger
+      # A `skribisto_model::PromoteTarget` wire code. Not a list index: the use case
+      # re-derives the legal targets from the item's *current* type and rejects a code
+      # that isn't among them, so a stale menu can never promote to the wrong type.
+      - name: target
+        type: uinteger
+
+  # Push one item's `is_exportable` down onto everything beneath it, as a single
+  # undo step.
+  #
+  # The subtree walk is the part worth having down here. A binder has no
+  # parent/child graph -- "beneath X" means "the following items with a strictly
+  # greater indent" (`binder_ordering::subtree_of`) -- so a caller that does not
+  # already hold an ordered, indent-annotated view of the binder cannot compute
+  # it. The outline had one and did the walk itself; nothing else does.
+  - name: set_descendants_exportable
+    entities:
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: SetDescendantsExportableDto
+      fields:
+      - name: item_id
+        type: uinteger
+      - name: exportable
+        type: boolean
+    dto_out:
+      name: SetDescendantsExportableResultDto
+      fields:
+      # The descendants actually written -- those that did not already hold the
+      # requested value. Empty is a success, not an error: it means the subtree
+      # already agreed.
+      - name: changed_ids
+        type: uinteger
+        is_list: true
+
+  # The same subtree walk as `set_descendants_exportable`, one field over: push
+  # a spellcheck language onto everything beneath an item.
+  #
+  # An **empty** `tags` is a legitimate instruction, not a missing argument. No
+  # language propagates implicitly (`skribisto_model::language::tags_in_binder`
+  # reads an item's own tag, else the Work's -- there is no container scope), so
+  # clearing the descendants is the only way to put an over-broad apply back
+  # without visiting every child.
+  - name: set_descendants_dict_language
+    entities:
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: SetDescendantsDictLanguageDto
+      fields:
+      - name: item_id
+        type: uinteger
+      - name: tags
+        type: string
+        is_list: true
+    dto_out:
+      name: SetDescendantsDictLanguageResultDto
+      fields:
+      - name: changed_ids
+        type: uinteger
+        is_list: true
+
+  # The same subtree walk again, over the `Books` relationship instead of a
+  # scalar field: push one item's declared filing down onto everything beneath
+  # it, as a single undo step.
+  #
+  # It **overwrites**, exactly like `set_descendants_dict_language` overwrites
+  # `dict_language` -- an empty `book_ids` is a legitimate instruction to push
+  # down (it clears a descendant's own filing), never a missing argument, and a
+  # child that already carried its own value loses it to the parent's current
+  # one. A writer who wants one child to differ edits that child afterward.
+  #
+  # The root is not touched -- the Inspector's own Books section owns that;
+  # this is the "apply to children" affordance beside it.
+  - name: set_descendants_books
+    entities:
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: SetDescendantsBooksDto
+      fields:
+      - name: item_id
+        type: uinteger
+      - name: book_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: SetDescendantsBooksResultDto
+      fields:
+      # The descendants actually written -- those whose filing did not already
+      # match. Empty is a success, not an error: it means the subtree already
+      # agreed.
+      - name: changed_ids
+        type: uinteger
+        is_list: true
+
+  # Blank the titles of the named items, in one undo step.
+  #
+  # A title has **two homes** -- `BinderItem.title`, which the outline and the
+  # tab show, and the title `Content` row the constraint matrix gives that
+  # combination (`skribisto_model::title_role_of`), which is what the exporter
+  # compiles. Writing one without the other is how they drift apart, and doing
+  # it per item from the UI is how a caller forgets the second. That pairing is
+  # the whole reason this is a use case rather than a loop of scalar updates.
+  #
+  # Takes explicit ids rather than a rule: the caller decides *which* titles are
+  # redundant (a read-model question, and one the writer confirms in a preview),
+  # so the rows that were shown are the rows that change even if the tree moved
+  # in between.
+  - name: clear_titles
+    entities:
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: ClearTitlesDto
+      fields:
+      - name: item_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: ClearTitlesResultDto
+      fields:
+      # Only the rows that had something to clear, in the order given.
+      - name: cleared_ids
+        type: uinteger
+        is_list: true
+- name: handling_app_lifecycle
+  use_cases:
+  - name: initialize_app
+    entities:
+    - Root
+    - System
+    undoable: false
+    dto_out:
+      name: InitializeAppResultDto
+      fields:
+      - name: root_id
+        type: uinteger
+  - name: clean_up_before_exit
+    entities:
+    - Root
+    - System
+    undoable: false
+- name: import_management
+  use_cases:
+  - name: import_plume_creator_file
+    entities: []
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: ImportPlumeCreatorFileDto
+      fields:
+      - name: source_path
+        type: string
+      - name: output_path
+        type: string
+      - name: overwrite
+        type: boolean
+      - name: manuscript_binder_name
+        type: string
+      - name: story_bible_binder_name
+        type: string
+      # Plume's own eight-rung revision ladder, resolved in the UI's locale and
+      # passed down, exactly as the two binder names above are. Plume stores a
+      # per-node `status` INDEX and translates the names at display time, so the
+      # names are not in the file and the importer has to be told them; seeding
+      # them here is what makes an imported project's statuses read in the
+      # writer's language instead of Plume's source English.
+      #
+      # An empty list means "do not seed statuses", which is what a caller that
+      # has no vocabulary to offer should pass. A short list is padded by index:
+      # a node whose status falls past the end simply gets none.
+      - name: status_names
+        type: string
+        is_list: true
+    dto_out:
+      name: ImportPlumeCreatorFileResultDto
+      fields:
+      - name: output_path
+        type: string
+      - name: imported_items
+        type: integer
+      - name: skipped_trashed
+        type: integer
+      - name: warnings
+        type: string
+        is_list: true
+
+  # Manuskript import. The same shape as the Plume converter above and for the
+  # same reasons: a pure file->file transform that reads a foreign project and
+  # writes a brand-new `.skrib`, touching no entity at all (`entities: []`), run
+  # as a long operation because the IO is on the UI's own thread otherwise.
+  #
+  # The conversion itself is `manuskript_import`, a crate of its own. What stays
+  # here is the use case: progress, cancellation, and the event the UI listens for.
+  - name: import_manuskript_project
+    entities: []
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: ImportManuskriptProjectDto
+      fields:
+      # A zipped `.msk`, the one-byte `.msk` beside a project folder, or the
+      # folder itself. All three are real ways a writer holds a Manuskript
+      # project, and the panel offers a file picker and a folder picker for
+      # exactly that reason.
+      - name: source_path
+        type: string
+      - name: output_path
+        type: string
+      - name: overwrite
+        type: boolean
+      # The names the app resolves in the writer's own language and passes down,
+      # exactly as the Plume importer does its two binder names. Manuskript has
+      # no binders and no story-bible groups, so it stores none of these.
+      #
+      # Note what is NOT here: the field headings inside an imported character
+      # sheet. Those are Manuskript's own on-disk key names, which are hard-coded
+      # English in every project whatever the writer's language, so reproducing
+      # them is what lets a writer recognise their own sheet.
+      - name: manuscript_binder_name
+        type: string
+      - name: story_bible_binder_name
+        type: string
+      - name: characters_group_name
+        type: string
+      - name: world_group_name
+        type: string
+      - name: plots_group_name
+        type: string
+      - name: project_info_note_name
+        type: string
+      - name: summary_note_name
+        type: string
+      # Manuskript's importance scale is three integers whose names live in its
+      # UI and are translated at display time, so the file carries no names at
+      # all -- the same shape as Plume's status ladder. Lowest rung first; a
+      # short list simply leaves the rungs past its end unnamed.
+      - name: importance_names
+        type: string
+        is_list: true
+    dto_out:
+      name: ImportManuskriptProjectResultDto
+      fields:
+      - name: output_path
+        type: string
+      - name: imported_items
+        type: integer
+      # Manuskript keeps whole-document snapshots with a timestamp, which is what
+      # a history entry already is here, so an imported project can open with a
+      # Versions panel that is not empty.
+      - name: imported_revisions
+        type: integer
+      - name: warnings
+        type: string
+        is_list: true
+
+  # Document import, part one of two: read the chosen files and work out what
+  # tree they would make. Writes nothing.
+  #
+  # Format-neutral on purpose. The plan rows carry nothing that says "this came
+  # from CommonMark" -- an ODT or DOCX scanner produces the identical shape --
+  # so adding a format later is a new `document_ingest::SourceScanner` and a
+  # match arm, not a second use-case pair with its own regen, its own
+  # hand-trimmed uow_action list, and a near-duplicate Apply DTO beside this one.
+  #
+  # `long_operation` for the IO, not the arithmetic: converting 78,000 words
+  # measures at ~5 ms, but a dropped folder is hundreds of individual reads on
+  # whatever the UI's own thread is, and a synchronous use case in this codebase
+  # runs there. Same reason `import_plume_creator_file` is one despite touching
+  # no entity at all.
+  #
+  # This is Qleany's own Scenario 4 (see `qleany docs flow`): a read-only long
+  # operation crunches and returns a preview, the writer reviews it, and a
+  # separate regular undoable use case applies what they accepted. Splitting it
+  # is what makes the review step possible, and what keeps the undo entry --
+  # `undoable` is dropped under `long_operation`, so the writing half must be
+  # synchronous.
+  - name: analyze_document_import
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: AnalyzeDocumentImportDto
+      fields:
+      # Which open Work to import into -- its `chapter_mode` decides how a
+      # detected Chapter is encoded, and there is no per-item override.
+      - name: work_id
+        type: uinteger
+      # The destination binder, read to warn about titles that already exist
+      # there. Re-importing an edited file is an ordinary workflow now that this
+      # is the only import path, and nothing else would notice it doubling a
+      # manuscript.
+      - name: binder_id
+        type: uinteger
+      - name: source_paths
+        type: string
+        is_list: true
+      # What the shallowest heading level becomes. Chosen from the destination,
+      # since importing under a Book means the first level is a Part while
+      # importing at the root means it is a Book.
+      # The destination, as the writer pointed at it. NOT a pre-computed indent
+      # and kind: what depth an import starts at, and what the shallowest heading
+      # becomes, follow from where it is going -- and the same question is asked
+      # again at apply time against a binder that may have moved on. Deriving it
+      # here and again there means one rule, `binder_ordering`'s, rather than the
+      # UI's guess baked into a plan.
+      #
+      # 0 = the binder itself (the writer chose a whole binder, or there is
+      # nothing in it yet).
+      - name: anchor_item_id
+        type: uinteger
+      - name: drop_position
+        type: enum
+        enum_name: DropPosition
+        enum_values:
+        - Before
+        - After
+        - Into
+    dto_out:
+      name: DocumentImportPlanDto
+      fields:
+      # One flat, depth-encoded row list rather than a tree -- the same `row` +
+      # `rows` escape hatch analysis_management's flat lists use, and the shape
+      # the binder actually has (an ordered stream plus an indent).
+      - name: row
+        type: enum
+        enum_name: DocumentImportRow
+        enum_values:
+        - Empty
+        # `comments` carries the editors' notes the source format brought with it
+        # (`.docx`, `.odt`; never Markdown, which has no comment syntax). They ride
+        # the *plan* rather than only the apply DTO because the writer reviews the
+        # plan and the UI hands it straight back -- exactly as `djot` already does.
+        # Sending only a count here would mean re-reading every file at apply time
+        # to recover what this pass already worked out.
+        # `source_uid_tag` / `source_digest` are the round-trip mark this row arrived with,
+        # when the file is one this project exported: which `BinderItem` the passage was, and
+        # what its prose digested to at export time. Empty for a first arrival and for a file
+        # from anywhere else. They ride the plan for the same reason `comments` does -- the
+        # writer reviews the plan and the UI hands it straight back, and re-deriving them at
+        # apply time would mean re-reading every file.
+        # `epigraph` rides the plan for the same reason and is kept out of `djot` for a
+        # stronger one: it becomes a `ContentRole::EpigraphText` of its own, and a quotation
+        # folded into the prose is duplicated on every round trip and counted as manuscript
+        # words. Empty for every row that heads no quotation, and for every format that
+        # carries no style information to recognise one by.
+        # `source_file_digest` is blake3 of the whole source **file**, taken where its bytes
+        # were already in hand, and is a different question from `source_digest` two lines
+        # up: that one is of this row's prose as it was exported, this one is of the document
+        # this row was read out of. It rides the plan for the same reason as the rest --
+        # re-deriving it at apply time would mean re-reading every file, and by then the file
+        # may have changed or gone. `origin` beside it is the full path, and stays on this
+        # side of the seam: what crosses into the apply DTO is the file name alone.
+        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, epigraph: String, scene_breaks: i64, word_count: i64, comments: Vec<ImportComment>, footnotes: Vec<ImportFootnote>, origin: String, included: bool, source_uid_tag: String, source_digest: String, source_file_digest: String }"
+      - name: rows
+        type: enum
+        enum_name: DocumentImportRows
+        enum_values:
+        - Empty
+        - "Found(Vec<DocumentImportRow>)"
+      # One imported comment, sent field for field rather than as one blob --
+      # because these ARE the Comment entity's fields, and neither the UI nor
+      # `apply_document_import` gets to reinterpret what an anchor means. The quote
+      # was already proved against this row's own Djot by
+      # `document_ingest::plan::anchor_comments`, using the same matcher that
+      # re-anchors a comment on every reopen.
+      #
+      # `comment_kind` / `orphan_reason` / `comment` / `reply` are declared as
+      # fields so the types exist in the generated file, the way `row` declares
+      # `DocumentImportRow`; only the ones inside a row are ever populated.
+      # Declared here rather than as an input on the analyse DTO, where it used to be
+      # `start_kind`: what the shallowest heading becomes is derived from the
+      # destination now, so nothing sends it. The rows below still name a type each,
+      # so the type must exist.
+      - name: row_kind
+        type: enum
+        enum_name: ImportRowKind
+        enum_values:
+        - Book
+        - Part
+        - Chapter
+        - Scene
+        - Note
+        - NoteFolder
+        - Folder
+        - Paratext
+        - ParatextFolder
+        - EndOfBook
+      - name: comment_kind
+        type: enum
+        enum_name: ImportCommentKind
+        enum_values:
+        - Range
+        - Paragraph
+        - Document
+      - name: orphan_reason
+        type: enum
+        enum_name: ImportOrphanReason
+        enum_values:
+        - NotOrphaned
+        - TextNotFound
+        - Ambiguous
+        - TargetDeleted
+      # `created_at` is RFC 3339: a DTO carries no chrono type, and the date the
+      # editor actually wrote the note is worth more than the date it was imported.
+      #
+      # `uid` (M-S7): the DOCX/ODT writer's own private-namespace attribute
+      # (`skrb:uid` — see `text-document`'s `export_docx_uc`/`export_odt_uc`),
+      # read back by the two scanners. `None` for a comment neither scanner found
+      # a uid on -- an editor's own remark typed straight into Word or
+      # LibreOffice, never one Skribisto exported. `apply_document_import_uc`
+      # is what turns that distinction into "update the matching row" versus
+      # "create a new one, minting a uid" -- see its own module doc.
+      # `author_initials` mirrors `Comment`/`CommentReply`'s own field: read from
+      # `w:initials` on DOCX, always empty on ODT (ODF's `office:annotation` has
+      # no carrier for it -- a documented format ceiling, not a bug).
+      - name: comment
+        type: enum
+        enum_name: ImportComment
+        enum_values:
+        - Empty
+        # `uid_tag` is the identity a round-trip *mark* carried for this comment, and is the
+        # one that survives in practice: `uid` above comes from a private XML attribute that
+        # both Word and LibreOffice delete on save, so on any real returning file it is None
+        # and this is not. A lookup key rather than a uid -- see
+        # `skribisto_model::round_trip::uid_tag`. Empty when the file carried no mark.
+        - "Found { kind: ImportCommentKind, uid: Option<Uuid>, uid_tag: String, author_name: String, author_initials: String, created_at: String, body: String, resolved: bool, orphaned: bool, orphan_reason: ImportOrphanReason, range_start: i64, range_length: i64, quote_prefix: String, quote_exact: String, quote_exact_truncated: bool, quote_suffix: String, block_ordinal_hint: i64, replies: Vec<ImportReply> }"
+      - name: reply
+        type: enum
+        enum_name: ImportReply
+        enum_values:
+        - Empty
+        - "Found { uid: Option<Uuid>, author_name: String, author_initials: String, created_at: String, body: String }"
+      # One footnote arriving with a row's prose. `label` is the **scanner's**
+      # placeholder, not the writer's: a source format numbers its notes however it
+      # likes (OOXML by an integer unique only within one file), and neither is safe
+      # to put into a project that already has footnotes. The prose cites this
+      # placeholder and `apply_document_import` swaps both halves for a label the
+      # project has free -- which is why there is no `number` here and never will be:
+      # the printed number is derived from position by
+      # `skribisto_model::footnote_numbering` and never stored.
+      - name: footnote
+        type: enum
+        enum_name: ImportFootnote
+        enum_values:
+        - Empty
+        - "Found { label: String, body: String }"
+      # Diagnostics travel as a key plus its data rather than a rendered
+      # sentence, so the UI can say them in the writer's own locale -- the house
+      # rule is that user-visible strings go through Fluent and data stays
+      # literal. `row_index` is -1 for one that belongs to the import as a whole.
+      - name: diagnostic
+        type: enum
+        enum_name: ImportDiagnosticRow
+        enum_values:
+        - Empty
+        - "Reported { key: String, severity: String, path: String, detail: String, count: i64, row_index: i64 }"
+      - name: diagnostics
+        type: enum
+        enum_name: ImportDiagnosticRows
+        enum_values:
+        - Empty
+        - "Reported(Vec<ImportDiagnosticRow>)"
+
+  # Part two: create what the writer accepted, as one undo entry.
+  #
+  # Synchronous, and that is not a workaround -- Qleany drops `undoable` under
+  # `long_operation`, and a Rust use case is synchronous anyway. The rows arrive
+  # already converted to Djot by the analyse half, so this opens a transaction,
+  # creates, and commits without parsing anything.
+  - name: apply_document_import
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - Content
+    # An editor's comments, when the source format carried them (`.docx`, `.odt`).
+    # This is the one honest dent in "a new format costs a SourceScanner and one
+    # register() line and zero manifest entries": importing comments is a *pipeline*
+    # capability, not a format's, and it is paid once here for every format that
+    # will ever carry them. Creating them inside this use case is also what puts
+    # them in the same undo entry as the rows they annotate.
+    - Comment
+    - CommentReply
+    undoable: true
+    dto_in:
+      name: ApplyDocumentImportDto
+      fields:
+      - name: work_id
+        type: uinteger
+      - name: binder_id
+        type: uinteger
+      # The row the writer pointed at, or 0 for the binder itself. Where the block
+      # actually lands is resolved from it here, at write time, through
+      # `binder_ordering` -- an anchor's own subtree has to be stepped over, or the
+      # import lands between a container and its children and re-parents them.
+      - name: anchor_item_id
+        type: uinteger
+      - name: drop_position
+        type: enum
+        enum_name: DropPosition
+        enum_values:
+        - Before
+        - After
+        - Into
+      # Deliberately a narrower row than the plan's: word counts, break counts
+      # and diagnostics are review-time information and have no business in a
+      # write. What is left is what actually gets created.
+      - name: row
+        type: enum
+        enum_name: ApplyImportRow
+        enum_values:
+        - Empty
+        # The very `ImportComment`s the plan carried, handed straight back. One
+        # declaration, one shape, no translation step in between for the two halves
+        # to disagree across.
+        #
+        # `source_uid_tag` is the exception to "narrower than the plan": it is not
+        # review-time information but identity, and it is what lets a returning file update
+        # the row it came from instead of landing beside it as a second copy. Empty for a row
+        # that is genuinely new.
+        #
+        # `epigraph` is the second exception, and a different one: it is not review-time
+        # information either, it is a *second `Content`*. A Part's or a Chapter's epigraph
+        # is stored under `ContentRole::EpigraphText`, never inside `djot` -- folding the
+        # two together is exactly the bug the reader-side fix exists to close, since it
+        # duplicates the quotation on every round trip and adds its words to the
+        # manuscript's count. Empty for every row that heads no quotation, which is most.
+        #
+        # `source_file_name` and `source_file_digest` are the third exception, and the
+        # first that is not about *making* the row. They are provenance: which file these
+        # words arrived in, and what that file hashed to. Nothing in the write reads them
+        # -- they exist so the completion event can say where each created row came from,
+        # which is the one moment the answer is known. The plan holds it, the store never
+        # will, and `ApplyImportRow` is the only channel between the two.
+        #
+        # A **file name, never a path**, and derived at the UI call site so the full path
+        # cannot reach here by construction rather than by a downstream filter somebody
+        # has to remember. A writer's directory tree says where they keep their work and
+        # sometimes who they are; the file name says which document this row came out of,
+        # which is all the question needs. Extension kept: `chapter-3-editor.docx` is a
+        # forensic name, not a display one.
+        #
+        # `source_file_digest` is blake3 of the **file's own bytes**, and is not the same
+        # thing as `source_uid_tag`'s companion digest one level up in the plan, which is
+        # of a single row's prose as it was exported. Both empty for a row that came from
+        # nowhere -- one the writer typed into the review step.
+        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, epigraph: String, comments: Vec<ImportComment>, footnotes: Vec<ImportFootnote>, source_uid_tag: String, source_file_name: String, source_file_digest: String }"
+        # A row the returning file brings home to one the project already has, named by the
+        # round-trip mark it carried. `Create` makes a row; this touches one.
+        #
+        # There is no "leave it alone" variant and there does not need to be: a row the writer
+        # decided to keep as it is simply is not sent, exactly as an unticked row is not.
+        #
+        # `replace_prose` false is the case the whole feature exists for -- bring the editor's
+        # remarks home and do not touch a word of the manuscript.
+        #
+        # `epigraph` rides `replace_prose` with the manuscript, because it is manuscript: an
+        # editor who corrected the attribution under a chapter's epigraph edited the book. It
+        # is written only when non-empty, since an absent epigraph in a returning file means
+        # "this export did not carry one" (`Preset::include_epigraphs` is a choice made on the
+        # way out) far more often than it means "delete the one you have".
+        #
+        # `source_file_name`/`source_file_digest` ride along here too, and mean the same
+        # thing: an editor's return is provenance for the prose it replaces exactly as a
+        # first arrival is provenance for the prose it creates. Carried even when
+        # `replace_prose` is false, because "this file came home and touched only the
+        # remarks" is itself worth being able to say afterwards.
+        - "Update { target_uid_tag: String, replace_prose: bool, djot: String, epigraph: String, comments: Vec<ImportComment>, footnotes: Vec<ImportFootnote>, source_file_name: String, source_file_digest: String }"
+      - name: rows
+        type: enum
+        enum_name: ApplyImportRows
+        enum_values:
+        - Empty
+        - "Create(Vec<ApplyImportRow>)"
+    dto_out:
+      name: ApplyDocumentImportResultDto
+      fields:
+      - name: created_ids
+        type: uinteger
+        is_list: true
+- name: search_management
+  use_cases:
+  # Synchronous Command UoW. NOT `read_only` — a QueryUnitOfWork has no commit(), so
+  # a read-only use case structurally cannot write the SearchResult rows. NOT a
+  # long_operation either: being synchronous is what removes the need for cancellation
+  # and a generation counter, since there is no thread boundary for two searches to
+  # race across (the UI debounce already serialises them).
+  - name: run_search
+    entities:
+    - Work
+    - WorkInfo
+    - Search
+    - SearchResult
+    - Binder
+    - BinderItem
+    - Content
+    # Comment bodies are prose the writer typed and expects to find again. They
+    # hang off Work, not off Content, so reaching them is a separate walk — see
+    # `run_search_uc::comment_fields`.
+    - Comment
+    - CommentReply
+    undoable: false
+    dto_in:
+      name: RunSearchDto
+      fields:
+      # Which open Work to search -- Search hangs off WorkInfo, and WorkInfo.work
+      # is how we find it. See work_management's SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      - name: query
+        type: string
+      - name: case_sensitive
+        type: boolean
+      - name: whole_word
+        type: boolean
+      - name: diacritic_sensitive
+        type: boolean
+      # SearchFacet codes; empty = every kind. See the Search entity.
+      - name: facets
+        type: integer
+        is_list: true
+      - name: search_body
+        type: boolean
+      - name: search_titles
+        type: boolean
+      - name: search_synopsis
+        type: boolean
+      - name: search_labels
+        type: boolean
+      # Comment threads and their replies. A separate switch from `search_body`
+      # because a comment is *about* the manuscript rather than part of it, and a
+      # writer hunting a phrase in the prose does not always want their own notes
+      # about that phrase back as well.
+      - name: search_comments
+        type: boolean
+      - name: include_trashed
+        type: boolean
+    dto_out:
+      name: RunSearchResultDto
+      fields:
+      - name: match_count
+        type: uinteger
+      - name: item_count
+        type: uinteger
+      - name: truncated
+        type: boolean
+  # The occurrences inside ONE result row, for the search tree's second level.
+  #
+  # Per ROW rather than per item, and that is what keeps the DTO honest: a row is
+  # one field of one item, so everything the tree needs to *identify* an occurrence
+  # -- which item, which field, which comment or footnote -- is already on the
+  # `SearchResult` the caller is expanding. Only the positions and their snippets
+  # are missing, and those are five parallel lists rather than one list of structs
+  # because the manifest's field types are primitives. Expanding an item is one
+  # call per matching field, which is one to three in practice.
+  #
+  # The query is NOT an input. It is read from the `Search` entity that
+  # `run_search` wrote, so the occurrences cannot disagree with the count in the
+  # badge beside them -- a caller passing its own query is exactly how the second
+  # level would come to contradict the first.
+  #
+  # NOT `read_only`: reaching a scene's prose goes through the same corpus walk
+  # `run_search` uses, and that walk is written against the command unit of work.
+  # Nothing here writes.
+  - name: occurrences_for_result
+    entities:
+    - Work
+    - WorkInfo
+    - Search
+    - SearchResult
+    - Binder
+    - BinderItem
+    - Content
+    - Comment
+    - CommentReply
+    # Listed here, unlike `run_search` above, whose unit of work hand-adds it. A
+    # footnote is a searchable field like any other and its text has to be reached
+    # the same way; leaving it out of the manifest only moves the fact into a
+    # hand-edit that the next regeneration argues with.
+    - Footnote
+    undoable: false
+    dto_in:
+      name: OccurrencesForResultDto
+      fields:
+      - name: work_id
+        type: uinteger
+      # The `SearchResult` row to open. Its field, its item and its comment or
+      # footnote id are all already on that row.
+      - name: result_id
+        type: uinteger
+    dto_out:
+      name: OccurrencesForResultResultDto
+      fields:
+      # Parallel by index: occurrence `i` is `char_starts[i]` long `char_lens[i]`,
+      # shown as `snippets_before[i]` + `snippets_match[i]` + `snippets_after[i]`.
+      # A match's length is not the query's: folding can change it, which is why
+      # the length is carried rather than assumed.
+      - name: char_starts
+        type: integer
+        is_list: true
+      - name: char_lens
+        type: integer
+        is_list: true
+      - name: snippets_before
+        type: string
+        is_list: true
+      - name: snippets_match
+        type: string
+        is_list: true
+      - name: snippets_after
+        type: string
+        is_list: true
+      # Whether the listed occurrences stop short of the row's own
+      # `occurrence_count`. A field can hold thousands of hits of a common word,
+      # and a tree that lists them all is neither readable nor affordable. The
+      # count on the parent row stays the true one.
+      - name: truncated
+        type: boolean
+  # SYNCHRONOUS, deliberately — and this is not the obvious choice, so: Qleany
+  # silently IGNORES `undoable: true` when `long_operation: true`. Compare the two
+  # generated controllers: an undoable command's controller takes an
+  # `undo_redo_manager` and calls `add_command_to_stack(uc, stack_id)`; a long
+  # operation's takes a `long_operation_manager`, calls `start_operation(uc)` — which
+  # *consumes* the use case — and never touches the undo stack. The manifest validates
+  # and the code compiles; the replace would simply never be undoable.
+  #
+  # Undo is the whole safety story for a bulk replace (one Ctrl-Z / one toast action
+  # puts the manuscript back), so it wins over progress-and-cancel. `snapshot_work` /
+  # `restore_work` is O(1) — an `im::HashMap` structural clone — so the batch is one
+  # undo entry regardless of how many scenes it touched.
+  - name: replace_in_project
+    entities:
+    - Work
+    - WorkInfo
+    - Search
+    - SearchResult
+    - Binder
+    - BinderItem
+    - Content
+    # Comment hits are replaceable, but arrive **excluded** — the writer ticks them
+    # in. Renaming a character should be able to fix the notes that quote the old
+    # name; it should not do so silently, because a comment is the writer's own
+    # record of a decision and rewriting it changes what that record says.
+    - Comment
+    - CommentReply
+    undoable: true
+    dto_in:
+      name: ReplaceInProjectDto
+      fields:
+      # Which open Work's Search results to replace across -- see
+      # RunSearchDto.work_id above.
+      - name: work_id
+        type: uinteger
+      - name: replacement
+        type: string
+      - name: preserve_case
+        type: boolean
+      # SearchResult ids the writer unticked — the whole fields to leave alone.
+      #
+      # Still the coarse switch, and still the one a writer reaches for most: it
+      # says "not this scene's prose at all". It is also the only exclusion that
+      # can be *complete* where a row holds more hits than the tree lists, which is
+      # why unticking a parent row is stored here rather than as an occurrence
+      # apiece.
+      - name: excluded_result_ids
+        type: uinteger
+        is_list: true
+      # Single occurrences the writer unticked, parallel by index: occurrence
+      # `excluded_occurrence_starts[i]` inside row `excluded_occurrence_rows[i]`.
+      #
+      # A row is one FIELD, so before this the finest thing a writer could refuse
+      # was every hit in a scene's prose at once. The results tree shows them one
+      # by one and lets them be refused one by one, which is what the panel it is
+      # modelled on does.
+      #
+      # Identified by character offset rather than by ordinal because the replace
+      # re-derives the hits itself, through the same matcher, and an offset says
+      # which hit it means without depending on both sides having counted from the
+      # same place. An offset naming no hit does NOT mean "nothing to skip": it
+      # means the field moved under the writer and this list no longer says which
+      # hits it meant, so the whole row is skipped and reported stale. Replacing
+      # the rest of it would be replacing hits nobody reviewed.
+      - name: excluded_occurrence_rows
+        type: uinteger
+        is_list: true
+      - name: excluded_occurrence_starts
+        type: integer
+        is_list: true
+      # The other direction, parallel by index the same way: in row
+      # `only_occurrence_rows[i]`, replace the occurrence at
+      # `only_occurrence_starts[i]` -- and, in that row, NOTHING else.
+      #
+      # Not a convenience over the exclusion list: the two cannot express each
+      # other. "Replace just this one" turned into "skip the other n-1" is only
+      # true while the caller can enumerate the other n-1, and it cannot -- a
+      # results tree lists at most `OCCURRENCE_CAP` hits of a field that may hold
+      # thousands. Sent as an exclusion, the hits past the cap are hits nobody
+      # named and every one of them would be rewritten. Sent this way the count
+      # is irrelevant: one occurrence is named and one is replaced.
+      #
+      # A row named here ignores the exclusion list, which is not a conflict to
+      # resolve but the same statement twice: naming what to do already says
+      # everything about what not to do.
+      - name: only_occurrence_rows
+        type: uinteger
+        is_list: true
+      - name: only_occurrence_starts
+        type: integer
+        is_list: true
+    dto_out:
+      name: ReplaceInProjectResultDto
+      fields:
+      - name: items_changed
+        type: uinteger
+      - name: occurrences_replaced
+        type: uinteger
+      # Fields whose occurrence count no longer matches what the writer reviewed:
+      # skipped and reported, never guessed at.
+      - name: skipped_stale
+        type: uinteger
+        is_list: true
+ui:
+  rust_cli: false

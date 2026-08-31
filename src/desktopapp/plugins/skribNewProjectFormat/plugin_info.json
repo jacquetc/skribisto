@@ -1,9 +1,0 @@
-{
-    "type": "newprojectformat",
-    "shortname": "SkribNewProjectFormat",
-    "longname": ".skrib New Project Format",
-    "version": "1.0",
-    "mandatory": true,
-    "activatedByDefault": true,
-    "dependencies": []
-}

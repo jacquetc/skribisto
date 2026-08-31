@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+// Panic hygiene: this crate is at zero `unwrap()`/`expect()`/`panic!` outside
+// tests, so the lint is switched on here to keep it that way — CI lints with
+// `-D warnings`, which makes any new panic path a build failure. See the note
+// in the workspace `Cargo.toml` for why this is per-crate and not workspace-wide.
+#![warn(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
+//! Compile an export scope into one `text_document::TextDocument` and render it.
+//!
+//! The single place a `TextDocument` is built for export. Given a frozen [`Gathered`] tree
+//! (from `skrib_format::tree_read::gather`), an ordered set of item ids to include (from
+//! `skribisto_model::compile::resolve_scope` or the Choose… tree), and a [`Preset`] style,
+//! it assembles one document — localized headings + scene breaks around each scene's Djot —
+//! and renders it to the chosen [`ExportFormat`]. Shared by the backend `export_work` use
+//! case (commit) and `teksilo_ui` (client-side live preview), so neither reimplements the
+//! compile.
+//!
+//! [`Gathered`]: skrib_format::Gathered
+
+mod fonts;
+/// The generated structural words and their number formatting — "Chapter 3",
+/// "Chapitre 3". Public because the UI shows the same numbers the export prints and
+/// must recognise a redundant title with the *same* predicate the exporter uses; two
+/// implementations of "does this title merely restate its number" would drift.
+pub mod headings;
+mod preset;
+/// What an export sent out, kept because the file itself cannot say.
+pub mod receipt;
+mod render;
+
+pub use preset::{
+    DigitStyle, DirectionMode, EpigraphPlacement, ExportFormat, FootnoteNumbering,
+    FootnotePlacement, HeadingLanguage, HeadingScheme, ImageHandling, LineSpacing, Margins,
+    PageSize, Preset, SceneBreak, builtin_presets,
+};
+pub use receipt::{ExportReceipt, ExportedRow};
+pub use render::{RenderRequest, RenderStats, render_to_file, render_to_string};
+
+use skrib_format::Gathered;
+use skribisto_model::compile::ItemMeta;
+
+/// The flat, ordered `ItemMeta` stream from a gathered tree — the input both
+/// [`skribisto_model::compile::resolve_scope`] and [`render::render_to_file`]'s scope
+/// filter walk. Shared by the backend `export_work` use case and the UI's client-side
+/// preview so the two resolve byte-identical scopes from the same tree.
+pub fn item_metas(g: &Gathered) -> Vec<ItemMeta> {
+    let mut v = Vec::new();
+    for bwi in &g.binders {
+        for iwc in &bwi.items {
+            let it = &iwc.item;
+            v.push(ItemMeta {
+                id: it.id,
+                binder_id: bwi.binder.id,
+                role: it.role.clone(),
+                sub_role: it.sub_role.clone(),
+                indent: it.indent as i32,
+                activated: it.activated,
+                is_exportable: it.is_exportable,
+                exclude_from_numbering: it.exclude_from_numbering,
+            });
+        }
+    }
+    v
+}

@@ -1,0 +1,12 @@
+title:          Chapitre 10
+ID:             120
+type:           folder
+compile:        2
+setGoal:        2000
+label:          3
+status:         4
+summarySentence:Où Passepartout est trop heureux d’en être quitte en perdant sa chaussure
+summaryFull:    À Bombay, Passepartout flâne et entre chaussé dans la pagode de Malebar-Hill. Roué de coups par les prêtres, il s’échappe et rejoint le train de Calcutta en chaussettes, trop heureux d’en être quitte à ce prix — sans se douter qu’il vient de fournir à Fix le moyen de faire arrêter son maître en territoire anglais.
+POV:            0
+
+

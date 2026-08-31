@@ -1,0 +1,163 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Commands over the editor surface: the master spell-check switch, opening an item into a
+//! pane, adding a word to the personal dictionary, and saving to disk.
+
+use teksilo::prelude::*;
+
+use crate::intents::AppIntent;
+use crate::settings::SettingsViewModel;
+
+use super::super::{can_save, offer_missing_dictionaries};
+use super::CommandDeps;
+
+pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
+    // F7 — the spell-check key every office suite has used for thirty years. A bare function
+    // key for the same reason F9 is: a Global shortcut resolves before the focused widget sees
+    // the raw key, so any Ctrl+letter here would shadow one of `RichTextEditor`'s built-in
+    // commands.
+    ctx.register_shortcut_global(
+        Shortcut::new("spellcheck.toggle")
+            .name(tr!(shortcut_name_spellcheck_toggle()))
+            .primary(KeyStroke::new(Key::F7, Modifiers::NONE))
+            .build(),
+    );
+    // The master spell-check switch. Flips the *setting* and nothing else — the effect in
+    // `App::build` owns the engine, so there is exactly one path from the key to
+    // `set_enabled` no matter which surface fired. The toast lives here rather than in that
+    // effect because only an action gets an `EventContext`.
+    {
+        let enabled = SettingsViewModel::new(ctx.settings()).spellcheck_enabled();
+        let docs = deps.spell_docs.clone();
+        let dicts = deps.dictionaries.clone();
+        let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
+        ctx.register_action_global(Action::new("spellcheck.toggle").on_invoke(
+            move |_i, c: &mut EventContext| {
+                let now_on = !enabled.get();
+                enabled.set(now_on);
+                // Turning it back on with no dictionary installed reproduces the exact
+                // symptom this switch exists to end: a silent absence of squiggles.
+                // `offer_missing_dictionaries` otherwise only ever fires on Load/New.
+                if now_on {
+                    offer_missing_dictionaries(&docs, &dicts, &session, &undo, c);
+                }
+            },
+        ));
+    }
+
+    {
+        let editors = deps.editors.clone();
+        ctx.register_action_global(Action::new("editor.open_item").on_invoke(move |i, c| {
+            if let Some(AppIntent::OpenItem { item_id, title }) = AppIntent::from_intent(i) {
+                // The Overview table's double-click / Enter, and every other
+                // deliberate "take me to this item" route. Focus follows, for the
+                // same reason it does from the outline.
+                editors.activate(*item_id, title, c);
+            }
+        }));
+    }
+    {
+        let editors = deps.editors.clone();
+        ctx.register_action_global(Action::new("editor.open_item_to_side").on_invoke(
+            move |i, c| {
+                if let Some(AppIntent::OpenItemToSide { item_id, title }) =
+                    AppIntent::from_intent(i)
+                {
+                    editors.activate_to_side(*item_id, title, c);
+                }
+            },
+        ));
+    }
+
+    // Add the resolved selection/caret word(s) to the personal dictionary, fired from the
+    // editor's "Add to dictionary" context-menu item. The menu mounts at the arena root, so
+    // only a **global** action reaches it. The resulting `DictWord(Created)` event drives the
+    // live squiggle refresh (the subscription in `App::build`); here we just create the
+    // entities and toast.
+    {
+        let vm = deps.user_dictionary.clone();
+        ctx.register_action_global(Action::new("editor.add_to_dictionary").on_invoke(
+            move |i, c| {
+                let Some(AppIntent::AddWordsToDictionary { words }) = AppIntent::from_intent(i)
+                else {
+                    return;
+                };
+                let sample = words.first().cloned();
+                let ids = vm.add_words(words);
+                vm.added_toast(c, ids, sample);
+            },
+        ));
+    }
+
+    // Ctrl+S: flush every editor to the store, then save the project to disk. Gated on
+    // `can_save` (dirty && !backup mode) at *both* ends: the shortcut stops matching the
+    // keystroke, and the action stops matching the intent — so nothing to save means the menu
+    // item greys out (same signal, in `main`), Ctrl+S is inert, and a scripted `editor.save`
+    // intent is a no-op instead of a pointless disk write. The exit guards call
+    // `save_to_disk()` directly, not through the intent, so save-then-close still works.
+    let can_save = can_save(&deps.unsaved, &deps.backup_mode);
+    ctx.register_shortcut_global(
+        Shortcut::new("editor.save")
+            .name(tr!(shortcut_name_editor_save()))
+            .primary(KeyStroke::ctrl(Key::S))
+            .enabled_when(can_save.clone())
+            .build(),
+    );
+    {
+        let editors = deps.editors.clone();
+        ctx.register_action_global(
+            Action::new("editor.save")
+                .enabled_when(can_save)
+                .on_invoke(move |_i, _c| editors.save_to_disk()),
+        );
+    }
+
+    // ── The focused tab: close it, pin it ──────────────────────────────────
+    //
+    // Both act on the **focused pane's selected tab** — deliberately a different
+    // target from the tab-strip context menu, which acts on the tab that was
+    // right-clicked. A keystroke has no pointer behind it, so "the tab in front
+    // of me" is the only target it can mean.
+    //
+    // Ctrl+F4 rather than Ctrl+W: Ctrl+W is registered globally as `work.close`
+    // (close the whole project) and a global shortcut resolves before the focused
+    // widget sees the key, so binding it here would shadow project close. Ctrl+F4
+    // is the long-standing "close this document, not the application" chord and
+    // collides with nothing in the app.
+    //
+    // Close others / Close all / the two move rows stay menu-only: they are rare
+    // and destructive, and every additional global chord is another thing that can
+    // shadow a `RichTextEditor` built-in.
+    ctx.register_shortcut_global(
+        Shortcut::new("editor.tab.close")
+            .name(tr!(shortcut_name_editor_tab_close()))
+            .primary(KeyStroke::ctrl(Key::F4))
+            .build(),
+    );
+    {
+        let editors = deps.editors.clone();
+        ctx.register_action_global(Action::new("editor.tab.close").on_invoke(move |_i, _c| {
+            let side = editors.focused_side();
+            if let Some(tab) = editors.selected(side).get() {
+                editors.close_in(side, tab);
+            }
+        }));
+    }
+    ctx.register_shortcut_global(
+        Shortcut::new("editor.tab.pin")
+            .name(tr!(shortcut_name_editor_tab_pin()))
+            .primary(KeyStroke::new(Key::P, Modifiers::CTRL | Modifiers::ALT))
+            .build(),
+    );
+    {
+        let editors = deps.editors.clone();
+        ctx.register_action_global(Action::new("editor.tab.pin").on_invoke(move |_i, _c| {
+            let side = editors.focused_side();
+            if let Some(tab) = editors.selected(side).get() {
+                editors.toggle_pin(side, tab);
+            }
+        }));
+    }
+}

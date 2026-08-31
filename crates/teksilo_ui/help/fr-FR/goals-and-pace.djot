@@ -1,0 +1,71 @@
+## Définir un objectif
+
+Sélectionnez un élément dans le classeur et ouvrez l’Inspecteur. Le champ *Objectif*, plus bas
+dans le panneau, accepte un nombre. Il affiche *Aucun objectif* tant qu’il vaut zéro.
+
+Un objectif est un nombre propre à l’élément, pas la somme de ce qu’il contient.
+
+## Où vous en êtes
+
+La progression face à un objectif suit l’élément partout. L’Inspecteur l’affiche sous le champ
+*Objectif*. La barre d’état l’affiche à côté du compte en direct, et le tableau *Vue d’ensemble*
+lui donne une colonne *Objectif*.
+
+## Ce qui compte dans un objectif
+
+La progression se mesure sur le manuscrit lui-même : la prose de vos
+[scènes et chapitres](:help-writing-model). Un synopsis, une note ou un paratexte reste hors du
+compte, tout comme ce qui est à la corbeille.
+
+Désactiver un élément par *Inclure dans les exports*, dans l’Inspecteur, l’en sort aussi.
+L’exclusion ne s’hérite pas : utilisez *Appliquer aux enfants* pour la propager à toute une
+branche.
+
+## Mots ou caractères
+
+Un seul choix vaut pour tout le projet. *Nouvelle œuvre* le demande d’emblée, sous *Compter en*.
+Vous pouvez le changer ensuite dans *Paramètres ▸ Œuvre : <projet> ▸ Structure*, sous
+*Objectifs*.
+
+Chaque élément garde deux nombres distincts : un objectif en mots et un objectif en caractères.
+
+## Répartir un objectif
+
+Un livre, une partie ou un dossier de chapitre porte un bouton *Répartir…* sur sa page propre. Il
+devient actif dès que ce conteneur a un objectif à lui. Il prévisualise le partage de cet
+objectif entre les parties, chapitres et scènes placés directement dedans. Choisissez la
+pondération des parts sous *Répartir* :
+
+- *Selon la longueur*, d’après ce qui est déjà écrit sous chacun ;
+- *Selon le nombre d’éléments* ;
+- *À parts égales*.
+
+Les enfants qui portent déjà un objectif le gardent, et les autres se partagent le reste. Activez
+*Remplacer les objectifs déjà définis* pour recalculer chaque part.
+
+## Planifier un rythme
+
+Un livre a un segment *Rythme* qui convertit son objectif en un chiffre journalier. S’il n’y a
+pas encore de plan, *Commencer la planification* fixe une échéance à quatre-vingt-dix jours.
+
+Remplissez *Objectif de mots* et *Échéance*, puis choisissez les jours de la semaine où vous
+écrivez. Skribisto calcule ce que demande chaque jour d’écriture restant, combien il en reste,
+et si vous êtes en avance ou en retard sur le rythme.
+
+Les périodes ajoutées sous *Congés* sont sautées.
+
+Le rythme et les jalons comptent en mots, quelle que soit l’unité du projet.
+
+## Jalons
+
+Un jalon marque une date en chemin.
+
+- Sous *Jalons* dans le planificateur, ajoutez-en un pour tout le livre : un nombre de mots
+  qu’il devrait atteindre à cette date.
+- Sur une partie ou un chapitre situé dans un livre, posez une *Date de jalon* dans
+  l’Inspecteur. Elle lit en direct l’objectif en mots de cet élément, et le suit.
+
+## À l’ouverture du projet
+
+Un livre apparaît dans la carte *Où en est le livre* dès que son plan est actif. *Ne plus
+afficher à l’ouverture* l’empêche de s’ouvrir seule ; *Œuvre ▸ Plan d’écriture…* la rouvre.

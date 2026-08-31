@@ -1,0 +1,67 @@
+## Le classeur organise, le type décide de la structure
+
+Le classeur, à gauche de la fenêtre, range votre projet comme il vous convient. Il ne
+décide pas de l’apparence du livre compilé. Ce rôle revient au *type* de chaque élément.
+
+Chaque élément qui porte du texte a un texte principal et un synopsis côte à côte :
+planifiez dans un panneau, rédigez dans l’autre. Les livres, les parties, les dossiers de
+notes et les dossiers simples portent un synopsis, mais pas de texte principal.
+
+## Les types que vous pouvez créer
+
+Faites un clic droit sur un élément du classeur et choisissez *Ajouter*.
+
+- *Livre* : aussi structuré que vous le souhaitez, de quelques scènes à des parties et
+  des chapitres imbriqués.
+- *Partie* : regroupe des chapitres sous un même titre.
+- *Chapitre* : se poursuit jusqu’au chapitre suivant, à la partie suivante, ou à la fin
+  du livre.
+- *Scène* : votre texte, avec son propre synopsis.
+- *Note* : du texte et un synopsis, pour la recherche, des remarques ou des rappels.
+- *Entrée de bible narrative…* : une note pour un personnage, un lieu ou un objet, créée
+  avec ses étiquettes et ses alias déjà renseignés.
+- *Dossier de notes* : une note qui contient d’autres notes.
+- *Dossier* : un simple conteneur, avec un synopsis et aucun texte à lui.
+
+## Deux formes de chapitre
+
+- Un *Dossier de chapitre* contient des scènes en dessous de lui dans le classeur.
+- Un *Chapitre à plat* est un seul élément dans lequel vous écrivez directement, sans
+  scènes en dessous.
+
+Pour choisir la forme des *nouveaux* chapitres, ouvrez *Paramètres ▸ Œuvre : <projet> ▸
+Structure* et réglez *Chapitres à plat*. Activé donne de simples éléments, désactivé des
+dossiers.
+
+## Changer le type d’un élément
+
+Faites un clic droit sur l’élément dans le classeur et ouvrez *Convertir en*.
+
+- Un dossier simple, un dossier de chapitre, une partie, un livre ou un dossier de notes
+  en n’importe lequel des quatre autres.
+- Un dossier de chapitre en chapitre à plat, et inversement.
+- Une scène en chapitre à plat ou en note, et inversement.
+
+Une conversion conserve le titre et le texte partout où le nouveau type a de la place.
+
+- Un dossier doit être vide avant de devenir un élément simple. Déplacez d’abord ce qu’il
+  contient, ou mettez-le à la corbeille.
+- Une conversion qui n’a nulle part où mettre un texte existant est refusée, et indique
+  ce qui serait perdu.
+
+## Où s’arrête un livre
+
+Un projet peut contenir plusieurs livres, l’un après l’autre dans le même classeur. Un
+livre court depuis son début jusqu’à la première de ces trois limites : un élément *Fin
+du livre*, le début du livre suivant, ou le bord de son classeur.
+
+## Le paratexte : dans le livre, pas dans l’histoire
+
+Un *Paratexte* appartient au livre mais pas à son histoire : une préface, une dédicace,
+une postface, un colophon. Il s’exporte là où vous le placez, et n’est jamais compté dans
+le nombre de mots.
+
+Un *Dossier de paratextes* garde les paratextes à l’écart du reste du classeur.
+
+Nouveau sur Skribisto ? [Premiers pas](:help-getting-started) explique comment ouvrir et
+enregistrer un projet.

@@ -1,0 +1,68 @@
+Skribisto keeps your work safe in two different ways, and it helps to know which one you need.
+
+A *backup* is a copy of the whole project, saved as a separate file. Use it when the project
+file itself goes missing or is damaged.
+
+*Version history* is the record of a single [scene, note or synopsis](:help-writing-model) as
+you changed it. Use it to get back an earlier wording, or something you deleted.
+
+## Backups
+
+Skribisto makes backups on its own: when you close the project, and every two hours while you
+work.
+
+To make one now, choose *Work ▸ Back up now*.
+
+To see what you already have, choose *Work ▸ Backups…*. The list shows every backup of this
+project, and you can open, reveal or delete any of them.
+
+### Where they go, and how many are kept
+
+Backups go to a folder Skribisto looks after. You can add folders of your own.
+
+Old backups are thinned out so they do not fill your disk. You choose how:
+
+- *Tiered* keeps roughly one an hour for a day, one a day for a week, one a week for a month,
+  and one a month after that.
+- *Keep last N* keeps that many, newest first.
+
+All of this lives in *Settings ▸ Backup & Sync ▸ Backup defaults*, and applies to every
+project.
+
+### Opening a backup
+
+Opening a backup never touches the project you are working on. It opens in a window of its
+own that you cannot save over, and a banner stays in view to remind you.
+
+From that window you can:
+
+- *Save As…* keeps the backup's contents as a separate project.
+- *Restore…* puts the backup back in place of the original.
+
+*Restore* is the only thing here that changes your real project. Before it does, it sets your
+current project aside as a backup of its own, so nothing is lost either way.
+
+## Version history
+
+Version history follows one scene, note or synopsis at a time. It comes from two places, and
+every entry tells you which one:
+
+- *The project's own history* saves the text every time you do.
+- *Backups* reach further back, however old they are.
+
+### Looking back, and putting text back
+
+The *Versions* panel sits on the right of the window, beside Comments and Format.
+
+*Restore this version* puts the older text back. Skribisto takes a safety backup first, and
+`Ctrl+Z` undoes it.
+
+Pin a version that came from a backup and clearing out old files will never delete it.
+
+### Something you deleted
+
+*Restore this version* only works on something that is still there. For a scene or note you
+deleted, choose *View ▸ Go back in time*.
+
+*Bring this back…* recreates the item with the text it had, wherever in the binder you want it.
+To undo that, use the button in the message that appears.
