@@ -10,6 +10,8 @@
 
 use super::*;
 
+use crate::shared::is_prose_bearing;
+
 /// The manuscript as a flowing page: the optional chapter title, the tag row, an
 /// optional compact synopsis box, and the prose — all scrolling together.
 ///
@@ -134,7 +136,14 @@ pub(super) fn manuscript_page(
             tab.open_doc.comment_binding_main(),
             tab.open_doc.footnote_binding_main(),
             tab.open_doc.images(),
-            tab.work_unique_id(),
+            // Only a page whose main field is the book's own prose counts what is
+            // typed into it. See `counts_toward_the_manuscript`: this page is built
+            // for four combinations and only three of them are the manuscript. The
+            // uid is read only once the answer is yes, because it is a store read
+            // and a Note tab has no use for it.
+            counts_toward_the_manuscript(tab)
+                .then(|| tab.work_unique_id())
+                .flatten(),
             // A trashed item's text is read-only. The banner above it is a
             // statement, not a guard: before this the content beneath it was built
             // by the same editable render path as any other tab.
@@ -236,4 +245,90 @@ pub(super) fn side_synopsis_pane(
     ZStack::new()
         .child(RectWidget::new().background(SurfaceRole::Main))
         .child(Padding::new(0.0, 12.0, 0.0, 12.0).child(Boxed::new(body)))
+}
+
+/// Whether what is typed on this page is the manuscript, and so whether the
+/// arrival tally should be armed for it.
+///
+/// [`manuscript_page`] is built for four combinations and only three of them are
+/// the book: `shared::prose` reaches it for `Item/Scene` and `Item/ChapterScene`,
+/// `item_paratext` for `Item/Paratext`, and the Note tab's segmented body for
+/// `Item/Note`. The last two carry `ParatextText` and `NoteText`, which the
+/// constraint matrix keeps out of `SceneText` deliberately, and which word
+/// counting therefore already excludes. Counting their keystrokes reports a note
+/// as prose in the Arrivals category, beside a word count that never saw it.
+///
+/// The predicate is `is_prose_bearing` rather than a list of sub_roles, for the
+/// reason the stream gives at its own call: the constraint matrix is the one
+/// place that decides what carries scene prose, and a second list here would be a
+/// second answer to drift from it.
+///
+/// Do not reach for `prose_kind_for` instead. It maps `Item/Paratext` to
+/// `ProseKind::Scene` on purpose, because a preface is typeset like the body it
+/// sits beside, so it answers a question about typography and this is a question
+/// about the manuscript.
+fn counts_toward_the_manuscript(tab: &ContentTab) -> bool {
+    is_prose_bearing(tab.role(), tab.sub_role())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use frontend::AppContext;
+    use frontend::common::entities::BinderItemRole;
+
+    use crate::app_ids::AppIds;
+    use crate::editors::test_support::test_typography;
+    use crate::settings::EditorViewMemory;
+    use crate::tabs::tab_for;
+
+    fn tab(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> ContentTab {
+        let ctx = Rc::new(AppContext::new());
+        tab_for(
+            &ctx,
+            1,
+            role,
+            sub_role,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            EditorViewMemory::detached(true),
+            &AppIds::new(),
+        )
+    }
+
+    /// The three combinations the constraint matrix gives a `SceneText` to are the
+    /// manuscript, in both of a chapter's encodings.
+    #[test]
+    fn a_page_showing_the_books_own_prose_counts_what_is_typed_into_it() {
+        for (role, sub_role) in [
+            (BinderItemRole::Item, BinderItemSubRole::Scene),
+            (BinderItemRole::Item, BinderItemSubRole::ChapterScene),
+            (BinderItemRole::Folder, BinderItemSubRole::ChapterScene),
+        ] {
+            assert!(
+                counts_toward_the_manuscript(&tab(&role, &sub_role)),
+                "{role:?}/{sub_role:?} carries the book's own prose and must be counted"
+            );
+        }
+    }
+
+    /// ⚠ The regression this exists for. Both of these reach [`manuscript_page`]
+    /// through the same shared body, and both used to arm the tally, so a writer
+    /// pasting research into a note had it signed into the record as manuscript
+    /// text that arrived by paste.
+    #[test]
+    fn a_note_or_a_paratext_page_does_not() {
+        for (role, sub_role) in [
+            (BinderItemRole::Item, BinderItemSubRole::Note),
+            (BinderItemRole::Item, BinderItemSubRole::Paratext),
+        ] {
+            assert!(
+                !counts_toward_the_manuscript(&tab(&role, &sub_role)),
+                "{role:?}/{sub_role:?} is not the manuscript and must not be counted"
+            );
+        }
+    }
 }
