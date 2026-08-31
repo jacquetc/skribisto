@@ -1,75 +1,79 @@
-Send your manuscript out for someone else to mark up in Word or LibreOffice, and bring their
-comments and edits back into the project instead of a disconnected second copy. This page
-covers the whole trip: what to send, how to send it, what your editor does, and how to read
-the result when it comes back.
+Send your manuscript out for someone to mark up in Word or LibreOffice, then bring their
+comments and edits back into the project instead of a second, disconnected copy.
 
-## What to send
+## Send a Word or LibreOffice file
 
-Export to Word (`.docx`) or OpenDocument Text (`.odt`). These are the only two formats that
-carry your comments out, and the only two that carry the invisible identifiers Skribisto uses
-to recognize its own rows and comments coming back. A Markdown or plain text export
-carries neither: an editor can still mark it up, but none of it comes back recognizable, and
-it carries no comments at all.
+Export with `Ctrl+Shift+E`, and under *Format* choose *Word* (`.docx`) or *LibreOffice*
+(`.odt`). Those two carry your comments out.
 
-## How to send it
+## Check the export style
 
-Every export style (Settings, under *Compile & Export*, then *Export Formats*) has a *Sending
-to an editor* group with two switches: *Include comments* and *Include round-trip markers*.
-Both default to on, in the built-in styles too, so a first DOCX or ODT export is already ready
-to return. Markers are invisible bookmarks, not ordinary custom attributes: a real file
-round-tripped through LibreOffice had its custom attributes stripped while its bookmarks
-survived. Built-in styles are read-only, so duplicate one first if you want a copy with either
-switch off, say for a file that will never come back.
+Each export style has a *Sending to an editor* page of its own:
 
-## What your editor does
+- *Include comments* writes your comment threads into the file.
+- *Include round-trip markers* writes the identifiers that let a returning file update this
+  project instead of landing beside it as a second copy.
 
-Nothing special. They open the file in Word or LibreOffice, add comments and edit the prose as
-usual, and send it back. Nothing an ordinary edit does to the text disturbs the identifiers
-riding along with it.
+To reach them, open *Settings ▸ Compile & Export ▸ Export Formats*. A built-in style cannot be
+edited, so press *Duplicate*, then *Edit* on your copy, then *Sending to an editor*.
 
-## Bringing it back
+## What your reader does
 
-*Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…* opens one wizard: *Files*, *Review*,
-*Destination*, *Merge*. See [Import documents](:help-import-documents) for the first three
-steps. The round trip itself happens on the last.
+Nothing special. They comment and edit in Word or LibreOffice as usual, then send the file
+back.
+
+## Bringing the file back
+
+*Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…* opens the import wizard. See
+[Import documents](:help-import-documents) for the steps before *Merge*. The round trip
+happens on *Merge*.
+
+Import one returning copy at a time: matching lines up a single copy against your project, so
+several at once would add a second book rather than merge one.
 
 ## Reading the Merge step
 
-Skribisto pairs each row in the file against the rows inside whichever part of the binder you
-chose as Destination: first by its round-trip mark, if it has one; failing that, by matching
-type and a normalized title. There is deliberately no pairing by prose similarity, so an
-unmatched row shows as *New* rather than being guessed onto the wrong chapter.
+Skribisto pairs each item in the file with the items inside the Destination you chose: first by
+its round-trip marker, then by type and title.
 
-With a mark to compare against, a paired row's Status says who changed what: *Same*, *They
-edited it*, *You edited it*, or *Both edited it*. Paired by title alone, it can only say
-whether the two texts agree (*Same*) or not (*Differs*), never who is responsible. A row the
-file relocated shows as *Moved* instead. The Action column offers *Comments only* (their
-remarks, your wording), *Take this version*, *Keep mine*, *Add as new*, or *Skip*, preselected
-to whichever is safest: taking the import when they edited it, keeping yours otherwise.
-*Compare* shows both versions side by side before you decide. A row your project has that the
-file no longer mentions shows as *Not in this file*, with only *Keep mine* offered: a missing
-chapter is not Skribisto's cue to delete it. Nothing to line up (an empty destination, say)
-collapses this step to one sentence instead of a table.
+The *Status* column says what happened:
+
+- *Same*, *They edited it*, *You edited it* or *Both edited it*, when the file carries the
+  original wording to compare both sides against.
+- *Same* or *Differs*, when it does not.
+- *New* for an item only the file has, *Not in this file* for one only you have.
+- *Moved* takes the place of those when the file puts a paired item somewhere else, so use
+  *Compare* to see whether the text changed as well.
+
+If your reader moved a chapter, move it yourself in the outline.
+
+*What to do* offers *Comments only* (their notes, your wording), *Take this version*, *Keep
+mine*, *Add as new* and *Skip*. The safest is preselected, and some statuses narrow the list:
+
+- *New* offers *Add as new* or *Skip*.
+- *Not in this file* offers *Keep mine* alone: a chapter missing from their copy is no reason
+  to delete yours.
+
+## Taking part of a rewrite
+
+*Compare* shows one item's two versions as one marked-up text: struck through is what they
+removed, underlined what they added. Below it sits a tick box per changed paragraph, each
+saying what it does: *Take this new paragraph*, *Take this rewrite* or *Drop this paragraph*.
+Tick the ones you accept, and every paragraph you leave keeps your wording.
+
+Ticks count under *Comments only* and *Take this version*. To keep none of their wording,
+choose *Keep mine*.
 
 ## Tracked changes
 
-A Word or OpenDocument file that comes back mid-revision arrives with its changes already
-accepted: insertions kept, deletions dropped. That is the version your editor left, and the
-Review step says so, naming who made them when the file records it.
+A file that comes back mid-revision arrives with its changes already accepted: insertions kept,
+deletions dropped. The *Review* step reports it, naming who made the changes when the file
+records it.
 
-Accepting or rejecting them is the Merge step's job, not a separate one. *Compare* puts your
-wording beside theirs paragraph by paragraph, and a paragraph you do not tick keeps yours
-exactly as it was. That is a coarser grain than Word's per-change buttons, and deliberately:
-the question a writer answers is "whose sentence is this", which is a paragraph-sized
-question. There is no way to take one editor's changes and refuse another's within the same
-paragraph.
+Accepting or rejecting them is what *Compare* is for, a paragraph at a time: you cannot take
+one person's edit and refuse another's inside the same paragraph.
 
-## Limits worth knowing
+## Limits
 
-Recognition depends on marks Skribisto itself wrote. A file from another tool, or one exported
-with markers off, falls back to title matching, which will not recognize a renamed chapter.
-Reimporting the same file twice creates no duplicate rows or comments: the safe default is
-preselected either way.
-
-See [Export](:help-export) for choosing a style and a format, and [Comments](:help-comments)
-for the notes that make this whole trip worth taking.
+- A file from another tool, or one exported with markers off, falls back to title matching,
+  which cannot recognize a renamed chapter.

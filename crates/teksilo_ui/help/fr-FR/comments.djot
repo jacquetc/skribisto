@@ -1,84 +1,85 @@
-Les commentaires sont des notes en marge du texte d’une scène : une remarque attachée à
-une expression, une phrase ou tout un paragraphe, qui reste en place pendant que vous
-continuez à écrire.
+Un commentaire est une note dans la marge, attachée à une expression, une phrase ou tout un
+paragraphe. Il suit les mots pendant que vous continuez à écrire.
 
 ## Ajouter un commentaire
 
-Sélectionnez le texte à commenter et appuyez sur `Ctrl+Alt+M`, ou utilisez *Format ▸
-Ajouter un commentaire*. Pour commenter tout un paragraphe sans rien sélectionner, placez
-le curseur dedans et appuyez sur `Ctrl+Alt+Maj+M`, ou utilisez *Format ▸ Commenter ce
-paragraphe*. Ces deux commandes ne sont actives que lorsqu’une scène est active dans l’éditeur.
+Depuis le texte que vous écrivez :
 
-Un nouveau commentaire s’ouvre avec une zone de texte vide dans la marge. Il s’enregistre
-au fur et à mesure que vous tapez, il n’y a donc pas de bouton d’enregistrement. Si vous
-n’avez pas encore défini de nom pour vous-même, une notification vous renvoie vers
-*Paramètres ▸ Utilisateur* afin que le commentaire puisse être signé.
+- Sélectionnez les mots à commenter et appuyez sur `Ctrl+Alt+M`.
+- Placez le curseur dans un paragraphe et appuyez sur `Ctrl+Alt+Maj+M` pour commenter tout le
+  paragraphe.
+- Faites un clic droit dans le texte pour *Commenter ce paragraphe*. *Ajouter un commentaire*
+  s’y ajoute dès que vous avez sélectionné quelque chose.
 
-## Répondre et résoudre
+Les deux mêmes commandes sont dans le menu *Format*.
 
-N’importe qui peut ajouter une réponse à un fil de commentaire : cliquez sur *Répondre*
-sous la note d’origine et tapez votre texte. Les réponses forment une liste à plat sous
-le commentaire d’origine, dans leur ordre d’écriture ; il n’y a pas d’imbrication.
+Une nouvelle fiche s’ouvre dans la marge, avec une zone vide et le curseur déjà dedans.
 
-Une fois qu’un commentaire a été traité, marquez-le comme *Résoudre*. Un fil résolu reste
-visible (filtré séparément, voir ci-dessous), et vous pouvez le *Rouvrir* plus tard si le
-problème n’était pas réellement réglé. *Supprimer* efface un commentaire ; une réponse a
-son propre bouton *Supprimer la réponse* à côté d’elle.
+## Signer vos commentaires
 
-## Où retrouver les commentaires
+Si aucun nom n’est défini pour vous sur cet ordinateur, un message signale que vos commentaires
+ne sont pas signés. Son bouton *Définir votre nom* ouvre *Paramètres ▸ Utilisateur*.
 
-Les mêmes fils apparaissent à trois endroits, qui lisent tous les mêmes données :
+## Répondre, résoudre, supprimer
 
-- La *marge de l’éditeur*, à côté de la scène que vous écrivez, qui n’affiche que les
-  commentaires ancrés à ce qui est visible à l’écran.
-- Le panneau *Commentaires* (à gauche de la fenêtre), qui liste tous les commentaires
-  du projet entier.
-- Le panneau *Ce document* (à droite), qui ne liste que les commentaires du document
-  actuellement ouvert.
+Chaque fiche dans la marge porte un bouton en chevron. Derrière :
 
-Les deux panneaux filtrent par Tous, Ouverts, Résolus ou Orphelins, et trient de trois
-façons : par ordre du document, du plus récent au plus ancien, ou groupés par lecteur.
-*Outils ▸ Commentaires* n’affiche ou ne masque que les repères en marge et leur
-présentation dans l’éditeur : cela ne touche à aucun des deux panneaux, qui continuent de
-lister tous les fils sans exception.
+- *Répondre* ajoute un tour au fil.
+- *Résoudre* marque le point comme réglé. La fiche quitte la marge et le commentaire reste dans
+  les panneaux.
+- *Supprimer* efface un commentaire, *Supprimer la réponse* une seule réponse, et *Supprimer
+  tous les commentaires ici* tout un lot d’un coup. Un bref message suit, avec un bouton
+  *Annuler*.
 
-*Groupés par lecteur* sert à un manuscrit qui revient de plusieurs personnes à la fois.
-Leurs remarques arrivent entremêlées par position, ce qui se lit comme quatre voix qui
-parlent en même temps ; le groupement réunit les notes de chaque lecteur, dans l’ordre où
-il les a écrites, avec son nom sur la gauche.
+Un clic droit sur une entrée de l’un des panneaux permet d’agir dessus sur place. C’est ainsi
+que vous rouvrez un commentaire résolu : sa fiche a quitté la marge.
 
-Une fiche indique aussi combien de lecteurs portent sur le même passage (« 3 lecteurs »)
-dès qu’il y en a plus d’un. C’est le nombre à traiter en premier : trois personnes qui
-butent sur le même paragraphe, c’est une seule chose à corriger, et dans l’ordre du
-document cela ressemble à trois problèmes distincts posés côte à côte. Deux remarques
-portent sur le même passage quand leurs sélections partagent réellement des mots ; une
-fiche n’affiche rien quand seul son propre auteur s’y trouve.
+Chaque commentaire et chaque réponse se modifie sur place. Le gras et l’italique sont dans le
+menu contextuel de la zone où vous tapez.
 
-## Comment un commentaire garde sa position
+## Où apparaissent les commentaires
 
-Un commentaire ne mémorise pas une position brute dans le texte. Il mémorise plutôt les
-mots auxquels il était attaché, un peu du texte qui les entoure de chaque côté, et une
-indication approximative de l’endroit où cela se trouvait. Rouvrir le projet, ou modifier
-le texte autour d’un commentaire, fait que Skribisto recherche à nouveau ce passage cité
-plutôt que de faire confiance à un chiffre que la modification aurait rendu sans
-signification. C’est aussi pour cela qu’un commentaire survit à un enregistrement puis un
-rechargement : rien d’autre dans le texte (identifiants de blocs, mises en forme,
-identifiants d’entités) n’est garanti de revenir de la même façon la prochaine fois ; seul
-le texte lui-même le fait de manière fiable.
+Les mêmes fils apparaissent à plusieurs endroits :
 
-Il arrive qu’un commentaire perde son ancrage. Si les mots exacts auxquels il était
-attaché sont supprimés ou réécrits au point d’être méconnaissables, Skribisto le marque
-*Texte introuvable* plutôt que de l’attacher en silence à la mauvaise phrase. Un
-commentaire arrivé par un format d’import sans véritable position dans le texte (un
-titre, par exemple) s’affiche à la place comme *Aucune position dans le texte*. Dans les
-deux cas, le commentaire n’est jamais supprimé : utilisez le filtre *Orphelins* dans l’un
-ou l’autre panneau pour le retrouver.
+- Dans la marge, à côté du texte que vous écrivez. Une expression commentée est teintée, un
+  commentaire de paragraphe reçoit un crochet, et un trait pointillé relie chaque marque à sa
+  fiche.
+- Dans le panneau *Commentaires*, à gauche de la fenêtre, qui liste les commentaires du projet.
+- Dans le panneau *Ce document*, à droite, qui liste les commentaires de l’élément que vous
+  modifiez.
 
-## Les commentaires en DOCX et ODT
+Cliquer sur un commentaire dans l’un des panneaux ouvre son élément. Si le commentaire a encore
+son texte, le curseur se pose sur les mots concernés. *Outils ▸ Commentaires* affiche ou masque
+les marques et la marge.
 
-Les commentaires voyagent avec votre manuscrit lorsque vous l’envoyez pour une relecture
-extérieure puis récupérez le fichier. Un style d’export peut choisir d’*Inclure les
-commentaires*, associé aux *marqueurs d’aller-retour* pour qu’un fichier de retour mette
-à jour ce projet au lieu d’arriver comme une copie séparée. Voir [l’aller-retour](:help-round-trip)
-pour savoir comment l’envoi d’une scène puis sa réimportation fonctionnent, y compris ce
-qu’il advient des commentaires et des réponses en chemin.
+## Filtrer et trier
+
+Les deux panneaux partagent un seul jeu de filtres : *Tous*, *Ouverts*, *Résolus* et
+*Orphelins*. Changez le filtre dans l’un, l’autre suit.
+
+À côté, un bouton fait défiler l’ordre, partagé de la même façon : *Dans l’ordre du document*,
+*Les plus récents d’abord*, *Groupés par lecteur*.
+
+## Les notes de plusieurs lecteurs
+
+*Groupés par lecteur* sert à un manuscrit revenu de plusieurs personnes. Le groupement réunit
+les notes de chaque lecteur, celles de chacun restant dans l’ordre du document, avec le nom sur
+la gauche.
+
+Dans l’un ou l’autre panneau, un commentaire indique aussi combien de lecteurs ont commenté le
+même passage (« 3 lecteurs ») quand il y en a plus d’un.
+
+## Quand un commentaire perd son texte
+
+Un commentaire mémorise les mots auxquels il était attaché, pas une position dans le fichier.
+
+Si ces mots sont supprimés ou réécrits au point d’être méconnaissables, le commentaire est
+marqué *Texte introuvable* au lieu d’être attaché à la mauvaise phrase. Le filtre *Orphelins*
+les retrouve.
+
+## Envoyer les commentaires et les récupérer
+
+Les fichiers Word et LibreOffice emportent vos commentaires et ramènent ceux de votre lecteur.
+Le style d’export propose pour cela *Inclure les commentaires* et *Inclure les marqueurs
+d’aller-retour*. Voir [l’aller-retour](:help-round-trip) pour envoyer un manuscrit et lire ce
+qui revient.

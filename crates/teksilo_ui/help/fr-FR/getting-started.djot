@@ -1,27 +1,64 @@
-Un projet Skribisto est un simple fichier `.skrib` (ou un dossier, si vous avez choisi cette option lors de sa création) qui contient tout ce que vous écrivez : la structure du manuscrit, le texte et le synopsis de chaque scène, ainsi que les paramètres propres au projet. Vous ouvrez un projet depuis le Lanceur, et c’est aussi depuis le Lanceur que vous en commencez un nouveau.
+Un projet Skribisto contient tout ce que vous écrivez : la structure du manuscrit, le texte et
+le synopsis de chaque scène, et les paramètres propres au projet. Le Lanceur ouvre un projet,
+et en commence un nouveau.
 
 ## Le Lanceur
 
-La barre latérale du Lanceur comporte quatre sections : *Œuvres*, *Exemples*, *Apprendre* et *À propos*. C’est dans *Œuvres* que se passent les dix premières minutes.
+La barre latérale comporte quatre sections : *Œuvres*, *Exemples*, *Apprendre* et *À propos*.
+En haut de la section *Œuvres* :
 
-En haut de la section *Œuvres* se trouvent un champ *Rechercher des œuvres*, un bouton *Ouvrir*, un bouton *Depuis des documents…* et un bouton *Nouvelle œuvre*. *Ouvrir* affiche un sélecteur de fichiers natif pour un fichier `.skrib` existant. *Depuis des documents…* démarre un projet à partir d’un dossier de fichiers que vous possédez déjà (voir [l’importation de documents](:help-import-documents)). *Nouvelle œuvre* ouvre la boîte de dialogue Nouvelle œuvre : un nom, un auteur facultatif, l’enregistrement en fichier unique ou en dossier, l’emplacement, une langue par défaut, et un modèle parmi *Aucun*, *Roman vide*, *Roman court*, *Roman* ou *Carnet*, chacun posant une structure de départ différente. *Créer l’œuvre* ouvre aussitôt le résultat.
+- *Rechercher des œuvres* filtre la liste au fur et à mesure que vous tapez.
+- *Ouvrir* demande un fichier `.skrib` existant.
+- *Créer depuis…* démarre un projet à partir de ce que vous avez déjà : *Documents (Markdown,
+  Word, ODT)…*, *Plume Creator (.plume)…* ou *Manuskript (.msk)…*. Voir
+  [l’importation de documents](:help-import-documents) et
+  [l’importation de projets](:help-import-projects).
+- *Nouvelle œuvre* ouvre l’assistant Nouvelle œuvre.
 
-En dessous se trouve *Œuvres récentes* : tous les projets que vous avez déjà ouverts, filtrés en direct à mesure que vous tapez dans le champ de recherche. La liste est vide la première fois que vous lancez Skribisto ; ouvrez ou créez votre premier projet à partir d’ici.
+En dessous, *Œuvres récentes* liste les projets que vous avez ouverts récemment.
 
-*Exemples* liste quelques projets d’exemple fournis avec l’application. En ouvrir un vous donne une copie de travail privée : vous pouvez tout regarder, tout modifier, sans jamais abîmer l’original.
+## Commencer un nouveau projet
 
-## Ce que contient un projet
+L’assistant compte trois étapes. *Suivant* et *Précédent* passent de l’une à l’autre ;
+*Créer l’œuvre* crée le projet et l’ouvre.
 
-L’écriture d’un projet vit dans son *Classeur* : une liste ordonnée d’éléments qui peuvent être indentés, tels que des parties, des chapitres, des scènes et des notes. Rien dans cet ordre n’est figé ; vous pouvez ajouter, renommer, indenter et réorganiser les éléments à mesure que le livre prend forme. Ce que chaque élément a le droit d’être, et ce qu’il peut contenir, suit un petit ensemble de règles ; cette page se limite à vous aider à vous repérer.
+- *Détails* : le *Nom de l’œuvre*, un *Auteur* facultatif, un *Format* et l’*Emplacement* où
+  enregistrer. *Fichier unique* est une archive `.skrib`, *Dossier* un dossier contenant chaque
+  texte et chaque ressource.
+- *Langue et structure* : la *Langue par défaut* des nouveaux textes et de la correction
+  orthographique, et *Compter en* mots ou en caractères. La *Structure du livre* pose les pages
+  liminaires et les annexes.
+- *Modèle* : *Aucun*, *Roman vide*, *Roman court*, *Roman*, *Roman en parties* ou *Carnet*, du
+  classeur vide jusqu’à trois parties et vingt-quatre chapitres. *Chapitres à plat* fait de
+  chaque chapitre un texte unique, sans scène en dessous.
 
-## Le panneau Classeur et l’ouverture d’un élément
+## Exemples
 
-Le panneau Classeur, sur le côté gauche de la fenêtre, affiche cette liste sous forme d’arborescence. Appuyez sur `F9`, ou utilisez *Affichage ▸ Plan*, pour l’afficher ou le masquer. Cliquer sur un élément (ou appuyer sur `Entrée` lorsqu’un élément est en surbrillance) l’ouvre dans l’éditeur.
+*Exemples* liste les projets d’exemple fournis avec Skribisto.
 
-Chaque élément d’écriture, une scène ou une note, montre deux choses ensemble : son texte principal et son *Synopsis*, un court résumé que vous gardez à côté. Les deux sont visibles par défaut, et c’est à vous de les remplir quand vous le souhaitez ; un synopsis vide ne vous empêche jamais d’écrire la scène elle-même, et inversement.
+## Le panneau Classeur
+
+Le panneau *Classeur* se trouve à gauche de la fenêtre et affiche le projet sous forme
+d’arborescence : parties, chapitres, scènes et notes. Appuyez sur `F9`, ou utilisez
+*Affichage ▸ Plan*, pour l’afficher ou le masquer.
+
+- Cliquez sur un élément, ou appuyez sur `Entrée` quand il est en surbrillance, pour l’ouvrir
+  dans l’éditeur.
+- Appuyez sur `Ctrl+Entrée` pour l’ouvrir dans l’autre volet d’édition.
+- Faites un clic droit sur un élément pour *Renommer*, *Dupliquer*, *Convertir en* et
+  *Mettre à la corbeille*.
+
+## Texte et synopsis
+
+Chaque scène et chaque note contient deux textes : son texte principal et son *Synopsis*, un
+court résumé gardé à côté. Les deux sont visibles pendant que vous écrivez, sauf si vous
+masquez le synopsis dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*.
 
 ## Ajouter des éléments
 
-L’en-tête du panneau Classeur porte un bouton *＋* suivi du type d’élément actuellement recommandé, par exemple « ＋ Scène » lorsqu’une scène est sélectionnée. Son menu déroulant liste tout ce que vous pourriez ajouter d’autre à cet endroit, chapitres, notes, dossiers et le reste, chacun placé là où cela a du sens compte tenu de ce que vous avez sélectionné. Il n’existe pas de « Nouvel élément » unique ; ce que vous pouvez créer, et où cela atterrit, dépend de l’endroit où vous vous trouvez dans l’arborescence.
+L’en-tête du panneau *Classeur* porte un bouton de création qui nomme le type recommandé là où
+vous êtes, « ＋ Scène » lorsqu’une scène est sélectionnée. Son menu déroulant liste tout ce que
+vous pourriez ajouter d’autre : chapitres, notes, dossiers et le reste.
 
-Cela suffit pour commencer à écrire. Pour savoir comment les éléments d’un livre s’articulent entre eux, des chapitres et des scènes jusqu’aux notes et au paratexte, voir [le modèle d’écriture](:help-writing-model).
+Cela suffit pour commencer à écrire. Pour savoir comment les éléments d’un livre s’articulent,
+voir [le modèle d’écriture](:help-writing-model).

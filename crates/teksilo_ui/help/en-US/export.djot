@@ -1,23 +1,68 @@
 ## Opening the Export dialog
 
-Press `Ctrl+Shift+E`, or open the *Work* menu's *Export* submenu. The submenu lists a quick entry for whatever you currently have open (Export Book, Export Part, Export Chapter, Export Scene, Export Note, Export Folder) plus *Choose…* for a set of items you pick yourself. A quick entry opens the dialog already scoped to that container; *Choose…*, and `Ctrl+Shift+E` itself, open it straight into a checkbox tree of your whole binder. A matching Export button also sits in the title bar: its main area names whatever you are currently focused on, and its dropdown lists the containers around it.
+Press `Ctrl+Shift+E`, or open *Work ▸ Export*. The submenu names what you have open:
+*Export Book*, *Export Part*, *Export Chapter*, *Export Scene*, *Export Note*,
+*Export Folder*. Each opens the dialog set to that container. *Choose…*, and
+`Ctrl+Shift+E` itself, open it on a checkbox tree of your whole binder instead.
 
 ## Choosing what to export
 
-The dialog's *What to export* column offers two states: the scope you arrived with, and *Custom selection*. Switch to Custom selection to check any combination of items in a tree of the whole binder. Checking a chapter checks its scenes; a partly checked chapter shows a dash instead of a full check, and a count of how many items are checked sits below the tree. Items whose Inspector *Include in exports* toggle is off are hidden here by default; a *Show non-exportable* toggle reveals them, and checking one there is an override for this one export only.
+The *What to export* column offers the container you arrived with, or *Custom selection*:
+a checkbox tree of your whole binder.
 
-## Format, style, and destination
+- The tree opens with your prose already checked. Uncheck what you want left out.
+- Checking a chapter checks its scenes. A partly checked chapter shows a dash.
+- Items whose Inspector *Include in exports* switch is off are hidden.
+  *Show non-exportable* reveals them, and checking one there counts for this export only.
 
-*Format* offers nine choices: Word (`.docx`), LibreOffice (`.odt`), PDF, EPUB, HTML, Markdown, Djot, Text, and LaTeX. PDF export is produced by a separate, optional part of the application. If the copy of Skribisto you are running was not built with it, PDF does not appear in the list at all, rather than appearing and then failing.
+## Picking a format
 
-*Style preset* is a saved bundle of choices that shapes the output no matter which format you pick: how chapter and part headings look, how scene breaks are marked, line spacing, justification, and whether notes, synopses, scene titles, epigraphs, paratexts, and footnotes are included (and how footnotes are numbered). A style applies wherever the chosen format can honor a given choice; a plain-text format such as Markdown or LaTeX ignores the typography settings that Word, LibreOffice, and PDF use. Skribisto ships several built-in styles. To make your own, open Settings ▸ Compile & Export ▸ Export Formats, duplicate a built-in style (a built-in itself cannot be edited), and adjust the copy.
+*Format* offers:
 
-*Destination* is the file you are writing to. Pick a folder and a name; if a file already exists there, Skribisto asks before replacing it.
+- *Word* (`.docx`) and *LibreOffice* (`.odt`), which carry comments
+- *PDF* and *EPUB*, for a finished book
+- *HTML*, *Markdown*, *Djot*, *Text* and *LaTeX*, all plain files
+
+## Choosing a style
+
+*Style* is a saved bundle of choices that shapes the output whichever format you pick:
+
+- chapter and part headings, numbered or not
+- scene breaks, line spacing and justification
+- which of notes, synopses, scene titles, epigraphs and paratexts go in
+- footnotes: whether they go in, and how they are numbered
+- whether your comments go out with the file
+- where a new page starts
+
+A style applies wherever the format can honour it.
+
+## Making a style of your own
+
+Built-in styles cannot be edited. To make your own, open
+*Settings ▸ Compile & Export ▸ Export Formats* and choose *Duplicate* on a built-in. The
+copy appears in the same list, after the built-in ones, and *Edit* opens it.
+
+## Where the file goes
+
+*Destination* is the file to write. Type a path, or pick one with the folder button beside
+it. Changing the format changes the extension for you. If that file already exists,
+Skribisto asks before replacing it.
 
 ## Running the export
 
-Click *Export* to start. Export always runs as a background operation, with a progress toast you can cancel. When it finishes, the toast offers to open the file or show it in its folder. If the export fails, the toast names the problem, with the full detail behind a *Details* link.
+Click *Export*.
 
-## Comments and getting a document back
+The export runs in the background, and a message follows it:
 
-Word and LibreOffice are the two formats that carry your comment threads out and can bring them back in with the comments intact: exporting to `.docx` or `.odt` writes each comment into the file, anchored to its passage, and re-importing that same file returns the comments to their place. Markdown can also be brought back in through [importing documents](:help-import-documents), but without any comments. Every other format exports one-way only. See [the round trip](:help-round-trip) for how DOCX and ODT find their way back to the right passage.
+- While it runs, a *Cancel* button stops it.
+- When the file lands, the message names it and offers *Open* and *Show in folder*.
+
+## Getting a document back
+
+- With the style's *Include comments* on, `.docx` and `.odt` carry each comment out
+  anchored to its passage.
+- Re-importing that file returns the comments to their places. That relies on the style's
+  *Include round-trip markers*, which starts on. See [the round trip](:help-round-trip) for how
+  that works.
+- Markdown and plain text come back through [importing documents](:help-import-documents),
+  but with no comments.

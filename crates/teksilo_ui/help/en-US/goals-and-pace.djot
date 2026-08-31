@@ -1,25 +1,69 @@
 ## Setting a target
 
-Almost anything in the binder can carry a word or character target: a scene, a chapter, a part, or the whole book. Select it and look at the Inspector: a *Target* field near the top takes a number, shown as *No target* when it is left at zero.
+Select an item in the binder and open the Inspector. The *Target* field, further down the panel,
+takes a number. It reads *No target* while it is zero.
 
-A target is its own number, never a sum of what is inside it. Setting a target on a chapter never changes its book's target, and a book's target is never worked out by adding up its chapters. A container's own page states, on a separate line, what the targets set inside it add up to: a figure to compare against its own number, never a total the app substitutes for it.
+A target is its own number, not a sum of what is inside it.
 
-Progress is measured against the manuscript: prose in [scenes and chapters](:help-writing-model) that would actually be exported. A note or a paratext is never part of it. Anything in the trash drops out too, and so does any row switched off with *Include in exports* in the Inspector, next to a subtree's *Apply to children* button; an excluded row's own length still shows, but it counts toward no total.
+## Where you stand
+
+Progress against a target follows the item around. The Inspector shows it under the *Target*
+field. The status bar shows it beside the live count, and the *Overview* table gives it a
+*Target* column.
+
+## What counts toward a target
+
+Progress is measured on the manuscript itself: the prose of your
+[scenes and chapters](:help-writing-model). A synopsis, a note or a paratext stays out of the
+count, and so does anything in the trash.
+
+Switching an item off with *Include in exports* in the Inspector takes it out too. Exclusion is
+not inherited: use *Apply to children* to push the setting down a whole branch.
 
 ## Words or characters
 
-Whether a project counts in words or characters is one project-wide choice, not a per-item setting: New Work asks for it up front (*Count in*), and you can change it later in Settings ▸ Work ▸ Structure, under *Targets*. Switching does not convert anything: every target and milestone keeps its number, only the unit it is read in changes, so a 50,000-word target reads as 50,000 characters the moment you switch, and switching back restores the original reading.
+One choice covers the whole project. *New Work* asks for it up front, under *Count in*. You can
+change it later in *Settings ▸ Work: <project> ▸ Structure*, under *Targets*.
 
-The Overview table's *Target* column, beside *Words* and *Total*, lets you scan every target in an outline at a glance.
+Each item keeps two separate numbers: a word target and a character target.
 
 ## Sharing a target out
 
-A book's or a part's own page offers a *Distribute…* button, enabled once it has a target. It previews splitting that target across its immediate children (by length, by pieces, or evenly), showing the sum against the parent's own target before anything is written. By default it fills only children with no target yet, unless you turn on *Replace targets that are already set*. Nothing is committed until you confirm, and the whole distribution is one undo step; afterward the numbers are ordinary targets, free to edit and drift apart again.
+A book, a part or a chapter folder has a *Distribute…* button on its own page. It becomes active
+once that container has a target of its own. It previews sharing that target out among the
+parts, chapters and scenes directly inside it. Choose how the shares are weighted under
+*Share out*:
 
-## Pace planning
+- *By length*, from what is already written under each;
+- *By pieces*;
+- *Evenly*.
 
-A book's *Pace* segment turns its target into a daily figure. Its *Word goal* field is the same number as the book's own Target in the Inspector, just shown in one more place. Add a *Deadline* and pick which weekdays you write on, and Skribisto works out how many words each remaining writing day needs, alongside the days left, your streak, and whether you are running ahead of or behind an even pace. Holidays you add pause the count across their span. Progress charts fill in once a day's count is recorded, which happens on save, so a never-saved project has nothing to plot yet.
+Children that already carry a target keep it, and the rest share out what is left. Turn on
+*Replace targets that are already set* to work every share out afresh.
 
-Milestones mark a date along the way, of two kinds: add one in the Pace panel for a word count the whole book should reach by then, or set a milestone date on a Part or Chapter in the Inspector, which reads that item's own Target live, so editing the target updates the milestone. It shows *No target* if that item's target is unset, and *Target deleted* if the item itself is gone.
+## Planning a pace
 
-Turning *Pace active* off stops a book's plan from appearing in the "Where the book stands" summary shown when the project opens, without deleting the plan.
+A book has a *Pace* segment that turns its target into a daily figure. With no plan yet, *Start
+planning* sets a deadline ninety days out.
+
+Fill in *Word goal* and *Deadline*, then pick the weekdays you write on. Skribisto works out
+what each remaining writing day needs, how many are left, and whether you are ahead of or
+behind pace.
+
+Spans added under *Holidays* are skipped.
+
+Pace and milestones count in words, whatever unit the project uses.
+
+## Milestones
+
+A milestone marks a date along the way.
+
+- Under *Milestones* in the planner, add one for the whole book: a word count it should reach
+  by that date.
+- On a part or a chapter inside a book, set a *Milestone date* in the Inspector. It reads that
+  item's own word target, and follows it.
+
+## When the project opens
+
+A book appears in the *Where the book stands* card once its plan is active. *Do not show this
+when opening* stops it; *Work ▸ Writing plan…* reopens it.

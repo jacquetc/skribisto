@@ -1,69 +1,83 @@
-Bringing writing you did not create in Skribisto into a project, for the first time, uses the
-*Import documents* wizard. If instead you are bringing back a file you sent out of Skribisto for
-someone else to mark up, that is a different question with a more exact answer: see
-[the round trip](:help-round-trip). And if what you have is a whole project made in
-another writing application, that is a different job again: see
+The *Import documents* wizard brings writing you did not create in Skribisto into a project. A
+file you sent out for someone to mark up comes back through [the round trip](:help-round-trip).
+A whole project made in another application arrives through
 [bringing a whole project across](:help-import-projects).
 
-## Starting it
+## Opening the wizard
 
-Open *Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…*. The wizard reads four formats:
-Markdown (`.md`), Word (`.docx`), OpenDocument (`.odt`), and plain text (`.txt`). Drop one or more
-files onto it, or use *Browse…* to pick them; reorder or remove any of them before moving on.
-Nothing is written to your project until the last step.
+Choose *Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…*. To open it with a destination
+already chosen, right-click an item in the binder and choose *Import here…*.
 
-## Four steps
+Nothing is written to your project until you press *Import* on the last step.
 
-*Files* collects what you are bringing in. *Review* is where the wizard shows you the tree it
-would build, before any of it exists: each row's inferred type, the file it came from, its word
-count, its scene breaks, and any comments and footnotes it carries. Retype a row with its *Type* column, or
-untick its *Import* checkbox to leave it (and everything under it) out. A *Heading levels* control
-above the tree lets you change what a whole heading depth means at once, Heading 1 as Book,
-Heading 2 as Chapter, and so on, rather than retyping row by row; if your files are a set of
-chapters with no book heading at all, *Add top level* inserts one above everything the wizard
-found.
+## Choosing the files
 
-*Destination* is where the new rows land. Choose a binder or an item in the live tree: the import
-goes inside what you chose if it is a folder, or right after it if it is a scene. *Merge* only has
-something to show when a row in the file matches what your project already holds; on a first
-import into an empty spot it says so in one line and there is nothing to decide there. Finishing
-runs the *Import* button itself: everything is written as one step, and a toast then says how many
-items arrived, with an *Undo* action that stays up for a few seconds (the underlying undo entry
-lasts far longer, reachable afterward through the ordinary undo history). If the write is refused
-for any reason, the wizard stays open with your plan intact rather than reporting a finished import
-that never happened.
+Drop files onto the *Files* page, or press *Browse…* to pick them. These formats are read:
 
-## How the tree is built
+- Markdown (`.md`)
+- Word (`.docx`)
+- OpenDocument (`.odt`)
+- plain text (`.txt`)
 
-The importer reads a file's headings and turns each one into a row. How deep a heading sits
-decides whether it becomes a Book, Part, Chapter, or Scene, stepping down that ladder and stopping
-at Scene: nothing sits inside a scene, so nothing deeper than the ladder's floor invents a phantom
-level. See [the writing model](:help-writing-model) for what each of those is. A row can also be
-retyped to Note or Paratext, off that structural ladder but still an available choice for any
-heading.
+Reorder or remove any of them, then press *Next*.
 
-A file with no headings at all becomes a single row holding all of its text. This is not treated
-as a mistake, only noted for your information: it is exactly what a folder of one-scene-per-file
-manuscripts looks like. If one file cannot be read, or has an extension nothing recognizes, only
-that file is skipped and reported; the rest of the batch still comes in.
+## Reviewing the tree
 
-## Comments
+*Review* shows the tree the wizard would build, before any of it exists. Its columns say what
+each item is and what it brings:
 
-A Word or OpenDocument file's comments come in too. Each one becomes a real Skribisto comment,
-anchored to the exact words it was attached to, carrying its author and (from a `.docx`) their
-initials, along with any replies underneath it. See [comments](:help-comments) for how they behave
-once they are part of your project.
+- the type it was given, and the file it came from
+- its word count and its scene breaks
+- how many comments and footnotes it carries
+- the epigraph heading it, when the file had one
+- what becomes of text the item's own type cannot hold
 
-## Footnotes
+Change an item's type in its *Type* column. Untick *Import* to leave that item, and everything
+under it, out.
 
-A Word or OpenDocument file's footnotes come in too, each one becoming a real Skribisto footnote
-with its own text, referenced from the same place in the prose it was referenced from. The
-numbers are not carried and do not need to be: Skribisto numbers a note from where it sits in the
-manuscript, so an imported note is numbered alongside the ones already there.
+## Setting whole heading levels
 
-A note whose reference the wizard cannot place is reported rather than invented. The ordinary
-case is a footnote on a chapter *title*: a title is a line of text, not a passage, so there is
-nothing in it for a note to hang off.
+*Heading levels*, above the tree, says what a whole heading depth becomes. The depths your
+files use are taken in order down Book, Part, Chapter, Scene, starting at Book.
 
-Markdown is the exception: a `[^1]` in a `.md` file arrives as plain text, and the *Review* step
-says so.
+The deepest depth gets a type that can hold prose. For chapter files that carry no book heading
+of their own, *Add top level* inserts a Book above everything found.
+
+Headings become Book, Part, Chapter or Scene, and stop there: nothing nests inside a scene. An
+item can also be retyped to Note or Paratext, off that ladder. See
+[the writing model](:help-writing-model) for what each type is.
+
+## Choosing where it lands
+
+On *Destination*, pick a binder or an item. The import goes inside what you chose if it is a
+folder, and just after it otherwise.
+
+A *Merge* step follows, but only when your files bring back items the project already holds and
+at least one of them needs a decision. That is the round trip, and
+[its own page](:help-round-trip) explains the choices.
+
+## Finishing
+
+*Import* writes everything in one step. A message then says how many items arrived and offers
+*Undo* for a few seconds. If the write is refused, the wizard stays open with your plan intact.
+
+## Comments and footnotes
+
+Comments in a Word or OpenDocument file arrive as real Skribisto comments, on the words they
+marked. A comment brings its author and its replies with it. See [comments](:help-comments).
+
+Footnotes arrive from those two formats too, each with its own text, called from the same place
+in the prose. Numbers are not carried.
+
+A note the wizard cannot place is reported rather than invented.
+
+## What the wizard reports
+
+A strip under the tree carries the wizard's messages about the import.
+
+- A file with no headings arrives as one item.
+- A file that cannot be read, or whose format nothing recognizes, is skipped and named. The
+  rest of the batch still comes in.
+- An item can carry text its own type cannot hold, since a Book or a Part holds none. The *Its
+  text* column then offers a choice. *Keep as paratext*, the default, gives that text a
+  paratext of its own just inside the item; *Drop the text* leaves it behind.

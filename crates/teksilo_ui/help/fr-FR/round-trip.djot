@@ -1,85 +1,86 @@
-Envoyez votre manuscrit à quelqu’un d’autre pour qu’il l’annote dans Word ou LibreOffice,
-puis récupérez ses commentaires et ses modifications dans le projet au lieu d’une seconde
-copie déconnectée. Cette page couvre tout le trajet : quoi envoyer, comment l’envoyer, ce
-que fait votre éditeur, et comment lire le résultat à son retour.
+Envoyez votre manuscrit à quelqu’un pour qu’il l’annote dans Word ou LibreOffice, puis
+récupérez ses commentaires et ses modifications dans le projet au lieu d’une seconde copie
+déconnectée.
 
-## Quoi envoyer
+## Envoyer un fichier Word ou LibreOffice
 
-Exportez en Word (`.docx`) ou en OpenDocument Text (`.odt`). Ce sont les deux seuls formats
-qui transportent vos commentaires, et les deux seuls qui transportent les identifiants
-invisibles que Skribisto utilise pour reconnaître ses propres lignes et commentaires au
-retour. Un export en Markdown ou en texte brut ne transporte ni l’un ni l’autre : un
-éditeur peut toujours l’annoter, mais rien n’en revient reconnaissable, et il ne
-transporte aucun commentaire.
+Exportez avec `Ctrl+Shift+E`, et choisissez sous *Format* le format *Word* (`.docx`) ou
+*LibreOffice* (`.odt`). Ces deux formats emportent vos commentaires.
 
-## Comment l’envoyer
+## Vérifier le style d’export
 
-Chaque style d’export (Paramètres, sous *Compilation et export*, puis *Formats d’export*)
-a un groupe *Envoi à un éditeur* avec deux interrupteurs : *Inclure les commentaires* et
-*Inclure les marqueurs d’aller-retour*. Les deux sont activés par défaut, y compris dans
-les styles intégrés, si bien qu’un premier export DOCX ou ODT est déjà prêt à revenir. Les
-marqueurs sont des signets invisibles, pas de simples attributs personnalisés : un vrai
-fichier ayant fait l’aller-retour par LibreOffice a vu ses attributs personnalisés effacés
-alors que ses signets ont survécu. Les styles intégrés sont en lecture seule ; dupliquez-en
-un d’abord si vous voulez une copie avec l’un des deux interrupteurs désactivé, par exemple
-pour un fichier qui ne reviendra jamais.
+Chaque style d’export a sa propre page *Envoi à un éditeur* :
 
-## Ce que fait votre éditeur
+- *Inclure les commentaires* écrit vos fils de commentaires dans le fichier.
+- *Inclure les marqueurs d’aller-retour* écrit les identifiants qui permettent à un fichier de
+  retour de mettre à jour ce projet au lieu de s’y ajouter en double.
 
-Rien de particulier. Il ouvre le fichier dans Word ou LibreOffice, ajoute des commentaires
-et modifie le texte comme d’habitude, puis le renvoie. Rien de ce qu’une modification
-ordinaire fait au texte ne perturbe les identifiants qui l’accompagnent.
+Pour les atteindre, ouvrez *Paramètres ▸ Compilation et export ▸ Formats d’export*. Un style
+intégré n’est pas modifiable : faites *Dupliquer*, puis *Modifier* sur votre copie, puis *Envoi
+à un éditeur*.
 
-## Le ramener
+## Ce que fait votre lecteur
 
-*Œuvre ▸ Importer depuis ▸ Documents (Markdown, Word, ODT)…* ouvre un assistant unique :
-*Fichiers*, *Vérifier*, *Destination*, *Fusion*. Voir [Importer des documents](:help-import-documents)
-pour les trois premières étapes. L’aller-retour proprement dit se joue sur la dernière.
+Rien de particulier. Il commente et modifie dans Word ou LibreOffice comme d’habitude, puis
+renvoie le fichier.
+
+## Ramener le fichier
+
+*Œuvre ▸ Importer depuis ▸ Documents (Markdown, Word, ODT)…* ouvre l’assistant d’import. Voir
+[Importer des documents](:help-import-documents) pour les étapes qui précèdent *Fusion*.
+L’aller-retour se joue sur *Fusion*.
+
+Importez un seul exemplaire de retour à la fois. La mise en correspondance ne confronte qu’un
+exemplaire à votre projet : plusieurs ensemble ajouteraient un second livre au lieu d’en
+fusionner un.
 
 ## Lire l’étape Fusion
 
-Skribisto associe chaque ligne du fichier aux lignes présentes dans la partie du classeur
-que vous avez choisie comme Destination : d’abord par son marqueur d’aller-retour, s’il en
-a un ; à défaut, par la correspondance du type et d’un titre normalisé. Il n’y a
-délibérément aucun appariement par ressemblance de texte, si bien qu’une ligne non appariée
-s’affiche comme *Nouveau* plutôt que d’être devinée sur le mauvais chapitre.
+Skribisto associe chaque élément du fichier aux éléments présents dans la Destination que vous
+avez choisie : d’abord par son marqueur d’aller-retour, puis par le type et le titre.
 
-Avec un marqueur à comparer, l’État d’une ligne appariée dit qui a changé quoi : *Identique*,
-*Modifié par l’éditeur*, *Modifié par vous*, ou *Modifié des deux côtés*. Appariée par le
-seul titre, elle ne peut dire que si les deux textes concordent (*Identique*) ou non
-(*Différent*), jamais qui en est responsable. Une ligne que le fichier a déplacée
-s’affiche plutôt comme *Déplacé*. La colonne Que faire propose *Commentaires seulement*
-(ses remarques, votre texte), *Prendre cette version*, *Garder la mienne*, *Ajouter comme
-nouveau*, ou *Ignorer*, présélectionnée selon ce qui est le plus sûr : prendre l’import
-quand il a modifié la ligne, garder la vôtre sinon. *Comparer* affiche les deux versions
-côte à côte avant que vous ne décidiez. Une ligne que votre projet possède et que le
-fichier ne mentionne plus s’affiche comme *Absent de ce fichier*, avec seulement *Garder
-la mienne* proposé : un chapitre absent n’est pas pour Skribisto un signal de le
-supprimer. S’il n’y a rien à apparier (une destination vide, par exemple), cette étape se
-réduit à une seule phrase plutôt qu’à un tableau.
+La colonne *État* dit ce qui s’est passé :
+
+- *Identique*, *Modifié par l’éditeur*, *Modifié par vous* ou *Modifié des deux côtés*, quand
+  le fichier porte le texte d’origine auquel comparer les deux côtés.
+- *Identique* ou *Différent*, quand il ne le porte pas.
+- *Nouveau* pour un élément que seul le fichier possède, *Absent de ce fichier* pour un élément
+  que vous êtes seul à avoir.
+- *Déplacé* prend la place des précédents quand le fichier place ailleurs un élément apparié :
+  ouvrez *Comparer* pour voir si le texte a changé aussi.
+
+Si votre lecteur a déplacé un chapitre, déplacez-le vous-même dans le plan.
+
+*Que faire* propose *Commentaires seulement* (ses remarques, votre texte), *Prendre cette
+version*, *Garder la mienne*, *Ajouter comme nouveau* et *Ignorer*. Le plus sûr est
+présélectionné, et certains états réduisent la liste :
+
+- *Nouveau* propose *Ajouter comme nouveau* ou *Ignorer*.
+- *Absent de ce fichier* ne propose que *Garder la mienne* : un chapitre absent de son
+  exemplaire n’est pas une raison de supprimer le vôtre.
+
+## Ne prendre qu’une partie d’une réécriture
+
+*Comparer* montre les deux versions d’un élément en un seul texte annoté : barré ce qu’il a
+retiré, souligné ce qu’il a ajouté. En dessous se trouve une case à cocher par paragraphe
+modifié, chacune disant ce qu’elle fait : *Prendre ce nouveau paragraphe*, *Prendre cette
+réécriture* ou *Supprimer ce paragraphe*. Cochez celles que vous acceptez, et chaque paragraphe
+laissé de côté garde votre formulation.
+
+Les cases comptent sous *Commentaires seulement* et *Prendre cette version*. Pour ne rien
+garder de sa formulation, choisissez *Garder la mienne*.
 
 ## Modifications suivies
 
-Un fichier Word ou OpenDocument qui revient en cours de révision arrive avec ses modifications
-déjà acceptées : les insertions conservées, les suppressions écartées. C’est la version que
-votre éditeur a laissée, et l’étape Vérifier le dit, en nommant qui les a faites quand le
-fichier l’enregistre.
+Un fichier qui revient en cours de révision arrive avec ses modifications déjà acceptées : les
+insertions conservées, les suppressions écartées. L’étape *Vérifier* le signale, en nommant qui
+les a faites quand le fichier l’enregistre.
 
-Les accepter ou les refuser relève de l’étape Fusion, et non d’une étape séparée. *Comparer*
-place votre formulation à côté de la leur, paragraphe par paragraphe, et un paragraphe que
-vous ne cochez pas garde exactement la vôtre. C’est une granularité plus grossière que les
-boutons par modification de Word, et c’est délibéré : la question à laquelle un auteur répond
-est « de qui est cette phrase », qui est une question de la taille d’un paragraphe. Il n’y a
-aucun moyen de prendre les modifications d’un éditeur et de refuser celles d’un autre à
-l’intérieur du même paragraphe.
+Les accepter ou les refuser, c’est le rôle de *Comparer*, paragraphe par paragraphe. Vous ne
+pouvez pas prendre la modification d’une personne et refuser celle d’une autre dans le même
+paragraphe.
 
-## Limites à connaître
+## Limites
 
-La reconnaissance dépend des marqueurs que Skribisto a lui-même écrits. Un fichier venu
-d’un autre outil, ou exporté avec les marqueurs désactivés, retombe sur la correspondance
-par titre, qui ne reconnaîtra pas un chapitre renommé. Réimporter deux fois le même
-fichier ne crée aucune ligne ni aucun commentaire en double : l’option sûre est
-présélectionnée dans les deux cas.
-
-Voir [Exporter](:help-export) pour choisir un style et un format, et
-[Commentaires](:help-comments) pour les notes qui rendent tout ce trajet utile.
+- Un fichier venu d’un autre outil, ou exporté sans marqueurs, retombe sur la correspondance
+  par titre, qui ne reconnaîtra pas un chapitre renommé.

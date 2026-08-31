@@ -1,77 +1,77 @@
-Comments are margin notes on a scene's text: a note attached to a phrase, a sentence,
-or a whole paragraph, that stays put while you keep writing.
+A comment is a note in the margin, attached to a phrase, a sentence or a whole paragraph. It
+stays with the words while you keep writing.
 
-## Adding a comment
+## Add a comment
 
-Select the text you want to comment on and press `Ctrl+Alt+M`, or use *Format ▸ Add
-comment*. To comment on a whole paragraph without selecting anything, place the caret
-in it and press `Ctrl+Alt+Shift+M`, or use *Format ▸ Comment on this paragraph*. Both
-rows are enabled only while a scene is focused.
+From the text you are writing:
 
-A new comment opens with an empty text box in the margin. It commits as you type,
-so there is no save button. If you have not set a name for yourself yet, a toast
-points you to *Settings ▸ User* so the comment can be signed.
+- Select the words to comment on and press `Ctrl+Alt+M`.
+- Put the cursor in a paragraph and press `Ctrl+Alt+Shift+M` to comment on the whole paragraph.
+- Right-click in the text for *Comment on this paragraph*. *Add comment* joins it as soon as you
+  have selected something.
 
-## Replying and resolving
+The same two commands are in the *Format* menu.
 
-Anyone can add a reply to a comment thread: click *Reply* under the opening note and
-type. Replies are a flat list under the original comment, in the order they were
-written; there is no nested threading.
+A new card opens in the margin, with an empty box and the cursor already in it.
 
-Once the point behind a comment is addressed, mark it *Resolve*. A resolved thread
-stays visible (filtered separately, see below), and you can *Reopen* it later if the
-issue was not actually settled. *Delete* removes a comment; a reply has its own
-*Delete reply* next to it.
+## Sign your comments
 
-## Where comments show up
+If no name is set for you on this computer, a message says your comments are unsigned. Its *Set
+your name* button opens *Settings ▸ User*.
 
-The same threads appear in three places, all reading from the same data:
+## Reply, resolve, delete
 
-- The *editor margin*, beside the scene you are writing, showing only the comments
-  anchored to what is on screen.
-- The *Comments* dock (leading side of the window), listing every comment in the
-  whole project.
-- The *This document* dock (trailing side), listing only the comments on the document
-  you currently have open.
+Every card in the margin carries a chevron button. Behind it:
 
-Both docks filter by All, Open, Resolved, or Orphaned, and sort three ways: document
-order, newest first, or grouped by reader. *Tools ▸ Comments* hides or shows the margin
-marks and the in-editor presentation only: it does not touch either dock, which keeps
-listing every thread regardless.
+- *Reply* adds a turn to the thread.
+- *Resolve* marks the point settled. The card leaves the margin and the comment stays in the
+  panels.
+- *Delete* removes a comment, *Delete reply* a single reply, and *Delete all comments here* a
+  whole batch at once. A short message follows, with an *Undo* button.
 
-*Grouped by reader* is for a manuscript that has come back from several people at once.
-Their remarks arrive interleaved by position, which reads as four voices talking over
-each other; grouping puts each reader's own notes together, in the order they wrote them,
-with the reader's name down the left.
+Right-click an entry in either panel to act on it there. That is where you reopen a resolved
+comment, since its card has left the margin.
 
-A card also says how many readers are on the same passage ("3 readers") whenever more
-than one is. That is the number worth acting on first: three people stumbling in the same
-paragraph is one thing to fix, and in position order it looks like three separate
-problems sitting next to each other. Two remarks count as the same passage when their
-selections actually share words; a card shows nothing when only its own author is there.
+Every comment and every reply is edited in place. Bold and italic are in the right-click menu of
+the box you are typing in.
 
-## How a comment keeps its place
+## Where comments appear
 
-A comment does not remember a raw position in the text. Instead it remembers the
-words it was attached to, plus a little of the surrounding text on each side, and a
-hint about roughly where that was. Reopening the project, or editing around a
-comment, makes Skribisto search for that quoted text again rather than trust a
-number editing would have made meaningless. This is also why a comment survives a
-save and reload at all: nothing else about the text (block ids, formatting runs,
-entity ids) is guaranteed to come back the same way next time; the prose itself is
-the only thing that reliably does.
+The same threads show up in more than one place:
 
-Occasionally a comment loses its anchor. If the exact words it was attached to are
-deleted or rewritten beyond recognition, Skribisto marks it *Lost its text* rather
-than silently attaching it to the wrong sentence. A comment that arrived through an
-import format with no real text position (a heading, say) shows as *No text
-position* instead. Either way, the comment is never deleted: use the *Orphaned*
-filter in either dock to find it.
+- In the margin beside the text you are writing. A commented phrase is tinted, a whole-paragraph
+  comment gets a bracket, and a dotted line joins each mark to its card.
+- In the *Comments* panel on the left of the window, listing the comments in the project.
+- In the *This document* panel on the right, listing the comments on the item you are editing.
 
-## Comments in DOCX and ODT
+Clicking a comment in either panel opens its item. If the comment still has its text, the cursor
+lands on the words it is about. *Tools ▸ Comments* hides or shows the marks and the margin.
 
-Comments travel with your manuscript when you send it out for an outside edit and
-bring the file back. An export style can choose to *Include comments*, paired with
-*round-trip markers* so a returning file updates this project instead of arriving as
-a separate copy. See [the round trip](:help-round-trip) for how sending a scene out
-and reimporting it works, including what happens to comments and replies along the way.
+## Filter and sort
+
+The two panels share one set of filters: *All*, *Open*, *Resolved* and *Orphaned*. Change the
+filter in one and the other follows.
+
+Next to them, one button cycles the order, shared the same way: *In document order*, *Newest
+first*, *Grouped by reader*.
+
+## Notes from several readers
+
+*Grouped by reader* is for a manuscript back from several people. Grouping puts each reader's
+notes together, each reader's own still in document order, with the name on the left.
+
+In either panel, a comment also says how many readers are on the same passage ("3 readers") when
+more than one is.
+
+## When a comment loses its text
+
+A comment remembers the words it was attached to, not a position in the file.
+
+If those words are deleted or rewritten past recognition, the comment is marked *Lost its text*
+rather than attached to the wrong sentence. The *Orphaned* filter finds them.
+
+## Sending comments out and back
+
+Word and LibreOffice files carry your comments out and bring your reader's back. An export style
+has *Include comments* and *Include round-trip markers* for that. See
+[the round trip](:help-round-trip) for sending a manuscript out and reading what comes home.

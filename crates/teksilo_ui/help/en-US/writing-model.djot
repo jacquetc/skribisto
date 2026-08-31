@@ -1,34 +1,62 @@
-## The binder organizes; item type decides structure
+## The binder organizes, the type decides structure
 
-The binder tree on the side is for arranging things the way that helps you work. It does not decide what your book looks like once compiled: that job belongs to each item's *type*. Skribisto reads a project as one flat, ordered list of typed rows, and the type of each row is what a Book, Part, or Chapter actually *is*. Nest freely; nesting is for you, not what shapes the book.
+The binder, on the left of the window, arranges your project the way that suits you. It
+does not decide what the compiled book looks like. That job belongs to each item's *type*.
 
-Every writing item, whatever its type, carries a main text and a synopsis side by side, so you plan in one pane while drafting in the other.
+Every item that carries prose has a main text and a synopsis side by side: plan in one
+pane, draft in the other. Books, parts, note folders and plain folders carry a synopsis
+but no main text.
 
 ## The types you can create
 
-- *Book*: as simple or layered as you like, from a few scenes to nested parts and chapters.
-- *Part*: gathers chapters under one heading, running until the next part or the book's end.
-- *Chapter*: runs until the next chapter, part, or the book's end. Two shapes, below.
+Right-click an item in the binder and choose *Add*.
+
+- *Book*: as layered as you like, from a few scenes to nested parts and chapters.
+- *Part*: gathers chapters under one heading.
+- *Chapter*: runs until the next chapter, the next part, or the end of the book.
 - *Scene*: your writing, with its own synopsis.
-- *Note*: text and a synopsis, for research, asides, or reminders. It can still reach the compiled book if you choose to include notes.
-- *Note folder*: a note that also holds other notes beneath it, for grouping them.
-- *Folder*: a plain container. It carries a synopsis but no prose of its own; the items inside hold the writing.
-- *Paratext*, *Paratext folder*, *End of Book*: below.
+- *Note*: text and a synopsis, for research, asides or reminders.
+- *Story bible entry…*: a note for a character, a place or an object, created with its
+  tags and aliases already filled in.
+- *Note folder*: a note that holds other notes.
+- *Folder*: a plain container with a synopsis and no prose of its own.
 
 ## Two shapes of chapter
 
-A chapter has two shapes that read identically in the finished book. A chapter folder holds scenes underneath it in the binder. A flat chapter is a single row you write straight into, with no scenes below it. Both take prose directly; the only difference is whether the chapter can also contain scenes.
+- A *Chapter folder* holds scenes underneath it in the binder.
+- A *Flat chapter* is a single item you write straight into, with no scenes below.
 
-Which shape a *new* chapter takes is set in Settings, under Work, then Structure: the *Flat chapters* toggle. On means single rows; off means folders that can also hold scenes. Existing chapters keep their shape regardless.
+To choose the shape *new* chapters take, open *Settings ▸ Work: <project> ▸ Structure* and
+set *Flat chapters*. On means single items, off means folders.
 
-To change one chapter's shape, or any item's type, right-click it (or open its Inspector) and choose *Convert to*. Converting a chapter folder to a flat chapter, or back, keeps its title and prose; only an empty one can become flat, since a flat chapter has nowhere to put child items. *Convert to* reaches further: a plain folder can become a chapter folder, part, book, or note folder and back; a scene can become a note or a flat chapter, either converting back to a scene. Whatever a conversion cannot carry over, Skribisto names plainly and refuses rather than discarding it quietly: a chapter with its own prose cannot become a Part, which has nowhere to keep scene text.
+## Changing an item's type
 
-## Why a book needs an End of Book marker
+Right-click the item in the binder and open *Convert to*.
 
-Skribisto keeps every book in one continuous list, so a book's end is not decided by nesting: one project can hold more than one book, end to end. The *End of Book* row marks where one stops; anything after it belongs to the next.
+- A plain folder, a chapter folder, a part, a book or a note folder into any other of
+  those five.
+- A chapter folder into a flat chapter, and back.
+- A scene into a flat chapter or a note, and back.
 
-## Paratext: part of the book, not the story
+A conversion keeps the title and the prose wherever the new type has room.
 
-A *Paratext* is writing that belongs to the book but not to its story: a preface, dedication, afterword, or colophon. It exports wherever you place it, but is never counted in the word count, since conventions for where it goes differ by country and publisher. A *Paratext folder* is purely organizational: it keeps paratexts out of the rest of the binder but contributes nothing to the exported book, not even its own name.
+- A folder must be empty before it can become a single item. Move or trash its contents
+  first.
+- A conversion with nowhere to put existing text is refused, and says what would be lost.
 
-New to Skribisto? [Getting started](:help-getting-started) covers opening and saving a project first.
+## Where one book ends
+
+A project can hold several books, one after another in the same binder. A book runs from
+where it starts until the first of three things: an *End of Book* item, the start of the
+next book, or the edge of its binder.
+
+## Paratext: in the book, not in the story
+
+A *Paratext* belongs to the book but not to its story: a preface, a dedication, an
+afterword, a colophon. It exports where you put it, and never counts towards the word
+count.
+
+A *Paratext folder* keeps paratexts clear of the rest of the binder.
+
+New to Skribisto? [Getting started](:help-getting-started) covers opening and saving a
+project first.
