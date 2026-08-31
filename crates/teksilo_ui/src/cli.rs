@@ -113,6 +113,122 @@ pub(crate) fn apply_config_pins(path: &str) {
     }
 }
 
+/// `--translation-dev <locale>=<dir>`: turn the parsed flags into the
+/// `(locale, directory)` pairs [`crate::startup::build_ui_config`] hands to
+/// `I18nConfig::runtime_override`, or exit describing what is wrong.
+///
+/// Debug-only, and fatal on any problem, for the same reason `--config` is: a
+/// translator who asked to watch a directory and silently got no watcher would
+/// conclude the *strings* are wrong when it is the path that is.
+///
+/// Three rejections, each a mistake that otherwise fails silently:
+///
+/// * **A path that does not exist.** Teksilo's watcher logs and carries on, so
+///   a typo becomes one line of stderr under a running app and an afternoon of
+///   saving a file nothing reads.
+/// * **A single `.ftl` file.** A locale's bundle here is the merge of all of
+///   [`crate::startup::LOCALE_FILES`], and reloading one file *replaces* that
+///   bundle, so every key the other four define falls back to `en-US`. It looks
+///   exactly like the translation being deleted. Point the flag at the
+///   directory instead, which is the form that rebuilds from all five.
+/// * **A directory holding none of the expected files.** Almost always
+///   `locales/` where `locales/fr-FR/` was meant.
+///
+/// A directory missing *some* of [`crate::startup::LOCALE_FILES`] is only
+/// warned about: it is a legitimate half-finished state for a locale being
+/// added, and the missing topics simply fall back to `en-US`.
+#[cfg_attr(not(debug_assertions), allow(unused_variables))]
+pub(crate) fn resolve_translation_dev(
+    entries: &[crate::shell::instance::TranslationOverride],
+) -> Vec<(LanguageIdentifier, std::path::PathBuf)> {
+    #[cfg(not(debug_assertions))]
+    {
+        if !entries.is_empty() {
+            eprintln!(
+                "skribisto: {} is available in debug builds only",
+                crate::shell::instance::TRANSLATION_DEV_FLAG
+            );
+            std::process::exit(2);
+        }
+        Vec::new()
+    }
+    #[cfg(debug_assertions)]
+    {
+        let flag = crate::shell::instance::TRANSLATION_DEV_FLAG;
+        let mut resolved = Vec::with_capacity(entries.len());
+        for entry in entries {
+            let path = std::path::Path::new(&entry.path);
+            let Ok(canonical) = path.canonicalize() else {
+                eprintln!(
+                    "skribisto: {flag}: cannot read `{}` for {}",
+                    path.display(),
+                    entry.locale
+                );
+                std::process::exit(2);
+            };
+
+            if canonical.is_file() {
+                // The directory *containing* the file is virtually always what
+                // was meant, so name it rather than only refusing.
+                let suggestion = canonical
+                    .parent()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|| String::from("the locale directory"));
+                eprintln!(
+                    "skribisto: {flag}: `{}` is one file, but a locale's strings are the merge of {}. \
+                     Reloading one of them replaces the whole bundle and the rest fall back to en-US. \
+                     Point the flag at `{suggestion}` instead.",
+                    canonical.display(),
+                    crate::startup::LOCALE_FILES.join(", ")
+                );
+                std::process::exit(2);
+            }
+
+            let present: Vec<&&str> = crate::startup::LOCALE_FILES
+                .iter()
+                .filter(|name| canonical.join(name).is_file())
+                .collect();
+            if present.is_empty() {
+                eprintln!(
+                    "skribisto: {flag}: `{}` holds none of {}. Did you mean one of its locale subdirectories?",
+                    canonical.display(),
+                    crate::startup::LOCALE_FILES.join(", ")
+                );
+                std::process::exit(2);
+            }
+
+            let Ok(locale) = entry.locale.parse::<LanguageIdentifier>() else {
+                // `parse_args` only admits tags from `SUPPORTED_LOCALES`, every
+                // one of which parses, so this is unreachable unless that list
+                // grows a malformed entry, and saying so beats a silent skip.
+                eprintln!(
+                    "skribisto: {flag}: `{}` is not a language tag",
+                    entry.locale
+                );
+                std::process::exit(2);
+            };
+
+            if present.len() < crate::startup::LOCALE_FILES.len() {
+                let missing: Vec<&&str> = crate::startup::LOCALE_FILES
+                    .iter()
+                    .filter(|name| !canonical.join(name).is_file())
+                    .collect();
+                eprintln!(
+                    "skribisto: {flag}: `{}` is missing {missing:?}; those strings will fall back to en-US",
+                    canonical.display()
+                );
+            }
+
+            eprintln!(
+                "skribisto: {flag}: watching {} for {locale}. Save any .ftl in it to reload.",
+                canonical.display()
+            );
+            resolved.push((locale, canonical));
+        }
+        resolved
+    }
+}
+
 /// Best-effort read of persisted theme/locale/autosave/show-welcome; defaults
 /// if anything is missing. `show_welcome` is read here (not just via
 /// `ctx.settings()` inside `App::build`) because it decides whether a bare

@@ -15,7 +15,7 @@ use frontend::AppContext;
 use frontend::commands::handling_app_lifecycle_commands;
 
 use teksilo::core::Theme;
-use teksilo::i18n::{I18nConfig, I18nManager};
+use teksilo::i18n::{I18nConfig, I18nManager, compile_in_locales};
 use teksilo::settings::{AppPaths, WindowStateService};
 use teksilo::widgets::framework_locales;
 
@@ -205,6 +205,55 @@ pub(crate) fn os_default_locale() -> String {
     I18nManager::resolve_initial_locale(&cfg).to_string()
 }
 
+/// The `.ftl` files each locale directory holds, one per topic.
+///
+/// Only the *names*: the cross-product with [`SUPPORTED_LOCALES`] is built by
+/// [`app_locales`]. Adding a topic file means adding it here once, not once
+/// per locale.
+pub(crate) const LOCALE_FILES: &[&str] = &[
+    "main.ftl",
+    "tooltips.ftl",
+    "tags.ftl",
+    "templates.ftl",
+    "story_bible.ftl",
+];
+
+/// Every locale's catalogue, compiled into the binary.
+///
+/// `compile_in_locales!` expands to the `locales × files` cross-product of
+/// `include_str!` calls: the same twenty-odd lines this used to spell out by
+/// hand, minus the chance of forgetting one. A missing file is a compile error
+/// naming it, because `include_str!` cannot resolve it; a file present on disk
+/// but absent from [`LOCALE_FILES`] is silently not shipped, which is what the
+/// drift test in [`mod tests`](self::tests) is for.
+///
+/// `base` is relative to **this source file**, not the crate root. The path is
+/// handed to `include_str!`, which resolves against the file it appears in. So
+/// `../locales/` from `src/startup.rs` means `crates/teksilo_ui/locales/`.
+///
+/// Kept as a function rather than a `const` so the macro's expansion has one
+/// name to attach a doc comment and a test to.
+pub(crate) fn app_locales() -> &'static [(&'static str, &'static [&'static str])] {
+    // Directory layout: one `.ftl` per topic per locale. The `tr!` macro
+    // auto-detects `locales/en-US/` and validates keys across every file in it,
+    // so the writing-model tooltips can live in their own file.
+    //
+    // The two lists below cannot be `SUPPORTED_LOCALES` and `LOCALE_FILES`:
+    // `include_str!` needs literals at expansion time and cannot read a const.
+    // The drift test holds them in step instead.
+    compile_in_locales!(
+        base = "../locales/",
+        locales = ["en-US", "fr-FR"],
+        files = [
+            "main.ftl",
+            "tooltips.ftl",
+            "tags.ftl",
+            "templates.ftl",
+            "story_bible.ftl",
+        ],
+    )
+}
+
 /// The theme, the compiled `I18nConfig`, and the persisted UI-prefs booleans
 /// the app builder needs before its first window exists.
 pub(crate) struct UiConfig {
@@ -264,7 +313,14 @@ pub(crate) fn theme_for(mode: Option<&str>, dark_key: bool, system_dark: bool) -
     }
 }
 
-pub(crate) fn build_ui_config() -> UiConfig {
+/// Build the launch-time UI configuration.
+///
+/// `translation_dev` is the (usually empty) set of `.ftl` directories
+/// `--translation-dev` asked to hot-reload, already validated against the
+/// filesystem by [`cli::resolve_translation_dev`].
+pub(crate) fn build_ui_config(
+    translation_dev: Vec<(teksilo::prelude::LanguageIdentifier, std::path::PathBuf)>,
+) -> UiConfig {
     // Read persisted UI prefs before constructing the app (same AppPaths the
     // builder will use via `.application(...)`).
     let cli::Prefs {
@@ -294,31 +350,7 @@ pub(crate) fn build_ui_config() -> UiConfig {
                 .iter()
                 .map(|l| l.parse().expect("a supported locale tag must parse")),
         )
-        // Directory layout: one `.ftl` per topic per locale. The `tr!` macro
-        // auto-detects `locales/en-US/` and validates keys across every file
-        // in it, so the writing-model tooltips can live in their own file.
-        .compile_in(&[
-            (
-                "en-US",
-                &[
-                    include_str!("../locales/en-US/main.ftl"),
-                    include_str!("../locales/en-US/tooltips.ftl"),
-                    include_str!("../locales/en-US/tags.ftl"),
-                    include_str!("../locales/en-US/templates.ftl"),
-                    include_str!("../locales/en-US/story_bible.ftl"),
-                ],
-            ),
-            (
-                "fr-FR",
-                &[
-                    include_str!("../locales/fr-FR/main.ftl"),
-                    include_str!("../locales/fr-FR/tooltips.ftl"),
-                    include_str!("../locales/fr-FR/tags.ftl"),
-                    include_str!("../locales/fr-FR/templates.ftl"),
-                    include_str!("../locales/fr-FR/story_bible.ftl"),
-                ],
-            ),
-        ])
+        .compile_in(app_locales())
         // `None` when the writer has never picked a language — which is the only
         // state that lets the OS step below run at all, since a `user_locale`
         // teksilo supports short-circuits resolution. `read_prefs` returning a
@@ -344,6 +376,18 @@ pub(crate) fn build_ui_config() -> UiConfig {
     let i18n = extension_locales.iter().fold(i18n, |cfg, bundle| {
         cfg.compile_in(&[(bundle.locale.as_str(), bundle.resources.as_slice())])
     });
+
+    // `--translation-dev`: watch a locale's directory and rebuild its bundle on
+    // every save. Registered **last**, after the extension catalogues, because a
+    // reload replaces that locale's whole bundle, so while the flag is in use,
+    // the watched locale is exactly what is on disk in that directory and
+    // nothing else. That is the point (the translator is previewing their own
+    // files), and it is also why this is a development flag rather than a
+    // setting: an extension's strings for the watched locale disappear until the
+    // app is restarted without it.
+    let i18n = translation_dev
+        .into_iter()
+        .fold(i18n, |cfg, (locale, dir)| cfg.runtime_override(locale, dir));
 
     UiConfig {
         theme,
@@ -623,6 +667,90 @@ pub(crate) fn shutdown(
 
 #[cfg(test)]
 mod tests {
+    /// `app_locales`' `locales = [...]` list cannot *be* [`SUPPORTED_LOCALES`]
+    /// (`include_str!` needs literals at expansion time and cannot read a
+    /// const), so the two lists are held in step here instead.
+    ///
+    /// Without this, adding a language to `SUPPORTED_LOCALES` and forgetting
+    /// the macro gives a language the picker offers and the app has no strings
+    /// for: every label falls back to `en-US` and nothing reports a problem.
+    #[test]
+    fn every_supported_locale_ships_a_catalogue() {
+        let compiled: Vec<&str> = super::app_locales().iter().map(|(tag, _)| *tag).collect();
+        assert_eq!(
+            compiled,
+            super::SUPPORTED_LOCALES.to_vec(),
+            "`app_locales` and `SUPPORTED_LOCALES` must list the same locales, in the same order"
+        );
+    }
+
+    /// Every locale ships every topic file, and [`LOCALE_FILES`] names exactly
+    /// those files.
+    ///
+    /// The macro guarantees a *missing* file is a compile error (`include_str!`
+    /// cannot resolve it). What it cannot catch is the other direction: a new
+    /// `.ftl` added to `locales/en-US/` and never added to the macro's `files`
+    /// list is simply not compiled in, and every key in it resolves to its own
+    /// name on screen.
+    #[test]
+    fn every_locale_directory_matches_locale_files() {
+        for (tag, resources) in super::app_locales() {
+            assert_eq!(
+                resources.len(),
+                super::LOCALE_FILES.len(),
+                "{tag} compiles in {} resources but LOCALE_FILES names {}",
+                resources.len(),
+                super::LOCALE_FILES.len()
+            );
+
+            let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("locales")
+                .join(tag);
+            let mut on_disk: Vec<String> = std::fs::read_dir(&dir)
+                .unwrap_or_else(|e| panic!("cannot read {}: {e}", dir.display()))
+                .filter_map(Result::ok)
+                .map(|entry| entry.file_name().to_string_lossy().into_owned())
+                .filter(|name| name.ends_with(".ftl"))
+                .collect();
+            on_disk.sort();
+
+            let mut expected: Vec<String> = super::LOCALE_FILES
+                .iter()
+                .map(|f| (*f).to_string())
+                .collect();
+            expected.sort();
+
+            assert_eq!(
+                on_disk, expected,
+                "{tag} holds .ftl files LOCALE_FILES does not name (or vice versa)"
+            );
+        }
+    }
+
+    /// The catalogues are not empty and not each other's copy. This guards
+    /// against a `base`/`locales` typo that happened to resolve to a real but
+    /// wrong directory.
+    #[test]
+    fn each_locale_compiles_in_its_own_strings() {
+        let locales = super::app_locales();
+        for (tag, resources) in locales {
+            for (index, body) in resources.iter().enumerate() {
+                assert!(
+                    !body.trim().is_empty(),
+                    "{tag}/{} is empty",
+                    super::LOCALE_FILES[index]
+                );
+            }
+        }
+        let [(_, first), (_, second)] = locales else {
+            panic!("expected exactly two locales");
+        };
+        assert_ne!(
+            first[0], second[0],
+            "two locales compiled in the same main.ftl"
+        );
+    }
+
     use super::*;
 
     /// The one hard invariant of [`os_default_locale`]. `set_locale` silently

@@ -225,6 +225,9 @@ pub(crate) enum Bootstrap {
         /// Whether this process won the election (and so must also serve the
         /// well-known socket once the app is up, not just its own per-pid one).
         is_primary: bool,
+        /// The `--translation-dev` directories to hot-reload, already checked
+        /// against the filesystem. Empty in every ordinary launch.
+        translation_dev: Vec<(teksilo::prelude::LanguageIdentifier, std::path::PathBuf)>,
     },
 }
 
@@ -267,9 +270,9 @@ pub(crate) fn bootstrap() -> Bootstrap {
     // behalf of a process that is about to exit. Everything below this block is
     // therefore reachable only by a primary or a standalone instance.
     //
-    // `--new-instance`, `--config`, `--dump-config`, `--style` and a bare `.skrib`
-    // path are the whole argument surface; `parse_args` is a pure function so that
-    // surface is unit-tested.
+    // `--new-instance`, `--config`, `--dump-config`, `--style`,
+    // `--translation-dev` and a bare `.skrib` path are the whole argument
+    // surface; `parse_args` is a pure function so that surface is unit-tested.
     let args = parse_args(std::env::args().skip(1));
     let initial_project = args.project.clone();
     if let Some(error) = &args.error {
@@ -307,6 +310,13 @@ pub(crate) fn bootstrap() -> Bootstrap {
         return Bootstrap::Exit;
     }
 
+    // ── The translator's hot-reload directories ───────────────────────────────
+    //
+    // After the settings flags because it is fatal on a bad path and there is no
+    // reason to have written pins first; before the election because it decides
+    // the role below. Ordinary launches pass none and this is a no-op.
+    let translation_dev = cli::resolve_translation_dev(&args.translation_dev);
+
     // The desktop's own startup token (a file-manager double-click sets it), so
     // whichever window the primary ends up showing can actually come forward on
     // Wayland — a process cannot raise itself unprompted.
@@ -323,7 +333,17 @@ pub(crate) fn bootstrap() -> Bootstrap {
     // be applied to a tree that already exists. An elected-away `--style` run
     // would hand its project to a window in the previous design language and
     // exit reporting success.
-    let role = if args.new_instance || args.config.is_some() || args.style.is_some() {
+    //
+    // `--translation-dev` implies it for a third reason: bundles are built once,
+    // in `run()`, from the config this process assembles. A run elected away to a
+    // primary would hand over its project and exit, leaving the translator
+    // editing `.ftl` files against an app that never registered a watcher, the
+    // exact silence the flag exists to break.
+    let role = if args.new_instance
+        || args.config.is_some()
+        || args.style.is_some()
+        || !translation_dev.is_empty()
+    {
         InstanceRole::Standalone
     } else {
         elect()
@@ -356,6 +376,7 @@ pub(crate) fn bootstrap() -> Bootstrap {
     Bootstrap::Continue {
         initial_project,
         is_primary,
+        translation_dev,
     }
 }
 
@@ -388,6 +409,14 @@ pub const DUMP_CONFIG_FLAG: &str = "--dump-config";
 /// launch decision and light/dark is not.
 pub const STYLE_FLAG: &str = "--style";
 
+/// Watch a locale's `.ftl` directory and hot-reload it on every save (debug
+/// builds only). Repeatable, once per locale.
+///
+/// The value is `<locale>=<path>`, and the path is the locale's **directory**,
+/// not one file inside it. See [`cli::resolve_translation_dev`] for why a file
+/// is refused outright here.
+pub const TRANSLATION_DEV_FLAG: &str = "--translation-dev";
+
 /// Everything the command line can say, in the order `main` acts on it.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct LaunchArgs {
@@ -404,10 +433,71 @@ pub struct LaunchArgs {
     /// than at the use site, so an unknown name is a startup error naming the
     /// legal set instead of a silent fall back to the default.
     pub style: Option<crate::style::AppStyle>,
+    /// `--translation-dev <locale>=<path>`, repeatable: the `.ftl` directories
+    /// to watch and hot-reload for the duration of this run. Shape and locale
+    /// are validated here, so an unsupported tag is a startup error naming the
+    /// legal set, rather than a watcher that quietly observes nothing.
+    pub translation_dev: Vec<TranslationOverride>,
     /// A malformed argument. Reported by `main`, which exits rather than launching
     /// — a probe that asked to pin settings and silently got none is worse than one
     /// that does not start, since it goes on to assert against the wrong state.
     pub error: Option<String>,
+}
+
+/// One `--translation-dev <locale>=<path>` pairing, already checked for shape
+/// and for a locale this build actually ships strings for.
+///
+/// Still strings: the path is not touched by [`parse_args`], which is pure so
+/// the whole argument surface stays unit-testable without a filesystem. Turning
+/// these into a watchable `(LanguageIdentifier, PathBuf)`, and rejecting a path
+/// that is missing or is a single file, is [`cli::resolve_translation_dev`]'s
+/// job.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TranslationOverride {
+    /// A tag from [`crate::startup::SUPPORTED_LOCALES`].
+    pub locale: String,
+    /// The directory of `.ftl` files to watch, exactly as typed.
+    pub path: String,
+}
+
+/// The `--translation-dev` rejections, in one place so the attached and
+/// separated forms cannot drift apart.
+fn bad_translation_dev(value: &str) -> String {
+    match value.split_once('=') {
+        None => format!(
+            "{TRANSLATION_DEV_FLAG}: `{value}` is missing the locale (expected {TRANSLATION_DEV_FLAG} <locale>=<path>)"
+        ),
+        Some((locale, path)) if locale.trim().is_empty() || path.trim().is_empty() => format!(
+            "{TRANSLATION_DEV_FLAG}: `{value}` needs both a locale and a path (expected {TRANSLATION_DEV_FLAG} <locale>=<path>)"
+        ),
+        Some((locale, _)) => format!(
+            "{TRANSLATION_DEV_FLAG}: unknown locale `{locale}` (this build ships: {})",
+            crate::startup::SUPPORTED_LOCALES.join(", ")
+        ),
+    }
+}
+
+/// Parse one `<locale>=<path>` value, or describe why it cannot be.
+///
+/// The locale is checked against [`crate::startup::SUPPORTED_LOCALES`] rather
+/// than merely parsed as a language tag: `set_locale` silently no-ops on an
+/// unsupported target, so `--translation-dev de-DE=...` would otherwise start a
+/// watcher on a bundle nothing can ever display and report nothing wrong.
+fn parse_translation_dev(value: &str) -> Result<TranslationOverride, String> {
+    let (locale, path) = value
+        .split_once('=')
+        .ok_or_else(|| bad_translation_dev(value))?;
+    let (locale, path) = (locale.trim(), path.trim());
+    if locale.is_empty() || path.is_empty() {
+        return Err(bad_translation_dev(value));
+    }
+    if !crate::startup::SUPPORTED_LOCALES.contains(&locale) {
+        return Err(bad_translation_dev(value));
+    }
+    Ok(TranslationOverride {
+        locale: locale.to_string(),
+        path: path.to_string(),
+    })
 }
 
 /// The `--style` rejection, in one place so the attached and separated forms
@@ -467,6 +557,28 @@ where
                 out.error = Some(format!(
                     "{STYLE_FLAG} needs a name ({})",
                     crate::style::names().join(", ")
+                ));
+            }
+        } else if let Some(value) = arg.strip_prefix("--translation-dev=") {
+            match parse_translation_dev(value) {
+                Ok(entry) => out.translation_dev.push(entry),
+                Err(e) => out.error = Some(e),
+            }
+        } else if arg == TRANSLATION_DEV_FLAG {
+            // Peek, never take: same reasoning as `--config` below.
+            let is_value = rest
+                .peek()
+                .is_some_and(|v| !v.as_ref().trim().is_empty() && !v.as_ref().starts_with("--"));
+            if is_value {
+                let value = rest.next().expect("just peeked");
+                match parse_translation_dev(value.as_ref()) {
+                    Ok(entry) => out.translation_dev.push(entry),
+                    Err(e) => out.error = Some(e),
+                }
+            } else {
+                out.error = Some(format!(
+                    "{TRANSLATION_DEV_FLAG} needs <locale>=<path> (locales: {})",
+                    crate::startup::SUPPORTED_LOCALES.join(", ")
                 ));
             }
         } else if arg == CONFIG_FLAG {
@@ -677,6 +789,101 @@ mod tests {
         assert!(args.dump_config);
         assert_eq!(args.style, Some(crate::style::AppStyle::Fluent));
         assert_eq!(args.error, None);
+    }
+
+    #[test]
+    fn translation_dev_takes_its_value_attached_or_separated() {
+        for args in [
+            parse_args(["--translation-dev=fr-FR=/tmp/fr"]),
+            parse_args(["--translation-dev", "fr-FR=/tmp/fr"]),
+        ] {
+            assert_eq!(args.error, None);
+            assert_eq!(
+                args.translation_dev,
+                vec![TranslationOverride {
+                    locale: "fr-FR".into(),
+                    path: "/tmp/fr".into(),
+                }]
+            );
+        }
+    }
+
+    /// Repeatable: one flag per locale, all of them kept.
+    #[test]
+    fn translation_dev_accumulates_across_locales() {
+        let args = parse_args([
+            "--translation-dev",
+            "fr-FR=/tmp/fr",
+            "--translation-dev",
+            "en-US=/tmp/en",
+        ]);
+        assert_eq!(args.error, None);
+        let seen: Vec<&str> = args
+            .translation_dev
+            .iter()
+            .map(|o| o.locale.as_str())
+            .collect();
+        assert_eq!(seen, ["fr-FR", "en-US"]);
+    }
+
+    /// A path holding an `=` (perfectly legal on Unix) splits at the *first*
+    /// one, so the locale is the part before it and the whole remainder is the
+    /// path.
+    #[test]
+    fn translation_dev_splits_at_the_first_equals_only() {
+        let args = parse_args(["--translation-dev=fr-FR=/tmp/a=b/fr-FR"]);
+        assert_eq!(args.error, None);
+        assert_eq!(
+            args.translation_dev.first().map(|o| o.path.as_str()),
+            Some("/tmp/a=b/fr-FR")
+        );
+    }
+
+    /// An unsupported tag is refused rather than watched: `set_locale` no-ops
+    /// on one, so the watcher would feed a bundle nothing can ever display.
+    #[test]
+    fn an_unsupported_translation_locale_is_an_error_naming_the_shipped_set() {
+        let args = parse_args(["--translation-dev=de-DE=/tmp/de"]);
+        assert!(args.translation_dev.is_empty());
+        let error = args.error.expect("an unsupported locale must be refused");
+        assert!(error.contains("de-DE"), "{error}");
+        for locale in crate::startup::SUPPORTED_LOCALES {
+            assert!(error.contains(locale), "{error} should name {locale}");
+        }
+    }
+
+    /// Both halves are required, and neither may be blank.
+    #[test]
+    fn a_malformed_translation_dev_value_is_an_error() {
+        for value in ["fr-FR", "=/tmp/fr", "fr-FR=", "fr-FR=   "] {
+            let args = parse_args([format!("--translation-dev={value}")]);
+            assert!(
+                args.error.is_some(),
+                "`{value}` should not parse as an override"
+            );
+            assert!(args.translation_dev.is_empty());
+        }
+    }
+
+    /// The peek-never-take rule: a missing value must not swallow the flag
+    /// that follows it.
+    #[test]
+    fn translation_dev_without_a_value_is_an_error_not_a_swallowed_flag() {
+        let args = parse_args(["--translation-dev", "--new-instance"]);
+        assert!(args.error.is_some());
+        assert!(
+            args.new_instance,
+            "the following flag must still have been parsed"
+        );
+        assert!(args.translation_dev.is_empty());
+    }
+
+    /// Its value is a flag value, not the project path.
+    #[test]
+    fn a_translation_dev_value_is_not_mistaken_for_the_project() {
+        let args = parse_args(["--translation-dev", "fr-FR=/tmp/fr", "/tmp/a.skrib"]);
+        assert_eq!(args.error, None);
+        assert_eq!(args.project.as_deref(), Some("/tmp/a.skrib"));
     }
 
     /// Election is a real socket dance. On Unix it is drivable against a temp

@@ -323,12 +323,13 @@ impl EventSource for EventHubSource {
 /// `AppIds`, a view-model, or any other type here. Everything the extension seam
 /// needs to reach lives behind this boundary.
 pub fn run() {
-    let (initial_project, is_primary) = match shell::instance::bootstrap() {
+    let (initial_project, is_primary, translation_dev) = match shell::instance::bootstrap() {
         shell::instance::Bootstrap::Exit => return,
         shell::instance::Bootstrap::Continue {
             initial_project,
             is_primary,
-        } => (initial_project, is_primary),
+            translation_dev,
+        } => (initial_project, is_primary, translation_dev),
     };
 
     let app_ctx = Rc::new(AppContext::new());
@@ -355,7 +356,7 @@ pub fn run() {
         autosave_init,
         spellcheck_init,
         show_welcome_init,
-    } = startup::build_ui_config();
+    } = startup::build_ui_config(translation_dev);
 
     let Tier1Services {
         registry,

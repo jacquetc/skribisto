@@ -361,12 +361,40 @@ and then register the locale in three places. The strings are compiled into the 
 than discovered on disk, so a new directory on its own is never loaded:
 
 - `SUPPORTED_LOCALES` in [crates/teksilo_ui/src/startup.rs](crates/teksilo_ui/src/startup.rs)
-- the `.compile_in(…)` block in the same file, which needs one `include_str!` line per `.ftl`
+- the `locales = […]` list of `app_locales()` in the same file. One entry, not one line per
+  `.ftl`: `compile_in_locales!` expands the `locales × files` cross-product for you, and a
+  file you forgot to create is a compile error naming it
 - the `djot_page!` rows in [crates/teksilo_ui/src/help.rs](crates/teksilo_ui/src/help.rs), one
   per help page
 
 That is three source edits and no build-system change; nothing else in the build has to move,
-and a locale nobody has translated yet costs the ones that exist nothing.
+and a locale nobody has translated yet costs the ones that exist nothing. The first two lists
+are held in step by a test, so a locale added to one and forgotten in the other fails the
+build rather than shipping a language the picker offers and the app has no strings for.
+
+### Seeing your edits without rebuilding
+
+A debug build can watch a locale directory and reload it on every save, so you can keep the
+app open beside your editor:
+
+```
+cargo run -p teksilo_ui -- --translation-dev fr-FR=crates/teksilo_ui/locales/fr-FR
+```
+
+Save any `.ftl` in that directory and the running window re-renders. The flag is repeatable
+(once per locale), and it prints the directory it is watching at startup.
+
+Point it at the **directory**, not at one file inside it. It will refuse a file rather than
+let you find out the hard way. A locale's strings are the merge of all five `.ftl` files, and
+a reload rebuilds the whole bundle: reloading `main.ftl` alone would drop every key the other
+four define, so most of the interface would silently revert to English and look like your
+translation had been deleted.
+
+Two consequences follow. The flag skips the single-instance election, because bundles are
+built once at startup and a run handed off to an already-running window would register no
+watcher at all. And while it is in use the watched locale is exactly what is in that
+directory, so an extension's strings for it are gone until you restart without the flag. It
+is a development flag; release builds refuse it.
 
 There is no Transifex, no `lupdate` or `lrelease`, and no `.ts`/`.qm` step any more. Edit the
 `.ftl` and `.djot` files directly and open a pull request.
