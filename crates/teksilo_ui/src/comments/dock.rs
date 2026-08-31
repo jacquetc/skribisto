@@ -37,6 +37,8 @@ use teksilo::widgets::{
 /// snippet beside it is the thing the row exists to show.
 const BREADCRUMB_WIDTH: f32 = 88.0;
 
+use teksilo::core::BindingLevel;
+
 use crate::binder::dock::OpenItemFn;
 use crate::comments::{CommentFilter, CommentSort, CommentsViewModel};
 use crate::models::CommentRow;
@@ -265,13 +267,144 @@ fn sort_toggle(vm: CommentsViewModel) -> impl Widget {
 }
 
 /// The thread list itself.
+/// The list of threads, narrowed to what the dock is actually showing.
+///
+/// **A widget rather than a plain builder, because the narrowing has to survive
+/// a change.** This bound the raw `CommentsListModel` and handed it straight to
+/// a `ListView`, while `visible_rows(scope_item)` — which applies the scope, the
+/// filter chips, the author filter and the sort — was consulted only to pick the
+/// empty state. So the document dock listed *every* comment in the Work rather
+/// than the focused item's, and the four filter chips and the sort toggle
+/// changed nothing but whether the empty page showed. The module doc above has
+/// always described the narrowing; nothing implemented it.
+///
+/// Rebuild triggers are chosen to keep typing cheap: **structure**, not
+/// `version`. `CommentsListModel` bumps `version` on every refresh — including
+/// one caused by editing a comment body, which happens *inside this list* — and
+/// rebuilding on that would tear down the card being typed into. `structure_key`
+/// deliberately excludes body text for exactly this reason, and body edits reach
+/// the rows through the `version` effect below, which refills the projection
+/// without a rebuild.
+struct ThreadList {
+    vm: CommentsViewModel,
+    scope: CommentScope,
+    focus: Signal<Option<u64>>,
+    /// This dock's own narrowed copy. Not shared with the other dock: the two
+    /// show different scopes, and one model cannot be narrowed two ways at once.
+    rows: teksilo::data::ListModel<CommentRow>,
+    on_open: OpenItemFn,
+    root_child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for ThreadList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ThreadList").finish()
+    }
+}
+
+impl ThreadList {
+    fn scope_item(&self) -> Option<u64> {
+        match self.scope {
+            CommentScope::Project => None,
+            CommentScope::Document => self.focus.get(),
+        }
+    }
+
+    /// Refill from the view-model's own narrowing. Keyed by row id, so a refill
+    /// that changes one body does not reset the list under the reader.
+    fn refill(&self) {
+        self.rows
+            .reconcile_by_key(self.vm.visible_rows(self.scope_item()), |r| r.id);
+    }
+}
+
+impl Widget for ThreadList {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Everything that changes *which* rows belong here rebuilds the list.
+        for signal in [
+            self.vm.model().structure_signal(),
+            self.focus.clone().map(|f| f.unwrap_or(0)),
+        ] {
+            signal.bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        }
+        self.vm.filter_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        self.vm
+            .sort_signal()
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.vm.author_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+
+        // Body edits and resolve/reopen bump `version` without changing the
+        // structure. Refill rather than rebuild, so the card being typed into
+        // survives. Re-registered every build: `BuildContext` effects are dropped
+        // on rebuild (the same rule `docks::inspector` records for its event
+        // subscription).
+        {
+            let me = self.rows.clone();
+            let vm = self.vm.clone();
+            let scope = self.scope;
+            let focus = self.focus.clone();
+            ctx.effect(&self.vm.model().version_signal(), move |_| {
+                let scope_item = match scope {
+                    CommentScope::Project => None,
+                    CommentScope::Document => focus.get(),
+                };
+                me.reconcile_by_key(vm.visible_rows(scope_item), |r| r.id);
+            });
+        }
+
+        self.refill();
+
+        let id = ctx.add_boxed(Box::new(thread_list_view(
+            self.vm.clone(),
+            self.scope,
+            self.focus.clone(),
+            self.rows.clone(),
+            self.on_open.clone(),
+        )));
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0))
+            .into()
+    }
+}
+
 fn thread_list(
     vm: CommentsViewModel,
     scope: CommentScope,
     focus: Signal<Option<u64>>,
     on_open: OpenItemFn,
 ) -> impl Widget {
-    let model = vm.model().list_model();
+    ThreadList {
+        vm,
+        scope,
+        focus,
+        rows: teksilo::data::ListModel::new(),
+        on_open,
+        root_child: None,
+    }
+}
+
+/// The `ListView` itself, over the narrowed model this dock owns.
+fn thread_list_view(
+    vm: CommentsViewModel,
+    scope: CommentScope,
+    focus: Signal<Option<u64>>,
+    model: teksilo::data::ListModel<CommentRow>,
+    on_open: OpenItemFn,
+) -> impl Widget {
     let row_vm = vm.clone();
     let row_focus = focus.clone();
 
@@ -511,6 +644,91 @@ mod tests {
     use crate::app_ids::AppIds;
     use crate::models::CommentsListModel;
 
+    /// A view-model over a real, loaded project with one thread on each of two
+    /// different items — the shape the document dock's narrowing has to tell
+    /// apart, and which an empty store cannot express.
+    ///
+    /// Gated off `mocks`, whose model fabricates its rows and has no `refresh_for`
+    /// or `create` to seed through. The narrowing it proves is
+    /// `CommentsViewModel::visible_rows`, which is the same code in both builds.
+    #[cfg(not(feature = "mocks"))]
+    fn vm_with_two_commented_items() -> (CommentsViewModel, Vec<u64>) {
+        use frontend::commands::{binder_item_commands, work_management_commands};
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        use frontend::common::entities::CommentAnchorKind;
+        use frontend::work_management::LoadWorkDto;
+
+        let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+        work_management_commands::load_work(
+            &app_ctx,
+            &LoadWorkDto {
+                media_root: crate::media_paths::media_root_string(),
+                file_name: format!(
+                    "{}/../../resources/test/skribisto_test_project.skrib",
+                    env!("CARGO_MANIFEST_DIR")
+                ),
+            },
+        )
+        .expect("the test project loads");
+        let work_id = frontend::commands::work_commands::get_all_work(&app_ctx)
+            .expect("works")
+            .into_iter()
+            .next()
+            .expect("one work")
+            .id;
+
+        let ids = AppIds::new();
+        ids.seed(&app_ctx, work_id);
+        let model = CommentsListModel::new(app_ctx.clone(), ids.clone());
+
+        // Two activated items that each own a Content row, so the two threads
+        // land on genuinely different items.
+        let mut owners: Vec<(u64, u64)> = binder_item_commands::get_all_binder_item(&app_ctx)
+            .expect("items")
+            .into_iter()
+            .filter(|it| it.activated)
+            .filter_map(|it| {
+                let contents = binder_item_commands::get_binder_item_relationship(
+                    &app_ctx,
+                    &it.id,
+                    &BinderItemRelationshipField::Contents,
+                )
+                .ok()?;
+                contents.first().map(|c| (it.id, *c))
+            })
+            .collect();
+        owners.sort_by_key(|(item, _)| *item);
+        owners.truncate(2);
+        assert_eq!(
+            owners.len(),
+            2,
+            "the fixture project needs two commentable items"
+        );
+
+        for (i, (_, content)) in owners.iter().enumerate() {
+            model
+                .create(
+                    *content,
+                    CommentAnchorKind::Range,
+                    &crate::comments::signature::resolve("Editor", "", ""),
+                    "Is this the right word?",
+                    &crate::comments::anchor::Anchor {
+                        start: 0,
+                        length: 3,
+                        exact: "The".into(),
+                        block_span: 1,
+                        ..Default::default()
+                    },
+                    None,
+                )
+                .unwrap_or_else(|| panic!("comment {i} is created"));
+        }
+        model.refresh_for(Some(work_id));
+
+        let vm = CommentsViewModel::new(model, app_ctx, Signal::new(None));
+        (vm, owners.into_iter().map(|(item, _)| item).collect())
+    }
+
     fn vm() -> CommentsViewModel {
         let ctx = std::rc::Rc::new(frontend::AppContext::new());
         CommentsViewModel::new(
@@ -619,6 +837,79 @@ mod tests {
         assert_eq!(
             comment_status(&row).resolve_now(),
             tr!(comments_status_unplaced()).resolve_now(),
+        );
+    }
+
+    #[cfg(not(feature = "mocks"))]
+    /// The document dock shows the focused item's threads and nothing else.
+    ///
+    /// It used to bind the raw `CommentsListModel`, so it listed every comment in
+    /// the Work — the narrowing the module doc has always promised was never
+    /// implemented. Driven through `ThreadList::refill`, which is what `build`
+    /// calls, so this exercises the same path the widget does.
+    #[test]
+    fn the_document_dock_lists_only_the_focused_items_threads() {
+        let (vm, items) = vm_with_two_commented_items();
+        assert!(
+            vm.visible_rows(None).len() >= 2,
+            "the fixture needs threads on two different items"
+        );
+
+        let focused = items[0];
+        let list = ThreadList {
+            vm: vm.clone(),
+            scope: CommentScope::Document,
+            focus: Signal::new(Some(focused)),
+            rows: teksilo::data::ListModel::new(),
+            on_open: std::rc::Rc::new(|_, _, _| {}),
+            root_child: None,
+        };
+        list.refill();
+
+        assert!(!list.rows.is_empty(), "the focused item has a thread");
+        assert!(
+            list.rows.len() < vm.visible_rows(None).len(),
+            "the document dock listed the whole project: {} of {}",
+            list.rows.len(),
+            vm.visible_rows(None).len()
+        );
+        list.rows.with_item(0, |r| {
+            assert_eq!(
+                r.item_id,
+                Some(focused),
+                "a row from another item leaked in"
+            );
+        });
+    }
+
+    #[cfg(not(feature = "mocks"))]
+    /// The filter chips have to reach the list, not only the empty state. All four
+    /// were inert: `visible_rows` applied them and nothing bound its result.
+    #[test]
+    fn the_filter_chips_change_what_the_list_holds() {
+        let (vm, _) = vm_with_two_commented_items();
+        let list = ThreadList {
+            vm: vm.clone(),
+            scope: CommentScope::Project,
+            focus: Signal::new(None),
+            rows: teksilo::data::ListModel::new(),
+            on_open: std::rc::Rc::new(|_, _, _| {}),
+            root_child: None,
+        };
+
+        vm.set_filter(CommentFilter::All);
+        list.refill();
+        let all = list.rows.len();
+        assert!(all > 0, "the fixture has threads");
+
+        // Nothing in the fixture is resolved, so the Resolved chip must empty it.
+        vm.set_filter(CommentFilter::Resolved);
+        list.refill();
+        assert_eq!(
+            list.rows.len(),
+            0,
+            "the Resolved filter did not reach the list ({} rows)",
+            list.rows.len()
         );
     }
 
