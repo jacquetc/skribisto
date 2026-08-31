@@ -225,12 +225,13 @@ fn filter_bar(vm: CommentsViewModel) -> impl Widget {
     )
 }
 
-/// Document order ↔ newest first.
+/// Document order → newest first → by reader, and round again.
 ///
 /// Document order is the default because that is the order a writer scrolls past
 /// their own notes; "newest first" is the separate review-pass question ("what did
-/// I just leave myself"), so it is an explicit toggle rather than a second sort
-/// nobody would discover.
+/// I just leave myself"); "by reader" is the question a *returning* manuscript
+/// raises, when four people's remarks have landed interleaved. All three are
+/// explicit states rather than sorts nobody would discover.
 fn sort_toggle(vm: CommentsViewModel) -> impl Widget {
     // An icon, not a label. "In document order" / "Dans l'ordre du document" was the
     // widest thing in the dock by a wide margin, sitting where it had the least room
@@ -251,6 +252,7 @@ fn sort_toggle(vm: CommentsViewModel) -> impl Widget {
     Switcher::new(vm.sort_signal().map(|s| match s {
         CommentSort::DocumentOrder => 0usize,
         CommentSort::NewestFirst => 1usize,
+        CommentSort::ByReader => 2usize,
     }))
     .child(button(
         crate::icons::comments::sort_document_icon(),
@@ -261,6 +263,12 @@ fn sort_toggle(vm: CommentsViewModel) -> impl Widget {
     .child(button(
         crate::icons::comments::sort_newest_icon(),
         tr!(comments_sort_newest()),
+        CommentSort::ByReader,
+        vm.clone(),
+    ))
+    .child(button(
+        crate::icons::comments::sort_reader_icon(),
+        tr!(comments_sort_reader()),
         CommentSort::DocumentOrder,
         vm.clone(),
     ))
@@ -409,7 +417,18 @@ fn thread_list_view(
     let row_focus = focus.clone();
 
     ListView::new(model.clone(), move |_i, row: &CommentRow, _sel| {
-        Box::new(comment_card(row, scope, row_vm.clone(), row_focus.clone())) as Box<dyn Widget>
+        // Read here rather than captured: the list is rebuilt on a sort change
+        // (`ThreadList::build` binds `sort_signal`), so the value a card is built
+        // with is always the sort the rows were just ordered by.
+        let grouped = row_vm.sort_signal().get() == CommentSort::ByReader;
+        Box::new(comment_card(
+            row,
+            scope,
+            row_vm.clone(),
+            row_focus.clone(),
+            grouped,
+            row_vm.agreement(row),
+        )) as Box<dyn Widget>
     })
     .auto_item_height(64.0)
     .scroll_bar_style(ScrollBarMode::Overlay)
@@ -515,6 +534,8 @@ fn comment_card(
     scope: CommentScope,
     vm: CommentsViewModel,
     focus: Signal<Option<u64>>,
+    grouped_by_reader: bool,
+    agreement: Vec<String>,
 ) -> impl Widget {
     let id = row.id;
     let resolved = row.resolved;
@@ -562,6 +583,25 @@ fn comment_card(
                 .color(TextRole::Secondary),
         );
     }
+    // Only from two. A lone remark needs no number, and "1 reader" on every card
+    // would drown the two that say 3 — which is the whole point of showing it.
+    //
+    // `Accent`, not `Secondary`: this is the one thing on the card that is not a
+    // property of the card, and a writer scanning a returned chapter is looking for
+    // exactly it.
+    //
+    // A count and not the names. `TextWidget` carries no tooltip in the framework
+    // and the card's own is already the Comment concept, so the names have nowhere
+    // to go here — and they have somewhere better to go: switching the sort to
+    // "grouped by reader" shows the same passage once under each of them, which
+    // answers "who" and "what did each of them actually say" in one move.
+    if agreement.len() > 1 {
+        footer = footer.child(
+            TextWidget::new(tr!(comments_agreement(count = agreement.len() as i64)))
+                .style(TextStyleRole::Tiny)
+                .color(TextRole::Accent),
+        );
+    }
 
     let mut item = StandardListItem::new(snippet)
         // The quoted snippet is arbitrary prose and elides like the subtitle
@@ -574,9 +614,33 @@ fn comment_card(
         .trailing_slot(footer)
         .rich_tooltip(crate::tooltip_registry::CONCEPT_COMMENT);
 
+    // Grouped by reader, the leading slot carries **the thread's own author** —
+    // in both docks, and in place of the breadcrumb where there is one.
+    //
+    // Without it the grouping reads as broken. The subtitle deliberately names the
+    // author of the *latest turn* (a summary saying "Jane: keep it" when Marc wrote
+    // it attributes the wrong opinion), so under a run of Jane's threads the visible
+    // names are whoever happened to answer last. The slot that makes a run of cards
+    // legible as a run has to say who the run belongs to.
+    if grouped_by_reader {
+        let name = if row.author_name.is_empty() {
+            tr!(comments_unsigned_author())
+        } else {
+            lit!(row.author_name.clone())
+        };
+        item = item.leading_slot(
+            MaxSize::width(BREADCRUMB_WIDTH).child(
+                TextWidget::new(name)
+                    .style(TextStyleRole::Tiny)
+                    .color(TextRole::Secondary)
+                    .single_line()
+                    .overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing)),
+            ),
+        );
+    }
     // The breadcrumb is the project dock's alone: in the per-document dock it
     // would repeat the dock's own scope on every row.
-    if scope == CommentScope::Project && !row.item_title.is_empty() {
+    else if scope == CommentScope::Project && !row.item_title.is_empty() {
         // Capped, and elided within the cap: an item title is user data of any
         // length, and an uncapped one takes as much of the row as it likes — in a
         // 260 dp dock that is the whole row, with the snippet it is supposed to be
@@ -913,6 +977,44 @@ mod tests {
         );
     }
 
+    /// A card carrying an agreement count and a reader name still lays out.
+    ///
+    /// Both additions land in slots that were empty or occupied by something else
+    /// — the leading slot takes the reader's name in place of the breadcrumb, and
+    /// the footer gains a third chip beside the status and the reply count — in a
+    /// dock that is 260 dp wide and whose own comments record two separate
+    /// occasions on which one more rigid child ran off the end of it.
+    #[test]
+    fn a_card_with_an_agreement_count_and_a_reader_name_still_fits() {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let row = CommentRow {
+            id: 4,
+            content_id: Some(3),
+            item_id: Some(7),
+            item_title: "A scene with a long enough title to crowd the row".into(),
+            author_name: "Jane Editor".into(),
+            body: "Is this the right word?".into(),
+            range_start: 10,
+            range_length: 5,
+            ..Default::default()
+        };
+        let id = tree.add_boxed(Box::new(comment_card(
+            &row,
+            CommentScope::Project,
+            vm(),
+            Signal::new(None),
+            true,
+            vec!["Ada".into(), "Jane Editor".into(), "Marc".into()],
+        )));
+        tree.layout(teksilo::prelude::SizeProposal::exact(260.0, 200.0));
+        let b = tree.bounds(id);
+        assert!(
+            b.width > 0.0 && b.height > 0.0 && b.width <= 260.0,
+            "the card must fit the dock it lives in ({b:?})"
+        );
+    }
+
     /// Not invisible: the card a real dock renders for an unplaced row lays out
     /// to a genuine, non-zero size — it is not silently collapsed, skipped by
     /// some filter, or otherwise dropped from what the writer sees.
@@ -925,6 +1027,8 @@ mod tests {
             CommentScope::Document,
             vm(),
             Signal::new(None),
+            false,
+            Vec::new(),
         )));
         tree.layout(teksilo::prelude::SizeProposal::exact(300.0, 200.0));
         let b = tree.bounds(id);

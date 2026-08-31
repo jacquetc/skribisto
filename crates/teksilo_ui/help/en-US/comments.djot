@@ -34,10 +34,21 @@ The same threads appear in three places, all reading from the same data:
 - The *This document* dock (trailing side), listing only the comments on the document
   you currently have open.
 
-Both docks filter by All, Open, Resolved, or Orphaned, and sort by document order or
-newest first. *Tools ▸ Comments* hides or shows the margin marks and the in-editor
-presentation only: it does not touch either dock, which keeps listing every thread
-regardless.
+Both docks filter by All, Open, Resolved, or Orphaned, and sort three ways: document
+order, newest first, or grouped by reader. *Tools ▸ Comments* hides or shows the margin
+marks and the in-editor presentation only: it does not touch either dock, which keeps
+listing every thread regardless.
+
+*Grouped by reader* is for a manuscript that has come back from several people at once.
+Their remarks arrive interleaved by position, which reads as four voices talking over
+each other; grouping puts each reader's own notes together, in the order they wrote them,
+with the reader's name down the left.
+
+A card also says how many readers are on the same passage ("3 readers") whenever more
+than one is. That is the number worth acting on first: three people stumbling in the same
+paragraph is one thing to fix, and in position order it looks like three separate
+problems sitting next to each other. Two remarks count as the same passage when their
+selections actually share words; a card shows nothing when only its own author is there.
 
 ## How a comment keeps its place
 

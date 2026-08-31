@@ -36,10 +36,23 @@ Les mêmes fils apparaissent à trois endroits, qui lisent tous les mêmes donn�
 - Le panneau *Ce document* (à droite), qui ne liste que les commentaires du document
   actuellement ouvert.
 
-Les deux panneaux filtrent par Tous, Ouverts, Résolus ou Orphelins, et trient par ordre
-du document ou du plus récent au plus ancien. *Outils ▸ Commentaires* n’affiche ou ne
-masque que les repères en marge et leur présentation dans l’éditeur : cela ne touche à
-aucun des deux panneaux, qui continuent de lister tous les fils sans exception.
+Les deux panneaux filtrent par Tous, Ouverts, Résolus ou Orphelins, et trient de trois
+façons : par ordre du document, du plus récent au plus ancien, ou groupés par lecteur.
+*Outils ▸ Commentaires* n’affiche ou ne masque que les repères en marge et leur
+présentation dans l’éditeur : cela ne touche à aucun des deux panneaux, qui continuent de
+lister tous les fils sans exception.
+
+*Groupés par lecteur* sert à un manuscrit qui revient de plusieurs personnes à la fois.
+Leurs remarques arrivent entremêlées par position, ce qui se lit comme quatre voix qui
+parlent en même temps ; le groupement réunit les notes de chaque lecteur, dans l’ordre où
+il les a écrites, avec son nom sur la gauche.
+
+Une fiche indique aussi combien de lecteurs portent sur le même passage (« 3 lecteurs »)
+dès qu’il y en a plus d’un. C’est le nombre à traiter en premier : trois personnes qui
+butent sur le même paragraphe, c’est une seule chose à corriger, et dans l’ordre du
+document cela ressemble à trois problèmes distincts posés côte à côte. Deux remarques
+portent sur le même passage quand leurs sélections partagent réellement des mots ; une
+fiche n’affiche rien quand seul son propre auteur s’y trouve.
 
 ## Comment un commentaire garde sa position
 

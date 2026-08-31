@@ -1841,6 +1841,15 @@ comments-menu-reopen = Reopen
 comments-menu-delete = Delete
 comments-sort-document = In document order
 comments-sort-newest = Newest first
+comments-sort-reader = Grouped by reader
+comments-unsigned-author = Unsigned
+# Shown on a thread that shares its passage with another reader's. Never at one:
+# a lone remark needs no number, and "1 reader" beside every card would drown the
+# two that say 3.
+comments-agreement = { $count ->
+    [one] { $count } reader
+   *[other] { $count } readers
+}
 comments-menu-add = Add comment
 comments-menu-add-paragraph = Comment on this paragraph
 overview-col-comments = Comments

@@ -79,6 +79,15 @@ pub enum CommentSort {
     DocumentOrder,
     /// "What did I just leave myself" — the review-pass order.
     NewestFirst,
+    /// Every reader's remarks together, each reader's own in document order.
+    ///
+    /// The order for reading a manuscript *back*: four beta readers' returns
+    /// interleaved by position are four voices talking over each other, and the
+    /// question a writer has at that point is "what did Marc think", not "what is
+    /// the next remark on page 12". The author filter answers the same question
+    /// one reader at a time; this answers it for all of them at once, which is what
+    /// a writer wants before deciding whose notes to act on.
+    ByReader,
 }
 
 /// One turn in a thread: the comment that opened it, or one of its replies.
@@ -523,15 +532,45 @@ impl CommentsViewModel {
             .filter(|r| filter.admits(r))
             .filter(|r| author.is_empty() || r.author_name == author)
             .collect();
-        if self.sort.get() == CommentSort::NewestFirst {
-            rows.sort_by(|a, b| {
-                b.created_at
-                    .cmp(&a.created_at)
-                    .then_with(|| b.id.cmp(&a.id))
-            });
-        }
-        // DocumentOrder is the model's own sort, already applied.
+        sort_rows(&mut rows, self.sort.get());
         rows
+    }
+
+    /// Everyone whose thread covers the same passage as `row`, `row`'s own author
+    /// included — so the answer is never empty for an anchored thread, and a
+    /// length of one means "only this reader said anything here".
+    ///
+    /// **The signal a writer actually wants back from several readers.** Twelve
+    /// unrelated remarks are twelve things to weigh one at a time; three readers
+    /// stumbling on the same paragraph is one thing to fix, and it is invisible in
+    /// a list sorted by position because the three sit next to each other looking
+    /// like three separate problems.
+    ///
+    /// # Overlap, not equality, and not the paragraph ordinal
+    ///
+    /// Two readers never select the same span — one marks the clause, another the
+    /// sentence around it — so equality would find nothing. Overlap of the live
+    /// ranges is the right relation, and it is comparable here for a reason worth
+    /// stating: both threads have already been re-anchored against **the same
+    /// stored prose** (`reanchor` runs per `content_id`), so their offsets are in
+    /// one coordinate space even though each arrived measured against its own
+    /// reader's copy.
+    ///
+    /// `Anchor::block_ordinal_hint` would have been the obvious key and is not
+    /// usable: `add_range_comment` passes `0` for every comment this app creates,
+    /// so it is a fallback hint for paragraph re-anchoring and not a paragraph
+    /// *identity*. Grouping on it would put every locally written comment in one
+    /// bucket.
+    ///
+    /// Overlap is deliberately not transitive and this does not pretend it is.
+    /// The question is asked per row — "who else is on *this* passage" — which is
+    /// well defined; equivalence classes over a chain of overlaps would merge two
+    /// remarks that share no words at all.
+    ///
+    /// Empty for an orphaned or unplaced thread: it has nowhere to point, so
+    /// nothing can be said to point at the same place.
+    pub fn agreement(&self, row: &CommentRow) -> Vec<String> {
+        agreement_in(&self.model.rows(), row)
     }
 
     /// How many open threads a dock's badge should show for `scope_item`
@@ -1009,6 +1048,61 @@ mod palette_tests {
     }
 }
 
+/// Order `rows` for `sort`, in place.
+///
+/// A free function so the two orders that are not the model's own are provable
+/// against hand-built rows — `visible_rows` needs a loaded project to reach the
+/// model at all, which is a lot of scaffolding to assert a comparator with.
+fn sort_rows(rows: &mut [CommentRow], sort: CommentSort) {
+    match sort {
+        CommentSort::NewestFirst => rows.sort_by(|a, b| {
+            b.created_at
+                .cmp(&a.created_at)
+                .then_with(|| b.id.cmp(&a.id))
+        }),
+        // **Stable**, and load-bearing: each reader's own remarks keep the document
+        // order the model already put them in, so the sort groups without reordering
+        // within a group. `sort_by` is guaranteed stable in Rust; a switch to
+        // `sort_unstable_by` here would silently shuffle one reader's notes.
+        //
+        // An unsigned thread sorts under the empty name, which puts it first: the
+        // writer's own unattributed notes are the ones they are least likely to be
+        // hunting for by name, and burying them under every named reader is worse
+        // than opening with them.
+        CommentSort::ByReader => rows.sort_by(|a, b| a.author_name.cmp(&b.author_name)),
+        // DocumentOrder is the model's own sort, already applied.
+        CommentSort::DocumentOrder => {}
+    }
+}
+
+/// The rule behind [`CommentsViewModel::agreement`], over a plain slice.
+///
+/// Separated from the view-model for the same reason [`sort_rows`] is: the
+/// property worth pinning ("who else is on this passage") is arithmetic over
+/// ranges, and proving it should not need a project on disk.
+fn agreement_in(rows: &[CommentRow], row: &CommentRow) -> Vec<String> {
+    if !row.is_anchored() {
+        return Vec::new();
+    }
+    let Some(content_id) = row.content_id else {
+        return Vec::new();
+    };
+    let start = row.range_start;
+    let end = row.range_start + row.range_length;
+    let mut names: Vec<String> = rows
+        .iter()
+        .filter(|other| other.content_id == Some(content_id) && other.is_anchored())
+        // Half-open: two threads that merely touch end to start are about different
+        // words, and a writer reading "2 readers" on a pair that shares no character
+        // at all would stop trusting the number.
+        .filter(|other| other.range_start < end && start < other.range_start + other.range_length)
+        .map(|other| other.author_name.clone())
+        .collect();
+    names.sort();
+    names.dedup();
+    names
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1023,6 +1117,155 @@ mod tests {
             author_name: author.into(),
             ..Default::default()
         }
+    }
+
+    /// An anchored row on content 1, `[start, start+len)`, by `author`.
+    fn ranged(id: u64, author: &str, start: u64, len: u64) -> CommentRow {
+        CommentRow {
+            id,
+            content_id: Some(1),
+            item_id: Some(1),
+            author_name: author.into(),
+            range_start: start,
+            range_length: len,
+            ..Default::default()
+        }
+    }
+
+    /// Three readers on the same sentence is one problem, not three — and every
+    /// one of the three cards has to say so.
+    #[test]
+    fn readers_on_the_same_passage_agree_with_each_other() {
+        let rows = vec![
+            ranged(1, "Jane", 10, 20),
+            ranged(2, "Marc", 15, 5),
+            ranged(3, "Ada", 12, 4),
+        ];
+        for row in &rows {
+            assert_eq!(
+                agreement_in(&rows, row),
+                vec!["Ada".to_string(), "Jane".to_string(), "Marc".to_string()],
+                "row {} disagrees about who is on its passage",
+                row.id
+            );
+        }
+    }
+
+    /// Overlap does not chain, and the count must not pretend it does.
+    ///
+    /// Jane's long selection covers both Marc's and Ada's, but those two share no
+    /// character with each other. Treating this as one group would tell Marc's card
+    /// that Ada is "also flagging here" when Ada marked a different sentence — the
+    /// number would grow along a chain of neighbours until a densely marked chapter
+    /// reported every reader on every card, which is the failure that makes an
+    /// agreement count worth nothing.
+    #[test]
+    fn agreement_does_not_chain_through_a_shared_neighbour() {
+        let rows = vec![
+            ranged(1, "Jane", 10, 30),
+            ranged(2, "Marc", 12, 4),
+            ranged(3, "Ada", 30, 8),
+        ];
+        assert_eq!(
+            agreement_in(&rows, &rows[0]),
+            vec!["Ada".to_string(), "Jane".to_string(), "Marc".to_string()],
+            "Jane's own selection really does cover both"
+        );
+        assert_eq!(
+            agreement_in(&rows, &rows[1]),
+            vec!["Jane".to_string(), "Marc".to_string()],
+            "Marc is on Jane's passage, not Ada's"
+        );
+        assert_eq!(
+            agreement_in(&rows, &rows[2]),
+            vec!["Ada".to_string(), "Jane".to_string()],
+            "and Ada is on Jane's, not Marc's"
+        );
+    }
+
+    /// Ranges that merely touch end to start share no character, so they are not
+    /// about the same words. Half-open, and worth pinning: an off-by-one here
+    /// makes every consecutive pair in a densely marked chapter read as agreement.
+    #[test]
+    fn threads_that_only_touch_are_not_on_the_same_passage() {
+        let rows = vec![ranged(1, "Jane", 0, 10), ranged(2, "Marc", 10, 10)];
+        assert_eq!(agreement_in(&rows, &rows[0]), vec!["Jane".to_string()]);
+        assert_eq!(agreement_in(&rows, &rows[1]), vec!["Marc".to_string()]);
+    }
+
+    /// One reader marking the same passage twice is one reader.
+    #[test]
+    fn a_reader_who_commented_twice_is_counted_once() {
+        let rows = vec![ranged(1, "Jane", 0, 10), ranged(2, "Jane", 2, 3)];
+        assert_eq!(agreement_in(&rows, &rows[0]), vec!["Jane".to_string()]);
+    }
+
+    /// Two documents are two coordinate spaces. Offsets only became comparable
+    /// once both threads were re-anchored against the same stored prose, which is
+    /// per `content_id` — so a row from another scene overlapping numerically is
+    /// not overlapping at all.
+    #[test]
+    fn overlap_is_never_read_across_two_documents() {
+        let mut elsewhere = ranged(2, "Marc", 0, 10);
+        elsewhere.content_id = Some(2);
+        let rows = vec![ranged(1, "Jane", 0, 10), elsewhere];
+        assert_eq!(agreement_in(&rows, &rows[0]), vec!["Jane".to_string()]);
+    }
+
+    /// A thread with nowhere to point cannot be said to point at the same place
+    /// as anything else — including one that resolved to an empty range.
+    #[test]
+    fn an_orphan_or_an_unplaced_thread_agrees_with_nobody() {
+        let orphan = CommentRow {
+            id: 1,
+            content_id: None,
+            orphaned: true,
+            author_name: "Jane".into(),
+            ..Default::default()
+        };
+        let unplaced = CommentRow {
+            id: 2,
+            content_id: Some(1),
+            range_start: 4,
+            range_length: 0,
+            author_name: "Marc".into(),
+            ..Default::default()
+        };
+        let rows = vec![orphan.clone(), unplaced.clone(), ranged(3, "Ada", 0, 10)];
+        assert!(agreement_in(&rows, &orphan).is_empty());
+        assert!(agreement_in(&rows, &unplaced).is_empty());
+        assert_eq!(
+            agreement_in(&rows, &rows[2]),
+            vec!["Ada".to_string()],
+            "and neither of them counts towards a thread that IS placed"
+        );
+    }
+
+    /// Grouping by reader must not reorder one reader's own remarks: they arrive
+    /// in document order and that is the order to read them in.
+    #[test]
+    fn grouping_by_reader_keeps_each_readers_own_document_order() {
+        let mut rows = vec![
+            ranged(1, "Marc", 0, 5),
+            ranged(2, "Jane", 10, 5),
+            ranged(3, "Marc", 20, 5),
+            ranged(4, "Jane", 30, 5),
+        ];
+        sort_rows(&mut rows, CommentSort::ByReader);
+        assert_eq!(
+            rows.iter().map(|r| r.id).collect::<Vec<_>>(),
+            vec![2, 4, 1, 3],
+            "Jane's two in order, then Marc's two in order"
+        );
+    }
+
+    /// An unsigned thread opens the list rather than being buried under every
+    /// named reader.
+    #[test]
+    fn unsigned_threads_sort_first_when_grouped_by_reader() {
+        let mut rows = vec![ranged(1, "Jane", 0, 5), ranged(2, "", 10, 5)];
+        sort_rows(&mut rows, CommentSort::ByReader);
+        assert_eq!(rows[0].id, 2);
     }
 
     #[test]

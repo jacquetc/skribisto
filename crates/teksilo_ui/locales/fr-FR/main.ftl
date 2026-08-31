@@ -1863,6 +1863,12 @@ comments-menu-reopen = Rouvrir
 comments-menu-delete = Supprimer
 comments-sort-document = Dans l’ordre du document
 comments-sort-newest = Les plus récents d’abord
+comments-sort-reader = Groupés par lecteur
+comments-unsigned-author = Non signé
+comments-agreement = { $count ->
+    [one] { $count } lecteur
+   *[other] { $count } lecteurs
+}
 comments-menu-add = Ajouter un commentaire
 comments-menu-add-paragraph = Commenter ce paragraphe
 overview-col-comments = Commentaires

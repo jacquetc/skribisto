@@ -26,3 +26,8 @@ pub fn sort_document_icon() -> IconWidget {
 pub fn sort_newest_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/comments/sort-newest.svg"))
 }
+
+/// By reader — two people: the question a returning manuscript raises is *who*.
+pub fn sort_reader_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/comments/sort-reader.svg"))
+}
