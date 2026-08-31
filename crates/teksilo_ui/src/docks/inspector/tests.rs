@@ -22,6 +22,7 @@ use super::super::inspector_sections::{
     InspectorSectionSpec, register_inspector_section, registered_for,
 };
 use super::Inspector;
+use crate::test_support::first_of_type;
 
 /// A Work with one binder holding one item of `sub_role`, and the item's id.
 fn work_with_item(ctx: &Rc<AppContext>, sub_role: BinderItemSubRole) -> (u64, u64) {
@@ -156,9 +157,23 @@ fn laid_out(
     work_id: u64,
     focus: Option<u64>,
 ) -> (teksilo::core::widget_tree::WidgetTree, WidgetId) {
+    laid_out_in(ctx, work_id, Signal::new(focus), SLOT_W, 4000.0)
+}
+
+/// As [`laid_out`], but in a slot of the caller's choosing and against a focus
+/// signal the caller keeps — what the overflow and scroll-carry tests need, the
+/// first because it is about a panel that does *not* fit and the second because
+/// it has to move focus after the first layout.
+fn laid_out_in(
+    ctx: &Rc<AppContext>,
+    work_id: u64,
+    focus: Signal<Option<u64>>,
+    width: f32,
+    height: f32,
+) -> (teksilo::core::widget_tree::WidgetTree, WidgetId) {
     let mut tree = crate::test_support::tree_with_events(ctx);
-    let id = tree.add_boxed(Box::new(panel(ctx, work_id, Signal::new(focus))));
-    tree.layout(SizeProposal::exact(300.0, 4000.0));
+    let id = tree.add_boxed(Box::new(panel(ctx, work_id, focus)));
+    tree.layout(SizeProposal::exact(width, height));
     (tree, id)
 }
 
@@ -181,23 +196,6 @@ fn scroll_offset(tree: &teksilo::core::widget_tree::WidgetTree, area: WidgetId) 
         .scroll_y_signal()
 }
 
-/// The first widget in the subtree whose type name contains `needle`.
-fn find(
-    tree: &teksilo::core::widget_tree::WidgetTree,
-    id: WidgetId,
-    needle: &str,
-) -> Option<WidgetId> {
-    if tree
-        .widget_type_name(id)
-        .is_some_and(|t| t.contains(needle))
-    {
-        return Some(id);
-    }
-    tree.children(id)
-        .into_iter()
-        .find_map(|c| find(tree, c, needle))
-}
-
 /// Every widget in the panel's **content** that has no children of its own.
 ///
 /// The panel fills whatever height it is given (`layout_response` defers to the
@@ -211,7 +209,7 @@ fn find(
 /// on its own, and enough to make every count that compares two panels differ by
 /// a constant nobody would think to look for.
 fn leaves(tree: &teksilo::core::widget_tree::WidgetTree, root: WidgetId) -> Vec<(WidgetId, Rect)> {
-    let content = find(tree, root, "ScrollArea")
+    let content = first_of_type(tree, root, "ScrollArea")
         .and_then(|area| tree.children(area).first().copied())
         .expect("the panel body is mounted inside a ScrollArea");
     let mut out = Vec::new();
@@ -471,11 +469,9 @@ fn setting_a_book_filing_writes_it_and_it_reads_back() {
 fn the_panel_scrolls_rather_than_clipping_what_does_not_fit() {
     let ctx = Rc::new(AppContext::new());
     let (work_id, item_id) = work_with_item(&ctx, BinderItemSubRole::Book);
-    let mut tree = crate::test_support::tree_with_events(&ctx);
-    let root = tree.add_boxed(Box::new(panel(&ctx, work_id, Signal::new(Some(item_id)))));
-    tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
+    let (tree, root) = laid_out_in(&ctx, work_id, Signal::new(Some(item_id)), SLOT_W, SLOT_H);
 
-    let area = find(&tree, root, "ScrollArea").expect("the inspector body scrolls");
+    let area = first_of_type(&tree, root, "ScrollArea").expect("the inspector body scrolls");
     let slot = tree.bounds(area);
     assert!(
         (slot.height - SLOT_H).abs() < 1.0 && (slot.width - SLOT_W).abs() < 1.0,
@@ -521,12 +517,10 @@ fn the_scroll_offset_survives_a_rebuild_but_not_a_focus_change() {
     let (work_id, book) = work_with_item(&ctx, BinderItemSubRole::Book);
     let second = add_book(&ctx, binder_of(&ctx, work_id), "Book Two");
     let focus = Signal::new(Some(book));
-    let mut tree = crate::test_support::tree_with_events(&ctx);
-    let root = tree.add_boxed(Box::new(panel(&ctx, work_id, focus.clone())));
-    tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
+    let (mut tree, root) = laid_out_in(&ctx, work_id, focus.clone(), SLOT_W, SLOT_H);
 
     let scrolled_to = {
-        let area = find(&tree, root, "ScrollArea").expect("the inspector body scrolls");
+        let area = first_of_type(&tree, root, "ScrollArea").expect("the inspector body scrolls");
         let offset = tree.bounds(area).height / 4.0;
         scroll_offset(&tree, area).set(offset);
         tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
@@ -541,7 +535,7 @@ fn the_scroll_offset_survives_a_rebuild_but_not_a_focus_change() {
     // rebuild on the same item — what a section's own write produces.
     focus.set(Some(book));
     tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
-    let after_rebuild = find(&tree, root, "ScrollArea").expect("still scrolls");
+    let after_rebuild = first_of_type(&tree, root, "ScrollArea").expect("still scrolls");
     let kept = scroll_offset(&tree, after_rebuild).get();
     assert!(
         (kept - scrolled_to).abs() < 1.0,
@@ -550,7 +544,7 @@ fn the_scroll_offset_survives_a_rebuild_but_not_a_focus_change() {
 
     focus.set(Some(second));
     tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
-    let after_focus = find(&tree, root, "ScrollArea").expect("still scrolls");
+    let after_focus = first_of_type(&tree, root, "ScrollArea").expect("still scrolls");
     let reset = scroll_offset(&tree, after_focus).get();
     assert!(
         reset.abs() < 1.0,

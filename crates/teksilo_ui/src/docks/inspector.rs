@@ -251,6 +251,14 @@ pub(super) struct Inspector {
     /// two different items would land wherever the previous one happened to be
     /// tall enough to reach.
     scrolled_item: Option<u64>,
+    /// The `(role, sub_role)` the offset was measured against, alongside the id.
+    ///
+    /// The id alone is not enough: `promote_uc` retypes an item **in place**, so
+    /// the same id can go from a `Item/Scene` panel to a `Folder/Book` one — a
+    /// different set of sections, a different height — without focus moving. The
+    /// pair is what the constraint matrix keys a panel's shape on, so it is what
+    /// decides whether an offset still means anything.
+    scrolled_shape: Option<(BinderItemRole, BinderItemSubRole)>,
     /// Tier-2 (per-open-Work) handles, threaded in from the owning window's own
     /// `sessions::WorkSession` — **not** looked up via `ctx.app_state::<T>()`, the
     /// multi-Work migration's whole point (see `sessions::WorkSession`'s module
@@ -293,6 +301,7 @@ impl Inspector {
             root_child: None,
             scroll_kept: None,
             scrolled_item: None,
+            scrolled_shape: None,
             tags,
             mention_index,
             open_docs,
@@ -346,14 +355,22 @@ impl Widget for Inspector {
         if self.probe.id() != item_id {
             self.probe.set_id(item_id);
         }
-        // Carry the scroll offset across this rebuild, but only within one item —
-        // see `scroll_kept`. Read before the body is built, because building it is
-        // what replaces the `ScrollArea` the offset is being read off.
+        let dto = item_id.and_then(|_| self.probe.dto());
+        // Carry the scroll offset across this rebuild, but only within one item
+        // *of one shape* — see `scroll_kept` and `scrolled_shape`. Read before the
+        // body is built, because building it is what replaces the `ScrollArea` the
+        // offset is being read off.
+        //
+        // `animation_target` first: a wheel scroll is a 150 ms eased animation, so
+        // a rebuild landing mid-fling reads a value the reader is still travelling
+        // through. Restoring that stops them short of where they were going.
+        let shape = dto.as_ref().map(|d| (d.role.clone(), d.sub_role.clone()));
         let restore = match self.scroll_kept.as_ref() {
-            Some(kept) if self.scrolled_item == item_id => kept.get(),
+            Some(kept) if self.scrolled_item == item_id && self.scrolled_shape == shape => {
+                kept.animation_target().unwrap_or_else(|| kept.get())
+            }
             _ => 0.0,
         };
-        let dto = item_id.and_then(|_| self.probe.dto());
 
         let body: Box<dyn Widget> = match dto {
             None => Box::new(
@@ -472,6 +489,7 @@ impl Widget for Inspector {
         let area = ScrollArea::from_id(content).restore_scroll_y(restore);
         self.scroll_kept = Some(area.scroll_y_signal().clone());
         self.scrolled_item = item_id;
+        self.scrolled_shape = shape;
         let id = ctx.add(area);
         self.root_child = Some(id);
         vec![id]

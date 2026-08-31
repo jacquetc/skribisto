@@ -125,3 +125,22 @@ fn tree_with_events_and_state(
     ));
     tree
 }
+
+/// First node at/under `root` whose fully-qualified type name ends with `suffix`
+/// (DFS pre-order); type names come from `std::any::type_name`, so match the leaf.
+///
+/// Shared rather than re-declared per test module: this was written twice, once
+/// in `tabs::tests` and once in `docks::inspector::tests`, and the two copies had
+/// already drifted (`ends_with` against `contains`) — which is the difference
+/// between "the Wrap" and "the WrapPanel that happens to contain it".
+pub(crate) fn first_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> Option<WidgetId> {
+    if tree
+        .widget_type_name(root)
+        .is_some_and(|n| n.ends_with(suffix))
+    {
+        return Some(root);
+    }
+    tree.children(root)
+        .into_iter()
+        .find_map(|c| first_of_type(tree, c, suffix))
+}

@@ -53,6 +53,12 @@ fn labels_of(menu: MenuList) -> Vec<String> {
 /// workaround — the AT tree is where a section caption is *supposed* to show
 /// up, and `GroupHeader`'s own `accessibility()` is what puts it there, so this
 /// asserts the property that actually matters to a screen-reader user.
+///
+/// Gated the same way its two callers are: both need `editors::test_support`'s
+/// store-backed fixture rows, which `--features mocks` does not have. Without
+/// the gate this is dead code under that feature set, and `cargo clippy
+/// --all-targets --features mocks -- -D warnings` fails on it.
+#[cfg(not(feature = "mocks"))]
 fn names_of(menu: MenuList) -> Vec<String> {
     let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
     let _root = tree.add(menu);

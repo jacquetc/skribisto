@@ -11,6 +11,8 @@ use super::*;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use teksilo::core::widget_tree::WidgetTree;
 
+use crate::test_support::first_of_type;
+
 /// A per-type typography set with distinguishable fonts (Scene/Synopsis =
 /// Literata, Notes = Inter) so tests can assert the right bundle reaches the
 /// right editor.
@@ -1702,20 +1704,6 @@ fn the_writing_page_buys_scroll_range_only_while_pinning() {
         middle - bottom_quarter,
         expected(TypewriterAnchor::Middle, TypewriterAnchor::BottomQuarter)
     );
-}
-
-/// First node at/under `root` whose fully-qualified type name ends with `suffix`
-/// (DFS pre-order); type names come from `std::any::type_name`, so match the leaf.
-fn first_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> Option<WidgetId> {
-    if tree
-        .widget_type_name(root)
-        .is_some_and(|n| n.ends_with(suffix))
-    {
-        return Some(root);
-    }
-    tree.children(root)
-        .into_iter()
-        .find_map(|c| first_of_type(tree, c, suffix))
 }
 
 /// The Book's Pace dashboard **must reflow with width**. `pace_pane` drops the
