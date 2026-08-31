@@ -1483,6 +1483,17 @@ impl Widget for App {
         let footnotes =
             wiring::footnotes::install(ctx, &mut self.footnotes, &self.app_ctx, &ids, &docs);
 
+        // Record every marked copy that leaves. Tier 1 service, per-project rows
+        // keyed by the payload's own `Work.unique_id` — the title is display
+        // only, so a window whose project has not loaded yet simply records an
+        // empty one and the next export fills it in.
+        // Cloned out of the borrow first: `app_state` hands back a reference tied
+        // to `ctx`, and `wire` needs `ctx` mutably.
+        let exchange = ctx.app_state::<crate::models::ExchangeService>().cloned();
+        if let Some(exchange) = exchange {
+            wiring::exchange::wire(ctx, &exchange, session.single_work.title());
+        }
+
         // Who new threads and replies get signed by: Settings ▸ User if it is
         // filled in, else this book's byline (see `comments::signature`).
         //

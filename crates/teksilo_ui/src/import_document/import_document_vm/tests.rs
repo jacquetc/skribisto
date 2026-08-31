@@ -1385,6 +1385,86 @@ fn keeping_a_row_sends_nothing_for_it() {
     );
 }
 
+/// The beta-reader case: a copy went out, came back with remarks and untouched
+/// prose, so the Reconcile step is dropped out of the flow entirely rather than
+/// showing a page of identical "comments only" dropdowns.
+#[test]
+fn a_return_that_only_brings_remarks_hides_the_reconcile_step() {
+    let vm = vm_from_a_returning_file();
+    let key = vm.plan().keys_in_order()[1];
+
+    let mut row = merged(
+        MergeRowKey::Current(uuid::Uuid::from_u128(1)),
+        Some(key),
+        vec![RowAction::CommentsOnly, RowAction::TakeImport],
+    );
+    // What `reconcile` reports for a row neither side touched.
+    row.status = RowStatus::Identical;
+    vm.seed_merge_for_test(vec![row]);
+
+    assert!(
+        vm.has_anything_to_reconcile(),
+        "the row still matched — this is not the first-import case"
+    );
+    assert!(
+        !vm.needs_reconcile().get(),
+        "nothing is left to decide, so the step must not be shown"
+    );
+}
+
+/// …and a row the editor actually rewrote still stops the writer.
+#[test]
+fn a_return_that_rewrote_prose_still_shows_the_reconcile_step() {
+    let vm = vm_from_a_returning_file();
+    let key = vm.plan().keys_in_order()[1];
+
+    vm.seed_merge_for_test(vec![merged(
+        MergeRowKey::Current(uuid::Uuid::from_u128(1)),
+        Some(key),
+        vec![RowAction::TakeImport, RowAction::CommentsOnly],
+    )]);
+
+    assert!(
+        vm.needs_reconcile().get(),
+        "an edited row is exactly what the step exists to show"
+    );
+}
+
+/// ⚠ The hazard the step-hiding must not create.
+///
+/// `rows_to_create`'s catch-all arm treats "no decision" as `CreateNew`, so if
+/// hiding the step ever stopped `rebuild_merge` running, every matched row would
+/// be created afresh — the manuscript duplicated, silently. Hiding the step must
+/// leave the decisions exactly as they were.
+#[test]
+fn hiding_the_reconcile_step_still_updates_rather_than_duplicates() {
+    let vm = vm_from_a_returning_file();
+    let key = vm.plan().keys_in_order()[1];
+
+    let mut row = merged(
+        MergeRowKey::Current(uuid::Uuid::from_u128(1)),
+        Some(key),
+        vec![RowAction::CommentsOnly, RowAction::TakeImport],
+    );
+    row.status = RowStatus::Identical;
+    vm.seed_merge_for_test(vec![row]);
+    assert!(!vm.needs_reconcile().get());
+
+    let rows = vm.rows_to_create();
+    let updates: Vec<_> = rows
+        .iter()
+        .filter(|r| matches!(r, ApplyImportRow::Update { .. }))
+        .collect();
+    assert_eq!(updates.len(), 1, "the matched row must update: {rows:#?}");
+    match updates[0] {
+        ApplyImportRow::Update { replace_prose, .. } => assert!(
+            !replace_prose,
+            "a comments-only return must not rewrite the writer's prose"
+        ),
+        _ => unreachable!(),
+    }
+}
+
 /// A decision is remembered against the row's own identity, so re-sourcing the merge —
 /// which is what going back and choosing a different destination does — cannot hand one
 /// row's instruction to another.

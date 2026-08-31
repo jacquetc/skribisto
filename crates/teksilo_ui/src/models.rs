@@ -36,6 +36,7 @@ mod dict_word_list_model;
 mod dictionary_settings_file;
 mod distraction_free_themes_file;
 mod examples_list_model;
+mod exchange_file;
 mod export_styles_file;
 mod folder_memory_file;
 mod footnote_numbering;
@@ -81,6 +82,7 @@ pub use dict_word_list_model::{DictWordListModel, DictWordRow};
 pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
 pub use distraction_free_themes_file::DistractionFreeThemesService;
 pub use examples_list_model::ExamplesListModel;
+pub use exchange_file::{ExchangeService, PerProjectExchange, SentPackage, SentRow};
 pub use export_styles_file::ExportStylesService;
 // `UNNUMBERED_MARKER` is used by the tests and by the dock's own reasoning about
 // what an unnumbered reference draws; re-exported beside `marker_for` so the two

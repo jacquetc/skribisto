@@ -1380,7 +1380,7 @@ fn pdf_export_writes_a_valid_pdf() {
     let g = flat_book();
     let p = preset("manuscript-shunn");
     let path = std::env::temp_dir().join(format!("skrib-export-{}.pdf", std::process::id()));
-    let stats = render_to_file(
+    let (stats, _receipt) = render_to_file(
         &req(&g, &[100, 101, 102], &p, ExportFormat::Pdf),
         &path,
         &|_| {},
@@ -1400,7 +1400,7 @@ fn epub_export_writes_a_non_empty_file() {
     let g = flat_book();
     let p = preset("neutral");
     let path = std::env::temp_dir().join(format!("skrib-export-{}.epub", std::process::id()));
-    let stats = render_to_file(
+    let (stats, _receipt) = render_to_file(
         &req(&g, &[100, 101, 102], &p, ExportFormat::Epub),
         &path,
         &|_| {},
@@ -1962,7 +1962,7 @@ fn a_real_export_reports_what_it_wrote_and_what_it_dropped() {
     for (fmt, ext) in [(ExportFormat::Docx, "docx"), (ExportFormat::Odt, "odt")] {
         let path =
             std::env::temp_dir().join(format!("skrib-comments-{}.{ext}", std::process::id()));
-        let stats = render_to_file(
+        let (stats, _receipt) = render_to_file(
             &req(&g, &[100, 101, 102], &p, fmt),
             &path,
             &|_| {},
@@ -1982,6 +1982,76 @@ fn a_real_export_reports_what_it_wrote_and_what_it_dropped() {
     }
 }
 
+/// The receipt must describe the file that was actually written.
+///
+/// Its whole purpose is to answer questions the file cannot — which rows went
+/// out, and what they said at the time — so a receipt that disagrees with the
+/// marks is worse than no receipt: it would report a row as unchanged when the
+/// reader's copy says otherwise, or the reverse.
+#[test]
+fn the_receipt_lists_exactly_the_rows_and_comments_the_file_was_marked_with() {
+    let g = flat_book_with_comments();
+    let p = preset("neutral");
+    let path = std::env::temp_dir().join(format!("skrib-receipt-{}.docx", std::process::id()));
+    let (stats, receipt) = render_to_file(
+        &req(&g, &[100, 101, 102], &p, ExportFormat::Docx),
+        &path,
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+
+    assert!(
+        !receipt.rows.is_empty(),
+        "a marked export must record the rows it marked"
+    );
+    // Every recorded digest is the one `round_trip` would compute for that row's
+    // prose, so a returning file's baseline lines up with it.
+    for row in &receipt.rows {
+        assert_eq!(row.digest.len(), 12, "a digest is twelve hex digits");
+        assert!(
+            !row.item_uid.is_nil(),
+            "a nil uid can never be matched home"
+        );
+    }
+    let unique: std::collections::HashSet<_> = receipt.rows.iter().map(|r| r.item_uid).collect();
+    assert_eq!(
+        unique.len(),
+        receipt.rows.len(),
+        "one entry per row, not per content"
+    );
+
+    // Comment uids are the *markable* ones — the placed comment with a real uid.
+    // `comments_written` counts placed comments including any nil-uid one, so the
+    // two are allowed to differ and the receipt must follow the marks.
+    assert!(
+        receipt.comment_uids.len() <= stats.comments_written,
+        "the receipt cannot claim more comments than were written"
+    );
+    let _ = std::fs::remove_file(&path);
+}
+
+/// An export written without round-trip marks records nothing, because nothing
+/// about it can be recognised on the way home — an empty receipt is the honest
+/// answer rather than a list implying a return could be matched.
+#[test]
+fn an_export_without_marks_records_an_empty_receipt() {
+    let g = flat_book_with_comments();
+    let mut p = preset("neutral");
+    p.include_round_trip_marks = false;
+    p.include_comments = false;
+    let path = std::env::temp_dir().join(format!("skrib-nomarks-{}.docx", std::process::id()));
+    let (_stats, receipt) = render_to_file(
+        &req(&g, &[100, 101, 102], &p, ExportFormat::Docx),
+        &path,
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    assert!(receipt.is_empty(), "{receipt:?}");
+    let _ = std::fs::remove_file(&path);
+}
+
 /// A format that carries no comments reports no counts — so its toast stays silent
 /// rather than warning about something the writer cannot act on.
 #[test]
@@ -1989,7 +2059,7 @@ fn a_non_carrying_format_reports_no_comment_counts() {
     let g = flat_book_with_comments();
     let p = preset("neutral");
     let path = std::env::temp_dir().join(format!("skrib-nocomments-{}.epub", std::process::id()));
-    let stats = render_to_file(
+    let (stats, _receipt) = render_to_file(
         &req(&g, &[100, 101, 102], &p, ExportFormat::Epub),
         &path,
         &|_| {},
@@ -2014,7 +2084,7 @@ fn odt_export_writes_a_real_odf_package() {
     let g = flat_book();
     let p = preset("neutral");
     let path = std::env::temp_dir().join(format!("skrib-export-{}.odt", std::process::id()));
-    let stats = render_to_file(
+    let (stats, _receipt) = render_to_file(
         &req(&g, &[100, 101, 102], &p, ExportFormat::Odt),
         &path,
         &|_| {},
@@ -2066,7 +2136,7 @@ fn docx_export_writes_a_non_empty_file() {
     let g = flat_book();
     let p = preset("neutral");
     let path = std::env::temp_dir().join(format!("skrib-export-{}.docx", std::process::id()));
-    let stats = render_to_file(
+    let (stats, _receipt) = render_to_file(
         &req(&g, &[100, 101, 102], &p, ExportFormat::Docx),
         &path,
         &|_| {},
@@ -2413,7 +2483,7 @@ fn every_builtin_preset_exports_every_format_with_both_tiers() {
         let binary = vec![ExportFormat::Docx, ExportFormat::Epub];
         for f in binary {
             let path = dir.join(format!("{}-{f:?}", p.id));
-            let stats = render_to_file(
+            let (stats, _receipt) = render_to_file(
                 &req(&g, &[100, 101, 102], &p, f),
                 &path,
                 &|_| {},

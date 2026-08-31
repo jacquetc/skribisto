@@ -376,6 +376,8 @@ pub(crate) struct Tier1Services {
     pub note_book_choice: models::NoteBookChoiceService,
     /// What "Add as note" remembers between captures, per project.
     pub note_capture: models::NoteCaptureService,
+    /// Which copies of a manuscript have gone out for review, per project.
+    pub exchange: models::ExchangeService,
 }
 
 pub(crate) fn open_tier1_services(
@@ -460,6 +462,17 @@ pub(crate) fn open_tier1_services(
                 .ok()
         })
         .unwrap_or_else(models::NoteCaptureService::in_memory_default);
+    // Which copies have gone out for review (`exchange.toml`). A seventh sibling,
+    // degraded the same way: with no config directory an export still works, it
+    // simply stops being remembered — and the readouts that depend on it go quiet
+    // rather than lying.
+    let exchange = crate::identity::app_paths()
+        .and_then(|paths| {
+            models::ExchangeService::open(&paths)
+                .map_err(|e| eprintln!("exchange record: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::ExchangeService::in_memory_default);
     // The Import-Plume view-model is a singleton (form + in-flight job + progress
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
@@ -567,6 +580,7 @@ pub(crate) fn open_tier1_services(
         backup_settings,
         note_book_choice,
         note_capture,
+        exchange,
     }
 }
 

@@ -206,8 +206,18 @@ impl Widget for ImportDocumentPanel {
                         }
                     }),
             )
+            // Hidden entirely when every matched row is already bringing only
+            // remarks home — the beta-reader case, where the page would be a
+            // table of identical "comments only" dropdowns. `visible_when` drops
+            // it out of the flow, so Next goes straight to Finish rather than
+            // through a page with nothing on it to decide.
+            //
+            // The *step* is gated, never Destination's `validate_on_next` above:
+            // that is what runs `rebuild_merge`, and without it every matched row
+            // would reach `rows_to_create` with no decision and be created afresh.
             .step(
                 Step::new(tr!(import_document_step_reconcile()))
+                    .visible_when(self.vm.needs_reconcile())
                     .content(move || reconcile_step(&reconcile_vm)),
             )
             // Import. The write is one transaction, so it either lands whole or

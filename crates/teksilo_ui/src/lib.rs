@@ -373,6 +373,7 @@ pub fn run() {
         backup_settings,
         note_book_choice,
         note_capture,
+        exchange,
     } = startup::open_tier1_services(&app_ctx, init_root_id);
 
     // The margin lane's own mark sources, registered through the same door an
@@ -677,6 +678,9 @@ pub fn run() {
         // exactly what it did before this registration existed.
         .app_state(note_book_choice.clone())
         .app_state(note_capture.clone())
+        // Read by the export wiring, which records every marked copy that goes
+        // out, and by the surfaces that ask how many are still with a reader.
+        .app_state(exchange.clone())
         .app_state(initial_state.session.backup_scheduler.clone())
         .app_state(project_factory.clone())
         // Bind this instance's sockets: its own per-pid one always, and the

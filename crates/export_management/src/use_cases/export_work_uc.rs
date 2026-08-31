@@ -182,8 +182,25 @@ impl LongOperation for ExportWorkUseCase {
         let outcome = run_export(&*uow, &self.dto, &progress_callback, &cancel_flag);
         uow.end_transaction()?;
 
-        let (work_id, result) = outcome?;
-        uow.publish_export_work_event(vec![work_id], None);
+        let (work_id, result, work_unique_id, receipt) = outcome?;
+        // The receipt rides the event's own `data` slot, which has carried
+        // `Option<String>` since it was generated and had never been filled.
+        // Deliberately not on `ExportResultDto`: that is what the writer is
+        // shown, this is bookkeeping, and the DTO is a generated file already
+        // carrying hand-edits that a regeneration would drop. See
+        // `crate::events` for the whole reasoning.
+        //
+        // Published after the transaction closed, and on a channel another
+        // thread drains — so a listener that panics, cannot parse this, or is
+        // not there at all changes nothing about the file just written.
+        let origins = crate::events::ExportOrigins::new(
+            &work_unique_id,
+            &result.output_path,
+            format!("{:?}", self.dto.format),
+            chrono::Utc::now().to_rfc3339(),
+            &receipt,
+        );
+        uow.publish_export_work_event(vec![work_id], origins.to_payload());
         progress_callback(OperationProgress::new(100.0, Some("completed".to_string())));
         Ok(result)
     }
@@ -194,7 +211,12 @@ fn run_export(
     dto: &ExportWorkDto,
     progress: &(dyn Fn(OperationProgress) + Send),
     cancel: &AtomicBool,
-) -> Result<(EntityId, ExportResultDto)> {
+) -> Result<(
+    EntityId,
+    ExportResultDto,
+    String,
+    skribisto_compiler::ExportReceipt,
+)> {
     // `gather` reads exactly `dto.work_id` — the Work to export, named explicitly.
     let g = gather(uow, dto.work_id as EntityId, progress, cancel)?;
     let work_id = g.work.id;
@@ -235,7 +257,7 @@ fn run_export(
     };
     let path = std::path::Path::new(&dto.output_path);
     // Flatten to the full `{:#}` chain so the failure toast keeps the root cause.
-    let stats = skribisto_compiler::render_to_file(&req, path, &render_progress, cancel)
+    let (stats, receipt) = skribisto_compiler::render_to_file(&req, path, &render_progress, cancel)
         .map_err(|e| anyhow!("{e:#}"))?;
 
     Ok((
@@ -246,6 +268,11 @@ fn run_export(
             comments_written: stats.comments_written as i64,
             comments_orphaned: stats.comments_orphaned as i64,
         },
+        // Read from the frozen snapshot, like everything else here: a uid taken
+        // after the transaction closed could name a project the writer has since
+        // switched away from.
+        g.work.unique_id.clone(),
+        receipt,
     ))
 }
 

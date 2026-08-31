@@ -26,6 +26,8 @@ mod fonts;
 /// implementations of "does this title merely restate its number" would drift.
 pub mod headings;
 mod preset;
+/// What an export sent out, kept because the file itself cannot say.
+pub mod receipt;
 mod render;
 
 pub use preset::{
@@ -33,6 +35,7 @@ pub use preset::{
     FootnotePlacement, HeadingLanguage, HeadingScheme, ImageHandling, LineSpacing, Margins,
     PageSize, Preset, SceneBreak, builtin_presets,
 };
+pub use receipt::{ExportReceipt, ExportedRow};
 pub use render::{RenderRequest, RenderStats, render_to_file, render_to_string};
 
 use skrib_format::Gathered;

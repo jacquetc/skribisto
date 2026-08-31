@@ -174,7 +174,18 @@ pub fn digest(text: &str) -> String {
 
 /// The bookmark name for a row: its `BinderItem.uid` and a digest of the prose being exported.
 pub fn row_mark_name(uid: &Uuid, text: &str) -> String {
-    format!("{ROW_PREFIX}{}_{}", uid_tag(uid), digest(text))
+    row_mark_name_with_digest(uid, &digest(text))
+}
+
+/// The same name, from a digest already in hand.
+///
+/// Exists so a caller that needs the digest *as well as* the name — the export
+/// receipt keeps it, because a mark name is one-way and cannot be read back —
+/// computes it once. Two computations of one digest are two chances for them to
+/// disagree, and a receipt that disagrees with the file it describes is worse
+/// than no receipt.
+pub fn row_mark_name_with_digest(uid: &Uuid, digest: &str) -> String {
+    format!("{ROW_PREFIX}{}_{}", uid_tag(uid), digest)
 }
 
 /// The bookmark name for a comment: its `Comment.uid`, and nothing else — a comment's *body*

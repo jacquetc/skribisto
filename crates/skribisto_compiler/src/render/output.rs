@@ -18,7 +18,7 @@ pub fn render_to_file(
     path: &Path,
     progress: &dyn Fn(f32),
     cancel: &AtomicBool,
-) -> Result<RenderStats> {
+) -> Result<(RenderStats, crate::ExportReceipt)> {
     let built = assemble(req, progress, cancel)?;
     let (doc, mut stats, langs) = (&built.doc, built.stats, &built.langs);
     if cancel.load(Ordering::Relaxed) {
@@ -32,6 +32,7 @@ pub fn render_to_file(
         comments,
         marks,
         orphaned: comments_orphaned,
+        receipt,
     } = export_payloads(req, &built)?;
     stats.comments_written = comments.len();
     stats.comments_orphaned = comments_orphaned;
@@ -148,7 +149,7 @@ pub fn render_to_file(
         other => return Err(anyhow!("{other:?} export is not implemented yet")),
     }
     progress(1.0);
-    Ok(stats)
+    Ok((stats, receipt))
 }
 
 /// A preset [`PageSize`] as (width, height) in millimetres — the unit `PdfExportOptions` uses.
@@ -206,6 +207,14 @@ pub(crate) struct Payloads {
     pub marks: text_document::DocumentMarks,
     /// Comments that belonged in this export and could not be placed.
     pub orphaned: usize,
+    /// What the marks above **say**, kept rather than only written.
+    ///
+    /// The mark names are one-way — `uid_tag` is a hash and the digest is a
+    /// truncation — so once the file is written nothing on this side can say
+    /// which rows went out or what they said at the time. That is the whole
+    /// reason a returning file can be recognised but a *stale* one cannot be
+    /// told from a fresh one. Collected here so the caller can keep a receipt.
+    pub receipt: crate::ExportReceipt,
 }
 
 /// Build both payloads from **one** pass over the compiled document.
@@ -220,6 +229,7 @@ pub(super) fn export_payloads(req: &RenderRequest, built: &Assembled) -> Result<
         comments: text_document::DocumentComments::new(),
         marks: text_document::DocumentMarks::new(),
         orphaned: 0,
+        receipt: crate::ExportReceipt::default(),
     };
 
     let want_comments = req.format.carries_comments()
@@ -244,8 +254,9 @@ pub(super) fn export_payloads(req: &RenderRequest, built: &Assembled) -> Result<
     let windows = comment_rebase::locate_windows(&text, &starts, &built.emitted);
 
     if want_marks {
-        for m in row_marks(built, &windows) {
-            out.marks.insert(m);
+        for (mark, row) in row_marks(built, &windows) {
+            out.marks.insert(mark);
+            out.receipt.rows.push(row);
         }
     }
     if want_comments {
@@ -267,7 +278,7 @@ pub(super) fn export_payloads(req: &RenderRequest, built: &Assembled) -> Result<
 pub(super) fn row_marks(
     built: &Assembled,
     windows: &std::collections::HashMap<u64, comment_rebase::Window>,
-) -> Vec<text_document::DocumentMark> {
+) -> Vec<(text_document::DocumentMark, crate::ExportedRow)> {
     let mut seen: std::collections::HashSet<uuid::Uuid> = std::collections::HashSet::new();
     let mut out = Vec::new();
     for e in &built.emitted {
@@ -279,9 +290,20 @@ pub(super) fn row_marks(
             // and re-import falls back to matching this row by type and title.
             continue;
         };
-        out.push(text_document::DocumentMark::point(
-            w.lo as u32,
-            skribisto_model::round_trip::row_mark_name(&e.item_uid, &e.djot_plain()),
+        // The digest is computed once and used twice — for the name written
+        // into the file and for the receipt kept here. Computing it twice would
+        // let the two drift, and a receipt that disagrees with the file it
+        // describes is worse than none.
+        let digest = skribisto_model::round_trip::digest(&e.djot_plain());
+        out.push((
+            text_document::DocumentMark::point(
+                w.lo as u32,
+                skribisto_model::round_trip::row_mark_name_with_digest(&e.item_uid, &digest),
+            ),
+            crate::ExportedRow {
+                item_uid: e.item_uid,
+                digest,
+            },
         ));
     }
     out
@@ -421,6 +443,10 @@ pub(super) fn comment_payload_into(
             )
             .with_ordinal(ordinal),
         );
+        // Recorded in the same pass and the same order as the mark it belongs
+        // to, so the receipt lists exactly the comments the file can be matched
+        // on — never the nil-uid ones, which got no mark and cannot come home.
+        out.receipt.comment_uids.push(*uid);
     }
     Ok(())
 }

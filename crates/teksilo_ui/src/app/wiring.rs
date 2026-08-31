@@ -31,6 +31,7 @@
 //!     the docking rail shares across builds.
 
 pub(super) mod autosave;
+pub(super) mod exchange;
 pub(super) mod focus_sync;
 pub(super) mod footnotes;
 pub(super) mod guards;

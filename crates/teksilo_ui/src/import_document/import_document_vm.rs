@@ -348,6 +348,10 @@ pub struct ImportDocumentViewModel {
     /// A plain signal rather than something derived from [`merge`](Self::merge): the step
     /// picks its page from it, and a page choice is re-read on every frame.
     merge_has_matches: Signal<bool>,
+    /// Whether any matched row still wants a decision — see [`needs_reconcile`].
+    ///
+    /// [`needs_reconcile`]: ImportDocumentViewModel::needs_reconcile
+    merge_needs_review: Signal<bool>,
     /// What to do with a row whose prose its own type cannot hold — see [`StrayProse`].
     stray_prose: Rc<RefCell<HashMap<PlanRowKey, StrayProse>>>,
 }
@@ -435,6 +439,7 @@ impl ImportDocumentViewModel {
             merge_actions: Rc::new(RefCell::new(HashMap::new())),
             merge_version: Signal::new(0),
             merge_has_matches: Signal::new(false),
+            merge_needs_review: Signal::new(false),
             files: ListModel::new(),
             file_count: Signal::new(0),
             controller: StepperController::new(STEP_COUNT),
@@ -1735,11 +1740,27 @@ impl ImportDocumentViewModel {
         // the writer tried and abandoned cannot leave an instruction behind.
         let live: std::collections::HashSet<MergeRowKey> = rows.iter().map(|m| m.key).collect();
         let has_matches = rows.iter().any(|m| m.current_item_id.is_some());
+        // Is there a decision worth showing, or only remarks coming home?
+        //
+        // The beta-reader case — a copy that went out, was read, was commented
+        // on and came back with the prose untouched — produces a table of rows
+        // whose every action is already `CommentsOnly`, which is what
+        // `RowStatus::Identical` defaults to. Asking the writer to confirm a
+        // page of them is the same ceremony `has_matches` already exists to
+        // avoid one step earlier.
+        //
+        // Judged on `action_for`, not on the raw status: the writer may have
+        // *chosen* an action, and their choice is the thing that decides whether
+        // there is anything left to look at.
+        let needs_review = rows
+            .iter()
+            .any(|m| m.current_item_id.is_some() && self.action_for(m) != RowAction::CommentsOnly);
         self.merge.set_rows(rows);
         self.merge_actions
             .borrow_mut()
             .retain(|k, _| live.contains(k));
         self.merge_has_matches.set(has_matches);
+        self.merge_needs_review.set(has_matches && needs_review);
         self.merge_version.set(self.merge_version.get() + 1);
     }
 
@@ -1790,6 +1811,21 @@ impl ImportDocumentViewModel {
     /// The same question, bindable — what the step picks its page from.
     pub fn anything_to_reconcile(&self) -> Signal<bool> {
         self.merge_has_matches.clone()
+    }
+
+    /// Whether the Reconcile step is worth showing at all.
+    ///
+    /// False when every matched row is already set to bring its remarks home and
+    /// leave the prose alone — the whole beta-reader case. The step is then
+    /// hidden from the flow (`Step::visible_when`), so the wizard finishes on
+    /// Destination rather than on a page of identical dropdowns.
+    ///
+    /// ⚠ This gates the **step**, never `rebuild_merge`. That still runs in
+    /// Destination's `validate_on_next`, and it must: `rows_to_create`'s
+    /// catch-all arm treats "no decision" as `CreateNew`, so a merge that never
+    /// ran would duplicate every matched row instead of updating it.
+    pub fn needs_reconcile(&self) -> Signal<bool> {
+        self.merge_needs_review.clone()
     }
 
     /// How many rows the returning file brings home rather than adds.
