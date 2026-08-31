@@ -13,6 +13,11 @@
 //! reaches into it for the reconcile tree's row types, the same reason
 //! `view_models::long_op` is `pub(crate)`.
 
+/// Block-level accept/reject over a returning file's prose.
+///
+/// Store-free and headless: the part that is easy to get subtly wrong and
+/// impossible to eyeball in a widget tree.
+pub(crate) mod hunk_merge;
 pub(crate) mod import_document_vm;
 pub(crate) mod panel;
 

@@ -1385,6 +1385,72 @@ fn keeping_a_row_sends_nothing_for_it() {
     );
 }
 
+/// A block-level decision must reach the write, and must override the whole-row
+/// action rather than being quietly dropped beside it.
+///
+/// `RowAction` is all-or-nothing: an editor who fixed thirty commas offered the
+/// writer "take all thirty and any rewriting with them, or none". Accepting one
+/// hunk is a strictly more specific answer to the same question, so it wins.
+#[test]
+fn an_accepted_hunk_overrides_the_whole_row_action() {
+    let vm = vm_from_a_returning_file();
+    let key = vm.plan().keys_in_order()[1];
+
+    // `CommentsOnly` — the row would otherwise leave the prose alone entirely.
+    vm.seed_merge_for_test(vec![merged(
+        MergeRowKey::Current(uuid::Uuid::from_u128(1)),
+        Some(key),
+        vec![RowAction::CommentsOnly, RowAction::TakeImport],
+    )]);
+    let row = vm.merge_rows().remove(0);
+    assert!(
+        vm.merged_prose(&row).is_none(),
+        "no decision made yet, so nothing overrides the row action"
+    );
+
+    vm.set_hunk_accepted(row.key, 0, true);
+    assert_eq!(
+        vm.accepted_hunks(row.key).len(),
+        1,
+        "the decision is remembered against the row's own key"
+    );
+
+    let rows = vm.rows_to_create();
+    let update = rows
+        .iter()
+        .find(|r| matches!(r, ApplyImportRow::Update { .. }))
+        .expect("the matched row still updates");
+    match update {
+        ApplyImportRow::Update { replace_prose, .. } => assert!(
+            *replace_prose,
+            "a block the writer accepted has to be written, so the prose is replaced"
+        ),
+        _ => unreachable!(),
+    }
+}
+
+/// Un-taking the last block returns the row to its whole-row meaning, rather
+/// than leaving an empty decision behind that still forces a prose rewrite.
+#[test]
+fn clearing_every_hunk_restores_the_plain_row_action() {
+    let vm = vm_from_a_returning_file();
+    let key = vm.plan().keys_in_order()[1];
+    vm.seed_merge_for_test(vec![merged(
+        MergeRowKey::Current(uuid::Uuid::from_u128(1)),
+        Some(key),
+        vec![RowAction::CommentsOnly, RowAction::TakeImport],
+    )]);
+    let row = vm.merge_rows().remove(0);
+
+    vm.set_hunk_accepted(row.key, 0, true);
+    vm.set_hunk_accepted(row.key, 0, false);
+    assert!(vm.accepted_hunks(row.key).is_empty());
+    assert!(
+        vm.merged_prose(&row).is_none(),
+        "an emptied decision must not keep forcing a rewrite"
+    );
+}
+
 /// The beta-reader case: a copy went out, came back with remarks and untouched
 /// prose, so the Reconcile step is dropped out of the flow entirely rather than
 /// showing a page of identical "comments only" dropdowns.

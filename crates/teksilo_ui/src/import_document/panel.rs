@@ -48,7 +48,8 @@ use crate::panels::import_epigraph_cell::EpigraphCell;
 use skribisto_model::reconcile::{RowAction, RowStatus};
 
 use super::import_document_vm::{
-    ImportDocumentViewModel, LEVEL_TYPES, MergeRowView, ROW_TYPES, STEP_REVIEW, StrayProse,
+    ImportDocumentViewModel, LEVEL_TYPES, MergeRowKey, MergeRowView, ROW_TYPES, STEP_REVIEW,
+    StrayProse,
 };
 
 const CARD_W: f32 = 920.0;
@@ -683,9 +684,16 @@ fn show_compare(ctx: &mut EventContext, vm: &ImportDocumentViewModel, row: &Merg
         .clone()
         .or_else(|| row.incoming_title.clone())
         .unwrap_or_default();
+    let panel_vm = vm.clone();
+    let key = row.key;
     ctx.present_modal(
         ModalRequest::deferred(move |t| {
-            t.add(ComparePanel::new(current.clone(), incoming.clone()))
+            t.add(ComparePanel::new(
+                panel_vm.clone(),
+                key,
+                current.clone(),
+                incoming.clone(),
+            ))
         })
         .presentation(ModalPresentation::InTree)
         .title(lit!(title))
@@ -704,6 +712,14 @@ const COMPARE_H: f32 = 520.0;
 /// comparison would reload and lose its scroll position on every repaint.
 struct ComparePanel {
     pane: crate::widgets::DiffPane,
+    vm: ImportDocumentViewModel,
+    key: MergeRowKey,
+    /// The blocks that differ, resolved once when the panel opens.
+    ///
+    /// Not re-derived per build: the two sides cannot change while the modal is
+    /// up, and re-running the alignment on every repaint would renumber hunks
+    /// under the checkboxes bound to them.
+    hunks: Vec<super::hunk_merge::Hunk>,
     root_child: Option<WidgetId>,
 }
 
@@ -714,21 +730,89 @@ impl std::fmt::Debug for ComparePanel {
 }
 
 impl ComparePanel {
-    fn new(current: String, incoming: String) -> Self {
+    fn new(
+        vm: ImportDocumentViewModel,
+        key: MergeRowKey,
+        current: String,
+        incoming: String,
+    ) -> Self {
         let pane = crate::widgets::DiffPane::new();
         let diff = crate::versions::version_diff::diff_djot(&current, &incoming);
         pane.show(&crate::versions::version_diff::render(&diff, None, &|n| {
             format!("[{n}]")
         }));
+        // The rendered diff above is `version_diff`'s, which flattens Djot to
+        // plain text — right for reading, and deliberately not what the
+        // checkboxes act on. `hunk_merge` re-derives the blocks from the Djot
+        // source so accepting one writes back the markup it actually had.
+        let hunks = super::hunk_merge::hunks(&current, &incoming);
         Self {
             pane,
+            vm,
+            key,
+            hunks,
             root_child: None,
         }
+    }
+
+    /// One line per differing block: take it, or leave it.
+    fn hunk_rows(&self, ctx: &mut BuildContext) -> VStack {
+        if self.hunks.is_empty() {
+            return VStack::new();
+        }
+        let accepted = self.vm.accepted_hunks(self.key);
+        let mut column = VStack::new().spacing(2.0);
+        for hunk in &self.hunks {
+            let signal = Signal::new(accepted.contains(&hunk.index));
+            {
+                let vm = self.vm.clone();
+                let key = self.key;
+                let index = hunk.index;
+                ctx.effect(&signal, move |on| vm.set_hunk_accepted(key, index, *on));
+            }
+            let label = match hunk.kind {
+                super::hunk_merge::HunkKind::Added => tr!(import_document_hunk_added()),
+                super::hunk_merge::HunkKind::Removed => tr!(import_document_hunk_removed()),
+                super::hunk_merge::HunkKind::Changed => tr!(import_document_hunk_changed()),
+            };
+            // The reader is choosing between two paragraphs they can see above;
+            // this line only has to say which one, so it previews the side the
+            // decision is *about*.
+            let preview = if hunk.kind == super::hunk_merge::HunkKind::Removed {
+                &hunk.local
+            } else {
+                &hunk.incoming
+            };
+            column = column.child(
+                HStack::new()
+                    .spacing(6.0)
+                    .child(Checkbox::new(signal).label(lit!(label)))
+                    .child(
+                        TextWidget::new(lit!(preview_line(preview)))
+                            .style(TextStyleRole::Small)
+                            .color(TextRole::Secondary)
+                            .single_line(),
+                    ),
+            );
+        }
+        column
+    }
+}
+
+/// A one-line preview of a block, for the row beside its checkbox.
+fn preview_line(text: &str) -> String {
+    let flat: String = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if flat.chars().count() > 72 {
+        let cut: String = flat.chars().take(71).collect();
+        format!("{cut}…")
+    } else {
+        flat
     }
 }
 
 impl Widget for ComparePanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let hunk_rows = self.hunk_rows(ctx);
         let editor = RichTextEditor::read_only(self.pane.doc.clone())
             .content_padding_symmetric(6.0, 8.0)
             .h_scroll_policy(ScrollPolicy::AlwaysOff);
@@ -749,6 +833,7 @@ impl Widget for ComparePanel {
                     Expand::vertical {
                         child: editor
                     }
+                    child: hunk_rows
                     HStack {
                         Spacer
                         Button::new(tr!(import_document_compare_close())) {

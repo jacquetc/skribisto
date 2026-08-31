@@ -549,3 +549,54 @@ impl Widget for WidgetHolder {
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
     }
 }
+
+/// The Compare modal offers a checkbox per differing block, and toggling one is
+/// what makes block-level merge reachable at all — the view-model half is inert
+/// without it.
+///
+/// Laid out through a real tree rather than asserted on the struct: a row that
+/// builds but measures to nothing is invisible, which is the failure mode this
+/// kind of list has.
+#[test]
+fn the_compare_panel_offers_one_checkbox_per_hunk() {
+    let app_ctx = Rc::new(AppContext::new());
+    let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
+    let key = MergeRowKey::Current(uuid::Uuid::from_u128(7));
+
+    let panel = ComparePanel::new(
+        vm.clone(),
+        key,
+        "One.\n\nTwo.\n\nThree.\n".into(),
+        "One.\n\nTwo rewritten.\n\nThree.\n\nFour added.\n".into(),
+    );
+    assert_eq!(
+        panel.hunks.len(),
+        2,
+        "one rewrite and one addition: {:#?}",
+        panel.hunks
+    );
+
+    let mut tree = crate::test_support::tree_with_events(&app_ctx);
+    let id = tree.add_boxed(Box::new(panel));
+    tree.layout(SizeProposal::exact(COMPARE_W, COMPARE_H));
+    let bounds = tree.bounds(id);
+    assert!(
+        bounds.width > 0.0 && bounds.height > 0.0,
+        "the compare panel laid out to nothing ({bounds:?})"
+    );
+}
+
+/// A row whose two sides are identical has nothing to decide, and must not put
+/// an empty control strip under the diff.
+#[test]
+fn an_unchanged_row_offers_no_hunks() {
+    let app_ctx = Rc::new(AppContext::new());
+    let vm = ImportDocumentViewModel::new(app_ctx, AppIds::default());
+    let panel = ComparePanel::new(
+        vm,
+        MergeRowKey::Current(uuid::Uuid::from_u128(7)),
+        "Same.\n".into(),
+        "Same.\n".into(),
+    );
+    assert!(panel.hunks.is_empty());
+}

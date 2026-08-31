@@ -348,6 +348,12 @@ pub struct ImportDocumentViewModel {
     /// A plain signal rather than something derived from [`merge`](Self::merge): the step
     /// picks its page from it, and a page choice is re-read on every frame.
     merge_has_matches: Signal<bool>,
+    /// Per-row hunk decisions, keyed the same way `merge_actions` is.
+    ///
+    /// Absent or empty means "no block-level decision", which is what every row
+    /// starts as and what keeps the whole-row actions meaning exactly what they
+    /// always did.
+    hunk_decisions: RefCell<HashMap<MergeRowKey, std::collections::BTreeSet<usize>>>,
     /// Whether any matched row still wants a decision — see [`needs_reconcile`].
     ///
     /// [`needs_reconcile`]: ImportDocumentViewModel::needs_reconcile
@@ -398,6 +404,13 @@ pub enum MergeRowKey {
 #[derive(Clone, Debug)]
 struct MergeDecision {
     action: RowAction,
+    /// The prose the writer assembled block by block in Compare, when they did.
+    ///
+    /// `None` is the ordinary case and means "no block-level decision" — the row
+    /// then means exactly what its whole-row action has always meant. Resolved
+    /// here, where the merge row is already in hand, rather than looked up again
+    /// later from a plan key that cannot name it.
+    merged_djot: Option<String>,
     /// `round_trip::uid_tag` of the destination item, or `None` for a row the project does not
     /// have — which is exactly the shape that may not be updated.
     target_uid_tag: Option<String>,
@@ -439,6 +452,7 @@ impl ImportDocumentViewModel {
             merge_actions: Rc::new(RefCell::new(HashMap::new())),
             merge_version: Signal::new(0),
             merge_has_matches: Signal::new(false),
+            hunk_decisions: RefCell::new(HashMap::new()),
             merge_needs_review: Signal::new(false),
             files: ListModel::new(),
             file_count: Signal::new(0),
@@ -1498,6 +1512,7 @@ impl ImportDocumentViewModel {
                         m.incoming_key?,
                         MergeDecision {
                             action: self.action_for(m),
+                            merged_djot: self.merged_prose(m),
                             // The **destination's** tag, read off the merge row's own key —
                             // never the incoming row's mark. `reconcile::pair` pairs on title
                             // and type when a file carries no marks at all (exported with
@@ -1537,21 +1552,32 @@ impl ImportDocumentViewModel {
                     Some(MergeDecision {
                         action: action @ (RowAction::TakeImport | RowAction::CommentsOnly),
                         target_uid_tag: Some(target),
-                    }) => Some(vec![ApplyImportRow::Update {
-                        target_uid_tag: target.clone(),
-                        replace_prose: *action == RowAction::TakeImport,
-                        djot: row.djot.clone(),
-                        // Rides `replace_prose` with the manuscript, and is handed over
-                        // whether or not it will be written: the use case is what decides,
-                        // and sending it conditionally here would put that decision in two
-                        // places.
-                        epigraph: row.epigraph.clone(),
-                        comments,
-                        // Provenance, for the completion event. The **name**, never
-                        // `row.origin` — see `PlanRowView::source_file_name`.
-                        source_file_name: row.source_file_name(),
-                        source_file_digest: row.source_file_digest.clone(),
-                    }]),
+                        merged_djot,
+                    }) => {
+                        // A block-level decision overrides the whole-row one: the
+                        // writer went into Compare and said which paragraphs to
+                        // take, which is a strictly more specific answer to the
+                        // same question. `merged_djot` is `None` unless they did,
+                        // so a row nobody opened behaves exactly as before.
+                        let replace_prose =
+                            merged_djot.is_some() || *action == RowAction::TakeImport;
+                        let djot = merged_djot.clone().unwrap_or_else(|| row.djot.clone());
+                        Some(vec![ApplyImportRow::Update {
+                            target_uid_tag: target.clone(),
+                            replace_prose,
+                            djot,
+                            // Rides `replace_prose` with the manuscript, and is handed over
+                            // whether or not it will be written: the use case is what decides,
+                            // and sending it conditionally here would put that decision in two
+                            // places.
+                            epigraph: row.epigraph.clone(),
+                            comments,
+                            // Provenance, for the completion event. The **name**, never
+                            // `row.origin` — see `PlanRowView::source_file_name`.
+                            source_file_name: row.source_file_name(),
+                            source_file_digest: row.source_file_digest.clone(),
+                        }])
+                    }
                     // Unreachable by construction — `reconcile` offers these two only on a row
                     // that has a destination side, and a row without one gets a key that says
                     // so. Writing nothing is the right way to be wrong here: creating a
@@ -1559,6 +1585,7 @@ impl ImportDocumentViewModel {
                     Some(MergeDecision {
                         action: RowAction::TakeImport | RowAction::CommentsOnly,
                         target_uid_tag: None,
+                        ..
                     }) => None,
                     // Nothing is written for a row the writer is keeping as it is. There is no
                     // "leave it alone" instruction to send, and there does not need to be.
@@ -1853,6 +1880,62 @@ impl ImportDocumentViewModel {
             .map(|r| r.djot)
             .unwrap_or_default();
         (current, incoming)
+    }
+
+    // ── block-level decisions ───────────────────────────────────────────────
+
+    /// The blocks that differ between the project's prose and the returning
+    /// file's, for one merge row.
+    ///
+    /// Empty when the row has no destination side, which is also when the
+    /// Compare button is hidden — there is nothing to compare a new row against.
+    pub fn hunks_for(&self, row: &MergeRowView) -> Vec<super::hunk_merge::Hunk> {
+        let (local, incoming) = self.compare_prose(row);
+        if local.is_empty() && incoming.is_empty() {
+            return Vec::new();
+        }
+        super::hunk_merge::hunks(&local, &incoming)
+    }
+
+    /// Which of this row's hunks the writer has taken.
+    pub fn accepted_hunks(&self, key: MergeRowKey) -> std::collections::BTreeSet<usize> {
+        self.hunk_decisions
+            .borrow()
+            .get(&key)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// Take or leave one block.
+    pub fn set_hunk_accepted(&self, key: MergeRowKey, index: usize, accepted: bool) {
+        {
+            let mut all = self.hunk_decisions.borrow_mut();
+            let row = all.entry(key).or_default();
+            if accepted {
+                row.insert(index);
+            } else {
+                row.remove(&index);
+            }
+            if row.is_empty() {
+                all.remove(&key);
+            }
+        }
+        self.merge_version.set(self.merge_version.get() + 1);
+    }
+
+    /// The prose this row will be written with, if the writer decided block by
+    /// block.
+    ///
+    /// `None` when they made no block-level decision — the row then means
+    /// exactly what its whole-row action has always meant, and nothing about the
+    /// coarse path changes.
+    pub fn merged_prose(&self, row: &MergeRowView) -> Option<String> {
+        let accepted = self.accepted_hunks(row.key);
+        if accepted.is_empty() {
+            return None;
+        }
+        let (local, incoming) = self.compare_prose(row);
+        Some(super::hunk_merge::apply(&local, &incoming, &accepted))
     }
 
     /// Say that `created` rows landed, and offer to take them back.
