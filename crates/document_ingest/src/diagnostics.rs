@@ -97,7 +97,19 @@ pub enum ImportDiagnostic {
     /// handed a file with somebody's unaccepted edits in it should be told, not
     /// left to notice later that a sentence they remember rejecting is in their
     /// manuscript.
-    TrackedChangesFlattened { path: String, count: usize },
+    TrackedChangesFlattened {
+        path: String,
+        count: usize,
+        /// Who made them, in the order the file names them, deduplicated. Empty
+        /// when the source records no author, which a `.docx` written by an
+        /// anonymiser does.
+        ///
+        /// **Not decoration.** A returning manuscript is often marked up by more
+        /// than one person, and "12 tracked changes were accepted" leaves the
+        /// writer no way to tell whose wording they have just taken. The names are
+        /// the one thing the file knows that the accepted text no longer says.
+        authors: Vec<String>,
+    },
     /// A text box, shape or frame was found. Its text is not part of the document's
     /// flow, so where it belongs in a linear manuscript is genuinely unanswerable —
     /// it is named rather than guessed at.
@@ -317,8 +329,16 @@ impl fmt::Display for ImportDiagnostic {
                     "an epigraph between '{above}' and '{below}' was given to '{above}'"
                 )
             }
-            TrackedChangesFlattened { path, count } => {
-                write!(f, "{path}: {count} tracked change(s) accepted")
+            TrackedChangesFlattened {
+                path,
+                count,
+                authors,
+            } => {
+                write!(f, "{path}: {count} tracked change(s) accepted")?;
+                if !authors.is_empty() {
+                    write!(f, " by {}", authors.join(", "))?;
+                }
+                Ok(())
             }
             TextBoxDropped { path, count } => write!(f, "{path}: {count} text box(es) dropped"),
             EmbeddedObjectDropped { path, count } => {

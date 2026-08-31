@@ -517,9 +517,17 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
             title: "A part".into(),
             kind: CreateType::Part,
         },
+        // Both shapes: the sentence branches on whether the file names anyone,
+        // and only one of the two keys would otherwise be walked.
         D::TrackedChangesFlattened {
             path: "/tmp/a.docx".into(),
             count: 6,
+            authors: Vec::new(),
+        },
+        D::TrackedChangesFlattened {
+            path: "/tmp/b.docx".into(),
+            count: 2,
+            authors: vec!["Marc Dubois".into(), "Ada Rees".into()],
         },
         D::TextBoxDropped {
             path: "/tmp/a.docx".into(),

@@ -539,6 +539,11 @@ struct Walker<'a> {
     open: HashMap<String, OpenRange>,
     diagnostics: Vec<ImportDiagnostic>,
     tracked_changes: usize,
+    /// Who made them, first-seen order — see the DOCX scanner's own
+    /// `Walker::tracked_authors`. ODF puts these in one place, `office:change-info`
+    /// inside each `text:changed-region`, so they are read where the regions are
+    /// counted rather than gathered as the prose is walked.
+    tracked_authors: Vec<String>,
     text_boxes: usize,
     embedded_objects: usize,
     fields: usize,
@@ -571,6 +576,7 @@ impl<'a> Walker<'a> {
             open: HashMap::new(),
             diagnostics: Vec::new(),
             tracked_changes: 0,
+            tracked_authors: Vec::new(),
             text_boxes: 0,
             embedded_objects: 0,
             fields: 0,
@@ -591,6 +597,7 @@ impl<'a> Walker<'a> {
                 ImportDiagnostic::TrackedChangesFlattened {
                     path: self.origin.clone(),
                     count: self.tracked_changes,
+                    authors: self.tracked_authors.clone(),
                 },
             ),
             (
@@ -709,6 +716,21 @@ impl<'a> Walker<'a> {
                         .children()
                         .filter(|c| is(c, NS_TEXT, "changed-region"))
                         .count();
+                    // `<office:change-info><dc:creator>` inside each region. Read
+                    // by descent rather than by an exact path: a region wraps its
+                    // change-info in `<text:insertion>` or `<text:deletion>`, and
+                    // ODF allows further nesting for a format change.
+                    for creator in child
+                        .descendants()
+                        .filter(|c| is(c, NS_DC, "creator"))
+                        .map(element_text)
+                    {
+                        let creator = creator.trim();
+                        if !creator.is_empty() && !self.tracked_authors.iter().any(|a| a == creator)
+                        {
+                            self.tracked_authors.push(creator.to_string());
+                        }
+                    }
                 }
                 (Some(NS_TABLE), "table") => self.walk_table(child),
                 (Some(NS_TEXT), "soft-page-break") | (Some(NS_TEXT), "sequence-decls") => {}

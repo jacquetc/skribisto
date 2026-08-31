@@ -2163,10 +2163,17 @@ import-diagnostic-image-not-ingested = “{ $path }” refers to the image “{ 
 import-diagnostic-duplicate-title = “{ $title }” appears { $count } times. If you have imported these files before, this will duplicate them.
 import-diagnostic-heading-level-jump = “{ $title }” jumps from heading level { $from } to { $to }; it is placed one level under its parent.
 import-diagnostic-illegal-combination = “{ $title }” carries prose, but a { $kind } cannot hold any. Import is held until you change its type or leave it out — nothing is imported at all otherwise.
+# Two sentences, because the file may or may not say who. `$names` is a
+# ready-formatted list the app never splits; empty when the source records no
+# author, which is what an anonymised .docx looks like.
 import-diagnostic-tracked-changes-flattened = { $path } was mid-revision: { $count ->
     [one] { $count } tracked change was accepted
    *[other] { $count } tracked changes were accepted
-}, and deletions dropped. That is the final text — but check it is the version you meant.
+}, and deletions dropped. That is the final text — to keep any of your own wording instead, use Compare in the last step.
+import-diagnostic-tracked-changes-flattened-by = { $path } was mid-revision: { $count ->
+    [one] { $count } tracked change by { $names } was accepted
+   *[other] { $count } tracked changes by { $names } were accepted
+}, and deletions dropped. That is the final text — to keep any of your own wording instead, use Compare in the last step.
 import-diagnostic-text-box-dropped = { $count ->
     [one] { $path } holds { $count } text box. Its text sits outside the document's flow, so where it belongs in a manuscript cannot be answered — it is not imported.
    *[other] { $path } holds { $count } text boxes. Their text sits outside the document's flow, so where it belongs in a manuscript cannot be answered — they are not imported.

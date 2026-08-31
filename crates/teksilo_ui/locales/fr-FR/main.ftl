@@ -2151,7 +2151,11 @@ import-diagnostic-illegal-combination = « { $title } » contient du texte, ma
 import-diagnostic-tracked-changes-flattened = { $path } était en cours de révision : { $count ->
     [one] { $count } modification suivie a été acceptée
    *[other] { $count } modifications suivies ont été acceptées
-} et les suppressions écartées. C’est le texte final — vérifiez que c’est bien la version voulue.
+} et les suppressions écartées. C’est le texte final — pour garder votre propre formulation, utilisez Comparer à la dernière étape.
+import-diagnostic-tracked-changes-flattened-by = { $path } était en cours de révision : { $count ->
+    [one] { $count } modification suivie de { $names } a été acceptée
+   *[other] { $count } modifications suivies de { $names } ont été acceptées
+} et les suppressions écartées. C’est le texte final — pour garder votre propre formulation, utilisez Comparer à la dernière étape.
 import-diagnostic-text-box-dropped = { $count ->
     [one] { $path } contient { $count } zone de texte. Son contenu est hors du fil du document : impossible de dire où il se place dans un manuscrit, elle n’est donc pas importée.
    *[other] { $path } contient { $count } zones de texte. Leur contenu est hors du fil du document : impossible de dire où il se place dans un manuscrit, elles ne sont donc pas importées.

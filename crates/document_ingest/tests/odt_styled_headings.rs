@@ -151,3 +151,76 @@ fn an_explicit_text_h_is_unaffected() {
         headings(&doc)
     );
 }
+
+/// ODF records a revision's author in one place, and the scanner reads it there.
+///
+/// The OOXML twin of this lives in `containers.rs` against a real `.docx`; there is
+/// no `.odt` fixture carrying tracked changes, and this pins a *rule* rather than a
+/// producer's behaviour — which is exactly the split `fixtures/generate.py`'s own
+/// doc draws between the two kinds of test.
+///
+/// Read by descent from `<text:tracked-changes>` rather than by an exact path: a
+/// `<text:changed-region>` wraps its `<office:change-info>` in `<text:insertion>` or
+/// `<text:deletion>`, and ODF allows a further level for a format change. Descent
+/// from that element also keeps *comment* authors out — `<dc:creator>` names those
+/// too, and a document-wide search would report every commenter as a reviser.
+#[test]
+fn odf_tracked_changes_name_their_authors() {
+    const REVISED: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<office:document
+  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  office:mimetype="application/vnd.oasis.opendocument.text">
+  <office:body>
+    <office:text>
+      <text:tracked-changes>
+        <text:changed-region text:id="ct1">
+          <text:insertion>
+            <office:change-info>
+              <dc:creator>Marc Dubois</dc:creator>
+              <dc:date>2026-01-05T10:00:00</dc:date>
+            </office:change-info>
+          </text:insertion>
+        </text:changed-region>
+        <text:changed-region text:id="ct2">
+          <text:deletion>
+            <office:change-info>
+              <dc:creator>Ada Rees</dc:creator>
+              <dc:date>2026-01-06T10:00:00</dc:date>
+            </office:change-info>
+          </text:deletion>
+        </text:changed-region>
+        <text:changed-region text:id="ct3">
+          <text:insertion>
+            <office:change-info>
+              <dc:creator>Marc Dubois</dc:creator>
+              <dc:date>2026-01-07T10:00:00</dc:date>
+            </office:change-info>
+          </text:insertion>
+        </text:changed-region>
+      </text:tracked-changes>
+      <text:h text:outline-level="1">Chapter One</text:h>
+      <text:p>She turned the corner.</text:p>
+    </office:text>
+  </office:body>
+</office:document>
+"#;
+    let doc = scan(REVISED);
+    let (authors, count) = doc
+        .diagnostics
+        .iter()
+        .find_map(|d| match d {
+            document_ingest::ImportDiagnostic::TrackedChangesFlattened {
+                authors, count, ..
+            } => Some((authors.clone(), *count)),
+            _ => None,
+        })
+        .expect("three changed regions must be reported");
+    assert_eq!(count, 3, "one per changed region");
+    assert_eq!(
+        authors,
+        vec!["Marc Dubois".to_string(), "Ada Rees".to_string()],
+        "first-seen order, each name once"
+    );
+}

@@ -58,6 +58,21 @@ la mienne* proposé : un chapitre absent n’est pas pour Skribisto un signal de
 supprimer. S’il n’y a rien à apparier (une destination vide, par exemple), cette étape se
 réduit à une seule phrase plutôt qu’à un tableau.
 
+## Modifications suivies
+
+Un fichier Word ou OpenDocument qui revient en cours de révision arrive avec ses modifications
+déjà acceptées : les insertions conservées, les suppressions écartées. C’est la version que
+votre éditeur a laissée, et l’étape Vérifier le dit, en nommant qui les a faites quand le
+fichier l’enregistre.
+
+Les accepter ou les refuser relève de l’étape Fusion, et non d’une étape séparée. *Comparer*
+place votre formulation à côté de la leur, paragraphe par paragraphe, et un paragraphe que
+vous ne cochez pas garde exactement la vôtre. C’est une granularité plus grossière que les
+boutons par modification de Word, et c’est délibéré : la question à laquelle un auteur répond
+est « de qui est cette phrase », qui est une question de la taille d’un paragraphe. Il n’y a
+aucun moyen de prendre les modifications d’un éditeur et de refuser celles d’un autre à
+l’intérieur du même paragraphe.
+
 ## Limites à connaître
 
 La reconnaissance dépend des marqueurs que Skribisto a lui-même écrits. Un fichier venu

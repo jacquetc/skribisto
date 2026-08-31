@@ -51,6 +51,19 @@ file no longer mentions shows as *Not in this file*, with only *Keep mine* offer
 chapter is not Skribisto's cue to delete it. Nothing to line up (an empty destination, say)
 collapses this step to one sentence instead of a table.
 
+## Tracked changes
+
+A Word or OpenDocument file that comes back mid-revision arrives with its changes already
+accepted: insertions kept, deletions dropped. That is the version your editor left, and the
+Review step says so, naming who made them when the file records it.
+
+Accepting or rejecting them is the Merge step's job, not a separate one. *Compare* puts your
+wording beside theirs paragraph by paragraph, and a paragraph you do not tick keeps yours
+exactly as it was. That is a coarser grain than Word's per-change buttons, and deliberately:
+the question a writer answers is "whose sentence is this", which is a paragraph-sized
+question. There is no way to take one editor's changes and refuse another's within the same
+paragraph.
+
 ## Limits worth knowing
 
 Recognition depends on marks Skribisto itself wrote. A file from another tool, or one exported

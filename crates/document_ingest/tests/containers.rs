@@ -321,6 +321,34 @@ fn tracked_changes_are_accepted_and_reported() {
     );
 }
 
+/// …and the sentence names who made them.
+///
+/// "12 tracked changes were accepted" leaves a writer no way to tell whose wording
+/// they have just taken, and a manuscript that has been through an editor *and* a
+/// proofreader carries two people's. The names are the one thing the file knows
+/// that the accepted text no longer says, and `docx-rs` surfaces them on `Insert`
+/// and `Delete` — this scanner used to count the change and drop the author.
+#[test]
+fn a_tracked_change_says_who_made_it() {
+    let doc = scan("word-shaped.docx");
+    let named = doc
+        .diagnostics
+        .iter()
+        .find_map(|d| match d {
+            ImportDiagnostic::TrackedChangesFlattened { authors, count, .. } => {
+                Some((authors.clone(), *count))
+            }
+            _ => None,
+        })
+        .expect("the revision is reported");
+    assert_eq!(
+        named.0,
+        vec!["Editor".to_string()],
+        "one editor made both changes, so the name appears once"
+    );
+    assert!(named.1 >= 2, "and both changes are still counted");
+}
+
 /// CommonMark has no comment syntax, so its scanner has nothing to report. That the
 /// side channel stays *empty* rather than inventing something is worth pinning: a
 /// format genuinely carrying data another does not is fine; a format inventing it

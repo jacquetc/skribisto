@@ -198,9 +198,20 @@ impl Diagnostic {
                     .map(|k| crate::binder::create_labels::recommendation_label(k).resolve_now())
                     .unwrap_or_default()
             )),
-            "tracked-changes-flattened" => tr!(import_diagnostic_tracked_changes_flattened(
+            // Two keys, not one with an optional argument. Fluent has no way to
+            // omit a clause around an empty `$names` without the sentence reading
+            // "changes by  were accepted", and a translator needs both word orders
+            // to be whole sentences they can rearrange.
+            "tracked-changes-flattened" if detail.is_empty() => {
+                tr!(import_diagnostic_tracked_changes_flattened(
+                    path = path,
+                    count = count
+                ))
+            }
+            "tracked-changes-flattened" => tr!(import_diagnostic_tracked_changes_flattened_by(
                 path = path,
-                count = count
+                count = count,
+                names = detail
             )),
             "text-box-dropped" => tr!(import_diagnostic_text_box_dropped(
                 path = path,

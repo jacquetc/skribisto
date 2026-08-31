@@ -424,8 +424,12 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
         | RawHtmlDropped { count, .. }
         | NestedBreakDropped { count, .. } => (String::new(), *count as i64),
         ImageNotIngested { target, .. } => (target.clone(), 0),
-        TrackedChangesFlattened { count, .. }
-        | TextBoxDropped { count, .. }
+        // The one variant whose `detail` is a **list**, and still one string: the
+        // UI interpolates it whole and never splits it, so this is not the
+        // separator-packed pair the rule above forbids. Empty for a file that
+        // records no author, and the sentence then simply omits the clause.
+        TrackedChangesFlattened { count, authors, .. } => (authors.join(", "), *count as i64),
+        TextBoxDropped { count, .. }
         | EmbeddedObjectDropped { count, .. }
         | FieldFlattened { count, .. }
         | CommentRepliesFlattened { count, .. } => (String::new(), *count as i64),

@@ -1069,6 +1069,9 @@ struct Walker<'a> {
     seen: HashSet<usize>,
     diagnostics: Vec<ImportDiagnostic>,
     tracked_changes: usize,
+    /// Who made them, first-seen order. A `.docx` an editor and a proofreader have
+    /// both been through names two people, and the accepted text names neither.
+    tracked_authors: Vec<String>,
     text_boxes: usize,
     embedded_objects: usize,
     fields: usize,
@@ -1111,6 +1114,7 @@ impl<'a> Walker<'a> {
             seen: HashSet::new(),
             diagnostics: Vec::new(),
             tracked_changes: 0,
+            tracked_authors: Vec::new(),
             text_boxes: 0,
             embedded_objects: 0,
             fields: 0,
@@ -1210,6 +1214,7 @@ impl<'a> Walker<'a> {
                 ImportDiagnostic::TrackedChangesFlattened {
                     path: self.origin.clone(),
                     count: self.tracked_changes,
+                    authors: self.tracked_authors.clone(),
                 },
             ),
             (
@@ -1431,6 +1436,24 @@ impl<'a> Walker<'a> {
         self.open_comment(id, block, offset);
     }
 
+    /// Count one tracked change and remember who made it.
+    ///
+    /// `docx-rs` defaults an absent `w:author` to the literal `"unnamed"`
+    /// (`Insert::default`), which is not a person and must not be shown as one —
+    /// nor is it distinguishable here from an editor who is genuinely called that,
+    /// so it is treated as absent. An anonymised file therefore reports its count
+    /// with no names, which is the honest answer.
+    fn tracked_change_by(&mut self, author: &str) {
+        self.tracked_changes += 1;
+        let author = author.trim();
+        if author.is_empty() || author == "unnamed" {
+            return;
+        }
+        if !self.tracked_authors.iter().any(|a| a == author) {
+            self.tracked_authors.push(author.to_string());
+        }
+    }
+
     fn paragraph(&mut self, paragraph: &Paragraph) {
         let property = &paragraph.property;
         let kind = match self.styles.heading_level(property) {
@@ -1484,11 +1507,11 @@ impl<'a> Walker<'a> {
                 ParagraphChild::Run(run) => self.run(run, property, build, link),
                 // Accepted: this is the text as it stands.
                 ParagraphChild::Insert(insert) => {
-                    self.tracked_changes += 1;
+                    self.tracked_change_by(&insert.author);
                     self.insert_children(insert, property, build, link);
                 }
                 ParagraphChild::MoveTo(move_to) => {
-                    self.tracked_changes += 1;
+                    self.tracked_change_by(&move_to.author);
                     for child in &move_to.children {
                         match child {
                             MoveToChild::Run(run) => self.run(run, property, build, link),
@@ -1498,13 +1521,13 @@ impl<'a> Walker<'a> {
                             MoveToChild::CommentEnd(end) => {
                                 self.close_comment(end, Some(build.len))
                             }
-                            MoveToChild::Delete(_) => self.tracked_changes += 1,
+                            MoveToChild::Delete(delete) => self.tracked_change_by(&delete.author),
                         }
                     }
                 }
                 // Dropped: this is text somebody removed.
                 ParagraphChild::Delete(delete) => {
-                    self.tracked_changes += 1;
+                    self.tracked_change_by(&delete.author);
                     for child in &delete.children {
                         match child {
                             DeleteChild::CommentStart(start) => {
@@ -1517,7 +1540,7 @@ impl<'a> Walker<'a> {
                         }
                     }
                 }
-                ParagraphChild::MoveFrom(_) => self.tracked_changes += 1,
+                ParagraphChild::MoveFrom(move_from) => self.tracked_change_by(&move_from.author),
                 ParagraphChild::Hyperlink(hyperlink) => {
                     let url = match &hyperlink.link {
                         docx_rs::HyperlinkData::External { rid: _, path } => Some(path.clone()),
