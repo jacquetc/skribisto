@@ -1371,6 +1371,30 @@ fn first_returning_odt() -> Vec<u8> {
 /// simulating Skribisto's own re-export of an already-recognised comment coming
 /// back from a further round of editing, with a changed body on both turns.
 fn returning_docx_for(comment_uid: uuid::Uuid, reply_uid: uuid::Uuid, resolved: bool) -> Vec<u8> {
+    returning_docx_by(
+        comment_uid,
+        reply_uid,
+        resolved,
+        "Writer",
+        "2026-01-01T01:00:00Z",
+    )
+}
+
+/// The same file, with the reply attributed to a named person at a named moment.
+///
+/// A reply carries no mark of its own, so the importer falls back to a natural
+/// key of author + `created_at`. Two *different* readers therefore have to differ
+/// in one of those, or the second's reply is correctly recognised as the first's
+/// and updated in place — which is the right behaviour and the wrong fixture.
+fn returning_docx_by(
+    comment_uid: uuid::Uuid,
+    reply_uid: uuid::Uuid,
+    resolved: bool,
+    reply_author: &str,
+    reply_date: &str,
+) -> Vec<u8> {
+    let reply_author = reply_author.to_string();
+    let reply_date = reply_date.to_string();
     build_docx(MANUSCRIPT, |doc| {
         let range = find_range(doc, "needs review");
         let mut root = DocumentComment {
@@ -1386,15 +1410,75 @@ fn returning_docx_for(comment_uid: uuid::Uuid, reply_uid: uuid::Uuid, resolved: 
         };
         root.replies.push(TdCommentReply {
             uid: reply_uid.to_string(),
-            author: "Writer".to_string(),
-            author_initials: "WR".to_string(),
-            date: "2026-01-01T01:00:00Z".to_string(),
+            author_initials: reply_author
+                .chars()
+                .take(2)
+                .collect::<String>()
+                .to_uppercase(),
+            author: reply_author.clone(),
+            date: reply_date.clone(),
             body: "Will do, on it now.".to_string(),
         });
         let mut comments = DocumentComments::new();
         comments.insert(root);
         comments
     })
+}
+
+/// Two readers, one thread: merging the second must not destroy the first's reply.
+///
+/// Reader two's copy was cut before reader one replied, so their file cannot
+/// mention that reply. Rebuilding `Comment.replies` from the file alone detached
+/// it — and nothing renders a `CommentReply` except through that list, so the
+/// remark was gone with no trace.
+#[test]
+fn a_second_readers_return_does_not_detach_the_first_readers_reply() {
+    let mut ctx = Ctx::new();
+
+    // Reader one comes home: one thread, one reply.
+    let first_path = ctx.write_bytes("returned-1.docx", &first_returning_docx());
+    let rows = ctx.analyse(vec![first_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let before = ctx.comments();
+    assert_eq!(before.len(), 1);
+    let (comment, replies) = &before[0];
+    assert_eq!(replies.len(), 1, "reader one's reply landed");
+    let (uid, reply_uid) = (comment.uid, replies[0].uid);
+    let first_reply_id = replies[0].id;
+
+    // Reader two's copy carries the same thread but a *different* reply uid —
+    // it never saw reader one's. `returning_docx_for` writes exactly one reply.
+    // A different person, at a different moment — otherwise the reply's natural
+    // key (author + date) correctly matches reader one's and updates in place.
+    let second = returning_docx_by(
+        uid,
+        uuid::Uuid::from_u128(0x5EC0_0002),
+        false,
+        "Second Reader",
+        "2026-01-02T09:00:00Z",
+    );
+    let second_path = ctx.write_bytes("returned-2.docx", &second);
+    let rows = ctx.analyse(vec![second_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(after.len(), 1, "still one thread: {after:#?}");
+    let (_, after_replies) = &after[0];
+    let ids: Vec<_> = after_replies.iter().map(|r| r.id).collect();
+    assert!(
+        ids.contains(&first_reply_id),
+        "reader one's reply was detached by reader two's return: {after_replies:#?}"
+    );
+    assert_eq!(
+        after_replies.len(),
+        2,
+        "both readers' replies belong on the thread: {after_replies:#?}"
+    );
+    // The returning file still decides the order of what it knows about, so the
+    // reply it carried comes first and the carried-over one is appended.
+    assert_eq!(after_replies[1].id, first_reply_id);
+    let _ = reply_uid;
 }
 
 /// A second reader's copy, cut before the writer settled the thread, must not

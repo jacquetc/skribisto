@@ -75,14 +75,18 @@
 //     lets an editor insert a brand-new reply in the middle of a thread without
 //     the replies after it being mistaken for new ones too (they still carry
 //     their own uids, wherever they now sit in the list).
-//   * **Deliberately out of scope**: a reply whose uid existed in a previous
-//     import but is absent from this one (the editor deleted it in their own
-//     app) is *detached* from `Comment.replies` — it stops showing, because
-//     nothing renders a `CommentReply` except through that list — but the row
-//     itself is not deleted from the store. Building actual reply deletion needs
-//     its own `Remove` action and its own undo story; this milestone's stated
-//     job is recognition (no duplication on re-import), not garbage collection,
-//     and an unreachable row here is inert data, not a correctness bug.
+//   * A reply the returning file does not mention is **kept**, appended after
+//     the ones it does. It used to be detached, on the reading that an absence
+//     meant the editor had deleted it in their own app. That reading does not
+//     survive more than one copy being out at a time: a second reader's file was
+//     cut before the first reader's reply existed and so cannot mention it, and
+//     rebuilding the thread from that file alone detached a reply nobody had
+//     deleted — permanently, since nothing renders a `CommentReply` except
+//     through this list. The file cannot tell the two cases apart (it says what
+//     it holds, never what it once held), so the tie goes to the safer error:
+//     a stale line the writer can delete beats a reader's remark destroyed with
+//     no trace. Actual reply deletion still needs its own `Remove` action and
+//     undo story, and remains out of scope.
 //   * A matched comment's `content` link is always repointed at the `Content` row
 //     *this* pass is writing into, never left on whatever row a previous import
 //     attached it to — the returning file describes the current pass at the
@@ -977,6 +981,37 @@ fn create_or_update_comment(
         };
         reply_ids.push(reply_id);
     }
+
+    // Replies this thread already has that the returning file never mentioned.
+    //
+    // **Kept, not detached** — and that is a reversal. The file's reply list used
+    // to be taken as the whole truth, on the reading that an absence meant the
+    // editor had deleted it in their own app. That reading is not available once
+    // more than one copy is out at a time: reader two's file was cut before
+    // reader one's reply existed, so it cannot mention it, and rebuilding the
+    // thread from that file alone silently detached a reply nobody deleted.
+    // Nothing renders a `CommentReply` except through this list, so detaching is
+    // losing it.
+    //
+    // The two cases are genuinely indistinguishable from the file — it says only
+    // what it holds, never what it once held — so the tie goes to the safer
+    // error. Keeping a reply the editor meant to delete leaves the writer one
+    // stale line they can remove themselves; detaching one nobody deleted
+    // destroys a reader's remark with no trace and no undo path back to it. The
+    // module's own rule elsewhere is that nothing here deletes; this brings the
+    // reply thread into line with it.
+    //
+    // Appended after the file's own, so the returning copy still decides the
+    // order of everything it knows about.
+    let carried: std::collections::HashSet<EntityId> = reply_ids.iter().copied().collect();
+    let mut kept: Vec<&CommentReply> = existing_replies
+        .values()
+        .filter(|r| reply_owner.get(&r.uid).copied() == existing_id)
+        .filter(|r| !carried.contains(&r.id))
+        .collect();
+    // Oldest first, matching how a thread is read and how the file lists its own.
+    kept.sort_by(|a, b| a.created_at.cmp(&b.created_at).then(a.id.cmp(&b.id)));
+    reply_ids.extend(kept.into_iter().map(|r| r.id));
 
     let (id, newly_created) = match existing_comment {
         Some(existing) => {
