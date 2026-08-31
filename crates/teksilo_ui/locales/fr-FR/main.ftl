@@ -77,8 +77,8 @@ ctx-move-down = Déplacer vers le &bas
 # Des clés `ctx-tab-*` neuves, jamais une réutilisation des lignes `ctx-*`
 # ci-dessus : celles-ci servent aussi de lignes de la barre de menus, si bien que
 # retoucher l'un de leurs mnémoniques pour ce menu casserait l'unicité de la barre.
-# Trois lignes sont exclusives deux à deux — la division, le déplacement et
-# l'épinglage n'en construisent qu'une chacun — d'où des lettres qui peuvent se
+# Trois lignes sont exclusives deux à deux : la division, le déplacement et
+# l'épinglage n'en construisent qu'une chacun, d'où des lettres qui peuvent se
 # répéter d'une paire à l'autre, mais jamais dans un même menu construit.
 ctx-tab-close = &Fermer
 ctx-tab-close-others = Fermer les &autres
@@ -95,11 +95,11 @@ ctx-tab-move-to-new-window = Déplacer dans une &nouvelle fenêtre
 # Pourquoi cette dernière ligne est indisponible. La seconde fenêtre s'ouvre sur
 # le fichier du projet : un projet jamais enregistré n'a donc rien à lui ouvrir.
 # Infobulle de la ligne désactivée, pas un libellé de menu, donc aucun mnémonique.
-ctx-tab-move-window-unsaved = Enregistrez d’abord ce projet — une seconde fenêtre s’ouvre sur un fichier du disque
+ctx-tab-move-window-unsaved = Enregistrez d’abord ce projet : une seconde fenêtre s’ouvre sur un fichier du disque
 ctx-tab-pin = Épin&gler cet onglet
 ctx-tab-unpin = Désépin&gler cet onglet
 # Infobulle de l'onglet, pas une ligne de menu : aucun mnémonique.
-tab-pinned-tooltip = Épinglé — « Fermer les autres » et « Fermer tout » le laissent ouvert
+tab-pinned-tooltip = Épinglé : « Fermer les autres » et « Fermer tout » le laissent ouvert
 
 ## Recommandations de création: libellés de types (titre du SplitButton + Ajouter ▸)
 create-book = Livre
@@ -118,7 +118,7 @@ type-book-start = Début du livre
 type-text = Texte
 
 ## Création: le titre par défaut d'une nouvelle ligne.
-## Donnée, et non habillage — résolu une seule fois à la création puis propriété
+## Donnée, et non habillage : résolu une seule fois à la création puis propriété
 ## de l'auteur, si bien que changer de langue ne renomme jamais l'existant.
 ## (Une scène réutilise « new-scene-title », partagé avec la division de scène.)
 new-item-book = Nouveau livre
@@ -199,7 +199,7 @@ session-readout = { $words } mots · { $time }
 session-readout-timed = { $words } mots · { $time } restant
 # La bande de contrôle toujours visible du mode sans distraction (étape 2).
 statusbar-focus-exit = Quitter le mode sans distraction
-# Les boutons Suivant/Précédent de la bande (étape 4) — déclenchent les mêmes
+# Les boutons Suivant/Précédent de la bande (étape 4) déclenchent les mêmes
 # actions go.next/go.prev que le raccourci et la paire générique du menu Aller à.
 statusbar-focus-synopsis = Synopsis
 statusbar-focus-go-prev = Élément précédent (Alt+Haut)
@@ -265,7 +265,7 @@ settings-page-keymap = Raccourcis clavier
 settings-keymap-filter = Filtrer les raccourcis
 
 ## Fenêtre des paramètres: à quoi sert chaque page
-# Une ligne par page, affichée sous son lien dans la page de son parent — et,
+# Une ligne par page, affichée sous son lien dans la page de son parent et,
 # pour un parent, sous son propre titre. Une seule ligne : elles disent ce que
 # la page contient, pas comment s'en servir.
 settings-desc-sec-appearance-behaviour = L’aspect de l’application elle-même, et ce qu’elle fait au démarrage.
@@ -275,7 +275,7 @@ settings-desc-sec-backup = Comment votre travail atteint le disque, et quelles c
 settings-desc-sec-compile = Ce qui sort de Skribisto, et sous quelle forme.
 settings-desc-sec-work = Les paramètres propres à ce projet, qui voyagent dans son fichier.
 settings-desc-sec-extensions = Les pages ajoutées par les extensions installées ici.
-settings-desc-group-typography = Une page par type de texte — police, taille, interligne et espacements.
+settings-desc-group-typography = Une page par type de texte : police, taille, interligne et espacements.
 settings-desc-appearance = Langue de l’interface, thème, taille du texte et écran d’accueil au démarrage.
 settings-desc-notifications = Tous les messages affichés pendant cette session, et les actions à rejouer.
 settings-desc-scene = La mise en page des scènes : police, taille, interligne, retraits et espacements.
@@ -283,7 +283,7 @@ settings-desc-synopsis = La mise en page du volet synopsis, indépendante du man
 settings-desc-notes = La mise en page des notes, indépendante du manuscrit.
 settings-desc-corkboard = La taille des fiches, ce qu’elles montrent, et la disposition du tableau.
 settings-desc-distraction-free = Typographie, largeur de colonne et bande de contrôle du plein écran.
-settings-desc-distraction-free-themes = La bibliothèque de thèmes du plein écran — ceux fournis et les vôtres.
+settings-desc-distraction-free-themes = La bibliothèque de thèmes du plein écran : ceux fournis et les vôtres.
 settings-desc-editor-behavior = Largeur du texte, place du synopsis, défilement machine à écrire et surlignage du curseur.
 settings-desc-punctuation = Le style typographique dont héritent les nouveaux projets. Chaque projet suit ces réglages, sauf s’il définit les siens.
 settings-desc-goals = Les objectifs en mots et en caractères, et la façon de compter les mots.
@@ -292,7 +292,7 @@ settings-desc-spellcheck = L’interrupteur unique qui active ou coupe la vérif
 settings-desc-dictionaries = Installer, retirer et parcourir les dictionnaires présents sur cette machine.
 settings-desc-autosave = Si vos modifications sont écrites sur le disque toutes seules.
 settings-desc-backup = Quand les copies sont prises, où elles sont rangées, et combien sont gardées. Chaque projet suit ces réglages, sauf s’il définit les siens.
-settings-desc-export = Les styles par lesquels passe chaque export — ceux fournis et les vôtres.
+settings-desc-export = Les styles par lesquels passe chaque export : ceux fournis et les vôtres.
 settings-desc-paratext = Les pages liminaires et finales dont peut partir un nouveau projet.
 settings-desc-keymap = Tous les raccourcis, et ce à quoi ils sont attachés.
 settings-page-user = Utilisateur
@@ -304,7 +304,7 @@ settings-field-user-name-hint = Signe les commentaires et les réponses que vous
 settings-field-user-initials = Vos initiales
 settings-field-user-initials-placeholder = D’après votre nom
 settings-field-user-initials-hint = Ce qu’un traitement de texte affiche en marge à côté de votre commentaire. Laissez vide pour utiliser celles affichées, déduites de votre nom.
-settings-field-user-hint = Les deux sont facultatifs et valent pour tous les projets de cet ordinateur. Les modifier signe les prochains commentaires que vous écrirez — ceux déjà écrits gardent le nom sous lequel ils l’ont été.
+settings-field-user-hint = Les deux sont facultatifs et valent pour tous les projets de cet ordinateur. Les modifier signe les prochains commentaires que vous écrirez. Ceux déjà écrits gardent le nom sous lequel ils l’ont été.
 settings-desc-author = Le nom qui figure sur ce projet.
 settings-desc-structure = Si les chapitres de ce projet sont des dossiers ou des éléments simples.
 settings-desc-language = La langue dans laquelle la prose de ce projet est vérifiée.
@@ -348,13 +348,13 @@ settings-field-first-line-indent = Retrait de première ligne
 settings-field-paragraph-spacing-before = Espace avant le paragraphe
 settings-field-paragraph-spacing-after = Espace après le paragraphe
 settings-field-column-width = Largeur de colonne
-settings-distraction-free-width-hint = S’applique uniquement en mode sans distraction — les largeurs de colonne de la Scène, du Synopsis et des Notes restent inchangées.
+settings-distraction-free-width-hint = S’applique uniquement en mode sans distraction : les largeurs de colonne de la Scène, du Synopsis et des Notes restent inchangées.
 settings-distraction-free-title = Conserver le nom de l’élément
 settings-distraction-free-word-count = Conserver le compteur de mots
 settings-distraction-free-session = Conserver la session d’écriture
 settings-distraction-free-go-to = Conserver le bouton Aller à…
 settings-distraction-free-go = Conserver les boutons Précédent et Suivant
-settings-distraction-free-chrome-hint = Le bouton Quitter reste toujours affiché, quels que soient ces choix — c’est votre porte de sortie si Échap est déjà pris.
+settings-distraction-free-chrome-hint = Le bouton Quitter reste toujours affiché, quels que soient ces choix : c’est votre porte de sortie si Échap est déjà pris.
 settings-field-app-theme = Thème
 # Les deux entrées du sélecteur de thème (les apparences claire / sombre de Fluent).
 settings-theme-light = Clair
@@ -404,7 +404,7 @@ settings-page-structure = Structure
 settings-page-author = Auteur
 settings-field-author-name = Nom de l’auteur
 settings-field-author-placeholder = Facultatif
-settings-field-author-hint = Apparaît sur la page de titre compilée et dans les métadonnées des fichiers exportés. Laissez vide pour l’omettre. C’est la signature du livre — le nom qui signe vos commentaires se trouve dans Paramètres ▸ Utilisateur.
+settings-field-author-hint = Apparaît sur la page de titre compilée et dans les métadonnées des fichiers exportés. Laissez vide pour l’omettre. C’est la signature du livre. Le nom qui signe vos commentaires se trouve dans Paramètres ▸ Utilisateur.
 settings-group-chapters = Chapitres
 tidy-titles-title = Nettoyer les titres de chapitre
 tidy-titles-none = Aucun titre de chapitre ou de partie ne se contente de répéter son propre numéro.
@@ -412,17 +412,17 @@ tidy-titles-lead = { $count ->
         [one] Un chapitre ou une partie n’a pour titre que son propre numéro.
        *[other] { $count } chapitres et parties n’ont pour titre que leur propre numéro.
     }
-tidy-titles-explain = Effacer ces titres laisse chacun désigné par le numéro que le livre connaît déjà — celui-là même qu’imprime l’export. Rien d’autre ne change, et une seule annulation les rétablit tous.
+tidy-titles-explain = Effacer ces titres laisse chacun désigné par le numéro que le livre connaît déjà, celui-là même qu’imprime l’export. Rien d’autre ne change, et une seule annulation les rétablit tous.
 menu-document-tidy-titles = &Nettoyer les titres de chapitre…
 settings-group-numbering = Numérotation
 settings-number-chapters = Numéroter les chapitres et les parties
-settings-number-chapters-tip = Les chapitres et les parties portent un numéro déduit de leur place dans le livre — affiché ici à côté de leur titre, et imprimé par l’export.
-settings-number-chapters-tip-more = Le numéro n’est jamais enregistré dans le titre : il reste juste quand vous réorganisez, insérez ou supprimez. Désactivez ceci et l’export n’imprime que les titres, quel que soit le style d’export. Pour n’exclure qu’un seul chapitre — un prologue, un interlude — utilisez plutôt l’interrupteur Numérotation de l’inspecteur : il le garde dans le livre mais l’empêche de prendre un numéro.
+settings-number-chapters-tip = Les chapitres et les parties portent un numéro déduit de leur place dans le livre, affiché ici à côté de leur titre, et imprimé par l’export.
+settings-number-chapters-tip-more = Le numéro n’est jamais enregistré dans le titre : il reste juste quand vous réorganisez, insérez ou supprimez. Désactivez ceci et l’export n’imprime que les titres, quel que soit le style d’export. Pour n’exclure qu’un seul chapitre (un prologue, un interlude), utilisez plutôt l’interrupteur Numérotation de l’inspecteur : il le garde dans le livre mais l’empêche de prendre un numéro.
 settings-part-resets-chapter = Recommencer la numérotation à chaque partie
 settings-part-resets-chapter-tip = Désactivé par défaut : les chapitres se suivent d’une partie à l’autre, si bien que la « Deuxième partie » s’ouvre sur le chapitre onze.
 settings-part-resets-chapter-tip-more = C’est l’usage de l’édition, et ce qu’attend un lecteur. Activez-le pour un livre dont les parties se lisent comme des volumes distincts, chacune s’ouvrant sur le chapitre un.
 settings-chapter-flat = Chapitres à plat
-settings-chapter-flat-hint = Activé : un chapitre est une seule ligne. Vous y écrivez, et il ne contient aucune scène. Désactivé : un chapitre est un dossier. Vous y écrivez également, mais il peut en outre contenir des scènes. Les nouveaux chapitres suivent ce paramètre ; les existants se convertissent via Promouvoir.
+settings-chapter-flat-hint = Activé : un chapitre est un seul élément. Vous y écrivez, et il ne contient aucune scène. Désactivé : un chapitre est un dossier. Vous y écrivez également, mais il peut en outre contenir des scènes. Les nouveaux chapitres suivent ce paramètre ; les existants se convertissent via Promouvoir.
 
 ## Paramètres: Styles d'export (Compilation et export ▸ Formats d'export)
 settings-styles-builtin = Styles intégrés
@@ -536,7 +536,7 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Imbriqué
 corkboard-view-flat = À plat
-corkboard-layout-hint = « Imbriqué » affiche les enfants directs d’un conteneur — ouvrez une carte dossier pour y entrer. « À plat » affiche toutes les scènes du conteneur d’un coup.
+corkboard-layout-hint = « Imbriqué » affiche les enfants directs d’un conteneur : ouvrez une carte dossier pour y entrer. « À plat » affiche toutes les scènes du conteneur d’un coup.
 corkboard-card-size = Taille des cartes
 corkboard-search-placeholder = Filtrer les cartes…
 corkboard-empty-title = Rien ici pour l’instant
@@ -573,7 +573,7 @@ corkboard-move-to-n = { $count ->
    *[other] Déplacer { $count } cartes vers…
 }
 corkboard-move-picker-title = Déplacer vers…
-corkboard-move-picker-empty = Aucun classeur pour l’instant — créez-en un d’abord.
+corkboard-move-picker-empty = Aucun classeur pour l’instant. Créez-en un d’abord.
 corkboard-move-picker-cancel = Annuler
 corkboard-move-here = Déplacer ici
 corkboard-moved-ok = { $count ->
@@ -595,10 +595,10 @@ overview-col-books = Livres
 overview-col-own-words = Mots
 overview-col-total-words = Total
 overview-row-count = { $count ->
-    [one] { $count } ligne
-   *[other] { $count } lignes
+    [one] { $count } élément
+   *[other] { $count } éléments
 }
-overview-search-placeholder = Filtrer les lignes…
+overview-search-placeholder = Filtrer les éléments…
 overview-expand-all = Tout déplier
 overview-collapse-all = Tout replier
 overview-table-label = Contenu
@@ -751,7 +751,7 @@ quit-question = Enregistrer les modifications avant de quitter ?
 quit-save-work-question = Enregistrer les modifications de { $title } avant de quitter ?
 unsaved-changes = Cette œuvre a des modifications non enregistrées.
 # Affiché par Quitter quand une autre œuvre ouverte (pas celle de cette fenêtre)
-# a encore des modifications non enregistrées — le dialogue unique listant
+# a encore des modifications non enregistrées. Le dialogue unique listant
 # chaque œuvre modifiée (voir l'action `app.quit` dans
 # app::commands::file). Quitter est refusé tant qu'elles ne sont pas
 # enregistrées ou fermées depuis leur propre fenêtre.
@@ -773,7 +773,7 @@ save-not-started = L’œuvre n’a pas pu être enregistrée.
 # cause va dans le corps, qui est le texte d'erreur non traduit. $file est le nom du
 # fichier, sans son chemin.
 could-not-open-work = Impossible d’ouvrir « { $file } »
-# Un projet enregistré par une version de Skribisto plus récente que celle-ci — titre et
+# Un projet enregistré par une version de Skribisto plus récente que celle-ci : titre et
 # corps. $written_by est la version qui l'a écrit, $requires la plus ancienne version
 # capable de l'ouvrir (les deux diffèrent lorsque la version récente n'a rien utilisé de
 # nouveau), $supported la plus récente que cette version comprend.
@@ -949,7 +949,7 @@ new-work-template-novel-in-parts-count = 3 parties, 24 chapitres
 new-work-template-notebook-count = notes libres
 # Bascule ChapterScene (modèles de roman)
 new-work-chapter-scene = Chapitres à plat
-new-work-chapter-scene-tip = Chaque chapitre est une seule ligne où vous écrivez directement, sans scène en dessous. Laissez désactivé pour la disposition classique : le chapitre est alors un dossier, dans lequel vous écrivez tout autant, mais qui peut aussi contenir des scènes.
+new-work-chapter-scene-tip = Chaque chapitre est un seul élément où vous écrivez directement, sans scène en dessous. Laissez désactivé pour la disposition classique : le chapitre est alors un dossier, dans lequel vous écrivez tout autant, mais qui peut aussi contenir des scènes.
 new-work-chapter-scene-tip-more = Vous écrivez dans le chapitre dans les deux cas. La seule différence est sa capacité à *contenir* des scènes. L’arborescence du classeur de Skribisto est purement organisationnelle : les deux dispositions produisent le même livre, vous pouvez les mélanger librement, et Promouvoir convertit un chapitre de l’une à l’autre sans perdre un mot.
 # Validation des champs
 new-work-name-required = Saisissez un nom pour l’œuvre
@@ -1205,16 +1205,16 @@ search-tip-whole-word = Mot entier : ne trouver que les mots complets ; « ch
 search-tip-diacritics = Respecter les accents : les lettres accentuées sont distinctes ; « cafe » ne trouve pas « café ».
 search-tip-body = Corps : rechercher dans la prose des scènes et des notes.
 search-tip-title = Titre : rechercher dans les titres des éléments du classeur.
-search-tip-synopsis = Synopsis : rechercher dans le résumé de chaque ligne d’écriture.
+search-tip-synopsis = Synopsis : rechercher dans le résumé de chaque élément d’écriture.
 search-tip-label = Libellé : rechercher dans la note affichée sous le titre d’un élément.
-search-tip-comment = Commentaires : rechercher dans le texte des fils de commentaires et de leurs réponses. Un commentaire porte sur le manuscrit sans en faire partie, d’où son propre bouton — et un remplacement laisse les commentaires décochés tant que vous ne les cochez pas.
+search-tip-comment = Commentaires : rechercher dans le texte des fils de commentaires et de leurs réponses. Un commentaire porte sur le manuscrit sans en faire partie, d’où son propre bouton, et un remplacement laisse les commentaires décochés tant que vous ne les cochez pas.
 search-tip-book = Livres : le conteneur du livre et ses marqueurs de début / fin.
 search-tip-part = Parties : les séparateurs de partie.
 search-tip-chapter = Chapitres : les chapitres, quel que soit leur stockage.
-search-tip-scene = Scènes : les lignes qui contiennent votre prose.
+search-tip-scene = Scènes : les éléments qui contiennent votre prose.
 search-tip-note = Notes : les notes libres.
 search-tip-folder = Dossiers : les simples dossiers d’organisation et séparateurs.
-search-tip-paratext = Un texte qui appartient au livre mais non à son récit — une préface, une dédicace, une postface. Jamais compté dans le manuscrit.
+search-tip-paratext = Un texte qui appartient au livre mais non à son récit : une préface, une dédicace, une postface. Jamais compté dans le manuscrit.
 search-tip-preserve-case = Conserver la casse : le remplacement reprend la casse trouvée, « ELENA » devient « MARTA » et « Elena » devient « Marta ».
 search-tip-replace = Remplacer : afficher le champ de remplacement et « Tout remplacer ».
 search-error = Échec de la recherche : { $message }
@@ -1296,7 +1296,7 @@ search-preview-empty = Sélectionnez un résultat pour l’afficher ici
 search-preview-no-prose = Ce résultat n’a pas de texte modifiable
 search-preview-prompt = Pour afficher un aperçu ici, lancez une recherche.
 search-preview-open-search = Rechercher dans le projet
-search-preview-footnote-prompt = Ce résultat se trouve dans le texte d’une note de bas de page — ouvrez-la dans le panneau Notes de bas de page pour la consulter et la modifier.
+search-preview-footnote-prompt = Ce résultat se trouve dans le texte d’une note de bas de page : ouvrez-la dans le panneau Notes de bas de page pour la consulter et la modifier.
 search-preview-open-footnotes = Ouvrir les notes de bas de page
 
 # Barre de recherche par éditeur (Ctrl+F)
@@ -1488,7 +1488,7 @@ toast-undo = Annuler
 ## autre chose s’est produit depuis, il le dit plutôt que de défaire ce qui se
 ## trouve désormais en dernier.
 undo-superseded-title = Cette étape n’est plus la dernière
-undo-superseded-body = Autre chose a changé dans ce projet depuis. Annuler reviendrait sur cette autre modification : rien n’a donc été fait. Cette étape reste en place — utilisez Édition ▸ Annuler pour remonter l’historique vous-même.
+undo-superseded-body = Autre chose a changé dans ce projet depuis. Annuler reviendrait sur cette autre modification : rien n’a donc été fait. Cette étape reste en place. Utilisez Édition ▸ Annuler pour remonter l’historique vous-même.
 undo-failed = Échec de l’annulation : { $error }
 
 ## Le menu Édition
@@ -1569,7 +1569,7 @@ trash-restored-ok = { $count ->
    *[other] { $count } éléments restaurés.
 }
 trash-restore-error = Impossible de restaurer : { $error }
-trash-restore-orphaned = L’emplacement d’origine de cet élément n’existe plus — choisissez où le restaurer.
+trash-restore-orphaned = L’emplacement d’origine de cet élément n’existe plus. Choisissez où le restaurer.
 trash-restore-no-project = Aucun projet n’est ouvert, il n’y a donc rien à restaurer.
 trash-delete-no-project = Aucun projet n’est ouvert, il n’y a donc rien à supprimer.
 trash-empty-confirm-title = Vider la corbeille ?
@@ -1596,7 +1596,7 @@ trash-restore-to-confirm-title = Restaurer ici ?
 trash-restore-to-confirm-text = Restaurer « { $item } » dans « { $destination } » ?
 trash-restore-picker-restore-here = Restaurer ici
 trash-restore-picker-cancel = Annuler
-trash-restore-picker-empty = Aucun classeur pour l’instant — créez-en un d’abord.
+trash-restore-picker-empty = Aucun classeur pour l’instant. Créez-en un d’abord.
 trash-banner-title = Cet élément est dans la corbeille
 trash-banner-description = Il n’apparaîtra ni dans le plan ni dans les exports tant que vous ne l’aurez pas restauré.
 trash-banner-restore = Restaurer…
@@ -1737,7 +1737,7 @@ about-close = Fermer
 ## Barre de menus native (macOS)
 # Libellés des menus standard « Application » et « Fenêtre » recopiés dans la
 # barre de menus globale de macOS. Pas de mnémonique `&` ici : macOS n'en a pas,
-# et le pont natif ne les retire pas — une esperluette s'afficherait telle
+# et le pont natif ne les retire pas : une esperluette s'afficherait telle
 # quelle. Le nom de l'application est une donnée (le nom de l'édition en cours
 # d'exécution) : il arrive en argument, comme pour les titres de fenêtre.
 native-menu-about = À propos de { $app }
@@ -1750,8 +1750,8 @@ native-menu-zoom = Zoom
 
 # Titres de fenêtre. Le nom de l'application est une donnée (le nom de l'édition
 # en cours d'exécution) : il arrive en argument plutôt que d'être écrit ici.
-window-title = { $title } — { $app }
-window-title-numbered = { $title } — { $app } (Fenêtre { $n })
+window-title = { $title } - { $app }
+window-title-numbered = { $title } - { $app } (Fenêtre { $n })
 window-title-empty = { $app }
 
 # Import des paramètres au premier lancement (une édition disposant de son propre
@@ -1766,7 +1766,7 @@ first-run-import = Importer les paramètres
 first-run-start-fresh = Repartir de zéro
 first-run-import-failed = Certains paramètres n’ont pas pu être importés : { $error }
 
-# ── Work ▸ Punctuation — le style typographique du projet ───────────────────
+# ── Work ▸ Punctuation : le style typographique du projet ───────────────────
 settings-page-punctuation = Réglages de ponctuation
 settings-group-punctuation = Ponctuation intelligente
 settings-page-work-punctuation = Ponctuation
@@ -1786,7 +1786,7 @@ settings-punctuation-spacing-hint = La typographie française place une espace f
 settings-punctuation-sample = Votre langue donne
 settings-punctuation-app-hint = Ce que fait chaque projet, sauf s’il adopte ses propres règles dans Projet ▸ Ponctuation.
 settings-punctuation-dialogue = Ouvrir un paragraphe saisi « - » par un tiret de dialogue
-settings-punctuation-dialogue-hint = Pour les langues qui marquent le dialogue par un tiret plutôt que par des guillemets — français, espagnol, russe et d’autres. Ne se déclenche qu’en tout début de paragraphe.
+settings-punctuation-dialogue-hint = Pour les langues qui marquent le dialogue par un tiret plutôt que par des guillemets : français, espagnol, russe et d’autres. Ne se déclenche qu’en tout début de paragraphe.
 
 ## Aller à (rejoindre n'importe quel élément)
 statusbar-go-to = Aller à…
@@ -1816,7 +1816,7 @@ settings-themes-export-failed = Impossible d’exporter ce thème
 # Affiché pour un thème dont le texte et la page sont sous le seuil WCAG AA.
 settings-themes-low-contrast = contraste faible
 # Affiché lorsque la page et le texte vont bien, mais que c'est la mise en
-# évidence qui masque la prose — un autre défaut, invisible sur les pastilles
+# évidence qui masque la prose : un autre défaut, invisible sur les pastilles
 # de la ligne.
 settings-themes-low-contrast-band = la mise en évidence masque le texte
 settings-themes-field-name = Nom
@@ -1824,7 +1824,7 @@ settings-themes-field-paper = Page
 settings-themes-field-ink = Texte
 settings-themes-field-general = Arrière-plan
 settings-themes-field-widget-text = Texte de la bande de contrôle
-# La teinte dessinée autour du curseur — la phrase ou le paragraphe en cours
+# La teinte dessinée autour du curseur : la phrase ou le paragraphe en cours
 # d'écriture, selon Éditeur ▸ « Mise en évidence autour du curseur ». Ce champ
 # en donne la couleur en mode sans distraction.
 settings-themes-field-caret-band = Mise en évidence autour du curseur
@@ -1834,7 +1834,7 @@ settings-themes-field-caret-band = Mise en évidence autour du curseur
 statusbar-focus-settings = Paramètres du mode sans distraction
 statusbar-focus-manage-themes = Gérer les thèmes…
 
-## Commentaires — les deux panneaux, les fiches de fil et leurs actions.
+## Commentaires : les deux panneaux, les fiches de fil et leurs actions.
 comments-title = Commentaires
 comments-document-title = Ce document
 comments-empty-project = Aucun commentaire dans ce projet.
@@ -1848,7 +1848,7 @@ comments-status-resolved = Résolu
 comments-status-orphaned = Texte introuvable
 comments-orphan-snippet = (le texte commenté a disparu)
 # Un commentaire dont l'ancrage a été résolu avec succès mais qui n'a aucune
-# position réelle à indiquer — importé depuis un format sans notion de position
+# position réelle à indiquer : importé depuis un format sans notion de position
 # dans le texte pour ce cas (un titre, un paragraphe vide, un tableau). À
 # distinguer de « Texte introuvable » : rien n'a disparu, il n'y a simplement
 # jamais eu de position.
@@ -1875,7 +1875,7 @@ overview-col-comments = Commentaires
 overview-col-total-comments = Total commentaires
 comments-card-placeholder = Écrire un commentaire…
 comments-card-unknown-author = Auteur inconnu
-comments-unsigned-toast = Vos commentaires ne sont pas signés — aucun nom n’est défini pour vous sur cet ordinateur.
+comments-unsigned-toast = Vos commentaires ne sont pas signés : aucun nom n’est défini pour vous sur cet ordinateur.
 comments-unsigned-action = Définir votre nom
 comments-card-reply = Répondre
 comments-card-reply-placeholder = Répondre…
@@ -1946,7 +1946,7 @@ binder-filter-clear = Effacer
 binder-filter-none = Rien ne correspond à « { $query } ».
 
 ## Settings: paratext structures
-settings-paratext-intro = Les pages liminaires et les annexes d’un nouveau projet. Chaque structure appartient à une tradition éditoriale, et ses titres sont écrits dans la langue de cette tradition — renommez-les librement une fois le projet créé.
+settings-paratext-intro = Les pages liminaires et les annexes d’un nouveau projet. Chaque structure appartient à une tradition éditoriale, et ses titres sont écrits dans la langue de cette tradition. Renommez-les librement une fois le projet créé.
 settings-paratext-structures = Structures
 settings-paratext-broken = Lecture impossible
 settings-paratext-edit = Modifier
@@ -1982,7 +1982,7 @@ image-menu-describe = &Décrire l’image…
 image-menu-resize = &Redimensionner l’image…
 image-menu-reset-size = Taille d’&origine
 
-# La couverture du livre — choisie depuis le livre, non insérée dans une scène.
+# La couverture du livre, choisie depuis le livre, non insérée dans une scène.
 cover-choose = &Couverture du livre…
 cover-clear = &Retirer la couverture
 cover-choose-title = Choisir une couverture
@@ -2022,7 +2022,7 @@ export-orphan-footnotes =
 menu-footnotes = Notes de bas de pa&ge
 footnotes-title = Notes de bas de page
 footnotes-insert = Insérer une note de bas de p&age
-footnotes-empty = Aucune note pour l’instant. Placez le curseur dans une scène, puis utilisez + ci-dessus — ou Ctrl+Alt+F.
+footnotes-empty = Aucune note pour l’instant. Placez le curseur dans une scène, puis utilisez + ci-dessus, ou Ctrl+Alt+F.
 footnotes-filter-all = Toutes
 footnotes-filter-document = Ce document
 footnotes-filter-orphaned = Orphelines
@@ -2045,8 +2045,8 @@ import-document-step-files = Fichiers
 import-document-step-review = Vérifier
 import-document-step-destination = Destination
 import-document-step-reconcile = Fusion
-import-document-reconcile-hint = Certaines de ces lignes sont des lignes que vous avez déjà. Indiquez ce qu’il faut faire de chacune.
-import-document-reconcile-all-new = Rien dans ce fichier ne correspond à votre projet — chaque ligne sera ajoutée comme nouvelle.
+import-document-reconcile-hint = Certains de ces éléments existent déjà dans votre projet. Indiquez ce qu’il faut faire de chacun.
+import-document-reconcile-all-new = Rien dans ce fichier ne correspond à votre projet : chaque élément sera ajouté comme nouveau.
 import-document-duplicate-returns = Ces fichiers sont plusieurs exemplaires du même manuscrit qui reviennent. Importez-les un par un : la mise en correspondance ne confronte qu’un seul exemplaire à votre projet, si bien qu’en importer plusieurs ensemble ajouterait une seconde copie du livre au lieu de la fusionner.
 import-document-hunk-added = Prendre ce nouveau paragraphe
 import-document-hunk-removed = Supprimer ce paragraphe
@@ -2097,14 +2097,14 @@ import-document-col-source = Source
 import-document-level-rules = Niveaux de titre
 import-document-level-n = Titre { $level }
 import-document-add-top-level = Ajouter un niveau supérieur
-import-document-add-top-level-tooltip = Insère un Livre au-dessus de toutes les lignes analysées — pour des chapitres sans titre de livre
+import-document-add-top-level-tooltip = Insère un Livre au-dessus de tous les éléments analysés, pour des chapitres sans titre de livre
 import-document-destination = Destination
-import-document-destination-hint = Choisissez un classeur ou un élément — les nouvelles lignes arrivent dans un dossier, ou après une scène.
-import-document-destination-empty = Aucun classeur pour l’instant — créez-en un d’abord.
+import-document-destination-hint = Choisissez un classeur ou un élément : les nouveaux éléments arrivent dans un dossier, ou après une scène.
+import-document-destination-empty = Aucun classeur pour l’instant. Créez-en un d’abord.
 import-document-plan-empty = Rien à importer pour l’instant.
 import-document-summary = { $rows ->
-    [one] 1 ligne
-   *[other] { $rows } lignes
+    [one] 1 élément
+   *[other] { $rows } éléments
 } · { $breaks ->
     [one] 1 coupure de scène
    *[other] { $breaks } coupures de scène
@@ -2135,12 +2135,12 @@ import-diagnostic-no-headings = « { $path } » ne contient aucun titre : il 
 import-diagnostic-unsupported-format = Aucun lecteur ne prend en charge les fichiers « .{ $detail } » : « { $path } » a été ignoré.
 import-diagnostic-front-matter-not-flat = En-tête de « { $path } » : « { $detail } » n’est pas une valeur simple et a été ignoré.
 import-diagnostic-footnotes-degraded = { $count ->
-    [one] Une note de bas de page de « { $path } » arrive en texte brut — les notes ne sont pas lues depuis Markdown.
-   *[other] { $count } notes de bas de page de « { $path } » arrivent en texte brut — les notes ne sont pas lues depuis Markdown.
+    [one] Une note de bas de page de « { $path } » arrive en texte brut : les notes ne sont pas lues depuis Markdown.
+   *[other] { $count } notes de bas de page de « { $path } » arrivent en texte brut : les notes ne sont pas lues depuis Markdown.
 }
 import-diagnostic-footnote-not-carried = { $count ->
-    [one] Une note de bas de page de « { $path } » n’a pas pu être reprise — les autres l’ont été.
-   *[other] { $count } notes de bas de page de « { $path } » n’ont pas pu être reprises — les autres l’ont été.
+    [one] Une note de bas de page de « { $path } » n’a pas pu être reprise. Les autres l’ont été.
+   *[other] { $count } notes de bas de page de « { $path } » n’ont pas pu être reprises. Les autres l’ont été.
 }
 import-diagnostic-raw-html-dropped = { $count ->
     [one] Un bloc HTML brut de « { $path } » a été supprimé.
@@ -2153,26 +2153,26 @@ import-diagnostic-nested-break-dropped = { $count ->
 import-diagnostic-image-not-ingested = « { $path } » fait référence à l’image « { $detail } ». La référence arrive en texte ; l’image elle-même n’est pas copiée.
 import-diagnostic-duplicate-title = « { $title } » apparaît { $count } fois. Si vous avez déjà importé ces fichiers, cela les dupliquera.
 import-diagnostic-heading-level-jump = « { $title } » passe du niveau de titre { $from } au niveau { $to } ; il est placé un niveau sous son parent.
-import-diagnostic-illegal-combination = « { $title } » contient du texte, mais un élément de type « { $kind } » ne peut pas en contenir. L’importation est suspendue tant que vous n’avez pas changé son type ou décoché la ligne — sinon rien du tout ne serait importé.
+import-diagnostic-illegal-combination = « { $title } » contient du texte, mais un élément de type « { $kind } » ne peut pas en contenir. L’importation est suspendue tant que vous n’avez pas changé son type ou décoché l’élément : sinon rien du tout ne serait importé.
 import-diagnostic-tracked-changes-flattened = { $path } était en cours de révision : { $count ->
     [one] { $count } modification suivie a été acceptée
    *[other] { $count } modifications suivies ont été acceptées
-} et les suppressions écartées. C’est le texte final — pour garder votre propre formulation, utilisez Comparer à la dernière étape.
+} et les suppressions écartées. C’est le texte final. Pour garder votre propre formulation, utilisez Comparer à la dernière étape.
 import-diagnostic-tracked-changes-flattened-by = { $path } était en cours de révision : { $count ->
     [one] { $count } modification suivie de { $names } a été acceptée
    *[other] { $count } modifications suivies de { $names } ont été acceptées
-} et les suppressions écartées. C’est le texte final — pour garder votre propre formulation, utilisez Comparer à la dernière étape.
+} et les suppressions écartées. C’est le texte final. Pour garder votre propre formulation, utilisez Comparer à la dernière étape.
 import-diagnostic-text-box-dropped = { $count ->
     [one] { $path } contient { $count } zone de texte. Son contenu est hors du fil du document : impossible de dire où il se place dans un manuscrit, elle n’est donc pas importée.
    *[other] { $path } contient { $count } zones de texte. Leur contenu est hors du fil du document : impossible de dire où il se place dans un manuscrit, elles ne sont donc pas importées.
 }
 import-diagnostic-embedded-object-dropped = { $count ->
-    [one] { $path } contient { $count } objet incorporé — graphique, équation ou similaire. Rien dans un manuscrit ne peut l’accueillir.
-   *[other] { $path } contient { $count } objets incorporés — graphique, équation ou similaire. Rien dans un manuscrit ne peut les accueillir.
+    [one] { $path } contient { $count } objet incorporé : graphique, équation ou similaire. Rien dans un manuscrit ne peut l’accueillir.
+   *[other] { $path } contient { $count } objets incorporés : graphique, équation ou similaire. Rien dans un manuscrit ne peut les accueillir.
 }
 import-diagnostic-field-flattened = { $count ->
-    [one] { $path } contient { $count } champ — numéro de page, renvoi, date. Il conserve le texte affiché en dernier et ne se mettra plus à jour.
-   *[other] { $path } contient { $count } champs — numéro de page, renvoi, date. Chacun conserve le texte affiché en dernier et ne se mettra plus à jour.
+    [one] { $path } contient { $count } champ : numéro de page, renvoi, date. Il conserve le texte affiché en dernier et ne se mettra plus à jour.
+   *[other] { $path } contient { $count } champs : numéro de page, renvoi, date. Chacun conserve le texte affiché en dernier et ne se mettra plus à jour.
 }
 import-diagnostic-unknown-style-level = { $path } utilise le style « { $detail } », qui ressemble à un titre mais n’indique aucun niveau. Ces paragraphes sont importés comme texte plutôt que devinés.
 import-diagnostic-comment-unanchored = Le commentaire « { $detail } » dans { $path } n’a pas pu être rattaché aux mots qu’il visait. Il est conservé sur son élément, où vous pouvez le déplacer.
@@ -2200,7 +2200,7 @@ versions-scope-synopsis = Synopsis
 versions-scope-prose = Texte
 versions-loading = Recherche dans vos copies de secours…
 versions-empty = Aucune version antérieure pour l’instant
-versions-error = Impossible de lire vos copies de secours — rien n’est perdu, mais cette liste peut être incomplète
+versions-error = Impossible de lire vos copies de secours. Rien n’est perdu, mais cette liste peut être incomplète
 versions-did-not-exist = N’existait pas encore le { $date }
 versions-deleted-after = Supprimé après le { $date }
 versions-unreadable = { $count ->
@@ -2208,8 +2208,8 @@ versions-unreadable = { $count ->
    *[other] { $count } copies de secours illisibles
 }
 versions-thinned = { $count ->
-    [one] Les anciennes versions s’espacent avec le temps — l’historique interne du projet a déjà supprimé { $count } état antérieur de ce texte.
-   *[other] Les anciennes versions s’espacent avec le temps — l’historique interne du projet a déjà supprimé { $count } états antérieurs de ce texte.
+    [one] Les anciennes versions s’espacent avec le temps. L’historique interne du projet a déjà supprimé { $count } état antérieur de ce texte.
+   *[other] Les anciennes versions s’espacent avec le temps. L’historique interne du projet a déjà supprimé { $count } états antérieurs de ce texte.
 }
 versions-source-backup = Depuis une copie de secours
 versions-source-project = Depuis l’historique du projet
@@ -2217,7 +2217,7 @@ versions-list-caption = Une entrée par changement, pas par copie de secours
 versions-pick-a-version = Choisissez une version pour voir ce qui a changé
 versions-earliest = La plus ancienne version enregistrée. Il n’y a rien de plus ancien à quoi la comparer.
 versions-no-change = Rien n’a changé dans cette partie
-versions-formatting-only = Seule la mise en forme a changé — les mots sont les mêmes
+versions-formatting-only = Seule la mise en forme a changé : les mots sont les mêmes
 versions-show-unchanged = Afficher l’inchangé
 versions-hide-unchanged = Masquer l’inchangé
 versions-next-change = Changement suivant
@@ -2234,31 +2234,31 @@ versions-blocks-moved = { $count ->
     [one] { $count } paragraphe déplacé
    *[other] { $count } paragraphes déplacés
 }
-versions-pin = Épingler la copie de secours d’où vient cette version — le nettoyage automatique ne la supprimera jamais
-versions-unpin = Désépingler la copie de secours d’où vient cette version — le nettoyage automatique pourra de nouveau la supprimer
+versions-pin = Épingler la copie de secours d’où vient cette version. Le nettoyage automatique ne la supprimera jamais
+versions-unpin = Désépingler la copie de secours d’où vient cette version. Le nettoyage automatique pourra de nouveau la supprimer
 versions-pinned-only = N’afficher que les versions épinglées
-versions-pin-note = Seules les versions issues d’une copie de secours peuvent être épinglées — une épingle conserve un fichier, et l’historique interne du projet n’en est pas un.
+versions-pin-note = Seules les versions issues d’une copie de secours peuvent être épinglées. Une épingle conserve un fichier, et l’historique interne du projet n’en est pas un.
 versions-pinned-empty = Rien n’est encore épinglé ici
-versions-pinned-empty-log = Rien n’est encore épinglé ici. Seules les versions issues d’une copie de secours peuvent être épinglées — une épingle conserve un fichier, et l’historique interne du projet n’en est pas un.
+versions-pinned-empty-log = Rien n’est encore épinglé ici. Seules les versions issues d’une copie de secours peuvent être épinglées. Une épingle conserve un fichier, et l’historique interne du projet n’en est pas un.
 versions-range-filter = N’afficher que les versions comprises entre deux dates
 versions-filtered-empty = Aucune version ne correspond aux filtres définis
 versions-clear-filters = Effacer les filtres
 versions-last-30-days = 30 derniers jours
 versions-restore-button = Restaurer cette version
 versions-restore-confirm-title = Remplacer ce texte par la version du { $date } ?
-versions-restore-confirm-text = Ce que vous avez maintenant sera remplacé par le texte de cette ligne au { $date }.
-versions-restore-confirm-with-comments = Ce que vous avez maintenant sera remplacé par le texte de cette ligne au { $date }. { $count ->
+versions-restore-confirm-text = Ce que vous avez maintenant sera remplacé par le texte de cet élément au { $date }.
+versions-restore-confirm-with-comments = Ce que vous avez maintenant sera remplacé par le texte de cet élément au { $date }. { $count ->
     [one] { $count } commentaire est ancré dans le texte actuel et risque de devenir orphelin.
    *[other] { $count } commentaires sont ancrés dans le texte actuel et risquent de devenir orphelins.
 }
 versions-restore-confirm-undo-note = Une copie de sécurité est faite d’abord, et Ctrl+Z annule tout en une fois.
 versions-restored-toast = Version du { $date } restaurée
 versions-undo = Annuler
-versions-restore-row-gone = Cette ligne n’est plus dans ce projet
-versions-restore-no-home = Cette ligne a changé de type depuis, et l’ancien texte n’y a plus sa place
+versions-restore-row-gone = Cet élément n’est plus dans ce projet
+versions-restore-no-home = Cet élément a changé de type depuis, et l’ancien texte n’y a plus sa place
 versions-restore-no-safety-copy = Votre copie de sécurité n’a pas été faite, rien n’a été modifié
 versions-restore-failed = La restauration a échoué : { $error }
-versions-restore-backup-busy = Une copie de secours est déjà en cours — réessayez dans un instant
+versions-restore-backup-busy = Une copie de secours est déjà en cours. Réessayez dans un instant
 versions-restore-in-backup-file = Vous consultez une copie de secours ; ouvrez le projet lui-même pour y restaurer
 versions-restore-no-project = Aucun projet ouvert
 versions-recreate-button = Rétablir cet élément…
@@ -2316,7 +2316,7 @@ timeline-kind-removed = N’est plus dans le projet
 timeline-kind-changed = Modifié depuis
 timeline-kind-moved = Déplacé depuis
 timeline-not-yet-written = Cela n’existait pas encore à ce moment-là
-timeline-no-text-of-its-own = Ceci n’a pas de texte propre — c’est un intitulé pour ce qu’il contient
+timeline-no-text-of-its-own = Ceci n’a pas de texte propre : c’est un intitulé pour ce qu’il contient
 timeline-reader-close = Fermer
 timeline-reader-stamp = Tel quel le { $date }
 timeline-reader-loading = Ouverture de la version enregistrée…
@@ -2332,17 +2332,17 @@ timeline-prose-only-record = Ce point provient de l’historique interne du proj
 # The Settings tree's section for pages an extension contributed.
 settings-sec-extensions = Extensions
 
-# Volet Jeux d'écriture — contraintes d'écriture volontaires
+# Volet Jeux d'écriture : contraintes d'écriture volontaires
 settings-group-games-forward = Droit devant
 settings-games-forward-toggle = Jouer à « Droit devant »
 settings-games-forward-hint =
     Tant que vous jouez, rien de ce que vous avez écrit ne peut être repris :
     Retour arrière, Suppr, Couper, le glisser-déposer et Annuler sont désactivés dans
     les surfaces choisies ci-dessous. Vous pouvez toujours écrire, coller, mettre en
-    forme et vous déplacer librement — le brouillon ne fait que grandir.
+    forme et vous déplacer librement. Le brouillon ne fait que grandir.
 settings-games-session-warning =
     Ce choix ne vaut que pour la session en cours : il n’est jamais enregistré. Fermer
-    le projet ou quitter Skribisto met toujours fin à la partie — et tout ce que vous
+    le projet ou quitter Skribisto met toujours fin à la partie, et tout ce que vous
     avez écrit en jouant redevient annulable à cet instant.
 settings-group-games-scope = Où cela s’applique
 settings-games-in-prose = Texte du manuscrit
@@ -2351,7 +2351,7 @@ settings-games-scope-hint =
     Les commentaires, les notes de bas de page et les titres ne sont jamais figés :
     c’est là que vous notez la correction que vous venez de vous interdire.
 settings-games-inert-warning =
-    « Droit devant » est activé mais ne s’applique à rien — cochez au moins une surface
+    « Droit devant » est activé mais ne s’applique à rien : cochez au moins une surface
     ci-dessus, sinon cela ne change rien à votre écriture.
 
 # Panneau Jeux d'écriture (rail de gauche) + l'avertissement de la barre d'état
@@ -2359,15 +2359,15 @@ games-title = Jeux d’écriture
 games-forward-name = Droit devant
 games-forward-blurb =
     Écrivez sans jamais revenir en arrière. Supprimer, couper et annuler sont
-    désactivés pendant la partie — écrivez la phrase suivante plutôt que de corriger
+    désactivés pendant la partie : écrivez la phrase suivante plutôt que de corriger
     la précédente.
-games-forward-playing = Partie en cours — la suppression est désactivée
+games-forward-playing = Partie en cours : la suppression est désactivée
 games-forward-idle = Aucune partie en cours
 games-session-note = La partie prend fin à la fermeture du projet.
 games-scope-prose-and-synopsis = S’applique à votre texte et à vos synopsis.
 games-scope-prose = S’applique à votre texte.
 games-scope-synopsis = S’applique à vos synopsis.
-games-scope-nothing = Ne s’applique à rien pour l’instant — choisissez une surface dans les paramètres.
+games-scope-nothing = Ne s’applique à rien pour l’instant. Choisissez une surface dans les paramètres.
 games-settings-link = Paramètres des jeux d’écriture…
 statusbar-games-forward = Droit devant
 statusbar-games-forward-tooltip =
@@ -2405,7 +2405,7 @@ inspector-goal-none = Aucun objectif
 # La colonne d'objectif de la Vue d'ensemble, et la mention portée par une ligne que
 # l'export laisse de côté.
 overview-col-goal = Objectif
-overview-excluded-from-export = Hors export : cette ligne ne compte dans aucun total
+overview-excluded-from-export = Hors export : cet élément ne compte dans aucun total
 
 # La page propre d'un conteneur : ce à quoi s'ajoutent les objectifs définis à l'intérieur.
 # Ce n'est délibérément pas un objectif, et la formulation ne doit pas laisser croire que
@@ -2597,7 +2597,7 @@ help-concept-round-trip-marks = Marqueurs d’aller-retour
 epigraph-mark-attribution = Ligne de source
 epigraph-mark-attribution-tip = Marque la ligne où se trouve le curseur comme la source de la citation, pour qu’elle s’imprime en attribution
 
-## Margin lane — the strip beside the scrollbar that maps a document
+## Margin lane: the strip beside the scrollbar that maps a document
 margin-lane-name = Repères de marge
 margin-lane-provider-comments = Commentaires
 margin-lane-provider-story-bible = Entrée de bible narrative
@@ -2633,7 +2633,7 @@ settings-margin-lane-surface-stream = Flux
 settings-margin-lane-surface-search-preview = Aperçu de recherche
 menu-margin-lane = Repères de &marge
 
-## Statuts — l'échelle d'avancement du projet.
+## Statuts : l'échelle d'avancement du projet.
 ## Le nom d'un échelon est une DONNÉE du projet : ces chaînes sont résolues une seule fois,
 ## à la création de l'échelle, puis stockées telles quelles. Elles ne sont pas retraduites
 ## ensuite, et l'auteur peut renommer n'importe quel échelon.
@@ -2667,19 +2667,19 @@ overview-status-mixed = les parties en dessous divergent
 help-concept-status = Statut
 status-completion-title = Où en est le livre
 status-completion-headline = { $done } scènes terminées sur { $total }
-status-completion-empty = Aucune scène pour l'instant — cette vue lit le manuscrit, elle se remplira à mesure que vous écrirez.
+status-completion-empty = Aucune scène pour l'instant. Cette vue lit le manuscrit, elle se remplira à mesure que vous écrirez.
 status-completion-open = Où en est le livre…
 
-## Réglages ▸ Projet ▸ Statuts — l'éditeur d'échelle.
+## Réglages ▸ Projet ▸ Statuts : l'éditeur d'échelle.
 ## L'auteur possède le NOM d'un échelon et l'ORDRE de l'échelle ; l'application possède sa
 ## catégorie, et la catégorie possède le symbole et la couleur. Seuls les noms de catégorie
-## ci-dessous sont traduits — le nom d'un échelon est le texte de l'auteur et reste tel quel.
+## ci-dessous sont traduits : le nom d'un échelon est le texte de l'auteur et reste tel quel.
 settings-page-statuses = Statuts
 settings-desc-statuses = Renommer, réordonner, ajouter et supprimer les étapes par lesquelles passe une scène
 settings-statuses-add = Ajouter un statut
 settings-statuses-add-placeholder = Nom du nouveau statut
 settings-statuses-desc =
-    Les étapes par lesquelles passe une scène, dans l'ordre — de la moins avancée en haut à
+    Les étapes par lesquelles passe une scène, dans l'ordre, de la moins avancée en haut à
     la plus avancée en bas. Cet ordre définit ce que « moins avancé que » signifie partout
     ailleurs dans l'application : placez-les selon votre processus réel.
 settings-statuses-apply-preset = Appliquer un préréglage…
@@ -2687,7 +2687,7 @@ settings-statuses-preset-applied = { $added ->
     [one] 1 statut ajouté
    *[other] { $added } statuts ajoutés
 }
-settings-statuses-preset-refused = Ce projet a déjà une échelle. Les préréglages ne remplissent qu'une échelle vide — supprimez d'abord les échelons dont vous ne voulez pas.
+settings-statuses-preset-refused = Ce projet a déjà une échelle. Les préréglages ne remplissent qu'une échelle vide. Supprimez d'abord les échelons dont vous ne voulez pas.
 settings-statuses-duplicate = « { $name } » figure déjà sur cette échelle
 settings-statuses-added = « { $name } » ajouté
 settings-statuses-move-up = Monter (moins avancé)
@@ -2695,8 +2695,8 @@ settings-statuses-move-down = Descendre (plus avancé)
 settings-statuses-details-placeholder = Ce que signifie cette étape (facultatif)
 settings-statuses-delete = Supprimer « { $name } »
 settings-statuses-delete-in-use = { $count ->
-    [one] Supprimer « { $name } » — { $count } élément le porte et perdra son statut
-   *[other] Supprimer « { $name } » — { $count } éléments le portent et perdront leur statut
+    [one] Supprimer « { $name } » : { $count } élément le porte et perdra son statut
+   *[other] Supprimer « { $name } » : { $count } éléments le portent et perdront leur statut
 }
 settings-statuses-deleted = « { $name } » supprimé
 settings-statuses-deleted-in-use = { $count ->

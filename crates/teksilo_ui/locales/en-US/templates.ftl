@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-# Note templates — the per-project catalog, its settings pane, the Document menu's
+# Note templates: the per-project catalog, its settings pane, the Document menu's
 # insert submenu, and the built-in presets.
 #
 # Preset NAMES and the section/field labels their bodies are built from are translated
 # deliberately: presets are assembled in code rather than shipped as `.djot` assets so that
-# applying one lands in the language of the INTERFACE in use at that moment — and so
+# applying one lands in the language of the INTERFACE in use at that moment, and so
 # improving the English wording later reaches every locale instead of being frozen into
 # whatever projects had already applied it. The interface's locale and not the project's:
 # a template is a form the writer fills in and then overwrites, and once applied its rows
@@ -14,7 +14,7 @@
 
 ## Settings ▸ Work ▸ Templates
 settings-page-templates = Templates
-settings-templates-description = Reusable pieces of writing you can drop into anything you are writing — a blank character sheet, a location profile, a beat sheet. They are stored in this project, so anyone who opens it gets the same set.
+settings-templates-description = Reusable pieces of writing you can drop into anything you are writing: a blank character sheet, a location profile, a beat sheet. They are stored in this project, so anyone who opens it gets the same set.
 settings-templates-filter = Filter templates
 settings-templates-count = { $n ->
     [0] No templates
@@ -71,7 +71,7 @@ save-as-template-explain = The text you are editing becomes a template you can d
 save-as-template-name = Name
 save-as-template-placeholder = Character sheet
 save-as-template-duplicate = A template called "{ $name }" already exists
-save-as-template-empty-editor = This editor is empty — there is nothing to save.
+save-as-template-empty-editor = This editor is empty. There is nothing to save.
 save-as-template-confirm = Save template
 save-as-template-saved = Saved "{ $name }" as a template
 template-inserted = Inserted "{ $name }"

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-# Tags — the per-project palette, the inspector section, and the preset catalog.
+# Tags: the per-project palette, the inspector section, and the preset catalog.
 # Preset tag NAMES are translated deliberately: presets are generated in code rather than
 # shipped as data so that applying one lands in the language of the INTERFACE the writer is
 # looking at, instead of the single language a data file would have had to pick at authoring
@@ -16,16 +16,16 @@ tags-preset-fantasy = Fantasy
 tags-preset-mystery = Mystery
 tags-preset-historical = Historical
 
-## Basic preset — the workflow ladder. The `status/` prefix is a naming convention:
+## Basic preset: the workflow ladder. The `status/` prefix is a naming convention:
 ## alphabetical sorting alone makes these cluster together in every list.
 
-## Basic preset — flags. Deliberately unprefixed: a scene can be a draft AND need
+## Basic preset: flags. Deliberately unprefixed: a scene can be a draft AND need
 ## research at the same time, so these are not part of the ladder above.
 tags-preset-needs-research = needs research
 tags-preset-continuity-check = continuity check
 tags-preset-plot-point = plot point
 
-## Basic preset — the taxonomy the mention index scans prose for.
+## Basic preset: the taxonomy the mention index scans prose for.
 tags-preset-character = character
 tags-preset-place = place
 tags-preset-item = item
@@ -119,7 +119,7 @@ cast-add-filter-placeholder = Filter story bible…
 cast-add-empty = No story-bible entries to add
 cast-pin = Add { $name } to cast
 cast-unpin = Remove { $name } from cast
-cast-empty = No one pinned yet — add or keep a suggestion
+cast-empty = No one pinned yet. Add or keep a suggestion
 cast-unresolved = No longer in the story bible
 
 ## Backlinks on a story-bible item
@@ -130,7 +130,7 @@ cast-unresolved = No longer in the story bible
 # The control on a suggested backlink row: the writer says yes, this really is her,
 # and the entry is written into that document's cast. Named after what it does rather
 # than after the agreement, and worded to mirror `cast-pin`, which is the same write
-# made from the other end. Confirm only — there is no "not her" to record; see
+# made from the other end. Confirm only: there is no "not her" to record; see
 # `teksilo_ui::mentions::presence`.
 mentions-confirm = Add to the cast of { $name }
 mentions-hit-count = { $n ->
@@ -150,7 +150,7 @@ mentions-pin = Add { $name } to cast
 # ── Point of view ────────────────────────────────────────────────────────────
 # Whose eyes a scene is told through. Distinct from the cast above: the cast is
 # who appears, the point of view is who holds the camera. A scene may have none
-# (unassigned) or, deliberately, more than one — which is what head-hopping is.
+# (unassigned) or, deliberately, more than one, which is what head-hopping is.
 pov-section = Point of view
 pov-empty = No point of view set
 pov-add = Set point of view…

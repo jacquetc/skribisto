@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-# Étiquettes — la palette du projet, la section de l'inspecteur et les préréglages.
+# Étiquettes : la palette du projet, la section de l'inspecteur et les préréglages.
 # Les NOMS des étiquettes des préréglages sont traduits volontairement : les préréglages
 # sont générés dans le code plutôt que livrés comme données, afin qu'en appliquer un
 # aboutisse dans la langue de l'INTERFACE que l'auteur a sous les yeux, et non dans l'unique
@@ -17,15 +17,15 @@ tags-preset-fantasy = Fantasy
 tags-preset-mystery = Policier
 tags-preset-historical = Historique
 
-## Préréglage basique — le cycle de travail. Le préfixe « statut/ » est une convention de
+## Préréglage basique : le cycle de travail. Le préfixe « statut/ » est une convention de
 
-## Préréglage basique — les marqueurs. Volontairement sans préfixe : une scène peut être un
+## Préréglage basique : les marqueurs. Volontairement sans préfixe : une scène peut être un
 ## brouillon ET demander des recherches, ils ne font donc pas partie du cycle ci-dessus.
 tags-preset-needs-research = recherches à faire
 tags-preset-continuity-check = vérifier la continuité
 tags-preset-plot-point = point d’intrigue
 
-## Préréglage basique — la taxinomie que l'index des mentions cherche dans le texte.
+## Préréglage basique : la taxinomie que l'index des mentions cherche dans le texte.
 tags-preset-character = personnage
 tags-preset-place = lieu
 tags-preset-item = objet
@@ -131,7 +131,7 @@ cast-add-filter-placeholder = Filtrer la bible narrative…
 cast-add-empty = Aucune entrée de bible narrative à ajouter
 cast-pin = Ajouter { $name } à la présence
 cast-unpin = Retirer { $name } de la présence
-cast-empty = Personne n’est encore épinglé — ajoutez ou conservez une suggestion
+cast-empty = Personne n’est encore épinglé. Ajoutez ou conservez une suggestion
 cast-unresolved = Ne fait plus partie de la bible narrative
 
 ## Rétroliens sur une entrée de bible narrative

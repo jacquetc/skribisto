@@ -80,8 +80,8 @@ ctx-move-down = Move Dow&n
 # Fresh `ctx-tab-*` keys, never a reuse of the `ctx-*` rows above: those double as
 # menu-BAR rows (shell/project_menus/document.rs), so retuning one of their
 # mnemonics to fit this menu would break the bar's own per-locale uniqueness.
-# Three rows are either/or — the split, the move and the pin each build exactly
-# one of their pair — so a letter may repeat across a pair but never within one
+# Three rows are either/or: the split, the move and the pin each build exactly
+# one of their pair, so a letter may repeat across a pair but never within one
 # built menu, which is a debug_assert! panic in MenuList::build, not a warning.
 ctx-tab-close = &Close
 ctx-tab-close-others = Close &others
@@ -96,15 +96,15 @@ ctx-tab-move-to-side = &Move to the side
 ctx-tab-move-to-main = &Move to the main pane
 ctx-tab-move-to-new-window = Move into a &new window
 # Why that last row is unavailable. A second window is opened onto the project's
-# file, so a project that has never been saved has nothing for it to open — a
+# file, so a project that has never been saved has nothing for it to open. A
 # tooltip on the disabled row, not a menu label, hence no mnemonic.
-ctx-tab-move-window-unsaved = Save this project first — a second window opens onto a file on disk
+ctx-tab-move-window-unsaved = Save this project first: a second window opens onto a file on disk
 ctx-tab-pin = &Pin this tab
 ctx-tab-unpin = &Unpin this tab
 # Tab tooltip, not a menu row: no mnemonic. It names the two commands a pin
 # actually protects against, because the tab itself shows only a glyph and a
-# missing close button — neither of which says what the pin is for.
-tab-pinned-tooltip = Pinned — "Close others" and "Close all" leave it open
+# missing close button, neither of which says what the pin is for.
+tab-pinned-tooltip = Pinned: "Close others" and "Close all" leave it open
 
 ## Create recommendations: logical type labels (SplitButton title + Add ▸ rows)
 create-book = Book
@@ -123,7 +123,7 @@ type-book-start = Book start
 type-text = Text
 
 ## Create: the default title a new row is given.
-## Data, not chrome — resolved once at creation and then owned by the writer,
+## Data, not chrome. Resolved once at creation and then owned by the writer,
 ## so switching language never retitles anything already created.
 ## (A scene reuses `new-scene-title`, shared with split-scene.)
 new-item-book = New Book
@@ -199,7 +199,7 @@ session-time-limit = Time limit
 # The spin box's non-editable trailing unit. An abbreviation, not a word that
 # agrees with the number: a `SpinBox` suffix is static text and cannot carry a
 # plural selector. The separating space is prepended in code (Qt's `" min"`
-# convention), so give the unit alone. Never shown at 0 — that reads
+# convention), so give the unit alone. Never shown at 0, which reads
 # `session-no-limit` instead.
 session-time-limit-unit = min
 session-no-goal = No goal
@@ -209,7 +209,7 @@ session-readout = { $words } words · { $time }
 session-readout-timed = { $words } words · { $time } left
 # Distraction-free mode's always-visible control strip (Increment 2).
 statusbar-focus-exit = Exit distraction-free mode
-# The strip's Next/Previous buttons (Increment 4) — fire the same go.next/go.prev
+# The strip's Next/Previous buttons (Increment 4) fire the same go.next/go.prev
 # actions as the shortcut and the Go menu's generic pair.
 statusbar-focus-synopsis = Synopsis
 statusbar-focus-go-prev = Previous item (Alt+Up)
@@ -275,7 +275,7 @@ settings-page-keymap = Keymap
 settings-keymap-filter = Filter shortcuts
 
 ## Settings window: what each page is for
-# One line per page, shown under that page's link on its parent's page — and,
+# One line per page, shown under that page's link on its parent's page and,
 # for a parent, under its own title. Keep them to one line: they describe what
 # the page holds, not how to use it.
 settings-desc-sec-appearance-behaviour = How the application itself looks, and what it does when it starts.
@@ -285,7 +285,7 @@ settings-desc-sec-backup = How your work reaches the disk, and what copies are k
 settings-desc-sec-compile = What leaves Skribisto, and in what shape.
 settings-desc-sec-work = Settings that belong to this project and travel inside its file.
 settings-desc-sec-extensions = Pages contributed by the extensions installed here.
-settings-desc-group-typography = One page per kind of text — typeface, size, line height and spacing.
+settings-desc-group-typography = One page per kind of text: typeface, size, line height and spacing.
 settings-desc-appearance = Interface language, theme, text size, and the launcher at startup.
 settings-desc-notifications = Every message this session has shown, and the actions you can replay.
 settings-desc-scene = How scene prose is set: typeface, size, line height, indents and spacing.
@@ -293,7 +293,7 @@ settings-desc-synopsis = How the synopsis pane is set, independently of the manu
 settings-desc-notes = How notes are set, independently of the manuscript.
 settings-desc-corkboard = Card size, what a card shows, and how the board arranges them.
 settings-desc-distraction-free = Typography, column width and control strip for full-screen writing.
-settings-desc-distraction-free-themes = The theme library for full-screen writing — the shipped ones and your own.
+settings-desc-distraction-free-themes = The theme library for full-screen writing: the shipped ones and your own.
 settings-desc-editor-behavior = Text width, synopsis position, typewriter scrolling and the caret highlight.
 settings-desc-punctuation = The typographic house style new projects start from. Every project follows this unless it sets its own.
 settings-desc-goals = Word and character targets, and how words are counted.
@@ -302,7 +302,7 @@ settings-desc-spellcheck = The single switch that turns spell-checking on and of
 settings-desc-dictionaries = Install, remove and browse the spelling dictionaries on this machine.
 settings-desc-autosave = Whether your edits are written to disk on their own.
 settings-desc-backup = When copies are taken, where they are kept, and how many. Every project follows this unless it sets its own.
-settings-desc-export = The styles every export compiles through — the shipped ones and your own.
+settings-desc-export = The styles every export compiles through: the shipped ones and your own.
 settings-desc-paratext = The front and back matter a new project can start with.
 settings-desc-keymap = Every shortcut, and what it is bound to.
 settings-page-user = User
@@ -314,7 +314,7 @@ settings-field-user-name-hint = Signs the comments and replies you write. Distin
 settings-field-user-initials = Your initials
 settings-field-user-initials-placeholder = From your name
 settings-field-user-initials-hint = What a word processor shows beside your comment in the margin. Leave it blank to use the ones shown, taken from your name.
-settings-field-user-hint = Both are optional and apply to every project on this computer. Changing them signs the comments you write next — comments already written keep the name they were written under.
+settings-field-user-hint = Both are optional and apply to every project on this computer. Changing them signs the comments you write next. Comments already written keep the name they were written under.
 settings-desc-author = The name that goes on this project.
 settings-desc-structure = Whether this project's chapters are folders or single items.
 settings-desc-language = The language this project's prose is checked against.
@@ -358,13 +358,13 @@ settings-field-first-line-indent = First-line indent
 settings-field-paragraph-spacing-before = Space before paragraph
 settings-field-paragraph-spacing-after = Space after paragraph
 settings-field-column-width = Column width
-settings-distraction-free-width-hint = Applies only while distraction-free mode is on — your Scene, Synopsis and Notes column widths are untouched.
+settings-distraction-free-width-hint = Applies only while distraction-free mode is on. Your Scene, Synopsis and Notes column widths are untouched.
 settings-distraction-free-title = Keep the item's name
 settings-distraction-free-word-count = Keep the word count
 settings-distraction-free-session = Keep the writing session
 settings-distraction-free-go-to = Keep the Go to… button
 settings-distraction-free-go = Keep the Previous and Next buttons
-settings-distraction-free-chrome-hint = The Exit button always stays, whatever you choose here — it is your way out if Escape is busy.
+settings-distraction-free-chrome-hint = The Exit button always stays, whatever you choose here. It is your way out if Escape is busy.
 settings-field-app-theme = Theme
 # The two entries of the Theme picker (the Fluent light / dark appearances).
 settings-theme-light = Light
@@ -413,7 +413,7 @@ settings-page-structure = Structure
 settings-page-author = Author
 settings-field-author-name = Author name
 settings-field-author-placeholder = Optional
-settings-field-author-hint = Appears on the compiled title page and in exported file metadata. Leave it blank to omit it. This is the book's byline — the name your comments are signed with is in Settings ▸ User.
+settings-field-author-hint = Appears on the compiled title page and in exported file metadata. Leave it blank to omit it. This is the book's byline. The name your comments are signed with is in Settings ▸ User.
 settings-group-chapters = Chapters
 tidy-titles-title = Tidy chapter titles
 tidy-titles-none = No chapter or part title is merely repeating its own number.
@@ -421,17 +421,17 @@ tidy-titles-lead = { $count ->
         [one] One chapter or part is titled with nothing but its own number.
        *[other] { $count } chapters and parts are titled with nothing but their own number.
     }
-tidy-titles-explain = Clearing those titles leaves each one named by the number the book already knows — the same number the export prints. Nothing else changes, and one undo puts them all back.
+tidy-titles-explain = Clearing those titles leaves each one named by the number the book already knows, the same number the export prints. Nothing else changes, and one undo puts them all back.
 menu-document-tidy-titles = Tid&y chapter titles…
 settings-group-numbering = Numbering
 settings-number-chapters = Number chapters and parts
-settings-number-chapters-tip = Chapters and parts carry a number worked out from where they sit in the book — shown beside their title here, and printed by the export.
-settings-number-chapters-tip-more = The number is never stored in the title, so it stays right when you reorder, insert or delete. Turn this off and the export prints titles alone, whatever the export style asks for. To leave one chapter out — a prologue, an interlude — use the Inspector's Numbering switch instead: that keeps it in the book but stops it taking a number.
+settings-number-chapters-tip = Chapters and parts carry a number worked out from where they sit in the book, shown beside their title here, and printed by the export.
+settings-number-chapters-tip-more = The number is never stored in the title, so it stays right when you reorder, insert or delete. Turn this off and the export prints titles alone, whatever the export style asks for. To leave one chapter out (a prologue, an interlude), use the Inspector's Numbering switch instead: that keeps it in the book but stops it taking a number.
 settings-part-resets-chapter = Restart chapter numbers at each part
 settings-part-resets-chapter-tip = Off by default: chapters run straight on across the parts of a book, so "Part Two" opens on Chapter Eleven.
 settings-part-resets-chapter-tip-more = That is the usual trade practice, and what a reader expects. Turn it on for a book whose parts are meant to read as separate volumes, where each one opens on Chapter One.
 settings-chapter-flat = Flat chapters
-settings-chapter-flat-hint = On: a chapter is a single row. You write into it, and it holds no scenes. Off: a chapter is a folder. You still write into it, but it can hold scenes as well. New chapters follow this setting; existing ones convert via Promote.
+settings-chapter-flat-hint = On: a chapter is a single item. You write into it, and it holds no scenes. Off: a chapter is a folder. You still write into it, but it can hold scenes as well. New chapters follow this setting; existing ones convert via Promote.
 
 ## Settings: Export styles (Compile & Export ▸ Export Formats)
 settings-styles-builtin = Built-in styles
@@ -545,7 +545,7 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Nested
 corkboard-view-flat = Flat
-corkboard-layout-hint = Nested shows a container's direct children — open a folder card to go inside it. Flat shows every scene in the whole container at once.
+corkboard-layout-hint = Nested shows a container's direct children. Open a folder card to go inside it. Flat shows every scene in the whole container at once.
 corkboard-card-size = Card size
 corkboard-search-placeholder = Filter cards…
 corkboard-empty-title = Nothing here yet
@@ -582,7 +582,7 @@ corkboard-move-to-n = { $count ->
    *[other] Move { $count } cards to…
 }
 corkboard-move-picker-title = Move to…
-corkboard-move-picker-empty = No binders yet — create one first.
+corkboard-move-picker-empty = No binders yet. Create one first.
 corkboard-move-picker-cancel = Cancel
 corkboard-move-here = Move Here
 corkboard-moved-ok = { $count ->
@@ -603,10 +603,10 @@ overview-col-books = Books
 overview-col-own-words = Words
 overview-col-total-words = Total
 overview-row-count = { $count ->
-    [one] { $count } row
-   *[other] { $count } rows
+    [one] { $count } item
+   *[other] { $count } items
 }
-overview-search-placeholder = Filter rows…
+overview-search-placeholder = Filter items…
 overview-expand-all = Expand all
 overview-collapse-all = Collapse all
 overview-table-label = Contents
@@ -722,7 +722,7 @@ menu-paste = Paste
 menu-paste-unformatted = Paste Unformatted
 menu-select-all = Select All
 # Tooltips on the editor context menu's formatting row. Icon-only buttons, so
-# the tooltip is their only accessible name — not decoration.
+# the tooltip is their only accessible name, not decoration.
 format-bold = Bold
 format-italic = Italic
 format-underline = Underline
@@ -762,7 +762,7 @@ quit-question = Save changes before quitting?
 quit-save-work-question = Save changes to { $title } before quitting?
 unsaved-changes = This work has unsaved changes.
 # Shown by Quit when another open Work (not this window's own) still has
-# unsaved edits — the design's "one dialog listing every dirty Work" (see
+# unsaved edits. The design's "one dialog listing every dirty Work" (see
 # app::commands::file's `app.quit` action). Quit is refused until those are
 # saved or closed from their own window.
 # Replacing the open work in this window (New Work, Open Work, "Open here", the
@@ -782,7 +782,7 @@ save-not-started = The work couldn't be saved.
 # Toast title. Kept short because a toast title is one line and truncates; the cause goes
 # in the body, which is the untranslated error text itself. $file is the file's base name.
 could-not-open-work = Could not open "{ $file }"
-# A project saved by a newer Skribisto than this one — title and body.
+# A project saved by a newer Skribisto than this one: title and body.
 # $written_by is the version that wrote it, $requires the lowest version that can open it
 # (the two differ when the newer build happened to use nothing new), $supported the newest
 # this build understands.
@@ -951,7 +951,7 @@ new-work-template-novel-in-parts-count = 3 parts, 24 chapters
 new-work-template-notebook-count = free-form notes
 # ChapterScene toggle (novel templates)
 new-work-chapter-scene = Flat chapters
-new-work-chapter-scene-tip = Each chapter is a single row you write straight into, with no scenes under it. Leave this off for the classic layout, where a chapter is a folder: you write straight into that too, but it can hold scenes as well.
+new-work-chapter-scene-tip = Each chapter is a single item you write straight into, with no scenes under it. Leave this off for the classic layout, where a chapter is a folder: you write straight into that too, but it can hold scenes as well.
 new-work-chapter-scene-tip-more = You write into a chapter either way. The only difference is whether it can *contain* scenes. Skribisto's binder tree is organizational only, so both layouts compile to the same book, you can mix them freely, and Promote converts a chapter between the two without losing a word.
 # Field validation
 new-work-name-required = Enter a name for the work
@@ -1201,16 +1201,16 @@ search-tip-whole-word = Whole word: match only complete words, so “cat” is n
 search-tip-diacritics = Match accents: treat accented letters as distinct, so “cafe” does not match “café”.
 search-tip-body = Body: search the prose of scenes and notes.
 search-tip-title = Title: search the titles of binder items.
-search-tip-synopsis = Synopsis: search each writing row’s summary.
+search-tip-synopsis = Synopsis: search each writing item’s summary.
 search-tip-label = Label: search the short note shown under a binder item’s title.
-search-tip-comment = Comments: search the text of comment threads and their replies. A comment is about the manuscript rather than part of it, so it has its own switch — and a replace leaves comment matches unticked until you tick them.
+search-tip-comment = Comments: search the text of comment threads and their replies. A comment is about the manuscript rather than part of it, so it has its own switch, and a replace leaves comment matches unticked until you tick them.
 search-tip-book = Books: the book container and its begin / end markers.
 search-tip-part = Parts: part-level dividers.
 search-tip-chapter = Chapters: chapters, in whichever way the project stores them.
-search-tip-scene = Scenes: the rows that hold your prose.
+search-tip-scene = Scenes: the items that hold your prose.
 search-tip-note = Notes: free-form notes.
 search-tip-folder = Folders: plain organizing folders and separators.
-search-tip-paratext = A text that belongs to the book but not to its story — a preface, a dedication, an afterword. Never counted in the manuscript.
+search-tip-paratext = A text that belongs to the book but not to its story: a preface, a dedication, an afterword. Never counted in the manuscript.
 search-tip-preserve-case = Preserve case: a replacement takes the case it found, so “ELENA” becomes “MARTA” and “Elena” becomes “Marta”.
 search-tip-replace = Replace: show the replacement field and Replace All.
 search-error = Search failed: { $message }
@@ -1292,7 +1292,7 @@ search-preview-empty = Select a result to preview it here
 search-preview-no-prose = This match has no editable text
 search-preview-prompt = To see a preview here, run a search.
 search-preview-open-search = Search in Project
-search-preview-footnote-prompt = This match is in a footnote's own text — open it in the Footnotes dock to see and edit it.
+search-preview-footnote-prompt = This match is in a footnote's own text. Open it in the Footnotes dock to see and edit it.
 search-preview-open-footnotes = Open Footnotes
 
 # Per-editor find banner (Ctrl+F)
@@ -1376,7 +1376,7 @@ ctx-unnumber = Do not &number this chapter
 inspector-numbering = Numbering
 inspector-numbered = Numbered
 inspector-numbered-tip = This chapter takes its place in the book's numbering. Switch it off for a prologue, an epilogue or an interlude.
-inspector-numbered-tip-more = An unnumbered chapter stays in the book exactly as it was — its heading, its prose and its word count are untouched. It simply prints no number, and does not use one up: the chapter after a prologue is chapter one, not chapter two. Leaving it out of the export instead is a different switch, above, and that one removes the chapter from the book altogether.
+inspector-numbered-tip-more = An unnumbered chapter stays in the book exactly as it was: its heading, its prose and its word count are untouched. It simply prints no number, and does not use one up: the chapter after a prologue is chapter one, not chapter two. Leaving it out of the export instead is a different switch, above, and that one removes the chapter from the book altogether.
 inspector-apply-to-children = Apply to children
 # The Inspector's per-Part/Chapter milestone date (M5), shown on the Book's Pace.
 inspector-milestone = Milestone date
@@ -1473,7 +1473,7 @@ toast-undo = Undo
 ## else has happened since, it says so rather than taking back whatever now
 ## happens to be last.
 undo-superseded-title = That step is no longer the last one
-undo-superseded-body = Something else has changed in this project since. Undo would take that back instead, so it hasn’t. Nothing this step did has been reversed — use Edit ▸ Undo to step back through the history yourself.
+undo-superseded-body = Something else has changed in this project since. Undo would take that back instead, so it hasn’t. Nothing this step did has been reversed. Use Edit ▸ Undo to step back through the history yourself.
 undo-failed = Undo failed: { $error }
 
 ## The Edit menu
@@ -1551,7 +1551,7 @@ trash-restore-to = Restore &to…
 trash-delete-forever = &Delete Forever
 trash-restored-ok = { $count } restored.
 trash-restore-error = Could not restore: { $error }
-trash-restore-orphaned = This item's original spot is gone — choose where to restore it.
+trash-restore-orphaned = This item's original spot is gone. Choose where to restore it.
 trash-restore-no-project = No project is open, so there is nothing to restore.
 trash-delete-no-project = No project is open, so there is nothing to delete.
 trash-empty-confirm-title = Empty the trash?
@@ -1575,7 +1575,7 @@ trash-restore-to-confirm-title = Restore here?
 trash-restore-to-confirm-text = Restore "{ $item }" into "{ $destination }"?
 trash-restore-picker-restore-here = Restore Here
 trash-restore-picker-cancel = Cancel
-trash-restore-picker-empty = No binders yet — create one first.
+trash-restore-picker-empty = No binders yet. Create one first.
 trash-banner-title = This item is in the Trash
 trash-banner-description = It won't appear in the outline or exports until you restore it.
 trash-banner-restore = Restore…
@@ -1616,7 +1616,7 @@ format-group-lists = Lists
 format-group-tables = Table
 format-group-breaks = Scene breaks
 # Button tooltips. Icon-only buttons, so each tooltip is that button's only
-# accessible name — not decoration.
+# accessible name, not decoration.
 format-superscript = Superscript
 format-subscript = Subscript
 format-link = Link…
@@ -1718,7 +1718,7 @@ about-close = Close
 # global menu bar. No `&` mnemonics here: macOS has none, and the native bridge
 # resolves these without stripping one, so an ampersand would print literally.
 # The application name is data (the running edition's own name), so it arrives
-# as an argument — same rule as the window titles below.
+# as an argument: same rule as the window titles below.
 native-menu-about = About { $app }
 native-menu-hide = Hide { $app }
 native-menu-quit = Quit { $app }
@@ -1729,8 +1729,8 @@ native-menu-zoom = Zoom
 
 # Window titles. The application name is data (the running edition's own name),
 # so it arrives as an argument rather than being written into the value here.
-window-title = { $title } — { $app }
-window-title-numbered = { $title } — { $app } (Window { $n })
+window-title = { $title } - { $app }
+window-title-numbered = { $title } - { $app } (Window { $n })
 window-title-empty = { $app }
 
 # First-run settings import (an edition with its own config directory, finding
@@ -1745,7 +1745,7 @@ first-run-import = Import settings
 first-run-start-fresh = Start fresh
 first-run-import-failed = Some settings could not be imported: { $error }
 
-# ── Work ▸ Punctuation — the project's typographic house style ──────────────
+# ── Work ▸ Punctuation: the project's typographic house style ──────────────
 settings-page-punctuation = Punctuation defaults
 settings-group-punctuation = Smart punctuation
 settings-page-work-punctuation = Punctuation
@@ -1765,7 +1765,7 @@ settings-punctuation-spacing-hint = French typography sets a narrow no-break spa
 settings-punctuation-sample = Your language gives
 settings-punctuation-app-hint = What every project does unless it takes rules of its own in Work ▸ Punctuation.
 settings-punctuation-dialogue = Open a paragraph typed as "- " with a dialogue dash
-settings-punctuation-dialogue-hint = For languages that mark speech with a dash rather than quotation marks — French, Spanish, Russian and others. It only fires at the very start of a paragraph.
+settings-punctuation-dialogue-hint = For languages that mark speech with a dash rather than quotation marks: French, Spanish, Russian and others. It only fires at the very start of a paragraph.
 
 ## Go to (jump to any item)
 statusbar-go-to = Go to…
@@ -1795,14 +1795,14 @@ settings-themes-export-failed = Could not export that theme
 # Shown on a theme whose text and page are below the WCAG AA contrast floor.
 settings-themes-low-contrast = low contrast
 # Shown when the page and the text are fine but the caret band is what hides
-# the prose — a different fault, and one the row's own swatches do not show.
+# the prose: a different fault, and one the row's own swatches do not show.
 settings-themes-low-contrast-band = highlight hides the text
 settings-themes-field-name = Name
 settings-themes-field-paper = Page
 settings-themes-field-ink = Text
 settings-themes-field-general = Background
 settings-themes-field-widget-text = Control strip text
-# The shading drawn around the caret — the sentence or paragraph being written,
+# The shading drawn around the caret: the sentence or paragraph being written,
 # per Editor ▸ "Highlight around the caret". This field is the color it uses in
 # distraction-free mode.
 settings-themes-field-caret-band = Highlight around the caret
@@ -1812,7 +1812,7 @@ settings-themes-field-caret-band = Highlight around the caret
 statusbar-focus-settings = Distraction-free settings
 statusbar-focus-manage-themes = Manage themes…
 
-## Comments — the two docks, the thread cards, and their actions.
+## Comments: the two docks, the thread cards, and their actions.
 comments-title = Comments
 comments-document-title = This document
 comments-empty-project = No comments in this project yet.
@@ -1826,7 +1826,7 @@ comments-status-open = Open
 comments-status-resolved = Resolved
 comments-status-orphaned = Lost its text
 comments-orphan-snippet = (the commented text is gone)
-# A comment that resolved successfully yet has no live range to point at — an
+# A comment that resolved successfully yet has no live range to point at: an
 # import from a format with no text-position concept for it (a heading, a blank
 # paragraph, a table). Distinct from "Lost its text": nothing went missing, it
 # never had a position to begin with.
@@ -1856,7 +1856,7 @@ overview-col-comments = Comments
 overview-col-total-comments = Total comments
 comments-card-placeholder = Write a comment…
 comments-card-unknown-author = Unknown author
-comments-unsigned-toast = Your comments are unsigned — no name is set for you on this computer.
+comments-unsigned-toast = Your comments are unsigned: no name is set for you on this computer.
 comments-unsigned-action = Set your name
 comments-card-reply = Reply
 comments-card-reply-placeholder = Reply…
@@ -1875,7 +1875,7 @@ comments-undo = Undo
 # ── Analysis (Book container segment) ────────────────────────────────────────
 # House rule for every string here: describe, never judge. No "too many", no
 # "weak", no "should". Every comparison is against the book's own median or its
-# own distribution — never a genre norm, and never a target value.
+# own distribution, never a genre norm, and never a target value.
 analysis-segment = Analysis
 analysis-scope-book = Analyzing this book
 analysis-run = Run analysis
@@ -1925,7 +1925,7 @@ analysis-dialogue = Dialogue
 analysis-dialogue-unsupported = Dialogue is not measured for this language yet.
 
 analysis-footnote-words = Footnote words
-# Kept apart from the manuscript total on purpose — see the module doc on
+# Kept apart from the manuscript total on purpose. See the module doc on
 # AnalysisViewModel::run for why a footnote is authored prose but must not be folded
 # into how far along the story reads as being.
 analysis-footnote-words-count = { $count ->
@@ -1933,7 +1933,7 @@ analysis-footnote-words-count = { $count ->
    *[other] { $count } words are in this book's footnotes, kept apart from the manuscript total.
 }
 # The figure comes from its own operation and can still be catching up even once the
-# rest of this report is ready — said plainly rather than shown as a misleading 0.
+# rest of this report is ready, said plainly rather than shown as a misleading 0.
 analysis-footnote-words-pending = Counting the footnotes…
 
 # Shape's charts draw one bar per text, so an outlined-but-unwritten book is mostly gaps.
@@ -1947,14 +1947,14 @@ analysis-all-texts-empty = Every text in this book is still empty.
 # ── Binder filter feedback ───────────────────────────────────────────────────
 # The binder's search field lives in a popover, so once it is dismissed nothing
 # on screen says a filter is still narrowing the tree. These strings are what
-# say it — without them a filtered-to-nothing binder is indistinguishable from
+# say it. Without them a filtered-to-nothing binder is indistinguishable from
 # an empty project.
 binder-filter-count = { $shown } of { $total } shown
 binder-filter-clear = Clear
 binder-filter-none = Nothing matches “{ $query }”.
 
 ## Settings: paratext structures
-settings-paratext-intro = The front and back matter a new project can start with. Each structure belongs to a publishing tradition, and its page titles are written in that tradition's own language — rename them freely once a project is created.
+settings-paratext-intro = The front and back matter a new project can start with. Each structure belongs to a publishing tradition, and its page titles are written in that tradition's own language. Rename them freely once a project is created.
 settings-paratext-structures = Structures
 settings-paratext-broken = Could not be read
 settings-paratext-edit = Edit
@@ -1973,7 +1973,7 @@ image-filter-label = Images
 image-large-title = This is a large image
 image-large-text =
     { $name } is { $megapixels } megapixels ({ $width }×{ $height }).
-    Keeping it as it is stores your original file in the project — it travels
+    Keeping it as it is stores your original file in the project: it travels
     with every backup and every export. Optimising stores a smaller copy
     instead, up to 2560 pixels on its longest side.
 image-large-keep = Keep original
@@ -1990,7 +1990,7 @@ image-menu-describe = &Describe the image…
 image-menu-resize = &Resize the image…
 image-menu-reset-size = Original si&ze
 
-# The book's cover — chosen from the book, not typed into a scene.
+# The book's cover, chosen from the book, not typed into a scene.
 cover-choose = Book co&ver…
 cover-clear = &Remove the cover
 cover-choose-title = Choose a cover
@@ -2031,7 +2031,7 @@ export-orphan-footnotes =
 menu-footnotes = Foot&notes
 footnotes-title = Footnotes
 footnotes-insert = Insert &footnote
-footnotes-empty = No footnotes yet. Put the cursor in a scene, then use + above — or Ctrl+Alt+F.
+footnotes-empty = No footnotes yet. Put the cursor in a scene, then use + above, or Ctrl+Alt+F.
 footnotes-filter-all = All
 footnotes-filter-document = This document
 footnotes-filter-orphaned = Orphaned
@@ -2054,8 +2054,8 @@ import-document-step-files = Files
 import-document-step-review = Review
 import-document-step-destination = Destination
 import-document-step-reconcile = Merge
-import-document-reconcile-hint = Some of these rows are ones you already have. Say what should happen to each.
-import-document-reconcile-all-new = Nothing in this file matches your project — every row will be added as new.
+import-document-reconcile-hint = Some of these items are ones you already have. Say what should happen to each.
+import-document-reconcile-all-new = Nothing in this file matches your project: every item will be added as new.
 import-document-duplicate-returns = These files are more than one copy of the same manuscript coming back. Import them one at a time: matching only lines up one returning copy against your project, so importing several together would add a second copy of the book instead of merging it.
 import-document-hunk-added = Take this new paragraph
 import-document-hunk-removed = Drop this paragraph
@@ -2106,14 +2106,14 @@ import-document-col-source = Source
 import-document-level-rules = Heading levels
 import-document-level-n = Heading { $level }
 import-document-add-top-level = Add top level
-import-document-add-top-level-tooltip = Insert a Book above every analyzed row — for chapter files that have no book heading
+import-document-add-top-level-tooltip = Insert a Book above every analyzed item, for chapter files that have no book heading
 import-document-destination = Destination
-import-document-destination-hint = Choose a binder or item — new rows land inside a folder, or after a scene.
-import-document-destination-empty = No binders yet — create one first.
+import-document-destination-hint = Choose a binder or item: new items land inside a folder, or after a scene.
+import-document-destination-empty = No binders yet. Create one first.
 import-document-plan-empty = Nothing to import yet.
 import-document-summary = { $rows ->
-    [one] 1 row
-   *[other] { $rows } rows
+    [one] 1 item
+   *[other] { $rows } items
 } · { $breaks ->
     [one] 1 scene break
    *[other] { $breaks } scene breaks
@@ -2148,17 +2148,17 @@ import-diagnostic-no-headings = “{ $path }” has no headings, so it arrives a
 import-diagnostic-unsupported-format = Nothing reads “.{ $detail }” files, so “{ $path }” was skipped.
 import-diagnostic-front-matter-not-flat = Front matter in “{ $path }”: “{ $detail }” is not a simple value and was skipped.
 import-diagnostic-footnotes-degraded = { $count ->
-    [one] One footnote in “{ $path }” arrives as plain text — footnotes are not read from Markdown.
-   *[other] { $count } footnotes in “{ $path }” arrive as plain text — footnotes are not read from Markdown.
+    [one] One footnote in “{ $path }” arrives as plain text: footnotes are not read from Markdown.
+   *[other] { $count } footnotes in “{ $path }” arrive as plain text: footnotes are not read from Markdown.
 }
 # The sibling of the line above, and deliberately a different sentence. That one
 # says the reader cannot carry footnotes at all (Markdown); this one says it
-# carried the rest and names what it could not — a note with no text behind it, or
+# carried the rest and names what it could not: a note with no text behind it, or
 # one whose reference sits where no prose block covers it, a chapter title being
 # the ordinary case.
 import-diagnostic-footnote-not-carried = { $count ->
-    [one] One footnote in “{ $path }” could not be brought over — the others were.
-   *[other] { $count } footnotes in “{ $path }” could not be brought over — the others were.
+    [one] One footnote in “{ $path }” could not be brought over. The others were.
+   *[other] { $count } footnotes in “{ $path }” could not be brought over. The others were.
 }
 import-diagnostic-raw-html-dropped = { $count ->
     [one] One block of raw HTML in “{ $path }” was dropped.
@@ -2171,29 +2171,29 @@ import-diagnostic-nested-break-dropped = { $count ->
 import-diagnostic-image-not-ingested = “{ $path }” refers to the image “{ $detail }”. The reference arrives as text; the picture itself is not copied in.
 import-diagnostic-duplicate-title = “{ $title }” appears { $count } times. If you have imported these files before, this will duplicate them.
 import-diagnostic-heading-level-jump = “{ $title }” jumps from heading level { $from } to { $to }; it is placed one level under its parent.
-import-diagnostic-illegal-combination = “{ $title }” carries prose, but a { $kind } cannot hold any. Import is held until you change its type or leave it out — nothing is imported at all otherwise.
+import-diagnostic-illegal-combination = “{ $title }” carries prose, but a { $kind } cannot hold any. Import is held until you change its type or leave it out. Nothing is imported at all otherwise.
 # Two sentences, because the file may or may not say who. `$names` is a
 # ready-formatted list the app never splits; empty when the source records no
 # author, which is what an anonymised .docx looks like.
 import-diagnostic-tracked-changes-flattened = { $path } was mid-revision: { $count ->
     [one] { $count } tracked change was accepted
    *[other] { $count } tracked changes were accepted
-}, and deletions dropped. That is the final text — to keep any of your own wording instead, use Compare in the last step.
+}, and deletions dropped. That is the final text. To keep any of your own wording instead, use Compare in the last step.
 import-diagnostic-tracked-changes-flattened-by = { $path } was mid-revision: { $count ->
     [one] { $count } tracked change by { $names } was accepted
    *[other] { $count } tracked changes by { $names } were accepted
-}, and deletions dropped. That is the final text — to keep any of your own wording instead, use Compare in the last step.
+}, and deletions dropped. That is the final text. To keep any of your own wording instead, use Compare in the last step.
 import-diagnostic-text-box-dropped = { $count ->
-    [one] { $path } holds { $count } text box. Its text sits outside the document's flow, so where it belongs in a manuscript cannot be answered — it is not imported.
-   *[other] { $path } holds { $count } text boxes. Their text sits outside the document's flow, so where it belongs in a manuscript cannot be answered — they are not imported.
+    [one] { $path } holds { $count } text box. Its text sits outside the document's flow, so where it belongs in a manuscript cannot be answered. It is not imported.
+   *[other] { $path } holds { $count } text boxes. Their text sits outside the document's flow, so where it belongs in a manuscript cannot be answered. They are not imported.
 }
 import-diagnostic-embedded-object-dropped = { $count ->
-    [one] { $path } holds { $count } embedded object — a chart, an equation or similar. There is nothing in a manuscript that could hold it.
-   *[other] { $path } holds { $count } embedded objects — a chart, an equation or similar. There is nothing in a manuscript that could hold them.
+    [one] { $path } holds { $count } embedded object: a chart, an equation or similar. There is nothing in a manuscript that could hold it.
+   *[other] { $path } holds { $count } embedded objects: a chart, an equation or similar. There is nothing in a manuscript that could hold them.
 }
 import-diagnostic-field-flattened = { $count ->
-    [one] { $path } holds { $count } field — a page number, a cross-reference, a date. It keeps the text it was last showing and will not update again.
-   *[other] { $path } holds { $count } fields — a page number, a cross-reference, a date. Each keeps the text it was last showing and will not update again.
+    [one] { $path } holds { $count } field: a page number, a cross-reference, a date. It keeps the text it was last showing and will not update again.
+   *[other] { $path } holds { $count } fields: a page number, a cross-reference, a date. Each keeps the text it was last showing and will not update again.
 }
 import-diagnostic-unknown-style-level = { $path } uses the style “{ $detail }”, which looks like a heading but names no level. Those paragraphs are imported as prose rather than guessed at a depth.
 import-diagnostic-comment-unanchored = The comment “{ $detail }” in { $path } could not be attached to the words it was about. It is kept on its item, where you can move it.
@@ -2221,7 +2221,7 @@ versions-scope-synopsis = Synopsis
 versions-scope-prose = Text
 versions-loading = Looking through your backups…
 versions-empty = No earlier version of this yet
-versions-error = Couldn't read your backups — nothing has been lost, but this list may be incomplete
+versions-error = Couldn't read your backups. Nothing has been lost, but this list may be incomplete
 versions-did-not-exist = Didn't exist yet on { $date }
 versions-deleted-after = Deleted some time after { $date }
 versions-unreadable = { $count ->
@@ -2231,16 +2231,16 @@ versions-unreadable = { $count ->
 # Counts what the project's own history dropped, which is why it names it: a
 # backup may still hold one of those states, and then it is in the list above.
 versions-thinned = { $count ->
-    [one] Older versions thin out as they age — the project's own history has already dropped { $count } earlier state of this text.
-   *[other] Older versions thin out as they age — the project's own history has already dropped { $count } earlier states of this text.
+    [one] Older versions thin out as they age. The project's own history has already dropped { $count } earlier state of this text.
+   *[other] Older versions thin out as they age. The project's own history has already dropped { $count } earlier states of this text.
 }
 versions-source-backup = From a backup
 versions-source-project = From the project's own history
 versions-list-caption = One entry per change, not per backup
 versions-pick-a-version = Pick a version to see what changed
 versions-earliest = The earliest version on record. There's nothing older to compare it with.
-versions-no-change = Nothing changed in this part of the row
-versions-formatting-only = Only the formatting changed here — the words are the same
+versions-no-change = Nothing changed in this part of the item
+versions-formatting-only = Only the formatting changed here. The words are the same
 versions-show-unchanged = Show unchanged
 versions-hide-unchanged = Hide unchanged
 versions-next-change = Next change
@@ -2258,16 +2258,16 @@ versions-blocks-moved = { $count ->
    *[other] { $count } paragraphs moved
 }
 # Names the backup, not the version: a pin is held against a file path, so it
-# keeps the whole snapshot this row's text was read out of — see versions-pin-note.
-versions-pin = Pin the backup this version came from — automatic cleanup will never delete it
-versions-unpin = Unpin the backup this version came from — automatic cleanup may delete it again
+# keeps the whole snapshot this row's text was read out of. See versions-pin-note.
+versions-pin = Pin the backup this version came from. Automatic cleanup will never delete it
+versions-unpin = Unpin the backup this version came from. Automatic cleanup may delete it again
 versions-pinned-only = Show only pinned versions
-versions-pin-note = Only versions from a backup can be pinned — a pin keeps a file, and the project's own history isn't one.
+versions-pin-note = Only versions from a backup can be pinned. A pin keeps a file, and the project's own history isn't one.
 versions-pinned-empty = Nothing here is pinned yet
 # The same sentence with the reason, for a list that actually holds a version no
 # pin can reach. On an all-backup list the reason is true and irrelevant, and
 # reads as an explanation for an emptiness it did not cause.
-versions-pinned-empty-log = Nothing here is pinned yet. Only versions from a backup can be pinned — a pin keeps a file, and the project's own history isn't one.
+versions-pinned-empty-log = Nothing here is pinned yet. Only versions from a backup can be pinned. A pin keeps a file, and the project's own history isn't one.
 versions-range-filter = Show only versions between two dates
 versions-filtered-empty = No version matches the filters you've set
 versions-clear-filters = Clear the filters
@@ -2275,19 +2275,19 @@ versions-clear-filters = Clear the filters
 versions-last-30-days = Last 30 days
 versions-restore-button = Restore this version
 versions-restore-confirm-title = Replace this text with the version from { $date }?
-versions-restore-confirm-text = What you have now will be replaced by the text this row had on { $date }.
-versions-restore-confirm-with-comments = What you have now will be replaced by the text this row had on { $date }. { $count ->
+versions-restore-confirm-text = What you have now will be replaced by the text this item had on { $date }.
+versions-restore-confirm-with-comments = What you have now will be replaced by the text this item had on { $date }. { $count ->
     [one] { $count } comment is anchored in the current text and may be left orphaned.
    *[other] { $count } comments are anchored in the current text and may be left orphaned.
 }
 versions-restore-confirm-undo-note = A backup is made first, and Ctrl+Z undoes this in one step.
 versions-restored-toast = Restored the version from { $date }
 versions-undo = Undo
-versions-restore-row-gone = That row is no longer in this project
-versions-restore-no-home = This row has changed type since then, and the old text has nowhere to go in it
+versions-restore-row-gone = That item is no longer in this project
+versions-restore-no-home = This item has changed type since then, and the old text has nowhere to go in it
 versions-restore-no-safety-copy = Your safety backup didn't run, so nothing was changed
 versions-restore-failed = The restore failed: { $error }
-versions-restore-backup-busy = A backup is already running — try again in a moment
+versions-restore-backup-busy = A backup is already running. Try again in a moment
 versions-restore-in-backup-file = You're looking at a backup file; open the project itself to restore into it
 versions-restore-no-project = No project is open
 # ── Bringing a deleted row back ──
@@ -2296,19 +2296,19 @@ versions-recreate-picker-title = Where should it go?
 versions-recreate-picker-empty = This project has no binder to put it in
 versions-recreate-picker-confirm = Bring it back here
 versions-recreate-picker-cancel = Cancel
-versions-recreate-untitled = this row
+versions-recreate-untitled = this item
 versions-recreate-confirm-title = Bring “{ $item }” back?
 versions-recreate-confirm-text = It will be added to { $destination }, with the text it had on { $date }.
 # NOT "Ctrl+Z": that undoes the focused editor's *document*, and this creates a
 # binder row. The way back is the Undo on the toast, as it is for trash and
-# comments — see versions-recreated-toast.
+# comments. See versions-recreated-toast.
 versions-recreate-confirm-undo-note = Undo, on the message that follows, takes it straight back out.
 versions-recreated-toast = “{ $item }” is back in your project
 versions-recreated-partial-toast = { $count ->
     [one] “{ $item }” is back, but one of its texts couldn't be read
    *[other] “{ $item }” is back, but { $count } of its texts couldn't be read
 }
-versions-recreate-already-here = That row is in your project already
+versions-recreate-already-here = That item is in your project already
 versions-recreate-no-destination = Pick somewhere in the binder to put it
 versions-recreate-unreadable = That backup couldn't be read, so nothing was added
 versions-recreate-failed = Couldn't bring it back: { $error }
@@ -2349,32 +2349,32 @@ timeline-kind-removed = No longer in the project
 timeline-kind-changed = Edited since
 timeline-kind-moved = Moved since
 timeline-not-yet-written = This didn't exist yet at that point
-timeline-no-text-of-its-own = This has no text of its own — it's a heading for what's inside it
+timeline-no-text-of-its-own = This has no text of its own. It's a heading for what's inside it
 timeline-reader-close = Close
 timeline-reader-stamp = As it was on { $date }
 timeline-reader-loading = Opening the recorded version…
-timeline-reader-unreadable = This recording couldn't be read — the backup may have been moved, deleted, or be on a drive that isn't connected.
+timeline-reader-unreadable = This recording couldn't be read. The backup may have been moved, deleted, or be on a drive that isn't connected.
 timeline-reader-compared = As it was on { $date }, set against what it says now
 timeline-reader-diff-legend = Struck through has gone since; underlined has been added.
 timeline-reader-view-label = What to show
 timeline-reader-view-diff = Changes
 timeline-reader-view-text = Text
 timeline-reader-deleted = This is no longer in your project. You can read it and copy it out here.
-timeline-prose-only-record = This point comes from the project's own history, which keeps text and nothing else — so what was deleted or moved since it can't be shown. Pick a backup for that.
+timeline-prose-only-record = This point comes from the project's own history, which keeps text and nothing else, so what was deleted or moved since it can't be shown. Pick a backup for that.
 
 # The Settings tree's section for pages an extension contributed.
 settings-sec-extensions = Extensions
 
-# Writing games pane — self-imposed drafting constraints
+# Writing games pane: self-imposed drafting constraints
 settings-group-games-forward = Always forward
 settings-games-forward-toggle = Play "Always forward"
 settings-games-forward-hint =
     While you play, nothing you have written can be taken back: Backspace, Delete,
     Cut, drag-and-drop and Undo are all disabled in the surfaces you choose below.
-    You can still type, paste, format and move around freely — the draft only grows.
+    You can still type, paste, format and move around freely. The draft only grows.
 settings-games-session-warning =
     This is a per-session choice: it is never saved. Closing the project, or quitting
-    Skribisto, always ends the game — and everything you wrote while playing becomes
+    Skribisto, always ends the game, and everything you wrote while playing becomes
     undoable again the moment it does.
 settings-group-games-scope = Where it applies
 settings-games-in-prose = Manuscript prose
@@ -2383,7 +2383,7 @@ settings-games-scope-hint =
     Comments, footnotes and titles are never frozen: they are where you note the fix
     you have just forbidden yourself from making.
 settings-games-inert-warning =
-    "Always forward" is on but applies to nothing — tick at least one surface above,
+    "Always forward" is on but applies to nothing. Tick at least one surface above,
     or it changes nothing as you write.
 
 # Writing games dock (leading rail) + the status-bar warning while a game is on
@@ -2391,14 +2391,14 @@ games-title = Writing games
 games-forward-name = Always forward
 games-forward-blurb =
     Draft without taking anything back. Deleting, cutting and undoing are disabled
-    while you play — write the next sentence instead of fixing the last one.
-games-forward-playing = Playing — deleting is disabled
+    while you play. Write the next sentence instead of fixing the last one.
+games-forward-playing = Playing: deleting is disabled
 games-forward-idle = Not playing
 games-session-note = Ends when you close the project.
 games-scope-prose-and-synopsis = Applies to your prose and synopses.
 games-scope-prose = Applies to your prose.
 games-scope-synopsis = Applies to your synopses.
-games-scope-nothing = Applies to nothing yet — choose a surface in Settings.
+games-scope-nothing = Applies to nothing yet. Choose a surface in Settings.
 games-settings-link = Writing game settings…
 statusbar-games-forward = Always forward
 statusbar-games-forward-tooltip =
@@ -2488,7 +2488,7 @@ pace-summary-remaining = { $words } to go
 pace-summary-open = Open the plan
 pace-summary-close = Close
 pace-summary-dont-show = Do not show this when opening
-# Work menu row that opens the same card on demand — greyed out when the project has
+# Work menu row that opens the same card on demand, greyed out when the project has
 # no active writing plan.
 pace-summary-menu = Writing plan…
 
@@ -2544,7 +2544,7 @@ command-palette-placeholder = Type a command
 
 # ── Shortcut names ───────────────────────────────────────────────────────────
 # The user-visible name of every rebindable `Shortcut` (`Shortcut::name`,
-# teksilo-core) — reactive to a locale switch via `LocalizedString`/
+# teksilo-core), reactive to a locale switch via `LocalizedString`/
 # `Prop<String>`. Read by Settings ▸ Keymap, the Help ▸ Keyboard shortcuts
 # sheet and the command palette. Kept in lockstep with the `Shortcut::new(...)`
 # calls in `app/commands/*.rs`, `binder/dock.rs` and `welcome/panel.rs`. Where
@@ -2630,7 +2630,7 @@ help-concept-round-trip-marks = Round-trip markers
 # The epigraph's attribution control. See tabs/shared/panes.rs::attribution_control.
 epigraph-mark-attribution = Source line
 epigraph-mark-attribution-tip = Mark the line the caret is in as the quotation's source, so it prints as an attribution
-## Margin lane — the strip beside the scrollbar that maps a document
+## Margin lane: the strip beside the scrollbar that maps a document
 margin-lane-name = Margin marks
 margin-lane-provider-comments = Comments
 margin-lane-provider-story-bible = Story bible entry
@@ -2666,7 +2666,7 @@ settings-margin-lane-surface-stream = Streams
 settings-margin-lane-surface-search-preview = Search preview
 menu-margin-lane = &Margin marks
 
-## Statuses — the project's workflow ladder.
+## Statuses: the project's workflow ladder.
 ## A rung's name is project DATA: these are resolved once, when a ladder is seeded, and
 ## stored literally from then on. They are not re-translated afterwards, and the writer is
 ## free to rename any of them.
@@ -2698,19 +2698,19 @@ overview-status-mixed = the parts below disagree
 help-concept-status = Status
 status-completion-title = Where the book stands
 status-completion-headline = { $done } of { $total } scenes finished
-status-completion-empty = No scenes yet — this reads the manuscript, so it fills in as you write.
+status-completion-empty = No scenes yet. This reads the manuscript, so it fills in as you write.
 status-completion-open = Where the book stands…
 
-## Settings ▸ Work ▸ Statuses — the ladder editor.
+## Settings ▸ Work ▸ Statuses: the ladder editor.
 ## The writer owns a rung's NAME and the ladder's ORDER; the app owns its category, and
 ## the category owns the glyph and the colour. Only the category names below are
-## translated — a rung's name is the writer's own text and stays as they typed it.
+## translated: a rung's name is the writer's own text and stays as they typed it.
 settings-page-statuses = Statuses
 settings-desc-statuses = Rename, reorder, add and remove the stages you move a scene through
 settings-statuses-add = Add status
 settings-statuses-add-placeholder = New status name
 settings-statuses-desc =
-    The stages a scene moves through, in order — from least finished at the top to most
+    The stages a scene moves through, in order, from least finished at the top to most
     finished at the bottom. That order is what "less finished than" means everywhere else
     in the app, so put them the way your process actually runs.
 settings-statuses-apply-preset = Apply a preset…
@@ -2718,7 +2718,7 @@ settings-statuses-preset-applied = { $added ->
     [one] 1 status added
    *[other] { $added } statuses added
 }
-settings-statuses-preset-refused = This project already has a ladder. Presets only fill an empty one — delete the rungs you don't want first.
+settings-statuses-preset-refused = This project already has a ladder. Presets only fill an empty one. Delete the rungs you don't want first.
 settings-statuses-duplicate = "{ $name }" is already on this ladder
 settings-statuses-added = Added "{ $name }"
 settings-statuses-move-up = Move up (less finished)
@@ -2726,8 +2726,8 @@ settings-statuses-move-down = Move down (more finished)
 settings-statuses-details-placeholder = What this stage means (optional)
 settings-statuses-delete = Delete "{ $name }"
 settings-statuses-delete-in-use = { $count ->
-    [one] Delete "{ $name }" — 1 item is on it and will lose its status
-   *[other] Delete "{ $name }" — { $count } items are on it and will lose their status
+    [one] Delete "{ $name }": 1 item is on it and will lose its status
+   *[other] Delete "{ $name }": { $count } items are on it and will lose their status
 }
 settings-statuses-deleted = Deleted "{ $name }"
 settings-statuses-deleted-in-use = { $count ->

@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-# Modèles de note — le catalogue du projet, son panneau de paramètres, le sous-menu
+# Modèles de note : le catalogue du projet, son panneau de paramètres, le sous-menu
 # d'insertion du menu Document, et les modèles fournis.
 #
 # Les NOMS des modèles fournis et les intitulés de section/champ dont leur corps est
 # assemblé sont traduits à dessein : les modèles sont construits dans le code plutôt que
 # livrés comme fichiers `.djot`, afin qu'en appliquer un aboutisse dans la langue de
-# l'INTERFACE en cours d'utilisation — et pour qu'une amélioration ultérieure de la
+# l'INTERFACE en cours d'utilisation, et pour qu'une amélioration ultérieure de la
 # formulation touche toutes les langues au lieu d'être figée dans les projets déjà créés.
 # Celle de l'interface, et non celle du projet : un modèle est un formulaire que l'auteur
 # remplit puis réécrit, et une fois appliquées ses lignes sont stockées telles quelles et
@@ -72,7 +72,7 @@ save-as-template-explain = Le texte que vous éditez devient un modèle que vous
 save-as-template-name = Nom
 save-as-template-placeholder = Fiche de personnage
 save-as-template-duplicate = Un modèle nommé « { $name } » existe déjà
-save-as-template-empty-editor = Cet éditeur est vide — il n’y a rien à enregistrer.
+save-as-template-empty-editor = Cet éditeur est vide. Il n’y a rien à enregistrer.
 save-as-template-confirm = Enregistrer le modèle
 save-as-template-saved = « { $name } » enregistré comme modèle
 template-inserted = « { $name } » inséré
