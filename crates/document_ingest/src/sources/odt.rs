@@ -542,7 +542,11 @@ struct Walker<'a> {
     text_boxes: usize,
     embedded_objects: usize,
     fields: usize,
-    footnotes: usize,
+    /// Notes the walk could not carry — see [`Walker::note`]. Not a count of the
+    /// document's footnotes: the ones it did carry are in [`Self::footnotes`].
+    footnotes_dropped: usize,
+    /// One entry per note whose reference reached the prose, deduplicated by label.
+    footnotes: Vec<rich::RichFootnote>,
     orphan_replies: usize,
 }
 
@@ -570,7 +574,8 @@ impl<'a> Walker<'a> {
             text_boxes: 0,
             embedded_objects: 0,
             fields: 0,
-            footnotes: 0,
+            footnotes_dropped: 0,
+            footnotes: Vec::new(),
             orphan_replies: 0,
         }
     }
@@ -610,10 +615,10 @@ impl<'a> Walker<'a> {
                 },
             ),
             (
-                self.footnotes,
-                ImportDiagnostic::FootnotesDegraded {
+                self.footnotes_dropped,
+                ImportDiagnostic::FootnoteNotCarried {
                     path: self.origin.clone(),
-                    count: self.footnotes,
+                    count: self.footnotes_dropped,
                 },
             ),
             (
@@ -636,6 +641,7 @@ impl<'a> Walker<'a> {
             blocks: std::mem::take(&mut self.blocks),
             annotations: std::mem::take(&mut self.annotations),
             row_marks: std::mem::take(&mut self.row_marks),
+            footnotes: std::mem::take(&mut self.footnotes),
         }
     }
 
@@ -804,6 +810,7 @@ impl<'a> Walker<'a> {
                         style,
                         link: link.map(str::to_string),
                         image: None,
+                        footnote: None,
                     });
                 }
                 continue;
@@ -837,6 +844,7 @@ impl<'a> Walker<'a> {
                         style,
                         link: link.map(str::to_string),
                         image: None,
+                        footnote: None,
                     });
                 }
                 (Some(NS_TEXT), "tab") => {
@@ -846,6 +854,7 @@ impl<'a> Walker<'a> {
                         style,
                         link: link.map(str::to_string),
                         image: None,
+                        footnote: None,
                     });
                 }
                 (Some(NS_TEXT), "line-break") => {
@@ -865,11 +874,7 @@ impl<'a> Walker<'a> {
                         self.close_annotation(name, build);
                     }
                 }
-                (Some(NS_TEXT), "note") => {
-                    // Footnotes and endnotes have no carrier in the block model, and
-                    // their body is not part of the sentence it hangs off.
-                    self.footnotes += 1;
-                }
+                (Some(NS_TEXT), "note") => self.note(child, build),
                 (Some(NS_DRAW), "frame") | (Some(NS_DRAW), "g") => self.frame(child, build, style),
                 // A bookmark is ordinarily nothing to a manuscript importer — a
                 // cross-reference target, a table-of-contents entry, LibreOffice's own
@@ -1092,6 +1097,66 @@ impl<'a> Walker<'a> {
         }
     }
 
+    /// A `<text:note>` — a footnote or an endnote, which ODF spells the same way.
+    ///
+    /// Easier than OOXML's, and in one specific way: the note's body sits **inline**,
+    /// right where its reference does, so there is no second part to read and no
+    /// offset to reconstruct. The reference becomes a run at the point the walk has
+    /// already reached, which is by construction the point it belongs at.
+    ///
+    /// `<text:note-citation>` — the number LibreOffice printed — is deliberately not
+    /// read. The number is derived from position by `skribisto_model::footnote_numbering`
+    /// and never stored, so carrying the source's would be a second answer to the
+    /// same question, and a wrong one the moment the note lands anywhere else in the
+    /// book.
+    fn note(&mut self, node: Node<'_, '_>, build: &mut ParaBuild) {
+        let Some(id) = node.attribute((NS_TEXT, "id")).map(sanitise_note_id) else {
+            self.footnotes_dropped += 1;
+            return;
+        };
+        let Some(body_node) = node.children().find(|c| is(c, NS_TEXT, "note-body")) else {
+            self.footnotes_dropped += 1;
+            return;
+        };
+        let mut body = AnnotationBody::default();
+        for p in body_node.children().filter(|c| is(c, NS_TEXT, "p")) {
+            let base = p
+                .attribute((NS_TEXT, "style-name"))
+                .map(|s| self.styles.text_style(s))
+                .unwrap_or_default();
+            self.annotation_inline(p, base, None, &mut body);
+            body.break_paragraph();
+        }
+        let paragraphs = body.finish();
+        if paragraphs.is_empty() {
+            // A note with an empty body: the marker would cite nothing.
+            self.footnotes_dropped += 1;
+            return;
+        }
+        let label = format!("{}{id}", crate::sources::docx::FOOTNOTE_LABEL_PREFIX);
+        // **Advances `build.len` by one, and it has to.** A footnote reference carries
+        // no text, but it is one object-replacement character in the plain text every
+        // comment offset in this paragraph is measured against — see
+        // `rich::Run::plain_push`. Counting it as nothing would put every comment after
+        // a note in the same paragraph one character early, silently: the quote would
+        // be captured a character off and either anchor on the wrong word or fail to
+        // match and degrade to a whole-document comment.
+        //
+        // The DOCX scanner reaches the same place by a different road (`shift_offsets`,
+        // after the fact) only because its references come from a raw pass that runs
+        // after the typed walk. Here the note *is* the walk, so the counter can simply
+        // be right the first time.
+        build.len += 1;
+        build.runs.push(Run {
+            footnote: Some(label.clone()),
+            ..Default::default()
+        });
+        if !self.footnotes.iter().any(|f| f.label == label) {
+            self.footnotes
+                .push(rich::RichFootnote { label, paragraphs });
+        }
+    }
+
     /// Character-styled runs for one paragraph of a comment or reply's own
     /// text — the same `text:span`/`text:a`/`text:s`/`text:tab` vocabulary
     /// [`Self::inline`] reads for manuscript prose, narrowed to what an
@@ -1121,6 +1186,7 @@ impl<'a> Walker<'a> {
                         style,
                         link: link.map(str::to_string),
                         image: None,
+                        footnote: None,
                     });
                 }
                 continue;
@@ -1150,6 +1216,7 @@ impl<'a> Walker<'a> {
                         style,
                         link: link.map(str::to_string),
                         image: None,
+                        footnote: None,
                     });
                 }
                 // A tab collapses to a single space: a comment box has no tab stops of
@@ -1161,6 +1228,7 @@ impl<'a> Walker<'a> {
                         style,
                         link: link.map(str::to_string),
                         image: None,
+                        footnote: None,
                     });
                 }
                 // A deliberate line break starts a new paragraph, exactly as it does for
@@ -1235,6 +1303,47 @@ impl AnnotationBody {
         self.break_paragraph();
         self.paragraphs
     }
+}
+
+/// An ODF `text:id` narrowed to what a Djot footnote label may hold.
+///
+/// ODF ids are NCNames in practice (`ftn1`, `endnote-3`), but the attribute is not
+/// schema-constrained in the wild and a label carrying `]`, `^` or a space would
+/// either break the `[^label]` reference or, worse, match a *different* one. Anything
+/// outside `[A-Za-z0-9_-]` becomes `_`, which cannot collide across two ids that
+/// differ only in a character both map to — because the id also has to be unique in
+/// the document for the reference to have found it in the first place, and two
+/// distinct ids mapping to one label is exactly what the deduplication in
+/// [`Walker::note`] would then treat as one note.
+///
+/// So collisions are made impossible rather than merely unlikely: the sanitised id
+/// is suffixed with the original's length whenever sanitising changed anything.
+fn sanitise_note_id(id: &str) -> String {
+    let clean: String = id
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    if clean == id {
+        clean
+    } else {
+        format!("{clean}_{:x}", fnv1a(id))
+    }
+}
+
+/// FNV-1a over the raw id, so a sanitised label still names exactly one source id.
+fn fnv1a(value: &str) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in value.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    hash
 }
 
 const NS_SVG: &str = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";

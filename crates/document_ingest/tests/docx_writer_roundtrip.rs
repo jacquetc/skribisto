@@ -412,3 +412,179 @@ fn two_comments_with_different_uids_both_survive_independently() {
     expected.sort();
     assert_eq!(by_author, expected);
 }
+
+/// A `.docx` carrying footnotes brings them back, body and all.
+///
+/// This was the one loss in the whole importer that was completely silent.
+/// `docx-rs` 0.4.22's reader never constructs `RunChild::FootnoteReference` —
+/// nothing in its `src/reader/` produces one — so the typed walk's arm for it was
+/// unreachable, the count it fed was always zero, and even the *warning* never
+/// fired for DOCX. A chapter came back from an editor with its footnotes gone and
+/// nothing said.
+///
+/// Both halves now come from raw passes `docx-rs` does not offer: the references
+/// from `word/document.xml`, the bodies from `word/footnotes.xml`. This asserts the
+/// whole loop — write a real note with `text-document`'s own DOCX writer, read it
+/// back, and find both the `[^…]` in the prose and its text beside it.
+#[test]
+fn a_docx_with_footnotes_brings_back_the_reference_and_its_text() {
+    let doc = text_document::TextDocument::new();
+    doc.set_djot_sync("The ferry was late.[^1]\n\n[^1]: It always is, in November.\n")
+        .expect("set_djot_sync");
+
+    let bytes = export_docx_bytes(&doc, DocxExportOptions::default());
+    let scanned = scan(&bytes);
+
+    assert_eq!(
+        scanned.footnotes.len(),
+        1,
+        "one note in, one note out; got {:?}",
+        scanned.footnotes
+    );
+    let note = &scanned.footnotes[0];
+    assert!(
+        note.body.contains("It always is, in November."),
+        "the note's own text must survive; got {:?}",
+        note.body
+    );
+
+    let prose: String = scanned
+        .blocks
+        .iter()
+        .filter_map(|b| match b {
+            SourceBlock::Prose { djot, .. } => Some(djot.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        prose.contains(&format!("[^{}]", note.label)),
+        "the prose must cite the note by the label the note carries; got {prose:?}"
+    );
+    assert!(
+        prose.starts_with("The ferry was late."),
+        "and the sentence itself must be unharmed; got {prose:?}"
+    );
+
+    let keys: Vec<&str> = scanned.diagnostics.iter().map(|d| d.key()).collect();
+    assert!(
+        !keys.contains(&"footnote-not-carried") && !keys.contains(&"footnotes-degraded"),
+        "nothing was lost, so nothing should be reported; got {keys:?}"
+    );
+}
+
+/// A reference whose note has no text is *not* carried, and says so.
+///
+/// A citation marker pointing at an empty note is worse than no marker: it prints a
+/// superscript in the finished book that leads nowhere. `text-document`'s
+/// `insert_footnote_reference` makes exactly this shape — a reference with no
+/// definition behind it — which is why it is the fixture.
+#[test]
+fn a_docx_footnote_with_no_body_is_reported_rather_than_invented() {
+    let doc = text_document::TextDocument::new();
+    doc.set_djot_sync("The ferry was late.\n")
+        .expect("set_djot_sync");
+    let cursor = doc.cursor();
+    cursor.move_position(
+        text_document::MoveOperation::End,
+        text_document::MoveMode::MoveAnchor,
+        1,
+    );
+    cursor
+        .insert_footnote_reference("1")
+        .expect("insert_footnote_reference");
+
+    let bytes = export_docx_bytes(&doc, DocxExportOptions::default());
+    let scanned = scan(&bytes);
+
+    assert!(
+        scanned.footnotes.is_empty(),
+        "an empty note is not a note; got {:?}",
+        scanned.footnotes
+    );
+    let keys: Vec<&str> = scanned.diagnostics.iter().map(|d| d.key()).collect();
+    assert!(
+        keys.contains(&"footnote-not-carried"),
+        "and the writer has to be told; got {keys:?}"
+    );
+}
+
+/// …and a `.docx` without footnotes must stay quiet, or the warning is one
+/// writers learn to ignore.
+#[test]
+fn a_docx_without_footnotes_says_nothing_about_them() {
+    let bytes = write_docx("The ferry was late.\n");
+    let scanned = scan(&bytes);
+    let keys: Vec<&str> = scanned.diagnostics.iter().map(|d| d.key()).collect();
+    assert!(
+        !keys.contains(&"footnote-not-carried"),
+        "no footnotes, no warning; got {keys:?}"
+    );
+}
+
+/// A comment sitting *after* a footnote in the same paragraph still quotes the right
+/// words.
+///
+/// The subtle half of carrying footnotes, and the one that fails silently. A
+/// footnote reference is an atomic one-character piece in the converted plain text —
+/// the same object-replacement character an image is — but the two walks that
+/// produce a comment's offset contribute nothing for it: `docx-rs` never yields the
+/// reference at all, and the raw pass that finds it counts characters in the typed
+/// walk's space. So the reference has to be spliced in after the comments are placed,
+/// and every offset past it moved along by one (`Walker::shift_offsets`).
+///
+/// Get that wrong and nothing errors: the quote captured from the block is off by one
+/// character, and either anchors a word late or fails to match and degrades to a
+/// whole-document comment. This asserts the quote itself, which is the only thing
+/// that can tell the two apart.
+#[test]
+fn a_comment_after_a_footnote_still_anchors_on_its_own_words() {
+    let doc = text_document::TextDocument::new();
+    doc.set_djot_sync(
+        "The ferry was late.[^1] The harbour needs review before dawn.\n\n[^1]: It always is.\n",
+    )
+    .expect("set_djot_sync");
+
+    let range = find_range(&doc, "needs review");
+    let mut comments = DocumentComments::new();
+    comments.insert(DocumentComment {
+        start: range.0,
+        end: range.1,
+        uid: uuid::Uuid::new_v4().to_string(),
+        author: "Alice Editor".to_string(),
+        author_initials: "AE".to_string(),
+        date: "2026-01-01T00:00:00Z".to_string(),
+        resolved: false,
+        body: "Which harbour?".to_string(),
+        replies: Vec::new(),
+    });
+
+    let bytes = export_docx_bytes(
+        &doc,
+        DocxExportOptions {
+            comments,
+            ..Default::default()
+        },
+    );
+    let source = scan(&bytes);
+
+    assert_eq!(source.footnotes.len(), 1, "the note must still come over");
+    assert_eq!(
+        source.annotations.len(),
+        1,
+        "and so must the comment; diagnostics: {:?}",
+        source.diagnostics
+    );
+    let annotation = &source.annotations[0];
+    assert_eq!(
+        annotation.kind,
+        AnnotationKind::Range,
+        "a comment whose quote no longer matches degrades to a whole-document one — \
+         which is exactly the failure this test exists to catch (diagnostics: {:?})",
+        source.diagnostics
+    );
+    assert_eq!(
+        annotation.anchor.exact, "needs review",
+        "the quote must be the editor's own words, not the ones a character to either side"
+    );
+}

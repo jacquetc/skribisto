@@ -69,6 +69,16 @@ pub enum ImportDiagnostic {
     /// rather than becoming a footnote — the writer would otherwise discover
     /// this by reading their own book.
     FootnotesDegraded { path: String, count: usize },
+    /// A footnote reference was found in a format that *can* carry footnotes, but
+    /// this one could not be brought over: the note it names has no body in the
+    /// file, or its reference sits somewhere no prose block covers (a table cell,
+    /// a paragraph that produced nothing).
+    ///
+    /// The sibling of [`Self::FootnotesDegraded`] and not the same thing.
+    /// `FootnotesDegraded` says "the reader cannot carry any of these"; this says
+    /// "the reader carried the others, and here is what it could not". A format
+    /// emits one or the other, never both.
+    FootnoteNotCarried { path: String, count: usize },
     /// Raw HTML was found and dropped. Djot has no general HTML passthrough and
     /// the document model does not carry one.
     RawHtmlDropped { path: String, count: usize },
@@ -161,6 +171,7 @@ impl ImportDiagnostic {
             LossyDecode { .. }
             | FrontMatterNotFlat { .. }
             | FootnotesDegraded { .. }
+            | FootnoteNotCarried { .. }
             | RawHtmlDropped { .. }
             | NestedBreakDropped { .. }
             | ImageNotIngested { .. }
@@ -194,6 +205,7 @@ impl ImportDiagnostic {
             | UnsupportedFormat { path, .. }
             | FrontMatterNotFlat { path, .. }
             | FootnotesDegraded { path, .. }
+            | FootnoteNotCarried { path, .. }
             | RawHtmlDropped { path, .. }
             | NestedBreakDropped { path, .. }
             | ImageNotIngested { path, .. }
@@ -226,6 +238,7 @@ impl ImportDiagnostic {
             UnsupportedFormat { .. } => "unsupported-format",
             FrontMatterNotFlat { .. } => "front-matter-not-flat",
             FootnotesDegraded { .. } => "footnotes-degraded",
+            FootnoteNotCarried { .. } => "footnote-not-carried",
             RawHtmlDropped { .. } => "raw-html-dropped",
             NestedBreakDropped { .. } => "nested-break-dropped",
             ImageNotIngested { .. } => "image-not-ingested",
@@ -267,6 +280,9 @@ impl fmt::Display for ImportDiagnostic {
             }
             FootnotesDegraded { path, count } => {
                 write!(f, "{path}: {count} footnote(s) kept as plain text")
+            }
+            FootnoteNotCarried { path, count } => {
+                write!(f, "{path}: {count} footnote(s) could not be brought over")
             }
             RawHtmlDropped { path, count } => {
                 write!(f, "{path}: {count} raw HTML block(s) dropped")

@@ -32,7 +32,8 @@ use crate::AnalyzeDocumentImportDto;
 use crate::DocumentImportPlanDto;
 use crate::dtos::{
     DocumentImportRow, DocumentImportRows, DropPosition, ImportComment, ImportCommentKind,
-    ImportDiagnosticRow, ImportDiagnosticRows, ImportOrphanReason, ImportReply, ImportRowKind,
+    ImportDiagnosticRow, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportReply,
+    ImportRowKind,
 };
 use crate::kind_mapping::create_type_to_kind;
 use anyhow::{Result, anyhow};
@@ -304,6 +305,7 @@ fn to_dto(plan: ImportPlan) -> DocumentImportPlanDto {
         orphan_reason: ImportOrphanReason::default(),
         comment: ImportComment::Empty,
         reply: ImportReply::Empty,
+        footnote: ImportFootnote::Empty,
         diagnostic: ImportDiagnosticRow::Empty,
         diagnostics: ImportDiagnosticRows::Reported(diagnostics),
     }
@@ -371,6 +373,14 @@ fn row_to_dto(row: &PlannedRow) -> DocumentImportRow {
         scene_breaks: row.scene_breaks as i64,
         word_count: row.word_count as i64,
         comments: row.comments.iter().map(comment_to_dto).collect(),
+        footnotes: row
+            .footnotes
+            .iter()
+            .map(|f| ImportFootnote::Found {
+                label: f.label.clone(),
+                body: f.body.clone(),
+            })
+            .collect(),
         origin: row.origin.clone(),
         included: row.included,
         // Empty for a first arrival, a foreign file, or a row the editor added — see
@@ -410,6 +420,7 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
         UnsupportedFormat { extension, .. } => (extension.clone(), 0),
         FrontMatterNotFlat { key, .. } => (key.clone(), 0),
         FootnotesDegraded { count, .. }
+        | FootnoteNotCarried { count, .. }
         | RawHtmlDropped { count, .. }
         | NestedBreakDropped { count, .. } => (String::new(), *count as i64),
         ImageNotIngested { target, .. } => (target.clone(), 0),

@@ -11,7 +11,7 @@ use common::database::CommandUnitOfWork;
 use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Comment, CommentReply, Content, Work};
+use common::entities::{Binder, BinderItem, Comment, CommentReply, Content, Footnote, Work};
 use common::event::ImportManagementEvent::ApplyDocumentImport;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -150,6 +150,14 @@ impl CommandUnitOfWork for ApplyDocumentImportUnitOfWork {
 #[macros::uow_action(entity = "CommentReply", action = "CreateOrphan")]
 #[macros::uow_action(entity = "CommentReply", action = "GetMulti")]
 #[macros::uow_action(entity = "CommentReply", action = "Update")]
+// Footnotes ride the same three actions a comment does, for the same reasons: a
+// `Footnote` hangs off `Work` (so it is created orphaned and attached in one
+// `SetRelationship`), and its `content` link is a relationship rather than a field.
+// `GetMulti` is what reads the project's existing labels — a label must be free
+// across the whole project, not merely within this import.
+#[macros::uow_action(entity = "Footnote", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Footnote", action = "GetMulti")]
+#[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
 impl ApplyDocumentImportUnitOfWorkTrait for ApplyDocumentImportUnitOfWork {
     fn publish_apply_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

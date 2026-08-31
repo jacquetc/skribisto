@@ -2091,6 +2091,7 @@ import-document-col-type = Type
 import-document-col-words = Words
 import-document-col-breaks = Breaks
 import-document-col-comments = Comments
+import-document-col-footnotes = Footnotes
 import-document-col-epigraph = Epigraph
 import-document-col-source = Source
 import-document-level-rules = Heading levels
@@ -2140,6 +2141,15 @@ import-diagnostic-front-matter-not-flat = Front matter in “{ $path }”: “{ 
 import-diagnostic-footnotes-degraded = { $count ->
     [one] One footnote in “{ $path }” arrives as plain text — footnotes are not read from Markdown.
    *[other] { $count } footnotes in “{ $path }” arrive as plain text — footnotes are not read from Markdown.
+}
+# The sibling of the line above, and deliberately a different sentence. That one
+# says the reader cannot carry footnotes at all (Markdown); this one says it
+# carried the rest and names what it could not — a note with no text behind it, or
+# one whose reference sits where no prose block covers it, a chapter title being
+# the ordinary case.
+import-diagnostic-footnote-not-carried = { $count ->
+    [one] One footnote in “{ $path }” could not be brought over — the others were.
+   *[other] { $count } footnotes in “{ $path }” could not be brought over — the others were.
 }
 import-diagnostic-raw-html-dropped = { $count ->
     [one] One block of raw HTML in “{ $path }” was dropped.

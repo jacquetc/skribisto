@@ -114,7 +114,7 @@ use crate::ApplyDocumentImportDto;
 use crate::ApplyDocumentImportResultDto;
 use crate::dtos::{
     ApplyImportRow, ApplyImportRows, DropPosition, ImportComment, ImportCommentKind,
-    ImportOrphanReason, ImportReply,
+    ImportFootnote, ImportOrphanReason, ImportReply,
 };
 use crate::kind_mapping::kind_to_create_type;
 use anyhow::{Result, anyhow};
@@ -123,10 +123,11 @@ use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::comment::CommentRelationshipField;
+use common::direct_access::footnote::FootnoteRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
     BinderItem, BinderItemSubRole, Comment, CommentAnchorKind, CommentOrphanReason, CommentReply,
-    Content, ContentRole, Work,
+    Content, ContentRole, Footnote, Work,
 };
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
@@ -173,6 +174,14 @@ pub trait ApplyDocumentImportUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "CommentReply", action = "CreateOrphan")]
 #[macros::uow_action(entity = "CommentReply", action = "GetMulti")]
 #[macros::uow_action(entity = "CommentReply", action = "Update")]
+// Footnotes ride the same three actions a comment does, for the same reasons: a
+// `Footnote` hangs off `Work` (so it is created orphaned and attached in one
+// `SetRelationship`), and its `content` link is a relationship rather than a field.
+// `GetMulti` is what reads the project's existing labels — a label must be free
+// across the whole project, not merely within this import.
+#[macros::uow_action(entity = "Footnote", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Footnote", action = "GetMulti")]
+#[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
 pub trait ApplyDocumentImportUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_apply_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -198,6 +207,17 @@ pub struct ApplyDocumentImportUseCase {
     /// Same as `updated_comments`, for a reply recognised (matched uid) within a
     /// recognised or freshly created comment's thread.
     updated_replies: Vec<(CommentReply, CommentReply)>,
+    /// The `Footnote` rows this import created, for exactly the reason
+    /// `created_comment_ids` exists: a `Footnote` hangs off `Work`, the undo
+    /// snapshot is `Binder`-scoped, so restoring the binder deletes the `Content`
+    /// each note annotates and leaves the note itself in `Work.footnotes` pointing
+    /// at nothing.
+    ///
+    /// There is no `updated_footnotes` beside it, and there does not need to be:
+    /// this import never *edits* an existing note. A note that came home unchanged
+    /// has its label reused and its row left exactly as it was
+    /// (`FootnoteWriter::resolve`), which is nothing to put back.
+    created_footnote_ids: Vec<EntityId>,
 }
 
 impl ApplyDocumentImportUseCase {
@@ -210,6 +230,7 @@ impl ApplyDocumentImportUseCase {
             created_comment_ids: Vec::new(),
             updated_comments: Vec::new(),
             updated_replies: Vec::new(),
+            created_footnote_ids: Vec::new(),
         }
     }
 
@@ -326,6 +347,22 @@ impl ApplyDocumentImportUseCase {
         let mut updated_comments: Vec<(Comment, Comment)> = Vec::new();
         let mut updated_replies: Vec<(CommentReply, CommentReply)> = Vec::new();
 
+        // Every footnote the project already holds, read once. Two questions need it:
+        // which labels are taken (a label must be free across the whole project, not
+        // merely within this import), and whether a note coming home is one that went
+        // out — see `FootnoteWriter`.
+        let mut created_footnote_ids: Vec<EntityId> = Vec::new();
+        let existing_footnotes: Vec<Footnote> = if rows_carry_footnotes(&rows) {
+            let ids = uow.get_work_relationship(&dto.work_id, &WorkRelationshipField::Footnotes)?;
+            uow.get_footnote_multi(&ids)?
+                .into_iter()
+                .flatten()
+                .collect()
+        } else {
+            Vec::new()
+        };
+        let mut footnotes = FootnoteWriter::new(&existing_footnotes);
+
         // ── Rows the returning file brings home to ones already here ──────────────────
         //
         // Run before the creations, and touching nothing they touch: an update names a row
@@ -340,6 +377,7 @@ impl ApplyDocumentImportUseCase {
                 djot,
                 epigraph,
                 comments,
+                footnotes: incoming_notes,
                 source_file_name,
                 source_file_digest,
             } = row
@@ -430,7 +468,21 @@ impl ApplyDocumentImportUseCase {
                 continue;
             };
 
+            // **Notes ride the prose, and only the prose.** A comments-only update leaves
+            // the manuscript untouched, so its stored prose still cites whatever labels it
+            // already did and carries no `[^srcfn-…]` for a new note to be referenced by.
+            // Creating one anyway would leave a `Footnote` row the finished book never
+            // prints a marker for. Nothing is lost that the writer did not choose to
+            // leave: a footnote is part of the text it hangs off.
+            let resolved = if *replace_prose {
+                footnotes.resolve(incoming_notes, Some(content_id), &existing_footnotes)
+            } else {
+                Vec::new()
+            };
+
             if *replace_prose {
+                let djot = &rewrite_footnote_labels(djot, &resolved);
+                let epigraph = &rewrite_footnote_labels(epigraph, &resolved);
                 let mut content = uow
                     .get_content_multi(&[content_id])?
                     .into_iter()
@@ -442,6 +494,22 @@ impl ApplyDocumentImportUseCase {
                 content.data = djot.clone();
                 content.updated_at = now;
                 uow.update_content(&content)?;
+
+                for note in &resolved {
+                    // `body: None` is a note the row already had, matched by its text and
+                    // reused — the prose now cites the label it always had, and there is
+                    // nothing to create.
+                    let Some(body) = &note.body else {
+                        continue;
+                    };
+                    created_footnote_ids.push(create_footnote(
+                        uow.as_mut(),
+                        content_id,
+                        &note.label,
+                        body,
+                        now,
+                    )?);
+                }
 
                 // The epigraph rides `replace_prose` because it *is* manuscript — an editor
                 // who corrected the attribution under a chapter's quotation edited the book,
@@ -479,6 +547,7 @@ impl ApplyDocumentImportUseCase {
                 djot,
                 epigraph,
                 comments,
+                footnotes: incoming_notes,
                 // Deliberately unread on this arm. Acting on a recovered identity is what
                 // `ApplyImportRow::Update` above is for, and a row reaching *this* arm is one
                 // the reconcile step decided to create — either because nothing in the
@@ -509,6 +578,12 @@ impl ApplyDocumentImportUseCase {
             // epigraph may arrive here as a Scene. `split_epigraph` folds it back into the
             // prose rather than refusing — see its own doc for why that beats an error.
             let (djot, epigraph) = split_epigraph(&role, &sub_role, djot.clone(), epigraph);
+
+            // Nothing to match against on a row being created, so every note here is a
+            // new one and every placeholder resolves to a freshly minted label.
+            let resolved = footnotes.resolve(incoming_notes, None, &existing_footnotes);
+            let djot = rewrite_footnote_labels(&djot, &resolved);
+            let epigraph = rewrite_footnote_labels(&epigraph, &resolved);
 
             // Trap 3: prose whose row cannot hold it would be dropped silently at
             // the next save. Refuse it here, where the writer can still be told.
@@ -591,6 +666,32 @@ impl ApplyDocumentImportUseCase {
                 )?;
             }
 
+            // A footnote points into prose exactly as a comment does, and reaching here
+            // with notes and no content would mean the two halves of this feature
+            // disagree: the planner only ever attaches a note to a row whose Djot it
+            // found the reference in.
+            if !resolved.is_empty() {
+                let Some(content_id) = content_id else {
+                    return Err(anyhow!(
+                        "apply_document_import: '{title}' carries {} footnote(s) but no prose \
+                         for them to hang off",
+                        resolved.len()
+                    ));
+                };
+                for note in &resolved {
+                    let Some(body) = &note.body else {
+                        continue;
+                    };
+                    created_footnote_ids.push(create_footnote(
+                        uow.as_mut(),
+                        content_id,
+                        &note.label,
+                        body,
+                        now,
+                    )?);
+                }
+            }
+
             // A comment points into prose, so a row that stored none can hold none.
             // That is not a loss to hide: the analyse half only ever attaches
             // comments to rows whose prose it anchored them against, so reaching
@@ -647,6 +748,16 @@ impl ApplyDocumentImportUseCase {
             uow.set_work_relationship(&dto.work_id, &WorkRelationshipField::Comments, &all)?;
         }
 
+        // And so do footnotes, on exactly the same terms and for the same reason —
+        // appended, never replaced: an import is not the only thing that ever made a
+        // note in this project.
+        if !created_footnote_ids.is_empty() {
+            let mut all =
+                uow.get_work_relationship(&dto.work_id, &WorkRelationshipField::Footnotes)?;
+            all.extend_from_slice(&created_footnote_ids);
+            uow.set_work_relationship(&dto.work_id, &WorkRelationshipField::Footnotes, &all)?;
+        }
+
         // Splice the new block in as one run, before the resolved insertion anchor
         // (or at the end when there is none). Keeping it contiguous is what makes the
         // import one movable, one undoable thing rather than rows scattered through
@@ -689,6 +800,7 @@ impl ApplyDocumentImportUseCase {
         self.created_comment_ids = created_comment_ids;
         self.updated_comments = updated_comments;
         self.updated_replies = updated_replies;
+        self.created_footnote_ids = created_footnote_ids;
         Ok(ApplyDocumentImportResultDto { created_ids })
     }
 }
@@ -728,6 +840,33 @@ impl ApplyDocumentImportUseCase {
             next.extend_from_slice(&self.created_comment_ids);
         }
         uow.set_work_relationship(&self.work_id, &WorkRelationshipField::Comments, &next)?;
+        Ok(())
+    }
+
+    /// Add or remove this import's footnotes from `Work.footnotes`.
+    ///
+    /// The exact sibling of [`Self::set_comments_attached`], for the exact same
+    /// reason — see its doc. Only rows this import *created*: a note whose label was
+    /// reused was already in `Work.footnotes` before this import ran, and detaching
+    /// it here would make a pre-existing note vanish on undo.
+    fn set_footnotes_attached(
+        &self,
+        uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
+        attached: bool,
+    ) -> Result<()> {
+        if self.created_footnote_ids.is_empty() || self.work_id == 0 {
+            return Ok(());
+        }
+        let current =
+            uow.get_work_relationship(&self.work_id, &WorkRelationshipField::Footnotes)?;
+        let mut next: Vec<EntityId> = current
+            .into_iter()
+            .filter(|id| !self.created_footnote_ids.contains(id))
+            .collect();
+        if attached {
+            next.extend_from_slice(&self.created_footnote_ids);
+        }
+        uow.set_work_relationship(&self.work_id, &WorkRelationshipField::Footnotes, &next)?;
         Ok(())
     }
 
@@ -1123,6 +1262,183 @@ fn create_or_update_comment(
 }
 
 /// RFC 3339, and the two shapes producers write without an offset.
+/// Create one `Footnote` annotating `content_id`.
+///
+/// Orphaned then linked, the way a `Comment` is: `Footnote.content` is a
+/// relationship, and `Work.footnotes` is set once for the whole import rather than
+/// per note (a `SetRelationship` *replaces*, so a call per note would drop every
+/// previous one).
+///
+/// The uid is minted here rather than left to the controller's `with_identity`,
+/// which this layer does not go through — a nil-identified footnote survives the
+/// session but not the save that re-mints every `EntityId`, and the note would come
+/// back unable to say it was the same note.
+fn create_footnote(
+    uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
+    content_id: EntityId,
+    label: &str,
+    body: &str,
+    now: chrono::DateTime<chrono::Utc>,
+) -> Result<EntityId> {
+    let created = uow.create_orphan_footnote(&Footnote {
+        uid: common::uid::new_uid(),
+        created_at: now,
+        updated_at: now,
+        label: label.to_string(),
+        body: body.to_string(),
+        ..Default::default()
+    })?;
+    uow.set_footnote_relationship(
+        &created.id,
+        &FootnoteRelationshipField::Content,
+        &[content_id],
+    )?;
+    Ok(created.id)
+}
+
+/// Whether any row in this import brings a footnote with it.
+///
+/// A guard, not an optimisation of style: without it every import — including the
+/// Markdown ones that can never carry a note — would read the project's whole
+/// footnote table to answer a question with no rows to ask it about.
+fn rows_carry_footnotes(rows: &[&ApplyImportRow]) -> bool {
+    rows.iter().any(|row| match row {
+        ApplyImportRow::Create { footnotes, .. } | ApplyImportRow::Update { footnotes, .. } => {
+            !footnotes.is_empty()
+        }
+        ApplyImportRow::Empty => false,
+    })
+}
+
+/// Turns the scanner's placeholders into labels this project has free.
+///
+/// A source format numbers its notes however it likes, and the scanner's `srcfn-…`
+/// placeholder is unique only within one file (see
+/// `document_ingest::block::SourceFootnote::label`). Two things therefore have to
+/// happen at the same moment, or the prose and the notes disagree: the row's Djot is
+/// rewritten to cite a free label, and the `Footnote` row is created under it.
+/// Doing both from one place is what makes that impossible to get half-right.
+///
+/// # A note that came home is not a new note
+///
+/// The returning file is the case this feature exists for, and it has a trap. A
+/// `.docx` this app exported carries its footnotes as real OOXML notes — the *body*
+/// travels, the label does not, because OOXML has nowhere to put one. So a chapter
+/// sent to an editor and read back would mint a second `Footnote` for every note it
+/// already had, leaving the originals orphaned and doubling the count.
+///
+/// [`Self::resolve`] closes that: on a row that already exists, a note whose body
+/// matches one already on that row's `Content` **reuses that note's label** and
+/// creates nothing. The body is what travels, so the body is what identifies. Two
+/// genuinely distinct notes with byte-identical text collapse into one — which is
+/// the right answer anyway: they are the same note, cited twice.
+struct FootnoteWriter {
+    /// The highest `fn<N>` the project already uses. Labels are minted above it.
+    ///
+    /// Read once and advanced in memory rather than re-derived per note: the rows
+    /// this import creates are not in the store yet, so a second read would hand out
+    /// the same label twice.
+    highest: u64,
+}
+
+/// What one placeholder resolved to.
+struct ResolvedFootnote {
+    /// The placeholder the row's prose cites, e.g. `srcfn-1`.
+    placeholder: String,
+    /// The label the prose will cite instead, e.g. `fn7`.
+    label: String,
+    /// The note's own text, or `None` when an existing note already holds it and
+    /// nothing needs creating.
+    body: Option<String>,
+}
+
+impl FootnoteWriter {
+    fn new(existing: &[Footnote]) -> Self {
+        FootnoteWriter {
+            highest: existing
+                .iter()
+                .filter_map(|f| label_number(&f.label))
+                .max()
+                .unwrap_or(0),
+        }
+    }
+
+    /// Resolve this row's placeholders, reusing a note already on `content` where one
+    /// matches and minting a free label otherwise.
+    ///
+    /// `content` is `None` for a row being created, which by definition has no notes
+    /// to match against.
+    fn resolve(
+        &mut self,
+        incoming: &[ImportFootnote],
+        content: Option<EntityId>,
+        existing: &[Footnote],
+    ) -> Vec<ResolvedFootnote> {
+        let mut out = Vec::with_capacity(incoming.len());
+        for note in incoming {
+            let ImportFootnote::Found { label, body } = note else {
+                continue;
+            };
+            // A placeholder resolved twice in one row would rewrite the first
+            // occurrence's label and leave the second citing a note that no longer
+            // exists under that name. The planner already deduplicates, and this is
+            // the belt to its braces.
+            if out
+                .iter()
+                .any(|r: &ResolvedFootnote| r.placeholder == *label)
+            {
+                continue;
+            }
+            let already = content.and_then(|content_id| {
+                existing
+                    .iter()
+                    .find(|f| f.content == Some(content_id) && f.body == *body)
+            });
+            match already {
+                Some(found) => out.push(ResolvedFootnote {
+                    placeholder: label.clone(),
+                    label: found.label.clone(),
+                    body: None,
+                }),
+                None => {
+                    self.highest += 1;
+                    out.push(ResolvedFootnote {
+                        placeholder: label.clone(),
+                        label: format!("fn{}", self.highest),
+                        body: Some(body.clone()),
+                    });
+                }
+            }
+        }
+        out
+    }
+}
+
+/// `"fn12"` → `Some(12)`; anything else → `None`.
+///
+/// The same reading `models::footnotes_list_model::mint_label` does in the editor,
+/// and it has to stay the same: a label this import mints must not collide with the
+/// next one the writer creates by hand.
+fn label_number(label: &str) -> Option<u64> {
+    label.strip_prefix("fn")?.parse().ok()
+}
+
+/// Point every `[^placeholder]` in `djot` at the label it resolved to.
+///
+/// A plain substring replacement, deliberately, and safe for the same reason
+/// `skribisto_model::footnote_numbering` searches that way: `[^` and `]` bracket the
+/// label on both sides, so `[^srcfn-1]` cannot match inside `[^srcfn-10]`.
+fn rewrite_footnote_labels(djot: &str, resolved: &[ResolvedFootnote]) -> String {
+    let mut out = djot.to_string();
+    for note in resolved {
+        out = out.replace(
+            &format!("[^{}]", note.placeholder),
+            &format!("[^{}]", note.label),
+        );
+    }
+    out
+}
+
 fn parse_created_at(value: &str) -> Option<chrono::DateTime<chrono::Utc>> {
     let value = value.trim();
     if value.is_empty() {
@@ -1451,6 +1767,7 @@ impl UndoRedoCommand for ApplyDocumentImportUseCase {
         // untouched by this restore and still there to point at.
         uow.restore_binder(snap)?;
         self.set_comments_attached(uow.as_mut(), false)?;
+        self.set_footnotes_attached(uow.as_mut(), false)?;
         self.reapply_comment_edits(uow.as_mut(), false)?;
         uow.commit()?;
         Ok(())
@@ -1465,6 +1782,7 @@ impl UndoRedoCommand for ApplyDocumentImportUseCase {
         uow.begin_transaction()?;
         uow.restore_binder(snap)?;
         self.set_comments_attached(uow.as_mut(), true)?;
+        self.set_footnotes_attached(uow.as_mut(), true)?;
         self.reapply_comment_edits(uow.as_mut(), true)?;
         uow.commit()?;
         Ok(())
@@ -1487,6 +1805,7 @@ mod tests {
             djot: String::new(),
             epigraph: String::new(),
             comments: Vec::new(),
+            footnotes: Vec::new(),
             source_uid_tag: String::new(),
             source_file_name: String::new(),
             source_file_digest: String::new(),

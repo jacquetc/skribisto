@@ -497,12 +497,14 @@ impl<'a> CommentBodyBuilder<'a> {
                     style,
                     link: link.map(str::to_string),
                     image: None,
+                    footnote: None,
                 }),
                 RunChild::Tab(_) | RunChild::PTab(_) => self.current.push(Run {
                     text: " ".into(),
                     style,
                     link: link.map(str::to_string),
                     image: None,
+                    footnote: None,
                 }),
                 // The conversion drops `<br>` outright and would glue the two
                 // lines together — the same reason `Walker::run` splits a break
@@ -620,6 +622,20 @@ struct RawScan {
     /// `w:id` → the `skrb:uid`/`w:initials` attributes only Skribisto's own writer
     /// puts on that comment's `<w:comment>` — see [`CommentAttrs`].
     comment_attrs: HashMap<usize, CommentAttrs>,
+    /// Paragraph ordinal → the footnote references in it, as `(w:id, char offset)`.
+    ///
+    /// Found here, in the raw pass, because **`docx-rs`'s reader never produces
+    /// one**: nothing in its `src/reader/` constructs `RunChild::FootnoteReference`,
+    /// so the typed walk's arm for it is unreachable and a scanner that trusted it
+    /// would see a document with no notes in it. That is what made this the one
+    /// silent loss in the whole import — a `.docx` coming back from an editor lost
+    /// its footnotes and said nothing.
+    ///
+    /// The same shape and the same coordinate space as [`Self::references`], so
+    /// a reference lands where the typed walk's text says it does.
+    footnotes: HashMap<usize, Vec<(usize, usize)>>,
+    /// `w:id` → that footnote's own styled paragraphs, from `word/footnotes.xml`.
+    footnote_bodies: HashMap<usize, Vec<Vec<Run>>>,
 }
 
 impl RawScan {
@@ -663,13 +679,25 @@ impl RawScan {
             }
             let mut offset = 0usize;
             let mut found: Vec<(usize, usize)> = Vec::new();
-            walk_raw_paragraph(paragraph, &mut offset, &mut found, &ranged);
+            let mut footnotes: Vec<(usize, usize)> = Vec::new();
+            walk_raw_paragraph(
+                paragraph,
+                &mut offset,
+                &mut found,
+                &ranged,
+                &mut footnotes,
+                0,
+            );
+            if !footnotes.is_empty() {
+                scan.footnotes.insert(ordinal, footnotes);
+            }
             if !found.is_empty() {
                 scan.references.insert(ordinal, found);
             }
         }
 
         scan.comment_attrs = read_comment_attrs(&mut zip).unwrap_or_default();
+        scan.footnote_bodies = read_footnote_bodies(&mut zip).unwrap_or_default();
         Some(scan)
     }
 }
@@ -711,6 +739,210 @@ fn read_comment_attrs<R: std::io::Read + std::io::Seek>(
     Some(out)
 }
 
+/// Read `word/footnotes.xml` for each footnote's own text.
+///
+/// Mirrors [`read_comment_attrs`], and for the same reason: `docx-rs`'s reader
+/// does not surface footnotes at all — not the part, not the `w:footnoteReference`
+/// that names one — so the only way to either is the raw member.
+///
+/// Word puts two synthetic notes at the top of every file, the separator rule and
+/// its continuation; both are chrome rather than content and are skipped by their
+/// `w:type`. What comes back is styled paragraphs on exactly the terms
+/// [`CommentBodyBuilder`] produces for a comment, so a note goes through
+/// `rich::assemble`'s single Djot conversion rather than acquiring a second one
+/// here — a footnote is prose the writer wrote, and the four marks
+/// [`rich::RunStyle`] carries are the four they could have applied to it.
+fn read_footnote_bodies<R: std::io::Read + std::io::Seek>(
+    zip: &mut zip::ZipArchive<R>,
+) -> Option<HashMap<usize, Vec<Vec<Run>>>> {
+    let xml = {
+        let mut file = zip.by_name("word/footnotes.xml").ok()?;
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut file, &mut buffer).ok()?;
+        String::from_utf8_lossy(&buffer).into_owned()
+    };
+    let document = roxmltree::Document::parse(&xml).ok()?;
+    let mut out = HashMap::new();
+    for node in document
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "footnote")
+    {
+        // `separator` / `continuationSeparator`: the horizontal rules Word draws
+        // above a page's notes, present in every document and never authored.
+        if node.attribute((NS_W, "type")).is_some() {
+            continue;
+        }
+        let Some(id) = node
+            .attribute((NS_W, "id"))
+            .and_then(|v| v.parse::<usize>().ok())
+        else {
+            continue;
+        };
+        let body = raw_note_paragraphs(node);
+        if !body.is_empty() {
+            out.insert(id, body);
+        }
+    }
+    Some(out)
+}
+
+/// The styled paragraphs of one `<w:footnote>`, from the raw tree.
+///
+/// The note opens with a run holding `<w:footnoteRef/>` — Word's own printed
+/// number — usually followed by a tab or a space. That run contributes no text, so
+/// it disappears on its own; the separator it left behind would arrive as a
+/// leading indent on the note's first line, so the first paragraph is trimmed at
+/// the front. Nothing else is trimmed: a writer's own spacing further in is theirs.
+fn raw_note_paragraphs(note: roxmltree::Node<'_, '_>) -> Vec<Vec<Run>> {
+    let mut paragraphs: Vec<Vec<Run>> = Vec::new();
+    for p in note
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "p")
+    {
+        let mut runs: Vec<Run> = Vec::new();
+        raw_note_runs(p, &mut runs, 0);
+        paragraphs.push(runs);
+    }
+    if let Some(first) = paragraphs.iter_mut().find(|p| !p.is_empty())
+        && let Some(run) = first.first_mut()
+    {
+        run.text = run.text.trim_start().to_string();
+    }
+    while paragraphs
+        .last()
+        .is_some_and(|p| p.iter().all(|r| r.text.trim().is_empty()))
+    {
+        paragraphs.pop();
+    }
+    paragraphs
+}
+
+/// Collect one raw paragraph's text runs, carrying the four marks that survive.
+///
+/// Recursion is bounded by [`MAX_RUN_NESTING`] on the same terms and for the same
+/// reason as [`walk_raw_paragraph`]: a hostile file's nesting is not a manuscript's,
+/// and following it aborts the process rather than unwinding.
+fn raw_note_runs(node: roxmltree::Node<'_, '_>, out: &mut Vec<Run>, depth: u32) {
+    if depth >= MAX_RUN_NESTING {
+        return;
+    }
+    for child in node.children().filter(roxmltree::Node::is_element) {
+        match child.tag_name().name() {
+            "r" => {
+                let style = raw_run_style(child);
+                for grandchild in child.children().filter(roxmltree::Node::is_element) {
+                    match grandchild.tag_name().name() {
+                        "t" => out.push(Run::styled(text_of(grandchild), style)),
+                        "tab" | "ptab" => out.push(Run::styled(" ", style)),
+                        // A tracked deletion inside a note is not the note's text,
+                        // on the same terms as in the manuscript.
+                        _ => {}
+                    }
+                }
+            }
+            // A nested note is not a thing Word can author, but a paragraph inside
+            // a table inside a note is — so the walk recurses rather than assuming
+            // runs are always direct children.
+            "p" => {}
+            _ => raw_note_runs(child, out, depth + 1),
+        }
+    }
+}
+
+/// The four marks [`rich::RunStyle`] carries, read off a raw `<w:rPr>`.
+///
+/// `code` is deliberately never set: OOXML expresses monospace as a *font*, and a
+/// font is not a mark this model carries — reading one as `code` would turn a note
+/// somebody typed in Courier into a literal code span.
+fn raw_run_style(run: roxmltree::Node<'_, '_>) -> RunStyle {
+    let Some(rpr) = run
+        .children()
+        .filter(roxmltree::Node::is_element)
+        .find(|n| n.tag_name().name() == "rPr")
+    else {
+        return RunStyle::default();
+    };
+    RunStyle {
+        bold: raw_toggle(rpr, "b"),
+        italic: raw_toggle(rpr, "i"),
+        // `w:u` is not a toggle: it names the *kind* of line, and `none` is how
+        // OOXML spells "no underline". Absent and `val="none"` mean the same thing.
+        underline: rpr
+            .children()
+            .filter(roxmltree::Node::is_element)
+            .find(|n| n.tag_name().name() == "u")
+            .is_some_and(|n| n.attribute((NS_W, "val")) != Some("none")),
+        strikethrough: raw_toggle(rpr, "strike") || raw_toggle(rpr, "dstrike"),
+        code: false,
+    }
+}
+
+/// One OOXML toggle property: present means on, unless it says otherwise.
+///
+/// `<w:b/>` and `<w:b w:val="1"/>` are both on; `0`, `false` and `off` are the
+/// three spellings of off that ECMA-376 allows for a toggle. Getting this wrong is
+/// silent — a note explicitly un-bolded inside a bold paragraph would arrive bold.
+fn raw_toggle(rpr: roxmltree::Node<'_, '_>, name: &str) -> bool {
+    rpr.children()
+        .filter(roxmltree::Node::is_element)
+        .find(|n| n.tag_name().name() == name)
+        .is_some_and(|n| !matches!(n.attribute((NS_W, "val")), Some("0" | "false" | "off")))
+}
+
+/// What a scanner's placeholder footnote label starts with.
+///
+/// Shared with the ODT scanner so both mint the same shape, and so
+/// `apply_document_import` has one prefix to recognise. The label itself is
+/// never shown to a writer and never stored — see
+/// [`crate::block::SourceFootnote::label`].
+pub const FOOTNOTE_LABEL_PREFIX: &str = "srcfn-";
+
+/// Insert a footnote-reference run `within` characters into `runs`, splitting the
+/// run that straddles that point.
+///
+/// The offset is in characters of the runs' plain text, so an image (one
+/// `IMAGE_PLACEHOLDER`) counts as one and a run already carrying a footnote counts
+/// as none — which is what makes two notes in one sentence land in the right order
+/// rather than both at the same seam.
+fn insert_footnote_run(runs: &mut Vec<Run>, within: usize, label: &str) {
+    let reference = Run {
+        footnote: Some(label.to_string()),
+        ..Default::default()
+    };
+    let mut seen = 0usize;
+    for index in 0..runs.len() {
+        let len = if runs[index].image.is_some() || runs[index].footnote.is_some() {
+            1
+        } else {
+            runs[index].text.chars().count()
+        };
+        if within < seen + len {
+            let split = within - seen;
+            if split == 0 {
+                runs.insert(index, reference);
+            } else if runs[index].image.is_some() {
+                // An image is one indivisible character: a note anchored "inside"
+                // it goes after it, never between its alt text's letters.
+                runs.insert(index + 1, reference);
+            } else {
+                let byte = runs[index]
+                    .text
+                    .char_indices()
+                    .nth(split)
+                    .map_or(runs[index].text.len(), |(b, _)| b);
+                let tail = runs[index].text.split_off(byte);
+                let mut second = runs[index].clone();
+                second.text = tail;
+                runs.insert(index + 1, reference);
+                runs.insert(index + 2, second);
+            }
+            return;
+        }
+        seen += len;
+    }
+    runs.push(reference);
+}
+
 /// An empty paragraph whose only border is at the bottom — Word's horizontal rule,
 /// and what its autoformat produces from a typed `---`.
 fn is_horizontal_rule(paragraph: roxmltree::Node<'_, '_>) -> bool {
@@ -742,12 +974,29 @@ fn is_horizontal_rule(paragraph: roxmltree::Node<'_, '_>) -> bool {
 /// `w:delText` and anything under `w:moveFrom` are skipped, because the typed walk
 /// drops that text too — if the two counted differently, every comment after a
 /// tracked change would be placed by an offset nobody could reproduce.
+/// How deep this walk will follow a paragraph's element tree.
+///
+/// `roxmltree` bounds *entity* recursion but not element nesting — it parses into
+/// a flat arena — so the depth here is whatever the file claims, and this
+/// function recurses once per level. Word nests a handful deep (a hyperlink
+/// inside a smart tag inside a content control); a file claiming thousands is
+/// not a manuscript, and following it exhausts the stack, which **aborts** rather
+/// than unwinding. Stopping is the same trade `skrib_format::djot_depth` makes on
+/// the prose side: content below the cap is not read, and the alternative is
+/// losing the whole process.
+const MAX_RUN_NESTING: u32 = 64;
+
 fn walk_raw_paragraph(
     node: roxmltree::Node<'_, '_>,
     offset: &mut usize,
     found: &mut Vec<(usize, usize)>,
     ranged: &HashSet<usize>,
+    footnotes: &mut Vec<(usize, usize)>,
+    depth: u32,
 ) {
+    if depth >= MAX_RUN_NESTING {
+        return;
+    }
     for child in node.children().filter(roxmltree::Node::is_element) {
         match child.tag_name().name() {
             "t" => *offset += text_of(child).chars().count(),
@@ -762,7 +1011,22 @@ fn walk_raw_paragraph(
                     found.push((id, *offset));
                 }
             }
-            _ => walk_raw_paragraph(child, offset, found, ranged),
+            // **Does not advance the offset.** Word draws a superscript number
+            // here, but these offsets index the text the *typed* walk produces,
+            // and that walk contributes no character for a reference — so
+            // counting one would put every comment after a footnote one
+            // character late. (An earlier revision of this arm did advance, on
+            // the reasoning that the reference occupies a rendered position.
+            // It does; it just is not in this coordinate space.)
+            "footnoteReference" | "endnoteReference" => {
+                let id = child
+                    .attribute((NS_W, "id"))
+                    .and_then(|v| v.parse::<usize>().ok());
+                if let Some(id) = id {
+                    footnotes.push((id, *offset));
+                }
+            }
+            _ => walk_raw_paragraph(child, offset, found, ranged, footnotes, depth + 1),
         }
     }
 }
@@ -808,7 +1072,13 @@ struct Walker<'a> {
     text_boxes: usize,
     embedded_objects: usize,
     fields: usize,
-    footnotes: usize,
+    /// References the walk could not put back into any block — see
+    /// [`Walker::splice_footnotes`]. Not a count of the document's footnotes: the
+    /// ones that *were* placed are in [`Self::footnotes`] and are carried.
+    footnotes_dropped: usize,
+    /// One entry per note whose reference reached the prose, in the order the
+    /// references were met. Deduplicated by label: a note cited twice is one note.
+    footnotes: Vec<rich::RichFootnote>,
     unknown_styles: HashSet<String>,
 }
 
@@ -844,7 +1114,8 @@ impl<'a> Walker<'a> {
             text_boxes: 0,
             embedded_objects: 0,
             fields: 0,
-            footnotes: 0,
+            footnotes_dropped: 0,
+            footnotes: Vec::new(),
             unknown_styles: HashSet::new(),
         }
     }
@@ -963,10 +1234,10 @@ impl<'a> Walker<'a> {
                 },
             ),
             (
-                self.footnotes,
-                ImportDiagnostic::FootnotesDegraded {
+                self.footnotes_dropped,
+                ImportDiagnostic::FootnoteNotCarried {
                     path: self.origin.clone(),
-                    count: self.footnotes,
+                    count: self.footnotes_dropped,
                 },
             ),
         ];
@@ -988,6 +1259,7 @@ impl<'a> Walker<'a> {
             blocks: std::mem::take(&mut self.blocks),
             annotations: std::mem::take(&mut self.annotations),
             row_marks: std::mem::take(&mut self.row_marks),
+            footnotes: std::mem::take(&mut self.footnotes),
         }
     }
 
@@ -1013,6 +1285,137 @@ impl<'a> Walker<'a> {
                 if produced { first_block } else { usize::MAX },
                 *offset,
             );
+        }
+
+        // After the comments, and safely so: a footnote run carries no text, so
+        // splicing one shifts none of the offsets just consumed. Doing it here
+        // rather than inside the build is what lets the reference find its place
+        // across a `<w:br>`, which restarts `ParaBuild::len` while the raw walk's
+        // offsets keep counting through the whole paragraph.
+        if let Some(refs) = self.raw.footnotes.get(&ordinal) {
+            let refs = refs.clone();
+            self.splice_footnotes(first_block, &refs);
+        }
+    }
+
+    /// Put this paragraph's footnote references back into the runs they sat between.
+    ///
+    /// `refs` are `(w:id, offset)` in the paragraph's own plain-text space, which is
+    /// the concatenation of the blocks it produced — a `<w:br>` contributes a
+    /// character to neither side, so walking the produced blocks in order
+    /// reconstructs exactly the space the raw pass counted in.
+    ///
+    /// Splicing back-to-front matters: an earlier insertion would shift the runs a
+    /// later offset is measured against, and two notes in one paragraph is ordinary
+    /// (a sentence citing two sources). Iterating in reverse means every offset is
+    /// still measured against the runs it was measured against when it was recorded.
+    fn splice_footnotes(&mut self, first_block: usize, refs: &[(usize, usize)]) {
+        let last_block = self.blocks.len();
+        for (id, offset) in refs.iter().rev() {
+            let Some(paragraphs) = self.raw.footnote_bodies.get(id) else {
+                // A reference naming a note `word/footnotes.xml` does not define.
+                // Carrying the marker with nothing behind it would put a citation
+                // in the book pointing at an empty note.
+                self.footnotes_dropped += 1;
+                continue;
+            };
+            let label = format!("{FOOTNOTE_LABEL_PREFIX}{id}");
+            if !self.place_footnote(first_block, last_block, *offset, &label) {
+                self.footnotes_dropped += 1;
+                continue;
+            }
+            if !self.footnotes.iter().any(|f| f.label == label) {
+                self.footnotes.push(rich::RichFootnote {
+                    label,
+                    paragraphs: paragraphs.clone(),
+                });
+            }
+        }
+    }
+
+    /// Insert one footnote run at `offset` within `first_block..last_block`.
+    ///
+    /// Returns whether it landed anywhere. An offset past the end of everything the
+    /// paragraph produced is clamped to the end of its last block rather than
+    /// refused: the two walks agree on ordinary prose, and where they cannot (a
+    /// field's result text, a construct the typed walk drops), a note at the end of
+    /// the paragraph it belongs to is much closer to right than no note at all.
+    fn place_footnote(
+        &mut self,
+        first_block: usize,
+        last_block: usize,
+        offset: usize,
+        label: &str,
+    ) -> bool {
+        let mut remaining = offset;
+        let mut target: Option<(usize, usize)> = None;
+        for index in first_block..last_block {
+            let len = self.blocks[index].plain_text().chars().count();
+            if remaining <= len {
+                target = Some((index, remaining));
+                break;
+            }
+            remaining -= len;
+            target = Some((index, len));
+        }
+        let Some((index, within)) = target else {
+            return false;
+        };
+        let RichBlock::Paragraph { runs, .. } = &mut self.blocks[index] else {
+            // A table: its cells are their own coordinate space and a paragraph
+            // ordinal does not address them.
+            return false;
+        };
+        insert_footnote_run(runs, within, label);
+        self.shift_offsets(index, within);
+        true
+    }
+
+    /// Move every offset in `block` at or after `at` along by the one character a
+    /// footnote reference now occupies there.
+    ///
+    /// The reference is spliced in **after** the comments of the same paragraph have
+    /// been placed, so every offset recorded up to that point was measured in a text
+    /// that did not contain it yet — see [`rich::Run::plain_push`] for why it counts
+    /// as a character at all. Rebasing here rather than adjusting each offset at the
+    /// point it is recorded keeps one rule in one place: the typed walk's ranged
+    /// comments, the raw pass's point comments and the round-trip bookmarks are three
+    /// separate paths to an offset, and every one of them would otherwise need the
+    /// same correction applied consistently.
+    ///
+    /// A range **containing** the insertion point grows by one instead of moving: the
+    /// note was cited inside the passage the editor commented on, so the passage is
+    /// now one character longer.
+    fn shift_offsets(&mut self, block: usize, at: usize) {
+        for annotation in &mut self.annotations {
+            if annotation.block_index != block {
+                continue;
+            }
+            if annotation.start >= at {
+                annotation.start += 1;
+            } else if annotation.start + annotation.length > at {
+                annotation.length += 1;
+            }
+        }
+        for open in self.open.values_mut() {
+            if open.block == block && open.start >= at {
+                open.start += 1;
+            }
+        }
+        for mark in self.open_marks.values_mut() {
+            if mark.block == block && mark.start >= at {
+                mark.start += 1;
+            }
+        }
+        for mark in &mut self.comment_marks {
+            if mark.block != block {
+                continue;
+            }
+            if mark.start >= at {
+                mark.start += 1;
+            } else if mark.start + mark.length > at {
+                mark.length += 1;
+            }
         }
     }
 
@@ -1188,6 +1591,7 @@ impl<'a> Walker<'a> {
                         style,
                         link: link.map(str::to_string),
                         image: None,
+                        footnote: None,
                     });
                 }
                 RunChild::Tab(_) | RunChild::PTab(_) => {
@@ -1197,6 +1601,7 @@ impl<'a> Walker<'a> {
                         style,
                         link: link.map(str::to_string),
                         image: None,
+                        footnote: None,
                     });
                 }
                 RunChild::Break(_) | RunChild::CarriageReturn(_) => {
@@ -1225,7 +1630,13 @@ impl<'a> Walker<'a> {
                     None => self.embedded_objects += 1,
                 },
                 RunChild::Shape(_) => self.embedded_objects += 1,
-                RunChild::FootnoteReference(_) => self.footnotes += 1,
+                // Unreachable: `docx-rs`'s reader never constructs this variant
+                // (nothing in its `src/reader/` produces one), which is why both the
+                // reference and its body come from raw passes — see
+                // `RawScan::footnotes` and `read_footnote_bodies`. Kept as an explicit
+                // arm so a future version of the crate that *does* produce it does not
+                // silently fall into the catch-all.
+                RunChild::FootnoteReference(_) => {}
                 RunChild::FieldChar(field) => {
                     if matches!(field.field_char_type, docx_rs::FieldCharType::Begin) {
                         self.fields += 1;

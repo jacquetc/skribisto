@@ -178,6 +178,31 @@ pub struct SourceAnnotationReply {
     pub body: String,
 }
 
+/// One footnote the source document defines.
+///
+/// Document-scoped, not block-scoped: where the note *sits* is decided by where
+/// its reference sits in the prose, and the prose carries that already as a
+/// `[^label]`. Pairing the two is [`crate::plan`]'s job, because it is the layer
+/// that knows which row each block ended up in.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SourceFootnote {
+    /// **The scanner's label, not the writer's.** A source format numbers its
+    /// notes however it likes — OOXML by an integer `w:id` that is unique only
+    /// within one file, ODF by a `text:id` — and neither is safe to put into a
+    /// project that already has footnotes of its own. So a scanner mints a
+    /// placeholder here and writes the matching `[^label]` into the prose, and
+    /// `apply_document_import` swaps both for a label the project has free.
+    ///
+    /// Unique **within one document**, which is all the pairing needs: a row
+    /// belongs to exactly one source file, so two files may safely mint the same
+    /// placeholder.
+    pub label: String,
+    /// The note's own text, already Djot — converted at
+    /// [`crate::sources::rich::assemble`], the one place either scanner turns
+    /// styled paragraphs into Djot.
+    pub body: String,
+}
+
 /// An editor's comment, recovered from a format that carries them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceAnnotation {
@@ -299,6 +324,11 @@ pub struct SourceDocument {
     /// Editors' comments the scanner recovered, in document order. Empty for a
     /// format that has no comments — see the module note above.
     pub annotations: Vec<SourceAnnotation>,
+    /// Every footnote this document defines, in document order. Empty for a format
+    /// whose reader cannot carry them (Markdown — see
+    /// [`crate::diagnostics::ImportDiagnostic::FootnotesDegraded`]) and for a
+    /// document that simply has none.
+    pub footnotes: Vec<SourceFootnote>,
     /// Round-trip row marks the scanner recovered, in document order. Empty unless this file
     /// is one Skribisto exported — which is exactly the case where the import is a *return*
     /// rather than a first arrival, and the only case where matching onto existing rows is
@@ -325,6 +355,7 @@ impl SourceDocument {
             metadata: SourceMetadata::default(),
             blocks: Vec::new(),
             annotations: Vec::new(),
+            footnotes: Vec::new(),
             row_marks: Vec::new(),
             diagnostics: Vec::new(),
         }

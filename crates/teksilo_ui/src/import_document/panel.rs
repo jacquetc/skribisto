@@ -1255,6 +1255,29 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     // has to fit is a per-row count, which is one to four digits.
     .width(ColumnWidth::Fixed(73.0));
 
+    // How many footnotes come with this row's prose, on exactly the terms the comments
+    // column beside it counts threads: blank rather than 0, because a column of zeros
+    // reads as a measurement that failed.
+    //
+    // A count and not a marker, unlike the epigraph. An epigraph is *recognised* — from a
+    // paragraph style, which the reader can get wrong — so the question there is "did it
+    // read the right paragraph", which only the words can answer. A footnote is not
+    // recognised: the source says outright that this is a note, so the only open question
+    // is how many are coming, and that is a number.
+    let footnotes = Column::new(
+        "footnotes",
+        tr!(import_document_col_footnotes()),
+        move |row: &PlanRowView, _cx: &CellContext| {
+            let text = if row.footnotes.is_empty() {
+                String::new()
+            } else {
+                row.footnotes.len().to_string()
+            };
+            Box::new(TextWidget::new(lit!(text))) as Box<dyn Widget>
+        },
+    )
+    .width(ColumnWidth::Fixed(73.0));
+
     // The quotation this row is headed by, when the source named one — a mark here and the
     // words themselves on hover. See `import_epigraph_cell` for why it is a marker rather
     // than a preview (the table was already exactly as wide as its card) and why the
@@ -1326,6 +1349,7 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
                 .add_column(words)
                 .add_column(breaks)
                 .add_column(comments)
+                .add_column(footnotes)
                 .add_column(epigraph)
                 .row_height(30.0),
         )

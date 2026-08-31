@@ -2085,6 +2085,7 @@ import-document-col-type = Type
 import-document-col-words = Mots
 import-document-col-breaks = Coupures
 import-document-col-comments = Commentaires
+import-document-col-footnotes = Notes de bas de page
 import-document-col-epigraph = Épigraphe
 import-document-col-source = Source
 import-document-level-rules = Niveaux de titre
@@ -2130,6 +2131,10 @@ import-diagnostic-front-matter-not-flat = En-tête de « { $path } » : « {
 import-diagnostic-footnotes-degraded = { $count ->
     [one] Une note de bas de page de « { $path } » arrive en texte brut — les notes ne sont pas lues depuis Markdown.
    *[other] { $count } notes de bas de page de « { $path } » arrivent en texte brut — les notes ne sont pas lues depuis Markdown.
+}
+import-diagnostic-footnote-not-carried = { $count ->
+    [one] Une note de bas de page de « { $path } » n’a pas pu être reprise — les autres l’ont été.
+   *[other] { $count } notes de bas de page de « { $path } » n’ont pas pu être reprises — les autres l’ont été.
 }
 import-diagnostic-raw-html-dropped = { $count ->
     [one] Un bloc HTML brut de « { $path } » a été supprimé.

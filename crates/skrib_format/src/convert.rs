@@ -18,6 +18,17 @@
 use anyhow::Result;
 use text_document::TextDocument;
 
+/// The attribute an HTML producer marks a footnote reference with, re-exported
+/// from `text-document` so the importers can reach it.
+///
+/// They build HTML and hand it to [`html_to_djot`] rather than depending on
+/// `text-document` themselves, so the one contract that HTML has to honour would
+/// otherwise be un-nameable from where it is written. A hard-coded copy of the
+/// string in each scanner is exactly the kind of pair that drifts silently: the
+/// producer would emit an attribute nothing reads, and the footnote would vanish
+/// with no error.
+pub use text_document::HTML_FOOTNOTE_ATTR;
+
 /// Convert Qt rich-text HTML to Djot. Blank input → empty string.
 pub fn html_to_djot(html: &str) -> Result<String> {
     Ok(html_to_djot_and_text(html)?.0)

@@ -17,7 +17,7 @@ ou retirez-en avant de continuer. Rien n’est écrit dans votre projet avant la
 *Fichiers* recueille ce que vous apportez. *Vérifier* est l’étape où l’assistant vous montre
 l’arborescence qu’il construirait, avant qu’aucune ligne n’existe : le type déduit de chaque
 ligne, le fichier d’où elle vient, son nombre de mots, ses coupures de scène, et les
-commentaires qu’elle porte. Retypez une ligne avec sa colonne *Type*, ou décochez sa case
+commentaires et notes de bas de page qu’elle porte. Retypez une ligne avec sa colonne *Type*, ou décochez sa case
 *Importer* pour la laisser de côté (elle et tout ce qu’elle contient). Un contrôle *Niveaux de
 titre* au-dessus de l’arborescence permet de changer d’un coup ce que signifie toute une
 profondeur de titre, Titre 1 en Livre, Titre 2 en Chapitre, et ainsi de suite, plutôt que de
@@ -60,3 +60,18 @@ véritable commentaire Skribisto, ancré exactement aux mots auxquels il était 
 son auteur et (à partir d’un `.docx`) ses initiales, ainsi que toutes les réponses qu’il porte.
 Voir [les commentaires](:help-comments) pour savoir comment ils se comportent une fois qu’ils
 font partie de votre projet.
+
+## Notes de bas de page
+
+Les notes de bas de page d’un fichier Word ou OpenDocument sont importées elles aussi. Chacune
+devient une véritable note Skribisto, avec son propre texte, appelée depuis l’endroit exact du
+texte d’où elle l’était. Les numéros ne sont pas repris et n’ont pas à l’être : Skribisto numérote
+une note d’après sa place dans le manuscrit, si bien qu’une note importée est numérotée avec
+celles qui étaient déjà là.
+
+Une note dont l’assistant ne peut pas placer l’appel est signalée plutôt qu’inventée. Le cas
+courant est une note sur un *titre* de chapitre : un titre est une ligne de texte, pas un
+passage, et il n’y a donc rien à quoi accrocher la note.
+
+Markdown fait exception : un `[^1]` dans un fichier `.md` arrive en texte brut, et l’étape
+*Vérifier* le dit.

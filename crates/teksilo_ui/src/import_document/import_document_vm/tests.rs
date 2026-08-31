@@ -69,6 +69,7 @@ fn planned(indent: i64, title: &str, kind: CreateType) -> PlannedRow {
         origin: "a.md".into(),
         included: true,
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_uid_tag: None,
         source_digest: None,
         diagnostics: Vec::new(),
@@ -420,6 +421,7 @@ fn exhaustive_over_every_variant(d: &document_ingest::ImportDiagnostic) {
         | UnsupportedFormat { .. }
         | FrontMatterNotFlat { .. }
         | FootnotesDegraded { .. }
+        | FootnoteNotCarried { .. }
         | RawHtmlDropped { .. }
         | NestedBreakDropped { .. }
         | ImageNotIngested { .. }
@@ -485,6 +487,10 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
         D::FootnotesDegraded {
             path: "/tmp/a.md".into(),
             count: 2,
+        },
+        D::FootnoteNotCarried {
+            path: "/tmp/a.docx".into(),
+            count: 1,
         },
         D::RawHtmlDropped {
             path: "/tmp/a.md".into(),

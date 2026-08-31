@@ -40,7 +40,8 @@ use frontend::common::event::Event;
 use frontend::import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyImportRow, ApplyImportRows,
     DocumentImportRow, DocumentImportRows, DropPosition, ImportComment, ImportCommentKind,
-    ImportDiagnosticRow, ImportDiagnosticRows, ImportOrphanReason, ImportReply, ImportRowKind,
+    ImportDiagnosticRow, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportReply,
+    ImportRowKind,
 };
 
 use document_ingest::plan::{PlannedComment, PlannedRow};
@@ -163,6 +164,10 @@ impl Diagnostic {
                 detail = detail
             )),
             "footnotes-degraded" => tr!(import_diagnostic_footnotes_degraded(
+                path = path,
+                count = count
+            )),
+            "footnote-not-carried" => tr!(import_diagnostic_footnote_not_carried(
                 path = path,
                 count = count
             )),
@@ -667,6 +672,7 @@ impl ImportDocumentViewModel {
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
+                    footnotes: Vec::new(),
                     source_uid_tag: None,
                     source_digest: None,
                     diagnostics: Vec::new(),
@@ -676,7 +682,7 @@ impl ImportDocumentViewModel {
                     create_type: CreateType::Chapter,
                     title: "Mock Chapter".into(),
                     stripped_ordinal: None,
-                    djot: "Prose.".into(),
+                    djot: "Prose.[^srcfn-1]".into(),
                     // A chapter can, so the mock carries one: it is the only way the
                     // review panel's epigraph column is exercised without a real file.
                     epigraph: "> Mock quotation.".into(),
@@ -687,6 +693,13 @@ impl ImportDocumentViewModel {
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
+                    // The chapter carries one, for the same reason it carries an
+                    // epigraph: it is the only way the review panel's footnote column
+                    // is exercised without a real file.
+                    footnotes: vec![document_ingest::plan::PlannedFootnote {
+                        label: "srcfn-1".into(),
+                        body: "A mock note.".into(),
+                    }],
                     source_uid_tag: None,
                     source_digest: None,
                     diagnostics: Vec::new(),
@@ -705,6 +718,7 @@ impl ImportDocumentViewModel {
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
+                    footnotes: Vec::new(),
                     source_uid_tag: None,
                     source_digest: None,
                     diagnostics: Vec::new(),
@@ -1543,6 +1557,17 @@ impl ImportDocumentViewModel {
                 // retyping a title or a type cannot move a comment: its quote was measured
                 // against this row's prose, and the prose is what the review step never edits.
                 let comments: Vec<_> = row.comments.iter().map(comment_to_dto).collect();
+                // Handed straight back as they arrived, on exactly the terms the comments
+                // are. The placeholder label each one carries is meaningless outside the
+                // row's own Djot, which the review step never edits either.
+                let footnotes: Vec<ImportFootnote> = row
+                    .footnotes
+                    .iter()
+                    .map(|f| ImportFootnote::Found {
+                        label: f.label.clone(),
+                        body: f.body.clone(),
+                    })
+                    .collect();
                 let tag = row.source_uid_tag.clone().unwrap_or_default();
 
                 match decided.get(&key) {
@@ -1572,6 +1597,11 @@ impl ImportDocumentViewModel {
                             // places.
                             epigraph: row.epigraph.clone(),
                             comments,
+                            // Notes ride the prose, and the use case is what decides
+                            // whether the prose is written — sending them conditionally
+                            // here would put that decision in two places, exactly as the
+                            // epigraph's own comment above says.
+                            footnotes: footnotes.clone(),
                             // Provenance, for the completion event. The **name**, never
                             // `row.origin` — see `PlanRowView::source_file_name`.
                             source_file_name: row.source_file_name(),
@@ -1595,7 +1625,7 @@ impl ImportDocumentViewModel {
                     }) => None,
                     // `CreateNew`, or no decision at all — a first import, or a plan the writer
                     // accepted without ever reaching the reconcile step.
-                    _ => Some(self.created_rows_for(key, &row, kind, comments, tag)),
+                    _ => Some(self.created_rows_for(key, &row, kind, comments, footnotes, tag)),
                 }
             })
             .flatten()
@@ -1624,16 +1654,21 @@ impl ImportDocumentViewModel {
         row: &PlanRowView,
         kind: CreateType,
         comments: Vec<ImportComment>,
+        footnotes: Vec<ImportFootnote>,
         tag: String,
     ) -> Vec<ApplyImportRow> {
         let container =
-            |djot: String, epigraph: String, comments: Vec<ImportComment>| ApplyImportRow::Create {
+            |djot: String,
+             epigraph: String,
+             comments: Vec<ImportComment>,
+             footnotes: Vec<ImportFootnote>| ApplyImportRow::Create {
                 indent: row.indent,
                 kind: create_type_to_kind(kind),
                 title: row.title.clone(),
                 djot,
                 epigraph,
                 comments,
+                footnotes,
                 // The row's own identity, handed back untouched for the same reason its comments
                 // are: the review step edits titles and types, never which row a passage *is*.
                 source_uid_tag: tag.clone(),
@@ -1652,12 +1687,14 @@ impl ImportDocumentViewModel {
         let epigraph = row.epigraph.clone();
 
         match self.stray_prose_for(key) {
-            None => vec![container(row.djot.clone(), epigraph, comments)],
+            None => vec![container(row.djot.clone(), epigraph, comments, footnotes)],
             Some(StrayProse::Discard) => {
-                vec![container(String::new(), epigraph, Vec::new())]
+                vec![container(String::new(), epigraph, Vec::new(), Vec::new())]
             }
+            // The notes go with the prose, like the comments and unlike the epigraph: a
+            // note is cited *by* the passage, so it belongs wherever the passage lands.
             Some(StrayProse::AsParatext) => vec![
-                container(String::new(), epigraph, Vec::new()),
+                container(String::new(), epigraph, Vec::new(), Vec::new()),
                 ApplyImportRow::Create {
                     indent: row.indent + 1,
                     kind: create_type_to_kind(CreateType::Paratext),
@@ -1666,6 +1703,7 @@ impl ImportDocumentViewModel {
                     // A paratext holds no epigraph, and this one is not its anyway.
                     epigraph: String::new(),
                     comments,
+                    footnotes,
                     // The mark named the *container*, and the container has it. A paratext
                     // minted here is a row this import is creating, not one it is bringing home.
                     source_uid_tag: String::new(),
@@ -2297,6 +2335,7 @@ pub fn plan_from_dto(
                 scene_breaks,
                 word_count,
                 comments,
+                footnotes,
                 origin,
                 included,
                 source_uid_tag,
@@ -2320,6 +2359,18 @@ pub fn plan_from_dto(
                 scene_breaks: *scene_breaks as usize,
                 word_count: *word_count as usize,
                 comments: comments.iter().filter_map(comment_from_dto).collect(),
+                footnotes: footnotes
+                    .iter()
+                    .filter_map(|f| match f {
+                        ImportFootnote::Found { label, body } => {
+                            Some(document_ingest::plan::PlannedFootnote {
+                                label: label.clone(),
+                                body: body.clone(),
+                            })
+                        }
+                        ImportFootnote::Empty => None,
+                    })
+                    .collect(),
                 origin: origin.clone(),
                 included: *included,
                 // Empty on the wire means the file carried no mark for this row.

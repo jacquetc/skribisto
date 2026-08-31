@@ -683,3 +683,122 @@ fn an_epigraph_is_not_counted_in_the_rows_word_count() {
         "only the row's own prose counts"
     );
 }
+
+/// A note goes to the row whose prose cites it, and only that row.
+#[test]
+fn a_footnote_lands_on_the_row_that_cites_it() {
+    let mut d = doc(
+        "a.docx",
+        vec![
+            heading(1, "Chapter One"),
+            prose("The ferry was late.[^srcfn-1]"),
+            heading(1, "Chapter Two"),
+            prose("The harbour was quiet."),
+        ],
+    );
+    d.footnotes = vec![crate::block::SourceFootnote {
+        label: "srcfn-1".into(),
+        body: "It always is.".into(),
+    }];
+    let rules = infer_rules(&[1], CreateType::Chapter);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+    assert_eq!(plan.rows.len(), 2);
+    assert_eq!(
+        plan.rows[0].footnotes,
+        vec![PlannedFootnote {
+            label: "srcfn-1".into(),
+            body: "It always is.".into(),
+        }]
+    );
+    assert!(
+        plan.rows[1].footnotes.is_empty(),
+        "a row that cites nothing carries nothing"
+    );
+    assert!(
+        !plan
+            .diagnostics
+            .iter()
+            .any(|d| d.key() == "footnote-not-carried"),
+        "nothing was lost; got {:?}",
+        plan.diagnostics
+    );
+}
+
+/// Two files may safely mint the same placeholder — the pairing is per document.
+///
+/// This is the whole reason `SourceFootnote::label` promises uniqueness *within one
+/// document* and no further: a scanner cannot know what the file beside it numbered
+/// its notes, and `w:id` restarts at 1 in every `.docx` ever written.
+#[test]
+fn two_files_using_the_same_placeholder_do_not_take_each_others_notes() {
+    let mut first = doc("a.docx", vec![heading(1, "One"), prose("Alpha.[^srcfn-1]")]);
+    first.footnotes = vec![crate::block::SourceFootnote {
+        label: "srcfn-1".into(),
+        body: "The first note.".into(),
+    }];
+    let mut second = doc("b.docx", vec![heading(1, "Two"), prose("Beta.[^srcfn-1]")]);
+    second.footnotes = vec![crate::block::SourceFootnote {
+        label: "srcfn-1".into(),
+        body: "The second note.".into(),
+    }];
+
+    let rules = infer_rules(&[1], CreateType::Chapter);
+    let plan = build_plan(&[first, second], &rules, ChapterMode::Folder, 0);
+
+    assert_eq!(plan.rows.len(), 2);
+    assert_eq!(plan.rows[0].footnotes[0].body, "The first note.");
+    assert_eq!(plan.rows[1].footnotes[0].body, "The second note.");
+}
+
+/// A note nobody cites is reported rather than attached to whatever row is nearest.
+///
+/// The real case is a footnote on a chapter *title*: the heading becomes a
+/// `BinderItem.title`, a plain string with no `Content` for a `Footnote` to annotate,
+/// so the reference never reaches any row's prose.
+#[test]
+fn a_note_no_row_cites_is_reported_not_guessed_at() {
+    let mut d = doc(
+        "a.docx",
+        vec![heading(1, "Chapter One"), prose("The ferry was late.")],
+    );
+    d.footnotes = vec![crate::block::SourceFootnote {
+        label: "srcfn-1".into(),
+        body: "Orphaned.".into(),
+    }];
+    let rules = infer_rules(&[1], CreateType::Chapter);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+    assert!(plan.rows.iter().all(|r| r.footnotes.is_empty()));
+    assert!(
+        plan.diagnostics
+            .iter()
+            .any(|d| d.key() == "footnote-not-carried"),
+        "got {:?}",
+        plan.diagnostics
+    );
+}
+
+/// A placeholder shown as an example is prose, not a citation.
+///
+/// `references_in` reads just enough of Djot's own grammar to know that a code span
+/// is inert — the same rule the editor and the exporter apply, so a "notes to self"
+/// document explaining the syntax cannot claim a note.
+#[test]
+fn a_placeholder_inside_a_code_span_does_not_cite_anything() {
+    let mut d = doc(
+        "a.docx",
+        vec![
+            heading(1, "Style notes"),
+            prose("Write `[^srcfn-1]` for a note."),
+        ],
+    );
+    d.footnotes = vec![crate::block::SourceFootnote {
+        label: "srcfn-1".into(),
+        body: "Not this one.".into(),
+    }];
+    let rules = infer_rules(&[1], CreateType::Chapter);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+    assert!(plan.rows.iter().all(|r| r.footnotes.is_empty()));
+}

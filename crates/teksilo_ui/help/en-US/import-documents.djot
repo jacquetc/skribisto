@@ -16,7 +16,7 @@ Nothing is written to your project until the last step.
 
 *Files* collects what you are bringing in. *Review* is where the wizard shows you the tree it
 would build, before any of it exists: each row's inferred type, the file it came from, its word
-count, its scene breaks, and any comments it carries. Retype a row with its *Type* column, or
+count, its scene breaks, and any comments and footnotes it carries. Retype a row with its *Type* column, or
 untick its *Import* checkbox to leave it (and everything under it) out. A *Heading levels* control
 above the tree lets you change what a whole heading depth means at once, Heading 1 as Book,
 Heading 2 as Chapter, and so on, rather than retyping row by row; if your files are a set of
@@ -53,3 +53,17 @@ A Word or OpenDocument file's comments come in too. Each one becomes a real Skri
 anchored to the exact words it was attached to, carrying its author and (from a `.docx`) their
 initials, along with any replies underneath it. See [comments](:help-comments) for how they behave
 once they are part of your project.
+
+## Footnotes
+
+A Word or OpenDocument file's footnotes come in too, each one becoming a real Skribisto footnote
+with its own text, referenced from the same place in the prose it was referenced from. The
+numbers are not carried and do not need to be: Skribisto numbers a note from where it sits in the
+manuscript, so an imported note is numbered alongside the ones already there.
+
+A note whose reference the wizard cannot place is reported rather than invented. The ordinary
+case is a footnote on a chapter *title*: a title is a line of text, not a passage, so there is
+nothing in it for a note to hang off.
+
+Markdown is the exception: a `[^1]` in a `.md` file arrives as plain text, and the *Review* step
+says so.

@@ -39,8 +39,11 @@
 //! * **`<sup>` and `<sub>` are dropped to plain text.** The characters survive, the
 //!   raising does not. No diagnostic: this is character *styling*, like colour,
 //!   font and size, none of which Skribisto's model carries either — saying so once
-//!   here is more honest than a warning on every document that contains a footnote
-//!   marker.
+//!   here is more honest than a warning on every document that raises a character.
+//!   A **footnote reference** is not this case and never was: it is a node, emitted
+//!   as `<sup>` carrying `skrib_format::HTML_FOOTNOTE_ATTR` and read back as a real
+//!   reference, because the escaper would otherwise turn a `[^label]` written as
+//!   characters into prose. See [`Run::footnote`].
 //! * **`<br>` vanishes entirely**, gluing the words either side of it together.
 //!   A soft line break is therefore split into a paragraph of its own before the
 //!   HTML is built, which is what every other manuscript importer does with one and
@@ -103,6 +106,14 @@ pub struct Run {
     /// The hyperlink this run sits inside, if any. Carried rather than flattened:
     /// a URL a writer put in their manuscript is content, and Djot has a link.
     pub link: Option<String>,
+    /// This run *is* a footnote reference, and this is the label it names.
+    ///
+    /// A run of its own rather than a property of the surrounding text, because
+    /// that is what it is in both source formats: OOXML's `<w:footnoteReference>`
+    /// and ODF's `<text:note>` sit between runs, not inside one. The run carries
+    /// no `text` — the printed number is derived from position, never stored, so
+    /// storing one here would be a second answer to the same question.
+    pub footnote: Option<String>,
     /// When set, this run **is** an image reference — `text` is its alt text and
     /// this is the path inside the container. It occupies exactly one character of
     /// plain text, [`IMAGE_PLACEHOLDER`].
@@ -131,6 +142,7 @@ impl Run {
             style,
             link: Some(url.into()),
             image: None,
+            footnote: None,
         }
     }
 
@@ -140,11 +152,23 @@ impl Run {
             style: RunStyle::default(),
             link: None,
             image: Some(src.into()),
+            footnote: None,
         }
     }
 
+    /// This run's contribution to the block's plain text.
+    ///
+    /// A footnote reference contributes [`IMAGE_PLACEHOLDER`] for the same reason an
+    /// image does, and it is **not** cosmetic: this string is the coordinate space
+    /// every annotation offset is measured in, and it has to agree character for
+    /// character with what the HTML→Djot conversion reports for the same block —
+    /// which renders both an image and a footnote reference as one object-replacement
+    /// character (`text-document`'s "atomic one-character piece"). Contributing
+    /// nothing here would put every comment after a footnote one character early,
+    /// silently, and `assemble`'s own check would degrade it to a whole-row comment
+    /// rather than say so.
     fn plain_push(&self, out: &mut String) {
-        if self.image.is_some() {
+        if self.image.is_some() || self.footnote.is_some() {
             out.push(IMAGE_PLACEHOLDER);
         } else {
             out.push_str(&self.text);
@@ -291,8 +315,53 @@ impl RichBlock {
         out
     }
 
+    /// Nothing here worth a block of its own.
+    ///
+    /// Plain text is the measure, with one exception: a **footnote reference
+    /// carries no text**. Its run is a node, not characters (see [`Run::footnote`]),
+    /// so a paragraph holding nothing but a citation reads as empty — and
+    /// [`assemble`] skips blank blocks outright. Word puts a note in a paragraph of
+    /// its own often enough (a caption, a source line under a table) that dropping
+    /// those would lose the note *and* the diagnostic, since the reference would
+    /// simply never reach the prose to be counted.
     fn is_blank(&self) -> bool {
+        if self.has_footnote_reference() {
+            return false;
+        }
         self.plain_text().trim().is_empty()
+    }
+
+    /// This block's text as a **title**.
+    ///
+    /// The same plain text, minus footnote references. A heading becomes a
+    /// `BinderItem.title` — a plain string, not a `Content` — and a `Footnote`
+    /// annotates a `Content`, so there is nothing for a note on a chapter title to
+    /// hang off. Left in, the reference's object-replacement character would simply
+    /// appear in the title as a stray glyph; the note itself is then cited by no row,
+    /// which is what `plan::attach_footnotes` reports.
+    fn title_text(&self) -> String {
+        match self {
+            RichBlock::Paragraph { runs, .. } => {
+                let mut out = String::new();
+                for run in runs.iter().filter(|r| r.footnote.is_none()) {
+                    run.plain_push(&mut out);
+                }
+                out
+            }
+            RichBlock::Table { .. } => self.plain_text(),
+        }
+    }
+
+    fn has_footnote_reference(&self) -> bool {
+        let mut runs: Box<dyn Iterator<Item = &Run>> = match self {
+            RichBlock::Paragraph { runs, .. } => Box::new(runs.iter()),
+            RichBlock::Table { rows } => Box::new(
+                rows.iter()
+                    .flat_map(|row| row.iter())
+                    .flat_map(|c| c.iter()),
+            ),
+        };
+        runs.any(|run| run.footnote.is_some())
     }
 }
 
@@ -416,6 +485,23 @@ pub struct RichDocument {
     pub annotations: Vec<RichAnnotation>,
     /// See [`crate::block::SourceRowMark`]. Empty for every file this app did not write.
     pub row_marks: Vec<RichRowMark>,
+    /// The body of every footnote the document defines, keyed by the label its
+    /// references name. Document-scoped rather than per-block: a note is defined
+    /// once and may be cited more than once, and in OOXML its text does not even
+    /// live in the same part as the reference.
+    pub footnotes: Vec<RichFootnote>,
+}
+
+/// One footnote's own text, as its container expressed it.
+///
+/// The label is the scanner's, not the writer's — see
+/// [`crate::block::SourceFootnote::label`]. The body arrives as styled paragraphs
+/// on exactly the terms a comment's does, and [`assemble`] turns both into Djot at
+/// the same single call site.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RichFootnote {
+    pub label: String,
+    pub paragraphs: Vec<Vec<Run>>,
 }
 
 /// Turn a rich document into the neutral block model, carrying its comments.
@@ -506,6 +592,17 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
                 digest: mark.digest.clone(),
             });
         }
+    }
+
+    // Bodies, converted at the same one call site as a comment's and for the same
+    // reason. A note is carried whether or not its reference survived into a
+    // block: `plan` is what pairs the two up, and it is better placed to say so —
+    // it is the layer that knows which row the reference landed in.
+    for footnote in &doc.footnotes {
+        out.footnotes.push(crate::block::SourceFootnote {
+            label: footnote.label.clone(),
+            body: body_to_djot(&footnote.paragraphs)?,
+        });
     }
 
     for annotation in &doc.annotations {
@@ -623,7 +720,7 @@ fn classify(block: &RichBlock) -> Boundary {
             ..
         } => Boundary::Heading {
             level: *level,
-            text: text.trim().to_string(),
+            text: block.title_text().trim().to_string(),
         },
         RichBlock::Paragraph {
             kind: ParagraphKind::Epigraph,
@@ -995,6 +1092,19 @@ fn runs_html(runs: &[Run]) -> String {
             html.push_str("\"/>");
             continue;
         }
+        if let Some(label) = &run.footnote {
+            // A node, not characters: the Djot escaper neutralises `[`, `^` and
+            // `]`, so a literal `[^1]` written here would arrive as prose. The
+            // attribute is `text-document`'s contract for "this element is a
+            // footnote reference"; `<sup>` is merely what renders sensibly if
+            // the HTML is ever looked at directly.
+            html.push_str("<sup ");
+            html.push_str(skrib_format::HTML_FOOTNOTE_ATTR);
+            html.push_str("=\"");
+            push_attr(&mut html, label);
+            html.push_str("\"></sup>");
+            continue;
+        }
         if run.text.is_empty() {
             continue;
         }
@@ -1028,11 +1138,17 @@ fn coalesce(runs: &[Run]) -> Vec<Run> {
     let mut out: Vec<Run> = Vec::with_capacity(runs.len());
     for run in runs {
         match out.last_mut() {
+            // A footnote run is never merged, in either direction. It carries no
+            // text, so merging one into a neighbour of the same style would be a
+            // no-op on the string and would silently discard the reference — the
+            // one piece of the run that is not its text.
             Some(last)
                 if last.style == run.style
                     && last.link == run.link
                     && last.image.is_none()
-                    && run.image.is_none() =>
+                    && run.image.is_none()
+                    && last.footnote.is_none()
+                    && run.footnote.is_none() =>
             {
                 last.text.push_str(&run.text)
             }

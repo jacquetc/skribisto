@@ -17,6 +17,7 @@ fn assemble_doc(blocks: Vec<RichBlock>, annotations: Vec<RichAnnotation>) -> Sou
             blocks,
             annotations,
             row_marks: Vec::new(),
+            footnotes: Vec::new(),
         },
         &mut out,
     )

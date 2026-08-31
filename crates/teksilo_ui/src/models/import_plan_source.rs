@@ -68,6 +68,12 @@ pub struct PlanRowView {
     /// same anchors straight back to the backend. Counting them here and re-reading
     /// the files later would mean scanning every document twice.
     pub comments: Vec<document_ingest::plan::PlannedComment>,
+    /// The footnotes this row's prose cites, carried whole for exactly the reason
+    /// `comments` is: the review edits titles and types, never a row's text, and
+    /// re-reading the file at apply time to recover them would mean scanning every
+    /// document twice. The label each one carries is the scanner's placeholder, which
+    /// `apply_document_import` swaps for one the project has free.
+    pub footnotes: Vec<document_ingest::plan::PlannedFootnote>,
     /// Which `BinderItem` this row *was*, when the file is one this project exported — the
     /// round-trip mark it arrived with. Carried through the review the same way `comments` is,
     /// and for the same reason: the review edits titles and types, never which row a passage
@@ -211,6 +217,8 @@ impl ImportPlanSource {
             word_count: 0,
             scene_breaks: 0,
             comments: Vec::new(),
+            // Nor any note: a note cites a passage, and this row has no prose.
+            footnotes: Vec::new(),
             // A row the writer invented in the review step was in no file, so no mark named
             // it and it can only ever be created.
             source_uid_tag: None,
@@ -395,6 +403,7 @@ fn view_of(key: PlanRowKey, row: &PlannedRow) -> PlanRowView {
         word_count: row.word_count,
         scene_breaks: row.scene_breaks,
         comments: row.comments.clone(),
+        footnotes: row.footnotes.clone(),
         source_uid_tag: row.source_uid_tag.clone(),
         source_digest: row.source_digest.clone(),
         source_file_digest: row.source_file_digest.clone(),
@@ -506,6 +515,7 @@ mod tests {
             origin: "a.md".into(),
             included: true,
             comments: Vec::new(),
+            footnotes: Vec::new(),
             source_uid_tag: None,
             source_digest: None,
             diagnostics: Vec::new(),

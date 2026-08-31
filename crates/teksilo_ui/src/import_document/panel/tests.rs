@@ -24,6 +24,7 @@ fn planned(indent: i64, title: &str, kind: CreateType, breaks: usize) -> Planned
         source_file_digest: String::new(),
         included: true,
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_uid_tag: None,
         source_digest: None,
         diagnostics: Vec::new(),

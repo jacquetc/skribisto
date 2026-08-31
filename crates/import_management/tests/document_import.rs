@@ -37,7 +37,7 @@ use import_management::import_management_controller;
 use import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyDocumentImportResultDto, ApplyImportRow,
     ApplyImportRows, DocumentImportRow, DocumentImportRows, DropPosition, ImportComment,
-    ImportCommentKind, ImportDiagnosticRows, ImportOrphanReason, ImportRowKind,
+    ImportCommentKind, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportRowKind,
 };
 
 /// A read DTO as the update DTO of the same row, changing nothing.
@@ -253,6 +253,7 @@ impl Ctx {
                     source_uid_tag,
                     origin,
                     source_file_digest,
+                    footnotes,
                     ..
                 } if included => Some(ApplyImportRow::Create {
                     indent,
@@ -267,6 +268,7 @@ impl Ctx {
                     // which is a second `Content` and not part of `djot`.
                     epigraph,
                     comments,
+                    footnotes,
                     source_uid_tag,
                     // …and its provenance, narrowed from the path to the name here
                     // exactly as `PlanRowView::source_file_name` does it. A helper
@@ -527,6 +529,7 @@ fn a_row_retyped_to_note_is_created_out_of_the_export() {
                 scene_breaks: 0,
                 word_count: 0,
                 comments: Vec::new(),
+                footnotes: Vec::new(),
                 origin: String::new(),
                 included: true,
                 source_uid_tag: String::new(),
@@ -667,6 +670,7 @@ fn prose_on_a_type_that_cannot_hold_it_is_refused_not_swallowed() {
                 djot: "Prose a Book cannot hold.".into(),
                 epigraph: String::new(),
                 comments: Vec::new(),
+                footnotes: Vec::new(),
                 source_uid_tag: String::new(),
                 source_file_name: String::new(),
                 source_file_digest: String::new(),
@@ -713,6 +717,7 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
             djot: String::new(),
             epigraph: String::new(),
             comments: Vec::new(),
+            footnotes: Vec::new(),
             source_uid_tag: String::new(),
             source_file_name: String::new(),
             source_file_digest: String::new(),
@@ -817,6 +822,7 @@ fn a_batched_import_fires_at_most_one_event_per_row() {
                 djot: String::new(),
                 epigraph: String::new(),
                 comments: Vec::new(),
+                footnotes: Vec::new(),
                 source_uid_tag: String::new(),
                 source_file_name: String::new(),
                 source_file_digest: String::new(),
@@ -2274,6 +2280,7 @@ fn a_row_that_stores_no_prose(ctx: &mut Ctx) -> EntityId {
         djot: String::new(),
         epigraph: String::new(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_uid_tag: String::new(),
         source_file_name: String::new(),
         source_file_digest: String::new(),
@@ -2300,6 +2307,7 @@ fn update_row(
         // below is the one that exercises the second `Content`.
         epigraph: String::new(),
         comments,
+        footnotes: Vec::new(),
         source_file_name: String::new(),
         source_file_digest: String::new(),
     }
@@ -2622,6 +2630,7 @@ fn create_chapter_with_epigraph(title: &str, djot: &str, epigraph: &str) -> Appl
         djot: djot.into(),
         epigraph: epigraph.into(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_uid_tag: String::new(),
         source_file_name: String::new(),
         source_file_digest: String::new(),
@@ -2694,6 +2703,7 @@ fn an_epigraph_retyped_onto_a_row_that_cannot_hold_one_is_folded_into_its_prose(
         djot: "The city held its breath.".into(),
         epigraph: "> Every winter asks twice.".into(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_uid_tag: String::new(),
         source_file_name: String::new(),
         source_file_digest: String::new(),
@@ -2730,6 +2740,7 @@ fn an_update_writes_the_editors_epigraph_when_it_takes_their_wording() {
         djot: "The editor's better wording.".into(),
         epigraph: "> As the editor corrected it.".into(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_file_name: String::new(),
         source_file_digest: String::new(),
     }]);
@@ -2766,6 +2777,7 @@ fn a_comments_only_update_leaves_the_epigraph_alone() {
         djot: "The editor's better wording.".into(),
         epigraph: "> As the editor corrected it.".into(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_file_name: String::new(),
         source_file_digest: String::new(),
     }]);
@@ -2821,6 +2833,7 @@ fn an_update_can_give_a_row_its_first_epigraph() {
         djot: "The editor's better wording.".into(),
         epigraph: "> Newly added by the editor.".into(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_file_name: String::new(),
         source_file_digest: String::new(),
     }]);
@@ -2891,6 +2904,7 @@ fn create_from(title: &str, djot: &str, file: &str, digest: &str) -> ApplyImport
         djot: djot.into(),
         epigraph: String::new(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_uid_tag: String::new(),
         source_file_name: file.into(),
         source_file_digest: digest.into(),
@@ -3027,6 +3041,7 @@ fn a_returning_file_that_only_brought_remarks_reports_no_characters() {
             djot: "The editor's rather different wording.".into(),
             epigraph: String::new(),
             comments: Vec::new(),
+            footnotes: Vec::new(),
             source_file_name: "chapter-1-editor.docx".into(),
             source_file_digest: "eee555".into(),
         }],
@@ -3073,6 +3088,7 @@ fn a_returning_file_taken_with_its_wording_reports_the_characters_it_wrote() {
             djot: editors_wording.into(),
             epigraph: String::new(),
             comments: Vec::new(),
+            footnotes: Vec::new(),
             source_file_name: "chapter-1-editor.docx".into(),
             source_file_digest: "eee555".into(),
         }],
@@ -3087,4 +3103,346 @@ fn a_returning_file_taken_with_its_wording_reports_the_characters_it_wrote() {
         editors_wording.chars().count() as u64
     );
     assert_eq!(origins.rows[0].item_uid, item.uid.to_string());
+}
+
+// ── Footnotes ────────────────────────────────────────────────────────────────
+//
+// A footnote arrives as two halves that have to stay in step: a `[^placeholder]` in
+// the row's prose and the note's own text beside it. The scanner mints that
+// placeholder because a source format's own numbering is unique only within one
+// file (`document_ingest::block::SourceFootnote::label`), so this half of the
+// feature is where both are swapped for a label the project has free — the prose
+// rewritten and the `Footnote` row created from one place, or they disagree.
+
+/// Every footnote the project holds, as (label, body, content).
+fn footnotes_of(ctx: &Ctx) -> Vec<(String, String, Option<EntityId>)> {
+    work_controller::get_relationship(
+        &ctx.db,
+        &ctx.work_id,
+        &common::direct_access::work::WorkRelationshipField::Footnotes,
+    )
+    .expect("footnotes")
+    .into_iter()
+    .map(|id| {
+        let f = direct_access::footnote::footnote_controller::get(&ctx.db, &id)
+            .expect("footnote")
+            .expect("footnote row");
+        (f.label, f.body, f.content)
+    })
+    .collect()
+}
+
+fn create_row_with_footnotes(
+    title: &str,
+    djot: &str,
+    footnotes: Vec<(&str, &str)>,
+) -> ApplyImportRow {
+    ApplyImportRow::Create {
+        indent: 0,
+        kind: ImportRowKind::Scene,
+        title: title.into(),
+        djot: djot.into(),
+        epigraph: String::new(),
+        comments: Vec::new(),
+        footnotes: footnotes
+            .into_iter()
+            .map(|(label, body)| ImportFootnote::Found {
+                label: label.into(),
+                body: body.into(),
+            })
+            .collect(),
+        source_uid_tag: String::new(),
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
+    }
+}
+
+/// A created row's note becomes a real `Footnote`, and its prose cites it by the
+/// label that note actually carries.
+#[test]
+fn an_imported_footnote_is_created_and_its_reference_rewritten() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_row_with_footnotes(
+        "The Crossing",
+        "The ferry was late.[^srcfn-1]",
+        vec![("srcfn-1", "It always is, in November.")],
+    )]);
+
+    let notes = footnotes_of(&ctx);
+    assert_eq!(notes.len(), 1, "one note in, one note out");
+    let (label, body, content) = &notes[0];
+    assert_eq!(body, "It always is, in November.");
+    assert!(
+        !label.starts_with("srcfn-"),
+        "the scanner's placeholder must not survive into the project; got {label:?}"
+    );
+
+    let item = ctx.item_named("The Crossing");
+    let prose = ctx.prose_of(item).expect("the row stores prose");
+    assert_eq!(
+        prose,
+        format!("The ferry was late.[^{label}]"),
+        "the prose must cite the note by the label the note carries"
+    );
+    assert_eq!(
+        *content,
+        Some(
+            binder_item_controller::get_relationship(
+                &ctx.db,
+                &item,
+                &BinderItemRelationshipField::Contents,
+            )
+            .expect("contents")[0]
+        ),
+        "and the note must annotate that row's prose, not hang off nothing"
+    );
+}
+
+/// A label the project already uses is not handed out twice.
+///
+/// The two rows arrive in one import, so the store cannot answer the question in
+/// between: the minter has to advance in memory or both notes come back as `fn1`,
+/// and every `[^fn1]` in the book would then be ambiguous.
+#[test]
+fn two_notes_in_one_import_get_two_different_labels() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![
+        create_row_with_footnotes("First", "Alpha.[^srcfn-1]", vec![("srcfn-1", "One.")]),
+        create_row_with_footnotes("Second", "Beta.[^srcfn-1]", vec![("srcfn-1", "Two.")]),
+    ]);
+
+    let mut labels: Vec<String> = footnotes_of(&ctx).into_iter().map(|(l, _, _)| l).collect();
+    labels.sort();
+    labels.dedup();
+    assert_eq!(labels.len(), 2, "two notes, two labels");
+
+    let first = ctx.prose_of(ctx.item_named("First")).expect("prose");
+    let second = ctx.prose_of(ctx.item_named("Second")).expect("prose");
+    assert_ne!(
+        first, second,
+        "and each row cites its own — got {first:?} twice"
+    );
+}
+
+/// A second import starts above the labels the first one used.
+///
+/// Reading the project's existing notes is what makes this work; without it the
+/// second import would mint `fn1` again over the first import's `fn1`.
+#[test]
+fn a_later_import_does_not_reuse_an_existing_label() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_row_with_footnotes(
+        "First",
+        "Alpha.[^srcfn-1]",
+        vec![("srcfn-1", "One.")],
+    )]);
+    ctx.apply_rows(vec![create_row_with_footnotes(
+        "Second",
+        "Beta.[^srcfn-1]",
+        vec![("srcfn-1", "Two.")],
+    )]);
+
+    let mut labels: Vec<String> = footnotes_of(&ctx).into_iter().map(|(l, _, _)| l).collect();
+    labels.sort();
+    labels.dedup();
+    assert_eq!(labels.len(), 2, "two imports, two labels; got {labels:?}");
+}
+
+/// Undoing an import takes its notes back out of the project.
+///
+/// `Footnote` hangs off `Work` and the undo snapshot is `Binder`-scoped, so
+/// restoring the binder deletes the `Content` each note annotates and leaves the
+/// note itself in `Work.footnotes` pointing at nothing — the same shape of bug
+/// `set_comments_attached` exists to close for comments.
+#[test]
+fn undoing_an_import_takes_its_footnotes_with_it() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_row_with_footnotes(
+        "The Crossing",
+        "The ferry was late.[^srcfn-1]",
+        vec![("srcfn-1", "It always is.")],
+    )]);
+    assert_eq!(footnotes_of(&ctx).len(), 1);
+
+    ctx.undo.undo(None).expect("undo");
+    assert!(
+        footnotes_of(&ctx).is_empty(),
+        "an undone import leaves no note behind; got {:?}",
+        footnotes_of(&ctx)
+    );
+
+    ctx.undo.redo(None).expect("redo");
+    assert_eq!(footnotes_of(&ctx).len(), 1, "and redo puts it back");
+}
+
+/// A note that came home is not a new note.
+///
+/// The returning-file case, and the one that doubles quietly. A `.docx` this app
+/// exported carries its notes as real OOXML footnotes: the body travels, the label
+/// does not, because OOXML has nowhere to put one. So the same note comes back
+/// wearing a fresh `srcfn-…` placeholder, and minting a second `Footnote` for it
+/// would orphan the original and double the count on every round trip.
+#[test]
+fn a_note_coming_home_reuses_the_one_already_there() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_row_with_footnotes(
+        "The Crossing",
+        "The ferry was late.[^srcfn-1]",
+        vec![("srcfn-1", "It always is.")],
+    )]);
+    let notes = footnotes_of(&ctx);
+    assert_eq!(notes.len(), 1);
+    let original_label = notes[0].0.clone();
+
+    let item = ctx.item_named("The Crossing");
+    let uid = binder_item_controller::get(&ctx.db, &item)
+        .expect("item")
+        .expect("item row")
+        .uid;
+    let tag = skribisto_model::round_trip::uid_tag(&uid);
+
+    // The same chapter back from an editor: one word changed, the note untouched
+    // and wearing a placeholder the scanner minted afresh.
+    ctx.apply_rows(vec![ApplyImportRow::Update {
+        target_uid_tag: tag,
+        replace_prose: true,
+        djot: "The ferry was very late.[^srcfn-9]".into(),
+        epigraph: String::new(),
+        comments: Vec::new(),
+        footnotes: vec![ImportFootnote::Found {
+            label: "srcfn-9".into(),
+            body: "It always is.".into(),
+        }],
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
+    }]);
+
+    let notes = footnotes_of(&ctx);
+    assert_eq!(
+        notes.len(),
+        1,
+        "the note came home, it did not arrive; got {notes:?}"
+    );
+    assert_eq!(notes[0].0, original_label, "and it kept the label it had");
+    assert_eq!(
+        ctx.prose_of(item).expect("prose"),
+        format!("The ferry was very late.[^{original_label}]"),
+        "the editor's wording, still citing the note that was always there"
+    );
+}
+
+/// A comments-only return leaves the manuscript alone, notes included.
+///
+/// A footnote is part of the text it hangs off. A writer who asked for the remarks
+/// and not the wording has asked for the notes to be left as they are too — and the
+/// stored prose, being untouched, carries no reference for a new one anyway.
+#[test]
+fn a_comments_only_return_creates_no_footnote() {
+    let mut ctx = Ctx::new();
+    let (item_id, tag) = a_project_with_one_row(&mut ctx);
+
+    ctx.apply_rows(vec![ApplyImportRow::Update {
+        target_uid_tag: tag,
+        replace_prose: false,
+        djot: "Rewritten by the editor.[^srcfn-1]".into(),
+        epigraph: String::new(),
+        comments: Vec::new(),
+        footnotes: vec![ImportFootnote::Found {
+            label: "srcfn-1".into(),
+            body: "An editor's aside.".into(),
+        }],
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
+    }]);
+
+    assert!(
+        footnotes_of(&ctx).is_empty(),
+        "no prose was written, so nothing cites a note; got {:?}",
+        footnotes_of(&ctx)
+    );
+    assert_eq!(
+        ctx.prose_of(item_id).expect("prose"),
+        "The original wording.",
+        "and the manuscript is untouched"
+    );
+}
+
+/// A row that stores no prose cannot hold a note, and says so rather than
+/// creating one nothing will ever print a marker for.
+#[test]
+fn a_footnote_on_a_row_that_stores_no_prose_is_refused() {
+    let mut ctx = Ctx::new();
+    let err = ctx
+        .try_apply_rows(vec![ApplyImportRow::Create {
+            indent: 0,
+            kind: ImportRowKind::Book,
+            title: "A Book".into(),
+            djot: String::new(),
+            epigraph: String::new(),
+            comments: Vec::new(),
+            footnotes: vec![ImportFootnote::Found {
+                label: "srcfn-1".into(),
+                body: "Nowhere to live.".into(),
+            }],
+            source_uid_tag: String::new(),
+            source_file_name: String::new(),
+            source_file_digest: String::new(),
+        }])
+        .expect_err("a note with no prose to hang off must be refused");
+    assert!(
+        err.to_string().contains("footnote"),
+        "and the message must say what was refused; got {err}"
+    );
+}
+
+/// The whole chain, on a real `.docx`: reference and body out of the file, through
+/// the analyse plan, into a `Footnote` the project can print.
+///
+/// The unit tests either side of this one each prove their own half against a
+/// hand-built fixture. Only this one proves they agree — that the placeholder the
+/// scanner minted is the placeholder the planner paired on and the placeholder the
+/// apply step rewrote, through the DTO that carries all three. Every previous
+/// mismatch in this feature's family was exactly that: two halves each correct
+/// about a different thing.
+#[test]
+fn a_real_docx_footnote_travels_all_the_way_into_the_project() {
+    let mut ctx = Ctx::new();
+    let bytes = build_docx(
+        "# Chapter One\n\nThe ferry was late.[^1]\n\n[^1]: It always is, in November.\n",
+        |_| DocumentComments::new(),
+    );
+    let path = ctx.write_bytes("with-a-note.docx", &bytes);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+
+    // The plan already carries it, or nothing downstream could.
+    let planned: usize = rows
+        .iter()
+        .map(|r| match r {
+            DocumentImportRow::Found { footnotes, .. } => footnotes.len(),
+            DocumentImportRow::Empty => 0,
+        })
+        .sum();
+    assert_eq!(planned, 1, "the plan must carry the note; got {rows:#?}");
+
+    ctx.apply(rows, 0);
+
+    let notes = footnotes_of(&ctx);
+    assert_eq!(notes.len(), 1, "one note in the file, one in the project");
+    let (label, body, content) = &notes[0];
+    assert_eq!(body, "It always is, in November.");
+    assert!(
+        !label.starts_with("srcfn-"),
+        "the placeholder must not survive; got {label:?}"
+    );
+
+    let item = ctx.item_named("Chapter One");
+    let prose = ctx.prose_of(item).expect("the chapter stores prose");
+    assert!(
+        prose.contains(&format!("[^{label}]")),
+        "the prose must cite the note that was created; prose {prose:?}, label {label:?}"
+    );
+    assert!(
+        content.is_some(),
+        "and the note must annotate that prose rather than hang off nothing"
+    );
 }

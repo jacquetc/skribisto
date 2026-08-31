@@ -16,13 +16,11 @@
 //! so a regression in either side breaks this test immediately rather than waiting for someone to
 //! regenerate a fixture.
 //!
-//! Scope, matching M-T2a's own scope: footnotes/images are not exercised, because
-//! `document_ingest`'s own `Walker::inline` deliberately does not carry a footnote's citation or
-//! body into any `SourceBlock` at all (`(Some(NS_TEXT), "note") => { self.footnotes += 1; }` — a
-//! diagnostic count, nothing else) — that is a known, pre-existing, and correctly documented
-//! limitation of the *reader*, not something this writer could satisfy no matter what it emitted.
-//! What the first half of this file proves is the part meant to round-trip: headings, prose (with
-//! inline bold/italic/hyperlink), nested lists, and a blockquote's prose.
+//! Scope: images are not exercised. Footnotes were not either, for as long as the reader
+//! counted a `<text:note>` and threw it away; they are now, at the end of this file, on the
+//! same generate-and-read-back terms as everything else. What the first half proves is the
+//! rest of the round trip: headings, prose (with inline bold/italic/hyperlink), nested lists,
+//! and a blockquote's prose.
 //!
 //! ## M-T2b: comments now round-trip too
 //!
@@ -53,7 +51,7 @@ use text_document::{
 
 /// Djot chosen to exercise headings, inline formatting, a hyperlink, a nested list, and a
 /// blockquote — everything `document_ingest::sources::odt`'s reader actually turns into
-/// `SourceBlock`s. Scene breaks, footnotes and images are deliberately left out — see this
+/// `SourceBlock`s. Scene breaks and images are deliberately left out — see this
 /// module's doc comment for why they would not prove anything about this pair either way.
 const SOURCE_DJOT: &str = "\
 # Chapter One
@@ -516,5 +514,120 @@ fn a_comment_with_no_uid_reads_back_as_none() {
     assert_eq!(
         source.annotations[0].uid, None,
         "an empty skrb:uid must not parse as a real uid"
+    );
+}
+
+/// An `.odt` carrying a footnote brings back the reference *and* the note's text.
+///
+/// The ODF half of `docx_writer_roundtrip.rs`'s own footnote test, and easier than
+/// it: `<text:note>` puts the body inline, right where the reference sits, so there
+/// is no second part to read and no offset to reconstruct. The reference becomes a
+/// run at the point the walk has already reached.
+///
+/// It is still worth generating and reading back rather than asserting the scanner
+/// against a fixture, for the reason the whole file exists: the two sides have to
+/// agree, and only a round trip can say whether they do.
+#[test]
+fn an_odt_footnote_brings_back_the_reference_and_its_text() {
+    let doc = text_document::TextDocument::new();
+    doc.set_djot_sync("The ferry was late.[^1]\n\n[^1]: It always is, in November.\n")
+        .expect("set_djot_sync");
+
+    let bytes = export_odt_bytes(&doc, OdtExportOptions::default());
+    let scanned = scan(&bytes);
+
+    assert_eq!(
+        scanned.footnotes.len(),
+        1,
+        "one note in, one note out; got {:?}",
+        scanned.footnotes
+    );
+    let note = &scanned.footnotes[0];
+    assert!(
+        note.body.contains("It always is, in November."),
+        "the note's own text must survive; got {:?}",
+        note.body
+    );
+
+    let prose: String = scanned
+        .blocks
+        .iter()
+        .filter_map(|b| match b {
+            SourceBlock::Prose { djot, .. } => Some(djot.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        prose.contains(&format!("[^{}]", note.label)),
+        "the prose must cite the note by the label the note carries; got {prose:?}"
+    );
+
+    let keys: Vec<&str> = scanned.diagnostics.iter().map(|d| d.key()).collect();
+    assert!(
+        !keys.contains(&"footnote-not-carried"),
+        "nothing was lost, so nothing should be reported; got {keys:?}"
+    );
+}
+
+/// A comment sitting *after* a footnote in the same paragraph still quotes the right
+/// words.
+///
+/// The ODF twin of `docx_writer_roundtrip.rs`'s own version of this test, and the
+/// failure is identical: a footnote reference is one object-replacement character in
+/// the plain text a comment's offset is measured against, so a walk that contributes
+/// nothing for it anchors every later comment a character early. Nothing errors when
+/// it is wrong — the quote either lands on the neighbouring word or fails to match
+/// and degrades to a whole-document comment — so the quote itself is what has to be
+/// asserted.
+#[test]
+fn an_odt_comment_after_a_footnote_still_anchors_on_its_own_words() {
+    let doc = text_document::TextDocument::new();
+    doc.set_djot_sync(
+        "The ferry was late.[^1] The harbour needs review before dawn.\n\n[^1]: It always is.\n",
+    )
+    .expect("set_djot_sync");
+
+    let range = find_range(&doc, "needs review");
+    let mut comments = DocumentComments::new();
+    comments.insert(DocumentComment {
+        start: range.0,
+        end: range.1,
+        uid: uuid::Uuid::new_v4().to_string(),
+        author: "Alice Editor".to_string(),
+        author_initials: String::new(),
+        date: "2026-01-01T00:00:00Z".to_string(),
+        resolved: false,
+        body: "Which harbour?".to_string(),
+        replies: Vec::new(),
+    });
+
+    let bytes = export_odt_bytes(
+        &doc,
+        OdtExportOptions {
+            comments,
+            ..Default::default()
+        },
+    );
+    let source = scan(&bytes);
+
+    assert_eq!(source.footnotes.len(), 1, "the note must still come over");
+    assert_eq!(
+        source.annotations.len(),
+        1,
+        "and so must the comment; diagnostics: {:?}",
+        source.diagnostics
+    );
+    let annotation = &source.annotations[0];
+    assert_eq!(
+        annotation.kind,
+        AnnotationKind::Range,
+        "a comment whose quote no longer matches degrades to a whole-document one — \
+         which is exactly the failure this test exists to catch (diagnostics: {:?})",
+        source.diagnostics
+    );
+    assert_eq!(
+        annotation.anchor.exact, "needs review",
+        "the quote must be the editor's own words, not the ones a character to either side"
     );
 }

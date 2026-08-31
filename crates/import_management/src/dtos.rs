@@ -93,6 +93,7 @@ pub struct DocumentImportPlanDto {
     pub orphan_reason: ImportOrphanReason,
     pub comment: ImportComment,
     pub reply: ImportReply,
+    pub footnote: ImportFootnote,
     pub diagnostic: ImportDiagnosticRow,
     pub diagnostics: ImportDiagnosticRows,
 }
@@ -112,6 +113,7 @@ pub enum DocumentImportRow {
         scene_breaks: i64,
         word_count: i64,
         comments: Vec<ImportComment>,
+        footnotes: Vec<ImportFootnote>,
         origin: String,
         included: bool,
         source_uid_tag: String,
@@ -200,6 +202,16 @@ pub enum ImportReply {
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum ImportFootnote {
+    #[default]
+    Empty,
+    Found {
+        label: String,
+        body: String,
+    },
+}
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
 pub enum ImportDiagnosticRow {
     #[default]
     Empty,
@@ -241,6 +253,7 @@ pub enum ApplyImportRow {
         djot: String,
         epigraph: String,
         comments: Vec<ImportComment>,
+        footnotes: Vec<ImportFootnote>,
         source_uid_tag: String,
         source_file_name: String,
         source_file_digest: String,
@@ -251,6 +264,7 @@ pub enum ApplyImportRow {
         djot: String,
         epigraph: String,
         comments: Vec<ImportComment>,
+        footnotes: Vec<ImportFootnote>,
         source_file_name: String,
         source_file_digest: String,
     },

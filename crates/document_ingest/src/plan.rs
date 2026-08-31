@@ -112,6 +112,23 @@ impl PlannedComment {
     }
 }
 
+/// One footnote arriving with a row's prose.
+///
+/// Paired to its row by the `[^label]` in that row's Djot, never by position — see
+/// [`crate::block::SourceFootnote`] for why the label is a placeholder rather than
+/// anything the writer chose. A note cited twice in one row appears once here; a
+/// note cited from two rows appears on both, because
+/// `apply_document_import` mints a `Footnote` per row and a `Footnote` belongs to
+/// exactly one `Content`.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PlannedFootnote {
+    /// The placeholder the row's Djot cites. Rewritten at apply time to a label the
+    /// project has free.
+    pub label: String,
+    /// The note's own text, Djot.
+    pub body: String,
+}
+
 /// One row the import would create.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlannedRow {
@@ -159,6 +176,9 @@ pub struct PlannedRow {
     /// Editors' comments arriving with this row's prose, already anchored against
     /// it. Empty for a format that carries none.
     pub comments: Vec<PlannedComment>,
+    /// Footnotes this row's prose cites, in first-citation order. Empty for a
+    /// format that carries none and for a row that cites none.
+    pub footnotes: Vec<PlannedFootnote>,
     /// The `BinderItem` this row *was*, when the file being imported is one this project
     /// exported — recovered from a round-trip mark. `None` for a first arrival, for a file
     /// from anywhere else, and for a row the writer added inside the file.
@@ -246,9 +266,67 @@ pub fn build_plan(
     }
 
     anchor_comments(&mut plan);
+    attach_footnotes(&mut plan, docs);
     flag_duplicate_titles(&mut plan);
     flag_illegal_combinations(&mut plan, &chapter_mode);
     plan
+}
+
+/// Give each row the notes its own prose cites.
+///
+/// Pairing is by the `[^label]` the scanner wrote into the prose, matched with
+/// `skribisto_model::skribisto_model::footnote_numbering::references_in` — the same reader the editor
+/// and the exporter use, so a placeholder shown inside a code span or after a
+/// backslash escape is *not* a citation here either, exactly as it would not be once
+/// the row is stored.
+///
+/// Scoped per document, and that is what makes the placeholder safe: it only has to
+/// be unique within one file (see [`crate::block::SourceFootnote::label`]), so two
+/// files importing together may both call their first note `srcfn-1` without either
+/// claiming the other's body.
+///
+/// A note nothing cites is **reported, not attached**. It happens for real: a
+/// footnote on a chapter *title* has nowhere to live, because a title is a plain
+/// string on the `BinderItem` and a `Footnote` annotates a `Content`. Attaching it to
+/// the row anyway would create a note the finished book never prints and the writer
+/// never sees a marker for.
+fn attach_footnotes(plan: &mut ImportPlan, docs: &[SourceDocument]) {
+    for doc in docs {
+        if doc.footnotes.is_empty() {
+            continue;
+        }
+        let labels: Vec<String> = doc.footnotes.iter().map(|f| f.label.clone()).collect();
+        let mut cited: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for row in plan.rows.iter_mut().filter(|r| r.origin == doc.origin) {
+            // Both texts, because both become a `Content` this row owns: a note
+            // cited from an epigraph is as real as one cited from the prose.
+            let mut here: Vec<String> = Vec::new();
+            for text in [&row.djot, &row.epigraph] {
+                for (_, label) in skribisto_model::footnote_numbering::references_in(text, &labels)
+                {
+                    if !here.contains(&label) {
+                        here.push(label);
+                    }
+                }
+            }
+            for label in here {
+                cited.insert(label.clone());
+                if let Some(note) = doc.footnotes.iter().find(|f| f.label == label) {
+                    row.footnotes.push(PlannedFootnote {
+                        label,
+                        body: note.body.clone(),
+                    });
+                }
+            }
+        }
+        let uncited = doc.footnotes.len() - cited.len();
+        if uncited > 0 {
+            plan.diagnostics.push(ImportDiagnostic::FootnoteNotCarried {
+                path: doc.origin.clone(),
+                count: uncited,
+            });
+        }
+    }
 }
 
 /// Prove every imported comment against the prose that will actually be stored.
@@ -470,6 +548,7 @@ fn append_document(
                     source_file_digest: doc.source_file_digest.clone(),
                     included: true,
                     comments: Vec::new(),
+                    footnotes: Vec::new(),
                     // Filled by the mark loop below, once this row is the current one.
                     source_uid_tag: None,
                     source_digest: None,
@@ -772,6 +851,7 @@ fn leading_row(doc: &SourceDocument, rules: &LevelRules, base_indent: i64) -> Pl
         source_file_digest: doc.source_file_digest.clone(),
         included: true,
         comments: Vec::new(),
+        footnotes: Vec::new(),
         source_uid_tag: None,
         source_digest: None,
         diagnostics: Vec::new(),
