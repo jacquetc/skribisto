@@ -6499,7 +6499,7 @@ dependencies = [
 
 [[package]]
 name = "text-document"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -6514,7 +6514,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-common"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -6537,7 +6537,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-direct-access"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6550,7 +6550,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-editing"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6563,7 +6563,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-formatting"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6576,7 +6576,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-frontend"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6594,7 +6594,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-inspection"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6607,7 +6607,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-io"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6631,7 +6631,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-macros"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -6641,7 +6641,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-search"
-version = "1.11.1"
+version = "1.12.0"
 dependencies = [
  "anyhow",
  "caseless",
