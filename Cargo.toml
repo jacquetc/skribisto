@@ -89,7 +89,7 @@ skribisto_compiler = { package = "skribisto-compiler", version = "3.0.0-rc2", pa
 skribisto_fonts = { package = "skribisto-fonts", version = "3.0.0-rc2", path = "crates/skribisto-fonts" }
 
 # Sibling repos (path deps live next to this workspace; see README "Build it, test it")
-text-document = { version = "1.11.1" }
+text-document = { path = "../text-document/crates/public_api", version = "1.11.1" }
 
 [profile.dev]
 # Debuginfo, not the linker, was the dev loop's biggest single cost. Measured on
