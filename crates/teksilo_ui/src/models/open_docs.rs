@@ -177,8 +177,40 @@ impl OpenDoc {
     /// drops its `OpenDoc`s *while* holding the map's `RefCell` borrow, so a `Drop`
     /// that released row refs would re-enter `borrow_mut()` and panic. It lives on
     /// `ContentTab` instead, which nothing in the store points back at.
+    /// Build a document set with a backend of its own.
+    ///
+    /// For a caller that owns exactly one `OpenDoc` and has no project to share
+    /// a backend with. Every real tab and every stream row goes through
+    /// [`build_in`](Self::build_in) instead, so the project pays one event pump
+    /// rather than one per document. The backend is kept alive by the documents
+    /// built in it.
     pub fn build(
         ctx: &Rc<AppContext>,
+        item_id: u64,
+        role: &BinderItemRole,
+        sub_role: &BinderItemSubRole,
+        contents: &[ContentDto],
+        edited: Signal<u64>,
+        media_dir: &std::path::Path,
+    ) -> Self {
+        Self::build_in(
+            ctx,
+            &teksilo::text_document::DocumentBackend::new(),
+            item_id,
+            role,
+            sub_role,
+            contents,
+            edited,
+            media_dir,
+        )
+    }
+
+    /// Build a document set inside a shared backend, which is what every
+    /// document of one open project uses.
+    #[allow(clippy::too_many_arguments)]
+    pub fn build_in(
+        ctx: &Rc<AppContext>,
+        backend: &teksilo::text_document::DocumentBackend,
         item_id: u64,
         role: &BinderItemRole,
         sub_role: &BinderItemSubRole,
@@ -223,18 +255,18 @@ impl OpenDoc {
             let existing = contents.iter().find(|c| &c.role == cr);
             match cr {
                 ContentRole::SynopsisText => {
-                    doc.synopsis = Some(prose_field(ctx, item_id, cr.clone(), existing))
+                    doc.synopsis = Some(prose_field(ctx, backend, item_id, cr.clone(), existing))
                 }
                 ContentRole::SceneText | ContentRole::NoteText => {
-                    doc.main = Some(prose_field(ctx, item_id, cr.clone(), existing))
+                    doc.main = Some(prose_field(ctx, backend, item_id, cr.clone(), existing))
                 }
                 ContentRole::EpigraphText => {
-                    doc.epigraph = Some(prose_field(ctx, item_id, cr.clone(), existing))
+                    doc.epigraph = Some(prose_field(ctx, backend, item_id, cr.clone(), existing))
                 }
                 // A paratext's prose is the page's whole content, so it takes the main
                 // slot — the same surface a scene writes into, with the same sessions.
                 ContentRole::ParatextText => {
-                    doc.main = Some(prose_field(ctx, item_id, cr.clone(), existing))
+                    doc.main = Some(prose_field(ctx, backend, item_id, cr.clone(), existing))
                 }
                 // The two *names*. They are edited as the item's title/subtitle (what the
                 // outline tree and the tab show) and mirrored into these content rows on
@@ -789,6 +821,15 @@ struct Inner {
     /// The open project's punctuation rules, pushed down to every session on
     /// change and to each newly-opened document. `None` until resolved.
     punctuation: RefCell<Option<SmartPunctuationFlags>>,
+    /// The document backend every document of this project is built in.
+    ///
+    /// One event hub and one thread for the whole project, instead of one of
+    /// each per document. A container stream opens a document per prose field of
+    /// every row, so on a book-length manuscript that was more than a hundred
+    /// OS threads to display one book. Tier 2 by construction: the store is
+    /// per open `Work`, so its backend is too, and every document in it dies
+    /// with the project.
+    doc_backend: teksilo::text_document::DocumentBackend,
     /// The memoised [`language_map`](OpenDocsStore::with_language_map), with the binder
     /// [fingerprint](LangFingerprint) it was built from.
     ///
@@ -861,6 +902,7 @@ impl OpenDocsStore {
         Self {
             inner: Rc::new(Inner {
                 open: RefCell::new(HashMap::new()),
+                doc_backend: teksilo::text_document::DocumentBackend::new(),
                 remembered: RefCell::new(std::collections::VecDeque::new()),
                 remember_history: Cell::new(true),
                 item_probe: SingleBinderItem::new(app_ctx.clone()),
@@ -1393,8 +1435,9 @@ impl OpenDocsStore {
         // would only offer the same wrong document again next time.
 
         let contents = self.load_contents(item_id, &item.role, &item.sub_role);
-        let doc = Rc::new(OpenDoc::build(
+        let doc = Rc::new(OpenDoc::build_in(
             &self.inner.app_ctx,
+            &self.inner.doc_backend,
             item_id,
             &item.role,
             &item.sub_role,
@@ -1450,8 +1493,9 @@ impl OpenDocsStore {
         self.inner.item_probe.set_id(Some(item_id));
         let item = self.inner.item_probe.dto()?;
         let contents = self.load_contents(item_id, &item.role, &item.sub_role);
-        let fresh = Rc::new(OpenDoc::build(
+        let fresh = Rc::new(OpenDoc::build_in(
             &self.inner.app_ctx,
+            &self.inner.doc_backend,
             item_id,
             &item.role,
             &item.sub_role,

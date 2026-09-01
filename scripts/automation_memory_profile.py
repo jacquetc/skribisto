@@ -329,6 +329,22 @@ def wait_for(pred, what, timeout=120.0):
 
 
 # ── measurement ───────────────────────────────────────────────────────────────
+def proc_threads(pid):
+    """Live thread count, from the kernel.
+
+    A document used to own an OS thread, so a manuscript stream opened one per
+    scene. This is the number that says whether it still does.
+    """
+    try:
+        with open(f"/proc/{pid}/status") as f:
+            for line in f:
+                if line.startswith("Threads:"):
+                    return int(line.split()[1])
+    except (OSError, IndexError, ValueError):
+        pass
+    return 0
+
+
 def proc_rss(pid):
     """`(rss, anon)` in bytes, straight from the kernel.
 
@@ -397,6 +413,7 @@ def mark(label, trim=False, sites=False):
     rss, anon = proc_rss(app.pid)
     rec = {
         "step": label,
+        "threads": proc_threads(app.pid),
         "rss": rss,
         "anon": anon,
         "live": int(row.get("live") or 0),
@@ -412,7 +429,8 @@ def mark(label, trim=False, sites=False):
     steps.append(rec)
     mb = lambda v: v / (1 << 20)
     print(f"  [{label:28}] rss={mb(rec['rss']):7.1f}  anon={mb(rec['anon']):7.1f}  "
-          f"live={mb(rec['live']):7.1f}  overhead={mb(rec['overhead']):7.1f}  MB"
+          f"live={mb(rec['live']):7.1f}  overhead={mb(rec['overhead']):7.1f}  MB  "
+          f"threads={rec['threads']:4}"
           + ("   (after malloc_trim)" if trim else ""))
     return rec
 
