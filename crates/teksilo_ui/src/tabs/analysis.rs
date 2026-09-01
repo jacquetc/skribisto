@@ -463,86 +463,24 @@ fn prose(text: impl Into<LocalizedString>) -> impl Widget {
 /// still loading) and when the row has no generated name to offer: only structural rows
 /// are numbered, so a genuinely untitled leaf scene keeps whatever it had.
 ///
-/// Whatever it resolves to is then held to [`MAX_BAR_LABEL_CHARS`]. See [`elide`] for the
-/// bug that made that mandatory rather than tidy.
+/// Whatever it resolves to is handed over **whole**. A bar's category is also its hover
+/// tooltip and its accessibility label, so truncating here truncated the name everywhere,
+/// and two chapters whose titles differ only past the cut became two identical bars a
+/// screen reader announced identically. The axis is the only place a long name is a
+/// problem, and the chart solves it there: `teksilo-charts` caps the label band at a
+/// fraction of its own height and cuts each label to the band it granted, ending it in an
+/// ellipsis. No title can starve the plot to nothing, whatever this hands it.
 fn bar_label(
     names: Option<&crate::models::NameContext>,
     item_id: common::types::EntityId,
     title: &str,
 ) -> String {
     if !title.trim().is_empty() {
-        return elide(title);
+        return title.to_string();
     }
-    elide(
-        &names
-            .and_then(|n| n.item(item_id).and_then(|it| n.generated_name(it)))
-            .unwrap_or_else(|| title.to_string()),
-    )
-}
-
-/// The longest axis label Shape will draw, in characters, ellipsis included.
-///
-/// Derived from the band arithmetic in [`elide`], against the shorter of the two charts
-/// on this page ([`STRIP_HEIGHT`]), and rounded down.
-const MAX_BAR_LABEL_CHARS: usize = 28;
-
-/// Hold an axis label to [`MAX_BAR_LABEL_CHARS`], ending it in an ellipsis when it does
-/// not fit.
-///
-/// ## Why a cap, and not just "long labels look untidy"
-///
-/// A chart carves a band off its own height for the x-axis labels before it has a plot to
-/// draw in. Once the labels are too wide to sit upright in their slots (which 37 scenes in
-/// a 1,000-pixel plot guarantees for anything but a very short name) they tilt to 45°, and
-/// a tilted label's band is about `0.707 × the widest label`. That band is subtracted with
-/// no floor under the plot, so a wide enough label leaves a plot of **zero height** and the
-/// chart paints nothing at all: no bars, no grid, no axis, no median line. Not an error and
-/// not an empty state, but a blank rectangle under a caption that still reads
-/// "This book's median scene runs 1,921 words."
-///
-/// That is what the bundled "Le Tour du monde en quatre-vingts jours" showed, because
-/// Verne titles his chapters in whole sentences: "Dans lequel Phileas Fogg et Passepartout
-/// s'acceptent réciproquement, l'un comme maître, l'autre comme domestique" is 111
-/// characters, roughly 600 pixels at the axis' `Tiny` style, which is a 430-pixel band on a
-/// 360-pixel chart.
-///
-/// The arithmetic, on the shorter chart ([`STRIP_HEIGHT`] = 260) and leaving it a plot of
-/// at least 120 pixels: the band may reach `260 − 120 − 12 − 4 = 124` pixels, of which the
-/// tick and its gap take 8, so the labels themselves get 116. At 45° that is
-/// `116 / 0.707 − 13.2 ≈ 151` pixels of text, and `Tiny` is 11 pixels, whose mixed-case
-/// advance averages near half that, so about 27 characters. 28 is that number rounded to
-/// something a reader of this constant can hold.
-///
-/// It is a budget, not a guarantee: the real width depends on the typeface and on which
-/// characters are in the title, so a line of capitals still overruns it. The floor that
-/// makes a chart survive that belongs in the chart, and this cap does not replace it. It
-/// keeps ordinary manuscripts well clear of the edge, and keeps a 111-character axis label
-/// from being drawn at all, which was never readable in the first place.
-///
-/// ## What it costs
-///
-/// A bar's category string is also its accessibility label, so a truncated label is
-/// truncated for a screen reader too. 28 characters still names the scene (it is the same
-/// budget the outline gives a row), and the alternative on offer was a chart with nothing
-/// in it, which names nothing.
-fn elide(label: &str) -> String {
-    if label.chars().count() <= MAX_BAR_LABEL_CHARS {
-        return label.to_string();
-    }
-    // One character of the budget goes to the ellipsis itself.
-    let budget = MAX_BAR_LABEL_CHARS - 1;
-    let kept: String = label.chars().take(budget).collect();
-    // Prefer to end on a word, so the label reads as a phrase rather than as a fragment
-    // cut mid-syllable. Only when that still leaves most of the budget: a title whose
-    // first word is longer than the cap (a URL, a compound) would otherwise elide to
-    // nothing but an ellipsis.
-    let trimmed = kept.trim_end();
-    let on_word = trimmed
-        .rfind(char::is_whitespace)
-        .filter(|cut| *cut * 2 >= trimmed.len())
-        .map(|cut| &trimmed[..cut])
-        .unwrap_or(trimmed);
-    format!("{}…", on_word.trim_end())
+    names
+        .and_then(|n| n.item(item_id).and_then(|it| n.generated_name(it)))
+        .unwrap_or_else(|| title.to_string())
 }
 
 fn scenes_of(dto: &BookAnalysisResultDto) -> Vec<&SceneAnalysis> {
@@ -981,76 +919,36 @@ mod tests {
         );
     }
 
-    /// **A chapter titled in a whole sentence is held to the axis' budget.**
+    /// **A chapter titled in a whole sentence reaches the chart whole.**
     ///
-    /// The regression this exists for is not cosmetic. A label wide enough carves the
-    /// entire chart height away as its tilted band, the plot rect comes out at zero
-    /// height, and the chart paints nothing at all. That is what the bundled Verne example
-    /// did, under a caption that went on quoting the book's median scene length.
-    /// See [`super::elide`].
+    /// It used to be cut to a character budget here, because a label wide enough carved
+    /// the entire chart height away as its tilted band, the plot came out at zero height
+    /// and the chart painted nothing. That is what the bundled Verne example did, under a
+    /// caption that went on quoting the book's median scene length. The floor belongs in
+    /// the chart and now lives there (`teksilo-charts` caps the label band and cuts
+    /// each label to the band it granted), so cutting here only cost the hover tooltip and
+    /// the accessibility label their name.
     #[test]
-    fn a_sentence_long_chapter_title_is_elided_to_the_budget() {
+    fn a_sentence_long_chapter_title_reaches_the_chart_whole() {
         let verne = "Dans lequel Phileas Fogg et Passepartout s’acceptent réciproquement, \
                      l’un comme maître, l’autre comme domestique";
-        let label = super::bar_label(None, 7, verne);
-
-        assert!(
-            label.chars().count() <= super::MAX_BAR_LABEL_CHARS,
-            "an axis label past the budget starves the plot; got {} chars: {label:?}",
-            label.chars().count()
-        );
-        assert!(label.ends_with('…'), "an elided label says so: {label:?}");
-        assert!(
-            verne.starts_with(label.trim_end_matches('…').trim_end()),
-            "what survives is the head of the real title: {label:?}"
-        );
-        assert!(
-            !label.trim_end_matches('…').ends_with(' '),
-            "no space before the ellipsis: {label:?}"
-        );
-    }
-
-    /// A label at or under the budget is passed through untouched, including the
-    /// generated "Chapter 12" names, which are what most bars carry.
-    #[test]
-    fn a_short_label_is_left_exactly_as_it_is() {
-        for label in ["Prologue", "Chapter 12", "Acknowledgments", ""] {
-            assert_eq!(super::elide(label), label, "{label:?} needed no eliding");
-        }
-        let exact: String = "x".repeat(super::MAX_BAR_LABEL_CHARS);
         assert_eq!(
-            super::elide(&exact),
-            exact,
-            "the budget is inclusive: a label of exactly that length still fits"
+            super::bar_label(None, 7, verne),
+            verne,
+            "the datum carries the whole name; the axis is the chart's problem to solve"
         );
     }
 
-    /// A single word longer than the whole budget must not elide to a bare ellipsis.
+    /// Two chapters whose titles differ only past a cut must not become the same bar.
     ///
-    /// The word-boundary preference is what would do that: with no space to back off to
-    /// inside the budget, backing off at all leaves nothing. It gives up instead and cuts
-    /// mid-word, which at least names something.
+    /// The category is the hover tooltip and the accessibility mark's label as well as the
+    /// axis text, so a truncating label made them one row to a reader and two identical
+    /// announcements to a screen reader.
     #[test]
-    fn one_very_long_word_is_cut_rather_than_erased() {
-        let label = super::elide("Kraftfahrzeughaftpflichtversicherungsbedingungen");
-        assert_eq!(label.chars().count(), super::MAX_BAR_LABEL_CHARS);
-        assert!(
-            label.starts_with("Kraftfahrzeug"),
-            "a cut mid-word still names the row: {label:?}"
-        );
-    }
-
-    /// Multi-byte characters are counted, never sliced.
-    ///
-    /// `&s[..n]` on a French title panics inside a `é`. The budget is in characters and
-    /// every cut lands on a boundary.
-    #[test]
-    fn eliding_never_splits_a_character() {
-        // Every character is two bytes, so a byte-indexed cut would land inside one.
-        let accented = "é".repeat(super::MAX_BAR_LABEL_CHARS * 2);
-        let label = super::elide(&accented);
-        assert_eq!(label.chars().count(), super::MAX_BAR_LABEL_CHARS);
-        assert!(label.ends_with('…'));
+    fn two_titles_that_differ_late_stay_two_labels() {
+        let a = "Dans lequel Phileas Fogg et Passepartout s’acceptent réciproquement";
+        let b = "Dans lequel Phileas Fogg et Passepartout arrivent à destination";
+        assert_ne!(super::bar_label(None, 7, a), super::bar_label(None, 8, b));
     }
 
     // ── the prose measure ────────────────────────────────────────────────────
