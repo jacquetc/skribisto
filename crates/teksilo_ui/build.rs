@@ -5,7 +5,7 @@
 //! which [`crate::version`] turns into the string the welcome window shows.
 //!
 //! The displayed version is a *git* fact, not a Cargo one: every crate in the
-//! workspace shares one placeholder `version = "0.0.1"`, so `CARGO_PKG_VERSION`
+//! workspace shares one placeholder `version = "3.0.0-rc1"`, so `CARGO_PKG_VERSION`
 //! cannot name a release. `git describe` can — and it also says whether HEAD is
 //! the tag or merely descends from it, which is what keeps a dev build from
 //! presenting itself as a release.

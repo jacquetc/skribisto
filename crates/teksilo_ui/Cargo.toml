@@ -150,7 +150,7 @@ encoding_rs = "0.8"
 # would install an executor with **no reactor**, which works for our
 # `spawn_blocking`-only futures but silently never wakes if anything ever awaits
 # a native future (a timer, a socket) — a runtime hang, not a compile error.
-teksilo = { path = "../../../teksilo/crates/teksilo", version = "0.9.0", features = [
+teksilo = { version = "0.9.0", features = [
     "automation",
     "async-std",
     # The sibling design-language presets, selectable at launch with `--style`
@@ -168,7 +168,7 @@ teksilo = { path = "../../../teksilo/crates/teksilo", version = "0.9.0", feature
 ] }
 # The Pace planner's progression / words-per-day charts (not re-exported by the
 # umbrella crate — a direct dependency, like the example widget catalog).
-teksilo-charts = { path = "../../../teksilo/crates/teksilo-charts", version = "0.9.0" }
+teksilo-charts = { version = "0.9.0" }
 # Calendar dates for the Pace end-date + weekday picker (the teksilo date widgets
 # speak `jiff::civil::Date`); `date_convert` bridges it to the entities' chrono.
 jiff = "0.2"
