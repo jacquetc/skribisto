@@ -5426,7 +5426,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-analysis-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5443,7 +5443,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-binder-item-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5459,7 +5459,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-binder-ordering"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "skribisto-common",
@@ -5467,7 +5467,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-common"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5482,7 +5482,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-compiler"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "png",
@@ -5501,7 +5501,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-direct-access"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5514,7 +5514,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-document-ingest"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "blake3",
@@ -5534,7 +5534,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-export-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5550,11 +5550,11 @@ dependencies = [
 
 [[package]]
 name = "skribisto-fonts"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 
 [[package]]
 name = "skribisto-frontend"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5581,7 +5581,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-handling-app-lifecycle"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5594,7 +5594,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-import-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5616,7 +5616,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-macros"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -5626,7 +5626,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-manuskript-import"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "blake3",
@@ -5643,7 +5643,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-mention-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5659,7 +5659,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-model"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "serde",
  "skribisto-common",
@@ -5670,7 +5670,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-note-template-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5681,7 +5681,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-plume-import"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5695,7 +5695,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-progress-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5714,7 +5714,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-search-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5729,7 +5729,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-skrib-format"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "blake3",
@@ -5749,7 +5749,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-spellcheck-engine"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "encoding_rs",
  "spellbook",
@@ -5758,7 +5758,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-tag-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5771,7 +5771,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-trash-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5786,7 +5786,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-work-management"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6105,7 +6105,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "teksilo-app",
  "teksilo-async",
@@ -6131,7 +6131,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-app"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "base64",
  "png",
@@ -6153,7 +6153,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-async"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "async-channel 2.5.0",
  "teksilo-app",
@@ -6163,7 +6163,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-async-std"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "async-std",
  "teksilo-app",
@@ -6173,7 +6173,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-automation"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -6183,7 +6183,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-canvas"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "bytemuck",
  "image-webp",
@@ -6198,7 +6198,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-charts"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6209,7 +6209,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-core"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "accesskit",
  "raw-window-handle",
@@ -6222,7 +6222,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-data"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "slotmap",
  "teksilo-core",
@@ -6230,7 +6230,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-i18n"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "fixed_decimal",
  "fluent-bundle",
@@ -6253,7 +6253,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-i18n-macros"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "fluent-syntax",
  "proc-macro2",
@@ -6263,7 +6263,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-inspector"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "serde_json",
  "teksilo-app",
@@ -6279,7 +6279,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-macros"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6289,7 +6289,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-parse"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "proc-macro2",
  "syn 3.0.2",
@@ -6297,7 +6297,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-platform"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "accesskit",
  "accesskit_winit",
@@ -6326,7 +6326,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-render"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "bytemuck",
  "teksilo-canvas",
@@ -6336,7 +6336,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-resources"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6346,7 +6346,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-settings"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "etcetera",
  "fs2",
@@ -6361,7 +6361,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-text"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "teksilo-canvas",
  "teksilo-tokens",
@@ -6371,7 +6371,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-fluent"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6381,7 +6381,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-macos"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6391,7 +6391,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-material3"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6401,14 +6401,14 @@ dependencies = [
 
 [[package]]
 name = "teksilo-tokens"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "teksilo-widgets"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "jiff",
  "open",
@@ -6426,7 +6426,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo_ui"
-version = "3.0.0-rc1"
+version = "3.0.0-rc2"
 dependencies = [
  "anyhow",
  "blake3",
