@@ -9,15 +9,31 @@ use spellcheck_engine::{MAX_SUGGESTIONS, bounded_levenshtein, detect_encoding, m
 
 // ── the master switch (Settings ▸ Spelling / the title-bar toggle / F7) ──
 
-/// A service whose `en-US` dictionary is already in the cache, so these tests never touch
-/// the disk and never depend on what this machine happens to have installed.
+/// A service with `en-US` **and** `fr-FR` already in the dictionary cache, so these tests
+/// never touch the disk and never depend on what this machine happens to have installed.
+///
+/// Two languages, not one, because the multi-Work tests need a language a Work has *not*
+/// muted beside one it has. Reaching past the fixture for that second language is how
+/// `closing_one_work_…` came to require an installed `fr-FR`: green on the machine it was
+/// written on, failing on every machine without a French dictionary, while the doc comment
+/// here went on promising the opposite.
+///
+/// Keyed through [`SpellcheckService::key_of`] rather than by literal, since that is the key
+/// [`SpellcheckService::dict`] looks up. A catalogue change to how a tag resolves would
+/// otherwise leave the entry unreachable and send the lookup back to the disk this exists to
+/// avoid — the same silent fall-through, one level down.
 fn service_with_tiny_dict() -> SpellcheckService {
     let svc = SpellcheckService::new();
-    let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n").unwrap();
-    svc.inner
-        .cache
-        .borrow_mut()
-        .insert("en-US".to_string(), Some(Arc::new(dict)));
+    for (tag, words) in [
+        ("en-US", "2\nhello\nworld\n"),
+        ("fr-FR", "2\nbonjour\nmonde\n"),
+    ] {
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", words).unwrap();
+        svc.inner
+            .cache
+            .borrow_mut()
+            .insert(SpellcheckService::key_of(tag), Some(Arc::new(dict)));
+    }
     svc
 }
 
@@ -132,12 +148,22 @@ fn closing_one_work_leaves_a_different_open_works_mutes_and_personal_words_intac
         !svc.is_muted("en-US", Some(work_b)),
         "Work B's mute is gone, as expected"
     );
+    // `fr-FR` is the language Work A did *not* mute, so a checker still builds for it.
     let checker_a = svc
         .build_checker(&tags("fr-FR"), Some(work_a))
-        .expect("Work A still has an active (unmuted) dictionary/personal word");
+        .expect("Work A never muted fr-FR, so its dictionary is still active");
+    assert!(
+        !checker_a.misspelled("bonjour"),
+        "and the checker really is the fr-FR one, not a fallback that happens to answer"
+    );
     assert!(
         !checker_a.misspelled("Skribisto"),
         "Work A's personal word survives Work B's close"
+    );
+    assert!(
+        svc.build_checker(&tags("en-US"), Some(work_a)).is_none(),
+        "while the language it muted stays muted — otherwise the assertion above \
+         would pass on a Work whose mute had been wiped"
     );
 }
 
