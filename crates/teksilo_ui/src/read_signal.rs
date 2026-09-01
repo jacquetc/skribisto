@@ -15,18 +15,22 @@
 //!
 //! ## Why not simply `signal.map(|v| v.clone())`
 //!
-//! A derived signal is read-only (`set` panics) and binds correctly — but
-//! [`observe`](teksilo::prelude::Signal::observe) *panics* on one, and
-//! `BuildContext::effect` is nothing but `observe`. An extension that reacted to
-//! focus imperatively — the obvious thing to do with this — would take a runtime
-//! panic in a seam whose whole defect history is "documented, then done wrong
-//! anyway".
+//! It once could not be: [`observe`](teksilo::prelude::Signal::observe) *panicked*
+//! on a derived signal, and `BuildContext::effect` is nothing but `observe` — so
+//! an extension that reacted to focus imperatively, the obvious thing to do with
+//! this, took a runtime panic. That is fixed in teksilo: a derived signal carries
+//! the mutable roots it was built from and observing it registers on each of them.
+//! (The same fix stopped the macOS native menu bar aborting the process on
+//! `enabled(unsaved.and(&backup_mode.not()))`.)
 //!
-//! So this holds the real mutable signal privately and publishes exactly two
-//! doors: [`ReadSignal::signal`] for widget binding (a derived projection, so a
-//! `set` on it cannot reach the original), and [`ReadSignal::on_change`] for
-//! effects (which observes the mutable one, and therefore works). Writing is not
-//! discouraged; it is unreachable.
+//! What survives is the *typing*. A bare `Signal<T>` handed across the seam is
+//! writable by anyone holding it, and a projection is only unwritable as long as
+//! nobody upstream hands out the mutable one by mistake — a property of a call
+//! site, which rots. `ReadSignal` makes it a property of the type: it holds the
+//! real mutable signal privately and publishes exactly two doors,
+//! [`ReadSignal::signal`] for widget binding (a derived projection, so a `set` on
+//! it cannot reach the original) and [`ReadSignal::on_change`] for effects.
+//! Writing is not discouraged; it is unreachable.
 
 use teksilo::prelude::{BuildContext, Signal};
 
@@ -60,9 +64,6 @@ impl<T: Clone + 'static> ReadSignal<T> {
     /// Run `f` whenever the value changes, for the lifetime of the build that
     /// registered it (torn down on rebuild or destroy, exactly like any
     /// `ctx.effect`).
-    ///
-    /// This is the reason the type wraps the mutable signal rather than exposing
-    /// a derived one — see the module docs.
     pub fn on_change(&self, ctx: &mut BuildContext, f: impl Fn(&T) + 'static) {
         ctx.effect(&self.inner, f);
     }
@@ -103,27 +104,20 @@ mod tests {
         assert_eq!(ro.signal().get(), 7, "the derived projection tracks it too");
     }
 
-    /// `on_change` observes the **mutable** signal, which is the entire reason
-    /// this type is not just a `map()`. `BuildContext::effect` is a bare
-    /// `observe`, and `observe` panics on a derived signal — so an extension
-    /// reacting to focus imperatively would crash.
+    /// Both doors are observable, so `ctx.effect` cannot panic on either.
     ///
     /// Asserted on the two signals rather than through a `BuildContext` (the
     /// framework exposes no way to build one outside a real build pass): what
-    /// `on_change` hands `ctx.effect` must be observable, and what `signal()`
-    /// hands a widget must not be settable.
+    /// `on_change` hands `ctx.effect` must be observable, and so must the
+    /// projection `signal()` hands a widget — an extension that reaches for the
+    /// bindable one and observes it directly is doing nothing wrong.
     #[test]
-    fn on_change_observes_a_signal_that_a_derived_projection_could_not() {
+    fn both_doors_are_observable() {
         use std::cell::Cell;
         use std::rc::Rc;
 
         let src = Signal::new(0u32);
         let ro = ReadSignal::new(src.clone());
-
-        assert!(
-            ro.signal().try_observe(|_| {}).is_err(),
-            "if a derived signal ever becomes observable, ReadSignal collapses to a plain map()"
-        );
 
         let seen = Rc::new(Cell::new(0u32));
         let s = seen.clone();
@@ -131,7 +125,30 @@ mod tests {
             .inner
             .try_observe(move |v| s.set(*v))
             .expect("on_change's target must be observable, or ctx.effect panics on it");
+
+        let derived_seen = Rc::new(Cell::new(0u32));
+        let d = derived_seen.clone();
+        let _derived = ro.signal().try_observe(move |v| d.set(*v)).expect(
+            "a derived signal registers on the mutable roots it was built from; \
+             this used to be the panic that made ReadSignal wrap the mutable one",
+        );
+
         src.set(4);
         assert_eq!(seen.get(), 4);
+        assert_eq!(derived_seen.get(), 4);
+    }
+
+    /// …and the projection is still unwritable, which is now the whole of this
+    /// type's job. Observability no longer distinguishes it from a plain
+    /// `map()`; being impossible to `set` through does.
+    #[test]
+    fn the_observable_projection_is_still_not_writable() {
+        let src = Signal::new(1u32);
+        let ro = ReadSignal::new(src.clone());
+        let bound = ro.signal();
+
+        assert!(bound.try_observe(|_| {}).is_ok(), "observable…");
+        assert!(bound.try_set(9).is_err(), "…but never writable");
+        assert_eq!(src.get(), 1);
     }
 }

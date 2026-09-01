@@ -8,7 +8,7 @@ name: Release
 # (currently deactivated) release-macos.yml and is intentionally absent here.
 #
 # The release version is a GIT fact (the tag), not a Cargo one: every crate
-# shares the placeholder version = "3.0.0-rc1", and build.rs stamps the tag into the
+# shares the placeholder version = "3.0.0-rc2", and build.rs stamps the tag into the
 # binary via SKRIBISTO_GIT_DESCRIBE. So there is no "Cargo version matches tag"
 # gate — the tag IS the version.
 
