@@ -225,7 +225,7 @@ pub(crate) const LOCALE_FILES: &[&str] = &[
 /// hand, minus the chance of forgetting one. A missing file is a compile error
 /// naming it, because `include_str!` cannot resolve it; a file present on disk
 /// but absent from [`LOCALE_FILES`] is silently not shipped, which is what the
-/// drift test in [`mod tests`](self::tests) is for.
+/// drift test in this module's `mod tests` is for.
 ///
 /// `base` is relative to **this source file**, not the crate root. The path is
 /// handed to `include_str!`, which resolves against the file it appears in. So
