@@ -88,6 +88,44 @@
 //! `test_support` is the exception and stays crate-private: it is `#[cfg(test)]`
 //! scaffolding, not API.
 
+/// The counting allocator, installed process-wide only when `memprof` is on.
+///
+/// A `#[global_allocator]` in a library applies to whatever binary links it, which
+/// is exactly what is wanted: `skribisto` and every automation harness that calls
+/// [`run`] get the same counters without repeating this line.
+#[cfg(feature = "memprof")]
+#[global_allocator]
+static MEMPROF_ALLOC: memprof::TrackingAlloc = memprof::TrackingAlloc;
+
+/// The attributing allocator, for `--features dhat-heap`.
+///
+/// Only one of the two can exist in a process, which is why the features are
+/// mutually exclusive rather than additive. See the compile error below.
+#[cfg(feature = "dhat-heap")]
+#[global_allocator]
+static DHAT_ALLOC: dhat::Alloc = dhat::Alloc;
+
+/// mimalloc on its own, when the counters are not wanted.
+///
+/// With `memprof` on, the counting allocator forwards to mimalloc instead and
+/// this is not needed, hence the `not(feature = "memprof")` gate rather than a
+/// third mutually-exclusive feature.
+#[cfg(all(
+    feature = "mimalloc",
+    not(feature = "memprof"),
+    not(feature = "dhat-heap")
+))]
+#[global_allocator]
+static MIMALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+#[cfg(all(feature = "memprof", feature = "dhat-heap"))]
+compile_error!(
+    "`memprof` and `dhat-heap` both install a #[global_allocator]; enable one at a time"
+);
+
+#[cfg(all(feature = "mimalloc", feature = "dhat-heap"))]
+compile_error!("`dhat-heap` installs its own #[global_allocator]; it cannot also use mimalloc");
+
 pub mod active_context;
 pub mod analysis;
 pub mod app;
@@ -126,6 +164,10 @@ pub mod ipc_serve;
 pub mod locales;
 pub mod margin_lane;
 pub mod media_paths;
+/// Heap instrumentation for the memory investigation. Off unless `--features memprof`;
+/// see the module docs for the CSV timeline and the `malloc_trim` experiment.
+#[cfg(feature = "memprof")]
+pub mod memprof;
 pub mod mentions;
 pub mod models;
 pub mod new_work;
@@ -323,6 +365,25 @@ impl EventSource for EventHubSource {
 /// `AppIds`, a view-model, or any other type here. Everything the extension seam
 /// needs to reach lives behind this boundary.
 pub fn run() {
+    // Before the election, before `AppContext`: the first CSV row has to be a real
+    // baseline, and everything below this line allocates.
+    #[cfg(feature = "memprof")]
+    memprof::start_sampler();
+
+    // Held for the whole of `run`, because the report is written when it drops and
+    // what it reports is every block still live at that moment, which is exactly
+    // the question ("after closing everything, what is still held, and who
+    // allocated it?"). `DHAT_OUT` names the file; dhat's own default is
+    // `dhat-heap.json` in the working directory.
+    #[cfg(feature = "dhat-heap")]
+    let _dhat = {
+        let mut builder = dhat::Profiler::builder();
+        if let Some(path) = std::env::var_os("DHAT_OUT") {
+            builder = builder.file_name(std::path::PathBuf::from(path));
+        }
+        builder.build()
+    };
+
     let (initial_project, is_primary, translation_dev) = match shell::instance::bootstrap() {
         shell::instance::Bootstrap::Exit => return,
         shell::instance::Bootstrap::Continue {
