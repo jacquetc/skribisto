@@ -122,7 +122,7 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         highlight_format: RefCell::new(None),
         find_docs: tab.in_prose_docs_sink(),
         store: tab.docs(),
-        segment: tab.segment.clone(),
+        active: None,
         root: None,
     };
 
@@ -331,15 +331,28 @@ struct NoteInProseBody {
     /// after construction, the same shape `Self::ids` already has; [`Drop`] reads it
     /// directly with no `BuildContext` needed.
     store: OpenDocsStore,
-    /// Which segment of the note's tab is on screen: the tab's own live selection signal,
-    /// shared and never a copy.
+    /// **Whether this page is the one on screen**, from the framework's own answer:
+    /// `BuildContext::activation_signal`, `true` while active and `false` while parked
+    /// dormant. Installed on the first build; `None` until then, which is a state only a
+    /// page being built for the first time is in, and such a page is active.
     ///
     /// This page is what a `Switcher` calls a mounted page: built the first time the writer
-    /// selects **In prose**, and then kept for the switcher's lifetime. So leaving the
-    /// reading runs no `Drop` and stops no effect, and everything this page had registered
-    /// against documents the rest of the app is showing stayed registered. See
-    /// [`Self::on_screen`].
-    segment: Signal<Option<teksilo::widgets::SegmentId>>,
+    /// picks **In prose**, and then kept for the switcher's lifetime. Leaving the reading
+    /// runs no `Drop` and stops no effect, so everything the page had registered against
+    /// state outside its own subtree stayed registered.
+    ///
+    /// Both switches it can disappear behind are `Switcher`s (the segment bar's, and
+    /// `TabWidget`'s own), so one signal answers for both. Reading `ContentTab::segment`
+    /// instead would answer only the first: a `ContentTab` is not told which pane holds it
+    /// or whether it is that pane's front tab, and `receive_tab` moves a handle between
+    /// panes.
+    ///
+    /// `activation_signal`'s own doc says ordinary widgets never need it, since a dormant
+    /// subtree is not painted and so vanishes for free. This page is the other case it
+    /// names: what it leaves behind does not live in its subtree. A range session lives on
+    /// a document a scene tab is still showing, and the lane subject is a thread-local every
+    /// stream in the project reads.
+    active: Option<Signal<bool>>,
     root: Option<WidgetId>,
 }
 
@@ -383,22 +396,6 @@ fn work_uid_of(app_ctx: &Rc<frontend::AppContext>, ids: &AppIds) -> Option<Strin
     crate::models::uid_is_usable(&uid).then_some(uid)
 }
 
-/// Whether the **In prose** page of a note's tab is the one on screen.
-///
-/// `Switcher` mounts a page lazily and then **keeps it**, so "was built" is not "is on
-/// screen" and `Drop` is not the bound on what such a page may leave behind.
-///
-/// The tab's own selection is deliberately not part of this: a `ContentTab` is not told which
-/// pane holds it or whether it is that pane's front tab, and `receive_tab` moves a handle
-/// between panes, so anything captured here would answer for the pane the tab has left. What
-/// that costs is written up in [`publish_subject`].
-fn in_prose_is_shown(segment: &Signal<Option<teksilo::widgets::SegmentId>>) -> bool {
-    segment.get()
-        == Some(shared::segments::segment_id(
-            shared::segments::SEG_NOTE_IN_PROSE,
-        ))
-}
-
 /// Put a reading's entry on the margin lane, or take it back off.
 ///
 /// Published when there is something to publish **and the page is on screen**, and
@@ -410,25 +407,24 @@ fn in_prose_is_shown(segment: &Signal<Option<teksilo::widgets::SegmentId>>) -> b
 /// The on-screen half is what [`crate::margin_lane::set_active_subject`]'s own contract asks
 /// for ("set while a note's **In prose** segment is on screen, cleared when it goes away") and
 /// what `Drop` alone could not deliver, because the page is never dropped for merely being
-/// left. The story-bible provider is `default_on` for every stream, so a subject left
+/// left; [`NoteInProseBody::active`] is where the answer comes from.
+/// The story-bible provider is `default_on` for every stream, so a subject left
 /// published puts a dot at every occurrence of that entry's names on every Full book / Full
 /// part / Full chapter stream in the project, with nothing on screen explaining them.
 ///
-/// ⚠ One case still leaks: switch to a **different tab** with **In prose** still the selected
-/// segment and the subject stays published, because the page cannot ask whether its tab is the
-/// one on top (see [`in_prose_is_shown`]). The wash in the prose is not affected either way:
-/// that one is an opt-in layer only this reading's own row editors name (see
-/// [`crate::story_bible::highlight`]), so it is bounded by construction rather than by
-/// lifetime.
+/// The wash in the prose needs none of this. It is an opt-in layer only this reading's own
+/// row editors name (see [`crate::story_bible::highlight`]), so it is bounded by
+/// construction. The lane subject has no such scoping, being one thread-local every stream
+/// in the project reads, so it is bounded by the page's own visibility instead.
 fn publish_subject(
     app_ctx: &Rc<frontend::AppContext>,
     ids: &AppIds,
     scope: crate::margin_lane::LaneScope,
-    segment: &Signal<Option<teksilo::widgets::SegmentId>>,
+    on_screen: bool,
     entity: Option<&skribisto_model::mentions::DiscoverableEntity>,
     table: &[skribisto_model::mentions::DiscoverableEntity],
 ) {
-    let subject = in_prose_is_shown(segment).then_some(()).and_then(|()| {
+    let subject = on_screen.then_some(()).and_then(|()| {
         entity
             .cloned()
             .zip(work_uid_of(app_ctx, ids))
@@ -447,9 +443,10 @@ fn publish_subject(
 
 impl NoteInProseBody {
     /// Whether this reading is the page the writer is actually looking at. See
-    /// [`in_prose_is_shown`].
+    /// [`Self::active`]. `true` before the first build has asked the framework, which is the
+    /// state a page is in while it is being built for the first time.
     fn on_screen(&self) -> bool {
-        in_prose_is_shown(&self.segment)
+        self.active.as_ref().is_none_or(|a| a.get())
     }
 
     /// This reading's entry on the margin lane. See [`publish_subject`].
@@ -462,7 +459,7 @@ impl NoteInProseBody {
             &self.app_ctx,
             &self.ids,
             self.scope,
-            &self.segment,
+            self.on_screen(),
             entity,
             table,
         );
@@ -579,16 +576,18 @@ impl NoteInProseBody {
         // build, which `reload_origins` triggers on any project write.
         let names = Rc::new(table);
         let subject_entity = Rc::new(entity.cloned());
+        let active = self
+            .active
+            .clone()
+            .unwrap_or_else(|| ctx.activation_signal(ctx.self_id()));
         let refresh = {
             let (walk, wanted, names) = (self.walk.clone(), wanted, names.clone());
-            let segment = self.segment.clone();
+            let active = active.clone();
             move || {
                 // `None` is not merely "stop refreshing": the ranges pushed while the
                 // reading was up are still on the documents, and its own walk still counts
                 // them in the header. `None` retires both.
-                let subject = in_prose_is_shown(&segment)
-                    .then_some(&wanted)
-                    .and_then(|w| w.as_ref());
+                let subject = active.get().then_some(&wanted).and_then(|w| w.as_ref());
                 walk.refresh(subject, &names);
             }
         };
@@ -606,20 +605,16 @@ impl NoteInProseBody {
         // switch itself. Publishing the gated one here would make the strip's own setting
         // withdraw the subject as well, and would do it only down this path (`build`
         // publishes the ungated entity), so which of the two the lane saw would depend on
-        // whether a rebuild or a segment switch happened last.
-        let (app_ctx, ids, scope, segment) = (
-            self.app_ctx.clone(),
-            self.ids.clone(),
-            self.scope,
-            self.segment.clone(),
-        );
-        ctx.effect(&self.segment.clone(), move |_| {
+        // whether a rebuild or a park happened last.
+        let (app_ctx, ids, scope) = (self.app_ctx.clone(), self.ids.clone(), self.scope);
+        ctx.effect(&active, move |on_screen| {
             refresh();
             publish_subject(
                 &app_ctx,
                 &ids,
                 scope,
-                &segment,
+                // The value the signal just took, rather than a re-read of it.
+                *on_screen,
                 subject_entity.as_ref().as_ref(),
                 &names,
             );
@@ -741,6 +736,11 @@ impl NoteInProseBody {
 
 impl Widget for NoteInProseBody {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Install-or-reuse, so a rebuild keeps the same signal the parked-page effects of
+        // the previous build were watching. See [`Self::active`].
+        if self.active.is_none() {
+            self.active = Some(ctx.activation_signal(ctx.self_id()));
+        }
         self.selected_book
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
         self.generation
@@ -1266,13 +1266,6 @@ mod tests {
             crate::settings::EditorViewMemory::detached(false),
             &ids,
         );
-        // **The reading is the page on screen.** In the app a `Switcher` only mounts this
-        // page once its chip is picked, so `tab.segment` names it by the time the body
-        // builds; a test that mounts the pane by hand has to say so, or every publish and
-        // every refresh takes the parked-page branch (see `in_prose_is_shown`).
-        tab.segment.set(Some(shared::segments::segment_id(
-            shared::segments::SEG_NOTE_IN_PROSE,
-        )));
         Fixture {
             ctx,
             tab,
@@ -1685,15 +1678,19 @@ mod tests {
     /// **Leaving the reading is not the same as closing it, and both must clear.**
     ///
     /// `Switcher` mounts a page lazily and then keeps it for its own lifetime, so picking
-    /// another segment, or another tab, drops nothing, runs no `Drop` and cancels no
-    /// effect. The page went on publishing its subject and re-deriving its marks every
-    /// frame, for a reading nobody was looking at.
+    /// another segment, or another tab, drops nothing, runs no `Drop` and cancels no effect.
+    /// The page went on publishing its subject and re-deriving its marks every frame, for a
+    /// reading nobody was looking at.
+    ///
+    /// Parked through a real `Switcher` rather than by writing `ContentTab::segment`,
+    /// because the gate is the framework's own activation and the point is that it answers
+    /// for a tab switch as well as a segment one. Both are `Switcher`s; this is one of them.
     ///
     /// Two things are checked, because the two halves fail differently: the lane subject is
     /// withdrawn by name, and the walk retires the ranges it had pushed onto documents that
     /// other views are still showing.
     #[test]
-    fn leaving_the_segment_clears_what_the_reading_had_published() {
+    fn parking_the_page_clears_what_the_reading_had_published() {
         let f = seed();
         f.give_the_work_a_uid();
         let doc = f
@@ -1704,8 +1701,14 @@ mod tests {
             .expect("the declared row's prose");
         doc.set_plain_text("A note was left.").unwrap();
 
+        // Page 0 is the reading, page 1 stands in for whatever the writer switches to.
+        let page = Signal::new(0usize);
         let mut tree = crate::test_support::tree_with_events(&f.ctx);
-        tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.add(
+            teksilo::widgets::Switcher::new(page.clone())
+                .child_boxed(note_in_prose_pane(&f.tab))
+                .child(TextWidget::new(lit!("elsewhere"))),
+        );
         tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
 
         let mine = doc.opt_in_session_ids();
@@ -1714,11 +1717,10 @@ mod tests {
         assert!(marks() > 0, "the reading marks its entry while it is up");
         assert!(crate::margin_lane::active_subject().get().is_some());
 
-        // The writer picks another page of the same note's tab. The pane is not destroyed:
-        // it is still mounted, still holding its documents, still observing.
-        f.tab.segment.set(Some(shared::segments::segment_id(
-            shared::segments::SEG_NOTE_OWN,
-        )));
+        // The writer switches away. The page is not destroyed: it stays mounted, still
+        // holding its documents, still observing.
+        page.set(1);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
 
         assert!(
             crate::margin_lane::active_subject().get().is_none(),
@@ -1731,9 +1733,8 @@ mod tests {
         );
 
         // Coming back re-derives rather than leaving a blank reading behind.
-        f.tab.segment.set(Some(shared::segments::segment_id(
-            shared::segments::SEG_NOTE_IN_PROSE,
-        )));
+        page.set(0);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
         assert!(
             marks() > 0,
             "returning to the reading brings its marks back"
