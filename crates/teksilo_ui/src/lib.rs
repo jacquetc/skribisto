@@ -153,6 +153,7 @@ pub mod footnotes;
 pub mod format;
 pub mod go;
 pub mod goals;
+pub mod heap;
 pub mod help;
 pub mod icons;
 pub mod identity;
@@ -323,7 +324,12 @@ fn register_editor_fonts() -> teksilo::text::VecFontRegistrar {
     use std::sync::Arc;
     use teksilo::text::{FontFaceSpec, VecFontRegistrar};
     let face = |bytes: &'static [u8]| FontFaceSpec {
-        data: Arc::new(bytes.to_vec()),
+        // `Arc::new(bytes)`, not `Arc::new(bytes.to_vec())`. The faces are
+        // `include_bytes!`-ed by `skribisto_fonts`, so they are already resident
+        // in the binary's rodata; copying them onto the heap put a second 6.4 MB
+        // there for the life of the process, and the typesetter kept a third
+        // until `FontFaceSpec` learned to carry a shared container.
+        data: Arc::new(bytes),
         is_default: false,
         // The writing-serif design size: this is what a Scene / Synopsis editor's
         // `size` = 100 % resolves to (the `size` setting is a font-size scale, so

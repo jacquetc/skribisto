@@ -446,13 +446,30 @@ impl WorkRegistry {
     /// A safe no-op for a window that never registered one — the Launcher (which
     /// shows no Work at all), or a project window force-closed before its own
     /// Load/New ever resolved a `work_id`.
-    pub fn remove_window(&self, window_id: TeksiloWindowId) {
+    /// Returns whether this was the **last** window on its `Work`, so the caller
+    /// can tell "a second window closed" from "the project is gone". `false`
+    /// also for a window id this registry never knew.
+    pub fn remove_window(&self, window_id: TeksiloWindowId) -> bool {
         let Some(entry) = self.windows.borrow_mut().remove(&window_id) else {
-            return;
+            return false;
         };
         let is_last = self.unregister(entry.work_id);
         (entry.window_teardown)(is_last);
         (entry.stack_teardown)(is_last);
+        if is_last {
+            // Everything the project held has just been dropped: teksilo's
+            // `on_removed` fires after the widget tree is gone, and the two
+            // teardowns above released the open documents and ran
+            // `ProjectLifecycleViewModel::on_close`. So this is the moment the
+            // process holds the most freed-but-still-mapped memory it ever
+            // will, and the only one where walking every arena is proportionate.
+            //
+            // Gated on `is_last` because a Work with a surviving window has
+            // released nothing: the sibling still holds every open document, and
+            // the walk would cost milliseconds to return no pages at all.
+            crate::heap::release_free_pages();
+        }
+        is_last
     }
 }
 

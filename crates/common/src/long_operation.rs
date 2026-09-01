@@ -115,7 +115,7 @@
 
 use crate::event::{Event, EventHub, LongOperationEvent, Origin};
 use anyhow::Result;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{
     Arc, Condvar, Mutex,
     atomic::{AtomicBool, Ordering},
@@ -320,6 +320,21 @@ impl OperationHandleTrait for OperationHandle {
     }
 }
 
+/// How many finished operations keep their handle and their serialized result.
+///
+/// A caller reads a result inside the handler for that operation's own
+/// completion event, so one would be enough for correctness. The bound is
+/// generous because being wrong costs a lost result while being generous costs
+/// a few kilobytes: `scan_mentions` returns about 100 KB and everything else is
+/// far smaller.
+///
+/// Before this bound existed neither map was pruned by anything, anywhere. A
+/// session that ran a few hundred searches, scans, saves and exports kept every
+/// result string for the life of the process, and with it every finished
+/// worker's `JoinHandle`, which is what stops the OS reclaiming that thread's
+/// stack and thread-local storage.
+const FINISHED_RETENTION: usize = 16;
+
 // Manager for long operations
 pub struct LongOperationManager {
     operations: Arc<Mutex<HashMap<String, Box<dyn OperationHandleTrait>>>>,
@@ -329,6 +344,14 @@ pub struct LongOperationManager {
     /// Signalled by each worker as it ends; lets callers block until an
     /// operation finishes rather than polling. See [`OperationCompletion`].
     completion: Arc<OperationCompletion>,
+    /// Ids in the order their workers **finished**, oldest first.
+    ///
+    /// Finish order, never start order. An export that runs for two minutes
+    /// while twenty searches come and go is the oldest operation by start and
+    /// the newest by finish, and it is the one whose result is about to be read.
+    /// Ordering the retention window by start would sweep it in the same event
+    /// drain that was about to deliver its completion.
+    finished_order: Arc<Mutex<VecDeque<String>>>,
 }
 
 impl std::fmt::Debug for LongOperationManager {
@@ -354,6 +377,7 @@ impl LongOperationManager {
             results: Arc::new(Mutex::new(HashMap::new())),
             event_hub: None,
             completion: Arc::new(OperationCompletion::new()),
+            finished_order: Arc::new(Mutex::new(VecDeque::new())),
         }
     }
 
@@ -364,6 +388,10 @@ impl LongOperationManager {
 
     /// Start a new long operation and return its ID
     pub fn start_operation<Op: LongOperation>(&self, operation: Op) -> String {
+        // The one moment the manager is certain to be reached and the only one
+        // at which the finished set can have grown since the last look.
+        self.prune_finished();
+
         let id = {
             let mut next_id = lock_or_recover(&self.next_id);
             *next_id += 1;
@@ -390,6 +418,7 @@ impl LongOperationManager {
         let id_clone = id.clone();
         let event_hub_opt = self.event_hub.clone();
         let completion_clone = self.completion.clone();
+        let finished_order_clone = self.finished_order.clone();
 
         let join_handle = thread::spawn(move || {
             let progress_callback = {
@@ -477,9 +506,14 @@ impl LongOperationManager {
 
             *lock_or_recover(&status_clone) = final_status;
 
-            // Publish completion **last** — after the result is stored, the
-            // event emitted and the final status written — so any thread woken
-            // by this observes a fully-settled operation rather than racing the
+            // Record the finish position before publishing, so a woken caller
+            // that immediately starts another operation cannot prune a window
+            // this id has not yet entered.
+            lock_or_recover(&finished_order_clone).push_back(id_clone.clone());
+
+            // Publish completion **last**: after the result is stored, the event
+            // emitted and the final status written, so any thread woken by this
+            // observes a fully-settled operation rather than racing the
             // bookkeeping that follows it.
             completion_clone.mark_finished(&id_clone);
         });
@@ -534,10 +568,49 @@ impl LongOperationManager {
         operations.get(id).map(|handle| handle.is_finished())
     }
 
-    /// Remove finished operations from memory
+    /// Remove every finished operation from memory, with its stored result.
+    ///
+    /// Removing the handle drops its `JoinHandle`, which detaches the worker so
+    /// the OS can reclaim the thread. A finished thread that is neither joined
+    /// nor detached keeps its stack and TLS allocated.
     pub fn cleanup_finished_operations(&self) {
+        // Lock order is `finished_order` → `operations` → `results`, the same
+        // order `prune_finished` takes them in. Taking `operations` first here
+        // and the queue last is a straight inversion: a UI thread in here and a
+        // worker's `start_operation` in `prune_finished` each hold what the
+        // other is waiting for, and the app stops.
+        let mut order = lock_or_recover(&self.finished_order);
         let mut operations = lock_or_recover(&self.operations);
-        operations.retain(|_, handle| !handle.is_finished());
+        let mut results = lock_or_recover(&self.results);
+        operations.retain(|id, handle| {
+            let finished = handle.is_finished();
+            if finished {
+                results.remove(id);
+            }
+            !finished
+        });
+        order.retain(|id| operations.contains_key(id));
+    }
+
+    /// Drop the bookkeeping of all but the most recently finished
+    /// [`FINISHED_RETENTION`] operations.
+    ///
+    /// A running operation is never touched: it is not in the queue until its
+    /// worker pushes it there on the way out.
+    fn prune_finished(&self) {
+        let mut order = lock_or_recover(&self.finished_order);
+        if order.len() <= FINISHED_RETENTION {
+            return;
+        }
+        let mut operations = lock_or_recover(&self.operations);
+        let mut results = lock_or_recover(&self.results);
+        while order.len() > FINISHED_RETENTION {
+            let Some(id) = order.pop_front() else {
+                break;
+            };
+            operations.remove(&id);
+            results.remove(&id);
+        }
     }
 
     /// Get list of all operation IDs
@@ -648,6 +721,26 @@ mod tests {
         }
     }
 
+    /// An operation that takes a measurable while and then returns a value. The
+    /// shape of an export or a scan: started early, finished long after a burst
+    /// of small operations has come and gone.
+    pub struct SlowOperation {
+        pub delay: Duration,
+    }
+
+    impl LongOperation for SlowOperation {
+        type Output = u32;
+
+        fn execute(
+            &self,
+            _progress_callback: Box<dyn Fn(OperationProgress) + Send>,
+            _cancel_flag: Arc<AtomicBool>,
+        ) -> Result<Self::Output> {
+            thread::sleep(self.delay);
+            Ok(7)
+        }
+    }
+
     /// An operation that finishes at once and returns a value — the shape of a
     /// small import, and the case a blocking wait must add no latency to.
     pub struct InstantOperation;
@@ -662,6 +755,131 @@ mod tests {
         ) -> Result<Self::Output> {
             Ok(42)
         }
+    }
+
+    /// Running many small operations must not make the manager grow without
+    /// bound. Before the retention cap, nothing anywhere pruned either map, so
+    /// every result string and every finished worker's `JoinHandle` stayed for
+    /// the life of the process. The oldest results going away is the visible
+    /// half of that; the thread handles going with them is the half that costs
+    /// the most and cannot be asserted from here.
+    #[test]
+    fn finished_operations_do_not_accumulate() {
+        let manager = LongOperationManager::new();
+        let completion = manager.completion_signal();
+
+        let total = FINISHED_RETENTION * 3;
+        let mut ids = Vec::with_capacity(total);
+        for _ in 0..total {
+            let id = manager.start_operation(InstantOperation);
+            assert!(
+                completion.wait_for(&id, Some(Duration::from_secs(5))),
+                "the operation must finish before the next one starts, or the \
+                 pruning under test never sees it as finished"
+            );
+            ids.push(id);
+        }
+
+        // One more start, so the last batch of finished operations is pruned:
+        // pruning runs at the top of `start_operation`, so the run above leaves
+        // the operations it finished still counted.
+        let last = manager.start_operation(InstantOperation);
+        assert!(completion.wait_for(&last, Some(Duration::from_secs(5))));
+
+        let live = manager.list_operations().len();
+        assert!(
+            live <= FINISHED_RETENTION + 1,
+            "expected at most {} retained operations, found {live}",
+            FINISHED_RETENTION + 1
+        );
+
+        // The oldest results are gone, and the newest are still readable, which
+        // is the property every caller actually depends on.
+        assert_eq!(
+            manager.get_operation_result(&ids[0]),
+            None,
+            "the oldest result must have been dropped"
+        );
+        assert_eq!(
+            manager.get_operation_result(&last),
+            Some("42".to_string()),
+            "the newest result must survive: it is read in the completion handler"
+        );
+    }
+
+    /// `cleanup_finished_operations` is public API. It used to drop the handle
+    /// and leave the result string behind, which made calling it look like a
+    /// cleanup while it freed almost nothing.
+    #[test]
+    fn cleanup_drops_the_result_with_the_handle() {
+        let manager = LongOperationManager::new();
+        let completion = manager.completion_signal();
+        let id = manager.start_operation(InstantOperation);
+        assert!(completion.wait_for(&id, Some(Duration::from_secs(5))));
+        assert_eq!(manager.get_operation_result(&id), Some("42".to_string()));
+
+        manager.cleanup_finished_operations();
+
+        assert!(manager.list_operations().is_empty());
+        assert_eq!(manager.get_operation_result(&id), None);
+    }
+
+    /// The retention window is ordered by when an operation FINISHED, not by
+    /// when it started. An export that runs while a burst of searches comes and
+    /// goes is the oldest operation by start and the newest by finish, and it is
+    /// the one whose result is about to be read: sweeping it would drop the
+    /// result in the same event drain that was about to deliver its completion.
+    #[test]
+    fn a_long_operation_that_finishes_last_keeps_its_result() {
+        let manager = LongOperationManager::new();
+        let completion = manager.completion_signal();
+
+        // Start the slow one first, so it is the oldest by START order.
+        let slow = manager.start_operation(SlowOperation {
+            delay: Duration::from_millis(150),
+        });
+        for _ in 0..(FINISHED_RETENTION * 2) {
+            let id = manager.start_operation(InstantOperation);
+            assert!(completion.wait_for(&id, Some(Duration::from_secs(5))));
+        }
+        assert!(completion.wait_for(&slow, Some(Duration::from_secs(5))));
+
+        // A further start runs the sweep with the slow operation now finished.
+        let after = manager.start_operation(InstantOperation);
+        assert!(completion.wait_for(&after, Some(Duration::from_secs(5))));
+
+        assert_eq!(
+            manager.get_operation_result(&slow),
+            Some("7".to_string()),
+            "the operation that finished last must still have its result"
+        );
+    }
+
+    /// A running operation is not in the finish queue at all, so no amount of
+    /// churn around it can sweep it while it is still working.
+    #[test]
+    fn a_running_operation_is_never_swept() {
+        let manager = LongOperationManager::new();
+        let completion = manager.completion_signal();
+
+        let running = manager.start_operation(SlowOperation {
+            delay: Duration::from_millis(400),
+        });
+        for _ in 0..(FINISHED_RETENTION * 2) {
+            let id = manager.start_operation(InstantOperation);
+            assert!(completion.wait_for(&id, Some(Duration::from_secs(5))));
+        }
+
+        assert_eq!(
+            manager.get_operation_status(&running),
+            Some(OperationStatus::Running),
+            "the operation is still working and must still be known to the manager"
+        );
+        assert!(completion.wait_for(&running, Some(Duration::from_secs(5))));
+        assert_eq!(
+            manager.get_operation_result(&running),
+            Some("7".to_string())
+        );
     }
 
     /// The whole point of the completion signal: a caller is woken the moment the
