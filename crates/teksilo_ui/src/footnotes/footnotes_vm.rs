@@ -62,7 +62,12 @@ pub enum FootnoteFilter {
 
 struct Inner {
     model: FootnotesListModel,
-    docs: OpenDocsStore,
+    /// **Weak.** The store owns this view-model, so a strong handle back would
+    /// close an `Rc` ring nothing can break — see
+    /// [`WeakOpenDocsStore`](crate::models::WeakOpenDocsStore) for what that ring
+    /// kept resident. `None` from the upgrade means the `Work` is closed, and
+    /// there is then nothing for these methods to tell.
+    docs: crate::models::WeakOpenDocsStore,
     stack_id: Signal<Option<u64>>,
     /// `(content_id, label)` — where the dock asked an editor to put the caret.
     pending_seek: Signal<Option<(u64, String)>>,
@@ -93,44 +98,7 @@ pub struct FootnotesViewModel {
     inner: Rc<Inner>,
 }
 
-/// A non-owning handle to a [`FootnotesViewModel`].
-///
-/// **The store may not own this view-model.** `OpenDocsStore` is Tier 2, one per
-/// open `Work`; this view-model is one per *window* and holds the store back
-/// (`Inner.docs`, and again through `FootnotesListModel`). A strong handle in the
-/// store therefore closed an `Rc` cycle that nothing could ever break: the store's
-/// refcount never reached zero, so the store, its `DocumentBackend` (and that
-/// backend's event-pump thread), its comment and spell handles and every document
-/// still in its map stayed resident for the life of the process, once per project
-/// the writer opened.
-///
-/// The window owns the strong handle (`App::footnotes`), which is the lifetime that
-/// is actually correct: there is no view-model to reach when the window that built
-/// it is gone, and [`upgrade`](Self::upgrade) then answers `None`, which every
-/// caller here already had to handle for the frames before `App` wires one.
-#[derive(Clone)]
-pub struct WeakFootnotesViewModel {
-    inner: std::rc::Weak<Inner>,
-}
-
-impl WeakFootnotesViewModel {
-    /// The view-model, if the window that owns it is still open.
-    pub fn upgrade(&self) -> Option<FootnotesViewModel> {
-        self.inner
-            .upgrade()
-            .map(|inner| FootnotesViewModel { inner })
-    }
-}
-
 impl FootnotesViewModel {
-    /// A handle that does not keep this view-model alive. See
-    /// [`WeakFootnotesViewModel`].
-    pub fn downgrade(&self) -> WeakFootnotesViewModel {
-        WeakFootnotesViewModel {
-            inner: Rc::downgrade(&self.inner),
-        }
-    }
-
     pub fn new(
         model: FootnotesListModel,
         docs: OpenDocsStore,
@@ -139,7 +107,7 @@ impl FootnotesViewModel {
         Self {
             inner: Rc::new(Inner {
                 model,
-                docs,
+                docs: docs.downgrade(),
                 stack_id,
                 pending_seek: Signal::new(None),
                 caret_label: Signal::new(None),
@@ -181,9 +149,10 @@ impl FootnotesViewModel {
     /// reference does (see [`insert_at`](Self::insert_at)), and a map that
     /// omitted it would draw `fn7` into the prose for that frame.
     pub fn push_markers(&self) {
-        self.inner
-            .docs
-            .set_footnote_markers(self.inner.model.markers());
+        let Some(docs) = self.inner.docs.upgrade() else {
+            return;
+        };
+        docs.set_footnote_markers(self.inner.model.markers());
     }
 
     /// An edit landed somewhere — renumber if a reference moved.
@@ -318,7 +287,14 @@ impl FootnotesViewModel {
             }
             return doc.clone();
         }
-        let doc = TextDocument::new();
+        // In the project's backend, not a document of its own: a bare
+        // `TextDocument::new()` mints an event hub and an OS thread to drain it,
+        // and a note's body is cached for as long as the project stays open. A
+        // manuscript with a hundred notes was a hundred threads.
+        let doc = match self.inner.docs.upgrade() {
+            Some(docs) => TextDocument::new_in(&docs.backend()),
+            None => TextDocument::new(),
+        };
         let _ = doc.set_djot_sync(initial);
         docs.insert(id, doc.clone());
         doc

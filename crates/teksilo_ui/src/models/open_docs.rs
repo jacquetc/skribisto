@@ -121,10 +121,9 @@ pub struct OpenDoc {
     /// The footnote feature's view-model, on exactly the same footing as
     /// `comments_vm` and installed the same way. `None` degrades the feature to
     /// "no footnote affordances in this document" rather than to a panic.
-    /// Weak, and see [`crate::footnotes::WeakFootnotesViewModel`] for why: the
-    /// view-model holds the store, the store holds every open document, and a
-    /// strong handle here closes that ring.
-    footnotes: RefCell<Option<crate::footnotes::WeakFootnotesViewModel>>,
+    /// The window's footnotes door. Strong, and safe to be: the view-model holds
+    /// this store through a [`WeakOpenDocsStore`], so the ring is already open.
+    footnotes: RefCell<Option<crate::footnotes::FootnotesViewModel>>,
     /// The replace-while-typing state machine for each prose document, if the
     /// lexicon view-model was installed on the store. Set by
     /// [`attach_replacements`](Self::attach_replacements) on open, and living as
@@ -180,10 +179,10 @@ impl OpenDoc {
     /// drops its `OpenDoc`s *while* holding the map's `RefCell` borrow, so a `Drop`
     /// that released row refs would re-enter `borrow_mut()` and panic. It lives on
     /// `ContentTab` instead, which nothing in the store points back at.
-    /// Build a document set with a backend of its own.
     ///
-    /// For a caller that owns exactly one `OpenDoc` and has no project to share
-    /// a backend with. Every real tab and every stream row goes through
+    /// This overload gives the document set a **backend of its own**: it is for a
+    /// caller that owns exactly one `OpenDoc` and has no project to share a
+    /// backend with. Every real tab and every stream row goes through
     /// [`build_in`](Self::build_in) instead, so the project pays one event pump
     /// rather than one per document. The backend is kept alive by the documents
     /// built in it.
@@ -573,7 +572,6 @@ impl OpenDoc {
             self.footnotes
                 .borrow()
                 .clone()?
-                .upgrade()?
                 .binding(self.main.as_ref()?.content()),
         )
     }
@@ -584,7 +582,6 @@ impl OpenDoc {
             self.footnotes
                 .borrow()
                 .clone()?
-                .upgrade()?
                 .binding(self.synopsis.as_ref()?.content()),
         )
     }
@@ -592,7 +589,7 @@ impl OpenDoc {
     /// Install the footnotes view-model on this doc (on open, and on the
     /// back-fill when `App` wires one after documents are already open).
     pub fn attach_footnotes(&self, vm: crate::footnotes::FootnotesViewModel) {
-        *self.footnotes.borrow_mut() = Some(vm.downgrade());
+        *self.footnotes.borrow_mut() = Some(vm);
     }
 
     /// Tell each of this doc's prose documents what a footnote marker prints.
@@ -802,11 +799,11 @@ struct Inner {
     comments: RefCell<Option<crate::comments::CommentsViewModel>>,
     /// The footnotes view-model, installed once per window and handed to every
     /// document as it opens (mirroring `comments`).
-    /// Weak, for the reason [`crate::footnotes::WeakFootnotesViewModel`] gives:
-    /// this view-model holds this store back, so owning it here made the store
-    /// immortal and took its `DocumentBackend`, its pump thread and everything
-    /// still in its map with it.
-    footnotes: RefCell<Option<crate::footnotes::WeakFootnotesViewModel>>,
+    /// The installed footnotes view-model, owned here on purpose: it must outlive
+    /// any single window, or closing the second window on a `Work` would take the
+    /// first one's footnotes with it. What keeps that from being a leak is the
+    /// other edge — see [`WeakOpenDocsStore`].
+    footnotes: RefCell<Option<crate::footnotes::FootnotesViewModel>>,
     /// What each footnote label's marker prints, project-wide.
     ///
     /// Held here rather than resolved per document because the number is a fact
@@ -889,7 +886,54 @@ pub struct OpenDocsStore {
     inner: Rc<Inner>,
 }
 
+/// An [`OpenDocsStore`] handle that does not keep the store alive.
+///
+/// **For a view-model the store installs on itself.** The store is Tier 2, one per
+/// open `Work`, and it holds the feature view-models a window hands it so that
+/// every document it opens can be given a door to them. A view-model that held the
+/// store back closed an `Rc` ring nothing could break: the store, its
+/// `DocumentBackend` (and that backend's event-pump thread), its comment and spell
+/// handles and everything left in its map stayed resident for the life of the
+/// process, once per project the writer opened.
+///
+/// The store owns; the view-model borrows. Which way round matters, and the other
+/// way was tried: giving the *store* the weak handle broke a second window, because
+/// the view-model is per window and closing either one took the installed handle
+/// with it, leaving the surviving window's documents without a door.
+///
+/// [`upgrade`](Self::upgrade) answers `None` once the `Work` is closed, which every
+/// caller already had to handle for the frames before a window installs anything.
+#[derive(Clone)]
+pub struct WeakOpenDocsStore {
+    inner: std::rc::Weak<Inner>,
+}
+
+impl WeakOpenDocsStore {
+    /// The store, if its `Work` is still open.
+    pub fn upgrade(&self) -> Option<OpenDocsStore> {
+        self.inner.upgrade().map(|inner| OpenDocsStore { inner })
+    }
+}
+
 impl OpenDocsStore {
+    /// The project's shared document backend.
+    ///
+    /// **Every document this project opens belongs in it.** A bare
+    /// `TextDocument::new()` mints its own event hub and its own OS thread to
+    /// drain it, and keeps both for as long as the document lives — which for a
+    /// comment or footnote body is the life of the project. Documents built here
+    /// share one hub and one thread, and keep their own store and undo stack.
+    pub fn backend(&self) -> teksilo::text_document::DocumentBackend {
+        self.inner.doc_backend.clone()
+    }
+
+    /// A handle that does not keep this store alive. See [`WeakOpenDocsStore`].
+    pub fn downgrade(&self) -> WeakOpenDocsStore {
+        WeakOpenDocsStore {
+            inner: Rc::downgrade(&self.inner),
+        }
+    }
+
     /// Point this store at the open project's media directory.
     ///
     /// Set when a Work opens, before any document is built: an image's bytes are
@@ -945,6 +989,9 @@ impl OpenDocsStore {
     /// wiring, so a document opened by workspace restore would otherwise show no
     /// comment highlights until it was closed and reopened.
     pub fn set_comments(&self, vm: crate::comments::CommentsViewModel) {
+        // Hand it the way back, weakly, so the bodies it opens go into this
+        // project's backend rather than each minting a hub and a thread of its own.
+        vm.attach_docs(self.downgrade());
         *self.inner.comments.borrow_mut() = Some(vm.clone());
         let docs: Vec<Rc<OpenDoc>> = self
             .inner
@@ -965,7 +1012,7 @@ impl OpenDocsStore {
     /// wiring, and one built before this would carry no footnote door at all —
     /// no insertion, no navigation — until it was closed and reopened.
     pub fn set_footnotes(&self, vm: crate::footnotes::FootnotesViewModel) {
-        *self.inner.footnotes.borrow_mut() = Some(vm.downgrade());
+        *self.inner.footnotes.borrow_mut() = Some(vm.clone());
         let docs: Vec<Rc<OpenDoc>> = self
             .inner
             .open
@@ -984,7 +1031,7 @@ impl OpenDocsStore {
     /// what the insert command needs: it has to tell "no project" apart from "no
     /// caret", and resolving through some document's binding collapses the two.
     pub fn footnotes(&self) -> Option<crate::footnotes::FootnotesViewModel> {
-        self.inner.footnotes.borrow().clone()?.upgrade()
+        self.inner.footnotes.borrow().clone()
     }
 
     /// Tell every open document what each footnote label's marker prints, and
@@ -2270,51 +2317,119 @@ mod tests {
     }
 }
 
-/// Remembering a closed tab's typing history — the M9 half of undo unification.
-///
-/// The behaviour these pin is the one the market gets wrong. Bear drops a note's
-/// undo buffer the moment you navigate away, and its forum is the loudest source
-/// of data-loss reports in this field; VS Code and Obsidian both switched to
-/// remembering, and VS Code's stated reason is this application's exact case —
-/// closing a tab here is casual navigation, not "I am done with this document".
-/// The store must not own the view-models a window installs on it.
+/// Which way round the store and a window's view-models hold each other.
 #[cfg(all(test, not(feature = "mocks")))]
 mod installed_view_model_tests {
     use super::*;
 
-    /// **The store holds the footnotes view-model weakly, and the window owns it.**
-    ///
-    /// The view-model holds the store back — directly, and again through its list
-    /// model — so a strong handle here closed an `Rc` ring nothing could break. The
-    /// store, its `DocumentBackend` (and that backend's event-pump thread), the
-    /// comment and spell handles it carries and everything left in its map then
-    /// stayed resident for the life of the process, once per project opened, on a
-    /// path that has no teardown call to forget.
-    ///
-    /// Written as "the reader answers `None` once the owner is gone" because that
-    /// is the observable half: a `Weak` that had quietly become a strong handle
-    /// again would keep answering here, and this is what would fail.
-    #[test]
-    fn the_store_lets_go_of_the_footnotes_view_model_with_its_window() {
-        let ctx = Rc::new(AppContext::new());
+    fn a_view_model(
+        ctx: &Rc<AppContext>,
+        store: &OpenDocsStore,
+    ) -> crate::footnotes::FootnotesViewModel {
         let ids = crate::app_ids::AppIds::new();
-        let store = OpenDocsStore::new(ctx.clone());
-
-        let vm = crate::footnotes::FootnotesViewModel::new(
+        crate::footnotes::FootnotesViewModel::new(
             crate::models::FootnotesListModel::new(ctx.clone(), ids.clone(), store.clone()),
             store.clone(),
             ids.stack_id.clone(),
-        );
+        )
+    }
+
+    /// **The view-model does not keep the store alive.**
+    ///
+    /// It holds the store — directly, and again through its list model — and the
+    /// store holds it. That ring was unbreakable: the store, its `DocumentBackend`
+    /// (and that backend's event-pump thread), the comment and spell handles it
+    /// carries and everything left in its map stayed resident for the life of the
+    /// process, once per project opened. The weak edge is the view-model's.
+    #[test]
+    fn the_footnotes_view_model_does_not_keep_the_store_alive() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx.clone());
+        let watch = store.downgrade();
+
+        let vm = a_view_model(&ctx, &store);
         store.set_footnotes(vm.clone());
+        assert!(watch.upgrade().is_some(), "alive while the Work is open");
+
+        drop(store);
+        assert!(
+            watch.upgrade().is_none(),
+            "the view-model and its list model must hold the store weakly"
+        );
+        // And the view-model survives its store, answering with nothing rather
+        // than reaching into a `Work` that is gone.
+        vm.push_markers();
+    }
+
+    /// **A comment body is a document, and a document used to be a thread.**
+    ///
+    /// `TextDocument::new()` mints an event hub and spawns an OS thread to drain
+    /// it, and a body document is cached for as long as the project stays open, so
+    /// a manuscript with a hundred comments carried a hundred threads that never
+    /// had anything to deliver. They belong in the project's own backend, and
+    /// footnote bodies with them.
+    ///
+    /// Asked of each document rather than counted from `/proc`: the thread count is
+    /// process-global, so a test asserting a delta on it fails whenever a sibling
+    /// test happens to open a document on another thread.
+    #[test]
+    fn comment_bodies_are_built_in_the_project_backend() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx.clone());
+        let ids = crate::app_ids::AppIds::new();
+        let comments = crate::comments::CommentsViewModel::new(
+            crate::models::CommentsListModel::new(ctx.clone(), ids.clone()),
+            ctx.clone(),
+            ids.stack_id.clone(),
+        );
+        store.set_comments(comments.clone());
+
+        for n in 0..8 {
+            let body = comments.body_doc(crate::comments::ThreadEntry::Comment(n), "body");
+            assert!(
+                body.shares_a_backend(),
+                "comment body {n} brought an event hub and a thread of its own"
+            );
+        }
+    }
+
+    /// The same for a footnote's body, which reaches the store the other way — it
+    /// is the view-model that holds the (weak) handle, not the store that hands
+    /// one over.
+    #[test]
+    fn footnote_bodies_are_built_in_the_project_backend() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx.clone());
+        let vm = a_view_model(&ctx, &store);
+
+        assert!(
+            vm.body_doc(1, "body").shares_a_backend(),
+            "footnote body brought an event hub and a thread of its own"
+        );
+    }
+
+    /// **And the store does keep the view-model alive**, which is the half that
+    /// cannot be weak.
+    ///
+    /// A `Work` can carry several windows and each installs its own view-model, so
+    /// a weak handle here was cleared by whichever window closed first — including
+    /// one that was not the window still showing the project. Closing the second
+    /// window took the first one's footnotes with it: no insertion, no navigation,
+    /// and markers drawn as raw labels.
+    #[test]
+    fn a_window_closing_does_not_take_the_installed_view_model_with_it() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx.clone());
+
+        let first = a_view_model(&ctx, &store);
+        store.set_footnotes(first);
+        let second = a_view_model(&ctx, &store);
+        store.set_footnotes(second.clone());
+
+        drop(second);
         assert!(
             store.footnotes().is_some(),
-            "installed, and reachable while the window holds it"
-        );
-
-        drop(vm);
-        assert!(
-            store.footnotes().is_none(),
-            "the store must not be the thing keeping the view-model alive"
+            "a second window closing must leave the first one's door open"
         );
     }
 }

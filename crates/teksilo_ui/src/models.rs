@@ -112,7 +112,7 @@ pub use numbering::{
     NameContext, fallback_label_for, item_meta_of, label_and_badge, numbers_for_items,
     numbers_for_work, ordered_item_dtos, work_language_tags,
 };
-pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard};
+pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard, WeakOpenDocsStore};
 pub use overview_rows_model::{
     COL_BOOKS, COL_GOAL, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_STATUS, COL_TAGS,
     COL_TITLE, COL_TOTAL_COMMENTS, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow,
