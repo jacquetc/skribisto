@@ -69,11 +69,18 @@ modules:
       # rather than a second drawing: a wrong-looking icon is a cosmetic bug, but
       # a *missing* one makes every .skrib render as a generic archive, which is
       # what the <generic-icon> fallback would otherwise give.
-      - install -Dm644 resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg /app/share/icons/hicolor/scalable/mimetypes/application-vnd.skribisto.project.svg
+      #
+      # The basename MUST start with the app id. `flatpak build-finish` refuses
+      # any exported filename that does not ("non-allowed export filename"), and
+      # it refuses it as a printed notice rather than a build failure, so the
+      # icon silently never reaches the host and every .skrib falls back to the
+      # generic archive glyph anyway. That is why the MIME entry's <icon name>
+      # is `eu.skribisto.skribisto.project` and not the derived type name.
+      - install -Dm644 resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg /app/share/icons/hicolor/scalable/mimetypes/eu.skribisto.skribisto.project.svg
       - |
         for s in 16 32 64 72 96 192 256 512; do
           src="resources/unix/icons/icons/hicolor/${s}x${s}/apps/skribisto.png"
-          [ -f "$src" ] && install -Dm644 "$src" "/app/share/icons/hicolor/${s}x${s}/mimetypes/application-vnd.skribisto.project.png"
+          [ -f "$src" ] && install -Dm644 "$src" "/app/share/icons/hicolor/${s}x${s}/mimetypes/eu.skribisto.skribisto.project.png"
         done
     sources:
       - type: dir

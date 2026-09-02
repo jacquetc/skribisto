@@ -229,15 +229,17 @@ side by side.
 
 This sibling layout is a **local-development requirement only**. CI never clones the other
 repositories: workflows (and jobs) that need to resolve the Rust dependency graph first run
-[.github/actions/strip-path-deps](.github/actions/strip-path-deps/action.yml) (5 of the 8
+[.github/actions/strip-path-deps](.github/actions/strip-path-deps/action.yml) (5 of the 9
 workflow files: `audit.yml`, `ci.yml`, `release-macos.yml`, `release.yml`, `rust-next.yml`),
 which drops the `path = "../…"` attribute from each external dependency so that the `version =`
 beside it resolves from crates.io instead. Internal `crates/…` paths are left untouched. Jobs
 that never touch Cargo (`packaging-lint.yml`, `generate-release-in-appdata.yml`,
 `spelling.yml`, and `ci.yml`'s rustfmt/spdx/locales jobs) skip this step entirely, and
-`release.yml`'s `flatpak` job strips paths via its own
-[package/flatpak/gen-cargo-sources.sh](package/flatpak/gen-cargo-sources.sh) script (which
-duplicates the same sed logic) rather than via this composite action.
+the Flatpak build
+([`flatpak.yml`](.github/workflows/flatpak.yml), called by `release.yml` on a tag and run
+weekly on its own) strips paths via
+[package/flatpak/gen-cargo-sources.sh](package/flatpak/gen-cargo-sources.sh) instead, which
+duplicates the same sed logic because it has to vendor in the same pass.
 
 ### Building and running
 
@@ -258,17 +260,47 @@ cargo build -p teksilo_ui --features pdf
 
 ### Linux (Flatpak)
 
-Make sure `flatpak` and `flatpak-builder` are installed, then add Flathub and the runtime (see
-the [Flathub setup guide](https://flatpak.org/setup/)). The exact runtime version is declared
-in the manifest,
-[package/flatpak/eu.skribisto.skribisto.yml](package/flatpak/eu.skribisto.skribisto.yml).
+Make sure `flatpak` and `flatpak-builder` are installed. Two things then have to be in place
+before the first build, and each fails in its own way when it is not.
+
+**The runtime, the SDK, and the Rust toolchain extension.** The base SDK ships no compiler:
+`cargo` and `rustc` come from a separate extension, and leaving it out stops the build at
+`Requested extension org.freedesktop.Sdk.Extension.rust-stable/x86_64/25.08 not installed`.
+The versions are declared in the manifest,
+[package/flatpak/eu.skribisto.skribisto.yml](package/flatpak/eu.skribisto.skribisto.yml); keep
+these commands in step with it. (See the [Flathub setup guide](https://flatpak.org/setup/) if
+you have no remote yet.)
 
 ```bash
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install --user flathub \
+    org.freedesktop.Platform//25.08 \
+    org.freedesktop.Sdk//25.08 \
+    org.freedesktop.Sdk.Extension.rust-stable//25.08
 ```
 
-Build and install from your local checkout. The manifest builds the repository directory it
-sits in:
+The `--user` is not decoration. If `flathub` exists in both the user and the system
+installation, a command that does not say which one it means stops and asks, which is an
+awkward thing for a build script to do.
+
+The runtime is pinned to 25.08 rather than the newest release deliberately: `rust-stable` has
+no 26.08 branch yet, so bumping the runtime on its own would leave the build with no compiler.
+
+**The vendored crate registry.** A flatpak-builder module builds with no network, so every
+crate has to be on disk before it starts. `cargo-sources.json` is generated rather than
+committed, and without it the build stops immediately with
+`Can't open …/package/flatpak/cargo-sources.json`:
+
+```bash
+./package/flatpak/gen-cargo-sources.sh
+```
+
+That needs network access once. It vendors the **committed** `Cargo.lock`, so what ships is the
+dependency set CI tested, and it refuses to run at all if that lockfile does not already
+resolve every dependency from crates.io, rather than quietly vendoring something else.
+
+Then build and install from your local checkout. The manifest builds the repository directory
+it sits in:
 
 ```bash
 flatpak-builder --user --repo=local-repo build-dir \
@@ -280,6 +312,11 @@ flatpak run eu.skribisto.skribisto
 ```
 
 To remove it: `flatpak remove eu.skribisto.skribisto`.
+
+A release tag builds this same manifest through
+[.github/workflows/flatpak.yml](.github/workflows/flatpak.yml), which a weekly schedule also
+runs, so a manifest broken by a moved runtime or a freshly published dependency surfaces on a
+Monday rather than in the middle of cutting a release.
 
 ### Windows
 

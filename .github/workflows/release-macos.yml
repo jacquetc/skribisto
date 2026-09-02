@@ -3,26 +3,33 @@
 
 name: Release (macOS)
 
-# DEACTIVATED for now. This workflow is written and ready but runs ONLY on
-# manual dispatch — it deliberately does NOT trigger on version tags, so tagging
-# a release builds Linux + Windows (release.yml) but never macOS.
+# ACTIVE, and UNSIGNED until an Apple Developer Program enrolment exists.
+# release.yml calls this on every version tag, so a tag now produces the .dmg
+# alongside the Flatpak, the Linux tarball and the Windows artifacts.
 #
-# To activate later:
+# The signing path below is written and dormant: `Determine signing mode` reads
+# secrets.MACOS_CERTIFICATE, and every step branches on it, so adding the secrets
+# is the whole activation. Until then the .dmg is ad-hoc signed only, which is
+# enough for the kernel to load the bundle on Apple Silicon but NOT enough for
+# Gatekeeper. macOS 15+ removed the Control-click "Open" bypass, so a user of an
+# unsigned build must go to System Settings -> Privacy & Security -> "Open
+# Anyway", or run `xattr -cr /Applications/Skribisto.app`.
+#
+# Shipping it unsigned is a deliberate call: a download that needs one documented
+# extra step beats no macOS download at all. release.yml's notes say so, so the
+# friction is announced rather than discovered.
+#
+# To sign later:
 #   1. Enrol in the Apple Developer Program ($99/yr) and obtain a Developer ID
 #      Application certificate (nothing signs without this).
 #   2. Add the secrets referenced below (MACOS_CERTIFICATE, ...).
-#   3. Uncomment the `push: tags:` trigger and add this job to release.yml's
-#      final `release` aggregation (or let it attach on its own).
-#
-# Until then it produces an UNSIGNED universal .dmg on manual dispatch. macOS 15+
-# removed the Control-click "Open" bypass, so users of an unsigned build must go
-# to System Settings -> Privacy & Security -> "Open Anyway", or run
-# `xattr -cr /Applications/Skribisto.app`.
+# Nothing here changes.
 
 on:
+  # Called by release.yml on a version tag. Also dispatchable on its own, which
+  # is how to test a macOS packaging change without cutting a release.
+  workflow_call:
   workflow_dispatch:
-  # push:
-  #   tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*"]
 
 permissions:
   contents: write
@@ -31,6 +38,9 @@ env:
   CARGO_TERM_COLOR: always
   APP_NAME: skribisto
   CARGO_PACKAGE: teksilo_ui
+  # build.rs reads this; the Windows job does the same. On a called run this is
+  # the caller's ref, so a tag build stamps the tag.
+  SKRIBISTO_GIT_DESCRIBE: ${{ github.ref_name }}
 
 jobs:
   macos-universal:
@@ -113,9 +123,5 @@ jobs:
             target/universal-apple-darwin/release/*.dmg
           if-no-files-found: error
 
-      # Enable together with the `push: tags:` trigger above.
-      # - name: Attach to GitHub Release
-      #   if: startsWith(github.ref, 'refs/tags/v')
-      #   uses: softprops/action-gh-release@v2
-      #   with:
-      #     files: target/universal-apple-darwin/release/*.dmg
+      # No attach step here on purpose: release.yml downloads every artifact of
+      # the run and assembles one Release. A second attach point would race it.

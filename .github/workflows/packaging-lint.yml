@@ -81,10 +81,50 @@ jobs:
           done
           exit $status
 
-      # Informational for now: the metainfo predates the Rust rewrite (stale
-      # <releases>, legacy license string) and would fail a strict validation.
-      # Surfaces issues without blocking the PR; tighten to a hard check once the
-      # metainfo is cleaned up.
+      # The bug this exists to prevent: `flatpak build-finish` silently refuses to
+      # export any file whose basename does not start with the app id. It prints
+      # "non-allowed export filename" and carries on, so the build stays green
+      # while the icon never reaches the host. That is what happened to the nine
+      # .skrib document icons: the MIME package exported, the type association
+      # worked, and every project file rendered as a generic archive because the
+      # icon the type names did not exist. The second half checks the two files
+      # still agree on the name, since fixing one without the other is silent too.
+      - name: Every exported icon is app-id-prefixed, and the MIME entry names it
+        run: |
+          set -euo pipefail
+          flatpak=package/flatpak/eu.skribisto.skribisto.yml
+          mime_xml=resources/unix/mime/eu.skribisto.skribisto.xml
+          app_id=$(sed -n 's/^app-id: *//p' "$flatpak")
+
+          status=0
+          for target in $(grep -oE '/app/share/icons/[^" ]+' "$flatpak" | sort -u); do
+            base=$(basename "$target")
+            case "$base" in
+              "$app_id".*|"$app_id"-*) ;;
+              *)
+                echo "::error file=$flatpak::$base is installed under share/icons but does not start with $app_id, so flatpak build-finish will refuse to export it"
+                status=1
+                ;;
+            esac
+          done
+
+          # The name the manifest installs into mimetypes/ must be the name the
+          # MIME entry asks for, or the lookup finds nothing.
+          installed=$(grep -oE '/app/share/icons/[^" ]+/mimetypes/[^" ]+' "$flatpak" \
+            | xargs -r -n1 basename | sed 's/\.[^.]*$//' | sort -u)
+          declared=$(sed -n 's/.*<icon name="\([^"]*\)".*/\1/p' "$mime_xml")
+          for name in $installed; do
+            if [ "$name" != "$declared" ]; then
+              echo "::error file=$mime_xml::the Flatpak installs the document icon as '$name' but <icon name=\"$declared\"/> asks for a different one"
+              status=1
+            fi
+          done
+          exit $status
+
+      # `appstreamcli validate` passes; `--strict` fails on one thing only, a
+      # missing `id` on <developer>. Add that and this step can drop
+      # continue-on-error and gain --strict. (The older note here claimed stale
+      # <releases> and a legacy license string would also fail. Neither does.)
       - name: Validate AppStream metainfo
         continue-on-error: true
         run: appstreamcli validate --no-net eu.skribisto.skribisto.metainfo.xml

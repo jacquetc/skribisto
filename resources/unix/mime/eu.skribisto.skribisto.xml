@@ -17,9 +17,12 @@
   entry; doing the same here would be a format change, so it is deliberately not
   done.)
 
-  <icon> is spelled out rather than left to the derived name: the automatic
-  mapping only rewrites '/' to '-', so the derived name for this type would
-  contain a literal '+' and no theme ships that file.
+  <icon> is spelled out rather than left to the derived name for two reasons.
+  The automatic mapping only rewrites '/' to '-', so the derived name for this
+  type would contain a literal '+' and no theme ships that file. And the name
+  has to start with the app id, because `flatpak build-finish` refuses to export
+  any icon whose basename does not, which left every .skrib on the generic
+  archive glyph while the manifest looked like it installed an icon.
 -->
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
     <mime-type type="application/vnd.skribisto.project+zip">
@@ -27,7 +30,7 @@
 	<comment xml:lang="fr">Projet Skribisto</comment>
 	<alias type="application/x-skribisto" />
 	<sub-class-of type="application/zip" />
-	<icon name="application-vnd.skribisto.project" />
+	<icon name="eu.skribisto.skribisto.project" />
 	<generic-icon name="x-office-document" />
 	<glob pattern="*.skrib" />
     </mime-type>

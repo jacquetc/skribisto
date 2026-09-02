@@ -1,0 +1,138 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+name: Flatpak
+
+# The real Flatpak build, in ONE place, driven by two callers:
+#
+#   - release.yml, on a version tag, producing the bundle that ships;
+#   - the weekly schedule below, so a broken manifest, a runtime that has moved
+#     on, or a freshly published dependency that will not compile offline
+#     surfaces on a Monday rather than in the middle of cutting a release.
+#
+# A reusable workflow rather than a second copy of the release job, on purpose:
+# a scheduled copy free to drift from the release copy proves nothing about the
+# release. packaging-lint.yml stays the seconds-long PR guard that reads the
+# manifest; this is the slow one that actually compiles it.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    # Mondays, 05:17 UTC. Off the hour deliberately: GitHub sheds scheduled runs
+    # under load, and the top of the hour is the most contended slot there is.
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Flatpak bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Strips external path deps and vendors every crate of the COMMITTED
+      # Cargo.lock into package/flatpak/cargo-sources.json — everything the
+      # offline flatpak-builder step needs. Requires teksilo*/text-document to be
+      # published (plan prerequisites P1/P2).
+      - name: Vendor cargo dependencies for offline build
+        run: ./package/flatpak/gen-cargo-sources.sh
+
+      # The runtime, SDK and SDK extensions must be installed BEFORE the build
+      # action, and installed SYSTEM-wide.
+      #
+      # The action runs `flatpak-builder --install-deps-from=flathub` and passes
+      # no `--user`; flatpak-builder documents `--system` as the default for that.
+      # It also only adds the remote itself when `repository-url` differs from the
+      # flathub default, which is not the case here. So a `--user` remote left the
+      # job with no system-side `flathub` to install from, and nothing else in the
+      # job supplied the runtime. Installing here as root also sidesteps polkit,
+      # which a headless runner has no agent to answer.
+      #
+      # The refs are read out of the manifest so the two cannot drift apart: a
+      # `runtime-version` bump must not need a matching edit here to keep working.
+      - name: Install flatpak + flatpak-builder and the manifest's runtimes
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists --system flathub \
+            https://flathub.org/repo/flathub.flatpakrepo
+
+          manifest=package/flatpak/eu.skribisto.skribisto.yml
+          runtime=$(sed -n 's/^runtime: *//p' "$manifest")
+          sdk=$(sed -n 's/^sdk: *//p' "$manifest")
+          version=$(sed -n 's/^runtime-version: *"\?\([^"]*\)"\?$/\1/p' "$manifest")
+          extensions=$(sed -n '/^sdk-extensions:/,/^[^ -]/p' "$manifest" | sed -n 's/^  *- *//p')
+
+          refs=""
+          for r in "$runtime" "$sdk" $extensions; do refs="$refs $r//$version"; done
+          echo "Installing:$refs"
+          # shellcheck disable=SC2086
+          sudo flatpak install --system -y flathub $refs
+
+      # If bubblewrap/user-namespace sandboxing ever fails on the bare runner,
+      # switch this job to run inside
+      # `container: { image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08, options: --privileged }`
+      # and install a Rust toolchain there for the vendor step above.
+      - name: Build and bundle the Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: skribisto.flatpak
+          manifest-path: package/flatpak/eu.skribisto.skribisto.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          # Pinned rather than left to the action's default, which is undocumented
+          # (`flatpak_app`, read out of its compiled source). The check below has
+          # to know where to look.
+          build-dir: flatpak_app
+
+      # `flatpak build-finish` refuses to export any file whose basename does not
+      # start with the app id. It says so and carries on, so the build stays green
+      # while the file never reaches the host. That is how nine .skrib document
+      # icons shipped missing: the MIME package exported, the type association
+      # worked, and every project file drew the generic archive glyph.
+      #
+      # packaging-lint.yml catches the naming statically on every PR. This catches
+      # the outcome, on the artifact that is about to be uploaded, and so also
+      # catches whatever the grep did not think of.
+      - name: Every installed icon actually got exported
+        run: |
+          set -euo pipefail
+          app=flatpak_app
+          status=0
+          while IFS= read -r f; do
+            rel="${f#"$app/files/"}"
+            if [ ! -e "$app/export/$rel" ]; then
+              echo "::error::$rel is installed but was NOT exported; flatpak build-finish refuses filenames not prefixed with the app id"
+              status=1
+            fi
+          done < <(find "$app/files/share/icons" -type f | sort)
+          [ "$status" -eq 0 ] && echo "every installed icon reached export/"
+          exit $status
+
+      - name: Upload Flatpak bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: skribisto-flatpak
+          path: skribisto.flatpak
+          if-no-files-found: error
+
+      # Not a release artifact: this is the vendored crate set the bundle above
+      # was actually built from, kept so release.yml's Flathub job can put THAT
+      # file in the Flathub PR rather than regenerating a second one. Two
+      # generations from the same tag would almost always agree, and the day they
+      # did not, the Flathub build would fail offline for no visible reason.
+      - name: Upload the vendored cargo sources
+        uses: actions/upload-artifact@v7
+        with:
+          name: cargo-sources
+          path: package/flatpak/cargo-sources.json
+          if-no-files-found: error

@@ -3,9 +3,13 @@
 
 name: Release
 
-# Cuts a GitHub Release on a version tag and attaches the Linux Flatpak bundle
-# and the Windows installer + portable zip. macOS is built by the separate
-# (currently deactivated) release-macos.yml and is intentionally absent here.
+# Cuts a GitHub Release on a version tag and attaches, for four platforms'
+# worth of one application: the Linux Flatpak bundle, a standalone Linux tarball,
+# the macOS universal .dmg, and the Windows installer + portable zip.
+#
+# The .dmg is UNSIGNED until an Apple Developer Program enrolment exists, so its
+# users need one documented extra step (System Settings -> Privacy & Security ->
+# "Open Anyway"). That belongs in the release notes, not in a surprise.
 #
 # The release version is a GIT fact (the tag), not a Cargo one: every crate
 # shares the placeholder version = "3.0.0", and build.rs stamps the tag into the
@@ -45,43 +49,112 @@ jobs:
   flatpak:
     name: Flatpak bundle
     needs: validate
+    # The build itself lives in flatpak.yml, which a weekly schedule also runs.
+    # One definition, so the scheduled canary and the release build cannot differ.
+    uses: ./.github/workflows/flatpak.yml
+
+  # -------- Linux: standalone tarball --------
+  #
+  # The Flatpak is not a standalone binary: installing it needs flatpak itself
+  # plus a freedesktop runtime pulled from Flathub. This is the "download it and
+  # run it" option, and until it existed there was no such thing for Linux.
+  #
+  # Built on ubuntu-latest, so it needs that image's glibc or newer. It does not
+  # pretend to be portable to every distribution; a musl or oldest-glibc build is
+  # a separate exercise with its own trade-offs.
+  linux:
+    name: Linux tarball
+    needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
+    env:
+      SKRIBISTO_GIT_DESCRIBE: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v6
-
+      - uses: ./.github/actions/install-linux-deps
       - uses: dtolnay/rust-toolchain@stable
-
-      # Strips external path deps, regenerates Cargo.lock against crates.io, and
-      # vendors every crate into package/flatpak/cargo-sources.json — everything
-      # the offline flatpak-builder step needs. Requires teksilo*/text-document
-      # to be published (plan prerequisites P1/P2).
-      - name: Vendor cargo dependencies for offline build
-        run: ./package/flatpak/gen-cargo-sources.sh
-
-      - name: Install flatpak + flatpak-builder
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
-          flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
-
-      # If bubblewrap/user-namespace sandboxing ever fails on the bare runner,
-      # switch this job to run inside
-      # `container: { image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08, options: --privileged }`
-      # and install a Rust toolchain there for the vendor step above.
-      - name: Build and bundle the Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+      - uses: ./.github/actions/strip-path-deps
+      - uses: Swatinem/rust-cache@v2
         with:
-          bundle: skribisto.flatpak
-          manifest-path: package/flatpak/eu.skribisto.skribisto.yml
-          cache-key: flatpak-builder-${{ github.sha }}
+          shared-key: linux
 
-      - name: Upload Flatpak bundle
+      - name: Build release binary (pdf)
+        run: cargo build --release -p teksilo_ui --features pdf
+
+      # The icons are installed under the names the .desktop and the MIME entry
+      # actually ask for (Icon=eu.skribisto.skribisto, <icon
+      # name="eu.skribisto.skribisto.project"/>), NOT under their source name
+      # `skribisto.png`. The Flatpak renames them for the same reason. An icon
+      # filed under a name nothing looks up is invisible, and silently so.
+      - name: Stage the tarball
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          root="Skribisto-${version}-x86_64-linux"
+          stage="dist/$root"
+
+          install -Dm755 target/release/skribisto "$stage/skribisto"
+          install -Dm644 COPYING                  "$stage/COPYING"
+          install -Dm644 README.md                "$stage/README.md"
+
+          install -Dm644 resources/unix/applications/eu.skribisto.skribisto.desktop \
+            "$stage/share/applications/eu.skribisto.skribisto.desktop"
+          install -Dm644 resources/unix/mime/eu.skribisto.skribisto.xml \
+            "$stage/share/mime/packages/eu.skribisto.skribisto.xml"
+          install -Dm644 resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg \
+            "$stage/share/icons/hicolor/scalable/apps/eu.skribisto.skribisto.svg"
+          install -Dm644 resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg \
+            "$stage/share/icons/hicolor/scalable/mimetypes/eu.skribisto.skribisto.project.svg"
+          for size in 16 32 64 72 96 192 256 512; do
+            src="resources/unix/icons/icons/hicolor/${size}x${size}/apps/skribisto.png"
+            if [ -f "$src" ]; then
+              install -Dm644 "$src" "$stage/share/icons/hicolor/${size}x${size}/apps/eu.skribisto.skribisto.png"
+              install -Dm644 "$src" "$stage/share/icons/hicolor/${size}x${size}/mimetypes/eu.skribisto.skribisto.project.png"
+            fi
+          done
+
+          # Exec=skribisto expects the binary on PATH, so a bare `cp share/` is
+          # not enough on its own. Ten lines that do the whole user-local install
+          # beat a paragraph telling someone to do it by hand.
+          cat > "$stage/install.sh" <<'SH'
+          #!/bin/sh
+          # Install Skribisto for the current user (default prefix ~/.local).
+          # Usage: ./install.sh [prefix]
+          set -eu
+          prefix="${1:-$HOME/.local}"
+          here="$(cd "$(dirname "$0")" && pwd)"
+          install -Dm755 "$here/skribisto" "$prefix/bin/skribisto"
+          mkdir -p "$prefix/share"
+          cp -r "$here/share/." "$prefix/share/"
+          update-desktop-database "$prefix/share/applications" 2>/dev/null || true
+          update-mime-database "$prefix/share/mime" 2>/dev/null || true
+          gtk-update-icon-cache -f -t "$prefix/share/icons/hicolor" 2>/dev/null || true
+          printf 'Installed to %s\n' "$prefix"
+          case ":$PATH:" in
+            *":$prefix/bin:"*) ;;
+            *) printf 'Note: %s/bin is not on your PATH.\n' "$prefix" ;;
+          esac
+          SH
+          sed -i 's/^          //' "$stage/install.sh"
+          chmod 755 "$stage/install.sh"
+
+          tar -C dist -czf "dist/${root}.tar.gz" "$root"
+          ls -la "dist/${root}.tar.gz"
+
+      - name: Upload Linux tarball
         uses: actions/upload-artifact@v7
         with:
-          name: skribisto-flatpak
-          path: skribisto.flatpak
+          name: skribisto-linux
+          path: dist/*.tar.gz
           if-no-files-found: error
+
+  # -------- macOS: universal .dmg (unsigned until enrolled) --------
+  macos:
+    name: macOS package
+    needs: validate
+    # Same reasoning as the Flatpak job: one definition, called from here rather
+    # than duplicated. release-macos.yml stays dispatchable on its own.
+    uses: ./.github/workflows/release-macos.yml
 
   # -------- Windows: installer + portable zip --------
   #
@@ -162,15 +235,31 @@ jobs:
         run: |
           if [ -n "$HAS_TOKEN" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else echo "enabled=false" >> "$GITHUB_OUTPUT"; fi
 
+      # Distinct FILENAMES, not just a distinct artifact name. The release job
+      # downloads every artifact of the run and copies them into one flat
+      # directory, so two files both called Skribisto-setup.exe resolve by `find`
+      # traversal order. That is a signed release quietly shipping unsigned
+      # binaries, with nothing in the log to say so.
+      #
+      # SignPath's artifact configuration must reference THESE names. That costs
+      # nothing today, since signing is not enrolled yet and there is no
+      # configuration to migrate.
+      - name: Stage unsigned artifacts under distinct names
+        if: steps.sign.outputs.enabled == 'true'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path unsigned | Out-Null
+          Copy-Item dist/Skribisto-portable.zip unsigned/Skribisto-portable-unsigned.zip
+          Copy-Item dist/Skribisto-setup.exe    unsigned/Skribisto-setup-unsigned.exe
+
       - name: Upload unsigned artifacts (for SignPath)
         if: steps.sign.outputs.enabled == 'true'
         id: unsigned
         uses: actions/upload-artifact@v7
         with:
           name: windows-unsigned
-          path: |
-            dist/Skribisto-portable.zip
-            dist/Skribisto-setup.exe
+          path: unsigned/
+          if-no-files-found: error
 
       - name: Submit signing request
         if: steps.sign.outputs.enabled == 'true'
@@ -182,7 +271,16 @@ jobs:
           signing-policy-slug: release-signing
           github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
           wait-for-completion: true
-          output-artifact-directory: dist
+          output-artifact-directory: signed
+
+      # The signed files come back under the names they were submitted with. The
+      # release ships the canonical names, so put them back before the upload.
+      - name: Adopt the signed binaries under their release names
+        if: steps.sign.outputs.enabled == 'true'
+        shell: pwsh
+        run: |
+          Copy-Item signed/Skribisto-portable-unsigned.zip dist/Skribisto-portable.zip -Force
+          Copy-Item signed/Skribisto-setup-unsigned.exe    dist/Skribisto-setup.exe -Force
       # ---- end optional signing ----
 
       - name: Upload Windows artifacts
@@ -197,7 +295,7 @@ jobs:
   # -------- Assemble the GitHub Release --------
   release:
     name: Create Release
-    needs: [flatpak, windows]
+    needs: [flatpak, linux, macos, windows]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -208,11 +306,23 @@ jobs:
         with:
           path: artifacts
 
+      # Collected by ARTIFACT NAME, not by a filename glob over everything that
+      # was downloaded. The glob could not tell a shipping file from a staging
+      # one: `windows-unsigned` holds the same binaries before signing, and a
+      # `*.zip` pattern swept it in regardless. Naming the four artifacts that
+      # ship makes "what goes in the release" a decision rather than a side
+      # effect of a pattern.
       - name: Collect release files
         run: |
+          set -euo pipefail
           mkdir -p release
-          find artifacts -type f \( -name "*.flatpak" -o -name "*.zip" -o -name "*-setup.exe" \) \
-            -exec cp {} release/ \;
+          for artifact in skribisto-flatpak skribisto-linux skribisto-macos-universal skribisto-windows; do
+            if [ ! -d "artifacts/$artifact" ]; then
+              echo "::error::expected artifact '$artifact' is missing from this run"
+              exit 1
+            fi
+            find "artifacts/$artifact" -type f -exec cp {} release/ \;
+          done
           ls -la release/
 
       - name: Generate checksums
@@ -246,3 +356,117 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: release/*
           fail_on_unmatched_files: true
+
+  # -------- Flathub: open the update PR --------
+  #
+  # Flathub's bot cannot do this alone. flatpak-external-data-checker reads the
+  # x-checker-data in the Flathub manifest and bumps `tag` and `commit`, but it
+  # cannot regenerate cargo-sources.json, and a tag bumped without it fails the
+  # offline build with a missing-package error. That gap is
+  # flatpak-external-data-checker#252, open and unassigned since 2021.
+  #
+  # So the update is pushed from here, where the vendored set was already
+  # generated from the lockfile OF THIS TAG by the flatpak job. Both halves leave
+  # one run and cannot disagree, which is the entire reason this job exists rather
+  # than a second generation on the Flathub side.
+  flathub:
+    name: Flathub update PR
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Flathub stable takes final releases only. A pre-release tag carries a
+    # hyphen, the same test the Release itself uses to set `prerelease:`.
+    if: ${{ !contains(github.ref_name, '-') }}
+    steps:
+      # A missing credential is not an emergency and must not fail a tag that has
+      # already produced every artifact. It reports why and stops.
+      - name: Determine whether a Flathub token is configured
+        id: creds
+        env:
+          HAS_TOKEN: ${{ secrets.FLATHUB_TOKEN }}
+        run: |
+          if [ -n "$HAS_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::FLATHUB_TOKEN is not set, so no Flathub PR was opened for ${GITHUB_REF_NAME}. Update flathub/eu.skribisto.skribisto by hand, or add the secret (a PAT with public_repo; GITHUB_TOKEN is scoped to this repository and cannot push to another one)."
+          fi
+
+      - name: Check out the Flathub repository
+        if: steps.creds.outputs.enabled == 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: flathub/eu.skribisto.skribisto
+          token: ${{ secrets.FLATHUB_TOKEN }}
+          path: flathub
+          ref: master
+
+      - name: Download the vendored cargo sources
+        if: steps.creds.outputs.enabled == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: cargo-sources
+          path: cargo-sources
+
+      - name: Point the Flathub manifest at this tag
+        if: steps.creds.outputs.enabled == 'true'
+        run: |
+          set -euo pipefail
+          manifest=flathub/eu.skribisto.skribisto.yml
+
+          # The indent is captured and replayed so only the git source's own keys
+          # move, and the surrounding comments stay exactly as written.
+          sed -i -E "s|^( *)tag: .*$|\1tag: ${GITHUB_REF_NAME}|" "$manifest"
+          sed -i -E "s|^( *)commit: .*$|\1commit: \"${GITHUB_SHA}\"|" "$manifest"
+
+          # A sed that matches nothing says nothing. Unchecked, that is a PR which
+          # bumps the vendored crates while still naming the previous tag: the one
+          # combination that builds cleanly and ships the wrong source.
+          grep -q "tag: ${GITHUB_REF_NAME}$" "$manifest" \
+            || { echo "::error::tag was not written into $manifest"; exit 1; }
+          grep -q "commit: \"${GITHUB_SHA}\"$" "$manifest" \
+            || { echo "::error::commit was not written into $manifest"; exit 1; }
+
+          cp cargo-sources/cargo-sources.json flathub/cargo-sources.json
+          git -C flathub --no-pager diff --stat
+
+      - name: Open the pull request
+        if: steps.creds.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.FLATHUB_TOKEN }}
+        working-directory: flathub
+        run: |
+          set -euo pipefail
+          branch="update-${GITHUB_REF_NAME}"
+
+          if git diff --quiet; then
+            echo "::notice::the Flathub manifest already matches ${GITHUB_REF_NAME}; nothing to open"
+            exit 0
+          fi
+
+          git config user.name "Skribisto release"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          # -C, not -c: the branch content is fully determined by the tag, so
+          # re-running a release resets its own branch instead of failing on one
+          # left behind. A fresh CI checkout never has it, which is exactly the
+          # kind of assumption that holds until it does not.
+          git switch -C "$branch"
+          git add eu.skribisto.skribisto.yml cargo-sources.json
+          git commit -m "Update to ${GITHUB_REF_NAME}"
+          # Re-running a tag may replace its own branch, and nothing else.
+          git push --force-with-lease origin "$branch"
+
+          body=$(printf '%s\n' \
+            "Automated from jacquetc/skribisto ${GITHUB_REF_NAME} (${GITHUB_SHA})." \
+            "" \
+            "The manifest tag/commit and \`cargo-sources.json\` come from the same release" \
+            "run, generated from the lockfile of this tag, so the vendored crate set matches" \
+            "the source being built. Keeping them together is what the external data checker" \
+            "cannot do on its own: flathub-infra/flatpak-external-data-checker#252.")
+
+          if [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
+            echo "::notice::a PR for ${branch} is already open; the update was pushed to it"
+          else
+            gh pr create --base master --head "$branch" \
+              --title "Update to ${GITHUB_REF_NAME}" --body "$body"
+          fi
