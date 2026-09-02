@@ -664,6 +664,7 @@ mod tests {
                 },
                 table: Vec::new(),
                 work_uid: work.unique_id.clone(),
+                publisher: crate::margin_lane::LaneScope::fresh(),
             },
         ));
 
@@ -820,6 +821,7 @@ mod tests {
                 },
                 table: Vec::new(),
                 work_uid: work.unique_id.clone(),
+                publisher: crate::margin_lane::LaneScope::fresh(),
             },
         ));
 

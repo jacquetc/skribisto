@@ -204,7 +204,11 @@ mod imp {
         ids: AppIds,
         /// The live overlay's source: a reference typed a moment ago is in an open
         /// document long before it reaches its `Content` row.
-        docs: OpenDocsStore,
+        ///
+        /// **Weak.** The store owns the view-model that owns this model, so a
+        /// strong handle back would close an `Rc` ring — see
+        /// [`WeakOpenDocsStore`](crate::models::WeakOpenDocsStore).
+        docs: crate::models::WeakOpenDocsStore,
         /// Every label any open document currently references, as of the last
         /// refresh — the cheap comparison that keeps typing from re-reading the
         /// whole manuscript on every keystroke.
@@ -234,7 +238,7 @@ mod imp {
                     subscribed: Cell::new(false),
                     ctx,
                     ids,
-                    docs,
+                    docs: docs.downgrade(),
                     live_labels: std::cell::RefCell::new(Vec::new()),
                 }),
             };
@@ -508,7 +512,9 @@ mod imp {
             let Ok(Some(dto)) = footnote_commands::get_footnote(&self.inner.ctx, &id) else {
                 return None;
             };
-            self.inner.docs.flush_all(stack_id);
+            if let Some(docs) = self.inner.docs.upgrade() {
+                docs.flush_all(stack_id);
+            }
 
             let touched = self.contents_referencing(&dto.label);
             let _ = undo_redo_commands::begin_composite(&self.inner.ctx, stack_id);
@@ -554,7 +560,9 @@ mod imp {
             // Only the fields that genuinely moved: an unconditional reload
             // clears each document's undo history, and most of these rows are
             // untouched by a note's deletion.
-            self.inner.docs.reload_if_diverged(&items);
+            if let Some(docs) = self.inner.docs.upgrade() {
+                docs.reload_if_diverged(&items);
+            }
             self.refresh();
 
             seq
@@ -609,8 +617,11 @@ mod imp {
         /// goes stale until an unrelated event happens to force a refresh.
         fn live_labels(&self) -> Vec<String> {
             let mut refs: Vec<(u64, &'static str, String)> = Vec::new();
-            for item_id in self.inner.docs.open_item_ids() {
-                let Some(doc) = self.inner.docs.peek(item_id) else {
+            let Some(docs) = self.inner.docs.upgrade() else {
+                return Vec::new();
+            };
+            for item_id in docs.open_item_ids() {
+                let Some(doc) = docs.peek(item_id) else {
                     continue;
                 };
                 for (kind, field) in [
@@ -679,8 +690,10 @@ mod imp {
         /// empty until the next `Footnote` entity event.
         fn refresh_for(&self, work_id: Option<u64>) {
             *self.inner.live_labels.borrow_mut() = self.live_labels();
+            let docs = self.inner.docs.upgrade();
             let rows = work_id
-                .map(|id| load_rows(&self.inner.ctx, id, &self.inner.docs))
+                .zip(docs.as_ref())
+                .map(|(id, docs)| load_rows(&self.inner.ctx, id, docs))
                 .unwrap_or_default();
             let key = super::structure_key(&rows);
             self.inner.model.reconcile_by_key(rows, |r| r.id);

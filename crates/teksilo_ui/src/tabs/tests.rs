@@ -3891,7 +3891,15 @@ fn scene_prose_field() -> (Rc<AppContext>, ProseField) {
     )
     .unwrap();
 
-    let field = prose_field(&ctx, item.id, ContentRole::SceneText, None);
+    // Its own backend: this helper builds one field with nothing to share with.
+    // The documents built in it keep it alive.
+    let field = prose_field(
+        &ctx,
+        &teksilo::text_document::DocumentBackend::new(),
+        item.id,
+        ContentRole::SceneText,
+        None,
+    );
     (ctx, field)
 }
 

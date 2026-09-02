@@ -182,6 +182,20 @@ interprocess = "2"
 open = "5.3"
 similar = { version = "3", features = ["unicode"] }
 
+# Heap profiler with call-site attribution, behind the `dhat-heap` feature.
+# Optional, so a default build neither compiles nor links it.
+dhat = { version = "0.3", optional = true }
+
+# Alternative general-purpose allocator, behind the `mimalloc` feature.
+mimalloc = { version = "0.1", optional = true, default-features = false }
+
+# Unresolved stack capture for `memprof`'s large-allocation attribution. The
+# `backtrace` crate rather than `std::backtrace` because only it separates
+# *capturing* a stack (cheap: a walk, a few pointers) from *symbolising* one
+# (expensive: DWARF, one binary-wide index). Capture happens per allocation;
+# symbolisation happens once, at the dump.
+backtrace = { version = "0.3", optional = true }
+
 # PID-liveness check for reaping stale open-registry locks.
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
@@ -217,6 +231,26 @@ mocks = []
 # neither the formatting nor the lookup, and both the lane's and the editor's sit
 # on a layout path that runs every dirty frame.
 debug-traces = ["teksilo/debug-traces"]
+# Heap instrumentation for the memory investigation: a counting global allocator
+# plus a sampler thread writing a CSV timeline (see `src/memprof.rs`). Off by
+# default because a shipped build has no business counting every allocation; the
+# two relaxed atomics per malloc are cheap but not free.
+memprof = ["dep:backtrace"]
+
+# Call-site attribution for the same investigation, via the `dhat` crate: every
+# live block at exit is reported with the backtrace that allocated it, which is
+# the half a counter cannot answer ("50 MB is still held", by what?). Mutually
+# exclusive with `memprof`: a process has one global allocator.
+dhat-heap = ["dep:dhat"]
+
+# Swap glibc malloc for mimalloc. Independent of `memprof`: with both on, the
+# counting allocator forwards to mimalloc instead of the system allocator, so the
+# same timeline can be read against either. Exists to answer, with numbers rather
+# than folklore, how much of the RSS that never comes back is glibc's arena
+# retention. mimalloc returns freed pages to the OS on its own schedule, where
+# glibc only trims the top of an arena.
+mimalloc = ["dep:mimalloc"]
+
 # Opt-in PDF export (embedded Typst). OFF by default so the standard build carries no Typst
 # dependency (~34 MB / ~60 s); the shipping/release build turns it on. When off, choosing PDF
 # in the export panel fails with a "PDF support not compiled" error rather than being absent.

@@ -62,7 +62,12 @@ pub enum FootnoteFilter {
 
 struct Inner {
     model: FootnotesListModel,
-    docs: OpenDocsStore,
+    /// **Weak.** The store owns this view-model, so a strong handle back would
+    /// close an `Rc` ring nothing can break — see
+    /// [`WeakOpenDocsStore`](crate::models::WeakOpenDocsStore) for what that ring
+    /// kept resident. `None` from the upgrade means the `Work` is closed, and
+    /// there is then nothing for these methods to tell.
+    docs: crate::models::WeakOpenDocsStore,
     stack_id: Signal<Option<u64>>,
     /// `(content_id, label)` — where the dock asked an editor to put the caret.
     pending_seek: Signal<Option<(u64, String)>>,
@@ -102,7 +107,7 @@ impl FootnotesViewModel {
         Self {
             inner: Rc::new(Inner {
                 model,
-                docs,
+                docs: docs.downgrade(),
                 stack_id,
                 pending_seek: Signal::new(None),
                 caret_label: Signal::new(None),
@@ -144,9 +149,10 @@ impl FootnotesViewModel {
     /// reference does (see [`insert_at`](Self::insert_at)), and a map that
     /// omitted it would draw `fn7` into the prose for that frame.
     pub fn push_markers(&self) {
-        self.inner
-            .docs
-            .set_footnote_markers(self.inner.model.markers());
+        let Some(docs) = self.inner.docs.upgrade() else {
+            return;
+        };
+        docs.set_footnote_markers(self.inner.model.markers());
     }
 
     /// An edit landed somewhere — renumber if a reference moved.
@@ -281,7 +287,14 @@ impl FootnotesViewModel {
             }
             return doc.clone();
         }
-        let doc = TextDocument::new();
+        // In the project's backend, not a document of its own: a bare
+        // `TextDocument::new()` mints an event hub and an OS thread to drain it,
+        // and a note's body is cached for as long as the project stays open. A
+        // manuscript with a hundred notes was a hundred threads.
+        let doc = match self.inner.docs.upgrade() {
+            Some(docs) => TextDocument::new_in(&docs.backend()),
+            None => TextDocument::new(),
+        };
         let _ = doc.set_djot_sync(initial);
         docs.insert(id, doc.clone());
         doc

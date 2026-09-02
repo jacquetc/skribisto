@@ -38,7 +38,7 @@ use std::rc::Rc;
 
 use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
-use teksilo::text_document::TextDocument;
+use teksilo::text_document::{HighlightMask, TextDocument};
 use teksilo::widgets::{
     Divider, Expand, HStack, IconButton, Segment, SegmentId, SegmentedControl, Spacer, TextWidget,
     VStack,
@@ -122,6 +122,7 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         highlight_format: RefCell::new(None),
         find_docs: tab.in_prose_docs_sink(),
         store: tab.docs(),
+        active: None,
         root: None,
     };
 
@@ -330,6 +331,28 @@ struct NoteInProseBody {
     /// after construction, the same shape `Self::ids` already has; [`Drop`] reads it
     /// directly with no `BuildContext` needed.
     store: OpenDocsStore,
+    /// **Whether this page is the one on screen**, from the framework's own answer:
+    /// `BuildContext::activation_signal`, `true` while active and `false` while parked
+    /// dormant. Installed on the first build; `None` until then, which is a state only a
+    /// page being built for the first time is in, and such a page is active.
+    ///
+    /// This page is what a `Switcher` calls a mounted page: built the first time the writer
+    /// picks **In prose**, and then kept for the switcher's lifetime. Leaving the reading
+    /// runs no `Drop` and stops no effect, so everything the page had registered against
+    /// state outside its own subtree stayed registered.
+    ///
+    /// Both switches it can disappear behind are `Switcher`s (the segment bar's, and
+    /// `TabWidget`'s own), so one signal answers for both. Reading `ContentTab::segment`
+    /// instead would answer only the first: a `ContentTab` is not told which pane holds it
+    /// or whether it is that pane's front tab, and `receive_tab` moves a handle between
+    /// panes.
+    ///
+    /// `activation_signal`'s own doc says ordinary widgets never need it, since a dormant
+    /// subtree is not painted and so vanishes for free. This page is the other case it
+    /// names: what it leaves behind does not live in its subtree. A range session lives on
+    /// a document a scene tab is still showing, and the lane subject is a thread-local every
+    /// stream in the project reads.
+    active: Option<Signal<bool>>,
     root: Option<WidgetId>,
 }
 
@@ -358,22 +381,96 @@ impl Drop for NoteInProseBody {
         for id in self.docs.borrow().keys() {
             self.store.release(*id, stack);
         }
-        crate::margin_lane::clear_subject_for(self.note_id);
+        crate::margin_lane::clear_subject_for(self.scope);
+    }
+}
+
+/// `Work.unique_id`, or `None` when there is nothing to key anything by. An unsaved project
+/// has none, and keying by `""` would make every such project share one.
+fn work_uid_of(app_ctx: &Rc<frontend::AppContext>, ids: &AppIds) -> Option<String> {
+    let work_id = ids.work_id.get()?;
+    let uid = frontend::commands::work_commands::get_work(app_ctx, &work_id)
+        .ok()
+        .flatten()?
+        .unique_id;
+    crate::models::uid_is_usable(&uid).then_some(uid)
+}
+
+/// Put a reading's entry on the margin lane, or take it back off.
+///
+/// Published when there is something to publish **and the page is on screen**, and
+/// **withdrawn by name** otherwise: an entry with no title and no alias, or a project with no
+/// uid yet, has nothing for the lane to mark, and clearing unconditionally would blank the
+/// marks a second window's reading of a different note had put there. The same "only if it is
+/// mine" rule `NoteInProseBody`'s [`Drop`] takes this off the lane with.
+///
+/// The on-screen half is what [`crate::margin_lane::set_active_subject`]'s own contract asks
+/// for ("set while a note's **In prose** segment is on screen, cleared when it goes away") and
+/// what `Drop` alone could not deliver, because the page is never dropped for merely being
+/// left; [`NoteInProseBody::active`] is where the answer comes from.
+/// The story-bible provider is `default_on` for every stream, so a subject left
+/// published puts a dot at every occurrence of that entry's names on every Full book / Full
+/// part / Full chapter stream in the project, with nothing on screen explaining them.
+///
+/// The wash in the prose needs none of this. It is an opt-in layer only this reading's own
+/// row editors name (see [`crate::story_bible::highlight`]), so it is bounded by
+/// construction. The lane subject has no such scoping, being one thread-local every stream
+/// in the project reads, so it is bounded by the page's own visibility instead.
+fn publish_subject(
+    app_ctx: &Rc<frontend::AppContext>,
+    ids: &AppIds,
+    scope: crate::margin_lane::LaneScope,
+    on_screen: bool,
+    entity: Option<&skribisto_model::mentions::DiscoverableEntity>,
+    table: &[skribisto_model::mentions::DiscoverableEntity],
+) {
+    let subject = on_screen.then_some(()).and_then(|()| {
+        entity
+            .cloned()
+            .zip(work_uid_of(app_ctx, ids))
+            .map(|(entity, work_uid)| crate::margin_lane::LaneSubject {
+                entity,
+                table: table.to_vec(),
+                work_uid,
+                publisher: scope,
+            })
+    });
+    match subject {
+        Some(subject) => crate::margin_lane::set_active_subject(Some(subject)),
+        None => crate::margin_lane::clear_subject_for(scope),
     }
 }
 
 impl NoteInProseBody {
+    /// Whether this reading is the page the writer is actually looking at. See
+    /// [`Self::active`]. `true` before the first build has asked the framework, which is the
+    /// state a page is in while it is being built for the first time.
+    fn on_screen(&self) -> bool {
+        self.active.as_ref().is_none_or(|a| a.get())
+    }
+
+    /// This reading's entry on the margin lane. See [`publish_subject`].
+    fn publish_subject(
+        &self,
+        entity: Option<&skribisto_model::mentions::DiscoverableEntity>,
+        table: &[skribisto_model::mentions::DiscoverableEntity],
+    ) {
+        publish_subject(
+            &self.app_ctx,
+            &self.ids,
+            self.scope,
+            self.on_screen(),
+            entity,
+            table,
+        );
+    }
+
     /// `Work.unique_id`, or `None` when there is nothing to key a remembered choice by.
     /// Mirrors `crate::settings::TreeExpansionViewModel::work_uid` exactly, for the same
     /// reason: a brand-new unsaved project has no uid yet, and keying by `""` would make
     /// every such project share one remembered Book.
     fn work_uid(&self) -> Option<String> {
-        let work_id = self.ids.work_id.get()?;
-        let uid = frontend::commands::work_commands::get_work(&self.app_ctx, &work_id)
-            .ok()
-            .flatten()?
-            .unique_id;
-        crate::models::uid_is_usable(&uid).then_some(uid)
+        work_uid_of(&self.app_ctx, &self.ids)
     }
 
     /// Open every newly-declared row and release every row that fell out of the current
@@ -457,12 +554,71 @@ impl NoteInProseBody {
         self.walk.set_order(order);
         // Once here as well as on the frame tick below, so the first paint of a freshly
         // mounted reading already carries its marks and its count rather than acquiring
-        // them a frame later.
-        self.walk.refresh(wanted.as_ref(), &table);
+        // them a frame later, and only when this page is the one on screen, since a
+        // rebuild reaches a parked page too (`reload_origins` fires on any project write).
+        self.walk.refresh(
+            self.on_screen().then_some(&wanted).and_then(|w| w.as_ref()),
+            &table,
+        );
 
-        let walk = self.walk.clone();
-        let tick = ctx.frame_tick();
-        ctx.effect(&tick, move |_| walk.refresh(wanted.as_ref(), &table));
+        // **Only while the reading is being read.** `ctx.frame_tick` is the tree's own
+        // signal, not the visibility-gated `subscribe_frame_tick`, so its observers fire on
+        // every frame the window renders, including for a page a `Switcher` has parked.
+        //
+        // What that costs is not a mention scan per row: `SubjectHighlight::refresh` bails
+        // out unless an edit staled it or the names changed. It is the *check*: one
+        // element-by-element comparison of the whole discoverable table per row, per frame,
+        // plus a full re-derive of every row on the frame after any keystroke anywhere in
+        // the project. None of it can reach a pixel while the page is parked.
+        //
+        // Both closures share one `Rc` of the table and one of the entity: a Book's table is
+        // a `String` title and a `Vec<String>` of aliases per entry, and this runs on every
+        // build, which `reload_origins` triggers on any project write.
+        let names = Rc::new(table);
+        let subject_entity = Rc::new(entity.cloned());
+        let active = self
+            .active
+            .clone()
+            .unwrap_or_else(|| ctx.activation_signal(ctx.self_id()));
+        let refresh = {
+            let (walk, wanted, names) = (self.walk.clone(), wanted, names.clone());
+            let active = active.clone();
+            move || {
+                // `None` is not merely "stop refreshing": the ranges pushed while the
+                // reading was up are still on the documents, and its own walk still counts
+                // them in the header. `None` retires both.
+                let subject = active.get().then_some(&wanted).and_then(|w| w.as_ref());
+                walk.refresh(subject, &names);
+            }
+        };
+        {
+            let refresh = refresh.clone();
+            let tick = ctx.frame_tick();
+            ctx.effect(&tick, move |_| refresh());
+        }
+        // And on the switch itself, so leaving the reading clears within the frame rather
+        // than whenever the next tick happens to arrive, and coming back re-derives from
+        // this build's names.
+        //
+        // `entity`, not `wanted`: the second carries the *marks* switch
+        // (`editor.margin_lane.provider.story_bible`), and the lane provider reads that
+        // switch itself. Publishing the gated one here would make the strip's own setting
+        // withdraw the subject as well, and would do it only down this path (`build`
+        // publishes the ungated entity), so which of the two the lane saw would depend on
+        // whether a rebuild or a park happened last.
+        let (app_ctx, ids, scope) = (self.app_ctx.clone(), self.ids.clone(), self.scope);
+        ctx.effect(&active, move |on_screen| {
+            refresh();
+            publish_subject(
+                &app_ctx,
+                &ids,
+                scope,
+                // The value the signal just took, rather than a re-read of it.
+                *on_screen,
+                subject_entity.as_ref().as_ref(),
+                &names,
+            );
+        });
     }
 
     fn book_bar(&self, books: &[BookChoice]) -> SegmentedControl {
@@ -514,6 +670,20 @@ impl NoteInProseBody {
         if let Some(field) = doc.main.as_ref() {
             let mark_dirty = self.mark_dirty.clone();
             let on_change = move || mark_dirty();
+            // **The one view that draws this row's wash.** The layer is an opt-in session
+            // (see `crate::story_bible::highlight`), so no editor renders it until its mask
+            // names it, and the scene on this row is very often open in a tab of its own,
+            // or a row of the Full Chapter in the other half of the split, at the same time.
+            //
+            // Minted by `sync_highlights` **earlier in this same `build`**, which is what
+            // makes reading it here safe: a theme change clears and re-mints every layer, and
+            // both halves happen in one build, so the id an editor is given can never name a
+            // retired session.
+            let mask = self
+                .highlights
+                .borrow()
+                .get(&row.item_id)
+                .map(|layer| HighlightMask::all().with(layer.session()));
             let min_lines = if is_heading {
                 shared::HEADING_PROSE_MIN_LINES
             } else {
@@ -557,6 +727,7 @@ impl NoteInProseBody {
                 // Every row here is manuscript prose in a real project, so the
                 // capture submenu is available from it like any other editor.
                 Some(self.tags.clone()),
+                mask,
             ));
         }
         col
@@ -565,6 +736,11 @@ impl NoteInProseBody {
 
 impl Widget for NoteInProseBody {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Install-or-reuse, so a rebuild keeps the same signal the parked-page effects of
+        // the previous build were watching. See [`Self::active`].
+        if self.active.is_none() {
+            self.active = Some(ctx.activation_signal(ctx.self_id()));
+        }
         self.selected_book
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
         self.generation
@@ -605,22 +781,9 @@ impl Widget for NoteInProseBody {
         // the index's first scan lands, which `subject::hits` handles: it matches the
         // reading's own entry either way.
         let table = self.mention_index.discoverable_table();
-        // Published when there is something to publish, and **withdrawn by name** when
-        // there is not: an entry with no title and no alias, or a project with no uid yet,
-        // has nothing for the lane to mark, and clearing unconditionally would blank the
-        // marks a second window's reading of a different note had put there. The same
-        // "only if it is mine" rule [`Drop`] takes this off the lane with.
-        match entity
-            .clone()
-            .zip(self.work_uid())
-            .map(|(entity, work_uid)| crate::margin_lane::LaneSubject {
-                entity,
-                table: table.clone(),
-                work_uid,
-            }) {
-            Some(subject) => crate::margin_lane::set_active_subject(Some(subject)),
-            None => crate::margin_lane::clear_subject_for(self.note_id),
-        }
+        // A rebuild can reach a page nobody is looking at (`reload_origins` fires on any
+        // project write), so this goes through the on-screen gate like every other publish.
+        self.publish_subject(entity.as_ref(), &table);
 
         // **Re-resolved on every build, never seeded once.** A choice that no longer names
         // a live Book is not a choice: trash the Book this reading was on and the previous
@@ -1286,7 +1449,12 @@ mod tests {
         tree.add_boxed(note_in_prose_pane(&f.tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
 
-        let marked: Vec<(usize, usize)> = paint_spans(&doc)
+        // The layer this page built over the row's document: the one private session on
+        // it, since nothing else in the app registers one.
+        let mine = doc.opt_in_session_ids();
+        assert_eq!(mine.len(), 1, "the reading builds one layer for this row");
+
+        let marked: Vec<(usize, usize)> = paint_spans(&doc, &HighlightMask::all().with(mine[0]))
             .into_iter()
             .filter(|s| s.background_color.is_some())
             .map(|s| (s.start, s.length))
@@ -1296,11 +1464,23 @@ mod tests {
             vec![(0, 6)],
             "the name where it is written, and not inside a longer word"
         );
+
+        // **And nowhere else.** This very document is what a tab on the same scene, a row
+        // of the Full Chapter beside it and the search preview band all show; each is on
+        // the default mask, and the wash is a fact about this reading, not about the prose.
+        assert!(
+            paint_spans(&doc, &HighlightMask::all()).is_empty(),
+            "an editor that did not ask for the reading's marks must draw none: {:?}",
+            paint_spans(&doc, &HighlightMask::all())
+        );
     }
 
-    fn paint_spans(doc: &TextDocument) -> Vec<teksilo::text_document::PaintHighlightSpan> {
-        use teksilo::text_document::{FlowElementSnapshot, HighlightMask};
-        match &doc.snapshot_flow_masked(&HighlightMask::all()).elements[0] {
+    fn paint_spans(
+        doc: &TextDocument,
+        mask: &HighlightMask,
+    ) -> Vec<teksilo::text_document::PaintHighlightSpan> {
+        use teksilo::text_document::FlowElementSnapshot;
+        match &doc.snapshot_flow_masked(mask).elements[0] {
             FlowElementSnapshot::Block(b) => b.paint_highlights.clone(),
             _ => panic!("block"),
         }
@@ -1495,6 +1675,79 @@ mod tests {
         );
     }
 
+    /// **Leaving the reading is not the same as closing it, and both must clear.**
+    ///
+    /// `Switcher` mounts a page lazily and then keeps it for its own lifetime, so picking
+    /// another segment, or another tab, drops nothing, runs no `Drop` and cancels no effect.
+    /// The page went on publishing its subject and re-deriving its marks every frame, for a
+    /// reading nobody was looking at.
+    ///
+    /// Parked through a real `Switcher` rather than by writing `ContentTab::segment`,
+    /// because the gate is the framework's own activation and the point is that it answers
+    /// for a tab switch as well as a segment one. Both are `Switcher`s; this is one of them.
+    ///
+    /// Two things are checked, because the two halves fail differently: the lane subject is
+    /// withdrawn by name, and the walk retires the ranges it had pushed onto documents that
+    /// other views are still showing.
+    #[test]
+    fn parking_the_page_clears_what_the_reading_had_published() {
+        let f = seed();
+        f.give_the_work_a_uid();
+        let doc = f
+            .tab
+            .docs()
+            .open(f.scene_id)
+            .and_then(|d| d.main.as_ref().map(|m| m.doc.clone()))
+            .expect("the declared row's prose");
+        doc.set_plain_text("A note was left.").unwrap();
+
+        // Page 0 is the reading, page 1 stands in for whatever the writer switches to.
+        let page = Signal::new(0usize);
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        tree.add(
+            teksilo::widgets::Switcher::new(page.clone())
+                .child_boxed(note_in_prose_pane(&f.tab))
+                .child(TextWidget::new(lit!("elsewhere"))),
+        );
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+
+        let mine = doc.opt_in_session_ids();
+        assert_eq!(mine.len(), 1, "the reading builds one layer for this row");
+        let marks = || paint_spans(&doc, &HighlightMask::all().with(mine[0])).len();
+        assert!(marks() > 0, "the reading marks its entry while it is up");
+        assert!(crate::margin_lane::active_subject().get().is_some());
+
+        // The writer switches away. The page is not destroyed: it stays mounted, still
+        // holding its documents, still observing.
+        page.set(1);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+
+        assert!(
+            crate::margin_lane::active_subject().get().is_none(),
+            "the strip must not go on marking this entry on every stream in the project"
+        );
+        assert_eq!(
+            marks(),
+            0,
+            "and the ranges must come off the documents the rest of the app is showing"
+        );
+
+        // Coming back re-derives rather than leaving a blank reading behind.
+        page.set(0);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert!(
+            marks() > 0,
+            "returning to the reading brings its marks back"
+        );
+        assert_eq!(
+            crate::margin_lane::active_subject()
+                .get()
+                .map(|s| s.note_id()),
+            Some(f.note_id),
+            "and its subject with them"
+        );
+    }
+
     /// A reading with nothing to publish (an entry with no title and no alias, or a
     /// project with no uid yet) must **withdraw its own** subject and not blank the
     /// marks a second window's reading of a different note put on the lane.
@@ -1510,6 +1763,7 @@ mod tests {
             },
             table: Vec::new(),
             work_uid: "another-project".into(),
+            publisher: crate::margin_lane::LaneScope::fresh(),
         };
         crate::margin_lane::set_active_subject(Some(elsewhere.clone()));
 

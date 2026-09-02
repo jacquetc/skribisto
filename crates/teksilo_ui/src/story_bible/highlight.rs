@@ -59,6 +59,22 @@
 //! empty set, so switching back re-derives on the next frame rather than rebuilding
 //! everything the reading holds.
 //!
+//! ## Marked here, and nowhere else
+//!
+//! The marks are a range session, and a range session lives on the **document**, which is
+//! the one the scene's own tab, its row in the Full Chapter beside it and the search preview
+//! band are all showing at the same time. So a layer registered the ordinary way washed the
+//! entry's names in every one of them, with nothing on those screens to explain the colour,
+//! and went on doing it for as long as this page stayed mounted (a `Switcher` keeps a page it
+//! has once shown, so leaving the reading does not drop it).
+//!
+//! The layer is therefore **opt-in**: `add_opt_in_range_session` puts it on the document
+//! where the offsets have to live, and no view draws it until its `HighlightMask` names
+//! [`SubjectHighlight::session`]. The reading's own row editors name it; nothing else does.
+//! The other shape, `HighlightMask::only` on every *other* editor, is unwritable, because
+//! each of them would have to name every session it does want, the widget's own ambient
+//! caret band included, whose id the application never sees.
+//!
 //! ## Read-only, and it never edits
 //!
 //! A range session is a paint layer: it changes no characters, survives no save, and is
@@ -215,7 +231,14 @@ impl SubjectHighlight {
         format: HighlightFormat,
         current_format: HighlightFormat,
     ) -> Self {
-        let session = doc.add_range_session();
+        // **Opt-in**, not shared: this layer is a fact about *this reading*, not about the
+        // prose. A range session lives on the document (there is nowhere else for one to
+        // live), and the reading's rows are the very documents a scene tab, a Full Chapter
+        // stream row and the search preview band all show at the same time. Registered
+        // shared, every one of them washed the entry's names in a colour nothing on their
+        // screen explained, and went on doing it for as long as the reading's page stayed
+        // mounted. Only a view that names [`Self::session`] draws this.
+        let session = doc.add_opt_in_range_session();
         let dirty = Arc::new(AtomicBool::new(false));
         let sub = {
             let dirty = dirty.clone();
@@ -348,6 +371,16 @@ impl SubjectHighlight {
         self.doc.set_session_ranges(self.session, next.clone());
         *self.last.borrow_mut() = next;
         true
+    }
+
+    /// The document session this layer owns. Put it in a view's `HighlightMask`
+    /// (`HighlightMask::all().with(id)`) to render it *there and nowhere else*.
+    ///
+    /// The layer is [opt-in](teksilo::text_document::SessionVisibility::OptIn), so a view
+    /// that never asks draws nothing; the reading's own row editors are the only ones that
+    /// ask. See [`Self::new`].
+    pub fn session(&self) -> SessionId {
+        self.session
     }
 
     /// How many names are marked right now.
@@ -993,20 +1026,64 @@ mod tests {
     #[test]
     fn dropping_the_layer_takes_its_marks_off_the_document() {
         let d = doc("Lizzy waited.");
-        {
+        let session = {
             let layer = layer_over(&d);
             assert!(layer.refresh(Some(&who(&["Lizzy"])), &[]));
-            assert!(!spans(&d).is_empty());
-        }
+            assert!(!spans_named(&d, layer.session()).is_empty());
+            layer.session()
+        };
         assert!(
-            spans(&d).is_empty(),
+            spans_named(&d, session).is_empty(),
             "the reading's marks must not survive it"
         );
     }
 
-    fn spans(doc: &TextDocument) -> Vec<teksilo::text_document::PaintHighlightSpan> {
-        use teksilo::text_document::{FlowElementSnapshot, HighlightMask};
-        match &doc.snapshot_flow_masked(&HighlightMask::all()).elements[0] {
+    /// **Marked in the reading, and in nothing else that shows the same scene.**
+    ///
+    /// The scene on a row of this reading is very often open in a tab of its own, a row of
+    /// the Full Chapter in the other half of the split, or the search preview band: all
+    /// live views of the *same* `TextDocument`. The layer is opt-in, so only a view whose
+    /// mask names it draws it; every other view is on the default `all()` and sees nothing.
+    #[test]
+    fn a_view_that_did_not_ask_for_the_marks_does_not_draw_them() {
+        let d = doc("Lizzy waited.");
+        let layer = layer_over(&d);
+        assert!(layer.refresh(Some(&who(&["Lizzy"])), &[]));
+
+        assert!(
+            !spans_named(&d, layer.session()).is_empty(),
+            "the reading's own editor names the session, so it draws the wash"
+        );
+        assert!(
+            spans_elsewhere(&d).is_empty(),
+            "a scene tab over the same document must come back clean: {:?}",
+            spans_elsewhere(&d)
+        );
+    }
+
+    /// What the reading's own row editor draws: every shared layer, plus the one session it
+    /// asked for by name. The mask `crate::tabs::note_in_prose` hands `writing_column`.
+    fn spans_named(
+        doc: &TextDocument,
+        session: SessionId,
+    ) -> Vec<teksilo::text_document::PaintHighlightSpan> {
+        use teksilo::text_document::HighlightMask;
+        spans_under(doc, &HighlightMask::all().with(session))
+    }
+
+    /// What every *other* view of the same document draws: the default mask, which no
+    /// editor in the app changes.
+    fn spans_elsewhere(doc: &TextDocument) -> Vec<teksilo::text_document::PaintHighlightSpan> {
+        use teksilo::text_document::HighlightMask;
+        spans_under(doc, &HighlightMask::all())
+    }
+
+    fn spans_under(
+        doc: &TextDocument,
+        mask: &teksilo::text_document::HighlightMask,
+    ) -> Vec<teksilo::text_document::PaintHighlightSpan> {
+        use teksilo::text_document::FlowElementSnapshot;
+        match &doc.snapshot_flow_masked(mask).elements[0] {
             FlowElementSnapshot::Block(b) => b.paint_highlights.clone(),
             _ => panic!("block"),
         }

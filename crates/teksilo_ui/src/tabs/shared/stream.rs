@@ -236,6 +236,8 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // the fold.
                     true,
                     Some(tab.tags()),
+                    // Nothing private on a split half: the default `all()`.
+                    None,
                 )),
                 SplitFlavour::Synopsis => Box::new(synopsis_column(
                     &field.doc,
@@ -573,6 +575,8 @@ fn stream_row(
                         // See the container's own column above.
                         true,
                         tags.cloned(),
+                        // Nothing private on a stream row: the default `all()`.
+                        None,
                     ));
                 }
             }

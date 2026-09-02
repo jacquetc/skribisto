@@ -247,12 +247,38 @@ type ScansByProse = HashMap<String, Arc<Vec<Mention>>>;
 /// Named rather than written inline because the nesting is the whole design —
 /// see [`Store`] — and clippy's `type_complexity` is right that three levels of
 /// generics in a field declaration reads as an accident.
-type ScansByTable = HashMap<(AliasTableFingerprint, FoldLocale), ScansByProse>;
+type ScansByTable = HashMap<(AliasTableFingerprint, FoldLocale), TableSlot>;
+
+/// How many alias tables keep their cached scans.
+///
+/// A slot is reachable only while its fingerprint can be recomputed, and the
+/// fingerprint folds each entity's **store id**. Those ids are re-minted by every
+/// `load_work`, so reopening a project mints a slot and orphans the previous one
+/// beyond any hope of a hit. Renaming one character does the same, mid-session.
+/// Neither is a leak the heap budget catches quickly: at 64 MB it takes a hundred
+/// reopenings, each holding the whole manuscript's prose as keys.
+///
+/// Eight is well past what is legitimately live (one per open project per fold
+/// locale) and small enough that orphaned slots cannot accumulate.
+const MAX_TABLES: usize = 8;
+
+/// One alias table's scans, with the heap they hold and when they were last read.
+///
+/// The per-slot total is what lets a slot be evicted without rescanning the whole
+/// store to find out what it was holding.
+struct TableSlot {
+    scans: ScansByProse,
+    heap: usize,
+    last_used: u64,
+}
 
 struct Store {
     by_table: ScansByTable,
     heap: usize,
     max_heap: usize,
+    /// Monotonic tick stamped onto a slot each time it is read or written, so the
+    /// least recently used slot can be found without an ordered container.
+    clock: u64,
 }
 
 impl Default for Store {
@@ -261,17 +287,22 @@ impl Default for Store {
             by_table: HashMap::new(),
             heap: 0,
             max_heap: MAX_HEAP,
+            clock: 0,
         }
     }
 }
 
 impl Store {
     fn get(
-        &self,
+        &mut self,
         prose: &str,
         key: (AliasTableFingerprint, FoldLocale),
     ) -> Option<Arc<Vec<Mention>>> {
-        self.by_table.get(&key)?.get(prose).cloned()
+        self.clock += 1;
+        let clock = self.clock;
+        let slot = self.by_table.get_mut(&key)?;
+        slot.last_used = clock;
+        slot.scans.get(prose).cloned()
     }
 
     fn insert(
@@ -281,7 +312,7 @@ impl Store {
         hits: Arc<Vec<Mention>>,
     ) {
         let size = prose.len() + hits.len() * std::mem::size_of::<Mention>();
-        // An entry that alone exceeds the budget is served but not cached — caching it would
+        // An entry that alone exceeds the budget is served but not cached. Caching it would
         // leave the store over budget, so the next insert would clear again, forever.
         if size > self.max_heap {
             return;
@@ -290,14 +321,39 @@ impl Store {
             self.by_table.clear();
             self.heap = 0;
         }
-        if self
-            .by_table
-            .entry(key)
-            .or_default()
-            .insert(prose.to_string(), hits)
-            .is_none()
-        {
+        self.clock += 1;
+        let clock = self.clock;
+        let slot = self.by_table.entry(key).or_insert_with(|| TableSlot {
+            scans: ScansByProse::new(),
+            heap: 0,
+            last_used: clock,
+        });
+        slot.last_used = clock;
+        if slot.scans.insert(prose.to_string(), hits).is_none() {
+            slot.heap += size;
             self.heap += size;
+        }
+        self.evict_stale_tables();
+    }
+
+    /// Drop the least recently used slots until at most [`MAX_TABLES`] remain.
+    ///
+    /// Eviction is per alias table rather than per entry on purpose: a slot goes
+    /// cold as a whole, when the ids it was keyed on stop existing, and every
+    /// entry in it goes cold with it.
+    fn evict_stale_tables(&mut self) {
+        while self.by_table.len() > MAX_TABLES {
+            let Some(oldest) = self
+                .by_table
+                .iter()
+                .min_by_key(|(_, slot)| slot.last_used)
+                .map(|(key, _)| *key)
+            else {
+                return;
+            };
+            if let Some(slot) = self.by_table.remove(&oldest) {
+                self.heap = self.heap.saturating_sub(slot.heap);
+            }
         }
     }
 }
@@ -313,8 +369,11 @@ pub fn cached_mentions(
     locale: FoldLocale,
 ) -> Arc<Vec<Mention>> {
     let key = (fingerprint, locale);
-    if let Ok(guard) = CACHE.read()
-        && let Some(hit) = guard.as_ref().and_then(|s| s.get(prose, key))
+    // A write lock for a read, because a hit stamps the slot's recency and that is
+    // what keeps the live tables live under [`MAX_TABLES`]. The critical section is
+    // two hash lookups; the scan below is what is expensive, and it stays outside.
+    if let Ok(mut guard) = CACHE.write()
+        && let Some(hit) = guard.as_mut().and_then(|s| s.get(prose, key))
     {
         return hit;
     }
@@ -400,6 +459,81 @@ mod tests {
             title: title.to_string(),
             aliases: aliases.iter().map(|s| s.to_string()).collect(),
         }
+    }
+
+    /// Reopening a project mints new store ids, so it mints a new fingerprint and
+    /// a new slot. Nothing can ever hit the old one again, so the store must not
+    /// keep it. Driven through `Store` directly rather than the process-global
+    /// cache, which other tests in this binary share.
+    #[test]
+    fn orphaned_alias_tables_are_evicted() {
+        let mut store = Store::default();
+        let prose = "Grace walked to the harbour and waited for Elias.";
+        let hits = Arc::new(Vec::new());
+
+        // One slot per "reopening": same prose, same names, ids re-minted.
+        for generation in 0..(MAX_TABLES as u64 * 4) {
+            let table = vec![
+                entity(generation * 2 + 1, "Grace", &[]),
+                entity(generation * 2 + 2, "Elias", &[]),
+            ];
+            let key = (fingerprint_alias_table(&table), FoldLocale::default());
+            store.insert(prose, key, hits.clone());
+        }
+
+        assert!(
+            store.by_table.len() <= MAX_TABLES,
+            "expected at most {MAX_TABLES} alias tables, found {}",
+            store.by_table.len()
+        );
+    }
+
+    /// Eviction must take the slot's bytes off the running total with it, or the
+    /// budget drifts upward until the wholesale clear fires for no reason.
+    #[test]
+    fn evicting_a_table_releases_its_heap() {
+        let mut store = Store::default();
+        let prose = "Grace walked to the harbour.";
+        let hits = Arc::new(Vec::new());
+
+        for generation in 0..(MAX_TABLES as u64 + 1) {
+            let table = vec![entity(generation, "Grace", &[])];
+            let key = (fingerprint_alias_table(&table), FoldLocale::default());
+            store.insert(prose, key, hits.clone());
+        }
+
+        let summed: usize = store.by_table.values().map(|slot| slot.heap).sum();
+        assert_eq!(
+            store.heap, summed,
+            "the running total must equal the sum of the surviving slots"
+        );
+    }
+
+    /// A slot that is still being read must outlive one that is not, whatever
+    /// order they were created in. Without this, a second project open in the
+    /// same process would evict the project the writer is actually using.
+    #[test]
+    fn a_table_still_in_use_outlives_an_idle_one() {
+        let mut store = Store::default();
+        let prose = "Grace walked to the harbour.";
+        let hits = Arc::new(Vec::new());
+
+        let live_table = vec![entity(1, "Grace", &[])];
+        let live_key = (fingerprint_alias_table(&live_table), FoldLocale::default());
+        store.insert(prose, live_key, hits.clone());
+
+        for generation in 0..(MAX_TABLES as u64 * 2) {
+            let table = vec![entity(1000 + generation, "Elias", &[])];
+            let key = (fingerprint_alias_table(&table), FoldLocale::default());
+            store.insert(prose, key, hits.clone());
+            // Keep reading the first table, as an open project's scans would.
+            assert!(store.get(prose, live_key).is_some());
+        }
+
+        assert!(
+            store.get(prose, live_key).is_some(),
+            "the table being read must never be the one evicted"
+        );
     }
 
     fn scan(prose: &str, table: &[DiscoverableEntity]) -> Vec<Mention> {

@@ -95,6 +95,8 @@ fn column_with(
         false,
         // No project behind a frame-loop probe, so no palette and no capture menu.
         None,
+        // Nothing private on this probe's editor: the default `all()`.
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);
@@ -199,6 +201,8 @@ fn prose_column_playing(
         None,
         false,
         // No project behind a frame-loop probe, so no palette and no capture menu.
+        None,
+        // Nothing private on this probe's editor: the default `all()`.
         None,
     );
     let mut tree = WidgetTree::new();
@@ -307,6 +311,8 @@ fn a_game_stops_typing_and_not_the_programmatic_api() {
         None,
         false,
         // No project behind a frame-loop probe, so no palette and no capture menu.
+        None,
+        // Nothing private on this probe's editor: the default `all()`.
         None,
     );
     let mut tree = WidgetTree::new();

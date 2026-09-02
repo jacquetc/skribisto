@@ -67,6 +67,8 @@ fn column_over(typo: &EditorTypography) -> WidgetTree {
         false,
         // No project behind this probe, so no palette and no capture menu.
         None,
+        // Nothing private on this probe's editor: the default `all()`.
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);

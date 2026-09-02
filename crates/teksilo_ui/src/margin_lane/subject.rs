@@ -71,6 +71,15 @@ pub struct LaneSubject {
     /// Which Work this belongs to, so a second window on a second project marks nothing
     /// rather than this project's names.
     pub work_uid: String,
+    /// **Which reading published it**: the surface token that reading hands its own
+    /// editors and its own lane ([`super::LaneScope`]).
+    ///
+    /// The note's id is not enough to tell two publishers apart. `Work ▸ New Window` puts
+    /// a second window on the same project with its own tab set, so the *same* note's
+    /// **In prose** page can be open twice at once; keyed by note, one of them leaving its
+    /// segment withdrew the other's still-visible marks. A scope is minted per surface, so
+    /// it separates them.
+    pub publisher: super::LaneScope,
 }
 
 impl LaneSubject {
@@ -96,14 +105,16 @@ pub fn set_active_subject(subject: Option<LaneSubject>) {
     });
 }
 
-/// Withdraw the subject **only if `note_id` is the one that published it**.
+/// Withdraw the subject **only if `publisher` is the reading that published it**.
 ///
-/// A reading closing must take its own marks off the lane and no one else's: the writer
-/// may have opened a second note's reading in another window, and clearing
-/// unconditionally would blank a strip nobody touched.
-pub fn clear_subject_for(note_id: EntityId) {
+/// A reading leaving the screen must take its own marks off the lane and no one else's:
+/// the writer may have another reading open in a second window, and clearing
+/// unconditionally would blank a strip nobody touched. By the publishing *surface* and not
+/// by the note, because the same note can be read in two windows at once and a note-keyed
+/// test cannot tell those two apart. See [`LaneSubject::publisher`].
+pub fn clear_subject_for(publisher: super::LaneScope) {
     ACTIVE.with(|s| {
-        if s.get().is_some_and(|a| a.note_id() == note_id) {
+        if s.get().is_some_and(|a| a.publisher == publisher) {
             let _ = s.set_if_changed(None);
         }
     });
@@ -292,17 +303,30 @@ mod tests {
     }
 
     /// The subject is withdrawn only by whoever published it.
+    ///
+    /// **By surface and not by note**, which is the case the second half pins: `Work ▸ New
+    /// Window` can put the same note's reading on screen twice, and the one that leaves
+    /// must not blank the one that stayed.
     #[test]
     fn only_the_publisher_withdraws_the_subject() {
-        let mine = LaneSubject {
+        let (mine, theirs) = (
+            super::super::LaneScope::fresh(),
+            super::super::LaneScope::fresh(),
+        );
+        let subject = LaneSubject {
             entity: entry("Elizabeth", &[]),
             table: Vec::new(),
             work_uid: "w".into(),
+            publisher: mine,
         };
-        set_active_subject(Some(mine.clone()));
-        clear_subject_for(9);
-        assert_eq!(active_subject().get(), Some(mine));
-        clear_subject_for(7);
+        set_active_subject(Some(subject.clone()));
+        clear_subject_for(theirs);
+        assert_eq!(
+            active_subject().get(),
+            Some(subject),
+            "another reading of the *same* note, in another window, may not withdraw this one"
+        );
+        clear_subject_for(mine);
         assert_eq!(active_subject().get(), None);
     }
 

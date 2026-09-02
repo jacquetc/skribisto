@@ -211,6 +211,47 @@ fn removing_one_of_two_windows_on_a_work_is_not_last_and_keeps_the_session() {
     );
 }
 
+/// The return value is the gate the heap trim rides on: a project window closing
+/// while a sibling still holds the same `Work` has released nothing, so walking
+/// every allocator arena there would cost milliseconds and return no pages.
+/// See `crate::heap::release_free_pages` and its call in `remove_window`.
+#[test]
+fn only_the_last_window_on_a_work_reports_the_work_gone() {
+    let reg = WorkRegistry::new();
+    let (first_stack, _first_stack_calls) = tracked_stack_teardown();
+    let (second_stack, _second_stack_calls) = tracked_stack_teardown();
+    reg.register(1, fixture_session());
+    reg.attach(1)
+        .expect("a second window attaches to the same Work");
+    reg.register_window(
+        TeksiloWindowId::new(1),
+        1,
+        None,
+        first_stack,
+        inert_window_teardown(),
+    );
+    reg.register_window(
+        TeksiloWindowId::new(2),
+        1,
+        None,
+        second_stack,
+        inert_window_teardown(),
+    );
+
+    assert!(
+        !reg.remove_window(TeksiloWindowId::new(1)),
+        "a sibling window still holds the Work, so nothing has been released"
+    );
+    assert!(
+        reg.remove_window(TeksiloWindowId::new(2)),
+        "the last window closing is what actually frees the project"
+    );
+    assert!(
+        !reg.remove_window(TeksiloWindowId::new(2)),
+        "a window this registry no longer knows frees nothing either"
+    );
+}
+
 #[test]
 fn removing_a_window_never_touches_a_sibling_works_session() {
     let reg = WorkRegistry::new();

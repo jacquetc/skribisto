@@ -462,6 +462,14 @@ fn prose(text: impl Into<LocalizedString>) -> impl Widget {
 /// Falls back to the row's own title when there is no context to ask (a test, or a project
 /// still loading) and when the row has no generated name to offer: only structural rows
 /// are numbered, so a genuinely untitled leaf scene keeps whatever it had.
+///
+/// Whatever it resolves to is handed over **whole**. A bar's category is also its hover
+/// tooltip and its accessibility label, so truncating here truncated the name everywhere,
+/// and two chapters whose titles differ only past the cut became two identical bars a
+/// screen reader announced identically. The axis is the only place a long name is a
+/// problem, and the chart solves it there: `teksilo-charts` caps the label band at a
+/// fraction of its own height and cuts each label to the band it granted, ending it in an
+/// ellipsis. No title can starve the plot to nothing, whatever this hands it.
 fn bar_label(
     names: Option<&crate::models::NameContext>,
     item_id: common::types::EntityId,
@@ -909,6 +917,38 @@ mod tests {
             "",
             "with nothing to ask, the row keeps exactly what it had"
         );
+    }
+
+    /// **A chapter titled in a whole sentence reaches the chart whole.**
+    ///
+    /// It used to be cut to a character budget here, because a label wide enough carved
+    /// the entire chart height away as its tilted band, the plot came out at zero height
+    /// and the chart painted nothing. That is what the bundled Verne example did, under a
+    /// caption that went on quoting the book's median scene length. The floor belongs in
+    /// the chart and now lives there (`teksilo-charts` caps the label band and cuts
+    /// each label to the band it granted), so cutting here only cost the hover tooltip and
+    /// the accessibility label their name.
+    #[test]
+    fn a_sentence_long_chapter_title_reaches_the_chart_whole() {
+        let verne = "Dans lequel Phileas Fogg et Passepartout s’acceptent réciproquement, \
+                     l’un comme maître, l’autre comme domestique";
+        assert_eq!(
+            super::bar_label(None, 7, verne),
+            verne,
+            "the datum carries the whole name; the axis is the chart's problem to solve"
+        );
+    }
+
+    /// Two chapters whose titles differ only past a cut must not become the same bar.
+    ///
+    /// The category is the hover tooltip and the accessibility mark's label as well as the
+    /// axis text, so a truncating label made them one row to a reader and two identical
+    /// announcements to a screen reader.
+    #[test]
+    fn two_titles_that_differ_late_stay_two_labels() {
+        let a = "Dans lequel Phileas Fogg et Passepartout s’acceptent réciproquement";
+        let b = "Dans lequel Phileas Fogg et Passepartout arrivent à destination";
+        assert_ne!(super::bar_label(None, 7, a), super::bar_label(None, 8, b));
     }
 
     // ── the prose measure ────────────────────────────────────────────────────

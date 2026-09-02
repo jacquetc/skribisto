@@ -410,12 +410,18 @@ pub(crate) fn renders_prose(role: &BinderItemRole, sub_role: &BinderItemSubRole)
 /// editor blank under `--features mocks`.
 pub(crate) fn prose_field(
     ctx: &Rc<AppContext>,
+    backend: &teksilo::text_document::DocumentBackend,
     item_id: u64,
     role: ContentRole,
     existing: Option<&ContentDto>,
 ) -> ProseField {
     let content = SingleContent::for_field(ctx.clone(), item_id, role, existing);
-    let doc = TextDocument::new();
+    // `new_in`, not `new`: a bare `TextDocument` owns an event hub and an OS
+    // thread draining it, and a container stream opens one document per prose
+    // field of every row up front. On a book-length manuscript that was more
+    // than a hundred threads to show one book. Every document of one project
+    // shares the project's backend, keeping its own store and undo stack.
+    let doc = TextDocument::new_in(backend);
     // `set_djot_sync`, not `set_djot(..).wait()`: this is a *load*, and the async
     // form spawns a worker thread only for us to block on it — overhead that does
     // not shrink with the text, so an empty scene paid it in full. A container

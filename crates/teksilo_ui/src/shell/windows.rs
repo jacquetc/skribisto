@@ -634,7 +634,9 @@ impl ProjectWindowFactory {
             // Load/New ever registered one.
             .on_removed({
                 let registry = registry.clone();
-                move |event| registry.remove_window(event.id)
+                move |event| {
+                    registry.remove_window(event.id);
+                }
             })
             .root(move |tree, state| {
                 let theme = tree.theme().clone();

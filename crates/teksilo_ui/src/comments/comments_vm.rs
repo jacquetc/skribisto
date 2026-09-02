@@ -138,6 +138,16 @@ pub struct CommentsViewModel {
     /// undo history mid-sentence. Same reasoning that puts prose documents on a
     /// shared `OpenDoc` rather than on the tab that shows them.
     body_docs: Rc<RefCell<HashMap<ThreadEntry, TextDocument>>>,
+    /// The open project's document store, for the backend its bodies belong in.
+    ///
+    /// **Weak**, and set after construction, because the store owns this
+    /// view-model: it is handed over by
+    /// [`OpenDocsStore::set_comments`](crate::models::OpenDocsStore::set_comments),
+    /// and a strong handle would close the ring
+    /// [`WeakOpenDocsStore`](crate::models::WeakOpenDocsStore) exists to keep open.
+    /// `None` on a surface with no project around it — the widget tests — where a
+    /// body falls back to a document of its own.
+    docs: Rc<RefCell<Option<crate::models::WeakOpenDocsStore>>>,
     /// The turn whose editor should take keyboard focus the moment it is built.
     ///
     /// Deliberately a plain `Cell`, not a `Signal`: nothing needs to *react* to
@@ -300,6 +310,7 @@ impl CommentsViewModel {
             model,
             app_ctx,
             stack,
+            docs: Rc::new(RefCell::new(None)),
             margin_content: Signal::new(None),
             filter: Signal::new(CommentFilter::All),
             sort: Signal::new(CommentSort::DocumentOrder),
@@ -379,6 +390,24 @@ impl CommentsViewModel {
     /// disagrees, and gating on focus is what stops handling *that* from
     /// re-introducing the exact clobbered-caret bug this cache exists to
     /// prevent — the fix must not trade one bug for the other.
+    /// Point this view-model at the project's document store, for the backend its
+    /// comment bodies belong in. Called by
+    /// [`OpenDocsStore::set_comments`](crate::models::OpenDocsStore::set_comments).
+    pub fn attach_docs(&self, docs: crate::models::WeakOpenDocsStore) {
+        *self.docs.borrow_mut() = Some(docs);
+    }
+
+    /// A document in the project's backend, or a standalone one where there is no
+    /// project — a comment body is a document like any other, and one per thread
+    /// used to mean one event hub and one OS thread per thread, held for as long
+    /// as the project stayed open.
+    fn new_body_doc(&self) -> TextDocument {
+        match self.docs.borrow().as_ref().and_then(|d| d.upgrade()) {
+            Some(docs) => TextDocument::new_in(&docs.backend()),
+            None => TextDocument::new(),
+        }
+    }
+
     pub fn body_doc(&self, entry: ThreadEntry, initial: &str) -> TextDocument {
         let mut docs = self.body_docs.borrow_mut();
         if let Some(doc) = docs.get(&entry) {
@@ -389,7 +418,7 @@ impl CommentsViewModel {
             }
             return doc.clone();
         }
-        let doc = TextDocument::new();
+        let doc = self.new_body_doc();
         let _ = doc.set_djot_sync(initial);
         docs.insert(entry, doc.clone());
         doc

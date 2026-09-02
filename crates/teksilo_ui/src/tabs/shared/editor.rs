@@ -236,6 +236,20 @@ pub fn writing_column(
     // it, the same shape as `comments` / `footnotes` / `images` above, and the submenu
     // simply does not render there. See [`CapturePalette`].
     tags: Option<crate::tags::TagsViewModel>,
+    // Which highlight sessions **this** editor renders, when the default is not right.
+    //
+    // `None` is [`HighlightMask::all`]: every shared layer on the document, which means the
+    // spell squiggles, the comment underlines, the find matches and the widget's own
+    // ambient caret band.
+    // That is what every writing surface wants, with one exception: a surface that owns an
+    // [opt-in](teksilo::text_document::SessionVisibility::OptIn) layer of its own has to name
+    // it (`HighlightMask::all().with(id)`), because an opt-in session is drawn by nobody
+    // until a view asks. Today that is the story bible's In prose reading and its wash of
+    // one entry's names. See `crate::story_bible::highlight`.
+    //
+    // A mask and not a bare `SessionId`, so a surface with two private layers needs no
+    // second parameter, and so the call site says what it means rather than what it holds.
+    highlight_mask: Option<teksilo::text_document::HighlightMask>,
 ) -> HStack {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -297,6 +311,12 @@ pub fn writing_column(
         .typography_defaults(typo_defaults(typo))
         // Sharp logical size (composes with a11y text scale) — not page zoom.
         .font_size_scale(typo.size.get());
+    // What this view draws of the document's highlight layers. Set before the editor is
+    // added, so its first snapshot is already the right one. A mask applied afterwards
+    // shows the wrong flavour for one frame.
+    if let Some(mask) = highlight_mask {
+        editor.set_highlight_mask(mask);
+    }
     // Hand this editor's handle to the find banner so it can select + scroll the
     // current match into view. Re-attached on every rebuild (a fresh widget each
     // time); the handle just re-points at the same underlying editor state.
@@ -414,9 +434,19 @@ pub fn writing_column(
     // may hold the same one three times.
     if let Some(fvm) = &format {
         let fvm = fvm.clone();
-        let handle = editor.handle();
+        // **Weak**, and it has to be. This handler is stored on the editor's own
+        // state, so a strong handle here makes the state own itself: an `Rc` ring
+        // nothing can break afterwards, keeping the editor, its document, its
+        // cursor and its shaped layout resident for the life of the process. A
+        // Full Book builds one editor per row, so a book-length manuscript leaked
+        // its whole manuscript on every open and close. See
+        // `teksilo::widgets::rich_text::WeakEditorHandle`.
+        let handle = editor.handle().downgrade();
         editor = editor.on_image_activated(move |activation, _ctx| {
             fvm.set_active_image(Some((activation.offset, activation.name.clone())));
+            let Some(handle) = handle.upgrade() else {
+                return;
+            };
             // …and select it. An image is one character, so this selects
             // exactly it — which is why the activation carries the offset. The
             // editor deliberately does not move the caret itself (the rule
@@ -442,8 +472,12 @@ pub fn writing_column(
     // reference's Djot attributes. Same rewrite as the Resize command, so a
     // dragged resize and a typed one land identically on the undo stack.
     {
-        let handle = editor.handle();
+        // Weak, for the reason the image-activation handler above gives.
+        let handle = editor.handle().downgrade();
         editor = editor.on_image_resized(move |resize, _ctx| {
+            let Some(handle) = handle.upgrade() else {
+                return;
+            };
             let Some(image) = crate::shared::images::image_at(
                 &handle.to_plain_text(),
                 resize.offset,
@@ -1139,6 +1173,8 @@ pub fn writing_section(
             anchor,
             estimate_height,
             tags,
+            // Nothing private on this surface: the default `all()`.
+            None,
         ))
 }
 
