@@ -391,7 +391,15 @@ pub fn run() {
     };
 
     let (initial_project, is_primary, translation_dev) = match shell::instance::bootstrap() {
-        shell::instance::Bootstrap::Exit => return,
+        shell::instance::Bootstrap::Exit => {
+            // This launch was handed to a primary and is leaving. It must not
+            // write a timeline: the file is named by an environment variable both
+            // processes inherit, so writing one truncates the run the primary is
+            // still recording. See `memprof::stand_down`.
+            #[cfg(feature = "memprof")]
+            memprof::stand_down();
+            return;
+        }
         shell::instance::Bootstrap::Continue {
             initial_project,
             is_primary,

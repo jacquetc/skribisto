@@ -40,9 +40,8 @@ use mimalloc::MiMalloc as Backing;
 #[cfg(not(feature = "mimalloc"))]
 use std::alloc::System as Backing;
 
-#[cfg(feature = "mimalloc")]
-const BACKING: Backing = Backing;
-#[cfg(not(feature = "mimalloc"))]
+// One line for both: `MiMalloc` and `System` are each a unit struct, so the alias
+// above is the whole of the selection and the value is spelled the same either way.
 const BACKING: Backing = Backing;
 
 /// Live bytes, as the program sees them: allocated minus deallocated.
@@ -683,6 +682,28 @@ fn output_path() -> std::path::PathBuf {
 ///
 /// Called from `run()` before anything else allocates in earnest, so the first row
 /// is a genuine baseline.
+/// Set once a launch has learned it is a remote and is about to exit.
+///
+/// See [`stand_down`].
+static STOOD_DOWN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Give up the timeline: this process is a remote and must not write one.
+///
+/// **The file is named by an environment variable, and every launch inherits it.**
+/// A second `skribisto` forwards its command line to the primary and exits in
+/// milliseconds — but it runs this crate's `main` first, so it used to create (and
+/// therefore truncate) the very file the primary was still filling. The timeline
+/// the operator read back was whatever the primary had written since the last
+/// handoff, silently, with no gap to notice.
+///
+/// The sampler does not create the file until its first row, one tick in, so a
+/// remote that calls this on its way out never touches it. Nothing is lost by the
+/// delay: the allocator has been counting since the process started, and the first
+/// row still reports every byte of it.
+pub fn stand_down() {
+    STOOD_DOWN.store(true, Ordering::SeqCst);
+}
+
 pub fn start_sampler() {
     use std::io::Write;
     use std::sync::atomic::AtomicBool;
@@ -698,29 +719,44 @@ pub fn start_sampler() {
         p.push(".marker");
         std::path::PathBuf::from(p)
     };
-    // Truncate rather than append: a run's timeline is only meaningful against its
-    // own baseline, and two runs concatenated read as one impossible sawtooth.
-    let mut file = match std::fs::File::create(&path) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("memprof: cannot write {}: {e}", path.display());
-            return;
-        }
-    };
-    let _ = std::fs::remove_file(&marker_path);
-    let _ = writeln!(
-        file,
-        "t_ms,live,peak,rss,rss_anon,rss_file,vsz,overhead,allocs,frees,total_bytes,docs,label"
-    );
-    let _ = file.flush();
 
     std::thread::Builder::new()
         .name("memprof".into())
         .spawn(move || {
             let start = std::time::Instant::now();
             let mut last_label = String::new();
+            let mut file: Option<std::fs::File> = None;
             loop {
                 std::thread::sleep(std::time::Duration::from_millis(SAMPLE_MS));
+                if STOOD_DOWN.load(Ordering::SeqCst) {
+                    return;
+                }
+                // Created here rather than at startup, and truncating rather than
+                // appending: a run's timeline is only meaningful against its own
+                // baseline, and two runs concatenated read as one impossible
+                // sawtooth. Deferring it to the first row is what lets a remote
+                // launch stand down before it has clobbered the primary's file.
+                let file = match file {
+                    Some(ref mut f) => f,
+                    None => {
+                        let mut f = match std::fs::File::create(&path) {
+                            Ok(f) => f,
+                            Err(e) => {
+                                eprintln!("memprof: cannot write {}: {e}", path.display());
+                                return;
+                            }
+                        };
+                        let _ = std::fs::remove_file(&marker_path);
+                        let _ = writeln!(
+                            f,
+                            "t_ms,live,peak,rss,rss_anon,rss_file,vsz,overhead,allocs,frees,\
+                             total_bytes,docs,label"
+                        );
+                        let _ = f.flush();
+                        file = Some(f);
+                        file.as_mut().expect("just assigned")
+                    }
+                };
                 let mut label = std::fs::read_to_string(&marker_path)
                     .unwrap_or_default()
                     .lines()
