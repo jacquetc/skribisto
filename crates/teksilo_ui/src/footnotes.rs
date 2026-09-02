@@ -14,4 +14,6 @@ mod footnotes_vm;
 
 pub mod dock;
 
-pub use footnotes_vm::{FootnoteBinding, FootnoteFilter, FootnotesViewModel};
+pub use footnotes_vm::{
+    FootnoteBinding, FootnoteFilter, FootnotesViewModel, WeakFootnotesViewModel,
+};

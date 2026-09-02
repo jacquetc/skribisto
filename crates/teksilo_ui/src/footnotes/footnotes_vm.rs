@@ -93,7 +93,44 @@ pub struct FootnotesViewModel {
     inner: Rc<Inner>,
 }
 
+/// A non-owning handle to a [`FootnotesViewModel`].
+///
+/// **The store may not own this view-model.** `OpenDocsStore` is Tier 2, one per
+/// open `Work`; this view-model is one per *window* and holds the store back
+/// (`Inner.docs`, and again through `FootnotesListModel`). A strong handle in the
+/// store therefore closed an `Rc` cycle that nothing could ever break: the store's
+/// refcount never reached zero, so the store, its `DocumentBackend` (and that
+/// backend's event-pump thread), its comment and spell handles and every document
+/// still in its map stayed resident for the life of the process, once per project
+/// the writer opened.
+///
+/// The window owns the strong handle (`App::footnotes`), which is the lifetime that
+/// is actually correct: there is no view-model to reach when the window that built
+/// it is gone, and [`upgrade`](Self::upgrade) then answers `None`, which every
+/// caller here already had to handle for the frames before `App` wires one.
+#[derive(Clone)]
+pub struct WeakFootnotesViewModel {
+    inner: std::rc::Weak<Inner>,
+}
+
+impl WeakFootnotesViewModel {
+    /// The view-model, if the window that owns it is still open.
+    pub fn upgrade(&self) -> Option<FootnotesViewModel> {
+        self.inner
+            .upgrade()
+            .map(|inner| FootnotesViewModel { inner })
+    }
+}
+
 impl FootnotesViewModel {
+    /// A handle that does not keep this view-model alive. See
+    /// [`WeakFootnotesViewModel`].
+    pub fn downgrade(&self) -> WeakFootnotesViewModel {
+        WeakFootnotesViewModel {
+            inner: Rc::downgrade(&self.inner),
+        }
+    }
+
     pub fn new(
         model: FootnotesListModel,
         docs: OpenDocsStore,

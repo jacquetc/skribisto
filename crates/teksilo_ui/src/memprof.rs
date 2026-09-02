@@ -710,7 +710,7 @@ pub fn start_sampler() {
     let _ = std::fs::remove_file(&marker_path);
     let _ = writeln!(
         file,
-        "t_ms,live,peak,rss,rss_anon,rss_file,vsz,overhead,allocs,frees,total_bytes,label"
+        "t_ms,live,peak,rss,rss_anon,rss_file,vsz,overhead,allocs,frees,total_bytes,docs,label"
     );
     let _ = file.flush();
 
@@ -756,9 +756,16 @@ pub fn start_sampler() {
                     last_label = label.clone();
                 }
                 let s = snapshot();
+                // How many document bodies are still alive. The one column here
+                // that names an *owner* rather than a byte count: a leak the
+                // rest of the row can only describe as "the rope and the block
+                // table are still resident" is a retained document, and this
+                // says how many. An atomic load, so it costs nothing to take on
+                // every tick.
+                let docs = teksilo::text_document::live_document_count();
                 let _ = writeln!(
                     file,
-                    "{},{},{},{},{},{},{},{},{},{},{},{}",
+                    "{},{},{},{},{},{},{},{},{},{},{},{},{}",
                     start.elapsed().as_millis(),
                     s.live,
                     s.peak,
@@ -770,6 +777,7 @@ pub fn start_sampler() {
                     s.allocs,
                     s.frees,
                     s.total_bytes,
+                    docs,
                     label
                 );
                 let _ = file.flush();

@@ -73,6 +73,12 @@ parser.add_argument("--skip-tab", action="store_true",
                          "isolates the project's own lifecycle from the editors'")
 parser.add_argument("--quit-timeout", type=float, default=300.0,
                     help="seconds to wait for a clean quit (a dhat build needs minutes)")
+parser.add_argument("--pin", action="append", default=[], metavar="KEY=VALUE",
+                    help="pin a settings key for the run, repeatable. `true`/`false` and "
+                         "bare numbers are typed; everything else is a string. This is the "
+                         "bisect handle: run the same scenario with a feature switched off "
+                         "and read the `documents +N` line to see whether that feature is "
+                         "what holds them")
 parser.add_argument("--explore", action="store_true",
                     help="open the project, dump the accessibility tree with bounds, and stop")
 args = parser.parse_args()
@@ -93,7 +99,28 @@ log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
 # geometry of the operator's own install cannot change what this measures. Both
 # launches below share it, which is also what lets the second one be handed to
 # the first by the single-instance election.
-env = fixture.isolated_config(locale="en-US", label="memprof", show_welcome=True)
+#: The settings this run pins on top of the sandbox's defaults.
+pins = {}
+for raw in args.pin:
+    key, _, value = raw.partition("=")
+    key = key.strip()
+    value = value.strip()
+    if not key or not value:
+        sys.exit(f"--pin wants KEY=VALUE, got {raw!r}")
+    if value in ("true", "false"):
+        pins[key] = value == "true"
+    else:
+        try:
+            pins[key] = int(value)
+        except ValueError:
+            try:
+                pins[key] = float(value)
+            except ValueError:
+                pins[key] = value
+if pins:
+    print("pins:", pins)
+env = fixture.isolated_config(locale="en-US", label="memprof", show_welcome=True,
+                              pins=pins or None)
 env["SKRIBISTO_MEMPROF"] = csv_path
 
 #: Every step's numbers, in order, for the table at the end.
@@ -418,6 +445,10 @@ def mark(label, trim=False, sites=False):
         "anon": anon,
         "live": int(row.get("live") or 0),
         "peak": int(row.get("peak") or 0),
+        # How many `TextDocument` bodies are still alive. The column that names
+        # an owner: a rise here across a full cycle is a document the UI did not
+        # let go of, and every byte under its rope and block table follows it.
+        "docs": int(row.get("docs") or 0),
         # Recomputed rather than read from the CSV: the app measures overhead
         # against its own reading of anonymous RSS, and this table must stay
         # right when the two disagree (an older binary, a different kernel).
@@ -430,7 +461,7 @@ def mark(label, trim=False, sites=False):
     mb = lambda v: v / (1 << 20)
     print(f"  [{label:28}] rss={mb(rec['rss']):7.1f}  anon={mb(rec['anon']):7.1f}  "
           f"live={mb(rec['live']):7.1f}  overhead={mb(rec['overhead']):7.1f}  MB  "
-          f"threads={rec['threads']:4}"
+          f"threads={rec['threads']:4}  docs={rec['docs']:4}"
           + ("   (after malloc_trim)" if trim else ""))
     return rec
 
@@ -559,14 +590,15 @@ for cycle in range(1, args.cycles + 1):
 # ── the table ─────────────────────────────────────────────────────────────────
 print("\n================ TIMELINE ================")
 print(f"{'step':30} {'rss':>8} {'anon':>8} {'live':>8} {'overhead':>9} "
-      f"{'Δanon':>8} {'Δlive':>8}   (MB)")
+      f"{'Δanon':>8} {'Δlive':>8} {'docs':>5}   (MB)")
 prev = None
 for rec in steps:
     mb = lambda v: v / (1 << 20)
     danon = f"{mb(rec['anon'] - prev['anon']):+8.1f}" if prev else "       ."
     dlive = f"{mb(rec['live'] - prev['live']):+8.1f}" if prev else "       ."
     print(f"{rec['step']:30} {mb(rec['rss']):8.1f} {mb(rec['anon']):8.1f} "
-          f"{mb(rec['live']):8.1f} {mb(rec['overhead']):9.1f} {danon} {dlive}")
+          f"{mb(rec['live']):8.1f} {mb(rec['overhead']):9.1f} {danon} {dlive} "
+          f"{rec['docs']:5}")
     prev = rec
 
 # The one number the whole exercise exists to produce: what a complete
@@ -579,7 +611,8 @@ if len(closed) >= 2:
         print(f"  {a['step']} -> {b['step']}: "
               f"anon {mb(b['anon'] - a['anon']):+.1f} MB, "
               f"live {mb(b['live'] - a['live']):+.1f} MB, "
-              f"overhead {mb(b['overhead'] - a['overhead']):+.1f} MB")
+              f"overhead {mb(b['overhead'] - a['overhead']):+.1f} MB, "
+              f"documents {b['docs'] - a['docs']:+d}")
     print("\n  live is what the program still holds; anon - live is the allocator's.")
     print("  A rising `live` is a leak. A rising `anon` with flat `live` is fragmentation.")
 

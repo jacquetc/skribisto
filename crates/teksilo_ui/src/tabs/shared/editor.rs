@@ -434,9 +434,19 @@ pub fn writing_column(
     // may hold the same one three times.
     if let Some(fvm) = &format {
         let fvm = fvm.clone();
-        let handle = editor.handle();
+        // **Weak**, and it has to be. This handler is stored on the editor's own
+        // state, so a strong handle here makes the state own itself: an `Rc` ring
+        // nothing can break afterwards, keeping the editor, its document, its
+        // cursor and its shaped layout resident for the life of the process. A
+        // Full Book builds one editor per row, so a book-length manuscript leaked
+        // its whole manuscript on every open and close. See
+        // `teksilo::widgets::rich_text::WeakEditorHandle`.
+        let handle = editor.handle().downgrade();
         editor = editor.on_image_activated(move |activation, _ctx| {
             fvm.set_active_image(Some((activation.offset, activation.name.clone())));
+            let Some(handle) = handle.upgrade() else {
+                return;
+            };
             // …and select it. An image is one character, so this selects
             // exactly it — which is why the activation carries the offset. The
             // editor deliberately does not move the caret itself (the rule
@@ -462,8 +472,12 @@ pub fn writing_column(
     // reference's Djot attributes. Same rewrite as the Resize command, so a
     // dragged resize and a typed one land identically on the undo stack.
     {
-        let handle = editor.handle();
+        // Weak, for the reason the image-activation handler above gives.
+        let handle = editor.handle().downgrade();
         editor = editor.on_image_resized(move |resize, _ctx| {
+            let Some(handle) = handle.upgrade() else {
+                return;
+            };
             let Some(image) = crate::shared::images::image_at(
                 &handle.to_plain_text(),
                 resize.offset,

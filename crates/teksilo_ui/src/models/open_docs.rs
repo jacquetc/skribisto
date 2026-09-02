@@ -121,7 +121,10 @@ pub struct OpenDoc {
     /// The footnote feature's view-model, on exactly the same footing as
     /// `comments_vm` and installed the same way. `None` degrades the feature to
     /// "no footnote affordances in this document" rather than to a panic.
-    footnotes: RefCell<Option<crate::footnotes::FootnotesViewModel>>,
+    /// Weak, and see [`crate::footnotes::WeakFootnotesViewModel`] for why: the
+    /// view-model holds the store, the store holds every open document, and a
+    /// strong handle here closes that ring.
+    footnotes: RefCell<Option<crate::footnotes::WeakFootnotesViewModel>>,
     /// The replace-while-typing state machine for each prose document, if the
     /// lexicon view-model was installed on the store. Set by
     /// [`attach_replacements`](Self::attach_replacements) on open, and living as
@@ -570,6 +573,7 @@ impl OpenDoc {
             self.footnotes
                 .borrow()
                 .clone()?
+                .upgrade()?
                 .binding(self.main.as_ref()?.content()),
         )
     }
@@ -580,6 +584,7 @@ impl OpenDoc {
             self.footnotes
                 .borrow()
                 .clone()?
+                .upgrade()?
                 .binding(self.synopsis.as_ref()?.content()),
         )
     }
@@ -587,7 +592,7 @@ impl OpenDoc {
     /// Install the footnotes view-model on this doc (on open, and on the
     /// back-fill when `App` wires one after documents are already open).
     pub fn attach_footnotes(&self, vm: crate::footnotes::FootnotesViewModel) {
-        *self.footnotes.borrow_mut() = Some(vm);
+        *self.footnotes.borrow_mut() = Some(vm.downgrade());
     }
 
     /// Tell each of this doc's prose documents what a footnote marker prints.
@@ -797,7 +802,11 @@ struct Inner {
     comments: RefCell<Option<crate::comments::CommentsViewModel>>,
     /// The footnotes view-model, installed once per window and handed to every
     /// document as it opens (mirroring `comments`).
-    footnotes: RefCell<Option<crate::footnotes::FootnotesViewModel>>,
+    /// Weak, for the reason [`crate::footnotes::WeakFootnotesViewModel`] gives:
+    /// this view-model holds this store back, so owning it here made the store
+    /// immortal and took its `DocumentBackend`, its pump thread and everything
+    /// still in its map with it.
+    footnotes: RefCell<Option<crate::footnotes::WeakFootnotesViewModel>>,
     /// What each footnote label's marker prints, project-wide.
     ///
     /// Held here rather than resolved per document because the number is a fact
@@ -956,7 +965,7 @@ impl OpenDocsStore {
     /// wiring, and one built before this would carry no footnote door at all —
     /// no insertion, no navigation — until it was closed and reopened.
     pub fn set_footnotes(&self, vm: crate::footnotes::FootnotesViewModel) {
-        *self.inner.footnotes.borrow_mut() = Some(vm.clone());
+        *self.inner.footnotes.borrow_mut() = Some(vm.downgrade());
         let docs: Vec<Rc<OpenDoc>> = self
             .inner
             .open
@@ -975,7 +984,7 @@ impl OpenDocsStore {
     /// what the insert command needs: it has to tell "no project" apart from "no
     /// caret", and resolving through some document's binding collapses the two.
     pub fn footnotes(&self) -> Option<crate::footnotes::FootnotesViewModel> {
-        self.inner.footnotes.borrow().clone()
+        self.inner.footnotes.borrow().clone()?.upgrade()
     }
 
     /// Tell every open document what each footnote label's marker prints, and
@@ -1210,7 +1219,7 @@ impl OpenDocsStore {
         // Footnotes on the same footing, and before the markers below: the door
         // is what an editor built from this doc reaches for when the writer asks
         // to insert one.
-        if let Some(vm) = self.inner.footnotes.borrow().clone() {
+        if let Some(vm) = self.footnotes() {
             doc.attach_footnotes(vm);
         }
         // Before anything can paint: a marker map that does not yet know this
@@ -2268,6 +2277,48 @@ mod tests {
 /// of data-loss reports in this field; VS Code and Obsidian both switched to
 /// remembering, and VS Code's stated reason is this application's exact case —
 /// closing a tab here is casual navigation, not "I am done with this document".
+/// The store must not own the view-models a window installs on it.
+#[cfg(all(test, not(feature = "mocks")))]
+mod installed_view_model_tests {
+    use super::*;
+
+    /// **The store holds the footnotes view-model weakly, and the window owns it.**
+    ///
+    /// The view-model holds the store back — directly, and again through its list
+    /// model — so a strong handle here closed an `Rc` ring nothing could break. The
+    /// store, its `DocumentBackend` (and that backend's event-pump thread), the
+    /// comment and spell handles it carries and everything left in its map then
+    /// stayed resident for the life of the process, once per project opened, on a
+    /// path that has no teardown call to forget.
+    ///
+    /// Written as "the reader answers `None` once the owner is gone" because that
+    /// is the observable half: a `Weak` that had quietly become a strong handle
+    /// again would keep answering here, and this is what would fail.
+    #[test]
+    fn the_store_lets_go_of_the_footnotes_view_model_with_its_window() {
+        let ctx = Rc::new(AppContext::new());
+        let ids = crate::app_ids::AppIds::new();
+        let store = OpenDocsStore::new(ctx.clone());
+
+        let vm = crate::footnotes::FootnotesViewModel::new(
+            crate::models::FootnotesListModel::new(ctx.clone(), ids.clone(), store.clone()),
+            store.clone(),
+            ids.stack_id.clone(),
+        );
+        store.set_footnotes(vm.clone());
+        assert!(
+            store.footnotes().is_some(),
+            "installed, and reachable while the window holds it"
+        );
+
+        drop(vm);
+        assert!(
+            store.footnotes().is_none(),
+            "the store must not be the thing keeping the view-model alive"
+        );
+    }
+}
+
 #[cfg(all(test, not(feature = "mocks")))]
 mod remembered_history_tests {
     use super::*;
