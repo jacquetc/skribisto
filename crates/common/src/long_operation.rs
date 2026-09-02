@@ -208,18 +208,84 @@ pub fn lock_or_recover<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 /// Obtain one via [`LongOperationManager::completion_signal`] and block on it
 /// **after** releasing any lock guarding the manager — see that method.
 pub struct OperationCompletion {
-    /// Ids that reached a final status. Deliberately never pruned: it mirrors
-    /// the manager's `results` map, so a wait on an already-finished (even
-    /// cleaned-up) operation returns at once instead of blocking on a signal
-    /// that can no longer come.
-    finished: Mutex<HashSet<String>>,
+    /// Which operations have reached a final status.
+    ///
+    /// It **outlives** the manager's `results` map, which is bounded by
+    /// [`FINISHED_RETENTION`]: a wait on an operation whose result has already
+    /// been swept must still return at once rather than block on a signal that
+    /// can no longer come. So this cannot simply be swept alongside it.
+    ///
+    /// It is bounded all the same, because ids are minted in sequence
+    /// (`op_1`, `op_2`, …) and the answer for a whole prefix of them collapses to
+    /// one number. See [`Completed`].
+    finished: Mutex<Completed>,
     condvar: Condvar,
+}
+
+/// Which operations have finished, in constant space for all but the ragged edge.
+///
+/// The naive answer is a set of every id ever finished, and it grows for the life
+/// of the process — small per entry, but unbounded, and this crate has just
+/// finished bounding everything around it.
+///
+/// Operations are numbered in the order they *start*, and they finish in a
+/// different order: a long export started first finishes after twenty short saves
+/// that followed it. But the numbering still means that "everything up to N has
+/// finished" is a fact one number can carry. `through` is the largest N for which
+/// that holds; `ahead` holds only the ids that finished while something earlier
+/// was still running, and empties as the stragglers land. Its size is the number
+/// of operations running at once, not the number ever run.
+///
+/// A `wait_for` on an id below the watermark therefore still answers at once,
+/// which is the property that made the unbounded set look necessary.
+#[derive(Debug, Default)]
+struct Completed {
+    /// Every operation numbered `1..=through` has finished.
+    through: u64,
+    /// Ids finished out of order, waiting for the watermark to reach them.
+    ///
+    /// `String` rather than the parsed number so an id that does not follow the
+    /// `op_<n>` shape — nothing mints one, but [`OperationCompletion::wait_for`]
+    /// is public and takes any `&str` — is still recorded and still answered,
+    /// exactly as it was before this was bounded.
+    ahead: HashSet<String>,
+}
+
+impl Completed {
+    /// The number in `op_<n>`, for an id of that shape.
+    fn ordinal(id: &str) -> Option<u64> {
+        id.strip_prefix("op_")?.parse().ok()
+    }
+
+    fn contains(&self, id: &str) -> bool {
+        match Self::ordinal(id) {
+            Some(n) if n <= self.through => true,
+            _ => self.ahead.contains(id),
+        }
+    }
+
+    /// Record `id`, then absorb into the watermark every contiguous id above it.
+    fn insert(&mut self, id: &str) {
+        if self.contains(id) {
+            return;
+        }
+        self.ahead.insert(id.to_string());
+        while self.ahead.remove(&format!("op_{}", self.through + 1)) {
+            self.through += 1;
+        }
+    }
+
+    /// How many ids are held individually — the ragged edge, and what a test or a
+    /// debugger asks about when it wants to know this stays bounded.
+    fn ahead_len(&self) -> usize {
+        self.ahead.len()
+    }
 }
 
 impl OperationCompletion {
     fn new() -> Self {
         Self {
-            finished: Mutex::new(HashSet::new()),
+            finished: Mutex::new(Completed::default()),
             condvar: Condvar::new(),
         }
     }
@@ -231,7 +297,7 @@ impl OperationCompletion {
     /// wake one waiting on a different operation and leave the right one asleep.
     fn mark_finished(&self, id: &str) {
         let mut finished = lock_or_recover(&self.finished);
-        finished.insert(id.to_string());
+        finished.insert(id);
         drop(finished);
         self.condvar.notify_all();
     }
@@ -282,7 +348,11 @@ impl OperationCompletion {
 impl std::fmt::Debug for OperationCompletion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("OperationCompletion")
-            .field("finished_len", &lock_or_recover(&self.finished).len())
+            .field("finished_through", &lock_or_recover(&self.finished).through)
+            .field(
+                "finished_ahead",
+                &lock_or_recover(&self.finished).ahead_len(),
+            )
             .finish()
     }
 }
@@ -721,11 +791,33 @@ mod tests {
         }
     }
 
-    /// An operation that takes a measurable while and then returns a value. The
-    /// shape of an export or a scan: started early, finished long after a burst
-    /// of small operations has come and gone.
+    /// An operation that runs until the test lets it finish, and then returns a
+    /// value. The shape of an export or a scan: started early, finished long
+    /// after a burst of small operations has come and gone.
+    ///
+    /// **Held open by a gate, never by a sleep.** A fixed delay makes "the burst
+    /// finishes first" a race against the machine: on a loaded runner the burst
+    /// of `FINISHED_RETENTION * 2` spawn-and-wait cycles can outlast any delay
+    /// short enough to keep the suite quick, and the test then measures the
+    /// opposite of what it names. The gate makes the ordering a fact.
     pub struct SlowOperation {
-        pub delay: Duration,
+        pub gate: Arc<OperationCompletion>,
+        pub id: String,
+    }
+
+    impl SlowOperation {
+        /// A gate and the operation that waits on it. Call
+        /// [`OperationCompletion::mark_finished`] with the same id to release it.
+        pub fn gated() -> (Arc<OperationCompletion>, Self) {
+            let gate = Arc::new(OperationCompletion::new());
+            (
+                gate.clone(),
+                Self {
+                    gate,
+                    id: "release".to_string(),
+                },
+            )
+        }
     }
 
     impl LongOperation for SlowOperation {
@@ -736,7 +828,7 @@ mod tests {
             _progress_callback: Box<dyn Fn(OperationProgress) + Send>,
             _cancel_flag: Arc<AtomicBool>,
         ) -> Result<Self::Output> {
-            thread::sleep(self.delay);
+            self.gate.wait_for(&self.id, Some(Duration::from_secs(30)));
             Ok(7)
         }
     }
@@ -835,13 +927,15 @@ mod tests {
         let completion = manager.completion_signal();
 
         // Start the slow one first, so it is the oldest by START order.
-        let slow = manager.start_operation(SlowOperation {
-            delay: Duration::from_millis(150),
-        });
+        let (gate, slow_op) = SlowOperation::gated();
+        let slow = manager.start_operation(slow_op);
         for _ in 0..(FINISHED_RETENTION * 2) {
             let id = manager.start_operation(InstantOperation);
             assert!(completion.wait_for(&id, Some(Duration::from_secs(5))));
         }
+        // Only now may it finish, which is what makes it the newest by FINISH
+        // order however long the burst above took.
+        gate.mark_finished("release");
         assert!(completion.wait_for(&slow, Some(Duration::from_secs(5))));
 
         // A further start runs the sweep with the slow operation now finished.
@@ -862,9 +956,8 @@ mod tests {
         let manager = LongOperationManager::new();
         let completion = manager.completion_signal();
 
-        let running = manager.start_operation(SlowOperation {
-            delay: Duration::from_millis(400),
-        });
+        let (gate, running_op) = SlowOperation::gated();
+        let running = manager.start_operation(running_op);
         for _ in 0..(FINISHED_RETENTION * 2) {
             let id = manager.start_operation(InstantOperation);
             assert!(completion.wait_for(&id, Some(Duration::from_secs(5))));
@@ -875,6 +968,7 @@ mod tests {
             Some(OperationStatus::Running),
             "the operation is still working and must still be known to the manager"
         );
+        gate.mark_finished("release");
         assert!(completion.wait_for(&running, Some(Duration::from_secs(5))));
         assert_eq!(
             manager.get_operation_result(&running),
@@ -992,5 +1086,80 @@ mod tests {
             manager.get_operation_status(&op_id),
             Some(OperationStatus::Cancelled)
         );
+    }
+}
+
+#[cfg(test)]
+mod completed_watermark_tests {
+    use super::Completed;
+
+    /// The set that answers "has this finished" stays bounded, and still answers.
+    ///
+    /// It used to hold one id per operation ever started, for the life of the
+    /// process. Bounding it looks unsafe — a wait on a swept id would block on a
+    /// signal that can never come — and this is why it is not: the ids below the
+    /// watermark are answered by the watermark.
+    #[test]
+    fn ids_that_finish_in_order_collapse_into_the_watermark() {
+        let mut c = Completed::default();
+        for n in 1..=1000 {
+            c.insert(&format!("op_{n}"));
+        }
+        assert_eq!(c.through, 1000);
+        assert_eq!(c.ahead_len(), 0, "nothing is held individually");
+        assert!(
+            c.contains("op_1"),
+            "the first still answers, a thousand later"
+        );
+        assert!(c.contains("op_1000"));
+        assert!(
+            !c.contains("op_1001"),
+            "and one that has not finished does not"
+        );
+    }
+
+    /// **The out-of-order case, which is the real one.** A long export started
+    /// first finishes after the twenty short saves that followed it, so the
+    /// watermark cannot move until it lands. Only that gap is held.
+    #[test]
+    fn a_straggler_holds_the_watermark_and_only_the_gap_is_kept() {
+        let mut c = Completed::default();
+        for n in 2..=21 {
+            c.insert(&format!("op_{n}"));
+        }
+        assert_eq!(c.through, 0, "op_1 is still running");
+        assert_eq!(c.ahead_len(), 20);
+        assert!(c.contains("op_21"));
+        assert!(!c.contains("op_1"));
+
+        c.insert("op_1");
+        assert_eq!(c.through, 21, "the straggler absorbs the whole run");
+        assert_eq!(c.ahead_len(), 0);
+        assert!(c.contains("op_1"));
+        assert!(c.contains("op_21"));
+    }
+
+    /// An id nothing minted is recorded literally and answered literally, which is
+    /// what `wait_for` did before this was bounded and what it must keep doing:
+    /// it is public and takes any `&str`.
+    #[test]
+    fn an_id_of_another_shape_is_still_recorded_and_still_answered() {
+        let mut c = Completed::default();
+        assert!(!c.contains("not-an-op"));
+        c.insert("not-an-op");
+        assert!(c.contains("not-an-op"));
+        assert_eq!(c.through, 0);
+        assert_eq!(c.ahead_len(), 1);
+    }
+
+    /// Recording the same id twice must not push it into `ahead` a second time,
+    /// nor move the watermark past an operation that is still running.
+    #[test]
+    fn recording_an_id_twice_changes_nothing() {
+        let mut c = Completed::default();
+        c.insert("op_1");
+        c.insert("op_1");
+        assert_eq!(c.through, 1);
+        assert_eq!(c.ahead_len(), 0);
     }
 }
