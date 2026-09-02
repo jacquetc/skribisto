@@ -209,8 +209,28 @@ jobs:
           Copy-Item target/x86_64-pc-windows-msvc/release/skribisto.exe dist/
           Compress-Archive -Path dist/skribisto.exe -DestinationPath dist/Skribisto-portable.zip -Force
 
-      # NSIS ships preinstalled on the windows runner images, so there is
-      # nothing to install here.
+      # NSIS is NOT preinstalled any more, and the comment that used to sit here
+      # saying it was is why this broke without anyone touching it. `windows-latest`
+      # migrated to Windows Server 2025: the 2022 image manifest lists "NSIS 3.10",
+      # the 2025 one lists none at all (it ships Chocolatey, InnoSetup and WiX
+      # instead). The failure is `The term 'makensis' is not recognized`.
+      #
+      # Installing it explicitly rather than pinning windows-2022 keeps the job
+      # independent of what an image happens to bundle, which is the same lesson
+      # librsvg2-common taught the Flatpak job.
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          choco install nsis --no-progress -y
+          # Chocolatey does not shim the executables of an installer-based package,
+          # so the install directory goes on PATH explicitly rather than on trust.
+          $candidates = @("$env:ProgramFiles\NSIS", "${env:ProgramFiles(x86)}\NSIS")
+          $makensis = Get-ChildItem -Path $candidates -Filter makensis.exe -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if (-not $makensis) { throw "makensis.exe not found after installing NSIS" }
+          Add-Content -Path $env:GITHUB_PATH -Value $makensis.DirectoryName
+          & $makensis.FullName /VERSION
+
       - name: Compile installer
         shell: pwsh
         run: |

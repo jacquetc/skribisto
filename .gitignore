@@ -36,6 +36,10 @@ dist/
 .flatpak-builder/
 build-dir
 build-dir/
+# The build dir the CI workflow pins (flatpak.yml passes build-dir: flatpak_app),
+# so reproducing the CI command locally leaves one here too.
+flatpak_app
+flatpak_app/
 # Local ostree repo written by `flatpak-builder --repo=local-repo`
 local-repo
 local-repo/

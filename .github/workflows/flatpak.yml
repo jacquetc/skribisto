@@ -63,7 +63,24 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
+          # librsvg2-common is not optional, and nothing pulls it in for us.
+          # flatpak-builder runs `appstreamcli compose` at the end of the build,
+          # which RASTERIZES the scalable icon to produce the catalogue icons. It
+          # does that through gdk-pixbuf, whose SVG loader lives in this package.
+          # Without it the whole build fails after the 20-minute compile with:
+          #
+          #   E: file-read-error
+          #      Unable to read data from file
+          #      `//share/icons/hicolor/scalable/apps/eu.skribisto.skribisto.svg`:
+          #      unrecognised image format
+          #   E: filters-but-no-output
+          #
+          # Note this is NOT a --no-install-recommends casualty: neither
+          # flatpak-builder nor appstream depends on or recommends it at any
+          # level. A desktop has it because GTK pulls it in, a bare runner does
+          # not, which is exactly why this passes locally and fails in CI.
+          sudo apt-get install -y --no-install-recommends \
+            flatpak flatpak-builder librsvg2-common
           sudo flatpak remote-add --if-not-exists --system flathub \
             https://flathub.org/repo/flathub.flatpakrepo
 

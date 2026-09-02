@@ -46,7 +46,7 @@ extensions = ["skrib"]
 mime-type = "application/vnd.skribisto.project+zip"
 name = "Skribisto project"
 description = "Skribisto project"
-role = "Editor"
+role = "editor"
 
 [package.metadata.packager.macos]
 minimum-system-version = "11.0"

@@ -32,7 +32,8 @@ under `--strict`.
                    not exist in that locale
     tooltip-link   `[label](:key)` whose target key does not exist in that
                    locale (the wm-*-more tooltips cascade through these)
-    unregistered   an .ftl file on disk that main.rs never `include_str!`s,
+    unregistered   an .ftl file on disk the loader never compiles in (as a
+                   literal `include_str!` or through `compile_in_locales!`),
                    so it is compiled into nothing
     syntax         a line that is not valid Fluent entry/continuation syntax
 
@@ -139,6 +140,23 @@ PLACEABLE_RE = re.compile(r"\{[^{}]*\}")
 # "&Plume Creator (.plume)…" counts three and trips the threshold.
 EXTENSION_RE = re.compile(r"\.[A-Za-z0-9]+")
 WORD_RE = re.compile(r"[^\W\d_]{2,}", re.UNICODE)
+
+# --- Loader (which .ftl files are compiled into the binary) ------------------
+
+# The literal form: one `include_str!("relative/path.ftl")` per file.
+INCLUDE_STR_RE = re.compile(r'include_str!\("([^"]+)"\)')
+# The cross-product form. `compile_in_locales!` expands to one `include_str!`
+# per (locale, file) pair, so no literal path appears in the source at all —
+# reading only the literal form here is how every file on disk once reported
+# itself unregistered while the app shipped all of them.
+COMPILE_IN_LOCALES_RE = re.compile(
+    r"compile_in_locales!\s*\(\s*"
+    r"base\s*=\s*\"([^\"]*)\"\s*,\s*"
+    r"locales\s*=\s*\[([^\]]*)\]\s*,\s*"
+    r"files\s*=\s*\[([^\]]*)\]\s*,?\s*\)",
+    re.DOTALL,
+)
+STRING_LITERAL_RE = re.compile(r'"([^"]*)"')
 
 ERROR_CHECKS = {
     "missing",
@@ -648,6 +666,21 @@ def check_against_base(
     return problems
 
 
+def loader_includes(loader: Path) -> set[str]:
+    """Every `.ftl` path the loader compiles in, in either spelling.
+
+    Paths are returned exactly as written, relative to the loader's own
+    directory — which is what `include_str!` resolves against.
+    """
+    source = loader.read_text(encoding="utf-8")
+    paths = set(INCLUDE_STR_RE.findall(source))
+    for base, locales, files in COMPILE_IN_LOCALES_RE.findall(source):
+        for locale in STRING_LITERAL_RE.findall(locales):
+            for name in STRING_LITERAL_RE.findall(files):
+                paths.add(f"{base}{locale}/{name}")
+    return paths
+
+
 def check_registration(
     loader: Path, discovered: dict[str, list[Path]]
 ) -> list[Problem]:
@@ -658,24 +691,31 @@ def check_registration(
     """
     if not loader.is_file():
         return []
-    source = loader.read_text(encoding="utf-8")
-    included = set(re.findall(r'include_str!\("([^"]+)"\)', source))
+    included = loader_includes(loader)
     included_names = {Path(p).name for p in included}
     included_paths = {"/".join(Path(p).parts[-2:]) for p in included}
+    # `include_str!` resolves against the file it appears in, so the loader's
+    # own directory is what a relative base like `../locales/` hangs off.
+    included_resolved = {(loader.parent / p).resolve() for p in included}
 
     problems: list[Problem] = []
     for locale, files in discovered.items():
         for path in files:
             relative = f"{locale}/{path.name}"
-            if relative in included_paths or path.name in included_names:
+            if (
+                path.resolve() in included_resolved
+                or relative in included_paths
+                or path.name in included_names
+            ):
                 continue
             problems.append(
                 Problem(
                     locale,
                     "unregistered",
                     "",
-                    f"{rel(path)} is never include_str!'d by {rel(loader)}; "
-                    f"its strings are not compiled in",
+                    f"{rel(path)} is never compiled in by {rel(loader)} "
+                    f"(neither include_str! nor compile_in_locales!); "
+                    f"its strings do not reach the binary",
                     path,
                     0,
                 )
@@ -874,7 +914,7 @@ def main() -> int:
     parser.add_argument(
         "--loader",
         default=DEFAULT_LOADER,
-        help=f"Rust file holding the include_str! locale list "
+        help=f"Rust file compiling the locale catalogues in "
              f"(default: {DEFAULT_LOADER})",
     )
     parser.add_argument(
