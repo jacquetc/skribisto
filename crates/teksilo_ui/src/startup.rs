@@ -210,6 +210,16 @@ pub(crate) fn os_default_locale() -> String {
 /// Only the *names*: the cross-product with [`SUPPORTED_LOCALES`] is built by
 /// [`app_locales`]. Adding a topic file means adding it here once, not once
 /// per locale.
+///
+/// Its only reader outside `mod tests` is `cli::resolve_translation_dev`, which
+/// validates a `--translation-dev` directory, and that flag is debug-only. So in
+/// a release build the list is genuinely unread, and the `allow` records that
+/// once instead of the build reporting it on every compile. Gating the constant
+/// itself would be worse: the drift test below is what holds it in step with
+/// `app_locales`, and the two doc links in `cli.rs` point at it from prose that
+/// ships in both profiles. Same shape as `resolve_translation_dev`'s own
+/// `#[cfg_attr(not(debug_assertions), allow(unused_variables))]`.
+#[cfg_attr(not(debug_assertions), allow(dead_code))]
 pub(crate) const LOCALE_FILES: &[&str] = &[
     "main.ftl",
     "tooltips.ftl",

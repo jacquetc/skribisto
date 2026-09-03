@@ -51,6 +51,8 @@
 //! project off into a tempdir.
 
 use std::io::{BufRead, BufReader, Write};
+// Only [`primary_socket`] needs it, and that is Unix-only. See its own cfg.
+#[cfg(unix)]
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -77,6 +79,16 @@ const ACK_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// The well-known socket every instance of this installation elects on — as a
 /// *path*, which exists only on Unix (see `open_registry::socket_path`).
+///
+/// `#[cfg(unix)]` because its one caller is: `elect`, reaping a crashed
+/// primary's stale socket file, itself under the same gate. A Windows named
+/// pipe is not a filesystem object and cannot outlive its server, so there is
+/// nothing to reap there and `open_registry::socket_path` answers `None` by
+/// design. Without this gate the function still compiled on a Windows target
+/// with no caller left, which is a `dead_code` warning that says nothing about
+/// the code and everything about the platform. Matching the caller's cfg states
+/// the portability fact instead.
+#[cfg(unix)]
 pub fn primary_socket() -> Option<PathBuf> {
     open_registry::socket_path(SocketId::Primary)
 }
