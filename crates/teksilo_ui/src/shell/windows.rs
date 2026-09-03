@@ -528,6 +528,12 @@ impl ProjectWindowFactory {
             // later change to `state.title()` reactively — see
             // `window_title_text`'s doc.
             .title(title_text.get())
+            // The *title* is this project's name and changes as the writer
+            // works; the app id is the application's and never does. The
+            // desktop matches windows on the second, so a project window is
+            // still recognisably Skribisto in the dash. See
+            // `identity::desktop_id`.
+            .app_id(crate::identity::desktop_id())
             .size(1200, 800)
             .min_size(800, 600)
             .decorations(DecorationsMode::CustomChrome)

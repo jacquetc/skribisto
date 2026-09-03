@@ -90,6 +90,10 @@ pub fn help_window_config(vm: HelpViewModel) -> WindowConfig {
         // *visible* title below names the screen, which is why `help-window-title`
         // exists and why it was unused until this window grew a title bar to put it in.
         .title(crate::identity::display_name())
+        // Which application this window belongs to, as far as the desktop is
+        // concerned. Every window in the process sends the same one. See
+        // `identity::desktop_id`.
+        .app_id(crate::identity::desktop_id())
         .size(W, H)
         .min_size(MIN_W, MIN_H)
         .decorations(DecorationsMode::CustomChrome)

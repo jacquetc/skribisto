@@ -92,6 +92,21 @@ pub struct AppIdentity {
     /// What the writer sees. Defaults to `application`; override when the path
     /// name and the product name should differ.
     pub display_name: String,
+    /// The basename of the installed desktop entry, which is also what a window
+    /// announces itself as. Defaults to the triple; override when the installed
+    /// entry is named something the triple does not spell.
+    pub desktop_id: String,
+}
+
+/// An application name as the filesystem and the desktop spell it: lowercased,
+/// with spaces turned to hyphens.
+///
+/// This is the normalisation `directories` already applies to the Linux config
+/// directory (`"Skribisto Pro"` → `~/.config/skribisto-pro`), reused for the
+/// desktop entry's last element so that the two cannot disagree about what the
+/// edition is called.
+fn path_name(application: &str) -> String {
+    application.to_lowercase().replace(' ', "-")
 }
 
 impl AppIdentity {
@@ -102,9 +117,12 @@ impl AppIdentity {
         application: impl Into<String>,
     ) -> Self {
         let application = application.into();
+        let qualifier = qualifier.into();
+        let organization = organization.into();
         Self {
-            qualifier: qualifier.into(),
-            organization: organization.into(),
+            desktop_id: format!("{qualifier}.{organization}.{}", path_name(&application)),
+            qualifier,
+            organization,
             display_name: application.clone(),
             application,
         }
@@ -114,6 +132,21 @@ impl AppIdentity {
     #[must_use]
     pub fn with_display_name(mut self, name: impl Into<String>) -> Self {
         self.display_name = name.into();
+        self
+    }
+
+    /// Override the desktop entry's basename, leaving everything else alone.
+    ///
+    /// The default derives it from the triple, which is exactly what the
+    /// community edition installs. Reach for this when the installed entry is
+    /// named something the triple does not spell (a Flatpak whose application id
+    /// was chosen before the triple was, say). The value has to match the
+    /// installed `.desktop` file **exactly**, minus the extension: the desktop
+    /// matches on equality, not on resemblance, and a near miss is
+    /// indistinguishable from setting nothing at all.
+    #[must_use]
+    pub fn with_desktop_id(mut self, id: impl Into<String>) -> Self {
+        self.desktop_id = id.into();
         self
     }
 
@@ -230,6 +263,30 @@ pub fn family_paths() -> Option<AppPaths> {
 /// rule that keeps entity titles on `lit!`.
 pub fn display_name() -> String {
     current().display_name
+}
+
+/// The identity a desktop matches this application's windows against: the
+/// basename of the installed desktop entry, and the `app_id` every window sends.
+///
+/// **A window that sends none has no desktop identity at all.** On Wayland there
+/// is no `WM_CLASS` to fall back to, so the shell cannot tie the toplevel to its
+/// `.desktop` file: it shows a separate, unnamed entry in the dash and in
+/// Alt+Tab carrying the generic fallback icon, however many icons were
+/// installed, and the portals attribute the application's notifications to
+/// nothing. `StartupWMClass` does not rescue it: GNOME reads that key for X11
+/// windows only.
+///
+/// It hides easily, which is most of why it went unnoticed here: on X11 winit
+/// falls back to the executable's own name and KWin falls back the same way, so
+/// a KDE session looked correct throughout while a GNOME one did not. Verified
+/// on this machine rather than assumed. KWin reported `resourceClass=skribisto`
+/// with an empty `desktopFileName`, which is the fallback working, not the match.
+///
+/// Under Flatpak the value is load-bearing in a second way: the sandbox expects
+/// the toplevel id to equal the Flatpak application id
+/// (`eu.skribisto.skribisto`), which the derived default already spells.
+pub fn desktop_id() -> String {
+    current().desktop_id
 }
 
 /// Whether the running build is the community edition.
@@ -699,6 +756,118 @@ mod tests {
              running — today only `open_registry::dir`, so that the editions share one \
              lock directory and can see each other's open projects — use \
              `identity::family_paths()` and say why at the call site.",
+            offenders.join("\n  ")
+        );
+    }
+
+    /// The derived desktop id must name the entry the project actually installs.
+    ///
+    /// Asserting the string alone would pass just as happily if
+    /// `resources/unix/applications/` were renamed tomorrow, and a desktop id
+    /// that names no installed entry is precisely the failure this whole field
+    /// exists to prevent: it is not an error, it just quietly matches nothing.
+    /// So the test reads the shipped file instead of a literal.
+    #[test]
+    fn the_community_desktop_id_names_the_installed_entry() {
+        use std::path::Path;
+
+        let id = AppIdentity::community().desktop_id;
+        assert_eq!(id, "eu.skribisto.skribisto");
+
+        // `CARGO_MANIFEST_DIR` is `crates/teksilo_ui`; the packaging resources
+        // live at the repository root.
+        let entry = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../resources/unix/applications")
+            .join(format!("{id}.desktop"));
+
+        assert!(
+            entry.is_file(),
+            "the derived desktop id `{id}` names no installed entry at {}. \
+             A window announcing an id no `.desktop` file carries matches \
+             nothing and reports nothing: the shell simply shows the fallback \
+             icon, exactly as it did when no id was sent at all. Either the \
+             entry was renamed, in which case follow it here, or the triple \
+             changed, in which case rename the entry (and the Flatpak id, and \
+             the MIME and metainfo files beside it, which all share the name).",
+            entry.display()
+        );
+    }
+
+    /// An edition gets its own id for free, and can still spell one out.
+    #[test]
+    fn an_edition_derives_or_overrides_its_desktop_id() {
+        let derived = AppIdentity::new("eu", "skribisto", "Skribisto Pro");
+        assert_eq!(
+            derived.desktop_id, "eu.skribisto.skribisto-pro",
+            "the last element follows the same lowercase-and-hyphenate rule as \
+             the Linux config directory, so the two cannot disagree"
+        );
+
+        let overridden = derived.with_desktop_id("com.example.writer");
+        assert_eq!(overridden.desktop_id, "com.example.writer");
+        assert_eq!(
+            overridden.application, "Skribisto Pro",
+            "overriding the desktop id must not move the config directory"
+        );
+    }
+
+    /// Every window in the process announces the same application.
+    ///
+    /// A walk rather than a list of the four known sites, for the same reason
+    /// [`no_module_resolves_its_own_app_paths`] uses one: the case to catch is
+    /// the *fifth* window, added later in a file nobody thought to check. It
+    /// costs nothing to set and there is no visible symptom when it is missed.
+    /// The window simply stops being this application on someone else's desktop.
+    #[test]
+    fn every_window_announces_its_app_id() {
+        use std::path::{Path, PathBuf};
+
+        fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                return;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, out);
+                } else if path.extension().is_some_and(|e| e == "rs") {
+                    out.push(path);
+                }
+            }
+        }
+
+        let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = Vec::new();
+        walk(&src, &mut files);
+
+        let mut offenders = Vec::new();
+        for file in files {
+            let Ok(text) = std::fs::read_to_string(&file) else {
+                continue;
+            };
+            // Counted per file rather than parsed as a builder chain: every
+            // window this crate builds is one `WindowConfig::new()` in a file of
+            // its own, so the counts answer the question without a parser that
+            // would itself need testing.
+            let configs = text.matches("WindowConfig::new()").count();
+            let announced = text.matches(".app_id(").count();
+            if configs > announced {
+                offenders.push(format!(
+                    "{} ({configs} window(s), {announced} .app_id call(s))",
+                    file.display()
+                ));
+            }
+        }
+
+        assert!(
+            offenders.is_empty(),
+            "these files build a window that sends no `app_id`, so on Wayland it \
+             has no desktop identity at all: an unnamed dash and Alt+Tab entry \
+             with the fallback icon, and unattributed notifications:\n  {}\n\n\
+             Add `.app_id(crate::identity::desktop_id())` to the builder. Do not \
+             write the id out: an edition registers its own identity, and a \
+             hardcoded `eu.skribisto.skribisto` would claim to be the community \
+             build under every one of them.",
             offenders.join("\n  ")
         );
     }

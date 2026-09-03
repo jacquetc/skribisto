@@ -31,6 +31,10 @@ pub fn first_run_window_config(source: AppPaths, on_answer: OnAnswer) -> WindowC
     WindowConfig::new()
         .id(FIRST_RUN_WINDOW_ID)
         .title(crate::identity::display_name())
+        // Which application this window belongs to, as far as the desktop is
+        // concerned. Every window in the process sends the same one. See
+        // `identity::desktop_id`.
+        .app_id(crate::identity::desktop_id())
         .size(W, H)
         .min_size(W, H)
         .max_size(W, H)

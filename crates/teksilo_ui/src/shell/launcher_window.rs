@@ -65,6 +65,10 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
         // is the reason the Welcome content no longer carries a title strip of
         // its own.
         .title(crate::identity::display_name())
+        // Which application this window belongs to, as far as the desktop is
+        // concerned. Every window in the process sends the same one. See
+        // `identity::desktop_id`.
+        .app_id(crate::identity::desktop_id())
         .size(W, H)
         .min_size(W, H)
         .max_size(W, H)
