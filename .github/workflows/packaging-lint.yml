@@ -121,10 +121,11 @@ jobs:
           done
           exit $status
 
-      # `appstreamcli validate` passes; `--strict` fails on one thing only, a
-      # missing `id` on <developer>. Add that and this step can drop
-      # continue-on-error and gain --strict. (The older note here claimed stale
-      # <releases> and a legacy license string would also fail. Neither does.)
+      # A hard check with --strict, no longer informational. The <developer id>
+      # that was missing is now there, and this is the gate that should have
+      # caught it: Flathub runs `flatpak-builder-lint --exceptions repo` on the
+      # finished build and treats appstream-failed-validation as an ERROR, so a
+      # metainfo problem does not surface until a 20-minute build on their
+      # infrastructure has already run, twice, once per architecture.
       - name: Validate AppStream metainfo
-        continue-on-error: true
-        run: appstreamcli validate --no-net eu.skribisto.skribisto.metainfo.xml
+        run: appstreamcli validate --no-net --strict eu.skribisto.skribisto.metainfo.xml

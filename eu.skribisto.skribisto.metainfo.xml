@@ -18,7 +18,7 @@
       <li>Open several projects at once, each in its own window</li>
     </ul>
   </description>
-  <developer>
+  <developer id="eu.skribisto">
     <name>Cyril Jacquet</name>
   </developer>
   <launchable type="desktop-id">eu.skribisto.skribisto.desktop</launchable>
