@@ -155,6 +155,17 @@ jobs:
     # Same reasoning as the Flatpak job: one definition, called from here rather
     # than duplicated. release-macos.yml stays dispatchable on its own.
     uses: ./.github/workflows/release-macos.yml
+    # A called workflow receives NO secrets unless they are passed. Without this
+    # line release-macos.yml reads `secrets.MACOS_CERTIFICATE` as empty however
+    # it is set, so `Determine signing mode` would report "disabled" forever and
+    # quietly ship unsigned .dmg files after an Apple enrolment. It is a no-op
+    # today, which is exactly why it would not be noticed later.
+    #
+    # `inherit` covers repository and organisation secrets. It does NOT reach
+    # ENVIRONMENT secrets: if the Apple ones go in the `release` environment
+    # alongside FLATHUB_FORK_TOKEN, release-macos.yml's own job must declare
+    # `environment: release` as well.
+    secrets: inherit
 
   # -------- Windows: installer + portable zip --------
   #
@@ -389,6 +400,10 @@ jobs:
   # generated from the lockfile OF THIS TAG by the flatpak job. Both halves leave
   # one run and cannot disagree, which is the entire reason this job exists rather
   # than a second generation on the Flathub side.
+  #
+  # It goes through the FORK, never straight at flathub/. That is the ordinary
+  # Flathub contribution route, it needs no credential on someone else's
+  # repository, and it keeps a human approval between a tag and the store.
   flathub:
     name: Flathub update PR
     needs: release
@@ -397,29 +412,50 @@ jobs:
     # Flathub stable takes final releases only. A pre-release tag carries a
     # hyphen, the same test the Release itself uses to set `prerelease:`.
     if: ${{ !contains(github.ref_name, '-') }}
+    # FLATHUB_FORK_TOKEN is an ENVIRONMENT secret, not a repository one, so this
+    # job has to name the environment to see it. Without this line
+    # `secrets.FLATHUB_FORK_TOKEN` resolves to the empty string and the job
+    # reports "no token configured" and skips, which is the one failure mode that
+    # looks like everything is fine.
+    #
+    # If the environment carries protection rules, they apply here: required
+    # reviewers pause this job until someone approves, and a deployment branch or
+    # tag rule must allow the version tags or the job never starts.
+    environment: release
+    env:
+      FORK: jacquetc/eu.skribisto.skribisto
+      UPSTREAM: flathub/eu.skribisto.skribisto
     steps:
       # A missing credential is not an emergency and must not fail a tag that has
       # already produced every artifact. It reports why and stops.
-      - name: Determine whether a Flathub token is configured
+      #
+      # FLATHUB_FORK_TOKEN needs rights on the FORK only. Make it a CLASSIC PAT
+      # with `public_repo`: a fine-grained token is scoped to repositories you
+      # own, and opening a pull request against flathub/ is not something it can
+      # express. A classic token acts as you, and anyone may open a PR on a
+      # public repository.
+      - name: Determine whether a fork token is configured
         id: creds
         env:
-          HAS_TOKEN: ${{ secrets.FLATHUB_TOKEN }}
+          HAS_TOKEN: ${{ secrets.FLATHUB_FORK_TOKEN }}
         run: |
           if [ -n "$HAS_TOKEN" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::FLATHUB_TOKEN is not set, so no Flathub PR was opened for ${GITHUB_REF_NAME}. Update flathub/eu.skribisto.skribisto by hand, or add the secret (a PAT with public_repo; GITHUB_TOKEN is scoped to this repository and cannot push to another one)."
+            echo "::notice::FLATHUB_FORK_TOKEN is not set, so no Flathub PR was opened for ${GITHUB_REF_NAME}. Update ${UPSTREAM} by hand, or add a classic PAT with public_repo scope."
           fi
 
-      - name: Check out the Flathub repository
+      - name: Check out the Flathub fork
         if: steps.creds.outputs.enabled == 'true'
         uses: actions/checkout@v6
         with:
-          repository: flathub/eu.skribisto.skribisto
-          token: ${{ secrets.FLATHUB_TOKEN }}
+          repository: jacquetc/eu.skribisto.skribisto
+          token: ${{ secrets.FLATHUB_FORK_TOKEN }}
           path: flathub
-          ref: master
+          # Needed to branch off upstream/master below rather than off whatever
+          # the fork happens to hold.
+          fetch-depth: 0
 
       - name: Download the vendored cargo sources
         if: steps.creds.outputs.enabled == 'true'
@@ -428,6 +464,24 @@ jobs:
           name: cargo-sources
           path: cargo-sources
 
+      # The branch starts at UPSTREAM's master, not at the fork's. A fork drifts
+      # behind the moment anyone else touches the Flathub repo, and a branch cut
+      # from a stale fork produces a pull request that reverts their commits
+      # while appearing to be a one-line version bump.
+      - name: Branch from the upstream manifest
+        if: steps.creds.outputs.enabled == 'true'
+        working-directory: flathub
+        run: |
+          set -euo pipefail
+          # Idempotent for the same reason `switch -C` is below: a fresh CI
+          # checkout never has this remote, which is exactly the sort of
+          # assumption that holds until someone re-runs the step.
+          git remote remove upstream 2>/dev/null || true
+          git remote add upstream "https://github.com/${UPSTREAM}.git"
+          git fetch --quiet upstream master
+          git switch -C "update-${GITHUB_REF_NAME}" upstream/master
+          echo "branched from upstream/master at $(git rev-parse --short upstream/master)"
+
       - name: Point the Flathub manifest at this tag
         if: steps.creds.outputs.enabled == 'true'
         run: |
@@ -435,7 +489,8 @@ jobs:
           manifest=flathub/eu.skribisto.skribisto.yml
 
           # The indent is captured and replayed so only the git source's own keys
-          # move, and the surrounding comments stay exactly as written.
+          # move, and the surrounding comments stay exactly as written. The commit
+          # is quoted because an unquoted 40-digit hash is a YAML integer.
           sed -i -E "s|^( *)tag: .*$|\1tag: ${GITHUB_REF_NAME}|" "$manifest"
           sed -i -E "s|^( *)commit: .*$|\1commit: \"${GITHUB_SHA}\"|" "$manifest"
 
@@ -450,31 +505,38 @@ jobs:
           cp cargo-sources/cargo-sources.json flathub/cargo-sources.json
           git -C flathub --no-pager diff --stat
 
-      - name: Open the pull request
+      - name: Push the branch and open the pull request
         if: steps.creds.outputs.enabled == 'true'
         env:
-          GH_TOKEN: ${{ secrets.FLATHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.FLATHUB_FORK_TOKEN }}
         working-directory: flathub
         run: |
           set -euo pipefail
           branch="update-${GITHUB_REF_NAME}"
+          owner="${FORK%%/*}"
 
           if git diff --quiet; then
-            echo "::notice::the Flathub manifest already matches ${GITHUB_REF_NAME}; nothing to open"
+            echo "::notice::${UPSTREAM} already matches ${GITHUB_REF_NAME}; nothing to open"
             exit 0
           fi
 
           git config user.name "Skribisto release"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          # -C, not -c: the branch content is fully determined by the tag, so
-          # re-running a release resets its own branch instead of failing on one
-          # left behind. A fresh CI checkout never has it, which is exactly the
-          # kind of assumption that holds until it does not.
-          git switch -C "$branch"
           git add eu.skribisto.skribisto.yml cargo-sources.json
           git commit -m "Update to ${GITHUB_REF_NAME}"
-          # Re-running a tag may replace its own branch, and nothing else.
+          # origin is the fork. Re-running a tag replaces its own branch there.
           git push --force-with-lease origin "$branch"
+
+          # Matched on owner AND branch: `--head` alone cannot tell this fork's
+          # branch from an identically named one on another contributor's.
+          existing=$(gh pr list --repo "$UPSTREAM" --state open \
+            --json number,headRefName,headRepositoryOwner \
+            --jq ".[] | select(.headRefName==\"$branch\" and .headRepositoryOwner.login==\"$owner\") | .number")
+
+          if [ -n "$existing" ]; then
+            echo "::notice::PR #${existing} on ${UPSTREAM} is already open for ${branch}; the update was pushed to it"
+            exit 0
+          fi
 
           body=$(printf '%s\n' \
             "Automated from jacquetc/skribisto ${GITHUB_REF_NAME} (${GITHUB_SHA})." \
@@ -484,9 +546,5 @@ jobs:
             "the source being built. Keeping them together is what the external data checker" \
             "cannot do on its own: flathub-infra/flatpak-external-data-checker#252.")
 
-          if [ -n "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
-            echo "::notice::a PR for ${branch} is already open; the update was pushed to it"
-          else
-            gh pr create --base master --head "$branch" \
-              --title "Update to ${GITHUB_REF_NAME}" --body "$body"
-          fi
+          gh pr create --repo "$UPSTREAM" --base master --head "${owner}:${branch}" \
+            --title "Update to ${GITHUB_REF_NAME}" --body "$body"
