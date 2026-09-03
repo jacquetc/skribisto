@@ -488,6 +488,20 @@ jobs:
           set -euo pipefail
           manifest=flathub/eu.skribisto.skribisto.yml
 
+          # The base is UPSTREAM's master, and upstream can hold an older
+          # GENERATION of this application rather than merely an older version of
+          # it. It did: the C++/Qt6 manifest stayed on Flathub after the Rust
+          # rewrite shipped, so bumping `tag` and `commit` on top of it produced a
+          # manifest that handed a Cargo workspace to cmake-ninja and failed with
+          # "Can't find CMakeLists.txt". Nothing else in this job can notice, and
+          # the result reads as an ordinary version bump, so check the base is the
+          # manifest this release can actually be built by. A vendored crate set
+          # means nothing to a manifest that never invokes cargo.
+          grep -q 'buildsystem: simple' "$manifest" \
+            || { echo "::error::${UPSTREAM}'s master still carries a non-Rust manifest (no 'buildsystem: simple' in eu.skribisto.skribisto.yml). Land the manifest migration there before a tag can update it."; exit 1; }
+          grep -q 'cargo --offline build' "$manifest" \
+            || { echo "::error::${UPSTREAM}'s master has no offline cargo build command in eu.skribisto.skribisto.yml. Land the manifest migration there before a tag can update it."; exit 1; }
+
           # The indent is captured and replayed so only the git source's own keys
           # move, and the surrounding comments stay exactly as written. The commit
           # is quoted because an unquoted 40-digit hash is a YAML integer.
