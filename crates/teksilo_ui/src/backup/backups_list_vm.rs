@@ -221,9 +221,20 @@ impl BackupsListViewModel {
         crate::shell::windows::open_or_focus_project(ctx, path);
     }
 
-    /// Show the backup in the platform's file manager.
+    /// Show one backup in the platform's file manager, among its siblings.
+    ///
+    /// Takes the path of a **backup**, never of a directory: to open a whole
+    /// destination folder, call [`Self::reveal_folder`]. See
+    /// [`process::reveal_in_file_manager`] for why the filesystem cannot be
+    /// asked which of the two it was handed.
     pub fn reveal(path: &str) {
         process::reveal_in_file_manager(path);
+    }
+
+    /// Open a backup **destination** in the platform's file manager — the app's
+    /// own root, as offered by Settings ▸ Backup defaults ▸ Show folder.
+    pub fn reveal_folder(dir: &str) {
+        process::open_folder(dir);
     }
 }
 

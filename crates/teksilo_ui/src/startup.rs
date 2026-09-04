@@ -81,6 +81,14 @@ pub(crate) fn launch_maintenance(
         }
     }
 
+    // ── The app's own backup folder, before anything names it ────────────────
+    // `backup_paths` promises the default destination is "app-managed and
+    // always present", and it was only ever present once a backup had been
+    // written into it. Settings ▸ Backup names it on the first launch, long
+    // before that, so the folder has to be there by then. Idempotent, and a
+    // failure only means the folder is made later by the backup itself.
+    crate::backup_paths::ensure_backup_root();
+
     // Seed the single shared Root + System frame into the (empty) store at
     // startup — before any work is opened — and keep the returned Root id to
     // point `AppIds` at it. `initialize_app` is idempotent: a later load/new

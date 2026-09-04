@@ -62,6 +62,50 @@ pub fn backup_root_string() -> String {
     backup_root().to_string_lossy().into_owned()
 }
 
+/// Create the app's backup root if it is not there yet, once per launch.
+///
+/// The module doc above calls the default destination "app-managed and always
+/// present", and until this existed it was neither: nothing created the folder
+/// until the *first backup ran*, which on a Flatpak install is
+/// `~/.var/app/eu.skribisto.skribisto/data/skribisto/backups`. So a writer who
+/// opened Settings ▸ Backup defaults on a fresh install read a path that was not
+/// on the disk, and reaching for it in a file manager — through the Show folder
+/// button or by hand — found nothing there. "Where does my work get backed up" answered with
+/// a path that does not exist reads as a broken setting, not as an empty one.
+///
+/// Idempotent and best-effort: a failure is reported and nothing else changes.
+/// The write path does **not** depend on this — `backup_now` creates the
+/// destination itself, and must, since a configured destination can be a stick
+/// that was unplugged since. This only makes the app's own default visible
+/// before the first backup lands in it.
+///
+/// Returns whether the root exists afterwards.
+pub fn ensure_backup_root() -> bool {
+    ensure_root(&backup_root())
+}
+
+/// The `root`-injected half of [`ensure_backup_root`], so the rule is testable
+/// without creating a folder in the developer's own data directory.
+///
+/// An empty `root` is "this platform has no data directory": there is nothing to
+/// make, and [`resolve_destinations`] already falls back to writing beside the
+/// project, so it is a `false` rather than an error.
+fn ensure_root(root: &std::path::Path) -> bool {
+    if root.as_os_str().is_empty() {
+        return false;
+    }
+    match std::fs::create_dir_all(root) {
+        Ok(()) => true,
+        Err(e) => {
+            eprintln!(
+                "skribisto: could not create the backup folder {}: {e}",
+                root.display()
+            );
+            false
+        }
+    }
+}
+
 /// The destinations a backup run should actually write to.
 ///
 /// Pure, and `default_root`-injected, so the policy → directories mapping is
@@ -354,6 +398,42 @@ mod tests {
             10 + 5 + 6,
             "a folder bundle is measured recursively, and strays contribute nothing",
         );
+    }
+
+    /// **The regression this exists for.** The backup root used to appear only
+    /// when the first backup was written into it, so Settings ▸ Backup defaults
+    /// named a folder that was not on the disk on every fresh install.
+    #[test]
+    fn the_backup_root_is_made_before_the_first_backup_is_written() {
+        let d = tempfile::tempdir().unwrap();
+        // Nested, because the data directory itself may not exist yet either on
+        // the launch this runs for.
+        let root = d.path().join("skribisto").join("backups");
+        assert!(!root.exists());
+        assert!(
+            ensure_root(&root),
+            "the app's own default must be creatable"
+        );
+        assert!(root.is_dir(), "{} must be a directory", root.display());
+        // Idempotent: a second launch finds it and does not report a failure.
+        assert!(ensure_root(&root));
+    }
+
+    /// A platform with no data directory has nothing to create, and says so
+    /// rather than trying to make a folder called "".
+    #[test]
+    fn no_data_dir_has_no_root_to_make() {
+        assert!(!ensure_root(std::path::Path::new("")));
+    }
+
+    /// A root that cannot be made is reported, not panicked on — the write path
+    /// creates its own destination anyway, so a backup still happens.
+    #[test]
+    fn an_uncreatable_root_is_reported_not_fatal() {
+        let d = tempfile::tempdir().unwrap();
+        let blocker = d.path().join("backups");
+        std::fs::write(&blocker, b"not a directory").unwrap();
+        assert!(!ensure_root(&blocker));
     }
 
     #[test]

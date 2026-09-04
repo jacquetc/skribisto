@@ -144,7 +144,11 @@ impl Widget for DefaultLocationRow {
                     Button(tr!(settings_backup_reveal_root())) {
                         variant: ButtonVariant::Ghost
                         on_activate_fn: move |_c| {
-                            crate::backup::BackupsListViewModel::reveal(&reveal_target)
+                            // Made at launch, but a writer can delete it between
+                            // then and now, and a button that names a folder must
+                            // open one. Idempotent either way.
+                            crate::backup_paths::ensure_backup_root();
+                            crate::backup::BackupsListViewModel::reveal_folder(&reveal_target)
                         }
                     }
                 }
