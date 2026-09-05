@@ -41,6 +41,10 @@ env:
   # build.rs reads this; the Windows job does the same. On a called run this is
   # the caller's ref, so a tag build stamps the tag.
   SKRIBISTO_GIT_DESCRIBE: ${{ github.ref_name }}
+  # The .dmg does not update itself, and re-downloading costs the unsigned-build
+  # "Open Anyway" step again, so its reader is the one who most needs telling that
+  # a new release exists rather than discovering it by accident.
+  SKRIBISTO_CHANNEL: dmg
 
 jobs:
   macos-universal:

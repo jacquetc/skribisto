@@ -45,6 +45,50 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
+      # The release notes a Linux software centre shows come from the AppStream
+      # metainfo, NOT from the GitHub Release. That file is regenerated from
+      # NEWS.yml by generate-release-in-appdata.yml, which triggers on a push to
+      # master and commits the result BACK to master — so a tag cut at or before
+      # that commit cannot contain it, and the artifact ships the previous
+      # release's notes. v3.0.1 shipped exactly that way: the tag was v3.0.1
+      # while the metainfo still said 3.0.0, so every GNOME Software and KDE
+      # Discover user was shown 3.0.0's "what's new" for a 3.0.1 install.
+      #
+      # This is the gate that ordering problem needs. It is deliberately in
+      # `validate`, before a single artifact is built: a stale metainfo cannot be
+      # repaired after the fact, because Flathub builds from the tag.
+      #
+      # To fix a failure: add the version's block to NEWS.yml, run
+      #   appstreamcli news-to-metainfo --limit=1 ./NEWS.yml ./eu.skribisto.skribisto.metainfo.xml
+      # commit both, then move the tag.
+      - name: The tag's release notes are in NEWS.yml and in the metainfo
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends appstream
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          if ! grep -qE "^Version: *\"?${VERSION}\"?[[:space:]]*$" NEWS.yml; then
+            echo "::error::NEWS.yml has no block for ${VERSION}. The GitHub Release would fall back to a bare \"Release ${GITHUB_REF_NAME}.\" and the software centres would show the previous release's notes."
+            exit 1
+          fi
+
+          # `news-to-metainfo` rewrites in place, so work on a copy and diff.
+          cp eu.skribisto.skribisto.metainfo.xml /tmp/committed.xml
+          cp eu.skribisto.skribisto.metainfo.xml /tmp/regenerated.xml
+          appstreamcli news-to-metainfo --limit=1 ./NEWS.yml /tmp/regenerated.xml
+          if ! diff -u /tmp/committed.xml /tmp/regenerated.xml; then
+            echo "::error::eu.skribisto.skribisto.metainfo.xml is not what NEWS.yml regenerates to. Commit the regenerated file, then move the tag."
+            exit 1
+          fi
+
+          NEWEST=$(sed -n 's/.*<release[^>]*version="\([^"]*\)".*/\1/p' eu.skribisto.skribisto.metainfo.xml | head -1)
+          if [ "$NEWEST" != "$VERSION" ]; then
+            echo "::error::the metainfo's newest release is ${NEWEST}, but this tag is ${VERSION}."
+            exit 1
+          fi
+          echo "NEWS.yml and the metainfo both name ${VERSION}."
+
   # -------- Linux: single .flatpak bundle --------
   flatpak:
     name: Flatpak bundle
@@ -69,6 +113,10 @@ jobs:
     timeout-minutes: 60
     env:
       SKRIBISTO_GIT_DESCRIBE: ${{ github.ref_name }}
+      # Nothing updates a tarball, so the application is the only signal this
+      # reader will ever get that a newer release exists. See
+      # crates/teksilo_ui/src/updates/channel.rs.
+      SKRIBISTO_CHANNEL: tarball
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/install-linux-deps
@@ -180,6 +228,10 @@ jobs:
     env:
       # Stamp the release version into the binary (build.rs reads this).
       SKRIBISTO_GIT_DESCRIBE: ${{ github.ref_name }}
+      # One value for the installer and the portable zip alike: this job runs one
+      # `cargo build` and packages its output twice, so the two artifacts cannot
+      # carry different stamps. Neither self-updates, so neither needs to.
+      SKRIBISTO_CHANNEL: windows
     steps:
       - uses: actions/checkout@v6
 
@@ -388,6 +440,34 @@ jobs:
           files: release/*
           fail_on_unmatched_files: true
 
+      # The website rebuilds data/release.toml (the download page's versions,
+      # sizes and checksums) and static/updates/stable.json (what the running
+      # application reads to learn a newer version exists) from the published
+      # releases. Its own workflow documents this exact step and it was never
+      # added, so both files only ever caught up on the next 06:17 cron: the
+      # download page advertised the previous release for up to a day after this
+      # one went out, and so did the in-app notice.
+      #
+      # Deliberately not `fail`-ing on a missing token. The daily cron is the
+      # backstop, so the cost of a missing secret is lateness, not wrong data,
+      # and a release that has already published its artifacts must not be marked
+      # failed over a website refresh.
+      - name: Tell the website to resync
+        env:
+          WEBSITE_DISPATCH_TOKEN: ${{ secrets.WEBSITE_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WEBSITE_DISPATCH_TOKEN}" ]; then
+            echo "::warning::WEBSITE_DISPATCH_TOKEN is not set; skribisto.eu will catch up on its next daily sync instead of now."
+            exit 0
+          fi
+          curl -sSf -X POST \
+            -H "Authorization: Bearer ${WEBSITE_DISPATCH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/jacquetc/skribisto-website/dispatches \
+            -d '{"event_type":"release-published"}'
+          echo "website resync requested."
+
   # -------- Flathub: open the update PR --------
   #
   # Flathub's bot cannot do this alone. flatpak-external-data-checker reads the
@@ -501,6 +581,13 @@ jobs:
             || { echo "::error::${UPSTREAM}'s master still carries a non-Rust manifest (no 'buildsystem: simple' in eu.skribisto.skribisto.yml). Land the manifest migration there before a tag can update it."; exit 1; }
           grep -q 'cargo --offline build' "$manifest" \
             || { echo "::error::${UPSTREAM}'s master has no offline cargo build command in eu.skribisto.skribisto.yml. Land the manifest migration there before a tag can update it."; exit 1; }
+          # Not fatal, and deliberately so. Without the stamp the Flathub build
+          # parses as `source`, which never checks on its own — so a missing
+          # value costs the reader nothing, while a wrong one (`flatpak-bundle`)
+          # would have every Flathub install duplicating what the software centre
+          # already tells them. Warn, and let the release through.
+          grep -q 'SKRIBISTO_CHANNEL: flathub' "$manifest" \
+            || echo "::warning::${UPSTREAM}'s manifest does not set SKRIBISTO_CHANNEL: flathub. The store build will not identify its channel, so it stays silent about updates (safe, but it also will not say that Flathub keeps it current)."
 
           # The indent is captured and replayed so only the git source's own keys
           # move, and the surrounding comments stay exactly as written. The commit

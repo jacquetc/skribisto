@@ -46,6 +46,18 @@ modules:
       env:
         CARGO_HOME: /run/build/skribisto/cargo
         CARGO_NET_OFFLINE: "true"
+        # This manifest builds the .flatpak bundle attached to a GitHub release.
+        # That bundle installs like a Flatpak but belongs to no repository, so
+        # nothing ever updates it and the application's own notice is the only
+        # signal its reader gets.
+        #
+        # The FLATHUB manifest is a different file, in the flathub/ repository,
+        # and it must set `flathub` here instead — a Flathub install is kept
+        # current by the software centre and must stay quiet. If that value is
+        # missing there the build stamps nothing, which parses as `source`: the
+        # copy never checks on its own, so the failure direction is silence
+        # rather than a duplicate notice. See crates/teksilo_ui/src/updates/channel.rs.
+        SKRIBISTO_CHANNEL: flatpak-bundle
     build-commands:
       # The checkout is already path-stripped by gen-cargo-sources.sh; build
       # fully offline from the vendored registry.
