@@ -955,6 +955,13 @@ impl Widget for WelcomePanel {
         tagline_style.family = "EB Garamond".to_string();
         tagline_style.size = 15.0;
         let logo = crate::identity::brand_mark().widget(60.0);
+        // The Launcher is not an `App`, so nothing `App::build` registers runs
+        // here. It has to start its own check, and `start_if_due` is idempotent
+        // across the whole process, so a session that opens the Launcher and then
+        // a project window still makes one request.
+        let updates = crate::updates::view_model();
+        updates.start_if_due(ctx, vm.check_for_updates().get());
+        let update_line = crate::updates::UpdateLine::new(updates);
         let branding = teksu!(
             Padding::symmetric(8.0, 4.0) {
                 VStack {
@@ -968,6 +975,13 @@ impl Widget for WelcomePanel {
                         style: TextStyleRole::Small
                         color: TextRole::Secondary
                     }
+                    // Directly under the version, and only when there is a newer
+                    // one: the Launcher is the one screen a writer passes through
+                    // while *not* mid-sentence, which is the only moment at which
+                    // being told to go and install something is welcome. It builds
+                    // nothing at all when this copy is current, so the tagline
+                    // closes straight up under the version as before.
+                    child: update_line
                     TextWidget::new(tr!(welcome_tagline())) {
                         style: tagline_style
                         color: TextRole::Secondary

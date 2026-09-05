@@ -207,6 +207,7 @@ pub mod text_replacement;
 pub mod timeline;
 pub mod toast_scope;
 pub mod trash;
+pub mod updates;
 pub mod versions;
 pub mod widgets;
 pub mod workspace_layout;

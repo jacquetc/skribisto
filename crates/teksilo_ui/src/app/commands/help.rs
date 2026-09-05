@@ -16,11 +16,21 @@
 //! any extension) registered as a shortcut. Wiring it is four lines and belongs next to
 //! the other "how do I find things" commands.
 
+use std::time::Duration;
+
 use teksilo::prelude::*;
-use teksilo::widgets::CommandPalette;
+use teksilo::widgets::{CommandPalette, Toast};
 
 use super::CommandDeps;
 use crate::help::window::open_or_focus_help;
+
+/// One toast surface for the hand-driven check, replaced in place by id rather
+/// than stacked, so pressing the menu row twice leaves one toast and not two.
+const UPDATE_TOAST_ID: &str = "update.check";
+
+/// How long that toast stays. Long enough to read a version number, short enough
+/// that it is gone before the reader is back in a sentence.
+const TOAST_DWELL: Duration = Duration::from_secs(6);
 
 /// Commands that must never appear as rows in the palette itself.
 ///
@@ -96,6 +106,44 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             c,
         );
     }));
+
+    // Asking on purpose, which is a different thing from the once-a-day check and
+    // obeys neither its cadence nor its setting: a reader who opens this menu has
+    // asked a question and is owed an answer now.
+    //
+    // Registered only where the channel shows update state at all. On a Flathub or
+    // distribution install there is no honest answer to give about *this* copy, so
+    // the row is absent rather than present and misleading. No chord: this is a
+    // command you find by name, and it still reaches the command palette and
+    // Settings ▸ Keymap from the registry.
+    if crate::updates::shows_update_state() {
+        ctx.register_shortcut_global(
+            Shortcut::new("help.check_updates")
+                .name(tr!(shortcut_name_help_check_updates()))
+                .category("Help")
+                .build(),
+        );
+        ctx.register_action_global(Action::new("help.check_updates").on_invoke(|_i, c| {
+            crate::updates::view_model().check_now(c, |outcome, ctx2| {
+                // Auto-dismissing, never persistent, and never `.broadcast()`:
+                // the reader who asked is looking at this window, and a standing
+                // panel in every other one is the failure mode the passive
+                // surfaces exist to avoid.
+                let toast = match outcome {
+                    crate::updates::CheckOutcome::Behind(a) => {
+                        Toast::info(tr!(update_check_behind(version = a.version)))
+                    }
+                    crate::updates::CheckOutcome::Current => {
+                        Toast::success(tr!(update_check_current()))
+                    }
+                    crate::updates::CheckOutcome::Failed(e) => {
+                        Toast::error(tr!(update_check_failed(error = e)))
+                    }
+                };
+                ctx2.show_toast(toast.id(UPDATE_TOAST_ID).auto_dismiss_after(TOAST_DWELL));
+            });
+        }));
+    }
 
     // Ctrl+Shift+P: the convention every editor with a palette uses, and unbound here.
     ctx.register_shortcut_global(

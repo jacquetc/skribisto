@@ -78,6 +78,13 @@ pub const COMMUNITY_QUALIFIER: &str = "eu";
 pub const COMMUNITY_ORGANIZATION: &str = "skribisto";
 pub const COMMUNITY_APPLICATION: &str = "Skribisto";
 
+/// Where the community edition asks whether a newer release exists.
+///
+/// A small static JSON file on the project's own site, generated from the
+/// published releases by the website repository's `sync_release_data.py`. See
+/// [`crate::updates`] for why this is not the GitHub API.
+pub const COMMUNITY_UPDATE_FEED: &str = "https://www.skribisto.eu/updates/stable.json";
+
 /// Who the running application is.
 ///
 /// The triple follows the `directories` / `etcetera` convention and picks the
@@ -96,6 +103,21 @@ pub struct AppIdentity {
     /// announces itself as. Defaults to the triple; override when the installed
     /// entry is named something the triple does not spell.
     pub desktop_id: String,
+    /// Where to ask whether a newer release of *this* edition exists, or `None`
+    /// to never ask.
+    ///
+    /// **`None` is the default for a registered identity, and that is the point.**
+    /// The update feed cannot be a bare constant in this crate: the commercial
+    /// edition links `teksilo_ui` as a library, so a constant compiled in here
+    /// would be compiled into that build too, and a paying reader would be sent
+    /// to the community download page. Hanging it off the identity means an
+    /// edition that declares who it is also declares where its releases live,
+    /// with no second registration to forget, and an edition that says nothing
+    /// stays silent instead of advertising somebody else's build.
+    ///
+    /// [`AppIdentity::community`] sets [`COMMUNITY_UPDATE_FEED`], so the
+    /// community application is unaffected.
+    pub update_feed: Option<String>,
 }
 
 /// An application name as the filesystem and the desktop spell it: lowercased,
@@ -125,7 +147,19 @@ impl AppIdentity {
             organization,
             display_name: application.clone(),
             application,
+            update_feed: None,
         }
+    }
+
+    /// Declare where this edition publishes its releases.
+    ///
+    /// The value must be an `https` URL of a JSON document in the shape
+    /// [`crate::updates::feed`] parses. Without it the edition never checks; see
+    /// [`AppIdentity::update_feed`].
+    #[must_use]
+    pub fn with_update_feed(mut self, url: impl Into<String>) -> Self {
+        self.update_feed = Some(url.into());
+        self
     }
 
     /// Override the user-visible name, leaving the paths alone.
@@ -157,6 +191,7 @@ impl AppIdentity {
             COMMUNITY_ORGANIZATION,
             COMMUNITY_APPLICATION,
         )
+        .with_update_feed(COMMUNITY_UPDATE_FEED)
     }
 
     /// Whether this *is* the community identity (all three path fields), which is
@@ -247,6 +282,12 @@ pub fn current() -> AppIdentity {
 /// crate should resolve them.**
 pub fn app_paths() -> Option<AppPaths> {
     current().app_paths()
+}
+
+/// Where this edition asks whether a newer release exists, or `None` when it
+/// never asks. See [`AppIdentity::update_feed`].
+pub fn update_feed() -> Option<String> {
+    current().update_feed
 }
 
 /// The **community** directories, whatever edition is running.

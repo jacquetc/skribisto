@@ -113,6 +113,13 @@ png = "0.18"
 # and the accepted-licences settings file. `skrib_format` pins its own `ron` and
 # re-exports nothing, so this is a real (one-line) edge, not a free ride.
 ron = "0.12.2"
+# Comparing the running version against the one the update feed names. Semver's
+# precedence rules are the whole reason this is a crate and not a string compare:
+# build metadata is IGNORED, so `3.0.1+5c62c8cac` (what a build past the tag
+# renders as) compares equal to `3.0.1` and a developer is never told their newer
+# build is out of date. Already resolved in the workspace lockfile at 1.0.28
+# through `rustc_version`, so this names an existing edge rather than adding one.
+semver = "1.0"
 # Dictionary downloads: a blocking HTTP GET on a `spawn_blocking` worker thread
 # (no async runtime needed). `ureq` 3 ships rustls by default — no OpenSSL
 # system-ABI dependency, which matters for a Flatpak/AppImage build where the

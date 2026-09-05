@@ -1,3 +1,17 @@
+Version: 3.0.2
+Date: 2026-09-04
+Type: stable
+Description:
+- "The folder Skribisto keeps its backups in is created when the app starts, so the location shown in Settings is really there before the first backup is taken"
+- "Show folder, in Settings under Backup defaults, opens that folder itself instead of the one above it"
+---
+Version: 3.0.1
+Date: 2026-09-03
+Type: stable
+Description:
+- "Windows now tell the desktop which application they belong to, so Skribisto keeps its own name and icon in the task switcher and its notifications are attributed to it"
+- "Packaging fixes for the Flathub build and its store listing"
+---
 Version: 3.0.0
 Date: 2026-07-19
 Type: stable

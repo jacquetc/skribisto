@@ -42,10 +42,10 @@ use teksilo::widgets::Toast;
 use frontend::AppContext;
 use frontend::direct_access::RecentWorkDto;
 
-use crate::SHOW_WELCOME_KEY;
 use crate::models::RecentWorkListModel;
 use crate::new_work::panel::NewWorkPanel;
 use crate::shell::windows::ProjectWindowFactory;
+use crate::{CHECK_FOR_UPDATES_DEFAULT, CHECK_FOR_UPDATES_KEY, SHOW_WELCOME_KEY};
 
 /// The recents projection's one filter column. `SortFilterListModel` keys
 /// predicates by column id (it is built for `TableView` headers); the recents
@@ -71,6 +71,7 @@ pub use crate::shared::project_links::GITHUB_URL;
 #[derive(Clone)]
 pub struct WelcomeViewModel {
     show_welcome: Signal<bool>,
+    check_for_updates: Signal<bool>,
     app_ctx: Rc<AppContext>,
     /// Builds the project window a successful open/create/import opens,
     /// before this (Launcher) window closes.
@@ -107,6 +108,7 @@ impl WelcomeViewModel {
             project_recents(recents.list_model(), &search, recents_selection.clone());
         Self {
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
+            check_for_updates: store.signal(CHECK_FOR_UPDATES_KEY, CHECK_FOR_UPDATES_DEFAULT),
             app_ctx,
             factory,
             recents,
@@ -122,6 +124,15 @@ impl WelcomeViewModel {
     /// `SHOW_WELCOME_KEY` signal).
     pub fn show_welcome(&self) -> Signal<bool> {
         self.show_welcome.clone()
+    }
+
+    /// The persisted update-check preference — the same cached
+    /// [`crate::CHECK_FOR_UPDATES_KEY`] signal Settings ▸ Notifications binds.
+    ///
+    /// Read by the Launcher's own panel, which has to start the check itself:
+    /// the Launcher is not an `App`, so nothing `App::build` registers reaches it.
+    pub fn check_for_updates(&self) -> Signal<bool> {
+        self.check_for_updates.clone()
     }
 
     // ── the recents search ──

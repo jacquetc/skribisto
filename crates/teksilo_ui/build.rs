@@ -31,7 +31,38 @@ fn main() {
 
     println!("cargo:rustc-env=SKRIBISTO_GIT_DESCRIBE={describe}");
 
+    stamp_channel();
     embed_windows_resources();
+}
+
+/// Stamps how this binary was distributed into `SKRIBISTO_CHANNEL`, which
+/// [`crate::updates::Channel`] parses.
+///
+/// The application cannot work this out at runtime with any accuracy. A Flatpak
+/// can be recognised from `/.flatpak-info`, but that says nothing about whether
+/// it came from Flathub (which updates itself, so the application must stay
+/// quiet) or from the bundle attached to a GitHub release (which does not, so it
+/// is the only signal that user will ever get). A Windows installer and a
+/// portable zip are the same executable in different places. A distribution
+/// package leaves no runtime trace at all. Only the recipe that produced the
+/// artifact knows, so the recipe is what says so.
+///
+/// Unset means `source`: a `cargo build`, a distribution rebuild, or anything
+/// else that did not go through one of this project's packaging workflows.
+/// [`Channel::Source`] does not check on its own, so the failure direction for
+/// an unstamped build is silence rather than a wrong instruction.
+///
+/// No validation here on purpose. A build script that panics on a typo is a
+/// packager's ruined afternoon; an unrecognised value parses to
+/// [`Channel::Unknown`], which is also silent.
+fn stamp_channel() {
+    println!("cargo:rerun-if-env-changed=SKRIBISTO_CHANNEL");
+    let channel = std::env::var("SKRIBISTO_CHANNEL")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "source".to_string());
+    println!("cargo:rustc-env=SKRIBISTO_CHANNEL={channel}");
 }
 
 /// For a Windows *target*, embed the app icon + version metadata into

@@ -381,6 +381,7 @@ jobs:
     needs: [flatpak, linux, macos, windows]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: release
     steps:
       - uses: actions/checkout@v6
 

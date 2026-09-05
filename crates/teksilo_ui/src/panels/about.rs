@@ -60,6 +60,23 @@ impl Widget for AboutPanel {
         // is the translated part and lives in the ftl key.
         let version = tr!(about_version(version = crate::version::app_version()));
 
+        // The second place the application prints its own version, and so the
+        // second place the update line belongs. It builds nothing when this copy
+        // is current, which is the usual case, leaving the header exactly as it
+        // was.
+        let update_line = crate::updates::UpdateLine::new(crate::updates::view_model());
+
+        // On a channel somebody else keeps current there is no check and no line,
+        // so this says who is responsible instead. Without it, a Flathub reader
+        // finds an application that never mentions versions and cannot tell that
+        // from one whose check is broken.
+        let managed = crate::updates::Channel::current()
+            .managed_by()
+            .map(|by| match by {
+                crate::updates::ManagedBy::Flathub => tr!(about_update_flathub()),
+                crate::updates::ManagedBy::Distribution => tr!(about_update_distro()),
+            });
+
         let footer = HStack::new().spacing(8.0).child(Spacer::new()).child(
             Button::new(tr!(about_close()))
                 .variant(ButtonVariant::Filled)
@@ -95,6 +112,7 @@ impl Widget for AboutPanel {
                                                 style: TextStyleRole::Tiny
                                                 color: TextRole::Secondary
                                             }
+                                            child: update_line
                                         }
                                     }
                                     IconButton::clear() {
@@ -123,6 +141,11 @@ impl Widget for AboutPanel {
                                     style: TextStyleRole::Small
                                     color: TextRole::Secondary
                                 }
+                                child_opt: managed.map(|line| {
+                                    TextWidget::new(line)
+                                        .style(TextStyleRole::Small)
+                                        .color(TextRole::Secondary)
+                                })
                                 Spacer
                             }
                         }
@@ -174,5 +197,45 @@ mod tests {
     fn the_version_shown_is_the_running_version() {
         let v = crate::version::app_version();
         assert!(!v.is_empty(), "app_version() must never be empty");
+    }
+
+    /// About is the second place the application prints its version, so it is the
+    /// second place a newer one has to be named. The panel builds the line from
+    /// the process-wide update state, which this seeds; without the seeding the
+    /// state is empty and the assertion would pass for the wrong reason, so the
+    /// negative case is checked first.
+    #[test]
+    fn a_newer_version_is_named_in_the_about_box() {
+        const LINE: &str = "Version 999.0.0 is available";
+
+        let mut tree = WidgetTree::new();
+        tree.add(AboutPanel::new());
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+        assert!(
+            tree.find_by_label(LINE).is_none(),
+            "nothing recorded means nothing shown"
+        );
+
+        let store = crate::models::updates_file::UpdatesService::in_memory_default();
+        store.record(
+            "999.0.0",
+            "2026-12-01",
+            std::collections::BTreeMap::new(),
+            std::collections::BTreeMap::from([(
+                "en".to_string(),
+                "https://www.skribisto.eu/download/".to_string(),
+            )]),
+        );
+        crate::updates::update_vm::set_view_model_for_test(crate::updates::UpdateViewModel::new(
+            store,
+        ));
+
+        let mut tree = WidgetTree::new();
+        tree.add(AboutPanel::new());
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+        assert!(
+            tree.find_by_label(LINE).is_some(),
+            "the About box has to name the newer version too, not only the Launcher"
+        );
     }
 }

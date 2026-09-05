@@ -249,6 +249,22 @@ pub const COMMENTS_VISIBLE_DEFAULT: bool = true;
 /// itself has no inline copy of this — see `welcome_panel.rs`'s module docs).
 pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
 
+/// Whether the application may ask, once a day at most, whether a newer release
+/// exists. On by default.
+///
+/// Opt-out rather than opt-in because a version check is not telemetry: it sends
+/// no identifier, no usage data and not even the running version, and the answer
+/// is compared on this machine. The three conditions that make opt-out
+/// defensible are all met, and the published privacy page states every one of
+/// them.
+///
+/// Only consulted on a channel that [checks at
+/// all](crate::updates::Channel::checks_automatically); a Flathub or
+/// distribution install never asks regardless of this value, so the toggle is
+/// hidden there rather than shown with no effect.
+pub const CHECK_FOR_UPDATES_KEY: &str = "ui.check_for_updates";
+pub const CHECK_FOR_UPDATES_DEFAULT: bool = true;
+
 /// Show the writing-plan summary when a project with an active plan opens.
 ///
 /// App-global rather than per-project, because the projects it *would* be wrong for are
@@ -709,6 +725,15 @@ pub static SETTINGS: &[SettingSpec] = &[
         check: check::<bool>,
         doc: "Open the Launcher on a bare launch; when false, reopen the most recent \
               reachable project instead.",
+    },
+    SettingSpec {
+        key: crate::CHECK_FOR_UPDATES_KEY,
+        ty: "bool",
+        default: || val(crate::CHECK_FOR_UPDATES_DEFAULT),
+        check: check::<bool>,
+        doc: "Ask the project's website, once a day at most, whether a newer release \
+              exists. Installs that a software centre already keeps up to date never \
+              ask, whatever this says.",
     },
     SettingSpec {
         key: teksilo::settings::TEXT_SCALE_KEY.key,

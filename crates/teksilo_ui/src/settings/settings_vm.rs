@@ -29,8 +29,9 @@ use frontend::common::entities::QuoteStyle;
 use crate::shared::{HighlightScope, SynopsisPlacement, TypewriterAnchor};
 
 use crate::{
-    AUTOSAVE_KEY, COMMENTS_VISIBLE_DEFAULT, COMMENTS_VISIBLE_KEY, CORKBOARD_CARD_SIZE_DEFAULT,
-    CORKBOARD_CARD_SIZE_KEY, CORKBOARD_FIRST_LINE_INDENT_DEFAULT, CORKBOARD_FIRST_LINE_INDENT_KEY,
+    AUTOSAVE_KEY, CHECK_FOR_UPDATES_DEFAULT, CHECK_FOR_UPDATES_KEY, COMMENTS_VISIBLE_DEFAULT,
+    COMMENTS_VISIBLE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY,
+    CORKBOARD_FIRST_LINE_INDENT_DEFAULT, CORKBOARD_FIRST_LINE_INDENT_KEY,
     CORKBOARD_FONT_FAMILY_DEFAULT, CORKBOARD_FONT_FAMILY_KEY, CORKBOARD_LINE_HEIGHT_DEFAULT,
     CORKBOARD_LINE_HEIGHT_KEY, CORKBOARD_MODAL_SIZE_DEFAULT, CORKBOARD_MODAL_SIZE_KEY,
     CORKBOARD_NESTED_DEFAULT, CORKBOARD_NESTED_KEY, CORKBOARD_PARA_SPACING_AFTER_DEFAULT,
@@ -374,6 +375,7 @@ pub struct SettingsViewModel {
     spellcheck_enabled: Signal<bool>,
     comments_visible: Signal<bool>,
     show_welcome: Signal<bool>,
+    check_for_updates: Signal<bool>,
     // ── Editor typography (per type) ──
     scene_typo: EditorTypography,
     synopsis_typo: EditorTypography,
@@ -448,6 +450,7 @@ impl SettingsViewModel {
             spellcheck_enabled: store.signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT),
             comments_visible: store.signal(COMMENTS_VISIBLE_KEY, COMMENTS_VISIBLE_DEFAULT),
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
+            check_for_updates: store.signal(CHECK_FOR_UPDATES_KEY, CHECK_FOR_UPDATES_DEFAULT),
             scene_typo: EditorTypography {
                 font_family: store
                     .signal(SCENE_FONT_FAMILY_KEY, SCENE_FONT_FAMILY_DEFAULT.to_string()),
@@ -647,6 +650,16 @@ impl SettingsViewModel {
     /// `SHOW_WELCOME_KEY` signal the Welcome dialog's inline checkbox binds.
     pub fn show_welcome(&self) -> Signal<bool> {
         self.show_welcome.clone()
+    }
+
+    /// Whether the once-a-day update check may run. See
+    /// [`crate::CHECK_FOR_UPDATES_KEY`] for why this is opt-out.
+    ///
+    /// The value is honoured only where the channel checks at all; a Flathub or
+    /// distribution install stays silent regardless, and the Settings row is not
+    /// rendered there rather than being shown with no effect.
+    pub fn check_for_updates(&self) -> Signal<bool> {
+        self.check_for_updates.clone()
     }
 
     // ── Reached through the store rather than held as fields ─────────────

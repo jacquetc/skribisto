@@ -230,6 +230,8 @@ settings-preview-width = Search preview width
 settings-autosave = Autosave to disk
 settings-show-welcome = Show the launcher at startup
 settings-show-welcome-tip = When off, the last project reopens instead.
+settings-check-for-updates = Check for new versions
+settings-check-for-updates-tip = Once a day at most, Skribisto asks the project's website which version is current. The request carries no identifier, and not even the version you are running: the comparison happens on this computer.
 
 ## Settings window: chrome
 settings-title = Settings
@@ -334,6 +336,7 @@ settings-group-distraction-free-strip = Control strip
 settings-group-theme = Theme
 settings-group-language = Language
 settings-group-startup = Startup
+settings-group-updates = Updates
 settings-group-autosave = Autosave
 settings-field-typeface = Typeface
 settings-field-size = Text size
@@ -504,6 +507,9 @@ settings-styles-spacing-double = Double
 welcome-title = Welcome to Skribisto
 # $version is stamped from the git tag at build time (see src/version.rs).
 welcome-version = Version { $version }
+# Shown under the version in the launcher sidebar, only when a newer release exists.
+welcome-update-available = Version { $version } is available
+welcome-update-tip = Opens the download page in your browser.
 welcome-search = Search works
 welcome-open = Open
 welcome-new-work = New Work
@@ -1708,6 +1714,10 @@ menu-format-table-remove = &Remove Table
 menu-about = &About Skribisto…
 about-title = About Skribisto
 about-version = Version { $version }
+about-update-available = Version { $version } is available
+about-update-see-notes = See what changed
+about-update-flathub = Flathub keeps this copy up to date.
+about-update-distro = Your distribution keeps this copy up to date.
 about-tagline = A novel-writing app for long-form fiction, written in Rust with the Teksilo toolkit.
 about-license = Released under the GNU General Public License, version 3.
 about-copyright = © 2026 Cyril Jacquet
@@ -2500,6 +2510,7 @@ menu-help-topics = Help &Topics
 menu-help-shortcuts = &Keyboard Shortcuts…
 menu-help-website = Skribisto on the &Web
 menu-help-report = &Report a Problem…
+menu-help-check-updates = Check for &Updates
 menu-command-palette = &Command Palette…
 
 # The Learn pane's rows in the Launcher. Separate keys from the Help menu's rows
@@ -2589,6 +2600,11 @@ shortcut-name-help-topics = Help Topics
 shortcut-name-help-shortcuts = Keyboard Shortcuts
 shortcut-name-help-website = Skribisto on the Web
 shortcut-name-help-report = Report a Problem
+shortcut-name-help-check-updates = Check for Updates
+# Raised only by the Help menu command, which the reader asked for.
+update-check-behind = Version { $version } is available.
+update-check-current = You are running the newest version.
+update-check-failed = Could not check for a newer version. { $error }
 shortcut-name-command-palette = Command Palette
 help-section-reference = What things are
 

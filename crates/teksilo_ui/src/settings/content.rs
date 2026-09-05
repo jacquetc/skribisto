@@ -365,7 +365,7 @@ pub(super) fn build(
         ),
         (
             Pane::Notifications,
-            panes::notifications::notifications_pane(ctx, &crumbs),
+            panes::notifications::notifications_pane(ctx, &crumbs, vm),
         ),
         (
             Pane::SceneTypography,

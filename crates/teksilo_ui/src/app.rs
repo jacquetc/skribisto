@@ -1840,6 +1840,23 @@ impl Widget for App {
         };
         commands::register_all(ctx, &command_deps);
 
+        // The once-a-day update check. Started here as well as from the Launcher
+        // because a writer who has turned the Launcher off, or who opened a
+        // project straight from the command line or a file manager, never builds
+        // a `WelcomePanel` at all and would otherwise never check.
+        // `start_if_due` is idempotent for the whole process, so whichever of the
+        // two runs first is the only one that makes a request, and it defers the
+        // work past mount so nothing about it is on the path to the first window.
+        crate::updates::view_model().start_if_due(
+            ctx,
+            ctx.settings()
+                .signal(
+                    crate::CHECK_FOR_UPDATES_KEY,
+                    crate::CHECK_FOR_UPDATES_DEFAULT,
+                )
+                .get(),
+        );
+
         // Anything an extension registered, onto **App's own** context, right
         // beside the app's own commands and for exactly that reason: a global
         // action belongs to the widget whose `build()` registered it, and is torn

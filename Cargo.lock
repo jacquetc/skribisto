@@ -6589,6 +6589,7 @@ dependencies = [
  "open",
  "png",
  "ron",
+ "semver",
  "serde",
  "serde_json",
  "similar",

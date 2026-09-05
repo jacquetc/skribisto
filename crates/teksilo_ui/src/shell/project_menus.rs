@@ -494,26 +494,39 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
             // Help Topics leads, and carries the F1 accelerator by *reference*: the
             // chord is declared once on the shortcut and rendered per platform and
             // locale, so a rebind in Settings reaches this row without an edit here.
-            m.item(
-                MenuEntry::new(tr!(menu_help_topics()))
-                    .intent("help.topics")
-                    .shortcut("help.topics"),
-            )
-            .item(
-                MenuEntry::new(tr!(menu_command_palette()))
-                    .intent("app.command_palette")
-                    .shortcut("app.command_palette"),
-            )
-            .item(
-                MenuEntry::new(tr!(menu_help_shortcuts()))
-                    .intent("help.shortcuts")
-                    .shortcut("help.shortcuts"),
-            )
-            .separator()
-            .item(MenuEntry::new(tr!(menu_help_website())).intent("help.website"))
-            .item(MenuEntry::new(tr!(menu_help_report())).intent("help.report"))
-            .separator()
-            .item(MenuEntry::new(tr!(menu_about())).intent("app.about"))
+            let mut m = m
+                .item(
+                    MenuEntry::new(tr!(menu_help_topics()))
+                        .intent("help.topics")
+                        .shortcut("help.topics"),
+                )
+                .item(
+                    MenuEntry::new(tr!(menu_command_palette()))
+                        .intent("app.command_palette")
+                        .shortcut("app.command_palette"),
+                )
+                .item(
+                    MenuEntry::new(tr!(menu_help_shortcuts()))
+                        .intent("help.shortcuts")
+                        .shortcut("help.shortcuts"),
+                )
+                .separator()
+                .item(MenuEntry::new(tr!(menu_help_website())).intent("help.website"));
+            // Sits with the other outward-facing rows, and is added only where the
+            // channel shows update state at all: on a Flathub or distribution
+            // install the software centre owns this, and offering a row whose
+            // answer cannot be acted on is worse than offering none. Conditional
+            // exactly the way the Tools rows above are, and matched by the
+            // registration in `app/commands/help.rs` so the row can never point at
+            // an action that was not registered.
+            if crate::updates::shows_update_state() {
+                m = m.item(
+                    MenuEntry::new(tr!(menu_help_check_updates())).intent("help.check_updates"),
+                );
+            }
+            m.item(MenuEntry::new(tr!(menu_help_report())).intent("help.report"))
+                .separator()
+                .item(MenuEntry::new(tr!(menu_about())).intent("app.about"))
         })
 }
 

@@ -220,6 +220,8 @@ settings-preview-width = Largeur de l’aperçu de recherche
 settings-autosave = Enregistrement automatique sur le disque
 settings-show-welcome = Afficher le lanceur au démarrage
 settings-show-welcome-tip = Sinon, le dernier projet se rouvre.
+settings-check-for-updates = Rechercher les nouvelles versions
+settings-check-for-updates-tip = Une fois par jour au maximum, Skribisto demande au site du projet quelle est la version actuelle. La requête ne transporte aucun identifiant, ni même la version que vous utilisez : la comparaison a lieu sur cet ordinateur.
 
 ## Fenêtre des paramètres: cadre
 settings-title = Paramètres
@@ -325,6 +327,7 @@ settings-group-distraction-free-strip = Bande de contrôle
 settings-group-theme = Thème
 settings-group-language = Langue
 settings-group-startup = Démarrage
+settings-group-updates = Mises à jour
 settings-group-autosave = Enregistrement automatique
 settings-field-typeface = Police
 settings-field-size = Taille du texte
@@ -495,6 +498,9 @@ settings-styles-spacing-double = Double
 welcome-title = Bienvenue dans Skribisto
 # $version provient de l'étiquette git, apposée à la compilation (src/version.rs).
 welcome-version = Version { $version }
+# Affiché sous la version dans la barre latérale du lanceur, seulement si une version plus récente existe.
+welcome-update-available = La version { $version } est disponible
+welcome-update-tip = Ouvre la page de téléchargement dans votre navigateur.
 welcome-search = Rechercher des œuvres
 welcome-open = Ouvrir
 welcome-new-work = Nouvelle œuvre
@@ -1729,6 +1735,10 @@ menu-format-table-remove = Supprimer le &tableau
 menu-about = À &propos de Skribisto…
 about-title = À propos de Skribisto
 about-version = Version { $version }
+about-update-available = La version { $version } est disponible
+about-update-see-notes = Voir les nouveautés
+about-update-flathub = Flathub tient cette copie à jour.
+about-update-distro = Votre distribution tient cette copie à jour.
 about-tagline = Une application d’écriture de romans pour la fiction longue, écrite en Rust avec la boîte à outils Teksilo.
 about-license = Distribué sous la Licence publique générale GNU, version 3.
 about-copyright = © 2026 Cyril Jacquet
@@ -2471,6 +2481,7 @@ menu-help-topics = &Rubriques d’aide
 menu-help-shortcuts = Raccourcis c&lavier…
 menu-help-website = Skribisto sur le &Web
 menu-help-report = &Signaler un problème…
+menu-help-check-updates = Rechercher les &mises à jour
 menu-command-palette = Palette de &commandes…
 
 # Les entrées du panneau Apprendre. Clés distinctes de celles du menu Aide : une
@@ -2555,6 +2566,11 @@ shortcut-name-help-topics = Rubriques d’aide
 shortcut-name-help-shortcuts = Raccourcis clavier
 shortcut-name-help-website = Skribisto sur le Web
 shortcut-name-help-report = Signaler un problème
+shortcut-name-help-check-updates = Rechercher les mises à jour
+# Affiché uniquement à la demande, via la commande du menu Aide.
+update-check-behind = La version { $version } est disponible.
+update-check-current = Vous utilisez la version la plus récente.
+update-check-failed = Impossible de vérifier s'il existe une version plus récente. { $error }
 shortcut-name-command-palette = Palette de commandes
 help-section-reference = Ce que sont les choses
 

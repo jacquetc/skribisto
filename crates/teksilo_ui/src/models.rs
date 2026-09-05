@@ -64,6 +64,7 @@ mod stream_rows_model;
 mod text_replacement_rule_list_model;
 mod trash_tree_model;
 mod tree_expansion_file;
+pub mod updates_file;
 mod work_note_templates_list_model;
 mod work_statuses_list_model;
 mod work_tags_list_model;
