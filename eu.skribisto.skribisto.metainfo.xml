@@ -53,24 +53,11 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="3.0.0" date="2026-07-19T00:00:00Z">
+    <release type="stable" version="3.0.2" date="2026-09-04T00:00:00Z">
       <description>
         <ul>
-          <li>Skribisto has been rewritten from scratch in Rust, with a new interface</li>
-          <li>New project format: a .skrib bundle holding plain-text prose, kept as a single file or as a folder you can put under version control</li>
-          <li>Projects from Skribisto 2.x are upgraded automatically when you open them</li>
-          <li>Write prose and its synopsis side by side, in split panes and tabs</li>
-          <li>Read a whole chapter, part or book as one continuous document, or all synopses at once</li>
-          <li>Corkboard, writing sessions, live word count and pace tracking</li>
-          <li>Search and replace across the whole project</li>
-          <li>Trash with restore and undo</li>
-          <li>Backups with a retention policy, several destinations, a scheduler, and read-only opening</li>
-          <li>Import projects from Plume Creator</li>
-          <li>Export to Word (DOCX), OpenDocument (ODT), EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live preview</li>
-          <li>Spell checking with downloadable dictionaries</li>
-          <li>Light and dark themes, and per-editor typography</li>
-          <li>Open several projects side by side, each in its own window</li>
-          <li>English and French interface</li>
+          <li>The folder Skribisto keeps its backups in is created when the app starts, so the location shown in Settings is really there before the first backup is taken</li>
+          <li>Show folder, in Settings under Backup defaults, opens that folder itself instead of the one above it</li>
         </ul>
       </description>
     </release>
