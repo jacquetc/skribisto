@@ -42,6 +42,14 @@ use crate::spellcheck::dictionary_registry::{self, DictionaryEntry, Source};
 /// One toast surface for the whole download activity, updated in place by id.
 const DICT_TOAST_ID: &str = "dict.download";
 
+/// How long to wait for the connection itself. Generous enough for a slow link and a
+/// distant mirror, short enough that a dropped packet does not park the worker.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
+
+/// How long to wait for the first byte of the response once connected. The body itself
+/// is deliberately unbounded in time; see [`http_get`].
+const RESPONSE_TIMEOUT: Duration = Duration::from_secs(30);
+
 /// A short User-Agent so a raw-file host (GitHub, grammalecte) sees a named client.
 fn user_agent() -> String {
     format!(
@@ -434,8 +442,31 @@ fn do_download(entry: &DictionaryEntry, dest_dir: &std::path::Path) -> Result<()
 
 /// A blocking HTTP GET to `Vec<u8>`, with the 10 MB default read cap raised (some `.dic`s are
 /// larger) and a descriptive User-Agent.
+///
+/// ## Why the two timeouts, and why not a third
+///
+/// `ureq` 3 sets **no** timeout of any kind by default: connect, resolve, send and
+/// receive are all `None` (`ureq::config`). A firewall that drops packets rather than
+/// refusing them therefore parks this worker thread forever, and because downloads are
+/// serialised behind one queue, that one stall takes the whole dictionary feature with
+/// it for the rest of the session. Neither the toast nor the queue has a way out: the
+/// call never returns to fire either.
+///
+/// [`Config::timeout_connect`] bounds reaching the host and
+/// [`Config::timeout_recv_response`] bounds the wait for the first byte of the
+/// response. There is deliberately **no** `timeout_global`: it would cap the whole
+/// transfer including the body, and a body here is up to 64 MB over whatever line the
+/// writer has. A cap generous enough for a slow line is no cap at all, and one tight
+/// enough to be useful would cancel honest downloads.
+///
+/// [`Config::timeout_connect`]: https://docs.rs/ureq/3/ureq/config/struct.ConfigBuilder.html
+/// [`Config::timeout_recv_response`]: https://docs.rs/ureq/3/ureq/config/struct.ConfigBuilder.html
 fn http_get(url: &str) -> Result<Vec<u8>, String> {
     ureq::get(url)
+        .config()
+        .timeout_connect(Some(CONNECT_TIMEOUT))
+        .timeout_recv_response(Some(RESPONSE_TIMEOUT))
+        .build()
         .header("User-Agent", &user_agent())
         .call()
         .map_err(|e| format!("request failed: {e}"))?
