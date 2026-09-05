@@ -12,10 +12,10 @@ Flow: load a scratch copy of an example, open a scene, then:
   4. Escape closes the popup and, inside distraction-free mode, does so
      without also leaving the mode — one keystroke must not do two things.
 
-Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
-automation_*.py scripts.
+Reuses the launch + bridge-wait + connect scaffolding from
+`automation_fixture` that every sibling `automation_*.py` script shares.
 """
-import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -28,6 +28,16 @@ MCP = fixture.mcp_binary()
 EXAMPLE = os.path.join(REPO, "resources/examples/starforgers/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
+
+# The popup's own labels are data (project titles), but the distraction-free
+# check (§4) asserts on the English "exit distraction-free" affordance, so the
+# run must SET the interface language rather than inherit the operator's OS
+# locale. The pins go through both `--config` (validated) and a sandboxed
+# `XDG_CONFIG_HOME` (isolated from the operator's own `workspace.toml`).
+ENV = fixture.isolated_config(locale="en-US", label="goto", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="goto")
 
 
 def fail(msg, app=None, mcp=None, log=None):
@@ -44,26 +54,15 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     def __init__(self, args):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
+        project = list(args) if args else None
+        self.app = subprocess.Popen(fixture.launch_argv(project, pins=PINS), env=ENV,
+                                    stdout=open(self.log, "w"), stderr=subprocess.STDOUT)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=60)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
-        self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=open(mcp_err, "w"), text=True, bufsize=1)
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

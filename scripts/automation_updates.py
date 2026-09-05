@@ -24,10 +24,10 @@ is worse than no probe. Its parsing, comparison and failure handling are unit
 tested (`crates/teksilo_ui/src/updates/`), against the exact bytes the website
 generator produces.
 
-Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
-automation_*.py scripts.
+Reuses the launch/bridge/connect scaffolding from `automation_fixture` shared
+by the sibling automation_*.py scripts.
 """
-import json, os, re, select, subprocess, sys, tempfile, time
+import json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -68,39 +68,27 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args, env=None):
+    def __init__(self, extra=(), env=None, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         self.app = subprocess.Popen(
-            [SKRIBISTO, *args],
+            fixture.launch_argv(pins=pins, extra=extra),
             stdout=open(self.log, "w"),
             stderr=subprocess.STDOUT,
             env={**os.environ, **(env or {})},
         )
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=60)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
         self.mcp = subprocess.Popen(
-            [MCP, "--connect", sock, "--token", tok],
+            fixture.mcp_argv(bridge, MCP),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=open(mcp_err, "w"), text=True, bufsize=1,
         )
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
                                   "clientInfo": {"name": "updates-test", "version": "1"}})
-        if self._recv(timeout=15, fatal=False) is None:
+        if self._recv(timeout=20, fatal=False) is None:
             fail("could not connect MCP", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
@@ -214,25 +202,30 @@ class Session:
 
 
 def sandbox(seeded, label):
-    """An env for one run, and the config dir inside it.
+    """An env for one run, the config dir inside it, and a `--config` pins file.
 
     `isolated_config` returns an environment dict, not a path, and pins the
     locale: a probe asserting on English text must set the language rather than
-    inherit the operator's. `label` keeps three runs in one process from sharing
-    one scratch directory.
+    inherit the operator's. The same keys go through `config_pins_file` so the
+    launch also validates them — a typo'd key is a startup error, not a probe
+    quietly running on defaults. `label` keeps three runs in one process from
+    sharing one scratch directory.
     """
     env = fixture.isolated_config(locale="en-US", label=label)
+    pins = fixture.config_pins_file(
+        {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+        label=label)
     cfg = os.path.join(env["XDG_CONFIG_HOME"], "skribisto")
     os.makedirs(cfg, exist_ok=True)
     if seeded:
         with open(os.path.join(cfg, "updates.toml"), "w", encoding="utf-8") as f:
             f.write(SEEDED)
-    return env, cfg
+    return env, cfg, pins
 
 
 def step_1_clean_install_says_nothing():
-    env, cfg = sandbox(seeded=False, label="clean")
-    s = Session(["--new-instance"], env=env)
+    env, cfg, pins = sandbox(seeded=False, label="clean")
+    s = Session(env=env, pins=pins)
     try:
         # Give any check that was going to happen every chance to happen.
         time.sleep(3)
@@ -249,8 +242,8 @@ def step_1_clean_install_says_nothing():
 
 
 def step_2_to_4_seeded():
-    env, cfg = sandbox(seeded=True, label="seeded")
-    s = Session(["--new-instance"], env=env)
+    env, cfg, pins = sandbox(seeded=True, label="seeded")
+    s = Session(env=env, pins=pins)
     try:
         if not s.wait_text(NOTICE):
             fail("the Launcher sidebar does not name the newer version", s.app, s.mcp, s.log)

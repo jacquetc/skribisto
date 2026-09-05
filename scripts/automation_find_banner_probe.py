@@ -17,7 +17,7 @@ it move on screen?
 Opens a scene, puts the caret in the prose, records the editor's bounds, toggles
 the banner with Ctrl+F, and reports the shift.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -41,21 +41,16 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, PROJECT], stdout=open(log, "w"), stderr=subprocess.STDOUT)
-sock = tok = None
-deadline = time.time() + 25
-while time.time() < deadline:
-    txt = open(log).read()
-    s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s_ and t_:
-        sock, tok = s_.group(1), t_.group(1)
-        break
-    if app.poll() is not None:
-        fail("app exited before printing the bridge socket", app, None, log)
-    time.sleep(0.2)
-if not sock:
-    fail("no bridge socket within 25s", app, None, log)
+env = fixture.isolated_config(locale="en-US", label="find-banner", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="find-banner")
+app = subprocess.Popen(fixture.launch_argv(PROJECT, pins=pins), env=env,
+                       stdout=open(log, "w"), stderr=subprocess.STDOUT)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=60)
+except RuntimeError as e:
+    fail(str(e), app, None, log)
 
 mcp = None
 _id = [0]
@@ -104,9 +99,7 @@ def call(name, args=None):
 deadline = time.time() + 25
 init = None
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=open(mcp_err, "w"), text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

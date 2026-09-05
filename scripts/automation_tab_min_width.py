@@ -19,7 +19,7 @@ accessibility tree reports is at least that wide. The side pane matters on its
 own: the splitter lets it shrink to 320 dp, the narrowest place a tab is ever
 laid out.
 """
-import json, os, re, shutil, subprocess, sys, tempfile, time
+import json, os, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -38,6 +38,17 @@ SIDE_DOCS = ["Chapter 10", "Chapter 11", "Chapter 12"]
 sandbox = tempfile.mkdtemp(prefix="skribisto_tab_width_")
 env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
        "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
+# This probe rolls its own sandbox (it isolates HOME/XDG_DATA_HOME too, not
+# just XDG_CONFIG_HOME), so `write_settings` — not `isolated_config`, which
+# would build its own separate directory — writes the settings into it. The
+# tab/row labels asserted on below are document titles, not UI chrome, so the
+# locale itself is not load-bearing here; it is still pinned for the same
+# reason every other probe pins it: an unset `ui.locale` follows this
+# machine's OS language, which is one more thing to vary between runs.
+fixture.write_settings(os.path.join(sandbox, "config"), locale="en-US", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="tabwidth")
 work = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, work)
 
@@ -51,25 +62,14 @@ def die(msg, log=None):
 
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, work], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(work, pins=pins), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
-sock = tok = None
-end = time.time() + 40
-while time.time() < end:
-    t = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
-    if s and k:
-        sock, tok = s.group(1), k.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited before announcing the bridge", log)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", log)
-time.sleep(1.0)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=40)
+except RuntimeError as e:
+    die(str(e), log)
 
-mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok], stdin=subprocess.PIPE,
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP), stdin=subprocess.PIPE,
                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1)
 _id = 0
 

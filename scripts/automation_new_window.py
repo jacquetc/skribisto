@@ -51,7 +51,7 @@ Runs against a throwaway copy of the bundled example in an isolated XDG sandbox
 fixture), so autosave and format migration cannot touch the repo.
 """
 
-import json, os, re, select, shutil, subprocess, sys, tempfile, time
+import json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -75,6 +75,13 @@ SANDBOX_ENV = {
 # the probe passed on an English desktop and failed on a French one, reporting
 # "the 'Work' menu did not open" — it had opened, as `Œuvre`.
 fixture.write_settings(SANDBOX_ENV["XDG_CONFIG_HOME"])
+# The same pins again, through `--config` this time: `write_settings` above
+# writes `general.toml` directly and nothing validates it, so a typo'd key would
+# silently run on defaults. `--config` makes the app check every key against its
+# schema instead (and implies `--new-instance`, passed explicitly below anyway).
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="new-window")
 WORK = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, WORK)
 
@@ -100,34 +107,25 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args):
+    def __init__(self, args, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         env = {**os.environ, **SANDBOX_ENV}
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=25)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
-        # The bridge announces the socket before binding; retry connect+init.
+        # `wait_for_bridge` already proved the endpoint is bound; still retry the
+        # handshake once, since the server-side accept can lag its own bind by a
+        # beat and the first connect attempt lands a hair too early.
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -319,7 +317,7 @@ def open_prologue(s, window_id=None):
 
 
 # ── 0. One window, one project ────────────────────────────────────────────────
-s = Session([WORK])
+s = Session([WORK], pins=PINS)
 if not s.wait_label("prologue", timeout=40):
     fail("the project never finished loading", s.app, s.mcp, s.log)
 

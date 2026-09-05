@@ -24,7 +24,7 @@ Checks:
   4. The rail's activity items are still tabs, and the action did NOT join
      their tab list — the ARIA structure this feature exists to keep valid.
 """
-import json, os, re, select, subprocess, sys, tempfile, time
+import json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -47,25 +47,18 @@ def die(msg, *procs):
     sys.exit(1)
 
 
-subprocess.run(["pkill", "-x", "skribisto"], check=False)
-time.sleep(0.4)
-app = subprocess.Popen([SKRIBISTO, "--new-instance"] + ([project] if project else []),
-                       stdout=open(log, "w"), stderr=subprocess.STDOUT)
+fixture.assert_no_running_instance(SKRIBISTO)
+env = fixture.isolated_config(locale="en-US", label="rail-action", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="rail-action")
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
+                       stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
 
-sock = tok = None
-end = time.time() + 25
-while time.time() < end:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited early", app)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", app)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=25)
+except RuntimeError as e:
+    die(str(e), app)
 
 _id = [0]
 mcp = None
@@ -114,9 +107,7 @@ def call(name, a=None):
 deadline = time.time() + 25
 init = None
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=subprocess.DEVNULL, text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -129,7 +120,7 @@ while time.time() < deadline and init is None:
 if init is None:
     die("could not connect MCP", app, mcp)
 send("notifications/initialized", notif=True)
-print(f"bridge up: {sock}")
+print(f"bridge up: {bridge.endpoint}")
 
 
 def settle():

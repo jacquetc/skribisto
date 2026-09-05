@@ -12,11 +12,14 @@ its own fixture still passes, so nothing catches it.
 *that*. Cheap enough (a few MB) that there is no reason to skip it.
 """
 
-import glob
+import collections
 import os
+import re
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 import tomllib
 
 #: Session scratchpad when one is set, else the system temp dir. Never inside the repo.
@@ -49,14 +52,24 @@ def wait_for_load(nodes_fn, markers, timeout=30.0, interval=0.5):
     return False
 
 
-def assert_no_running_instance(binary=None):
-    """Refuse to launch while another instance of the same build is up.
+def assert_no_running_instance(binary=None, strict=False):
+    """Report another live instance of the same build. Only *fails* when `strict`.
 
-    The single-instance election hands a second launch off to the existing
-    process and exits, so a probe that launches into that situation scrapes a
-    `bridge socket = ...` line belonging to a process on its way out, and every
-    call then times out — reporting a symptom (e.g. "the modal did not open")
-    several layers from the real cause. Failing loudly up front costs one line.
+    This used to refuse outright, and that was right when a probe launched the
+    app bare: the single-instance election hands a second launch off to the
+    existing process and exits, so the probe scraped the announce of a process
+    on its way out and every call then timed out — reporting a symptom (e.g.
+    "the modal did not open") several layers from the real cause.
+
+    [`launch_argv`] passes `--new-instance`, which makes that handoff impossible,
+    and `isolated_config` puts the run in its own configuration directory — which
+    the open registry is namespaced by, so the two instances do not even see each
+    other's open projects. Neither reason to refuse survives, and refusing costs
+    something real: a probe could not run while the operator had the app open,
+    which is most of the time.
+
+    So it now prints a note and continues. Pass `strict=True` where a probe
+    genuinely must be alone — one asserting on the election itself, say.
 
     Deliberately does NOT kill anything. The match is on this worktree's debug
     binary, which is also what `run-app` launches, so a stray instance may well
@@ -70,15 +83,24 @@ def assert_no_running_instance(binary=None):
         out = subprocess.run(["pgrep", "-af", binary], capture_output=True, text=True).stdout
     except (OSError, subprocess.SubprocessError):
         return  # pgrep unavailable: not worth failing the probe over
-    live = [l for l in out.splitlines() if l.strip()]
-    if live:
-        listing = "\n  ".join(live)
+    # ⚠ `pgrep -af <pattern>` matches on the whole command line, and this
+    # process's own shell command line contains the pattern. Drop our own
+    # ancestry, or a probe reports itself as the instance in the way.
+    mine = {str(os.getpid()), str(os.getppid())}
+    live = [l for l in out.splitlines()
+            if l.strip() and l.split(maxsplit=1)[0] not in mine]
+    if not live:
+        return
+    listing = "\n  ".join(live)
+    if strict:
         raise RuntimeError(
             f"another instance of {binary} is already running:\n  {listing}\n"
-            "Launching now would hand off to it and exit, and every bridge call "
-            "would time out. Close it (or `pkill -f target/debug/skribisto` if it "
-            "is a probe leftover and you have nothing unsaved) and re-run."
+            "This probe asked to be alone (strict=True). Close it (or "
+            "`pkill -f target/debug/skribisto` if it is a probe leftover and you "
+            "have nothing unsaved) and re-run."
         )
+    print(f"note      : {len(live)} other instance(s) of {binary} are running; "
+          "launching with --new-instance in a private config, so they are ignored")
 
 
 def toml_scalar(value):
@@ -322,33 +344,76 @@ def repo_path(*parts):
     return os.path.join(repo_root(), *parts)
 
 
-def teksilo_root():
-    """The teksilo checkout this one builds against, read from its path dependency.
+#: Override the teksilo checkout used to build the MCP server from source.
+TEKSILO_ROOT_ENV = "TEKSILO_ROOT"
 
-    A crate manifest under `crates/` already names it (`teksilo = { path = ... }`),
-    and that declaration is the only statement of the relationship that cannot go
-    stale — cargo would not build otherwise. Reading it beats guessing a sibling
-    directory: a worktree reaches teksilo through a `.claude/worktrees/teksilo`
-    symlink, which the relative path resolves through and a guess does not.
 
-    Returns None if the manifest or the dependency is missing, leaving the caller
-    to fall back to `PATH` and then to a message naming what to build.
+def teksilo_version():
+    """The teksilo version this checkout pins, read from `teksilo_ui`'s manifest.
+
+    The MCP server has to speak the same wire protocol as the bridge inside the
+    app, and that protocol is not frozen: 0.9.3 replaced the socket announce with
+    an endpoint descriptor and put a deadline on the token handshake. A server
+    older than the app therefore fails at connect time with a symptom that names
+    neither version, which is why [`mcp_binary`] compares them and this reads the
+    number to compare against.
+
+    Returns None if the manifest cannot be read, leaving the caller to skip the
+    check rather than refuse to run over it.
     """
-    for manifest in sorted(glob.glob(os.path.join(repo_root(), "crates", "*", "Cargo.toml"))):
-        try:
-            with open(manifest, "rb") as fh:
-                dep = tomllib.load(fh).get("dependencies", {}).get("teksilo")
-        except (OSError, tomllib.TOMLDecodeError):
-            continue
-        path = dep.get("path") if isinstance(dep, dict) else None
-        if not path:
-            continue
-        # The dep points at the *crate* (`<root>/crates/teksilo`); the target
-        # directory hangs off the workspace root two levels above it.
-        crate = os.path.normpath(os.path.join(os.path.dirname(manifest), path))
-        root = os.path.dirname(os.path.dirname(crate))
-        if os.path.isdir(root):
-            return root
+    manifest = os.path.join(repo_root(), "crates", "teksilo_ui", "Cargo.toml")
+    try:
+        with open(manifest, "rb") as fh:
+            dep = tomllib.load(fh).get("dependencies", {}).get("teksilo")
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    if isinstance(dep, str):
+        return dep.lstrip("^~=")
+    if isinstance(dep, dict) and dep.get("version"):
+        return str(dep["version"]).lstrip("^~=")
+    return None
+
+
+def _version_tuple(text):
+    """`"0.9.4"` → `(0, 9, 4)`. Non-numeric tails are dropped, so a pre-release sorts low."""
+    parts = []
+    for chunk in str(text).split("."):
+        digits = re.match(r"\d+", chunk)
+        if not digits:
+            break
+        parts.append(int(digits.group()))
+    return tuple(parts)
+
+
+def teksilo_root():
+    """A teksilo checkout to build the MCP server from, or None.
+
+    ⚠ **teksilo is a registry dependency, not a path one.** This used to read
+    `teksilo = { path = ... }` out of a crate manifest, which was the only
+    statement of the relationship that could not go stale — right up until the
+    dependency became `teksilo = { version = "0.9.4" }` and no manifest named a
+    path at all. The function then returned None, `mcp_binary` had nothing to
+    try, and all 72 probes died on a `FileNotFoundError` whose message told the
+    reader to build the server in `<teksilo checkout>` without saying where that
+    was. Nothing in the repo noticed, because no workflow runs these.
+
+    So the checkout is now genuinely optional, and only a convenience for
+    someone developing teksilo alongside this app. `$TEKSILO_ROOT` names it; a
+    sibling directory beside this checkout is the fallback guess. The supported
+    route for everyone else is `cargo install teksilo-automation-mcp`, which
+    [`mcp_binary`] finds on `$PATH` and which the error message now names.
+    """
+    override = os.environ.get(TEKSILO_ROOT_ENV)
+    if override:
+        return override if os.path.isdir(override) else None
+    for candidate in (
+        # A worktree reaches its framework through this symlink; check it first,
+        # so a worktree builds against its own teksilo and not the main one.
+        os.path.join(repo_root(), ".claude", "worktrees", "teksilo"),
+        os.path.join(os.path.dirname(repo_root()), "teksilo"),
+    ):
+        if os.path.isdir(os.path.join(candidate, "crates", "teksilo-automation-mcp")):
+            return candidate
     return None
 
 
@@ -401,17 +466,319 @@ def skribisto_binary():
     )
 
 
-def mcp_binary():
-    """Path to `teksilo-automation-mcp`, or ``$TEKSILO_MCP_BIN``.
+#: Set to "1"/"yes" to install the MCP client without asking, "0"/"never" to
+#: refuse. Unset means: ask, if there is a terminal to ask on.
+MCP_AUTOINSTALL_ENV = "SKRIBISTO_MCP_AUTOINSTALL"
 
-    Lives in the *teksilo* checkout, which is a separate cargo workspace with its
-    own target directory — so it is not built by anything run in this repo, and a
-    probe failing here usually means it has simply never been built.
+
+def mcp_install_command(version=None):
+    """The command that puts `teksilo-automation-mcp` on `$PATH`.
+
+    ⚠ **The authority on this is teksilo, not this file.**
+    `teksilo_automation::client::install_command` composes the same string from
+    the toolkit's own version, and the app prints it on startup when the client
+    is missing. This is the same command, reachable before the app has been
+    launched — which is when a probe needs it, since it must spawn the client
+    itself. The version comes from *this* checkout's own pin, which is a thing
+    Skribisto legitimately knows about itself.
     """
-    tek = teksilo_root()
-    candidates = [os.path.join(t, "debug", "teksilo-automation-mcp")
-                  for t in _target_dirs(tek)] if tek else []
-    return _resolve(
-        MCP_BIN_ENV, "teksilo-automation-mcp", candidates,
-        f"cargo build -p teksilo-automation-mcp   # in {tek or '<teksilo checkout>'}",
+    version = version or teksilo_version()
+    cmd = ["cargo", "install", "teksilo-automation-mcp"]
+    if version:
+        cmd += ["--version", version]
+    return cmd + ["--locked"]
+
+
+def _wants_install(prompt):
+    """Ask whether to install. Env var wins; otherwise ask, if anyone can answer.
+
+    A probe run by CI or by an agent has no terminal, and a prompt there is not
+    a question, it is a hang. So the absence of a TTY means "no" and the caller
+    raises with the command spelled out instead.
+    """
+    choice = os.environ.get(MCP_AUTOINSTALL_ENV, "").strip().lower()
+    if choice in ("1", "y", "yes", "true", "always"):
+        return True
+    if choice in ("0", "n", "no", "false", "never"):
+        return False
+    try:
+        if not sys.stdin.isatty():
+            return False
+        return input(prompt).strip().lower() in ("y", "yes")
+    except (OSError, EOFError, KeyboardInterrupt):
+        return False
+
+
+def install_mcp(version=None):
+    """Run `cargo install teksilo-automation-mcp`, and return the resulting path.
+
+    Raises `RuntimeError` if cargo is missing or the build fails — with cargo's
+    own output, which says far more than "install failed" ever could.
+    """
+    cmd = mcp_install_command(version)
+    if not shutil.which("cargo"):
+        raise RuntimeError(
+            "cargo is not on $PATH, so `teksilo-automation-mcp` cannot be installed "
+            f"automatically. Install Rust, then run:\n  {' '.join(cmd)}"
+        )
+    print(f"installing : {' '.join(cmd)}\n  (this builds the client once; it takes a "
+          "couple of minutes and then never again)")
+    done = subprocess.run(cmd, capture_output=True, text=True)
+    if done.returncode != 0:
+        tail = "\n".join((done.stderr or done.stdout).splitlines()[-20:])
+        raise RuntimeError(f"`{' '.join(cmd)}` failed (exit {done.returncode}):\n{tail}")
+    found = shutil.which("teksilo-automation-mcp")
+    if not found:
+        raise RuntimeError(
+            f"`{' '.join(cmd)}` reported success but the binary is still not on "
+            "$PATH. Is cargo's bin directory (usually ~/.cargo/bin) on it?"
+        )
+    print(f"installed  : {found}")
+    return found
+
+
+def mcp_binary():
+    """Path to `teksilo-automation-mcp`, installing it if it is missing.
+
+    A probe has to spawn the client itself, so it has to resolve a path to it.
+    That is all this does. **Why** the client is a separate binary, and what to
+    do when it is absent, is teksilo's to say and it says it:
+    `teksilo_automation::client` owns the name, the matching version and the
+    install command, and a debug build prints them on startup when the client
+    is not on `$PATH`. This file used to carry its own copy of that reasoning,
+    including an account of teksilo's protocol history, which is not an
+    application's business to know.
+
+    Resolution order, `$PATH` first:
+
+    1. ``$TEKSILO_MCP_BIN`` — an explicit override, which must exist.
+    2. ``$PATH`` — where `cargo install` puts it, and the supported route.
+    3. A teksilo checkout's `target/debug` — for someone developing the
+       framework and the app together; opt in with ``$TEKSILO_ROOT``, or have
+       the checkout beside this one. Deliberately *after* `$PATH`, because a
+       checkout can hold a build from any point in its history and silently
+       preferring it is how a stale client ends up talking to a current app.
+    4. Nothing found — offer to install, or raise naming the command.
+    """
+    want = teksilo_version()
+    cmd = " ".join(mcp_install_command(want))
+
+    override = os.environ.get(MCP_BIN_ENV)
+    if override:
+        if not os.path.exists(override):
+            raise FileNotFoundError(
+                f"${MCP_BIN_ENV} points at {override}, which does not exist")
+        _check_mcp_version(override, want, cmd)
+        return override
+
+    found = shutil.which("teksilo-automation-mcp")
+    if not found:
+        tek = teksilo_root()
+        for target in (_target_dirs(tek) if tek else []):
+            candidate = os.path.join(target, "debug", "teksilo-automation-mcp")
+            if os.path.exists(candidate):
+                found = candidate
+                break
+
+    if not found:
+        if _wants_install(
+            f"\n`teksilo-automation-mcp` is not installed.\n"
+            f"  Install it now with `{cmd}`? [y/N] "
+        ):
+            found = install_mcp(want)
+        else:
+            raise FileNotFoundError(
+                "cannot find `teksilo-automation-mcp`, the MCP client these probes "
+                f"drive the app through.\nInstall it with:\n  {cmd}\n"
+                f"then re-run. (Set ${MCP_AUTOINSTALL_ENV}=1 to have this do it for "
+                f"you, or ${MCP_BIN_ENV} to point at an existing build.)"
+            )
+
+    _check_mcp_version(found, want, cmd)
+    return found
+
+
+def mcp_version(binary=None):
+    """The MCP client's own version string, or None if it will not say.
+
+    Deliberately tolerant: a client that cannot be asked is not a reason to
+    refuse to run, only a reason to skip the comparison.
+    """
+    binary = binary or os.environ.get(MCP_BIN_ENV) or shutil.which("teksilo-automation-mcp")
+    if not binary:
+        return None
+    try:
+        out = subprocess.run([binary, "--version"], capture_output=True,
+                             text=True, timeout=30).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    m = re.search(r"(\d+\.\d+\.\d+\S*)", out)
+    return m.group(1) if m else None
+
+
+def _check_mcp_version(binary, want, install_cmd):
+    """Refuse a client older than the teksilo this checkout builds against.
+
+    The reasoning behind the rule lives in `teksilo_automation::client`; the
+    rule is enforced here because this is what spawns the client. Offers the
+    same install as [`mcp_binary`], since "yours is too old" and "you have none"
+    want the same one-line answer.
+    """
+    if not want:
+        return
+    have = mcp_version(binary)
+    if not have or _version_tuple(have) >= _version_tuple(want):
+        return
+    problem = (
+        f"`{binary}` is teksilo-automation-mcp {have}, but this checkout builds "
+        f"against teksilo {want}, whose bridge protocol it predates. It would "
+        f"fail at connect time."
     )
+    if _wants_install(f"\n{problem}\n  Update it now with `{install_cmd}`? [y/N] "):
+        install_mcp(want)
+        return
+    raise RuntimeError(
+        f"{problem}\nUpdate it with:\n  {install_cmd}\n"
+        f"or point ${MCP_BIN_ENV} at a build of {want} or newer."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Launching the app, and attaching the bridge to it
+# ---------------------------------------------------------------------------
+#
+# Every probe used to open-code these three steps, and all 72 of them carried
+# the same two assumptions: that a launch with no flags gets a process of its
+# own, and that the bridge announces itself as `bridge socket = ...`. Neither
+# survived. The single-instance election means a bare launch can hand off to a
+# primary and exit — so the probe drives someone else's window, or none — and
+# 0.9.3 renamed the announce to `bridge endpoint = ...`, which every probe's
+# regex missed, waited 60 seconds for, and reported as "no bridge socket".
+#
+# Both are decided here now, once.
+
+#: The bridge's announce line. 0.9.3 renamed `socket` to `endpoint`; both are
+#: accepted so a probe still runs against an older app binary.
+BRIDGE_ENDPOINT_RE = re.compile(r"bridge (?:endpoint|socket) = (\S+)")
+BRIDGE_TOKEN_RE = re.compile(r"TEKSILO_AUTOMATION_TOKEN=(\S+)")
+BRIDGE_DESCRIPTOR_RE = re.compile(r"teksilo-automation: descriptor = (\S+)")
+
+#: What [`wait_for_bridge`] hands back. `pid` is the app process that owns the
+#: bridge, which is the launched process only because every probe passes
+#: `--new-instance` — see [`launch_argv`].
+Bridge = collections.namedtuple("Bridge", "endpoint token descriptor pid")
+
+
+def launch_argv(project=None, pins=None, new_instance=True, extra=()):
+    """The command line every probe should launch the app with.
+
+    Two things are always wanted and were usually missing:
+
+    **`--new-instance`.** The first live copy wins an election and becomes the
+    primary; every later launch forwards its command line over a socket and
+    exits in milliseconds. A probe that launches without this flag while any
+    other copy is up therefore scrapes the announce of a process on its way out,
+    and every bridge call then times out — a symptom several layers from its
+    cause, which `assert_no_running_instance` used to guard against by refusing
+    to run at all. The flag removes the failure mode instead of detecting it,
+    and lets probes run beside the operator's own session.
+
+    **`--config`.** `isolated_config` gives the run a private
+    `XDG_CONFIG_HOME`, but nothing validates the keys written into it — a typo
+    is not an error, it is a probe quietly running on defaults. Passing the same
+    pins through `--config` makes the app check every one against its schema and
+    refuse to start on an unknown key. Use both: the sandbox for isolation, the
+    flag for validation. (`--config` implies `--new-instance`; the flag is still
+    passed explicitly, because a probe that drops its pins should not silently
+    lose its own process too.)
+
+        env = fixture.isolated_config(locale="en-US", label="mine")
+        pins = fixture.config_pins_file({"editor.autosave": False}, label="mine")
+        app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
+                               stdout=open(log, "w"),
+                               stderr=subprocess.STDOUT, env=env)
+
+    `project` may be None (launch to the Launcher), a path, or a list of
+    arguments; `extra` appends further flags before it.
+    """
+    argv = [skribisto_binary()]
+    if new_instance:
+        argv.append("--new-instance")
+    if pins:
+        argv += ["--config", pins]
+    argv += list(extra)
+    if project is None:
+        return argv
+    if isinstance(project, (list, tuple)):
+        return argv + [str(p) for p in project]
+    return argv + [str(project)]
+
+
+def wait_for_bridge(log, proc=None, timeout=90.0, interval=0.2):
+    """Poll the app's log until the automation bridge announces itself.
+
+    Returns a [`Bridge`]. Raises `RuntimeError` on timeout, or as soon as the
+    process exits without announcing — waiting the full timeout for a process
+    that is already gone only delays the log tail the caller needs.
+
+    The bridge binds the endpoint, publishes its descriptor and spawns the
+    accept thread *before* printing any of this, so the endpoint is connectable
+    the instant it is read and no client needs a retry loop. That ordering is
+    load-bearing and is asserted here: if `endpoint` is announced before it
+    exists, the announce-before-bind race is back (teksilo
+    `automation_bridge::spawn_bridge_thread`) and every client of this bridge is
+    racing, not just this one.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            text = open(log, encoding="utf-8", errors="replace").read()
+        except OSError:
+            text = ""
+        endpoint = BRIDGE_ENDPOINT_RE.search(text)
+        token = BRIDGE_TOKEN_RE.search(text)
+        if endpoint and token:
+            descriptor = BRIDGE_DESCRIPTOR_RE.search(text)
+            path = endpoint.group(1)
+            # Unix endpoints are filesystem paths; a Windows named pipe is not,
+            # so only check the shape that can be checked.
+            if path.startswith("/") and not os.path.exists(path):
+                raise RuntimeError(
+                    f"the bridge announced {path} before binding it — the "
+                    "announce-before-bind race is back; see teksilo "
+                    "automation_bridge::spawn_bridge_thread"
+                )
+            return Bridge(path, token.group(1),
+                          descriptor.group(1) if descriptor else None,
+                          proc.pid if proc is not None else None)
+        if proc is not None and proc.poll() is not None:
+            tail = "\n".join(text.splitlines()[-25:])
+            raise RuntimeError(
+                f"the app exited (code {proc.returncode}) before announcing its "
+                f"automation bridge.\n--- log tail ---\n{tail}"
+            )
+        time.sleep(interval)
+    tail = "\n".join(open(log, encoding="utf-8", errors="replace").read().splitlines()[-25:])
+    raise RuntimeError(
+        f"no automation bridge announced within {timeout:g}s.\n"
+        "A release build has no bridge at all (it is `#[cfg(debug_assertions)]`), "
+        "and a build without teksilo's `automation` feature has none either.\n"
+        f"--- log tail ---\n{tail}"
+    )
+
+
+def mcp_argv(bridge, mcp=None):
+    """The command line that attaches the MCP server to `bridge`.
+
+    Prefers `--attach-pid`, which reads the endpoint and the token out of the
+    descriptor the app published. The alternative, `--connect <endpoint> --token
+    <uuid>`, puts the token on a command line — and a command line is readable
+    by every user on the machine through `/proc/<pid>/cmdline`, which is the
+    exposure 0.9.3 tightened the socket mode and the descriptor mode to close.
+    Falls back to `--connect` when the pid is unknown (a bridge discovered from
+    a log rather than a process this probe launched).
+    """
+    mcp = mcp or mcp_binary()
+    if bridge.pid is not None:
+        return [mcp, "--attach-pid", str(bridge.pid)]
+    return [mcp, "--connect", bridge.endpoint, "--token", bridge.token]

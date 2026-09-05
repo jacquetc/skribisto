@@ -28,7 +28,7 @@ Step 4 is the one worth having. A link is a stretch of runs rather than an
 object, so "find the link under the caret" is real work — and a version that
 finds only part of it looks identical here until step 5 leaves half a link.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import isolated_config, working_copy
@@ -53,11 +53,13 @@ NAME = "the lighthouse log"
 args = [a for a in sys.argv[1:] if a != "--dark"]
 dark = "--dark" in sys.argv
 env = isolated_config(locale="en-US", label="links", dark=dark, show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": dark, "ui.show_welcome": False}, label="links")
 project = working_copy(os.path.abspath(args[0]), "links") if args else None
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
-argv = [SKRIBISTO] + ([project] if project else [])
+argv = fixture.launch_argv(project, pins=pins)
 app = subprocess.Popen(argv, env=env, stdout=open(log, "w"), stderr=subprocess.STDOUT)
 mcp = None
 
@@ -72,20 +74,10 @@ def die(msg):
     sys.exit(1)
 
 
-sock = tok = None
-end = time.time() + 30
-while time.time() < end:
-    txt = open(log).read()
-    s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s_ and t_:
-        sock, tok = s_.group(1), t_.group(1)
-        break
-    if app.poll() is not None:
-        die("the app exited before printing its bridge socket")
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket within 30s")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=30)
+except RuntimeError as e:
+    die(str(e))
 
 _id = [0]
 
@@ -133,9 +125,7 @@ def call(name, args=None):
 init = None
 end = time.time() + 30
 while time.time() < end and init is None:
-    while not os.path.exists(sock) and time.time() < end:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=open(mcp_err, "w"), text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

@@ -21,7 +21,7 @@ always shows one fabricated "Mock Project" recent row; clicking it opens the
 project window (mocks-fabricated content, regardless of the fake path) and
 closes the Launcher, exactly like a real recent would.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -46,25 +46,21 @@ def die(msg, *procs):
     sys.exit(1)
 
 
-subprocess.run(["pkill", "-x", "skribisto"], check=False)
-time.sleep(0.4)
-app = subprocess.Popen([SKRIBISTO] + ([project] if project else []),
-                       stdout=open(log, "w"), stderr=subprocess.STDOUT)
+# `--new-instance` (via `launch_argv`) is what used to need the `pkill` here: it
+# forces this launch to become its own primary regardless of who else is
+# running, so there is no longer a reason to kill another instance to get one.
+fixture.assert_no_running_instance(SKRIBISTO)
+env = fixture.isolated_config(locale="en-US", label="streams", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="streams")
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
+                       stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
 
-sock = tok = None
-end = time.time() + 25
-while time.time() < end:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited early", app)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", app)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=90)
+except RuntimeError as e:
+    die(str(e), app)
 
 _id = [0]
 mcp = None
@@ -109,25 +105,18 @@ def call(name, a=None):
     return res, payload
 
 
-deadline = time.time() + 25
-init = None
-while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                           stderr=subprocess.DEVNULL, text=True, bufsize=1)
-    send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                        "clientInfo": {"name": "streams", "version": "1"}})
-    init = recv(timeout=4, fatal=False)
-    if init is None:
-        if mcp.poll() is None:
-            mcp.terminate()
-        time.sleep(0.3)
+# `wait_for_bridge` only returns once the endpoint is bound and the accept
+# thread is up, so a single connect attempt is enough here.
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                       stderr=subprocess.DEVNULL, text=True, bufsize=1)
+send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                    "clientInfo": {"name": "streams", "version": "1"}})
+init = recv(timeout=20, fatal=False)
 if init is None:
     die("could not connect MCP", app, mcp)
 send("notifications/initialized", notif=True)
-print(f"bridge up: {sock}")
+print(f"bridge up: {bridge.endpoint}")
 
 
 def settle():

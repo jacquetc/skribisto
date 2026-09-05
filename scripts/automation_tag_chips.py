@@ -39,7 +39,6 @@ Run:  python3 scripts/automation_tag_chips.py
 import base64
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -56,6 +55,15 @@ from automation_fixture import working_copy
 
 # A throwaway copy — see `automation_fixture`.
 FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "chips")
+
+# Every launch below gets its own sandboxed config (so it never inherits this
+# machine's real settings or OS locale) plus a validated `--config` pins file
+# (so an unknown key is a hard startup error, not a silently-ignored typo).
+# `find()` below matches both English and French label variants, but the
+# literal strings in this file (TAG, "Add a tag", …) are English, hence en-US.
+ENV = fixture.isolated_config(locale="en-US", label="chips", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False}, label="chips")
 
 # The one container in the fixture that renders Stream/Corkboard, and a scene
 # inside it. Named rather than discovered: the structure is fixed and known,
@@ -87,39 +95,20 @@ class Session:
 
     def __init__(self, args):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=PINS),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=ENV)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=20)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "chips-test", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.3)
-        if init is None:
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "chips-test", "version": "1"}})
+        if self._recv(timeout=8, fatal=False) is None:
             fail("could not connect MCP", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 

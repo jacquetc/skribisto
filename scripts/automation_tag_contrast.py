@@ -49,7 +49,6 @@ Run:  python3 scripts/automation_tag_contrast.py
 import base64
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -69,6 +68,15 @@ from automation_fixture import wait_for_load, working_copy
 # opens the project live, and a legacy load can itself rewrite the file on
 # disk during migration — never the checked-in fixture.
 FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "tagcontrast")
+
+# A private config directory (never this machine's real settings/OS locale)
+# plus a validated `--config` pins file, so an unknown key is a hard startup
+# error rather than a silently-ignored typo. `ui.dark` only seeds the START
+# state — the probe itself drives the Theme ComboBox for the LIGHT/DARK
+# comparison below and restores whatever the combo reported at launch.
+ENV = fixture.isolated_config(locale="en-US", label="tagcontrast", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False}, label="tagcontrast")
 
 try:
     from PIL import Image  # noqa: F401 -- optional cross-check only, see pil_cross_check()
@@ -137,26 +145,15 @@ class Session:
         self.mcp = None
         self.app = None
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, path], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if a and b:
-                sock, tok = a.group(1), b.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self)
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
+        self.app = subprocess.Popen(fixture.launch_argv(path, pins=PINS),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=ENV)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=25)
+        except RuntimeError as e:
+            fail(str(e), self)
         self._id = 0
-        self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=open(mcp_err, "w"), text=True, bufsize=1)
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

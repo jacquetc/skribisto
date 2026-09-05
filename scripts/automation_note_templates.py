@@ -22,7 +22,7 @@ The gate's real hazard — that it must survive the focus loss of opening the me
 `FormatViewModel::surface` drops to `None` there — is pinned by
 `note_focused_survives_the_focus_loss_of_opening_a_menu` and
 `a_real_change_of_surface_still_clears_the_gate` in `view_models/format.rs`."""
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 import pathlib
 
@@ -47,32 +47,24 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args):
+    def __init__(self, args, pins=None, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=env)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=20)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
+        # `wait_for_bridge` already proved the endpoint is bound; still retry the
+        # handshake once, since the server-side accept can lag its own bind by a
+        # beat and the first connect attempt lands a hair too early.
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -210,7 +202,11 @@ def expand_and_click(section_variants, leaf_variants):
 
 
 print("== launch with the bundled example ==")
-s = Session([EXAMPLE])
+env = fixture.isolated_config(locale="en-US", label="templates", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="templates")
+s = Session([EXAMPLE], pins=pins, env=env)
 if not s.wait_label("starforgers", timeout=30):
     fail("example did not load", s.app, s.mcp, s.log)
 print("example loaded.")

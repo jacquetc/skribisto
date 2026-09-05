@@ -53,7 +53,6 @@ Run:  python3 scripts/automation_mentions.py
 import base64
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -74,11 +73,21 @@ FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "m
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
 
+# Both launches below (the initial run and the relaunch in section 11) share one
+# isolated sandbox + validated pins, pinned to en-US for a deterministic run.
+ENV = fixture.isolated_config(locale="en-US", label="mentions", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="mentions")
+
 # ─────────────────────────────────────────────────────────────────────────────
-# Locale-tuple strings. The app follows the SYSTEM locale (French on this
-# machine); an English-only selector finds nothing and reports it exactly like
-# a real regression. Every string carries both spellings, commented with the
-# ftl key it came from (crates/teksilo_ui/locales/{en-US,fr-FR}/{main,tags}.ftl).
+# Locale-tuple strings. This file predates the pinning above, from when the app
+# followed whichever locale the operator's own (unisolated) config held —
+# French on the machine it was written on — so an English-only selector found
+# nothing and reported it exactly like a real regression. Every string still
+# carries both spellings: it costs nothing to keep them, and it means this
+# probe also runs correctly against a build with no pinning at all. Commented
+# with the ftl key it came from (crates/teksilo_ui/locales/{en-US,fr-FR}/{main,tags}.ftl).
 # ─────────────────────────────────────────────────────────────────────────────
 SEC_WORK = ("work", "œuvre", "oeuvre")                       # settings-sec-work
 PAGE_TAGS = ("tags", "étiquettes")                            # settings-page-tags
@@ -154,26 +163,15 @@ class Session:
         self.mcp = None
         self.app = None
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, path], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if a and b:
-                sock, tok = a.group(1), b.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self)
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
+        self.app = subprocess.Popen(fixture.launch_argv(path, pins=PINS),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=ENV)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=25)
+        except RuntimeError as e:
+            fail(str(e), self)
         self._id = 0
-        self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=open(mcp_err, "w"), text=True, bufsize=1)
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -234,10 +232,11 @@ class Session:
     def stop(self):
         """Terminate and *wait*.
 
-        Relaunching on the same path while the old process still holds its
-        open-registry lock hands the new launch off to it and exits it
-        immediately — surfacing as "app exited before printing the bridge
-        socket", not as the timeout it actually is.
+        Relaunching on the same path before the old process has actually gone
+        risks a stale open-registry lock, or a `general.toml` still mid-write
+        from the dying process (both launches share one sandbox) — either
+        surfaces as `wait_for_bridge` reporting the app exited before
+        announcing its bridge, not as the timeout it actually looks like.
         """
         for p in (self.mcp, self.app):
             if p and p.poll() is None:

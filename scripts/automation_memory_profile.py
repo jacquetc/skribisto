@@ -37,7 +37,6 @@ fixture.
 import argparse
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -141,27 +140,30 @@ def die(msg, *procs):
 
 
 # ── launch the primary ────────────────────────────────────────────────────────
+# Deliberately NOT routed through `--new-instance`/`--config`: every cycle below
+# opens its project by launching a second, bare `[SKRIBISTO, project]` (below)
+# and relying on the single-instance election to hand that command line to
+# *this* process — the same path a double-click takes, and the whole scenario
+# this probe reproduces. `--new-instance` makes a launch Standalone, and a
+# Standalone process never binds the well-known socket a later launch elects
+# into — putting it here would make every "handoff" open a brand-new process
+# instead, and the point of the probe (one process, watched across the whole
+# cycle) would be gone. `fixture.launch_argv(None, new_instance=False)` is
+# exactly `[SKRIBISTO]`; it is used here only so the binary path is resolved
+# the same way every other probe resolves it.
 fixture.assert_no_running_instance(SKRIBISTO)
-app = subprocess.Popen([SKRIBISTO], stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
+app = subprocess.Popen(fixture.launch_argv(None, new_instance=False),
+                       stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
 
-sock = tok = None
-end = time.time() + 40
-while time.time() < end:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        # The exit code separates the two very different reasons an app vanishes
-        # here: a crash (signal, or a non-zero status) and the single-instance
-        # election handing this launch to an existing primary (status 0, and no
-        # output at all, which is what makes it look like a crash).
-        die(f"app exited early with status {app.returncode}", app)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket. Is this a debug build?", app)
+try:
+    # The exit-before-announce case folds two very different causes into one
+    # message: a crash, and the single-instance election quietly handing this
+    # launch to an existing primary (status 0, no output at all — which is what
+    # makes it look like a crash). `wait_for_bridge`'s message names the exit
+    # code either way.
+    bridge = fixture.wait_for_bridge(log, app, timeout=40)
+except RuntimeError as e:
+    die(str(e), app)
 
 _id = [0]
 mcp = None
@@ -229,9 +231,7 @@ def call(name, a=None):
 deadline = time.time() + 30
 init = None
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=subprocess.DEVNULL, text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -244,7 +244,7 @@ while time.time() < deadline and init is None:
 if init is None:
     die("could not connect MCP", app, mcp)
 send("notifications/initialized", notif=True)
-print(f"bridge up: {sock}")
+print(f"bridge up: {bridge.endpoint}")
 print(f"timeline:  {csv_path}")
 print(f"project:   {project}")
 

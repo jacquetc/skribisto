@@ -45,16 +45,15 @@ Four things are checked, in order, each one a distinct restore path:
 Run:
     python3 scripts/automation_caret_restore.py
 
-Reuses the launch + scrape-socket/token + connect scaffolding common to the
-sibling `automation_*.py` scripts, and `automation_fixture.working_copy` /
-`isolated_config` / `assert_no_running_instance` for the sandboxing rules
-every probe follows.
+Reuses the launch + bridge-wait + connect scaffolding common to the sibling
+`automation_*.py` scripts, and `automation_fixture.working_copy` /
+`isolated_config` / `assert_no_running_instance` / `wait_for_bridge` /
+`mcp_argv` for the sandboxing and connection rules every probe follows.
 """
 
 import base64
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -89,39 +88,29 @@ def check(ok, msg):
 # first one wrote), so this is a class rather than one flat script.
 # ---------------------------------------------------------------------------
 class Session:
-    def __init__(self, args, env, name):
+    def __init__(self, argv, env, name):
         self.name = name
         self.log = tempfile.NamedTemporaryFile(suffix=f".{name}.log", delete=False).name
         self.mcp_err = tempfile.NamedTemporaryFile(suffix=f".{name}.mcperr", delete=False).name
         self.app = subprocess.Popen(
-            [SKRIBISTO, *args], stdout=open(self.log, "w"), stderr=subprocess.STDOUT, env=env
+            argv, stdout=open(self.log, "w"), stderr=subprocess.STDOUT, env=env
         )
-        sock = tok = None
         # A cold `load_work` against a debug binary can take ~20s to its first
         # open-registry claim (see the unit brief); 45s leaves headroom
-        # without turning a real hang into a five-minute wait.
-        deadline = time.time() + 45
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                self._die("app exited before printing the bridge socket")
-            time.sleep(0.2)
-        if not sock:
-            self._die("no bridge socket within 45s")
+        # without turning a real hang into a five-minute wait. The bridge
+        # itself announces well before that (at startup, not at load), but
+        # the same budget covers both without a second magic number.
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=45)
+        except RuntimeError as e:
+            self._die(str(e))
         self._id = 0
         self.mcp = None
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
             self.mcp = subprocess.Popen(
-                [MCP, "--connect", sock, "--token", tok],
+                fixture.mcp_argv(self.bridge, MCP),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=open(self.mcp_err, "w"),
@@ -143,7 +132,7 @@ class Session:
         if init is None:
             self._die("could not connect MCP (socket never usable)")
         self._send("notifications/initialized", notif=True)
-        print(f"[{name}] connected (bridge={sock})")
+        print(f"[{name}] connected (bridge={self.bridge.endpoint})")
 
     # -- transport -----------------------------------------------------
     def _send(self, method, params=None, notif=False):
@@ -534,6 +523,9 @@ def main():
 
     cfg_env = fixture.isolated_config(locale="en-US", show_welcome=False, label="caret-restore")
     env = fresh_env(cfg_env["XDG_CONFIG_HOME"])
+    pins = fixture.config_pins_file(
+        {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+        label="caret-restore")
 
     # Candidates for "the long scene": Chapter 23 (~4200 words in the bundled
     # example, the longest of the 32 numbered chapters) with fallbacks in case
@@ -549,7 +541,7 @@ def main():
     print("\n" + "=" * 70)
     print("PHASE A: first launch, leaving the desk in a state worth restoring")
     print("=" * 70)
-    a = Session([project], env, "phase-a")
+    a = Session(fixture.launch_argv(project, pins=pins), env, "phase-a")
     if not a.wait_any_label(["chapter", "prologue", "starforgers"], timeout=45):
         a._die("the example project never loaded")
     print("  project loaded")
@@ -654,7 +646,7 @@ def main():
     print("PHASE B: relaunch, checking whether the desk comes back")
     print("=" * 70)
     fixture.assert_no_running_instance(SKRIBISTO)
-    b = Session([project], env, "phase-b")
+    b = Session(fixture.launch_argv(project, pins=pins), env, "phase-b")
     if not b.wait_any_label(["chapter", "prologue", "starforgers"], timeout=45):
         b._die("the project never reloaded on relaunch")
     print("  project reloaded")

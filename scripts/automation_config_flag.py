@@ -22,7 +22,7 @@ Run it after touching `settings_keys.rs`, `parse_args`, or the startup ordering
 in `main` — the unit tests cover the parsing and the merge, but only a launch
 covers "and then the app actually reads it".
 """
-import json, os, re, select, subprocess, sys, tempfile, time, tomllib
+import json, os, select, subprocess, sys, tempfile, time, tomllib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import (  # noqa: E402
@@ -181,20 +181,10 @@ def bail(msg):
     report()
 
 
-sock = tok = None
-deadline = time.time() + 60
-while time.time() < deadline:
-    text = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", text)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", text)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        bail("the app exited before opening its automation bridge")
-    time.sleep(0.2)
-if not sock:
-    bail("no automation bridge within 60s")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=60)
+except RuntimeError as e:
+    bail(str(e))
 
 check(True, "the app launched with --config and opened its bridge")
 
@@ -239,23 +229,15 @@ def call(name, args=None):
     return payload
 
 
-# The bridge announces its socket before binding it, so connect-and-initialize is
-# retried rather than raced (same dance as automation_test.py).
+# `wait_for_bridge` already asserted the endpoint is bound before returning, so
+# there is nothing left to race here — one connect-and-initialize is enough.
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
-init = None
-deadline = time.time() + 30
-while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                           stderr=open(mcp_err, "w"), text=True, bufsize=1)
-    send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                        "clientInfo": {"name": "skribisto-config-flag", "version": "1"}})
-    init = recv(timeout=4)
-    if init is None and mcp.poll() is None:
-        mcp.terminate()
-        time.sleep(0.3)
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                       stderr=open(mcp_err, "w"), text=True, bufsize=1)
+send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                    "clientInfo": {"name": "skribisto-config-flag", "version": "1"}})
+init = recv(timeout=20)
 if init is None:
     bail("could not reach the automation bridge")
 send("notifications/initialized", notif=True)

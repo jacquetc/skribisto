@@ -24,7 +24,7 @@ Read against the layout tree rather than AccessKit: the placeholder reaches the
 AT tree as painted text, not as a node label, so only the arena can answer where
 its box actually is.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import isolated_config, working_copy
@@ -40,13 +40,16 @@ os.makedirs(OUT, exist_ok=True)
 # is keyed by the Work's uid, so a previous run's dragged splitter would decide
 # this run's starting width.
 env = isolated_config(locale="en-US", label="fmt-empty", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="fmt-empty")
 project = working_copy(os.path.abspath(sys.argv[1]), "fmt-empty") \
     if len(sys.argv) > 1 else None
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
-argv = [SKRIBISTO] + ([project] if project else [])
-app = subprocess.Popen(argv, env=env, stdout=open(log, "w"), stderr=subprocess.STDOUT)
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins), env=env,
+                       stdout=open(log, "w"), stderr=subprocess.STDOUT)
 mcp = None
 
 
@@ -60,20 +63,10 @@ def die(msg):
     sys.exit(1)
 
 
-sock = tok = None
-end = time.time() + 30
-while time.time() < end:
-    txt = open(log).read()
-    s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s_ and t_:
-        sock, tok = s_.group(1), t_.group(1)
-        break
-    if app.poll() is not None:
-        die("the app exited before printing its bridge socket")
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket within 30s")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=60)
+except RuntimeError as e:
+    die(str(e))
 
 _id = [0]
 
@@ -121,9 +114,7 @@ def call(name, args=None):
 init = None
 end = time.time() + 30
 while time.time() < end and init is None:
-    while not os.path.exists(sock) and time.time() < end:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=open(mcp_err, "w"), text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

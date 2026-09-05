@@ -68,12 +68,23 @@ def die(msg, *procs):
     sys.exit(1)
 
 
-subprocess.run(["pkill", "-x", "skribisto"], check=False)
-time.sleep(0.4)
+fixture.assert_no_running_instance()
 # Run against an isolated config/data root when asked, so the probe reads the
 # *default* backup location and never touches the real one. `SHOT_XDG=<dir>`.
+#
+# Deliberately **not** `fixture.isolated_config` here: this probe's whole point,
+# absent that override, is to read backups out of the *operator's own* default
+# backup root (see the module docstring) — an isolated sandbox with nothing in
+# it would make every check below report "no dated version rows" honestly, but
+# uselessly. `--config` writes into whatever `XDG_CONFIG_HOME` the process
+# resolves (`cli::apply_config_pins`'s own doc comment says so), so pinning
+# settings without `PROBE_XDG` set would permanently rewrite the operator's
+# real `general.toml` — the file this run was explicitly trying not to touch.
+# So the pins file is built only inside the isolated branch, where writing to
+# `XDG_CONFIG_HOME` is this run's own scratch directory.
 env = dict(os.environ)
 xdg = os.environ.get("PROBE_XDG")
+pins_file = None
 if xdg:
     os.makedirs(os.path.join(xdg, "config"), exist_ok=True)
     os.makedirs(os.path.join(xdg, "data"), exist_ok=True)
@@ -87,24 +98,17 @@ if xdg:
             os.remove(os.path.join(xdg, "config", "skribisto", stale))
         except FileNotFoundError:
             pass
+    pins_file = fixture.config_pins_file(
+        {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+        label="versions")
     print(f"isolated XDG root: {xdg}")
-app = subprocess.Popen([SKRIBISTO] + ([project] if project else []),
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins_file),
                        stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
 
-sock = tok = None
-end = time.time() + 25
-while time.time() < end:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited early", app)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", app)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=60)
+except RuntimeError as e:
+    die(str(e), app)
 
 _id = [0]
 mcp = None
@@ -149,25 +153,15 @@ def call(name, a=None):
     return res, payload
 
 
-deadline = time.time() + 25
-init = None
-while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                           stderr=subprocess.DEVNULL, text=True, bufsize=1)
-    send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                        "clientInfo": {"name": "versions-probe", "version": "1"}})
-    init = recv(timeout=4, fatal=False)
-    if init is None:
-        if mcp.poll() is None:
-            mcp.terminate()
-        time.sleep(0.3)
-if init is None:
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                       stderr=subprocess.DEVNULL, text=True, bufsize=1)
+send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                    "clientInfo": {"name": "versions-probe", "version": "1"}})
+if recv(timeout=20, fatal=False) is None:
     die("could not connect MCP", app, mcp)
 send("notifications/initialized", notif=True)
-print(f"bridge up: {sock}")
+print(f"bridge up: endpoint={bridge.endpoint} pid={bridge.pid}")
 
 
 def settle():

@@ -46,10 +46,10 @@ exception: a menu row can only be picked out by its name, so the probe pins
 `ui.locale` in a sandbox of its own rather than reading whatever the operator
 has persisted.
 
-Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
-automation_*.py scripts.
+Reuses the launch/bridge/connect scaffolding from `automation_fixture` shared
+by the sibling automation_*.py scripts.
 """
-import json, os, re, select, shutil, subprocess, sys, tempfile, time
+import json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -82,46 +82,25 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args, env=None):
+    def __init__(self, args, env=None, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
-        self.sock, self.tok = sock, tok
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=60)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
+        self.bridge = bridge
         self._id = 0
-        self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "unsaved-guard-test", "version": "1"}})
-            # Generous: the app's bridge accepts one connection, and tearing a slow
-            # -but-working MCP down to retry leaves the socket unusable for the
-            # replacement (every later call then dies with a broken pipe).
-            init = self._recv(timeout=15, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.5)
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "unsaved-guard-test", "version": "1"}})
+        init = self._recv(timeout=20, fatal=False)
         if init is None:
-            fail("could not connect MCP (socket never reachable)", self.app, self.mcp, self.log)
+            fail("could not connect MCP", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
     def _send(self, method, params=None, notif=False):
@@ -218,10 +197,15 @@ shutil.copy2(EXAMPLE, project)
 # the *assertions*, not about getting to them). `editor.autosave` off because
 # with it on there is no guard to test at all: `unsaved_decision` answers
 # `SaveThenProceed` and the switch proceeds silently, which is correct
-# behaviour and a false failure here.
+# behaviour and a false failure here. The same dict also goes to `--config`
+# (via `config_pins_file`) so a typo'd key is a startup error, not a probe
+# quietly running on defaults.
+guard_pins = {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True,
+              "editor.autosave": False}
 env = fixture.isolated_config(locale="en-US", label="unsaved-guard",
                               pins={"editor.autosave": False})
-s = Session([project], env=env)
+pins = fixture.config_pins_file(guard_pins, label="unsaved-guard")
+s = Session([project], env=env, pins=pins)
 if not s.wait_label("starforgers", timeout=30):
     fail("the example work did not load", s.app, s.mcp, s.log)
 print(f"  loaded {project}")

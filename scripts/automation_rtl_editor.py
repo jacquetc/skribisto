@@ -14,7 +14,7 @@ paragraph has to sit against the right edge of the writing column, not the
 left. A pure-Arabic paragraph carries no stored `fmt_direction`, so getting
 that right depends entirely on the bidi algorithm auto-detecting it.
 """
-import json, os, re, subprocess, sys, tempfile, time, base64
+import json, os, subprocess, sys, tempfile, time, base64
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -42,33 +42,30 @@ def die(msg, log=None):
     sys.exit(1)
 
 
+fixture.assert_no_running_instance(SKRIBISTO)
 sandbox = tempfile.mkdtemp(prefix="skribisto_rtl_")
 env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
        "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
+# Pinned to English: "Chapter 1" below is an English label literal, and an
+# unset `ui.locale` is not "English", it is the operator's OS language
+# (`startup.rs`'s `auto_detect_os_locale`).
+fixture.write_settings(env["XDG_CONFIG_HOME"], locale="en-US", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False}, label="rtl")
 work = os.path.join(sandbox, "test_ar.skrib")
 import shutil
 shutil.copyfile(PROJECT, work)
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, work], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(work, pins=pins), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
-sock = tok = None
-end = time.time() + 30
-while time.time() < end:
-    t = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
-    if s and k:
-        sock, tok = s.group(1), k.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited before announcing the bridge", log)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", log)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=30)
+except RuntimeError as e:
+    die(str(e), log)
 time.sleep(1.5)
 
-mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok], stdin=subprocess.PIPE,
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP), stdin=subprocess.PIPE,
                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1)
 _id = 0
 

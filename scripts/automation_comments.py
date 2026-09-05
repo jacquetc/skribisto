@@ -35,12 +35,11 @@ rather than only the happy one.
 Reuses the launch + Launcher→Mock-Project scaffolding from
 automation_overview_segment.py.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
-SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 OUT = os.environ.get("SHOT_DIR", "/tmp")
 PANE_X = 300
@@ -59,25 +58,17 @@ def die(msg, *procs):
     sys.exit(1)
 
 
-subprocess.run(["pkill", "-x", "skribisto"], check=False)
-time.sleep(0.4)
-app = subprocess.Popen([SKRIBISTO] + ([project] if project else []),
-                       stdout=open(log, "w"), stderr=subprocess.STDOUT)
+fixture.assert_no_running_instance()
+env = fixture.isolated_config(locale="en-US", label="comments", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.show_welcome": False}, label="comments")
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
+                       stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
 
-sock = tok = None
-end = time.time() + 25
-while time.time() < end:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited early", app)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", app)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=90)
+except RuntimeError as e:
+    die(str(e), app)
 
 _id = [0]
 mcp = None
@@ -122,25 +113,16 @@ def call(name, a=None):
     return res, payload
 
 
-deadline = time.time() + 25
-init = None
-while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                           stderr=subprocess.DEVNULL, text=True, bufsize=1)
-    send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                        "clientInfo": {"name": "overview-segment", "version": "1"}})
-    init = recv(timeout=4, fatal=False)
-    if init is None:
-        if mcp.poll() is None:
-            mcp.terminate()
-        time.sleep(0.3)
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                       stderr=subprocess.DEVNULL, text=True, bufsize=1)
+send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                    "clientInfo": {"name": "overview-segment", "version": "1"}})
+init = recv(timeout=20, fatal=False)
 if init is None:
     die("could not connect MCP", app, mcp)
 send("notifications/initialized", notif=True)
-print(f"bridge up: {sock}")
+print(f"bridge up: endpoint={bridge.endpoint}")
 
 
 def settle():

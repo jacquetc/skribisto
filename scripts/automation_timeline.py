@@ -51,7 +51,6 @@ import json, os, re, select, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
-SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 
 project = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None
@@ -98,23 +97,21 @@ if project is None:
              "This probe needs a project with recorded versions — backups beside "
              "the file or in the backup root, or an in-project history log.")
 
-app = subprocess.Popen([SKRIBISTO] + ([project] if project else []),
+# Every check below matches an English literal ("versions recorded, going back
+# to...", "Struck through", ...), so the interface language is pinned rather
+# than left to follow whatever `$PROBE_XDG` (or the operator's own profile,
+# when unset) happens to carry — see `isolated_config`'s docstring for what
+# inheriting it costs on a non-English desktop. Mirrored into a `--config`
+# pins file so an unknown/mistyped key is a startup error, not a silent no-op.
+pins = fixture.config_pins_file({"ui.locale": "en-US"}, label="timeline")
+
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
                        stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
 
-sock = tok = None
-end = time.time() + 25
-while time.time() < end:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited early", app)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", app)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=60)
+except RuntimeError as e:
+    die(str(e), app)
 
 _id = [0]
 mcp = None
@@ -159,25 +156,16 @@ def call(name, a=None):
     return res, payload
 
 
-deadline = time.time() + 40
-init = None
-while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                           stderr=subprocess.DEVNULL, text=True, bufsize=1)
-    send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                        "clientInfo": {"name": "timeline-probe", "version": "1"}})
-    init = recv(timeout=4, fatal=False)
-    if init is None:
-        if mcp.poll() is None:
-            mcp.terminate()
-        time.sleep(0.3)
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                       stderr=subprocess.DEVNULL, text=True, bufsize=1)
+send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                    "clientInfo": {"name": "timeline-probe", "version": "1"}})
+init = recv(timeout=20, fatal=False)
 if init is None:
     die("could not connect MCP", app, mcp)
 send("notifications/initialized", notif=True)
-print(f"bridge up: {sock}")
+print(f"bridge up: endpoint={bridge.endpoint} pid={bridge.pid}")
 
 
 def settle():

@@ -27,7 +27,7 @@ Recents are seeded on disk (a sandbox `recents.toml` pointing at 3 real .skrib
 copies) rather than by opening projects: the list only shows *reachable* paths,
 and clicking a row would open it (ActivateOn::SingleClick).
 """
-import base64, glob, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, glob, json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -53,6 +53,11 @@ SANDBOX_ENV = {
 # operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
 # passed on an English desktop and failed on a French one.
 fixture.write_settings(SANDBOX_ENV["XDG_CONFIG_HOME"])
+# The same three keys, also validated through `--config`: an unknown or
+# mistyped one is now a hard startup error rather than a probe quietly running
+# on whatever `write_settings` happened to leave in place.
+PINS_FILE = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True}, label="kbd")
 
 # 3 reachable projects, so an arrow-key cursor has somewhere to go.
 #
@@ -92,41 +97,23 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args):
+    def __init__(self, pins=PINS_FILE):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         env = {**os.environ, **SANDBOX_ENV}
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=60)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "kbd-test", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.3)
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "kbd-test", "version": "1"}})
+        init = self._recv(timeout=20, fatal=False)
         if init is None:
             fail("could not connect MCP", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
@@ -302,7 +289,7 @@ failures = []
 # an AT `focused` flag is a weaker claim than the app actually doing the thing.
 # (Alpha is the most recent, so it is the row under the cursor.)
 print("== Phase 0: Enter at launch opens the top recent (no click, no Tab) ==")
-s0 = Session([])
+s0 = Session()
 if not s0.wait_label("welcome sections"):
     fail("the Launcher window did not appear", s0.app, s0.mcp, s0.log)
 if not wait_rows(s0):
@@ -329,7 +316,7 @@ else:
 s0.close()
 
 print("\n== Launcher: keyboard highlight in the Welcome lists ==")
-s = Session([])
+s = Session()
 if not s.wait_label("welcome sections"):
     fail("the Launcher window did not appear", s.app, s.mcp, s.log)
 
@@ -404,7 +391,7 @@ s.close()
 
 # ── Examples (a second, independent list in the same window) ────────────────
 print("\n== Examples pane ==")
-s2 = Session([])
+s2 = Session()
 if not s2.wait_label("welcome sections"):
     fail("the Launcher window did not appear (examples phase)", s2.app, s2.mcp, s2.log)
 ex_tab = s2.find("Examples", role="Tab") or s2.find("Examples")

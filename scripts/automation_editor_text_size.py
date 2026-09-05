@@ -35,7 +35,6 @@ Run: python3 scripts/automation_editor_text_size.py [project.skrib]
 """
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -43,7 +42,7 @@ import tempfile
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from automation_fixture import isolated_config, working_copy  # noqa: E402
+from automation_fixture import config_pins_file, isolated_config, working_copy  # noqa: E402
 
 import automation_fixture as fixture  # noqa: E402
 
@@ -53,11 +52,15 @@ MCP = fixture.mcp_binary()
 SRC = os.path.abspath(
     sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "resources/examples/starforgers/Starforgers.skrib")
 )
+fixture.assert_no_running_instance()
 # Never open the checked-in fixture: autosave is real, and this probe writes
 # settings besides.
 PROJECT = working_copy(SRC)
 # en-US so the toast assertions read the strings this probe knows.
 ENV = isolated_config(locale="en-US", label="textsize", show_welcome=False)
+PINS = config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="textsize")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
@@ -78,23 +81,13 @@ def fail(msg):
 
 
 app = subprocess.Popen(
-    [SKRIBISTO, PROJECT], stdout=open(log, "w"), stderr=subprocess.STDOUT, env=ENV
+    fixture.launch_argv(PROJECT, pins=PINS), stdout=open(log, "w"), stderr=subprocess.STDOUT, env=ENV
 )
 
-sock = tok = None
-deadline = time.time() + 90
-while time.time() < deadline:
-    txt = open(log).read()
-    s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s_ and t_:
-        sock, tok = s_.group(1), t_.group(1)
-        break
-    if app.poll() is not None:
-        fail("app exited before printing the bridge socket")
-    time.sleep(0.2)
-if not sock:
-    fail("no bridge socket within 90s")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=90)
+except RuntimeError as e:
+    fail(str(e))
 
 _id = [0]
 
@@ -142,10 +135,8 @@ def call(name, args=None):
 deadline = time.time() + 30
 init = None
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
     mcp = subprocess.Popen(
-        [MCP, "--connect", sock, "--token", tok],
+        fixture.mcp_argv(bridge, MCP),
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=open(mcp_err, "w"),

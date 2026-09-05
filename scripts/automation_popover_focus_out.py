@@ -28,7 +28,7 @@ Asserts, against a live app with a project open:
 Step 4 is the whole test. Before this change it stayed open.
 """
 
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import isolated_config, working_copy
@@ -57,34 +57,22 @@ def die(msg, sess=None):
 
 
 class Session:
-    def __init__(self, path, env):
+    def __init__(self, path, env, pins=None):
         self.mcp = None
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         self.app = subprocess.Popen(
-            [SKRIBISTO, "--new-instance", path],
+            fixture.launch_argv(path, pins=pins),
             env=env, stdout=open(self.log, "w"), stderr=subprocess.STDOUT,
         )
-        sock = tok = None
         # Debug `load_work` on the bundled example is slow — CLAUDE.md measures
         # ~20 s to the first open-registry claim. Budget well past that.
-        deadline = time.time() + 90
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if a and b:
-                sock, tok = a.group(1), b.group(1)
-                break
-            if self.app.poll() is not None:
-                die("app exited before printing the bridge socket", self)
-            time.sleep(0.2)
-        if not sock:
-            die("no bridge socket in 90s", self)
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=90)
+        except RuntimeError as e:
+            die(str(e), self)
         self._id = 0
         self.mcp = subprocess.Popen(
-            [MCP, "--connect", sock, "--token", tok],
+            fixture.mcp_argv(bridge, MCP),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=open(mcp_err, "w"), text=True, bufsize=1,
         )
@@ -205,9 +193,12 @@ def main():
     # Pin the locale rather than inherit it, and skip the welcome screen so the
     # project window is what comes up.
     env = isolated_config(locale="en-US", label="popover-focus-out", show_welcome=False)
+    pins = fixture.config_pins_file(
+        {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+        label="popover-focus-out")
 
     print("== launch ==")
-    sess = Session(proj, env)
+    sess = Session(proj, env, pins)
     print("connected")
 
     # A popover trigger is a Button carrying disclosure state: the snapshot

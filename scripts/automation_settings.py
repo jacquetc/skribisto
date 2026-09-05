@@ -38,8 +38,9 @@ module docs), opens Settings (Ctrl+, with a menu fallback), then asserts:
   10. the footer is instant-apply — Reset to defaults + Done, no Apply/Cancel/OK;
   11. Done dismisses the window.
 
-Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
-automation_*.py scripts.
+Launches through `automation_fixture.launch_argv` (--new-instance, --config
+pins) and attaches via `wait_for_bridge` + `mcp_argv`, the same scaffolding
+every sibling automation_*.py script now shares.
 
 The rail is driven entirely through AT actions on rows found by role + label
 (`scroll_into_view` / `click` / `expand`), never by synthetic clicks at row
@@ -48,7 +49,7 @@ the viewport reports *content* coordinates — the ones under "Work:" land below
 the window's own bottom edge — and the disclosure chevron is a nameless 16 px
 target whose x depends on an indent level. See `settings_tree_rows`.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -81,43 +82,24 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args):
+    def __init__(self, args, env=None, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
-        self.sock, self.tok = sock, tok
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=env)
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=90)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "settings-test", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.3)
+        self.mcp = subprocess.Popen(fixture.mcp_argv(self.bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "settings-test", "version": "1"}})
+        init = self._recv(timeout=20, fatal=False)
         if init is None:
-            fail("could not connect MCP (socket never reachable)", self.app, self.mcp, self.log)
+            fail("could not connect MCP", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
     def _send(self, method, params=None, notif=False):
@@ -225,8 +207,17 @@ class Session:
 
 
 # ── Launch (example loaded → Welcome suppressed) ──────────────────────────────
+# Pinned to en-US: the assertions below are locale-robust (SECTIONS etc. carry
+# both wordings), but the sandboxed config still needs a real value for the
+# key, and `isolated_config`'s own default is fr-FR — picking a locale here
+# rather than inheriting that default is what keeps the choice deliberate.
 print("== launch with example loaded ==")
-s = Session([EXAMPLE])
+fixture.assert_no_running_instance(SKRIBISTO)
+env = fixture.isolated_config(locale="en-US", label="settings-test", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="settings-test")
+s = Session([EXAMPLE], env=env, pins=pins)
 # `load_work` is slow in a debug build — the bundled example takes ~20 s to
 # reach its first window, so a 15 s budget was a coin flip on a cold cache.
 if not s.wait_label("starforgers", timeout=45):

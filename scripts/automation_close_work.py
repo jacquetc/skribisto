@@ -46,11 +46,11 @@ fires the very same global `work.close` action.
 Assertions favour locale-independent anchors (AccessKit roles, geometry, the
 button set) so this passes whatever UI language is persisted.
 
-Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
+Reuses the launch + bridge-wait + connect scaffolding from the sibling
 automation_*.py scripts.
 """
 
-import json, os, re, select, shutil, subprocess, sys, tempfile, time
+import json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -83,33 +83,20 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args):
+    def __init__(self, argv, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
-        self.sock, self.tok = sock, tok
+        self.app = subprocess.Popen(argv, stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=env)
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=30)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(self.bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -213,7 +200,11 @@ print("== launch with a scratch copy of the Starforgers example ==")
 scratch = tempfile.mkdtemp(prefix="skribisto-close-work-")
 project = os.path.join(scratch, "Starforgers.skrib")
 shutil.copy2(EXAMPLE, project)
-s = Session([project])
+env = fixture.isolated_config(locale="en-US", label="close-work", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="close-work")
+s = Session(fixture.launch_argv(project, pins=pins), env=env)
 if not s.wait_label("starforgers", timeout=30):
     fail("the example work did not load", s.app, s.mcp, s.log)
 print(f"  loaded {project}")

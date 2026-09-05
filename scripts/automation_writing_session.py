@@ -10,7 +10,8 @@ Flow: load a scratch copy of an example →
   2. click it     → a live "words · mm:ss" readout starts running
   3. type prose   → the session keeps running with the typed text in the editor
 
-Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
+Reuses `automation_fixture`'s launch/bridge-wait/MCP-attach plumbing
+(`launch_argv`, `wait_for_bridge`, `mcp_argv`), the same as the sibling
 automation_*.py scripts.
 """
 import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
@@ -23,6 +24,17 @@ MCP = fixture.mcp_binary()
 EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
+
+# Every label this probe matches ("N words", "writing session", the
+# "words · mm:ss" readout) is English, so the language has to be SET rather
+# than inherited from the operator's OS (`startup.rs`'s
+# `auto_detect_os_locale`) — and a private `XDG_CONFIG_HOME` also keeps this
+# run off the operator's real settings/recents. A project is always passed, so
+# the Welcome window never shows either way.
+ENV = fixture.isolated_config(locale="en-US", label="writing-session", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="writing-session")
 
 
 def fail(msg, app=None, mcp=None, log=None):
@@ -37,34 +49,25 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args):
+    def __init__(self, args, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=ENV)
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=60)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
-        self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+        # `wait_for_bridge` only returns once the bridge has bound its endpoint
+        # and spawned its accept thread, so there is nothing left to retry here.
+        self.mcp = subprocess.Popen(fixture.mcp_argv(self.bridge, MCP),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=open(mcp_err, "w"), text=True, bufsize=1)
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
                                   "clientInfo": {"name": "word-count-test", "version": "1"}})
-        if self._recv(timeout=15, fatal=False) is None:
-            fail("could not connect MCP", self.app, self.mcp, self.log)
+        if self._recv(timeout=20, fatal=False) is None:
+            fail("could not connect MCP (no initialize response)", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
     def _send(self, method, params=None, notif=False):
@@ -168,7 +171,7 @@ print("== launch with a scratch copy of the Starforgers example ==")
 scratch = tempfile.mkdtemp(prefix="skribisto-wordcount-")
 project = os.path.join(scratch, "Starforgers.skrib")
 shutil.copy2(EXAMPLE, project)
-s = Session([project])
+s = Session([project], PINS)
 if not s.wait_label("starforgers", timeout=30):
     fail("the example work did not load", s.app, s.mcp, s.log)
 print(f"  loaded {project}")

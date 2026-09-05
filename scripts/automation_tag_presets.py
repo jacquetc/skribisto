@@ -56,7 +56,6 @@ Run:  python3 scripts/automation_tag_presets.py
 import base64
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -66,7 +65,6 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
-SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 from automation_fixture import (  # noqa: E402
     SCRATCH,
@@ -75,7 +73,12 @@ from automation_fixture import (  # noqa: E402
 )
 
 #: French, in a scratch config dir: this probe checks that presets translate.
-PROBE_ENV = isolated_config(locale="fr-FR", label="presets")
+PROBE_ENV = isolated_config(locale="fr-FR", label="presets", show_welcome=True)
+#: Mirrored into `--config` so the app validates the pin rather than silently
+#: ignoring a typo'd key — see `launch_argv`'s docstring on pairing the two.
+PROBE_PINS = fixture.config_pins_file(
+    {"ui.locale": "fr-FR", "ui.dark": False, "ui.show_welcome": True},
+    label="presets")
 
 # Before anything else: a live instance would swallow this launch (see the
 # helper's docstring) and every later failure would name the wrong cause.
@@ -179,27 +182,20 @@ class Session:
         # A private config dir pinning the locale to French. This probe asserts
         # that presets come out TRANSLATED, so it must set the language rather
         # than inherit whatever the operator's `general.toml` happens to say —
-        # see `isolated_config`'s docstring for what inheriting it cost.
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        # see `isolated_config`'s docstring for what inheriting it cost. The
+        # same pin also goes through `--config` (`PROBE_PINS`), so the app
+        # validates it against its settings schema instead of silently
+        # ignoring a typo'd key.
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=PROBE_PINS),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=PROBE_ENV)
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if a and b:
-                sock, tok = a.group(1), b.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self)
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=40)
+        except RuntimeError as e:
+            fail(str(e), self)
+        self.bridge = bridge
         self._id = 0
-        self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=open(mcp_err, "w"), text=True, bufsize=1)
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

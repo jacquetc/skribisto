@@ -24,7 +24,6 @@ import base64
 import json
 import os
 import pathlib
-import re
 import select
 import subprocess
 import sys
@@ -60,37 +59,25 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args, env=None):
+    def __init__(self, project=None, pins=None, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         self.app = subprocess.Popen(
-            [SKRIBISTO, *args],
+            fixture.launch_argv(project, pins=pins),
             stdout=open(self.log, "w"),
             stderr=subprocess.STDOUT,
             env={**os.environ, **(env or {})},
         )
-        sock = tok = None
-        deadline = time.time() + 30
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 30s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
             self.mcp = subprocess.Popen(
-                [MCP, "--connect", sock, "--token", tok],
+                fixture.mcp_argv(bridge, MCP),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=open(mcp_err, "w"),
@@ -304,7 +291,11 @@ fixture.assert_no_running_instance(SKRIBISTO)
 SHOT_DIR.mkdir(parents=True, exist_ok=True)
 
 print("== launch Starforgers ==")
-s = Session(["--new-instance", EXAMPLE])
+env = fixture.isolated_config(locale="en-US", label="import-layout", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="import-layout")
+s = Session(EXAMPLE, pins=pins, env=env)
 if not s.wait_label("starforgers", timeout=45):
     fail("example did not load", s.app, s.mcp, s.log)
 print("loaded.")

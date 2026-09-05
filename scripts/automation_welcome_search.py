@@ -32,7 +32,7 @@ does: the list only shows *reachable* paths. XDG_RUNTIME_DIR is deliberately NOT
 sandboxed (it holds the Wayland socket), so step 5 keeps only the locks naming a
 path inside this run's sandbox — see `claimed_paths`.
 """
-import base64, glob, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, glob, json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -63,6 +63,12 @@ SANDBOX_ENV = {
 # operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
 # passed on an English desktop and failed on a French one.
 fixture.write_settings(SANDBOX_ENV["XDG_CONFIG_HOME"])
+# The same pins, again, through `--config` — the sandbox above sets them but
+# validates nothing, so a typo would just run on defaults; `--config` makes the
+# app check every key against its schema.
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="search")
 
 # 3 reachable projects. They are copies of the same example, so all three carry
 # the title "Starforgers" *inside* the .skrib — which is precisely why step 5
@@ -107,43 +113,26 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args):
+    def __init__(self, args, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         env = {**os.environ, **SANDBOX_ENV}
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=60)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "search-test", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.3)
-        if init is None:
-            fail("could not connect MCP", self.app, self.mcp, self.log)
+        # `wait_for_bridge` only returns once the bridge has bound its endpoint
+        # and spawned its accept thread, so there is nothing left to retry here.
+        self.mcp = subprocess.Popen(fixture.mcp_argv(self.bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "search-test", "version": "1"}})
+        if self._recv(timeout=20, fatal=False) is None:
+            fail("could not connect MCP (no initialize response)", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
     def _send(self, method, params=None, notif=False):
@@ -358,7 +347,7 @@ def editor_of(s, node):
 
 
 failures = []
-s = Session([])
+s = Session([], PINS)
 # The nav TabBar's `access_label_literal` — the Launcher's landmark. (The
 # "Recent Works" GroupHeader is decorative text and carries no AT label.)
 if not s.wait_label("welcome sections"):

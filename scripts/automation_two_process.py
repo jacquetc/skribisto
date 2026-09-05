@@ -10,11 +10,16 @@ file, both sharing one sandboxed config/data directory (`XDG_CONFIG_HOME` /
 `~/.local/share/skribisto`), and asserts against the cross-process-correct
 `teksilo-settings` layer:
 
-KNOWN GAP: since the single-instance election (spawn_new_process was
-removed), the second launch below hands off to the first instead of starting
-its own process, unless it passes `--new-instance`. It does not yet — see
-`Session.__init__`'s `args` — so this script currently exercises one process,
-not two, until that flag is added to instance B's launch.
+This is deliberately asymmetric, because the single-instance election
+(`spawn_new_process` was removed) is itself part of what makes two real
+processes over one sandbox worth testing: instance A launches WITHOUT
+`--new-instance`, so it wins the election and becomes the primary — the
+ordinary case every other probe wants electable out of the way with the flag,
+kept here on purpose. Instance B launches WITH `--new-instance`, so its
+command line starts its own process instead of being forwarded to A and
+exited — without that flag on B alone, this script would silently exercise
+one process, not two, and every "two processes never clobber each other"
+assertion below would be trivially true for the wrong reason.
 
   (a) opening a distinct project in each instance -> BOTH end up recorded in
       the shared `recents.toml` (previously, a naive re-serialize-on-write
@@ -43,12 +48,11 @@ not two, until that flag is added to instance B's launch.
 Saves screenshots of both settled windows to /tmp/sk-two-proc-a.png and
 /tmp/sk-two-proc-b.png.
 """
-import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time, tomllib
+import base64, json, os, select, shutil, subprocess, sys, tempfile, time, tomllib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
-SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
@@ -63,50 +67,40 @@ def record(name, passed, detail=""):
 
 class Session:
     """One launched `skribisto <project>` app + its connected MCP bridge,
-    under a caller-supplied environment (used here to sandbox XDG dirs)."""
+    under a caller-supplied environment (used here to sandbox XDG dirs).
 
-    def __init__(self, name, args, env_overrides):
+    `new_instance` defaults to True (every OTHER launch in this app wants the
+    election out of the way), but instance A below passes False on purpose:
+    it must win the election and become the primary, which is the very thing
+    this script is proving stays correct across two processes. See the
+    module docstring.
+    """
+
+    def __init__(self, name, args, env_overrides, new_instance=True):
         self.name = name
         self.log = tempfile.NamedTemporaryFile(suffix=f".{name}.log", delete=False).name
         self.mcp_err = tempfile.NamedTemporaryFile(suffix=f".{name}.mcperr", delete=False).name
-        env = {**os.environ, **env_overrides}
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                self._fail("app exited before printing the bridge socket")
-            time.sleep(0.2)
-        if not sock:
-            self._fail("no bridge socket within 20s")
-        self.sock, self.tok = sock, tok
-        self._id = 0
         self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(self.mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": f"two-process-test-{name}", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.3)
+        env = {**os.environ, **env_overrides}
+        self.app = subprocess.Popen(
+            fixture.launch_argv(list(args), new_instance=new_instance),
+            stdout=open(self.log, "w"), stderr=subprocess.STDOUT, env=env)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=40)
+        except RuntimeError as e:
+            self._fail(str(e))
+        self.bridge = bridge
+        self._id = 0
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(self.mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": f"two-process-test-{name}", "version": "1"}})
+        init = self._recv(timeout=8, fatal=False)
         if init is None:
-            self._fail("could not connect MCP (socket never reachable)")
+            self._fail("MCP did not initialize")
         self._send("notifications/initialized", notif=True)
-        print(f"[{name}] connected: pid={self.app.pid} socket={sock}")
+        print(f"[{name}] connected: pid={bridge.pid} endpoint={bridge.endpoint}")
 
     def _fail(self, msg):
         print(f"FATAL[{self.name}]:", msg)
@@ -355,6 +349,15 @@ SHARED_ENV = {
     "XDG_DATA_HOME": data_dir,
     "HOME": sandbox,  # defensive: anything falling back to $HOME stays sandboxed too
 }
+# A sandbox with no `general.toml` is not the neutral choice it looks like: with
+# `startup.rs`'s `auto_detect_os_locale` on, an unset `ui.locale` is not English,
+# it is *the operator's OS language*. This probe asserts mostly on the project's
+# on-disk title, which is locale-independent, but its Theme control check reads a
+# label — so the language is pinned here rather than inherited, for the same
+# reason `isolated_config` pins it. `write_settings` is the half of that pair for
+# a probe like this one, which builds its own sandbox because it needs an
+# `XDG_DATA_HOME` and a `HOME` too.
+fixture.write_settings(config_dir, locale="en-US", show_welcome=False)
 # `teksilo_settings::AppPaths::new("eu", "skribisto", "Skribisto")` (via
 # etcetera's XDG strategy) nests everything one level further, under an
 # app-named subdirectory of each XDG root (confirmed empirically: files land
@@ -370,15 +373,20 @@ shutil.copyfile(EXAMPLE, proj_a)
 shutil.copyfile(EXAMPLE, proj_b)
 
 # ── Launch both instances on their own distinct projects ──────────────────
-print("== launching instance A (Project A) ==")
-a = Session("A", [proj_a], SHARED_ENV)
+# A is deliberately NOT `--new-instance`: it must win the election and become
+# the primary (see the module docstring and `Session`'s own docstring).
+print("== launching instance A (Project A) — the primary, no --new-instance ==")
+a = Session("A", [proj_a], SHARED_ENV, new_instance=False)
 SESSIONS.append(a)
 if not a.wait_loaded(timeout=20):
     a._fail("Project A did not load")
 print("A loaded.")
 
-print("== launching instance B (Project B) ==")
-b = Session("B", [proj_b], SHARED_ENV)
+# B passes `--new-instance` so its own command line starts a second process
+# instead of being handed off to A and exiting — the one flag this whole
+# script exists to prove is not merely present but load-bearing.
+print("== launching instance B (Project B) — --new-instance, so it gets its own process ==")
+b = Session("B", [proj_b], SHARED_ENV, new_instance=True)
 SESSIONS.append(b)
 if not b.wait_loaded(timeout=20):
     b._fail("Project B did not load")

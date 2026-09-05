@@ -18,7 +18,7 @@ This drives the real app to prove it: open the switcher, and assert an element
 INSIDE the popover overlay carries the AT `focused` flag — then press Down and
 confirm focus is still in the popover (i.e. the menu is really keyboard-live).
 """
-import base64, json, os, re, shutil, subprocess, sys, tempfile, time
+import base64, json, os, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -32,6 +32,15 @@ env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
        "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
 work = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, work)
+# This sandbox used to write no settings at all, which is not the neutral
+# choice it looks like: with `auto_detect_os_locale` on, an unset `ui.locale`
+# is the operator's OS language, not English — so the label matches below
+# (English button text) passed on an English desktop and failed on a French
+# one. Pin it explicitly, same as every other launch here.
+fixture.write_settings(env["XDG_CONFIG_HOME"], locale="en-US", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="switcher-focus")
 
 
 def die(msg, log=None):
@@ -42,25 +51,15 @@ def die(msg, log=None):
 
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, work], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(work, pins=pins), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
-sock = tok = None
-end = time.time() + 25
-while time.time() < end:
-    t = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
-    if s and k:
-        sock, tok = s.group(1), k.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited before announcing the bridge", log)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", log)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=25)
+except RuntimeError as e:
+    die(str(e), log)
 time.sleep(1.0)
 
-mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok], stdin=subprocess.PIPE,
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP), stdin=subprocess.PIPE,
                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1)
 _id = 0
 

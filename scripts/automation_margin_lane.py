@@ -22,7 +22,7 @@ more precisely than a screenshot could. What no headless test can answer is
 whether the strip is on screen and the right size at all, which is exactly the
 half that kept going wrong.
 """
-import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -44,25 +44,43 @@ fixture.assert_no_running_instance(SKRIBISTO)
 sandbox = tempfile.mkdtemp(prefix="lane-probe-")
 project = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, project)
+# Pinned rather than assumed: the defaults say the lane is on, and a probe that
+# trusted them would go green on a build where they had changed.
+#
+# ⚠ The per-surface keys (`editor.margin_lane.surface.<surface>`) are NOT in
+# the validated settings schema — `margin_lane_surface_key` builds them from
+# `LaneSurface::key()` at runtime rather than declaring a `SettingSpec`, so
+# `--dump-config` never lists them and `--config` refuses them as unknown.
+# They go through `isolated_config`'s unvalidated `general.toml` write only;
+# `--config` carries just the two keys that really are in the schema.
+LANE_PINS = {
+    "editor.margin_lane.enabled": True,
+    "editor.margin_lane.surface.editor": True,
+    "editor.margin_lane.texture": False,
+}
 env = dict(os.environ)
 env.update(
     fixture.isolated_config(
         locale="en-US",
         label="lane",
         show_welcome=False,
-        # Pinned rather than assumed: the defaults say the lane is on, and a probe
-        # that trusted them would go green on a build where they had changed.
-        pins={
-            "editor.margin_lane.enabled": True,
-            "editor.margin_lane.surface.editor": True,
-            "editor.margin_lane.texture": False,
-        },
+        pins=LANE_PINS,
     )
+)
+pins = fixture.config_pins_file(
+    {
+        "ui.locale": "en-US",
+        "ui.dark": False,
+        "ui.show_welcome": False,
+        "editor.margin_lane.enabled": True,
+        "editor.margin_lane.texture": False,
+    },
+    label="lane",
 )
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
-app = subprocess.Popen([SKRIBISTO, project], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
 mcp = None
 
@@ -80,20 +98,10 @@ def die(msg):
     sys.exit(1)
 
 
-sock = tok = None
-deadline = time.time() + 25
-while time.time() < deadline:
-    txt = open(log).read()
-    s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s_ and t_:
-        sock, tok = s_.group(1), t_.group(1)
-        break
-    if app.poll() is not None:
-        die("the app exited before printing the bridge socket")
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket within 25s")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=25)
+except RuntimeError as e:
+    die(str(e))
 
 _id = [0]
 
@@ -141,9 +149,7 @@ def call(name, args=None):
 deadline = time.time() + 25
 init = None
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=open(mcp_err, "w"), text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -247,41 +253,41 @@ for p in (mcp, app):
         p.wait(timeout=10)
 time.sleep(1.0)
 
+TEX_PINS = {
+    "editor.margin_lane.enabled": True,
+    "editor.margin_lane.surface.editor": True,
+    "editor.margin_lane.texture": True,
+}
 env2 = dict(os.environ)
 env2.update(
     fixture.isolated_config(
         locale="en-US", label="lane-tex", show_welcome=False,
-        pins={
-            "editor.margin_lane.enabled": True,
-            "editor.margin_lane.surface.editor": True,
-            "editor.margin_lane.texture": True,
-        },
+        pins=TEX_PINS,
     )
 )
+# Only the two schema keys go through `--config` — see the note above `LANE_PINS`.
+pins2 = fixture.config_pins_file(
+    {
+        "ui.locale": "en-US",
+        "ui.dark": False,
+        "ui.show_welcome": False,
+        "editor.margin_lane.enabled": True,
+        "editor.margin_lane.texture": True,
+    },
+    label="lane-tex",
+)
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, project], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins2), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env2)
-sock = tok = None
-deadline = time.time() + 25
-while time.time() < deadline:
-    txt = open(log).read()
-    s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s_ and t_:
-        sock, tok = s_.group(1), t_.group(1)
-        break
-    if app.poll() is not None:
-        die("the app exited before printing the bridge socket (texture run)")
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket within 25s (texture run)")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=25)
+except RuntimeError as e:
+    die(str(e))
 
 init = None
 deadline = time.time() + 25
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=open(mcp_err, "w"), text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -430,40 +436,40 @@ for p in (mcp, app):
         p.wait(timeout=10)
 time.sleep(1.0)
 
+BOOK_PINS = {
+    "editor.margin_lane.enabled": True,
+    "editor.margin_lane.surface.stream": True,
+    "editor.margin_lane.texture": True,
+}
 env3 = dict(os.environ)
 env3.update(
     fixture.isolated_config(
         locale="en-US", label="lane-book", show_welcome=False,
-        pins={
-            "editor.margin_lane.enabled": True,
-            "editor.margin_lane.surface.stream": True,
-            "editor.margin_lane.texture": True,
-        },
+        pins=BOOK_PINS,
     )
 )
+# Only the two schema keys go through `--config` — see the note above `LANE_PINS`.
+pins3 = fixture.config_pins_file(
+    {
+        "ui.locale": "en-US",
+        "ui.dark": False,
+        "ui.show_welcome": False,
+        "editor.margin_lane.enabled": True,
+        "editor.margin_lane.texture": True,
+    },
+    label="lane-book",
+)
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, project], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins3), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env3)
-sock = tok = None
-deadline = time.time() + 25
-while time.time() < deadline:
-    txt = open(log).read()
-    s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s_ and t_:
-        sock, tok = s_.group(1), t_.group(1)
-        break
-    if app.poll() is not None:
-        die("the app exited before printing the bridge socket (book run)")
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket within 25s (book run)")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=25)
+except RuntimeError as e:
+    die(str(e))
 init = None
 deadline = time.time() + 25
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=open(mcp_err, "w"), text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

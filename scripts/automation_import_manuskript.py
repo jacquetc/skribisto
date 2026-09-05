@@ -42,7 +42,7 @@ Run it with the worktree's debug build:
     python3 scripts/automation_import_manuskript.py
 """
 
-import base64, json, os, pathlib, re, select, subprocess, sys, tempfile, time
+import base64, json, os, pathlib, select, subprocess, sys, tempfile, time
 
 _ROOT = pathlib.Path(__file__).resolve().parent.parent  # this repo/worktree root
 sys.path.insert(0, str(_ROOT / "scripts"))
@@ -67,33 +67,22 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args, env=None):
+    def __init__(self, project=None, pins=None, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT,
                                     env={**os.environ, **(env or {})})
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -296,9 +285,14 @@ def text_inputs(s):
 
 def run(env, locale, name):
     print(f"\n=== pass: {locale} ===")
-    # `--new-instance`: without it a second pass is handed to the first
-    # process by the single-instance election and tests nothing.
-    s = Session(["--new-instance", EXAMPLE], env=env)
+    # `--new-instance` (always on via `launch_argv`): without it a second pass
+    # is handed to the first process by the single-instance election and tests
+    # nothing. The pins go through `--config` too, so a typo'd key is a hard
+    # startup error rather than a silently-ignored one.
+    pins = fixture.config_pins_file(
+        {"ui.locale": locale, "ui.dark": False, "ui.show_welcome": True},
+        label=f"import-manuskript-{locale}")
+    s = Session(EXAMPLE, pins=pins, env=env)
     try:
         # `load_work` is slow in a debug build: the bundled example takes tens of
         # seconds before its binder is on screen, and a cold worktree target is

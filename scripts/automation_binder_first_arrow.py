@@ -15,7 +15,7 @@ in the framework's headless tests.
 Opens the bundled example, focuses the binder tree, presses Down once, and
 asserts the FIRST binder row is the selected one.
 """
-import json, os, re, select, shutil, subprocess, sys, tempfile, time, base64
+import json, os, select, shutil, subprocess, sys, tempfile, time, base64
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -25,10 +25,22 @@ MCP = fixture.mcp_binary()
 EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 sandbox = tempfile.mkdtemp(prefix="skribisto_binder_kbd_")
-env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
+cfg_home = os.path.join(sandbox, "config")
+env = {**os.environ, "XDG_CONFIG_HOME": cfg_home,
        "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
 work = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, work)
+
+# This sandbox is hand-rolled (it needs a HOME as well as the two XDG dirs), so
+# it writes its own general.toml via `write_settings` rather than going through
+# `isolated_config` — the two do the same thing, this one just needs the extra
+# env keys `isolated_config` does not set. The pins file mirrors the same keys
+# through `--config` so a typo would be a hard startup error, not a silently
+# ignored one.
+fixture.write_settings(cfg_home, locale="en-US", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="binder-kbd")
 
 
 def die(msg, log=None):
@@ -39,25 +51,14 @@ def die(msg, log=None):
 
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, work], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(work, pins=pins), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
-sock = tok = None
-end = time.time() + 25
-while time.time() < end:
-    t = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
-    if s and k:
-        sock, tok = s.group(1), k.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited before announcing the bridge", log)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", log)
-time.sleep(1.0)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=45)
+except RuntimeError as e:
+    die(str(e), log)
 
-mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok], stdin=subprocess.PIPE,
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP), stdin=subprocess.PIPE,
                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1)
 _id = 0
 

@@ -50,7 +50,7 @@ below is against strings this probe controls rather than whatever locale the
 operator happens to have persisted.
 """
 
-import json, os, re, select, subprocess, sys, tempfile, time
+import json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -83,33 +83,23 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args, env=None):
+    def __init__(self, argv, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(argv, stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=25)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
-        # The bridge announces the socket before binding; retry connect+init.
+        # `wait_for_bridge` already asserts the endpoint exists by the time it
+        # returns; the retry loop below is only for the (rarer) case where the
+        # accept thread is not yet scheduled to service a connection.
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -274,10 +264,14 @@ def dismiss_modal(s, timeout=8):
 
 print("== Launcher menu bar + Create from… ==")
 env = fixture.isolated_config(locale="en-US", label="launcher-menu")
-# `--new-instance`: a primary already running on this machine would otherwise
-# win the election and this launch would hand off and exit, leaving the probe
-# driving nothing.
-s = Session(["--new-instance"], env=env)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="launcher-menu")
+# `fixture.launch_argv` always adds `--new-instance`: a primary already running
+# on this machine would otherwise win the election and this launch would hand
+# off and exit, leaving the probe driving nothing. No project: this probe is
+# about the Launcher itself.
+s = Session(fixture.launch_argv(None, pins=pins), env=env)
 if not s.wait_label("welcome sections"):
     s.dump("startup")
     fail("the Launcher window did not appear", s.app, s.mcp, s.log)

@@ -63,25 +63,18 @@ def fail(msg):
     sys.exit(1)
 
 
-app = subprocess.Popen([SKRIBISTO, PROJECT], stdout=open(log, "w"), stderr=subprocess.STDOUT)
-sock = tok = None
-end = time.time() + 40
-while time.time() < end:
-    txt = open(log).read()
-    a = re.search(r"bridge socket = (\S+)", txt)
-    b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if a and b:
-        sock, tok = a.group(1), b.group(1)
-        break
-    if app.poll() is not None:
-        fail("app exited before printing the bridge socket")
-    time.sleep(0.2)
-if not sock:
-    fail("no bridge socket within 40s")
-while not os.path.exists(sock) and time.time() < end:
-    time.sleep(0.05)
+env = fixture.isolated_config(locale="en-US", label="in-prose-mentions", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="in-prose-mentions")
+app = subprocess.Popen(fixture.launch_argv(PROJECT, pins=pins), stdout=open(log, "w"),
+                       stderr=subprocess.STDOUT, env=env)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=40)
+except RuntimeError as e:
+    fail(str(e))
 
-mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok], stdin=subprocess.PIPE,
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP), stdin=subprocess.PIPE,
                        stdout=subprocess.PIPE, stderr=open(mcp_err, "w"), text=True, bufsize=1)
 _id = [0]
 

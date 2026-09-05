@@ -9,7 +9,7 @@ as a fallback, a synthetic pointer click), and verify an editor tab appears.
 Prints the relevant tool schemas (self-guiding) and notes anything that looks
 like an MCP bug or gap.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -41,24 +41,22 @@ def die(msg, *procs, log=None):
     sys.exit(1)
 
 
+fixture.assert_no_running_instance()
+env = fixture.isolated_config(locale="en-US", label="explore", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="explore")
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, PROJECT], stdout=open(log, "w"), stderr=subprocess.STDOUT)
-sock = tok = None
-end = time.time() + 20
-while time.time() < end:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt); t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1); break
-    if app.poll() is not None:
-        die("app exited early", app, log=log)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", app, log=log)
-print(f"bridge up: {sock}")
+app = subprocess.Popen(fixture.launch_argv(PROJECT, pins=pins),
+                       stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=90)
+except RuntimeError as e:
+    die(str(e), app, log=log)
+print(f"bridge up: {bridge.endpoint}")
 
 def launch_mcp():
-    return subprocess.Popen([MCP, "--connect", sock, "--token", tok], stdin=subprocess.PIPE,
+    return subprocess.Popen(fixture.mcp_argv(bridge, MCP), stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=open(mcp_err, "w"), text=True, bufsize=1)
 
 mcp = None
@@ -91,15 +89,13 @@ def call(name, args=None):
         payload = json.loads(txt) if txt.strip().startswith("{") else {"_text": txt}
     return res, payload
 
-# The bridge announces the socket path *before* it is bound/listening, so an
-# immediate connect races and the MCP server dies with ENOENT — worse while the
-# app is busy migrating a legacy .skrib. Wait for the socket file, then retry the
-# whole connect+initialize until the server answers.
+# `wait_for_bridge` already confirms the endpoint is bound before returning it,
+# so no connect-before-bind race is possible here — but a legacy `.skrib` still
+# migrating can leave the bridge briefly unresponsive, so retry the
+# connect+initialize handshake until the server actually answers.
 deadline = time.time() + 20
 init = None
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
     mcp = launch_mcp()
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
                         "clientInfo": {"name": "explore", "version": "1"}})

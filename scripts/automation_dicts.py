@@ -5,14 +5,13 @@
 """Drive the worktree build to verify the Dictionaries + Work-Language settings panes
 and the per-item language field render. Reuses the launch/connect scaffolding shape of
 the sibling automation_*.py scripts, pointed at the feature worktree binary."""
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 import pathlib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 _ROOT = pathlib.Path(__file__).resolve().parent.parent  # this repo/worktree root
-SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 EXAMPLE = str(_ROOT / "resources/examples/starforgers/Starforgers.skrib")
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
@@ -30,40 +29,22 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args):
+    def __init__(self, args, env, pins):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    env=env, stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=90)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "dicts-test", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate(); time.sleep(0.3)
-        if init is None:
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "dicts-test", "version": "1"}})
+        if self._recv(timeout=20, fatal=False) is None:
             fail("could not connect MCP", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
@@ -192,7 +173,11 @@ def expand_and_click(section_variants, leaf_variants):
 
 
 print("== launch with example ==")
-s = Session([EXAMPLE])
+fixture.assert_no_running_instance()
+env = fixture.isolated_config(locale="en-US", label="dicts", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.show_welcome": False}, label="dicts")
+s = Session([EXAMPLE], env, pins)
 if not s.wait_label("starforgers", timeout=15):
     fail("example did not load", s.app, s.mcp, s.log)
 print("example loaded.")

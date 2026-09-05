@@ -71,13 +71,23 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
 ROOT = fixture.repo_root()
-SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 from automation_fixture import wait_for_load, working_copy
 
 # This probe creates tags and saves nothing explicitly, but the app autosaves
 # on its own timer — never the checked-in fixture.
 FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "overflow")
+
+# A private config dir, pinned to English (this probe's own selector tuples
+# tolerate French too, but the item/container titles it plants — "1.1 Zeus",
+# "Chapter 1" — are fixture DATA, never translated, so the interface language
+# doesn't matter to what is being proven; English keeps the printed labels
+# readable). Mirrored into a `--config` pins file so the app validates the
+# keys rather than silently ignoring a typo'd one.
+PROBE_ENV = fixture.isolated_config(locale="en-US", label="overflow", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="overflow")
 
 # ── Locale-safe strings, each keyed to its ftl entry ─────────────────────────
 # The app follows the *system* locale (French on this machine). An
@@ -152,26 +162,16 @@ class Session:
         self.mcp = None
         self.app = None
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, path], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if a and b:
-                sock, tok = a.group(1), b.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self)
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
+        self.app = subprocess.Popen(fixture.launch_argv(path, pins=PINS),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=PROBE_ENV)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=40)
+        except RuntimeError as e:
+            fail(str(e), self)
+        self.bridge = bridge
         self._id = 0
-        self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=open(mcp_err, "w"), text=True, bufsize=1)
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

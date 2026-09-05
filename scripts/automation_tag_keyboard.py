@@ -75,7 +75,6 @@ Run:  python3 scripts/automation_tag_keyboard.py
 import base64
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -94,6 +93,16 @@ from automation_fixture import wait_for_load, working_copy
 # it still opens an editor tab and toggles a tag mid-run — never the checked-in
 # fixture.
 FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "kbdtags")
+
+# A private config directory (never this machine's real settings/OS locale)
+# plus a validated `--config` pins file, so an unknown key is a hard startup
+# error rather than a silently-ignored typo. The strings matched below carry
+# both locales (see the ftl-keyed block just under this), but the literals
+# this probe types and reasons about (ITEM, CHAPTER1, the tag names) are
+# English, hence en-US.
+ENV = fixture.isolated_config(locale="en-US", label="kbdtags", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False}, label="kbdtags")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
 
@@ -130,33 +139,26 @@ def fail(msg, sess=None):
 
 
 class Session:
-    """One launched app + connected MCP server, restartable. Copied verbatim
-    from automation_languages.py's Session — the template this probe follows."""
+    """One launched app + connected MCP server, restartable. Started life
+    copied verbatim from automation_languages.py's Session; the launch/bridge/
+    connect plumbing was since updated for teksilo 0.9.4 (the bridge announce
+    renamed `socket` to `endpoint`, and teksilo is now a registry, not a path,
+    dependency) — see `automation_fixture.launch_argv`/`wait_for_bridge`/
+    `mcp_argv`, which every probe now shares instead of hand-rolling this scrape."""
 
     def __init__(self, path):
         self.mcp = None
         self.app = None
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, path], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if a and b:
-                sock, tok = a.group(1), b.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self)
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
+        self.app = subprocess.Popen(fixture.launch_argv(path, pins=PINS),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=ENV)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=25)
+        except RuntimeError as e:
+            fail(str(e), self)
         self._id = 0
-        self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=open(mcp_err, "w"), text=True, bufsize=1)
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},

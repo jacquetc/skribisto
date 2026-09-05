@@ -39,7 +39,7 @@ English, and an unset `ui.locale` is the operator's OS language, not English
 (`startup.rs`'s `auto_detect_os_locale`). Without this the probe passes on an
 English desktop and fails on a French one, reporting that the menu never opened.
 """
-import base64, json, os, re, shutil, subprocess, sys, tempfile, time
+import base64, json, os, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -52,10 +52,18 @@ EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 #: "closed the others" apart from "closed everything but the selection".
 DOCS = ["Chapter 1", "Chapter 2", "Chapter 3"]
 
+fixture.assert_no_running_instance(SKRIBISTO)
 sandbox = tempfile.mkdtemp(prefix="skribisto_tab_menu_")
 env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
        "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
-fixture.write_settings(env["XDG_CONFIG_HOME"])
+# Written directly (not `isolated_config`) because this probe needs its own
+# `XDG_DATA_HOME`/`HOME` too, and read a second time verbatim on the restart in
+# STEP 6 — the whole point there is that it is the SAME sandbox, so the pin's
+# `workspace.toml` is what comes back, not a fresh one.
+fixture.write_settings(env["XDG_CONFIG_HOME"], locale="en-US", dark=False, show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="tab-menu")
 work = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, work)
 
@@ -78,25 +86,15 @@ def die(msg, log=None):
 
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, work], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(work, pins=pins), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
-sock = tok = None
-end = time.time() + 40
-while time.time() < end:
-    t = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
-    if s and k:
-        sock, tok = s.group(1), k.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited before announcing the bridge", log)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", log)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=90)
+except RuntimeError as e:
+    die(str(e), log)
 time.sleep(1.0)
 
-mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok], stdin=subprocess.PIPE,
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP), stdin=subprocess.PIPE,
                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1)
 _id = 0
 
@@ -415,25 +413,18 @@ for p in (mcp, app):
         p.terminate()
 time.sleep(2.0)
 
-# Same file, same sandbox — so the same `workspace.toml`.
-app = subprocess.Popen([SKRIBISTO, "--new-instance", work], stdout=open(log, "w"),
+# Same file, same sandbox — so the same `workspace.toml`. `launch_argv` already
+# adds `--new-instance`; the old code passed it explicitly for the same reason
+# this restart matters at all — a hand-off to some other primary would attach
+# this probe to the wrong window and it would "restore" nothing.
+app = subprocess.Popen(fixture.launch_argv(work, pins=pins), stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
-sock = tok = None
-end = time.time() + 60
-while time.time() < end:
-    t = open(log).read()
-    sm = re.search(r"bridge socket = (\S+)", t)
-    km = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
-    if sm and km:
-        sock, tok = sm.group(1), km.group(1)
-        break
-    if app.poll() is not None:
-        die("the app exited before announcing the bridge on restart", log)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket after restart", log)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=90)
+except RuntimeError as e:
+    die(str(e), log)
 time.sleep(1.0)
-mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok], stdin=subprocess.PIPE,
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP), stdin=subprocess.PIPE,
                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1)
 _id = 0
 mcp.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 0, "method": "initialize",

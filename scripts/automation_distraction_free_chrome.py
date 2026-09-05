@@ -15,10 +15,11 @@ Flow: load a scratch copy of an example →
   2. Shift+F11    → the tab strip is GONE and the strip's Exit button is present
   3. Shift+F11    → the tab strip is BACK
 
-Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
-automation_*.py scripts.
+Reuses the launch + bridge-wait + connect scaffolding from
+`automation_fixture` — see that module for why the app now launches with
+`--new-instance --config <pins>` and how the bridge announce is read.
 """
-import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -45,28 +46,17 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args):
+    def __init__(self, args, env=None, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=env)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=90)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
-        self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=open(mcp_err, "w"), text=True, bufsize=1)
         self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -196,10 +186,15 @@ def wait_for(pred, timeout=10):
 
 
 print("== launch with a scratch copy of the Starforgers example ==")
+fixture.assert_no_running_instance()
 scratch = tempfile.mkdtemp(prefix="skribisto-df-chrome-")
 project = os.path.join(scratch, "Starforgers.skrib")
 shutil.copy2(EXAMPLE, project)
-s = Session([project])
+env = fixture.isolated_config(locale="en-US", label="df-chrome", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="df-chrome")
+s = Session([project], env=env, pins=pins)
 if not s.wait_label("starforgers", timeout=30):
     fail("the example work did not load", s.app, s.mcp, s.log)
 print(f"  loaded {project}")

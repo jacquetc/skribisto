@@ -38,7 +38,7 @@ strings this repo ships rather than whatever language the operator last used.
 Run it after `cargo build -p teksilo_ui` — it drives the debug binary of the
 checkout it lives in, worktrees included.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture
@@ -74,43 +74,24 @@ class Session:
     `automation_settings.py`'s, with the binary resolved from this checkout and
     an environment the caller supplies (the pinned-locale sandbox)."""
 
-    def __init__(self, args, env=None):
+    def __init__(self, args, env=None, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
-        self.sock, self.tok = sock, tok
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=90)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "parent-pages", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.3)
+        self.mcp = subprocess.Popen(fixture.mcp_argv(self.bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "parent-pages", "version": "1"}})
+        init = self._recv(timeout=20, fatal=False)
         if init is None:
-            fail("could not connect MCP (socket never reachable)", self.app, self.mcp, self.log)
+            fail("could not connect MCP", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
     def _send(self, method, params=None, notif=False):
@@ -199,13 +180,16 @@ class Session:
 # ── Launch: pinned locale, sandboxed config, a scratch copy of the example ────
 fixture.assert_no_running_instance(SKRIBISTO)
 env = fixture.isolated_config(locale="en-US", label="parent-pages", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="parent-pages")
 project = fixture.working_copy(EXAMPLE, label="parent-pages")
 
 print("== launch with the example loaded ==")
-# `--new-instance`: the sandboxed config already gives this run its own primary
-# socket, and asking for it outright removes any chance of being handed off to a
-# copy of the app running from another checkout.
-s = Session(["--new-instance", project], env=env)
+# `launch_argv` always adds `--new-instance`: the sandboxed config already gives
+# this run its own primary socket, and asking for it outright removes any chance
+# of being handed off to a copy of the app running from another checkout.
+s = Session([project], env=env, pins=pins)
 # `load_work` is slow in a debug build — the bundled example takes ~20 s to reach
 # its first window, so anything under 45 s is a coin flip on a cold cache.
 if not s.wait_label("starforgers", timeout=60):

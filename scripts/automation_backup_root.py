@@ -29,7 +29,7 @@ platforms through `open` / `explorer`.
 Run it after `cargo build -p teksilo_ui` — it drives the debug binary of the
 checkout it lives in, worktrees included.
 """
-import json, os, re, select, shutil, subprocess, sys, tempfile, time
+import json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture
@@ -63,32 +63,20 @@ def check(ok, what):
 class Session:
     """The launch/connect scaffolding the sibling automation_*.py scripts share."""
 
-    def __init__(self, args, env=None):
+    def __init__(self, argv, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(argv, stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 30
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 30s", self.app, None, self.log)
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=45)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(self.bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -194,7 +182,10 @@ EXPECTED_ROOT = os.path.join(SANDBOX, "data", "skribisto", "backups")
 print(f"expected backup root: {EXPECTED_ROOT}")
 
 print("== launch with the bundled example ==")
-s = Session(["--new-instance", EXAMPLE], env=env)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="backup-root")
+s = Session(fixture.launch_argv(EXAMPLE, pins=pins), env=env)
 
 # ── 1. The folder is there before a single backup has been taken ─────────────
 print("=== the app's backup folder exists at launch ===")

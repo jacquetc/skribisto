@@ -12,10 +12,10 @@ Flow, against a scratch copy of an example so nothing in the repo is touched:
   4. **Ctrl+Shift+P** opens the command palette and typing narrows it;
   5. the **Keyboard shortcuts** sheet lists real chords.
 
-Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
-automation_*.py scripts.
+Reuses the launch + bridge-wait + connect scaffolding from `automation_fixture`,
+shared with the sibling automation_*.py scripts.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -39,33 +39,21 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args, env=None):
+    def __init__(self, project=None, pins=None, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         self.app = subprocess.Popen(
-            [SKRIBISTO, *args],
+            fixture.launch_argv(project, pins=pins),
             stdout=open(self.log, "w"),
             stderr=subprocess.STDOUT,
             env={**os.environ, **(env or {})},
         )
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        while not os.path.exists(sock) and time.time() < deadline:
-            time.sleep(0.05)
         self.mcp = subprocess.Popen(
-            [MCP, "--connect", sock, "--token", tok],
+            fixture.mcp_argv(bridge, MCP),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=open(mcp_err, "w"), text=True, bufsize=1,
         )
@@ -168,7 +156,11 @@ def main():
     # English, so the assertions below read against known strings rather than
     # whichever locale the developer's desktop happens to be in.
     env = fixture.isolated_config(locale="en-US", label="help")
-    s = Session(["--new-instance"], env=env)
+    pins = fixture.config_pins_file(
+        {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+        label="help")
+    # No project: this probe drives the Launcher itself, not an opened work.
+    s = Session(pins=pins, env=env)
     try:
         if not s.wait_text("recent works", timeout=30):
             fail("launcher never appeared", s.app, s.mcp, s.log)

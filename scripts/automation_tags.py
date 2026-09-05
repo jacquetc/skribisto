@@ -49,7 +49,6 @@ Run:  python3 scripts/automation_tags.py
 import base64
 import json
 import os
-import re
 import select
 import subprocess
 import sys
@@ -60,7 +59,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
 ROOT = fixture.repo_root()
-SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 # A throwaway copy, never the checked-in fixture — this probe saves.
 from automation_fixture import working_copy
@@ -68,6 +66,17 @@ from automation_fixture import working_copy
 LEGACY = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "tags")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
+
+# A private config dir. The legacy fixture's own strings ("Chapter 1", the tag
+# names) are DATA and never translated, but the settings-pane chrome this probe
+# reads (SEC_WORK, PAGE_TAGS, ...) is — hence the (english, french) tuples
+# throughout. English is pinned here only to keep the printed diagnostics
+# readable; the matchers below would pass under French too. Mirrored into a
+# `--config` pins file so the app validates the keys.
+PROBE_ENV = fixture.isolated_config(locale="en-US", label="tags", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="tags")
 
 # The app follows the *system* locale, so a probe written against English labels
 # fails on a French desktop with "no such row" — which reads exactly like a broken
@@ -97,41 +106,24 @@ class Session:
 
     def __init__(self, args):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
-        self.sock, self.tok = sock, tok
-        self._id = 0
         self.mcp = None
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "tags-test", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.3)
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=PINS),
+                                    stdout=open(self.log, "w"),
+                                    stderr=subprocess.STDOUT, env=PROBE_ENV)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=40)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
+        self.bridge = bridge
+        self._id = 0
+        self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "tags-test", "version": "1"}})
+        init = self._recv(timeout=8, fatal=False)
         if init is None:
-            fail("could not connect MCP (socket never reachable)", self.app, self.mcp, self.log)
+            fail("MCP did not initialize", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
     def _send(self, method, params=None, notif=False):

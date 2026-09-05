@@ -35,7 +35,7 @@ So both checks below name an item by a real title. "Prologue" leaves the binder
 tree and arrives in the Trash panel under its own name, which is a statement that
 can only be true if the reload actually happened."""
 
-import base64, json, os, pathlib, re, select, subprocess, sys, tempfile, time
+import base64, json, os, pathlib, select, subprocess, sys, tempfile, time
 
 _ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT / "scripts"))
@@ -59,33 +59,21 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args, env=None):
+    def __init__(self, argv, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(argv, stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT,
                                     env={**os.environ, **(env or {})})
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self.app, None, self.log)
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=45)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(self.bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -198,7 +186,10 @@ fixture.assert_no_running_instance(SKRIBISTO)
 
 print("== launch with the bundled example ==")
 env = fixture.isolated_config(locale="en-US", label="tree-refresh")
-s = Session(["--new-instance", EXAMPLE], env=env)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="tree-refresh")
+s = Session(fixture.launch_argv(EXAMPLE, pins=pins), env=env)
 if not s.wait_label("starforgers", timeout=90):
     print("labels on screen:", s.tree_items()[:10], "|", s.joined()[:300])
     fail("example did not load", s.app, s.mcp, s.log)

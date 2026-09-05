@@ -40,7 +40,7 @@ That loop is not untested, it is tested where it can be:
 A probe that faked its own staging would be worse than none — see the same note in
 `automation_note_templates.py` for the precedent."""
 
-import base64, json, os, pathlib, re, select, subprocess, sys, tempfile, time
+import base64, json, os, pathlib, select, subprocess, sys, tempfile, time
 
 _ROOT = pathlib.Path(__file__).resolve().parent.parent  # this repo/worktree root
 sys.path.insert(0, str(_ROOT / "scripts"))
@@ -64,33 +64,22 @@ def fail(msg, app=None, mcp=None, log=None):
 
 
 class Session:
-    def __init__(self, args, env=None):
+    def __init__(self, project=None, pins=None, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT,
                                     env={**os.environ, **(env or {})})
-        sock = tok = None
-        deadline = time.time() + 25
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 25s", self.app, None, self.log)
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -270,7 +259,11 @@ fixture.assert_no_running_instance(SKRIBISTO)
 # 1. The in-project door: Work > Import from > Documents...
 # ==========================================================================
 print("\n== launch with the bundled example ==")
-s = Session(["--new-instance", EXAMPLE])
+env = fixture.isolated_config(locale="en-US", label="import-md")
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="import-md")
+s = Session(EXAMPLE, pins=pins, env=env)
 if not s.wait_label("starforgers", timeout=40):
     fail("example did not load", s.app, s.mcp, s.log)
 print("example loaded.")
@@ -343,7 +336,11 @@ time.sleep(1.5)
 # ==========================================================================
 print("\n== the Launcher's cold-start door ==")
 env = fixture.isolated_config(locale="en-US", label="import-md-launcher")
-s = Session(["--new-instance"], env=env)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="import-md-launcher")
+# No project: this probe drives the Launcher itself, not an opened work.
+s = Session(pins=pins, env=env)
 launcher = s.wait_label("recent works", timeout=30) or s.wait_label("new work", timeout=10)
 check(launcher, "the Launcher opens with no project")
 if launcher:
@@ -360,7 +357,10 @@ time.sleep(1.5)
 # ==========================================================================
 print("\n== fr-FR ==")
 env = fixture.isolated_config(locale="fr-FR", label="import-md-fr")
-s = Session(["--new-instance", EXAMPLE], env=env)
+pins = fixture.config_pins_file(
+    {"ui.locale": "fr-FR", "ui.dark": False, "ui.show_welcome": True},
+    label="import-md-fr")
+s = Session(EXAMPLE, pins=pins, env=env)
 if not s.wait_label("starforgers", timeout=40):
     fail("example did not load under fr-FR", s.app, s.mcp, s.log)
 

@@ -23,7 +23,7 @@ Asserts, against the running app:
 
 Run: python3 scripts/automation_writing_games.py [project.skrib]
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import working_copy  # noqa: E402
@@ -44,6 +44,17 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
 app = mcp = None
 
+# Every label this probe matches ("Writing games", "Always forward", "deleting
+# is disabled", …) is English, so the language has to be SET rather than
+# inherited from the operator's OS (`startup.rs`'s `auto_detect_os_locale`); a
+# private `XDG_CONFIG_HOME` also keeps this run off the operator's real
+# settings/recents. A project is always passed, so the Welcome window never
+# shows either way.
+ENV = fixture.isolated_config(locale="en-US", label="writing-games", show_welcome=False)
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="writing-games")
+
 
 def fail(msg):
     print("FAIL:", msg)
@@ -58,21 +69,12 @@ def fail(msg):
     sys.exit(1)
 
 
-app = subprocess.Popen([SKRIBISTO, PROJECT], stdout=open(log, "w"), stderr=subprocess.STDOUT)
-sock = tok = None
-deadline = time.time() + 30
-while time.time() < deadline:
-    txt = open(log).read()
-    s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s_ and t_:
-        sock, tok = s_.group(1), t_.group(1)
-        break
-    if app.poll() is not None:
-        fail("app exited before printing the bridge socket")
-    time.sleep(0.2)
-if not sock:
-    fail("no bridge socket within 30s")
+app = subprocess.Popen(fixture.launch_argv(PROJECT, pins=PINS), stdout=open(log, "w"),
+                       stderr=subprocess.STDOUT, env=ENV)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=60)
+except RuntimeError as e:
+    fail(str(e))
 
 _id = [0]
 
@@ -118,33 +120,26 @@ def call(name, args=None):
     return result, payload
 
 
-deadline = time.time() + 30
-init = None
-while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen(
-        [MCP, "--connect", sock, "--token", tok],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=open(mcp_err, "w"),
-        text=True,
-        bufsize=1,
-    )
-    send(
-        "initialize",
-        {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "writing-games-probe", "version": "1"},
-        },
-    )
-    init = recv(timeout=4, fatal=False)
-    if init is None and mcp.poll() is None:
-        mcp.terminate()
-        time.sleep(0.3)
-if init is None:
-    fail("could not connect MCP")
+# `wait_for_bridge` only returns once the bridge has bound its endpoint and
+# spawned its accept thread, so there is nothing left to retry here.
+mcp = subprocess.Popen(
+    fixture.mcp_argv(bridge, MCP),
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=open(mcp_err, "w"),
+    text=True,
+    bufsize=1,
+)
+send(
+    "initialize",
+    {
+        "protocolVersion": "2024-11-05",
+        "capabilities": {},
+        "clientInfo": {"name": "writing-games-probe", "version": "1"},
+    },
+)
+if recv(timeout=20, fatal=False) is None:
+    fail("could not connect MCP (no initialize response)")
 send("notifications/initialized", notif=True)
 print("connected")
 

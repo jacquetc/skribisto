@@ -35,10 +35,10 @@ Note: the ordinary "Create Work" is not clicked; creating from the Launcher open
 a *second* (project) window and closes the Launcher, and that transition is
 covered end-to-end by `automation_welcome.py`.
 
-Reuses the launch + scrape-socket/token + connect scaffolding from
-automation_welcome.py.
+Reuses the launch + bridge-wait + connect scaffolding from automation_welcome.py
+(`fixture.wait_for_bridge` / `fixture.mcp_argv`, not a hand-rolled log scrape).
 """
-import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture
@@ -70,34 +70,24 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args, env=None):
+    def __init__(self, args, pins=None, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
-        self.sock, self.tok = sock, tok
+        try:
+            bridge = fixture.wait_for_bridge(self.log, self.app, timeout=20)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
         self.mcp = None
-        # The bridge announces the socket before binding; retry connect+init.
+        # `wait_for_bridge` already proved the endpoint is bound; still retry the
+        # handshake once, since the server-side accept can lag its own bind by a
+        # beat and the first connect attempt lands a hair too early.
         deadline = time.time() + 20
         init = None
         while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+            self.mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=open(mcp_err, "w"), text=True, bufsize=1)
             self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -211,7 +201,14 @@ class Session:
 
 # ── Launch, wait for the Launcher window ──────────────────────────────────────
 print("== New Work modal via the automation MCP ==")
-s = Session([])
+# A fresh sandbox has no recent work to fall back on, so the Launcher shows
+# either way — `show_welcome=True` is pinned anyway, since that IS what this
+# phase is testing the door into.
+env = fixture.isolated_config(locale="en-US", label="new-work", show_welcome=True)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="new-work")
+s = Session([], pins=pins, env=env)
 tools = s.tools()
 print(f"tools: {len(tools)} ->", ", ".join(sorted(tools)))
 for n in ("inject_key", "type_text", "focus_node", "set_value", "invoke_action"):
@@ -540,8 +537,11 @@ time.sleep(1.0)
 # wizard opened over it, files chosen there, once.
 print("\n== From documents… ==")
 env = fixture.isolated_config(locale="en-US", label="new-work-docs")
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="new-work-docs")
 target = tempfile.mkdtemp(prefix="new-work-docs-")
-s = Session([], env=env)
+s = Session([], pins=pins, env=env)
 s.tools()
 if not s.wait_label("welcome sections"):
     fail("the Launcher window did not appear", s.app, s.mcp, s.log)

@@ -193,8 +193,7 @@ def die(msg, *procs):
     sys.exit(1)
 
 
-subprocess.run(["pkill", "-x", "skribisto"], check=False)
-time.sleep(0.4)
+fixture.assert_no_running_instance(SKRIBISTO)
 
 # A sandboxed config, so a desk arrangement left by an earlier run cannot decide
 # whether this one's docks open. Never `XDG_RUNTIME_DIR` — that holds the
@@ -211,24 +210,22 @@ env["XDG_DATA_HOME"] = os.path.join(sandbox, "data")
 # out made the probe pass on an English desktop and fail on a French one ("the
 # scope bar offers no Text segment" — it was there, as `Texte`).
 fixture.write_settings(env["XDG_CONFIG_HOME"])
+# The same pins again, through `--config`: the sandbox above writes
+# `general.toml` directly, and nothing validates its keys, so a typo'd one
+# would silently run on defaults. `--config` checks every key against the
+# settings schema before the app starts.
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="recreate-row")
 
-app = subprocess.Popen([SKRIBISTO, project], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
+                       stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
 
-sock = tok = None
-end = time.time() + 40
-while time.time() < end:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        die("app exited early", app)
-    time.sleep(0.2)
-if not sock:
-    die("no bridge socket", app)
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=40)
+except RuntimeError as e:
+    die(str(e), app)
 
 _id = [0]
 mcp = None
@@ -276,9 +273,7 @@ def call(name, a=None):
 deadline = time.time() + 40
 init = None
 while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+    mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                            stderr=subprocess.DEVNULL, text=True, bufsize=1)
     send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
@@ -291,7 +286,7 @@ while time.time() < deadline and init is None:
 if init is None:
     die("could not connect MCP", app, mcp)
 send("notifications/initialized", notif=True)
-print(f"bridge up: {sock}")
+print(f"bridge up: {bridge.endpoint}")
 
 
 def settle(extra=0.4):

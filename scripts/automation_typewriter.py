@@ -33,7 +33,7 @@ thing that moves its top edge is the page scrolling under it.
 
 Run: python3 scripts/automation_typewriter.py
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, select, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import working_copy, assert_no_running_instance
@@ -45,12 +45,6 @@ MCP = fixture.mcp_binary()
 EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
-_sandbox = tempfile.mkdtemp(prefix="skribisto_typewriter_")
-SANDBOX_ENV = {
-    "XDG_CONFIG_HOME": os.path.join(_sandbox, "config"),
-    "XDG_DATA_HOME": os.path.join(_sandbox, "data"),
-    "HOME": _sandbox,
-}
 
 FAILURES = []
 
@@ -83,28 +77,21 @@ def check(ok, msg):
 # ---------------------------------------------------------------- launch ----
 assert_no_running_instance(SKRIBISTO)
 project = working_copy(EXAMPLE, "typewriter")
+env = fixture.isolated_config(locale="en-US", label="typewriter", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False,
+     "editor.typewriter_scroll": True},
+    label="typewriter")
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-env = dict(os.environ, **SANDBOX_ENV)
-for d in SANDBOX_ENV.values():
-    os.makedirs(d, exist_ok=True)
-app = subprocess.Popen([SKRIBISTO, project], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
+                       stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
 
-sock = tok = None
-deadline = time.time() + 40
-while time.time() < deadline:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        fail("app exited before printing the bridge socket", app, None, log)
-    time.sleep(0.2)
-if not sock:
-    fail("no bridge socket within 40s", app, None, log)
-print(f"bridge up: socket={sock}")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=90)
+except RuntimeError as e:
+    fail(str(e), app, None, log)
+print(f"bridge up: endpoint={bridge.endpoint} pid={bridge.pid}")
 
 mcp = None
 _id = [0]
@@ -151,20 +138,12 @@ def call(name, args=None):
     return result, payload
 
 
-deadline = time.time() + 30
-init = None
-while time.time() < deadline and init is None:
-    while not os.path.exists(sock) and time.time() < deadline:
-        time.sleep(0.05)
-    mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                           stderr=open(mcp_err, "w"), text=True, bufsize=1)
-    send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                        "clientInfo": {"name": "skribisto-typewriter", "version": "1"}})
-    init = recv(timeout=5, fatal=False)
-    if init is None and mcp.poll() is None:
-        mcp.terminate()
-        time.sleep(0.3)
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
+                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                       stderr=open(mcp_err, "w"), text=True, bufsize=1)
+send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                    "clientInfo": {"name": "skribisto-typewriter", "version": "1"}})
+init = recv(timeout=20, fatal=False)
 if init is None:
     fail("could not connect MCP", app, mcp, log)
 send("notifications/initialized", notif=True)

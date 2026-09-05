@@ -19,10 +19,12 @@ launcher→project transition done in the wrong order quits the app).
 Phase 2 (a project path): the Launcher must NOT appear at all (argv always
 skips it), and the work must load directly into the (only) window.
 
-Reuses the launch + scrape-socket/token + connect + announce-before-bind-race
-scaffolding from automation_test.py / automation_explore.py.
+Reuses the launch/bridge-wait/MCP-attach scaffolding from `automation_fixture`
+(`launch_argv`, `wait_for_bridge`, `mcp_argv`) — the same plumbing
+automation_test.py uses, minus the announce-before-bind race, which the
+fixture already asserts.
 """
-import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
+import base64, json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -50,6 +52,12 @@ SANDBOX_ENV = {
 # operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
 # passed on an English desktop and failed on a French one.
 fixture.write_settings(SANDBOX_ENV["XDG_CONFIG_HOME"])
+# The same pins, again, through `--config` — the sandbox above sets them but
+# validates nothing, so a typo would just run on defaults; `--config` makes the
+# app check every key against its schema.
+PINS = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
+    label="welcome")
 
 
 def fail(msg, app=None, mcp=None, log=None):
@@ -73,45 +81,26 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args):
+    def __init__(self, args, pins=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         env = {**os.environ, **SANDBOX_ENV}
-        self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
+        self.app = subprocess.Popen(fixture.launch_argv(list(args), pins=pins),
+                                    stdout=open(self.log, "w"),
                                     stderr=subprocess.STDOUT, env=env)
-        sock = tok = None
-        deadline = time.time() + 20
-        while time.time() < deadline:
-            txt = open(self.log).read()
-            s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-            if s and t:
-                sock, tok = s.group(1), t.group(1)
-                break
-            if self.app.poll() is not None:
-                fail("app exited before printing the bridge socket", self.app, None, self.log)
-            time.sleep(0.2)
-        if not sock:
-            fail("no bridge socket within 20s", self.app, None, self.log)
-        self.sock, self.tok = sock, tok
+        try:
+            self.bridge = fixture.wait_for_bridge(self.log, self.app, timeout=60)
+        except RuntimeError as e:
+            fail(str(e), self.app, None, self.log)
         self._id = 0
-        self.mcp = None
-        # The bridge announces the socket before binding; retry connect+init.
-        deadline = time.time() + 20
-        init = None
-        while time.time() < deadline and init is None:
-            while not os.path.exists(sock) and time.time() < deadline:
-                time.sleep(0.05)
-            self.mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
-                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
-            self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                                      "clientInfo": {"name": "welcome-test", "version": "1"}})
-            init = self._recv(timeout=4, fatal=False)
-            if init is None and self.mcp.poll() is None:
-                self.mcp.terminate()
-                time.sleep(0.3)
-        if init is None:
-            fail("could not connect MCP (socket never reachable)", self.app, self.mcp, self.log)
+        # `wait_for_bridge` only returns once the bridge has bound its endpoint
+        # and spawned its accept thread, so there is nothing left to retry here.
+        self.mcp = subprocess.Popen(fixture.mcp_argv(self.bridge, MCP),
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=open(mcp_err, "w"), text=True, bufsize=1)
+        self._send("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
+                                  "clientInfo": {"name": "welcome-test", "version": "1"}})
+        if self._recv(timeout=20, fatal=False) is None:
+            fail("could not connect MCP (no initialize response)", self.app, self.mcp, self.log)
         self._send("notifications/initialized", notif=True)
 
     def _send(self, method, params=None, notif=False):
@@ -217,7 +206,7 @@ class Session:
 # The Launcher is detected by its nav-rail access label ("Welcome sections") —
 # the header title text is not surfaced as an AccessKit label.
 print("== Phase 1: the Launcher window at a bare startup ==")
-s = Session([])
+s = Session([], PINS)
 if not s.wait_label("welcome sections"):
     fail("the Launcher window did not appear at startup", s.app, s.mcp, s.log)
 labels = s.labels()
@@ -322,7 +311,7 @@ s.close()
 
 # ── Phase 2: a project path → the Launcher never appears, one window only ───
 print("\n== Phase 2: startup gate (project passed) ==")
-s2 = Session([EXAMPLE])
+s2 = Session([EXAMPLE], PINS)
 # Give the launch-load (+ legacy .skrib migration) a moment; assert no Launcher.
 time.sleep(2.5)
 joined2 = " | ".join(s2.labels()).lower()

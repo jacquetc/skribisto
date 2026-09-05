@@ -8,11 +8,12 @@ the project given on the command line actually loaded.
     scripts/automation_test.py                  # the bundled example
     scripts/automation_test.py PROJECT.skrib    # any project, zip or folder
 
-Launches `skribisto <project>` (debug, with the automation bridge), reads the
-bridge socket + token from its stderr, connects `teksilo-automation-mcp
---connect`, performs the MCP handshake, then *polls* the AccessKit tree until the
-loaded work's content appears (the launch-load is driven by a backend event that
-takes a few UI-thread ticks to reflect — a single early snapshot is stale).
+Launches `skribisto --new-instance --config <pins> <project>` (debug, with the
+automation bridge), waits for the bridge announce on its stderr, attaches
+`teksilo-automation-mcp --attach-pid`, performs the MCP handshake, then *polls*
+the AccessKit tree until the loaded work's content appears (the launch-load is
+driven by a backend event that takes a few UI-thread ticks to reflect — a single
+early snapshot is stale).
 Saves a screenshot of the settled state to $SHOT_DIR (default /tmp).
 
 **What "loaded" means here.** The markers are read out of the project's own
@@ -181,43 +182,36 @@ elif not titles:
           "the work title is asserted below")
 
 # ---------------------------------------------------------------------------
-# 1. Launch the app with the project; bridge prints socket+token to stderr.
+# 1. Launch the app with the project; the bridge announces itself on stderr.
 # ---------------------------------------------------------------------------
+# `--new-instance` (from `launch_argv`) is what makes `app.pid` the process that
+# owns the bridge: without it the election can hand this command line to a
+# primary and exit, and the probe would attach to nothing. The pins go through
+# `--config` as well as the sandbox so the app validates every key rather than
+# ignoring a typo'd one.
+fixture.assert_no_running_instance()
 env = fixture.isolated_config(locale="en-US", label="smoke", show_welcome=False)
+pins = fixture.config_pins_file(
+    {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": False},
+    label="smoke")
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
-app = subprocess.Popen([SKRIBISTO, PROJECT], stdout=open(log, "w"),
+app = subprocess.Popen(fixture.launch_argv(PROJECT, pins=pins),
+                       stdout=open(log, "w"),
                        stderr=subprocess.STDOUT, env=env)
-sock = tok = None
-deadline = time.time() + 60
-while time.time() < deadline:
-    txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
-    if s and t:
-        sock, tok = s.group(1), t.group(1)
-        break
-    if app.poll() is not None:
-        fail("app exited before printing the bridge socket", app, None, log)
-    time.sleep(0.2)
-if not sock:
-    fail("no bridge socket within 60s", app, None, log)
-
-# The bridge binds and *then* announces, so the path is connectable the instant
-# it is printed. Asserting that here is what lets everything below connect once
-# instead of retrying: if this ever fires, the announcement has drifted back
-# ahead of the bind (teksilo `automation_bridge::spawn_bridge_thread`) and every
-# client of this bridge is racing again, not just this one.
-if not os.path.exists(sock):
-    fail(f"bridge announced {sock} before binding it — the announce-before-bind "
-         f"race is back; see teksilo automation_bridge::spawn_bridge_thread",
-         app, None, log)
-print(f"bridge up : socket={sock} token={tok[:8]}… (existed when announced)")
+try:
+    bridge = fixture.wait_for_bridge(log, app, timeout=90)
+except RuntimeError as e:
+    fail(str(e), app, None, log)
+print(f"bridge up : endpoint={bridge.endpoint} token={bridge.token[:8]}… "
+      f"pid={bridge.pid} (existed when announced)")
 
 # ---------------------------------------------------------------------------
 # 2. Connect the MCP server to the live app.
 # ---------------------------------------------------------------------------
+# `--attach-pid`, so the token is read from the descriptor the app published
+# rather than passed on a command line every user on the machine can read.
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
-mcp = subprocess.Popen([MCP, "--connect", sock, "--token", tok],
+mcp = subprocess.Popen(fixture.mcp_argv(bridge, MCP),
                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                        stderr=open(mcp_err, "w"), text=True, bufsize=1)
 
