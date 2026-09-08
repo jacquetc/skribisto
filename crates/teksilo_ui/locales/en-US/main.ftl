@@ -750,6 +750,9 @@ open-here = Open here
 binder-all = All Binders
 binder-show-all = Show all binders
 binder-new = New binder…
+# Pre-filled in the "New binder" dialog, so the writer can just press Enter.
+# Stored literally from then on: a binder name is data, not a label.
+binder-default-name = New binder
 binder-item-count = { $count ->
     [one] { $count } item
    *[other] { $count } items
@@ -761,6 +764,7 @@ binder-trash-confirm-text = “{ $name }” and all its items will be moved to t
 
 ## Dialogs
 dialog-rename = Rename
+dialog-new-binder = New binder
 dialog-set-label = Set label
 dialog-new-scene = New scene
 close-work-question = Save changes before closing the work?

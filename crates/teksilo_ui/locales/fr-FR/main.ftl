@@ -739,6 +739,9 @@ open-here = Ouvrir ici
 binder-all = Tous les classeurs
 binder-show-all = Afficher tous les classeurs
 binder-new = Nouveau classeur…
+# Pré-rempli dans la boîte « Nouveau classeur », pour n'avoir qu'à valider.
+# Stocké littéralement ensuite : un nom de classeur est une donnée, pas un libellé.
+binder-default-name = Nouveau classeur
 binder-item-count = { $count ->
     [one] { $count } élément
    *[other] { $count } éléments
@@ -750,6 +753,7 @@ binder-trash-confirm-text = « { $name } » et tous ses éléments seront mis 
 
 ## Boîtes de dialogue
 dialog-rename = Renommer
+dialog-new-binder = Nouveau classeur
 dialog-set-label = Définir le libellé
 dialog-new-scene = Nouvelle scène
 close-work-question = Enregistrer les modifications avant de fermer l’œuvre ?

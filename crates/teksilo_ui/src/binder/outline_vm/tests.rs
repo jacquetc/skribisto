@@ -1505,3 +1505,221 @@ mod apply_books {
         );
     }
 }
+
+// ── "New binder…": the name is asked for BEFORE anything is written ──
+//
+// The regression these pin: `new_binder` used to create the binder outright and
+// then open the *rename* dialog on it, so both of that dialog's buttons left a
+// binder behind. Cancel meant "keep the one I just made, called New Binder",
+// which is not what Cancel says.
+#[cfg(not(feature = "mocks"))]
+mod new_binder {
+    use super::recommend::seed;
+    use super::*;
+
+    use teksilo::core::ModalContent;
+    use teksilo::core::accessibility::widget_id_to_node_id;
+    use teksilo::core::widget_id::WidgetId;
+    use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::i18n::lit;
+    use teksilo::widgets::Button;
+
+    fn binders_of(outline: &OutlineViewModel) -> Vec<u64> {
+        let work_id = outline.ids.work_id.get().expect("the seeded Work");
+        work_commands::get_work_relationship(
+            &outline.app_ctx,
+            &work_id,
+            &WorkRelationshipField::Binders,
+        )
+        .unwrap()
+    }
+
+    fn name_of(outline: &OutlineViewModel, binder: u64) -> String {
+        binder_commands::get_binder(&outline.app_ctx, &binder)
+            .unwrap()
+            .expect("the binder must exist")
+            .name
+    }
+
+    /// Descendants of `root` whose type name contains `needle`. Locale-independent,
+    /// unlike hunting the OK/Cancel buttons by their translated label. Same walk as
+    /// `the_rename_dialog_appears_and_a_submitted_title_actually_renames`.
+    fn collect(tree: &WidgetTree, root: WidgetId, needle: &str, out: &mut Vec<WidgetId>) {
+        if tree
+            .widget_type_name(root)
+            .is_some_and(|t| t.contains(needle))
+        {
+            out.push(root);
+        }
+        for c in tree.children(root) {
+            collect(tree, c, needle, out);
+        }
+    }
+
+    fn click(tree: &mut WidgetTree, target: WidgetId) {
+        tree.dispatch_event(WidgetEvent::AccessAction {
+            action: teksilo::core::accesskit::Action::Click,
+            target: Some(target),
+            target_node: widget_id_to_node_id(target),
+            data: None,
+        });
+    }
+
+    /// Mirror `new_binder_row`'s wiring exactly (`.on_activate_fn(move |ctx|
+    /// outline.new_binder(ctx))`), activate it, and mount the dialog it queues.
+    /// Returns the tree and the dialog body's root.
+    fn present(outline: &OutlineViewModel) -> (WidgetTree, WidgetId) {
+        let vm = outline.clone();
+        let mut tree = WidgetTree::new().with_theme(intui::light());
+        let trigger =
+            tree.add(Button::new(lit!("new binder")).on_activate_fn(move |ctx| vm.new_binder(ctx)));
+        tree.layout(SizeProposal::exact(420.0, 60.0));
+        click(&mut tree, trigger);
+
+        assert!(
+            tree.has_pending_modal_requests(),
+            "the row must ask before it writes: a modal request has to be queued"
+        );
+        let request = tree.drain_pending_modal_requests().pop().unwrap().request;
+        let ModalContent::Deferred(builder) = request.content else {
+            panic!("InputDialog must present as deferred content");
+        };
+        let content_id = builder(&mut tree);
+        tree.layout(SizeProposal::exact(420.0, 180.0));
+        (tree, content_id)
+    }
+
+    /// Footer order is Cancel, then OK (`InputDialogBody::build`).
+    fn footer_buttons(tree: &WidgetTree, content_id: WidgetId) -> (WidgetId, WidgetId) {
+        let mut buttons = Vec::new();
+        collect(tree, content_id, "Button", &mut buttons);
+        assert_eq!(
+            buttons.len(),
+            2,
+            "the InputDialog footer is exactly Cancel then OK"
+        );
+        (buttons[0], buttons[1])
+    }
+
+    /// **The reported bug.** Cancel must leave the project exactly as it was.
+    #[test]
+    fn cancel_creates_nothing() {
+        let (outline, binder) = seed();
+        assert_eq!(binders_of(&outline), vec![binder], "the seed's one binder");
+
+        let (mut tree, content_id) = present(&outline);
+        let (cancel, _ok) = footer_buttons(&tree, content_id);
+        click(&mut tree, cancel);
+
+        assert_eq!(
+            binders_of(&outline),
+            vec![binder],
+            "Cancel must not leave a stray binder behind"
+        );
+        assert_eq!(
+            outline.filters.binder.get(),
+            None,
+            "and the switcher stays where it was"
+        );
+    }
+
+    /// The other half: OK is what creates it, appended to the Work's ordered list,
+    /// named as typed, and shown in the switcher.
+    #[test]
+    fn ok_creates_the_binder_under_the_typed_name() {
+        let (outline, binder) = seed();
+        let (mut tree, content_id) = present(&outline);
+
+        let mut fields = Vec::new();
+        collect(&tree, content_id, "TextInputField", &mut fields);
+        let field = *fields
+            .first()
+            .expect("the InputDialog must mount its text field");
+        tree.dispatch_event(WidgetEvent::AccessAction {
+            action: teksilo::core::accesskit::Action::SetValue,
+            target: Some(field),
+            target_node: widget_id_to_node_id(field),
+            data: Some(teksilo::core::accesskit::ActionData::Value(
+                "Research".into(),
+            )),
+        });
+        // The field debounces onto its outer `Signal<String>` on a frame tick, so OK
+        // cannot see the edit until one happens.
+        tree.request_frame();
+        tree.tick_animations(std::time::Duration::from_millis(16));
+        tree.layout(SizeProposal::exact(420.0, 180.0));
+
+        let (_cancel, ok) = footer_buttons(&tree, content_id);
+        click(&mut tree, ok);
+
+        let created = *binders_of(&outline)
+            .last()
+            .expect("the Work must have binders");
+        assert_eq!(
+            binders_of(&outline),
+            vec![binder, created],
+            "appended after the existing binder, not inserted before it"
+        );
+        assert_eq!(name_of(&outline, created), "Research", "named as typed");
+        assert_eq!(
+            outline.filters.binder.get(),
+            Some(created),
+            "the switcher moves to the new binder"
+        );
+    }
+
+    /// The dialog is pre-filled, so a writer who wants the default just presses
+    /// Enter. The default is translated too, unlike the hardcoded "New Binder"
+    /// this replaces.
+    #[test]
+    fn the_dialog_is_prefilled_with_a_usable_default() {
+        let (outline, _binder) = seed();
+        let (mut tree, content_id) = present(&outline);
+
+        let mut fields = Vec::new();
+        collect(&tree, content_id, "TextInputField", &mut fields);
+        let field = *fields.first().expect("the dialog mounts its text field");
+        let update = tree.sync_accessibility();
+        let field_node = widget_id_to_node_id(field);
+        let value = update
+            .nodes
+            .iter()
+            .find(|(id, _)| *id == field_node)
+            .and_then(|(_, n)| n.value())
+            .map(|v| v.to_string());
+        assert_eq!(
+            value.as_deref(),
+            Some(&*String::from(tr!(binder_default_name()))),
+            "pre-filled with the translated default name"
+        );
+    }
+
+    /// A blank name is refused, the same guard `begin_rename` applies to a binder.
+    /// The dialog's validator greys OK out; this is the backstop under it.
+    #[test]
+    fn a_blank_name_creates_nothing() {
+        let (outline, binder) = seed();
+        assert_eq!(outline.create_binder("   "), None);
+        assert_eq!(binders_of(&outline), vec![binder]);
+        assert_eq!(
+            outline.filters.binder.get(),
+            None,
+            "and the switcher is left where it was"
+        );
+    }
+
+    /// A name is trimmed on the way in, so no binder is named " Research ".
+    #[test]
+    fn the_name_is_trimmed() {
+        let (outline, _binder) = seed();
+        let created = outline.create_binder("  Research  ").expect("created");
+        assert_eq!(name_of(&outline, created), "Research");
+    }
+
+    /// With no project open there is nothing to append to, so the row is inert.
+    #[test]
+    fn with_no_work_open_nothing_is_created() {
+        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()), AppIds::default());
+        assert_eq!(outline.create_binder("Research"), None);
+    }
+}

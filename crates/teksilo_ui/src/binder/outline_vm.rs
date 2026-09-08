@@ -856,30 +856,61 @@ impl OutlineViewModel {
         self.reload();
     }
 
-    /// Create a new binder in the open Work, switch the switcher to it, and open
-    /// the rename dialog so the user names it. Backs the popover's "New binder…".
+    /// Ask for a name, then create the binder. Backs the popover's "New binder…".
+    ///
+    /// The dialog runs **before** the write. This used to create the binder
+    /// outright and then open the *rename* dialog on it, so both of that
+    /// dialog's buttons left a new binder behind: Cancel meant "keep the one I
+    /// just made, called New Binder", which is not what Cancel says.
     pub fn new_binder(&self, ctx: &mut EventContext) {
-        let Some(work_id) = self.ids.work_id.get() else {
+        if self.ids.work_id.get().is_none() {
             return; // no project open
-        };
+        }
+        let vm = self.clone();
+        InputDialog::new(tr!(dialog_new_binder()))
+            .default_text(tr!(binder_default_name()))
+            .validate(|name| {
+                // Nothing to say: the writer has cleared the field, they have not
+                // made a mistake. The greyed OK carries it, as it does for a
+                // template name.
+                if name.trim().is_empty() {
+                    return Err(None);
+                }
+                Ok(())
+            })
+            .on_result(move |result, _ctx| {
+                // `None` is Cancel: nothing has been written yet, so there is
+                // nothing to undo either.
+                if let Some(name) = result {
+                    vm.create_binder(&name);
+                }
+            })
+            .present(ctx);
+    }
+
+    /// Create a binder named `name` at the end of the open Work's ordered binder
+    /// list, and switch the switcher to it. Returns its id, or `None` when
+    /// nothing was created.
+    ///
+    /// A blank name is refused, the same guard `begin_rename` applies to a binder:
+    /// an unnamed binder is unpickable in the switcher.
+    pub fn create_binder(&self, name: &str) -> Option<u64> {
+        let work_id = self.ids.work_id.get()?;
+        let name = name.trim();
+        if name.is_empty() {
+            return None;
+        }
         let dto = CreateBinderDto {
-            name: "New Binder".to_string(),
+            name: name.to_string(),
             activated: true,
             ..Default::default()
         };
         // `-1` appends to the Work's ordered binder list; undoable on the stack.
-        if let Ok(binder) =
-            binder_commands::create_binder(&self.app_ctx, self.stack(), &dto, work_id, -1)
-        {
-            // Show the new binder (this re-sources the tree so its row exists),
-            // then rename it in place — `begin_rename` reads the row's name.
-            self.set_binder_filter(Some(binder.id));
-            // The filter change re-sourced the tree, so the new binder now has a row —
-            // and therefore a key.
-            if let Some(key) = self.model.key_for_binder(binder.id) {
-                self.begin_rename(key, ctx);
-            }
-        }
+        let binder =
+            binder_commands::create_binder(&self.app_ctx, self.stack(), &dto, work_id, -1).ok()?;
+        // Show the new binder. The filter change re-sources the tree, so its row exists.
+        self.set_binder_filter(Some(binder.id));
+        Some(binder.id)
     }
 
     /// Trash a whole binder by id — the switcher context-menu action, reached via

@@ -184,7 +184,7 @@ fn binder_row(outline: &OutlineViewModel, b: &BinderRow, current: bool) -> impl 
         })
 }
 
-/// The "New binder…" popover entry — create + rename dialog.
+/// The "New binder…" popover entry: a name dialog, then the create.
 fn new_binder_row(outline: &OutlineViewModel) -> impl Widget {
     let outline = outline.clone();
     MenuItem::new(tr!(binder_new()))
