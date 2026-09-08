@@ -222,6 +222,41 @@ fn word_positions_keeps_apostrophes() {
     assert_eq!(curly, ["l\u{2019}auteur"]);
 }
 
+/// French typography's thin space is a separator, not part of the word beside it.
+///
+/// UAX#29 gives `U+202F` `Word_Break = ExtendNumLet`, so the segmenter glues it to its
+/// neighbour and used to hand the checker `\u{202F}Que` for `« Que` and `pire\u{202F}` for
+/// `pire »` — no dictionary knows either, so every quoted word in a French manuscript was
+/// squiggled.
+#[test]
+fn word_positions_split_on_the_narrow_no_break_space() {
+    // « Que — the guillemet is char 0, the thin space char 1, so "Que" starts at char 2.
+    assert_eq!(word_positions("\u{ab}\u{202f}Que"), [(2, 3, "Que")]);
+    // pire » — the thin space must not extend the word.
+    assert_eq!(word_positions("pire\u{202f}\u{bb}"), [(0, 4, "pire")]);
+    // The same character sits before « ? », « ! » and « ; ».
+    assert_eq!(word_positions("Quoi\u{202f}?"), [(0, 4, "Quoi")]);
+    // Offsets stay right further into a line.
+    assert_eq!(
+        word_positions("il dit \u{ab}\u{202f}Que pire\u{202f}\u{bb}"),
+        [(0, 2, "il"), (3, 3, "dit"), (9, 3, "Que"), (13, 4, "pire")]
+    );
+}
+
+/// A no-break space between digits splits too, and neither piece is checkable.
+///
+/// Splitting `1\u{202F}000` is what UAX#29's `ExtendNumLet` rule exists to prevent, so it is
+/// worth pinning that nothing is lost by it here: a piece with no letter in it is never a
+/// misspelling, whether it arrives whole or in halves.
+#[test]
+fn word_positions_split_grouped_digits_harmlessly() {
+    assert_eq!(word_positions("1\u{202f}000"), [(0, 1, "1"), (2, 3, "000")]);
+    let hl = SpellChecker::from_word_lists(&["mot"], &[]);
+    for (_, _, w) in word_positions("1\u{202f}000") {
+        assert!(!hl.misspelled(w), "{w:?} must not be flagged");
+    }
+}
+
 /// A tiny real dictionary flags the misspelling and leaves the good word and the number.
 #[test]
 fn highlighter_flags_only_the_misspelling() {

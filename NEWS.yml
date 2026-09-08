@@ -4,6 +4,7 @@ Type: stable
 Description:
 - "The folder Skribisto keeps its backups in is created when the app starts, so the location shown in Settings is really there before the first backup is taken"
 - "Show folder, in Settings under Backup defaults, opens that folder itself instead of the one above it"
+- "French typography no longer confuses the spell checker: the thin space inside « » and before ?, ! and ; is not taken to be part of the word next to it"
 ---
 Version: 3.0.1
 Date: 2026-09-03

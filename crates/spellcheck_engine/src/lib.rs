@@ -77,6 +77,16 @@ pub fn validate_dictionary_files(aff_path: &Path, dic_path: &Path) -> Result<(),
 ///
 /// `pub(crate)` so the editor's "Add to dictionary" menu resolves selection/caret words with the
 /// **same** tokenizer the squiggles use — what is addable and what is flagged can never disagree.
+///
+/// ## No-break spaces separate words here, whatever UAX#29 says
+///
+/// The narrow no-break space (`U+202F`) carries `Word_Break = ExtendNumLet`, so the standard
+/// deliberately glues it to whatever sits beside it — that is how `1 000` stays one token. French
+/// typography puts exactly that character inside guillemets and before `?`, `!` and `;`, so the
+/// segmenter hands back one token for `« Que` and one for `pire »`, thin space included. No
+/// dictionary knows either, which squiggled every quoted or questioned word in a French
+/// manuscript. Each segment is therefore split again on whitespace, restoring the bare word and
+/// its true offset while leaving `1 000` harmless — a piece with no letter in it is never checked.
 pub fn word_positions(text: &str) -> Vec<(usize, usize, &str)> {
     use unicode_segmentation::UnicodeSegmentation;
     let mut out = Vec::new();
@@ -85,10 +95,30 @@ pub fn word_positions(text: &str) -> Vec<(usize, usize, &str)> {
     let mut char_pos = 0usize;
     for (byte_off, word) in text.unicode_word_indices() {
         char_pos += text[last_byte..byte_off].chars().count();
-        let len = word.chars().count();
-        out.push((char_pos, len, word));
-        char_pos += len;
         last_byte = byte_off + word.len();
+        // One pass over the segment, emitting each whitespace-free run. A segment holding no
+        // whitespace — the overwhelming majority — yields exactly one piece: the segment itself.
+        let mut seen = 0usize; // chars consumed from `word`
+        let mut piece_byte = 0usize; // byte offset of the run being accumulated, within `word`
+        let mut piece_char = 0usize; // char offset of that run, within `word`
+        let mut piece_len = 0usize; // chars accumulated in it
+        for (i, c) in word.char_indices() {
+            if c.is_whitespace() {
+                if piece_len > 0 {
+                    out.push((char_pos + piece_char, piece_len, &word[piece_byte..i]));
+                }
+                piece_byte = i + c.len_utf8();
+                piece_char = seen + 1;
+                piece_len = 0;
+            } else {
+                piece_len += 1;
+            }
+            seen += 1;
+        }
+        if piece_len > 0 {
+            out.push((char_pos + piece_char, piece_len, &word[piece_byte..]));
+        }
+        char_pos += seen;
     }
     out
 }
