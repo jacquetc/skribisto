@@ -1734,6 +1734,16 @@ menu-format-table-row-delete = Supprimer la &ligne
 menu-format-table-col-delete = Supprimer la &colonne
 menu-format-table-remove = Supprimer le &tableau
 
+## Marques de formatage : les caractères invisibles que l'auteur pose à la main.
+## Les mnémoniques sont uniques dans le sous-menu (E, T, c, n, u, J).
+menu-format-typo-marks = Ma&rque de formatage
+menu-format-typo-nbsp = &Espace insécable
+menu-format-typo-nbhyphen = &Tiret insécable
+menu-format-typo-soft-hyphen = Trait d'union &conditionnel
+menu-format-typo-nnbsp = Espace insécable fi&ne
+menu-format-typo-zwsp = Espace de largeur n&ulle
+menu-format-typo-word-joiner = &Joint de mots
+
 ## Fenêtre « À propos »
 
 menu-about = À &propos de Skribisto…
@@ -2549,6 +2559,10 @@ shortcut-name-editor-insert-footnote = Insérer une note de bas de page
 shortcut-name-format-scene-break = Insérer un saut de scène
 shortcut-name-format-major-scene-break = Insérer un saut de scène majeur
 shortcut-name-format-link = Lien…
+shortcut-name-format-mark-nbsp = Insérer une espace insécable
+shortcut-name-format-mark-nbhyphen = Insérer un tiret insécable
+shortcut-name-format-mark-nnbsp = Insérer une espace insécable fine
+shortcut-name-format-mark-zwsp = Insérer une espace de largeur nulle
 shortcut-name-go-next = Suivant
 shortcut-name-go-prev = Précédent
 shortcut-name-go-to = Aller à

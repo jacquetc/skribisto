@@ -143,6 +143,9 @@ complet = "complet"
 objet = "objet"
 Objets = "Objets"
 ponctuation = "ponctuation"
+# French for the space character, in the formatting-marks probe, whose six rows
+# are French labels ("Espace insécable"). Not a misspelling of Escape.
+Espace = "Espace"
 Registre = "Registre"
 # French for "statuses", in the settings-tree search test that asserts a query
 # for one label does NOT match another ("statuts" must not find "Étiquettes").

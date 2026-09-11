@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Commands over the manuscript's typography: inserting a scene break, and
-//! linking.
+//! Commands over the manuscript's typography: inserting a scene break, linking,
+//! and placing one of the invisible marks in [`crate::format::marks`].
 //!
 //! A scene break is an **explicit authorial mark** — the binder is
 //! organisational, so item adjacency never implies one. These commands place the
@@ -78,5 +78,27 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             Action::new("format.link")
                 .on_invoke(move |_i, c| crate::format::link_panel::present(&format, c)),
         );
+    }
+
+    // The invisible typographic marks. One shortcut and one action per mark that
+    // carries a chord, both built from the same table the Format menu's submenu
+    // reads, so the key and the row can never write different characters.
+    //
+    // `refocus` after the edit for the same reason the menu rows do it: this is
+    // also the path a chord pressed while a *menu* is open takes.
+    for mk in crate::format::marks::all() {
+        let Some(sc) = mk.shortcut else { continue };
+        let mut shortcut = Shortcut::new(sc.id).name(sc.name).primary(sc.primary);
+        if let Some(shifted) = sc.secondary {
+            shortcut = shortcut.secondary(shifted);
+        }
+        ctx.register_shortcut_global(shortcut.build());
+        let format = deps.format.clone();
+        let text = mk.text;
+        ctx.register_action_global(Action::new(sc.id).on_invoke(move |_i, c| {
+            format.insert_mark(text);
+            c.request_frame();
+            format.refocus(c);
+        }));
     }
 }

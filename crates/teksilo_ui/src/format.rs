@@ -19,6 +19,7 @@ mod format_vm;
 
 pub mod dock;
 pub mod link_panel;
+pub mod marks;
 
 pub use format_vm::{
     ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,

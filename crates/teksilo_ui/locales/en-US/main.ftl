@@ -1713,6 +1713,16 @@ menu-format-table-row-delete = &Delete Row
 menu-format-table-col-delete = Delete &Column
 menu-format-table-remove = &Remove Table
 
+## Formatting marks: the invisible characters a writer places by hand.
+## Mnemonics are unique within the submenu (N, H, S, r, Z, W).
+menu-format-typo-marks = &Formatting Mark
+menu-format-typo-nbsp = &No-break Space
+menu-format-typo-nbhyphen = No-break &Hyphen
+menu-format-typo-soft-hyphen = &Soft Hyphen
+menu-format-typo-nnbsp = Na&rrow No-break Space
+menu-format-typo-zwsp = &Zero-width Space
+menu-format-typo-word-joiner = &Word Joiner
+
 ## About panel
 
 menu-about = &About Skribisto…
@@ -2583,6 +2593,10 @@ shortcut-name-editor-insert-footnote = Insert Footnote
 shortcut-name-format-scene-break = Insert Scene Break
 shortcut-name-format-major-scene-break = Insert Major Scene Break
 shortcut-name-format-link = Insert Link
+shortcut-name-format-mark-nbsp = Insert No-break Space
+shortcut-name-format-mark-nbhyphen = Insert No-break Hyphen
+shortcut-name-format-mark-nnbsp = Insert Narrow No-break Space
+shortcut-name-format-mark-zwsp = Insert Zero-width Space
 shortcut-name-go-next = Next
 shortcut-name-go-prev = Previous
 shortcut-name-go-to = Go to

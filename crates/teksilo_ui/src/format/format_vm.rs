@@ -1475,6 +1475,19 @@ impl FormatViewModel {
 
     // ── Lists ─────────────────────────────────────────────────────────────
 
+    /// Write one invisible typographic mark at the caret: a no-break space, a
+    /// soft hyphen, a word joiner (see [`crate::format::marks`] for the table
+    /// and for why each one exists).
+    ///
+    /// Goes through `with_editor` like every other command here, so it reaches
+    /// whichever surface this view-model currently targets: the tab's prose, its
+    /// synopsis, or a stream row's own editor. It also means the mark lands in
+    /// the editor's own undo history as one step, which is what a writer who
+    /// inserted the wrong one expects of Ctrl+Z.
+    pub fn insert_mark(&self, text: &str) {
+        self.with_editor(|h| h.insert_text(text));
+    }
+
     pub fn insert_bullet_list(&self) {
         self.with_editor(|h| h.insert_list(false));
     }

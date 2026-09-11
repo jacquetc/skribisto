@@ -319,6 +319,39 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                     ))
             }
         })
+        // The invisible marks, in LibreOffice Writer's order and mostly with its
+        // chords, from the one table `app::commands::format` registers those
+        // chords from: a row and its shortcut cannot come to write different
+        // characters. Rows without one simply render no chord, which is why the
+        // shortcut id is attached only when the mark carries it — `.shortcut()`
+        // with an unregistered id would render a blank accelerator column.
+        .submenu(tr!(menu_format_typo_marks()), {
+            let f = f.clone();
+            let on = on.clone();
+            move |s| {
+                let mut s = s;
+                for mk in crate::format::marks::all() {
+                    let f = f.clone();
+                    let text = mk.text;
+                    let mut row =
+                        MenuEntry::new(mk.label)
+                            .enabled(on.clone())
+                            .on_activate(move |c| {
+                                f.insert_mark(text);
+                                c.request_frame();
+                                // Invoked from the menubar, focus sits on the menu
+                                // overlay: the edit lands but nothing schedules the
+                                // repaint, exactly as `insert_scene_break` documents.
+                                f.refocus(c);
+                            });
+                    if let Some(sc) = mk.shortcut {
+                        row = row.shortcut(sc.id);
+                    }
+                    s = s.item(row);
+                }
+                s
+            }
+        })
         // Undo and Redo used to sit here, acting on the focused editor's own
         // history. They now live in **Edit**, where they act on whichever
         // history the caret is in. Two Undo rows in two menus, meaning

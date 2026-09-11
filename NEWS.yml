@@ -8,6 +8,7 @@ Description:
 - "New binder, in the outline's binder menu, asks for a name before it creates anything, so Cancel no longer leaves an unwanted binder behind"
 - "Your text replacement rules are loaded when a project opens, so they fire from the first keystroke instead of staying dormant until you added a new one"
 - "Search options and history are restored with the project you open, instead of reverting to the application defaults and overwriting what the project had saved"
+- "Format ▸ Formatting mark places the invisible characters typography needs: a no-break space, a narrow no-break space, a no-break hyphen, a soft hyphen, a zero-width space and a word joiner, four of them with a keyboard shortcut"
 ---
 Version: 3.0.1
 Date: 2026-09-03
