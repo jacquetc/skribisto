@@ -1557,8 +1557,10 @@ impl Widget for App {
         // or wipe *this* window's own live search box/preview.
         {
             let s = search.clone();
-            wiring::project_events::on_own_load_or_new(ctx, &session.ids, move |_e| {
-                s.restore_for_project();
+            wiring::project_events::on_own_load_or_new(ctx, &session.ids, move |e| {
+                // The event's own work id, because this handler runs before the seed
+                // below writes `ids.work_id` (see `restore_for_project`).
+                s.restore_for_project(e.ids.first().copied());
             });
             let s = search.clone();
             wiring::project_events::on_own_close(ctx, &session.ids, move |_e| {
@@ -1681,9 +1683,16 @@ impl Widget for App {
         // and the editor's typing session — resolved off `session`, same as
         // `smart_punctuation` above.
         //
-        // Tags and the personal dictionary are wired *after* the LoadWork seed below:
-        // their Load/New handlers re-read Work-scoped relationships, and must not race
-        // the lifecycle seed that writes `ids.work_id` (see WorkTagsListModel::wire).
+        // Wired here, *before* the LoadWork seed below, which is safe only because
+        // `TextReplacementRuleListModel::wire` takes the work id off the event and ends
+        // in a catch-up. It was not always: with a bare refresh, its handler ran before
+        // the seed wrote `ids.work_id`, read `None`, and left the lexicon empty for the
+        // rest of the session — the Settings pane showed no rules and none fired while
+        // typing, until the writer created one and every one of them came back.
+        //
+        // Tags and the personal dictionary answer the same race the other way, by being
+        // wired *after* the seed (see WorkTagsListModel::wire). Either works; nothing
+        // here depends on which, and that is the point.
         session.text_replacements.wire(ctx);
         // Backup scheduler (on `session`) + settings (registered in `main`). The
         // scheduler drives every trigger and holds the singles; the settings VM

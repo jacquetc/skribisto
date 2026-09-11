@@ -71,7 +71,6 @@ pub fn colliding_trigger(
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
-    use std::cell::Cell;
     use std::rc::Rc;
 
     use teksilo::data::ListModel;
@@ -92,7 +91,6 @@ mod imp {
     struct Inner {
         model: ListModel<TextReplacementRuleRow>,
         version: Signal<u64>,
-        subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
         /// The open Work's own ids — `work_id` scopes every read to *this*
         /// Work's `text_replacement_rules` relationship (see [`load_rows`]); a
@@ -108,21 +106,20 @@ mod imp {
 
     impl TextReplacementRuleListModel {
         pub fn new(ctx: Rc<AppContext>, ids: AppIds) -> Self {
-            let model = ListModel::from_vec(load_rows(&ctx, &ids));
+            let model = ListModel::from_vec(load_rows(&ctx, ids.work_id.get()));
             Self {
                 inner: Rc::new(Inner {
                     model,
                     version: Signal::new(0),
-                    subscribed: Cell::new(false),
                     ctx,
                     ids,
                 }),
             }
         }
 
-        /// Subscribe (once) so the list stays live: any `TextReplacementRule`
+        /// Subscribe so the list stays live: any `TextReplacementRule`
         /// mutation — from this pane, the editor's typing session, or an
-        /// undo/redo — re-reads the set, and a project switch replaces it
+        /// undo/redo — re-reads the set, and a project boundary replaces it
         /// wholesale.
         ///
         /// `TextReplacementRule` entity events carry no `work_id`, only the
@@ -133,10 +130,27 @@ mod imp {
         /// and are guarded accordingly: a sibling Work's project boundary must
         /// not force a reload of a list that is (before or after) legitimately
         /// empty.
+        ///
+        /// **The `LoadWork`/`NewWork` arms fall back to the event's own work id,
+        /// and `wire` ends in a catch-up.** This model is built with
+        /// `WorkSession` and wired from `App::build`, which registers *before*
+        /// `wiring::project_events`' lifecycle seed writes `ids.work_id`. Both
+        /// answer the same `LoadWork`, and this one runs first, so a bare
+        /// `refresh` read `None`, loaded nothing, and was never asked again:
+        /// merely opening a project produces no further `TextReplacementRule`
+        /// event. The lexicon then stayed empty for the whole session, the
+        /// Settings pane showed none of it, and the typing session compiled an
+        /// empty engine, so no rule fired — until the writer created one new
+        /// rule, whose `Created` event brought every one of them back. That is
+        /// how a reader reported it, on 3.0.1, on Linux and macOS alike. Same
+        /// bug, same fix, as [`WorkTagsListModel::wire`](crate::models::WorkTagsListModel)
+        /// and `WorkStatusesListModel::wire`.
+        ///
+        /// **Re-subscribes on every call**, like both of those: a `BuildContext`
+        /// subscription is scoped to the current build and dropped on the next,
+        /// so the one-shot guard this used to carry left the model permanently
+        /// deaf after any rebuild while still reporting itself wired.
         pub fn wire(&self, ctx: &mut BuildContext) {
-            if self.inner.subscribed.replace(true) {
-                return;
-            }
             for ev in [
                 EntityEvent::Created,
                 EntityEvent::Updated,
@@ -151,9 +165,19 @@ mod imp {
             for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
                 let me = self.clone();
                 ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
-                    if me.inner.ids.is_bootstrap_or_own(&event.ids) {
-                        me.refresh()
+                    if !me.inner.ids.is_bootstrap_or_own(&event.ids) {
+                        return;
                     }
+                    // Prefer the already-seeded work id; fall back to the one the
+                    // event carries, which is the only id available while the
+                    // lifecycle seed is still queued behind this handler.
+                    let work_id = me
+                        .inner
+                        .ids
+                        .work_id
+                        .get()
+                        .or_else(|| event.ids.first().copied());
+                    me.refresh_for(work_id);
                 });
             }
             {
@@ -162,11 +186,13 @@ mod imp {
                     Origin::WorkManagement(WorkManagementEvent::CloseWork),
                     move |event: &Event| {
                         if me.inner.ids.is_event_for_my_work(&event.ids) {
-                            me.refresh()
+                            me.refresh_for(None)
                         }
                     },
                 );
             }
+            // Catch up when this window is already seeded (rebuild / late wire).
+            self.refresh_for(self.inner.ids.work_id.get());
         }
 
         /// The reactive model to bind a `ListView` to (through the pane's
@@ -350,24 +376,48 @@ mod imp {
             skipped
         }
 
+        /// Re-read the lexicon for the currently seeded Work (`None` → empty).
         fn refresh(&self) {
-            self.inner
-                .model
-                .reconcile_by_key(load_rows(&self.inner.ctx, &self.inner.ids), |r| r.id);
-            let v = &self.inner.version;
-            v.set(v.get().wrapping_add(1));
+            self.refresh_for(self.inner.ids.work_id.get());
+        }
+
+        /// Re-read for an explicitly named Work, which is what lets a `LoadWork`
+        /// handler load the project whose id `ids.work_id` does not carry yet
+        /// (see [`Self::wire`]).
+        pub(crate) fn refresh_for(&self, work_id: Option<u64>) {
+            let rows = load_rows(&self.inner.ctx, work_id);
+            // **The version bump is conditional, and that is load-bearing.** It
+            // means "the lexicon changed", never "somebody re-read it". `wire`
+            // now ends in a catch-up `refresh_for` that runs inside `build()`,
+            // and the Settings pane binds this version: an unconditional bump
+            // would be a write a widget's own build made, which dirties it,
+            // which rebuilds, which builds, which bumps, at frame rate, forever.
+            // The identical bump cost `WorkStatusesListModel` 205 rebuilds of an
+            // idle window in six seconds before it was made conditional there.
+            //
+            // The typing session keys its engine off this same signal
+            // (`session::refresh_engine` compiles on `(version, enabled)`), so
+            // comparing first also spares it a recompile per unrelated event.
+            let changed = snapshot(&self.inner.model) != rows;
+            self.inner.model.reconcile_by_key(rows, |r| r.id);
+            if changed {
+                let v = &self.inner.version;
+                v.set(v.get().wrapping_add(1));
+            }
         }
     }
 
-    /// Read this window's own open Work's `TextReplacementRule`s (via
-    /// `Work.text_replacement_rules`), into sorted rows — **not**
+    /// Read `work_id`'s `TextReplacementRule`s (via
+    /// `Work.text_replacement_rules`), into sorted rows. The id is passed rather
+    /// than read off `AppIds` so a `LoadWork` handler can name the Work the seed
+    /// has not written yet (see [`TextReplacementRuleListModel::wire`]) — **not**
     /// `get_all_text_replacement_rule`, which returns every rule in the whole
     /// shared store: with a second Work simultaneously open, that would merge
     /// both Works' lexicons into one list, and make one Work's private rules
     /// editable/deletable from the other's Settings pane and applicable to the
     /// other's typing session.
-    fn load_rows(ctx: &AppContext, ids: &AppIds) -> Vec<TextReplacementRuleRow> {
-        let Some(work_id) = ids.work_id.get() else {
+    fn load_rows(ctx: &AppContext, work_id: Option<u64>) -> Vec<TextReplacementRuleRow> {
+        let Some(work_id) = work_id else {
             return Vec::new(); // no project open
         };
         let rule_ids = work_commands::get_work_relationship(
@@ -555,6 +605,147 @@ mod imp {
 }
 
 pub use imp::TextReplacementRuleListModel;
+
+/// What only the real half can get wrong: which Work a refresh reads, and when the
+/// version signal is allowed to move. The mock half fabricates its rows and never
+/// re-reads anything, so both questions are answered for it by construction.
+#[cfg(all(test, not(feature = "mocks")))]
+mod store_tests {
+    use super::*;
+    use crate::app_ids::AppIds;
+    use frontend::AppContext;
+    use frontend::commands::{smart_punctuation_commands, work_commands};
+    use frontend::common::entities::QuoteStyle;
+    use frontend::direct_access::{CreateSmartPunctuationDto, CreateWorkDto};
+    use std::rc::Rc;
+
+    fn now() -> chrono::DateTime<chrono::Utc> {
+        chrono::Utc::now()
+    }
+
+    /// A Work in the store and a model pointed at **nothing** — `AppIds` exactly as it
+    /// stands while `LoadWork` is being dispatched and the lifecycle seed is still queued.
+    fn model_and_unseeded_work() -> (TextReplacementRuleListModel, AppIds, u64) {
+        let ctx = Rc::new(AppContext::new());
+        // A Work owns exactly one SmartPunctuation (one_to_one, strong), so it has to
+        // exist before the Work that points at it.
+        let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
+            &ctx,
+            None,
+            &CreateSmartPunctuationDto {
+                created_at: now(),
+                updated_at: now(),
+                override_app_default: false,
+                dashes: false,
+                ellipsis: false,
+                quotes: false,
+                quote_style: QuoteStyle::LocaleDefault,
+                pre_punctuation_spacing: false,
+                dialogue_marker: false,
+            },
+        )
+        .expect("create smart_punctuation")
+        .id;
+        let work = work_commands::create_orphan_work(
+            &ctx,
+            None,
+            &CreateWorkDto {
+                statuses: Vec::new(),
+                created_at: now(),
+                updated_at: now(),
+                title: "W".into(),
+                smart_punctuation,
+                ..Default::default()
+            },
+        )
+        .expect("create work")
+        .id;
+        let ids = AppIds::new();
+        (
+            TextReplacementRuleListModel::new(ctx, ids.clone()),
+            ids,
+            work,
+        )
+    }
+
+    /// **The reported bug, as a unit test.** `App::build` wires this model before the
+    /// lifecycle seed writes `ids.work_id`, and both answer the same `LoadWork` with this
+    /// one first — so the handler has nothing but the event's own id to go on. It must be
+    /// able to load that Work anyway.
+    ///
+    /// The event itself cannot be driven headlessly (`test_support`'s source never fires),
+    /// so what is pinned here is the capability the handler depends on.
+    #[test]
+    fn a_lexicon_loads_for_a_work_the_ids_have_not_been_seeded_with() {
+        let (model, ids, work) = model_and_unseeded_work();
+        assert_eq!(ids.work_id.get(), None, "the seed has not run yet");
+        model.create("btw", "by the way", true, Some(work), None);
+        model.create("teh", "the", true, Some(work), None);
+
+        model.refresh_for(Some(work));
+
+        let triggers: Vec<String> = model.rows().into_iter().map(|r| r.trigger).collect();
+        assert_eq!(triggers, vec!["btw".to_string(), "teh".to_string()]);
+    }
+
+    /// The other half of the same story: a refresh that reads the unseeded `AppIds` finds
+    /// no project and empties the list. Correct in itself, and exactly what left the
+    /// lexicon empty for a whole session when it was the only thing the handler did.
+    #[test]
+    fn a_refresh_that_reads_the_unseeded_ids_finds_no_project() {
+        let (model, _ids, work) = model_and_unseeded_work();
+        model.create("btw", "by the way", true, Some(work), None);
+        model.refresh_for(Some(work));
+        assert_eq!(model.len(), 1);
+
+        model.refresh_for(None);
+
+        assert!(
+            model.is_empty(),
+            "no open Work means no lexicon, not the previous Work's"
+        );
+    }
+
+    /// **The rebuild loop, as a unit test.** `wire` ends in a catch-up `refresh_for` that
+    /// runs inside `build()`, and the Settings pane binds this version at rebuild level: a
+    /// bump on an unchanged re-read is a write the widget's own build made, which dirties
+    /// it, which rebuilds, which builds, which bumps. Measured on the identical bug in
+    /// `WorkStatusesListModel`: 205 rebuilds of an idle window in six seconds.
+    #[test]
+    fn re_reading_an_unchanged_lexicon_does_not_move_the_version() {
+        let (model, ids, work) = model_and_unseeded_work();
+        ids.work_id.set(Some(work));
+        model.create("btw", "by the way", true, Some(work), None);
+        model.refresh_for(Some(work));
+        let settled = model.version_signal().get();
+
+        for _ in 0..20 {
+            model.refresh_for(Some(work));
+        }
+
+        assert_eq!(
+            model.version_signal().get(),
+            settled,
+            "a re-read that changes nothing must not ask anyone to repaint"
+        );
+        assert_eq!(model.len(), 1, "and it must not lose the row either");
+    }
+
+    /// The bump still happens when the lexicon really moves, or the Settings pane's
+    /// empty-state and the typing session's engine would both keep a stale answer.
+    #[test]
+    fn a_real_change_does_move_the_version() {
+        let (model, ids, work) = model_and_unseeded_work();
+        ids.work_id.set(Some(work));
+        model.refresh_for(Some(work));
+        let before = model.version_signal().get();
+
+        model.create("btw", "by the way", true, Some(work), None);
+        model.refresh_for(Some(work));
+
+        assert_ne!(model.version_signal().get(), before);
+    }
+}
 
 #[cfg(test)]
 mod tests {

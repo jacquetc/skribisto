@@ -565,7 +565,7 @@ pub(in crate::app) fn install_lifecycle(
                 if !remembered.is_empty() {
                     outline.model().set_expanded_keys(&remembered);
                 }
-                search.restore_for_project();
+                search.restore_for_project(Some(work_id));
                 if let Some(window_id) = window_id {
                     let stack_teardown =
                         crate::app::build_stack_teardown(app_ctx.clone(), ids.stack_id.get());

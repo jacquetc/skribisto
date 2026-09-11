@@ -41,7 +41,6 @@ fn sort_rows(rows: &mut [DictWordRow]) {
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
-    use std::cell::Cell;
     use std::rc::Rc;
 
     use teksilo::data::ListModel;
@@ -62,7 +61,6 @@ mod imp {
     struct Inner {
         model: ListModel<DictWordRow>,
         version: Signal<u64>,
-        subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
         /// The open Work's own ids — `work_id` scopes every read to *this*
         /// Work's `dict_words` relationship (see [`load_rows`]); a second
@@ -78,12 +76,11 @@ mod imp {
 
     impl DictWordListModel {
         pub fn new(ctx: Rc<AppContext>, ids: AppIds) -> Self {
-            let model = ListModel::from_vec(load_rows(&ctx, &ids));
+            let model = ListModel::from_vec(load_rows(&ctx, ids.work_id.get()));
             Self {
                 inner: Rc::new(Inner {
                     model,
                     version: Signal::new(0),
-                    subscribed: Cell::new(false),
                     ctx,
                     ids,
                 }),
@@ -101,10 +98,20 @@ mod imp {
         /// wrong one. `LoadWork`/`NewWork`/`CloseWork` DO carry `work_id` and are
         /// guarded accordingly: a sibling Work's project boundary must not force
         /// a reload of a list that is (before or after) legitimately empty.
+        ///
+        /// **The `LoadWork`/`NewWork` arms fall back to the event's own work id, and
+        /// `wire` ends in a catch-up**, so this model no longer depends on being wired
+        /// *after* `wiring::project_events`' lifecycle seed — which is the only reason it
+        /// ever loaded anything, its call site in `App::build` happening to sit below the
+        /// seed's. Wired above it, a bare `refresh` would read `None` and the personal
+        /// dictionary would stay empty for the whole session, since merely opening a
+        /// project produces no `DictWord` event. Same bug, same fix, as
+        /// `TextReplacementRuleListModel::wire`, which shipped it.
+        ///
+        /// **Re-subscribes on every call.** A `BuildContext` subscription is scoped to
+        /// the current build and dropped on the next, so the one-shot guard this used to
+        /// carry left the model deaf after any rebuild while still reporting itself wired.
         pub fn wire(&self, ctx: &mut BuildContext) {
-            if self.inner.subscribed.replace(true) {
-                return;
-            }
             for ev in [
                 EntityEvent::Created,
                 EntityEvent::Updated,
@@ -119,9 +126,19 @@ mod imp {
             for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
                 let me = self.clone();
                 ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
-                    if me.inner.ids.is_bootstrap_or_own(&event.ids) {
-                        me.refresh()
+                    if !me.inner.ids.is_bootstrap_or_own(&event.ids) {
+                        return;
                     }
+                    // Prefer the already-seeded work id; fall back to the one the
+                    // event carries, which is the only id available while the
+                    // lifecycle seed is still queued behind this handler.
+                    let work_id = me
+                        .inner
+                        .ids
+                        .work_id
+                        .get()
+                        .or_else(|| event.ids.first().copied());
+                    me.refresh_for(work_id);
                 });
             }
             {
@@ -130,11 +147,13 @@ mod imp {
                     Origin::WorkManagement(WorkManagementEvent::CloseWork),
                     move |event: &Event| {
                         if me.inner.ids.is_event_for_my_work(&event.ids) {
-                            me.refresh()
+                            me.refresh_for(None)
                         }
                     },
                 );
             }
+            // Catch up when this window is already seeded (rebuild / late wire).
+            self.refresh_for(self.inner.ids.work_id.get());
         }
 
         /// The reactive model to bind a `ListView` to (through the pane's
@@ -235,12 +254,27 @@ mod imp {
             }
         }
 
+        /// Re-read the dictionary for the currently seeded Work (`None` → empty).
         fn refresh(&self) {
-            self.inner
-                .model
-                .reconcile_by_key(load_rows(&self.inner.ctx, &self.inner.ids), |r| r.id);
-            let v = &self.inner.version;
-            v.set(v.get().wrapping_add(1));
+            self.refresh_for(self.inner.ids.work_id.get());
+        }
+
+        /// Re-read for an explicitly named Work, which is what lets a `LoadWork`
+        /// handler load the project whose id `ids.work_id` does not carry yet
+        /// (see [`Self::wire`]).
+        pub(crate) fn refresh_for(&self, work_id: Option<u64>) {
+            let rows = load_rows(&self.inner.ctx, work_id);
+            // Conditional, because `wire` now ends in a catch-up that runs inside
+            // `build()`: an unconditional bump would be a write a widget's own build
+            // made, which dirties it, which rebuilds, which builds, which bumps. See
+            // `WorkStatusesListModel::refresh_for`, where that cost 205 rebuilds of an
+            // idle window in six seconds.
+            let changed = snapshot(&self.inner.model) != rows;
+            self.inner.model.reconcile_by_key(rows, |r| r.id);
+            if changed {
+                let v = &self.inner.version;
+                v.set(v.get().wrapping_add(1));
+            }
         }
     }
 
@@ -249,8 +283,8 @@ mod imp {
     /// the whole shared store: with a second Work simultaneously open, that would
     /// merge both Works' personal dictionaries into one list, and make one Work's
     /// private words deletable from the other's Settings pane.
-    fn load_rows(ctx: &AppContext, ids: &AppIds) -> Vec<DictWordRow> {
-        let Some(work_id) = ids.work_id.get() else {
+    fn load_rows(ctx: &AppContext, work_id: Option<u64>) -> Vec<DictWordRow> {
+        let Some(work_id) = work_id else {
             return Vec::new(); // no project open
         };
         let word_ids =
@@ -398,3 +432,110 @@ mod imp {
 }
 
 pub use imp::DictWordListModel;
+
+/// What only the real half can get wrong: which Work a refresh reads, and when the
+/// version signal is allowed to move.
+#[cfg(all(test, not(feature = "mocks")))]
+mod store_tests {
+    use super::*;
+    use crate::app_ids::AppIds;
+    use frontend::AppContext;
+    use frontend::commands::{smart_punctuation_commands, work_commands};
+    use frontend::common::entities::QuoteStyle;
+    use frontend::direct_access::{CreateSmartPunctuationDto, CreateWorkDto};
+    use std::rc::Rc;
+
+    fn now() -> chrono::DateTime<chrono::Utc> {
+        chrono::Utc::now()
+    }
+
+    /// A Work in the store and a model pointed at **nothing** — `AppIds` exactly as it
+    /// stands while `LoadWork` is being dispatched and the lifecycle seed is still queued.
+    fn model_and_unseeded_work() -> (DictWordListModel, AppIds, u64) {
+        let ctx = Rc::new(AppContext::new());
+        // A Work owns exactly one SmartPunctuation (one_to_one, strong), so it has to
+        // exist before the Work that points at it.
+        let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
+            &ctx,
+            None,
+            &CreateSmartPunctuationDto {
+                created_at: now(),
+                updated_at: now(),
+                override_app_default: false,
+                dashes: false,
+                ellipsis: false,
+                quotes: false,
+                quote_style: QuoteStyle::LocaleDefault,
+                pre_punctuation_spacing: false,
+                dialogue_marker: false,
+            },
+        )
+        .expect("create smart_punctuation")
+        .id;
+        let work = work_commands::create_orphan_work(
+            &ctx,
+            None,
+            &CreateWorkDto {
+                created_at: now(),
+                updated_at: now(),
+                title: "W".into(),
+                smart_punctuation,
+                ..Default::default()
+            },
+        )
+        .expect("create work")
+        .id;
+        let ids = AppIds::new();
+        (DictWordListModel::new(ctx, ids.clone()), ids, work)
+    }
+
+    /// The capability the `LoadWork` handler depends on: load the Work the event names,
+    /// not the one `AppIds` has not been told about yet. This model used to be correct
+    /// only because its call site in `App::build` happened to sit below the seed's.
+    #[test]
+    fn a_dictionary_loads_for_a_work_the_ids_have_not_been_seeded_with() {
+        let (model, ids, work) = model_and_unseeded_work();
+        assert_eq!(ids.work_id.get(), None, "the seed has not run yet");
+        model.add_words(
+            &["azerty".to_string(), "qwerty".to_string()],
+            Some(work),
+            None,
+        );
+
+        model.refresh_for(Some(work));
+
+        assert_eq!(model.len(), 2);
+        assert!(model.contains("azerty"));
+    }
+
+    /// The rebuild loop, as a unit test: `wire` ends in a catch-up that runs inside
+    /// `build()`, so a bump on an unchanged re-read would dirty the widget that made it.
+    #[test]
+    fn re_reading_an_unchanged_dictionary_does_not_move_the_version() {
+        let (model, ids, work) = model_and_unseeded_work();
+        ids.work_id.set(Some(work));
+        model.add_words(&["azerty".to_string()], Some(work), None);
+        model.refresh_for(Some(work));
+        let settled = model.version_signal().get();
+
+        for _ in 0..20 {
+            model.refresh_for(Some(work));
+        }
+
+        assert_eq!(model.version_signal().get(), settled);
+        assert_eq!(model.len(), 1, "and it must not lose the row either");
+    }
+
+    /// No open Work means no dictionary, never the previous Work's.
+    #[test]
+    fn closing_the_work_empties_the_dictionary() {
+        let (model, _ids, work) = model_and_unseeded_work();
+        model.add_words(&["azerty".to_string()], Some(work), None);
+        model.refresh_for(Some(work));
+        assert_eq!(model.len(), 1);
+
+        model.refresh_for(None);
+
+        assert!(model.is_empty());
+    }
+}

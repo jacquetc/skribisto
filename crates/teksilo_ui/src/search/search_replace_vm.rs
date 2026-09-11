@@ -1142,7 +1142,21 @@ impl SearchReplaceViewModel {
     /// Re-seed the inputs from the just-opened project's saved preferences and
     /// load its query/replacement history, and drop any preview held for the
     /// previous project. Call on `LoadWork`/`NewWork`.
-    pub fn restore_for_project(&self) {
+    ///
+    /// `work_id` names the project explicitly, and it has to: this is registered from
+    /// `App::build`, which subscribes to `LoadWork` *before* the lifecycle seed that
+    /// writes `ids.work_id` does, and both answer the same event with this one first.
+    /// Reading the signal alone therefore found `None`, resolved the uid to `""`, and
+    /// restored the application-wide defaults instead of the project's own saved
+    /// options — every time a project was opened. Worse silently: `persist_prefs_if_changed`
+    /// re-reads the id when it *writes*, by which time the seed has run, so the first
+    /// toggle the writer touched afterwards saved those defaults back under the project's
+    /// real uid and overwrote what had been there. Same bug, same fix, as
+    /// `TextReplacementRuleListModel::wire`.
+    ///
+    /// `None` falls back to the seeded id, which is what the Work ▸ New Window path
+    /// (`attach_seed`) and any later caller want.
+    pub fn restore_for_project(&self, work_id: Option<u64>) {
         self.clear_preview();
         self.excluded.set(HashSet::new());
         self.query.set(String::new());
@@ -1152,7 +1166,7 @@ impl SearchReplaceViewModel {
         self.ran.set(false);
         self.error.set(None);
 
-        let (uid, _path, _title) = self.project_ident();
+        let (uid, _path, _title) = self.project_ident_for(self.ids.work_id.get().or(work_id));
         let p = self.settings.effective_for(&uid);
         self.case_sensitive.set(p.case_sensitive);
         self.whole_word.set(p.whole_word);
@@ -1247,11 +1261,14 @@ impl SearchReplaceViewModel {
     /// doc for why that stopped being a safe stand-in once the backend scoped
     /// `Work` to support more than one open project.
     fn project_ident(&self) -> (String, String, String) {
-        let work = self
-            .ids
-            .work_id
-            .get()
-            .and_then(|id| work_commands::get_work(&self.app_ctx, &id).ok().flatten());
+        self.project_ident_for(self.ids.work_id.get())
+    }
+
+    /// The same, for an explicitly named Work — the one door a caller running *before*
+    /// the lifecycle seed can use (see [`Self::restore_for_project`]).
+    fn project_ident_for(&self, work_id: Option<u64>) -> (String, String, String) {
+        let work =
+            work_id.and_then(|id| work_commands::get_work(&self.app_ctx, &id).ok().flatten());
         match work {
             Some(w) => (w.unique_id, String::new(), w.title),
             None => (String::new(), String::new(), String::new()),
@@ -1370,6 +1387,117 @@ mod tests {
             DockWidgetId::fresh(),
             DockWidgetId::fresh(),
         )
+    }
+
+    /// A Work in the store carrying `uid`, so a per-project override can be keyed to it.
+    fn work_with_uid(app_ctx: &Rc<AppContext>, uid: &str) -> u64 {
+        use frontend::commands::smart_punctuation_commands;
+        use frontend::common::entities::QuoteStyle;
+        use frontend::direct_access::{CreateSmartPunctuationDto, CreateWorkDto};
+        let now = chrono::Utc::now();
+        // A Work owns exactly one SmartPunctuation (one_to_one, strong), so it has to
+        // exist before the Work that points at it.
+        let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
+            app_ctx,
+            None,
+            &CreateSmartPunctuationDto {
+                created_at: now,
+                updated_at: now,
+                override_app_default: false,
+                dashes: false,
+                ellipsis: false,
+                quotes: false,
+                quote_style: QuoteStyle::LocaleDefault,
+                pre_punctuation_spacing: false,
+                dialogue_marker: false,
+            },
+        )
+        .expect("create smart_punctuation")
+        .id;
+        work_commands::create_orphan_work(
+            app_ctx,
+            None,
+            &CreateWorkDto {
+                created_at: now,
+                updated_at: now,
+                title: "W".into(),
+                unique_id: uid.into(),
+                smart_punctuation,
+                ..Default::default()
+            },
+        )
+        .expect("create work")
+        .id
+    }
+
+    /// **The bug, as a unit test.** `App::build` registers this restore on `LoadWork`
+    /// before the lifecycle seed writes `ids.work_id`, and the two answer the same event
+    /// with this one first — so the handler has nothing but the event's own id to go on,
+    /// and it must be able to resolve the project from that alone.
+    ///
+    /// Before the fix it read the signal, found `None`, resolved the uid to `""`, and
+    /// handed back `general` — the application-wide defaults — for every project opened.
+    #[test]
+    fn a_project_restores_its_own_options_when_the_ids_are_not_seeded_yet() {
+        let vm = vm();
+        let uid = "11111111-1111-1111-1111-111111111111";
+        let work = work_with_uid(&vm.app_ctx, uid);
+        // Saved for this project, and deliberately the opposite of `general` on every
+        // field the restore reads back below.
+        vm.settings
+            .set_override(
+                uid,
+                "",
+                "W",
+                SearchPrefs {
+                    case_sensitive: true,
+                    whole_word: true,
+                    search_titles: false,
+                    include_trashed: true,
+                    ..SearchPrefs::default()
+                },
+            )
+            .expect("save the project override");
+        assert_eq!(vm.ids.work_id.get(), None, "the seed has not run yet");
+
+        vm.restore_for_project(Some(work));
+
+        assert!(
+            vm.case_sensitive.get(),
+            "the project's own option, not general's"
+        );
+        assert!(vm.whole_word.get());
+        assert!(!vm.search_titles.get());
+        assert!(vm.include_trashed.get());
+    }
+
+    /// The other half: with nothing to name the project by, the restore can only fall
+    /// back to the application-wide defaults. Correct in itself, and exactly what every
+    /// open used to get.
+    #[test]
+    fn an_unnamed_project_falls_back_to_the_general_defaults() {
+        let vm = vm();
+        let uid = "22222222-2222-2222-2222-222222222222";
+        work_with_uid(&vm.app_ctx, uid);
+        vm.settings
+            .set_override(
+                uid,
+                "",
+                "W",
+                SearchPrefs {
+                    case_sensitive: true,
+                    ..SearchPrefs::default()
+                },
+            )
+            .expect("save the project override");
+
+        vm.restore_for_project(None);
+
+        assert_eq!(
+            vm.case_sensitive.get(),
+            vm.settings.effective_for("").case_sensitive,
+            "no project named means general, never some other project's"
+        );
     }
 
     /// Two fields of one item, one hit and three, so an item's counts are not the
