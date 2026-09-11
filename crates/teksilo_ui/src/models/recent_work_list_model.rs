@@ -26,7 +26,7 @@
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
-    use std::cell::{Cell, RefCell};
+    use std::cell::RefCell;
     use std::path::Path;
     use std::rc::Rc;
 
@@ -112,7 +112,6 @@ mod imp {
         /// Bumped on every refresh, for `Rebuild`-bound (non-`ListView`) consumers.
         version: Signal<u64>,
         /// One-shot guard: subscriptions persist across the consumer's rebuilds.
-        subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
         /// The main-thread async executor (T2-3): `on_open`'s backup sniff (a
         /// blocking `File::open` + zip parse — see `crate::backup::is_backup_path`)
@@ -139,18 +138,18 @@ mod imp {
                     mru,
                     model,
                     version: Signal::new(0),
-                    subscribed: Cell::new(false),
                     ctx,
                     async_rt: RefCell::new(None),
                 }),
             }
         }
 
-        /// Subscribe (once) so the list records + refreshes on each work open.
+        /// Subscribe so the list records + refreshes on each work open.
+        ///
+        /// **Re-subscribes on every call.** A `BuildContext` subscription is scoped to
+        /// the current build and dropped on the next, so the one-shot guard this used to
+        /// carry left the model deaf after any rebuild while still reporting itself wired.
         pub fn wire(&self, ctx: &mut BuildContext) {
-            if self.inner.subscribed.replace(true) {
-                return;
-            }
             *self.inner.async_rt.borrow_mut() = ctx.app_state::<AsyncRuntimeHandle>().cloned();
             let me = self.clone();
             ctx.subscribe_event(

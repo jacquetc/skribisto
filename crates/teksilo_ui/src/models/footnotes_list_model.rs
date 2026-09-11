@@ -199,7 +199,6 @@ mod imp {
         last_structure: Cell<u64>,
         /// Bumped only when the *set of labels a document references* changes —
         /// what [`FootnotesListModel::note_live_edit`] gates on.
-        subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
         ids: AppIds,
         /// The live overlay's source: a reference typed a moment ago is in an open
@@ -235,7 +234,6 @@ mod imp {
                     version: Signal::new(0),
                     structure: Signal::new(0),
                     last_structure: Cell::new(0),
-                    subscribed: Cell::new(false),
                     ctx,
                     ids,
                     docs: docs.downgrade(),
@@ -256,10 +254,12 @@ mod imp {
         /// whole set.
         ///
         /// Typing is **not** among them — see [`note_live_edit`](Self::note_live_edit).
+        ///
+        /// **Re-subscribes on every call.** A `BuildContext` subscription is scoped to
+        /// the current build and dropped on the next, so the one-shot guard this used to
+        /// carry left the model deaf after any rebuild while still reporting itself
+        /// wired, and skipped the catch-up below with it.
         pub fn wire(&self, ctx: &mut BuildContext) {
-            if self.inner.subscribed.replace(true) {
-                return;
-            }
             for ev in [
                 EntityEvent::Created,
                 EntityEvent::Updated,
@@ -688,7 +688,7 @@ mod imp {
         /// in `App::build` *before* the lifecycle seed writes `ids.work_id`, so a
         /// `LoadWork` handler reading the signal reads `None` and the dock stays
         /// empty until the next `Footnote` entity event.
-        fn refresh_for(&self, work_id: Option<u64>) {
+        pub(crate) fn refresh_for(&self, work_id: Option<u64>) {
             *self.inner.live_labels.borrow_mut() = self.live_labels();
             let docs = self.inner.docs.upgrade();
             let rows = work_id
@@ -696,9 +696,19 @@ mod imp {
                 .map(|(id, docs)| load_rows(&self.inner.ctx, id, docs))
                 .unwrap_or_default();
             let key = super::structure_key(&rows);
+            // Conditional, and that is what lets `wire` end in a catch-up without
+            // re-subscribing being a hazard: the catch-up runs inside `build()`, and a
+            // bump on an unchanged re-read is a write a widget's own build made, which
+            // dirties it, which rebuilds, which builds, which bumps. Measured on the
+            // identical bug in `WorkStatusesListModel`: 205 rebuilds of an idle window
+            // in six seconds. It also means this signal says "the rows changed" rather
+            // than "somebody re-read them", which is what every consumer wanted anyway.
+            let changed = snapshot(&self.inner.model) != rows;
             self.inner.model.reconcile_by_key(rows, |r| r.id);
-            let v = &self.inner.version;
-            v.set(v.get().wrapping_add(1));
+            if changed {
+                let v = &self.inner.version;
+                v.set(v.get().wrapping_add(1));
+            }
             if self.inner.last_structure.replace(key) != key {
                 let st = &self.inner.structure;
                 st.set(st.get().wrapping_add(1));
@@ -1259,6 +1269,42 @@ mod real_backend_tests {
         ids.seed(app_ctx, work_id);
         ids.open_stack(app_ctx);
         ids
+    }
+
+    /// **The rebuild loop, as a unit test.** `wire` ends in a catch-up `refresh_for`
+    /// that runs inside `build()`, and the dock binds this version: a bump on a re-read
+    /// that changed nothing is a write a widget's own build made, which dirties it, which
+    /// rebuilds, which builds, which bumps, at frame rate. Measured on the identical bug
+    /// in `WorkStatusesListModel`: 205 rebuilds of an idle window in six seconds.
+    ///
+    /// This is what makes dropping the one-shot `subscribed` guard safe, and re-wiring on
+    /// every build is what the framework asks for: a `BuildContext` subscription dies with
+    /// its build.
+    #[test]
+    fn re_reading_unchanged_footnotes_does_not_move_the_version() {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = loaded(&app_ctx);
+        let work_id = ids.work_id.get().expect("seeded");
+        let docs = OpenDocsStore::new(app_ctx.clone());
+        let model = FootnotesListModel::new(app_ctx.clone(), ids.clone(), docs);
+        model.refresh_for(Some(work_id));
+        let settled = model.version_signal().get();
+        let rows = model.rows().len();
+
+        for _ in 0..20 {
+            model.refresh_for(Some(work_id));
+        }
+
+        assert_eq!(
+            model.version_signal().get(),
+            settled,
+            "a re-read that changes nothing must not ask anyone to repaint"
+        );
+        assert_eq!(
+            model.rows().len(),
+            rows,
+            "and it must not lose the rows either"
+        );
     }
 
     /// A `Content` row that footnote machinery will actually look at: activated,

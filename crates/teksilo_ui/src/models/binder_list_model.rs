@@ -29,7 +29,6 @@ pub struct BinderRow {
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
-    use std::cell::Cell;
     use std::rc::Rc;
 
     use teksilo::prelude::*;
@@ -49,7 +48,6 @@ mod imp {
         /// Bumped on every refresh, for `Rebuild`-bound consumers.
         version: Signal<u64>,
         /// One-shot guard: subscriptions persist across the consumer's rebuilds.
-        subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
         /// The open Work id (ids-only global state) — the binders' owner.
         work_id: Signal<Option<u64>>,
@@ -65,19 +63,19 @@ mod imp {
             Self {
                 inner: Rc::new(Inner {
                     version: Signal::new(0),
-                    subscribed: Cell::new(false),
                     ctx,
                     work_id,
                 }),
             }
         }
 
-        /// Subscribe (once) so the list refreshes when binders or their item
-        /// counts change. Call from the consumer widget's `build`.
+        /// Subscribe so the list refreshes when binders or their item counts change.
+        /// Call from the consumer widget's `build`.
+        ///
+        /// **Re-subscribes on every call.** A `BuildContext` subscription is scoped to
+        /// the current build and dropped on the next, so the one-shot guard this used to
+        /// carry left the model deaf after any rebuild while still reporting itself wired.
         pub fn wire(&self, ctx: &mut BuildContext) {
-            if self.inner.subscribed.replace(true) {
-                return;
-            }
             use DirectAccessEntity::{Binder, BinderItem};
             use EntityEvent::{Created, Removed, Updated};
             let origins = [

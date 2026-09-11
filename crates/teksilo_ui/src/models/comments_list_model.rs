@@ -245,7 +245,6 @@ mod imp {
         /// Bumped only when the set's *shape* changes — see [`structure_key`](super::structure_key).
         structure: Signal<u64>,
         last_structure: Cell<u64>,
-        subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
         ids: AppIds,
     }
@@ -270,7 +269,6 @@ mod imp {
                     version: Signal::new(0),
                     structure: Signal::new(0),
                     last_structure: Cell::new(key),
-                    subscribed: Cell::new(false),
                     ctx,
                     ids,
                 }),
@@ -286,10 +284,12 @@ mod imp {
         /// from this model's own `ids.work_id`, so a sibling Work's event costs a
         /// harmless re-read rather than a wrong one — the same posture
         /// `DictWordListModel` documents.
+        ///
+        /// **Re-subscribes on every call.** A `BuildContext` subscription is scoped to
+        /// the current build and dropped on the next, so the one-shot guard this used to
+        /// carry left the model deaf after any rebuild while still reporting itself
+        /// wired, and skipped the catch-up below with it.
         pub fn wire(&self, ctx: &mut BuildContext) {
-            if self.inner.subscribed.replace(true) {
-                return;
-            }
             for ev in [
                 EntityEvent::Created,
                 EntityEvent::Updated,
@@ -692,9 +692,19 @@ mod imp {
                 .map(|id| load_rows(&self.inner.ctx, id))
                 .unwrap_or_default();
             let key = super::structure_key(&rows);
+            // Conditional, and that is what lets `wire` end in a catch-up without
+            // re-subscribing being a hazard: the catch-up runs inside `build()`, and a
+            // bump on an unchanged re-read is a write a widget's own build made, which
+            // dirties it, which rebuilds, which builds, which bumps. Measured on the
+            // identical bug in `WorkStatusesListModel`: 205 rebuilds of an idle window
+            // in six seconds. It also means this signal says "the rows changed" rather
+            // than "somebody re-read them", which is what every consumer wanted anyway.
+            let changed = snapshot(&self.inner.model) != rows;
             self.inner.model.reconcile_by_key(rows, |r| r.id);
-            let v = &self.inner.version;
-            v.set(v.get().wrapping_add(1));
+            if changed {
+                let v = &self.inner.version;
+                v.set(v.get().wrapping_add(1));
+            }
             if self.inner.last_structure.replace(key) != key {
                 let s = &self.inner.structure;
                 s.set(s.get().wrapping_add(1));
@@ -873,7 +883,6 @@ mod imp {
         version: Signal<u64>,
         structure: Signal<u64>,
         last_structure: Cell<u64>,
-        subscribed: Cell<bool>,
         next_id: Cell<u64>,
     }
 
@@ -890,16 +899,13 @@ mod imp {
                     version: Signal::new(0),
                     structure: Signal::new(0),
                     last_structure: Cell::new(super::structure_key(&fabricated())),
-                    subscribed: Cell::new(false),
                     next_id: Cell::new(100),
                 }),
             }
         }
 
         /// Inert: a mock build has no backend to emit entity events.
-        pub fn wire(&self, _ctx: &mut BuildContext) {
-            self.inner.subscribed.set(true);
-        }
+        pub fn wire(&self, _ctx: &mut BuildContext) {}
 
         pub fn list_model(&self) -> ListModel<CommentRow> {
             self.inner.model.clone()
@@ -1411,6 +1417,37 @@ mod real_backend_tests {
             .collect();
         ids.sort_unstable();
         ids.into_iter().next().expect("a live content row")
+    }
+
+    /// **The rebuild loop, as a unit test.** `wire` ends in a catch-up `refresh_for`
+    /// that runs inside `build()`, and both docks bind this version: a bump on a re-read
+    /// that changed nothing is a write a widget's own build made, which dirties it, which
+    /// rebuilds, which builds, which bumps, at frame rate. Measured on the identical bug
+    /// in `WorkStatusesListModel`: 205 rebuilds of an idle window in six seconds.
+    ///
+    /// This is what makes dropping the one-shot `subscribed` guard safe, and re-wiring on
+    /// every build is what the framework asks for: a `BuildContext` subscription dies with
+    /// its build.
+    #[test]
+    fn re_reading_unchanged_comments_does_not_move_the_version() {
+        let app_ctx = Rc::new(AppContext::new());
+        let (ids, work_id) = loaded(&app_ctx);
+        ids.seed(&app_ctx, work_id);
+        let model = CommentsListModel::new(app_ctx.clone(), ids.clone());
+        model.refresh_for(Some(work_id));
+        let settled = model.version_signal().get();
+        let rows = model.len();
+
+        for _ in 0..20 {
+            model.refresh_for(Some(work_id));
+        }
+
+        assert_eq!(
+            model.version_signal().get(),
+            settled,
+            "a re-read that changes nothing must not ask anyone to repaint"
+        );
+        assert_eq!(model.len(), rows, "and it must not lose the rows either");
     }
 
     /// **Regression.** A project opened with comments already in it showed two
