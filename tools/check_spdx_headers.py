@@ -126,6 +126,11 @@ SKIP_PATH_PREFIXES: tuple[str, ...] = (
 # not licensable source. Its SKILL.md files open with YAML frontmatter that
 # must be the very first line, so a header inserted above it breaks parsing.
 # `assets/` covers per-crate bundled assets (e.g. crates/teksilo_ui/assets/).
+# `tests/fixtures/tour-du-monde/` is a generated Manuskript project: its
+# outline `.md` files must start with Manuskript's `title:`/`ID:`/`type:`
+# header, and stamping a Cyril Jacquet copyright on public-domain Verne
+# excerpts would be a false claim. The generator beside them (`generate.py`)
+# is source and stays in scope.
 SKIP_PATH_SUBSTRINGS: tuple[str, ...] = (
     "target/",
     "dist/",
@@ -134,6 +139,7 @@ SKIP_PATH_SUBSTRINGS: tuple[str, ...] = (
     "assets/",
     "vendor/",
     "node_modules/",
+    "tests/fixtures/tour-du-monde/",
 )
 
 LICENSE_LINE_RE = re.compile(r"SPDX-License-Identifier:\s*(\S+)")
