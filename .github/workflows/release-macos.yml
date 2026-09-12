@@ -24,6 +24,31 @@ name: Release (macOS)
 #      Application certificate (nothing signs without this).
 #   2. Add the secrets referenced below (MACOS_CERTIFICATE, ...).
 # Nothing here changes.
+#
+# ## Why two architectures are two JOBS
+#
+# They were one job, building both targets back to back, and on 2026-09-12 it hit
+# its 60-minute ceiling at 58m19s inside that step and the whole v3.0.2 release
+# was lost with it: `Create Release` and `Flathub update PR` are downstream of
+# this, so both were skipped, no GitHub release was published, and Flathub's
+# update bot reached the store first with a manifest-only bump that could not
+# build. A timed-out job also reports as "cancelled" rather than "failed", which
+# reads like somebody pressed the button.
+#
+# It had been closing on the ceiling for a while — 45m43s, then 57m02s, then over
+# — because the budget was never two builds' worth. Sequential architectures put
+# a whole second compile of an 831-crate tree (Typst included, via `pdf`) inside
+# one timeout, so each architecture effectively had 30 minutes, cold.
+#
+# The two builds share nothing but the source, so they are a matrix now: each
+# leg gets the full hour, and the wall-clock is one build rather than two.
+#
+# ⚠ The cache cannot be relied on to keep this under any ceiling. `rust-cache`
+# keys on the lockfile hash, so the release that bumps a dependency — which is
+# what a release usually follows — starts cold by construction, and GitHub evicts
+# a cache untouched for 7 days regardless. The 2026-09-12 run had no macOS cache
+# at all for both reasons at once. The budget has to fit a cold build, and now
+# does, twice over.
 
 on:
   # Called by release.yml on a version tag. Also dispatchable on its own, which
@@ -47,10 +72,21 @@ env:
   SKRIBISTO_CHANNEL: dmg
 
 jobs:
-  macos-universal:
-    name: Build universal .dmg
+  build:
+    name: Build ${{ matrix.arch }}
     runs-on: macos-14 # Apple Silicon; cross-links x86_64 via Xcode CLT
     timeout-minutes: 60
+    strategy:
+      # Never fail-fast. One architecture failing while the other is mid-compile
+      # would throw away a 30-minute build that was going to succeed, and the log
+      # of the leg that failed is more useful beside its sibling's than alone.
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            arch: Apple Silicon
+          - target: x86_64-apple-darwin
+            arch: Intel
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -58,31 +94,95 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          targets: ${{ matrix.target }}
 
       - name: Strip path dependencies
         uses: ./.github/actions/strip-path-deps
 
+      # A cache PER TARGET. One shared key across both legs would have them race
+      # to save the same entry, and the loser's work is discarded — two jobs
+      # cannot share one cache the way two sequential steps did.
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: release-macos
+          shared-key: release-macos-${{ matrix.target }}
+
+      - name: Build (release, pdf)
+        run: cargo build --release --target ${{ matrix.target }} -p "$CARGO_PACKAGE" --features pdf
+
+      # Staging, not shipping. release.yml collects the release by ARTIFACT NAME
+      # and ignores everything else in the run, so these two are invisible to it;
+      # the short retention keeps a pair of ~100 MB binaries per release from
+      # accumulating anyway.
+      - name: Upload the architecture binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-binary-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/${{ env.APP_NAME }}
+          if-no-files-found: error
+          retention-days: 1
+
+  package:
+    name: Build universal .dmg
+    needs: build
+    runs-on: macos-14
+    # Packaging itself is minutes. The variable part is notarization, which is a
+    # round trip to Apple's service and is the reason this is not tighter; it is
+    # dormant until the signing secrets exist.
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # `cargo packager` reads this crate's `[package.metadata.packager]`, so the
+      # toolchain and the manifest have to be here even though nothing compiles.
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Strip path dependencies
+        uses: ./.github/actions/strip-path-deps
 
       - name: Install cargo-packager
         run: cargo install cargo-packager --locked --version "^0.11"
 
-      - name: Build both architectures (release, pdf)
-        run: |
-          cargo build --release --target aarch64-apple-darwin -p "$CARGO_PACKAGE" --features pdf
-          cargo build --release --target x86_64-apple-darwin  -p "$CARGO_PACKAGE" --features pdf
+      # Straight into the layout `cargo packager --target` expects, so nothing
+      # has to be moved afterwards.
+      - name: Download the Apple Silicon binary
+        uses: actions/download-artifact@v8
+        with:
+          name: macos-binary-aarch64-apple-darwin
+          path: target/aarch64-apple-darwin/release
+
+      - name: Download the Intel binary
+        uses: actions/download-artifact@v8
+        with:
+          name: macos-binary-x86_64-apple-darwin
+          path: target/x86_64-apple-darwin/release
 
       - name: Merge into a universal binary (lipo)
         run: |
+          set -euo pipefail
           mkdir -p target/universal-apple-darwin/release
+          # ⚠ upload-artifact does not preserve the executable bit — it zips the
+          # file without its mode — so both inputs arrive at 0644 and the merged
+          # output inherits that. An .app whose executable is not executable
+          # packages and ships perfectly happily and then refuses to launch, so
+          # the bit is set back explicitly rather than assumed.
+          chmod +x "target/aarch64-apple-darwin/release/$APP_NAME" \
+                   "target/x86_64-apple-darwin/release/$APP_NAME"
           lipo -create -output "target/universal-apple-darwin/release/$APP_NAME" \
             "target/aarch64-apple-darwin/release/$APP_NAME" \
             "target/x86_64-apple-darwin/release/$APP_NAME"
+          chmod +x "target/universal-apple-darwin/release/$APP_NAME"
           lipo -info "target/universal-apple-darwin/release/$APP_NAME"
+          # Both architectures present, and runnable. `lipo -create` is happy to
+          # produce a single-architecture "universal" file if it is handed the
+          # same input twice, which would ship an Intel-only .dmg to everyone.
+          for arch in arm64 x86_64; do
+            lipo -info "target/universal-apple-darwin/release/$APP_NAME" | grep -q "$arch" \
+              || { echo "::error::$arch missing from the universal binary"; exit 1; }
+          done
+          test -x "target/universal-apple-darwin/release/$APP_NAME"
 
       # Secrets cannot be used directly in `if:` — promote to an env var, then
       # branch on a step output.
