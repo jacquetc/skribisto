@@ -58,6 +58,11 @@
         <ul>
           <li>The folder Skribisto keeps its backups in is created when the app starts, so the location shown in Settings is really there before the first backup is taken</li>
           <li>Show folder, in Settings under Backup defaults, opens that folder itself instead of the one above it</li>
+          <li>French typography no longer confuses the spell checker: the thin space inside « » and before ?, ! and ; is not taken to be part of the word next to it</li>
+          <li>New binder, in the outline's binder menu, asks for a name before it creates anything, so Cancel no longer leaves an unwanted binder behind</li>
+          <li>Your text replacement rules are loaded when a project opens, so they fire from the first keystroke instead of staying dormant until you added a new one</li>
+          <li>Search options and history are restored with the project you open, instead of reverting to the application defaults and overwriting what the project had saved</li>
+          <li>Format ▸ Formatting mark places the invisible characters typography needs: a no-break space, a narrow no-break space, a no-break hyphen, a soft hyphen, a zero-width space and a word joiner, four of them with a keyboard shortcut</li>
         </ul>
       </description>
     </release>
