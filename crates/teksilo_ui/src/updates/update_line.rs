@@ -163,7 +163,7 @@ mod tests {
         if !latest.is_empty() {
             store.record(latest, "2026-12-01", links.clone(), links);
         }
-        UpdateViewModel::new(store)
+        UpdateViewModel::for_tests(store)
     }
 
     #[test]
@@ -196,7 +196,7 @@ mod tests {
     #[test]
     fn the_row_appears_when_a_check_lands_while_the_surface_is_open() {
         let store = UpdatesService::in_memory_default();
-        let vm = UpdateViewModel::new(store.clone());
+        let vm = UpdateViewModel::for_tests(store.clone());
         let mut tree = WidgetTree::new().with_theme(intui::light());
         tree.add(UpdateLine::new(vm.clone()));
         tree.layout(SizeProposal::exact(240.0, 60.0));
@@ -217,7 +217,7 @@ mod tests {
     fn the_row_goes_away_once_there_is_nothing_to_say() {
         let store = UpdatesService::in_memory_default();
         store.record("999.0.0", "2026-12-01", links(), links());
-        let vm = UpdateViewModel::new(store.clone());
+        let vm = UpdateViewModel::for_tests(store.clone());
         let mut tree = WidgetTree::new().with_theme(intui::light());
         tree.add(UpdateLine::new(vm.clone()));
         tree.layout(SizeProposal::exact(240.0, 60.0));

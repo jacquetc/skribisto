@@ -226,9 +226,9 @@ mod tests {
                 "https://www.skribisto.eu/download/".to_string(),
             )]),
         );
-        crate::updates::update_vm::set_view_model_for_test(crate::updates::UpdateViewModel::new(
-            store,
-        ));
+        crate::updates::update_vm::set_view_model_for_test(
+            crate::updates::UpdateViewModel::for_tests(store),
+        );
 
         let mut tree = WidgetTree::new();
         tree.add(AboutPanel::new());

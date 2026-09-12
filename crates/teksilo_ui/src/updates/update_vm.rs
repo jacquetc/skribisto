@@ -83,6 +83,12 @@ struct Inner {
     /// that opens three windows must still make one request.
     kicked: RefCell<bool>,
     store: UpdatesService,
+    /// The version this build reports, read once at construction.
+    ///
+    /// Held rather than re-read because it is a constant of the process, and
+    /// because holding it is what lets a test pin it rather than inherit
+    /// whatever `git describe` said about the checkout (`for_tests`).
+    running: String,
 }
 
 /// Handle on the update state. Cloneable; every clone shares one state.
@@ -115,6 +121,15 @@ pub fn view_model() -> UpdateViewModel {
         vm
     })
 }
+
+/// The build a test pretends to be running.
+///
+/// Any parseable version does; this one is real enough to read in a failure
+/// message. The feed versions the tests record are `999.0.0` on one side of it
+/// and `0.0.1` on the other, so neither is close enough to it for a bump here to
+/// change a verdict.
+#[cfg(test)]
+pub(crate) const RUNNING_VERSION_IN_TESTS: &str = "3.0.0";
 
 /// Seed the process's update state. Tests only.
 ///
@@ -152,15 +167,41 @@ fn open_store() -> UpdatesService {
 
 impl UpdateViewModel {
     pub fn new(store: UpdatesService) -> Self {
+        Self::with_running_version(store, crate::version::app_version())
+    }
+
+    /// The same, with the running version supplied rather than taken from the
+    /// build that is executing.
+    fn with_running_version(store: UpdatesService, running: String) -> Self {
         let vm = Self {
             inner: Rc::new(Inner {
                 available: Signal::new(None),
                 kicked: RefCell::new(false),
                 store,
+                running,
             }),
         };
         vm.reload_from_store();
         vm
+    }
+
+    /// A view-model on a pinned, parseable build. **Every test must use this**,
+    /// never [`Self::new`].
+    ///
+    /// [`crate::version::app_version`] is `git describe` of the checkout, so its
+    /// value is a property of the clone rather than of the code. A checkout with
+    /// no tags reachable — which is exactly what `actions/checkout` produces,
+    /// since it is shallow and fetches none — reports a bare commit hash.
+    /// [`compare::verdict`] answers [`Verdict::Unknown`] for that, deliberately
+    /// and correctly, and `available` is then `None` whatever the feed said.
+    ///
+    /// Under `new`, therefore, every assertion that a newer release is announced
+    /// fails in CI and passes on a maintainer's tagged clone, and — worse — every
+    /// assertion that nothing is announced passes in CI for the wrong reason,
+    /// testing an unreadable running version instead of the rule it names.
+    #[cfg(test)]
+    pub(crate) fn for_tests(store: UpdatesService) -> Self {
+        Self::with_running_version(store, RUNNING_VERSION_IN_TESTS.to_string())
     }
 
     /// The standing fact, for a surface to bind.
@@ -183,8 +224,7 @@ impl UpdateViewModel {
     /// `3.0.2`, so the surfaces simply have nothing to draw.
     pub fn reload_from_store(&self) {
         let stored = self.inner.store.get();
-        let running = crate::version::app_version();
-        let next = match compare::verdict(&running, &stored.latest_version) {
+        let next = match compare::verdict(&self.inner.running, &stored.latest_version) {
             Verdict::Behind(newer) => Some(Available {
                 version: newer.to_string(),
                 date: stored.latest_date.clone(),
@@ -366,7 +406,7 @@ mod tests {
 
     #[test]
     fn nothing_is_shown_when_no_check_has_ever_run() {
-        let vm = UpdateViewModel::new(UpdatesService::in_memory_default());
+        let vm = UpdateViewModel::for_tests(UpdatesService::in_memory_default());
         assert_eq!(vm.available().get(), None);
     }
 
@@ -374,7 +414,7 @@ mod tests {
     fn a_stored_newer_release_becomes_the_standing_fact() {
         let store = UpdatesService::in_memory_default();
         store.record("999.0.0", "2026-12-01", links("news"), links("download"));
-        let vm = UpdateViewModel::new(store);
+        let vm = UpdateViewModel::for_tests(store);
         let a = vm
             .available()
             .get()
@@ -389,7 +429,7 @@ mod tests {
     fn a_stored_older_release_says_nothing() {
         let store = UpdatesService::in_memory_default();
         store.record("0.0.1", "2020-01-01", links("news"), links("download"));
-        let vm = UpdateViewModel::new(store);
+        let vm = UpdateViewModel::for_tests(store);
         assert_eq!(vm.available().get(), None);
     }
 
@@ -399,10 +439,14 @@ mod tests {
     #[test]
     fn the_notice_clears_itself_once_the_reader_has_updated() {
         let store = UpdatesService::in_memory_default();
-        // Whatever this build is, storing exactly it means "you are up to date".
-        let running = crate::version::app_version();
-        store.record(&running, "2026-09-04", links("news"), links("download"));
-        let vm = UpdateViewModel::new(store);
+        // Storing exactly the running version means "you are up to date".
+        store.record(
+            RUNNING_VERSION_IN_TESTS,
+            "2026-09-04",
+            links("news"),
+            links("download"),
+        );
+        let vm = UpdateViewModel::for_tests(store);
         assert_eq!(
             vm.available().get(),
             None,
@@ -414,7 +458,7 @@ mod tests {
     fn an_unreadable_stored_version_says_nothing() {
         let store = UpdatesService::in_memory_default();
         store.record("not-a-version", "", links("news"), links("download"));
-        let vm = UpdateViewModel::new(store);
+        let vm = UpdateViewModel::for_tests(store);
         assert_eq!(vm.available().get(), None);
     }
 
@@ -422,7 +466,7 @@ mod tests {
     fn turning_the_check_off_clears_the_surfaces_and_the_file() {
         let store = UpdatesService::in_memory_default();
         store.record("999.0.0", "2026-12-01", links("news"), links("download"));
-        let vm = UpdateViewModel::new(store.clone());
+        let vm = UpdateViewModel::for_tests(store.clone());
         assert!(vm.available().get().is_some());
 
         vm.forget_if_disabled(false);
@@ -438,7 +482,7 @@ mod tests {
     fn leaving_the_check_on_changes_nothing() {
         let store = UpdatesService::in_memory_default();
         store.record("999.0.0", "2026-12-01", links("news"), links("download"));
-        let vm = UpdateViewModel::new(store);
+        let vm = UpdateViewModel::for_tests(store);
         vm.forget_if_disabled(true);
         assert!(vm.available().get().is_some());
     }
@@ -447,7 +491,7 @@ mod tests {
     fn one_signal_is_shared_by_every_clone() {
         // Two windows hold two clones and must never disagree about the fact.
         let store = UpdatesService::in_memory_default();
-        let vm = UpdateViewModel::new(store.clone());
+        let vm = UpdateViewModel::for_tests(store.clone());
         let other = vm.clone();
         store.record("999.0.0", "2026-12-01", links("news"), links("download"));
         vm.reload_from_store();
