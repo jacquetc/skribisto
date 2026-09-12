@@ -462,12 +462,15 @@ jobs:
             echo "::warning::WEBSITE_DISPATCH_TOKEN is not set; skribisto.eu will catch up on its next daily sync instead of now."
             exit 0
           fi
-          curl -sSf -X POST \
+          if curl -sSf -X POST \
             -H "Authorization: Bearer ${WEBSITE_DISPATCH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/jacquetc/skribisto-website/dispatches \
-            -d '{"event_type":"release-published"}'
-          echo "website resync requested."
+            https://api.github.com/repos/FernTech-EU/skribisto-website/dispatches \
+            -d '{"event_type":"release-published"}'; then
+            echo "website resync requested."
+          else
+            echo "::warning::website resync dispatch was refused; skribisto.eu will catch up on its next daily sync instead of now."
+          fi
 
   # -------- Flathub: open the update PR --------
   #
