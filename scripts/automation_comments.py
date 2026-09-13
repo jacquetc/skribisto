@@ -105,7 +105,17 @@ def recv(timeout=25, fatal=True):
 
 def call(name, a=None):
     send("tools/call", {"name": name, "arguments": a or {}})
-    res = recv().get("result", {})
+    reply = recv()
+    # A refused op performs nothing, so letting one pass quietly turns every
+    # assertion after it into a statement about an app that was never driven.
+    # `inject_pointer {"button": "left"}` was exactly that: rejected for an
+    # out-of-vocabulary value, and reported as a feature that did not work.
+    if (err := reply.get("error")) is not None:
+        die(f"{name}{a or {}} was refused: {err.get('message', err)}", app, mcp)
+    res = reply.get("result", {})
+    if res.get("isError"):
+        txt = "".join(c.get("text", "") for c in res.get("content", []) if c.get("type") == "text")
+        die(f"{name}{a or {}} reported an error: {txt or res}", app, mcp)
     payload = res.get("structuredContent")
     if payload is None:
         txt = "".join(c.get("text", "") for c in res.get("content", []) if c.get("type") == "text")

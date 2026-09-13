@@ -174,7 +174,7 @@ if not row:
     fail("no 'Prologue' row in the binder", app, mcp, log)
 b = row["bounds"]
 call("inject_pointer", {"x": b["x"] + b["width"] / 2, "y": b["y"] + b["height"] / 2,
-                        "button": "left", "action": "click"})
+                        "button": "primary", "action": "click"})
 time.sleep(1.5)
 
 res_sc, sc = call("get_shortcuts")

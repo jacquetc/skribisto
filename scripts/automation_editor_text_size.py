@@ -33,6 +33,7 @@ can only ever send the plain wheel, and "scrolled when it should have zoomed" an
 
 Run: python3 scripts/automation_editor_text_size.py [project.skrib]
 """
+import base64
 import json
 import os
 import select
@@ -122,7 +123,21 @@ def recv(timeout=25, fatal=True):
 
 def call(name, args=None):
     send("tools/call", {"name": name, "arguments": args or {}})
-    result = recv().get("result", {})
+    reply = recv()
+    # A refused op is not a quiet no-op. `inject_pointer` with an argument outside
+    # the bridge's vocabulary comes back as a JSON-RPC error having performed
+    # nothing, and this probe used to drop that on the floor -- so every "click"
+    # below was a no-op and the symptom surfaced far away, as "timed out waiting
+    # for a prose editor with text". A probe that cannot tell a refused op from a
+    # performed one cannot go red for the right reason.
+    if (err := reply.get("error")) is not None:
+        fail(f"{name}{args or {}} was refused: {err.get('message', err)}")
+    result = reply.get("result", {})
+    if result.get("isError"):
+        text = "".join(
+            c.get("text", "") for c in result.get("content", []) if c.get("type") == "text"
+        )
+        fail(f"{name}{args or {}} reported an error: {text or result}")
     payload = result.get("structuredContent")
     if payload is None:
         text = "".join(
@@ -201,7 +216,7 @@ def click_node(n):
         fail(f"node {text_of(n)!r} carries no bounds to click")
     call(
         "inject_pointer",
-        {"x": b["x"] + b["width"] / 2, "y": b["y"] + b["height"] / 2, "button": "left"},
+        {"x": b["x"] + b["width"] / 2, "y": b["y"] + b["height"] / 2, "button": "primary"},
     )
     settle(5)
 
@@ -276,7 +291,7 @@ editor = prose_editor(ns)[0]
 b = editor["bounds"]
 call(
     "inject_pointer",
-    {"x": b["x"] + min(b["width"] / 2, 200.0), "y": max(b["y"] + 24.0, 24.0), "button": "left"},
+    {"x": b["x"] + min(b["width"] / 2, 200.0), "y": max(b["y"] + 24.0, 24.0), "button": "primary"},
 )
 settle(4)
 if not any(n.get("focused") for n in nodes()):
@@ -366,7 +381,15 @@ if not t or "110%" not in t[0]:
     fail(f"three notches down from 125% must read 110%, got: {t}")
 print("OK  Ctrl+Wheel down shrank it ->", t[0])
 
-call("screenshot", {"path": "/tmp/skribisto-text-size.png"})
+# `screenshot` hands back base64 PNG — it has no `path` argument, and passing
+# one was refused outright (silently, until `call` started reading errors).
+shot = "/tmp/skribisto-text-size.png"
+res, _ = call("screenshot")
+for c in res.get("content", []):
+    if c.get("type") == "image" and c.get("data"):
+        open(shot, "wb").write(base64.b64decode(c["data"]))
+        print(f"screenshot -> {shot}")
+        break
 
 print("\nAll editor-text-size assertions passed.")
 for p in (mcp, app):

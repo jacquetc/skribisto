@@ -268,7 +268,7 @@ def click_into(node_id):
     b = (n or {}).get("bounds") or {}
     x = b.get("x", 0.0) + min(b.get("width", 200.0) / 2, 200.0)
     y = max(b.get("y", 0.0) + 24.0, 24.0)
-    call("inject_pointer", {"x": x, "y": y, "button": "left"})
+    call("inject_pointer", {"x": x, "y": y, "button": "primary"})
     settle(3)
 
 
@@ -283,7 +283,7 @@ for n in nodes():
             call(
                 "inject_pointer",
                 {"x": bb["x"] + bb["width"] / 2, "y": bb["y"] + bb["height"] / 2,
-                 "button": "left"},
+                 "button": "primary"},
             )
             settle(5)
             opened = True
@@ -316,7 +316,7 @@ if tab is None:
 b = tab["bounds"]
 call(
     "inject_pointer",
-    {"x": b["x"] + b["width"] / 2, "y": b["y"] + b["height"] / 2, "button": "left"},
+    {"x": b["x"] + b["width"] / 2, "y": b["y"] + b["height"] / 2, "button": "primary"},
 )
 settle(6)
 time.sleep(0.5)
@@ -359,7 +359,7 @@ def click_toggle():
     bb = node["bounds"]
     call(
         "inject_pointer",
-        {"x": bb["x"] + bb["width"] / 2, "y": bb["y"] + bb["height"] / 2, "button": "left"},
+        {"x": bb["x"] + bb["width"] / 2, "y": bb["y"] + bb["height"] / 2, "button": "primary"},
     )
     settle(5)
 

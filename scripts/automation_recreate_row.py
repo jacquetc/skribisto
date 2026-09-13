@@ -340,7 +340,7 @@ def click_at(node):
     # has dwelt on its control.
     call("inject_pointer", {"action": "move", "x": x, "y": y})
     time.sleep(0.15)
-    call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "left"})
+    call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "primary"})
     time.sleep(0.5)
     return True
 
@@ -357,9 +357,9 @@ def open_row(node):
     x, y = b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
     call("inject_pointer", {"action": "move", "x": x, "y": y})
     time.sleep(0.12)
-    call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "left"})
+    call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "primary"})
     time.sleep(0.14)
-    call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "left"})
+    call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "primary"})
     time.sleep(2.2)
     settle(1.0)
     return True

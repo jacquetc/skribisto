@@ -344,7 +344,7 @@ def click_at(node):
     x, y = b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
     call("inject_pointer", {"action": "move", "x": x, "y": y})
     time.sleep(0.15)
-    call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "left"})
+    call("inject_pointer", {"action": "click", "x": x, "y": y, "button": "primary"})
     time.sleep(0.5)
     return True
 
