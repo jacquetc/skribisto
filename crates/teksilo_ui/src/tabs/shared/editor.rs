@@ -318,11 +318,10 @@ pub fn writing_column(
         editor.set_highlight_mask(mask);
     }
     // Hand this editor's handle to the find banner so it can select + scroll the
-    // current match into view. Re-attached on every rebuild (a fresh widget each
-    // time); the handle just re-points at the same underlying editor state.
-    if let Some(find) = &find {
-        find.attach_handle(editor.handle());
-    }
+    // current match into view. Deferred to `TypographyBoundEditor`'s build and gated
+    // on activation, NOT attached here: this function is *called* for both of
+    // `prose_body`'s layout arms, only one of which is ever mounted, so attaching at
+    // construction published the arm nobody can see. See `with_find_claim`.
     // Same re-attach-on-every-rebuild contract for the view-state ports, and the
     // caret this editor opens at. `initial` was carried over from the outgoing
     // editor by `tab_pane` before this build started, so a rebuild (a Promote, a
@@ -505,6 +504,9 @@ pub fn writing_column(
     }
     if let Some(anchor) = anchor {
         bound = bound.with_anchor(anchor);
+    }
+    if let Some(f) = find.clone() {
+        bound = bound.with_find_claim(f);
     }
     if let Some(band) = caret {
         bound = bound.with_caret_band(band);

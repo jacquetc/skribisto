@@ -548,3 +548,77 @@ fn a_capture_row_shows_the_tag_in_the_writers_own_colour() {
         );
     }
 }
+
+/// **The manuscript arm on screen owns the tab's prose handle — not the last one built.**
+///
+/// `panes::prose_body` constructs *two* manuscript columns for the same item, the Top
+/// layout and the Side one, and hands both the same per-tab `FindViewModel`. Only one is
+/// ever mounted. While the handle was attached during construction, the last column
+/// *constructed* won — the Side arm, which a Top-placement project never mounts — so
+/// `EditorsViewModel::focused_prose_handle` published an editor that is not on screen.
+/// Every command gated on `handle.focused_signal()` then asked that off-screen editor
+/// whether it had focus, got `false` for the life of the tab, and silently did nothing:
+/// Ctrl+Alt+M, Ctrl+Alt+Shift+M and both scene-break chords were dead in every Scene tab.
+///
+/// The two arms carry different prose here purely as identity: `attach_handle` does not
+/// read the document, so the text is the only way to say *which* column claimed. The
+/// unmounted arm is built **second**, reproducing the construction order that made the
+/// bug, so this goes red against the old attach-on-construction behaviour.
+#[test]
+fn only_the_mounted_manuscript_arm_claims_the_tabs_prose_handle() {
+    let mounted_doc = TextDocument::new();
+    mounted_doc.set_plain_text("the arm on screen").unwrap();
+    let parked_doc = TextDocument::new();
+    parked_doc.set_plain_text("the arm nobody mounted").unwrap();
+
+    // One view-model for the tab, exactly as `manuscript_page` hands `tab.find()` to
+    // both arms.
+    let find = crate::search::FindViewModel::new(mounted_doc.clone());
+
+    let column = |doc: &TextDocument| {
+        writing_column(
+            doc,
+            &Signal::new(700.0),
+            &test_typo(),
+            MAIN_MIN_LINES,
+            || {},
+            None,
+            Some(find.clone()),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
+            None,
+            false,
+            None,
+            None,
+        )
+    };
+
+    let mounted = column(&mounted_doc);
+    // Built last and never added to the tree: the Side arm's shape.
+    let _parked = column(&parked_doc);
+
+    let mut tree = WidgetTree::new();
+    tree.add(mounted);
+    tree.layout(SizeProposal::exact(900.0, 600.0));
+    let _ = tree.render();
+
+    let claimed = find
+        .editor_handle()
+        .expect("the mounted arm must publish a handle for the tab's prose commands");
+    assert_eq!(
+        claimed.to_plain_text(),
+        "the arm on screen",
+        "the tab's prose handle is the column nobody mounted, so every command gated on \
+         `focused_signal()` asks an off-screen editor and does nothing"
+    );
+}

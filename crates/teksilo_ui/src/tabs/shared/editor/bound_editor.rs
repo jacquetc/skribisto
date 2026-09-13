@@ -170,6 +170,10 @@ pub(super) struct TypographyBoundEditor {
     /// a scene open in a tab is also a row of the Full Chapter beside it. See
     /// [`LaneAnchor`](crate::margin_lane::LaneAnchor).
     pub(super) anchor: Option<crate::margin_lane::LaneAnchor>,
+    /// The per-tab find view-model this editor claims as "the tab's prose editor"
+    /// **while it is the arm on screen**. `None` on every surface that is not a
+    /// tab's main prose column. See [`Self::with_find_claim`].
+    pub(super) find: Option<crate::search::FindViewModel>,
 }
 
 impl TypographyBoundEditor {
@@ -197,9 +201,24 @@ impl TypographyBoundEditor {
             games: None,
             footnotes: None,
             anchor: None,
+            find: None,
         }
     }
 
+    /// Claim this tab's find handle for as long as this editor is the arm on screen.
+    ///
+    /// Opt-in, and only from a tab's **main prose** column: the handle it publishes is
+    /// what `EditorsViewModel::focused_prose_handle` hands to every prose-editing
+    /// command, and a stream showing one editor per row has no single "the" editor to
+    /// offer — the same reason `writing_column` passes no `view_state` there.
+    pub(super) fn with_find_claim(mut self, find: crate::search::FindViewModel) -> Self {
+        self.find = Some(find);
+        self
+    }
+
+    /// Name the `BinderItem` this editor is showing, and the surface showing it.
+    /// Opt-in, because the surfaces built with no project around them (the widget
+    /// tests) have no anchor to give.
     pub(super) fn with_anchor(mut self, anchor: crate::margin_lane::LaneAnchor) -> Self {
         self.anchor = Some(anchor);
         self
@@ -297,6 +316,38 @@ impl Widget for TypographyBoundEditor {
         let handle = editor.handle();
         let id = ctx.add(editor);
         self.child_id = Some(id);
+        // **The arm on screen owns the tab's prose handle — not the last one built.**
+        //
+        // `panes::prose_body` builds *two* manuscript columns for the same item, the
+        // Top layout and the Side one, and hands both the same per-tab
+        // `FindViewModel`. Attaching at construction therefore let the last column
+        // *constructed* win, which is the Side arm — the one a Top-placement project
+        // never mounts. Every command routed through
+        // `EditorsViewModel::focused_prose_handle` then asked an editor that is not on
+        // screen whether it had focus, got `false` for the life of the tab, and did
+        // nothing at all: Ctrl+Alt+M, Ctrl+Alt+Shift+M and both scene-break chords were
+        // dead in every Scene tab, while the Format dock's identical-looking commands
+        // kept working because they search their registry for whichever editor *is*
+        // focused rather than trusting one cached handle.
+        //
+        // Claiming on activation fixes both placements and needs no ordering: exactly
+        // one arm is ever mounted, and switching placement re-claims. Same gate, and
+        // the same hazard, as `wire_spell` above and `LaneScope` beside it.
+        if let Some(find) = self.find.clone() {
+            let self_id = ctx.self_id();
+            let active = ctx.activation_signal(self_id);
+            let handle = handle.clone();
+            // Seed: `ctx.effect` fires on later changes only, and the live arm is
+            // normally already active by the time it builds.
+            if active.get() {
+                find.attach_handle(handle.clone());
+            }
+            ctx.effect(&active, move |&on| {
+                if on {
+                    find.attach_handle(handle.clone());
+                }
+            });
+        }
         // Ctrl+Wheel resizes the type this editor is dressed in. One handler
         // here reaches every writing surface in the app, because every one of
         // them is wrapped in this widget — and each already carries the right
