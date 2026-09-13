@@ -50,11 +50,11 @@ fn pump(tree: &mut WidgetTree) {
 /// that never focuses would see nothing however well the wiring works.
 fn click_into(tree: &mut WidgetTree) {
     let _ = tree.render();
-    tree.dispatch_event(teksilo::core::WidgetEvent::PointerDown {
-        position: teksilo::canvas::Point::new(450.0, 20.0),
-        button: teksilo::core::PointerButton::Primary,
-        modifiers: teksilo::core::Modifiers::NONE,
-    });
+    tree.dispatch_event(teksilo::core::WidgetEvent::pointer_down(
+        teksilo::canvas::Point::new(450.0, 20.0),
+        teksilo::core::PointerButton::Primary,
+        teksilo::core::Modifiers::NONE,
+    ));
     pump(tree);
     assert!(tree.focused().is_some(), "the click must focus the editor");
 }

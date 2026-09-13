@@ -81,13 +81,13 @@ fn column_over(typo: &EditorTypography) -> WidgetTree {
 /// from — the dispatcher sends a wheel to `hovered.or(focused)`, and a headless
 /// tree has hovered nothing until it is told.
 fn hover_prose(tree: &mut WidgetTree) {
-    tree.dispatch_event(WidgetEvent::PointerMove {
-        position: teksilo::canvas::Point::new(450.0, 20.0),
-    });
+    tree.dispatch_event(WidgetEvent::pointer_move(teksilo::canvas::Point::new(
+        450.0, 20.0,
+    )));
 }
 
 fn wheel(tree: &mut WidgetTree, delta: ScrollDelta, modifiers: Modifiers) {
-    tree.dispatch_event(WidgetEvent::Scroll { delta, modifiers });
+    tree.dispatch_event(WidgetEvent::scroll(delta, modifiers));
 }
 
 /// One physical notch, as the platform layer delivers it (3 lines per detent).

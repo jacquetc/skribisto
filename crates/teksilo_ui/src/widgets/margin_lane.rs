@@ -902,6 +902,7 @@ impl Widget for MarginLane {
                     DragPhase::Started {
                         position,
                         button: PointerButton::Primary,
+                        ..
                     } => {
                         let held = if geometry.box_contains(bounds.height, position.y) {
                             // Grabbed the box: keep where on it.
@@ -1758,19 +1759,19 @@ mod tests {
 
     fn press(tree: &mut WidgetTree, y: f32) {
         tree.pointer_move(Point::new(6.0, y));
-        tree.dispatch_event(WidgetEvent::PointerDown {
-            position: Point::new(6.0, y),
-            button: PointerButton::Primary,
-            modifiers: teksilo::core::event::Modifiers::NONE,
-        });
+        tree.dispatch_event(WidgetEvent::pointer_down(
+            Point::new(6.0, y),
+            PointerButton::Primary,
+            teksilo::core::event::Modifiers::NONE,
+        ));
     }
 
     fn release(tree: &mut WidgetTree, y: f32) {
-        tree.dispatch_event(WidgetEvent::PointerUp {
-            position: Point::new(6.0, y),
-            button: PointerButton::Primary,
-            modifiers: teksilo::core::event::Modifiers::NONE,
-        });
+        tree.dispatch_event(WidgetEvent::pointer_up(
+            Point::new(6.0, y),
+            PointerButton::Primary,
+            teksilo::core::event::Modifiers::NONE,
+        ));
     }
 
     /// **A click brings the box to the pointer, centred on it.**
@@ -1837,12 +1838,8 @@ mod tests {
         // Box top is at 200px. Grab it 30px in, at 230px.
         press(&mut tree, 230.0);
         // One move to cross the recogniser's 5px threshold, then the real one.
-        tree.dispatch_event(WidgetEvent::PointerMove {
-            position: Point::new(6.0, 240.0),
-        });
-        tree.dispatch_event(WidgetEvent::PointerMove {
-            position: Point::new(6.0, 350.0),
-        });
+        tree.dispatch_event(WidgetEvent::pointer_move(Point::new(6.0, 240.0)));
+        tree.dispatch_event(WidgetEvent::pointer_move(Point::new(6.0, 350.0)));
         release(&mut tree, 350.0);
 
         // Pointer at 350px, still 30px into the box, so the top is at 320px.
@@ -1868,12 +1865,8 @@ mod tests {
         // The first move crosses the recogniser's 5px threshold and emits
         // `DragStarted`, which reports the *press* position; the second is the
         // first real `DragMoved`.
-        tree.dispatch_event(WidgetEvent::PointerMove {
-            position: Point::new(6.0, 490.0),
-        });
-        tree.dispatch_event(WidgetEvent::PointerMove {
-            position: Point::new(6.0, 520.0),
-        });
+        tree.dispatch_event(WidgetEvent::pointer_move(Point::new(6.0, 490.0)));
+        tree.dispatch_event(WidgetEvent::pointer_move(Point::new(6.0, 520.0)));
         release(&mut tree, 520.0);
 
         let seen = jumps.borrow().clone();

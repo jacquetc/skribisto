@@ -923,7 +923,12 @@ fn a_press_in_a_card_synopsis_does_not_arm_an_ancestor_drag() {
     let press = |tree: &mut WidgetTree, r: teksilo::canvas::Rect| {
         let p = Point::new(r.x + r.width / 2.0, r.y + r.height / 2.0);
         tree.pointer_down_button(p, PointerButton::Primary);
-        let armed: Vec<_> = tree.armed_drag_observers().to_vec();
+        // `sequence_members` is teksilo's successor to the deleted
+        // `armed_drag_observers()`: the same question — who competes for this
+        // press — asked of the per-pointer arbitration that replaced the old
+        // observer list. A dead zone still blocks enrolment kind-independently,
+        // so what this asserts is unchanged.
+        let armed = tree.sequence_members(teksilo::core::pointer::PointerId::MOUSE);
         tree.pointer_up_button(p, PointerButton::Primary);
         armed
     };
@@ -985,7 +990,12 @@ fn a_press_in_a_cards_rename_field_does_not_arm_the_card_drag() {
     let press = |tree: &mut WidgetTree, r: teksilo::canvas::Rect| {
         let p = Point::new(r.x + r.width / 2.0, r.y + r.height / 2.0);
         tree.pointer_down_button(p, PointerButton::Primary);
-        let armed: Vec<_> = tree.armed_drag_observers().to_vec();
+        // `sequence_members` is teksilo's successor to the deleted
+        // `armed_drag_observers()`: the same question — who competes for this
+        // press — asked of the per-pointer arbitration that replaced the old
+        // observer list. A dead zone still blocks enrolment kind-independently,
+        // so what this asserts is unchanged.
+        let armed = tree.sequence_members(teksilo::core::pointer::PointerId::MOUSE);
         tree.pointer_up_button(p, PointerButton::Primary);
         armed
     };
@@ -4701,16 +4711,16 @@ fn clicking_inside_the_open_editor_keeps_it_open() {
 /// A primary press + release at an absolute point.
 fn press_at(tree: &mut WidgetTree, at: teksilo::canvas::Point) {
     use teksilo::core::event::{Modifiers, PointerButton, WidgetEvent};
-    tree.dispatch_event(WidgetEvent::PointerDown {
-        position: at,
-        button: PointerButton::Primary,
-        modifiers: Modifiers::NONE,
-    });
-    tree.dispatch_event(WidgetEvent::PointerUp {
-        position: at,
-        button: PointerButton::Primary,
-        modifiers: Modifiers::NONE,
-    });
+    tree.dispatch_event(WidgetEvent::pointer_down(
+        at,
+        PointerButton::Primary,
+        Modifiers::NONE,
+    ));
+    tree.dispatch_event(WidgetEvent::pointer_up(
+        at,
+        PointerButton::Primary,
+        Modifiers::NONE,
+    ));
 }
 
 /// **Escape still cancels after the writer has clicked into the field.**

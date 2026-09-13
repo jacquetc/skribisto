@@ -781,11 +781,11 @@ fn the_mode_paints_its_theme_band_onto_the_document() {
         .next()
         .expect("the mode mounts one writing column");
     let _ = tree.render();
-    tree.dispatch_event(teksilo::core::WidgetEvent::PointerDown {
-        position: teksilo::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
-        button: teksilo::core::PointerButton::Primary,
-        modifiers: teksilo::core::Modifiers::NONE,
-    });
+    tree.dispatch_event(teksilo::core::WidgetEvent::pointer_down(
+        teksilo::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
+        teksilo::core::PointerButton::Primary,
+        teksilo::core::Modifiers::NONE,
+    ));
     settle(&mut tree);
     assert!(tree.focused().is_some(), "the click must focus the editor");
 
@@ -848,16 +848,16 @@ fn leaving_the_mode_takes_its_band_off_the_shared_document() {
         .next()
         .expect("the mode mounts one writing column");
     let _ = tree.render();
-    tree.dispatch_event(teksilo::core::WidgetEvent::PointerDown {
-        position: teksilo::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
-        button: teksilo::core::PointerButton::Primary,
-        modifiers: teksilo::core::Modifiers::NONE,
-    });
-    tree.dispatch_event(teksilo::core::WidgetEvent::PointerUp {
-        position: teksilo::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
-        button: teksilo::core::PointerButton::Primary,
-        modifiers: teksilo::core::Modifiers::NONE,
-    });
+    tree.dispatch_event(teksilo::core::WidgetEvent::pointer_down(
+        teksilo::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
+        teksilo::core::PointerButton::Primary,
+        teksilo::core::Modifiers::NONE,
+    ));
+    tree.dispatch_event(teksilo::core::WidgetEvent::pointer_up(
+        teksilo::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
+        teksilo::core::PointerButton::Primary,
+        teksilo::core::Modifiers::NONE,
+    ));
     settle(&mut tree);
 
     let doc = fx.docs.peek(1).expect("seeded");

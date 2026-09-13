@@ -1805,11 +1805,11 @@ mod tests {
             "nothing is open before the click"
         );
         let b = tree.bounds(id);
-        tree.dispatch_event(teksilo::core::event::WidgetEvent::PointerDown {
-            position: teksilo::canvas::Point::new(b.x + b.width / 2.0, b.y + b.height / 2.0),
-            button: teksilo::core::event::PointerButton::Secondary,
-            modifiers: teksilo::core::event::Modifiers::NONE,
-        });
+        tree.dispatch_event(teksilo::core::event::WidgetEvent::pointer_down(
+            teksilo::canvas::Point::new(b.x + b.width / 2.0, b.y + b.height / 2.0),
+            teksilo::core::event::PointerButton::Secondary,
+            teksilo::core::event::Modifiers::NONE,
+        ));
         assert_eq!(
             tree.active_overlays().len(),
             1,
@@ -1820,11 +1820,11 @@ mod tests {
         // and the release lands on the lane -- which is outside the menu that
         // just opened over it. A menu dismissed by the second half of the click
         // that opened it never appears at all.
-        tree.dispatch_event(teksilo::core::event::WidgetEvent::PointerUp {
-            position: teksilo::canvas::Point::new(b.x + b.width / 2.0, b.y + b.height / 2.0),
-            button: teksilo::core::event::PointerButton::Secondary,
-            modifiers: teksilo::core::event::Modifiers::NONE,
-        });
+        tree.dispatch_event(teksilo::core::event::WidgetEvent::pointer_up(
+            teksilo::canvas::Point::new(b.x + b.width / 2.0, b.y + b.height / 2.0),
+            teksilo::core::event::PointerButton::Secondary,
+            teksilo::core::event::Modifiers::NONE,
+        ));
         assert_eq!(
             tree.active_overlays().len(),
             1,

@@ -200,9 +200,6 @@ impl TypographyBoundEditor {
         }
     }
 
-    /// Name the `BinderItem` this editor is showing, and the surface showing it.
-    /// Opt-in, because the surfaces built with no project around them (the widget
-    /// tests) have no anchor to give.
     pub(super) fn with_anchor(mut self, anchor: crate::margin_lane::LaneAnchor) -> Self {
         self.anchor = Some(anchor);
         self
@@ -318,7 +315,10 @@ impl Widget for TypographyBoundEditor {
             let mut wheel = crate::shared::editor_size::WheelAccumulator::default();
             ctx.apply_self_handlers(HandlerSet::new().on_pointer_event(
                 move |event: &WidgetEvent, ctx: &mut EventContext| -> EventResponse {
-                    let WidgetEvent::Scroll { delta, modifiers } = event else {
+                    let WidgetEvent::Scroll {
+                        delta, modifiers, ..
+                    } = event
+                    else {
                         return EventResponse::Ignored;
                     };
                     // Super as well as Ctrl, so ⌘-wheel is the gesture on macOS
