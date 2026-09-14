@@ -3,7 +3,9 @@
 
 use super::*;
 use common::entities::{Binder, BinderItem, BinderItemRole, BinderItemSubRole as SR, Work};
+use proptest::prelude::*;
 use skrib_format::{BinderWithItems, ItemWithContents};
+use text_document::{DjotImportOptions, djot_to_plain_text};
 
 use crate::preset::builtin_presets;
 
@@ -1059,8 +1061,8 @@ fn an_author_named_like_a_list_marker_is_not_eaten() {
     }
 }
 
-/// The escape helper itself, per marker family — a backslash belongs before
-/// punctuation only.
+/// The escape helper itself, one assertion per marker family — a backslash belongs before
+/// punctuation only, and a run needs all of it escaped, not just its first character.
 #[test]
 fn block_leading_escapes_pick_the_right_character() {
     // Single special character: escape it directly.
@@ -1070,8 +1072,80 @@ fn block_leading_escapes_pick_the_right_character() {
     assert_eq!(escape_block_leading("A. Writer"), "A\\. Writer");
     assert_eq!(escape_block_leading("1. Thing"), "1\\. Thing");
     assert_eq!(escape_block_leading("i) Roman"), "i\\) Roman");
+    // A marker is not one character long. Each of these was emitted verbatim before,
+    // and each came back with the marker deleted.
+    assert_eq!(escape_block_leading("12. Thing"), "12\\. Thing");
+    assert_eq!(escape_block_leading("1984. A Novel"), "1984\\. A Novel");
+    assert_eq!(escape_block_leading("iv. Roman"), "iv\\. Roman");
+    assert_eq!(escape_block_leading("MCM. Roman"), "MCM\\. Roman");
+    assert_eq!(escape_block_leading("10) Ten"), "10\\) Ten");
+    // The surrounding-paren style, which the old rule did not model at all.
+    assert_eq!(escape_block_leading("(1) Nineteen"), "(1\\) Nineteen");
+    assert_eq!(escape_block_leading("(a) Item"), "(a\\) Item");
+    // A run of punctuation needs every character escaped: `\-` plus a surviving `--` is
+    // the en-dash ligature, and a surviving pair of backticks opens a code span.
+    assert_eq!(escape_block_leading("--- x"), "\\-\\-\\- x");
+    assert_eq!(escape_block_leading("``` x"), "\\`\\`\\` x");
+    assert_eq!(escape_block_leading("::: x"), "\\:\\:\\: x");
+    // Block openers whose character was absent from the old list.
+    assert_eq!(escape_block_leading("[^1]: a note"), "\\[\\^1]: a note");
+    assert_eq!(escape_block_leading("{.cls} text"), "\\{\\.cls} text");
+    // Indentation does not protect a line in Djot, so the marker is still found.
+    assert_eq!(escape_block_leading("  12. Thing"), "  12\\. Thing");
+    // Not a marker: no separator after the punctuation.
+    assert_eq!(escape_block_leading("1.x"), "1.x");
     // Nothing special: left alone.
     assert_eq!(escape_block_leading("Plain name"), "Plain name");
+}
+
+proptest! {
+    /// The contract itself, checked against the parser that reads the file back.
+    ///
+    /// The assertions above are a map of the families; this is the territory. It builds a
+    /// line out of the pieces a marker is made of — indentation, the optional `(`, a
+    /// numbering token or a punctuation run, a closing `.`/`)`, a tail — and asserts the
+    /// only thing that finally matters: a reader gets back what the writer put in.
+    ///
+    /// Three successive versions of `escape_block_leading` passed a list like the one above
+    /// and lost text on a neighbour of it (`1.` handled, `12.` eaten; `*` handled, `---`
+    /// truncated), which is the failure mode an example list cannot close by construction.
+    ///
+    /// Read back through `djot_to_plain_text` rather than a parser of this test's own, so
+    /// the exporter is pinned against **the app's own reader**: the two cannot agree here
+    /// and disagree in the product.
+    ///
+    /// The expectation is `line.trim()`, not `line`: a Djot block cannot carry leading or
+    /// trailing whitespace at all, for ordinary prose as much as for this.
+    #[test]
+    fn an_escaped_line_reads_back_as_itself(
+        indent in "[ \t]{0,3}",
+        open in prop_oneof![Just(""), Just("(")],
+        token in prop_oneof![
+            "[0-9]{1,5}",
+            "[ivxlcdmIVXLCDM]{1,4}",
+            "[a-zA-Z]{1,3}",
+            r"[#*+>:|~=._!?`\-]{1,3}",
+            r"[\[\]{}()^]{1,2}",
+            Just(String::new()),
+        ],
+        punct in prop_oneof![Just(""), Just("."), Just(")"), Just(". "), Just(") ")],
+        tail in r"[\p{L} ]{0,10}",
+    ) {
+        let line = format!("{indent}{open}{token}{punct}{tail}");
+        prop_assume!(!line.trim().is_empty());
+
+        let emitted = escape_block_leading(&line);
+        let read_back = djot_to_plain_text(&emitted, &DjotImportOptions::default());
+
+        prop_assert_eq!(
+            read_back.as_str(),
+            line.trim(),
+            "line {:?} emitted as {:?} read back as {:?}",
+            line,
+            emitted,
+            read_back
+        );
+    }
 }
 
 /// The running header degrades sensibly rather than printing a stray

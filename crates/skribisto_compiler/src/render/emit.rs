@@ -440,31 +440,129 @@ pub(super) fn take_break(pending: &mut bool, anything_above: &mut bool) -> Vec<S
 
 /// Escape a leading Djot block marker so the line is read as a plain paragraph.
 ///
-/// Two different families of marker can hijack the start of a line, and they need
-/// *different* escapes — a backslash only escapes punctuation in Djot, so putting one
-/// in front of a letter or digit leaves a literal backslash on the page:
+/// Every caller here holds **data** — a writer's scene-break glyph, their own name, a
+/// generated word-count note — and Djot decides what a line means from how it starts. A
+/// line that happens to open like a marker is silently re-read as a list, a heading, a
+/// quote or a rule, and the marker text is *consumed*: `12. Thing` exported and read back
+/// is the single word `Thing`. Nothing downstream looks wrong, because the file is valid
+/// Djot; it simply says something else.
 ///
-/// * a **single special character** (`#` heading, `>` quote, `*`/`-`/`+` bullet, …).
-///   Escape the character itself: `\* Star` → `* Star`.
-/// * a **two-character list marker** — an alphanumeric followed by `.` or `)`, which
-///   Djot reads as an ordered list (numeric `1.`, alphabetic `A.`, roman `i.`).
-///   Escape the *punctuation*, not the leading character: `A\. Writer` → `A. Writer`,
-///   whereas `\A. Writer` renders the backslash literally and `A. Writer` silently
-///   loses the `A.` — the marker is consumed and only "Writer" survives.
+/// # What actually hijacks a line
+///
+/// Measured against the parser rather than assumed, because three earlier rules here were
+/// each narrower than the grammar and each lost text:
+///
+/// * An **ordered-list marker**: a decimal run of any length (`12.`, `007.`), a roman
+///   numeral run in either case (`ii.`, `MCM.`), or a single letter (`a.`, `Z.`); optionally
+///   wrapped as `(1)`; closed by `.` or `)`; and followed by whitespace or end of line.
+///   Reading only the first two characters — which is what this did — covers the
+///   single-character forms and nothing else.
+/// * Any of the **punctuation-initiated blocks**: `#` heading, `*`/`-`/`+` bullet, `>`
+///   quote, `:` description list, `|` table, `---`/`***` rule, ```` ``` ````/`~~~` fence,
+///   `:::` div, `[^n]:` footnote definition, `[ref]:` link definition, `{...}` attributes.
+///   The last four start with characters the old list did not have at all, and `{.cls} text`
+///   was not merely re-read but *erased*: attributes attach to a block and produce none.
+/// * **Indentation does not protect a line.** Djot has no indented code block, so every one
+///   of the above still fires under any number of leading spaces or tabs.
+///
+/// # The rule
+///
+/// Find the first character that is not indentation. If an ordered-list marker starts
+/// there, escape the `.` or `)` that closes it: `A\. Writer`, `(1\) Nineteen`. Escaping the
+/// *leading* character instead would leave a literal backslash on the page, since a
+/// backslash only escapes punctuation in Djot. Otherwise escape **every** character of the
+/// leading run of ASCII punctuation, not just the first: `\-` followed by a surviving `--`
+/// is the en-dash ligature, so `--- x` escaped at one character came back as `- x`, and
+/// ```` \``` ```` left a code-span delimiter behind.
+///
+/// That second branch is deliberately wider than the list of block markers. `\X` is exactly
+/// `X` for every ASCII punctuation character, so over-escaping is free, while a list of
+/// markers has to be re-derived every time the parser gains one. The property test pins the
+/// result against the real parser, which is what makes the wide rule safe to rely on.
+///
+/// # What it does not preserve
+///
+/// Leading and trailing whitespace, which a Djot block cannot represent at all — `"  hi  "`
+/// round-trips as `"hi"` whether or not anything is escaped. The contract is therefore that
+/// the emitted line reads back as `s.trim()`; every caller here already hands over trimmed
+/// or generated text.
 pub(super) fn escape_block_leading(s: &str) -> String {
-    let mut chars = s.chars();
-    match (chars.next(), chars.next()) {
-        // Ordered-list marker: escape the `.`/`)` that makes it one.
-        (Some(c), Some(p)) if c.is_alphanumeric() && (p == '.' || p == ')') => {
-            let mut out = String::with_capacity(s.len() + 1);
-            out.push(c);
-            out.push('\\');
-            out.push_str(&s[c.len_utf8()..]);
-            out
-        }
-        (Some(c), _) if "#*-_+>~:|=`".contains(c) => format!("\\{s}"),
-        _ => s.to_string(),
+    let indent_end = s.find(|c: char| c != ' ' && c != '\t').unwrap_or(s.len());
+    let (indent, rest) = s.split_at(indent_end);
+    if rest.is_empty() {
+        return s.to_string();
     }
+
+    // An ordered-list marker: escape the punctuation that closes it, in place.
+    if let Some(at) = ordered_marker_punct(rest) {
+        let mut out = String::with_capacity(s.len() + 1);
+        out.push_str(indent);
+        out.push_str(&rest[..at]);
+        out.push('\\');
+        out.push_str(&rest[at..]);
+        return out;
+    }
+
+    // Otherwise neutralise the whole leading punctuation run.
+    let run_end = rest
+        .find(|c: char| !c.is_ascii_punctuation())
+        .unwrap_or(rest.len());
+    if run_end == 0 {
+        return s.to_string();
+    }
+    let mut out = String::with_capacity(s.len() + run_end);
+    out.push_str(indent);
+    for c in rest[..run_end].chars() {
+        out.push('\\');
+        out.push(c);
+    }
+    out.push_str(&rest[run_end..]);
+    out
+}
+
+/// Byte offset within `s` of the `.` or `)` that would make `s` open an ordered list, if it
+/// does. `s` must already have its indentation stripped.
+fn ordered_marker_punct(s: &str) -> Option<usize> {
+    let b = s.as_bytes();
+    // `(1)` is a third marker style beside `1.` and `1)`, and closes only with `)`.
+    let paren = b.first() == Some(&b'(');
+    let start = usize::from(paren);
+    let mut i = start;
+    while i < b.len() && b[i].is_ascii_alphanumeric() {
+        i += 1;
+    }
+    if !is_ordered_token(&s[start..i]) {
+        return None;
+    }
+    let punct = *b.get(i)?;
+    if paren {
+        if punct != b')' {
+            return None;
+        }
+    } else if punct != b'.' && punct != b')' {
+        return None;
+    }
+    // A marker is only a marker when something separates it from the text: `1.x` is prose.
+    match b.get(i + 1) {
+        None => {}
+        Some(c) if c.is_ascii_whitespace() => {}
+        Some(_) => return None,
+    }
+    Some(i)
+}
+
+/// Whether `t` is the numbering half of an ordered-list marker: a decimal run, a roman
+/// numeral run in one case, or a single letter.
+///
+/// Slightly wider than the parser in one harmless direction — `dim` reads as roman here —
+/// because the consequence of a false positive is one backslash that renders as nothing,
+/// and the consequence of a false negative is deleted text.
+fn is_ordered_token(t: &str) -> bool {
+    !t.is_empty()
+        && (t.bytes().all(|c| c.is_ascii_digit())
+            || (t.len() == 1 && t.as_bytes()[0].is_ascii_alphabetic())
+            || t.bytes().all(|c| b"ivxlcdm".contains(&c))
+            || t.bytes().all(|c| b"IVXLCDM".contains(&c)))
 }
 
 /// Whether a row's text lays out right-to-left, honouring a forced preset direction.

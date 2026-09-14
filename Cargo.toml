@@ -61,6 +61,14 @@ csv = "1.4"
 chrono = { version = "0.4" , features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 
+# Test-only: property-based testing. Matches the sibling repos, which already depend on it
+# (`teksilo-core`, `text-document`'s `common` / `document_io` / `public_api`), so a reviewer
+# meets one tool rather than two. Used here for the properties that state a contract no list
+# of hand-picked examples can stand in for: a round trip that must be the identity, a
+# comparator that must be a total order, an edit that must leave a tree well-formed.
+# Add it as a `dev-dependencies` entry, never a real one.
+proptest = "1"
+
 # Internal crates
 common = { package = "skribisto-common", version = "3.0.2", path = "crates/common" }
 macros = { package = "skribisto-macros", version = "3.0.2", path = "crates/macros" }

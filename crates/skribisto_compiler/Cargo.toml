@@ -36,6 +36,11 @@ teksilo-text = { version = "0.9.5", features = ["fonts-arabic", "fonts-hebrew"] 
 
 [dev-dependencies]
 tempfile = "3"
+# The escaping contract in `render::emit` is a round trip, and a round trip is a property:
+# the families of Djot block marker are few, but the shapes inside each are not, and the
+# three rules that preceded the current one each passed a hand-picked list while losing
+# text on a neighbour of it.
+proptest = { workspace = true }
 png = "0.18"
 # Reading a packed `.docx`/`.odt` back to prove a round-trip mark reached the file rather than
 # only the payload. Dev-only: the writers themselves live in text-document.
