@@ -28,7 +28,7 @@ fn ts() -> DateTime<Utc> {
 /// producer sets it — so a bundle handed in with `None` reads back carrying its actual
 /// floor. That difference is the feature working, not loss, so this asserts the stamp is
 /// right and then compares everything else exactly.
-fn assert_round_trip(input: &WorkBundle, read: &WorkBundle) {
+pub(crate) fn assert_round_trip(input: &WorkBundle, read: &WorkBundle) {
     assert_eq!(
         read.manifest.format_min_read_version,
         Some(crate::version_gate::compute_min_read_version(input)),
@@ -116,16 +116,16 @@ fn sample_statuses() -> Vec<common::entities::BinderStatus> {
 
 /// Build a fixture covering every combination, with each item carrying exactly
 /// its allowed content roles. `content_id` is bumped to keep ids unique.
-struct SampleInputs {
-    work: Work,
-    tags: Vec<BinderTag>,
-    dict_words: Vec<DictWord>,
-    note_templates: Vec<common::entities::NoteTemplate>,
-    statuses: Vec<common::entities::BinderStatus>,
-    assets: Vec<Asset>,
-    smart_punctuation: common::entities::SmartPunctuation,
-    trash: Vec<TrashInfo>,
-    binders: Vec<BinderWithItems>,
+pub(crate) struct SampleInputs {
+    pub(crate) work: Work,
+    pub(crate) tags: Vec<BinderTag>,
+    pub(crate) dict_words: Vec<DictWord>,
+    pub(crate) note_templates: Vec<common::entities::NoteTemplate>,
+    pub(crate) statuses: Vec<common::entities::BinderStatus>,
+    pub(crate) assets: Vec<Asset>,
+    pub(crate) smart_punctuation: common::entities::SmartPunctuation,
+    pub(crate) trash: Vec<TrashInfo>,
+    pub(crate) binders: Vec<BinderWithItems>,
 }
 
 fn sample_inputs() -> SampleInputs {
@@ -600,7 +600,10 @@ pub(crate) fn build_bundle_with_footnotes(shape: ShapeTag) -> WorkBundle {
 /// Exists so the naming tests below can do the two things a real session does —
 /// remap every entity id (what `load_work` does on open) and edit titles or
 /// order — without duplicating `build_bundle`'s fifteen-argument call.
-fn build_bundle_with(shape: ShapeTag, tweak: impl FnOnce(&mut SampleInputs)) -> WorkBundle {
+pub(crate) fn build_bundle_with(
+    shape: ShapeTag,
+    tweak: impl FnOnce(&mut SampleInputs),
+) -> WorkBundle {
     let mut s = sample_inputs();
     tweak(&mut s);
     let comments = sample_comments(&s.binders);
@@ -625,7 +628,7 @@ fn build_bundle_with(shape: ShapeTag, tweak: impl FnOnce(&mut SampleInputs)) -> 
 }
 
 /// Every prose path the bundle records, sorted — the set a git diff would see.
-fn prose_paths(bundle: &WorkBundle) -> Vec<String> {
+pub(crate) fn prose_paths(bundle: &WorkBundle) -> Vec<String> {
     let mut paths: Vec<String> = bundle
         .binders
         .iter()

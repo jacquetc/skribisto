@@ -1,3 +1,9 @@
+Version: 3.0.3
+Date: 2026-09-14
+Type: stable
+Description:
+- "A project kept as a folder opens again after a file synchronisation tool or macOS respelled the accents in its file names, and saving into it edits those files in place instead of writing a second copy beside them"
+---
 Version: 3.0.2
 Date: 2026-09-04
 Type: stable

@@ -5,6 +5,11 @@
 //! (the `project.skrib` is the commit point), and **diff-minimal**: a blob is
 //! only touched when its bytes actually change, and orphaned blobs/dirs are
 //! pruned — so an exploded project under git shows a tight diff.
+//!
+//! Every path a manifest names is resolved through [`super::locate`], on both the
+//! read and the write side, and every prune compares names by NFC form: a folder
+//! that crossed a Unicode-normalisation boundary (a sync client, HFS+) still opens,
+//! and a save into it edits the files as they are spelled rather than writing twins.
 
 use anyhow::{Context, Result};
 use serde::Serialize;
@@ -17,6 +22,7 @@ use tempfile::NamedTempFile;
 
 use super::bundle::*;
 use super::history::{HISTORY_DIR, HISTORY_INDEX, blob_relpath};
+use super::locate::{Locator, nfc};
 use super::shape::MANIFEST_NAME;
 use super::slug::{ASSETS_DIR, TEMPLATES_DIR, binder_dir_name};
 use super::version_gate::compute_min_read_version;
@@ -88,6 +94,7 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         root,
         paths: &bundle.carried,
     };
+    let locator = Locator::new();
 
     // Carried files go down **first**, so that anything this build also models
     // overwrites them with its own authoritative bytes rather than the other way
@@ -100,7 +107,7 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         // verbatim by design. `read_zip` already refuses an escaping entry, but
         // a `WorkBundle` can also be built by hand (both project importers do),
         // so the write side checks rather than assuming.
-        let target = crate::safe_path::join_checked(root, rel, "carried file")?;
+        let target = locator.locate(root, rel, "carried file")?;
         write_if_changed(&target, &file.bytes)
             .with_context(|| format!("writing carried file {rel}"))?;
     }
@@ -174,10 +181,10 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
             .get(&t.file_id)
             .ok_or_else(|| anyhow::anyhow!("missing body blob for note template {}", t.file_id))?;
         write_if_changed(
-            &crate::safe_path::join_checked(root, &t.path, "note-template body")?,
+            &locator.locate(root, &t.path, "note-template body")?,
             body.as_bytes(),
         )?;
-        expected_templates.insert(fname);
+        expected_templates.insert(nfc(&fname));
     }
     prune_dir(&templates_dir, &expected_templates, "djot", &carried)?;
 
@@ -215,11 +222,8 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
                 a.content_hash
             )
         })?;
-        write_if_changed(
-            &crate::safe_path::join_checked(root, &a.path, "asset")?,
-            bytes,
-        )?;
-        expected_assets.insert(fname);
+        write_if_changed(&locator.locate(root, &a.path, "asset")?, bytes)?;
+        expected_assets.insert(nfc(&fname));
     }
     prune_assets_dir(&assets_dir, &expected_assets, &carried)?;
 
@@ -258,8 +262,11 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
 
     for (index, bb) in bundle.binders.iter().enumerate() {
         let dir_name = binder_dir_name(index, &bb.binder.name);
-        expected_binder_dirs.insert(dir_name.clone());
-        let bdir = binders_dir.join(&dir_name);
+        expected_binder_dirs.insert(nfc(&dir_name));
+        // The directory as it is already spelled on disk (see `locate`): a twin
+        // beside it would be pruned as stale on a byte-exact filesystem and would
+        // collide with it on a normalisation-insensitive one.
+        let bdir = locator.locate_child(&binders_dir, &dir_name);
         let tdir = bdir.join("text");
         fs::create_dir_all(&tdir).with_context(|| format!("creating {}", tdir.display()))?;
 
@@ -284,26 +291,29 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
                 let data = item.prose.get(&pr.file_id).ok_or_else(|| {
                     anyhow::anyhow!("missing prose blob for content {}", pr.file_id)
                 })?;
-                write_if_changed(
-                    &crate::safe_path::join_checked(root, &pr.path, "prose")?,
-                    data.as_bytes(),
-                )?;
-                expected_prose.insert(fname.clone());
+                write_if_changed(&locator.locate(root, &pr.path, "prose")?, data.as_bytes())?;
+                expected_prose.insert(nfc(&fname));
 
                 if let Some(comments) = item.comments.get(&pr.file_id)
                     && !comments.is_empty()
                 {
                     let cname = comments_file_name(&fname);
-                    write_if_changed(&tdir.join(&cname), to_ron(comments)?.as_bytes())?;
-                    expected_sidecars.insert(cname);
+                    write_if_changed(
+                        &locator.locate_child(&tdir, &cname),
+                        to_ron(comments)?.as_bytes(),
+                    )?;
+                    expected_sidecars.insert(nfc(&cname));
                 }
 
                 if let Some(footnotes) = item.footnotes.get(&pr.file_id)
                     && !footnotes.is_empty()
                 {
                     let fnname = footnotes_file_name(&fname);
-                    write_if_changed(&tdir.join(&fnname), to_ron(footnotes)?.as_bytes())?;
-                    expected_sidecars.insert(fnname);
+                    write_if_changed(
+                        &locator.locate_child(&tdir, &fnname),
+                        to_ron(footnotes)?.as_bytes(),
+                    )?;
+                    expected_sidecars.insert(nfc(&fnname));
                 }
             }
         }
@@ -363,6 +373,10 @@ pub(crate) fn footnotes_file_name(prose_file_name: &str) -> String {
 
 /// Remove files in `dir` with extension `ext` whose name is not in `keep` — and
 /// which this write is not carrying through (see [`Carried`]).
+///
+/// `keep` holds NFC names and the comparison is by NFC form, like every prune here:
+/// a file whose name reached this machine in another normalisation is the file the
+/// bundle means, not a stale one (see [`super::locate`]).
 fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str, carried: &Carried) -> Result<()> {
     let Ok(entries) = fs::read_dir(dir) else {
         return Ok(());
@@ -371,7 +385,7 @@ fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str, carried: &Carried) 
         let p = entry.path();
         if p.extension().and_then(|e| e.to_str()) == Some(ext)
             && let Some(name) = p.file_name().and_then(|n| n.to_str())
-            && !keep.contains(name)
+            && !keep.contains(&nfc(name))
             && !carried.holds(&p)
         {
             fs::remove_file(&p).ok();
@@ -396,7 +410,7 @@ fn prune_assets_dir(dir: &Path, keep: &BTreeSet<String>, carried: &Carried) -> R
         let p = entry.path();
         if p.is_file()
             && let Some(name) = p.file_name().and_then(|n| n.to_str())
-            && !keep.contains(name)
+            && !keep.contains(&nfc(name))
             && !carried.holds(&p)
         {
             fs::remove_file(&p).ok();
@@ -422,7 +436,7 @@ fn prune_binder_dirs(binders_dir: &Path, keep: &BTreeSet<String>) -> Result<()> 
         let p = entry.path();
         if p.is_dir()
             && let Some(name) = p.file_name().and_then(|n| n.to_str())
-            && !keep.contains(name)
+            && !keep.contains(&nfc(name))
         {
             fs::remove_dir_all(&p).ok();
         }
@@ -434,6 +448,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     let manifest_text = fs::read_to_string(root.join(MANIFEST_NAME))
         .with_context(|| format!("reading {}", root.join(MANIFEST_NAME).display()))?;
     let manifest: ProjectManifest = from_ron(&manifest_text, "project.skrib")?;
+    let locator = Locator::new();
 
     let tags = read_ron_vec(&root.join("tags.ron"), "tags.ron")?;
     let dict_words = read_ron_vec(&root.join("dictionary.ron"), "dictionary.ron")?;
@@ -460,7 +475,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         read_ron_vec(&root.join("templates.ron"), "templates.ron")?;
     let mut note_template_bodies = std::collections::BTreeMap::new();
     for t in &note_templates {
-        let path = crate::safe_path::join_checked(root, &t.path, "note-template body")?;
+        let path = locator.locate(root, &t.path, "note-template body")?;
         let text = fs::read_to_string(&path)
             .with_context(|| format!("reading note-template body {}", t.path))?;
         crate::djot_depth::check(&text)
@@ -527,7 +542,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     let statuses: Vec<BinderStatusFile> = read_ron_vec(&root.join("statuses.ron"), "statuses.ron")?;
     let mut asset_bytes = std::collections::BTreeMap::new();
     for a in &assets {
-        let path = crate::safe_path::join_checked(root, &a.path, "asset")?;
+        let path = locator.locate(root, &a.path, "asset")?;
         let bytes = fs::read(&path)
             .with_context(|| format!("reading asset {} ({})", a.file_name, a.path))?;
         asset_bytes.insert(a.content_hash.clone(), bytes);
@@ -560,7 +575,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
             let mut comments = std::collections::BTreeMap::new();
             let mut footnotes = std::collections::BTreeMap::new();
             for pr in &item.prose_refs {
-                let prose_path = crate::safe_path::join_checked(root, &pr.path, "prose")?;
+                let prose_path = locator.locate(root, &pr.path, "prose")?;
                 let text = fs::read_to_string(&prose_path)
                     .with_context(|| format!("reading prose {}", pr.path))?;
                 // Refuse before the prose can reach an editor or an exporter: the
@@ -577,14 +592,14 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
                     prose_path.parent(),
                     prose_path.file_name().and_then(|n| n.to_str()),
                 ) {
-                    let cpath = dir.join(comments_file_name(fname));
+                    let cpath = locator.locate_child(dir, &comments_file_name(fname));
                     if let Ok(ctext) = fs::read_to_string(&cpath) {
                         let list: Vec<CommentFile> = from_ron(&ctext, "comments.ron")?;
                         if !list.is_empty() {
                             comments.insert(pr.file_id, list);
                         }
                     }
-                    let fpath = dir.join(footnotes_file_name(fname));
+                    let fpath = locator.locate_child(dir, &footnotes_file_name(fname));
                     if let Ok(ftext) = fs::read_to_string(&fpath) {
                         let list: Vec<FootnoteFile> = from_ron(&ftext, "footnotes.ron")?;
                         if !list.is_empty() {

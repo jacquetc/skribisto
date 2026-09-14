@@ -65,7 +65,11 @@ impl fmt::Display for SkribFormatError {
 impl std::error::Error for SkribFormatError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Unreadable(e) => Some(e.as_ref()),
+            // The first *cause*, not the `anyhow::Error` itself: its own `Display` is the
+            // outermost context, which `fmt::Display` above has already printed, so
+            // handing it back here made a `{:#}` chain read "reading prose X: reading
+            // prose X: No such file or directory" — one message shown twice.
+            Self::Unreadable(e) => e.chain().nth(1),
             _ => None,
         }
     }

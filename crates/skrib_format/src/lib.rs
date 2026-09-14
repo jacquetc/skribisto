@@ -49,9 +49,15 @@ mod history_tests;
 #[cfg(test)]
 mod hostile_tests;
 mod loaded;
+/// Finding a bundle path on disk whatever Unicode normalisation a sync client or
+/// another filesystem gave its name. Every reader and writer of bundle-supplied
+/// paths resolves through it, on top of [`safe_path`]'s containment check.
+mod locate;
 mod mapping;
 pub mod media;
 mod migration;
+#[cfg(test)]
+mod normalisation_tests;
 mod reader;
 pub mod retention;
 /// Turning a path that came out of a bundle into a path on this machine, safely.

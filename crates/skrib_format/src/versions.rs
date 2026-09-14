@@ -336,7 +336,8 @@ fn read_entry(bundle: &Path, rel: &str) -> Result<String> {
             // Same rule as every other bundle-supplied path: `rel` comes out of
             // a backup's own `items.ron`/history index, and a backup is a file
             // like any other. See `crate::safe_path`.
-            let full = crate::safe_path::join_checked(&folder_root(&path), rel, "version blob")?;
+            let full =
+                crate::locate::Locator::new().locate(&folder_root(&path), rel, "version blob")?;
             std::fs::read_to_string(&full).with_context(|| format!("reading {}", full.display()))
         }
         SkribShape::ZipFile => {
@@ -365,6 +366,7 @@ fn folder_rows(root: &Path) -> Result<Vec<VersionRow>> {
     };
     let mut dirs: Vec<PathBuf> = entries.flatten().map(|e| e.path()).collect();
     dirs.sort();
+    let locator = crate::locate::Locator::new();
     for d in dirs {
         let items_path = d.join("items.ron");
         let Ok(text) = std::fs::read_to_string(&items_path) else {
@@ -379,7 +381,8 @@ fn folder_rows(root: &Path) -> Result<Vec<VersionRow>> {
                 .map(|pr| {
                     // `metadata`, not a read — but on a path out of the bundle
                     // all the same, so it is checked like every other one.
-                    let bytes = crate::safe_path::join_checked(root, &pr.path, "version prose")
+                    let bytes = locator
+                        .locate(root, &pr.path, "version prose")
                         .ok()
                         .and_then(|p| std::fs::metadata(p).ok())
                         .map(|m| m.len())

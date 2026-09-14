@@ -68,6 +68,10 @@
 //! for exactly that reason — [`crate::slug::prose_relpath`] folds in the item's
 //! *title*, so re-deriving would stop finding the prose of every project whose
 //! titles have changed since it was last written, which is most of them.
+//!
+//! What this module answers is *may* this path be joined; *where* the file is —
+//! a name can arrive from another machine in a different Unicode normalisation —
+//! is the `locate` module's question, asked only after this one has been answered.
 
 use std::path::{Component, Path, PathBuf};
 
