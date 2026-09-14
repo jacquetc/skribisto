@@ -28,3 +28,9 @@ encoding_rs = "0.8"
 # UAX#29 word segmentation — spellbook delegates tokenisation to the caller, and
 # the same tokenizer has to answer "what is flagged" and "what is addable".
 unicode-segmentation = "1"
+
+[dev-dependencies]
+# Three pieces of ordinary arithmetic on the path a writer takes hundreds of times a
+# page: a hand-rolled byte/character cursor whose offsets the squiggle is drawn at, a
+# distance with a bail-out, and a budget with reserved slots. See `tests/properties.rs`.
+proptest = { workspace = true }

@@ -119,6 +119,9 @@ docx-rs = { version = "=0.4.22", optional = true }
 text2num = "~2.8"
 
 [dev-dependencies]
+# `natural_cmp` must be a total order or `sort_by` is entitled to panic, and totality is a
+# statement about every triple. See `tests/order_properties.rs`.
+proptest = { workspace = true }
 # M-T2a round trip: `text-document` now has an ODT *writer* (`TextDocument::to_odt_with_options`)
 # to go with this crate's ODT *reader* (`sources::odt::OdtScanner`) — dev-only, so it proves the
 # two agree on the wire format without this crate depending on text-document's export machinery

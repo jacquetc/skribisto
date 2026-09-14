@@ -954,6 +954,8 @@ fn assemble(picks: Vec<(CreateType, Relation)>) -> Vec<Recommendation> {
 }
 
 #[cfg(test)]
+mod property_tests;
+#[cfg(test)]
 mod tests;
 
 #[cfg(test)]

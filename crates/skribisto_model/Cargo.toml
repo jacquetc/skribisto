@@ -26,5 +26,12 @@ uuid = { workspace = true }
 # vocabulary measure, so they cannot disagree about what a word is.
 unicode-segmentation = "1"
 
+[dev-dependencies]
+# Most of this crate is pure functions over arbitrary prose, which is exactly the shape a
+# table of examples under-tests: a comment that must not move, a number that must not depend
+# on what an export selected, two engines that must not panic on any keystroke in any script.
+# See `src/property_tests.rs`.
+proptest = { workspace = true }
+
 [lints]
 workspace = true

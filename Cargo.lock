@@ -5698,6 +5698,7 @@ dependencies = [
  "chrono",
  "docx-rs",
  "encoding_rs",
+ "proptest",
  "pulldown-cmark",
  "roxmltree 0.21.1",
  "skribisto-common",
@@ -5838,6 +5839,7 @@ dependencies = [
 name = "skribisto-model"
 version = "3.0.2"
 dependencies = [
+ "proptest",
  "serde",
  "skribisto-common",
  "text-document",
@@ -5930,6 +5932,7 @@ name = "skribisto-spellcheck-engine"
 version = "3.0.2"
 dependencies = [
  "encoding_rs",
+ "proptest",
  "spellbook",
  "unicode-segmentation",
 ]
