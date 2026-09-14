@@ -15,7 +15,8 @@ use crate::MoveDto;
 use crate::MovePlace;
 use anyhow::{Result, anyhow};
 use binder_ordering::{
-    DropPlace, anchor_for_binder_target, expand_to_subtrees, insert_block, resolve_item_target,
+    DropPlace, anchor_for_binder_target, expand_to_subtrees, insert_block, rebase_indents,
+    resolve_item_target,
 };
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
@@ -117,7 +118,6 @@ impl MoveItemsUseCase {
             return Err(anyhow!("move_items: nothing to move"));
         }
         let move_set: HashSet<EntityId> = full_move_ids.iter().copied().collect();
-        let root_old_indent = *indent.get(&full_move_ids[0]).unwrap_or(&0);
         // Resolve destination binder, the new base indent for the moved root,
         // and the anchor id to insert before (None = append at end).
         let (dest_binder, base_indent, anchor_id): (EntityId, i64, Option<EntityId>) = if dto
@@ -185,8 +185,6 @@ impl MoveItemsUseCase {
             (dest_binder, base_indent, anchor)
         };
 
-        let delta = base_indent - root_old_indent;
-
         // Scoped snapshot of the affected binder subtree(s), taken now (after the
         // read-only resolution, before the first mutation below).
         let mut roots = vec![src_binder, dest_binder];
@@ -223,16 +221,30 @@ impl MoveItemsUseCase {
             )?;
         }
 
-        // Reindent the moved subtree (preserving its internal relative shape).
-        if delta != 0 {
+        // Reindent the moved rows, each subtree rebased to `base_indent` on its own and
+        // keeping its own internal shape.
+        //
+        // Not one delta for the whole block: a selection may hold several subtrees at
+        // different depths (the Corkboard in Flat mode lists a container's descendants, so a
+        // multi-card drag is exactly that), and a shared delta taken from the first row moved
+        // every later subtree by an amount computed from another row's depth. It produced
+        // negative indents and rows parented to nothing, silently — the binder has no parent
+        // link to contradict, so the result is a valid file describing a different book.
+        // `binder_ordering::rebase_indents` owns the rule; `restore_items_to` has always
+        // applied the same one, per planned subtree.
+        let wanted = rebase_indents(&src_order, &indent, &requested, base_indent);
+        let changed: Vec<EntityId> = full_move_ids
+            .iter()
+            .copied()
+            .filter(|id| wanted.get(id) != indent.get(id))
+            .collect();
+        if !changed.is_empty() {
             let mut updated: Vec<BinderItem> = Vec::new();
-            for it in uow
-                .get_binder_item_multi(&full_move_ids)?
-                .into_iter()
-                .flatten()
-            {
+            for it in uow.get_binder_item_multi(&changed)?.into_iter().flatten() {
                 let mut it = it;
-                it.indent += delta;
+                if let Some(&depth) = wanted.get(&it.id) {
+                    it.indent = depth;
+                }
                 updated.push(it);
             }
             uow.update_binder_item_multi(&updated)?;

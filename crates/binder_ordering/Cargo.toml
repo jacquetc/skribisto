@@ -21,5 +21,11 @@ name = "binder_ordering"
 common = { workspace = true }
 anyhow = { workspace = true }
 
+[dev-dependencies]
+# The invariant this crate exists to keep — a binder's flat item list still
+# describes a tree once a subtree has been relocated — is a statement about every
+# tree and every legal drop, not about the six hand-drawn trees in `lib.rs`.
+proptest = { workspace = true }
+
 [lints]
 workspace = true

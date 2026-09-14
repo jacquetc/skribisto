@@ -79,15 +79,24 @@ pub fn subtree_end(
     j
 }
 
-/// Expand a requested id set to full contiguous subtrees, in `order`'s order,
-/// deduplicating nested selections (a descendant already covered by an earlier
-/// requested ancestor's subtree is not repeated).
-pub fn expand_to_subtrees(
+/// One pass over `order`, yielding every row of every requested subtree in binder order,
+/// each flagged with whether it is the row that *opened* its subtree.
+///
+/// The single definition of "which rows move, and which of them is a root", so
+/// [`expand_to_subtrees`] and [`rebase_indents`] cannot come to different answers. They must
+/// not: one decides what is relocated and the other how deep each row lands, and a
+/// disagreement is a row moved to a depth computed for a different row.
+///
+/// A root cannot be recovered from the result afterwards. Two disjoint subtrees can each be
+/// deeper than the last, so "not deeper than the root currently open" recognises the second
+/// root inside one subtree and misses it across two — which is exactly the mistake that
+/// makes a selection of a chapter plus a far-away scene collapse into one block.
+fn walk_subtrees(
     order: &[EntityId],
     indent: &HashMap<EntityId, i64>,
     requested: &HashSet<EntityId>,
-) -> Vec<EntityId> {
-    let mut full: Vec<EntityId> = Vec::new();
+) -> Vec<(EntityId, bool)> {
+    let mut full: Vec<(EntityId, bool)> = Vec::new();
     let mut seen: HashSet<EntityId> = HashSet::new();
     let mut i = 0usize;
     while i < order.len() {
@@ -97,7 +106,7 @@ pub fn expand_to_subtrees(
             let mut j = i;
             loop {
                 let cur = order[j];
-                full.push(cur);
+                full.push((cur, j == i));
                 seen.insert(cur);
                 j += 1;
                 if j >= order.len() {
@@ -113,6 +122,56 @@ pub fn expand_to_subtrees(
         }
     }
     full
+}
+
+/// Expand a requested id set to full contiguous subtrees, in `order`'s order,
+/// deduplicating nested selections (a descendant already covered by an earlier
+/// requested ancestor's subtree is not repeated).
+pub fn expand_to_subtrees(
+    order: &[EntityId],
+    indent: &HashMap<EntityId, i64>,
+    requested: &HashSet<EntityId>,
+) -> Vec<EntityId> {
+    walk_subtrees(order, indent, requested)
+        .into_iter()
+        .map(|(id, _)| id)
+        .collect()
+}
+
+/// The indent each expanded row takes once the block is rebased so that its subtree roots sit
+/// at `base_indent`.
+///
+/// **One rebase per subtree, never one delta for the whole block.** A selection is not a
+/// subtree: a writer can pick a chapter and a scene from inside a different chapter, and the
+/// expansion hands both back as one ordered list. Shifting that list by a single delta taken
+/// from its first row moves every later subtree by an amount computed from somebody else's
+/// depth — which produced rows at indent −2, a binder whose first row was not at the top
+/// level, and chapters that had quietly become each other's scenes. Nothing contradicts it,
+/// because the binder stores no parent link; the file is valid and describes a different book.
+///
+/// So each subtree is rebased on its own: its root lands at `base_indent`, and every row under
+/// it keeps exactly the depth it had below that root. Dropping a chapter and a far-away scene
+/// onto one folder makes both children of it, which is what the gesture says, and preserves
+/// the accident of their former relative depths in neither.
+///
+/// `trash_management::restore_items_to` has always worked this way, one `root_old_indent` per
+/// planned subtree. This is the same rule, for the caller that had a single one.
+pub fn rebase_indents(
+    order: &[EntityId],
+    indent: &HashMap<EntityId, i64>,
+    requested: &HashSet<EntityId>,
+    base_indent: i64,
+) -> HashMap<EntityId, i64> {
+    let mut out = HashMap::new();
+    let mut root_indent = 0i64;
+    for (id, is_root) in walk_subtrees(order, indent, requested) {
+        let own = *indent.get(&id).unwrap_or(&0);
+        if is_root {
+            root_indent = own;
+        }
+        out.insert(id, base_indent + (own - root_indent));
+    }
+    out
 }
 
 /// Insert `block` into `base` immediately before `anchor` (or at the end when
@@ -249,6 +308,48 @@ mod tests {
             expand_to_subtrees(&order, &indent, &requested),
             vec![2, 3, 5]
         );
+    }
+
+    #[test]
+    fn rebase_puts_every_selected_subtree_at_the_base_indent() {
+        // 1(0) 2(0) 3(1) 4(2) 5(2) 6(1) 7(2) — the shape a property run shrank to.
+        let order = vec![1, 2, 3, 4, 5, 6, 7];
+        let indent = indent_map(&[(1, 0), (2, 0), (3, 1), (4, 2), (5, 2), (6, 1), (7, 2)]);
+        // Two disjoint subtrees, at indent 0 and indent 2, dropped at the top level.
+        let requested: HashSet<EntityId> = [1, 5].into_iter().collect();
+        let out = rebase_indents(&order, &indent, &requested, 0);
+        assert_eq!(out.get(&1), Some(&0));
+        assert_eq!(
+            out.get(&5),
+            Some(&0),
+            "the second subtree's root is rebased on its own, not carried along by the first"
+        );
+    }
+
+    #[test]
+    fn rebase_keeps_each_subtree_internal_shape() {
+        // 1(0) 2(1) 3(2) 4(0) — selecting 1 takes 2 and 3 with it.
+        let order = vec![1, 2, 3, 4];
+        let indent = indent_map(&[(1, 0), (2, 1), (3, 2), (4, 0)]);
+        let requested: HashSet<EntityId> = [1].into_iter().collect();
+        let out = rebase_indents(&order, &indent, &requested, 2);
+        assert_eq!(out.get(&1), Some(&2));
+        assert_eq!(out.get(&2), Some(&3));
+        assert_eq!(out.get(&3), Some(&4));
+        assert_eq!(out.get(&4), None, "an unselected row is not rebased");
+    }
+
+    #[test]
+    fn rebase_never_returns_a_negative_indent_for_a_deeper_selection() {
+        // The original fault: a delta taken from the first subtree's root (indent 2) applied
+        // to a later root at indent 0 gave −2.
+        let order = vec![1, 2, 3, 4];
+        let indent = indent_map(&[(1, 0), (2, 1), (3, 2), (4, 0)]);
+        let requested: HashSet<EntityId> = [3, 4].into_iter().collect();
+        let out = rebase_indents(&order, &indent, &requested, 0);
+        assert_eq!(out.get(&3), Some(&0));
+        assert_eq!(out.get(&4), Some(&0));
+        assert!(out.values().all(|d| *d >= 0));
     }
 
     #[test]

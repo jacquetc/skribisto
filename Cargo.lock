@@ -5621,6 +5621,7 @@ version = "3.0.2"
 dependencies = [
  "anyhow",
  "chrono",
+ "proptest",
  "serde",
  "serde_json",
  "skribisto-binder-ordering",
@@ -5636,6 +5637,7 @@ name = "skribisto-binder-ordering"
 version = "3.0.2"
 dependencies = [
  "anyhow",
+ "proptest",
  "skribisto-common",
 ]
 

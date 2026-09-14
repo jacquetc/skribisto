@@ -36,6 +36,10 @@ uuid = { workspace = true }
 # straight through direct_access, bypassing work_management's single-open-Work
 # sweep so a cross-Work id-mismatch scenario can exist at all.
 direct_access = { workspace = true }
+# `move_items` writes the binder's order and each row's depth separately, and the
+# result has to still describe a tree. That is an invariant over every shape and
+# every drop, not something a fixture can stand for — see `tests/move_properties.rs`.
+proptest = { workspace = true }
 
 [lints]
 workspace = true

@@ -12,6 +12,7 @@ Description:
 - "Text typed while a closing save was still writing is saved too before the window closes, the project is switched or the application quits"
 - "The backup taken when closing waits for the final save, so it holds what was just written"
 - "A line of exported Djot that begins like a list item, a heading or a rule keeps the characters it starts with: a scene break written as 12. or (1), or a row of dashes, is no longer dropped from the exported file"
+- "Dragging several items at once when they sit at different levels, as the Corkboard's flat view lists them, now puts every one of them where you dropped it. Some of them used to land at a level computed from another item, which could leave the binder describing a different structure than the one on screen"
 ---
 Version: 3.0.2
 Date: 2026-09-04
