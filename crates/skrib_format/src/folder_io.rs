@@ -637,7 +637,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         let Some(key) = rel_key(root, entry.path()) else {
             continue;
         };
-        if super::carry::is_modelled(&key) {
+        if super::carry::is_modelled(&key) || super::carry::is_stray_bundle(&key) {
             continue;
         }
         let bytes = fs::read(entry.path())

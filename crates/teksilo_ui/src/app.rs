@@ -46,10 +46,12 @@ use teksilo::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, comment_commands, undo_redo_commands, work_commands, work_management_commands,
+    binder_commands, comment_commands, pace_commands, undo_redo_commands, work_commands,
+    work_management_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::comment::CommentRelationshipField;
+use frontend::common::direct_access::pace::PaceRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Origin};
 use frontend::work_management::{CloseWorkDto, LoadWorkDto, NewWorkDto};
@@ -1033,8 +1035,9 @@ fn open_search_settings() -> crate::models::SearchSettingsService {
 /// `FootnotesListModel::set_body` all skip no-op writes for exactly this reason.
 fn mutation_origins() -> Vec<Origin> {
     use DirectAccessEntity::{
-        Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, DictWord, Footnote,
-        NoteTemplate, Work,
+        Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, DictWord,
+        Footnote, Holiday, Milestone, NoteTemplate, Pace, SmartPunctuation, TextReplacementRule,
+        Work,
     };
     let mut v = Vec::new();
     for ent in [
@@ -1086,6 +1089,35 @@ fn mutation_origins() -> Vec<Origin> {
         NoteTemplate(EntityEvent::Created),
         NoteTemplate(EntityEvent::Updated),
         NoteTemplate(EntityEvent::Removed),
+        // Six more kinds edited from panes and dialogs, never from a manuscript
+        // editor, found missing in one sweep: a pace or its milestones and
+        // holidays (the Pace tab), a text replacement rule and the punctuation
+        // settings (Settings ▸ Work), and an image's row (insert, cover). Each
+        // edited-then-closed with no prompt, exactly as the four above once did.
+        //
+        // Checked against the precondition: `PaceModel::ensure_pace` creates a
+        // row only on the first date edit, `SingleSmartPunctuation::save` runs
+        // only from the settings setters, the rule list writes only from its
+        // pane, and `images::store`/`set_cover` write only on an insert. No
+        // write at flush or on open. `SmartPunctuation(Created)` is deliberately
+        // absent: the row is created by `load_work` for every project, before
+        // this window's `work_id` is seeded.
+        Pace(EntityEvent::Created),
+        Pace(EntityEvent::Updated),
+        Pace(EntityEvent::Removed),
+        Milestone(EntityEvent::Created),
+        Milestone(EntityEvent::Updated),
+        Milestone(EntityEvent::Removed),
+        Holiday(EntityEvent::Created),
+        Holiday(EntityEvent::Updated),
+        Holiday(EntityEvent::Removed),
+        TextReplacementRule(EntityEvent::Created),
+        TextReplacementRule(EntityEvent::Updated),
+        TextReplacementRule(EntityEvent::Removed),
+        SmartPunctuation(EntityEvent::Updated),
+        Asset(EntityEvent::Created),
+        Asset(EntityEvent::Updated),
+        Asset(EntityEvent::Removed),
     ] {
         v.push(Origin::DirectAccess(ent));
     }
@@ -1187,6 +1219,43 @@ fn mutation_ids_belong_to_work(
             )
             .unwrap_or_default();
             event_ids.iter().any(|id| mine.contains(id))
+        }
+        // Four more direct `Work` children, same shape as the rungs above. The
+        // one-to-one `SmartPunctuation` reads back as a one-element list.
+        DirectAccessEntity::Pace(_)
+        | DirectAccessEntity::TextReplacementRule(_)
+        | DirectAccessEntity::Asset(_)
+        | DirectAccessEntity::SmartPunctuation(_) => {
+            let field = match entity {
+                DirectAccessEntity::Pace(_) => WorkRelationshipField::Paces,
+                DirectAccessEntity::TextReplacementRule(_) => {
+                    WorkRelationshipField::TextReplacementRules
+                }
+                DirectAccessEntity::Asset(_) => WorkRelationshipField::Assets,
+                _ => WorkRelationshipField::SmartPunctuation,
+            };
+            let mine =
+                work_commands::get_work_relationship(ctx, &my_work_id, &field).unwrap_or_default();
+            event_ids.iter().any(|id| mine.contains(id))
+        }
+        // One hop further, through the Work's paces — the `BinderItem` shape.
+        DirectAccessEntity::Milestone(_) | DirectAccessEntity::Holiday(_) => {
+            let field = if matches!(entity, DirectAccessEntity::Milestone(_)) {
+                PaceRelationshipField::Milestones
+            } else {
+                PaceRelationshipField::Holidays
+            };
+            let my_paces = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::Paces,
+            )
+            .unwrap_or_default();
+            my_paces.iter().any(|pace_id| {
+                let children =
+                    pace_commands::get_pace_relationship(ctx, pace_id, &field).unwrap_or_default();
+                event_ids.iter().any(|id| children.contains(id))
+            })
         }
         DirectAccessEntity::BinderItem(_) => {
             let my_binders = work_commands::get_work_relationship(
@@ -1743,7 +1812,9 @@ impl Widget for App {
                 window_id,
                 Rc::new({
                     let editors = editors.clone();
-                    move || editors.flush_all()
+                    move || {
+                        editors.flush_all();
+                    }
                 }),
             );
         }
@@ -1757,11 +1828,15 @@ impl Widget for App {
         // only ways the edits can be kept at all.
         save_as_vm.set_flush_hook(Rc::new({
             let editors = editors.clone();
-            move || editors.flush_all()
+            move || {
+                editors.flush_all();
+            }
         }));
         restore_vm.set_flush_hook(Rc::new({
             let editors = editors.clone();
-            move || editors.flush_all()
+            move || {
+                editors.flush_all();
+            }
         }));
         // The project-switch guard (New Work / Open Work / "Open here" / the import
         // toast — every command that replaces this window's project in place) needs
@@ -2098,7 +2173,10 @@ impl Widget for App {
         {
             let app_ctx2 = self.app_ctx.clone();
             let my_ids = session.ids.clone();
-            let unsaved = self.unsaved.clone();
+            // The Work's own answer, not the pair's: `is_unsaved` also counts a
+            // change an extension reported from a thread that cannot bump
+            // `dirty_seq` (see `SaveStateViewModel::poll_external`).
+            let save_state_close = session.save_state.clone();
             let autosave = settings.autosave();
             let pending = self.pending_exit.clone();
             let scheduler = backup_scheduler.clone();
@@ -2108,7 +2186,7 @@ impl Widget for App {
                     ctx,
                     &app_ctx2,
                     &my_ids,
-                    unsaved.get(),
+                    save_state_close.is_unsaved(),
                     backup_mode.get(),
                     autosave.get(),
                     &pending,
@@ -2403,7 +2481,10 @@ fn open_work_flow(
                 crate::models::FolderPurpose::OpenProject,
                 &path,
             );
-            let file = path.to_string_lossy().into_owned();
+            // A dialog picks files, so a folder project arrives as its
+            // `project.skrib`; the project is its folder — see
+            // `skrib_format::canonical_project_path`.
+            let file = skrib_format::canonical_project_path(&path.to_string_lossy());
             let switch = switch.clone();
             let ids = ids.clone();
             let registry = registry.clone();

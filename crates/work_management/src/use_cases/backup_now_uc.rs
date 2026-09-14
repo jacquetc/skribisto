@@ -259,6 +259,12 @@ fn run_backup(
         .as_ref()
         .and_then(|wi| wi.file_name.clone())
         .ok_or_else(|| anyhow!("no open project to back up"))?;
+    // One spelling per project (`load_work` already records it so; this is the
+    // belt to that brace): a folder project named by its `project.skrib` would
+    // otherwise be backed up *into itself*, as `project-<stamp>.skrib`, and the
+    // retention sweep and the media directory would resolve from the wrong
+    // place. See `skrib_format::canonical_project_path`.
+    let source = skrib::canonical_project_path(&source);
     let work_id = g.work.id;
     let unique_id = g.work.unique_id.clone();
 
@@ -512,7 +518,10 @@ fn write_and_verify(
 /// folder the backup was actually written into.
 fn resolve_backup_dir(source: &str, directory: &str) -> PathBuf {
     if directory.trim().is_empty() {
-        Path::new(source)
+        // "Next to the project" is next to the *folder* for a folder project,
+        // whichever spelling of its path arrived here — inside it is not next to it.
+        let source = skrib::canonical_project_path(source);
+        Path::new(&source)
             .parent()
             .filter(|p| !p.as_os_str().is_empty())
             .map(|p| p.to_path_buf())
@@ -523,7 +532,10 @@ fn resolve_backup_dir(source: &str, directory: &str) -> PathBuf {
 }
 
 fn backup_stem(source: &str) -> String {
-    Path::new(source)
+    // A folder project's backups are named after the folder, never "project"
+    // (the manifest's stem, which every folder project shares).
+    let source = skrib::canonical_project_path(source);
+    Path::new(&source)
         .file_stem()
         .and_then(|s| s.to_str())
         .filter(|s| !s.is_empty())
@@ -628,4 +640,43 @@ fn take_forced_verify_failure(dir: &Path) -> bool {
 #[cfg(not(test))]
 fn take_forced_verify_failure(_dir: &Path) -> bool {
     false
+}
+
+#[cfg(test)]
+mod project_path_tests {
+    use super::*;
+
+    /// Both spellings of a folder project's path put its backups in the same
+    /// place with the same name: beside the folder, named after it. Under the
+    /// manifest spelling "next to the project" used to resolve to the bundle
+    /// itself, and every backup was called `project-…`.
+    #[test]
+    fn a_folder_project_is_backed_up_beside_its_folder_under_either_spelling() {
+        let folder = "/home/j/Textes/raphaël-et-mireïa";
+        let manifest = "/home/j/Textes/raphaël-et-mireïa/project.skrib";
+        assert_eq!(backup_stem(folder), "raphaël-et-mireïa");
+        assert_eq!(backup_stem(manifest), "raphaël-et-mireïa");
+        assert_eq!(
+            resolve_backup_dir(folder, ""),
+            PathBuf::from("/home/j/Textes")
+        );
+        assert_eq!(
+            resolve_backup_dir(manifest, ""),
+            PathBuf::from("/home/j/Textes")
+        );
+        // An explicit destination is taken as is, whatever the source spelling.
+        assert_eq!(
+            resolve_backup_dir(manifest, "/backups"),
+            PathBuf::from("/backups")
+        );
+    }
+
+    #[test]
+    fn a_zip_project_is_named_after_its_file() {
+        assert_eq!(backup_stem("/home/j/Novel.skrib"), "Novel");
+        assert_eq!(
+            resolve_backup_dir("/home/j/Novel.skrib", ""),
+            PathBuf::from("/home/j")
+        );
+    }
 }

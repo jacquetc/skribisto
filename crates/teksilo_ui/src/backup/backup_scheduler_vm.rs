@@ -102,6 +102,10 @@ struct Pending {
     dirs: Vec<String>,
     /// Set when this backup must be followed by a window/work close.
     close: Option<PendingExit>,
+    /// The close arrived while this backup was already running, so its snapshot
+    /// predates the save the close waited for: on completion, take the on-close
+    /// copy afresh rather than closing on this one. See [`Pending::attach_close`].
+    rerun_for_close: bool,
     /// Set when this backup is a **safety copy taken before a destructive
     /// write**, and the write must happen only if a copy actually exists.
     ///
@@ -111,6 +115,17 @@ struct Pending {
     /// `backup_now` first would have no safety net at all: that function returns
     /// early, with nothing but a toast, on three separate conditions.
     then: Option<SafetyOutcome>,
+}
+
+impl Pending {
+    /// A close arrived while this backup was running. Its completion must not
+    /// close on *this* snapshot: it was taken before the save the close waited
+    /// for landed, so "back up when closing" would keep a copy of the state
+    /// before the writer's last words. Mark it to run the on-close backup afresh.
+    fn attach_close(&mut self, then: PendingExit) {
+        self.close = Some(then);
+        self.rerun_for_close = true;
+    }
 }
 
 /// Told whether a safety backup produced a copy. See [`Pending::then`].
@@ -467,9 +482,10 @@ impl BackupSchedulerViewModel {
             return self.do_close(ctx, then);
         }
         // A backup already running: attach the close to it instead of starting a
-        // second one; its completion will close.
+        // second one now. Its snapshot predates the save this close waited for,
+        // so its completion takes the on-close copy afresh, then closes.
         if let Some(mut p) = self.pending.get() {
-            p.close = Some(then);
+            p.attach_close(then);
             self.pending.set(Some(p));
             return;
         }
@@ -603,6 +619,7 @@ impl BackupSchedulerViewModel {
                     dirs,
                     close,
                     then,
+                    rerun_for_close: false,
                 }));
             }
             Err(e) => {
@@ -854,6 +871,22 @@ impl BackupSchedulerViewModel {
             // user fix it and retry, or knowingly discard.
             if produced_nothing {
                 return self.prompt_backup_failed(ctx, then);
+            }
+            if pending.rerun_for_close {
+                // That backup was already running when the close arrived, so its
+                // snapshot predates the save the close waited for. Take the
+                // on-close copy now, from the state actually being kept —
+                // skip-if-unchanged makes it free when nothing moved since.
+                let policy = self.settings.effective_for(&pending.uid);
+                self.flush();
+                return self.start(
+                    Some(ctx),
+                    &pending.uid,
+                    &pending.path,
+                    &policy,
+                    false,
+                    Some(then),
+                );
             }
             self.do_close(ctx, then);
         }

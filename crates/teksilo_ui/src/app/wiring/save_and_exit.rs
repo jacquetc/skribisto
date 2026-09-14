@@ -35,6 +35,13 @@ use crate::workspace_layout::WorkspaceLayoutViewModel;
 /// window's subscriber runs first, and the specific text wins either way.
 const SAVE_FAILED_TOAST_ID: &str = "save.failed";
 
+/// Dedup id (Work-scoped) of the "these documents could not be handed to the
+/// save" toast [`report_flush_failures`] raises.
+const FLUSH_FAILED_TOAST_ID: &str = "save.flush_failed";
+
+/// How many extra saves a deferred close may ask for while typing continues.
+const MAX_DEFERRED_RESAVES: u8 = 3;
+
 /// Handles the install function needs from `App::build`.
 pub(in crate::app) struct SaveAndExitDeps {
     pub editors: EditorsViewModel,
@@ -52,6 +59,9 @@ pub(in crate::app) struct SaveAndExitDeps {
 /// Install the pending-exit effect and the long-op Completed/Failed handlers that
 /// resume a deferred close or project switch.
 pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &SaveAndExitDeps) {
+    // Extra saves this window's deferred close has asked for — see the `Close`
+    // arm below. Reset each time a close is armed.
+    let resaves = Rc::new(Cell::new(0u8));
     // The window close guard and the `work.close` action set `pending_exit`; that
     // asks for a disk save and remembers the edit sequence it will cover. The
     // close is performed only once *that* sequence is on disk.
@@ -59,10 +69,12 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &SaveAndExitDeps) {
         let editors = deps.editors.clone();
         let exit_seq = deps.exit_seq.clone();
         let pending = deps.pending_exit.clone();
+        let resaves = resaves.clone();
         ctx.effect(&deps.pending_exit, move |pe| {
             if *pe == PendingExit::None {
                 return;
             }
+            resaves.set(0);
             match editors.request_save() {
                 Some(covers) => exit_seq.set(Some(covers)),
                 // The command could not be issued, so no operation exists — no
@@ -83,6 +95,7 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &SaveAndExitDeps) {
         let editors = deps.editors.clone();
         let pending = deps.pending_exit.clone();
         let exit_seq = deps.exit_seq.clone();
+        let resaves = resaves.clone();
         let scheduler = deps.backup_scheduler.clone();
         let switch = deps.project_switch.clone();
         let workspace_layout = deps.workspace_layout.clone();
@@ -96,6 +109,7 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &SaveAndExitDeps) {
                 let Some(landed) = editors.on_save_completed(e) else {
                     return;
                 };
+                report_flush_failures(c, &editors, ids.work_id.get());
                 if let Some(layout) = &workspace_layout {
                     layout.capture();
                 }
@@ -118,6 +132,31 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &SaveAndExitDeps) {
                         e,
                     ),
                     DeferredResume::Close => {
+                        // Text typed while that save was writing is not in it.
+                        // Unless the flush itself failed — it would again, and
+                        // the toast above has said so — ask for one more write
+                        // and keep the close parked on it. Bounded, so a project
+                        // that never settles still closes after a few.
+                        if editors.is_unsaved()
+                            && !editors.last_flush_failed()
+                            && resaves.get() < MAX_DEFERRED_RESAVES
+                        {
+                            resaves.set(resaves.get() + 1);
+                            match editors.request_save() {
+                                Some(covers) => exit_seq.set(Some(covers)),
+                                None => abandon_deferred(
+                                    c,
+                                    &pending,
+                                    &exit_seq,
+                                    &switch,
+                                    None,
+                                    ids.work_id.get(),
+                                    &save_state_for_completed,
+                                    e,
+                                ),
+                            }
+                            return;
+                        }
                         pending.set(PendingExit::None);
                         exit_seq.set(None);
                         switch.cancel();
@@ -210,4 +249,38 @@ pub(in crate::app) fn abandon_deferred(
                 .target_work(work_id),
         );
     }
+}
+
+/// Say which documents the save that just landed could not include.
+///
+/// A flush fails on a timer (autosave) as often as on a keystroke (Ctrl+S), and
+/// the timer has no `EventContext` to speak with; the completion of the save the
+/// flush preceded is the first moment with one. The project has stayed unsaved
+/// in the meantime (`SaveStateViewModel::request_save_after_flush`), so the glyph
+/// already says so — this says *what*, and that the words are still in their
+/// editor and nowhere else.
+fn report_flush_failures(c: &mut EventContext, editors: &EditorsViewModel, work_id: Option<u64>) {
+    let failures = editors.take_flush_failures();
+    let Some(first) = failures.first() else {
+        return;
+    };
+    let titles = failures
+        .iter()
+        .map(|f| {
+            if f.title.trim().is_empty() {
+                tr!(untitled()).resolve_now()
+            } else {
+                f.title.clone()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    c.show_toast(
+        Toast::error(tr!(save_flush_failed(
+            titles = titles,
+            error = first.error.clone()
+        )))
+        .scoped_id(FLUSH_FAILED_TOAST_ID, work_id)
+        .target_work(work_id),
+    );
 }

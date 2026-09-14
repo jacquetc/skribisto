@@ -122,6 +122,9 @@ pub type TabMenuInstaller = Rc<dyn Fn(TabId, TabInfo) -> TabInfo>;
 #[derive(Clone)]
 pub struct EditorsViewModel {
     app_ctx: Rc<AppContext>,
+    /// Documents the last `flush_all` could not hand to the store, kept for the
+    /// save-completion handler — the one place with an `EventContext` to say so.
+    flush_failures: Rc<RefCell<Vec<crate::models::FlushFailure>>>,
     /// Where the writer was in each item of this project, whether or not a tab is
     /// open on it. Injected after construction (`set_item_view_states`) rather than
     /// taken as a constructor argument, the same shape `WorkspaceLayoutViewModel`
@@ -281,6 +284,7 @@ impl EditorsViewModel {
         );
         Self {
             app_ctx,
+            flush_failures: Rc::new(RefCell::new(Vec::new())),
             item_view_states: Rc::new(RefCell::new(None)),
             tab_menu: Rc::new(RefCell::new(None)),
             primary: Pane::new(),
@@ -1940,8 +1944,29 @@ impl EditorsViewModel {
         self.docs.clone()
     }
 
-    pub fn flush_all(&self) {
-        self.docs.flush_all(self.ids.stack_id.get());
+    /// Flush every open document into the store. `false` if one could not be:
+    /// its text is still in its editor, [`Self::take_flush_failures`] says which,
+    /// and the caller asking for a save afterwards passes this on so the save is
+    /// not credited with it.
+    pub fn flush_all(&self) -> bool {
+        let failures = self.docs.flush_all(self.ids.stack_id.get());
+        let ok = failures.is_empty();
+        if !ok {
+            self.flush_failures.borrow_mut().extend(failures);
+        }
+        ok
+    }
+
+    /// The documents [`Self::flush_all`] could not hand to the store since the
+    /// last call — drained, so each failure is reported once.
+    pub fn take_flush_failures(&self) -> Vec<crate::models::FlushFailure> {
+        std::mem::take(&mut *self.flush_failures.borrow_mut())
+    }
+
+    /// Whether the save last asked for was preceded by a failed flush — see
+    /// [`SaveStateViewModel::last_flush_failed`].
+    pub fn last_flush_failed(&self) -> bool {
+        self.save_state.last_flush_failed()
     }
 
     /// Flush all editors to the store, then write the project to disk
@@ -1993,8 +2018,8 @@ impl EditorsViewModel {
         // Flush first, then let the shared save state read the sequence: the
         // store now holds everything the user has typed, so a save started here
         // covers exactly this seq.
-        self.flush_all();
-        self.save_state.request_save()
+        let flushed = self.flush_all();
+        self.save_state.request_save_after_flush(!flushed)
     }
 
     /// Route a `LongOperation::Completed`. `None` if it wasn't **our** save — a

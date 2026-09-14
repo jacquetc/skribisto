@@ -245,3 +245,205 @@ fn a_sibling_works_annotation_events_do_not_belong_to_mine() {
         &[their_template]
     ));
 }
+
+/// The six kinds edited from panes and dialogs rather than a manuscript editor,
+/// wired the way the live models wire them: a pace under the Work with a
+/// milestone and a holiday under it, a text replacement rule, an image row, and
+/// the Work's own punctuation settings.
+struct Planning {
+    work: u64,
+    pace: u64,
+    milestone: u64,
+    holiday: u64,
+    rule: u64,
+    asset: u64,
+    smart_punctuation: u64,
+}
+
+fn work_with_planning(ctx: &AppContext) -> Planning {
+    use frontend::commands::{
+        asset_commands, holiday_commands, milestone_commands, pace_commands,
+        text_replacement_rule_commands,
+    };
+    use frontend::common::entities::MilestoneKind;
+    use frontend::direct_access::{
+        CreateAssetDto, CreateHolidayDto, CreateMilestoneDto, CreatePaceDto,
+        CreateTextReplacementRuleDto,
+    };
+    let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
+        ctx,
+        None,
+        &CreateSmartPunctuationDto {
+            created_at: now(),
+            updated_at: now(),
+            override_app_default: false,
+            dashes: false,
+            ellipsis: false,
+            quotes: false,
+            quote_style: QuoteStyle::LocaleDefault,
+            pre_punctuation_spacing: false,
+            dialogue_marker: false,
+        },
+    )
+    .expect("create smart_punctuation")
+    .id;
+    let work = work_commands::create_orphan_work(
+        ctx,
+        None,
+        &CreateWorkDto {
+            statuses: Vec::new(),
+            created_at: now(),
+            updated_at: now(),
+            title: "P".into(),
+            smart_punctuation,
+            ..Default::default()
+        },
+    )
+    .expect("create work")
+    .id;
+    let pace = pace_commands::create_pace(
+        ctx,
+        None,
+        &CreatePaceDto {
+            created_at: now(),
+            updated_at: now(),
+            book_item: None,
+            start_date: now(),
+            end_date: now(),
+            weekday_mask: 31,
+            active: true,
+            holidays: Vec::new(),
+            milestones: Vec::new(),
+        },
+        work,
+        -1,
+    )
+    .expect("create pace")
+    .id;
+    let milestone = milestone_commands::create_milestone(
+        ctx,
+        None,
+        &CreateMilestoneDto {
+            created_at: now(),
+            updated_at: now(),
+            label: "Halfway".into(),
+            target_item: None,
+            target_date: now(),
+            target_word_count: Some(40_000),
+            kind: MilestoneKind::BookCumulative,
+        },
+        pace,
+        -1,
+    )
+    .expect("create milestone")
+    .id;
+    let holiday = holiday_commands::create_holiday(
+        ctx,
+        None,
+        &CreateHolidayDto {
+            created_at: now(),
+            updated_at: now(),
+            label: "August".into(),
+            start_date: now(),
+            end_date: None,
+        },
+        pace,
+        -1,
+    )
+    .expect("create holiday")
+    .id;
+    let rule = text_replacement_rule_commands::create_text_replacement_rule(
+        ctx,
+        None,
+        &CreateTextReplacementRuleDto {
+            created_at: now(),
+            updated_at: now(),
+            trigger: "->".into(),
+            replacement: "→".into(),
+            enabled: true,
+        },
+        work,
+        -1,
+    )
+    .expect("create rule")
+    .id;
+    let asset = asset_commands::create_asset(
+        ctx,
+        None,
+        &CreateAssetDto {
+            created_at: now(),
+            updated_at: now(),
+            content_hash: "abc123".into(),
+            file_name: "cover.png".into(),
+            mime_type: "image/png".into(),
+            width: 1,
+            height: 1,
+            byte_size: 1,
+            alt: String::new(),
+            is_cover: true,
+        },
+        work,
+        -1,
+    )
+    .expect("create asset")
+    .id;
+    Planning {
+        work,
+        pace,
+        milestone,
+        holiday,
+        rule,
+        asset,
+        smart_punctuation,
+    }
+}
+
+/// Every one of the six attributes to its own Work: the four direct children
+/// through one relationship read, the two grandchildren through the paces.
+#[test]
+fn my_own_planning_and_settings_events_belong_to_my_work() {
+    let ctx = AppContext::new();
+    let p = work_with_planning(&ctx);
+    use DirectAccessEntity::{
+        Asset, Holiday, Milestone, Pace, SmartPunctuation, TextReplacementRule,
+    };
+    let mine = |entity, ids: &[u64]| mutation_ids_belong_to_work(&ctx, p.work, entity, ids);
+    assert!(mine(Pace(EntityEvent::Updated), &[p.pace]));
+    assert!(mine(Milestone(EntityEvent::Updated), &[p.milestone]));
+    assert!(mine(Holiday(EntityEvent::Updated), &[p.holiday]));
+    assert!(mine(TextReplacementRule(EntityEvent::Updated), &[p.rule]));
+    assert!(mine(Asset(EntityEvent::Updated), &[p.asset]));
+    assert!(mine(
+        SmartPunctuation(EntityEvent::Updated),
+        &[p.smart_punctuation]
+    ));
+}
+
+/// …and none of a sibling Work's do — the multi-window scenario every arm
+/// exists for, where the `_ => true` fallback would have marked every open
+/// project dirty for one project's pace edit.
+#[test]
+fn a_sibling_works_planning_and_settings_events_do_not_belong_to_mine() {
+    let ctx = AppContext::new();
+    let mine = work_with_planning(&ctx);
+    let theirs = work_with_planning(&ctx);
+    use DirectAccessEntity::{
+        Asset, Holiday, Milestone, Pace, SmartPunctuation, TextReplacementRule,
+    };
+    let is_mine = |entity, ids: &[u64]| mutation_ids_belong_to_work(&ctx, mine.work, entity, ids);
+    assert!(!is_mine(Pace(EntityEvent::Updated), &[theirs.pace]));
+    assert!(!is_mine(
+        Milestone(EntityEvent::Updated),
+        &[theirs.milestone]
+    ));
+    assert!(!is_mine(Holiday(EntityEvent::Updated), &[theirs.holiday]));
+    assert!(!is_mine(
+        TextReplacementRule(EntityEvent::Updated),
+        &[theirs.rule]
+    ));
+    assert!(!is_mine(Asset(EntityEvent::Updated), &[theirs.asset]));
+    assert!(!is_mine(
+        SmartPunctuation(EntityEvent::Updated),
+        &[theirs.smart_punctuation]
+    ));
+}

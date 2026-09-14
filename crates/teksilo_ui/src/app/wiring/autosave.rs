@@ -152,8 +152,13 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &AutosaveDeps) {
         {
             let editors = deps.editors.clone();
             let autosave = autosave.clone();
+            let save_state_tick = deps.save_state.clone();
             let tick = ctx.frame_tick();
             ctx.effect(&tick, move |_| {
+                // An extension's change reported from another thread cannot
+                // bump `dirty_seq` itself; the tick folds it in, and from there
+                // the countdown above, the glyph and every guard see it.
+                save_state_tick.poll_external();
                 let (save, resleep) = countdown.tick(Instant::now(), autosave.get());
                 if save {
                     editors.save_to_disk();

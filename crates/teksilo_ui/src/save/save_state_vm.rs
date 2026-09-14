@@ -107,6 +107,17 @@ struct Inner {
     /// The generation the save currently in flight is writing. Promoted into
     /// [`Self::external_saved`] when that save lands, and never read otherwise.
     external_in_flight: Cell<u64>,
+    /// The highest generation already folded into [`Self::dirty_seq`] by
+    /// [`SaveStateViewModel::poll_external`], so one extension change bumps the
+    /// sequence once, not once per pumped frame.
+    external_seen: Cell<u64>,
+    /// `Work.unique_id`, cached per `work_id`: the generation is asked for on
+    /// every pumped frame, and a store read per frame for a value that only
+    /// changes when the Work does would be waste.
+    uid_cache: RefCell<Option<(u64, String)>>,
+    /// The save last asked for was preceded by an editor flush that failed —
+    /// see [`SaveStateViewModel::request_save_after_flush`].
+    flush_failed: Cell<bool>,
     /// One `save_work` at a time, with coalescing — see [`SaveQueue`].
     queue: RefCell<SaveQueue>,
     /// The last `LongOperation::Completed` op id this object has already turned
@@ -151,6 +162,9 @@ impl SaveStateViewModel {
                 saving: Signal::new(false),
                 external_saved: Cell::new(0),
                 external_in_flight: Cell::new(0),
+                external_seen: Cell::new(0),
+                uid_cache: RefCell::new(None),
+                flush_failed: Cell::new(false),
                 queue: RefCell::new(SaveQueue::default()),
                 last_completed: RefCell::new(None),
                 last_failed: RefCell::new(None),
@@ -204,14 +218,44 @@ impl SaveStateViewModel {
             .unwrap_or(0)
     }
 
-    /// This Work's `unique_id`, or `None` for an unsaved project.
+    /// This Work's `unique_id`, or `None` for an unsaved project. Cached once
+    /// known: a `unique_id` never changes for the life of a store row.
     fn work_unique_id(&self) -> Option<String> {
         let work_id = self.inner.ids.work_id.get()?;
+        if let Some((cached_id, uid)) = self.inner.uid_cache.borrow().as_ref()
+            && *cached_id == work_id
+        {
+            return Some(uid.clone());
+        }
         let uid = frontend::commands::work_commands::get_work(&self.inner.app_ctx, &work_id)
             .ok()
             .flatten()?
             .unique_id;
-        (!uid.is_empty()).then_some(uid)
+        if uid.is_empty() {
+            return None;
+        }
+        *self.inner.uid_cache.borrow_mut() = Some((work_id, uid.clone()));
+        Some(uid)
+    }
+
+    /// Fold an extension's off-thread change into the edit sequence.
+    ///
+    /// `work_management::external_changes` is a counter behind a lock, bumped
+    /// from threads that cannot touch a `Signal`, so nothing reactive can observe
+    /// it: the UI polls. The autosave frame tick calls this, and the first poll
+    /// after a bump advances [`Self::dirty_seq`] exactly once — from there the
+    /// status glyph, the autosave countdown and every guard see the change the
+    /// way they see a keystroke. [`Self::is_unsaved`] compares the generation
+    /// itself as well, so a guard asked between two frames is not fooled either.
+    /// Returns whether it found something new.
+    pub fn poll_external(&self) -> bool {
+        let generation = self.external_generation();
+        if generation <= self.inner.external_seen.get() {
+            return false;
+        }
+        self.inner.external_seen.set(generation);
+        self.bump_dirty();
+        true
     }
 
     /// A mutation happened: this window's typing, or a tree/metadata event any
@@ -235,6 +279,20 @@ impl SaveStateViewModel {
     /// already in flight (started by this window or another one sharing this
     /// object) this queues a follow-up instead of starting a second op.
     pub fn request_save(&self) -> Option<u64> {
+        self.request_save_after_flush(false)
+    }
+
+    /// [`Self::request_save`], told whether the editor flush before it succeeded.
+    ///
+    /// A flush that failed left text in an editor that the store does not hold,
+    /// so the save about to run cannot cover the sequence it would otherwise
+    /// claim. Bumping past that sequence *after* the claim is recorded keeps the
+    /// project unsaved once the write lands — the glyph, autosave and every guard
+    /// keep saying so — instead of the save being credited with words it never
+    /// saw. [`Self::last_flush_failed`] lets a deferred close or switch tell this
+    /// apart from typing during the save, which they answer with one more write;
+    /// a flush that just failed would only fail again.
+    pub fn request_save_after_flush(&self, flush_failed: bool) -> Option<u64> {
         let covers = self.inner.dirty_seq.get();
         // Bind the decision first so the `RefMut` from `borrow_mut` ends *before*
         // `start_save` runs. Matching on `queue.borrow_mut().request(...)` keeps
@@ -243,10 +301,27 @@ impl SaveStateViewModel {
         // — which panics with "RefCell already borrowed". That path is what a
         // brand-new Work hits on its first save after create.
         let request = self.inner.queue.borrow_mut().request(Instant::now());
-        match request {
+        let issued = match request {
             SaveRequest::Queued => Some(covers),
             SaveRequest::StartNow => self.start_save(covers).then_some(covers),
+        };
+        self.note_flush_outcome(flush_failed, issued.is_some());
+        issued
+    }
+
+    /// The policy behind [`Self::request_save_after_flush`], on its own so it can
+    /// be exercised against a seeded queue: record the outcome, and if the flush
+    /// failed and a save was issued, move the sequence past what that save claims.
+    fn note_flush_outcome(&self, flush_failed: bool, issued: bool) {
+        self.inner.flush_failed.set(flush_failed);
+        if flush_failed && issued {
+            self.bump_dirty();
         }
+    }
+
+    /// Whether the save last asked for was preceded by a failed editor flush.
+    pub fn last_flush_failed(&self) -> bool {
+        self.inner.flush_failed.get()
     }
 
     /// An extension-safe view onto this Work's save state — see [`WorkHandle`].
@@ -319,7 +394,13 @@ impl SaveStateViewModel {
     /// re-entering [`SaveQueue::completed`] — which is one-shot-consuming and
     /// would otherwise hand every window but the first a `None`, exactly the bug
     /// this type exists to close.
-    pub fn on_save_completed(&self, event: &Event, flush: impl FnOnce()) -> Option<SaveLanded> {
+    /// `flush` returns whether every editor could be flushed; a `false` is
+    /// accounted exactly as [`Self::request_save_after_flush`] accounts it.
+    pub fn on_save_completed(
+        &self,
+        event: &Event,
+        flush: impl FnOnce() -> bool,
+    ) -> Option<SaveLanded> {
         let op_id = event_id(event)?;
         if let Some((last_op, landed)) = self.inner.last_completed.borrow().as_ref()
             && *last_op == op_id
@@ -346,9 +427,10 @@ impl SaveStateViewModel {
             // predates them. Save again, covering everything typed since —
             // exactly once, regardless of how many windows are about to ask
             // this same question for this same event.
-            flush();
+            let flushed = flush();
             let covers = self.inner.dirty_seq.get();
             follow_up_failed = !self.start_save(covers);
+            self.note_flush_outcome(!flushed, !follow_up_failed);
         } else {
             self.inner.saving.set(false);
         }
@@ -446,6 +528,15 @@ impl SaveStateViewModel {
         self.inner.queue.borrow_mut().reset();
         self.inner.saving.set(false);
         self.inner.saved_seq.set(self.inner.dirty_seq.get());
+        // The extensions' half starts clean too, baselined on whatever the
+        // *incoming* Work's generation already is — the outgoing project's
+        // number must not stay behind as the floor the new one is judged by.
+        *self.inner.uid_cache.borrow_mut() = None;
+        let generation = self.external_generation();
+        self.inner.external_saved.set(generation);
+        self.inner.external_in_flight.set(generation);
+        self.inner.external_seen.set(generation);
+        self.inner.flush_failed.set(false);
         *self.inner.last_completed.borrow_mut() = None;
         *self.inner.last_failed.borrow_mut() = None;
         *self.inner.failure_reported.borrow_mut() = None;
@@ -595,9 +686,9 @@ mod tests {
         let event = completed_event("op-1");
 
         let landed_a = window_a
-            .on_save_completed(&event, || {})
+            .on_save_completed(&event, || true)
             .expect("window A processes the completion");
-        let landed_b = window_b.on_save_completed(&event, || {}).expect(
+        let landed_b = window_b.on_save_completed(&event, || true).expect(
             "window B must ALSO see it — a one-shot queue consumption must not \
              starve every subscriber but the first",
         );
@@ -632,7 +723,10 @@ mod tests {
         for window in [vm.clone(), vm.clone(), vm.clone()] {
             let flushes = flushes.clone();
             let landed = window
-                .on_save_completed(&event, move || flushes.set(flushes.get() + 1))
+                .on_save_completed(&event, move || {
+                    flushes.set(flushes.get() + 1);
+                    true
+                })
                 .expect("every window observes the completion");
             assert_eq!(landed.saved_seq, 1, "only op-1's snapshot is on disk yet");
             assert!(!landed.follow_up_failed);
@@ -673,7 +767,7 @@ mod tests {
     fn saved_seq_advances_monotonically_and_never_regresses() {
         let vm = vm();
         seed_running(&vm, "op-1", 5);
-        vm.on_save_completed(&completed_event("op-1"), || {})
+        vm.on_save_completed(&completed_event("op-1"), || true)
             .expect("our op");
         assert_eq!(vm.saved_seq().get(), 5);
 
@@ -681,7 +775,7 @@ mod tests {
         // sequence must never move `saved_seq` backwards — belt and braces
         // alongside the idempotency cache above.
         seed_running(&vm, "op-0", 2);
-        vm.on_save_completed(&completed_event("op-0"), || {})
+        vm.on_save_completed(&completed_event("op-0"), || true)
             .expect("still a real (if stale) completion of a tracked op");
         assert_eq!(vm.saved_seq().get(), 5, "never regresses");
     }
@@ -710,7 +804,7 @@ mod tests {
         let vm = vm();
         seed_running(&vm, "op-1", 1);
         assert_eq!(
-            vm.on_save_completed(&completed_event("backup-op"), || {}),
+            vm.on_save_completed(&completed_event("backup-op"), || true),
             None
         );
         assert_eq!(vm.on_save_failed(&failed_event("import-op", "x")), None);
@@ -737,7 +831,7 @@ mod tests {
         assert!(!vm.saving().get());
         // The outgoing project's completion must not resurrect anything.
         assert_eq!(
-            vm.on_save_completed(&completed_event("op-old"), || {}),
+            vm.on_save_completed(&completed_event("op-old"), || true),
             None
         );
     }
@@ -749,7 +843,7 @@ mod tests {
         vm.bump_dirty();
         assert!(vm.is_unsaved());
         seed_running(&vm, "op-1", 1);
-        vm.on_save_completed(&completed_event("op-1"), || {});
+        vm.on_save_completed(&completed_event("op-1"), || true);
         assert!(!vm.is_unsaved(), "the save covered the only edit so far");
         vm.bump_dirty();
         assert!(vm.is_unsaved(), "a later edit is unsaved again");
@@ -919,5 +1013,109 @@ mod tests {
         assert!(handle.dirty_seq().signal().try_set(0).is_err());
         assert!(handle.saved_seq().signal().try_set(99).is_err());
         assert!(handle.is_unsaved(), "…and the Work is still dirty");
+    }
+
+    // ── The extensions' half, and a flush that failed ────────────────────────
+
+    /// A Work with a durable id in the store, so `external_changes` has a key.
+    fn work_with_uid(ctx: &AppContext, uid: &str) -> u64 {
+        use frontend::commands::{smart_punctuation_commands, work_commands};
+        use frontend::common::entities::QuoteStyle;
+        use frontend::direct_access::{CreateSmartPunctuationDto, CreateWorkDto};
+        let now = chrono::Utc::now();
+        let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
+            ctx,
+            None,
+            &CreateSmartPunctuationDto {
+                created_at: now,
+                updated_at: now,
+                override_app_default: false,
+                dashes: false,
+                ellipsis: false,
+                quotes: false,
+                quote_style: QuoteStyle::LocaleDefault,
+                pre_punctuation_spacing: false,
+                dialogue_marker: false,
+            },
+        )
+        .expect("smart punctuation")
+        .id;
+        work_commands::create_orphan_work(
+            ctx,
+            None,
+            &CreateWorkDto {
+                unique_id: uid.into(),
+                smart_punctuation,
+                ..Default::default()
+            },
+        )
+        .expect("work")
+        .id
+    }
+
+    /// An extension's off-thread change reaches every surface through the one
+    /// counter they all read — folded in by the frame tick's poll, exactly once —
+    /// and a guard asked before any frame pumps is not fooled in the meantime.
+    #[test]
+    fn polling_folds_an_extension_change_into_the_edit_sequence_once() {
+        use frontend::work_management::external_changes;
+        let ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
+        let uid = "save-state-test-poll";
+        ids.work_id.set(Some(work_with_uid(&ctx, uid)));
+        let vm = SaveStateViewModel::new(ctx, ids);
+        vm.mark_clean();
+        assert!(!vm.poll_external());
+        assert!(!vm.is_unsaved());
+
+        external_changes::mark_changed(uid);
+        assert!(vm.is_unsaved(), "seen before any frame pumps");
+        assert!(vm.poll_external(), "the first poll folds it in");
+        assert_eq!(vm.dirty_seq().get(), 1);
+        assert!(!vm.poll_external(), "…and only the first");
+        assert_eq!(vm.dirty_seq().get(), 1);
+
+        vm.mark_clean();
+        assert!(
+            !vm.is_unsaved(),
+            "a clean slate baselines on the current generation"
+        );
+        assert!(!vm.poll_external());
+        external_changes::forget(uid);
+    }
+
+    /// A save credited with text an editor could not hand over would read as
+    /// "saved" while the words sit only in the buffer. The failed flush keeps the
+    /// project unsaved past the write, and says which kind of unsaved it is.
+    #[test]
+    fn a_failed_flush_keeps_the_project_unsaved_after_its_save_lands() {
+        let vm = vm();
+        vm.bump_dirty(); // seq 1: the edit whose flush is about to fail
+        let covers = vm.dirty_seq().get();
+        seed_running(&vm, "op-1", covers);
+        vm.note_flush_outcome(true, true);
+        assert!(vm.last_flush_failed());
+        assert!(
+            vm.dirty_seq().get() > covers,
+            "the claim stops short of the text that never reached the store"
+        );
+
+        vm.on_save_completed(&completed_event("op-1"), || true)
+            .expect("our save");
+        assert_eq!(vm.saved_seq().get(), covers);
+        assert!(
+            vm.is_unsaved(),
+            "the write landed; the project is still unsaved"
+        );
+
+        // The next save whose flush succeeds clears the mark…
+        vm.note_flush_outcome(false, true);
+        assert!(!vm.last_flush_failed());
+        // …and a follow-up save whose flush fails sets it again.
+        seed_running(&vm, "op-2", vm.dirty_seq().get());
+        vm.inner.queue.borrow_mut().request(Instant::now());
+        vm.on_save_completed(&completed_event("op-2"), || false)
+            .expect("our save");
+        assert!(vm.last_flush_failed());
     }
 }

@@ -106,7 +106,13 @@ struct Inner {
     /// The Work whose save we are waiting on, and the edit sequence that save
     /// covers. `None` unless a `Save` answer is outstanding.
     waiting: RefCell<Option<(u64, u64)>>,
+    /// How many extra saves the Work being waited on has already been asked for
+    /// because typing went on during the previous one.
+    resaves: Cell<u8>,
 }
+
+/// How many extra saves one Work may be asked for during a quit.
+const MAX_RESAVES: u8 = 3;
 
 /// App-global (Tier 1): one quit at a time, over every open Work.
 #[derive(Clone)]
@@ -124,6 +130,7 @@ impl QuitSequencer {
                 queue: RefCell::new(VecDeque::new()),
                 active: Cell::new(false),
                 waiting: RefCell::new(None),
+                resaves: Cell::new(0),
             }),
         }
     }
@@ -164,8 +171,11 @@ impl QuitSequencer {
             let Some(session) = self.inner.registry.session_for(work_id) else {
                 continue;
             };
+            // The Work's own answer, not the pair's: a change an extension
+            // reported from another thread counts (see
+            // `SaveStateViewModel::poll_external`).
             let step = step_for(
-                session.unsaved.get(),
+                session.save_state.is_unsaved(),
                 session.backup_mode.get(),
                 self.inner.autosave.get(),
             );
@@ -323,10 +333,24 @@ impl QuitSequencer {
         };
         let flush_session = session.clone();
         session.save_state.on_save_completed(event, move || {
-            flush_session.backup_scheduler.flush_all_windows()
+            flush_session.backup_scheduler.flush_all_windows();
+            true
         });
         if session.save_state.saved_seq().get() >= covers {
+            // Text typed while that save was writing is not in it: one more
+            // write, unless the flush itself failed (it would again) or this
+            // Work has already been asked a few times.
+            if session.save_state.is_unsaved()
+                && !session.save_state.last_flush_failed()
+                && self.inner.resaves.get() < MAX_RESAVES
+            {
+                self.inner.resaves.set(self.inner.resaves.get() + 1);
+                if self.start_save(work_id, &session) {
+                    return;
+                }
+            }
             self.inner.waiting.borrow_mut().take();
+            self.inner.resaves.set(0);
             // Saved and consistent — now this Work's on-close backup, then the
             // next Work. Same order the single-window deferred close uses: the
             // backup must capture the saved state, not the state before it.
@@ -356,6 +380,7 @@ impl QuitSequencer {
     fn abort(&self) {
         self.inner.queue.borrow_mut().clear();
         self.inner.waiting.borrow_mut().take();
+        self.inner.resaves.set(0);
         self.inner.active.set(false);
     }
 

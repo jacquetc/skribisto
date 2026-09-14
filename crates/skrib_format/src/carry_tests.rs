@@ -208,3 +208,50 @@ fn a_carried_file_changes_the_content_fingerprint() {
         "a changed carried file must change the fingerprint, or dedup skips its backup"
     );
 }
+
+/// A backup that ended up *inside* a folder project — an older "next to the
+/// project" default, applied to a project addressed by its manifest — is neither
+/// carried (into every later save and backup, compounding) nor deleted. It is
+/// simply left where it is.
+#[test]
+fn a_bundle_inside_the_bundle_is_left_alone_not_carried() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let target = dir.path().join("Novel");
+    let path = target.to_string_lossy().into_owned();
+    write_bundle(
+        &path,
+        SkribShape::ExplodedFolder,
+        &super::tests::build_bundle(ShapeTag::Folder),
+    )
+    .expect("write");
+    let stray = target.join("project-20260914-101010.skrib");
+    std::fs::write(&stray, b"PK\x03\x04 a backup archive").unwrap();
+
+    let bundle = read_bundle(&path).expect("read");
+    assert!(
+        bundle.carried.keys().all(|k| !k.ends_with(".skrib")),
+        "a bundle at the root is not carried: {:?}",
+        bundle.carried.keys().collect::<Vec<_>>()
+    );
+    assert!(
+        super::carry::load(&path)
+            .keys()
+            .all(|k| !k.ends_with(".skrib")),
+        "…by either reader"
+    );
+
+    write_bundle(&path, SkribShape::ExplodedFolder, &bundle).expect("write again");
+    assert!(stray.is_file(), "and it is not pruned either");
+
+    assert!(super::carry::is_stray_bundle(
+        "project-20260914-101010.skrib"
+    ));
+    assert!(
+        !super::carry::is_stray_bundle("project.skrib"),
+        "the manifest is modelled"
+    );
+    assert!(
+        !super::carry::is_stray_bundle("notes/draft.skrib"),
+        "only the root: deeper down, an unknown file is what carrying is for"
+    );
+}

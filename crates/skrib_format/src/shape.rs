@@ -70,3 +70,61 @@ pub fn folder_root(path: &str) -> PathBuf {
         p.to_path_buf()
     }
 }
+
+/// The one spelling of a project's path everything keyed on that path agrees on.
+///
+/// A folder-shaped project can be named two ways: by its folder, or by the
+/// `project.skrib` manifest inside it. The second is what a file dialog can pick
+/// (a dialog picks files), the first is what Save As ▸ folder records — and every
+/// consumer that keys on the path has to agree, or the same book is two projects:
+/// `WorkInfo.file_name`, the recents list, the open registry, a window's
+/// persistence id, where a backup goes and what it is named. Before this
+/// existed, a folder project created in one session and reopened through its
+/// manifest in the next was loaded a second time into an independent Work, with
+/// two sessions autosaving one folder, and a backup written "next to the
+/// project" landed *inside* it.
+///
+/// Collapses the manifest spelling onto the folder; every other path (a zip, a
+/// legacy file, a path that does not exist yet) comes back unchanged. Purely
+/// syntactic — no filesystem access — so it answers the same for a path that is
+/// not on disk yet and is cheap enough to call at every door.
+pub fn canonical_project_path(path: &str) -> String {
+    let p = Path::new(path);
+    if p.file_name().and_then(|n| n.to_str()) == Some(MANIFEST_NAME)
+        && let Some(parent) = p.parent().filter(|d| !d.as_os_str().is_empty())
+    {
+        return parent.to_string_lossy().into_owned();
+    }
+    path.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_manifest_path_collapses_onto_its_folder() {
+        assert_eq!(
+            canonical_project_path("/home/j/Textes/raphaël-et-mireïa/project.skrib"),
+            "/home/j/Textes/raphaël-et-mireïa"
+        );
+    }
+
+    #[test]
+    fn every_other_spelling_is_returned_unchanged() {
+        for p in [
+            "/home/j/Textes/raphaël-et-mireïa",
+            "/home/j/Novel.skrib",
+            "relative/Novel.skrib",
+            "project.skrib",
+        ] {
+            assert_eq!(canonical_project_path(p), p, "{p}");
+        }
+    }
+
+    #[test]
+    fn it_is_idempotent() {
+        let once = canonical_project_path("/x/Novel/project.skrib");
+        assert_eq!(canonical_project_path(&once), once);
+    }
+}

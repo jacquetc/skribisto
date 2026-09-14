@@ -352,23 +352,31 @@ impl OpenDoc {
         // a user action — it fires once, on blur, and is exactly the "Undo
         // renaming «Chapter 3»" a writer reaches for. A prose flush is a timer
         // going off; its undo lives in the document's own word-level history.
-        if let Some(f) = &self.title {
-            f.flush(stack)?;
+        //
+        // Every field is attempted even after one fails: a title the store
+        // refused must not keep the prose beside it from reaching the store.
+        // `dirty` is cleared only once all five landed, so the next flush
+        // retries the one that did not; the first error is the one reported.
+        let outcomes = [
+            self.title.as_ref().map(|f| f.flush(stack)),
+            self.subtitle.as_ref().map(|f| f.flush(stack)),
+            self.main.as_ref().map(|f| f.flush()),
+            self.synopsis.as_ref().map(|f| f.flush()),
+            self.epigraph.as_ref().map(|f| f.flush()),
+        ];
+        let mut first_error = None;
+        for outcome in outcomes.into_iter().flatten() {
+            if let Err(e) = outcome {
+                first_error.get_or_insert(e);
+            }
         }
-        if let Some(f) = &self.subtitle {
-            f.flush(stack)?;
+        match first_error {
+            None => {
+                self.dirty.set(false);
+                Ok(())
+            }
+            Some(e) => Err(e),
         }
-        if let Some(f) = &self.main {
-            f.flush()?;
-        }
-        if let Some(f) = &self.synopsis {
-            f.flush()?;
-        }
-        if let Some(f) = &self.epigraph {
-            f.flush()?;
-        }
-        self.dirty.set(false);
-        Ok(())
     }
 
     /// Exact "has any prose field changed since it was last flushed" check,
@@ -1680,8 +1688,12 @@ impl OpenDocsStore {
         self.inner.remembered.borrow().len()
     }
 
-    /// Flush every open doc once (changed fields only).
-    pub fn flush_all(&self, stack: Option<u64>) {
+    /// Flush every open doc once (changed fields only). Returns the documents
+    /// that could not be flushed — every other one is still flushed, since one
+    /// bad write must not stop the rest from being saved — so the caller asking
+    /// for the save can refuse to credit it with text that never arrived.
+    pub fn flush_all(&self, stack: Option<u64>) -> Vec<FlushFailure> {
+        let mut failures = Vec::new();
         let docs: Vec<Rc<OpenDoc>> = self
             .inner
             .open
@@ -1694,8 +1706,18 @@ impl OpenDocsStore {
             // must not stop every other open document from being saved too.
             if let Err(e) = doc.flush(stack) {
                 eprintln!("open docs: flush_all failed for item {}: {e}", doc.item_id);
+                failures.push(FlushFailure {
+                    item_id: doc.item_id,
+                    title: doc
+                        .title
+                        .as_ref()
+                        .map(|t| t.value.get())
+                        .unwrap_or_default(),
+                    error: e.to_string(),
+                });
             }
         }
+        failures
     }
 
     /// Drop **all** open docs without flushing — for a project switch, where the
@@ -1821,6 +1843,16 @@ impl OpenDocsStore {
     pub(crate) fn refs_for_test(&self, item_id: u64) -> Option<usize> {
         self.inner.open.borrow().get(&item_id).map(|e| e.refs)
     }
+}
+
+/// One document [`OpenDocsStore::flush_all`] could not hand to the store: its
+/// text is still in its editor and nowhere else.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FlushFailure {
+    pub item_id: u64,
+    /// The row's own title — empty for an untitled scene.
+    pub title: String,
+    pub error: String,
 }
 
 #[cfg(test)]

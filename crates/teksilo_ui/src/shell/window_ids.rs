@@ -29,6 +29,10 @@ pub const LAUNCHER_WINDOW_ID: &str = "launcher";
 /// Falls back to the raw string when the path doesn't exist yet (a New Work
 /// target that hasn't been written to disk).
 ///
+/// A folder project has one id under both spellings of its path (its folder,
+/// or the `project.skrib` inside it): `canon` collapses the second onto the
+/// first before hashing. Two ids here were two windows on one book.
+///
 /// Hashed with **blake3**, not `std::hash::DefaultHasher`: the result is
 /// *persisted* (as the key of a `window_state.toml` row), and `DefaultHasher`'s
 /// algorithm is explicitly not guaranteed stable across Rust releases.
@@ -111,4 +115,36 @@ fn find_open_project_window(
             .then(|| registry.windows_for(work_id).first().copied())
             .flatten()
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The Open dialog can only pick the `project.skrib` inside a folder project,
+    /// while Save As ▸ folder records the folder: both must resolve to the window
+    /// already showing it, or the project opens a second time beside itself.
+    #[test]
+    fn a_folder_project_has_one_window_id_under_both_spellings() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path().join("Novel");
+        std::fs::create_dir(&folder).unwrap();
+        std::fs::write(folder.join("project.skrib"), b"(manifest)").unwrap();
+        let by_folder = window_id_for(folder.to_str().unwrap());
+        let by_manifest = window_id_for(folder.join("project.skrib").to_str().unwrap());
+        assert_eq!(by_folder, by_manifest);
+        assert!(by_folder.starts_with("work-"));
+    }
+
+    #[test]
+    fn two_projects_keep_two_ids() {
+        let dir = tempfile::tempdir().unwrap();
+        for name in ["A.skrib", "B.skrib"] {
+            std::fs::write(dir.path().join(name), b"PK").unwrap();
+        }
+        assert_ne!(
+            window_id_for(dir.path().join("A.skrib").to_str().unwrap()),
+            window_id_for(dir.path().join("B.skrib").to_str().unwrap())
+        );
+    }
 }

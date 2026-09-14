@@ -103,19 +103,26 @@ impl LoadWorkUseCase {
 
     pub fn execute(&mut self, dto: &LoadWorkDto) -> Result<()> {
         let now = chrono::Utc::now();
+        // One spelling per project from here on: a folder project handed over
+        // as its `project.skrib` (what a file dialog picks) is recorded — in
+        // `WorkInfo`, the recents list, and everything the UI keys on those —
+        // by its folder, exactly as Save As ▸ folder records it. Two spellings
+        // used to be two projects: opened twice, backed up inside itself. See
+        // `skrib_format::canonical_project_path`.
+        let file_name = skrib::canonical_project_path(&dto.file_name);
 
         // Stage 1: read + map the file into a neutral graph (no store access yet).
-        let shape = skrib::detect_shape(&dto.file_name)
-            .with_context(|| format!("inspecting '{}'", dto.file_name))?;
+        let shape =
+            skrib::detect_shape(&file_name).with_context(|| format!("inspecting '{file_name}'"))?;
         let loaded = match shape {
             SkribShape::LegacySqlite => {
-                let project = legacy::read_project(&dto.file_name)
-                    .with_context(|| format!("reading legacy project '{}'", dto.file_name))?;
+                let project = legacy::read_project(&file_name)
+                    .with_context(|| format!("reading legacy project '{file_name}'"))?;
                 legacy_to_loaded(project, now)
             }
             SkribShape::ZipFile | SkribShape::ExplodedFolder => {
-                let bundle = skrib::read_bundle(&dto.file_name)
-                    .with_context(|| format!("reading project '{}'", dto.file_name))?;
+                let bundle = skrib::read_bundle(&file_name)
+                    .with_context(|| format!("reading project '{file_name}'"))?;
                 // Put the images where the editor and the exporters will look
                 // for them, before the entities that reference them exist.
                 //
@@ -124,14 +131,14 @@ impl LoadWorkUseCase {
                 // bytes are already there and nothing is copied. Only a zip
                 // needs a working copy extracted.
                 let media_dir = skrib_format::media::media_dir(
-                    std::path::Path::new(&dto.file_name),
+                    std::path::Path::new(&file_name),
                     &bundle.manifest.work.unique_id,
                     std::path::Path::new(&dto.media_root),
                     &bundle.manifest.work.unique_id,
                 );
                 crate::work_io::write_asset_bytes(&bundle, &media_dir)
-                    .with_context(|| format!("writing media for '{}'", dto.file_name))?;
-                skrib::bundle_to_loaded(bundle, &dto.file_name)?
+                    .with_context(|| format!("writing media for '{file_name}'"))?;
+                skrib::bundle_to_loaded(bundle, &file_name)?
             }
         };
 
@@ -151,7 +158,7 @@ impl LoadWorkUseCase {
         uow.begin_transaction()?;
 
         let mat = materialize(&*uow, &loaded)?;
-        create_trunk(&*uow, &loaded, &mat, &dto.file_name, shape, now)?;
+        create_trunk(&*uow, &loaded, &mat, &file_name, shape, now)?;
 
         uow.commit()?;
         uow.publish_load_work_event(vec![mat.work_id], None);
@@ -165,7 +172,7 @@ impl LoadWorkUseCase {
         if crate::lifecycle::has_listeners() {
             crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Opened {
                 unique_id: loaded.work.unique_id.clone(),
-                path: dto.file_name.clone(),
+                path: file_name.clone(),
                 live_binder_item_uids: crate::work_io::loaded_binder_item_uids(&loaded),
             });
         }

@@ -14,13 +14,19 @@ use std::path::Path;
 /// Best-effort canonical form for comparing project paths across the open registry (which
 /// stores canonical paths) and the recents list.
 ///
+/// A folder project's `project.skrib` spelling is collapsed onto its folder first
+/// (`skrib_format::canonical_project_path`): a file and its parent directory never
+/// canonicalise to the same thing, so without this the two spellings a folder project
+/// legitimately arrives under were two identities — two windows, two registry claims.
+///
 /// Falls back to the input unchanged when the path does not resolve — an unreachable network
 /// mount or a deleted project still has to compare *somehow*, and comparing the raw string is
 /// better than dropping the entry.
 pub(crate) fn canon(path: &str) -> String {
-    std::fs::canonicalize(path)
+    let path = skrib_format::canonical_project_path(path);
+    std::fs::canonicalize(&path)
         .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| path.to_string())
+        .unwrap_or(path)
 }
 
 /// Open the file manager on the folder holding `path`, so `path` itself is one

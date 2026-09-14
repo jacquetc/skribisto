@@ -113,6 +113,12 @@ pub enum UnsavedDecision {
 /// the project has edits not yet on disk — including text still sitting in an
 /// editor buffer, since typing bumps it through the editors' `edited` signal (see
 /// `App::build`).
+/// How many extra saves a parked switch may ask for while typing continues.
+const MAX_RESAVES: u8 = 3;
+
+/// A yes/no question answered by the Work's save state — see [`ProjectSwitchViewModel::set_unsaved_probe`].
+type Probe = Rc<dyn Fn() -> bool>;
+
 pub fn unsaved_decision(unsaved: bool, backup_mode: bool, autosave: bool) -> UnsavedDecision {
     match (unsaved, backup_mode, autosave) {
         (false, _, _) => UnsavedDecision::Proceed,
@@ -142,6 +148,12 @@ pub struct ProjectSwitchViewModel {
     /// "a save finished" — an autosave already in flight may have gathered the
     /// store before our flush.
     pending_seq: Rc<Cell<Option<u64>>>,
+    /// The Work's own "is anything unsaved?" — see [`Self::set_unsaved_probe`].
+    unsaved_probe: Rc<RefCell<Option<Probe>>>,
+    /// "Should a landed save be followed by one more?" — see [`Self::set_resave_probe`].
+    resave_probe: Rc<RefCell<Option<Probe>>>,
+    /// How many extra saves this parked switch has already asked for.
+    resaves: Rc<Cell<u8>>,
     /// The OUTGOING Work [`Self::pending`] will close (see
     /// `crate::app::close_outgoing_work`) once it fires — the caller's own
     /// window's `AppIds.work_id` at the moment [`Self::request`] was called,
@@ -179,6 +191,9 @@ impl ProjectSwitchViewModel {
             autosave,
             pending: Signal::new(PendingSwitch::None),
             pending_seq: Rc::new(Cell::new(None)),
+            unsaved_probe: Rc::new(RefCell::new(None)),
+            resave_probe: Rc::new(RefCell::new(None)),
+            resaves: Rc::new(Cell::new(0)),
             pending_work_id: Rc::new(Cell::new(CapturedWork::none())),
             save_hook: Rc::new(RefCell::new(Rc::new(|| None) as Rc<dyn Fn() -> Option<u64>>)),
             new_work_form_hook: Rc::new(RefCell::new(
@@ -189,6 +204,33 @@ impl ProjectSwitchViewModel {
 
     /// Install "flush the editors and ask for a disk write", from `App::build`.
     /// Visible on every clone already handed out (shared cell).
+    /// Wire the Work's own answer to "is anything unsaved?" —
+    /// `SaveStateViewModel::is_unsaved`, which also counts a change an extension
+    /// reported from a thread that cannot bump `dirty_seq`. The `unsaved` signal
+    /// alone is `dirty_seq > saved_seq`, and that pair never sees such a change:
+    /// without this, New Work / Open Work replaced the project over it silently.
+    pub fn set_unsaved_probe(&self, probe: Rc<dyn Fn() -> bool>) {
+        *self.unsaved_probe.borrow_mut() = Some(probe);
+    }
+
+    /// Wire "should a landed save be followed by one more?": still unsaved, and
+    /// not because a flush failed (that would only fail again). Text typed while
+    /// the parked switch's save was writing is not in it, and without this the
+    /// switch replaced the project over that text.
+    pub fn set_resave_probe(&self, probe: Rc<dyn Fn() -> bool>) {
+        *self.resave_probe.borrow_mut() = Some(probe);
+    }
+
+    fn is_unsaved(&self) -> bool {
+        self.unsaved.get() || self.unsaved_probe.borrow().as_ref().is_some_and(|p| p())
+    }
+
+    /// Bounded: each extra save needs the writer to still be typing, and a
+    /// project that never settles gets the switch it asked for after a few.
+    fn should_resave(&self) -> bool {
+        self.resaves.get() < MAX_RESAVES && self.resave_probe.borrow().as_ref().is_some_and(|p| p())
+    }
+
     pub fn set_save_hook(&self, hook: Rc<dyn Fn() -> Option<u64>>) {
         *self.save_hook.borrow_mut() = hook;
     }
@@ -215,7 +257,7 @@ impl ProjectSwitchViewModel {
         outgoing_work_id: Option<u64>,
     ) {
         match unsaved_decision(
-            self.unsaved.get(),
+            self.is_unsaved(),
             self.backup_mode.get(),
             self.autosave.get(),
         ) {
@@ -284,6 +326,7 @@ impl ProjectSwitchViewModel {
         };
         self.pending.set(switch);
         self.pending_seq.set(Some(covers));
+        self.resaves.set(0);
         self.pending_work_id
             .set(CapturedWork::given(outgoing_work_id));
     }
@@ -368,6 +411,16 @@ impl ProjectSwitchViewModel {
         };
         if saved_seq < waiting_for {
             return; // an earlier save landed; ours is still coming
+        }
+        // Text typed while that save was writing is not in it: one more write,
+        // parked on the new sequence, before the project is replaced.
+        if self.should_resave() {
+            let save = self.save_hook.borrow().clone();
+            if let Some(covers) = save() {
+                self.resaves.set(self.resaves.get() + 1);
+                self.pending_seq.set(Some(covers));
+                return;
+            }
         }
         let outgoing_work_id: Option<u64> = self.pending_work_id.get().into();
         let switch = self.take_pending();
@@ -614,5 +667,29 @@ mod tests {
         }
         defer_headless(&earlier_clone, PendingSwitch::NewWork, Some(7));
         assert_eq!(saves.get(), 1, "the earlier clone must see the new hook");
+    }
+
+    /// The probes are what make a parked switch honest: a change only an
+    /// extension knows about still prompts, and a save that landed while typing
+    /// went on is followed by another — a few times, never forever.
+    #[test]
+    fn the_probes_decide_unsaved_and_resave_and_the_resaves_are_bounded() {
+        let vm = test_vm(false, false, true);
+        assert!(!vm.is_unsaved(), "nothing typed, nothing reported");
+        vm.set_unsaved_probe(Rc::new(|| true));
+        assert!(vm.is_unsaved(), "an extension's change counts");
+
+        assert!(!vm.should_resave(), "no probe, no extra save");
+        vm.set_resave_probe(Rc::new(|| true));
+        defer_headless(&vm, PendingSwitch::OpenWork("/x.skrib".into()), Some(7));
+        assert_eq!(vm.resaves.get(), 0, "parking resets the count");
+        for _ in 0..MAX_RESAVES {
+            assert!(vm.should_resave());
+            vm.resaves.set(vm.resaves.get() + 1);
+        }
+        assert!(
+            !vm.should_resave(),
+            "the switch it asked for happens after a few"
+        );
     }
 }

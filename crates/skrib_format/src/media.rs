@@ -47,8 +47,8 @@ pub fn media_dir(
     data_root: &Path,
     fallback_key: &str,
 ) -> PathBuf {
-    if is_folder_project(project_path) {
-        return project_path.join(ASSETS_DIR);
+    if let Some(root) = folder_project_root(project_path) {
+        return root.join(ASSETS_DIR);
     }
     let key = if unique_id.trim().is_empty() {
         fallback_key
@@ -58,14 +58,33 @@ pub fn media_dir(
     data_root.join("media").join(sanitize_key(key))
 }
 
-/// Whether `path` is an exploded-folder project rather than a zip.
+/// The bundle root of an exploded-folder project, under either spelling of its
+/// path — the folder itself, or the `project.skrib` inside it (what a file
+/// dialog picks; see [`crate::canonical_project_path`]). `None` for a zip, a
+/// legacy file, or a path that is not on disk yet.
 ///
 /// Decided by what is on disk, not by the extension: both shapes use `.skrib`,
 /// which is the whole point of the format's "one name, two layouts" design.
 /// A path that does not exist yet is treated as a zip, because that is what
-/// `new_work` produces unless the writer asked otherwise.
+/// `new_work` produces unless the writer asked otherwise. The manifest spelling
+/// used to fall through to the zip branch here, so a folder project opened
+/// through its manifest had every image copied into the app's data root on
+/// open and read back from there on save — consistent, so nothing was lost,
+/// but a shadow copy of every picture that outlived its deletion.
+pub fn folder_project_root(path: &Path) -> Option<PathBuf> {
+    if path.is_dir() {
+        return Some(path.to_path_buf());
+    }
+    if path.file_name().and_then(|n| n.to_str()) == Some(crate::shape::MANIFEST_NAME) {
+        return path.parent().filter(|p| p.is_dir()).map(Path::to_path_buf);
+    }
+    None
+}
+
+/// Whether `path` is an exploded-folder project rather than a zip — see
+/// [`folder_project_root`].
 pub fn is_folder_project(path: &Path) -> bool {
-    path.is_dir()
+    folder_project_root(path).is_some()
 }
 
 /// Reduce a key to something safe to use as a single directory name.
@@ -189,6 +208,22 @@ mod tests {
         std::fs::create_dir(&project).unwrap();
         let got = media_dir(&project, "uid-1", Path::new("/data"), "session");
         assert_eq!(got, project.join("assets"));
+    }
+
+    #[test]
+    fn a_folder_project_named_by_its_manifest_keeps_its_assets_beside_its_prose() {
+        let dir = tempfile::tempdir().unwrap();
+        let project = dir.path().join("Novel");
+        std::fs::create_dir(&project).unwrap();
+        std::fs::write(project.join("project.skrib"), b"(manifest)").unwrap();
+        let got = media_dir(
+            &project.join("project.skrib"),
+            "uid-1",
+            Path::new("/data"),
+            "session",
+        );
+        assert_eq!(got, project.join("assets"));
+        assert!(is_folder_project(&project.join("project.skrib")));
     }
 
     #[test]

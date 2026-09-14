@@ -88,6 +88,19 @@ pub fn is_modelled(rel: &str) -> bool {
     }
 }
 
+/// A bundle that ended up **inside** this one — neither modelled nor carried.
+///
+/// A `.skrib` at the bundle root is a backup an older default wrote "next to
+/// the project" while the project was addressed by its `project.skrib`, so that
+/// "next to" resolved to the bundle itself. Carrying it would copy every such
+/// backup into every later save and every later backup — each of which would
+/// then hold all the earlier ones — and modelling it would prune it. It stays
+/// on disk, untouched, where the writer can still find it. Only the root is
+/// special: deeper down, an unknown file is exactly what carrying exists for.
+pub fn is_stray_bundle(rel: &str) -> bool {
+    !rel.contains('/') && rel != MANIFEST_NAME && rel.ends_with(".skrib")
+}
+
 /// Read the unmodelled files of the bundle at `path`, whatever its shape.
 ///
 /// Mirrors [`crate::history::load`], and exists for the same reason: this is the
@@ -129,7 +142,7 @@ fn load_folder(root: &std::path::Path) -> BTreeMap<String, CarriedFile> {
         else {
             continue;
         };
-        if is_modelled(&rel) {
+        if is_modelled(&rel) || is_stray_bundle(&rel) {
             continue;
         }
         // The same filter the zip side applies, for the same reason and with the
@@ -169,7 +182,7 @@ fn load_zip(path: &std::path::Path) -> BTreeMap<String, CarriedFile> {
     // it.
     let unmodelled: Vec<String> = archive
         .file_names()
-        .filter(|n| !n.ends_with('/') && !is_modelled(n))
+        .filter(|n| !n.ends_with('/') && !is_modelled(n) && !is_stray_bundle(n))
         .filter(|n| match crate::safe_path::bundle_relative(n) {
             Ok(_) => true,
             Err(e) => {

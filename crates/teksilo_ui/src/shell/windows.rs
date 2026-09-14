@@ -506,6 +506,18 @@ impl ProjectWindowFactory {
             backup_mode.clone(),
             self.autosave_menu.clone(),
         );
+        // The switch guard's own answer to "unsaved?" is the Work's, not the
+        // pair's: `SaveStateViewModel::is_unsaved` also counts a change an
+        // extension reported from a thread that cannot bump `dirty_seq`. And a
+        // landed save is followed by one more while typing went on during it —
+        // unless the flush itself failed, which would only fail again.
+        {
+            let s = session.save_state.clone();
+            project_switch.set_unsaved_probe(Rc::new(move || s.is_unsaved()));
+            let s = session.save_state.clone();
+            project_switch
+                .set_resave_probe(Rc::new(move || s.is_unsaved() && !s.last_flush_failed()));
+        }
         // Fresh per WINDOW, never a `self`/`session` field: this names a
         // *window's* own deferred close/quit, not the Work's data — even two
         // windows on the SAME Work must each resolve their own close
@@ -577,7 +589,9 @@ impl ProjectWindowFactory {
             // Work's refcount dropped by one, its undo stack left alone because
             // `WorkRegistry` reports this was not the last window on it.
             .on_close_requested({
-                let unsaved = unsaved.clone();
+                // The Work's own answer, not the pair's — see the `work.close`
+                // action in `app.rs` for why.
+                let save_state_guard = session.save_state.clone();
                 let autosave = autosave_menu.clone();
                 let pending = pending_exit.clone();
                 let scheduler = backup_scheduler.clone();
@@ -606,7 +620,7 @@ impl ProjectWindowFactory {
                         ctx,
                         &app_ctx_guard,
                         &ids,
-                        unsaved.get(),
+                        save_state_guard.is_unsaved(),
                         backup_mode.get(),
                         autosave.get(),
                         &pending,

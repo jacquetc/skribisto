@@ -4001,3 +4001,46 @@ fn lifecycle_events_name_exactly_the_project_they_are_about() {
         "closing A removed B from the store"
     );
 }
+
+/// A folder project is one project under both spellings of its path. A file
+/// dialog can only pick the `project.skrib` inside the folder, while Save As ▸
+/// folder records the folder itself; recording the manifest spelling made the
+/// same book two projects — opened twice, and backed up into itself.
+#[test]
+fn a_folder_project_opened_by_its_manifest_is_recorded_under_its_folder() {
+    let dir = tempfile::tempdir().unwrap();
+    let folder = dir.path().join("Novel");
+    let folder_path = folder.to_str().unwrap().to_string();
+    skrib::write_bundle(&folder_path, SkribShape::ExplodedFolder, &sample_bundle()).unwrap();
+    let manifest_path = folder.join("project.skrib").to_str().unwrap().to_string();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: manifest_path,
+        },
+    )
+    .expect("a folder project opens through its manifest");
+
+    let store = db.get_store();
+    let infos: Vec<_> = store.work_infos.read().unwrap().values().cloned().collect();
+    assert_eq!(infos.len(), 1, "one project open");
+    assert_eq!(
+        infos[0].file_name.as_deref(),
+        Some(folder_path.as_str()),
+        "WorkInfo names the folder, not the manifest inside it"
+    );
+    assert!(
+        store
+            .recent_works
+            .read()
+            .unwrap()
+            .values()
+            .any(|r| r.absolute_path == folder_path),
+        "and so does the recents entry"
+    );
+}

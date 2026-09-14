@@ -176,6 +176,7 @@ fn a_backup_already_running_blocks_the_safety_copy_rather_than_queueing_behind_i
         dirs: vec![String::new()],
         close: None,
         then: None,
+        rerun_for_close: false,
     }));
     assert_eq!(
         s.safety_backup_blocker(),
@@ -209,6 +210,7 @@ fn each_reason_a_safety_copy_cannot_run_is_distinguishable() {
         dirs: vec![String::new()],
         close: None,
         then: None,
+        rerun_for_close: false,
     }));
     seen.insert(format!("{:?}", running.safety_backup_blocker().unwrap()));
 
@@ -265,6 +267,7 @@ fn a_backups_captured_work_id_survives_a_later_in_place_switch() {
         dirs: vec![String::new()],
         close: None,
         then: None,
+        rerun_for_close: false,
     }));
     let captured = scheduler.pending.get().unwrap().tracked.work_id();
     assert_eq!(captured, Some(1));
@@ -339,6 +342,7 @@ fn backup_now_toasts_for_two_works_both_stay_live_in_a_real_registry() {
         dirs: vec![String::new()],
         close: None,
         then: None,
+        rerun_for_close: false,
     }));
     let b = test_scheduler();
     b.single_work.set_id(Some(2));
@@ -350,6 +354,7 @@ fn backup_now_toasts_for_two_works_both_stay_live_in_a_real_registry() {
         dirs: vec![String::new()],
         close: None,
         then: None,
+        rerun_for_close: false,
     }));
 
     let registry = ToastRegistry::new(ToastInstallOptions {
@@ -408,6 +413,7 @@ fn backup_now_toasts_stay_live_even_when_single_work_does_not_track_ids() {
         dirs: vec![String::new()],
         close: None,
         then: None,
+        rerun_for_close: false,
     }));
     let b = test_scheduler();
     b.ids.work_id.set(Some(2));
@@ -418,6 +424,7 @@ fn backup_now_toasts_stay_live_even_when_single_work_does_not_track_ids() {
         dirs: vec![String::new()],
         close: None,
         then: None,
+        rerun_for_close: false,
     }));
 
     let registry = ToastRegistry::new(ToastInstallOptions {
@@ -740,5 +747,29 @@ fn to_engine_retention_mode_round_trips_both_variants() {
     assert_eq!(
         to_engine_retention_mode(RetentionMode::KeepLastN),
         EngineRetentionMode::KeepLastN
+    );
+}
+
+/// A close that arrives during a running backup must not be satisfied by that
+/// backup's snapshot: it predates the save the close waited for. The pending
+/// record says so, and the completion handler reruns the on-close copy from it.
+#[test]
+fn a_close_attached_to_a_running_backup_asks_for_a_fresh_copy_on_completion() {
+    let ids = AppIds::new();
+    ids.work_id.set(Some(1));
+    let mut pending = Pending {
+        tracked: TrackedOp::start(&ids, "op-1".into()),
+        uid: "uid-1".into(),
+        path: "/tmp/Novel.skrib".into(),
+        dirs: vec![String::new()],
+        close: None,
+        then: None,
+        rerun_for_close: false,
+    };
+    pending.attach_close(PendingExit::Quit);
+    assert_eq!(pending.close, Some(PendingExit::Quit));
+    assert!(
+        pending.rerun_for_close,
+        "the completion takes the on-close copy afresh"
     );
 }

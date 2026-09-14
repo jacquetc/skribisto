@@ -290,10 +290,14 @@ pub fn socket_name(id: SocketId) -> Option<interprocess::local_socket::Name<'sta
     }
 }
 
+/// The form a claim is keyed by. Same rule as `shell::process::canon`, for the same
+/// reason: a folder project's two spellings (`…/Novel`, `…/Novel/project.skrib`)
+/// must be one claim, or a second instance opens the project a second time.
 pub(crate) fn canonical(path: &str) -> String {
-    std::fs::canonicalize(path)
+    let path = skrib_format::canonical_project_path(path);
+    std::fs::canonicalize(&path)
         .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| path.to_string())
+        .unwrap_or(path)
 }
 
 /// The lock file naming `pid`'s claim on `project_path`. Pid is a parameter (not
