@@ -37,6 +37,11 @@ unicode-normalization = "0.1"
 # editorial-metadata spec.
 [dev-dependencies]
 toml = "1.1.3"
+# A project's file names are made out of its titles, so the format's sharpest
+# invariants are statements about every title rather than about one fixture — and
+# the sharpest of them, "a no-op save changes nothing on disk", is what the two
+# shipped naming faults both broke. See `src/property_tests.rs`.
+proptest = { workspace = true }
 
 [lints]
 workspace = true

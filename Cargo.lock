@@ -5911,6 +5911,7 @@ dependencies = [
  "anyhow",
  "blake3",
  "chrono",
+ "proptest",
  "ron",
  "serde",
  "skribisto-common",

@@ -58,6 +58,8 @@ pub mod media;
 mod migration;
 #[cfg(test)]
 mod normalisation_tests;
+#[cfg(test)]
+mod property_tests;
 mod reader;
 pub mod retention;
 /// Turning a path that came out of a bundle into a path on this machine, safely.
