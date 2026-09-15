@@ -500,7 +500,7 @@ pub fn synopsis_section(
                 MaxSize::width(synopsis_width.get()) {
                     max_width: synopsis_width.clone()
                     Expand::horizontal {
-                        child: synopsis_editor(
+                        synopsis_editor(
                             doc,
                             typo,
                             SynopsisFit::Compact,
@@ -617,7 +617,7 @@ pub fn synopsis_column(
         MaxSize::width(synopsis_width.get()) {
             max_width: synopsis_width.clone()
             Expand::horizontal {
-                child: synopsis_editor(
+                synopsis_editor(
                     doc,
                     typo,
                     SynopsisFit::Growing,

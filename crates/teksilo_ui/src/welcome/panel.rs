@@ -173,7 +173,7 @@ impl WelcomePanel {
                         // The rows fire the same two named actions the Launcher
                         // menu's Create from ▸ submenu does — one command each,
                         // two surfaces.
-                        child: create_from_button()
+                        create_from_button()
                         Button::new(tr!(welcome_new_work())) {
                             variant: ButtonVariant::Filled
                             icon: plus_icon, IconLocation::Leading
@@ -188,7 +188,7 @@ impl WelcomePanel {
                     }
                 }
                 Expand::vertical {
-                    child: self.recents_list(vm, ctx)
+                    self.recents_list(vm, ctx)
                 }
             }
         )
@@ -327,7 +327,7 @@ impl WelcomePanel {
                     }
                 }
                 Expand::vertical {
-                    child: self.examples_list(vm)
+                    self.examples_list(vm)
                 }
             }
         )
@@ -638,10 +638,10 @@ fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
         Center {
             HStack {
                 spacing: 4.0
-                child: link_button(github_icon, tr!(welcome_github()), move |ctx| {
+                link_button(github_icon, tr!(welcome_github()), move |ctx| {
                     github_vm.open_link(GITHUB_URL, ctx)
                 })
-                child: link_button(discord_icon, tr!(welcome_discord()), move |ctx| {
+                link_button(discord_icon, tr!(welcome_discord()), move |ctx| {
                     discord_vm.open_link(DISCORD_URL, ctx)
                 })
             }

@@ -450,7 +450,7 @@ fn controls(vm: &FormatViewModel) -> Padding {
             VStack {
                 spacing: BUTTON_GAP
                 GroupHeader::new(tr!(format_group_tables()))
-                child: row().child(command_button(
+                row().child(command_button(
                     glyph::table_insert(),
                     tr!(format_table_insert()),
                     vm.clone(),

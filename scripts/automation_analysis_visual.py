@@ -272,6 +272,17 @@ for w in WANT:
     print(f"  {'OK  ' if n else 'MISS'} {w}")
 
 shot("analysis-report")
+
+# The Arrivals view is the block's sibling: same shape, six more bare children
+# and the `if total == 0` empty state.
+if click("Arrivals", "(sub-segment)", minx=PANE_X):
+    time.sleep(1.5)
+    for w in ("Arrivals",):
+        n = find(w, timeout=15, minx=PANE_X, contains=True)
+        found[f"arrivals/{w}"] = n is not None
+        print(f"  {'OK  ' if n else 'MISS'} arrivals/{w}")
+    shot("analysis-arrivals")
+
 ok = all(found.values())
 print("\nRESULT:", "the migrated block rendered its rows"
       if ok else "ROWS MISSING - the bare-expression children did not attach")

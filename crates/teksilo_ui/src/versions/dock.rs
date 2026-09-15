@@ -427,7 +427,7 @@ fn scope_bar(vm: VersionsViewModel) -> impl Widget + use<> {
                         label: tr!(versions_range_filter())
                     }
                 }
-                child: filter_row(vm)
+                filter_row(vm)
             }
         }
     )

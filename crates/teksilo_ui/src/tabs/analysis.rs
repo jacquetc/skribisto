@@ -447,7 +447,7 @@ const PROSE_MEASURE: f32 = 640.0;
 fn prose(text: impl Into<LocalizedString>) -> impl Widget {
     teksu!(
         MaxSize::width(PROSE_MEASURE) {
-            child: note(text)
+            note(text)
         }
     )
 }
@@ -538,7 +538,7 @@ fn shape_view(
     if all.is_empty() {
         return teksu!(
             VStack {
-                child: note(tr!(analysis_no_scenes()))
+                note(tr!(analysis_no_scenes()))
                 child: footnote_section
             }
         );
@@ -556,8 +556,8 @@ fn shape_view(
         return teksu!(
             VStack {
                 spacing: 10.0
-                child: empty_toggle(ignore_empty)
-                child: note(tr!(analysis_all_texts_empty()))
+                empty_toggle(ignore_empty)
+                note(tr!(analysis_all_texts_empty()))
                 child: footnote_section
             }
         );
@@ -722,12 +722,14 @@ fn arrivals_view(counts: &common::arrival::Counts) -> impl Widget {
     let rows = teksu!(
         VStack {
             spacing: 6.0
-            child_opt: (total == 0).then(|| note(tr!(analysis_arrivals_nothing())))
+            if total == 0 {
+                note(tr!(analysis_arrivals_nothing()))
+            }
             for (label, value) in routes.into_iter() {
                 HStack {
                     spacing: 8.0
                     TextWidget::new(label)
-                    child: note(value)
+                    note(value)
                 }
             }
         }
@@ -736,14 +738,14 @@ fn arrivals_view(counts: &common::arrival::Counts) -> impl Widget {
     teksu!(
         VStack {
             spacing: 10.0
-            child: heading(tr!(analysis_arrivals()))
-            child: prose(tr!(analysis_arrivals_explainer()))
+            heading(tr!(analysis_arrivals()))
+            prose(tr!(analysis_arrivals_explainer()))
             child: rows
             // Below the figures, not above: they are caveats on what was just read,
             // and a reader who takes nothing else from this pane should still take
             // these two.
-            child: note(tr!(analysis_arrivals_scope()))
-            child: note(tr!(analysis_arrivals_session()))
+            note(tr!(analysis_arrivals_scope()))
+            note(tr!(analysis_arrivals_session()))
         }
     )
 }
@@ -756,7 +758,7 @@ fn footnote_words_section(value: Option<i64>) -> impl Widget {
     teksu!(
         VStack {
             spacing: 6.0
-            child: heading(tr!(analysis_footnote_words()))
+            heading(tr!(analysis_footnote_words()))
             child: line
         }
     )

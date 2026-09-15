@@ -377,7 +377,7 @@ impl TimelinePanel {
                     }
                     child: slider
                     Expand::vertical {
-                        child: self.chart()
+                        self.chart()
                     }
                     TextWidget::new(caption) {
                         style: TextStyleRole::Small
@@ -386,8 +386,8 @@ impl TimelinePanel {
                     }
                     HStack {
                         spacing: 6.0
-                        child: self.range_filter()
-                        child: self.recent_button()
+                        self.range_filter()
+                        self.recent_button()
                         child: crate::tabs::Boxed::new(self.window_control(axis))
                         Spacer
                     }
@@ -1277,7 +1277,7 @@ impl Widget for PastReader {
                 corner_radius: 10.0
                 padding: 0.0
                 Padding::uniform(16.0) {
-                    child: column.child(
+                    column.child(
                         Expand::vertical()
                             .child(crate::tabs::Boxed::new(self.body(comparing))),
                     )

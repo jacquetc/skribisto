@@ -42,7 +42,7 @@ pub(super) fn overview_header(
                             vm: vm.clone(),
                             root: None,
                         })
-                        child: expand_collapse_buttons(vm)
+                        expand_collapse_buttons(vm)
                         child: (OverviewCreateButton {
                             vm: vm.clone(),
                             root: None,
