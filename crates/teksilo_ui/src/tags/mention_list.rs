@@ -372,7 +372,7 @@ impl Widget for MentionList {
                     TooltipPlacement::Side,
                 );
             }
-            col = col.add_child(id);
+            col = col.child(id);
         }
 
         let id = ctx.add(col.access_role(Role::List));

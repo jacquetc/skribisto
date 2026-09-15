@@ -223,7 +223,7 @@ impl Widget for ImportManuskriptPanel {
         self.first_field
             .set(ctx.first_focusable_descendant(form_id));
 
-        let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child_id(form_id));
+        let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child(form_id));
 
         let import_vm = self.vm.clone();
         let import_can = self.vm.can_import();

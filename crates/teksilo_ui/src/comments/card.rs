@@ -161,7 +161,7 @@ impl RichTextEditorStyle for CommentBodyStyle {
         // there is no field to blend in the first place.
         if cfg.is_read_only {
             return match cfg.content_padding {
-                Some((t, r, b, l)) => ctx.add(Padding::new(t, r, b, l).child_id(cfg.viewport)),
+                Some((t, r, b, l)) => ctx.add(Padding::new(t, r, b, l).child(cfg.viewport)),
                 None => cfg.viewport,
             };
         }
@@ -178,8 +178,8 @@ impl RichTextEditorStyle for CommentBodyStyle {
         // Tighter than the default field insets: the margin is 300 px wide and this
         // box has no frame to hold text away from any more.
         let (pt, pr, pb, pl) = cfg.content_padding.unwrap_or((3.0, 5.0, 3.0, 5.0));
-        let padded = ctx.add(Padding::new(pt, pr, pb, pl).child_id(cfg.viewport));
-        ctx.add(ZStack::new().add_child(bg).add_child(padded))
+        let padded = ctx.add(Padding::new(pt, pr, pb, pl).child(cfg.viewport));
+        ctx.add(ZStack::new().child(bg).child(padded))
     }
 }
 

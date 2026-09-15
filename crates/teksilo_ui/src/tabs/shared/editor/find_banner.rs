@@ -167,7 +167,7 @@ impl Widget for FindBanner {
                     .toggle(self.find.replace_mode_signal())
                     .tooltip(tr!(find_replace_toggle())),
             ))
-            .add_child(query_id)
+            .child(query_id)
             .child(
                 Padding::symmetric(0.0, 6.0).child(
                     TextWidget::new(lit!(""))

@@ -237,7 +237,7 @@ impl Widget for Pill {
         if let Some(glyph) = self.leading.take() {
             let leading_id = ctx.add_boxed(glyph);
             ctx.set_opacity(leading_id, self.leading_opacity);
-            content = content.add_child(leading_id);
+            content = content.child(leading_id);
         }
 
         // A pill's text is user data (a tag, a name), and a pill sits in a row beside
@@ -294,7 +294,7 @@ impl Widget for Pill {
                 delay,
                 self.tooltip_placement,
             );
-            content = content.add_child(x_id);
+            content = content.child(x_id);
         }
 
         // Keyboard-focus ring. The fill carries the hairline; the ring rides above it in

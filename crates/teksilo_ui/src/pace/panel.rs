@@ -285,7 +285,7 @@ impl Widget for PaceSummaryPanel {
                     .spacing(8.0)
                     .child(Toggle::new(hide).label(tr!(pace_summary_dont_show())))
                     .child(Spacer::new())
-                    .add_child(close_button),
+                    .child(close_button),
             ),
         );
         // `Expand::horizontal` around each bar, not a bare `FixedSize`: a height-only
@@ -326,7 +326,7 @@ impl Widget for PaceSummaryPanel {
                         Divider
                     }
                     Expand::vertical {
-                        child_id: body
+                        child: body
                     }
                     Expand::horizontal {
                         Divider
@@ -334,7 +334,7 @@ impl Widget for PaceSummaryPanel {
                     Expand::horizontal {
                         FixedSize {
                             height: FOOTER_H
-                            child_id: footer
+                            child: footer
                         }
                     }
                 }

@@ -150,18 +150,13 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
             // `welcome_panel`'s module docs) — centring a fixed-size card in
             // here is what put a gutter down each side of it.
             let body = tree.add(Expand::new().child(WelcomePanel::new(app_ctx.clone())));
-            let inner = tree.add(
-                VStack::new()
-                    .spacing(0.0)
-                    .add_child(title_bar)
-                    .add_child(body),
-            );
+            let inner = tree.add(VStack::new().spacing(0.0).child(title_bar).child(body));
 
             // Edge resize handles, same as the project window (skipped where
             // the host doesn't need them, e.g. macOS).
             match tree.title_bar_host() {
                 Some(host) if host.needs_custom_resize_handles() => {
-                    tree.add(WindowFrame::new(host).thickness(6.0).content_id(inner))
+                    tree.add(WindowFrame::new(host).thickness(6.0).content(inner))
                 }
                 _ => inner,
             }

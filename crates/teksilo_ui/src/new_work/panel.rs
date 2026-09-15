@@ -794,7 +794,7 @@ impl Widget for NewWorkPanel {
                     corner_radius: 10.0
                     padding: 12.0
                     Expand::vertical {
-                        child_id: stepper_id
+                        child: stepper_id
                     }
                 }
             }

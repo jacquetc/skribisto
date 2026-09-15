@@ -114,7 +114,7 @@ impl RememberSegment {
                 segment = segment.visible(entry.1.clone());
             }
             bar = bar.segment(segment);
-            content = content.child_boxed(pane);
+            content = content.child(pane);
         }
 
         let col = shell(

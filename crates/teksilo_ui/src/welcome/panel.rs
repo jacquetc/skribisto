@@ -249,7 +249,7 @@ impl WelcomePanel {
         Switcher::new(vm.recents_page())
             .child(empty_note(tr!(welcome_empty_recents()))) // RECENTS_PAGE_EMPTY
             .child(empty_note(tr!(welcome_no_matches()))) // RECENTS_PAGE_NO_MATCH
-            .child_id(list_id) // RECENTS_PAGE_LIST
+            .child(list_id) // RECENTS_PAGE_LIST
     }
 
     /// Learn pane: the doors out of the Launcher for someone who does not yet know

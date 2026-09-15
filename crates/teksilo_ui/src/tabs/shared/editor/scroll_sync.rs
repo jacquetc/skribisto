@@ -181,9 +181,7 @@ impl Widget for WidthProbe {
         }
 
         if let Some((top, side)) = self.pending.take() {
-            let switcher = Switcher::new(self.mode.clone())
-                .child_boxed(top)
-                .child_boxed(side);
+            let switcher = Switcher::new(self.mode.clone()).child(top).child(side);
             self.switcher_id = Some(ctx.add(switcher));
         }
         self.switcher_id.into_iter().collect()

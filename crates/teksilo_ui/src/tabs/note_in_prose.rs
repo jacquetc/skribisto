@@ -1706,7 +1706,7 @@ mod tests {
         let mut tree = crate::test_support::tree_with_events(&f.ctx);
         tree.add(
             teksilo::widgets::Switcher::new(page.clone())
-                .child_boxed(note_in_prose_pane(&f.tab))
+                .child(note_in_prose_pane(&f.tab))
                 .child(TextWidget::new(lit!("elsewhere"))),
         );
         tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));

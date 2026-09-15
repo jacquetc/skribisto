@@ -63,15 +63,10 @@ pub fn first_run_window_config(source: AppPaths, on_answer: OnAnswer) -> WindowC
             let body = tree.add(Expand::new().child(
                 Padding::uniform(16.0).child(FirstRunPanel::new(source.clone(), on_answer.clone())),
             ));
-            let inner = tree.add(
-                VStack::new()
-                    .spacing(0.0)
-                    .add_child(title_bar)
-                    .add_child(body),
-            );
+            let inner = tree.add(VStack::new().spacing(0.0).child(title_bar).child(body));
             match tree.title_bar_host() {
                 Some(host) if host.needs_custom_resize_handles() => {
-                    tree.add(WindowFrame::new(host).thickness(6.0).content_id(inner))
+                    tree.add(WindowFrame::new(host).thickness(6.0).content(inner))
                 }
                 _ => inner,
             }

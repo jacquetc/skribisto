@@ -571,10 +571,10 @@ impl Widget for EntryPanel {
             }
             HStack::new()
                 .spacing(8.0)
-                .add_child(cancel_id)
+                .child(cancel_id)
                 .child(Spacer::new())
-                .add_child(create_and_open_id)
-                .add_child(create_id)
+                .child(create_and_open_id)
+                .child(create_id)
         };
 
         let root = ctx.add(

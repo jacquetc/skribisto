@@ -400,7 +400,7 @@ impl AnalysisPane {
         let ids: Vec<SegmentId> = cats.iter().map(|c| c.segment_id()).collect();
         let mut sw = Switcher::new(segmented_control::index_signal(&self.vm.category(), &ids));
         for c in cats {
-            sw = sw.child_boxed(scrolled_boxed((c.view)(&self.vm, dto)));
+            sw = sw.child(scrolled_boxed((c.view)(&self.vm, dto)));
         }
         sw
     }
@@ -981,7 +981,7 @@ mod tests {
         // A literal rather than the real key: this asserts a layout rule, and it must not
         // start passing because a translator shortened a sentence.
         let para = tree.add_boxed(Box::new(prose(lit!(LONG))));
-        let _root = tree.add_boxed(Box::new(VStack::new().add_child(para)));
+        let _root = tree.add_boxed(Box::new(VStack::new().child(para)));
         // Wider than any measure: a maximised window on a large display.
         tree.layout(SizeProposal::exact(1450.0, 900.0));
 
@@ -1017,7 +1017,7 @@ mod tests {
         let mut tree = WidgetTree::new();
         let capped = tree.add_boxed(Box::new(prose(lit!(LONG))));
         let bare = tree.add_boxed(Box::new(note(lit!(LONG))));
-        let _root = tree.add_boxed(Box::new(VStack::new().add_child(capped).add_child(bare)));
+        let _root = tree.add_boxed(Box::new(VStack::new().child(capped).child(bare)));
         tree.layout(SizeProposal::exact(1450.0, 900.0));
 
         let (c, u) = (tree.bounds(capped), tree.bounds(bare));
@@ -1046,7 +1046,7 @@ mod tests {
 
         let mut tree = WidgetTree::new();
         let para = tree.add_boxed(Box::new(prose(lit!(LONG))));
-        let _root = tree.add_boxed(Box::new(VStack::new().add_child(para)));
+        let _root = tree.add_boxed(Box::new(VStack::new().child(para)));
         tree.layout(SizeProposal::exact(320.0, 900.0));
         assert!(
             tree.bounds(para).width <= 320.0,

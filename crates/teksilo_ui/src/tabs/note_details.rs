@@ -1046,7 +1046,7 @@ impl Widget for BacklinksList {
             // pins both, and pins that `Shrinkable` and a bare `ColumnFlow` column do
             // not close it — a stack only distributes a deficit along its main axis, and
             // a flow's clamp does not reach through an intermediate stack.
-            col = col.child(Expand::horizontal().child_id(id));
+            col = col.child(Expand::horizontal().child(id));
         }
 
         let id = ctx.add(col.access_role(Role::List));

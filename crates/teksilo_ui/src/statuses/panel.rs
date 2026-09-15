@@ -108,7 +108,7 @@ impl Widget for CompletionPanel {
         self.close_button = Some(close_button);
         let footer = ctx.add(
             Padding::symmetric(10.0, 16.0)
-                .child(HStack::new().child(Spacer::new()).add_child(close_button)),
+                .child(HStack::new().child(Spacer::new()).child(close_button)),
         );
         // `Expand::horizontal` around each bar: a height-only `FixedSize` is placed at its
         // child's intrinsic width, which starves the header title and leaves the footer's
@@ -147,7 +147,7 @@ impl Widget for CompletionPanel {
                         Divider
                     }
                     Expand::vertical {
-                        child_id: body
+                        child: body
                     }
                     Expand::horizontal {
                         Divider
@@ -155,7 +155,7 @@ impl Widget for CompletionPanel {
                     Expand::horizontal {
                         FixedSize {
                             height: FOOTER_H
-                            child_id: footer
+                            child: footer
                         }
                     }
                 }

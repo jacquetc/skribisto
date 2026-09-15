@@ -42,7 +42,7 @@ struct SeamlessEditorStyle;
 impl RichTextEditorStyle for SeamlessEditorStyle {
     fn make_body(&self, cfg: &RichTextEditorStyleConfig, ctx: &mut BuildContext) -> WidgetId {
         match cfg.content_padding {
-            Some((t, r, b, l)) => ctx.add(Padding::new(t, r, b, l).child_id(cfg.viewport)),
+            Some((t, r, b, l)) => ctx.add(Padding::new(t, r, b, l).child(cfg.viewport)),
             None => cfg.viewport,
         }
     }

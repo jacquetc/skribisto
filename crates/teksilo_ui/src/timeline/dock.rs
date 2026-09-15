@@ -1162,7 +1162,7 @@ impl PastReader {
             .pages()
             .into_iter()
             .fold(Switcher::new(self.view.clone()), |sw, (_, _, doc)| {
-                sw.child_boxed(Box::new(Self::page(doc)))
+                sw.child(Box::new(Self::page(doc)))
             });
         Box::new(switcher)
     }

@@ -884,8 +884,8 @@ impl ProjectWindowFactory {
                     chrome_visible,
                     VStack::new()
                         .spacing(0.0)
-                        .add_child(title_bar)
-                        .add_child(body),
+                        .child(title_bar)
+                        .child(body),
                 ));
                 // `VisibleWhen` **inside** `Slide`, not around it. Both read the
                 // same signal, so they turn on and off together — but the nesting
@@ -951,8 +951,8 @@ impl ProjectWindowFactory {
                 // content-sized box instead of filling the window. Its
                 // `place_children` does hand each child the full bounds, so one
                 // `Expand` on the outside is all it takes.
-                let stack = tree.add(ZStack::new().add_child(shell).add_child(surface));
-                let inner = tree.add(Expand::new().child_id(stack));
+                let stack = tree.add(ZStack::new().child(shell).child(surface));
+                let inner = tree.add(Expand::new().child(stack));
 
                 // Add edge resize handles only where the host needs the app
                 // to drive them (skipped on macOS — NSWindow handles edges).
@@ -960,7 +960,7 @@ impl ProjectWindowFactory {
                 // `register_action_global` (no root wrapper needed).
                 match tree.title_bar_host() {
                     Some(host) if host.needs_custom_resize_handles() => {
-                        tree.add(WindowFrame::new(host).thickness(6.0).content_id(inner))
+                        tree.add(WindowFrame::new(host).thickness(6.0).content(inner))
                     }
                     _ => inner,
                 }

@@ -1473,13 +1473,8 @@ mod tests {
                 .height(2000.0)
                 .child(TextWidget::new(lit!(""))),
         );
-        let row = tree.add(
-            FixedSize::new()
-                .width(220.0)
-                .height(300.0)
-                .child_id(editor_id),
-        );
-        let content = tree.add(VStack::new().add_child(above).add_child(row));
+        let row = tree.add(FixedSize::new().width(220.0).height(300.0).child(editor_id));
+        let content = tree.add(VStack::new().child(above).child(row));
         let page_area = ScrollArea::from_id(content).smooth_scrolling(false);
         let page_y = page_area.scroll_y_signal().clone();
         let _page = tree.add(page_area);

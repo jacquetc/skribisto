@@ -211,7 +211,7 @@ fn facts_grid(cells: Vec<WidgetId>) -> impl Widget {
         .column_gap(12.0)
         .row_gap(LINE_SPACING);
     for cell in cells {
-        grid = grid.add_child(cell);
+        grid = grid.child(cell);
     }
     grid
 }

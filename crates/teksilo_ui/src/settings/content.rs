@@ -130,7 +130,7 @@ pub(super) fn build(
     let search = tree::search_field(ctx, &spec, &work_title, nav.clone());
     let left = VStack::new()
         .spacing(0.0)
-        .child(Padding::symmetric(10.0, 10.0).child_id(search))
+        .child(Padding::symmetric(10.0, 10.0).child(search))
         .child(Expand::vertical().child(Padding::symmetric(2.0, 6.0).child(tree)));
 
     // Every breadcrumb in the window, derived from that same spec rather than
@@ -550,7 +550,7 @@ pub(super) fn build(
     let index = selected_pane.map(move |sel| order.iter().position(|p| p == sel).unwrap_or(0));
     let content = panes
         .into_iter()
-        .fold(Switcher::new(index), |sw, (_, body)| sw.child_boxed(body));
+        .fold(Switcher::new(index), |sw, (_, body)| sw.child(body));
 
     (left, content, search)
 }

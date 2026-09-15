@@ -121,15 +121,10 @@ pub fn help_window_config(vm: HelpViewModel) -> WindowConfig {
                 None => tree.add(TextWidget::new(tr!(help_window_title()))),
             };
             let body = tree.add(Expand::new().child(HelpPanel::new((*vm).clone())));
-            let inner = tree.add(
-                VStack::new()
-                    .spacing(0.0)
-                    .add_child(title_bar)
-                    .add_child(body),
-            );
+            let inner = tree.add(VStack::new().spacing(0.0).child(title_bar).child(body));
             match tree.title_bar_host() {
                 Some(host) if host.needs_custom_resize_handles() => {
-                    tree.add(WindowFrame::new(host).thickness(6.0).content_id(inner))
+                    tree.add(WindowFrame::new(host).thickness(6.0).content(inner))
                 }
                 _ => inner,
             }

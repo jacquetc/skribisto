@@ -1381,7 +1381,7 @@ impl RichTextEditorStyle for WritingEditorStyle {
     fn make_body(&self, cfg: &RichTextEditorStyleConfig, ctx: &mut BuildContext) -> WidgetId {
         if cfg.is_read_only {
             return match cfg.content_padding {
-                Some((t, r, b, l)) => ctx.add(Padding::new(t, r, b, l).child_id(cfg.viewport)),
+                Some((t, r, b, l)) => ctx.add(Padding::new(t, r, b, l).child(cfg.viewport)),
                 None => cfg.viewport,
             };
         }
@@ -1402,8 +1402,8 @@ impl RichTextEditorStyle for WritingEditorStyle {
                 .corner_radius(CornerRadius::uniform(6.0)),
         );
         let (pt, pr, pb, pl) = cfg.content_padding.unwrap_or((8.0, 12.0, 8.0, 12.0));
-        let padded = ctx.add(Padding::new(pt, pr, pb, pl).child_id(cfg.viewport));
-        ctx.add(ZStack::new().add_child(bg).add_child(padded))
+        let padded = ctx.add(Padding::new(pt, pr, pb, pl).child(cfg.viewport));
+        ctx.add(ZStack::new().child(bg).child(padded))
     }
 }
 

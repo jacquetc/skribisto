@@ -575,7 +575,7 @@ impl Widget for TagPickRow {
         let focused = ctx.signal(false);
         let body = HStack::new()
             .spacing(6.0)
-            .add_child(check_id)
+            .child(check_id)
             .child(swatch(contrast::parse(&self.tag.color)))
             .child(
                 TextWidget::new(lit!(self.tag.name.clone()))

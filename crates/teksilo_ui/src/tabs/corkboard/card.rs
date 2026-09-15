@@ -434,7 +434,7 @@ impl Widget for InlineTitle {
             //
             // Wrapped *after* `ctx.focus`, which has to name the field itself — a
             // dead zone is not a focus target.
-            ctx.add(DeadZone::new().child_id(fid))
+            ctx.add(DeadZone::new().child(fid))
         } else {
             let vm = self.vm.clone();
             let item_id = self.item_id;

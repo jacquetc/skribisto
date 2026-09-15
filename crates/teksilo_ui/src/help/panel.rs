@@ -50,7 +50,7 @@ fn ground(role: SurfaceRole, child: WidgetId) -> impl Widget + 'static {
         .background(role)
         .corner_radius(0.0)
         .padding(0.0)
-        .child_id(child)
+        .child(child)
 }
 
 /// Width of the table of contents. Wide enough for the longest topic title in both
@@ -387,7 +387,7 @@ impl HelpReadingPane {
         // its content rather than greedily, so without the `Expand` a short topic would
         // leave the reading pane's background showing through beneath it.
         let body = self.build_body(ctx, &spec);
-        ctx.add(column.child(Expand::new().child_id(body)))
+        ctx.add(column.child(Expand::new().child(body)))
     }
 
     /// The prose itself, by body kind.

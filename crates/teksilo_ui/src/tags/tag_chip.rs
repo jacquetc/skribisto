@@ -148,7 +148,7 @@ impl Widget for TagChipRow {
                 lit!(tag.name.clone()),
                 TooltipPlacement::Below,
             );
-            row = row.add_child(cell);
+            row = row.child(cell);
         }
 
         let hidden = rest.len();
@@ -175,7 +175,7 @@ impl Widget for TagChipRow {
                 label,
                 TooltipPlacement::Below,
             );
-            row = row.add_child(cell);
+            row = row.child(cell);
         }
 
         let id = ctx.add(row);
