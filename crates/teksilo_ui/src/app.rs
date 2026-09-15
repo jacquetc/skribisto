@@ -9,9 +9,13 @@
 //! Clicking a binder item opens (or focuses) its editor tab via the tree's
 //! `KeyedSelectionModel<NodeId>` selection signal.
 //!
-//! Plain builder calls rather than `teksu!`: the docking/tab/editor widgets are
-//! generic over closures, which the DSL doesn't express cleanly. See
-//! `settings.rs` for the `teksu!` style.
+//! Plain builder calls rather than `teksu!` for the docking/tab/editor widgets, but not
+//! because they are "generic over closures": a closure argument is an ordinary property
+//! value and parses fine. `build_pane_tabs`'s `.dynamic_tab::<ContentTab>(..)` is the real
+//! wall: a `teksu!` property name cannot carry a `::<T>` type argument. The docking tree in
+//! `project_shell.rs` has no such wall; it stays a builder chain because its construction is
+//! interleaved with one-time imperative `DockingModel` setup, not a closure limitation.
+//! See `settings.rs` for the `teksu!` style.
 
 mod commands;
 mod project_shell;

@@ -108,9 +108,9 @@ impl Widget for HelpPanel {
         // the filter field floats in the middle of an empty column. That shipped once
         // here and is exactly what `welcome_body` already documents.
         //
-        // Plain builders rather than `teksu!`: both halves are built as widget *ids*
-        // (the reading pane adds its own document to the tree), and these containers
-        // take a child by id only through `child_id`.
+        // Plain builders here, not because of `child_id`: `child_id: id` is an
+        // ordinary `teksu!` property and would parse fine. This HStack is a plain
+        // builder because it was never converted, not because of any DSL wall.
         // The two halves take the main window's own grounds, measured rather than
         // guessed: a dock panel is transparent over `SurfaceRole::Main`, and an editor
         // tab's body sits on `SurfaceRole::Content` (`ContentTab::backdrop_role`). This

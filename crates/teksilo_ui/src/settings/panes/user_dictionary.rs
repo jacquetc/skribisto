@@ -10,8 +10,9 @@
 //! [`DictWordListModel`](crate::models::DictWordListModel) through a `SortFilterListModel` search
 //! projection, so a word added here or from the editor's "Add to dictionary" appears live either way.
 //!
-//! Like `panes::dictionaries`, it needs generic-closure widgets (`ListView`)
-//! the `teksu!` DSL can't express, so it is a chained-builder module.
+//! Not a `teksu!` limitation: `ListView` parses and builds fine through the macro. This
+//! stays a chained-builder module by convention, matching `panes::dictionaries` and its
+//! other siblings, not because of anything the DSL can't express.
 
 use teksilo::core::styles::TextInputVariant;
 use teksilo::data::SortFilterListModel;

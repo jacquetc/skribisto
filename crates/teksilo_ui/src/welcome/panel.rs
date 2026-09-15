@@ -23,9 +23,11 @@
 //! hide the very screen you're looking at.
 //!
 //! All business logic lives on [`WelcomeViewModel`]; this view is thin. The
-//! layout is built with the `teksu!` DSL; only the nav [`TabBar`] and the
-//! content [`Switcher`] stay as plain builders — they're generic over
-//! closures, which the DSL can't express.
+//! layout is built with the `teksu!` DSL; the nav [`TabBar`] and the content
+//! [`Switcher`] are built as plain builders instead, not because the DSL can't
+//! express them, but because each needs extra computed configuration (a derived
+//! selection index, `.show_scroll_arrows`, …) before it can join the tree, so
+//! they're built first and spliced in via `child:`.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -1030,8 +1032,10 @@ impl Widget for WelcomePanel {
         .access_label_literal("Welcome sections");
 
         // Right pane: a Switcher keyed off the bar's selection. `TabBar` and
-        // `Switcher` are generic over closures, so they stay plain builders
-        // and join the teksu! tree below via `child:`.
+        // `Switcher` both parse fine in `teksu!`; they stay plain builders here
+        // because each needs its own computed configuration first (the derived
+        // `switch_index`, the bar's trailing chrome), then join the tree below
+        // via `child:`.
         let ids_for_idx = self.tab_ids.clone();
         let switch_index = self.selected_tab.map(move |opt: &Option<TabId>| {
             (*opt)

@@ -11,9 +11,9 @@
 //! row edits one rule in place: trigger, replacement, an enabled toggle
 //! (deactivate without deleting), and delete.
 //!
-//! Like the tag palette and dictionary panes it needs generic-closure widgets
-//! (`ListView`) the `teksu!` DSL can't express, so it is a chained-builder
-//! module.
+//! Not a `teksu!` limitation: `ListView` parses and builds fine through the macro. This
+//! stays a chained-builder module by convention, matching the tag palette and dictionary
+//! panes beside it, not because of anything the DSL can't express.
 
 use teksilo::core::styles::TextInputVariant;
 use teksilo::data::SortFilterListModel;

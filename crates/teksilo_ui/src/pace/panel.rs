@@ -269,8 +269,10 @@ impl Widget for PaceSummaryPanel {
         let body =
             ctx.add(ScrollArea::new().child(Padding::symmetric(CARD_PADDING, 16.0).child(list)));
 
-        // Built by hand rather than inside the `teksu!` shell so its id can be captured
-        // for `initial_focus_hint` — see that method for why the ✕ must not have it.
+        // Built by hand here, not because the id couldn't be captured from `teksu!`:
+        // `teksu!(ctx => ..)` returns the same `WidgetId` `ctx.add(..)` would. Kept as a
+        // plain builder to match the rest of this function. See `initial_focus_hint` for
+        // why the ✕ must not get this id.
         let close_button = ctx.add(
             Button::new(tr!(pace_summary_close()))
                 .variant(ButtonVariant::Filled)

@@ -14,8 +14,11 @@
 //! signal (never on the styles-changed bump), so editing a field never rebuilds the form under
 //! the user's cursor — the lists, which *do* bind the bump, refresh names live.
 //!
-//! Like `panes::dictionaries`, it needs generic-closure widgets (`ListView`) the `teksu!` DSL
-//! can't express, so it is a chained-builder module.
+//! Not `ListView`: it parses and builds fine through `teksu!`. The real friction is the
+//! `FormLayout` editor below: `.line(label, value)` takes the field as a second argument,
+//! and `teksu!` cannot parse a method chain there (`TextInput::new(name).placeholder(..)`
+//! is exactly the documented failing shape), so, like `panes::typography`, it stays a
+//! chained-builder module.
 
 use teksilo::core::binding::BindingLevel;
 use teksilo::core::widget::WidgetPlacement;

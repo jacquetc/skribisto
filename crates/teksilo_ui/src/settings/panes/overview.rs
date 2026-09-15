@@ -24,9 +24,11 @@
 //! line to write on its behalf — and it is the only case where the gloss is
 //! missing.
 //!
-//! Built with chained builders rather than `teksu!`: the entry list is a loop over
-//! however many children the tree spec gives, which is the same reason the
-//! `FormLayout` panes beside it are chained.
+//! Not a `teksu!` limitation: a runtime-length loop producing one child per entry is
+//! exactly what the `for` structural form does (`for child in children { entry(child, &nav) }`
+//! lowers to `.children(..)`), and the optional header line is exactly what a bare `if` does
+//! (`.child_opt(..)`). This stays a chained-builder module by convention, matching the
+//! `FormLayout` panes beside it, not because either the loop or the optional child needs it.
 
 use teksilo::widgets::Link;
 

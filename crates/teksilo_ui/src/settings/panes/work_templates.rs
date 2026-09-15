@@ -18,8 +18,9 @@
 //! * **Delete asks first.** Losing a tag costs a label; losing a template costs a document
 //!   nothing else holds a copy of.
 //!
-//! Like the dictionary and tag panes it needs generic-closure widgets (`ListView`) that
-//! `teksu!` cannot express, so it is a chained-builder module.
+//! Not a `teksu!` limitation: `ListView` parses and builds fine through the macro. This
+//! stays a chained-builder module by convention, matching the dictionary and tag panes
+//! beside it, not because of anything the DSL can't express.
 
 use teksilo::core::styles::TextInputVariant;
 use teksilo::data::SortFilterListModel;

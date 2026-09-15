@@ -17,8 +17,9 @@
 //!   fires on commit rather than as you type.
 //! * **Deleting a tag in use detaches it from every item**, so the confirmation says how many.
 //!
-//! Like the dictionary pane it needs generic-closure widgets (`ListView`) the `teksu!` DSL
-//! cannot express, so it is a chained-builder module.
+//! Not a `teksu!` limitation: `ListView` parses and builds fine through the macro. This
+//! stays a chained-builder module by convention, matching the dictionary pane beside it,
+//! not because of anything the DSL can't express.
 
 use teksilo::core::BindingLevel;
 use teksilo::core::styles::{ComboBoxVariant, TextInputVariant};

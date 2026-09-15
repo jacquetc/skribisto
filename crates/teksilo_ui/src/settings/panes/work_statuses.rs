@@ -27,8 +27,9 @@
 //!   cannot clear WCAG against both of this app's themes, so a per-status colour would be
 //!   a control that produces unreadable output for most of its range.
 //!
-//! Like the tag pane it needs generic-closure widgets (`ListView`) the `teksu!` DSL cannot
-//! express, so it is a chained-builder module.
+//! Not a `teksu!` limitation: `ListView` parses and builds fine through the macro. This
+//! stays a chained-builder module by convention, matching the tag pane beside it, not
+//! because of anything the DSL can't express.
 
 use std::rc::Rc;
 

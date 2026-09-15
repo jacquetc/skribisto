@@ -96,8 +96,10 @@ impl Widget for CompletionPanel {
                 ),
             ),
         );
-        // Built by hand rather than inside the `teksu!` shell so its id can be captured for
-        // `initial_focus_hint` — see that method, and `pace::panel`'s own copy of it.
+        // Built by hand here, not because the id couldn't be captured from `teksu!`:
+        // `teksu!(ctx => ..)` returns the same `WidgetId` `ctx.add(..)` would. Kept as a
+        // plain builder to match the rest of this function. See `initial_focus_hint`, and
+        // `pace::panel`'s own copy of this note.
         let close_button = ctx.add(
             Button::new(tr!(pace_summary_close()))
                 .variant(ButtonVariant::Filled)

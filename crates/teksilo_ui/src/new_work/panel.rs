@@ -407,7 +407,10 @@ fn template_rows() -> [TemplateTile; crate::new_work::TEMPLATE_TILE_COUNT] {
 
 /// The Template picker — a vertical [`RadioTileGroup`], one tile per `NewWorkTemplate`.
 ///
-/// A row-accumulating builder, so a chained fold rather than `teksu!`.
+/// A row-accumulating builder, so a chained fold rather than `teksu!`: `RadioTileGroup`
+/// accumulates via `.tile(..)`, and `teksu!`'s `for` form only ever lowers to
+/// `.children(..)`, so a runtime-length loop can't target it (a fixed, written-out list
+/// of `tile:` properties would parse fine, but this list isn't one).
 fn template_tiles(vm: &NewWorkViewModel) -> RadioTileGroup {
     let mut group = RadioTileGroup::new(vm.template_idx()).layout(TileLayout::Vertical);
     for row in template_rows() {

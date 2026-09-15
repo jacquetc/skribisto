@@ -43,9 +43,11 @@ pub(in crate::settings) fn font_picker(
 /// Extracted from [`typography_pane`] because the distraction-free page needs
 /// the *same rows* under a page that also carries a column width and the
 /// control-strip toggles, and the strip's quick-access popover needs them again
-/// in a third place. `FormLayout` is a row-accumulating builder — which is why
-/// the settings pane bodies are chained builders rather than `teksu!` — so
-/// "append to a form" is the shape that composes, not "return a widget".
+/// in a third place. `FormLayout` is a row-accumulating builder: this function
+/// takes an existing `form: FormLayout` and returns it extended, and `teksu!`
+/// has no form for that: every element it builds starts fresh from a type
+/// path, never continues a value passed in. "Append to a form" is the shape
+/// that composes here, not "return a widget".
 pub(crate) fn typography_rows(
     ctx: &mut BuildContext,
     form: FormLayout,

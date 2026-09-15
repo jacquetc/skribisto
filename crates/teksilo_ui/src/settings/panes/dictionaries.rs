@@ -10,8 +10,11 @@
 //! - **Get more** — the catalogue, searchable, each row offering "View licence" and a Download
 //!   (gated behind the licence-accept modal). A row already installed says so instead.
 //!
-//! Needs generic-closure widgets (`ListView`, `TabWidget`) the `teksu!` DSL can't express, so —
-//! like `panes::backup` — it is a chained-builder module rather than a `teksu!` tree.
+//! `ListView` and `TabWidget` both parse and build fine through `teksu!` (see
+//! docs/teksu-macro-reference.md), so that is not why this stays a chained-builder module.
+//! The real friction is `installed_row`'s `match row.origin { .. }`: one arm needs a `let`
+//! before its widget, and a `teksu!` match arm must be exactly one element with no
+//! intermediate statement. Like `panes::backup`, it stays a plain-builder module.
 
 use teksilo::data::{ListModel, SortFilterListModel};
 use teksilo::prelude::*;

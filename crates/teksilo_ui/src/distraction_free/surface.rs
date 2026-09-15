@@ -10,8 +10,12 @@
 //! drift out of step with `skribisto_model::COMBINATIONS`.
 //!
 //! **A hand-written `Widget`, not `teksu!`.** It owns a live `Option<ContentTab>`
-//! and swaps it as the writer navigates, which is the same category the house
-//! rule already exempts (`DockingLayout`, `TabWidget`, `FormLayout`).
+//! and swaps it as the writer navigates. That is a style choice, not a DSL wall:
+//! `teksu!(ctx => ..)` returns the same `WidgetId` `ctx.add(..)` would, so it could
+//! be captured into a field just as easily. `DockingLayout`, `TabWidget` and
+//! `FormLayout` each have their own, narrower reasons for staying builders
+//! elsewhere in this app (see `app.rs`, `settings/panes/typography.rs`), and there is
+//! no blanket exemption for "generic" widgets.
 //!
 //! **It holds a refcount on the shared document and must give it back itself.**
 //! `EditorsViewModel::release_own_open_docs` — the only release that runs on a

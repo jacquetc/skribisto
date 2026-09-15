@@ -357,9 +357,11 @@ impl Widget for DestinationPickerView {
             .version_signal()
             .map(move |_| usize::from(empty_model.visible_count() != 0));
 
-        // Plain builders, not `teksu!`: `Switcher` takes its children as ordered
-        // closure-built slots, which the macro cannot express — the same reason
-        // the DockingLayout and TabWidget call sites use builders.
+        // Plain builders, not `teksu!`, but not because of `Switcher`: it takes ordered
+        // widget children and would parse fine on its own. The real reason is above,
+        // where `item = item.center_slot(..)` / `item = item.subtitle(..)` conditionally
+        // reconfigure the row; `teksu!` has no conditional-property form, only whole
+        // conditional children via `if`/`match`.
         let empty_text = self.empty_text.clone();
         let switcher = Switcher::new(switch)
             .child(
