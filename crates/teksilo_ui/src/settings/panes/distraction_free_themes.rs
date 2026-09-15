@@ -493,11 +493,11 @@ impl Widget for ThemeEditor {
                 // `field_col_width` regardless — see `fields::slider_field`.
                 TextInput::new(name),
             )
-            .line_ids(paper_label, paper_id)
-            .line_ids(ink_label, ink_id)
-            .line_ids(general_label, general_id)
-            .line_ids(widget_label, widget_id)
-            .line_ids(band_label, band_id);
+            .line_id(paper_label, paper_id)
+            .line_id(ink_label, ink_id)
+            .line_id(general_label, general_id)
+            .line_id(widget_label, widget_id)
+            .line_id(band_label, band_id);
         self.child = Some(ctx.add(form));
         self.child.into_iter().collect()
     }

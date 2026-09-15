@@ -606,18 +606,16 @@ fn shape_view(
         }
     }
 
-    // The dialogue strip is one heading followed by one of two bodies — hence the
-    // heading hoisted out of the branch and a `child_opt` pair below it: a `teksu!`
-    // `if/else` arm holds a single element, and the heading is common to both.
     let no_dialogue = dialogue_points.is_empty();
     teksu!(
         VStack {
             spacing: 10.0
-            child: empty_toggle(ignore_empty)
-            child_opt: (hiding && hidden > 0)
-            .then(|| note(tr!(analysis_empty_hidden(count = hidden as i64))))
-            child: heading(tr!(analysis_words_per_scene()))
-            child: wide_chart(
+            empty_toggle(ignore_empty)
+            if hiding && hidden > 0 {
+                note(tr!(analysis_empty_hidden(count = hidden as i64)))
+            }
+            heading(tr!(analysis_words_per_scene()))
+            wide_chart(
                 points.len(),
                 CHART_HEIGHT,
                 BarChart::new(ChartModel::from_series_vec(vec![
@@ -633,12 +631,13 @@ fn shape_view(
                     tr!(analysis_median_line(count = median.round() as i64)),
                 )),
             )
-            child: note(tr!(analysis_median_words(count = median.round() as i64)))
-            child: heading(tr!(analysis_dialogue()))
+            note(tr!(analysis_median_words(count = median.round() as i64)))
+            heading(tr!(analysis_dialogue()))
             // Not "0% dialogue" — the language has no curated convention, which is a
             // different and honest statement.
-            child_opt: no_dialogue.then(|| note(tr!(analysis_dialogue_unsupported())))
-            child_opt: (!no_dialogue).then(|| {
+            if no_dialogue {
+                note(tr!(analysis_dialogue_unsupported()))
+            } else {
                 wide_chart(
                     dialogue_points.len(),
                     STRIP_HEIGHT,
@@ -649,7 +648,7 @@ fn shape_view(
                     .grid(true)
                     .legend(false),
                 )
-            })
+            }
             child: footnote_section
         }
     )
