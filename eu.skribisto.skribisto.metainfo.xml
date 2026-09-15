@@ -53,16 +53,23 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="3.0.2" date="2026-09-04T00:00:00Z">
+    <release type="stable" version="3.0.3" date="2026-09-14T00:00:00Z">
       <description>
         <ul>
-          <li>The folder Skribisto keeps its backups in is created when the app starts, so the location shown in Settings is really there before the first backup is taken</li>
-          <li>Show folder, in Settings under Backup defaults, opens that folder itself instead of the one above it</li>
-          <li>French typography no longer confuses the spell checker: the thin space inside « » and before ?, ! and ; is not taken to be part of the word next to it</li>
-          <li>New binder, in the outline's binder menu, asks for a name before it creates anything, so Cancel no longer leaves an unwanted binder behind</li>
-          <li>Your text replacement rules are loaded when a project opens, so they fire from the first keystroke instead of staying dormant until you added a new one</li>
-          <li>Search options and history are restored with the project you open, instead of reverting to the application defaults and overwriting what the project had saved</li>
-          <li>Format ▸ Formatting mark places the invisible characters typography needs: a no-break space, a narrow no-break space, a no-break hyphen, a soft hyphen, a zero-width space and a word joiner, four of them with a keyboard shortcut</li>
+          <li>A project kept as a folder opens again after a file synchronisation tool or macOS respelled the accents in its file names, and saving into it edits those files in place instead of writing a second copy beside them</li>
+          <li>A project kept as a folder is the same project whether it is opened through its folder or through the project.skrib file inside it: it no longer opens a second time beside itself, and its backups are named after the folder and kept next to it rather than inside it</li>
+          <li>A backup file that ended up inside a folder project is left where it is instead of being copied into every later save and backup</li>
+          <li>The images of a folder project opened through its project.skrib file stay in the project’s own assets folder instead of being copied into the application’s data folder</li>
+          <li>A change made by an add-on on its own now counts as unsaved work, so closing, switching project or quitting asks about it instead of dropping it</li>
+          <li>Editing a pace, a milestone, a holiday, a text replacement rule, the punctuation settings or an image’s details now marks the project as unsaved, so those edits are saved and never dropped on close without asking</li>
+          <li>When a document’s text could not be handed to the save, Skribisto says which one and keeps the project marked unsaved instead of reporting it saved</li>
+          <li>Text typed while a closing save was still writing is saved too before the window closes, the project is switched or the application quits</li>
+          <li>The backup taken when closing waits for the final save, so it holds what was just written</li>
+          <li>A line of exported Djot that begins like a list item, a heading or a rule keeps the characters it starts with: a scene break written as 12. or (1), or a row of dashes, is no longer dropped from the exported file</li>
+          <li>Dragging several items at once when they sit at different levels, as the Corkboard's flat view lists them, now puts every one of them where you dropped it. Some of them used to land at a level computed from another item, which could leave the binder describing a different structure than the one on screen</li>
+          <li>A sentence cut or copied at the end of a paragraph no longer takes the paragraph break and the first letters of the next paragraph with it. This happened once something had been typed earlier in the document since the last deletion, and the stray text only showed up on paste</li>
+          <li>Bold, italic, Replace and turning paragraphs into a list land on the selected text again after typing elsewhere in the document, instead of the same number of characters too late</li>
+          <li>In a document holding a table, the caret can reach the last characters after the table again, and a selection to the end of the document includes them</li>
         </ul>
       </description>
     </release>
