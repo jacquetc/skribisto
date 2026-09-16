@@ -42,8 +42,8 @@
       <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot1.png</image>
     </screenshot>
     <screenshot>
-      <caption>Exporting, with a live preview of the compiled manuscript</caption>
-      <caption xml:lang="fr">L'export, avec un aperçu en direct du manuscrit compilé</caption>
+      <caption>Exporting the manuscript</caption>
+      <caption xml:lang="fr">L'export du manuscrit</caption>
       <image type="source">https://raw.githubusercontent.com/jacquetc/skribisto/master/resources/skribisto_screenshot2.png</image>
     </screenshot>
     <screenshot>

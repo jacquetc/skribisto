@@ -14,8 +14,8 @@
 //! `skribisto_model::compile::resolve_scope` or the Choose… tree), and a [`Preset`] style,
 //! it assembles one document — localized headings + scene breaks around each scene's Djot —
 //! and renders it to the chosen [`ExportFormat`]. Shared by the backend `export_work` use
-//! case (commit) and `teksilo_ui` (client-side live preview), so neither reimplements the
-//! compile.
+//! case (commit) and `teksilo_ui` (the Export panel's style picker), so neither reimplements
+//! the compile.
 //!
 //! [`Gathered`]: skrib_format::Gathered
 
@@ -43,8 +43,8 @@ use skribisto_model::compile::ItemMeta;
 
 /// The flat, ordered `ItemMeta` stream from a gathered tree — the input both
 /// [`skribisto_model::compile::resolve_scope`] and [`render::render_to_file`]'s scope
-/// filter walk. Shared by the backend `export_work` use case and the UI's client-side
-/// preview so the two resolve byte-identical scopes from the same tree.
+/// filter walk. Shared by the backend `export_work` use case and the UI so the two
+/// resolve byte-identical scopes from the same tree.
 pub fn item_metas(g: &Gathered) -> Vec<ItemMeta> {
     let mut v = Vec::new();
     for bwi in &g.binders {

@@ -1118,8 +1118,6 @@ export-format-label = Format
 export-style-label = Style
 export-path-label = File
 export-browse = Browse…
-export-preview-label = Preview
-export-preview-empty = Nothing to preview for this selection.
 export-show-non-exportable = Show non-exportable
 export-choose-empty = No project to choose from.
 export-cancel = Cancel
@@ -1131,9 +1129,6 @@ export-section-style = Style
 export-section-destination = Destination
 export-custom-selection = Custom selection
 export-selected-count = { $count } selected
-# Live-preview header
-export-preview-compiled = compiled
-export-preview-live = Live preview
 # Style-preset summary chips
 export-chip-chapters-none = Chapters: none
 export-chip-chapters-numbered = Chapters: numbered

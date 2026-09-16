@@ -12,10 +12,6 @@ which fires the `export.scope` intent and opens the shared Export panel → asse
 panel's structure (the format segments, the Style picker, and the footer Export button)
 and screenshot it.
 
-The panel used to carry a live preview column; it is gone (see `export/panel.rs`), so
-there is no "Preview" anchor to assert any more — the completion toast offers to open the
-exported file instead.
-
     scripts/automation_export.py                 # default fixture project
     scripts/automation_export.py PROJECT.skrib   # a real project
 
@@ -235,9 +231,6 @@ if adaptive:
     for anchor in ("Export",):
         if anchor not in lbset:
             failures.append(f"panel is missing the {anchor!r} anchor")
-    # …and the preview really is gone, rather than merely unasserted.
-    if "Preview" in lbset:
-        failures.append("the panel still carries the removed preview column")
     shot("export_2_panel")
 
     # ── 4. Optionally dispatch the real export (guarded; writes + deletes a file). ──
@@ -296,7 +289,7 @@ if failures:
     for f in failures:
         print("  -", f)
 else:
-    print("PASS: Export UI end-to-end (adaptive split-button → panel with preview).")
+    print("PASS: Export UI end-to-end (adaptive split-button → panel).")
 
 # Leave the app running (KEEP_ALIVE) so an external screencapture can grab the open
 # panel; otherwise tear both down.

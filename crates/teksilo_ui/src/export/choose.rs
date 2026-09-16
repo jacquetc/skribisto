@@ -64,8 +64,8 @@ impl ChooseNode {
     }
 }
 
-/// The tree + its check model, plus the observers that bump `changed` on any check so the
-/// panel's live preview refreshes. Cloneable — every field is an `Rc`-backed handle.
+/// The tree + its check model, plus the observers that bump `changed` on any check.
+/// Cloneable — every field is an `Rc`-backed handle.
 #[derive(Clone)]
 pub struct ChooseModel {
     pub tree: TreeModel<ChooseNode>,
@@ -77,7 +77,7 @@ impl ChooseModel {
     /// Build the tree from a gathered snapshot. `show_non_exportable` reveals items the
     /// user marked non-exportable; otherwise only exportable, activated items appear.
     /// `changed` is bumped on any check change (the caller owns it, stable across rebuilds,
-    /// so the preview binding survives a "show non-exportable" toggle).
+    /// so it survives a "show non-exportable" toggle).
     pub fn build(g: &Gathered, show_non_exportable: bool, changed: Signal<u64>) -> Self {
         let tree: TreeModel<ChooseNode> = TreeModel::new();
         // Numbered from the whole manuscript, before any of the filtering below — the

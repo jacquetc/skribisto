@@ -17,11 +17,8 @@
 //! - the in-flight export **long operation** id, whose `Origin::LongOperation(...)` events
 //!   `App::build` routes here to drive the progress / success / error toast.
 //!
-//! The **live preview** is rendered *client-side* by [`skribisto_compiler`] over a
-//! `Gathered` tree assembled here from the frontend read commands — the exact same compile
-//! path the backend `export_work` long op runs, so the preview and the committed file cannot
-//! diverge (given the same store state). The panel is modal, so no prose edit can slip in
-//! between opening it (which flushes the editors) and exporting.
+//! The panel is modal, so no prose edit can slip in between opening it (which flushes the
+//! editors) and exporting.
 
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
@@ -284,8 +281,8 @@ impl ExportViewModel {
 
     /// Set up the panel for a quick scope anchored at `anchor` (the focused item), defaulting
     /// the output path from the project's location + title + the current format's extension.
-    /// The caller (`App`'s `export.scope` action) flushes the editors first, so the preview
-    /// and the committed export both see current prose.
+    /// The caller (`App`'s `export.scope` action) flushes the editors first, so the
+    /// committed export sees current prose.
     pub fn prepare(&self, scope: ExportScopeKind, anchor: Option<u64>) {
         let is_custom = scope == ExportScopeKind::Custom;
         // The quick scope the "What to export" toggle can switch back to: the opening scope
@@ -362,7 +359,7 @@ impl ExportViewModel {
         self.segment_index.clone()
     }
 
-    /// The active scope signal — the leading column, preview, and `can_export` bind this so
+    /// The active scope signal — the leading column and `can_export` bind this so
     /// flipping the segmented control re-renders them.
     pub fn scope_signal(&self) -> Signal<ExportScopeKind> {
         self.scope.clone()
@@ -957,10 +954,9 @@ impl ExportViewModel {
             Ok(Some(res)) => {
                 let done = tr!(export_done(count = res.exported_count));
                 // The two things a writer wants the moment an export lands: to look at it,
-                // or to get at it. This is where the panel's old live preview went — a
-                // preview could only ever show the assembled text, and everything worth
-                // checking about an export (its pagination, its title page, how the chosen
-                // format actually renders) is visible only in the file itself.
+                // or to get at it. Everything worth checking about an export (its pagination,
+                // its title page, how the chosen format actually renders) is visible only in
+                // the file itself.
                 let to_open = res.output_path.clone();
                 let to_reveal = res.output_path.clone();
                 // The path, plus — only when there is something to say — how many comments

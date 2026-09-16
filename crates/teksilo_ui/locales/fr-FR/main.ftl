@@ -1116,8 +1116,6 @@ export-format-label = Format
 export-style-label = Style
 export-path-label = Fichier
 export-browse = Parcourir…
-export-preview-label = Aperçu
-export-preview-empty = Rien à prévisualiser pour cette sélection.
 export-show-non-exportable = Afficher les non-exportables
 export-choose-empty = Aucun projet à sélectionner.
 export-cancel = Annuler
@@ -1132,9 +1130,6 @@ export-selected-count = { $count ->
     [one] { $count } sélectionné
    *[other] { $count } sélectionnés
 }
-# En-tête de l'aperçu en direct
-export-preview-compiled = compilé
-export-preview-live = Aperçu en direct
 # Étiquettes récapitulatives du style
 export-chip-chapters-none = Chapitres : aucun
 export-chip-chapters-numbered = Chapitres : numérotés

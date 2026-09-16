@@ -118,9 +118,8 @@ const SHUNN_JSON: &str = r#"{
 /// result and read the XML.
 ///
 /// Everything below this point is only observable in the written file — a compiled
-/// `TextDocument` cannot tell you whether Word will find a definition for `Heading1`, and
-/// the export panel's old live preview could not either. That is precisely why these
-/// three things were broken without anything failing.
+/// `TextDocument` cannot tell you whether Word will find a definition for `Heading1`.
+/// That is precisely why these three things were broken without anything failing.
 #[test]
 fn a_docx_export_paginates_and_defines_the_styles_it_uses() {
     let ctx = AppContext::new();

@@ -3,9 +3,9 @@
 
 //! The two export entry points: a focus-derived quick scope, and the Choose… picker.
 //!
-//! Both flush the editors and read the anchor **here**, before presenting, so the panel's
-//! preview and the committed export see current prose. The panel is modal, so no edit can
-//! slip in behind it.
+//! Both flush the editors and read the anchor **here**, before presenting, so the
+//! committed export sees current prose. The panel is modal, so no edit can slip in
+//! behind it.
 
 use teksilo::prelude::*;
 

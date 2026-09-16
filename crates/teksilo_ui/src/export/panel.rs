@@ -12,14 +12,6 @@
 //!
 //! Cancel / Export sit in a full-width footer under both columns. All logic lives on
 //! [`ExportViewModel`]; this view is thin.
-//!
-//! There used to be a third column carrying a live preview of the compiled document. It is
-//! gone. It could only ever show the *assembled text* — it compiled through one fixed format
-//! regardless of the one chosen — so the things a writer opens this modal to check (page
-//! breaks, the title page, DOCX styling, PDF pagination) were exactly the things it could not
-//! show. Whatever it did show, the real file shows better. The export toast now offers to
-//! open that file, or the folder holding it, which is what "let me look at the result"
-//! always meant.
 
 use teksilo::core::binding::BindingLevel;
 use teksilo::core::styles::PanelVariant;
@@ -38,14 +30,12 @@ use skribisto_compiler::Preset;
 use crate::export::choose::ChooseTreeWidget;
 use crate::export::{ExportViewModel, format_label, scope_label};
 
-/// Two columns now, not three — sized for what is left after the preview column went,
-/// rather than keeping a third of the card empty.
+/// Two columns, sized to the two they hold rather than keeping a third of the card empty.
 const CARD_W: f32 = 900.0;
 /// Two heights, because the two modes genuinely hold different amounts. A quick scope is
 /// a segmented control and three fields; Custom adds a whole manuscript outline, and the
 /// tree is only usable with room to be a tree in. One height for both meant either a
-/// cramped outline or a half-empty dialog, and with the preview column gone there is
-/// nothing to fill the slack with.
+/// cramped outline or a half-empty dialog.
 const CARD_H_QUICK: f32 = 520.0;
 const CARD_H_CUSTOM: f32 = 760.0;
 /// The taller of the two — what the headless layout tests propose.
