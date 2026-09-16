@@ -1,3 +1,9 @@
+Version: 3.0.4
+Date: 2026-09-16
+Type: stable
+Description:
+- "The left arrow key moves the caret again wherever two writing areas are open at once, which is every scene and every note, since each shows its synopsis beside its text. The key was being taken for a request to close a menu and never reached the words"
+---
 Version: 3.0.3
 Date: 2026-09-14
 Type: stable
