@@ -41,7 +41,7 @@ jobs:
   # passed. Set branch protection to require this "CI" job, not each leg.
   ci:
     name: CI
-    needs: [test-linux, test-cross, check, rustfmt, clippy, docs, spdx, locales]
+    needs: [test-linux, test-cross, check, rustfmt, clippy, docs, spdx, locales, lockfile]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +54,8 @@ jobs:
              [[ "${{ needs.clippy.result }}" != "success" ]] || \
              [[ "${{ needs.docs.result }}" != "success" ]] || \
              [[ "${{ needs.spdx.result }}" != "success" ]] || \
-             [[ "${{ needs.locales.result }}" != "success" ]]; then
+             [[ "${{ needs.locales.result }}" != "success" ]] || \
+             [[ "${{ needs.lockfile.result }}" != "success" ]]; then
             echo "One or more jobs failed"
             exit 1
           fi
@@ -176,6 +177,46 @@ jobs:
 
       - name: Check
         run: ${{ matrix.cmd }}
+
+  # The committed Cargo.lock must resolve from crates.io and nothing else.
+  #
+  # teksilo*/text-document are pinned by version in the workspace manifest, and a
+  # developer's gitignored `.cargo/config.toml` overlays them onto local sibling
+  # checkouts through `[patch.crates-io]`. Cargo records a patched package as a
+  # PATH package: it strips the `source` and `checksum` lines out of that
+  # package's lock entry. So any local build with the overlay active rewrites
+  # Cargo.lock into a form that resolves on that one machine.
+  #
+  # Committing that is silent. No build, test or check leg notices, because they
+  # all re-resolve from crates.io on the fly. The one step that cannot is the
+  # Flatpak vendoring, which passes `--locked` because flatpak-builder builds
+  # offline. v3.0.4's release died exactly there -- after the tag was cut, with
+  # every other artifact already building, and a tag cannot be repaired in place
+  # once Flathub has built from it.
+  #
+  # This is that failure moved forward onto the pull request that causes it.
+  # `cargo metadata` needs no compilation, so the leg costs an index fetch.
+  #
+  # To fix a failure: run ./scripts/relock-crates-io.sh and commit the Cargo.lock
+  # it produces.
+  lockfile:
+    name: Lockfile resolves from crates.io
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cargo.lock needs no change to resolve from crates.io
+        run: |
+          if ! cargo metadata --locked --format-version 1 >/dev/null; then
+            echo "::error::Cargo.lock does not resolve from crates.io alone -- a local [patch.crates-io] overlay strips source/checksum from the patched crates. Run ./scripts/relock-crates-io.sh and commit the result."
+            exit 1
+          fi
+          echo "Cargo.lock resolves from crates.io with no change."
 
   rustfmt:
     name: Format
