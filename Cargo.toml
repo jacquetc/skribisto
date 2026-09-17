@@ -47,7 +47,7 @@ categories = ["to-be-filled"]
 license = "GPL-3.0-only"
 readme = "README.md"
 edition = "2024"
-version = "3.0.3"
+version = "3.0.4"
 
 [workspace.dependencies]
 thiserror = "2.0"
@@ -70,31 +70,31 @@ uuid = { version = "1", features = ["v4", "serde"] }
 proptest = "1"
 
 # Internal crates
-common = { package = "skribisto-common", version = "3.0.3", path = "crates/common" }
-macros = { package = "skribisto-macros", version = "3.0.3", path = "crates/macros" }
-direct_access = { package = "skribisto-direct-access", version = "3.0.3", path = "crates/direct_access" }
-frontend = { package = "skribisto-frontend", version = "3.0.3", path = "crates/frontend" }
-work_management = { package = "skribisto-work-management", version = "3.0.3", path = "crates/work_management" }
-export_management = { package = "skribisto-export-management", version = "3.0.3", path = "crates/export_management" }
-progress_management = { package = "skribisto-progress-management", version = "3.0.3", path = "crates/progress_management" }
-trash_management = { package = "skribisto-trash-management", version = "3.0.3", path = "crates/trash_management" }
-mention_management = { package = "skribisto-mention-management", version = "3.0.3", path = "crates/mention_management" }
-analysis_management = { package = "skribisto-analysis-management", version = "3.0.3", path = "crates/analysis_management" }
-tag_management = { package = "skribisto-tag-management", version = "3.0.3", path = "crates/tag_management" }
-note_template_management = { package = "skribisto-note-template-management", version = "3.0.3", path = "crates/note_template_management" }
-binder_item_management = { package = "skribisto-binder-item-management", version = "3.0.3", path = "crates/binder_item_management" }
-binder_ordering = { package = "skribisto-binder-ordering", version = "3.0.3", path = "crates/binder_ordering" }
-handling_app_lifecycle = { package = "skribisto-handling-app-lifecycle", version = "3.0.3", path = "crates/handling_app_lifecycle" }
-import_management = { package = "skribisto-import-management", version = "3.0.3", path = "crates/import_management" }
-search_management = { package = "skribisto-search-management", version = "3.0.3", path = "crates/search_management" }
-skribisto_model = { package = "skribisto-model", version = "3.0.3", path = "crates/skribisto_model" }
-skrib_format = { package = "skribisto-skrib-format", version = "3.0.3", path = "crates/skrib_format" }
-document_ingest = { package = "skribisto-document-ingest", version = "3.0.3", path = "crates/document_ingest" }
-plume_import = { package = "skribisto-plume-import", version = "3.0.3", path = "crates/plume_import" }
-manuskript_import = { package = "skribisto-manuskript-import", version = "3.0.3", path = "crates/manuskript_import" }
-spellcheck_engine = { package = "skribisto-spellcheck-engine", version = "3.0.3", path = "crates/spellcheck_engine" }
-skribisto_compiler = { package = "skribisto-compiler", version = "3.0.3", path = "crates/skribisto_compiler" }
-skribisto_fonts = { package = "skribisto-fonts", version = "3.0.3", path = "crates/skribisto-fonts" }
+common = { package = "skribisto-common", version = "3.0.4", path = "crates/common" }
+macros = { package = "skribisto-macros", version = "3.0.4", path = "crates/macros" }
+direct_access = { package = "skribisto-direct-access", version = "3.0.4", path = "crates/direct_access" }
+frontend = { package = "skribisto-frontend", version = "3.0.4", path = "crates/frontend" }
+work_management = { package = "skribisto-work-management", version = "3.0.4", path = "crates/work_management" }
+export_management = { package = "skribisto-export-management", version = "3.0.4", path = "crates/export_management" }
+progress_management = { package = "skribisto-progress-management", version = "3.0.4", path = "crates/progress_management" }
+trash_management = { package = "skribisto-trash-management", version = "3.0.4", path = "crates/trash_management" }
+mention_management = { package = "skribisto-mention-management", version = "3.0.4", path = "crates/mention_management" }
+analysis_management = { package = "skribisto-analysis-management", version = "3.0.4", path = "crates/analysis_management" }
+tag_management = { package = "skribisto-tag-management", version = "3.0.4", path = "crates/tag_management" }
+note_template_management = { package = "skribisto-note-template-management", version = "3.0.4", path = "crates/note_template_management" }
+binder_item_management = { package = "skribisto-binder-item-management", version = "3.0.4", path = "crates/binder_item_management" }
+binder_ordering = { package = "skribisto-binder-ordering", version = "3.0.4", path = "crates/binder_ordering" }
+handling_app_lifecycle = { package = "skribisto-handling-app-lifecycle", version = "3.0.4", path = "crates/handling_app_lifecycle" }
+import_management = { package = "skribisto-import-management", version = "3.0.4", path = "crates/import_management" }
+search_management = { package = "skribisto-search-management", version = "3.0.4", path = "crates/search_management" }
+skribisto_model = { package = "skribisto-model", version = "3.0.4", path = "crates/skribisto_model" }
+skrib_format = { package = "skribisto-skrib-format", version = "3.0.4", path = "crates/skrib_format" }
+document_ingest = { package = "skribisto-document-ingest", version = "3.0.4", path = "crates/document_ingest" }
+plume_import = { package = "skribisto-plume-import", version = "3.0.4", path = "crates/plume_import" }
+manuskript_import = { package = "skribisto-manuskript-import", version = "3.0.4", path = "crates/manuskript_import" }
+spellcheck_engine = { package = "skribisto-spellcheck-engine", version = "3.0.4", path = "crates/spellcheck_engine" }
+skribisto_compiler = { package = "skribisto-compiler", version = "3.0.4", path = "crates/skribisto_compiler" }
+skribisto_fonts = { package = "skribisto-fonts", version = "3.0.4", path = "crates/skribisto-fonts" }
 
 # Published sibling crates. Local checkouts are overlaid via `[patch.crates-io]`
 # in `.cargo/config.toml` (gitignored; the table is in the README).
