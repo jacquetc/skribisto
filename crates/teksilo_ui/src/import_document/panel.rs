@@ -1086,7 +1086,7 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
             // contradiction.
             Box::new(
                 Checkbox::new(signal)
-                    .labels_hidden(true)
+                    .labelled_externally()
                     .enabled(tick_vm.ancestors_included(key)),
             )
         },

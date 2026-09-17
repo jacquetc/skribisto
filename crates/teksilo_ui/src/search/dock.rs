@@ -384,7 +384,7 @@ fn results_list(vm: SearchReplaceViewModel) -> impl Widget {
                     // routes through the data source, and the source is the model,
                     // which fetches the branch before it opens -- so the chevron,
                     // the keyboard and an accessibility action all take one path.
-                    .on_toggle_rc(row.toggle_callback());
+                    .on_chevron_toggle_rc(row.toggle_callback());
                 let menu_vm = row_vm.clone();
                 let target = RowTarget::Item(node.binder_item_id);
                 Box::new(item.context_menu(move |_pos, _ctx| {

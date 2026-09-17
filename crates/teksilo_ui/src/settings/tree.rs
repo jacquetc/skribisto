@@ -167,7 +167,7 @@ pub(crate) fn build_tree(
             .tooltip(label)
             .from_entry(entry)
             .selected(selected)
-            .on_toggle_rc(rowctx.toggle_callback());
+            .on_chevron_toggle_rc(rowctx.toggle_callback());
         if let Some(icon) = pane.icon() {
             row = row.leading_slot(icon);
         }

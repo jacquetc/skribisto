@@ -101,7 +101,7 @@ fn trash_tree(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {
                 .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                 .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                 .selected(selected)
-                .on_toggle_rc(row.toggle_callback())
+                .on_chevron_toggle_rc(row.toggle_callback())
                 .rich_tooltip(crate::tooltip_registry::CONCEPT_TRASH);
             if !node.label.is_empty() {
                 item = item.subtitle(lit!(node.label.clone()));

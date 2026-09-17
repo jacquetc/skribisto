@@ -146,7 +146,7 @@ fn binder_tree(
                 // chapter heading of the 1870s runs to a hundred characters.
                 .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                 .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
-                .on_toggle_rc(row.toggle_callback());
+                .on_chevron_toggle_rc(row.toggle_callback());
             if !node.label.is_empty() {
                 item = item.subtitle(lit!(node.label.clone()));
             }

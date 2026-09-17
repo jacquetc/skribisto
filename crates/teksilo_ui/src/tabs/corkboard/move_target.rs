@@ -114,7 +114,7 @@ impl Widget for MoveTargetPanel {
                     .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .selected(selected)
-                    .on_toggle_rc(row.toggle_callback());
+                    .on_chevron_toggle_rc(row.toggle_callback());
                 if !node.label.is_empty() {
                     item = item.subtitle(lit!(node.label.clone()));
                 }

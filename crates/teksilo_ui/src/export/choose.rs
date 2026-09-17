@@ -318,7 +318,7 @@ impl Widget for ChooseTreeWidget {
                     .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .selected(selected)
-                    .on_toggle_rc(rowctx.toggle_callback())
+                    .on_chevron_toggle_rc(rowctx.toggle_callback())
                     .tristate_checkbox(sig)
                     .leading_slot(icon)
                     .label_color(title_color);
