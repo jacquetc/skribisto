@@ -61,9 +61,6 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
 
-      - name: Strip path dependencies
-        uses: ./.github/actions/strip-path-deps
-
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:

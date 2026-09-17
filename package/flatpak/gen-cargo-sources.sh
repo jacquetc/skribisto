@@ -3,18 +3,18 @@
 #
 # WHY: flatpak-builder builds with no network, so every crate must be vendored.
 # flatpak-cargo-generator.py turns a Cargo.lock into a Flatpak `sources` list.
-# A Cargo.lock resolving the external siblings (teksilo*, text-document) from
-# LOCAL PATHS cannot be vendored from crates.io, so the `../` path attrs are
-# stripped first (each such dep also carries a `version =`). This is why
-# teksilo*/teksilo-charts/text-document must be published before this can succeed.
+# Manifests pin teksilo*/text-document by version (local sibling checkouts are a
+# gitignored `[patch.crates-io]` overlay in `.cargo/config.toml`), so this
+# script vendors the crates.io graph. Those crates must be published before
+# this can succeed.
 #
 # The COMMITTED Cargo.lock is what gets vendored. It is deliberately not
 # regenerated: see the note above the verification step below.
 #
-# This MODIFIES Cargo.toml (strip) IN PLACE, and nothing else. In CI that is a
-# throwaway checkout. For a LOCAL run, do it on a scratch clone, or run
-#   git checkout -- Cargo.toml 'crates/*/Cargo.toml'
-# afterwards to restore the path deps for day-to-day development.
+# A local `.cargo/config.toml` overlay would redirect those crates back onto
+# path checkouts, which cannot be vendored. This script parks that file for
+# the duration of the run (and restores it on exit) so the lock is read as
+# crates.io. CI has no overlay to park.
 #
 # Requires: python3 (with venv), cargo, and network access.
 # Usage (from anywhere in the repo):  ./package/flatpak/gen-cargo-sources.sh
@@ -31,15 +31,23 @@ GEN_URL="https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/${FBT_R
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-echo "==> Stripping external ../ path deps (teksilo*/text-document -> crates.io)"
-shopt -s nullglob
-for f in Cargo.toml crates/*/Cargo.toml; do
-  sed -i.bak -E \
-    -e 's#, *path = "\.\.[^"]*"##g' \
-    -e 's#path = "\.\.[^"]*", *##g' \
-    "$f"
-  rm -f "$f.bak"
-done
+overlay=".cargo/config.toml"
+overlay_bak=".cargo/config.toml.vendoring-bak"
+tmp=""
+cleanup() {
+  if [[ -n "$tmp" ]]; then
+    rm -rf "$tmp"
+  fi
+  if [[ -f "$overlay_bak" ]]; then
+    mv -f "$overlay_bak" "$overlay"
+  fi
+}
+trap cleanup EXIT
+
+if [[ -f "$overlay" ]]; then
+  echo "==> Parking local $overlay so siblings resolve from crates.io"
+  mv "$overlay" "$overlay_bak"
+fi
 
 # Deliberately NOT `cargo generate-lockfile`. That re-resolves every dependency
 # to the newest compatible version, which has two consequences a release build
@@ -54,7 +62,6 @@ cargo metadata --locked --format-version 1 >/dev/null
 
 echo "==> Fetching flatpak-cargo-generator.py (ref: ${FBT_REF})"
 tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
 curl -fsSL "$GEN_URL" -o "$tmp/flatpak-cargo-generator.py"
 
 # The dependency list is the generator's own PEP-723 header, not a guess:

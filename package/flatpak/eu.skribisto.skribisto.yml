@@ -6,10 +6,11 @@
 #
 # IMPORTANT — offline cargo vendoring: flatpak-builder's module build has NO
 # network. Before building, `cargo-sources.json` must exist next to this file
-# (the vendored crate registry) AND the checkout's Cargo.toml must have its
-# external `../` path deps stripped so teksilo*/text-document resolve from
-# crates.io. Both are produced by `package/flatpak/gen-cargo-sources.sh`, which
-# CI runs before flatpak-builder. See that script's header for the exact recipe.
+# (the vendored crate registry). It is produced by
+# `package/flatpak/gen-cargo-sources.sh`, which CI runs before flatpak-builder.
+# Manifests pin teksilo*/text-document by version (local checkouts are a
+# gitignored `[patch.crates-io]` overlay), so the vendor step resolves them
+# from crates.io. See that script's header for the exact recipe.
 app-id: eu.skribisto.skribisto
 runtime: org.freedesktop.Platform
 runtime-version: "25.08"

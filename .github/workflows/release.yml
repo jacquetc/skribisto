@@ -38,7 +38,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/install-linux-deps
       - uses: dtolnay/rust-toolchain@stable
-      - uses: ./.github/actions/strip-path-deps
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: linux
@@ -121,7 +120,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/install-linux-deps
       - uses: dtolnay/rust-toolchain@stable
-      - uses: ./.github/actions/strip-path-deps
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: linux
@@ -238,8 +236,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
-
-      - uses: ./.github/actions/strip-path-deps
 
       - uses: Swatinem/rust-cache@v2
         with:

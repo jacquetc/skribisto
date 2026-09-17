@@ -96,9 +96,6 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Strip path dependencies
-        uses: ./.github/actions/strip-path-deps
-
       # A cache PER TARGET. One shared key across both legs would have them race
       # to save the same entry, and the loser's work is discarded — two jobs
       # cannot share one cache the way two sequential steps did.
@@ -138,9 +135,6 @@ jobs:
       # toolchain and the manifest have to be here even though nothing compiles.
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Strip path dependencies
-        uses: ./.github/actions/strip-path-deps
 
       - name: Install cargo-packager
         run: cargo install cargo-packager --locked --version "^0.11"

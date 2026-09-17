@@ -17,6 +17,7 @@
   * [Build it, test it](#build-it-test-it)
     + [Prerequisites](#prerequisites)
     + [Building and running](#building-and-running)
+    + [Working against local checkouts](#working-against-local-checkouts)
     + [Linux (Flatpak)](#linux-flatpak)
     + [Windows](#windows)
       - [Building it from Linux](#building-it-from-linux)
@@ -213,33 +214,9 @@ On Linux you also need the usual desktop development libraries. The exact packag
 installs is in
 [.github/actions/install-linux-deps/action.yml](.github/actions/install-linux-deps/action.yml).
 
-Skribisto is built from path dependencies on sibling repositories, so clone them all into the
-same parent directory:
-
-```
-~/Devel/skribisto
-~/Devel/teksilo         # the GUI framework
-~/Devel/text-document   # the rich-text document model
-~/Devel/text-typeset    # the typesetter under Teksilo's text layer
-```
-
-Skribisto points at `teksilo` and `text-document` itself; `teksilo` in turn resolves
-`text-typeset` and `text-document` the same way, so all four checkouts have to be present, and
-side by side.
-
-This sibling layout is a **local-development requirement only**. CI never clones the other
-repositories: workflows (and jobs) that need to resolve the Rust dependency graph first run
-[.github/actions/strip-path-deps](.github/actions/strip-path-deps/action.yml) (5 of the 9
-workflow files: `audit.yml`, `ci.yml`, `release-macos.yml`, `release.yml`, `rust-next.yml`),
-which drops the `path = "../…"` attribute from each external dependency so that the `version =`
-beside it resolves from crates.io instead. Internal `crates/…` paths are left untouched. Jobs
-that never touch Cargo (`packaging-lint.yml`, `generate-release-in-appdata.yml`,
-`spelling.yml`, and `ci.yml`'s rustfmt/spdx/locales jobs) skip this step entirely, and
-the Flatpak build
-([`flatpak.yml`](.github/workflows/flatpak.yml), called by `release.yml` on a tag and run
-weekly on its own) strips paths via
-[package/flatpak/gen-cargo-sources.sh](package/flatpak/gen-cargo-sources.sh) instead, which
-duplicates the same sed logic because it has to vendor in the same pass.
+That is the development environment. `teksilo`, `teksilo-charts`, `teksilo-text`, and
+`text-document` are pinned by version and come from crates.io, so `cargo build` works from
+this repository alone.
 
 ### Building and running
 
@@ -257,6 +234,32 @@ PDF export sits behind an opt-in feature, because it pulls in a large typesettin
 ```bash
 cargo build -p teksilo_ui --features pdf
 ```
+
+### Working against local checkouts
+
+Only needed if you are changing Teksilo or the document model in the same sitting. Clone
+those repositories as siblings of this one:
+
+```
+…/skribisto
+…/teksilo         # the GUI framework
+…/text-document   # the rich-text document model
+…/text-typeset    # teksilo's typesetter; pulled in by a local teksilo, not by Skribisto
+```
+
+and write this to `.cargo/config.toml` (gitignored, so it never ships and CI never sees it).
+Paths are relative to this workspace root:
+
+```toml
+[patch.crates-io]
+teksilo = { path = "../teksilo/crates/teksilo" }
+teksilo-charts = { path = "../teksilo/crates/teksilo-charts" }
+teksilo-text = { path = "../teksilo/crates/teksilo-text" }
+text-document = { path = "../text-document/crates/public_api" }
+```
+
+A local teksilo still path-depends on `text-typeset` and `text-document`, which is why
+those two checkouts have to sit beside it when the overlay is on.
 
 ### Linux (Flatpak)
 

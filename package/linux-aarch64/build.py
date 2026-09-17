@@ -189,10 +189,10 @@ def ensure_rust_target() -> Path:
 def external_path_deps(cargo: Path) -> list[Path]:
     """Workspace roots of path dependencies that live outside this repo.
 
-    Sibling checkouts of teksilo and text-document are addressed with a leading
-    ``..`` in the crate manifests, exactly the shape .github/actions/strip-path-deps
-    removes for a crates.io build. They have to be mounted at their own absolute
-    paths, or cargo resolves them to nothing inside the container.
+    Sibling checkouts of teksilo and text-document are overlaid via
+    ``[patch.crates-io]`` in ``.cargo/config.toml``. They have to be mounted at
+    their own absolute paths, or cargo resolves them to nothing inside the
+    container.
 
     The list comes from ``cargo metadata`` rather than from reading this repo's
     manifests, because it has to be transitive: teksilo has a sibling of its own

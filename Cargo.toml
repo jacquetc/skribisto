@@ -96,8 +96,13 @@ spellcheck_engine = { package = "skribisto-spellcheck-engine", version = "3.0.3"
 skribisto_compiler = { package = "skribisto-compiler", version = "3.0.3", path = "crates/skribisto_compiler" }
 skribisto_fonts = { package = "skribisto-fonts", version = "3.0.3", path = "crates/skribisto-fonts" }
 
-# Sibling repos (path deps live next to this workspace; see README "Build it, test it")
-text-document = { path = "../text-document/crates/public_api", version = "1.12" }
+# Published sibling crates. Local checkouts are overlaid via `[patch.crates-io]`
+# in `.cargo/config.toml` (gitignored; the table is in the README).
+# CI and a plain clone resolve these from crates.io.
+text-document = "1.12"
+teksilo = "0.12.0"
+teksilo-charts = "0.12.0"
+teksilo-text = "0.12.0"
 
 [profile.dev]
 # Debuginfo, not the linker, was the dev loop's biggest single cost. Measured on

@@ -39,10 +39,10 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      # Strips external path deps and vendors every crate of the COMMITTED
-      # Cargo.lock into package/flatpak/cargo-sources.json — everything the
-      # offline flatpak-builder step needs. Requires teksilo*/text-document to be
-      # published (plan prerequisites P1/P2).
+      # Vendors every crate of the COMMITTED Cargo.lock into
+      # package/flatpak/cargo-sources.json — everything the offline
+      # flatpak-builder step needs. Requires teksilo*/text-document to be
+      # published. Local `[patch.crates-io]` overlays are parked by the script.
       - name: Vendor cargo dependencies for offline build
         run: ./package/flatpak/gen-cargo-sources.sh
 

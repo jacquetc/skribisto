@@ -32,11 +32,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # cargo-audit reads Cargo.lock (self-contained); stripping the external
-      # path deps keeps the manifest consistent if the lock is regenerated.
-      - name: Strip path dependencies
-        uses: ./.github/actions/strip-path-deps
-
       - name: Install cargo-audit
         uses: taiki-e/install-action@cargo-audit
 
