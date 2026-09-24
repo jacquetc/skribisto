@@ -50,8 +50,26 @@ fn column_with_document_and(
     let doc = TextDocument::new();
     doc.set_plain_text("Some prose to write in.").unwrap();
     let find = crate::search::FindViewModel::new(doc.clone());
-    let col = writing_column(
-        &doc,
+    let col = fixture_column(&doc, &find, typewriter, caret);
+    let mut tree = WidgetTree::new();
+    tree.add(col);
+    tree.layout(SizeProposal::exact(900.0, 600.0));
+    let handle = find
+        .editor_handle()
+        .expect("writing_column attached its handle");
+    (doc, handle, tree)
+}
+
+/// The writing column every fixture here builds: a normal, editable prose surface
+/// with no project around it.
+fn fixture_column(
+    doc: &TextDocument,
+    find: &crate::search::FindViewModel,
+    typewriter: Option<TypewriterSettings>,
+    caret: Option<crate::shared::CaretBand>,
+) -> HStack {
+    writing_column(
+        doc,
         &Signal::new(700.0),
         &typo(),
         MAIN_MIN_LINES,
@@ -81,14 +99,92 @@ fn column_with_document_and(
         None,
         // Nothing private on this probe's editor: the default `all()`.
         None,
-    );
+    )
+}
+
+/// Where the page scrolls to after the caret walks `presses` lines down a real
+/// writing column, laid out the way `writing_page_scroll` lays out every writing
+/// page: the column inside a `ScrollArea` whose range past the end follows the
+/// same typewriter setting the editor does.
+fn page_offset_after_arrow_downs(typewriter: TypewriterSettings, presses: usize) -> f32 {
+    use teksilo::canvas::Point;
+    use teksilo::core::event::{Key, Modifiers, PointerButton, WidgetEvent};
+
+    let doc = TextDocument::new();
+    doc.set_plain_text(
+        &(1..=80)
+            .map(|i| format!("Line {i}"))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    )
+    .unwrap();
+    let find = crate::search::FindViewModel::new(doc.clone());
+    let range = typewriter.scroll_past_end_signal();
+    let area = teksilo::widgets::ScrollArea::new()
+        .scroll_past_end(range)
+        .child(fixture_column(&doc, &find, Some(typewriter), None));
+    let scroll_y = area.scroll_y_signal().clone();
+
+    let viewport = SizeProposal::exact(900.0, 400.0);
     let mut tree = WidgetTree::new();
-    tree.add(col);
-    tree.layout(SizeProposal::exact(900.0, 600.0));
-    let handle = find
-        .editor_handle()
-        .expect("writing_column attached its handle");
-    (doc, handle, tree)
+    tree.add(area);
+    tree.layout(viewport);
+    let _ = tree.render();
+    // A complete click on the first line: focuses the editor and places the caret.
+    // The release matters, since a press alone leaves a drag-selection in progress,
+    // which stands the pin down.
+    let first_line = Point::new(450.0, 12.0);
+    tree.dispatch_event(WidgetEvent::pointer_down(
+        first_line,
+        PointerButton::Primary,
+        Modifiers::NONE,
+    ));
+    tree.dispatch_event(WidgetEvent::pointer_up(
+        first_line,
+        PointerButton::Primary,
+        Modifiers::NONE,
+    ));
+    for _ in 0..presses {
+        tree.dispatch_event(WidgetEvent::KeyDown {
+            key: Key::ArrowDown,
+            modifiers: Modifiers::NONE,
+            text: None,
+        });
+        tree.layout(viewport);
+        let _ = tree.render();
+    }
+    scroll_y.get()
+}
+
+#[test]
+fn the_pin_scrolls_the_page_the_column_sits_in() {
+    // The column's own width cap (a `MaxSize`) sits between the editor and the
+    // page, and it clips. For a while teksilo spent the pin on that cap, which
+    // cannot scroll, and handed the page a plain reveal: every wiring test above
+    // still passed, since the setting did reach the editor, while typewriter
+    // scrolling had quietly become ordinary caret-following.
+    //
+    // Ten lines down a 400 px page is past the middle but still well on screen,
+    // so plain caret-following leaves the page where it is and only a pin moves it.
+    let off = TypewriterSettings::new(
+        Signal::new(false),
+        Signal::new(Some(TypewriterAnchor::Middle)),
+    );
+    assert_eq!(
+        page_offset_after_arrow_downs(off, 10),
+        0.0,
+        "sanity: with the caret still on screen, plain caret-following does not scroll"
+    );
+
+    let on = TypewriterSettings::new(
+        Signal::new(true),
+        Signal::new(Some(TypewriterAnchor::Middle)),
+    );
+    assert!(
+        page_offset_after_arrow_downs(on, 10) > 0.0,
+        "with typewriter scrolling on, a caret past the middle must scroll the page \
+         to hold its line there"
+    );
 }
 
 #[test]
