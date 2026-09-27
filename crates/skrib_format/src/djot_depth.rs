@@ -22,6 +22,19 @@
 //! place a refusal can still name a file and leave the writer's own project
 //! untouched.
 //!
+//! # What is held to it
+//!
+//! Every piece of Djot a bundle stores, as the bundle is read: each row's prose,
+//! each note template's body, and the body of every comment, every reply and every
+//! footnote, in the sidecars beside the prose and in the two orphanages (`check_comments`
+//! and `check_footnotes` below). Those last three are not prose, but they are parsed
+//! all the same, by the comment and footnote cards on the UI thread and by the
+//! exporter, so a body past the ceiling aborts the process exactly as a scene would.
+//! A comment or reply body a bundle stamped before v12 stores is plain text rather than
+//! Djot, and the load rewrites it as Djot a load always accepts, so it is left to that.
+//! The readers of a project's past hold what they hand over to it too: the history
+//! log's blobs, and a backup's prose and comment threads.
+//!
 //! # Why a scan rather than a parser limit
 //!
 //! The parser is the right place for a depth limit and this is not it (see the
@@ -94,6 +107,10 @@
 //! for a list nested ten deep, two spaces a level, counts 19 here. No manuscript
 //! reaches 96, and 96 is far below the 617 that overflows a debug build.
 
+use anyhow::Context;
+
+use crate::bundle::{CommentFile, FootnoteFile};
+
 /// The most nested block containers a bundle's prose may declare.
 pub const MAX_DEPTH: usize = 96;
 
@@ -136,6 +153,35 @@ pub fn check(text: &str) -> Result<(), TooDeep> {
                 line: index + 1,
             });
         }
+    }
+    Ok(())
+}
+
+/// Refuse a list of comment threads if the body of any comment or reply in it could
+/// nest past [`MAX_DEPTH`], naming that body by its place in the list.
+///
+/// One file at a time: a `.comments.ron` sidecar or `orphan_comments.ron`, whose name
+/// the caller adds. Positions count from one, as a writer counts, and the refusal's
+/// own line is the line inside that body.
+pub(crate) fn check_comments(threads: &[CommentFile]) -> anyhow::Result<()> {
+    for (index, comment) in threads.iter().enumerate() {
+        check(&comment.body).with_context(|| format!("comment {}", index + 1))?;
+        for (turn, reply) in comment.replies.iter().enumerate() {
+            check(&reply.body)
+                .with_context(|| format!("reply {} to comment {}", turn + 1, index + 1))?;
+        }
+    }
+    Ok(())
+}
+
+/// Refuse a list of footnotes if the body of any could nest past [`MAX_DEPTH`],
+/// naming that note by its place in the list.
+///
+/// By place and not by label: the label is the file's own string, of any length,
+/// and the refusal is what the writer reads.
+pub(crate) fn check_footnotes(notes: &[FootnoteFile]) -> anyhow::Result<()> {
+    for (index, note) in notes.iter().enumerate() {
+        check(&note.body).with_context(|| format!("footnote {}", index + 1))?;
     }
     Ok(())
 }

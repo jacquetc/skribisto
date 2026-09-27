@@ -23,6 +23,7 @@ use tempfile::NamedTempFile;
 use super::bundle::*;
 use super::history::{HISTORY_DIR, HISTORY_INDEX, blob_relpath};
 use super::locate::{Locator, nfc};
+use super::migration::COMMENT_BODIES_ARE_DJOT_FROM;
 use super::shape::MANIFEST_NAME;
 use super::slug::{ASSETS_DIR, TEMPLATES_DIR, binder_dir_name};
 use super::version_gate::compute_min_read_version;
@@ -356,6 +357,9 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
 /// `12-the-lamp.comments.ron`. Derived from the blob's own file name so the two
 /// always sort together and a reader can find one from the other without a lookup
 /// table — the same reason the prose name already carries its content `file_id`.
+///
+/// Only the suffix changes, so a blob's bundle-relative path gives the sidecar's,
+/// which is how a refusal names it.
 pub(crate) fn comments_file_name(prose_file_name: &str) -> String {
     let stem = prose_file_name
         .strip_suffix(".djot")
@@ -462,9 +466,16 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     let progress_snapshots = read_ron_vec(&root.join("snapshots.ron"), "snapshots.ron")?;
     // Additive: a bundle written before comments existed has no orphanage, which
     // `read_ron_vec` reads back as an empty vec — no `format_version` bump needed.
-    let orphan_comments = read_ron_vec(&root.join("orphan_comments.ron"), "orphan_comments.ron")?;
-    let orphan_footnotes =
+    //
+    // The bodies are Djot the comment and footnote cards parse, so they are held to
+    // the same ceiling as the prose below, and refused the same way.
+    let orphan_comments: Vec<CommentFile> =
+        read_ron_vec(&root.join("orphan_comments.ron"), "orphan_comments.ron")?;
+    check_comment_bodies(&manifest, &orphan_comments, "orphan_comments.ron")?;
+    let orphan_footnotes: Vec<FootnoteFile> =
         read_ron_vec(&root.join("orphan_footnotes.ron"), "orphan_footnotes.ron")?;
+    crate::djot_depth::check_footnotes(&orphan_footnotes)
+        .context("footnotes orphan_footnotes.ron")?;
     // Additive like its neighbours: a pre-v5 bundle has no `templates.ron` and reads back
     // as zero templates. A *malformed* one is a hard error, matching every sibling here —
     // and for a sharper reason than consistency. Degrading to "no templates" would let
@@ -588,6 +599,10 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
                 // or any content the writer never annotated — simply has no sidecar,
                 // which reads back as "no comments" rather than as an error. That is
                 // what lets this ship without a `format_version` bump.
+                //
+                // Every body in a sidecar is Djot, parsed by the comment and footnote
+                // cards and by the exporter, so it is refused here for the same reason
+                // and in the same words as the prose beside it, naming the sidecar.
                 if let (Some(dir), Some(fname)) = (
                     prose_path.parent(),
                     prose_path.file_name().and_then(|n| n.to_str()),
@@ -595,6 +610,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
                     let cpath = locator.locate_child(dir, &comments_file_name(fname));
                     if let Ok(ctext) = fs::read_to_string(&cpath) {
                         let list: Vec<CommentFile> = from_ron(&ctext, "comments.ron")?;
+                        check_comment_bodies(&manifest, &list, &comments_file_name(&pr.path))?;
                         if !list.is_empty() {
                             comments.insert(pr.file_id, list);
                         }
@@ -602,6 +618,9 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
                     let fpath = locator.locate_child(dir, &footnotes_file_name(fname));
                     if let Ok(ftext) = fs::read_to_string(&fpath) {
                         let list: Vec<FootnoteFile> = from_ron(&ftext, "footnotes.ron")?;
+                        crate::djot_depth::check_footnotes(&list).with_context(|| {
+                            format!("footnotes {}", footnotes_file_name(&pr.path))
+                        })?;
                         if !list.is_empty() {
                             footnotes.insert(pr.file_id, list);
                         }
@@ -664,6 +683,26 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         binders,
         carried,
     })
+}
+
+/// Hold the bodies in one file of comment threads to the Djot nesting ceiling, naming
+/// `file` when one is past it, if `manifest`'s bundle stores them as Djot.
+///
+/// A bundle stamped before [`COMMENT_BODIES_ARE_DJOT_FROM`] stores them as plain text,
+/// which nothing parses as it stands: `migrate_bundle` rewrites each one as the Djot that
+/// reads back as the same words, and that Djot is within the ceiling whatever the words
+/// were (`plain_text_to_djot_verbatim`). Refusing such a body for looking nested would lock
+/// a writer out of an older project over a remark that could never have reached the
+/// parser as nesting.
+fn check_comment_bodies(
+    manifest: &ProjectManifest,
+    threads: &[CommentFile],
+    file: &str,
+) -> Result<()> {
+    if manifest.format_version < COMMENT_BODIES_ARE_DJOT_FROM {
+        return Ok(());
+    }
+    crate::djot_depth::check_comments(threads).with_context(|| format!("comments {file}"))
 }
 
 fn read_ron_vec<T: DeserializeOwned>(path: &Path, what: &str) -> Result<Vec<T>> {

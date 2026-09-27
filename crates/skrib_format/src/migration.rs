@@ -29,6 +29,14 @@ use super::bundle::{FORMAT_VERSION, WorkBundle};
 // while agreeing on everything easy.
 use super::convert::plain_text_to_djot_verbatim;
 
+/// The first format version that stores a comment's body and a reply's as Djot.
+///
+/// Before it they were plain text, which [`step_v11_to_v12`] rewrites on load as the Djot
+/// that reads back as the same words. The reader needs the boundary as well: a body stored
+/// as plain text is never parsed as it stands, so `folder_io::read_folder` holds only the
+/// ones stored as Djot to the nesting ceiling ([`crate::djot_depth`]).
+pub(crate) const COMMENT_BODIES_ARE_DJOT_FROM: u32 = 12;
+
 /// Walk `bundle` forward to [`FORMAT_VERSION`], one arm per transition.
 ///
 /// **This does not decide whether the bundle is too new** — [`crate::version_gate`] does,

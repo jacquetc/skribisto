@@ -294,18 +294,74 @@ enum PlantedIn {
     Prose,
     /// The first note template's body.
     TemplateBody,
+    /// The first comment's body in a prose blob's `.comments.ron` sidecar.
+    CommentBody,
+    /// The first reply's body in that sidecar.
+    ReplyBody,
+    /// The first footnote's body in a prose blob's `.footnotes.ron` sidecar.
+    FootnoteBody,
+    /// The first comment's body in `orphan_comments.ron`.
+    OrphanCommentBody,
+    /// The body of a reply to that comment.
+    OrphanReplyBody,
+    /// The first footnote's body in `orphan_footnotes.ron`.
+    OrphanFootnoteBody,
 }
 
-/// Replace the prose at `place` in `bundle` with `text`, and return the bundle-relative
-/// path of the file it is written to, which a refusal has to name.
-fn plant(bundle: &mut super::WorkBundle, place: PlantedIn, text: &str) -> String {
+impl PlantedIn {
+    /// Every place a bundle stores Djot that something later parses.
+    const ALL: [PlantedIn; 8] = [
+        PlantedIn::Prose,
+        PlantedIn::TemplateBody,
+        PlantedIn::CommentBody,
+        PlantedIn::ReplyBody,
+        PlantedIn::FootnoteBody,
+        PlantedIn::OrphanCommentBody,
+        PlantedIn::OrphanReplyBody,
+        PlantedIn::OrphanFootnoteBody,
+    ];
+}
+
+/// The fixture every planting test starts from: the ordinary project, plus a comment
+/// thread and a footnote beside a row's prose and one of each in the orphanages.
+fn fixture() -> super::WorkBundle {
+    super::tests::build_bundle_with_footnotes(ShapeTag::Folder)
+}
+
+/// Where a planted body landed: the bundle-relative path of the file it is written
+/// to, and the words naming it inside that file. A refusal has to say both.
+struct Planted {
+    file: String,
+    what: String,
+}
+
+impl Planted {
+    fn file(file: &str) -> Self {
+        Self {
+            file: file.to_string(),
+            what: String::new(),
+        }
+    }
+}
+
+/// The sidecar beside the prose blob `content` names, as the bundle records it.
+fn sidecar_of(item: &super::BundledItem, content: u64, name: fn(&str) -> String) -> String {
+    let Some(prose_ref) = item.item.prose_refs.iter().find(|p| p.file_id == content) else {
+        panic!("the fixture's sidecar must sit beside a prose blob");
+    };
+    name(&prose_ref.path)
+}
+
+/// Replace the prose at `place` in `bundle` with `text`, and say where it went.
+fn plant(bundle: &mut super::WorkBundle, place: PlantedIn, text: &str) -> Planted {
+    use super::folder_io::{comments_file_name, footnotes_file_name};
     match place {
         PlantedIn::Prose => {
             for binder in &mut bundle.binders {
                 for item in &mut binder.items {
                     if let Some(prose_ref) = item.item.prose_refs.first() {
                         item.prose.insert(prose_ref.file_id, text.to_string());
-                        return prose_ref.path.clone();
+                        return Planted::file(&prose_ref.path);
                     }
                 }
             }
@@ -318,38 +374,147 @@ fn plant(bundle: &mut super::WorkBundle, place: PlantedIn, text: &str) -> String
             bundle
                 .note_template_bodies
                 .insert(template.file_id, text.to_string());
-            template.path.clone()
+            Planted::file(&template.path)
+        }
+        PlantedIn::CommentBody | PlantedIn::ReplyBody => {
+            let reply = matches!(place, PlantedIn::ReplyBody);
+            for binder in &mut bundle.binders {
+                for item in &mut binder.items {
+                    let found = item.comments.iter_mut().find_map(|(content, thread)| {
+                        let (index, comment) = thread
+                            .iter_mut()
+                            .enumerate()
+                            .find(|(_, c)| !reply || !c.replies.is_empty())?;
+                        Some((*content, index, comment))
+                    });
+                    let Some((content, index, comment)) = found else {
+                        continue;
+                    };
+                    let what = if reply {
+                        comment.replies[0].body = text.to_string();
+                        format!("reply 1 to comment {}", index + 1)
+                    } else {
+                        comment.body = text.to_string();
+                        format!("comment {}", index + 1)
+                    };
+                    return Planted {
+                        file: sidecar_of(item, content, comments_file_name),
+                        what,
+                    };
+                }
+            }
+            panic!("the fixture must hold a comment thread with a reply beside its prose");
+        }
+        PlantedIn::FootnoteBody => {
+            for binder in &mut bundle.binders {
+                for item in &mut binder.items {
+                    let found = item.footnotes.iter_mut().find_map(|(content, notes)| {
+                        notes.first_mut().map(|note| (*content, note))
+                    });
+                    let Some((content, note)) = found else {
+                        continue;
+                    };
+                    note.body = text.to_string();
+                    return Planted {
+                        file: sidecar_of(item, content, footnotes_file_name),
+                        what: "footnote 1".to_string(),
+                    };
+                }
+            }
+            panic!("the fixture must hold a footnote beside its prose");
+        }
+        PlantedIn::OrphanCommentBody => {
+            let Some(comment) = bundle.orphan_comments.first_mut() else {
+                panic!("the fixture must hold an orphaned comment");
+            };
+            comment.body = text.to_string();
+            Planted {
+                file: "orphan_comments.ron".to_string(),
+                what: "comment 1".to_string(),
+            }
+        }
+        PlantedIn::OrphanReplyBody => {
+            let Some(comment) = bundle.orphan_comments.first_mut() else {
+                panic!("the fixture must hold an orphaned comment");
+            };
+            comment.replies.push(super::CommentReplyFile {
+                file_id: 9_901,
+                uid: common::uid::fixture_uid(9_901),
+                created_at: comment.created_at.clone(),
+                updated_at: comment.updated_at.clone(),
+                author_name: "Marc".to_string(),
+                author_initials: "M".to_string(),
+                body: text.to_string(),
+            });
+            Planted {
+                file: "orphan_comments.ron".to_string(),
+                what: format!("reply {} to comment 1", comment.replies.len()),
+            }
+        }
+        PlantedIn::OrphanFootnoteBody => {
+            let Some(note) = bundle.orphan_footnotes.first_mut() else {
+                panic!("the fixture must hold an orphaned footnote");
+            };
+            note.body = text.to_string();
+            Planted {
+                file: "orphan_footnotes.ron".to_string(),
+                what: "footnote 1".to_string(),
+            }
         }
     }
 }
 
-/// Parse every piece of prose `bundle` holds, rows and template bodies, on a long
-/// operation's stack: what opening, exporting or searching the project does.
+/// Every piece of Djot `bundle` holds: rows, template bodies, and the bodies of
+/// every comment, reply and footnote, anchored or orphaned.
+fn every_stored_djot(bundle: &super::WorkBundle) -> Vec<&str> {
+    fn threads(list: &[super::CommentFile]) -> impl Iterator<Item = &str> {
+        list.iter().flat_map(|c| {
+            std::iter::once(c.body.as_str()).chain(c.replies.iter().map(|r| r.body.as_str()))
+        })
+    }
+    let mut out: Vec<&str> = Vec::new();
+    for item in bundle.binders.iter().flat_map(|binder| &binder.items) {
+        out.extend(item.prose.values().map(String::as_str));
+        for list in item.comments.values() {
+            out.extend(threads(list));
+        }
+        for notes in item.footnotes.values() {
+            out.extend(notes.iter().map(|n| n.body.as_str()));
+        }
+    }
+    out.extend(bundle.note_template_bodies.values().map(String::as_str));
+    out.extend(threads(&bundle.orphan_comments));
+    out.extend(bundle.orphan_footnotes.iter().map(|n| n.body.as_str()));
+    out
+}
+
+/// Parse every piece of Djot `bundle` holds on a long operation's stack: what
+/// opening, exporting or searching the project does, and what the comment and
+/// footnote cards do with a body.
 fn parse_every_prose(bundle: &super::WorkBundle) {
-    let rows = bundle
-        .binders
-        .iter()
-        .flat_map(|binder| &binder.items)
-        .flat_map(|item| item.prose.values());
-    for text in rows.chain(bundle.note_template_bodies.values()) {
-        if let Err(e) = super::djot_depth::tests::parse_on_a_long_operation_stack(text.clone()) {
+    for text in every_stored_djot(bundle) {
+        let parsed = super::djot_depth::tests::parse_on_a_long_operation_stack(text.to_string());
+        if let Err(e) = parsed {
             panic!("the parser refused the prose: {e}");
         }
     }
 }
 
-/// Every shape of nesting a container can take, in a row's prose and in a note
-/// template's body, in a folder and in a zip: refused at the bundle, naming the file
-/// and the line. Before the guard counted every kind of container, every shape but
-/// the first loaded, and the first parse of the row aborted the process: this test
-/// then aborts in `parse_every_prose`.
+/// Every shape of nesting a container can take, in every place a bundle stores Djot
+/// (a row's prose, a note template's body, and the body of a comment, a reply or a
+/// footnote, beside the prose or in an orphanage), in a folder and in a zip: refused
+/// at the bundle, naming the file and the line. Before the guard counted every kind
+/// of container, every shape but the first loaded from the prose and the templates,
+/// and before it read the sidecars every shape loaded from a comment, a reply or a
+/// footnote; the first parse aborted the process. This test then aborts in
+/// `parse_every_prose`.
 #[test]
 fn every_shape_of_nesting_past_the_ceiling_is_refused_at_the_bundle_by_name() {
     for (name, hostile) in super::djot_depth::tests::past_the_parsers_limit() {
         for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
-            for place in [PlantedIn::Prose, PlantedIn::TemplateBody] {
-                let mut bundle = super::tests::build_bundle(ShapeTag::Folder);
-                let file = plant(&mut bundle, place, &hostile);
+            for place in PlantedIn::ALL {
+                let mut bundle = fixture();
+                let planted = plant(&mut bundle, place, &hostile);
                 let dir = tempfile::tempdir().expect("tmp");
                 let path = dir
                     .path()
@@ -363,8 +528,12 @@ fn every_shape_of_nesting_past_the_ceiling_is_refused_at_the_bundle_by_name() {
                         let msg = chain(&err);
                         assert!(msg.contains("nests"), "{name}, {shape:?}, {place:?}: {msg}");
                         assert!(
-                            msg.contains(&file),
+                            msg.contains(&planted.file),
                             "{name}, {place:?}: names the file: {msg}"
+                        );
+                        assert!(
+                            msg.contains(&planted.what),
+                            "{name}, {place:?}: names the body in it: {msg}"
                         );
                         assert!(msg.contains("at line "), "{name}: names the line: {msg}");
                     }
@@ -378,16 +547,17 @@ fn every_shape_of_nesting_past_the_ceiling_is_refused_at_the_bundle_by_name() {
     }
 }
 
-/// The same shapes at the ceiling load, and every prose blob parses from a long
-/// operation's stack.
+/// The same shapes at the ceiling load from every place, and every piece of Djot the
+/// bundle holds parses from a long operation's stack.
 #[test]
 fn every_shape_of_nesting_at_the_ceiling_loads_and_parses() {
     for marker in ["- ", "1. ", "(iv) ", "- [ ] ", "[^a]: ", ": ", "> "] {
         let text = super::djot_depth::tests::one_line(marker, super::MAX_DJOT_DEPTH);
         for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
-            let mut bundle = super::tests::build_bundle(ShapeTag::Folder);
-            plant(&mut bundle, PlantedIn::Prose, &text);
-            plant(&mut bundle, PlantedIn::TemplateBody, &text);
+            let mut bundle = fixture();
+            for place in PlantedIn::ALL {
+                plant(&mut bundle, place, &text);
+            }
             let dir = tempfile::tempdir().expect("tmp");
             let path = dir
                 .path()
@@ -399,7 +569,87 @@ fn every_shape_of_nesting_at_the_ceiling_loads_and_parses() {
                 Ok(loaded) => loaded,
                 Err(err) => panic!("{marker:?}, {shape:?}: {}", chain(&err)),
             };
+            let stored = every_stored_djot(&loaded);
+            assert_eq!(
+                stored.iter().filter(|djot| **djot == text).count(),
+                PlantedIn::ALL.len(),
+                "{marker:?}, {shape:?}: every body planted at the ceiling loads as it was"
+            );
             parse_every_prose(&loaded);
+        }
+    }
+}
+
+/// Before v12 a comment's body and a reply's were stored as plain text, which nothing
+/// parses as it stands: the load rewrites each one as the Djot that reads back as the
+/// same words. So a remark in an older project that only looks nested opens, and comes
+/// back as those words, within the ceiling and parseable from a long operation's stack.
+/// A footnote's body was Djot from the day footnotes existed, and in the same project it
+/// is refused by name, like the prose.
+#[test]
+fn a_pre_v12_remark_that_looks_nested_opens_as_its_words() {
+    const REMARKS: [PlantedIn; 4] = [
+        PlantedIn::CommentBody,
+        PlantedIn::ReplyBody,
+        PlantedIn::OrphanCommentBody,
+        PlantedIn::OrphanReplyBody,
+    ];
+    let write_v11 = |bundle: &mut super::WorkBundle, shape: SkribShape| {
+        bundle.manifest.format_version = 11;
+        let dir = tempfile::tempdir().expect("tmp");
+        let path = dir
+            .path()
+            .join("Novel.skrib")
+            .to_string_lossy()
+            .into_owned();
+        write_bundle(&path, shape, bundle).expect("write");
+        (dir, path)
+    };
+
+    for (name, hostile) in super::djot_depth::tests::past_the_parsers_limit() {
+        let words = super::plain_text_to_djot_verbatim(&hostile);
+        assert!(super::djot_depth::check(&words).is_ok(), "{name}");
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            // Every remark in one project: none of them may be refused.
+            let mut bundle = fixture();
+            for place in REMARKS {
+                plant(&mut bundle, place, &hostile);
+            }
+            let (_dir, path) = write_v11(&mut bundle, shape);
+            let loaded = match read_bundle(&path) {
+                Ok(loaded) => loaded,
+                Err(err) => panic!(
+                    "{name}, {shape:?}: a plain-text remark was refused: {}",
+                    chain(&err)
+                ),
+            };
+            let stored = every_stored_djot(&loaded)
+                .into_iter()
+                .filter(|djot| *djot == words)
+                .count();
+            assert_eq!(
+                stored,
+                REMARKS.len(),
+                "{name}, {shape:?}: every remark is stored as its words"
+            );
+            parse_every_prose(&loaded);
+
+            for place in [PlantedIn::FootnoteBody, PlantedIn::OrphanFootnoteBody] {
+                let mut bundle = fixture();
+                let planted = plant(&mut bundle, place, &hostile);
+                let (_dir, path) = write_v11(&mut bundle, shape);
+                match read_bundle(&path) {
+                    Err(err) => {
+                        let msg = chain(&err);
+                        assert!(msg.contains("nests"), "{name}, {shape:?}, {place:?}: {msg}");
+                        assert!(msg.contains(&planted.file), "{name}, {place:?}: {msg}");
+                    }
+                    Ok(loaded) => {
+                        parse_every_prose(&loaded);
+                        panic!("{name}, {shape:?}, {place:?}: loaded past the ceiling");
+                    }
+                }
+            }
         }
     }
 }

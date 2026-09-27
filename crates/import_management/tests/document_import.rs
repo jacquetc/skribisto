@@ -3793,3 +3793,222 @@ fn a_note_whose_formatting_changed_arrives_with_the_change() {
         );
     }
 }
+
+// ── Margin text that looks like nesting ──────────────────────────────────────
+//
+// A comment's body, a reply's and a footnote's are Djot, stored as the importer wrote
+// them and held to `skrib_format::djot_depth`'s ceiling the next time the project is
+// read. An editor's remark that happens to look like deeply nested Djot therefore has
+// to be stored as the words it is: stored as the nesting it looks like, it would crash
+// the comment card that parses it, and the project that imported it could not be opened
+// again.
+
+/// Margin text that would nest far past the parser's limit if it were stored as the
+/// Djot it looks like, one entry per line. A line break inside a comment or a note
+/// starts a new paragraph, so the several-line shapes are several paragraphs.
+fn margin_text_that_looks_nested() -> Vec<(&'static str, Vec<String>)> {
+    let levels = 700;
+    let one_line = |marker: &str| vec![format!("{}deep", marker.repeat(levels))];
+    let fences = (0..levels)
+        .map(|_| "::: note".to_string())
+        .chain(std::iter::once("deep".to_string()))
+        .collect();
+    let shrinking = (0..levels)
+        .map(|i| ":".repeat(levels + 2 - i))
+        .chain(std::iter::once("deep".to_string()))
+        .collect();
+    vec![
+        ("bullets", one_line("- ")),
+        ("blockquotes", one_line("> ")),
+        (
+            "a blockquote run",
+            vec![format!("{}deep", ">".repeat(4_000))],
+        ),
+        ("ordered items", one_line("1. ")),
+        ("roman numerals in parentheses", one_line("(iv) ")),
+        ("task items", one_line("- [ ] ")),
+        ("footnote definitions", one_line("[^a]: ")),
+        ("definition items", one_line(": ")),
+        ("a div opened on every line", fences),
+        ("fences each one colon shorter", shrinking),
+    ]
+}
+
+/// The first words of `lines`, which a body stored as text reads back with.
+fn opening_words(lines: &[String]) -> String {
+    lines
+        .first()
+        .map(|line| line.chars().take(24).collect())
+        .unwrap_or_default()
+}
+
+/// `text` with the five characters XML reserves escaped.
+fn xml_text(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+/// A flat `.fodt` with one paragraph carrying a comment, a reply to it and a footnote,
+/// the three of them holding `margin`: the inner XML of one `<text:p>`.
+fn fodt_with_margin(margin: &str) -> String {
+    format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
+         <office:document xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" \
+         xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" \
+         xmlns:dc=\"http://purl.org/dc/elements/1.1/\" \
+         xmlns:loext=\"urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0\" \
+         office:version=\"1.3\"><office:body><office:text>\
+         <text:p>The lamp went out \
+         <office:annotation office:name=\"c1\"><dc:creator>Editor</dc:creator>\
+         <dc:date>2026-01-01T00:00:00</dc:date><text:p>{margin}</text:p></office:annotation>\
+         in the hall<office:annotation-end office:name=\"c1\"/>.\
+         <office:annotation loext:parent-name=\"c1\"><dc:creator>Writer</dc:creator>\
+         <dc:date>2026-01-01T01:00:00</dc:date><text:p>{margin}</text:p></office:annotation>\
+         <text:note text:id=\"ftn1\" text:note-class=\"footnote\">\
+         <text:note-citation>1</text:note-citation><text:note-body><text:p>{margin}</text:p>\
+         </text:note-body></text:note></text:p>\
+         </office:text></office:body></office:document>"
+    )
+}
+
+/// Parse `djot` on a thread with the 2 MiB stack a long operation gets, as the comment
+/// and footnote cards and the exporter do, and return its plain text. An overflow here
+/// aborts the test binary rather than failing the test, which is the signal.
+fn parse_on_a_long_operation_stack(djot: String) -> Result<String, String> {
+    std::thread::Builder::new()
+        .stack_size(2 << 20)
+        .spawn(move || {
+            let doc = TextDocument::new();
+            doc.set_djot_sync(&djot).map_err(|e| e.to_string())?;
+            doc.to_plain_text().map_err(|e| e.to_string())
+        })
+        .expect("spawn the parse thread")
+        .join()
+        .expect("the parse must not unwind")
+}
+
+/// Import `file`, then check every comment, reply and footnote body the project now
+/// holds: one of each arrived, each is Djot the next load of the project accepts, and
+/// each parses from a long operation's stack back to words that include `words`.
+fn assert_margins_stored_within_the_ceiling(shape: &str, mut ctx: Ctx, file: String, words: &str) {
+    let rows = ctx.analyse(vec![file], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let threads = ctx.comments();
+    let [(comment, replies)] = threads.as_slice() else {
+        panic!("{shape}: one comment thread arrives, got {}", threads.len());
+    };
+    let [reply] = replies.as_slice() else {
+        panic!("{shape}: one reply arrives, got {}", replies.len());
+    };
+    let notes = footnotes_of(&ctx);
+    let [(_, note, _)] = notes.as_slice() else {
+        panic!("{shape}: one footnote arrives, got {notes:?}");
+    };
+
+    for (what, body) in [
+        ("comment", &comment.body),
+        ("reply", &reply.body),
+        ("footnote", note),
+    ] {
+        if let Err(refused) = skrib_format::djot_depth::check(body) {
+            panic!("{shape}, {what}: stored past what a load accepts: {refused}");
+        }
+        match parse_on_a_long_operation_stack(body.clone()) {
+            Ok(read) => assert!(
+                read.contains(words) && read.contains("deep"),
+                "{shape}, {what}: the words arrive: {read:?}"
+            ),
+            Err(e) => panic!("{shape}, {what}: the stored body does not parse: {e}"),
+        }
+    }
+}
+
+/// An OpenDocument comment, reply and footnote whose text looks like nesting past the
+/// parser's limit are stored as text a load accepts, whatever the shape: markers on one
+/// line, a marker line repeated across line breaks, or a marker behind a run of spaces or
+/// tabs as long as any indentation the ceiling counts.
+#[test]
+fn an_odt_margin_that_looks_nested_is_stored_as_words_a_load_accepts() {
+    let mut cases: Vec<(String, String, String)> = margin_text_that_looks_nested()
+        .into_iter()
+        .map(|(shape, lines)| {
+            assert!(
+                skrib_format::djot_depth::check(&lines.join("\n")).is_err(),
+                "{shape}: read as Djot, the text nests past the ceiling"
+            );
+            let margin = lines
+                .iter()
+                .map(|line| xml_text(line))
+                .collect::<Vec<_>>()
+                .join("<text:line-break/>");
+            (shape.to_string(), margin, opening_words(&lines))
+        })
+        .collect();
+    cases.push((
+        "a run of spaces".to_string(),
+        "<text:s text:c=\"400\"/>- deep".to_string(),
+        "- deep".to_string(),
+    ));
+    cases.push((
+        "a run of tabs".to_string(),
+        format!("{}&gt; deep", "<text:tab/>".repeat(400)),
+        "> deep".to_string(),
+    ));
+    cases.push((
+        "spaces after a line break".to_string(),
+        "First line.<text:line-break/><text:s text:c=\"400\"/>1. deep".to_string(),
+        "1. deep".to_string(),
+    ));
+
+    for (shape, margin, words) in cases {
+        let ctx = Ctx::new();
+        let file = ctx.write("margins.fodt", &fodt_with_margin(&margin));
+        assert_margins_stored_within_the_ceiling(&shape, ctx, file, &words);
+    }
+}
+
+/// The same shapes from a Word document, written by `text-document` with the text in the
+/// comment, the reply and the footnote as the literal words, so the Word reader and not
+/// the Djot one is what meets them.
+#[test]
+fn a_docx_margin_that_looks_nested_is_stored_as_words_a_load_accepts() {
+    for (shape, lines) in margin_text_that_looks_nested() {
+        // Djot that reads back as exactly these lines, one paragraph each.
+        let literal = skrib_format::plain_text_to_djot_verbatim(&lines.join("\n"));
+        let note = literal.replace("\n\n", "\n\n    ");
+        let manuscript = format!(
+            "This manuscript opens with a sentence that needs review.[^1]\n\n[^1]: {note}\n"
+        );
+        let bytes = build_docx(&manuscript, |doc| {
+            let range = find_range(doc, "needs review");
+            let mut root = DocumentComment {
+                start: range.0,
+                end: range.1,
+                uid: String::new(),
+                author: "Editor".to_string(),
+                author_initials: "ED".to_string(),
+                date: "2026-01-01T00:00:00Z".to_string(),
+                resolved: false,
+                body: literal.clone(),
+                replies: Vec::new(),
+            };
+            root.replies.push(TdCommentReply {
+                uid: String::new(),
+                author: "Writer".to_string(),
+                author_initials: "WR".to_string(),
+                date: "2026-01-01T01:00:00Z".to_string(),
+                body: literal.clone(),
+            });
+            let mut comments = DocumentComments::new();
+            comments.insert(root);
+            comments
+        });
+        let ctx = Ctx::new();
+        let file = ctx.write_bytes("margins.docx", &bytes);
+        assert_margins_stored_within_the_ceiling(shape, ctx, file, &opening_words(&lines));
+    }
+}

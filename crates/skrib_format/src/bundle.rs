@@ -736,6 +736,9 @@ pub struct CommentFile {
     /// Djot — an editor's remark arrives from `.docx`/`.odt` carrying its own emphasis.
     /// Plain text is still valid Djot, so a body written before this became rich reads
     /// back unchanged; `migrate_bundle` escapes the ones that would not.
+    ///
+    /// Held to the nesting ceiling on read, with every reply's, exactly as the prose it
+    /// annotates is ([`crate::djot_depth`]): the comment cards and the exporter parse it.
     pub body: String,
     pub resolved: bool,
     pub orphaned: bool,
@@ -773,7 +776,8 @@ pub struct FootnoteFile {
     pub updated_at: String,
     /// What `[^label]` in the prose names.
     pub label: String,
-    /// Djot.
+    /// Djot, held to the nesting ceiling on read like the prose that cites it
+    /// ([`crate::djot_depth`]): the footnote cards and the exporter parse it.
     pub body: String,
 }
 

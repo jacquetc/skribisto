@@ -229,6 +229,10 @@ pub trait VersionSource {
     /// derivable from the blob's own name (`…djot` → `….comments.ron`), so the
     /// same read path that recovers old prose also recovers *what the note on that
     /// paragraph said before it was resolved*.
+    ///
+    /// A body past the Djot ceiling ([`crate::djot_depth`]) fails the read, naming
+    /// the sidecar, exactly as [`Self::prose`] fails on a blob past it: a comment's
+    /// body and a reply's are Djot the comment cards parse.
     fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>>;
 }
 
@@ -413,7 +417,14 @@ impl VersionSource for BackupVersions {
     fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>> {
         let sidecar = comments_sidecar(blob_path);
         match read_entry(&v.path, &sidecar) {
-            Ok(text) => Ok(ron::from_str(&text).unwrap_or_default()),
+            Ok(text) => {
+                let threads: Vec<CommentFile> = ron::from_str(&text).unwrap_or_default();
+                // The same refusal `prose` gives a blob past the ceiling, and for the
+                // same reason: whoever asks for these parses every body in them.
+                crate::djot_depth::check_comments(&threads)
+                    .with_context(|| format!("version comments {sidecar}"))?;
+                Ok(threads)
+            }
             // No sidecar means no comments — the common case, not a failure.
             Err(_) => Ok(Vec::new()),
         }
