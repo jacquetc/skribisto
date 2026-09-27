@@ -86,7 +86,11 @@ impl Widget for NotificationBell {
         self.work_id
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
-        let mut bell = NotificationCenterButton::new(self.archive.clone()).size(self.size);
+        // An archived action has lost its closure; the hook turns the ones that
+        // kept a name (an import's warnings Details) back into what they did.
+        let mut bell = NotificationCenterButton::new(self.archive.clone())
+            .size(self.size)
+            .on_action_invoked(crate::shared::import_warnings::replay_archived_action);
         if let Some(work_id) = self.work_id.get() {
             bell = bell.for_audience(ToastAudience::new(work_id));
         }
@@ -227,6 +231,37 @@ mod tests {
             expected, 30.0,
             "sanity check: Compact's dimension must actually differ from the old \
              hardcoded 30.0, otherwise this test could pass for the wrong reason"
+        );
+    }
+
+    /// An import's warnings can be reopened from the bell once their toast is
+    /// gone: the bell's popover renders the archived Details as a button, and
+    /// pressing it opens the list again. Without the replay hook the bell
+    /// installs, the same row renders Details as an inert tag.
+    #[test]
+    fn the_bell_reopens_an_import_s_warnings() {
+        use crate::shared::import_warnings::{PLUME, archive_holding};
+        use crate::test_support::{click, drain_dialog_titles};
+        use teksilo::widgets::{FixedSize, Spacer, VStack};
+
+        let archive = archive_holding(&PLUME, &["Chapter 3 has no scenes.".to_string()]);
+        let mut tree = WidgetTree::new().with_theme(intui::light());
+        // At the foot of the window, where the status bar puts it.
+        let spacer = tree.add(FixedSize::new().height(500.0).child(Spacer::new()));
+        let bell = tree.add(NotificationBell::new(archive, Signal::new(Some(1))));
+        tree.add(VStack::new().child(spacer).child(bell));
+        tree.layout(SizeProposal::exact(400.0, 600.0));
+
+        tree.click(bell);
+        tree.layout(SizeProposal::exact(400.0, 600.0));
+        let details = tree
+            .find_by_label(&tr!(import_plume_details()).resolve_now())
+            .expect("the bell's log offers the archived Details as a button");
+        click(&mut tree, details);
+        assert_eq!(
+            drain_dialog_titles(&mut tree),
+            vec![tr!(import_plume_warnings_title()).resolve_now()],
+            "pressing it reopens the list"
         );
     }
 

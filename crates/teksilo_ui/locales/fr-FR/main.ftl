@@ -1108,6 +1108,17 @@ import-manuskript-warnings-title = À propos de cet import
 import-manuskript-error-title = Impossible d’importer le projet
 import-manuskript-error-details = Détails
 
+## Import de projet, commun aux boîtes de dialogue Plume Creator et Manuskript
+# La destination choisie est un projet ouvert dans une fenêtre, ici ou dans une autre
+# instance de Skribisto. L’import est refusé plutôt qu’écrit par-dessus.
+import-target-open-title = Ce projet est ouvert
+import-target-open-text = « { $name } » est ouvert dans Skribisto. Un import à cet emplacement remplacerait le projet sur lequel vous travaillez, et votre prochain enregistrement réécrirait ce projet par-dessus l’import. Choisissez un autre nom de fichier, ou fermez d’abord le projet.
+# Lu par un lecteur d’écran quand l’avis d’un import apparaît, jamais affiché.
+# $result est la ligne de résultat de l’import (« 12 éléments importés. »), $notice
+# le titre de l’avis (« 2 éléments n’ont pas pu être importés à l’identique »).
+# L’avis est lu par-dessus le résultat : il dit donc les deux.
+import-warnings-announcement = { $result } { $notice }.
+
 ## Dialogue d'exportation
 export-title = Exporter
 export-close = Fermer

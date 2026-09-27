@@ -5,6 +5,9 @@ Description:
 - "Dates and times in the Versions dock, the Timeline, the backups list, the Trash, the project switcher, the Welcome window and the restore confirmations are shown in your own time zone. They were shown in UTC while presenting themselves as local time, which could put a version on the wrong day"
 - "Pace and daily progress credit words to the day you wrote them, on your own calendar. A writer west of UTC used to see evening words counted for the next day"
 - "The Versions dock lists the earlier versions of front and back matter, such as a preface, as it does for any other text"
+- "The warnings of a Plume Creator or Manuskript import stay on screen until you close them, and can be opened again afterwards from the notifications. They used to disappear after ten seconds"
+- "Choosing where to save a new or imported project no longer writes and deletes a test file in that folder over and over while the dialog is open"
+- "An import can no longer overwrite a project that is open in a window, in this copy of Skribisto or another one"
 ---
 Version: 3.0.4
 Date: 2026-09-16

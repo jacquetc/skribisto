@@ -927,6 +927,11 @@ impl ImportDocumentViewModel {
             .scoped_id(IMPORT_TOAST_ID, self.work_id())
             .target_work(self.work_id());
         if !detail.is_empty() {
+            // The reason is the only account of what went wrong, so it waits for
+            // the writer rather than leaving after ten seconds, and it travels in
+            // the body, which the notification log keeps once the toast is
+            // closed (the Details closure below does not survive that).
+            toast = toast.body(lit!(detail.clone())).persistent();
             toast = toast.action(ToastAction::primary(
                 tr!(import_document_details()),
                 move |c| {

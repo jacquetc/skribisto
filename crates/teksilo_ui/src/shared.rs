@@ -33,8 +33,18 @@ mod caret_highlight;
 pub mod editor_size;
 pub mod external_link;
 mod focus_vm;
+// Disk-touching field checks worked out once per edit, never per read: the
+// import dialogs and New Work. (Plain comments on these three: an outer doc
+// comment would make rustdoc resolve the modules' own intra-doc links here.)
+pub(crate) mod form_checks;
 mod fullscreen_vm;
 pub mod images;
+// The destination folder and file name of the two project importers' forms,
+// and their refusal to write over a project that is open.
+pub(crate) mod import_destination;
+// The two project importers' warnings notice, and its replay from the
+// notification log.
+pub(crate) mod import_warnings;
 mod item_view_states;
 pub mod list_naming;
 /// Shared `Origin::LongOperation` event-parsing + Work-capture helpers, used

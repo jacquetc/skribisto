@@ -15,7 +15,14 @@
 //! **Cancel** button. The backend's `Origin::LongOperation(...)` events — routed
 //! here by `App::build` via `subscribe_event_with_ctx` — update that one toast in
 //! place: progress ticks, then a success toast (with **Open now** → `load_work`),
-//! a cancelled notice, or an error toast with **Details**.
+//! a cancelled notice, or an error toast with **Details**. What the importer
+//! could not carry across comes as a separate notice that stays until the writer
+//! closes it and can be reopened from the notification log (see
+//! `shared::import_warnings`).
+//!
+//! The destination is `shared::import_destination`, shared with the Manuskript
+//! form: its checks run when a field changes rather than on every read, and an
+//! import aimed at a project open in a window is refused.
 
 use std::path::Path;
 use std::rc::Rc;
@@ -23,7 +30,8 @@ use std::time::Duration;
 
 use teksilo::prelude::*; // EventContext, Signal, tr!, lit!, FileDialogResult
 use teksilo::widgets::{
-    MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction, ValidationState,
+    MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction, ToastPriority,
+    ValidationState,
 };
 
 use frontend::AppContext;
@@ -32,15 +40,38 @@ use frontend::common::event::{Event, LongOperationEvent, Origin};
 use frontend::import_management::ImportPlumeCreatorFileDto;
 
 use crate::intents::AppIntent;
+use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
+use crate::shared::import_destination::{DestinationMessages, ImportDestination, refuse_if_open};
+use crate::shared::import_warnings::{LiveNotice, PLUME as WARNINGS};
 use crate::shared::long_op::{event_id, parse_payload, payload_id};
 
 /// Update-in-place key for the single toast the import drives through its
 /// lifecycle (loading → progress → success / cancelled / error).
 const IMPORT_TOAST_ID: &str = "import.plume";
-/// The warnings notice rides its own id so it does not replace — nor get
-/// replaced by — the progress/result toast, while still being replaceable by a
-/// later import's warnings instead of stacking.
-const IMPORT_WARNINGS_TOAST_ID: &str = "import.plume.warnings";
+
+/// The import's own toast, in whichever state it is in: one entry updated in
+/// place under [`IMPORT_TOAST_ID`], broadcast (see [`ImportPlumeViewModel::progress_toast`]),
+/// and admitted at `High` priority. At the default priority a toast reaching a
+/// corner that already holds five is dropped without being logged, and this one
+/// carries the only Cancel, the only Open now and the only report of a failure.
+fn import_toast(toast: Toast) -> Toast {
+    toast
+        .id(IMPORT_TOAST_ID)
+        .priority(ToastPriority::High)
+        .broadcast()
+}
+
+/// The destination fields' words.
+static DESTINATION: DestinationMessages = DestinationMessages {
+    folder: FolderMessages {
+        required: || tr!(import_plume_location_required()),
+        missing: || tr!(import_plume_location_missing()),
+        not_folder: || tr!(import_plume_location_not_folder()),
+        readonly: || tr!(import_plume_location_readonly()),
+    },
+    name_required: || tr!(import_plume_name_required()),
+    name_exists: || tr!(import_plume_name_exists()),
+};
 
 /// Strip a `.plume` / `.plume_backup` extension from a source path's file name,
 /// yielding the default output base name (`"…/Le Visiteur.plume"` → `"Le Visiteur"`).
@@ -60,20 +91,9 @@ fn output_stem(source: &str) -> String {
     stem.to_string()
 }
 
-/// Build the target `<dir>/<name>.skrib` (empty when the name is blank). A
-/// trailing `.skrib` the user typed is not doubled.
-fn build_target(dir: &str, name: &str) -> String {
-    let name = name.trim();
-    let name = name.strip_suffix(".skrib").unwrap_or(name).trim();
-    if name.is_empty() {
-        return String::new();
-    }
-    let dir = dir.trim().trim_end_matches(['/', '\\']);
-    let sep = if dir.is_empty() { "" } else { "/" };
-    format!("{dir}{sep}{name}.skrib")
-}
-
 /// Validate the source: a non-blank path to an existing, readable file.
+///
+/// Touches the disk, so it runs in a [`CachedValidation`], never on a read.
 fn source_state(source: &str) -> ValidationState {
     let s = source.trim();
     if s.is_empty() {
@@ -89,61 +109,38 @@ fn source_state(source: &str) -> ValidationState {
     ValidationState::None
 }
 
-/// Validate the destination folder — it must exist, be a directory, and be writable.
-fn location_state(dir: &str) -> ValidationState {
-    let trimmed = dir.trim();
-    if trimmed.is_empty() {
-        return ValidationState::Error(tr!(import_plume_location_required()));
-    }
-    let path = Path::new(trimmed);
-    if !path.exists() {
-        return ValidationState::Error(tr!(import_plume_location_missing()));
-    }
-    if !path.is_dir() {
-        return ValidationState::Error(tr!(import_plume_location_not_folder()));
-    }
-    if !dir_writable(path) {
-        return ValidationState::Error(tr!(import_plume_location_readonly()));
-    }
-    ValidationState::None
-}
-
-/// Probe writability with a uniquely-named temp file (owner mode bits alone don't
-/// prove the current user may write), then remove it.
-fn dir_writable(dir: &Path) -> bool {
-    let probe = dir.join(format!(".skribisto-writetest-{}", std::process::id()));
-    match std::fs::File::create(&probe) {
-        Ok(_) => {
-            let _ = std::fs::remove_file(&probe);
-            true
-        }
-        Err(_) => false,
-    }
-}
-
 #[derive(Clone)]
 pub struct ImportPlumeViewModel {
     /// The chosen `.plume` / `.plume_backup` source path.
     source: Signal<String>,
-    /// The destination folder for the produced `.skrib`.
-    location: Signal<String>,
-    /// The output base name (a `.skrib` is appended).
-    name: Signal<String>,
+    /// [`source_state`] of `source`, worked out when it changes.
+    source_check: CachedValidation,
+    /// The destination folder and output name, with their checks.
+    destination: ImportDestination,
     /// The long-operation id of the import running right now, if any — set on
     /// start, cleared when it completes / is cancelled / fails. Drives event
     /// filtering (only events for *this* op touch the toast) and the Cancel button.
     active: Signal<Option<String>>,
+    /// The warnings notice of the latest import that had any, while it is on
+    /// screen: the next one takes its place rather than piling up beside it.
+    warnings_notice: LiveNotice,
     app_ctx: Rc<AppContext>,
 }
 
 #[allow(dead_code)]
 impl ImportPlumeViewModel {
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
+        let source = Signal::new(String::new());
+        let source_check = {
+            let picked = source.clone();
+            CachedValidation::new(&[&source], move || source_state(&picked.get()))
+        };
         Self {
-            source: Signal::new(String::new()),
-            location: Signal::new(String::new()),
-            name: Signal::new(String::new()),
+            source,
+            source_check,
+            destination: ImportDestination::new(&DESTINATION),
             active: Signal::new(None),
+            warnings_notice: LiveNotice::default(),
             app_ctx,
         }
     }
@@ -152,8 +149,7 @@ impl ImportPlumeViewModel {
     /// session's paths don't linger. The in-flight job is independent.
     pub fn reset_form(&self) {
         self.source.set(String::new());
-        self.location.set(String::new());
-        self.name.set(String::new());
+        self.destination.clear();
     }
 
     // ── Signal accessors (bound by the view) ───────────────────────────────
@@ -161,10 +157,10 @@ impl ImportPlumeViewModel {
         self.source.clone()
     }
     pub fn location(&self) -> Signal<String> {
-        self.location.clone()
+        self.destination.location()
     }
     pub fn name(&self) -> Signal<String> {
-        self.name.clone()
+        self.destination.name()
     }
 
     /// React to the source file picker: default the destination folder + name
@@ -174,38 +170,36 @@ impl ImportPlumeViewModel {
     pub fn apply_source_defaults(&self, res: &FileDialogResult) {
         if let FileDialogResult::File(Some(path)) = res {
             let source = path.to_string_lossy().into_owned();
-            if let Some(parent) = path.parent().and_then(|p| p.to_str()) {
-                self.location.set(parent.to_string());
-            }
-            self.name.set(output_stem(&source));
+            self.destination
+                .default_from(path.parent().and_then(|p| p.to_str()), output_stem(&source));
         }
     }
 
     /// The reactive "Will create `…/<name>.skrib`" preview.
     pub fn target_path(&self) -> Signal<String> {
-        self.location
-            .zip(&self.name)
-            .map(|(dir, name)| build_target(dir, name))
+        self.destination.target_path()
     }
 
+    /// The source field's verdict, cached: reading it never touches the disk.
     pub fn source_validation(&self) -> Signal<ValidationState> {
-        self.source.map(|s| source_state(s))
+        self.source_check.signal()
     }
+    /// The destination folder's verdict, cached: its check writes a probe file,
+    /// which a derived signal would do on every frame the field is painted.
     pub fn location_validation(&self) -> Signal<ValidationState> {
-        self.location.map(|d| location_state(d))
+        self.destination.location_validation()
     }
 
     /// Whether "Import" may fire: a valid source **and** a valid destination
-    /// **and** a non-blank name.
+    /// **and** a non-blank name. Derived from the cached verdicts only.
     pub fn can_import(&self) -> Signal<bool> {
-        let source_ok = self
-            .source
-            .map(|s| matches!(source_state(s), ValidationState::None));
-        let location_ok = self
-            .location
-            .map(|d| matches!(location_state(d), ValidationState::None));
-        let name_ok = self.name.map(|n| !build_target("x", n).is_empty());
-        source_ok.and(&location_ok).and(&name_ok)
+        self.source_check.passes().and(&self.destination.is_ready())
+    }
+
+    /// Whether the source names a path the disk refused. The cached verdict
+    /// only; a blank source is not a refusal the disk could lift.
+    fn source_refused(&self) -> bool {
+        !self.source.get().trim().is_empty() && self.source_check.refuses()
     }
 
     fn dto(&self, overwrite: bool) -> ImportPlumeCreatorFileDto {
@@ -218,7 +212,7 @@ impl ImportPlumeViewModel {
             // straight across.
             status_names: crate::statuses::Preset::Plume.resolved_names(),
             source_path: self.source.get(),
-            output_path: build_target(&self.location.get(), &self.name.get()),
+            output_path: self.destination.target(),
             overwrite,
             manuscript_binder_name: tr!(import_plume_manuscript_binder()).into(),
             story_bible_binder_name: tr!(import_plume_story_bible_binder()).into(),
@@ -227,25 +221,34 @@ impl ImportPlumeViewModel {
 
     /// Inline validation for the file-name field: blank → error; a name whose
     /// target `.skrib` already exists → a *warning* (import still proceeds, after
-    /// an overwrite confirmation).
+    /// an overwrite confirmation). Cached, like the folder's.
     pub fn name_validation(&self) -> Signal<ValidationState> {
-        self.location.zip(&self.name).map(|(loc, name)| {
-            let target = build_target(loc, name);
-            if target.is_empty() {
-                ValidationState::Error(tr!(import_plume_name_required()))
-            } else if Path::new(&target).exists() {
-                ValidationState::Warning(tr!(import_plume_name_exists()))
-            } else {
-                ValidationState::None
-            }
-        })
+        self.destination.name_validation()
     }
 
-    /// "Import" — if the target `.skrib` already exists, confirm overwrite first;
-    /// otherwise import straight away.
+    /// "Import": check every field against the disk again, refuse a target that
+    /// is a project open in a window, confirm an overwrite, then start.
     pub fn import(&self, ctx: &mut EventContext) {
-        let target = build_target(&self.location.get(), &self.name.get());
-        if !target.is_empty() && Path::new(&target).exists() {
+        // The verdicts on screen were worked out when the fields last changed,
+        // and the disk may have moved on since. Both checks run, so every field
+        // shows its fresh verdict, before either answer is acted on.
+        let source_ok = self.source_check.recheck();
+        let destination_ok = self.destination.recheck();
+        if !(source_ok && destination_ok) {
+            return;
+        }
+        // Everything below acts on this one request, taken from the form now.
+        // The form is one view-model every window shares, and the overwrite
+        // question is modal in its own window only: while it waits, another
+        // window can open this importer and fill the form in afresh. OK then
+        // imports the file that was asked about and checked, never the one the
+        // form names by that time.
+        let request = self.dto(false);
+        let target = request.output_path.clone();
+        if refuse_if_open(ctx, &target) {
+            return;
+        }
+        if Path::new(&target).exists() {
             let vm = self.clone();
             let fname = Path::new(&target)
                 .file_name()
@@ -256,24 +259,32 @@ impl ImportPlumeViewModel {
                 .text(tr!(import_plume_overwrite_text(name = fname)))
                 .buttons(MessageBoxButtons::OkCancel)
                 .on_result(move |r, c| {
-                    if r.button == StandardButton::Ok {
-                        vm.run_import(c, true);
+                    // The confirmation can sit open while the writer opens that
+                    // very project in another window, so the refusal is asked
+                    // again at the last moment.
+                    if r.button == StandardButton::Ok && !refuse_if_open(c, &target) {
+                        vm.run_import(
+                            c,
+                            ImportPlumeCreatorFileDto {
+                                overwrite: true,
+                                ..request.clone()
+                            },
+                        );
                     }
                 })
                 .present(ctx);
         } else {
-            self.run_import(ctx, false);
+            self.run_import(ctx, request);
         }
     }
 
-    /// Start the conversion (a long operation). Returns immediately with the
-    /// operation id; the panel closes and a loading toast takes over, driven by
-    /// the `Origin::LongOperation(...)` events routed to `on_long_op_*`. Only a
-    /// failure to *start* is handled inline — the actual import errors arrive as
-    /// a `Failed` event.
-    fn run_import(&self, ctx: &mut EventContext, overwrite: bool) {
-        let dto = self.dto(overwrite);
-        match import_management_commands::import_plume_creator_file(&self.app_ctx, &dto) {
+    /// Start the conversion of `request` (a long operation). Returns immediately
+    /// with the operation id; the panel closes and a loading toast takes over,
+    /// driven by the `Origin::LongOperation(...)` events routed to
+    /// `on_long_op_*`. Only a failure to *start* is handled inline; the actual
+    /// import errors arrive as a `Failed` event.
+    fn run_import(&self, ctx: &mut EventContext, request: ImportPlumeCreatorFileDto) {
+        match import_management_commands::import_plume_creator_file(&self.app_ctx, &request) {
             Ok(op_id) => {
                 self.active.set(Some(op_id));
                 // Close the import panel. `dismiss_top_overlay` (not
@@ -311,10 +322,8 @@ impl ImportPlumeViewModel {
         } else {
             format!("{percent:.0}% · {message}")
         };
-        Toast::loading(tr!(import_plume_progress_title()))
-            .id(IMPORT_TOAST_ID)
+        import_toast(Toast::loading(tr!(import_plume_progress_title())))
             .body(lit!(body))
-            .broadcast()
             .action(
                 ToastAction::destructive(tr!(import_plume_cancel_import()), move |c| vm.cancel(c))
                     .closes_toast(false),
@@ -417,32 +426,7 @@ impl ImportPlumeViewModel {
                     imported = res.imported_items,
                     skipped = res.skipped_trashed
                 ));
-                // The mapper records what it could not carry over — prose on a
-                // separator, a separator with no scene to attach to, unresolved
-                // cross-links. These were collected end to end and then never
-                // read by anything, so an import quietly lost data. Surface them
-                // as a Details action, never as the headline.
-                if !res.warnings.is_empty() {
-                    let detail = res.warnings.join("\n");
-                    let count = res.warnings.len() as i64;
-                    // Carries its own id so a second import replaces this rather
-                    // than stacking another undismissable toast on top of it.
-                    ctx.show_toast(
-                        Toast::warning(tr!(import_plume_warnings(count = count)))
-                            .id(IMPORT_WARNINGS_TOAST_ID)
-                            .broadcast()
-                            .action(ToastAction::primary(
-                                tr!(import_plume_details()),
-                                move |c| {
-                                    MessageBox::warning(tr!(import_plume_warnings_title()))
-                                        .text(lit!(detail.clone()))
-                                        .buttons(MessageBoxButtons::Ok)
-                                        .present(c);
-                                },
-                            )),
-                    );
-                }
-                ctx.show_toast(Toast::success(done).id(IMPORT_TOAST_ID).broadcast().action(
+                ctx.show_toast(import_toast(Toast::success(done.clone())).action(
                     ToastAction::primary(tr!(import_plume_open_now()), move |c| {
                         // Opening the imported project *replaces* the one in this
                         // window, so this goes through the `work.open_path` intent →
@@ -454,15 +438,21 @@ impl ImportPlumeViewModel {
                         });
                     }),
                 ));
+                // The mapper records what it could not carry over: prose on a
+                // separator, a separator with no scene to attach to, unresolved
+                // cross-links. Read by nobody, that is an import that quietly lost
+                // data, so they get a notice of their own that waits for the
+                // writer and can be reopened from the notification log. Raised
+                // after the result, which it comments on, and which its spoken
+                // name repeats: a screen reader hears the notice over it.
+                WARNINGS.show(ctx, &res.warnings, &done, &self.warnings_notice);
             }
             // Completed without a recoverable result (shouldn't happen) — clear
             // the loading toast with a neutral, self-dismissing notice.
             Ok(None) | Err(_) => {
                 ctx.show_toast(
-                    Toast::info(tr!(import_plume_progress_title()))
-                        .id(IMPORT_TOAST_ID)
-                        .auto_dismiss_after(Duration::from_secs(4))
-                        .broadcast(),
+                    import_toast(Toast::info(tr!(import_plume_progress_title())))
+                        .auto_dismiss_after(Duration::from_secs(4)),
                 );
             }
         }
@@ -479,10 +469,8 @@ impl ImportPlumeViewModel {
         }
         self.active.set(None);
         ctx.show_toast(
-            Toast::info(tr!(import_plume_cancelled()))
-                .id(IMPORT_TOAST_ID)
-                .auto_dismiss_after(Duration::from_secs(4))
-                .broadcast(),
+            import_toast(Toast::info(tr!(import_plume_cancelled())))
+                .auto_dismiss_after(Duration::from_secs(4)),
         );
     }
 
@@ -513,11 +501,9 @@ impl ImportPlumeViewModel {
     fn show_error(&self, ctx: &mut EventContext, message: &str) {
         let details = message.to_string();
         ctx.show_toast(
-            Toast::error(tr!(import_plume_error_title()))
-                .id(IMPORT_TOAST_ID)
+            import_toast(Toast::error(tr!(import_plume_error_title())))
                 .body(lit!(message.to_string()))
                 .persistent()
-                .broadcast()
                 .action(ToastAction::primary(
                     tr!(import_plume_error_details()),
                     move |c| {
@@ -528,6 +514,27 @@ impl ImportPlumeViewModel {
                     },
                 )),
         );
+    }
+}
+
+/// The form's disk-checked fields, looked at again while the panel is on screen
+/// and one of them is refused (see `shared::form_checks::retry_refusals`): a
+/// source that appears or a folder created after its path was typed reopens
+/// Import without an edit.
+impl DiskChecked for ImportPlumeViewModel {
+    fn disk_verdicts(&self) -> Vec<Signal<ValidationState>> {
+        vec![self.source_validation(), self.location_validation()]
+    }
+
+    fn refused_on_disk(&self) -> bool {
+        self.source_refused() || self.destination.folder_refused()
+    }
+
+    fn retry_refused(&self) {
+        if self.source_refused() {
+            self.source_check.recheck();
+        }
+        self.destination.retry_refused_folder();
     }
 }
 
@@ -546,23 +553,6 @@ mod tests {
         );
         assert_eq!(output_stem("/books/PLAIN.PLUME"), "PLAIN");
         assert_eq!(output_stem("nodir.plume"), "nodir");
-    }
-
-    #[test]
-    fn build_target_appends_skrib_once() {
-        assert_eq!(
-            build_target("/books", "Le Visiteur"),
-            "/books/Le Visiteur.skrib"
-        );
-        assert_eq!(
-            build_target("/books/", "Le Visiteur"),
-            "/books/Le Visiteur.skrib"
-        );
-        assert_eq!(
-            build_target("/books", "Le Visiteur.skrib"),
-            "/books/Le Visiteur.skrib"
-        );
-        assert_eq!(build_target("/books", "   "), "");
     }
 
     #[test]
@@ -604,5 +594,491 @@ mod tests {
         assert_eq!(vm.dto(false).output_path, "/out/a.skrib");
         assert!(!vm.dto(false).overwrite);
         assert!(vm.dto(true).overwrite);
+    }
+
+    /// A form filled in with a stand-in source file and `<dir>/novel.skrib`.
+    /// The source only has to pass the form's own check (an existing file); the
+    /// tests below never let an import start.
+    fn filled(app_ctx: &Rc<AppContext>, dir: &std::path::Path) -> ImportPlumeViewModel {
+        let source = dir.join("Le Visiteur.plume");
+        std::fs::write(&source, b"PK").unwrap();
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location().set(dir.to_string_lossy().into_owned());
+        vm.name().set("novel".into());
+        vm
+    }
+
+    /// Reading the form, as its fields and its Import button do on every frame,
+    /// never touches the disk. Before, the folder check wrote and deleted a
+    /// probe file on each read.
+    #[test]
+    fn reading_the_form_never_touches_the_disk() {
+        let dir = tempfile::tempdir().unwrap();
+        let vm = filled(&Rc::new(AppContext::new()), dir.path());
+        let location = vm.location_validation();
+        let source = vm.source_validation();
+        let can_import = vm.can_import();
+        assert!(matches!(location.get(), ValidationState::None));
+        assert!(can_import.get());
+
+        std::fs::remove_dir_all(dir.path()).unwrap();
+        for _ in 0..50 {
+            assert!(matches!(location.get(), ValidationState::None));
+            assert!(matches!(source.get(), ValidationState::None));
+            assert!(can_import.get());
+        }
+
+        // Typing is what reruns a check.
+        vm.source().set(vm.source().get());
+        assert!(matches!(source.get(), ValidationState::Error(_)));
+        assert!(!can_import.get());
+    }
+
+    /// Import checks the disk again before anything starts, field by field,
+    /// and each field shows its fresh verdict. The verdicts on screen were
+    /// worked out when the fields last changed, so a folder or a source that
+    /// has gone since is only noticed here.
+    #[test]
+    fn import_rechecks_the_disk_first() {
+        use crate::test_support::{IsolatedOpenRegistry, drain_dialog_titles, press};
+
+        let _registry = IsolatedOpenRegistry::new();
+        let sources = tempfile::tempdir().unwrap();
+        let destination = tempfile::tempdir().unwrap();
+        let source = sources.path().join("Le Visiteur.plume");
+        std::fs::write(&source, b"PK").unwrap();
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location()
+            .set(destination.path().to_string_lossy().into_owned());
+        vm.name().set("novel".into());
+        assert!(vm.can_import().get());
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+
+        // The destination folder goes while the dialog is open.
+        std::fs::remove_dir(destination.path()).unwrap();
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(matches!(
+            vm.location_validation().get(),
+            ValidationState::Error(_)
+        ));
+        assert!(drain_dialog_titles(&mut tree).is_empty());
+
+        // The folder is back, and now the source goes.
+        std::fs::create_dir(destination.path()).unwrap();
+        std::fs::remove_file(&source).unwrap();
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(matches!(
+            vm.source_validation().get(),
+            ValidationState::Error(_)
+        ));
+        assert!(
+            matches!(vm.location_validation().get(), ValidationState::None),
+            "the folder was looked at again too"
+        );
+        assert!(drain_dialog_titles(&mut tree).is_empty());
+    }
+
+    /// The project the import would replace is open in a window of this
+    /// process: refused before the overwrite question, and nothing starts.
+    #[test]
+    fn an_import_over_a_project_open_here_is_refused() {
+        use crate::sessions::{WorkRegistry, WorkSession};
+        use crate::test_support::{IsolatedOpenRegistry, drain_dialog_titles, press};
+        use std::any::{Any, TypeId};
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("novel.skrib");
+        std::fs::write(&target, b"PK").unwrap();
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = filled(&app_ctx, dir.path());
+
+        let works = WorkRegistry::new();
+        let session = WorkSession::for_test();
+        // Spelled differently from the form's target on purpose: the check
+        // compares canonical paths, not strings.
+        session
+            .single_work_info
+            .file_name()
+            .set(Some(format!("{}/./novel.skrib", dir.path().display())));
+        works.register(3, session);
+        let state: std::collections::HashMap<TypeId, Box<dyn Any>> = [(
+            TypeId::of::<WorkRegistry>(),
+            Box::new(works) as Box<dyn Any>,
+        )]
+        .into();
+        let mut tree = crate::test_support::tree_with_app_state(&app_ctx, state);
+
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+
+        assert_eq!(
+            drain_dialog_titles(&mut tree),
+            vec![tr!(import_target_open_title()).resolve_now()],
+            "the refusal, not the overwrite confirmation"
+        );
+        assert!(vm.active.get().is_none(), "nothing may start");
+        assert_eq!(std::fs::read(&target).unwrap(), b"PK");
+    }
+
+    /// The overwrite question is modal in its own window only, and the form is
+    /// one view-model every window shares: while the question waits, another
+    /// window can open this importer and fill the form in afresh, even with the
+    /// name of a project open in a window. OK imports the file that was asked
+    /// about and checked, never the one the form names by then.
+    #[test]
+    fn answering_the_overwrite_question_imports_what_was_asked_about() {
+        use crate::sessions::{WorkRegistry, WorkSession};
+        use crate::test_support::{IsolatedOpenRegistry, click, drain_dialog_titles, press};
+        use std::any::{Any, TypeId};
+        use std::time::Instant;
+        use teksilo::core::ModalContent;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let source = lonely_plume(dir.path());
+        let asked = dir.path().join("first.skrib");
+        let open = dir.path().join("open.skrib");
+        std::fs::write(&asked, b"PK").unwrap();
+        std::fs::write(&open, b"PK").unwrap();
+        let app_ctx = Rc::new(AppContext::new());
+        let works = WorkRegistry::new();
+        let session = WorkSession::for_test();
+        session
+            .single_work_info
+            .file_name()
+            .set(Some(open.to_string_lossy().into_owned()));
+        works.register(3, session);
+        let state: std::collections::HashMap<TypeId, Box<dyn Any>> = [(
+            TypeId::of::<WorkRegistry>(),
+            Box::new(works) as Box<dyn Any>,
+        )]
+        .into();
+        let mut tree = crate::test_support::tree_with_app_state(&app_ctx, state);
+
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let fill = |name: &str| {
+            vm.source().set(source.to_string_lossy().into_owned());
+            vm.location().set(dir.path().to_string_lossy().into_owned());
+            vm.name().set(name.into());
+        };
+        fill("first");
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        let request = tree
+            .drain_pending_modal_requests()
+            .pop()
+            .expect("an existing target is asked about first")
+            .request;
+        assert_eq!(
+            request.title,
+            Some(tr!(import_plume_overwrite_title()).resolve_now())
+        );
+
+        // Meanwhile, another window opens the importer and fills it in again.
+        vm.reset_form();
+        fill("open");
+
+        let ModalContent::Deferred(builder) = request.content else {
+            panic!("a MessageBox presents deferred content");
+        };
+        builder(&mut tree);
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+        let ok = tree
+            .find_by_label(&StandardButton::Ok.default_label().resolve_now())
+            .expect("the question offers OK");
+        click(&mut tree, ok);
+        assert!(
+            drain_dialog_titles(&mut tree).is_empty(),
+            "the file asked about is open nowhere"
+        );
+
+        let op_id = vm.active.get().expect("the confirmed import started");
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
+            assert!(Instant::now() < deadline, "the import never finished");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert_eq!(
+            std::fs::read(&open).unwrap(),
+            b"PK",
+            "the project open in a window is untouched"
+        );
+        assert_ne!(
+            std::fs::read(&asked).unwrap(),
+            b"PK",
+            "the file asked about holds the import"
+        );
+    }
+
+    /// A Plume project with a chapter that holds nothing but a separator, which
+    /// the importer has to drop and says so: an import that always has one
+    /// warning to report.
+    fn lonely_plume(dir: &std::path::Path) -> PathBuf {
+        use std::io::Write;
+        let source = dir.join("Lonely.plume");
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&source).unwrap());
+        zip.start_file("tree", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(
+            br#"<!DOCTYPE plume-tree><plume-tree version="0.5" projectName="Lonely">
+                <book number="1" name="Book">
+                  <chapter number="2" name="Only a break">
+                    <separator number="10001" name="* * *"/>
+                  </chapter>
+                </book>
+              </plume-tree>"#,
+        )
+        .unwrap();
+        zip.finish().unwrap();
+        source
+    }
+
+    /// A tree whose app state holds a toast registry filing into an in-memory
+    /// notification archive, as the running app's does.
+    fn tree_with_archive(
+        app_ctx: &Rc<AppContext>,
+    ) -> (
+        teksilo::core::widget_tree::WidgetTree,
+        teksilo::widgets::ToastRegistry,
+        Rc<teksilo::widgets::NotificationArchiveModel>,
+    ) {
+        use std::any::{Any, TypeId};
+        use teksilo::widgets::{NotificationArchiveModel, ToastInstallOptions, ToastRegistry};
+        let archive = Rc::new(NotificationArchiveModel::in_memory());
+        let toasts = ToastRegistry::with_archive(
+            ToastInstallOptions {
+                archive: None,
+                ..ToastInstallOptions::default()
+            },
+            archive.clone(),
+        );
+        let state: std::collections::HashMap<TypeId, Box<dyn Any>> = [(
+            TypeId::of::<ToastRegistry>(),
+            Box::new(toasts.clone()) as Box<dyn Any>,
+        )]
+        .into();
+        let tree = crate::test_support::tree_with_app_state(app_ctx, state);
+        (tree, toasts, archive)
+    }
+
+    /// Every row of `archive`, oldest first.
+    fn archived(
+        archive: &teksilo::widgets::NotificationArchiveModel,
+    ) -> Vec<teksilo::widgets::NotificationEntry> {
+        (0..archive.entries().len())
+            .filter_map(|i| archive.entries().with_item(i, |e| e.clone()))
+            .collect()
+    }
+
+    /// Press Import on a filled form, wait for the long operation, and deliver
+    /// its completion as the app's wiring would.
+    fn import_to_completion(
+        tree: &mut teksilo::core::widget_tree::WidgetTree,
+        app_ctx: &Rc<AppContext>,
+        vm: &ImportPlumeViewModel,
+    ) {
+        use crate::test_support::press;
+        use frontend::common::event::{Event, LongOperationEvent, Origin};
+        use std::time::Instant;
+
+        let importing = vm.clone();
+        press(tree, move |c| importing.import(c));
+        let op_id = vm.active.get().expect("the import started");
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while long_operation_commands::is_operation_finished(app_ctx, &op_id) != Some(true) {
+            assert!(Instant::now() < deadline, "the import never finished");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let completed = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Completed),
+            ids: Vec::new(),
+            data: Some(format!(r#"{{"id":"{op_id}"}}"#)),
+        };
+        let finishing = vm.clone();
+        press(tree, move |c| finishing.on_long_op_completed(c, &completed));
+    }
+
+    /// End to end: a real import of a Plume project the importer has to report
+    /// on. The warning arrives as its own notice, archived with the whole list
+    /// and a Details action the notification log can replay (the notice's own
+    /// lifetime is pinned in `shared::import_warnings`).
+    #[test]
+    fn a_completed_import_files_its_warnings_where_they_can_be_reopened() {
+        use crate::test_support::IsolatedOpenRegistry;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let source = lonely_plume(dir.path());
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location().set(dir.path().to_string_lossy().into_owned());
+        vm.name().set("novel".into());
+        let (mut tree, _toasts, archive) = tree_with_archive(&app_ctx);
+
+        import_to_completion(&mut tree, &app_ctx, &vm);
+
+        let notice = archived(&archive)
+            .into_iter()
+            .find(|e| {
+                e.actions
+                    .iter()
+                    .any(|a| a.intent_name.as_deref() == Some(WARNINGS.action))
+            })
+            .expect("the warnings notice is archived with a replayable Details");
+        let body = notice.body.unwrap_or_default();
+        assert!(body.contains("has no scenes"), "{body}");
+        assert!(
+            dir.path().join("novel.skrib").exists(),
+            "and the import landed"
+        );
+    }
+
+    /// A writer importing one project after another, each with something to
+    /// report. Every list stays in the log, but only the latest notice stays on
+    /// screen: notices that wait for the writer would otherwise fill the corner
+    /// until a later import's own result had no room left and was dropped
+    /// unseen and unlogged.
+    #[test]
+    fn earlier_notices_never_crowd_out_an_import_result() {
+        use crate::test_support::IsolatedOpenRegistry;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let source = lonely_plume(dir.path());
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location().set(dir.path().to_string_lossy().into_owned());
+        let (mut tree, toasts, archive) = tree_with_archive(&app_ctx);
+
+        // One more import than the corner has room for.
+        for round in 0..6 {
+            vm.name().set(format!("novel-{round}"));
+            import_to_completion(&mut tree, &app_ctx, &vm);
+        }
+
+        let rows = archived(&archive);
+        let notices = rows
+            .iter()
+            .filter(|e| {
+                e.actions
+                    .iter()
+                    .any(|a| a.intent_name.as_deref() == Some(WARNINGS.action))
+            })
+            .count();
+        assert_eq!(notices, 6, "every import's list is in the log");
+        // The log merges a re-raised id into its first row, updating the title
+        // and body only, so the title is what shows which state was admitted
+        // last.
+        let progress = tr!(import_plume_progress_title()).resolve_now();
+        let result = rows
+            .iter()
+            .find(|e| e.dedup_id.as_deref() == Some(IMPORT_TOAST_ID))
+            .expect("the import's own toast is in the log");
+        assert_ne!(
+            result.title, progress,
+            "the last import's result reached the writer, not only its progress toast"
+        );
+        assert_eq!(
+            toasts.live_count(),
+            2,
+            "on screen: the last result and the last notice"
+        );
+    }
+
+    /// A failure is the one thing an import must always get in front of the
+    /// writer, however many other messages are already up: dropped for want of
+    /// room, it would be reported nowhere, not even in the log.
+    #[test]
+    fn a_failure_reaches_the_writer_however_full_the_corner() {
+        use crate::test_support::press;
+        use teksilo::core::styles::BannerSeverity;
+
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let (mut tree, _toasts, archive) = tree_with_archive(&app_ctx);
+        press(&mut tree, |c| {
+            for i in 0..5 {
+                c.show_toast(
+                    Toast::info(lit!(format!("Something else {i}")))
+                        .id(format!("elsewhere.{i}"))
+                        .broadcast(),
+                );
+            }
+        });
+
+        let failing = vm.clone();
+        press(&mut tree, move |c| {
+            failing.show_error(c, "No space left on device")
+        });
+
+        let error = archived(&archive)
+            .into_iter()
+            .find(|e| e.dedup_id.as_deref() == Some(IMPORT_TOAST_ID))
+            .expect("the failure was admitted, so it is in the log");
+        assert_eq!(error.severity, BannerSeverity::Error);
+        assert_eq!(error.body.as_deref(), Some("No space left on device"));
+    }
+
+    /// The overwrite question can sit open while the writer opens that very
+    /// project in another window. Answering it is the last moment before the
+    /// file is replaced, so the refusal is asked again there.
+    #[test]
+    fn a_project_opened_while_the_overwrite_question_waits_is_refused() {
+        use crate::shell::open_registry;
+        use crate::test_support::{IsolatedOpenRegistry, click, drain_dialog_titles, press};
+        use teksilo::core::ModalContent;
+        use teksilo::widgets::StandardButton;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("novel.skrib");
+        std::fs::write(&target, b"PK").unwrap();
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = filled(&app_ctx, dir.path());
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        let request = tree
+            .drain_pending_modal_requests()
+            .pop()
+            .expect("an existing target is asked about first")
+            .request;
+        assert_eq!(
+            request.title,
+            Some(tr!(import_plume_overwrite_title()).resolve_now())
+        );
+
+        // Meanwhile, another window opens the project.
+        open_registry::claim(&target.to_string_lossy(), "Novel");
+
+        let ModalContent::Deferred(builder) = request.content else {
+            panic!("a MessageBox presents deferred content");
+        };
+        builder(&mut tree);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 600.0));
+        let ok = tree
+            .find_by_label(&StandardButton::Ok.default_label().resolve_now())
+            .expect("the question offers OK");
+        click(&mut tree, ok);
+        open_registry::release(&target.to_string_lossy());
+
+        assert_eq!(
+            drain_dialog_titles(&mut tree),
+            vec![tr!(import_target_open_title()).resolve_now()],
+            "OK is answered with the refusal"
+        );
+        assert!(vm.active.get().is_none(), "nothing may start");
+        assert_eq!(std::fs::read(&target).unwrap(), b"PK");
     }
 }

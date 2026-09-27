@@ -80,6 +80,7 @@ use teksilo::widgets::{
 use frontend::AppContext;
 
 use crate::new_work::{NewWorkPurpose, NewWorkViewModel};
+use crate::shared::form_checks::{RETRY_REFUSED_AFTER, retry_refusals};
 
 /// The card size. Wider and slightly shorter than the old single-column form:
 /// the indicator strip and footer take the height the scrolling form used to,
@@ -709,6 +710,11 @@ impl Widget for NewWorkPanel {
             .app_state::<crate::models::FolderMemoryService>()
             .and_then(|svc| svc.last(crate::models::FolderPurpose::NewProjectLocation));
 
+        // The Location's verdict is worked out per edit, so a refusal would
+        // outlive its cause: look at a refused folder again while the wizard is
+        // up, and creating it outside the app reopens Next.
+        retry_refusals(ctx, self.vm.clone(), RETRY_REFUSED_AFTER);
+
         let details_vm = self.vm.clone();
         let language_vm = self.vm.clone();
         let template_vm = self.vm.clone();
@@ -960,6 +966,43 @@ mod tests {
             // one of them.
             ctrl.back();
             assert_eq!(ctrl.current(), 1);
+        }
+    }
+
+    /// The writer types a Location that does not exist yet, then creates the
+    /// folder elsewhere and comes back. While the wizard is up, a refused folder
+    /// is looked at again, so Next reopens without the field being edited.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn a_folder_created_after_it_was_typed_reopens_next() {
+        use std::time::{Duration, Instant};
+
+        let base = tempfile::tempdir().unwrap();
+        let folder = base.path().join("Books");
+        let panel = NewWorkPanel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingStarters::default(),
+        );
+        let vm = panel.vm.clone();
+        vm.name().set("Tidewrack".into());
+        vm.location().set(folder.to_string_lossy().into_owned());
+        let gate = vm.can_create();
+
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(Box::new(panel));
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+        assert!(!gate.get(), "a missing folder closes Next");
+
+        std::fs::create_dir(&folder).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !gate.get() {
+            assert!(
+                Instant::now() < deadline,
+                "Next never reopened: the refusal was never looked at again"
+            );
+            std::thread::sleep(Duration::from_millis(50));
+            tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         }
     }
 }

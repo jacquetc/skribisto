@@ -28,8 +28,10 @@ use teksilo::core::event_source::{
 };
 use teksilo::core::widget_id::WidgetId;
 use teksilo::core::widget_tree::WidgetTree;
+use teksilo::i18n::lit;
+use teksilo::prelude::{EventContext, SizeProposal};
 use teksilo::settings::SettingsStore;
-use teksilo::widgets::ToastRegistry;
+use teksilo::widgets::{Button, ToastRegistry};
 
 use frontend::{AppContext, EventHubClient};
 
@@ -99,6 +101,50 @@ pub(crate) fn click(tree: &mut WidgetTree, id: WidgetId) {
         target_node: widget_id_to_node_id(id),
         data: None,
     });
+}
+
+/// Run `f` with a real `EventContext`, the way a button press would: a `Button`
+/// wired to it is added to `tree` as a root of its own and [`click`]ed, with a
+/// layout pass on either side so whatever `f` raised (a toast, a modal request)
+/// has been built by the time this returns. For view-model methods that need
+/// the context but do not call for a widget of their own to test.
+pub(crate) fn press(tree: &mut WidgetTree, f: impl Fn(&mut EventContext) + 'static) {
+    let button = tree.add(Button::new(lit!("press")).on_activate_fn(f));
+    tree.layout(SizeProposal::exact(900.0, 600.0));
+    click(tree, button);
+    tree.layout(SizeProposal::exact(900.0, 600.0));
+}
+
+/// The titles of the dialogs presented since the last drain, taking them off the
+/// queue. A headless tree has no window manager to present them, so they wait
+/// there, and the title is what tells one dialog from another.
+pub(crate) fn drain_dialog_titles(tree: &mut WidgetTree) -> Vec<String> {
+    tree.drain_pending_modal_requests()
+        .into_iter()
+        .filter_map(|queued| queued.request.title)
+        .collect()
+}
+
+/// Points the open registry at a directory of the test's own for as long as
+/// this lives, so code that consults it (the import dialogs' refusal to write
+/// over an open project) neither reads nor reaps the machine's real lock files.
+/// The override is per thread, like the test itself.
+pub(crate) struct IsolatedOpenRegistry {
+    _dir: tempfile::TempDir,
+}
+
+impl IsolatedOpenRegistry {
+    pub(crate) fn new() -> Self {
+        let dir = tempfile::tempdir().expect("a temporary open-registry directory");
+        crate::shell::open_registry::set_dir_override(Some(dir.path().to_path_buf()));
+        Self { _dir: dir }
+    }
+}
+
+impl Drop for IsolatedOpenRegistry {
+    fn drop(&mut self) {
+        crate::shell::open_registry::set_dir_override(None);
+    }
 }
 
 /// As [`tree_with_events`], plus whatever `state` the caller supplies: the general

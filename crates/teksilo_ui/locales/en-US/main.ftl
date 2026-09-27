@@ -1110,6 +1110,17 @@ import-manuskript-warnings-title = About this import
 import-manuskript-error-title = Could not import the project
 import-manuskript-error-details = Details
 
+## Project import, shared by the Plume Creator and Manuskript dialogs
+# The chosen destination is a project open in a window, here or in another
+# running copy of Skribisto. The import is refused rather than written over it.
+import-target-open-title = This project is open
+import-target-open-text = “{ $name }” is open in Skribisto. Importing over it would replace the project you are working on, and your next save would write that project back over the import. Choose another file name, or close the project first.
+# Spoken by a screen reader when an import's warnings notice appears, never shown.
+# $result is the import's own result line ("Imported 12 items."), $notice the
+# notice's title ("2 things could not be imported exactly"). The notice is read out
+# over the result, so it says both.
+import-warnings-announcement = { $result } { $notice }.
+
 ## Export dialog
 export-title = Export
 export-close = Close

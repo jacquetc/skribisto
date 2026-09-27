@@ -19,6 +19,10 @@ Le panneau demande :
 Rien n’est écrit avant que vous n’appuyiez sur *Importer*. L’import affiche sa progression, et
 *Annuler* ne laisse rien derrière lui.
 
+Le nom de fichier ne peut pas être celui d’un projet ouvert dans Skribisto, dans cette fenêtre ou
+dans une autre. Importer par-dessus remplacerait le projet sur lequel vous travaillez : l’import
+refuse donc, et dit pourquoi. Choisissez un autre nom, ou fermez d’abord ce projet.
+
 ## Désigner un projet Manuskript
 
 Manuskript enregistre un projet sous l’une ou l’autre de ces formes, et les deux sont acceptées :
@@ -98,8 +102,12 @@ indiquez le vôtre dans *Paramètres ▸ Œuvre : <projet> ▸ Auteur*.
 
 Un message propose *Ouvrir maintenant*, qui ouvre le nouveau projet.
 
-Les remarques de l’import arrivent dans leur propre message, en clair derrière un bouton
-*Détails*. Il nomme ce qui n’a pas pu être repris à l’identique.
+Les remarques de l’import arrivent dans leur propre message, en clair. Ses premières lignes
+s’affichent dans le message même, et *Détails* ouvre la liste complète. Il nomme exactement ce qui
+n’a pas pu être repris à l’identique, et reste affiché jusqu’à ce que vous le fermiez, ou qu’un
+import suivant apporte ses propres remarques. Dans les deux cas, il figure encore sous la cloche
+de la barre d’état et dans *Paramètres ▸ Apparence et comportement ▸ Notifications*, où *Détails*
+rouvre la liste.
 
 Le nouveau projet est un unique fichier `.skrib`. Si vous gardiez l’ancien sous forme de dossier
 pour la gestion de versions, utilisez ensuite *Œuvre ▸ Enregistrer comme dossier…*. Voir

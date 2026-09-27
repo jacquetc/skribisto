@@ -18,6 +18,10 @@ The panel asks for:
 Nothing is written until you press *Import*. The import shows its progress, and *Cancel* leaves
 nothing behind.
 
+The file name cannot be a project that is open in Skribisto, in this window or any other.
+Importing over it would replace the project you are working on, so the import refuses and says
+why. Choose another name, or close that project first.
+
 ## Pointing at a Manuskript project
 
 Manuskript saves a project in either of these shapes, and both are accepted:
@@ -92,8 +96,11 @@ keep, before importing. Plume carries no author name, so set yours in *Settings 
 
 A message offers *Open now*, which opens the new project.
 
-The import's notes come in their own message, in plain language behind a *Details* button. It
-names what could not be carried across exactly.
+The import's notes come in their own message, in plain language. Its first lines show in the
+message itself, and *Details* opens the whole list. It names exactly what could not be carried
+across, and it stays until you close it, or until a later import brings notes of its own. Either
+way it is still listed under the bell in the status bar and in *Settings ▸ Appearance & Behavior ▸
+Notifications*, where *Details* opens the list again.
 
 The new project is a single `.skrib` file. If you kept your old one as a folder for version
 control, use *Work ▸ Save as folder…* afterwards. See

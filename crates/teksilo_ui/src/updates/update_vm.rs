@@ -30,9 +30,11 @@
 //!   `route_visible`, and a `Broadcast` entry is visible at every scope. Opening
 //!   the bell to look at an export notice and pressing Escape would consume the
 //!   update row.
-//! - An archived action is inert in this application: teksilo replays
-//!   `intent_name` only through an `on_action_invoked` hook, and nothing here
-//!   wires one (`settings/panes/notifications.rs` says so outright).
+//! - An archived action is inert unless the application maps its name back to
+//!   what it did: teksilo replays `intent_name` only through an
+//!   `on_action_invoked` hook, and the one both logs install here
+//!   (`shared::import_warnings::replay_archived_action`) knows an import's
+//!   warnings and nothing else.
 //!
 //! All three come from the same mismatch. The archive is a log of *events*, and
 //! "a newer version exists" is not an event, it is a standing fact. A fact

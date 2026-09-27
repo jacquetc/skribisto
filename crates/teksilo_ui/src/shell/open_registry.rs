@@ -186,9 +186,10 @@ pub fn dir() -> Option<PathBuf> {
 }
 
 /// Point [`dir`] at a temp directory for the duration of a test (this thread
-/// only).
+/// only). Crate-visible so a test elsewhere that consults the registry (the
+/// import dialogs' open-project refusal) never reads or reaps the real one.
 #[cfg(test)]
-fn set_dir_override(path: Option<PathBuf>) {
+pub(crate) fn set_dir_override(path: Option<PathBuf>) {
     DIR_OVERRIDE.with(|d| *d.borrow_mut() = path);
 }
 

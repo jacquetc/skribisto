@@ -27,6 +27,7 @@ use teksilo::widgets::{
 };
 
 use crate::import_manuskript::ImportManuskriptViewModel;
+use crate::shared::form_checks::{RETRY_REFUSED_AFTER, retry_refusals};
 
 const CARD_W: f32 = 600.0;
 const CARD_H: f32 = 500.0;
@@ -227,6 +228,10 @@ impl Widget for ImportManuskriptPanel {
 
         let import_vm = self.vm.clone();
         let import_can = self.vm.can_import();
+        // The fields' verdicts are worked out per edit, so a refusal would
+        // outlive its cause: look at a refused source or folder again while the
+        // dialog is up, and fixing it outside the app reopens Import.
+        retry_refusals(ctx, self.vm.clone(), RETRY_REFUSED_AFTER);
 
         let root = teksu!(ctx => FixedSize {
                 width: CARD_W
@@ -334,5 +339,42 @@ mod tests {
             (CARD_W, CARD_H),
             "panel fills the card"
         );
+    }
+
+    /// The source is on a drive that is not mounted yet when the writer types
+    /// its path. While the dialog is up, a refused source is looked at again, so
+    /// Import reopens once the drive appears, without the field being edited.
+    #[test]
+    fn a_source_that_appears_after_it_was_typed_reopens_import() {
+        use std::time::{Duration, Instant};
+
+        let base = tempfile::tempdir().unwrap();
+        let source = base.path().join("Tour du monde");
+        let vm = ImportManuskriptViewModel::new(Rc::new(AppContext::new()));
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location()
+            .set(base.path().to_string_lossy().into_owned());
+        vm.name().set("novel".into());
+        let gate = vm.can_import();
+
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(Box::new(ImportManuskriptPanel::new(vm.clone())));
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+        assert!(!gate.get(), "a missing source closes Import");
+
+        std::fs::create_dir(&source).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !gate.get() {
+            assert!(
+                Instant::now() < deadline,
+                "Import never reopened: the refusal was never looked at again"
+            );
+            std::thread::sleep(Duration::from_millis(50));
+            tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+        }
+        assert!(matches!(
+            vm.source_validation().get(),
+            teksilo::widgets::ValidationState::None
+        ));
     }
 }

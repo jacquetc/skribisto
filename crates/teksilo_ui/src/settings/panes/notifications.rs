@@ -75,12 +75,12 @@ pub(in crate::settings) fn notifications_pane(
     match ctx.app_state::<Rc<NotificationArchiveModel>>().cloned() {
         Some(archive) => {
             // Unscoped: this is the settings-level manager, not a per-window
-            // bell. Action replay (`on_action_invoked`) is left unwired for now
-            // — Skribisto's toasts use live closures rather than
-            // `ToastAction::shortcut_id`, so archived actions already render as
-            // inert past-action tags (same as the status-bar bell). When a toast
-            // starts carrying a static intent name, wire the known ones here.
-            let log = NotificationLog::new(archive);
+            // bell. Replay goes through the same hook as the status-bar bell's:
+            // an import's warnings Details is archived under a name and reopens
+            // its list from here, while every other archived action is a live
+            // closure the archive could not keep, and stays an inert tag.
+            let log = NotificationLog::new(archive)
+                .on_action_invoked(crate::shared::import_warnings::replay_archived_action);
             // The log takes whatever the pane has left, floored by the shared
             // list floor. It used to declare 360 px of its own — 84% of the
             // viewport, so the page scrolled around a log that was itself
@@ -107,5 +107,93 @@ pub(in crate::settings) fn notifications_pane(
             Pane::Notifications,
             Sec::AppearanceBehaviour.icon_svg(),
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::any::{Any, TypeId};
+    use std::collections::HashMap;
+
+    use teksilo::settings::SettingsStore;
+
+    use crate::shared::import_warnings::{MANUSKRIPT, archive_holding};
+    use crate::test_support::{click, drain_dialog_titles};
+
+    struct PaneHost {
+        vm: Option<SettingsViewModel>,
+        root_child: Option<WidgetId>,
+    }
+
+    impl std::fmt::Debug for PaneHost {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("PaneHost").finish()
+        }
+    }
+
+    impl Widget for PaneHost {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let vm = self.vm.take().expect("built once");
+            let crumbs = Crumbs::new(
+                std::rc::Rc::new(crate::settings::tree_spec(false, &[])),
+                "",
+                None,
+            );
+            let body = notifications_pane(ctx, &crumbs, &vm);
+            let root = ctx.add_boxed(body);
+            self.root_child = Some(root);
+            vec![root]
+        }
+
+        fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+            self.root_child
+                .and_then(|id| ctx.child_size(id, proposal))
+                .map(LayoutResponse::from)
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        }
+
+        fn children(&self) -> Vec<WidgetId> {
+            self.root_child.into_iter().collect()
+        }
+    }
+
+    /// An import's warnings can be reopened from Settings ▸ Notifications once
+    /// their toast is gone: the page's log renders the archived Details as a
+    /// button, and pressing it opens the list again. Without the replay hook
+    /// the page installs, the same row renders Details as an inert tag.
+    #[test]
+    fn the_page_reopens_an_import_s_warnings() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let store = SettingsStore::open(dir.path().join("general.toml")).expect("settings store");
+        let archive = archive_holding(&MANUSKRIPT, &["Chapter 3 has no ID of its own.".into()]);
+        let state: HashMap<TypeId, Box<dyn Any>> = [
+            (
+                TypeId::of::<SettingsStore>(),
+                Box::new(store.clone()) as Box<dyn Any>,
+            ),
+            (
+                TypeId::of::<Rc<NotificationArchiveModel>>(),
+                Box::new(archive) as Box<dyn Any>,
+            ),
+        ]
+        .into();
+        let mut tree =
+            crate::test_support::tree_with_app_state(&Rc::new(frontend::AppContext::new()), state);
+        tree.add(PaneHost {
+            vm: Some(SettingsViewModel::new(&store)),
+            root_child: None,
+        });
+        tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 620.0));
+
+        let details = tree
+            .find_by_label(&tr!(import_manuskript_details()).resolve_now())
+            .expect("the page's log offers the archived Details as a button");
+        click(&mut tree, details);
+        assert_eq!(
+            drain_dialog_titles(&mut tree),
+            vec![tr!(import_manuskript_warnings_title()).resolve_now()],
+            "pressing it reopens the list"
+        );
     }
 }

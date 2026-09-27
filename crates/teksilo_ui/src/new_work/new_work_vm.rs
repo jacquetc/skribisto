@@ -35,13 +35,14 @@
 //! for the project an import is about to fill, which changes which questions are
 //! worth asking, not where the answers go.
 
-use std::path::Path;
 use std::rc::Rc;
 
 use crate::models::{ParatextPreset, ParatextPresetsService};
 
 use teksilo::prelude::*; // EventContext, Signal, tr!
 use teksilo::widgets::{Toast, ValidationState};
+
+use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages, folder_state};
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
@@ -229,45 +230,21 @@ fn slugify(name: &str) -> String {
     out.trim_matches(|c: char| c == '-' || c == '.').to_string()
 }
 
-/// Validate the chosen Location folder — it must exist, be a directory, and be
-/// writable (we actually create a new work there). Returns the field's inline
-/// [`ValidationState`]; `None` means valid.
-fn location_state(dir: &str) -> ValidationState {
-    let trimmed = dir.trim();
-    if trimmed.is_empty() {
-        return ValidationState::Error(tr!(new_work_location_required()));
-    }
-    let path = Path::new(trimmed);
-    if !path.exists() {
-        return ValidationState::Error(tr!(new_work_location_missing()));
-    }
-    if !path.is_dir() {
-        return ValidationState::Error(tr!(new_work_location_not_folder()));
-    }
-    if !dir_writable(path) {
-        return ValidationState::Error(tr!(new_work_location_readonly()));
-    }
-    ValidationState::None
-}
+/// The Location field's words. The folder must exist, be a directory and be
+/// writable (a new work is created there); the check itself is shared with the
+/// import dialogs and runs once per edit, never on a read (it writes a probe
+/// file, see `shared::form_checks`).
+static LOCATION: FolderMessages = FolderMessages {
+    required: || tr!(new_work_location_required()),
+    missing: || tr!(new_work_location_missing()),
+    not_folder: || tr!(new_work_location_not_folder()),
+    readonly: || tr!(new_work_location_readonly()),
+};
 
-/// True when `location_state` reports no error (used to gate "Create Work").
-fn location_ok(dir: &str) -> bool {
-    matches!(location_state(dir), ValidationState::None)
-}
-
-/// Is `dir` writable *by us*? Probe with a uniquely-named temp file (owner
-/// mode-bits alone don't say whether the current user may write), then remove
-/// it. Only ever called for a path already known to be an existing directory,
-/// so it does not run on every keystroke of a half-typed path.
-fn dir_writable(dir: &Path) -> bool {
-    let probe = dir.join(format!(".skribisto-writetest-{}", std::process::id()));
-    match std::fs::File::create(&probe) {
-        Ok(_) => {
-            let _ = std::fs::remove_file(&probe);
-            true
-        }
-        Err(_) => false,
-    }
+/// The Location field's verdict, worked out whenever `location` is set.
+fn location_check(location: &Signal<String>) -> CachedValidation {
+    let dir = location.clone();
+    CachedValidation::new(&[location], move || folder_state(&dir.get(), &LOCATION))
 }
 
 /// The user's home directory (`$HOME` / `%USERPROFILE%`), or `""` — a starting
@@ -294,6 +271,8 @@ pub struct NewWorkViewModel {
     format_idx: Signal<usize>,
     /// The containing folder chosen via the file picker.
     location: Signal<String>,
+    /// [`LOCATION`]'s verdict on `location`, cached.
+    location_check: CachedValidation,
     /// Selected default-language locale tag (`Some("en-US")`), or `None`.
     language: Signal<Option<String>>,
     /// Template segment index (`0..=4`).
@@ -425,11 +404,13 @@ impl NewWorkViewModel {
         pending_starters: crate::app::PendingStarters,
     ) -> Self {
         let (presets, preselected) = load_paratext_presets();
+        let location = Signal::new(default_location());
         Self {
             name: Signal::new(String::new()),
             author: Signal::new(String::new()),
             format_idx: Signal::new(0),
-            location: Signal::new(default_location()),
+            location_check: location_check(&location),
+            location,
             language: Signal::new(current_locale_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
@@ -502,11 +483,13 @@ impl NewWorkViewModel {
         close_presenting_window: bool,
     ) -> Self {
         let (presets, preselected) = load_paratext_presets();
+        let location = Signal::new(default_location());
         Self {
             name: Signal::new(String::new()),
             author: Signal::new(String::new()),
             format_idx: Signal::new(0),
-            location: Signal::new(default_location()),
+            location_check: location_check(&location),
+            location,
             language: Signal::new(current_locale_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
@@ -639,15 +622,15 @@ impl NewWorkViewModel {
     }
 
     /// Inline validation for the Location field — the folder must exist, be a
-    /// directory, and be writable. Recomputes only when the location changes.
+    /// directory, and be writable. Cached: worked out when the location is set,
+    /// never on a read, since the check writes a probe file into the folder.
     pub fn location_validation(&self) -> Signal<ValidationState> {
-        self.location.map(|dir| location_state(dir))
+        self.location_check.signal()
     }
 
     /// Whether the wizard may leave its first step — a non-blank name **and** a
-    /// valid location. Split into two per-field booleans so typing the name
-    /// doesn't re-probe the filesystem (the location check only reruns on a
-    /// location change).
+    /// valid location. Reads the location's cached verdict, so neither typing
+    /// the name nor painting the gate touches the filesystem.
     ///
     /// This is the Stepper's only gate: it sits on the Details step, which is
     /// where both of those fields live, so Next stays off until creation could
@@ -664,8 +647,7 @@ impl NewWorkViewModel {
             return Signal::new(true);
         }
         let name_ok = self.name.map(|n| !slugify(n).is_empty());
-        let location_ok = self.location.map(|dir| location_ok(dir));
-        name_ok.and(&location_ok)
+        name_ok.and(&self.location_check.passes())
     }
 
     /// The paratext titles the chosen preset asks for, verbatim.
@@ -788,6 +770,20 @@ impl NewWorkViewModel {
             ctx.dismiss_modal();
             return true;
         }
+        // The gate read a verdict cached when the folder was last chosen; the
+        // folder may have gone since. Checked again against the disk. A failure
+        // holds the wizard, and since the Location field saying why is on the
+        // first step while the writer is on the last, the reason is also put in
+        // front of them here, the way the other failure below is.
+        if !self.location_check.recheck() {
+            let reason = self
+                .location_check
+                .refusal()
+                .map(|reason| reason.resolve_now())
+                .unwrap_or_default();
+            ctx.show_toast(Toast::error(tr!(could_not_create_work(error = reason))));
+            return false;
+        }
         match &self.target {
             CreateTarget::InPlace(ids) => {
                 crate::app::close_outgoing_work(&self.app_ctx, ids.work_id.get());
@@ -845,6 +841,26 @@ impl NewWorkViewModel {
             }
         }
         true
+    }
+}
+
+/// The Location field, looked at again while the wizard is on screen and it is
+/// refused (see `shared::form_checks::retry_refusals`): a folder created,
+/// mounted or made writable after its path was typed reopens Next without an
+/// edit.
+impl DiskChecked for NewWorkViewModel {
+    fn disk_verdicts(&self) -> Vec<Signal<ValidationState>> {
+        vec![self.location_validation()]
+    }
+
+    fn refused_on_disk(&self) -> bool {
+        !self.location.get().trim().is_empty() && self.location_check.refuses()
+    }
+
+    fn retry_refused(&self) {
+        if self.refused_on_disk() {
+            self.location_check.recheck();
+        }
     }
 }
 
@@ -1117,6 +1133,76 @@ mod tests {
         vm.name().set("Tidewrack".into());
         vm.location().set("/nonexistent-skribisto-probe".into());
         assert!(!gate.get());
+    }
+
+    /// The Location check writes a probe file into the folder, so it runs when
+    /// the folder is chosen and never when the field or the gate is read. A
+    /// folder removed behind the open wizard is still reported as it was, and
+    /// Finish checks the disk again rather than creating into nowhere. The
+    /// writer is on the last step by then, where the Location field is not on
+    /// screen, so the refusal says why in a message of its own.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn the_location_is_checked_per_edit_and_again_at_finish() {
+        use crate::test_support::press;
+        use std::cell::Cell;
+        use teksilo::core::styles::BannerSeverity;
+        use teksilo::widgets::{NotificationArchiveModel, ToastInstallOptions, ToastRegistry};
+
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path().join("Books");
+        std::fs::create_dir(&folder).unwrap();
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingStarters::default(),
+        );
+        vm.name().set("Tidewrack".into());
+        vm.location().set(folder.to_string_lossy().into_owned());
+        let verdict = vm.location_validation();
+        let gate = vm.can_create();
+        assert!(matches!(verdict.get(), ValidationState::None));
+        assert!(gate.get());
+
+        std::fs::remove_dir(&folder).unwrap();
+        for _ in 0..50 {
+            assert!(matches!(verdict.get(), ValidationState::None));
+            assert!(gate.get());
+        }
+
+        let created = Rc::new(Cell::new(true));
+        let answer = created.clone();
+        let finishing = vm.clone();
+        let archive = Rc::new(NotificationArchiveModel::in_memory());
+        let toasts = ToastRegistry::with_archive(
+            ToastInstallOptions {
+                archive: None,
+                ..ToastInstallOptions::default()
+            },
+            archive.clone(),
+        );
+        let mut tree =
+            crate::test_support::tree_with_toast_registry(&Rc::new(AppContext::new()), &toasts);
+        press(&mut tree, move |c| answer.set(finishing.create(c)));
+        assert!(
+            !created.get(),
+            "Finish must not create into a folder that is gone"
+        );
+        assert!(matches!(verdict.get(), ValidationState::Error(_)));
+        assert!(!folder.exists(), "and nothing was created in its place");
+
+        assert_eq!(toasts.live_count(), 1, "the writer is told why");
+        let told = archive
+            .entries()
+            .with_item(0, |e| e.clone())
+            .expect("the message is in the log");
+        assert_eq!(told.severity, BannerSeverity::Error);
+        let reason = tr!(new_work_location_missing()).resolve_now();
+        assert!(
+            told.title.contains(&reason),
+            "the message names the Location's own reason: {:?}",
+            told.title
+        );
     }
 
     /// Under `mocks` that gate is off, or an untouched wizard could not be

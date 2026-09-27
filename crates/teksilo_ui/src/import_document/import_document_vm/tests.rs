@@ -957,6 +957,94 @@ fn a_real_analysis_lands_a_plan_on_the_review_step() {
     );
 }
 
+/// An analysis that fails says why, and keeps saying it: the reason waits for
+/// the writer to close it, and the notification log keeps it once they have.
+/// A toast left to its default would take the only account of what went wrong
+/// with it after ten seconds, leaving the log a bare "could not read" row.
+#[test]
+fn a_failed_analysis_keeps_its_reason() {
+    use crate::test_support::press;
+    use frontend::commands::{handling_app_lifecycle_commands, work_management_commands};
+    use frontend::common::event::{LongOperationEvent, Origin};
+    use frontend::work_management::{NewWorkDto, NewWorkTemplate};
+    use teksilo::core::styles::BannerSeverity;
+    use teksilo::widgets::{
+        Expand, NotificationArchiveModel, Spacer, ToastHost, ToastInstallOptions, ToastRegistry,
+        ZStack,
+    };
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    std::fs::write(dir.path().join("one.md"), "# One\n\nIt began.\n").unwrap();
+    let app_ctx = Rc::new(AppContext::new());
+    handling_app_lifecycle_commands::initialize_app(&app_ctx).unwrap();
+    work_management_commands::new_work(
+        &app_ctx,
+        &NewWorkDto {
+            goal_unit: Default::default(),
+            file_name: dir.path().join("p.skrib").to_string_lossy().into_owned(),
+            title: String::new(),
+            is_folder: false,
+            template_kind: NewWorkTemplate::Novel,
+            labels: vec![],
+            language: vec!["en".to_string()],
+            author_name: String::new(),
+            chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
+        },
+    )
+    .unwrap();
+    let work_id = frontend::commands::work_commands::get_all_work(&app_ctx)
+        .unwrap()
+        .first()
+        .map(|w| w.id)
+        .expect("the work the test just created");
+    let ids = AppIds::default();
+    ids.work_id.set(Some(work_id));
+    let vm = ImportDocumentViewModel::new(app_ctx.clone(), ids);
+    vm.add_files([dir.path().join("one.md")]);
+    let op = vm.start_analysis().expect("the analysis starts");
+
+    // A window with a toast corner filing into an archive, as the app has.
+    let options = ToastInstallOptions {
+        archive: None,
+        ..ToastInstallOptions::default()
+    };
+    let archive = Rc::new(NotificationArchiveModel::in_memory());
+    let registry = ToastRegistry::with_archive(options.clone(), archive.clone());
+    let mut tree = crate::test_support::tree_with_toast_registry(&app_ctx, &registry);
+    let page = tree.add(Expand::new().child(Spacer::new()));
+    let host = tree.add(ToastHost::new(registry.clone(), options));
+    tree.add(ZStack::new().child(page).child(host));
+    let wake = tree.wake_at_handle();
+
+    let detail = "one.md: the file could not be read (permission denied)";
+    let failed = Event {
+        origin: Origin::LongOperation(LongOperationEvent::Failed),
+        ids: Vec::new(),
+        data: Some(format!(r#"{{"id":"{op}","error":"{detail}"}}"#)),
+    };
+    let failing = vm.clone();
+    press(&mut tree, move |c| failing.on_long_op_failed(c, &failed));
+
+    assert_eq!(registry.live_count(), 1, "the failure is on screen");
+    assert!(
+        wake.get().is_none(),
+        "a timed toast arms a wake deadline to dismiss itself; the reason \
+         must wait for the writer"
+    );
+    let row = archive
+        .entries()
+        .with_item(0, |e| e.clone())
+        .expect("the failure is in the log");
+    assert_eq!(row.severity, BannerSeverity::Error);
+    assert_eq!(
+        row.body.as_deref(),
+        Some(detail),
+        "the log keeps the reason itself"
+    );
+}
+
 /// Build a `.skrib` holding an imported `.docx`, comments and all, at
 /// `$SKRIBISTO_IMPORT_FIXTURE_OUT`.
 ///
