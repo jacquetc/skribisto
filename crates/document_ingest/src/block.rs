@@ -63,19 +63,20 @@ pub enum SourceBlock {
     ///
     /// Conversion is per-format and therefore a scanner's responsibility: Markdown
     /// goes through `skrib_format::markdown_to_djot_and_text`, and the OOXML/ODF
-    /// scanners build HTML from their styled runs and go through
-    /// `skrib_format::html_to_djot_and_text`, since `text-document` has no DOCX or
-    /// ODT reader.
+    /// scanners write Djot from their styled runs in `sources::rich`, proving it
+    /// against `skrib_format::read_djot`, since `text-document` has no DOCX or ODT
+    /// reader.
     ///
     /// **`text` is not a convenience copy.** It is the coordinate space an
     /// annotation's quote and *hint* offsets are measured in, and it comes from the
     /// *same parse* as `djot` so the two cannot describe different content. Deriving
     /// it later would mean parsing the Djot a second time and hoping the answer
-    /// matched. It is the plain-text *export* (no `U+FFFC` table anchors), which is
-    /// fine for a hint: before anything is stored, `plan::anchor_comments` proves
-    /// every quote against the row's **addressable** text
-    /// (`skrib_format::djot_plain_text`, anchors counted) and re-captures the anchor
-    /// there, so a hint that drifts past a table is corrected by the quote match.
+    /// matched. For DOCX and ODT it is the **addressable** text (a table's `U+FFFC`
+    /// anchor counted), the space the row is proved in; Markdown still hands over the
+    /// plain-text export, which is fine for a hint: before anything is stored,
+    /// `plan::assemble_row` proves every quote against the row's addressable text
+    /// (`skrib_format::djot_plain_text`) and re-captures the anchor there, so a hint
+    /// that drifts past a table is corrected by the quote match.
     Prose { djot: String, text: String },
     /// A scene break the scanner recognised. Carrying the tier here — rather
     /// than the raw glyph — is what keeps `skribisto_model`'s vocabulary the one
@@ -146,9 +147,13 @@ pub enum AnnotationKind {
     /// A whole paragraph. Both Word and LibreOffice allow a comment with no range
     /// — the marker simply sits in a paragraph — and this is what that becomes.
     Paragraph,
-    /// The row as a whole, carrying no text anchor. Where a comment on something
-    /// that is not prose lands: a heading becomes a row's *title*, and a title has
-    /// no `Content` for a quote to point into.
+    /// The row as a whole, carrying no text anchor.
+    ///
+    /// No scanner in this crate produces it: neither DOCX nor ODF can express a comment
+    /// on the whole document, and the comment panel has nowhere to open one. A comment
+    /// that cannot keep its words lands on the nearest paragraph instead. The planner
+    /// still accepts it from a scanner outside this crate, and turns it into a comment on
+    /// the paragraph its block names.
     Document,
 }
 
@@ -217,6 +222,15 @@ pub struct SourceAnnotation {
     /// in what order, so it can rebase these exactly — whereas a document-absolute
     /// offset would have to be corrected for every block the row did *not* take.
     pub anchor: Anchor,
+    /// Whether the scanner could not keep the comment on the words it marked and pointed it
+    /// at the nearest paragraph instead: its paragraph produced nothing, its range could not
+    /// be proved, or the file gave no position for it.
+    ///
+    /// A flag rather than a diagnostic, because the scanner does not know where the comment
+    /// finally lands. The planner does, and reports each comment once: as
+    /// [`crate::ImportDiagnostic::CommentUnanchored`] when it is kept on a paragraph, or as
+    /// [`crate::ImportDiagnostic::CommentNotCarried`] when no stored prose can hold it.
+    pub unanchored: bool,
     /// See [`SourceAnnotationReply::uid`] — the same recognition mechanism, for the
     /// thread's opening comment rather than one of its replies.
     pub uid: Option<uuid::Uuid>,

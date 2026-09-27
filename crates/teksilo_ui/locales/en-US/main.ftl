@@ -2243,9 +2243,26 @@ import-diagnostic-field-flattened = { $count ->
 }
 import-diagnostic-unknown-style-level = { $path } uses the style “{ $detail }”, which looks like a heading but names no level. Those paragraphs are imported as prose rather than guessed at a depth.
 import-diagnostic-comment-unanchored = The comment “{ $detail }” in { $path } could not be attached to the words it was about. It is kept on its item, where you can move it.
+# The sibling of the line above, for the one case where there is no item to keep the
+# comment on: the file brought no text at all, or only headings.
+import-diagnostic-comment-not-carried = The comment “{ $detail }” in { $path } is not imported, because nothing in the file arrives as text it could be kept on. Copy it from the file if you need it.
 import-diagnostic-comment-replies-flattened = { $count ->
     [one] { $count } reply in { $path } named a comment that is not in the file, so it arrives as a comment of its own.
    *[other] { $count } replies in { $path } named a comment that is not in the file, so they arrive as comments of their own.
+}
+import-diagnostic-prose-not-verbatim = { $count ->
+    [one] { $count } paragraph in { $path } could not be brought over with its formatting exactly as written, so it arrives as plain text. Compare it with the original.
+   *[other] { $count } paragraphs in { $path } could not be brought over with their formatting exactly as written, so they arrive as plain text. Compare them with the original.
+}
+import-diagnostic-styled-spaces-not-carried = { $count ->
+    [one] In { $path }, { $count } stretch of blank space was underlined or struck through, a line left to fill in for example. Skribisto keeps neither line on spaces alone, so it arrives as plain spaces, or not at all where it starts or ends a paragraph.
+   *[other] In { $path }, { $count } stretches of blank space were underlined or struck through, lines left to fill in for example. Skribisto keeps neither line on spaces alone, so they arrive as plain spaces, or not at all where they start or end a paragraph.
+}
+# List items nested deeper than the importer keeps, placed at the deepest level it keeps.
+# $count is how many items; $limit is that deepest level, a number.
+import-diagnostic-list-nesting-flattened = { $count ->
+    [one] { $count } list item in { $path } was nested more than { $limit } levels deep. It arrives at level { $limit }, the deepest Skribisto keeps, with its words and formatting.
+   *[other] { $count } list items in { $path } were nested more than { $limit } levels deep. They arrive at level { $limit }, the deepest Skribisto keeps, with their words and formatting.
 }
 import-diagnostic-epigraph-not-carried = “{ $title }” is headed by an epigraph, but a { $kind } cannot hold one. The quotation is kept at the top of its text instead.
 import-diagnostic-epigraph-placement-ambiguous = An epigraph sits between “{ $title }” and “{ $below }” and could head either. It was given to “{ $title }”, which is where an epigraph usually goes.

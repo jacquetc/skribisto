@@ -20,8 +20,8 @@ use common::entities::ContentRole;
 use skrib_format::{
     BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BundledBinder, BundledItem,
     DictWordFile, FORMAT_VERSION, InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle,
-    WorkFile, binder_dir_name, html_to_djot, new_unique_id, prose_file_name, prose_kind,
-    prose_relpath,
+    WorkFile, binder_dir_name, html_to_djot, new_unique_id, plain_text_to_djot_verbatim,
+    prose_file_name, prose_kind, prose_relpath,
 };
 use skribisto_model::SubRoleExt;
 use skribisto_model::content_allowed;
@@ -1044,6 +1044,12 @@ impl IdGen {
 ///
 /// `obj.aliases` is deliberately absent from this text — they live on `BinderItem.aliases`
 /// instead, where the mention index can actually use them.
+///
+/// Returned as Djot, like every other synopsis. These are XML attributes holding what the
+/// writer typed into plain fields, not rich text, so they go through
+/// `plain_text_to_djot_verbatim`: stored as they came, a detail such as `*not* the killer`
+/// was read back emphasised, `born 10:30:45` lost `:30:`, and a line opening `- ` became a
+/// list item.
 fn build_obj_synopsis(obj: &PlumeObj, spinbox_label: &str) -> String {
     let mut meta: Vec<String> = Vec::new();
     for label in &obj.box_labels {
@@ -1066,7 +1072,8 @@ fn build_obj_synopsis(obj: &PlumeObj, spinbox_label: &str) -> String {
     if !meta.is_empty() {
         parts.push(meta.join(" · "));
     }
-    parts.join("\n\n")
+    // One paragraph per line, which is what a line of a plain field meant.
+    plain_text_to_djot_verbatim(&parts.join("\n"))
 }
 
 /// Count each distinct non-empty badge across the (non-trashed) tree.

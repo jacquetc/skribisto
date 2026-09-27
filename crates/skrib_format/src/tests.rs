@@ -1662,6 +1662,47 @@ fn migrating_a_pre_v12_bundle_escapes_only_the_bodies_that_would_change_meaning(
     );
 }
 
+/// A remark holding a time, straight quotes, a double hyphen or a line opening with a
+/// roman numeral is ordinary text to the writer, and the exporter's escaper alone left it
+/// as it was, so the first load dropped `:30:` as a symbol, curled the quotes, turned `--`
+/// into a dash and read `II.` as a list marker.
+#[test]
+fn migrating_a_pre_v12_bundle_keeps_every_character_of_a_plain_body() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 11;
+
+    let remark = "Meet at 10:30:45, don't be late -- \"sharp\"...";
+    let outline = "I. First point\nII. Second point";
+    {
+        let list = bundle
+            .binders
+            .iter_mut()
+            .flat_map(|b| b.items.iter_mut())
+            .flat_map(|i| i.comments.values_mut())
+            .find(|l| l.len() >= 2)
+            .expect("the fixture must carry a Content with at least two comments");
+        list[0].body = remark.to_string();
+        list[1].body = outline.to_string();
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let list = bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .flat_map(|i| i.comments.values())
+        .find(|l| l.len() >= 2)
+        .expect("the same list must still be there");
+    for (body, typed) in [(&list[0].body, remark), (&list[1].body, outline)] {
+        assert_eq!(
+            crate::convert::djot_plain_text(body).expect("parse").0,
+            typed,
+            "the migrated body {body:?} must read back as what the writer typed"
+        );
+    }
+}
+
 /// v13's `goal_unit` step reads the only signal a v12 file carries: which of the two
 /// per-item targets a project actually used. A project keeping character targets and no
 /// word targets meant characters.

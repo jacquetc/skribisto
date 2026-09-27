@@ -118,12 +118,11 @@ impl CommentRow {
     ///
     /// `range_length > 0` is as load-bearing here as `orphaned` and `content_id`:
     /// a comment can resolve *successfully* to an empty range.
-    /// `CommentAnchorKind::Document` — the kind the importer minted for a comment
-    /// on a heading, a blank paragraph or a table before it stopped being able to
-    /// point at prose at all (see `document_ingest::plan`'s module doc, and
-    /// `sources::rich`'s for the two cases that still mint it) — resolves to
-    /// exactly `Anchor::default()`: a genuine zero-length range, not a missing
-    /// one, so `orphaned` stays `false` for it. Before this guard checked
+    /// `CommentAnchorKind::Document`, the kind the importer once minted for a
+    /// comment on a heading, a blank paragraph or a table (it mints none now: see
+    /// `document_ingest::plan`'s module doc; comments stored before that still
+    /// carry it), resolves to exactly `Anchor::default()`: a genuine zero-length
+    /// range, not a missing one, so `orphaned` stays `false` for it. Before this guard checked
     /// `range_length`, such a row reported itself anchored and a click seeked to
     /// a fabricated `(0, 0)` instead of nowhere. See [`Self::is_unplaced`].
     pub fn is_anchored(&self) -> bool {
@@ -1221,13 +1220,14 @@ flowing prose per row."
                 ..Default::default()
             },
             CommentRow {
-                // `CommentAnchorKind::Document`'s only surviving shape: a comment
-                // the import pipeline could not point at any prose (a heading, in
-                // the pre-fix importer; a blank paragraph or a table today — see
-                // `document_ingest::plan`'s module doc). Its `Content` is alive
-                // and it is *not* orphaned — `range_length: 0` is the only tell —
-                // so without `is_unplaced` this row would render a blank quote
-                // and fabricate a seek to (0, 0) on click.
+                // `CommentAnchorKind::Document`'s only surviving shape: a comment an
+                // older build of the importer could not point at any prose (a
+                // heading, a blank paragraph or a table). The importer mints none now
+                // (see `document_ingest::plan`'s module doc), but comments stored
+                // before that still carry it. Its `Content` is alive and it is *not*
+                // orphaned, `range_length: 0` being the only tell, so without
+                // `is_unplaced` this row would render a blank quote and fabricate a
+                // seek to (0, 0) on click.
                 id: 5,
                 content_id: Some(content),
                 item_id: Some(MOCK_ITEM),

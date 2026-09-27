@@ -228,6 +228,45 @@ fn an_odt_nested_to_the_ceiling_is_read_through_every_walk_from_a_long_operation
     }
 }
 
+/// The lists at the ceiling nest far past the levels imported prose keeps. The row they
+/// make is stored as prose the next load of the project accepts, the item arrives as the
+/// list item it was, at the deepest level kept, and the writer is told.
+#[test]
+fn an_odt_list_nested_to_the_ceiling_is_stored_as_prose_a_load_accepts() {
+    let levels = (MAX_XML_DEPTH - 4) / 2;
+    let doc = scan_on_a_long_operation_stack("hostile.fodt", fodt(&lists(levels, 0)));
+    let djot: Vec<&str> = doc
+        .blocks
+        .iter()
+        .filter_map(|block| match block {
+            SourceBlock::Prose { djot, .. } => Some(djot.as_str()),
+            _ => None,
+        })
+        .collect();
+    let [djot] = djot.as_slice() else {
+        panic!("one prose block, got {:?}", doc.blocks);
+    };
+    assert!(
+        skrib_format::djot_depth::check(djot).is_ok(),
+        "the load must accept what is stored: {djot:?}"
+    );
+    let kept = document_ingest::sources::rich::MAX_LIST_LEVELS;
+    let deepest = format!("{}- Words at the bottom", "  ".repeat(kept - 1));
+    assert!(
+        djot.starts_with(&deepest),
+        "the item is written at the deepest level kept: {djot:?}"
+    );
+    assert_eq!(prose(&doc), "Words at the bottom.");
+    assert!(
+        doc.diagnostics.iter().any(|d| matches!(
+            d,
+            ImportDiagnostic::ListNestingFlattened { count: 1, limit, .. } if *limit == kept
+        )),
+        "the flattening is reported: {:?}",
+        doc.diagnostics
+    );
+}
+
 #[test]
 fn an_odt_one_level_past_the_ceiling_is_refused_by_name_whatever_the_shape() {
     let past_the_ceiling = [

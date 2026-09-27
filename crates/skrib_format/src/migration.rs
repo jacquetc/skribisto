@@ -21,12 +21,13 @@
 
 use anyhow::Result;
 use common::entities::{GoalUnit, MilestoneKind};
-// The Djot exporter's own escaper, shared rather than reimplemented: a second definition
-// would disagree with it about exactly the awkward bodies (`- ` at a line start, a title
-// in `[brackets]`, prose about `snake_case`) while agreeing on everything easy.
-use text_document::{needs_djot_escaping, plain_text_to_djot};
 
 use super::bundle::{FORMAT_VERSION, WorkBundle};
+// The Djot exporter's own escaper plus what text-document 1.12.2 leaves open, shared
+// rather than reimplemented: a second definition would disagree with it about exactly the
+// awkward bodies (`- ` at a line start, a title in `[brackets]`, prose about `snake_case`)
+// while agreeing on everything easy.
+use super::convert::plain_text_to_djot_verbatim;
 
 /// Walk `bundle` forward to [`FORMAT_VERSION`], one arm per transition.
 ///
@@ -139,40 +140,46 @@ fn step_v10_to_v11(bundle: &mut WorkBundle) {
 /// themselves — "Check this scene." parses to "Check this scene.". The ones that are not
 /// would change meaning on the next read: a remark reading `*not* like this` would come
 /// back emphasised, and one opening `- ` would become a list item. So every body is run
-/// through [`plain_text_to_djot`], the same escaper the Djot **exporter** uses, so the two
-/// cannot disagree about which strings are awkward.
+/// through [`plain_text_to_djot_verbatim`]: the escaper the Djot **exporter** uses, so the
+/// two cannot disagree about which strings are awkward, plus the strings text-document
+/// 1.12.2 lets the parser rewrite. With the exporter's escaper alone, `Meet at 10:30:45`
+/// was kept as it was and read back as `Meet at 1045`, and `don't` came back curled.
 ///
-/// Escaping is skipped where it would be a no-op ([`needs_djot_escaping`]), which keeps
-/// ordinary bodies byte-identical on disk — and that matters beyond tidiness: a body left
-/// untouched still reads correctly in an older build, so only projects that genuinely held
-/// markup-like text are changed at all.
+/// A body is rewritten only when the conversion changes it, which keeps ordinary bodies
+/// byte-identical on disk. That matters beyond tidiness: a body left untouched still reads
+/// correctly in an older build, so only projects that genuinely held markup-like text are
+/// changed at all.
 ///
 /// # Idempotency
 ///
-/// Re-running must not double-escape. That is not automatic — `plain_text_to_djot` is not
-/// idempotent on its own output (`\*` would become `\\\*`) — so the guard is the format
-/// stamp: `migrate_bundle` advances `format_version` past 11 once, and this step never runs
-/// against a v12 bundle. The uid half *is* independently idempotent, via `heal_uid`.
+/// Re-running must not double-escape. That is not automatic, since
+/// `plain_text_to_djot_verbatim` is not idempotent on its own output (`\*` would become
+/// `\\\*`), so the guard is the format stamp: `migrate_bundle` advances `format_version`
+/// past 11 once, and this step never runs against a v12 bundle. The uid half *is*
+/// independently idempotent, via `heal_uid`.
 ///
 /// # The two shapes that change, and why neither loses meaning
 ///
 /// A *plain-text* round trip through Djot cannot reproduce a **blank line** inside a body,
-/// nor **trailing whitespace** on a line — `text_document::djot_round_trip_is_lossy` names
-/// both, and it is the right tool for a caller whose exact bytes matter.
+/// nor **whitespace at either end** of a line. `text_document::djot_round_trip_is_lossy`
+/// names the first and trailing whitespace, and it is the right tool for a caller whose
+/// exact bytes matter. (A line's leading whitespace never survived either: the parser
+/// drops it at the start of a paragraph.)
 ///
 /// It is deliberately not used here, because for this field the bytes are not the meaning.
 /// A blank line in a plain-text comment body *is* the plain-text encoding of a paragraph
 /// break; once the body is Djot that break is carried by the paragraph structure itself,
 /// which is strictly more faithful than the character that stood in for it. The card
-/// renders two paragraphs either way. Trailing spaces on a line carry no meaning in a
+/// renders two paragraphs either way. Spaces at the ends of a line carry no meaning in a
 /// remark at all.
 ///
 /// So nothing is quietly dropped: what changes is the *encoding* of a break the writer
 /// will still see — which is why this step owes them no reporting channel.
 fn step_v11_to_v12(bundle: &mut WorkBundle) {
     fn heal_body(body: &mut String) {
-        if needs_djot_escaping(body) {
-            *body = plain_text_to_djot(body);
+        let djot = plain_text_to_djot_verbatim(body);
+        if djot != *body {
+            *body = djot;
         }
     }
 

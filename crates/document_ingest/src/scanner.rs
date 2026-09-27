@@ -51,10 +51,9 @@ impl ScannerRegistry {
     pub fn with_builtin_scanners() -> Self {
         let mut registry = Self::new();
         #[cfg(feature = "markdown")]
-        {
-            registry.register(Box::new(crate::sources::markdown::MarkdownScanner));
-            registry.register(Box::new(crate::sources::plain::PlainTextScanner));
-        }
+        registry.register(Box::new(crate::sources::markdown::MarkdownScanner));
+        #[cfg(feature = "plain")]
+        registry.register(Box::new(crate::sources::plain::PlainTextScanner));
         #[cfg(feature = "odt")]
         registry.register(Box::new(crate::sources::odt::OdtScanner));
         #[cfg(feature = "docx")]

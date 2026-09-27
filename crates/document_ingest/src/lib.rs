@@ -38,7 +38,7 @@ pub use block::{
 };
 pub use diagnostics::{DiagnosticSeverity, ImportDiagnostic};
 pub use order::{natural_cmp, sort_documents};
-pub use plan::{ImportPlan, PlannedRow, build_plan};
+pub use plan::{AssembledProse, ImportPlan, PlannedRow, RowPart, assemble_row, build_plan};
 pub use scanner::{ScannerRegistry, SourceScanner};
 pub use structure::{LevelRules, infer_rules, levels_used};
 pub use title::{ExtractedOrdinal, extract_leading_ordinal};

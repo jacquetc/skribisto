@@ -30,6 +30,7 @@ fn annotation(block_index: usize, start: usize, length: usize) -> RichAnnotation
         block_index,
         start,
         length,
+        end: None,
         uid: None,
         uid_tag: None,
         author: "Editor".into(),
@@ -39,6 +40,17 @@ fn annotation(block_index: usize, start: usize, length: usize) -> RichAnnotation
         resolved: false,
         replies: Vec::new(),
     }
+}
+
+/// The words an annotation points at, taken from the block it names rather than from
+/// what the annotation says about itself.
+fn quoted(doc: &SourceDocument, index: usize) -> String {
+    let annotation = &doc.annotations[index];
+    let text = doc.blocks[annotation.block_index].plain_text();
+    text.chars()
+        .skip(annotation.anchor.start)
+        .take(annotation.anchor.length)
+        .collect()
 }
 
 #[test]
@@ -62,7 +74,8 @@ fn styled_runs_become_djot_with_the_right_delimiters() {
     let SourceBlock::Prose { djot, text } = &doc.blocks[0] else {
         panic!("expected prose, got {:?}", doc.blocks);
     };
-    assert_eq!(djot, "He was _utterly_ lost, and *furious*.");
+    // Braced delimiters always: they read the same inside a word and when nested.
+    assert_eq!(djot, "He was {_utterly_} lost, and {*furious*}.");
     assert_eq!(
         text, "He was utterly lost, and furious.",
         "the plain text is the space an anchor is measured in"
@@ -84,7 +97,7 @@ fn a_word_split_across_three_identical_runs_comes_out_once() {
     let SourceBlock::Prose { djot, .. } = &doc.blocks[0] else {
         panic!("expected prose");
     };
-    assert_eq!(djot, "*bold*", "not *b**o**ld*");
+    assert_eq!(djot, "{*bold*}", "one pair of delimiters, not three");
 }
 
 #[test]
@@ -94,6 +107,7 @@ fn a_heading_is_a_boundary_not_prose() {
             RichBlock::Paragraph {
                 kind: ParagraphKind::Heading { level: 2 },
                 runs: vec![Run::plain("Chapter One")],
+                props: BlockProps::default(),
             },
             RichBlock::body(vec![Run::plain("Prose.")]),
         ],
@@ -123,6 +137,7 @@ fn a_paragraph_that_is_only_a_break_glyph_is_a_break_whatever_it_was_styled() {
                 RichBlock::Paragraph {
                     kind,
                     runs: vec![Run::plain(glyph)],
+                    props: BlockProps::default(),
                 },
                 RichBlock::body(vec![Run::plain("After.")]),
             ],
@@ -187,17 +202,21 @@ fn a_comment_with_no_range_is_a_paragraph_comment() {
     assert_eq!(doc.annotations[0].kind, AnnotationKind::Paragraph);
 }
 
-/// A table's own block positions cannot be trusted, so a comment inside one is
-/// carried as a comment on the row rather than pointed confidently at nothing.
+/// A table is proved cell by cell like any paragraph, so a comment inside one keeps its
+/// words, measured in the addressable text the table's anchor character is part of.
 #[test]
-fn a_comment_inside_a_table_becomes_a_whole_row_comment() {
+fn a_comment_inside_a_table_keeps_its_words() {
     let doc = assemble_doc(
         vec![RichBlock::Table {
-            rows: vec![vec![vec![Run::plain("a")], vec![Run::plain("b")]]],
+            rows: vec![vec![vec![Run::plain("salt")], vec![Run::plain("bleached")]]],
         }],
-        vec![annotation(0, 0, 1)],
+        // "bleached": the table's own plain text is "salt\nbleached".
+        vec![annotation(0, 5, 8)],
     );
-    assert_eq!(doc.annotations[0].kind, AnnotationKind::Document);
+    let a = &doc.annotations[0];
+    assert_eq!(a.kind, AnnotationKind::Range);
+    assert_eq!(a.anchor.exact, "bleached");
+    assert_eq!(quoted(&doc, 0), "bleached");
 }
 
 #[test]
@@ -237,6 +256,9 @@ fn a_blank_paragraph_produces_nothing_and_does_not_shift_what_follows() {
     assert_eq!(doc.annotations[0].kind, AnnotationKind::Range);
 }
 
+/// A comment on a paragraph that produced nothing lands on the nearest paragraph, the one
+/// before it, as a paragraph comment: never as a comment on the whole document, which
+/// neither format can express and the comment panel cannot open.
 #[test]
 fn a_comment_whose_paragraph_produced_nothing_is_reported_not_dropped() {
     let doc = assemble_doc(
@@ -247,12 +269,17 @@ fn a_comment_whose_paragraph_produced_nothing_is_reported_not_dropped() {
         vec![annotation(1, 0, 0)],
     );
     assert_eq!(doc.annotations.len(), 1, "the comment survives");
-    assert_eq!(doc.annotations[0].kind, AnnotationKind::Document);
+    assert_eq!(doc.annotations[0].kind, AnnotationKind::Paragraph);
+    assert_eq!(doc.annotations[0].anchor.exact, "Kept.");
     assert!(
-        doc.diagnostics
+        doc.annotations[0].unanchored,
+        "and is flagged for the planner to report"
+    );
+    assert!(
+        !doc.diagnostics
             .iter()
             .any(|d| matches!(d, crate::ImportDiagnostic::CommentUnanchored { .. })),
-        "and says so: {:?}",
+        "once, by the planner, which knows where it lands: {:?}",
         doc.diagnostics
     );
 }
@@ -267,6 +294,7 @@ fn lists_and_quotes_convert_and_keep_one_line_each() {
                     depth: 0,
                 },
                 runs: vec![Run::plain("one")],
+                props: BlockProps::default(),
             },
             RichBlock::Paragraph {
                 kind: ParagraphKind::ListItem {
@@ -274,10 +302,12 @@ fn lists_and_quotes_convert_and_keep_one_line_each() {
                     depth: 1,
                 },
                 runs: vec![Run::plain("deep")],
+                props: BlockProps::default(),
             },
             RichBlock::Paragraph {
                 kind: ParagraphKind::Quote,
                 runs: vec![Run::plain("quoted")],
+                props: BlockProps::default(),
             },
         ],
         Vec::new(),
@@ -335,9 +365,9 @@ fn a_body_preview_is_one_short_line() {
 
 // ── Rich comment bodies (M-S4) ──────────────────────────────────────────
 //
-// A comment's own text goes through the same HTML→Djot pipeline as
-// manuscript prose, so its emphasis survives instead of being flattened —
-// see `body_to_djot`'s doc.
+// A comment's own text is written and proved by the same emitter as manuscript
+// prose, so its emphasis survives instead of being flattened. See
+// `Assembly::body_to_djot`'s doc.
 
 #[test]
 fn a_comments_own_emphasis_survives_as_djot() {
@@ -347,6 +377,7 @@ fn a_comments_own_emphasis_survives_as_djot() {
             block_index: 0,
             start: 0,
             length: 0,
+            end: None,
             uid: None,
             uid_tag: None,
             author: "Editor".into(),
@@ -371,7 +402,7 @@ fn a_comments_own_emphasis_survives_as_djot() {
     );
     assert_eq!(
         doc.annotations[0].body,
-        "Is this *really* the _right_ word?"
+        "Is this {*really*} the {_right_} word?"
     );
 }
 
@@ -385,6 +416,7 @@ fn a_replys_own_emphasis_survives_as_djot_too() {
             block_index: 0,
             start: 0,
             length: 0,
+            end: None,
             uid: None,
             uid_tag: None,
             author: "Editor".into(),
@@ -402,7 +434,7 @@ fn a_replys_own_emphasis_survives_as_djot_too() {
         }],
     );
     assert_eq!(doc.annotations[0].replies.len(), 1);
-    assert_eq!(doc.annotations[0].replies[0].body, "*Fixed.*");
+    assert_eq!(doc.annotations[0].replies[0].body, "{*Fixed.*}");
 }
 
 /// A comment written as more than one paragraph — the LibreOffice
@@ -416,6 +448,7 @@ fn a_multi_paragraph_comment_keeps_both_paragraphs() {
             block_index: 0,
             start: 0,
             length: 0,
+            end: None,
             uid: None,
             uid_tag: None,
             author: "Editor".into(),
@@ -450,6 +483,7 @@ fn a_blank_paragraph_in_a_comment_contributes_nothing() {
             block_index: 0,
             start: 0,
             length: 0,
+            end: None,
             uid: None,
             uid_tag: None,
             author: "Editor".into(),
@@ -467,9 +501,18 @@ fn a_blank_paragraph_in_a_comment_contributes_nothing() {
 /// produces this) converts to the empty string rather than erroring.
 #[test]
 fn an_annotation_with_no_paragraphs_converts_to_an_empty_body() {
-    assert_eq!(body_to_djot(&[]).expect("convert"), "");
+    let mut assembly = Assembly {
+        placement: Vec::new(),
+        not_verbatim: 0,
+        styled_blanks: 0,
+        lists_flattened: 0,
+        read: &skrib_format::read_djot,
+    };
+    assert_eq!(assembly.body_to_djot(&[]).expect("convert"), "");
     assert_eq!(
-        body_to_djot(&[vec![Run::plain("   ")]]).expect("convert"),
+        assembly
+            .body_to_djot(&[vec![Run::plain("   ")]])
+            .expect("convert"),
         ""
     );
 }
@@ -691,10 +734,12 @@ fn an_epigraph_run_becomes_one_block_holding_one_quotation() {
             RichBlock::Paragraph {
                 kind: ParagraphKind::Epigraph,
                 runs: vec![Run::plain("All happy families are alike.")],
+                props: BlockProps::default(),
             },
             RichBlock::Paragraph {
                 kind: ParagraphKind::Epigraph,
                 runs: vec![Run::plain("— Tolstoy")],
+                props: BlockProps::default(),
             },
         ],
         Vec::new(),
@@ -705,10 +750,11 @@ fn an_epigraph_run_becomes_one_block_holding_one_quotation() {
     let SourceBlock::Epigraph { djot, .. } = blocks[0] else {
         panic!("expected an epigraph block, got {blocks:?}");
     };
+    // One blockquote: the empty quoted line keeps the attribution inside it, where a
+    // blank line would open a second quotation.
     assert_eq!(
-        djot.lines().filter(|l| l.starts_with('>')).count(),
-        2,
-        "both paragraphs must sit inside the same quotation: {djot:?}"
+        djot, "> All happy families are alike.\n>\n> — Tolstoy",
+        "both paragraphs must sit inside the same quotation"
     );
 }
 
@@ -723,6 +769,7 @@ fn an_epigraph_keeps_its_place_in_document_order() {
             RichBlock::Paragraph {
                 kind: ParagraphKind::Epigraph,
                 runs: vec![Run::plain("The quotation.")],
+                props: BlockProps::default(),
             },
             RichBlock::body(vec![Run::plain("After.")]),
         ],
@@ -739,4 +786,342 @@ fn an_epigraph_keeps_its_place_in_document_order() {
         })
         .collect();
     assert_eq!(shape, vec!["Before.", "<epigraph>", "After."]);
+}
+
+// ── The defect this module was rewritten for ────────────────────────────────────────
+
+/// A double space and a tab early in a run used to shift every later paragraph's offset,
+/// and each of their comments fell back to the whole document. Written directly, the
+/// whitespace is kept and every comment keeps its words.
+#[test]
+fn comments_after_a_double_space_or_a_tab_keep_their_words() {
+    let doc = assemble_doc(
+        vec![
+            RichBlock::body(vec![Run::plain("One.  Two sentences, two spaces.")]),
+            // A tab the scanner turned into a space, opening the paragraph.
+            RichBlock::body(vec![Run::plain(" Indented by a tab.")]),
+            RichBlock::body(vec![Run::plain("She turned the corner.")]),
+            RichBlock::body(vec![
+                Run::plain("The street was "),
+                Run::styled("gone", bold()),
+                Run::plain("."),
+            ]),
+        ],
+        vec![
+            annotation(1, 1, 8),  // "Indented"
+            annotation(2, 4, 6),  // "turned"
+            annotation(3, 15, 4), // "gone"
+        ],
+    );
+    let SourceBlock::Prose { text, .. } = &doc.blocks[0] else {
+        panic!("expected prose, got {:?}", doc.blocks);
+    };
+    assert_eq!(
+        text,
+        "One.  Two sentences, two spaces.\nIndented by a tab.\nShe turned the corner.\nThe street was gone."
+    );
+    for (index, words) in ["Indented", "turned", "gone"].iter().enumerate() {
+        assert_eq!(doc.annotations[index].kind, AnnotationKind::Range);
+        assert_eq!(quoted(&doc, index), *words);
+    }
+}
+
+/// Whatever the reason a comment cannot keep its words, it lands on a paragraph: never on
+/// the whole document.
+#[test]
+fn no_comment_is_ever_a_comment_on_the_whole_document() {
+    let doc = assemble_doc(
+        vec![
+            RichBlock::Paragraph {
+                kind: ParagraphKind::Heading { level: 1 },
+                runs: vec![Run::plain("Chapter")],
+                props: BlockProps::default(),
+            },
+            RichBlock::body(vec![Run::plain("   ")]),
+            RichBlock::body(vec![Run::plain("Prose.")]),
+            RichBlock::body(vec![Run::plain("* * *")]),
+        ],
+        vec![
+            annotation(0, 0, 3),          // on the heading
+            annotation(1, 0, 0),          // on a blank paragraph
+            annotation(3, 0, 5),          // on the break
+            annotation(usize::MAX, 0, 0), // nowhere the scanner could say
+        ],
+    );
+    assert_eq!(doc.annotations.len(), 4);
+    for a in &doc.annotations {
+        assert_ne!(a.kind, AnnotationKind::Document, "{a:?}");
+    }
+    // The blank paragraph's comment went to the paragraph before it that produced a block.
+    assert_eq!(doc.annotations[1].block_index, 0, "the heading before it");
+    // The one with no position went to the last paragraph.
+    assert_eq!(doc.annotations[3].anchor.exact, "* * *");
+}
+
+/// Centring and a page break reach the stored prose; a centred line that reads as a scene
+/// break stays a break.
+#[test]
+fn paragraph_formatting_reaches_the_prose() {
+    let doc = assemble_doc(
+        vec![
+            RichBlock::body(vec![Run::plain("Before.")]),
+            RichBlock::Paragraph {
+                kind: ParagraphKind::Body,
+                runs: vec![Run::plain("A centred line on a new page.")],
+                props: BlockProps {
+                    alignment: Some(Alignment::Center),
+                    direction: None,
+                    page_break_before: true,
+                },
+            },
+            RichBlock::Paragraph {
+                kind: ParagraphKind::Body,
+                runs: vec![Run::plain("* * *")],
+                props: BlockProps {
+                    alignment: Some(Alignment::Center),
+                    ..BlockProps::default()
+                },
+            },
+        ],
+        Vec::new(),
+    );
+    let SourceBlock::Prose { djot, text } = &doc.blocks[0] else {
+        panic!("expected prose, got {:?}", doc.blocks);
+    };
+    assert_eq!(
+        djot,
+        "Before.\n\n{alignment=center page_break_before=true}\nA centred line on a new page."
+    );
+    assert_eq!(text, "Before.\nA centred line on a new page.");
+    assert!(matches!(doc.blocks[1], SourceBlock::SceneBreak { .. }));
+}
+
+/// A paragraph whose writing does not read back is stored as its words alone, and the
+/// writer is told; a comment on it keeps to its paragraph rather than to unproved words.
+#[test]
+fn a_paragraph_that_fails_its_proof_is_stored_plain_and_reported() {
+    let misread = |djot: &str| -> anyhow::Result<skrib_format::DjotReading> {
+        let mut reading = skrib_format::read_djot(djot)?;
+        for block in &mut reading.blocks {
+            if block.text.contains("cursed") {
+                block.text.push('!');
+            }
+        }
+        Ok(reading)
+    };
+    let rich = RichDocument {
+        blocks: vec![
+            RichBlock::body(vec![Run::plain("A fine paragraph.")]),
+            RichBlock::body(vec![
+                Run::plain("A "),
+                Run::styled("cursed", bold()),
+                Run::plain(" one."),
+            ]),
+        ],
+        annotations: vec![annotation(1, 2, 6)],
+        row_marks: Vec::new(),
+        footnotes: Vec::new(),
+    };
+    let mut out = SourceDocument::new("fixture", "fixture.docx");
+    assemble_with(&rich, &mut out, &misread).expect("assemble");
+
+    let SourceBlock::Prose { djot, .. } = &out.blocks[0] else {
+        panic!("expected prose, got {:?}", out.blocks);
+    };
+    assert_eq!(djot, "A fine paragraph.\n\nA cursed one\\.");
+    assert!(
+        out.diagnostics
+            .iter()
+            .any(|d| matches!(d, ImportDiagnostic::ProseNotVerbatim { count: 1, .. })),
+        "{:?}",
+        out.diagnostics
+    );
+    assert_eq!(out.annotations[0].kind, AnnotationKind::Paragraph);
+    assert!(out.annotations[0].unanchored, "{:?}", out.annotations[0]);
+}
+
+/// `Block Quote`, the style Scrivener's compiler writes into its Word and OpenDocument
+/// output, is a quotation like the host applications' own.
+#[test]
+fn a_block_quote_style_is_a_quotation() {
+    for name in ["Block Quote", "BlockQuote", "Block_20_Quote"] {
+        assert_eq!(styled_as(name), Some(StyledAs::Quote), "{name}");
+    }
+}
+
+/// A range an editor laid across two paragraphs keeps its whole extent, the paragraph
+/// break included, when both ends land in the same stored block.
+#[test]
+fn a_range_across_paragraphs_keeps_its_whole_extent() {
+    let mut spanning = annotation(1, 4, 18); // "turned the corner." to the end of block 1
+    spanning.end = Some(AnnotationEnd {
+        block_index: 2,
+        offset: 7, // "The fog"
+    });
+    let doc = assemble_doc(
+        vec![
+            RichBlock::body(vec![Run::plain("First.")]),
+            RichBlock::body(vec![Run::plain("She turned the corner.")]),
+            RichBlock::body(vec![Run::plain("The fog stayed.")]),
+        ],
+        vec![spanning],
+    );
+    assert_eq!(doc.annotations[0].kind, AnnotationKind::Range);
+    assert_eq!(quoted(&doc, 0), "turned the corner.\nThe fog");
+}
+
+/// When something that is not prose lies between the two ends, the range stops at the
+/// end of the paragraph it started in, rather than pointing somewhere unproved.
+#[test]
+fn a_range_across_a_heading_stops_at_the_end_of_its_first_paragraph() {
+    let mut spanning = annotation(0, 4, 18);
+    spanning.end = Some(AnnotationEnd {
+        block_index: 2,
+        offset: 7,
+    });
+    let doc = assemble_doc(
+        vec![
+            RichBlock::body(vec![Run::plain("She turned the corner.")]),
+            RichBlock::Paragraph {
+                kind: ParagraphKind::Heading { level: 1 },
+                runs: vec![Run::plain("Chapter Two")],
+                props: BlockProps::default(),
+            },
+            RichBlock::body(vec![Run::plain("The fog stayed.")]),
+        ],
+        vec![spanning],
+    );
+    assert_eq!(doc.annotations[0].kind, AnnotationKind::Range);
+    assert_eq!(quoted(&doc, 0), "turned the corner.");
+}
+
+/// A stretch of blank space that is underlined or struck through, a line left to fill in,
+/// is written as plain spaces and reported, once per stretch: the editor would drop the
+/// line the first time it saved the paragraph. The struck one ends its paragraph, so it is
+/// not written at all, and is reported the same. Bold spaces show nothing and are not
+/// counted, nor is a styled word whose edge spaces go outside its delimiters.
+#[test]
+fn an_underlined_blank_arrives_as_plain_spaces_and_is_reported() {
+    let underline = RunStyle {
+        underline: true,
+        ..Default::default()
+    };
+    let struck = RunStyle {
+        strikethrough: true,
+        ..Default::default()
+    };
+    let doc = assemble_doc(
+        vec![
+            RichBlock::body(vec![
+                Run::plain("Name:"),
+                Run::styled("      ", underline),
+                Run::plain(" Date:"),
+                Run::styled("    ", struck),
+            ]),
+            RichBlock::body(vec![
+                Run::plain("A"),
+                Run::styled("   ", bold()),
+                Run::styled("word ", underline),
+                Run::plain("here."),
+            ]),
+        ],
+        Vec::new(),
+    );
+    let SourceBlock::Prose { djot, text } = &doc.blocks[0] else {
+        panic!("expected prose, got {:?}", doc.blocks);
+    };
+    assert_eq!(djot, "Name:       Date:\n\nA   {+word+} here.");
+    assert_eq!(text, "Name:       Date:\nA   word here.");
+    let reported: Vec<&ImportDiagnostic> = doc
+        .diagnostics
+        .iter()
+        .filter(|d| matches!(d, ImportDiagnostic::StyledSpacesNotCarried { .. }))
+        .collect();
+    assert!(
+        matches!(
+            reported.as_slice(),
+            [ImportDiagnostic::StyledSpacesNotCarried { count: 2, .. }]
+        ),
+        "{reported:?}"
+    );
+}
+
+/// Blank space at a paragraph's start or end is not kept, styled or not, so a line left to
+/// fill in after a label, or on a line of its own, arrives not at all. It is counted with
+/// the stretches that arrive as plain spaces all the same: the writer is told either way.
+#[test]
+fn an_underlined_blank_at_a_paragraphs_edge_or_on_its_own_is_reported_too() {
+    let underline = RunStyle {
+        underline: true,
+        ..Default::default()
+    };
+    let struck = RunStyle {
+        strikethrough: true,
+        ..Default::default()
+    };
+    let doc = assemble_doc(
+        vec![
+            RichBlock::body(vec![
+                Run::plain("Signature:"),
+                Run::styled("                    ", underline),
+            ]),
+            RichBlock::body(vec![Run::styled("\t\t", underline)]),
+            RichBlock::body(vec![Run::styled("    ", struck), Run::plain("Date.")]),
+        ],
+        Vec::new(),
+    );
+    let [SourceBlock::Prose { djot, text }] = doc.blocks.as_slice() else {
+        panic!("one prose block: {:?}", doc.blocks);
+    };
+    assert_eq!(djot, "Signature:\n\nDate.");
+    assert_eq!(text, "Signature:\nDate.");
+    let reported: Vec<&ImportDiagnostic> = doc
+        .diagnostics
+        .iter()
+        .filter(|d| matches!(d, ImportDiagnostic::StyledSpacesNotCarried { .. }))
+        .collect();
+    assert!(
+        matches!(
+            reported.as_slice(),
+            [ImportDiagnostic::StyledSpacesNotCarried { count: 3, .. }]
+        ),
+        "{reported:?}"
+    );
+}
+
+/// The same in a table cell and in a comment's own text, which go through the same
+/// emitter, down to a table or a paragraph of the comment that holds nothing else.
+#[test]
+fn an_underlined_blank_in_a_cell_or_a_comment_is_reported_too() {
+    let underline = RunStyle {
+        underline: true,
+        ..Default::default()
+    };
+    let mut remark = annotation(0, 0, 4);
+    remark.paragraphs = vec![
+        vec![Run::plain("Sign here:"), Run::styled("     ", underline)],
+        vec![Run::styled("      ", underline)],
+    ];
+    let doc = assemble_doc(
+        vec![
+            RichBlock::body(vec![Run::plain("Text.")]),
+            RichBlock::Table {
+                rows: vec![vec![
+                    vec![Run::plain("Name")],
+                    vec![Run::styled("        ", underline)],
+                ]],
+            },
+            RichBlock::Table {
+                rows: vec![vec![vec![Run::styled("        ", underline)]]],
+            },
+        ],
+        vec![remark],
+    );
+    assert!(
+        doc.diagnostics
+            .iter()
+            .any(|d| matches!(d, ImportDiagnostic::StyledSpacesNotCarried { count: 4, .. })),
+        "{:?}",
+        doc.diagnostics
+    );
 }

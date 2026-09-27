@@ -39,23 +39,42 @@
 //!
 //! ## This planner never mints `CommentAnchorKind::Document`
 //!
-//! Neither DOCX nor ODF has a "comment on the whole document" concept — `Document`
+//! Neither DOCX nor ODF has a "comment on the whole document" concept: `Document`
 //! is a kind neither format can express, and the comment UI never wires it up
 //! either (there is no surface to open one from). A comment landing on a *heading*
-//! block used to become one; it becomes a `Paragraph` comment on the row's first
-//! block instead (see `planned_comment`), and a comment on a row whose Djot
-//! failed to parse becomes a `Paragraph` comment pinned to block 0 with an empty
-//! quote (see `anchor_comments`) — both real, storable anchors rather than a
-//! placeholder kind. `sources::rich` still mints `Document` for the two cases that
-//! genuinely have no text to point at (a blank paragraph, a table) — a deliberate,
-//! separate decision, not an oversight here. The enum variant itself is not
-//! removed: comments minted before this change exist on disk and must keep
-//! loading, and the UI (`docks::comments`) still renders them — as a comment that
-//! resolved successfully yet has nowhere to point, never as one that silently
-//! vanished.
+//! block becomes a `Paragraph` comment on the row's first block (see
+//! `planned_comment`), a comment on a row whose Djot failed to parse becomes a
+//! `Paragraph` comment pinned to block 0 with an empty quote (see
+//! [`assemble_row`]), and a `Document` annotation a scanner still hands over becomes
+//! a `Paragraph` comment on the block it names. `sources::rich` no longer mints one at
+//! all. The enum variant itself is not removed: comments minted before this change
+//! exist on disk and must keep loading, and the UI (`docks::comments`) still renders
+//! them, as a comment that resolved successfully yet has nowhere to point, never as
+//! one that silently vanished.
+//!
+//! ## Every comment lands on a row that stores prose
+//!
+//! A comment hangs off the `Content` holding its row's prose, so a row that stores none
+//! (a book title directly above a chapter, a heading with no text under it, a row not
+//! created at all) cannot hold one. [`build_plan`] moves such a comment to the nearest
+//! paragraph that is stored and reports it once, as it reports a comment the scanner
+//! already had to move. Only a file with no stored prose at all leaves a comment nowhere
+//! to go, and that is reported as a comment not imported.
+//!
+//! ## One row, one assembly
+//!
+//! [`build_plan`] decides which blocks make which row: where headings open rows, and
+//! which row an epigraph belongs to. Everything after that, for one row, is
+//! [`assemble_row`]: its Djot, its epigraph, its comments proved against the prose it
+//! stores, its footnotes, its scene breaks and its word count. A converter that already
+//! knows its rows (one per document, say) calls it directly and gets the same anchoring
+//! the document importer uses, since there is no second anchoring stage to drift from it.
+
+use std::collections::HashSet;
 
 use common::entities::{CommentAnchorKind, CommentOrphanReason, ContentRole};
 use skribisto_model::comment_anchor::{self, Anchor, Resolution};
+use skribisto_model::counting::{CountMethod, cached_count};
 use skribisto_model::scene_break;
 use skribisto_model::{ChapterMode, CreateType, allowed_content, content_allowed};
 
@@ -207,6 +226,143 @@ impl ImportPlan {
     }
 }
 
+/// What one row stores, assembled from its blocks and proved.
+///
+/// Narrow on purpose: everything here follows from the row's own blocks, and nothing
+/// depends on where the row sits in a tree, what type it was given or which heading opened
+/// it. [`build_plan`] adds those to make a [`PlannedRow`]; a converter that already knows
+/// its rows takes this as it is.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AssembledProse {
+    /// The row's prose, Djot, scene-break markers spliced in. Empty for a row whose
+    /// blocks hold no prose.
+    pub djot: String,
+    /// The epigraph the row heads, Djot, one blockquote per quotation. See
+    /// [`PlannedRow::epigraph`].
+    pub epigraph: String,
+    /// Every comment on the row's blocks, anchored against `djot`. Never
+    /// `CommentAnchorKind::Document`.
+    pub comments: Vec<PlannedComment>,
+    /// The notes `djot` and `epigraph` cite, in first-citation order.
+    pub footnotes: Vec<PlannedFootnote>,
+    /// How many scene breaks `djot` carries.
+    pub scene_breaks: usize,
+    /// Words in `djot`, markers excluded, counted the way the app counts a row.
+    pub word_count: usize,
+    /// What went wrong on the way, for the row.
+    pub diagnostics: Vec<ImportDiagnostic>,
+}
+
+/// What one block of a [`SourceDocument`] gives the row it joins, by index into
+/// [`SourceDocument::blocks`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RowPart {
+    /// A heading whose text is the row's title. It adds nothing to the row's Djot; a
+    /// comment on it becomes a paragraph comment on the row's first block.
+    Title(usize),
+    /// A prose block, a scene break, or an epigraph kept in the prose: appended to the
+    /// row's Djot, its comments rebased onto it.
+    Prose(usize),
+    /// An epigraph the row heads: appended to the row's epigraph. Its comments become
+    /// paragraph comments on the row's first block, since an epigraph carries no comment
+    /// layer of its own.
+    Epigraph(usize),
+}
+
+impl RowPart {
+    fn block(self) -> usize {
+        match self {
+            RowPart::Title(index) | RowPart::Prose(index) | RowPart::Epigraph(index) => index,
+        }
+    }
+}
+
+/// Assemble one row from its blocks: Djot, epigraph, comments proved against the Djot,
+/// footnotes, scene breaks and words.
+///
+/// The one place an imported comment is anchored. A block's comments arrive measured
+/// against that block's own text; they are rebased onto the row, then every quote is
+/// proved against the row's Djot through `skrib_format::djot_plain_text`, the parse the
+/// editor will do, and `comment_anchor::resolve`, the matcher that re-anchors the comment
+/// on every reopen. A quote that does not survive is kept as an orphan and reported, never
+/// quietly moved. A comment the scanner already had to move to the nearest paragraph
+/// ([`SourceAnnotation::unanchored`]) is reported too, once.
+pub fn assemble_row(doc: &SourceDocument, parts: &[RowPart]) -> AssembledProse {
+    assemble_parts(doc, parts, &doc.annotations)
+}
+
+/// [`assemble_row`], taking the row's comments from `annotations` rather than from the
+/// document's own list: [`build_plan`] hands over that list with every comment its row
+/// cannot hold moved to the nearest stored paragraph (see [`rehome_comments`]).
+fn assemble_parts(
+    doc: &SourceDocument,
+    parts: &[RowPart],
+    annotations: &[SourceAnnotation],
+) -> AssembledProse {
+    let mut prose = AssembledProse::default();
+    // Parallel to `prose.comments`: whether each one already landed away from its words.
+    let mut moved: Vec<bool> = Vec::new();
+    // How long the row's prose is in *plain text*, mirroring `append_djot`'s `\n\n` join
+    // with the single `\n` it reads back as. This is what rebases a block-relative
+    // comment offset into a row-relative one; the proof below then checks the result.
+    let mut plain_len = 0usize;
+
+    for part in parts {
+        let Some(block) = doc.blocks.get(part.block()) else {
+            continue;
+        };
+        let block_offset = if plain_len == 0 { 0 } else { plain_len + 1 };
+        let role = match *part {
+            RowPart::Title(_) => PartRole::Title,
+            RowPart::Epigraph(_) => {
+                if let SourceBlock::Epigraph { djot, .. } | SourceBlock::Prose { djot, .. } = block
+                {
+                    // Appended, never assigned: a row may head two quotations, and
+                    // `mark_epigraph` marks each blockquote separately on the way out.
+                    append_djot(&mut prose.epigraph, djot);
+                }
+                PartRole::Title
+            }
+            RowPart::Prose(_) => {
+                match block {
+                    SourceBlock::Prose { djot, text } | SourceBlock::Epigraph { djot, text } => {
+                        append_djot(&mut prose.djot, djot);
+                        plain_len = block_offset + text.chars().count();
+                    }
+                    SourceBlock::SceneBreak { tier } => {
+                        append_djot(&mut prose.djot, scene_break::canonical_djot(*tier));
+                        prose.scene_breaks += 1;
+                        plain_len =
+                            block_offset + scene_break::canonical_plain(*tier).chars().count();
+                    }
+                    // A heading is never prose; `build_plan` never hands one over as such.
+                    SourceBlock::Heading { .. } => {}
+                }
+                PartRole::Prose
+            }
+        };
+        for annotation in annotations.iter().filter(|a| a.block_index == part.block()) {
+            prose
+                .comments
+                .push(planned_comment(annotation, role, block_offset));
+            moved.push(annotation.unanchored);
+        }
+    }
+
+    anchor_comments(
+        &prose.djot,
+        &doc.origin,
+        &mut prose.comments,
+        &moved,
+        &mut prose.diagnostics,
+    );
+    prose.footnotes = cited_footnotes(doc, &prose.djot, &prose.epigraph);
+    // Counted the way the app counts a row once it is stored, so the review shows the
+    // number the binder will: markers stripped, markup and attribute lines not words.
+    prose.word_count = cached_count(&prose.djot, CountMethod::WhitespaceSplit).words;
+    prose
+}
+
 /// Turn scanned documents into a reviewable plan.
 ///
 /// `chapter_mode` is read once and applied to every chapter, because the model
@@ -238,44 +394,71 @@ pub fn build_plan(
             // Nothing became a row, so a comment on this document has no prose to
             // point into and nowhere to live. Named rather than dropped.
             for annotation in &doc.annotations {
-                plan.diagnostics.push(ImportDiagnostic::CommentUnanchored {
+                plan.diagnostics.push(ImportDiagnostic::CommentNotCarried {
                     path: doc.origin.clone(),
                     quote: body_preview(&annotation.body),
                 });
             }
             continue;
         }
-        append_document(
-            &mut plan,
-            doc,
-            rules,
-            &chapter_mode,
-            base_indent,
-            &mut open_levels,
-        );
-    }
 
-    // Word counts, once, on the assembled prose — and with markers stripped,
-    // because a break is furniture the writer placed, not words they wrote.
-    // Out here rather than per document: inside the loop it re-counted every
-    // row already in the plan for each further document.
-    for row in &mut plan.rows {
-        row.word_count = scene_break::strip_markers_djot(&row.djot)
-            .split_whitespace()
+        let drafts = draft_rows(doc, rules, &chapter_mode, base_indent, &mut open_levels);
+        let mut assembled: Vec<AssembledProse> = drafts
+            .iter()
+            .map(|draft| assemble_parts(doc, &draft.parts, &doc.annotations))
+            .collect();
+        // A row with neither a title nor prose is not created. What it held is not lost
+        // with it: its comments are moved below, like any comment its row cannot hold.
+        let created: Vec<bool> = drafts
+            .iter()
+            .zip(&assembled)
+            .map(|(draft, prose)| !(draft.title.trim().is_empty() && prose.djot.trim().is_empty()))
+            .collect();
+        let homes = rehome_comments(doc, &drafts, &assembled, &created);
+        plan.diagnostics.extend(homes.not_carried);
+        if let Some(annotations) = homes.annotations {
+            // Whether a row is created follows from its title and its Djot, and neither
+            // depends on its comments, so the second assembly creates the same rows.
+            assembled = drafts
+                .iter()
+                .map(|draft| assemble_parts(doc, &draft.parts, &annotations))
+                .collect();
+        }
+
+        let mut cited: HashSet<String> = HashSet::new();
+        for ((draft, prose), created) in drafts.into_iter().zip(assembled).zip(created) {
+            if !created {
+                continue;
+            }
+            cited.extend(prose.footnotes.iter().map(|f| f.label.clone()));
+            plan.rows.push(draft.into_row(doc, prose));
+        }
+
+        // A note nothing cites is reported, not attached. It happens for real: a
+        // footnote on a chapter *title* has nowhere to live, because a title is a plain
+        // string on the `BinderItem` and a `Footnote` annotates a `Content`.
+        let uncited = doc
+            .footnotes
+            .iter()
+            .filter(|f| !cited.contains(&f.label))
             .count();
+        if uncited > 0 {
+            plan.diagnostics.push(ImportDiagnostic::FootnoteNotCarried {
+                path: doc.origin.clone(),
+                count: uncited,
+            });
+        }
     }
 
-    anchor_comments(&mut plan);
-    attach_footnotes(&mut plan, docs);
     flag_duplicate_titles(&mut plan);
     flag_illegal_combinations(&mut plan, &chapter_mode);
     plan
 }
 
-/// Give each row the notes its own prose cites.
+/// The notes a row's prose and epigraph cite, in first-citation order.
 ///
 /// Pairing is by the `[^label]` the scanner wrote into the prose, matched with
-/// `skribisto_model::skribisto_model::footnote_numbering::references_in` — the same reader the editor
+/// `skribisto_model::footnote_numbering::references_in`, the same reader the editor
 /// and the exporter use, so a placeholder shown inside a code span or after a
 /// backslash escape is *not* a citation here either, exactly as it would not be once
 /// the row is stored.
@@ -284,121 +467,223 @@ pub fn build_plan(
 /// be unique within one file (see [`crate::block::SourceFootnote::label`]), so two
 /// files importing together may both call their first note `srcfn-1` without either
 /// claiming the other's body.
+fn cited_footnotes(doc: &SourceDocument, djot: &str, epigraph: &str) -> Vec<PlannedFootnote> {
+    if doc.footnotes.is_empty() {
+        return Vec::new();
+    }
+    let labels: Vec<String> = doc.footnotes.iter().map(|f| f.label.clone()).collect();
+    // Both texts, because both become a `Content` this row owns: a note cited from an
+    // epigraph is as real as one cited from the prose.
+    let mut here: Vec<String> = Vec::new();
+    for text in [djot, epigraph] {
+        for (_, label) in skribisto_model::footnote_numbering::references_in(text, &labels) {
+            if !here.contains(&label) {
+                here.push(label);
+            }
+        }
+    }
+    here.into_iter()
+        .filter_map(|label| {
+            doc.footnotes
+                .iter()
+                .find(|f| f.label == label)
+                .map(|note| PlannedFootnote {
+                    label,
+                    body: note.body.clone(),
+                })
+        })
+        .collect()
+}
+
+/// Prove every comment on a row against the prose that will actually be stored.
 ///
-/// A note nothing cites is **reported, not attached**. It happens for real: a
-/// footnote on a chapter *title* has nowhere to live, because a title is a plain
-/// string on the `BinderItem` and a `Footnote` annotates a `Content`. Attaching it to
-/// the row anyway would create a note the finished book never prints and the writer
-/// never sees a marker for.
-fn attach_footnotes(plan: &mut ImportPlan, docs: &[SourceDocument]) {
-    for doc in docs {
-        if doc.footnotes.is_empty() {
-            continue;
+/// The offsets the scanner supplied are a *hint*, not an answer: they are exact
+/// arithmetic over the block texts, but the Djot between them and the row is a real
+/// parse, and the only way to know the quote still points at the same words is to look.
+/// `comment_anchor::resolve` is the same three-tier matcher that re-anchors the comment
+/// on every reopen, so a comment that lands here lands there.
+///
+/// One `djot_plain_text` per row that carries comments, and none at all for the common
+/// case of a row with none, which is every Markdown import.
+///
+/// `moved` runs parallel to `comments`: whether each one already landed away from its
+/// words before it reached this row. Each comment is reported at most once, whether it was
+/// moved, its quote did not survive, or both.
+fn anchor_comments(
+    djot: &str,
+    origin: &str,
+    comments: &mut [PlannedComment],
+    moved: &[bool],
+    diagnostics: &mut Vec<ImportDiagnostic>,
+) {
+    if comments.is_empty() {
+        return;
+    }
+    let report = |comment: &PlannedComment, diagnostics: &mut Vec<ImportDiagnostic>| {
+        diagnostics.push(ImportDiagnostic::CommentUnanchored {
+            path: origin.to_string(),
+            quote: body_preview(&comment.body),
+        });
+    };
+    let Ok((text, block_starts)) = skrib_format::djot_plain_text(djot) else {
+        // The Djot this planner just built failed to parse, so there is no parsed text
+        // to prove any quote against, not even "the row's first block", which is what a
+        // heading comment falls back to below and which depends on this very parse.
+        //
+        // Every comment on the row becomes a `Paragraph` comment pinned to block 0 with
+        // an empty quote: the tier-3 fallback `comment_anchor::resolve` already takes
+        // when a paragraph's wording cannot be found. It is a real, storable anchor, and
+        // the editor's own re-anchor pass places it the first time the row is opened.
+        pin_to_first_block(comments);
+        for (comment, _) in comments.iter().zip(moved).filter(|(_, moved)| **moved) {
+            report(comment, diagnostics);
         }
-        let labels: Vec<String> = doc.footnotes.iter().map(|f| f.label.clone()).collect();
-        let mut cited: std::collections::HashSet<String> = std::collections::HashSet::new();
-        for row in plan.rows.iter_mut().filter(|r| r.origin == doc.origin) {
-            // Both texts, because both become a `Content` this row owns: a note
-            // cited from an epigraph is as real as one cited from the prose.
-            let mut here: Vec<String> = Vec::new();
-            for text in [&row.djot, &row.epigraph] {
-                for (_, label) in skribisto_model::footnote_numbering::references_in(text, &labels)
-                {
-                    if !here.contains(&label) {
-                        here.push(label);
-                    }
+        return;
+    };
+
+    for (comment, moved) in comments.iter_mut().zip(moved) {
+        let is_paragraph = comment.kind == CommentAnchorKind::Paragraph;
+        comment.anchor.block_ordinal =
+            comment_anchor::block_of(&block_starts, comment.anchor.start);
+
+        match comment_anchor::resolve(&text, &comment.anchor, is_paragraph, &block_starts) {
+            Resolution::Anchored { start, length } => {
+                // Re-capture at the proven position, so what is stored was
+                // measured against this row's text rather than a block's.
+                let ordinal = comment_anchor::block_of(&block_starts, start);
+                let mut anchor = comment_anchor::capture(&text, start, start + length, ordinal);
+                anchor.block_span = comment.anchor.block_span.max(1);
+                comment.anchor = anchor;
+                if *moved {
+                    report(comment, diagnostics);
                 }
             }
-            for label in here {
-                cited.insert(label.clone());
-                if let Some(note) = doc.footnotes.iter().find(|f| f.label == label) {
-                    row.footnotes.push(PlannedFootnote {
-                        label,
-                        body: note.body.clone(),
-                    });
-                }
+            Resolution::Orphan(reason) => {
+                comment.orphaned = true;
+                comment.orphan_reason = reason;
+                report(comment, diagnostics);
             }
-        }
-        let uncited = doc.footnotes.len() - cited.len();
-        if uncited > 0 {
-            plan.diagnostics.push(ImportDiagnostic::FootnoteNotCarried {
-                path: doc.origin.clone(),
-                count: uncited,
-            });
         }
     }
 }
 
-/// Prove every imported comment against the prose that will actually be stored.
+/// What [`rehome_comments`] decided for one document.
+#[derive(Debug, Default)]
+struct Homes {
+    /// The document's annotations with every comment its row could not hold moved to the
+    /// nearest stored paragraph, or `None` when every comment already has a home.
+    annotations: Option<Vec<SourceAnnotation>>,
+    /// One [`ImportDiagnostic::CommentNotCarried`] per comment no stored prose can hold.
+    not_carried: Vec<ImportDiagnostic>,
+}
+
+/// Give every comment a row that stores prose to hold it.
 ///
-/// One `djot_plain_text` per row that carries comments — and none at all for the
-/// common case of an import with none, which is every Markdown import.
+/// A comment lives on the `Content` of its row's prose, so a row that stores none cannot
+/// hold one: a title-only row (a Book heading directly above a Chapter heading, a chapter
+/// with no text yet), or a row that is not created at all. Left there, such a comment
+/// either vanished with the row or reached `apply_document_import` attached to a row with
+/// no prose, which refuses the whole import. Instead it becomes a paragraph comment on the
+/// nearest paragraph that is stored, flagged [`SourceAnnotation::unanchored`], so the row
+/// reports it. Which way is nearest depends on what the comment was on:
 ///
-/// The offsets the scanner supplied are a *hint*, not an answer: they are exact
-/// arithmetic over the block texts, but the conversion between them and this row's
-/// Djot is a real parse, and the only way to know the quote still points at the same
-/// words is to look. `comment_anchor::resolve` is the same three-tier matcher that
-/// re-anchors the comment on every reopen, so a comment that lands here lands there.
-fn anchor_comments(plan: &mut ImportPlan) {
-    for row in &mut plan.rows {
-        if row.comments.is_empty() {
+/// * a heading or an epigraph introduces what follows it, so a comment on one goes forward
+///   to the first stored paragraph after it, even under a later heading (a part's title
+///   directly above its first chapter), and back only when nothing follows;
+/// * anything else, most often an empty line, goes back to the paragraph before it, since
+///   a comment there most often belongs to the passage it follows, and forward only when
+///   nothing comes before.
+///
+/// Only a document with no stored prose at all leaves a comment without a home, and that is
+/// reported as not imported.
+fn rehome_comments(
+    doc: &SourceDocument,
+    drafts: &[RowDraft],
+    assembled: &[AssembledProse],
+    created: &[bool],
+) -> Homes {
+    // The blocks of every row that stores prose, and among them the prose blocks a
+    // comment can point at.
+    let mut held: HashSet<usize> = HashSet::new();
+    let mut homes: Vec<usize> = Vec::new();
+    for ((draft, prose), created) in drafts.iter().zip(assembled).zip(created) {
+        if !created || prose.djot.trim().is_empty() {
             continue;
         }
-        let Ok((text, block_starts)) = skrib_format::djot_plain_text(&row.djot) else {
-            // The Djot this planner just built failed to parse, so there is no
-            // parsed text to prove any quote against — not even "the row's first
-            // block", which is what a heading comment falls back to below, and
-            // which depends on this very parse having succeeded.
-            //
-            // This is *not* `CommentAnchorKind::Document`: that kind is reserved
-            // for a format that genuinely has no text to point into (a blank
-            // paragraph, a table — see `sources::rich`'s module doc), and it is
-            // neither DOCX nor ODF's vocabulary, nor one the comment UI ever
-            // wires up. A row whose Djot failed to parse is not that — it is an
-            // ordinary paragraph comment whose text simply is not available
-            // *yet*. So every comment on the row becomes a `Paragraph` comment
-            // pinned to block 0 with an empty quote: exactly the tier-3 fallback
-            // `comment_anchor::resolve` already falls back to when a paragraph's
-            // wording cannot be found (`_ => anchor.block_ordinal`). It cannot be
-            // resolved here — there is no parsed text to resolve it against —
-            // but it is a real, storable anchor rather than a zero-length
-            // placeholder tied to a kind the UI cannot render, so the live
-            // editor's own re-anchor pass places it on block 0 the first time
-            // the row is actually opened (by which point its Djot, whatever this
-            // planner built, is what the editor parses too).
-            pin_to_first_block(&mut row.comments);
-            continue;
-        };
-
-        for comment in &mut row.comments {
-            if comment.kind == CommentAnchorKind::Document {
-                comment.anchor = Anchor::default();
-                continue;
-            }
-            let is_paragraph = comment.kind == CommentAnchorKind::Paragraph;
-            comment.anchor.block_ordinal =
-                comment_anchor::block_of(&block_starts, comment.anchor.start);
-
-            match comment_anchor::resolve(&text, &comment.anchor, is_paragraph, &block_starts) {
-                Resolution::Anchored { start, length } => {
-                    // Re-capture at the proven position, so what is stored was
-                    // measured against this row's text rather than a block's.
-                    let ordinal = comment_anchor::block_of(&block_starts, start);
-                    let mut anchor = comment_anchor::capture(&text, start, start + length, ordinal);
-                    anchor.block_span = comment.anchor.block_span.max(1);
-                    comment.anchor = anchor;
-                }
-                Resolution::Orphan(reason) => {
-                    comment.orphaned = true;
-                    comment.orphan_reason = reason;
-                    row.diagnostics.push(ImportDiagnostic::CommentUnanchored {
-                        path: row.origin.clone(),
-                        quote: body_preview(&comment.body),
-                    });
-                }
+        for part in &draft.parts {
+            held.insert(part.block());
+            if let RowPart::Prose(index) = *part
+                && doc
+                    .blocks
+                    .get(index)
+                    .is_some_and(|block| !block.plain_text().trim().is_empty())
+            {
+                homes.push(index);
             }
         }
     }
+    homes.sort_unstable();
+
+    if doc
+        .annotations
+        .iter()
+        .all(|a| held.contains(&a.block_index))
+    {
+        return Homes::default();
+    }
+    let mut out = Homes::default();
+    let mut annotations = Vec::with_capacity(doc.annotations.len());
+    for annotation in &doc.annotations {
+        if held.contains(&annotation.block_index) {
+            annotations.push(annotation.clone());
+            continue;
+        }
+        let before = homes
+            .iter()
+            .rev()
+            .find(|home| **home < annotation.block_index);
+        let after = homes.iter().find(|home| **home > annotation.block_index);
+        let introduces = matches!(
+            doc.blocks.get(annotation.block_index),
+            Some(SourceBlock::Heading { .. } | SourceBlock::Epigraph { .. })
+        );
+        let before = before.map(|h| (*h, true));
+        let after = after.map(|h| (*h, false));
+        let home = if introduces {
+            after.or(before)
+        } else {
+            before.or(after)
+        };
+        let Some((home, from_before)) = home else {
+            out.not_carried.push(ImportDiagnostic::CommentNotCarried {
+                path: doc.origin.clone(),
+                quote: body_preview(&annotation.body),
+            });
+            continue;
+        };
+        let text = doc.blocks.get(home).map_or("", SourceBlock::plain_text);
+        let chars: Vec<char> = text.chars().collect();
+        // The paragraph of the home block nearest the comment: its last when the block
+        // comes before the comment, its first otherwise.
+        let (start, end) = if from_before {
+            let start = chars.iter().rposition(|c| *c == '\n').map_or(0, |i| i + 1);
+            (start, chars.len())
+        } else {
+            (
+                0,
+                chars.iter().position(|c| *c == '\n').unwrap_or(chars.len()),
+            )
+        };
+        let ordinal = chars[..start].iter().filter(|c| **c == '\n').count();
+        let mut moved = annotation.clone();
+        moved.block_index = home;
+        moved.kind = AnnotationKind::Paragraph;
+        moved.anchor = comment_anchor::capture(text, start, end, ordinal);
+        moved.unanchored = true;
+        annotations.push(moved);
+    }
+    out.annotations = Some(annotations);
+    out
 }
 
 /// Give every comment in `comments` a `Paragraph` anchor pinned to block 0 with
@@ -450,8 +735,46 @@ fn body_preview(body: &str) -> String {
     }
 }
 
-fn append_document(
-    plan: &mut ImportPlan,
+/// A row before its prose is assembled: where it sits, what opened it, and which blocks
+/// it takes.
+struct RowDraft {
+    indent: i64,
+    create_type: CreateType,
+    title: String,
+    stripped_ordinal: Option<String>,
+    source_uid_tag: Option<String>,
+    source_digest: Option<String>,
+    diagnostics: Vec<ImportDiagnostic>,
+    parts: Vec<RowPart>,
+}
+
+impl RowDraft {
+    fn into_row(self, doc: &SourceDocument, prose: AssembledProse) -> PlannedRow {
+        let mut diagnostics = self.diagnostics;
+        diagnostics.extend(prose.diagnostics);
+        PlannedRow {
+            indent: self.indent,
+            create_type: self.create_type,
+            title: self.title,
+            stripped_ordinal: self.stripped_ordinal,
+            djot: prose.djot,
+            epigraph: prose.epigraph,
+            scene_breaks: prose.scene_breaks,
+            word_count: prose.word_count,
+            origin: doc.origin.clone(),
+            source_file_digest: doc.source_file_digest.clone(),
+            included: true,
+            comments: prose.comments,
+            footnotes: prose.footnotes,
+            source_uid_tag: self.source_uid_tag,
+            source_digest: self.source_digest,
+            diagnostics,
+        }
+    }
+}
+
+/// Decide which blocks of `doc` make which row.
+fn draft_rows(
     doc: &SourceDocument,
     rules: &LevelRules,
     // Only ever read to answer "can this row hold an epigraph" — `Chapter` is the one
@@ -464,43 +787,29 @@ fn append_document(
     // the phantom-folder failure other importers are documented to produce. Owned
     // [`build_plan`] and carried across documents — see the note there.
     open_levels: &mut Vec<u8>,
-) {
+) -> Vec<RowDraft> {
+    let mut drafts: Vec<RowDraft> = Vec::new();
     // The row currently collecting prose. A document may open with prose before
     // any heading, which becomes a row of its own rather than being silently
     // attached to the first heading that follows.
-    let mut current: Option<PlannedRow> = None;
+    let mut current: Option<RowDraft> = None;
     // An epigraph that belongs to the row the *next* heading will open — the
     // `EpigraphPlacement::BeforeHeading` shape, where the quotation opens the chapter
     // above its own title. Carried rather than attached on sight, because the row it
     // belongs to does not exist yet.
-    let mut deferred_epigraph = String::new();
+    let mut deferred_epigraph: Vec<RowPart> = Vec::new();
     // Whether `current` was opened by a heading and has taken nothing since. An epigraph
     // is its row's only when it sits *immediately* under the heading; one that follows a
     // paragraph of the scene is a quotation inside the scene, which is a different thing
     // and stays where the writer put it.
     let mut at_row_head = false;
-    // How long the current row's prose is in *plain text*, mirroring `append_djot`'s
-    // `\n\n` join with the single `\n` it renders to. This is what rebases a
-    // block-relative comment offset into a row-relative one; `anchor_comments` then
-    // proves the result rather than trusting it.
-    let mut plain_len = 0usize;
-
-    let push = |plan: &mut ImportPlan, row: Option<PlannedRow>| {
-        if let Some(row) = row
-            && !(row.title.trim().is_empty() && row.djot.trim().is_empty())
-        {
-            plan.rows.push(row);
-        }
-    };
 
     for (block_index, block) in doc.blocks.iter().enumerate() {
-        // Where this block's text begins inside the row it is about to join.
-        let block_offset = if plain_len == 0 { 0 } else { plain_len + 1 };
-
         match block {
             SourceBlock::Heading { level, text } => {
-                push(plan, current.take());
-                plain_len = 0;
+                if let Some(done) = current.take() {
+                    drafts.push(done);
+                }
 
                 while open_levels.last().is_some_and(|open| *open >= *level) {
                     open_levels.pop();
@@ -532,50 +841,39 @@ fn append_document(
                     None => (text.clone(), None),
                 };
 
-                current = Some(PlannedRow {
+                // An epigraph held over from before this heading is this row's, and
+                // `place_epigraph` has already proven this type can hold one: it is
+                // only ever deferred when the following heading's own type passed. It
+                // comes first, in document order.
+                let mut parts = std::mem::take(&mut deferred_epigraph);
+                parts.push(RowPart::Title(block_index));
+                current = Some(RowDraft {
                     indent,
                     create_type: rules.kind_for(*level),
                     title: title_text,
                     stripped_ordinal: stripped,
-                    djot: String::new(),
-                    // An epigraph held over from before this heading is this row's, and
-                    // `epigraph_block` has already proven this type can hold one — it is
-                    // only ever deferred when the following heading's own type passed.
-                    epigraph: std::mem::take(&mut deferred_epigraph),
-                    scene_breaks: 0,
-                    word_count: 0,
-                    origin: doc.origin.clone(),
-                    source_file_digest: doc.source_file_digest.clone(),
-                    included: true,
-                    comments: Vec::new(),
-                    footnotes: Vec::new(),
                     // Filled by the mark loop below, once this row is the current one.
                     source_uid_tag: None,
                     source_digest: None,
                     diagnostics,
+                    parts,
                 });
                 at_row_head = true;
             }
-            SourceBlock::Prose { djot, text } => {
-                let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
-                append_djot(&mut row.djot, djot);
-                plain_len = block_offset + text.chars().count();
+            SourceBlock::Prose { .. } | SourceBlock::SceneBreak { .. } => {
+                current
+                    .get_or_insert_with(|| leading_row(doc, rules, base_indent))
+                    .parts
+                    .push(RowPart::Prose(block_index));
                 at_row_head = false;
             }
-            SourceBlock::SceneBreak { tier } => {
-                let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
-                append_djot(&mut row.djot, scene_break::canonical_djot(*tier));
-                row.scene_breaks += 1;
-                plain_len = block_offset + scene_break::canonical_plain(*tier).chars().count();
-                at_row_head = false;
-            }
-            SourceBlock::Epigraph { djot, text } => {
+            SourceBlock::Epigraph { .. } => {
                 // Decided here, from the file's own shape, and never from the export
                 // preset that wrote it: `EpigraphPlacement` is a choice made on the way
                 // *out*, recorded nowhere in the file, and absent entirely from a
                 // document this app did not produce. What the file does say is which
                 // heading the quotation is touching, and that is what is read.
-                let placed = epigraph_block(
+                let placed = place_epigraph(
                     EpigraphContext {
                         doc,
                         rules,
@@ -583,33 +881,14 @@ fn append_document(
                         block_index,
                         at_row_head,
                     },
-                    djot,
                     &mut current,
                     &mut deferred_epigraph,
                     || leading_row(doc, rules, base_indent),
                 );
                 if placed == EpigraphPlacementOutcome::KeptAsProse {
-                    // Not an epigraph after all — a quotation somewhere in the scene, or
-                    // one beside a heading whose type cannot hold it. Either way it is
-                    // this row's prose, and it advances the offsets like any other.
-                    plain_len = block_offset + text.chars().count();
                     at_row_head = false;
                 }
             }
-        }
-
-        // Comments on this block belong to whichever row it just joined. A comment
-        // on a *heading* has no prose to point into — a heading becomes a row's
-        // title — so `planned_comment` gives it a `Paragraph` anchor on the row's
-        // first block instead of a quote it could never carry.
-        for annotation in doc
-            .annotations
-            .iter()
-            .filter(|a| a.block_index == block_index)
-        {
-            let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
-            row.comments
-                .push(planned_comment(annotation, block, block_offset));
         }
 
         // A round-trip mark on this block names the row the block just joined. **First mark
@@ -644,10 +923,15 @@ fn append_document(
             }
         }
     }
-    push(plan, current.take());
+    // Nothing is left in `deferred_epigraph` here: an epigraph is only deferred when the
+    // very next block is the heading that takes it.
+    if let Some(done) = current.take() {
+        drafts.push(done);
+    }
+    drafts
 }
 
-/// What [`epigraph_block`] did with the quotation.
+/// What [`place_epigraph`] did with the quotation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum EpigraphPlacementOutcome {
     /// It became a row's `EpigraphText` — either the row above it or the one the next
@@ -657,7 +941,7 @@ enum EpigraphPlacementOutcome {
     KeptAsProse,
 }
 
-/// Everything `epigraph_block` needs to read about *where* the quotation sits.
+/// Everything `place_epigraph` needs to read about *where* the quotation sits.
 struct EpigraphContext<'a> {
     doc: &'a SourceDocument,
     rules: &'a LevelRules,
@@ -687,12 +971,11 @@ struct EpigraphContext<'a> {
 /// When 1 and 2 are *both* available the writer is told (an
 /// [`ImportDiagnostic::EpigraphPlacementAmbiguous`]) rather than the tie being resolved
 /// silently — the two placements are genuinely both real practice.
-fn epigraph_block(
+fn place_epigraph(
     ctx: EpigraphContext<'_>,
-    djot: &str,
-    current: &mut Option<PlannedRow>,
-    deferred: &mut String,
-    make_leading_row: impl Fn() -> PlannedRow,
+    current: &mut Option<RowDraft>,
+    deferred: &mut Vec<RowPart>,
+    make_leading_row: impl Fn() -> RowDraft,
 ) -> EpigraphPlacementOutcome {
     // The heading immediately below, if the very next block is one. Blank blocks never
     // reach `SourceDocument::blocks`, so "the next block" really is the next thing in
@@ -701,15 +984,13 @@ fn epigraph_block(
         Some(SourceBlock::Heading { level, text }) => Some((ctx.rules.kind_for(*level), text)),
         _ => None,
     };
-
-    let above_ok = ctx.at_row_head
-        && current
-            .as_ref()
-            .is_some_and(|row| carries_epigraph(row.create_type, ctx.chapter_mode));
     let below_ok = below.is_some_and(|(kind, _)| carries_epigraph(kind, ctx.chapter_mode));
 
-    if above_ok {
-        let row = current.as_mut().expect("above_ok proved it is Some");
+    if ctx.at_row_head
+        && let Some(row) = current
+            .as_mut()
+            .filter(|row| carries_epigraph(row.create_type, ctx.chapter_mode))
+    {
         if let Some((_, below_title)) = below.filter(|_| below_ok) {
             row.diagnostics
                 .push(ImportDiagnostic::EpigraphPlacementAmbiguous {
@@ -717,14 +998,12 @@ fn epigraph_block(
                     below: below_title.clone(),
                 });
         }
-        // Appended, never assigned: a row may legitimately head two quotations, and
-        // `mark_epigraph` marks each blockquote separately on the way back out.
-        append_djot(&mut row.epigraph, djot);
+        row.parts.push(RowPart::Epigraph(ctx.block_index));
         return EpigraphPlacementOutcome::Attached;
     }
 
     if below_ok {
-        append_djot(deferred, djot);
+        deferred.push(RowPart::Epigraph(ctx.block_index));
         return EpigraphPlacementOutcome::Attached;
     }
 
@@ -741,7 +1020,7 @@ fn epigraph_block(
         row.diagnostics
             .push(ImportDiagnostic::EpigraphNotCarried { title, kind });
     }
-    append_djot(&mut row.djot, djot);
+    row.parts.push(RowPart::Prose(ctx.block_index));
     EpigraphPlacementOutcome::KeptAsProse
 }
 
@@ -755,63 +1034,58 @@ fn carries_epigraph(create_type: CreateType, chapter_mode: &ChapterMode) -> bool
     content_allowed(&role, &sub_role, &ContentRole::EpigraphText)
 }
 
+/// How a block's comments join its row.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PartRole {
+    /// Its text is part of the row's Djot, so a comment keeps its words, rebased.
+    Prose,
+    /// Its text is not: a heading became the title, an epigraph a `Content` of its own.
+    Title,
+}
+
 /// Rebase one scanned annotation onto the row its block joined.
 ///
 /// The anchor arrives measured against the block's own text; shifting `start` by
 /// where that block begins in the row is the whole of the rebasing. Everything else
-/// — the quote, its context, whether it was truncated — is carried across untouched,
-/// because it describes prose rather than position. The one exception is a
-/// heading's annotation, which carries no offset across at all — see below.
+/// (the quote, its context, whether it was truncated) is carried across untouched,
+/// because it describes prose rather than position.
+///
+/// A comment whose block is not the row's prose (a heading or an epigraph) becomes a
+/// `Paragraph` comment with a blank anchor: the proof then places it on the row's
+/// *first* block, the same tier-3 "fall back to the block ordinal" path
+/// `comment_anchor::resolve` takes for a paragraph comment whose wording cannot be
+/// found. An epigraph carries no comment layer in the editor either (see
+/// `OpenDoc::build`), so this is what keeps the editor's words instead of dropping them.
+///
+/// And a `Document` annotation, which no scanner in this crate mints any more but a
+/// future one could, becomes a `Paragraph` comment on the block it names, since the
+/// comment UI has no surface to open a comment on the whole document from.
 fn planned_comment(
     annotation: &SourceAnnotation,
-    block: &SourceBlock,
+    role: PartRole,
     block_offset: usize,
 ) -> PlannedComment {
-    // Both of these are blocks whose text is *not* part of the row's Djot — a heading
-    // becomes the row's title, an epigraph becomes a `Content` of its own — so an offset
-    // into either would point at unrelated words once the row's prose is assembled. They
-    // take the same treatment for the same reason.
-    //
-    // An epigraph carries no comment layer in the editor either (see `OpenDoc::build`),
-    // so there is no anchor for an imported remark to keep even in principle; becoming a
-    // paragraph comment on the row's first block is what keeps the editor's words instead
-    // of dropping them.
-    let is_heading = matches!(
-        block,
-        SourceBlock::Heading { .. } | SourceBlock::Epigraph { .. }
-    );
-    let kind = match annotation.kind {
-        // A heading is a title, not prose — it becomes the row's `title` field,
-        // never its Djot — so nothing inside it can be pointed at with a quote.
-        //
-        // This used to become `CommentAnchorKind::Document`: a kind neither DOCX
-        // nor ODF (the only formats that carry comments at all) can express, and
-        // one the comment UI never wires up — see the crate's design note on why
-        // the importer stopped minting it. It becomes a `Paragraph` comment
-        // instead, with an empty quote and no offset carried across (below):
-        // `anchor_comments` re-derives that, once the row's Djot is fully
-        // assembled, into a real anchor on the row's *first* block — the same
-        // tier-3 "fall back to the block ordinal" path `comment_anchor::resolve`
-        // already takes for a paragraph comment whose wording cannot be found.
-        _ if is_heading => CommentAnchorKind::Paragraph,
-        AnnotationKind::Range => CommentAnchorKind::Range,
-        AnnotationKind::Paragraph => CommentAnchorKind::Paragraph,
-        AnnotationKind::Document => CommentAnchorKind::Document,
+    let kind = match (role, annotation.kind) {
+        (PartRole::Title, _) => CommentAnchorKind::Paragraph,
+        (PartRole::Prose, AnnotationKind::Range) => CommentAnchorKind::Range,
+        (PartRole::Prose, AnnotationKind::Paragraph | AnnotationKind::Document) => {
+            CommentAnchorKind::Paragraph
+        }
     };
-    // A heading's own offset describes a position inside the *title*, which is
-    // never part of the row's Djot — carrying it across (`+= block_offset`)
-    // would hand `anchor_comments`' block lookup an offset that happens to land
-    // in some unrelated block instead of the row's first one. Starting from a
-    // blank anchor is what makes the block-ordinal fallback described above
-    // land on block 0, deliberately, rather than by accident.
-    let mut anchor = if is_heading {
-        Anchor::default()
-    } else {
-        annotation.anchor.clone()
+    let mut anchor = match (role, annotation.kind) {
+        (PartRole::Title, _) => Anchor::default(),
+        // No text to quote: the block's position is all it has, and the proof resolves a
+        // paragraph comment with no quote by its block.
+        (PartRole::Prose, AnnotationKind::Document) => Anchor {
+            start: block_offset,
+            ..Anchor::default()
+        },
+        (PartRole::Prose, _) => {
+            let mut anchor = annotation.anchor.clone();
+            anchor.start += block_offset;
+            anchor
+        }
     };
-    if !is_heading {
-        anchor.start += block_offset;
-    }
     anchor.block_span = anchor.block_span.max(1);
 
     PlannedComment {
@@ -835,37 +1109,35 @@ fn planned_comment(
 /// One surveyed tool leaves this case unresolved in its own source comment, letting
 /// the text inherit a title it has no claim to. Giving it a row of its own named for
 /// the document is duller and correct: nothing is lost and nothing is misfiled.
-fn leading_row(doc: &SourceDocument, rules: &LevelRules, base_indent: i64) -> PlannedRow {
-    PlannedRow {
+fn leading_row(doc: &SourceDocument, rules: &LevelRules, base_indent: i64) -> RowDraft {
+    RowDraft {
         indent: base_indent,
         create_type: rules.kind_for(u8::MAX),
         title: doc.effective_title().to_string(),
         stripped_ordinal: None,
-        djot: String::new(),
-        // Never an epigraph: this row exists because prose arrived before any heading,
-        // and an epigraph with no heading to head is not one.
-        epigraph: String::new(),
-        scene_breaks: 0,
-        word_count: 0,
-        origin: doc.origin.clone(),
-        source_file_digest: doc.source_file_digest.clone(),
-        included: true,
-        comments: Vec::new(),
-        footnotes: Vec::new(),
         source_uid_tag: None,
         source_digest: None,
         diagnostics: Vec::new(),
+        // Never an epigraph: this row exists because prose arrived before any heading,
+        // and an epigraph with no heading to head is not one.
+        parts: Vec::new(),
     }
 }
 
+/// Append a block's Djot to a row's, a blank line between them.
+///
+/// Only the whitespace Djot itself ignores is trimmed from the end. A paragraph ending in
+/// a no-break space keeps it: the parser does, and the importer proved the paragraph with
+/// it.
 fn append_djot(buffer: &mut String, addition: &str) {
+    let addition = addition.trim_end_matches(skrib_format::is_djot_whitespace);
     if addition.trim().is_empty() {
         return;
     }
     if !buffer.is_empty() {
         buffer.push_str("\n\n");
     }
-    buffer.push_str(addition.trim_end());
+    buffer.push_str(addition);
 }
 
 fn ordinal_label(e: &title::ExtractedOrdinal) -> String {

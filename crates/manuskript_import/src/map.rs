@@ -38,8 +38,9 @@ use common::entities::BinderItemSubRole as SubRole;
 use common::entities::{ContentRole, StatusCategory};
 use skrib_format::{
     BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BundledBinder, BundledItem,
-    FORMAT_VERSION, InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle, WorkFile,
-    binder_dir_name, markdown_to_djot, new_unique_id, prose_file_name, prose_kind, prose_relpath,
+    EscapeContext, FORMAT_VERSION, InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle,
+    WorkFile, binder_dir_name, escape_djot_text, new_unique_id, plain_text_to_djot_verbatim,
+    prose_file_name, prose_kind, prose_relpath, trim_djot_whitespace,
 };
 use skribisto_model::content_allowed;
 
@@ -548,23 +549,6 @@ impl<'a> Builder<'a> {
             },
         )
     }
-
-    /// Convert a Markdown body to Djot, reporting rather than failing.
-    fn djot_of(&mut self, markdown: &str, what: &str) -> String {
-        if markdown.trim().is_empty() {
-            return String::new();
-        }
-        match markdown_to_djot(markdown) {
-            Ok(djot) => djot,
-            Err(e) => {
-                self.warnings.push(format!(
-                    "The text of '{what}' could not be converted ({e}); it was kept exactly as \
-                     it was written."
-                ));
-                markdown.to_string()
-            }
-        }
-    }
 }
 
 /// Count every outline row, for the progress denominator.
@@ -698,9 +682,8 @@ impl Builder<'_> {
             // not rows, and minting a tag per character would bury the palette.
             self.dropped_colors += 1;
         }
-        let synopsis = self.djot_of(&character.summary_sentence, &character.name);
-        let body = self.character_body(character);
-        let note = self.djot_of(&body, &character.name);
+        let synopsis = plain_text_to_djot_verbatim(&character.summary_sentence);
+        let note = self.character_body(character);
         let (id, mut item) = self.make_item(
             STORY_BIBLE_INDEX,
             binder,
@@ -742,7 +725,7 @@ impl Builder<'_> {
         for (key, value) in &character.infos {
             sections.push((key.as_str(), value.as_str()));
         }
-        sections_to_markdown(&sections)
+        sections_to_djot(&sections)
     }
 
     fn emit_world(
@@ -758,13 +741,12 @@ impl Builder<'_> {
                 return;
             }
             self.tick(&entry.name);
-            let body = sections_to_markdown(&[
+            let note = sections_to_djot(&[
                 ("Description", entry.description.as_str()),
                 ("Passion", entry.passion.as_str()),
                 ("Conflict", entry.conflict.as_str()),
             ]);
-            let note = self.djot_of(&body, &entry.name);
-            let synopsis = self.djot_of(&entry.description, &entry.name);
+            let synopsis = plain_text_to_djot_verbatim(&entry.description);
 
             // A world entry with children is a folder, which the matrix allows
             // only a synopsis; one without is a note, which can hold its prose.
@@ -804,13 +786,12 @@ impl Builder<'_> {
     }
 
     fn emit_plot(&mut self, binder: &str, plot: &Plot, tag: u64, out: &mut Vec<BundledItem>) {
-        let body = sections_to_markdown(&[
+        let note = sections_to_djot(&[
             ("Description", plot.description.as_str()),
             ("Result", plot.result.as_str()),
             ("Summary", plot.summary.as_str()),
         ]);
-        let note = self.djot_of(&body, &plot.name);
-        let synopsis = self.djot_of(&plot.summary, &plot.name);
+        let synopsis = plain_text_to_djot_verbatim(&plot.summary);
         let has_steps = !plot.steps.is_empty();
 
         // Same rule as a world entry: a plot with beats under it is a folder.
@@ -857,12 +838,11 @@ impl Builder<'_> {
         }
 
         for step in &plot.steps {
-            let step_body = sections_to_markdown(&[
+            let step_note = sections_to_djot(&[
                 ("Meta", step.meta.as_str()),
                 ("Summary", step.summary.as_str()),
             ]);
-            let step_note = self.djot_of(&step_body, &step.name);
-            let step_synopsis = self.djot_of(&step.summary, &step.name);
+            let step_synopsis = plain_text_to_djot_verbatim(&step.summary);
             let (_, mut child) = self.make_item(
                 STORY_BIBLE_INDEX,
                 binder,
@@ -888,17 +868,16 @@ impl Builder<'_> {
     /// left over.
     fn emit_project_info(&mut self, binder: &str, out: &mut Vec<BundledItem>) {
         let info = &self.project.info;
-        let body = sections_to_markdown(&[
+        let note = sections_to_djot(&[
             ("Serie", info.serie.as_str()),
             ("Volume", info.volume.as_str()),
             ("Genre", info.genre.as_str()),
             ("License", info.license.as_str()),
             ("Email", info.email.as_str()),
         ]);
-        if body.trim().is_empty() {
+        if note.is_empty() {
             return;
         }
-        let note = self.djot_of(&body, &self.names.project_info_note.clone());
         let title = self.names.project_info_note.clone();
         let (_, item) = self.make_item(
             STORY_BIBLE_INDEX,
@@ -923,8 +902,7 @@ impl Builder<'_> {
             return;
         }
         let rungs = self.project.summary.rungs();
-        let body = sections_to_markdown(&rungs);
-        let note = self.djot_of(&body, &self.names.summary_note.clone());
+        let note = sections_to_djot(&rungs);
         let title = self.names.summary_note.clone();
         let (_, item) = self.make_item(
             STORY_BIBLE_INDEX,
@@ -940,20 +918,34 @@ impl Builder<'_> {
     }
 }
 
-/// Render `(heading, body)` pairs as a Markdown document, skipping empty ones.
-fn sections_to_markdown(sections: &[(&str, &str)]) -> String {
+/// Render `(heading, body)` pairs as a Djot document, skipping empty ones.
+///
+/// Each body is a plain field's text and each heading the field's name, a writer's own
+/// for a custom character field. Both are written as they were typed, which is why this
+/// builds Djot directly: going through Markdown read a field's `*` and `_` as emphasis,
+/// its line breaks as spaces, and left `10:30:45` or a line opening `I. ` for the first
+/// load to rewrite. A field whose name is blank keeps its text without a heading.
+fn sections_to_djot(sections: &[(&str, &str)]) -> String {
     let mut out = String::new();
     for (heading, body) in sections {
-        if body.trim().is_empty() {
+        let body = plain_text_to_djot_verbatim(body);
+        if body.is_empty() {
             continue;
         }
         if !out.is_empty() {
             out.push_str("\n\n");
         }
-        out.push_str("## ");
-        out.push_str(heading);
-        out.push_str("\n\n");
-        out.push_str(body.trim());
+        // A heading is one line; a stray line break in a name would end it early.
+        let name: String = trim_djot_whitespace(heading)
+            .chars()
+            .map(|c| if matches!(c, '\n' | '\r') { ' ' } else { c })
+            .collect();
+        if !name.is_empty() {
+            out.push_str("## ");
+            out.push_str(&escape_djot_text(&name, EscapeContext::default()));
+            out.push_str("\n\n");
+        }
+        out.push_str(&body);
     }
     out
 }
@@ -1044,7 +1036,7 @@ impl Builder<'_> {
             .map(|(_, body)| body.to_string())
             .max_by_key(|body| body.trim().len())
             .unwrap_or_default();
-        self.djot_of(&longest, "the book summary")
+        plain_text_to_djot_verbatim(&longest)
     }
 
     /// Emit one outline row and everything under it.
@@ -1080,8 +1072,8 @@ impl Builder<'_> {
             (Role::Item, SubRole::Scene, None)
         };
 
-        let synopsis_md = join_summaries(&row.summary_sentence, &row.summary_full);
-        let synopsis = self.djot_of(&synopsis_md, &row.title);
+        let synopsis =
+            plain_text_to_djot_verbatim(&join_summaries(&row.summary_sentence, &row.summary_full));
         // Already Djot: `crate::prose` converted it at the reader boundary, and
         // converting again would read Djot as Markdown and quietly demote every
         // bold run to italic.
@@ -1291,9 +1283,11 @@ impl Builder<'_> {
             return;
         }
         // Notes are plain text in Manuskript, with no `type` of their own, so
-        // unlike the body they are converted here rather than at the reader.
+        // unlike the body they are converted here rather than at the reader, and
+        // verbatim: read as Markdown, a note's `*` and `_` became emphasis and its
+        // line breaks spaces.
         let scanned = self.rewrite_prose(&row.notes, &row.title);
-        let note = self.djot_of(&scanned.text, &row.title);
+        let note = plain_text_to_djot_verbatim(&scanned.text);
         let title = format!("{} (notes)", row.title);
         let (_, mut item) = self.make_item(
             MANUSCRIPT_INDEX,
@@ -1452,7 +1446,8 @@ fn max_folder_depth(items: &[OutlineItem]) -> usize {
         .unwrap_or(0)
 }
 
-/// Fold Manuskript's two summaries into the one synopsis Skribisto keeps.
+/// Fold Manuskript's two summaries into the one synopsis Skribisto keeps, as plain
+/// text.
 ///
 /// The sentence leads and the fuller telling follows, which is the order they are
 /// written in and the order they read in. Either alone is used alone; neither is
@@ -1462,7 +1457,7 @@ fn join_summaries(sentence: &str, full: &str) -> String {
         ("", "") => String::new(),
         (s, "") => s.to_string(),
         ("", f) => f.to_string(),
-        (s, f) => format!("{s}\n\n{f}"),
+        (s, f) => format!("{s}\n{f}"),
     }
 }
 

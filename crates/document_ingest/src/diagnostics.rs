@@ -141,6 +141,43 @@ pub enum ImportDiagnostic {
     /// attached to its row as a whole rather than to a span. The comment is kept —
     /// it is the writer's, and the most valuable thing an editor sends back.
     CommentUnanchored { path: String, quote: String },
+    /// A comment no stored prose can hold, so it is not imported: the file brought no
+    /// text at all, or only headings, which become titles and carry no comments.
+    ///
+    /// The sibling of [`Self::CommentUnanchored`] and never raised with it for the same
+    /// comment. That one says the comment arrives somewhere other than its words; this one
+    /// says it does not arrive, which is what the writer needs to know to copy it by hand.
+    CommentNotCarried { path: String, quote: String },
+    /// Paragraphs whose formatting could not be written so that they read back exactly as
+    /// the file has them, and were imported as their words alone.
+    ///
+    /// The importer proves every paragraph it stores against the parser the editor reads
+    /// prose with, and never keeps one that does not read back. This is what the fallback
+    /// says when it was needed: the words are the file's, the styles and links of those
+    /// paragraphs are not carried. Should the words themselves not read back even then, the
+    /// paragraph is counted here too, since what the writer should do is the same: compare
+    /// it with the original.
+    ProseNotVerbatim { path: String, count: usize },
+    /// Stretches of blank space that were underlined or struck through, a line left to fill
+    /// in by hand most often, arrive without their line: as plain spaces, or not at all at
+    /// the start or end of a paragraph, where no blank space is kept, styled or not.
+    ///
+    /// The editor's document model reads a style on spaces alone but drops it the first
+    /// time it writes the paragraph back, so the importer writes those spaces plain and says
+    /// so, rather than store a line that would vanish at the writer's next edit. Bold,
+    /// italic or a raised position on spaces alone shows nothing and is not counted.
+    StyledSpacesNotCarried { path: String, count: usize },
+    /// List items nested more than `limit` levels deep, which arrive at level `limit`,
+    /// beside the deepest items kept, with their words, marker and formatting.
+    ///
+    /// Word stops at nine levels and LibreOffice at ten, so only an odd or a hostile file
+    /// raises this. Written as deep as the file has them, such an item would be stored as
+    /// prose the next load of the project refuses (see `sources::rich::MAX_LIST_LEVELS`).
+    ListNestingFlattened {
+        path: String,
+        count: usize,
+        limit: usize,
+    },
     /// Replies could not be recovered as replies and became comments of their own.
     /// ODF has no standardised threading, so this is the honest outcome for a file
     /// whose producer did not use one this scanner recognises.
@@ -208,7 +245,11 @@ impl ImportDiagnostic {
             | FieldFlattened { .. }
             | UnknownStyleLevel { .. }
             | CommentUnanchored { .. }
+            | CommentNotCarried { .. }
             | CommentRepliesFlattened { .. }
+            | ProseNotVerbatim { .. }
+            | StyledSpacesNotCarried { .. }
+            | ListNestingFlattened { .. }
             | EpigraphNotCarried { .. } => Warning,
             // Nothing was lost and nothing needs correcting — the epigraph landed on one
             // of the two rows it could have. Said once so a writer who meant the other
@@ -240,7 +281,11 @@ impl ImportDiagnostic {
             | FieldFlattened { path, .. }
             | UnknownStyleLevel { path, .. }
             | CommentUnanchored { path, .. }
-            | CommentRepliesFlattened { path, .. } => Some(path),
+            | CommentNotCarried { path, .. }
+            | CommentRepliesFlattened { path, .. }
+            | ProseNotVerbatim { path, .. }
+            | StyledSpacesNotCarried { path, .. }
+            | ListNestingFlattened { path, .. } => Some(path),
             DuplicateTitle { .. }
             | HeadingLevelJump { .. }
             | IllegalCombination { .. }
@@ -277,7 +322,11 @@ impl ImportDiagnostic {
             FieldFlattened { .. } => "field-flattened",
             UnknownStyleLevel { .. } => "unknown-style-level",
             CommentUnanchored { .. } => "comment-unanchored",
+            CommentNotCarried { .. } => "comment-not-carried",
             CommentRepliesFlattened { .. } => "comment-replies-flattened",
+            ProseNotVerbatim { .. } => "prose-not-verbatim",
+            StyledSpacesNotCarried { .. } => "styled-spaces-not-carried",
+            ListNestingFlattened { .. } => "list-nesting-flattened",
             EpigraphNotCarried { .. } => "epigraph-not-carried",
             EpigraphPlacementAmbiguous { .. } => "epigraph-placement-ambiguous",
         }
@@ -373,8 +422,29 @@ impl fmt::Display for ImportDiagnostic {
             CommentUnanchored { path, quote } => {
                 write!(f, "{path}: comment '{quote}' could not be anchored")
             }
+            CommentNotCarried { path, quote } => {
+                write!(
+                    f,
+                    "{path}: comment '{quote}' has no stored prose to hold it"
+                )
+            }
             CommentRepliesFlattened { path, count } => {
                 write!(f, "{path}: {count} reply/replies became separate comments")
+            }
+            ProseNotVerbatim { path, count } => {
+                write!(f, "{path}: {count} paragraph(s) imported as plain text")
+            }
+            StyledSpacesNotCarried { path, count } => {
+                write!(
+                    f,
+                    "{path}: {count} underlined or struck-through blank(s) imported without their line"
+                )
+            }
+            ListNestingFlattened { path, count, limit } => {
+                write!(
+                    f,
+                    "{path}: {count} list item(s) nested past {limit} levels placed at level {limit}"
+                )
             }
         }
     }

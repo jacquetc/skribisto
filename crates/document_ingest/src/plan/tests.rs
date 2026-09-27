@@ -265,6 +265,7 @@ fn annotation(block_index: usize, kind: AnnotationKind, body: &str) -> SourceAnn
         block_index,
         kind,
         anchor: Anchor::default(),
+        unanchored: false,
         uid: None,
         uid_tag: None,
         author: "Editor".into(),
@@ -326,13 +327,14 @@ fn a_comment_on_a_heading_lands_as_a_paragraph_comment_on_the_rows_first_block()
     );
 }
 
-/// A heading comment on a row with **no** prose at all (nothing ever follows
-/// the heading) has nothing to fall back to. It must still not be
-/// `CommentAnchorKind::Document` — it becomes a `Paragraph` comment that
-/// honestly reports itself orphaned, exactly as a paragraph comment whose
-/// wording vanished entirely would.
+/// A heading comment in a file with **no** prose at all (nothing ever follows
+/// the heading) has nothing to fall back to. It is never
+/// `CommentAnchorKind::Document`, and never left on the title-only row either:
+/// a comment hangs off a row's prose, and `apply_document_import` refuses a row
+/// carrying comments and no prose, which would have refused the whole import.
+/// It is reported, once, as a comment that could not be brought over.
 #[test]
-fn a_comment_on_a_heading_with_no_following_prose_becomes_an_orphaned_paragraph_comment() {
+fn a_comment_on_a_heading_with_no_prose_anywhere_is_reported_not_attached() {
     let mut d = doc("a.md", vec![heading(1, "Chapter One")]);
     d.annotations = vec![annotation(0, AnnotationKind::Document, "Nice title.")];
 
@@ -340,12 +342,18 @@ fn a_comment_on_a_heading_with_no_following_prose_becomes_an_orphaned_paragraph_
     let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
 
     assert_eq!(plan.rows.len(), 1, "the heading still becomes a row");
-    let c = &plan.rows[0].comments[0];
-    assert_eq!(c.kind, CommentAnchorKind::Paragraph);
     assert!(
-        c.orphaned,
-        "nothing in the row's Djot to point at, so it must say so rather than \
-             silently claim block 0 of an empty document"
+        plan.rows[0].comments.is_empty(),
+        "{:?}",
+        plan.rows[0].comments
+    );
+    assert!(
+        matches!(
+            comment_reports(&plan).as_slice(),
+            [ImportDiagnostic::CommentNotCarried { .. }]
+        ),
+        "{:?}",
+        comment_reports(&plan)
     );
 }
 
@@ -362,12 +370,12 @@ fn the_parse_failure_fallback_pins_every_comment_to_block_zero_with_an_empty_quo
     let mut comments = vec![
         planned_comment(
             &annotation(0, AnnotationKind::Range, "A range comment."),
-            &prose("Some prose."),
+            PartRole::Prose,
             0,
         ),
         planned_comment(
             &annotation(0, AnnotationKind::Document, "A document comment."),
-            &prose("Some prose."),
+            PartRole::Prose,
             0,
         ),
     ];
@@ -801,4 +809,292 @@ fn a_placeholder_inside_a_code_span_does_not_cite_anything() {
     let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
 
     assert!(plan.rows.iter().all(|r| r.footnotes.is_empty()));
+}
+
+/// A paragraph ending in a no-break space keeps it in the row: the parser does, and the
+/// importer proved the paragraph with it.
+#[test]
+fn a_trailing_no_break_space_stays_in_the_row() {
+    let d = doc(
+        "a.docx",
+        vec![
+            SourceBlock::prose("Il dit\u{a0}", "Il dit\u{a0}"),
+            prose("Ensuite."),
+        ],
+    );
+    let rules = infer_rules(&[], CreateType::Scene);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+    assert_eq!(plan.rows[0].djot, "Il dit\u{a0}\n\nEnsuite.");
+}
+
+/// Every diagnostic the plan raises about a comment, wherever it was filed: on the plan or
+/// on a row.
+fn comment_reports(plan: &ImportPlan) -> Vec<&ImportDiagnostic> {
+    plan.diagnostics
+        .iter()
+        .chain(plan.rows.iter().flat_map(|r| r.diagnostics.iter()))
+        .filter(|d| {
+            matches!(
+                d,
+                ImportDiagnostic::CommentUnanchored { .. }
+                    | ImportDiagnostic::CommentNotCarried { .. }
+            )
+        })
+        .collect()
+}
+
+/// A comment on a block no created row took lands on the nearest stored paragraph, the one
+/// before it, and is reported once: never dropped, and never dropped without a word.
+#[test]
+fn a_comment_whose_block_is_in_no_row_lands_on_the_nearest_paragraph() {
+    let mut d = doc("a.docx", vec![prose("Only prose.")]);
+    d.annotations = vec![annotation(7, AnnotationKind::Range, "Where did this go?")];
+    let rules = infer_rules(&[], CreateType::Scene);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+    let c = &plan.rows[0].comments[0];
+    assert_eq!(c.kind, CommentAnchorKind::Paragraph);
+    assert!(!c.orphaned);
+    assert_eq!(c.anchor.exact, "Only prose.");
+    assert!(
+        matches!(
+            comment_reports(&plan).as_slice(),
+            [ImportDiagnostic::CommentUnanchored { .. }]
+        ),
+        "{:?}",
+        comment_reports(&plan)
+    );
+}
+
+/// A comment on a heading whose row stores no prose (a Book title directly above a
+/// chapter) cannot live on that row: a comment hangs off the row's prose, and
+/// `apply_document_import` refuses a row carrying comments and no prose. It moves to the
+/// nearest stored paragraph instead, here the chapter's first, and says so once.
+#[test]
+fn a_comment_on_a_title_only_row_moves_to_the_nearest_stored_paragraph() {
+    let mut d = doc(
+        "a.docx",
+        vec![
+            heading(1, "Book"),
+            heading(2, "Chapter"),
+            SourceBlock::prose(
+                "The ferry was late.\n\nNobody minded.",
+                "The ferry was late.\nNobody minded.",
+            ),
+        ],
+    );
+    d.annotations = vec![annotation(
+        0,
+        AnnotationKind::Paragraph,
+        "On the book title",
+    )];
+    let rules = infer_rules(&[1, 2], CreateType::Book);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+    let book = plan.rows.iter().find(|r| r.title == "Book").expect("book");
+    assert!(book.comments.is_empty(), "{:?}", book.comments);
+    let chapter = plan
+        .rows
+        .iter()
+        .find(|r| r.title == "Chapter")
+        .expect("chapter");
+    let [c] = chapter.comments.as_slice() else {
+        panic!("one comment on the chapter: {:?}", chapter.comments);
+    };
+    assert_eq!(c.kind, CommentAnchorKind::Paragraph);
+    assert!(!c.orphaned);
+    assert_eq!(
+        c.anchor.exact, "The ferry was late.",
+        "the paragraph nearest it"
+    );
+    assert_eq!(
+        comment_reports(&plan).len(),
+        1,
+        "{:?}",
+        comment_reports(&plan)
+    );
+}
+
+/// A comment on a heading whose row stores no prose goes forward, to the first paragraph
+/// under that heading, even when another heading comes first: a comment on a part's title
+/// is about that part, never about the end of the part before it.
+#[test]
+fn a_comment_on_a_title_only_part_goes_forward_into_that_part() {
+    let mut d = doc(
+        "parts.docx",
+        vec![
+            heading(1, "Part One"),
+            heading(2, "Chapter One"),
+            prose("Text of chapter one."),
+            heading(1, "Part Two"),
+            heading(2, "Chapter Two"),
+            SourceBlock::prose(
+                "Text of chapter two.\n\nIt goes on.",
+                "Text of chapter two.\nIt goes on.",
+            ),
+        ],
+    );
+    d.annotations = vec![annotation(3, AnnotationKind::Paragraph, "Rename this part")];
+    let rules = infer_rules(&[1, 2], CreateType::Part);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+    let comments_on = |title: &str| {
+        plan.rows
+            .iter()
+            .find(|r| r.title == title)
+            .map(|r| r.comments.clone())
+            .unwrap_or_default()
+    };
+    assert!(comments_on("Chapter One").is_empty(), "{:?}", plan.rows);
+    let [c] = comments_on("Chapter Two").try_into().unwrap_or_else(|c| {
+        panic!("one comment on the second chapter: {c:?}");
+    });
+    assert_eq!(c.kind, CommentAnchorKind::Paragraph);
+    assert!(!c.orphaned);
+    assert_eq!(c.anchor.exact, "Text of chapter two.");
+    assert_eq!(
+        comment_reports(&plan).len(),
+        1,
+        "{:?}",
+        comment_reports(&plan)
+    );
+}
+
+/// Under a chapter with no text yet, a comment on its heading goes forward to the next
+/// chapter's first paragraph, while a comment on the blank line under it still goes back,
+/// to the passage it follows, which is what a comment left under a paragraph is most
+/// often about.
+#[test]
+fn a_heading_comment_goes_forward_and_a_blank_line_comment_goes_back() {
+    let mut d = doc(
+        "a.docx",
+        vec![
+            heading(1, "Chapter One"),
+            prose("Text of chapter one."),
+            heading(1, "Chapter Two"),
+            SourceBlock::prose("", ""),
+            heading(1, "Chapter Three"),
+            prose("Text of chapter three."),
+        ],
+    );
+    d.annotations = vec![
+        annotation(2, AnnotationKind::Paragraph, "On the heading"),
+        annotation(3, AnnotationKind::Paragraph, "On the blank line"),
+    ];
+    let rules = infer_rules(&[1], CreateType::Chapter);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+    let on = |title: &str| -> Vec<(String, String)> {
+        plan.rows
+            .iter()
+            .filter(|r| r.title == title)
+            .flat_map(|r| r.comments.iter())
+            .map(|c| (c.body.clone(), c.anchor.exact.clone()))
+            .collect()
+    };
+    assert_eq!(
+        on("Chapter One"),
+        vec![("On the blank line".into(), "Text of chapter one.".into())]
+    );
+    assert_eq!(on("Chapter Two"), Vec::new());
+    assert_eq!(
+        on("Chapter Three"),
+        vec![("On the heading".into(), "Text of chapter three.".into())]
+    );
+}
+
+/// A comment that comes after the last stored paragraph lands on that paragraph's last
+/// line, the one nearest it.
+#[test]
+fn a_comment_after_the_last_paragraph_lands_on_its_last_line() {
+    let mut d = doc(
+        "a.docx",
+        vec![
+            heading(1, "Chapter"),
+            SourceBlock::prose("First line.\n\nLast line.", "First line.\nLast line."),
+            heading(1, "Empty chapter"),
+        ],
+    );
+    d.annotations = vec![annotation(2, AnnotationKind::Paragraph, "About the end")];
+    let rules = infer_rules(&[1], CreateType::Chapter);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+    let c = &plan.rows[0].comments[0];
+    assert_eq!(c.anchor.exact, "Last line.");
+    assert!(plan.rows[1].comments.is_empty());
+}
+
+/// A comment the scanner already had to move is reported by the planner, once, even when
+/// its quote then fails to resolve as well.
+#[test]
+fn a_comment_the_scanner_moved_is_reported_once() {
+    let mut d = doc("a.docx", vec![prose("Kept paragraph.")]);
+    let mut moved = annotation(0, AnnotationKind::Paragraph, "Moved here");
+    moved.anchor = comment_anchor::capture("Kept paragraph.", 0, 15, 0);
+    moved.unanchored = true;
+    let mut lost = annotation(0, AnnotationKind::Range, "Lost words");
+    lost.anchor = comment_anchor::capture("Words that are not there.", 0, 5, 0);
+    lost.unanchored = true;
+    d.annotations = vec![moved, lost];
+    let rules = infer_rules(&[], CreateType::Scene);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+    assert_eq!(plan.rows[0].comments.len(), 2);
+    assert_eq!(
+        comment_reports(&plan).len(),
+        2,
+        "{:?}",
+        comment_reports(&plan)
+    );
+}
+
+/// A `Document` annotation, which no scanner here mints but a future one could, becomes a
+/// comment on the paragraph its block names, resolved there.
+#[test]
+fn a_document_annotation_becomes_a_comment_on_its_paragraph() {
+    let mut d = doc(
+        "a.docx",
+        vec![prose("First paragraph."), prose("Second paragraph.")],
+    );
+    d.annotations = vec![annotation(1, AnnotationKind::Document, "About this one.")];
+    let rules = infer_rules(&[], CreateType::Scene);
+    let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+    let c = &plan.rows[0].comments[0];
+    assert_eq!(c.kind, CommentAnchorKind::Paragraph);
+    assert!(!c.orphaned);
+    assert_eq!(c.anchor.exact, "Second paragraph.");
+}
+
+/// `assemble_row` is the row assembly `build_plan` uses, callable on its own: one
+/// document's blocks, handed over as the parts of one row.
+#[test]
+fn assemble_row_assembles_one_row_on_its_own() {
+    let mut d = doc(
+        "a.docx",
+        vec![
+            heading(1, "Chapter"),
+            epi("> A quotation."),
+            prose("She turned the corner."),
+            SourceBlock::SceneBreak {
+                tier: SceneBreakTier::Minor,
+            },
+            prose("Later."),
+        ],
+    );
+    let mut on_turned = annotation(2, AnnotationKind::Range, "Which way?");
+    on_turned.anchor = comment_anchor::capture("She turned the corner.", 4, 10, 0);
+    d.annotations = vec![on_turned];
+    let prose = assemble_row(
+        &d,
+        &[
+            RowPart::Title(0),
+            RowPart::Epigraph(1),
+            RowPart::Prose(2),
+            RowPart::Prose(3),
+            RowPart::Prose(4),
+        ],
+    );
+    assert_eq!(prose.epigraph, "> A quotation.");
+    assert_eq!(prose.scene_breaks, 1);
+    assert_eq!(prose.word_count, 5);
+    assert_eq!(prose.comments.len(), 1);
+    assert_eq!(prose.comments[0].kind, CommentAnchorKind::Range);
+    assert_eq!(prose.comments[0].anchor.exact, "turned");
+    assert!(!prose.comments[0].orphaned);
 }

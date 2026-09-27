@@ -31,16 +31,19 @@
 //! saw. A reply whose producer already flattened it arrives as an ordinary comment,
 //! which is what it now is.
 //!
-//! ## Two deliberate simplifications, both stated rather than hidden
+//! ## One deliberate simplification, stated rather than hidden
 //!
-//! * **A comment spanning several paragraphs is clamped to the first.** Its quote
-//!   still starts on the words it started on; it simply stops at the end of that
-//!   paragraph instead of running on. Better than the alternative, which is a range
-//!   whose end nobody can locate.
-//! * **A `Quotations`-styled paragraph is imported as prose, not as a quote.** ODF
-//!   expresses a block quote as an indent on a paragraph style, and matching style
-//!   names to recover it is the kind of guess that goes wrong quietly. The words
-//!   are all there; only the indent is not.
+//! **A comment spanning several paragraphs keeps its extent only within one stretch of
+//! prose.** When its end lands in the same stored block as its start, the whole range
+//! comes over; when a heading, a table or a scene break lies between them, it stops at
+//! the end of the paragraph it started in. Its quote still starts on the words it
+//! started on, which beats a range whose end nobody can locate.
+//!
+//! ## A `Quotations` paragraph is a quotation
+//!
+//! A paragraph in LibreOffice's `Quotations` style, or in a style built on it, arrives as a
+//! quotation: the style is the application stating what the paragraph is, in its own
+//! vocabulary, which is not a guess from an indent (see [`rich::styled_as`]).
 //!
 //! ## A horizontal line *is* a scene break, and that is not the alignment rule
 //!
@@ -65,8 +68,9 @@ use crate::diagnostics::ImportDiagnostic;
 use crate::scanner::SourceScanner;
 use crate::sources::rich;
 use crate::sources::rich::{
-    CommentMark, OpenMark, ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply,
-    RichRowMark, Run, RunStyle, assemble, attach_comment_marks,
+    Alignment, AnnotationEnd, BlockProps, CommentMark, Direction, OpenMark, ParagraphKind,
+    RichAnnotation, RichBlock, RichDocument, RichReply, RichRowMark, Run, RunStyle, assemble,
+    attach_comment_marks,
 };
 use skribisto_model::round_trip;
 
@@ -213,8 +217,9 @@ fn parse_part<'a>(part: &str, xml: &'a str) -> Result<Document<'a>> {
     })
 }
 
-/// How deep `node` sits, the root element counting as one. Asked once, of the
-/// body the walk starts from; the walk carries the count down from there.
+/// How deep `node` sits, the root element counting as one. Asked of the body the
+/// walk starts from, which carries the count down from there, and of each table
+/// cell's paragraph, which the table reaches through `descendants` instead.
 fn element_depth(node: Node<'_, '_>) -> usize {
     node.ancestors().filter(Node::is_element).count()
 }
@@ -288,6 +293,49 @@ struct RawTextStyle {
     italic: Option<bool>,
     underline: Option<bool>,
     strikethrough: Option<bool>,
+    /// `style:text-position`: raised, lowered, or explicitly on the baseline.
+    position: Option<TextPosition>,
+}
+
+/// Where `style:text-position` puts a run relative to the baseline.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TextPosition {
+    Baseline,
+    Raised,
+    Lowered,
+}
+
+/// Read `style:text-position`: `super` or `sub`, or a percentage whose sign says which,
+/// each optionally followed by the font scale.
+fn text_position(value: &str) -> Option<TextPosition> {
+    let first = value.split_whitespace().next()?;
+    match first {
+        "super" => return Some(TextPosition::Raised),
+        "sub" => return Some(TextPosition::Lowered),
+        _ => {}
+    }
+    let percent: f32 = first.strip_suffix('%')?.trim().parse().ok()?;
+    Some(if percent > 0.0 {
+        TextPosition::Raised
+    } else if percent < 0.0 {
+        TextPosition::Lowered
+    } else {
+        TextPosition::Baseline
+    })
+}
+
+/// What a paragraph style's `style:paragraph-properties` says about alignment, direction
+/// and page breaks, as written. `None` is silence, which defers to the parent style.
+#[derive(Default, Clone)]
+struct RawParagraphProps {
+    /// `fo:text-align`.
+    align: Option<String>,
+    /// `style:writing-mode`.
+    writing_mode: Option<String>,
+    /// `fo:break-before`.
+    break_before: Option<String>,
+    /// `fo:break-after`.
+    break_after: Option<String>,
 }
 
 #[derive(Default, Clone)]
@@ -303,6 +351,7 @@ struct RawParaStyle {
     /// The text properties a paragraph style carries in its own right; a run with
     /// no span of its own inherits them.
     text: RawTextStyle,
+    paragraph: RawParagraphProps,
 }
 
 #[derive(Default)]
@@ -341,19 +390,27 @@ impl StyleTable {
                 self.text.insert(name.to_string(), text);
             }
             Some("paragraph") => {
-                let rule = node
+                let properties = node
                     .children()
-                    .find(|c| is(c, NS_STYLE, "paragraph-properties"))
-                    .map(|p| {
-                        let bottom = p.attribute((NS_FO, "border-bottom"));
-                        let all = p.attribute((NS_FO, "border"));
-                        let has_bottom =
-                            bottom.is_some_and(|v| v != "none") || all.is_some_and(|v| v != "none");
-                        let sides_clear = ["border-top", "border-left", "border-right"]
-                            .iter()
-                            .all(|s| p.attribute((NS_FO, *s)).is_none_or(|v| v == "none"));
-                        has_bottom && sides_clear
-                    });
+                    .find(|c| is(c, NS_STYLE, "paragraph-properties"));
+                let paragraph = properties
+                    .map(|p| RawParagraphProps {
+                        align: p.attribute((NS_FO, "text-align")).map(str::to_string),
+                        writing_mode: p.attribute((NS_STYLE, "writing-mode")).map(str::to_string),
+                        break_before: p.attribute((NS_FO, "break-before")).map(str::to_string),
+                        break_after: p.attribute((NS_FO, "break-after")).map(str::to_string),
+                    })
+                    .unwrap_or_default();
+                let rule = properties.map(|p| {
+                    let bottom = p.attribute((NS_FO, "border-bottom"));
+                    let all = p.attribute((NS_FO, "border"));
+                    let has_bottom =
+                        bottom.is_some_and(|v| v != "none") || all.is_some_and(|v| v != "none");
+                    let sides_clear = ["border-top", "border-left", "border-right"]
+                        .iter()
+                        .all(|s| p.attribute((NS_FO, *s)).is_none_or(|v| v == "none"));
+                    has_bottom && sides_clear
+                });
                 let outline_level = node
                     .attribute((NS_STYLE, "default-outline-level"))
                     .and_then(|v| v.trim().parse::<u8>().ok())
@@ -365,6 +422,7 @@ impl StyleTable {
                         rule,
                         text,
                         outline_level,
+                        paragraph,
                     },
                 );
             }
@@ -426,8 +484,84 @@ impl StyleTable {
             if let Some(v) = raw.strikethrough {
                 style.strikethrough = v;
             }
+            if let Some(position) = raw.position {
+                style.superscript = position == TextPosition::Raised;
+                style.subscript = position == TextPosition::Lowered;
+            }
         }
         style
+    }
+
+    /// The first value `pick` finds in the paragraph style `name` or the ones it inherits
+    /// from, the same walk and 32-step guard as [`Self::outline_level`].
+    fn paragraph_value(
+        &self,
+        name: &str,
+        pick: impl Fn(&RawParagraphProps) -> Option<&String>,
+    ) -> Option<String> {
+        let mut current = Some(name.to_string());
+        let mut guard = 0;
+        while let Some(n) = current {
+            let raw = self.para.get(&n)?;
+            if let Some(value) = pick(&raw.paragraph) {
+                return Some(value.clone());
+            }
+            current = raw.parent.clone();
+            guard += 1;
+            if guard > 32 {
+                return None;
+            }
+        }
+        None
+    }
+
+    /// What the paragraph style `name` says about alignment, direction and a page break
+    /// before the paragraph, its inheritance resolved.
+    ///
+    /// `fo:text-align` has two logical values, `start` and `end`, which name an edge only
+    /// once the direction is known, and two physical ones, `left` and `right`.
+    fn paragraph_props(&self, name: Option<&str>) -> BlockProps {
+        let Some(name) = name else {
+            return BlockProps::default();
+        };
+        let direction = self
+            .paragraph_value(name, |p| p.writing_mode.as_ref())
+            .and_then(|mode| match mode.as_str() {
+                "rl-tb" | "rl" => Some(Direction::RightToLeft),
+                "lr-tb" | "lr" => Some(Direction::LeftToRight),
+                // `page` defers to the page, and the vertical modes have no counterpart.
+                _ => None,
+            });
+        let right_to_left = direction == Some(Direction::RightToLeft);
+        let (start, end) = if right_to_left {
+            (Alignment::Right, Alignment::Left)
+        } else {
+            (Alignment::Left, Alignment::Right)
+        };
+        let alignment = self
+            .paragraph_value(name, |p| p.align.as_ref())
+            .and_then(|align| match align.as_str() {
+                "center" => Some(Alignment::Center),
+                "justify" => Some(Alignment::Justify),
+                "start" => Some(start),
+                "end" => Some(end),
+                "left" => Some(Alignment::Left),
+                "right" => Some(Alignment::Right),
+                _ => None,
+            });
+        BlockProps {
+            alignment,
+            direction,
+            page_break_before: self
+                .paragraph_value(name, |p| p.break_before.as_ref())
+                .is_some_and(|b| b == "page"),
+        }
+    }
+
+    /// Whether the paragraph style `name` ends its page after the paragraph.
+    fn breaks_page_after(&self, name: Option<&str>) -> bool {
+        name.and_then(|n| self.paragraph_value(n, |p| p.break_after.as_ref()))
+            .is_some_and(|b| b == "page")
     }
 
     /// Whether a paragraph style is the ODF spelling of a horizontal rule.
@@ -543,6 +677,9 @@ fn text_properties(node: Node<'_, '_>, parent: Option<String>) -> RawTextStyle {
     if let Some(s) = props.attribute((NS_STYLE, "text-line-through-style")) {
         raw.strikethrough = Some(s != "none");
     }
+    if let Some(position) = props.attribute((NS_STYLE, "text-position")) {
+        raw.position = text_position(position);
+    }
     raw
 }
 
@@ -593,6 +730,9 @@ struct Walker<'a> {
     /// One entry per note whose reference reached the prose, deduplicated by label.
     footnotes: Vec<rich::RichFootnote>,
     orphan_replies: usize,
+    /// A page ended after the last block (`fo:break-after="page"`), so the next block the
+    /// walk produces starts a new one.
+    page_break_pending: bool,
 }
 
 /// The paragraph currently being built.
@@ -600,6 +740,62 @@ struct ParaBuild {
     kind: ParagraphKind,
     runs: Vec<Run>,
     len: usize,
+    props: BlockProps,
+    /// Whether a white-space character read now is dropped: at the start of the paragraph,
+    /// and right after another one. See [`collapse_space`].
+    after_space: bool,
+    /// Whether this is a table cell's text, where a line break is a space: a cell is one
+    /// block of its table, never a paragraph of its own.
+    in_cell: bool,
+}
+
+impl ParaBuild {
+    fn new(kind: ParagraphKind, props: BlockProps) -> Self {
+        ParaBuild {
+            kind,
+            runs: Vec::new(),
+            len: 0,
+            props,
+            after_space: true,
+            in_cell: false,
+        }
+    }
+
+    /// The rest of the same paragraph after a line break: same kind, same alignment and
+    /// direction, and not the start of a page.
+    fn continuation(&self) -> ParaBuild {
+        ParaBuild::new(
+            self.kind,
+            BlockProps {
+                page_break_before: false,
+                ..self.props
+            },
+        )
+    }
+}
+
+/// Character data under ODF's white-space rule (ODF 1.2 part 1, 6.1.2): a tab, a line feed
+/// or a carriage return is a space, a run of spaces is one space, and a space at the start
+/// of a paragraph or right after another one is dropped, across element boundaries.
+///
+/// That is how every consumer reads it, LibreOffice included; a producer writes the
+/// spaces it means as `<text:s/>` and its tabs as `<text:tab/>`, which the walk takes
+/// literally. `after_space` carries the state from one piece of character data to the
+/// next.
+fn collapse_space(text: &str, after_space: &mut bool) -> String {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        if matches!(c, ' ' | '\t' | '\n' | '\r') {
+            if !*after_space {
+                out.push(' ');
+                *after_space = true;
+            }
+        } else {
+            out.push(c);
+            *after_space = false;
+        }
+    }
+    out
 }
 
 impl<'a> Walker<'a> {
@@ -623,6 +819,7 @@ impl<'a> Walker<'a> {
             footnotes_dropped: 0,
             footnotes: Vec::new(),
             orphan_replies: 0,
+            page_break_pending: false,
         }
     }
 
@@ -721,6 +918,9 @@ impl<'a> Walker<'a> {
                         .attribute((NS_TEXT, "style-name"))
                         .is_some_and(|s| self.styles.is_rule(s));
                     if styled_as_rule && element_text(child).trim().is_empty() {
+                        // A scene break carries no paragraph formatting, so a pending
+                        // page break ends here.
+                        self.page_break_pending = false;
                         self.push_block(RichBlock::body(vec![Run::plain(
                             skribisto_model::scene_break::CANONICAL_MINOR,
                         )]));
@@ -825,50 +1025,81 @@ impl<'a> Walker<'a> {
         }
     }
 
+    /// A table, every cell read with the same inline walk a paragraph gets.
+    ///
+    /// One buffer runs through the whole table, so its offsets are the table's own plain
+    /// text (cells joined by a line break, a cell's paragraphs by a space): the space a
+    /// comment or a round-trip mark inside a cell is measured in, which is what lets
+    /// `rich::assemble` place it on its words. A cell's text is its paragraphs' text and
+    /// nothing else; a comment's author, date and body, or a note's text, are not the
+    /// cell's words.
     fn walk_table(&mut self, node: Node<'_, '_>) {
+        let mut build = ParaBuild::new(ParagraphKind::Body, BlockProps::default());
+        build.in_cell = true;
         let mut rows: Vec<Vec<Vec<Run>>> = Vec::new();
+        let mut first_cell = true;
         for row in node.descendants().filter(|n| is(n, NS_TABLE, "table-row")) {
             let mut cells: Vec<Vec<Run>> = Vec::new();
             for cell in row.children().filter(|c| is(c, NS_TABLE, "table-cell")) {
-                // A cell's paragraphs are joined with a space: a table cell is one
-                // Djot cell whatever it holds, and a newline inside one would break
-                // the plain-text arithmetic the annotations rest on.
-                let text = element_text(cell).replace(['\n', '\r'], " ");
-                cells.push(vec![Run::plain(text.trim())]);
+                if !first_cell {
+                    build.len += 1;
+                }
+                first_cell = false;
+                let start = build.runs.len();
+                for (i, paragraph) in cell_paragraphs(cell).into_iter().enumerate() {
+                    if i > 0 {
+                        build.len += 1;
+                        build.runs.push(Run::plain(" "));
+                    }
+                    build.after_space = true;
+                    let base = paragraph
+                        .attribute((NS_TEXT, "style-name"))
+                        .map(|s| self.styles.text_style(s))
+                        .unwrap_or_default();
+                    // Cells are found through `descendants`, not by a walk that
+                    // carries the count down, so each paragraph measures its own.
+                    self.inline(paragraph, &mut build, base, None, element_depth(paragraph));
+                }
+                cells.push(build.runs.split_off(start));
             }
             if !cells.is_empty() {
                 rows.push(cells);
             }
         }
         if !rows.is_empty() {
+            // A table carries no paragraph formatting, so a page break before it is not
+            // carried either.
+            self.page_break_pending = false;
             self.push_block(RichBlock::Table { rows });
         }
     }
 
     fn paragraph(&mut self, node: Node<'_, '_>, kind: ParagraphKind, depth: usize) {
-        let base = node
-            .attribute((NS_TEXT, "style-name"))
+        let style_name = node.attribute((NS_TEXT, "style-name"));
+        let base = style_name
             .map(|s| self.styles.text_style(s))
             .unwrap_or_default();
-        let mut build = ParaBuild {
-            kind,
-            runs: Vec::new(),
-            len: 0,
-        };
+        let mut build = ParaBuild::new(kind, self.styles.paragraph_props(style_name));
         self.inline(node, &mut build, base, None, depth);
         self.flush_paragraph(build);
+        if self.styles.breaks_page_after(style_name) {
+            self.page_break_pending = true;
+        }
     }
 
-    /// Finish the paragraph under construction and start a fresh one — what a
-    /// deliberate line break becomes, since the conversion drops `<br>` outright
-    /// and would otherwise glue the two lines into one word.
+    /// Finish the paragraph under construction. Also what a deliberate line break does,
+    /// the rest of the line starting a paragraph of its own: Djot has no line break inside
+    /// a paragraph that the editor keeps.
     fn flush_paragraph(&mut self, build: ParaBuild) {
         if build.runs.is_empty() {
             return;
         }
+        let mut props = build.props;
+        props.page_break_before |= std::mem::take(&mut self.page_break_pending);
         self.push_block(RichBlock::Paragraph {
             kind: build.kind,
             runs: build.runs,
+            props,
         });
     }
 
@@ -891,11 +1122,11 @@ impl<'a> Walker<'a> {
         }
         for child in node.children() {
             if child.is_text() {
-                let text = child.text().unwrap_or_default();
+                let text = collapse_space(child.text().unwrap_or_default(), &mut build.after_space);
                 if !text.is_empty() {
                     build.len += text.chars().count();
                     build.runs.push(Run {
-                        text: text.to_string(),
+                        text,
                         style,
                         link: link.map(str::to_string),
                         image: None,
@@ -928,6 +1159,9 @@ impl<'a> Walker<'a> {
                         .unwrap_or(1);
                     let spaces = " ".repeat(count);
                     build.len += count;
+                    // Written spaces are the producer's own, never collapsed, and a raw
+                    // space after them is kept.
+                    build.after_space = false;
                     build.runs.push(Run {
                         text: spaces,
                         style,
@@ -938,6 +1172,18 @@ impl<'a> Walker<'a> {
                 }
                 (Some(NS_TEXT), "tab") => {
                     build.len += 1;
+                    build.after_space = false;
+                    build.runs.push(Run {
+                        text: " ".into(),
+                        style,
+                        link: link.map(str::to_string),
+                        image: None,
+                        footnote: None,
+                    });
+                }
+                (Some(NS_TEXT), "line-break") if build.in_cell => {
+                    build.len += 1;
+                    build.after_space = true;
                     build.runs.push(Run {
                         text: " ".into(),
                         style,
@@ -947,14 +1193,8 @@ impl<'a> Walker<'a> {
                     });
                 }
                 (Some(NS_TEXT), "line-break") => {
-                    let finished = std::mem::replace(
-                        build,
-                        ParaBuild {
-                            kind: build.kind,
-                            runs: Vec::new(),
-                            len: 0,
-                        },
-                    );
+                    let next = build.continuation();
+                    let finished = std::mem::replace(build, next);
                     self.flush_paragraph(finished);
                 }
                 (Some(NS_OFFICE), "annotation") => self.open_annotation(child, build, depth + 1),
@@ -1003,8 +1243,17 @@ impl<'a> Walker<'a> {
                         path: self.origin.clone(),
                         target: src.to_string(),
                     });
+                    // The frame, not the image, states how large the picture is shown.
+                    let size = |name: &str| {
+                        node.attribute((NS_SVG, name))
+                            .and_then(length_in_pixels)
+                            .unwrap_or(0)
+                    };
                     build.len += 1;
-                    build.runs.push(Run::image(alt, src));
+                    build.after_space = false;
+                    build
+                        .runs
+                        .push(Run::sized_image(alt, src, size("width"), size("height")));
                 }
                 "text-box" => self.text_boxes += 1,
                 "object" | "object-ole" | "applet" | "plugin" | "floating-frame" => {
@@ -1162,6 +1411,7 @@ impl<'a> Walker<'a> {
             block_index: self.blocks.len(),
             start: build.len,
             length: 0,
+            end: None,
             uid,
             // Filled by `attach_comment_marks` once the whole document is walked — the
             // bookmark carrying it may close after this point, and on a file an editor has
@@ -1231,14 +1481,14 @@ impl<'a> Walker<'a> {
         // comment offset in this paragraph is measured against — see
         // `rich::Run::plain_push`. Counting it as nothing would put every comment after
         // a note in the same paragraph one character early, silently: the quote would
-        // be captured a character off and either anchor on the wrong word or fail to
-        // match and degrade to a whole-document comment.
+        // be captured a character off, on the wrong words.
         //
         // The DOCX scanner reaches the same place by a different road (`shift_offsets`,
         // after the fact) only because its references come from a raw pass that runs
         // after the typed walk. Here the note *is* the walk, so the counter can simply
         // be right the first time.
         build.len += 1;
+        build.after_space = false;
         build.runs.push(Run {
             footnote: Some(label.clone()),
             ..Default::default()
@@ -1277,10 +1527,10 @@ impl<'a> Walker<'a> {
         }
         for child in node.children() {
             if child.is_text() {
-                let text = child.text().unwrap_or_default();
+                let text = collapse_space(child.text().unwrap_or_default(), &mut out.after_space);
                 if !text.is_empty() {
                     out.push(Run {
-                        text: text.to_string(),
+                        text,
                         style,
                         link: link.map(str::to_string),
                         image: None,
@@ -1309,6 +1559,7 @@ impl<'a> Walker<'a> {
                         .attribute((NS_TEXT, "c"))
                         .and_then(|v| v.parse().ok())
                         .unwrap_or(1);
+                    out.after_space = false;
                     out.push(Run {
                         text: " ".repeat(count),
                         style,
@@ -1321,6 +1572,7 @@ impl<'a> Walker<'a> {
                 // its own to honour, so the words either side still read correctly and
                 // only the exact whitespace differs.
                 (Some(NS_TEXT), "tab") => {
+                    out.after_space = false;
                     out.push(Run {
                         text: " ".into(),
                         style,
@@ -1346,22 +1598,31 @@ impl<'a> Walker<'a> {
 
     /// Close a comment range.
     ///
-    /// A range that ends in a *later* paragraph is clamped to the end of the one it
-    /// started in — the quote still begins on the right words, and a range whose end
-    /// nobody can place is worse than a short one.
+    /// A range that ends in a *later* paragraph keeps its length to the end of the one
+    /// it started in, and where it really ends beside it. `rich::assemble` keeps the
+    /// whole extent when both ends land in the same stretch of stored prose, and
+    /// otherwise stops it at the end of its first paragraph: the quote still begins on
+    /// the right words, and a range whose end nobody can place is worse than a short one.
     fn close_annotation(&mut self, name: &str, build: &ParaBuild) {
         let Some(open) = self.open.remove(name) else {
             return;
         };
-        let end = if open.block == self.blocks.len() {
-            build.len
-        } else {
-            self.blocks
-                .get(open.block)
-                .map(|b| b.plain_text().chars().count())
-                .unwrap_or(open.start)
-        };
-        self.annotations[open.annotation].length = end.saturating_sub(open.start);
+        let current = self.blocks.len();
+        let annotation = &mut self.annotations[open.annotation];
+        if open.block == current {
+            annotation.length = build.len.saturating_sub(open.start);
+            return;
+        }
+        let start_len = self
+            .blocks
+            .get(open.block)
+            .map(|b| b.plain_text().chars().count())
+            .unwrap_or(open.start);
+        annotation.length = start_len.saturating_sub(open.start);
+        annotation.end = (current > open.block).then_some(AnnotationEnd {
+            block_index: current,
+            offset: build.len,
+        });
     }
 }
 
@@ -1375,10 +1636,21 @@ impl<'a> Walker<'a> {
 /// the break reach the outer vector; a plain `&mut Vec<Run>` per paragraph structurally
 /// cannot, which is exactly how a Shift+Enter in a LibreOffice comment used to arrive as a
 /// space.
-#[derive(Default)]
 struct AnnotationBody {
     paragraphs: Vec<Vec<Run>>,
     current: Vec<Run>,
+    /// The [`collapse_space`] state of the paragraph in progress.
+    after_space: bool,
+}
+
+impl Default for AnnotationBody {
+    fn default() -> Self {
+        AnnotationBody {
+            paragraphs: Vec::new(),
+            current: Vec::new(),
+            after_space: true,
+        }
+    }
 }
 
 impl AnnotationBody {
@@ -1388,10 +1660,11 @@ impl AnnotationBody {
 
     /// End the paragraph in progress.
     ///
-    /// A no-op when nothing has been collected, so consecutive breaks — and the closing
-    /// break every `<text:p>` performs — cannot manufacture empty paragraphs, which
-    /// `body_to_djot` would turn into stray blank `<p>` elements.
+    /// A no-op when nothing has been collected, so consecutive breaks, and the closing
+    /// break every `<text:p>` performs, cannot manufacture empty paragraphs. White space
+    /// at the start of the next paragraph is dropped again.
     fn break_paragraph(&mut self) {
+        self.after_space = true;
         if !self.current.is_empty() {
             self.paragraphs.push(std::mem::take(&mut self.current));
         }
@@ -1446,17 +1719,47 @@ fn fnv1a(value: &str) -> u64 {
 
 const NS_SVG: &str = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
 
+/// An ODF length (`3.5cm`, `2in`, `120pt`) in pixels at 96 to the inch, the unit the
+/// editor measures a picture in. `None` for a unit it does not know, or a length that
+/// rounds to nothing.
+fn length_in_pixels(value: &str) -> Option<u32> {
+    let value = value.trim();
+    let split = value.find(|c: char| c.is_ascii_alphabetic())?;
+    let (number, unit) = value.split_at(split);
+    let number: f64 = number.trim().parse().ok()?;
+    let per_unit = match unit {
+        "in" => 96.0,
+        "cm" => 96.0 / 2.54,
+        "mm" => 96.0 / 25.4,
+        "pt" => 96.0 / 72.0,
+        "pc" => 16.0,
+        "px" => 1.0,
+        _ => return None,
+    };
+    let pixels = (number * per_unit).round();
+    (pixels.is_finite() && pixels >= 1.0 && pixels <= f64::from(u32::MAX)).then_some(pixels as u32)
+}
+
 /// Character formatting from an inner span applied over what it inherits.
 ///
 /// ODF spans do not carry "off" switches for what a parent turned on, so an inner
 /// span can only add — which is what a reader of the document sees.
 fn merge(outer: RunStyle, inner: RunStyle) -> RunStyle {
+    // A span that raises or lowers its text decides the position; one that says nothing
+    // about it keeps the outer one.
+    let (superscript, subscript) = if inner.superscript || inner.subscript {
+        (inner.superscript, inner.subscript)
+    } else {
+        (outer.superscript, outer.subscript)
+    };
     RunStyle {
         bold: outer.bold || inner.bold,
         italic: outer.italic || inner.italic,
         underline: outer.underline || inner.underline,
         strikethrough: outer.strikethrough || inner.strikethrough,
         code: outer.code || inner.code,
+        superscript,
+        subscript,
     }
 }
 
@@ -1476,6 +1779,29 @@ fn find_descendant<'a, 'input>(
     name: &str,
 ) -> Option<Node<'a, 'input>> {
     root.descendants().find(|n| is(n, ns, name))
+}
+
+/// The paragraphs of one table cell, in order: its own, whether directly inside it or
+/// inside a list or a section it holds, and not those of a table nested in it (whose rows
+/// the table walk meets on their own) nor the text of a comment or a note sitting in it.
+fn cell_paragraphs<'a, 'input>(cell: Node<'a, 'input>) -> Vec<Node<'a, 'input>> {
+    cell.descendants()
+        .filter(|n| is(n, NS_TEXT, "p") || is(n, NS_TEXT, "h"))
+        .filter(|paragraph| {
+            for ancestor in paragraph.ancestors().skip(1) {
+                if ancestor == cell {
+                    return true;
+                }
+                if is(&ancestor, NS_TABLE, "table-cell")
+                    || is(&ancestor, NS_OFFICE, "annotation")
+                    || is(&ancestor, NS_TEXT, "note")
+                {
+                    return false;
+                }
+            }
+            false
+        })
+        .collect()
 }
 
 /// Every text node under `node`, concatenated.

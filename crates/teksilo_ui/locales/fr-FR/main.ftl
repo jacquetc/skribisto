@@ -2223,9 +2223,24 @@ import-diagnostic-field-flattened = { $count ->
 }
 import-diagnostic-unknown-style-level = { $path } utilise le style « { $detail } », qui ressemble à un titre mais n’indique aucun niveau. Ces paragraphes sont importés comme texte plutôt que devinés.
 import-diagnostic-comment-unanchored = Le commentaire « { $detail } » dans { $path } n’a pas pu être rattaché aux mots qu’il visait. Il est conservé sur son élément, où vous pouvez le déplacer.
+import-diagnostic-comment-not-carried = Le commentaire « { $detail } » dans { $path } n’est pas importé, car rien dans le fichier n’arrive sous forme de texte où le conserver. Recopiez-le depuis le fichier si vous en avez besoin.
 import-diagnostic-comment-replies-flattened = { $count ->
     [one] { $count } réponse dans { $path } désigne un commentaire absent du fichier : elle arrive donc comme un commentaire à part entière.
    *[other] { $count } réponses dans { $path } désignent un commentaire absent du fichier : elles arrivent donc comme des commentaires à part entière.
+}
+import-diagnostic-prose-not-verbatim = { $count ->
+    [one] { $count } paragraphe de { $path } n’a pas pu être repris tel quel avec sa mise en forme : il arrive donc en texte brut. Comparez-le avec l’original.
+   *[other] { $count } paragraphes de { $path } n’ont pas pu être repris tels quels avec leur mise en forme : ils arrivent donc en texte brut. Comparez-les avec l’original.
+}
+import-diagnostic-styled-spaces-not-carried = { $count ->
+    [one] Dans { $path }, { $count } suite d’espaces était soulignée ou barrée, par exemple une ligne à remplir à la main. Skribisto ne garde aucun de ces traits sur des espaces seules : elle arrive donc sans trait, ou pas du tout si elle ouvre ou termine un paragraphe.
+   *[other] Dans { $path }, { $count } suites d’espaces étaient soulignées ou barrées, par exemple des lignes à remplir à la main. Skribisto ne garde aucun de ces traits sur des espaces seules : elles arrivent donc sans trait, ou pas du tout quand elles ouvrent ou terminent un paragraphe.
+}
+# Éléments de liste imbriqués plus profondément que ce que l’importation conserve, placés au
+# niveau le plus profond conservé. $count est leur nombre ; $limit ce niveau, un nombre.
+import-diagnostic-list-nesting-flattened = { $count ->
+    [one] { $count } élément de liste de { $path } était imbriqué sur plus de { $limit } niveaux. Il arrive au niveau { $limit }, le plus profond que Skribisto conserve, avec son texte et sa mise en forme.
+   *[other] { $count } éléments de liste de { $path } étaient imbriqués sur plus de { $limit } niveaux. Ils arrivent au niveau { $limit }, le plus profond que Skribisto conserve, avec leur texte et leur mise en forme.
 }
 import-diagnostic-epigraph-not-carried = « { $title } » est précédé d’une épigraphe, mais un élément de type « { $kind } » ne peut pas en porter. La citation est conservée en tête de son texte.
 import-diagnostic-epigraph-placement-ambiguous = Une épigraphe se trouve entre « { $title } » et « { $below } » et pourrait précéder l’un ou l’autre. Elle a été attribuée à « { $title } », où se place habituellement une épigraphe.

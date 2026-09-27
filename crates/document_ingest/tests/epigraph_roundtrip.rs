@@ -99,6 +99,11 @@ She read the letter twice.
 Then she folded it away.
 ";
 
+/// The epigraph as the importer stores it: italic written with braced delimiters, which
+/// read the same inside a word and when nested, where a bare `_` depends on what surrounds
+/// it.
+const EPIGRAPH: &str = "> {_Every winter asks the same question twice._}";
+
 fn write(djot: &str, ext: &str, dir: &Path) -> PathBuf {
     let doc = text_document::TextDocument::new();
     doc.set_djot_sync(djot).expect("set_djot_sync");
@@ -172,7 +177,7 @@ fn an_epigraph_after_its_heading_is_read_as_an_epigraph_not_as_prose() {
     for_both_formats("after", AFTER_HEADING, |ext, doc| {
         assert_eq!(
             epigraphs(&doc),
-            vec!["> _Every winter asks the same question twice._"],
+            vec![EPIGRAPH],
             "[{ext}] the quotation must come back as an epigraph block"
         );
         // The point of the whole change: it is *not* also in the prose. Before the fix
@@ -190,7 +195,7 @@ fn an_epigraph_before_its_heading_is_read_as_an_epigraph_not_as_prose() {
     for_both_formats("before", BEFORE_HEADING, |ext, doc| {
         assert_eq!(
             epigraphs(&doc),
-            vec!["> _Every winter asks the same question twice._"],
+            vec![EPIGRAPH],
             "[{ext}] the quotation must come back as an epigraph block"
         );
         assert_eq!(
@@ -299,7 +304,7 @@ fn survives_a_real_libreoffice_save() {
         let doc = scan(&returned, ext);
         assert_eq!(
             epigraphs(&doc),
-            vec!["> _Every winter asks the same question twice._"],
+            vec![EPIGRAPH],
             "[{ext}] the Epigraph style must survive a real save, or the round trip \
              only ever worked for a file nobody opened"
         );

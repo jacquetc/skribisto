@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The Markdown (and CommonMark-shaped plain text) scanner.
+//! The Markdown scanner.
 //!
 //! ## Why this owns its own parse
 //!

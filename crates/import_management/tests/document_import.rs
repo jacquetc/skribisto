@@ -2132,8 +2132,10 @@ fn a_comment_with_no_uid_is_recognised_by_its_round_trip_mark() {
         after[0].0.uid, local_uid,
         "identity is local, never the file's"
     );
+    // The importer writes emphasis with braced delimiters, which read the same as the
+    // bare `*closely*` the file was written from.
     assert_eq!(
-        after[0].0.body, "Please look at this *closely*.",
+        after[0].0.body, "Please look at this {*closely*}.",
         "the editor's revised wording is what the file is for"
     );
 }
@@ -3445,4 +3447,349 @@ fn a_real_docx_footnote_travels_all_the_way_into_the_project() {
         content.is_some(),
         "and the note must annotate that prose rather than hang off nothing"
     );
+}
+
+// ── Prose written as Djot directly, proved before it is stored ─────────────────────
+//
+// A Word or OpenDocument file's paragraphs used to reach the store through an HTML
+// conversion that collapsed double spaces, trimmed a leading tab, dropped alignment and
+// page breaks, and left straight quotes, `--`, `...` and `10:30:45` for the first load to
+// rewrite. These run the whole journey: a file written here, analysed, applied, and the
+// stored prose read back by the parser the editor opens it with.
+
+/// A chapter whose early paragraph holds a double space and a tab, and whose later
+/// paragraphs carry comments on single words.
+const SPACED: &str = "One.  Two.\tThree.\n\nShe turned the corner.\n\nThe fog had not lifted, and nobody said a word.";
+
+fn spaced_comments(doc: &TextDocument) -> DocumentComments {
+    let mut comments = DocumentComments::new();
+    for (word, remark, uid) in [
+        (
+            "turned",
+            "Which way?",
+            "0b0e0a50-0000-4000-8000-000000000001",
+        ),
+        (
+            "nobody",
+            "Really nobody?",
+            "0b0e0a50-0000-4000-8000-000000000002",
+        ),
+    ] {
+        let range = find_range(doc, word);
+        // A uid of its own each: the writer keys its comments by uid.
+        comments.insert(DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: uid.to_string(),
+            author: "Editor".to_string(),
+            author_initials: String::new(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: remark.to_string(),
+            replies: Vec::new(),
+        });
+    }
+    comments
+}
+
+/// Import `bytes` as `name` and return the stored plain text of the one row holding prose,
+/// with every comment on the project as `(kind, orphaned, the stored words it covers)`.
+fn import_and_read(
+    ctx: &mut Ctx,
+    name: &str,
+    bytes: &[u8],
+) -> (
+    String,
+    Vec<(common::entities::CommentAnchorKind, bool, String)>,
+) {
+    let path = ctx.write_bytes(name, bytes);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    let created = ctx.apply(rows, 0);
+    let owner = created
+        .iter()
+        .copied()
+        .find(|id| !ctx.plain_of(*id).is_empty())
+        .expect("a row holding the prose");
+    let plain = ctx.plain_of(owner);
+    let chars: Vec<char> = plain.chars().collect();
+    let comments = ctx
+        .comments()
+        .into_iter()
+        .map(|(c, _)| {
+            let start = (c.range_start as usize).min(chars.len());
+            let end = (start + c.range_length as usize).min(chars.len());
+            (c.kind, c.orphaned, chars[start..end].iter().collect())
+        })
+        .collect();
+    (plain, comments)
+}
+
+#[test]
+fn docx_comments_after_a_double_space_and_a_tab_arrive_on_their_words() {
+    let mut ctx = Ctx::new();
+    let (plain, comments) = import_and_read(
+        &mut ctx,
+        "spaced.docx",
+        &build_docx(SPACED, spaced_comments),
+    );
+    assert!(
+        plain.starts_with("One.  Two."),
+        "the double space is kept: {plain:?}"
+    );
+    assert_eq!(
+        comments,
+        vec![
+            (
+                common::entities::CommentAnchorKind::Range,
+                false,
+                "turned".to_string()
+            ),
+            (
+                common::entities::CommentAnchorKind::Range,
+                false,
+                "nobody".to_string()
+            ),
+        ]
+    );
+}
+
+#[test]
+fn odt_comments_after_a_double_space_and_a_tab_arrive_on_their_words() {
+    let mut ctx = Ctx::new();
+    let (plain, comments) =
+        import_and_read(&mut ctx, "spaced.odt", &build_odt(SPACED, spaced_comments));
+    // The ODT scanner reads `<text:tab/>` as a space, as it always has.
+    assert!(
+        plain.starts_with("One.  Two. Three."),
+        "the double space is kept: {plain:?}"
+    );
+    assert_eq!(
+        comments,
+        vec![
+            (
+                common::entities::CommentAnchorKind::Range,
+                false,
+                "turned".to_string()
+            ),
+            (
+                common::entities::CommentAnchorKind::Range,
+                false,
+                "nobody".to_string()
+            ),
+        ]
+    );
+}
+
+/// Straight quotes, `--`, `...`, a time and a roman numeral opening a paragraph, stored
+/// exactly as typed. The Djot here escapes them so the fixture file holds them verbatim.
+const TYPED: &str = "He said \\\"hi\\\" and \\'bye\\'.\n\nWait-\\-no. Then.\\.\\.\n\nAt 10\\:30\\:45 exactly.\n\nI\\. Introduction";
+const TYPED_READ: &str =
+    "He said \"hi\" and 'bye'.\nWait--no. Then...\nAt 10:30:45 exactly.\nI. Introduction";
+
+/// A book title directly above its first chapter: the Book row stores no prose.
+const TITLED: &str = "# The Book\n\n## Chapter One\n\nThe ferry was late.\n\nNobody minded.";
+
+fn book_title_comment(doc: &TextDocument) -> DocumentComments {
+    let range = find_range(doc, "The Book");
+    let mut comments = DocumentComments::new();
+    comments.insert(DocumentComment {
+        start: range.0,
+        end: range.1,
+        uid: "0b0e0a50-0000-4000-8000-000000000003".to_string(),
+        author: "Editor".to_string(),
+        author_initials: String::new(),
+        date: "2026-01-01T00:00:00Z".to_string(),
+        resolved: false,
+        body: "A stronger title?".to_string(),
+        replies: Vec::new(),
+    });
+    comments
+}
+
+/// A comment on a book title that sits directly above a chapter has no prose on its own
+/// row to hang off. It arrives on the nearest stored paragraph, the chapter's first, and
+/// the import goes through: left on the Book row, it made the apply step refuse the whole
+/// import, since a comment cannot be stored on a row that stores no prose.
+#[test]
+fn a_comment_on_a_book_title_arrives_on_the_nearest_paragraph() {
+    for (name, bytes) in [
+        ("titled.docx", build_docx(TITLED, book_title_comment)),
+        ("titled.odt", build_odt(TITLED, book_title_comment)),
+    ] {
+        let mut ctx = Ctx::new();
+        let (plain, comments) = import_and_read(&mut ctx, name, &bytes);
+        assert_eq!(plain, "The ferry was late.\nNobody minded.", "{name}");
+        assert_eq!(
+            comments,
+            vec![(
+                common::entities::CommentAnchorKind::Paragraph,
+                false,
+                "The ferry was late.".to_string()
+            )],
+            "{name}"
+        );
+    }
+}
+
+#[test]
+fn typed_punctuation_arrives_as_typed_from_docx_and_odt() {
+    for (name, bytes) in [
+        ("typed.docx", build_docx(TYPED, |_| DocumentComments::new())),
+        ("typed.odt", build_odt(TYPED, |_| DocumentComments::new())),
+    ] {
+        let mut ctx = Ctx::new();
+        let (plain, _) = import_and_read(&mut ctx, name, &bytes);
+        assert_eq!(plain, TYPED_READ, "{name}");
+    }
+}
+
+/// Centred and flush-right lines and a page break survive the journey into the store.
+///
+/// Raised and lowered characters are pinned by `document_ingest`'s `paragraph_fidelity`
+/// tests on files spelled out by hand: `text-document`'s own writers do not put them in
+/// the file, so a file written by them cannot show the importer reading them.
+#[test]
+fn paragraph_formatting_arrives_from_docx_and_odt() {
+    let djot = "{alignment=center}\nA centred line.\n\n{alignment=right}\nA line set right.\n\n{page_break_before=true}\nOn a new page.";
+    for (name, bytes) in [
+        (
+            "formatted.docx",
+            build_docx(djot, |_| DocumentComments::new()),
+        ),
+        (
+            "formatted.odt",
+            build_odt(djot, |_| DocumentComments::new()),
+        ),
+    ] {
+        let mut ctx = Ctx::new();
+        let path = ctx.write_bytes(name, &bytes);
+        let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+        let created = ctx.apply(rows, 0);
+        let stored = created
+            .iter()
+            .find_map(|id| ctx.prose_of(*id).filter(|p| !p.is_empty()))
+            .expect("a row holding the prose");
+
+        let doc = TextDocument::new();
+        doc.set_djot_sync(&stored).expect("the stored prose parses");
+        let blocks = doc.blocks();
+        let format_of = |opening: &str| {
+            blocks
+                .iter()
+                .find(|b| b.text().starts_with(opening))
+                .unwrap_or_else(|| panic!("[{name}] no paragraph opens {opening:?}: {stored:?}"))
+                .block_format()
+        };
+        assert_eq!(
+            format_of("A centred").alignment,
+            Some(text_document::Alignment::Center),
+            "[{name}] {stored:?}"
+        );
+        assert_eq!(
+            format_of("A line set").alignment,
+            Some(text_document::Alignment::Right),
+            "[{name}] {stored:?}"
+        );
+        assert_eq!(
+            format_of("On a new page").page_break_before,
+            Some(true),
+            "[{name}] {stored:?}"
+        );
+    }
+}
+
+/// A note the footnote editor wrote with emphasis comes home through an import that writes
+/// the same emphasis with braced delimiters. It is the same note, and it is reused.
+#[test]
+fn a_formatted_note_coming_home_reuses_the_one_already_there() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_row_with_footnotes(
+        "The Crossing",
+        "The ferry was late.[^srcfn-1]",
+        vec![("srcfn-1", "It *always* is.")],
+    )]);
+    let original_label = footnotes_of(&ctx)[0].0.clone();
+    let item = ctx.item_named("The Crossing");
+    let uid = binder_item_controller::get(&ctx.db, &item)
+        .expect("item")
+        .expect("item row")
+        .uid;
+
+    ctx.apply_rows(vec![ApplyImportRow::Update {
+        target_uid_tag: skribisto_model::round_trip::uid_tag(&uid),
+        replace_prose: true,
+        djot: "The ferry was very late.[^srcfn-9]".into(),
+        epigraph: String::new(),
+        comments: Vec::new(),
+        footnotes: vec![ImportFootnote::Found {
+            label: "srcfn-9".into(),
+            body: "It {*always*} is.".into(),
+        }],
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
+    }]);
+
+    let notes = footnotes_of(&ctx);
+    assert_eq!(notes.len(), 1, "the note came home: {notes:?}");
+    assert_eq!(notes[0].0, original_label);
+}
+
+/// A note whose words came home unchanged but whose formatting or link an editor changed is
+/// not the stored note: it arrives as a note of its own carrying the change, the prose cites
+/// it, and the change reaches the project instead of being dropped.
+#[test]
+fn a_note_whose_formatting_changed_arrives_with_the_change() {
+    for (stored, returning) in [
+        ("It *always* is.", "It {_always_} is."),
+        ("See War and Peace.", "See {_War and Peace_}."),
+        (
+            "See [the map](https://a.example/map).",
+            "See [the map](https://b.example/map).",
+        ),
+    ] {
+        let mut ctx = Ctx::new();
+        ctx.apply_rows(vec![create_row_with_footnotes(
+            "The Crossing",
+            "The ferry was late.[^srcfn-1]",
+            vec![("srcfn-1", stored)],
+        )]);
+        let original_label = footnotes_of(&ctx)[0].0.clone();
+        let item = ctx.item_named("The Crossing");
+        let uid = binder_item_controller::get(&ctx.db, &item)
+            .expect("item")
+            .expect("item row")
+            .uid;
+
+        ctx.apply_rows(vec![ApplyImportRow::Update {
+            target_uid_tag: skribisto_model::round_trip::uid_tag(&uid),
+            replace_prose: true,
+            djot: "The ferry was late.[^srcfn-9]".into(),
+            epigraph: String::new(),
+            comments: Vec::new(),
+            footnotes: vec![ImportFootnote::Found {
+                label: "srcfn-9".into(),
+                body: returning.into(),
+            }],
+            source_file_name: String::new(),
+            source_file_digest: String::new(),
+        }]);
+
+        let notes = footnotes_of(&ctx);
+        let arrived: Vec<&(String, String, Option<EntityId>)> =
+            notes.iter().filter(|n| n.1 == returning).collect();
+        assert_eq!(
+            arrived.len(),
+            1,
+            "{returning:?} reached the project: {notes:?}"
+        );
+        assert_ne!(
+            arrived[0].0, original_label,
+            "{returning:?} is a note of its own"
+        );
+        let prose = ctx.prose_of(item).expect("prose");
+        assert!(
+            prose.contains(&format!("[^{}]", arrived[0].0)),
+            "the prose cites the changed note: {prose:?}"
+        );
+    }
 }

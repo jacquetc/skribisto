@@ -239,9 +239,27 @@ impl Diagnostic {
                 path = path,
                 detail = detail
             )),
+            "comment-not-carried" => tr!(import_diagnostic_comment_not_carried(
+                path = path,
+                detail = detail
+            )),
             "comment-replies-flattened" => tr!(import_diagnostic_comment_replies_flattened(
                 path = path,
                 count = count
+            )),
+            "prose-not-verbatim" => tr!(import_diagnostic_prose_not_verbatim(
+                path = path,
+                count = count
+            )),
+            "styled-spaces-not-carried" => tr!(import_diagnostic_styled_spaces_not_carried(
+                path = path,
+                count = count
+            )),
+            // `detail` is the level the items were placed at, a number sent as text.
+            "list-nesting-flattened" => tr!(import_diagnostic_list_nesting_flattened(
+                path = path,
+                count = count,
+                limit = detail
             )),
             // Same shape as `illegal-combination`: the row knows its own title and type,
             // so neither travels over the wire.

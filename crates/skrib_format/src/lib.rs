@@ -108,8 +108,12 @@ pub use bundle::{
 };
 pub use convert::HTML_FOOTNOTE_ATTR;
 pub use convert::{
-    TextEdit, djot_plain_text, html_to_djot, html_to_djot_and_text, markdown_to_djot,
-    markdown_to_djot_and_text, markdown_to_html, rewrite_djot_text,
+    DjotBlockReading, DjotEscaping, DjotInlineStyle, DjotReading, EscapeContext, TextEdit,
+    djot_as_the_editor_writes_it, djot_link_destination, djot_plain_text, escape_djot_text,
+    guard_djot_line_start, html_to_djot, html_to_djot_and_text, is_djot_whitespace,
+    markdown_to_djot, markdown_to_djot_and_text, markdown_to_html, plain_text_to_djot_verbatim,
+    push_djot_run, push_djot_run_with, push_djot_verbatim_run, read_djot, rewrite_djot_text,
+    trim_djot_whitespace,
 };
 pub use djot_depth::{MAX_DEPTH as MAX_DJOT_DEPTH, TooDeep};
 pub use errors::SkribFormatError;

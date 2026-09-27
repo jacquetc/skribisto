@@ -279,6 +279,73 @@ fn a_rows_notes_become_a_note_that_is_not_part_of_the_book() {
     assert!(!note.item.is_exportable, "a note is not part of the book");
 }
 
+/// What the pinned parser reads a stored Djot string back as, which is what the writer
+/// will see when the row is opened.
+fn read_back(djot: &str) -> String {
+    skrib_format::djot_plain_text(djot).expect("parse").0
+}
+
+/// Summaries and notes are what the writer typed into Manuskript's plain fields. Read as
+/// Markdown, a `*` pair became emphasis and the lines of a note ran together; and left
+/// unescaped, `10:30:45`, the quotes, `--` and a line opening `II. ` were rewritten by
+/// the first load.
+#[test]
+fn a_rows_summaries_and_notes_read_back_as_typed() {
+    let mut row = scene("1", "Opening", "Words.");
+    row.summary_sentence = "Meet at 10:30:45.".into();
+    row.summary_full = "I. The *first* part\nII. The second -- \"quoted\"".into();
+    row.notes = "- keep the dash\n_not_ emphasis, don't".into();
+    let mapped = build(&project_with(vec![row]));
+
+    let synopsis = prose(find(&mapped, 0, "Opening"), ContentRole::SynopsisText);
+    assert_eq!(
+        read_back(&synopsis),
+        "Meet at 10:30:45.\nI. The *first* part\nII. The second -- \"quoted\"",
+        "stored as {synopsis:?}"
+    );
+    let note = prose(find(&mapped, 0, "Opening (notes)"), ContentRole::NoteText);
+    assert_eq!(
+        read_back(&note),
+        "- keep the dash\n_not_ emphasis, don't",
+        "stored as {note:?}"
+    );
+}
+
+/// A character sheet's fields, the writer's own included, keep every character: the
+/// field's name as a heading and its text beneath it, both as typed.
+#[test]
+fn a_character_sheets_fields_read_back_as_typed() {
+    let project = Project {
+        characters: vec![Character {
+            id: Some("0".into()),
+            name: "Ann".into(),
+            summary_sentence: "Born 1:2:3 -- \"lucky\"".into(),
+            motivation: "To be *free*...".into(),
+            infos: vec![("Born: where".into(), "A. The docks, 10:30:45".into())],
+            ..Character::default()
+        }],
+        ..project_with(vec![scene("1", "A", "x")])
+    };
+    let mapped = build(&project);
+    let ann = find(&mapped, 1, "Ann");
+    let synopsis = prose(ann, ContentRole::SynopsisText);
+    assert_eq!(
+        read_back(&synopsis),
+        "Born 1:2:3 -- \"lucky\"",
+        "{synopsis:?}"
+    );
+    let sheet = prose(ann, ContentRole::NoteText);
+    assert_eq!(
+        read_back(&sheet),
+        "Motivation\nTo be *free*...\nBorn: where\nA. The docks, 10:30:45",
+        "{sheet:?}"
+    );
+    assert!(
+        sheet.starts_with("## Motivation\n\n"),
+        "a field's name is a heading: {sheet:?}"
+    );
+}
+
 #[test]
 fn a_folders_notes_become_its_first_child_and_a_leaf_gets_its_next_sibling() {
     let mut chapter = folder("1", "Chapter", vec![scene("2", "Scene", "x")]);

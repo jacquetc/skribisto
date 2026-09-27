@@ -33,10 +33,11 @@ name = "document_ingest"
 # DOCX *export*, which has nothing to do with these features and would make a
 # working gate look broken.
 [features]
-default = ["markdown", "odt", "docx"]
-# `.md` and `.txt` — plain text runs through the Markdown scanner by design, so
-# the two travel together.
+default = ["markdown", "plain", "odt", "docx"]
 markdown = ["dep:pulldown-cmark"]
+# `.txt`, kept as typed rather than read as Markdown. It needs no dependency of its
+# own: the verbatim converter is `skrib_format`'s.
+plain = []
 odt = ["dep:zip", "dep:roxmltree"]
 # `zip`/`roxmltree` alongside `docx-rs` for the supplementary pass over
 # `word/document.xml`: two constructs a manuscript really uses — a comment anchored

@@ -478,6 +478,40 @@ fn old_zip_schema_is_normalized() {
     assert!(has(story, "Town"));
 }
 
+/// A story-bible entry's quick details are what the writer typed into a plain field.
+/// Stored as Djot unescaped, `*not*` came back emphasised, `10:30:45` lost `:30:` as a
+/// symbol, the quotes were curled and a detail opening `A. ` became a list item.
+#[test]
+fn a_story_bible_entrys_plain_details_read_back_as_typed() {
+    let details = "Born at 10:30:45 -- \"Lucky\" is *not* her name";
+    let second_line = "A. Smith knew her";
+    let attendance = format!(
+        r#"<!DOCTYPE plume-attendance><plume-attendance version="0.6" box_1="Main--Secondary" box_2="None--Protagonist" spinBox_1_label="Age :">
+            <group number="40" name="Characters">
+              <obj number="10" name="Alice" quickDetails="{}&#10;{}" box_1="0" box_2="1" spinBox_1="30"/>
+            </group></plume-attendance>"#,
+        details.replace('"', "&quot;"),
+        second_line
+    );
+    let mut members = terminal_members();
+    for member in &mut members {
+        if member.0 == "attendance" {
+            member.1 = attendance.as_str();
+        }
+    }
+    let (_summary, bundle) = import_zip(&members);
+
+    let alice = find(&bundle.binders[1], "Alice");
+    let synopsis = prose(alice, ContentRole::SynopsisText);
+    let (text, paragraphs) = skrib_format::djot_plain_text(&synopsis).expect("parse");
+    assert_eq!(
+        text,
+        format!("{details}\n{second_line}\nMain · Protagonist · Age : 30"),
+        "stored as {synopsis:?}"
+    );
+    assert_eq!(paragraphs.len(), 3, "one paragraph per line: {synopsis:?}");
+}
+
 #[test]
 fn old_system_bare_directory_is_imported() {
     // Pre-0.3 layout: loose *.plume (root <plume>) + *.attend + *.prjinfo + text/.

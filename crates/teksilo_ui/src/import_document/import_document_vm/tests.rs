@@ -400,7 +400,11 @@ fn exhaustive_over_every_variant(d: &document_ingest::ImportDiagnostic) {
         | FieldFlattened { .. }
         | UnknownStyleLevel { .. }
         | CommentUnanchored { .. }
+        | CommentNotCarried { .. }
         | CommentRepliesFlattened { .. }
+        | ProseNotVerbatim { .. }
+        | StyledSpacesNotCarried { .. }
+        | ListNestingFlattened { .. }
         | EpigraphNotCarried { .. }
         | EpigraphPlacementAmbiguous { .. } => {}
     }
@@ -520,9 +524,26 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
             path: "/tmp/a.docx".into(),
             quote: "Is this the right word?".into(),
         },
+        D::CommentNotCarried {
+            path: "/tmp/a.docx".into(),
+            quote: "Nothing to keep me on.".into(),
+        },
         D::CommentRepliesFlattened {
             path: "/tmp/a.odt".into(),
             count: 3,
+        },
+        D::ProseNotVerbatim {
+            path: "/tmp/a.docx".into(),
+            count: 2,
+        },
+        D::StyledSpacesNotCarried {
+            path: "/tmp/a.docx".into(),
+            count: 3,
+        },
+        D::ListNestingFlattened {
+            path: "/tmp/a.odt".into(),
+            count: 4,
+            limit: 16,
         },
         D::EpigraphNotCarried {
             title: "A scene".into(),
@@ -590,6 +611,37 @@ fn a_file_refused_for_its_nesting_is_named_in_both_locales() {
             let text = d.message("", None).resolve_now();
             assert!(text.contains("hostile.odt"), "{locale}: {text}");
             assert!(text.contains("256"), "{locale}: {text}");
+            assert!(
+                !text.contains("{$") && !text.contains("{ $"),
+                "{locale} left an argument unfilled: {text}"
+            );
+        });
+    }
+}
+
+/// A list flattened to the deepest level kept names the file, how many items and that
+/// level, in both shipped locales, singular and plural. `fr-FR` is not checked at compile
+/// time, so its sentence is resolved here.
+#[test]
+fn flattened_list_items_are_counted_with_their_level_in_both_locales() {
+    for (count, locale) in [(1, "en-US"), (5, "en-US"), (1, "fr-FR"), (5, "fr-FR")] {
+        let raised = document_ingest::ImportDiagnostic::ListNestingFlattened {
+            path: "/tmp/deep.odt".into(),
+            count,
+            limit: 16,
+        };
+        crate::test_support::with_shipped_messages(locale, || {
+            let dto = frontend::import_management::diagnostic_to_dto(&raised, 0);
+            let (_, _, parsed) = plan_from_dto(
+                &DocumentImportRows::Empty,
+                &ImportDiagnosticRows::Reported(vec![dto]),
+            );
+            let d = parsed.first().expect("the DTO round-trips");
+            assert!(d.is_warning(), "the items arrive, one level shallower");
+            let text = d.message("", None).resolve_now();
+            assert!(text.contains("deep.odt"), "{locale}: {text}");
+            assert!(text.contains("16"), "{locale}: {text}");
+            assert!(text.contains(&count.to_string()), "{locale}: {text}");
             assert!(
                 !text.contains("{$") && !text.contains("{ $"),
                 "{locale} left an argument unfilled: {text}"

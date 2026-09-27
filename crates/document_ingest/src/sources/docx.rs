@@ -77,10 +77,10 @@ use std::collections::{HashMap, HashSet};
 
 use anyhow::{Result, anyhow};
 use docx_rs::{
-    Bold, Comment, CommentChild, CommentRangeEnd, DeleteChild, DocumentChild, Docx, DrawingData,
-    Insert, InsertChild, Italic, MoveToChild, Paragraph, ParagraphChild, ParagraphProperty,
-    Run as DocxRun, RunChild, RunProperty, Style, Table, TableCellContent, TableChild,
-    TableRowChild, Underline,
+    Bold, Break, BreakType, Comment, CommentChild, CommentRangeEnd, DeleteChild, DocumentChild,
+    Docx, DrawingData, Insert, InsertChild, Italic, MoveToChild, Paragraph, ParagraphChild,
+    ParagraphProperty, Run as DocxRun, RunChild, RunProperty, Style, Table, TableCellContent,
+    TableChild, TableRowChild, Underline, VertAlign, VertAlignType,
 };
 
 use crate::block::{SourceBlock, SourceDocument};
@@ -88,8 +88,9 @@ use crate::diagnostics::ImportDiagnostic;
 use crate::scanner::SourceScanner;
 use crate::sources::rich;
 use crate::sources::rich::{
-    CommentMark, OpenMark, ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply,
-    RichRowMark, Run, RunStyle, assemble, attach_comment_marks,
+    Alignment, AnnotationEnd, BlockProps, CommentMark, Direction, OpenMark, ParagraphKind,
+    RichAnnotation, RichBlock, RichDocument, RichReply, RichRowMark, Run, RunStyle, assemble,
+    attach_comment_marks,
 };
 use skribisto_model::round_trip;
 
@@ -486,6 +487,36 @@ impl StyleTable {
         None
     }
 
+    /// The `w:jc` value this paragraph is aligned by: its own, else its style's, following
+    /// `w:basedOn`. `default_style` is the style a paragraph naming none is in.
+    fn justification(
+        &self,
+        property: &ParagraphProperty,
+        default_style: Option<&str>,
+    ) -> Option<String> {
+        if let Some(jc) = &property.alignment {
+            return Some(jc.val.clone());
+        }
+        let mut current = property
+            .style
+            .as_ref()
+            .map(|s| s.val.clone())
+            .or_else(|| default_style.map(str::to_string));
+        let mut guard = 0;
+        while let Some(id) = current {
+            let style = self.by_id.get(&id)?;
+            if let Some(jc) = &style.paragraph_property.alignment {
+                return Some(jc.val.clone());
+            }
+            current = self.based_on(style);
+            guard += 1;
+            if guard > 32 {
+                return None;
+            }
+        }
+        None
+    }
+
     /// The style id a style is based on.
     ///
     /// `BasedOn` keeps its value private with no accessor, so the id is recovered by
@@ -530,6 +561,35 @@ fn looks_like_a_heading(id: &str) -> bool {
     lower.starts_with("heading") || lower.starts_with("title") || lower.starts_with("subtitle")
 }
 
+/// A DrawingML length in pixels at 96 to the inch, the unit the editor measures a picture
+/// in. An English Metric Unit is 1/914,400 of an inch, so a pixel is 9,525 of them.
+fn emu_to_pixels(emu: u32) -> u32 {
+    (emu + 9_525 / 2) / 9_525
+}
+
+/// A `w:jc` value as the edge the paragraph is laid against.
+///
+/// OOXML's `left` and `right` name the paragraph's **start** and **end**, the same as the
+/// `start` and `end` its strict schema spells out: in a right-to-left paragraph, `left` is
+/// the right-hand edge. That is how Word writes them and how LibreOffice reads them back,
+/// so a right-to-left paragraph's edges are swapped here, where the direction is known.
+/// `docx-rs` reads an unrecognised value (the kashida justifications) as `left`, which is
+/// the start edge, the one alignment the stored Djot never needs to state.
+fn alignment_of(value: &str, right_to_left: bool) -> Option<Alignment> {
+    let (start, end) = if right_to_left {
+        (Alignment::Right, Alignment::Left)
+    } else {
+        (Alignment::Left, Alignment::Right)
+    };
+    match value {
+        "center" => Some(Alignment::Center),
+        "left" | "start" => Some(start),
+        "right" | "end" => Some(end),
+        "both" | "distribute" | "justified" => Some(Alignment::Justify),
+        _ => None,
+    }
+}
+
 /// `Bold`, `Italic` and `Underline` keep their value private, so they are compared
 /// against a constructed twin rather than read. That is the whole public API for
 /// them, and it is exact: `Bold::new()` is the "on" value and `.disable()` the "off"
@@ -548,6 +608,12 @@ fn apply_run_property(property: &RunProperty, style: &mut RunStyle) {
     }
     if let Some(underline) = &property.underline {
         style.underline = *underline != Underline::new("none");
+    }
+    // `w:vertAlign`. `baseline` is how a run inside a raised style says it is not raised,
+    // so it clears both.
+    if let Some(position) = &property.vert_align {
+        style.superscript = *position == VertAlign::new(VertAlignType::SuperScript);
+        style.subscript = *position == VertAlign::new(VertAlignType::SubScript);
     }
 }
 
@@ -645,9 +711,8 @@ fn meta_of(
 /// edits to the *manuscript*, never to a margin note — though a comment can sit
 /// inside an accepted `w:ins`/`w:moveTo` span, which is why those two are still
 /// read here), no nested comment (Word offers no UI to comment on a comment), no
-/// field, footnote or embedded object. What is left — `w:r`, `w:hyperlink`, a tab
-/// — is exactly what `collect_paragraph_text` used to flatten this to; the
-/// difference is that a run's own formatting now survives with it.
+/// field, footnote or embedded object. What is left is `w:r`, `w:hyperlink` and a tab,
+/// each keeping its run's own formatting.
 struct CommentBodyBuilder<'a> {
     styles: &'a StyleTable,
     paragraphs: Vec<Vec<Run>>,
@@ -725,9 +790,9 @@ impl<'a> CommentBodyBuilder<'a> {
                     image: None,
                     footnote: None,
                 }),
-                // The conversion drops `<br>` outright and would glue the two
-                // lines together — the same reason `Walker::run` splits a break
-                // into a fresh block for manuscript prose.
+                // A line break starts a new paragraph, as `Walker::run` does for
+                // manuscript prose: Djot has no line break inside a paragraph that the
+                // editor keeps.
                 RunChild::Break(_) | RunChild::CarriageReturn(_) => {
                     self.paragraphs.push(std::mem::take(&mut self.current));
                 }
@@ -738,43 +803,6 @@ impl<'a> CommentBodyBuilder<'a> {
 
     fn finish(self) -> Vec<Vec<Run>> {
         self.paragraphs
-    }
-}
-
-/// The plain text of a table cell's own paragraph. Only table cells still want
-/// this: a comment's own text goes through [`CommentBodyBuilder`] instead, so its
-/// formatting is not flattened away.
-fn collect_paragraph_text(children: &[ParagraphChild], out: &mut String) {
-    for child in children {
-        match child {
-            ParagraphChild::Run(run) => collect_run_text(run, out),
-            ParagraphChild::Insert(insert) => {
-                for child in &insert.children {
-                    if let InsertChild::Run(run) = child {
-                        collect_run_text(run, out);
-                    }
-                }
-            }
-            ParagraphChild::MoveTo(move_to) => {
-                for child in &move_to.children {
-                    if let MoveToChild::Run(run) = child {
-                        collect_run_text(run, out);
-                    }
-                }
-            }
-            ParagraphChild::Hyperlink(link) => collect_paragraph_text(&link.children, out),
-            _ => {}
-        }
-    }
-}
-
-fn collect_run_text(run: &DocxRun, out: &mut String) {
-    for child in &run.children {
-        match child {
-            RunChild::Text(text) => out.push_str(&text.text),
-            RunChild::Tab(_) | RunChild::PTab(_) => out.push(' '),
-            _ => {}
-        }
     }
 }
 
@@ -855,6 +883,123 @@ struct RawScan {
     footnotes: HashMap<usize, Vec<(usize, usize)>>,
     /// `w:id` → that footnote's own styled paragraphs, from `word/footnotes.xml`.
     footnote_bodies: HashMap<usize, Vec<Vec<Run>>>,
+    /// Paragraph ordinal → the direction and page break its own `w:pPr` states.
+    ///
+    /// Read here because `docx-rs` never reads `w:bidi` at all, and reads
+    /// `w:pageBreakBefore` only when it is on, so a paragraph turning off the break its
+    /// style asks for would be indistinguishable from one saying nothing.
+    paragraph_props: HashMap<usize, RawParagraphProps>,
+    /// The same two properties for each paragraph style of `word/styles.xml`, and the
+    /// document's defaults, for a paragraph that states neither itself.
+    styles: RawStyles,
+}
+
+/// What a `w:pPr` states about a paragraph's direction and page break. `None` is silence,
+/// which defers to the style.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+struct RawParagraphProps {
+    bidi: Option<bool>,
+    page_break_before: Option<bool>,
+}
+
+impl RawParagraphProps {
+    fn read(paragraph_or_style: roxmltree::Node<'_, '_>) -> Self {
+        let Some(ppr) = paragraph_or_style
+            .children()
+            .find(|n| n.is_element() && n.tag_name().name() == "pPr")
+        else {
+            return Self::default();
+        };
+        RawParagraphProps {
+            bidi: raw_toggle_value(ppr, "bidi"),
+            page_break_before: raw_toggle_value(ppr, "pageBreakBefore"),
+        }
+    }
+}
+
+/// The paragraph styles of `word/styles.xml`, reduced to what [`RawParagraphProps`] holds.
+#[derive(Debug, Clone, Default)]
+struct RawStyles {
+    /// Style id → its own properties and the id it is based on.
+    by_id: HashMap<String, (RawParagraphProps, Option<String>)>,
+    /// The style a paragraph naming none is in: the one marked `w:default`.
+    default_style: Option<String>,
+    /// `w:docDefaults`, under every style.
+    defaults: RawParagraphProps,
+}
+
+impl RawStyles {
+    fn read<R: std::io::Read + std::io::Seek>(zip: &mut zip::ZipArchive<R>) -> Option<Self> {
+        let xml = {
+            let mut file = zip.by_name("word/styles.xml").ok()?;
+            let mut buffer = Vec::new();
+            std::io::Read::read_to_end(&mut file, &mut buffer).ok()?;
+            String::from_utf8_lossy(&buffer).into_owned()
+        };
+        let document = roxmltree::Document::parse(&xml).ok()?;
+        let mut styles = RawStyles::default();
+        for node in document
+            .root_element()
+            .children()
+            .filter(|n| n.is_element())
+        {
+            match node.tag_name().name() {
+                "docDefaults" => {
+                    if let Some(default) = node
+                        .children()
+                        .find(|n| n.is_element() && n.tag_name().name() == "pPrDefault")
+                    {
+                        styles.defaults = RawParagraphProps::read(default);
+                    }
+                }
+                "style" if node.attribute((NS_W, "type")) == Some("paragraph") => {
+                    let Some(id) = node.attribute((NS_W, "styleId")) else {
+                        continue;
+                    };
+                    if matches!(node.attribute((NS_W, "default")), Some("1" | "true" | "on")) {
+                        styles.default_style = Some(id.to_string());
+                    }
+                    let based_on = node
+                        .children()
+                        .find(|n| n.is_element() && n.tag_name().name() == "basedOn")
+                        .and_then(|n| n.attribute((NS_W, "val")))
+                        .map(str::to_string);
+                    styles
+                        .by_id
+                        .insert(id.to_string(), (RawParagraphProps::read(node), based_on));
+                }
+                _ => {}
+            }
+        }
+        Some(styles)
+    }
+
+    /// The first value `pick` finds in the style `id` names or the ones it is based on, and
+    /// then in the document's defaults.
+    fn resolve(
+        &self,
+        id: Option<&str>,
+        pick: impl Fn(&RawParagraphProps) -> Option<bool>,
+    ) -> Option<bool> {
+        let mut current = id
+            .map(str::to_string)
+            .or_else(|| self.default_style.clone());
+        let mut guard = 0;
+        while let Some(style) = current {
+            let Some((props, based_on)) = self.by_id.get(&style) else {
+                break;
+            };
+            if let Some(value) = pick(props) {
+                return Some(value);
+            }
+            current = based_on.clone();
+            guard += 1;
+            if guard > 32 {
+                break;
+            }
+        }
+        pick(&self.defaults)
+    }
 }
 
 impl RawScan {
@@ -913,10 +1058,15 @@ impl RawScan {
             if !found.is_empty() {
                 scan.references.insert(ordinal, found);
             }
+            let props = RawParagraphProps::read(paragraph);
+            if props != RawParagraphProps::default() {
+                scan.paragraph_props.insert(ordinal, props);
+            }
         }
 
         scan.comment_attrs = read_comment_attrs(&mut zip).unwrap_or_default();
         scan.footnote_bodies = read_footnote_bodies(&mut zip).unwrap_or_default();
+        scan.styles = RawStyles::read(&mut zip).unwrap_or_default();
         Some(scan)
     }
 }
@@ -1068,7 +1218,7 @@ fn raw_note_runs(node: roxmltree::Node<'_, '_>, out: &mut Vec<Run>, depth: u32) 
     }
 }
 
-/// The four marks [`rich::RunStyle`] carries, read off a raw `<w:rPr>`.
+/// The marks [`rich::RunStyle`] carries, read off a raw `<w:rPr>`.
 ///
 /// `code` is deliberately never set: OOXML expresses monospace as a *font*, and a
 /// font is not a mark this model carries — reading one as `code` would turn a note
@@ -1093,7 +1243,28 @@ fn raw_run_style(run: roxmltree::Node<'_, '_>) -> RunStyle {
             .is_some_and(|n| n.attribute((NS_W, "val")) != Some("none")),
         strikethrough: raw_toggle(rpr, "strike") || raw_toggle(rpr, "dstrike"),
         code: false,
+        superscript: raw_vertical_position(rpr) == Some("superscript"),
+        subscript: raw_vertical_position(rpr) == Some("subscript"),
     }
+}
+
+/// The `w:vertAlign` value of a raw `<w:rPr>`, if it has one.
+fn raw_vertical_position<'a>(rpr: roxmltree::Node<'a, '_>) -> Option<&'a str> {
+    rpr.children()
+        .filter(roxmltree::Node::is_element)
+        .find(|n| n.tag_name().name() == "vertAlign")
+        .and_then(|n| n.attribute((NS_W, "val")))
+}
+
+/// What an OOXML toggle property under `parent` says: `Some(true)` when present and on,
+/// `Some(false)` when present and off, `None` when absent. See [`raw_toggle`] for the
+/// spellings of off.
+fn raw_toggle_value(parent: roxmltree::Node<'_, '_>, name: &str) -> Option<bool> {
+    parent
+        .children()
+        .filter(roxmltree::Node::is_element)
+        .find(|n| n.tag_name().name() == name)
+        .map(|n| !matches!(n.attribute((NS_W, "val")), Some("0" | "false" | "off")))
 }
 
 /// One OOXML toggle property: present means on, unless it says otherwise.
@@ -1310,12 +1481,37 @@ struct Walker<'a> {
     /// references were met. Deduplicated by label: a note cited twice is one note.
     footnotes: Vec<rich::RichFootnote>,
     unknown_styles: HashSet<String>,
+    /// A page break was met and nothing has started on the new page yet. The next block
+    /// the walk produces starts the page: a paragraph holding only Word's `Ctrl+Enter`
+    /// break produces none itself, and the break belongs to what follows it.
+    page_break_pending: bool,
 }
 
 struct ParaBuild {
     kind: ParagraphKind,
     runs: Vec<Run>,
     len: usize,
+    props: BlockProps,
+    /// Whether this is a table cell's text, where a line break is a space: a cell is one
+    /// block of its table, never a paragraph of its own.
+    in_cell: bool,
+}
+
+impl ParaBuild {
+    /// The rest of the same paragraph after a line break: same kind, same alignment and
+    /// direction, and not the start of a page.
+    fn continuation(&self) -> ParaBuild {
+        ParaBuild {
+            kind: self.kind,
+            runs: Vec::new(),
+            len: 0,
+            props: BlockProps {
+                page_break_before: false,
+                ..self.props
+            },
+            in_cell: self.in_cell,
+        }
+    }
 }
 
 impl<'a> Walker<'a> {
@@ -1348,6 +1544,7 @@ impl<'a> Walker<'a> {
             footnotes_dropped: 0,
             footnotes: Vec::new(),
             unknown_styles: HashSet::new(),
+            page_break_pending: false,
         }
     }
 
@@ -1363,7 +1560,7 @@ impl<'a> Walker<'a> {
                 DocumentChild::StructuredDataTag(tag) => {
                     for child in &tag.children {
                         if let docx_rs::StructuredDataTagChild::Paragraph(p) = child {
-                            self.paragraph(p);
+                            self.paragraph(p, None);
                         }
                     }
                 }
@@ -1412,13 +1609,15 @@ impl<'a> Walker<'a> {
                     });
                 }
                 None => {
-                    // No range and no thread. `assemble` turns an annotation whose
-                    // block does not exist into a comment on the row plus a
-                    // diagnostic, which is what this is.
+                    // No range and no thread. `assemble` puts an annotation whose block
+                    // does not exist on the last block it placed, flagged as moved, and
+                    // the planner reports it, or reports it as not imported when the
+                    // file stores no prose at all.
                     self.annotations.push(RichAnnotation {
                         block_index: usize::MAX,
                         start: 0,
                         length: 0,
+                        end: None,
                         uid: meta.uid,
                         // A comment with no range has nothing for a mark to bracket, so no
                         // mark can name it.
@@ -1501,14 +1700,16 @@ impl<'a> Walker<'a> {
         if self.raw.rules.contains(&ordinal) {
             // A horizontal rule. Emitted as its glyph so `skribisto_model` stays the
             // one authority on what a break is — the same treatment the ODT scanner
-            // gives ODF's spelling of the same construct.
+            // gives ODF's spelling of the same construct. A scene break carries no
+            // paragraph formatting, so a pending page break ends here.
+            self.page_break_pending = false;
             self.blocks.push(RichBlock::body(vec![Run::plain(
                 skribisto_model::scene_break::CANONICAL_MINOR,
             )]));
             return;
         }
         let first_block = self.blocks.len();
-        self.paragraph(paragraph);
+        self.paragraph(paragraph, Some(ordinal));
         let produced = self.blocks.len() > first_block;
 
         for (id, offset) in self.raw.references.get(&ordinal).into_iter().flatten() {
@@ -1620,6 +1821,12 @@ impl<'a> Walker<'a> {
     /// now one character longer.
     fn shift_offsets(&mut self, block: usize, at: usize) {
         for annotation in &mut self.annotations {
+            if let Some(end) = annotation.end.as_mut()
+                && end.block_index == block
+                && end.offset >= at
+            {
+                end.offset += 1;
+            }
             if annotation.block_index != block {
                 continue;
             }
@@ -1681,7 +1888,40 @@ impl<'a> Walker<'a> {
         }
     }
 
-    fn paragraph(&mut self, paragraph: &Paragraph) {
+    /// What the paragraph states about its alignment, direction and page break, its style
+    /// chain resolved. `ordinal` is its top-level position, the key of the raw pass's own
+    /// reading of its `w:pPr`; a paragraph inside a content control has none.
+    fn paragraph_props(&self, property: &ParagraphProperty, ordinal: Option<usize>) -> BlockProps {
+        let own = ordinal
+            .and_then(|o| self.raw.paragraph_props.get(&o))
+            .copied()
+            .unwrap_or_default();
+        let style = property.style.as_ref().map(|s| s.val.as_str());
+        let styles = &self.raw.styles;
+        let bidi = own.bidi.or_else(|| styles.resolve(style, |p| p.bidi));
+        let page_break_before = own
+            .page_break_before
+            .or(property.page_break_before)
+            .or_else(|| styles.resolve(style, |p| p.page_break_before))
+            .unwrap_or(false);
+        let right_to_left = bidi == Some(true);
+        BlockProps {
+            alignment: self
+                .styles
+                .justification(property, styles.default_style.as_deref())
+                .and_then(|jc| alignment_of(&jc, right_to_left)),
+            direction: bidi.map(|rtl| {
+                if rtl {
+                    Direction::RightToLeft
+                } else {
+                    Direction::LeftToRight
+                }
+            }),
+            page_break_before,
+        }
+    }
+
+    fn paragraph(&mut self, paragraph: &Paragraph, ordinal: Option<usize>) {
         let property = &paragraph.property;
         let kind = match self.styles.heading_level(property) {
             HeadingVerdict::Heading(level) => ParagraphKind::Heading { level },
@@ -1717,6 +1957,8 @@ impl<'a> Walker<'a> {
             kind,
             runs: Vec::new(),
             len: 0,
+            props: self.paragraph_props(property, ordinal),
+            in_cell: false,
         };
         self.paragraph_children(&paragraph.children, property, &mut build, None);
         self.flush(build);
@@ -1854,17 +2096,32 @@ impl<'a> Walker<'a> {
                         footnote: None,
                     });
                 }
-                RunChild::Break(_) | RunChild::CarriageReturn(_) => {
-                    // The conversion drops `<br>` outright, gluing the words either
-                    // side together, so a break becomes a paragraph of its own.
-                    let finished = std::mem::replace(
-                        build,
-                        ParaBuild {
-                            kind: build.kind,
-                            runs: Vec::new(),
-                            len: 0,
-                        },
-                    );
+                // Inside a table cell a break of any kind is a space: the cell is one
+                // block of its table.
+                RunChild::Break(_) | RunChild::CarriageReturn(_) if build.in_cell => {
+                    build.len += 1;
+                    build.runs.push(Run {
+                        text: " ".into(),
+                        style,
+                        link: link.map(str::to_string),
+                        image: None,
+                        footnote: None,
+                    });
+                }
+                // A line break ends the paragraph here and the rest starts a new one:
+                // Djot has no line break inside a paragraph that the editor keeps. A page
+                // break does the same, and the text after it starts the new page.
+                RunChild::Break(kind) => {
+                    let next = build.continuation();
+                    let finished = std::mem::replace(build, next);
+                    self.flush(finished);
+                    if *kind == Break::new(BreakType::Page) {
+                        self.page_break_pending = true;
+                    }
+                }
+                RunChild::CarriageReturn(_) => {
+                    let next = build.continuation();
+                    let finished = std::mem::replace(build, next);
                     self.flush(finished);
                 }
                 RunChild::Drawing(drawing) => match &drawing.data {
@@ -1874,7 +2131,12 @@ impl<'a> Walker<'a> {
                             target: pic.id.clone(),
                         });
                         build.len += 1;
-                        build.runs.push(Run::image("", pic.id.clone()));
+                        build.runs.push(Run::sized_image(
+                            "",
+                            pic.id.clone(),
+                            emu_to_pixels(pic.size.0),
+                            emu_to_pixels(pic.size.1),
+                        ));
                     }
                     Some(DrawingData::TextBox(_)) => self.text_boxes += 1,
                     None => self.embedded_objects += 1,
@@ -1908,29 +2170,56 @@ impl<'a> Walker<'a> {
         }
     }
 
+    /// A table, every cell read with the same walk a paragraph gets.
+    ///
+    /// One buffer runs through the whole table, so its offsets are the table's own plain
+    /// text (cells joined by a line break, a cell's paragraphs by a space): the space a
+    /// comment or a round-trip mark inside a cell is measured in, which is what lets
+    /// `rich::assemble` place it on its words, and a cell keeps its formatting.
     fn table(&mut self, table: &Table) {
+        let mut build = ParaBuild {
+            kind: ParagraphKind::Body,
+            runs: Vec::new(),
+            len: 0,
+            props: BlockProps::default(),
+            in_cell: true,
+        };
         let mut rows: Vec<Vec<Vec<Run>>> = Vec::new();
+        let mut first_cell = true;
         for TableChild::TableRow(row) in &table.rows {
             let mut cells: Vec<Vec<Run>> = Vec::new();
             for TableRowChild::TableCell(cell) in &row.cells {
-                let mut text = String::new();
+                if !first_cell {
+                    build.len += 1;
+                }
+                first_cell = false;
+                let start = build.runs.len();
+                let mut first_paragraph = true;
                 for content in &cell.children {
                     if let TableCellContent::Paragraph(paragraph) = content {
-                        if !text.is_empty() {
-                            text.push(' ');
+                        if !first_paragraph {
+                            build.len += 1;
+                            build.runs.push(Run::plain(" "));
                         }
-                        collect_paragraph_text(&paragraph.children, &mut text);
+                        first_paragraph = false;
+                        self.paragraph_children(
+                            &paragraph.children,
+                            &paragraph.property,
+                            &mut build,
+                            None,
+                        );
                     }
                 }
-                // One cell is one Djot cell whatever it held: a newline inside one
-                // would break the plain-text arithmetic the annotations rest on.
-                cells.push(vec![Run::plain(text.replace(['\n', '\r'], " ").trim())]);
+                cells.push(build.runs.split_off(start));
             }
             if !cells.is_empty() {
                 rows.push(cells);
             }
         }
         if !rows.is_empty() {
+            // A table carries no paragraph formatting of its own, so a page break before
+            // it is not carried either.
+            self.page_break_pending = false;
             self.blocks.push(RichBlock::Table { rows });
         }
     }
@@ -1939,9 +2228,12 @@ impl<'a> Walker<'a> {
         if build.runs.is_empty() {
             return;
         }
+        let mut props = build.props;
+        props.page_break_before |= std::mem::take(&mut self.page_break_pending);
         self.blocks.push(RichBlock::Paragraph {
             kind: build.kind,
             runs: build.runs,
+            props,
         });
     }
 
@@ -1974,6 +2266,7 @@ impl<'a> Walker<'a> {
             block_index: block,
             start,
             length: 0,
+            end: None,
             uid: meta.uid,
             // Filled by `attach_comment_marks` after the walk — the bookmark carrying it
             // closes later, and on a file an editor has saved may even open first.
@@ -2013,15 +2306,35 @@ impl<'a> Walker<'a> {
         let Some(open) = self.open.remove(&index) else {
             return;
         };
-        let end_offset = match at {
-            Some(offset) if open.block == self.blocks.len() => offset,
-            _ => self
-                .blocks
-                .get(open.block)
-                .map(|b| b.plain_text().chars().count())
-                .unwrap_or(open.start),
+        let current = self.blocks.len();
+        if let Some(offset) = at
+            && open.block == current
+        {
+            self.annotations[open.annotation].length = offset.saturating_sub(open.start);
+            return;
+        }
+        // The range ran on past the paragraph it started in. Its length there runs to the
+        // end of that paragraph, and where it really ends is kept beside it: in the
+        // paragraph being built when the end sits inside one, or at the end of the last
+        // paragraph produced when it sits between two.
+        let start_len = self
+            .blocks
+            .get(open.block)
+            .map(|b| b.plain_text().chars().count())
+            .unwrap_or(open.start);
+        let end = match at {
+            Some(offset) => Some(AnnotationEnd {
+                block_index: current,
+                offset,
+            }),
+            None => current.checked_sub(1).map(|last| AnnotationEnd {
+                block_index: last,
+                offset: self.blocks[last].plain_text().chars().count(),
+            }),
         };
-        self.annotations[open.annotation].length = end_offset.saturating_sub(open.start);
+        let annotation = &mut self.annotations[open.annotation];
+        annotation.length = start_len.saturating_sub(open.start);
+        annotation.end = end.filter(|e| e.block_index > open.block);
     }
 
     fn annotation_of_matches(&self, index: usize, end: &CommentRangeEnd) -> bool {

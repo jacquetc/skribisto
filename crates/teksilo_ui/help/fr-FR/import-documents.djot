@@ -67,11 +67,36 @@ contient déjà et qu’au moins l’un d’eux demande une décision. C’est l
 arrivés et propose *Annuler l’import* pendant quelques secondes. Si l’écriture est refusée,
 l’assistant reste ouvert avec votre plan intact.
 
+## Votre texte tel que vous l’avez tapé
+
+Depuis un fichier Word, OpenDocument ou texte brut, les mots arrivent exactement comme le
+fichier les contient. Les guillemets droits restent droits, une double espace reste double, et
+`--`, `...` ou une heure comme `10:30:45` ne sont pas réécrits.
+
+Dans un fichier texte brut, chaque ligne est un paragraphe. Dans un fichier coupé à largeur fixe,
+avec une ligne vide entre les paragraphes, les lignes coupées sont réunies en paragraphes entiers.
+Une ligne courte, comme une ligne d’adresse, y termine toujours son paragraphe.
+
+Les fichiers Word et OpenDocument apportent aussi :
+
+- le gras, l’italique, le souligné, le barré, l’exposant et l’indice
+- les liens
+- les lignes centrées ou alignées à droite
+- les sauts de page
+
+La justification suit votre style d’export, pas le fichier.
+
 ## Commentaires et notes de bas de page
 
 Les commentaires d’un fichier Word ou OpenDocument arrivent comme de vrais commentaires
 Skribisto, sur les mots qu’ils annotaient. Un commentaire apporte avec lui son auteur et ses
 réponses. Voir [les commentaires](:help-comments).
+
+Si les mots qu’un commentaire annotait sont introuvables, il est conservé sur le paragraphe le
+plus proche, et l’assistant le signale. Un commentaire sur un titre arrive sur le premier
+paragraphe placé dessous. Si aucun texte ne se trouve juste sous ce titre, comme sous un titre
+de livre suivi d’un titre de chapitre, il va au premier paragraphe qui le suit, ou au dernier
+qui le précède quand rien ne suit.
 
 Les notes de bas de page arrivent aussi depuis ces deux formats, chacune avec son propre texte,
 appelée depuis le même endroit du texte. Les numéros ne sont pas repris.
@@ -83,6 +108,14 @@ Une note dont l’assistant ne peut pas placer l’appel est signalée plutôt q
 Un bandeau sous l’arborescence porte les messages de l’assistant sur l’import.
 
 - Un fichier sans aucun titre arrive en un seul élément.
+- Un paragraphe dont la mise en forme ne peut pas être reprise telle quelle arrive en texte
+  brut. L’assistant indique combien.
+- Une ligne à remplir, tracée par des espaces soulignées ou barrées, arrive en espaces simples,
+  ou pas du tout si elle ouvre ou termine un paragraphe. L’assistant indique combien.
+- Une liste imbriquée sur plus de seize niveaux arrive avec ses éléments plus profonds au
+  seizième niveau, texte et mise en forme compris. L’assistant indique combien.
+- Un commentaire d’un fichier sans texte où le conserver, qui ne contient que des titres par
+  exemple, n’est pas importé, et l’assistant le nomme.
 - Un fichier qui ne peut pas être lu, ou dont le format n’est reconnu par rien, est ignoré et
   nommé. Le reste du lot est quand même importé.
 - Un élément peut porter du texte que son type ne peut pas contenir, car un Livre ou une Partie

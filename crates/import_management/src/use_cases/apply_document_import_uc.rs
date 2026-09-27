@@ -1328,10 +1328,11 @@ fn rows_carry_footnotes(rows: &[&ApplyImportRow]) -> bool {
 /// already had, leaving the originals orphaned and doubling the count.
 ///
 /// [`Self::resolve`] closes that: on a row that already exists, a note whose body
-/// matches one already on that row's `Content` **reuses that note's label** and
-/// creates nothing. The body is what travels, so the body is what identifies. Two
-/// genuinely distinct notes with byte-identical text collapse into one — which is
-/// the right answer anyway: they are the same note, cited twice.
+/// reads the same as one already on that row's `Content` **reuses that note's label**
+/// and creates nothing. The body is what travels, so the body is what identifies, read
+/// as the editor shows it: the same words with the same formatting (see [`same_note`]).
+/// Two genuinely distinct notes with identical text collapse into one, which is the right
+/// answer anyway: they are the same note, cited twice.
 struct FootnoteWriter {
     /// The highest `fn<N>` the project already uses. Labels are minted above it.
     ///
@@ -1392,7 +1393,7 @@ impl FootnoteWriter {
             let already = content.and_then(|content_id| {
                 existing
                     .iter()
-                    .find(|f| f.content == Some(content_id) && f.body == *body)
+                    .find(|f| f.content == Some(content_id) && same_note(&f.body, body))
             });
             match already {
                 Some(found) => out.push(ResolvedFootnote {
@@ -1411,6 +1412,31 @@ impl FootnoteWriter {
             }
         }
         out
+    }
+}
+
+/// Whether two footnote bodies are the same note: the same words with the same formatting
+/// and links, however the markup spells them.
+///
+/// Compared as the editor writes each one back
+/// ([`skrib_format::djot_as_the_editor_writes_it`]), neither byte for byte nor by words
+/// alone. The same note written by the footnote editor and brought back through a document
+/// import differs in markup only (the importer writes styles with braced delimiters and
+/// escapes what the parser would otherwise rewrite), and byte equality minted a second note
+/// for every formatted note that came home. Words alone went too far the other way: a note
+/// whose only change was its formatting, a title an editor put in italics, was taken for the
+/// stored one and the change was dropped. A note that differs in either is a new note, as a
+/// note with new words always was. A body that cannot be read is never taken for another.
+fn same_note(stored: &str, incoming: &str) -> bool {
+    if stored == incoming {
+        return true;
+    }
+    match (
+        skrib_format::djot_as_the_editor_writes_it(stored),
+        skrib_format::djot_as_the_editor_writes_it(incoming),
+    ) {
+        (Ok(stored), Ok(incoming)) => stored == incoming,
+        _ => false,
     }
 }
 

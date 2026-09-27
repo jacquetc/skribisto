@@ -10,65 +10,64 @@
 //! paragraphs" happens once, here, and the same input produces the same prose
 //! whichever container it arrived in.
 //!
-//! ## Build HTML, then convert — never hand-emit Djot
+//! ## Djot written directly, and proved before it is kept
 //!
-//! `skrib_format::html_to_djot_and_text` goes through `text-document`'s document
-//! model, and its own doc says why that matters: **CommonMark and Djot swap their
-//! emphasis delimiters**, so any hand-written emitter has to re-derive that, plus
-//! Djot escaping, plus list and table syntax — twice, once per format. Emitting
-//! `<p><strong>…</strong><em>…</em></p>` from styled runs is trivial and
-//! unambiguous, and the conversion that follows is the one the Markdown scanner
-//! already trusts.
+//! This module used to build HTML from the runs and hand it to `text-document`'s HTML
+//! reader. That reader follows HTML's rules, and HTML's rules are not a manuscript's: it
+//! collapses a double space and trims a paragraph's leading tab, it has no reading for a
+//! centred paragraph or a page break, and its plain text and the Djot it wrote were two
+//! different parses. Every paragraph after one with a double space or a tab then failed
+//! the offset check, and its comments lost their words. On a real corpus, more than a
+//! quarter of paragraphs changed on their first load.
 //!
-//! It also neutralises Word's habit of splitting one bold word across three runs
-//! with identical properties: parsing to a model merges adjacent identical-format
-//! runs, so `*b**o**ld*` cannot come out the far end. Runs are still coalesced by
-//! property set before emitting, because emitting six tags where one will do is
-//! wasteful and makes the intermediate unreadable when something needs debugging.
+//! The runs are therefore written as Djot here, by the `emit` module, with three rules
+//! that remove the reasons the old note gave for going through HTML:
 //!
-//! ## What the conversion carries, measured rather than assumed
+//! * **Braced delimiters always** (`{*…*}`, `{_…_}`, `{+…+}`, `{-…-}`, `{^…^}`, `{~…~}`).
+//!   They read the same inside a word and when nested, where a bare `*` or `_` depends on
+//!   what surrounds it, and no Markdown is involved to swap them.
+//! * **Escaping from `skrib_format`**, built on `text-document`'s own escaper and widened
+//!   to the strings its parser still rewrites (`10:30:45`, straight quotes, `--`, `...`,
+//!   `I. `), with the neighbouring runs as context.
+//! * **A proof.** Every member of a run is parsed back with the parser the editor uses, and
+//!   its text and link targets compared with the source. A member that does not read back
+//!   is written again with every punctuation mark escaped, then as its words alone; one
+//!   stored below its formatting is reported ([`ImportDiagnostic::ProseNotVerbatim`]).
+//!   Nothing is stored that was not proved, or reported.
 //!
-//! Verified against the real converter: `<strong>`→`*x*`, `<em>`→`_x_`,
-//! `<u>`→`{+x+}`, `<s>`/`<del>`→`{-x-}`, `<code>`→`` `x` ``, `<blockquote>`→`> x`,
-//! `<ul>`/`<ol>`→Djot lists at any nesting depth, `<table>`→a Djot pipe table, and
-//! HTML entities decode to their characters.
+//! What is stored is the Djot as written, never a re-export of it: the editor writes a
+//! row back only once the writer changes it, so the escapes above stay until then.
 //!
-//! Three things it does **not** carry, each handled here rather than left to
-//! surprise someone:
+//! ## What a paragraph carries
 //!
-//! * **`<sup>` and `<sub>` are dropped to plain text.** The characters survive, the
-//!   raising does not. No diagnostic: this is character *styling*, like colour,
-//!   font and size, none of which Skribisto's model carries either — saying so once
-//!   here is more honest than a warning on every document that raises a character.
-//!   A **footnote reference** is not this case and never was: it is a node, emitted
-//!   as `<sup>` carrying `skrib_format::HTML_FOOTNOTE_ATTR` and read back as a real
-//!   reference, because the escaper would otherwise turn a `[^label]` written as
-//!   characters into prose. See [`Run::footnote`].
-//! * **`<br>` vanishes entirely**, gluing the words either side of it together.
-//!   A soft line break is therefore split into a paragraph of its own before the
-//!   HTML is built, which is what every other manuscript importer does with one and
-//!   is the only option that does not silently corrupt the sentence.
-//! * **A truly empty `<p>` produces no block at all**, while a whitespace-only one
-//!   does. Blank paragraphs are dropped before emitting so the two cannot disagree,
-//!   and so the offset arithmetic below stays exact.
+//! Bold, italic, underline, strikethrough, superscript, subscript and code; links;
+//! footnote references and pictures, each one character of plain text; and on a paragraph,
+//! centred or flush-right alignment, a right-to-left direction and a page break before it.
+//! Justified text is not carried (see `emit::attribute_line`). Nor is an underline or a
+//! strike-through on blank space alone, which the editor would drop on its first save; it
+//! is reported instead ([`ImportDiagnostic::StyledSpacesNotCarried`]). Lists become Djot lists,
+//! tables pipe tables, a quotation a blockquote, and an epigraph run one blockquote. A list
+//! item nested deeper than [`MAX_LIST_LEVELS`] is written at that level and reported
+//! ([`ImportDiagnostic::ListNestingFlattened`]).
 //!
-//! ## Where a comment ends up, and why a table is flushed alone
+//! ## Where a comment ends up
 //!
-//! An annotation is captured against **one block's own plain text**, and the
-//! planner rebases it into the row that block lands in. That rebasing is arithmetic
-//! — every block contributes exactly one line to the run's plain text, joined by one
-//! `\n` — and it is *checked* rather than trusted: [`assemble`] verifies the slice it
-//! computed really is the block's text before using the offset, and degrades the
-//! annotation to a whole-row [`AnnotationKind::Document`] comment when it is not.
+//! An annotation is captured against **one block's own plain text**, and the planner
+//! rebases it into the row that block lands in. The proof is what makes that rebasing
+//! exact: it reports where each paragraph's text starts in the stored prose and how much
+//! edge whitespace the parser dropped, and a comment is placed through that map rather
+//! than through arithmetic. A table is proved cell by cell like any paragraph, so a comment
+//! inside one keeps its words too.
 //!
-//! A table is the one construct that breaks the arithmetic: `text-document` reports
-//! block positions for a table that do not agree with its own plain text (measured:
-//! a one-cell table's following paragraph reports position 4 in a 7-character
-//! string where it actually starts at 2). So a table is flushed as a prose block of
-//! its own, and a comment inside one becomes a `Document` comment rather than a
-//! confidently misplaced range.
+//! **No annotation becomes a comment on the whole document.** Neither format can express
+//! one and the comment panel cannot open one. A comment that cannot be placed on its words
+//! (its paragraph produced nothing, or failed the proof) becomes a comment on the nearest
+//! paragraph, flagged [`SourceAnnotation::unanchored`]. The planner reports it, once
+//! ([`ImportDiagnostic::CommentUnanchored`]), since only the planner knows whether the
+//! paragraph it landed on is stored at all.
 
 use anyhow::Result;
+use skrib_format::DjotReading;
 use skribisto_model::comment_anchor::{self, Anchor};
 use skribisto_model::scene_break;
 
@@ -76,11 +75,29 @@ use crate::block::{
     AnnotationKind, SourceAnnotation, SourceAnnotationReply, SourceBlock, SourceDocument,
     SourceRowMark,
 };
+use crate::diagnostics::ImportDiagnostic;
+
+mod emit;
+
+use emit::{Frame, MemberProof, Segment, Source};
+
+/// The most list levels imported prose keeps. A list item nested deeper arrives at the
+/// deepest of them, and is reported ([`ImportDiagnostic::ListNestingFlattened`]).
+///
+/// Word's numbering has nine levels (`w:ilvl` 0 to 8) and LibreOffice's ten, so sixteen
+/// keeps every level either application can write, with six to spare for a producer that
+/// writes more. It is also far inside what stored prose may nest: the deepest item is
+/// written thirty columns in, which `skrib_format::djot_depth` counts as fifteen of its
+/// [`skrib_format::MAX_DJOT_DEPTH`] levels, leaving room for any blockquote or footnote
+/// around it. A list written deeper than that ceiling is not merely unusual: the next load
+/// refuses the whole project over it, and from `text-document` 1.12.3 the parser reads such
+/// a line as literal text rather than as a list.
+pub const MAX_LIST_LEVELS: usize = 16;
 
 /// Character formatting a container format can express and Djot can carry.
 ///
-/// Deliberately closed and small: these five are exactly what survives the
-/// conversion. A sixth field would be a promise this layer cannot keep.
+/// Deliberately closed and small: these are exactly what the editor's document model
+/// keeps. A field beyond them would be a promise this layer cannot keep.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct RunStyle {
     pub bold: bool,
@@ -88,14 +105,52 @@ pub struct RunStyle {
     pub underline: bool,
     pub strikethrough: bool,
     pub code: bool,
+    /// Raised above the baseline: an exponent, an ordinal's suffix (`1er`, `2nd`).
+    pub superscript: bool,
+    /// Lowered below the baseline: a chemical formula's count. When a source sets both, the
+    /// raising wins, since one character cannot be both.
+    pub subscript: bool,
+}
+
+/// How a paragraph is aligned, in the four values the editor's document model has.
+///
+/// Physical, as the editor lays a line out: [`Alignment::Left`] is the left edge whatever
+/// the paragraph's direction. A scanner resolves its format's own logical values (OOXML's
+/// `start`/`end`, ODF's) against the paragraph's direction before storing one here.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Alignment {
+    Left,
+    Center,
+    Right,
+    Justify,
+}
+
+/// Which way a paragraph's text runs, when the source states it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Direction {
+    LeftToRight,
+    RightToLeft,
+}
+
+/// Paragraph formatting a container states and the editor can carry.
+///
+/// Every field is what the source says about this one paragraph, its style chain resolved.
+/// Which of them reach the stored Djot is the emitter's decision, not the scanner's.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+pub struct BlockProps {
+    pub alignment: Option<Alignment>,
+    pub direction: Option<Direction>,
+    /// The paragraph starts a new page: OOXML's `w:pageBreakBefore` or a page break just
+    /// before it, ODF's `fo:break-before="page"`.
+    pub page_break_before: bool,
 }
 
 /// The object-replacement character an inline image occupies in plain text.
 ///
-/// Not this crate's invention: it is what the conversion emits for an `<img>`, and
-/// what `comment_anchor::for_display` already knows to substitute a picture glyph
-/// for. Counting it as one character here is what keeps an annotation that follows
-/// an image on the right words.
+/// Not this crate's invention: it is what `text-document` counts a picture or a footnote
+/// reference as, and what `comment_anchor::for_display` already knows to substitute a
+/// picture glyph for. Counting it as one character here is what keeps an annotation that
+/// follows an image on the right words.
 pub const IMAGE_PLACEHOLDER: char = '\u{FFFC}';
 
 /// One run of text and how it is formatted.
@@ -114,10 +169,22 @@ pub struct Run {
     /// no `text` — the printed number is derived from position, never stored, so
     /// storing one here would be a second answer to the same question.
     pub footnote: Option<String>,
-    /// When set, this run **is** an image reference — `text` is its alt text and
-    /// this is the path inside the container. It occupies exactly one character of
-    /// plain text, [`IMAGE_PLACEHOLDER`].
-    pub image: Option<String>,
+    /// When set, this run **is** an image reference: `text` is its alt text, and this
+    /// says where the picture is and how large it is shown. It occupies exactly one
+    /// character of plain text, [`IMAGE_PLACEHOLDER`].
+    pub image: Option<RunImage>,
+}
+
+/// A picture a run shows.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct RunImage {
+    /// Where the picture is inside the container.
+    pub src: String,
+    /// Its display width in pixels, at 96 to the inch: what the editor's document model
+    /// measures a picture in. `0` when the source states none.
+    pub width: u32,
+    /// Its display height, on the same terms.
+    pub height: u32,
 }
 
 impl Run {
@@ -147,11 +214,25 @@ impl Run {
     }
 
     pub fn image(alt: impl Into<String>, src: impl Into<String>) -> Self {
+        Self::sized_image(alt, src, 0, 0)
+    }
+
+    /// A picture shown at `width` by `height` pixels.
+    pub fn sized_image(
+        alt: impl Into<String>,
+        src: impl Into<String>,
+        width: u32,
+        height: u32,
+    ) -> Self {
         Run {
             text: alt.into(),
             style: RunStyle::default(),
             link: None,
-            image: Some(src.into()),
+            image: Some(RunImage {
+                src: src.into(),
+                width,
+                height,
+            }),
             footnote: None,
         }
     }
@@ -161,12 +242,10 @@ impl Run {
     /// A footnote reference contributes [`IMAGE_PLACEHOLDER`] for the same reason an
     /// image does, and it is **not** cosmetic: this string is the coordinate space
     /// every annotation offset is measured in, and it has to agree character for
-    /// character with what the HTML→Djot conversion reports for the same block —
-    /// which renders both an image and a footnote reference as one object-replacement
-    /// character (`text-document`'s "atomic one-character piece"). Contributing
-    /// nothing here would put every comment after a footnote one character early,
-    /// silently, and `assemble`'s own check would degrade it to a whole-row comment
-    /// rather than say so.
+    /// character with what the parser reads the stored Djot as, where both an image and
+    /// a footnote reference are one object-replacement character (`text-document`'s
+    /// "atomic one-character piece"). Contributing nothing here would put every comment
+    /// after a footnote one character early.
     fn plain_push(&self, out: &mut String) {
         if self.image.is_some() || self.footnote.is_some() {
             out.push(IMAGE_PLACEHOLDER);
@@ -237,12 +316,13 @@ pub enum StyledAs {
 ///   ODT writers apply. These are what closes the round trip, and they survive an editor's
 ///   save (measured against a real LibreOffice save, unlike the `skrb:uid` attribute that
 ///   `round_trip`'s module doc records being deleted).
-/// * **The host applications' own.** LibreOffice's `Quotations` and Word's `IntenseQuote` /
-///   `BlockText` are the styles a writer gets by pressing the block-quote button in the
-///   application they actually wrote the manuscript in. Reading them is the same move as
-///   reading `style:default-outline-level` off a novel template's chapter style: not name
-///   *guessing*, but the document stating what a paragraph is in the vocabulary its own
-///   producer uses.
+/// * **The host applications' own.** LibreOffice's `Quotations`, Word's `IntenseQuote` /
+///   `BlockText`, and the `Block Quote` style Scrivener's compiler writes into the Word and
+///   OpenDocument files it produces, are the styles a writer gets from the block-quote
+///   button of the application they actually wrote the manuscript in. Reading them is the
+///   same move as reading `style:default-outline-level` off a novel template's chapter
+///   style: not name *guessing*, but the document stating what a paragraph is in the
+///   vocabulary its own producer uses.
 ///
 /// Matching folds case and drops separators, so `Epigraph Attribution`, `epigraph-attribution`
 /// and ODF's own `Epigraph_20_Attribution` escape all answer alike. `_20_` (ODF's escape for a
@@ -256,7 +336,9 @@ pub fn styled_as(identifier: &str) -> Option<StyledAs> {
         .collect();
     match folded.as_str() {
         "epigraph" | "epigraphattribution" => Some(StyledAs::Epigraph),
-        "quote" | "quotations" | "intensequote" | "blocktext" => Some(StyledAs::Quote),
+        "quote" | "quotations" | "intensequote" | "blocktext" | "blockquote" => {
+            Some(StyledAs::Quote)
+        }
         _ => None,
     }
 }
@@ -275,17 +357,24 @@ pub fn kind_for_style(styled: StyledAs) -> ParagraphKind {
 /// One block of a rich document.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RichBlock {
-    /// Contributes exactly one line to the plain text of the run it joins.
-    Paragraph { kind: ParagraphKind, runs: Vec<Run> },
-    /// Rows of cells of runs. Flushed on its own — see the module note.
+    /// One paragraph: one line of the plain text of the run it joins.
+    Paragraph {
+        kind: ParagraphKind,
+        runs: Vec<Run>,
+        props: BlockProps,
+    },
+    /// Rows of cells of runs. Flushed as a block of its own, each cell proved like a
+    /// paragraph.
     Table { rows: Vec<Vec<Vec<Run>>> },
 }
 
 impl RichBlock {
+    /// A body paragraph with no paragraph formatting.
     pub fn body(runs: Vec<Run>) -> Self {
         RichBlock::Paragraph {
             kind: ParagraphKind::Body,
             runs,
+            props: BlockProps::default(),
         }
     }
 
@@ -315,7 +404,7 @@ impl RichBlock {
         out
     }
 
-    /// Nothing here worth a block of its own.
+    /// Nothing here that could be a block of its own.
     ///
     /// Plain text is the measure, with one exception: a **footnote reference
     /// carries no text**. Its run is a node, not characters (see [`Run::footnote`]),
@@ -338,7 +427,7 @@ impl RichBlock {
     /// annotates a `Content`, so there is nothing for a note on a chapter title to
     /// hang off. Left in, the reference's object-replacement character would simply
     /// appear in the title as a stray glyph; the note itself is then cited by no row,
-    /// which is what `plan::attach_footnotes` reports.
+    /// which is what `plan` reports.
     fn title_text(&self) -> String {
         match self {
             RichBlock::Paragraph { runs, .. } => {
@@ -363,6 +452,18 @@ impl RichBlock {
         };
         runs.any(|run| run.footnote.is_some())
     }
+
+    /// This block as the emitter reads it.
+    fn source(&self) -> Source<'_> {
+        match self {
+            RichBlock::Paragraph { kind, runs, props } => Source::Paragraph {
+                kind: *kind,
+                runs,
+                props: *props,
+            },
+            RichBlock::Table { rows } => Source::Table { rows },
+        }
+    }
 }
 
 /// A comment as its container expressed it, before it knows anything about rows.
@@ -373,7 +474,13 @@ pub struct RichAnnotation {
     /// Character offset within that block's [`RichBlock::plain_text`].
     pub start: usize,
     /// `0` means the comment had no range — it belongs to the paragraph.
+    ///
+    /// For a range that runs on into a later block ([`Self::end`]), this is its length
+    /// within this block, to the end of it.
     pub length: usize,
+    /// Where the range ends, when an editor laid it across several paragraphs and it ends
+    /// in a later block than it starts in. `None` for a range inside one block.
+    pub end: Option<AnnotationEnd>,
     /// The uid this comment carried in the source file, when the file is one
     /// Skribisto itself exported (the DOCX/ODT writers' own `skrb:uid` attribute —
     /// see [`crate::block::SourceAnnotation::uid`]). `None` for a comment an editor
@@ -387,16 +494,23 @@ pub struct RichAnnotation {
     /// "none", never carried at all on ODT.
     pub author_initials: String,
     pub created: Option<chrono::DateTime<chrono::Utc>>,
-    /// The comment's own text, one `Vec` of [`Run`]s per paragraph — **not yet
-    /// Djot**. An editor's remark can carry the same bold/italic/underline/
-    /// strikethrough a manuscript paragraph can, and it is converted the same
-    /// way: [`assemble`] runs every annotation (and every reply) through
-    /// `body_to_djot` in the one pass that already owns the "never hand-emit
-    /// Djot" pipeline, so a scanner never has to carry a second copy of it just
-    /// to stringify a comment.
+    /// The comment's own text, one `Vec` of [`Run`]s per paragraph, **not yet
+    /// Djot**. An editor's remark can carry the same formatting a manuscript
+    /// paragraph can, and it is written the same way: [`assemble`] runs every
+    /// annotation (and every reply) through the emitter and its proof, so a scanner
+    /// never has to carry a second copy of either just to stringify a comment.
     pub paragraphs: Vec<Vec<Run>>,
     pub resolved: bool,
     pub replies: Vec<RichReply>,
+}
+
+/// Where a comment range that spans blocks ends.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AnnotationEnd {
+    /// Index into [`RichDocument::blocks`] of the block the range ends in.
+    pub block_index: usize,
+    /// Character offset of the end within that block's [`RichBlock::plain_text`].
+    pub offset: usize,
 }
 
 /// One reply, before its body is converted — see [`RichAnnotation::paragraphs`].
@@ -506,24 +620,43 @@ pub struct RichFootnote {
 
 /// Turn a rich document into the neutral block model, carrying its comments.
 ///
-/// `out` is filled rather than returned so a scanner can put its metadata and its
-/// own diagnostics on the document first — an annotation the assembler cannot place
-/// reports itself through `out.diagnostics`, and doing that to a half-built document
-/// would lose whatever the scanner had already said.
+/// `out` is filled rather than returned so a scanner can put its metadata and its own
+/// diagnostics on the document first: the assembler adds its own to `out.diagnostics`
+/// (paragraphs stored as plain text, lines left to fill in), and doing that to a half-built
+/// document would lose whatever the scanner had already said. A comment it cannot keep on
+/// its words is not reported here: it lands on the nearest paragraph, flagged
+/// [`SourceAnnotation::unanchored`], and `plan` reports it, being the layer that knows
+/// whether that paragraph is stored at all.
 pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
-    // Which `SourceBlock` each rich block ended up in, and where in that block's
-    // plain text it starts. `None` for a rich block that produced nothing.
-    let mut placement: Vec<Option<Placement>> = vec![None; doc.blocks.len()];
+    assemble_with(doc, out, &skrib_format::read_djot)
+}
 
-    // The prose run being accumulated: (rich index, html, plain text).
-    let mut pending: Vec<(usize, String, String)> = Vec::new();
-    // The epigraph run being accumulated, in the same shape. Separate because an
-    // epigraph becomes a block of its own; the two never hold members at once, since
-    // each is flushed the moment the other starts.
-    let mut pending_epigraph: Vec<(usize, String, String)> = Vec::new();
+/// [`assemble`], proving what it writes with `read`, so a test can make a proof fail.
+fn assemble_with(
+    doc: &RichDocument,
+    out: &mut SourceDocument,
+    read: &dyn Fn(&str) -> Result<DjotReading>,
+) -> Result<()> {
+    let mut assembly = Assembly {
+        placement: vec![None; doc.blocks.len()],
+        not_verbatim: 0,
+        styled_blanks: 0,
+        lists_flattened: 0,
+        read,
+    };
+
+    // The prose run being accumulated, as rich block indices.
+    let mut pending: Vec<usize> = Vec::new();
+    // The epigraph run being accumulated. Separate because an epigraph becomes a block of
+    // its own; the two never hold members at once, since each is flushed the moment the
+    // other starts.
+    let mut pending_epigraph: Vec<usize> = Vec::new();
 
     for (index, block) in doc.blocks.iter().enumerate() {
         if block.is_blank() {
+            // Nothing to write. A line left to fill in can be a paragraph of its own,
+            // though, and it is reported with the ones written as plain spaces.
+            assembly.styled_blanks += emit::styled_blanks_in(&block.source());
             continue;
         }
         let boundary = classify(block);
@@ -532,50 +665,56 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
         // `out.blocks` in document order — which is the whole basis on which `plan`
         // decides, from adjacency alone, which heading an epigraph belongs to.
         if !matches!(boundary, Boundary::Epigraph) {
-            flush_epigraph(&mut pending_epigraph, out, &mut placement)?;
+            assembly.flush(doc, &mut pending_epigraph, Frame::Epigraph, out)?;
         }
         match boundary {
             Boundary::SceneBreak(tier) => {
-                flush(&mut pending, out, &mut placement)?;
-                placement[index] = Some(Placement {
+                assembly.flush(doc, &mut pending, Frame::Blocks, out)?;
+                // Not exact: the source may spell the break `***` where the row stores
+                // `* * *`. A comment on it becomes a comment on the break line.
+                let glyph_len = scene_break::canonical_plain(tier).chars().count();
+                assembly.placement[index] = Some(Placement {
                     source_block: out.blocks.len(),
-                    offset: 0,
+                    segments: vec![Segment {
+                        source_start: 0,
+                        source_len: block.plain_text().chars().count(),
+                        lead: 0,
+                        stored_start: 0,
+                        stored_len: glyph_len,
+                    }],
                     exact: false,
                 });
                 out.blocks.push(SourceBlock::SceneBreak { tier });
             }
             Boundary::Heading { level, text } => {
-                flush(&mut pending, out, &mut placement)?;
-                placement[index] = Some(Placement {
+                assembly.flush(doc, &mut pending, Frame::Blocks, out)?;
+                // A heading becomes a row's title, which has no prose to point into.
+                // `plan` gives a comment on it a paragraph anchor on the row's first block.
+                assembly.placement[index] = Some(Placement {
                     source_block: out.blocks.len(),
-                    offset: 0,
+                    segments: Vec::new(),
                     exact: false,
                 });
                 out.blocks.push(SourceBlock::Heading { level, text });
             }
             Boundary::Table => {
-                // Alone, because the block positions of a document containing a
-                // table cannot be trusted — see the module note.
-                flush(&mut pending, out, &mut placement)?;
-                pending.push((index, html_of(block), block.plain_text()));
-                flush(&mut pending, out, &mut placement)?;
-                if let Some(p) = placement[index].as_mut() {
-                    p.exact = false;
-                }
+                // A block of its own: a table is structure the writer placed between two
+                // passages, and keeping it apart keeps each passage's own block intact.
+                assembly.flush(doc, &mut pending, Frame::Blocks, out)?;
+                pending.push(index);
+                assembly.flush(doc, &mut pending, Frame::Blocks, out)?;
             }
             Boundary::Epigraph => {
                 // The prose above it is closed first, so the epigraph block lands
                 // between the two runs exactly where the document put it.
-                flush(&mut pending, out, &mut placement)?;
-                pending_epigraph.push((index, html_of(block), block.plain_text()));
+                assembly.flush(doc, &mut pending, Frame::Blocks, out)?;
+                pending_epigraph.push(index);
             }
-            Boundary::Prose => {
-                pending.push((index, html_of(block), block.plain_text()));
-            }
+            Boundary::Prose => pending.push(index),
         }
     }
-    flush_epigraph(&mut pending_epigraph, out, &mut placement)?;
-    flush(&mut pending, out, &mut placement)?;
+    assembly.flush(doc, &mut pending_epigraph, Frame::Epigraph, out)?;
+    assembly.flush(doc, &mut pending, Frame::Blocks, out)?;
 
     // Row marks, rebased onto the neutral block model the same way an annotation is.
     //
@@ -585,7 +724,11 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
     // mark is missing is matching by type and title, which is a guess the writer can see and
     // correct, while a mark is trusted outright.
     for mark in &doc.row_marks {
-        if let Some(place) = placement.get(mark.block_index).copied().flatten() {
+        if let Some(place) = assembly
+            .placement
+            .get(mark.block_index)
+            .and_then(Option::as_ref)
+        {
             out.row_marks.push(SourceRowMark {
                 block_index: place.source_block,
                 uid_tag: mark.uid_tag.clone(),
@@ -594,25 +737,20 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
         }
     }
 
-    // Bodies, converted at the same one call site as a comment's and for the same
-    // reason. A note is carried whether or not its reference survived into a
-    // block: `plan` is what pairs the two up, and it is better placed to say so —
-    // it is the layer that knows which row the reference landed in.
+    // Bodies, written and proved at the same one call site as a comment's and for the
+    // same reason. A note is carried whether or not its reference survived into a
+    // block: `plan` is what pairs the two up, and it is better placed to say so,
+    // being the layer that knows which row the reference landed in.
     for footnote in &doc.footnotes {
+        let body = assembly.body_to_djot(&footnote.paragraphs)?;
         out.footnotes.push(crate::block::SourceFootnote {
             label: footnote.label.clone(),
-            body: body_to_djot(&footnote.paragraphs)?,
+            body,
         });
     }
 
     for annotation in &doc.annotations {
-        // Converted once, here — the one place in either scanner that turns a
-        // comment's own paragraphs into Djot, on the same terms manuscript prose
-        // gets converted a few lines up. Doing this per-annotation rather than
-        // inside each scanner's own recursive walk is what keeps `docx.rs` and
-        // `odt.rs` from needing their own copy of `html_to_djot_and_text`'s
-        // error handling — there is exactly one call site to get right.
-        let body = body_to_djot(&annotation.paragraphs)?;
+        let body = assembly.body_to_djot(&annotation.paragraphs)?;
         let mut replies = Vec::with_capacity(annotation.replies.len());
         for reply in &annotation.replies {
             replies.push(SourceAnnotationReply {
@@ -620,76 +758,353 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
                 author: reply.author.clone(),
                 author_initials: reply.author_initials.clone(),
                 created: reply.created,
-                body: body_to_djot(without_reply_citation(&reply.paragraphs))?,
+                body: assembly.body_to_djot(without_reply_citation(&reply.paragraphs))?,
             });
         }
 
-        match placement.get(annotation.block_index).copied().flatten() {
-            Some(place) => {
-                let block_text = out.blocks[place.source_block].plain_text().to_string();
-                let member_len = doc.blocks[annotation.block_index]
-                    .plain_text()
-                    .chars()
-                    .count();
-                out.annotations.push(place_annotation(
-                    annotation,
-                    place,
-                    &block_text,
-                    member_len,
-                    body,
-                    replies,
-                ));
-            }
-            // The block it pointed at produced nothing at all — a comment on a
-            // paragraph that was blank, or one the scanner indexed past the end.
-            // The comment is still the writer's, so it is carried as a comment on
-            // the document rather than dropped, and it says so.
-            None => {
-                // The diagnostic's quote is plain text, not Djot — a message
-                // naming "the passage beginning '*Is this*'" would show the
-                // writer their editor's own markup rather than their editor's
-                // words. `preview`'s own contract is a plain string it collapses
-                // whitespace in, so the Djot is converted back down for it here
-                // rather than changing what `preview` accepts. Falls back to the
-                // raw Djot on the vanishingly rare parse failure — a diagnostic
-                // with a slightly rougher quote beats one silently skipped.
-                let plain = skrib_format::djot_plain_text(&body)
-                    .map(|(text, _)| text)
-                    .unwrap_or_else(|_| body.clone());
-                out.diagnostics
-                    .push(crate::diagnostics::ImportDiagnostic::CommentUnanchored {
-                        path: out.origin.clone(),
-                        quote: preview(&plain),
-                    });
-                out.annotations.push(SourceAnnotation {
-                    block_index: out.blocks.len().saturating_sub(1),
-                    kind: AnnotationKind::Document,
-                    anchor: Anchor::default(),
-                    uid: annotation.uid,
-                    uid_tag: annotation.uid_tag.clone(),
-                    author: annotation.author.clone(),
-                    author_initials: annotation.author_initials.clone(),
-                    created: annotation.created,
-                    body,
-                    resolved: annotation.resolved,
-                    replies,
-                });
-            }
-        }
+        let placed = assembly.place_annotation(annotation, out);
+        out.annotations.push(SourceAnnotation {
+            block_index: placed.source_block,
+            kind: placed.kind,
+            anchor: placed.anchor,
+            unanchored: placed.unanchored,
+            uid: annotation.uid,
+            uid_tag: annotation.uid_tag.clone(),
+            author: annotation.author.clone(),
+            author_initials: annotation.author_initials.clone(),
+            created: annotation.created,
+            body,
+            resolved: annotation.resolved,
+            replies,
+        });
+    }
+
+    if assembly.not_verbatim > 0 {
+        out.diagnostics.push(ImportDiagnostic::ProseNotVerbatim {
+            path: out.origin.clone(),
+            count: assembly.not_verbatim,
+        });
+    }
+    if assembly.styled_blanks > 0 {
+        out.diagnostics
+            .push(ImportDiagnostic::StyledSpacesNotCarried {
+                path: out.origin.clone(),
+                count: assembly.styled_blanks,
+            });
+    }
+    if assembly.lists_flattened > 0 {
+        out.diagnostics
+            .push(ImportDiagnostic::ListNestingFlattened {
+                path: out.origin.clone(),
+                count: assembly.lists_flattened,
+                limit: MAX_LIST_LEVELS,
+            });
     }
     Ok(())
 }
 
 /// Where one rich block ended up.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct Placement {
+    /// Index of the `SourceBlock` it landed in.
     source_block: usize,
-    /// Character offset of this rich block's text within that `SourceBlock`'s text.
-    offset: usize,
-    /// Whether the offset was *verified* against the converted text. When false the
-    /// block is still identified, but a range annotation on it degrades to a
-    /// whole-row comment rather than pointing somewhere unproven.
+    /// How its own plain text maps onto that block's text. Empty for a heading, whose
+    /// text became a title.
+    segments: Vec<Segment>,
+    /// Whether the map was proved: the stored text reads back as the source's. When false
+    /// the block is still identified, but a comment on it covers the whole paragraph
+    /// rather than pointing at an unproved range.
     exact: bool,
+}
+
+impl Placement {
+    /// Where the end of a range at the source character `offset` lands: in the last
+    /// stretch it reaches into, clamped to that stretch, so a range running past its
+    /// paragraph stops where the paragraph does.
+    fn map_end(&self, offset: usize) -> Option<usize> {
+        self.segments
+            .iter()
+            .rev()
+            .find(|s| s.source_start < offset)
+            .and_then(|s| s.map(offset.min(s.source_start + s.source_len)))
+    }
+
+    /// The stretch holding the source character `offset`, or the first one.
+    fn segment_at(&self, offset: usize) -> Option<&Segment> {
+        self.segments
+            .iter()
+            .find(|s| s.map(offset).is_some())
+            .or(self.segments.first())
+    }
+}
+
+/// Where one annotation landed.
+struct Placed {
+    source_block: usize,
+    kind: AnnotationKind,
+    anchor: Anchor,
+    /// It could not be placed on its words and landed on the nearest paragraph instead.
+    unanchored: bool,
+}
+
+/// The state [`assemble`] carries from one run to the next.
+struct Assembly<'r> {
+    /// Which `SourceBlock` each rich block ended up in, and where. `None` for a rich
+    /// block that produced nothing.
+    placement: Vec<Option<Placement>>,
+    /// Paragraphs stored without their formatting, or not exactly as the source wrote
+    /// them: the count [`ImportDiagnostic::ProseNotVerbatim`] reports.
+    not_verbatim: usize,
+    /// Stretches of blank space underlined or struck through, written as plain spaces or,
+    /// at a paragraph's edge, not at all: the count
+    /// [`ImportDiagnostic::StyledSpacesNotCarried`] reports.
+    styled_blanks: usize,
+    /// List items nested deeper than [`MAX_LIST_LEVELS`], written at that level: the count
+    /// [`ImportDiagnostic::ListNestingFlattened`] reports.
+    lists_flattened: usize,
+    /// The parser every run is proved with.
+    read: &'r dyn Fn(&str) -> Result<DjotReading>,
+}
+
+impl Assembly<'_> {
+    /// Write the accumulated run as one block, prove it, and record where each of its
+    /// members landed inside it.
+    ///
+    /// One function for prose and epigraphs because the placement below is the part that
+    /// must not diverge: it is what a comment's position is rebased through, and two
+    /// copies of it would eventually disagree about where a paragraph starts.
+    fn flush(
+        &mut self,
+        doc: &RichDocument,
+        pending: &mut Vec<usize>,
+        frame: Frame,
+        out: &mut SourceDocument,
+    ) -> Result<()> {
+        if pending.is_empty() {
+            return Ok(());
+        }
+        let members = std::mem::take(pending);
+        let sources: Vec<Source<'_>> = members.iter().map(|i| doc.blocks[*i].source()).collect();
+        let proven = emit::prove_with(&sources, frame, self.read)?;
+        if trim_is_empty(&proven.djot) {
+            return Ok(());
+        }
+        let source_block = out.blocks.len();
+        for (index, proof) in members.iter().zip(proven.members) {
+            let MemberProof {
+                segments,
+                exact,
+                reported,
+                styled_blanks,
+                list_flattened,
+            } = proof;
+            if reported {
+                self.not_verbatim += 1;
+            }
+            self.styled_blanks += styled_blanks;
+            if list_flattened {
+                self.lists_flattened += 1;
+            }
+            self.placement[*index] = Some(Placement {
+                source_block,
+                segments,
+                exact,
+            });
+        }
+        out.blocks.push(match frame {
+            Frame::Blocks => SourceBlock::Prose {
+                djot: proven.djot,
+                text: proven.text,
+            },
+            Frame::Epigraph => SourceBlock::Epigraph {
+                djot: proven.djot,
+                text: proven.text,
+            },
+        });
+        Ok(())
+    }
+
+    /// A comment's or a note's own paragraphs as proved Djot.
+    ///
+    /// Written by the same emitter as manuscript prose and proved the same way, rather
+    /// than by a comment-only writer that would eventually disagree with it. A paragraph
+    /// carrying no text and no image contributes nothing, the rule
+    /// [`RichBlock::is_blank`] applies to prose, so a remark that is entirely whitespace
+    /// (an editor who pressed Enter twice and typed nothing) does not become an empty
+    /// paragraph. A body with no such paragraph at all is the empty string. A line left to
+    /// fill in that made up one of those paragraphs is still counted, as it is in prose.
+    fn body_to_djot(&mut self, paragraphs: &[Vec<Run>]) -> Result<String> {
+        fn body(runs: &[Run]) -> Source<'_> {
+            Source::Paragraph {
+                kind: ParagraphKind::Body,
+                runs,
+                props: BlockProps::default(),
+            }
+        }
+        let (blank, kept): (Vec<&[Run]>, Vec<&[Run]>) =
+            paragraphs.iter().map(Vec::as_slice).partition(|runs| {
+                runs.iter()
+                    .all(|r| r.image.is_none() && r.footnote.is_none() && r.text.trim().is_empty())
+            });
+        self.styled_blanks += blank
+            .into_iter()
+            .map(|runs| emit::styled_blanks_in(&body(runs)))
+            .sum::<usize>();
+        let sources: Vec<Source<'_>> = kept.into_iter().map(body).collect();
+        if sources.is_empty() {
+            return Ok(String::new());
+        }
+        let proven = emit::prove_with(&sources, Frame::Blocks, self.read)?;
+        self.not_verbatim += proven.members.iter().filter(|m| m.reported).count();
+        self.styled_blanks += proven
+            .members
+            .iter()
+            .map(|m| m.styled_blanks)
+            .sum::<usize>();
+        Ok(proven.djot)
+    }
+
+    /// Where an annotation lands, and the selector that points there.
+    ///
+    /// The capture goes through `comment_anchor::capture`, never a local reimplementation:
+    /// a selector built by one set of rules and resolved by another is exactly the drift
+    /// that module was moved down to prevent.
+    fn place_annotation(&self, annotation: &RichAnnotation, out: &SourceDocument) -> Placed {
+        let own = self
+            .placement
+            .get(annotation.block_index)
+            .and_then(Option::as_ref);
+        let Some(place) = own else {
+            return self.place_on_nearest(annotation.block_index, out);
+        };
+        let Some(block) = out.blocks.get(place.source_block) else {
+            return self.place_on_nearest(annotation.block_index, out);
+        };
+        let block_text = block.plain_text();
+
+        // A range whose both ends were proved keeps its words.
+        if place.exact && (annotation.length > 0 || annotation.end.is_some()) {
+            let start = place.segments.iter().find_map(|s| s.map(annotation.start));
+            // A range laid across paragraphs keeps its whole extent when its end landed in
+            // the same stored block, proved; otherwise it stops at the end of the
+            // paragraph it started in.
+            let spanned = annotation.end.and_then(|end| {
+                let end_place = self.placement.get(end.block_index)?.as_ref()?;
+                (end_place.exact && end_place.source_block == place.source_block)
+                    .then(|| end_place.map_end(end.offset))
+                    .flatten()
+            });
+            let end = spanned.or_else(|| place.map_end(annotation.start + annotation.length));
+            if let (Some(start), Some(end)) = (start, end)
+                && end > start
+            {
+                return Placed {
+                    source_block: place.source_block,
+                    kind: AnnotationKind::Range,
+                    anchor: comment_anchor::capture(
+                        block_text,
+                        start,
+                        end,
+                        ordinal(block_text, start),
+                    ),
+                    unanchored: false,
+                };
+            }
+        }
+
+        // Otherwise the paragraph it sits in: a comment with no range means the whole
+        // paragraph (quoting from its marker, which Word and LibreOffice put at the end,
+        // would capture nothing), and one whose range could not be proved is kept on the
+        // paragraph rather than pointed at unproved words.
+        let unanchored = !place.exact
+            && !matches!(
+                block,
+                SourceBlock::Heading { .. } | SourceBlock::SceneBreak { .. }
+            );
+        match place.segment_at(annotation.start) {
+            Some(segment) => {
+                let range = segment.stored();
+                Placed {
+                    source_block: place.source_block,
+                    kind: AnnotationKind::Paragraph,
+                    anchor: comment_anchor::capture(
+                        block_text,
+                        range.start,
+                        range.end,
+                        ordinal(block_text, range.start),
+                    ),
+                    unanchored,
+                }
+            }
+            // A heading: `plan` pins it to the first paragraph of the row it titles.
+            None => Placed {
+                source_block: place.source_block,
+                kind: AnnotationKind::Paragraph,
+                anchor: Anchor::default(),
+                unanchored,
+            },
+        }
+    }
+
+    /// A paragraph comment on the placed paragraph nearest `block_index`: the one before
+    /// it when there is one, since a comment on an empty line most often belongs to the
+    /// passage it follows, and the one after it otherwise. `usize::MAX` (a comment the
+    /// scanner found no position for) lands on the last paragraph.
+    fn place_on_nearest(&self, block_index: usize, out: &SourceDocument) -> Placed {
+        let before = self.placement[..block_index.min(self.placement.len())]
+            .iter()
+            .rev()
+            .flatten()
+            .next()
+            .map(|p| (p, true));
+        let after = self
+            .placement
+            .get(block_index.saturating_add(1)..)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .next()
+            .map(|p| (p, false));
+        let Some((place, from_before)) = before.or(after) else {
+            // Nothing in the document produced a block, so there is no paragraph to be
+            // near. Pointed past the last block: `plan` finds no row holding it and reports
+            // a comment it could not bring over, rather than storing it.
+            return Placed {
+                source_block: usize::MAX,
+                kind: AnnotationKind::Paragraph,
+                anchor: Anchor::default(),
+                unanchored: true,
+            };
+        };
+        let segment = if from_before {
+            place.segments.last()
+        } else {
+            place.segments.first()
+        };
+        let anchor = match (segment, out.blocks.get(place.source_block)) {
+            (Some(segment), Some(block)) => {
+                let text = block.plain_text();
+                let range = segment.stored();
+                comment_anchor::capture(text, range.start, range.end, ordinal(text, range.start))
+            }
+            _ => Anchor::default(),
+        };
+        Placed {
+            source_block: place.source_block,
+            kind: AnnotationKind::Paragraph,
+            anchor,
+            unanchored: true,
+        }
+    }
+}
+
+/// Which block of `text` the character `offset` sits in.
+fn ordinal(text: &str, offset: usize) -> usize {
+    text.chars().take(offset).filter(|c| *c == '\n').count()
+}
+
+fn trim_is_empty(djot: &str) -> bool {
+    djot.trim().is_empty()
 }
 
 enum Boundary {
@@ -730,169 +1145,6 @@ fn classify(block: &RichBlock) -> Boundary {
     }
 }
 
-/// Convert the accumulated run into one prose block and record where each of its
-/// members landed inside it.
-fn flush(
-    pending: &mut Vec<(usize, String, String)>,
-    out: &mut SourceDocument,
-    placement: &mut [Option<Placement>],
-) -> Result<()> {
-    flush_run(pending, out, placement, RunKind::Prose)
-}
-
-/// The same, for a run of epigraph-styled paragraphs — one `<blockquote>` around the
-/// whole run, landing in a [`SourceBlock::Epigraph`].
-fn flush_epigraph(
-    pending: &mut Vec<(usize, String, String)>,
-    out: &mut SourceDocument,
-    placement: &mut [Option<Placement>],
-) -> Result<()> {
-    flush_run(pending, out, placement, RunKind::Epigraph)
-}
-
-/// Which of the two block kinds a flushed run becomes.
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum RunKind {
-    Prose,
-    Epigraph,
-}
-
-/// Convert the accumulated run into one block and record where each of its members
-/// landed inside it.
-///
-/// One function for both kinds because the offset arithmetic below is the part that
-/// must not diverge: it is what a comment's position is rebased through, and two
-/// copies of it would eventually disagree about where a paragraph starts.
-fn flush_run(
-    pending: &mut Vec<(usize, String, String)>,
-    out: &mut SourceDocument,
-    placement: &mut [Option<Placement>],
-    kind: RunKind,
-) -> Result<()> {
-    if pending.is_empty() {
-        return Ok(());
-    }
-    let members = std::mem::take(pending);
-    let inner: String = members.iter().map(|(_, h, _)| h.as_str()).collect();
-    // One quotation around the whole epigraph run, not one per paragraph — see
-    // `html_of`'s epigraph arm for why several would come back as several epigraphs.
-    let html = match kind {
-        RunKind::Prose => inner,
-        RunKind::Epigraph => format!("<blockquote>{inner}</blockquote>"),
-    };
-    let (djot, text) = skrib_format::html_to_djot_and_text(&html)?;
-    if djot.trim().is_empty() {
-        return Ok(());
-    }
-    let source_block = out.blocks.len();
-    out.blocks.push(match kind {
-        RunKind::Prose => SourceBlock::Prose { djot, text },
-        RunKind::Epigraph => SourceBlock::Epigraph { djot, text },
-    });
-    let (SourceBlock::Prose { text, .. } | SourceBlock::Epigraph { text, .. }) =
-        &out.blocks[source_block]
-    else {
-        unreachable!("just pushed a prose or epigraph block");
-    };
-
-    // Every block contributes one line, joined by one `\n` — but check it, because
-    // a wrong offset here is a comment silently attached to the wrong sentence.
-    let converted: Vec<char> = text.chars().collect();
-    let mut offset = 0usize;
-    for (index, _, plain) in &members {
-        let len = plain.chars().count();
-        let exact = converted
-            .get(offset..offset + len)
-            .is_some_and(|slice| slice.iter().collect::<String>() == *plain);
-        placement[*index] = Some(Placement {
-            source_block,
-            offset,
-            exact,
-        });
-        offset += len + 1;
-    }
-    Ok(())
-}
-
-/// Capture the annotation's selector against the block it landed in.
-///
-/// `block_text` is that [`SourceBlock`]'s plain text and `member_len` the length of
-/// the one paragraph the comment was written on — needed because a paragraph
-/// comment's extent is the whole paragraph, not the zero-length range the container
-/// stored for it.
-///
-/// The capture itself goes through `comment_anchor::capture`, never a local
-/// reimplementation: a selector built by one set of rules and resolved by another is
-/// exactly the drift that module was moved down to prevent.
-fn place_annotation(
-    annotation: &RichAnnotation,
-    place: Placement,
-    block_text: &str,
-    member_len: usize,
-    body: String,
-    replies: Vec<SourceAnnotationReply>,
-) -> SourceAnnotation {
-    let (kind, anchor) = if !place.exact {
-        (AnnotationKind::Document, Anchor::default())
-    } else {
-        // A comment with no range belongs to the paragraph its marker sat in, and
-        // covers **all** of it — not the empty span at the marker. Quoting from the
-        // marker outwards would capture nothing at all when the marker sits at the
-        // end of the paragraph, which is exactly where Word and LibreOffice put it,
-        // and a zero-length quote can never be re-found.
-        let (kind, start, end) = if annotation.length == 0 {
-            (
-                AnnotationKind::Paragraph,
-                place.offset,
-                place.offset + member_len,
-            )
-        } else {
-            let start = place.offset + annotation.start;
-            (AnnotationKind::Range, start, start + annotation.length)
-        };
-        let ordinal = block_text
-            .chars()
-            .take(start)
-            .filter(|c| *c == '\n')
-            .count();
-        (
-            kind,
-            comment_anchor::capture(block_text, start, end, ordinal),
-        )
-    };
-
-    SourceAnnotation {
-        block_index: place.source_block,
-        kind,
-        anchor,
-        uid: annotation.uid,
-        uid_tag: annotation.uid_tag.clone(),
-        author: annotation.author.clone(),
-        author_initials: annotation.author_initials.clone(),
-        created: annotation.created,
-        body,
-        resolved: annotation.resolved,
-        replies,
-    }
-}
-
-/// Convert a comment or reply's own paragraphs — an editor's remark, carrying
-/// whatever emphasis they gave it — into the Djot [`common::entities::Comment`]
-/// (via `skribisto_model`'s crate boundary, [`SourceAnnotation::body`]) and
-/// [`SourceAnnotationReply::body`] now store.
-///
-/// Goes through the same HTML→Djot pipeline manuscript prose takes ([`flush`]),
-/// not a comment-only emitter: see the module doc's "never hand-emit Djot" for
-/// why a second emitter would have to re-derive Djot's swapped emphasis
-/// delimiters and its escaping rules on its own, and would eventually disagree
-/// with the one manuscript prose already trusts.
-///
-/// A paragraph carrying no text and no image contributes nothing — the same
-/// rule [`RichBlock::is_blank`] applies to manuscript prose, so a remark that is
-/// entirely whitespace (an editor who pressed Enter twice and typed nothing)
-/// does not turn into a bare, meaningless Djot paragraph marker. An annotation
-/// with no non-blank paragraph at all converts to the empty string, exactly as
-/// `flush` produces no block for an all-blank prose run.
 /// A reply's own paragraphs, with LibreOffice's citation block removed if it wrote one.
 ///
 /// LibreOffice's **Reply** button does not merely thread a reply — it prepends a paragraph
@@ -1013,201 +1265,6 @@ fn separates_digits(text: &str, seps: &[char]) -> bool {
     chars
         .windows(3)
         .any(|w| w[0].is_ascii_digit() && seps.contains(&w[1]) && w[2].is_ascii_digit())
-}
-
-fn body_to_djot(paragraphs: &[Vec<Run>]) -> Result<String> {
-    let mut html = String::new();
-    for runs in paragraphs {
-        if runs
-            .iter()
-            .all(|r| r.image.is_none() && r.text.trim().is_empty())
-        {
-            continue;
-        }
-        html.push_str("<p>");
-        html.push_str(&runs_html(runs));
-        html.push_str("</p>");
-    }
-    if html.is_empty() {
-        return Ok(String::new());
-    }
-    Ok(skrib_format::html_to_djot_and_text(&html)?.0)
-}
-
-/// One block's HTML.
-fn html_of(block: &RichBlock) -> String {
-    match block {
-        RichBlock::Paragraph { kind, runs } => {
-            let inner = runs_html(runs);
-            match kind {
-                ParagraphKind::Heading { level } => {
-                    let level = (*level).clamp(1, 6);
-                    format!("<h{level}>{inner}</h{level}>")
-                }
-                // An epigraph's own paragraphs are bare here: `flush_epigraph` wraps the
-                // whole run in **one** `<blockquote>`, so a two-paragraph quotation and its
-                // attribution line come back as one epigraph rather than three. Wrapping each
-                // separately (as `Quote` must, since consecutive quoted paragraphs in a scene
-                // are not necessarily one quotation) would export as three epigraphs on the
-                // next trip out — `render::mark_epigraph` marks every blockquote it finds.
-                ParagraphKind::Body | ParagraphKind::Epigraph => format!("<p>{inner}</p>"),
-                ParagraphKind::Quote => format!("<blockquote><p>{inner}</p></blockquote>"),
-                ParagraphKind::ListItem { ordered, depth } => {
-                    // One `<li>` per block, nested by repeating the container.
-                    // `text-document` reads any depth and re-emits it as an
-                    // indented Djot list, one plain-text line per item.
-                    let tag = if *ordered { "ol" } else { "ul" };
-                    let open = format!("<{tag}>").repeat(*depth as usize + 1);
-                    let close = format!("</{tag}>").repeat(*depth as usize + 1);
-                    format!("{open}<li>{inner}</li>{close}")
-                }
-            }
-        }
-        RichBlock::Table { rows } => {
-            let mut html = String::from("<table>");
-            for row in rows {
-                html.push_str("<tr>");
-                for cell in row {
-                    html.push_str("<td>");
-                    html.push_str(&runs_html(cell));
-                    html.push_str("</td>");
-                }
-                html.push_str("</tr>");
-            }
-            html.push_str("</table>");
-            html
-        }
-    }
-}
-
-/// Coalesced, escaped, tagged inline HTML for a paragraph's runs.
-fn runs_html(runs: &[Run]) -> String {
-    let mut html = String::new();
-    for run in coalesce(runs) {
-        if let Some(src) = &run.image {
-            html.push_str("<img src=\"");
-            push_attr(&mut html, src);
-            html.push_str("\" alt=\"");
-            push_attr(&mut html, &run.text);
-            html.push_str("\"/>");
-            continue;
-        }
-        if let Some(label) = &run.footnote {
-            // A node, not characters: the Djot escaper neutralises `[`, `^` and
-            // `]`, so a literal `[^1]` written here would arrive as prose. The
-            // attribute is `text-document`'s contract for "this element is a
-            // footnote reference"; `<sup>` is merely what renders sensibly if
-            // the HTML is ever looked at directly.
-            html.push_str("<sup ");
-            html.push_str(skrib_format::HTML_FOOTNOTE_ATTR);
-            html.push_str("=\"");
-            push_attr(&mut html, label);
-            html.push_str("\"></sup>");
-            continue;
-        }
-        if run.text.is_empty() {
-            continue;
-        }
-        if let Some(url) = &run.link {
-            html.push_str("<a href=\"");
-            push_attr(&mut html, url);
-            html.push_str("\">");
-        }
-        let (open, close) = tags(run.style);
-        html.push_str(&open);
-        push_escaped(&mut html, &run.text);
-        html.push_str(&close);
-        if run.link.is_some() {
-            html.push_str("</a>");
-        }
-    }
-    html
-}
-
-/// Merge adjacent runs sharing a property set.
-///
-/// Word routinely splits one styled word into three identically-formatted runs
-/// (spell-check state, revision ids, arbitrary editing history), and ODF does the
-/// same across a span boundary. The conversion would survive it either way, but
-/// six tags where one will do makes the intermediate unreadable.
-///
-/// An image run is never merged into anything: it is one character of plain text
-/// whose `text` is alt text rather than prose, and gluing it to its neighbour would
-/// put both of those wrong.
-fn coalesce(runs: &[Run]) -> Vec<Run> {
-    let mut out: Vec<Run> = Vec::with_capacity(runs.len());
-    for run in runs {
-        match out.last_mut() {
-            // A footnote run is never merged, in either direction. It carries no
-            // text, so merging one into a neighbour of the same style would be a
-            // no-op on the string and would silently discard the reference — the
-            // one piece of the run that is not its text.
-            Some(last)
-                if last.style == run.style
-                    && last.link == run.link
-                    && last.image.is_none()
-                    && run.image.is_none()
-                    && last.footnote.is_none()
-                    && run.footnote.is_none() =>
-            {
-                last.text.push_str(&run.text)
-            }
-            _ => out.push(run.clone()),
-        }
-    }
-    out
-}
-
-/// Escape an attribute value.
-fn push_attr(html: &mut String, value: &str) {
-    for ch in value.chars() {
-        match ch {
-            '&' => html.push_str("&amp;"),
-            '<' => html.push_str("&lt;"),
-            '>' => html.push_str("&gt;"),
-            '"' => html.push_str("&quot;"),
-            '\n' | '\r' => html.push(' '),
-            _ => html.push(ch),
-        }
-    }
-}
-
-/// Outermost to innermost, so `code` never wraps markup it would have to escape.
-fn tags(style: RunStyle) -> (String, String) {
-    let mut open = String::new();
-    let mut close = String::new();
-    for (on, tag) in [
-        (style.bold, "strong"),
-        (style.italic, "em"),
-        (style.underline, "u"),
-        (style.strikethrough, "s"),
-        (style.code, "code"),
-    ] {
-        if on {
-            open.push_str(&format!("<{tag}>"));
-            close.insert_str(0, &format!("</{tag}>"));
-        }
-    }
-    (open, close)
-}
-
-/// Escape a text node, and normalise the line separators the conversion cannot see.
-///
-/// A literal newline inside a `<p>` survives into the plain text without producing
-/// a second block, which would put every later block's offset out by one — the
-/// arithmetic in [`flush`] would then be wrong for the whole rest of the run. A
-/// container's *deliberate* line break is split into its own paragraph by the
-/// scanner before it ever gets here; anything left is stray, and becomes a space.
-fn push_escaped(html: &mut String, text: &str) {
-    for ch in text.chars() {
-        match ch {
-            '&' => html.push_str("&amp;"),
-            '<' => html.push_str("&lt;"),
-            '>' => html.push_str("&gt;"),
-            '\n' | '\r' => html.push(' '),
-            _ => html.push(ch),
-        }
-    }
 }
 
 /// A short, single-line rendering of a comment body, for a diagnostic.

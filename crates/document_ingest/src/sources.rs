@@ -24,7 +24,7 @@ pub mod docx;
 pub mod markdown;
 #[cfg(feature = "odt")]
 pub mod odt;
-#[cfg(feature = "markdown")]
+#[cfg(feature = "plain")]
 pub mod plain;
 #[cfg(any(feature = "odt", feature = "docx"))]
 pub mod rich;
