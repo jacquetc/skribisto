@@ -100,9 +100,9 @@ skribisto_fonts = { package = "skribisto-fonts", version = "3.0.4", path = "crat
 # in `.cargo/config.toml` (gitignored; the table is in the README).
 # CI and a plain clone resolve these from crates.io.
 text-document = "1.12"
-teksilo = "0.12.0"
-teksilo-charts = "0.12.0"
-teksilo-text = "0.12.0"
+teksilo = "0.14.0"
+teksilo-charts = "0.14.0"
+teksilo-text = "0.14.0"
 
 [profile.dev]
 # Debuginfo, not the linker, was the dev loop's biggest single cost. Measured on
