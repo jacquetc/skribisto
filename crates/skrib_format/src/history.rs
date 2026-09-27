@@ -426,22 +426,21 @@ fn load_folder(root: &std::path::Path) -> HistoryLog {
 }
 
 fn load_zip(path: &std::path::Path) -> HistoryLog {
-    use std::io::Read;
     let Ok(file) = std::fs::File::open(path) else {
         return HistoryLog::default();
     };
-    let Ok(mut archive) = zip::ZipArchive::new(file) else {
+    // The blobs are Djot from an untrusted bundle, read the same as the live prose,
+    // so they are bounded by the same guard `read_zip` uses on the rest of the file.
+    let Ok((mut archive, mut guard)) =
+        crate::zip_guard::ZipGuard::open(crate::zip_io::LIMITS, file)
+    else {
         return HistoryLog::default();
     };
-    let mut text = String::new();
-    match archive.by_name(HISTORY_INDEX) {
-        Ok(mut entry) => {
-            if entry.read_to_string(&mut text).is_err() {
-                return HistoryLog::default();
-            }
-        }
-        Err(_) => return HistoryLog::default(), // no history in this bundle yet
-    }
+    let text = match guard.read_named(&mut archive, HISTORY_INDEX) {
+        Ok(Some(bytes)) => String::from_utf8_lossy(&bytes).into_owned(),
+        // No history in this bundle yet, or the index is past the budget.
+        Ok(None) | Err(_) => return HistoryLog::default(),
+    };
     let entries: Vec<HistoryEntry> = match ron::from_str(&text) {
         Ok(e) => e,
         Err(_) => return HistoryLog::default(),
@@ -451,11 +450,9 @@ fn load_zip(path: &std::path::Path) -> HistoryLog {
         if blobs.contains_key(&hash) {
             continue;
         }
-        // Each `ZipFile` holds an exclusive borrow of the archive, so it must be
-        // dropped before the next `by_name` — which it is, at the end of this arm.
-        if let Ok(mut entry) = archive.by_name(&blob_relpath(&hash)) {
-            let mut t = String::new();
-            if entry.read_to_string(&mut t).is_ok() && crate::djot_depth::check(&t).is_ok() {
+        if let Ok(Some(bytes)) = guard.read_named(&mut archive, &blob_relpath(&hash)) {
+            let t = String::from_utf8_lossy(&bytes).into_owned();
+            if crate::djot_depth::check(&t).is_ok() {
                 blobs.insert(hash, t);
             }
         }

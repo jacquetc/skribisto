@@ -36,3 +36,5 @@ roxmltree = "0.21.1"
 [dev-dependencies]
 # The round-trip tests build `.plume` fixtures (zip + loose dir) in a scratch dir.
 tempfile = "3"
+# The crafted archives (bombs, over-declared members) the zip-bomb tests read.
+skrib_format = { workspace = true, features = ["hostile-fixtures"] }

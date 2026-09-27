@@ -19,7 +19,6 @@
 
 use std::collections::HashMap;
 use std::fs;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -36,6 +35,19 @@ pub struct PlumeSource {
 }
 
 const DICT_MEMBER: &str = "dicts/userDict.dict_plume";
+
+/// What a `.plume` zip may hold, before and while it inflates (see
+/// [`skrib_format::zip_guard`]).
+///
+/// A real `.plume` is tiny — tens of kilobytes, one small XML tree and a handful of
+/// HTML blobs — so these are generous headroom, not a tight fit: a novel's worth of
+/// prose is a few megabytes. A `.plume` past any of them is one built to exhaust
+/// memory, not one Plume Creator wrote.
+const LIMITS: skrib_format::zip_guard::ZipLimits = skrib_format::zip_guard::ZipLimits {
+    max_entries: 100_000,
+    max_member_bytes: 256 << 20,
+    max_total_bytes: 512 << 20,
+};
 
 #[cfg(test)]
 impl PlumeSource {
@@ -74,13 +86,21 @@ impl PlumeSource {
             .with_context(|| format!("reading Plume project '{source_path}'"))?;
 
         // Modern zip? (Plume's own zip-vs-loose discriminator.)
-        match zip::ZipArchive::new(std::io::Cursor::new(&bytes[..])) {
-            Ok(archive) => Self::from_zip(archive),
+        match skrib_format::zip_guard::ZipGuard::open(LIMITS, std::io::Cursor::new(&bytes[..])) {
+            Ok((archive, guard)) => Self::from_zip(archive, guard),
             Err(_) => Self::from_old_system(Path::new(source_path), &bytes),
         }
     }
 
-    fn from_zip(mut archive: zip::ZipArchive<std::io::Cursor<&[u8]>>) -> Result<Self> {
+    fn from_zip(
+        mut archive: zip::ZipArchive<std::io::Cursor<&[u8]>>,
+        mut guard: skrib_format::zip_guard::ZipGuard,
+    ) -> Result<Self> {
+        // A `.plume` is a zip from an untrusted source, so every member inflates under
+        // the shared guard — a bomb or an over-declared member refused before it fills
+        // memory.
+        guard.check_directory(&mut archive, |_| true)?;
+
         let mut tree_xml = None;
         let mut attendance_xml = None;
         let mut info_xml = None;
@@ -93,8 +113,7 @@ impl PlumeSource {
                 continue;
             }
             let name = file.name().trim_start_matches('/').to_string();
-            let mut buf = Vec::new();
-            file.read_to_end(&mut buf)?;
+            let buf = guard.read(&mut file)?;
             let text = String::from_utf8_lossy(&buf).into_owned();
             match name.as_str() {
                 "tree" => tree_xml = Some(text),

@@ -45,6 +45,8 @@ blake3 = "1"
 [dev-dependencies]
 # The round-trip tests build Manuskript fixtures (zip + loose folder) in a scratch dir.
 tempfile = "3"
-# The end-to-end tests read their own output back through the real reader.
-skrib_format = { workspace = true }
+# The end-to-end tests read their own output back through the real reader, and the
+# zip-bomb tests read crafted archives (bombs, over-declared members) from its
+# `zip_guard::fixtures`.
+skrib_format = { workspace = true, features = ["hostile-fixtures"] }
 common = { workspace = true }

@@ -18,6 +18,27 @@
 //! feature of its own: it belongs to whichever of `odt` and `docx` is enabled, and
 //! to neither when both are off.
 
+/// What a single imported document's zip container may hold, before and while it
+/// inflates (see [`skrib_format::zip_guard`]).
+///
+/// Generous rather than tight, because refusing a real manuscript is a worse
+/// failure than a slow one, but far below what exhausts memory: a book with tracked
+/// changes, comments and its whole revision history in one `document.xml` lands in
+/// the low tens of megabytes, and its embedded images push the total up but no one
+/// part past the member ceiling. A `.docx` or `.odt` past any of these is one built
+/// to be, not one anyone wrote.
+#[cfg(any(feature = "odt", feature = "docx"))]
+pub(crate) const DOCUMENT_ZIP_LIMITS: skrib_format::zip_guard::ZipLimits =
+    skrib_format::zip_guard::ZipLimits {
+        // A document with hundreds of images and their relationship parts, an order
+        // of magnitude of headroom over any real one.
+        max_entries: 50_000,
+        // One part — a `document.xml` or `content.xml`, or one embedded image.
+        max_member_bytes: 512 << 20,
+        // The whole document, images included.
+        max_total_bytes: 2 << 30,
+    };
+
 #[cfg(feature = "docx")]
 pub mod docx;
 #[cfg(feature = "markdown")]

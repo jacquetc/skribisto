@@ -155,13 +155,60 @@ impl std::error::Error for TooDeep {}
 ///
 /// See the module note for what is counted. The scan is a loop over the lines,
 /// never a recursion, and stops at the first line past the ceiling.
+///
+/// # Lists are counted the way jotdown nests them, not by their indentation
+///
+/// A list item's depth is **how many enclosing list items it sits inside**, which is
+/// the number of open items whose indentation is strictly less than its own — exactly
+/// jotdown's rule (`Kind::continues` continues an item on a line indented past it,
+/// `IdentifiedBlock::new` re-parses the content past a marker as a block of its own).
+/// So `open_lists` is a stack of the open items' indents, strictly increasing from the
+/// bottom, and a new item at indent `I` sits at depth `keep + 1` where `keep` is the
+/// count of open items indented less than `I`.
+///
+/// This is what the editor's own output needs: it writes a nested list two spaces a
+/// level (`export_djot_uc`'s `"  ".repeat(indent)`), so a list Tabbed 48 deep writes
+/// 96 spaces before its deepest marker — which the old per-byte count read as 96
+/// levels and refused, though jotdown nests it 48 deep. A lone deeply-indented item
+/// with nothing above it is depth 1, not one-per-byte, because jotdown opens exactly
+/// one list for it.
+///
+/// Blockquotes (counted per `>` on the line, as jotdown re-states them every line),
+/// divs (via `OpenDivs`, which nothing on a later line has to mention) and a table
+/// row (one container whose cells hold no blocks) are added to the list depth. The
+/// count stays a conservative upper bound where the exact rule is intricate — a `>`
+/// not followed by a space, or a marker mixed with mid-line quotes — over-counting by
+/// a small constant rather than risking an under-count.
 pub fn check(text: &str) -> Result<(), TooDeep> {
     let mut divs = OpenDivs::default();
+    // The indents of the list/definition items open at the current line, strictly
+    // increasing from the bottom. A blank or marker-less-but-empty line leaves it
+    // untouched (a loose list stays open across the blank between its items).
+    let mut open_lists: Vec<usize> = Vec::new();
     for (index, line) in text.split('\n').enumerate() {
         let start = line_start(line, Grammar::Djot, MAX_DEPTH);
         divs.read(&start);
-        // Indentation in front of no marker is not counted: see the module note.
-        let depth = divs.count() + start.containers;
+
+        let layout = djot_line_layout(line);
+        if let Some(content_indent) = layout.first_content_indent {
+            // Close every open item this line does not sit inside: jotdown continues
+            // an item only on a line indented past it, so items at indent >=
+            // `content_indent` are done.
+            let keep = open_lists
+                .iter()
+                .take_while(|&&indent| indent < content_indent)
+                .count();
+            open_lists.truncate(keep);
+            // Each list marker on the line opens one more level, nested by its column.
+            for &col in &layout.list_indents {
+                while open_lists.last().is_some_and(|&top| top >= col) {
+                    open_lists.pop();
+                }
+                open_lists.push(col);
+            }
+        }
+
+        let depth = divs.count() + layout.quotes + open_lists.len() + usize::from(layout.table);
         if depth > MAX_DEPTH {
             return Err(TooDeep {
                 depth,
@@ -170,6 +217,139 @@ pub fn check(text: &str) -> Result<(), TooDeep> {
         }
     }
     Ok(())
+}
+
+/// What one line opens, as jotdown reads it, for the list-nesting count in [`check`].
+///
+/// Separate from [`LineStart`]: that one serves the Markdown guard and [`OpenDivs`]
+/// and folds a line's leading indentation into a single per-byte count, which is the
+/// very thing the Djot list count must not do. This walk instead records each list
+/// marker's **column**, so [`check`] can nest it the way jotdown does.
+#[derive(Debug, Default, PartialEq, Eq)]
+struct DjotLine {
+    /// Every `>` on the line, counted as jotdown re-states a blockquote each line.
+    /// Every one, not only those a space follows: a `>` run with no spaces is prose
+    /// to jotdown, but counting it is the safe direction and is what the guard has
+    /// always done.
+    quotes: usize,
+    /// The column of each list or definition marker the line opens, relative to the
+    /// content after the leading blockquote run, in the order they open — strictly
+    /// increasing, since each nests inside the last.
+    list_indents: Vec<usize>,
+    /// A `|` table row: one container, its cells holding no blocks.
+    table: bool,
+    /// The column of the first block content after the leading blockquote run, or
+    /// `None` for a line with no content (blank, or only blockquote markers). It is
+    /// the indent that decides which open list items this line continues.
+    first_content_indent: Option<usize>,
+}
+
+/// Read one line as [`DjotLine`].
+fn djot_line_layout(line: &str) -> DjotLine {
+    let bytes = line.as_bytes();
+    // From here to the end the line is nothing but `-`, `*` and whitespace, where a
+    // `-`/`*` may be a thematic break rather than a bullet — jotdown's own rule.
+    let decoration_from = bytes
+        .iter()
+        .rposition(|&byte| !matches!(byte, b'-' | b'*') && !byte.is_ascii_whitespace())
+        .map_or(0, |last| last + 1);
+    let ends_marker = |offset: usize| {
+        bytes
+            .get(offset)
+            .is_none_or(|byte| byte.is_ascii_whitespace())
+    };
+
+    let mut out = DjotLine::default();
+    // The byte offset past the leading blockquote run, from which list columns and
+    // the content indent are measured — mirroring jotdown, which strips `> ` before
+    // reading the inner block.
+    let mut after_quotes = 0usize;
+    // Still inside that leading run: only a `>` before any other marker advances it.
+    let mut leading = true;
+    let mut at = 0usize;
+
+    loop {
+        while bytes.get(at).is_some_and(u8::is_ascii_whitespace) {
+            at += 1;
+        }
+        let Some(&byte) = bytes.get(at) else { break };
+        let col = at.saturating_sub(after_quotes);
+        match byte {
+            b'>' => {
+                out.quotes += 1;
+                // A `>` a space follows, still in the leading run, is a real
+                // blockquote prefix jotdown strips; advance past it (and its space).
+                if leading && ends_marker(at + 1) {
+                    at += 1;
+                    if bytes.get(at).is_some_and(|b| matches!(b, b' ' | b'\t')) {
+                        at += 1;
+                    }
+                    after_quotes = at;
+                    continue;
+                }
+                at += 1;
+            }
+            b'-' | b'*' if at >= decoration_from && is_thematic_break(&bytes[at..]) => break,
+            b'-' | b'*' | b'+' if ends_marker(at + 1) => {
+                out.list_indents.push(col);
+                leading = false;
+                at += 1;
+                // A task box `[ ]`/`[x]` belongs to this bullet — not a new container.
+                let mut boxed = at;
+                while bytes.get(boxed).is_some_and(|b| matches!(b, b' ' | b'\t')) {
+                    boxed += 1;
+                }
+                if task_box(&bytes[boxed..]) {
+                    at = boxed + 3;
+                }
+            }
+            b':' if ends_marker(at + 1) => {
+                out.list_indents.push(col);
+                leading = false;
+                at += 1;
+            }
+            b'[' => match definition(&bytes[at..]) {
+                Some(len) => {
+                    out.list_indents.push(col);
+                    leading = false;
+                    at += len;
+                }
+                None => break,
+            },
+            b'|' => {
+                out.table = true;
+                out.first_content_indent.get_or_insert(col);
+                break;
+            }
+            _ => match ordered_marker(&bytes[at..]) {
+                Some(len) => {
+                    out.list_indents.push(col);
+                    leading = false;
+                    at += len;
+                }
+                None => break,
+            },
+        }
+        // The first non-whitespace content after the leading run sets the indent that
+        // decides which open items this line continues.
+        if !leading {
+            out.first_content_indent.get_or_insert(col);
+        }
+    }
+
+    // A line whose only content is blockquote markers, or a blank line, has no block
+    // content: `first_content_indent` stays `None`, and the list stack is left alone.
+    if out.first_content_indent.is_none() {
+        let mut i = after_quotes;
+        while bytes.get(i).is_some_and(u8::is_ascii_whitespace) {
+            i += 1;
+        }
+        if i < bytes.len() && bytes.get(i) != Some(&b'>') {
+            out.first_content_indent = Some(i - after_quotes);
+        }
+    }
+
+    out
 }
 
 /// Refuse a list of comment threads if the body of any comment or reply in it could

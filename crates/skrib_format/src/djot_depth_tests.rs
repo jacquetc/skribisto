@@ -170,16 +170,41 @@ fn indentation_alone_opens_nothing_however_long() {
     }
 }
 
-/// Indentation in front of a marker is still counted, one level per byte, since it
-/// may be continuing that many list items: the rule the fix above leaves alone.
+/// A lone marker behind any amount of indentation opens exactly one level, because
+/// jotdown opens one list (or blockquote, or table) for it and no item encloses it.
+///
+/// This is the fix: the old guard counted indentation in front of a marker one level
+/// per byte, so the editor's own two-spaces-a-level list — 96 spaces at 48 levels
+/// deep — was read as 96 levels and refused, though jotdown nests it 48. A single
+/// indented marker nests nothing, so it is depth one however far it is pushed in.
 #[test]
-fn indentation_in_front_of_a_marker_is_still_counted() {
+fn a_lone_indented_marker_opens_one_level_however_far_it_is_indented() {
     for marker in ["- ", "1. ", "[^a]: ", ": ", "> ", "| a |"] {
-        let text = format!("{}{marker}item\n", " ".repeat(MAX_DEPTH));
-        assert!(check(&text).is_err(), "{marker:?}");
-        let text = format!("{}{marker}item\n", " ".repeat(MAX_DEPTH - 1));
-        assert!(check(&text).is_ok(), "{marker:?}");
+        for indent in [0, 1, MAX_DEPTH, 4 * MAX_DEPTH, 4_000] {
+            let text = format!("{}{marker}item\n", " ".repeat(indent));
+            assert!(
+                check(&text).is_ok(),
+                "{marker:?} behind {indent} spaces must open one level, not one per byte"
+            );
+        }
     }
+}
+
+/// Genuine nesting is still counted: a list whose items step in one column a level,
+/// one item per line, nests one level per step, exactly as jotdown reads it — so the
+/// depth is the number of steps, not the number of indentation bytes.
+#[test]
+fn a_list_stepping_in_one_column_a_level_is_counted_per_step() {
+    let stepped = |levels: usize| {
+        (0..levels)
+            .map(|level| format!("{}- level {level}", " ".repeat(level)))
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n"
+    };
+    assert!(check(&stepped(MAX_DEPTH)).is_ok());
+    let err = check(&stepped(MAX_DEPTH + 1)).expect_err("one step past the ceiling");
+    assert!(err.depth > MAX_DEPTH);
 }
 
 /// Closing fences must bring the depth back down, or a long document with
@@ -702,5 +727,87 @@ proptest! {
     ) {
         a_load_accepts(edited_djot(&edits))?;
         a_load_accepts(edited_djot(&remark))?;
+    }
+}
+
+// ── Deep nesting the editor writes loads at its real depth ───────────────────────────
+
+/// A list the editor Tabbed `levels` deep, its items stepping one level a line the way
+/// the editor writes them (two spaces a level). This is the shape the old guard
+/// over-counted: at 48 levels it wrote 96 leading spaces and was refused, though
+/// jotdown nests it 48.
+fn editor_list_chain(levels: usize) -> String {
+    let edits: Vec<Edit> = (0..levels)
+        .map(|d| Edit::Listed(format!("level {d}"), ListStyle::Disc, d as u8))
+        .collect();
+    edited_djot(&edits)
+}
+
+/// Whatever the editor writes for a list nested N levels, the guard counts at N (not at
+/// twice it), so a chain at the ceiling loads and parses; a chain past the ceiling is
+/// refused. The property the fix exists for.
+#[test]
+fn what_the_editor_writes_for_a_nested_list_is_counted_at_its_real_depth() {
+    for levels in [1, 10, 48, MAX_DEPTH] {
+        let djot = editor_list_chain(levels);
+        assert!(
+            check(&djot).is_ok(),
+            "a {levels}-level editor list must load: the count must follow jotdown, not the byte indent\n{djot:.200}"
+        );
+        assert!(
+            parse_on_a_long_operation_stack(djot).is_ok(),
+            "a {levels}-level editor list must parse from a long operation's stack"
+        );
+    }
+    // A chain deep enough to reach the ceiling is still refused.
+    assert!(check(&editor_list_chain(MAX_DEPTH + 8)).is_err());
+    assert!(check(&editor_list_chain(MAX_DEPTH + 24)).is_err());
+}
+
+/// The same for quotes: the editor writes N nested blockquotes as N `>` markers, which
+/// the guard has always counted per marker, so a quote at the ceiling loads and parses
+/// and one past it is refused. Kept beside the list case so the two shapes the property
+/// test names travel together.
+#[test]
+fn what_the_editor_writes_for_a_nested_quote_is_counted_at_its_real_depth() {
+    let quoted = |depth: u8| edited_djot(&[Edit::Quoted("deep".to_string(), depth)]);
+    for depth in [1u8, 10, 48, MAX_DEPTH as u8] {
+        let djot = quoted(depth);
+        assert!(
+            check(&djot).is_ok(),
+            "a {depth}-level quote must load: {djot:.120}"
+        );
+        assert!(parse_on_a_long_operation_stack(djot).is_ok());
+    }
+    assert!(check(&quoted((MAX_DEPTH + 8) as u8)).is_err());
+}
+
+proptest! {
+    // Each case builds a text-document through the cursor (work quadratic in the depth)
+    // and may parse it on a spawned thread, so the case count is kept low.
+    #![proptest_config(ProptestConfig { cases: 12, ..ProptestConfig::default() })]
+
+    /// Whatever the editor writes for a list Tabbed N levels deep, the guard's count
+    /// is within a small constant of N — never twice it — and, when it accepts, the
+    /// output parses from a long operation's stack. `N` ranges either side of the
+    /// ceiling: below it must load, well past it must be refused, and around it the
+    /// count tracks N rather than the byte indent.
+    #[test]
+    fn the_guard_counts_a_nested_list_within_a_constant_of_its_depth(levels in 1usize..(MAX_DEPTH + 24)) {
+        let djot = editor_list_chain(levels);
+        match check(&djot) {
+            Ok(()) => {
+                // Accepted only when the real depth is within the ceiling: never the
+                // old 2x over-count that refused a list half this deep.
+                prop_assert!(levels <= MAX_DEPTH + 1, "{levels} accepted");
+                prop_assert!(parse_on_a_long_operation_stack(djot).is_ok());
+            }
+            Err(refused) => {
+                // Refused only when the depth genuinely reaches the ceiling — within a
+                // small constant of `levels`, not half of it.
+                prop_assert!(refused.depth > MAX_DEPTH);
+                prop_assert!(levels + 2 >= refused.depth, "counted {} for {levels} levels", refused.depth);
+            }
+        }
     }
 }

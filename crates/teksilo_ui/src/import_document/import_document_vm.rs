@@ -154,6 +154,9 @@ impl Diagnostic {
                 path = path,
                 limit = count
             )),
+            // The file is a zip built to unpack far larger than it is; the sentence
+            // names the file and says it was left out, like `nested-too-deep`.
+            "archive-too-large" => tr!(import_diagnostic_archive_too_large(path = path)),
             "lossy-decode" => tr!(import_diagnostic_lossy_decode(path = path, count = count)),
             "decoded-from-bom" => tr!(import_diagnostic_decoded_from_bom(
                 path = path,

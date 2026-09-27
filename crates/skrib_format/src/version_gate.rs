@@ -36,7 +36,6 @@
 use anyhow::Context;
 use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use std::fs::File;
-use std::io::Read;
 
 use super::bundle::{FORMAT_VERSION, WorkBundle};
 use super::errors::SkribFormatError;
@@ -216,18 +215,16 @@ fn probe_text(path: &str, shape: SkribShape) -> anyhow::Result<String> {
             // Streams ONLY the `project.skrib` entry, mirroring `peek_manifest`'s zip
             // arm. Never `.extract()` — the cost of extracting a whole archive before
             // discovering it cannot be opened is precisely what this gate exists to
-            // avoid.
+            // avoid. Bounded by the shared guard: the manifest entry is a member of an
+            // untrusted bundle like any other.
             let file = File::open(path).with_context(|| format!("opening '{path}'"))?;
-            let mut archive =
-                zip::ZipArchive::new(file).with_context(|| format!("reading zip '{path}'"))?;
-            let mut entry = archive
-                .by_name(MANIFEST_NAME)
+            let (mut archive, mut guard) =
+                crate::zip_guard::ZipGuard::open(crate::zip_io::LIMITS, file)
+                    .with_context(|| format!("reading zip '{path}'"))?;
+            let bytes = guard
+                .read_named(&mut archive, MANIFEST_NAME)?
                 .with_context(|| format!("no {MANIFEST_NAME} entry in '{path}'"))?;
-            let mut text = String::new();
-            entry
-                .read_to_string(&mut text)
-                .with_context(|| format!("reading {MANIFEST_NAME} from '{path}'"))?;
-            Ok(text)
+            Ok(String::from_utf8_lossy(&bytes).into_owned())
         }
         SkribShape::LegacySqlite => {
             // Not reachable through `read_bundle`, which rejects this shape first. An

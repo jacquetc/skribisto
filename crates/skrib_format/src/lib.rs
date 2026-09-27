@@ -98,6 +98,11 @@ mod writer;
 /// parser's unbounded recursion. `pub` because every importer parses XML, and the
 /// same check has to guard each of them.
 pub mod xml_depth;
+/// Reading an untrusted zip archive bounded before and while it inflates, so a
+/// crafted one cannot exhaust memory. `pub` because every reader of a zip from
+/// outside the app — the document, project and dictionary importers, and this
+/// crate's own bundle reader — goes through it.
+pub mod zip_guard;
 mod zip_io;
 
 // On-disk bundle DTOs + the in-memory `WorkBundle`. Public so an external
@@ -140,6 +145,7 @@ pub use sniff::{BackupSniff, sniff_backup, sniff_backup_filename};
 pub use tree_read::{Gathered, TreeReader, gather};
 pub use writer::{mark_existing_as_backup, verify_backup_at, write_bundle};
 pub use xml_depth::{FoldersTooDeep, MAX_DEPTH as MAX_XML_DEPTH, XmlTooDeep};
+pub use zip_guard::{MAX_RATIO, RATIO_FLOOR_BYTES, ZipGuard, ZipLimits, ZipRefused};
 
 /// Generate a fresh, stable project identity string (UUID v4). Used to mint a
 /// `Work.unique_id` for brand-new projects, to heal a load whose source carries

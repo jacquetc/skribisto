@@ -49,7 +49,6 @@
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -453,14 +452,15 @@ fn read_entry(bundle: &Path, rel: &str) -> Result<String> {
         SkribShape::ZipFile => {
             let file = std::fs::File::open(bundle)
                 .with_context(|| format!("opening {}", bundle.display()))?;
-            let mut archive = zip::ZipArchive::new(file)
-                .with_context(|| format!("reading zip {}", bundle.display()))?;
-            let mut entry = archive
-                .by_name(rel)
+            // A backup is a bundle like any other, so its blob inflates under the
+            // same guard `read_zip` uses.
+            let (mut archive, mut guard) =
+                crate::zip_guard::ZipGuard::open(crate::zip_io::LIMITS, file)
+                    .with_context(|| format!("reading zip {}", bundle.display()))?;
+            let bytes = guard
+                .read_named(&mut archive, rel)?
                 .with_context(|| format!("no '{rel}' in {}", bundle.display()))?;
-            let mut text = String::new();
-            entry.read_to_string(&mut text)?;
-            Ok(text)
+            Ok(String::from_utf8_lossy(&bytes).into_owned())
         }
         SkribShape::LegacySqlite => anyhow::bail!("'{path}' is a legacy file"),
     }
@@ -510,8 +510,8 @@ fn folder_rows(root: &Path) -> Result<Vec<VersionRow>> {
 /// entries — never an extraction.
 fn zip_rows(path: &Path) -> Result<Vec<VersionRow>> {
     let file = std::fs::File::open(path).with_context(|| format!("opening {}", path.display()))?;
-    let mut archive =
-        zip::ZipArchive::new(file).with_context(|| format!("reading zip {}", path.display()))?;
+    let (mut archive, mut guard) = crate::zip_guard::ZipGuard::open(crate::zip_io::LIMITS, file)
+        .with_context(|| format!("reading zip {}", path.display()))?;
 
     // Collect first: `file_names` borrows the archive immutably and `by_name`
     // needs it mutably, so the two cannot overlap.
@@ -525,11 +525,12 @@ fn zip_rows(path: &Path) -> Result<Vec<VersionRow>> {
     let mut stamps: BTreeMap<String, BlobStamp> = BTreeMap::new();
     let mut rows = Vec::new();
     for name in &items_entries {
-        let mut text = String::new();
-        archive
-            .by_name(name)
-            .with_context(|| format!("reading {name} from {}", path.display()))?
-            .read_to_string(&mut text)?;
+        // An `items.ron` is a manifest read out of an untrusted bundle, so it is
+        // inflated under the guard rather than straight to a string.
+        let text = guard
+            .read_named(&mut archive, name)?
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+            .with_context(|| format!("reading {name} from {}", path.display()))?;
         let itf: ItemsFile = ron::from_str(&text)
             .with_context(|| format!("parsing {name} from {}", path.display()))?;
         for item in itf.items {

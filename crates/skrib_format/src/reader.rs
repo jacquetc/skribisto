@@ -5,7 +5,6 @@
 
 use anyhow::{Context, Result};
 use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 
 use super::bundle::{ProjectManifest, WorkBundle};
@@ -66,15 +65,14 @@ pub fn peek_manifest(path: &str) -> Result<ProjectManifest> {
         }
         SkribShape::ZipFile => {
             let file = File::open(path).with_context(|| format!("opening '{path}'"))?;
-            let mut archive =
-                zip::ZipArchive::new(file).with_context(|| format!("reading zip '{path}'"))?;
-            let mut entry = archive
-                .by_name(MANIFEST_NAME)
+            // The manifest entry is a member of an untrusted bundle like any other, so
+            // it inflates under the shared guard rather than straight to a string.
+            let (mut archive, mut guard) = crate::zip_guard::ZipGuard::open(zip_io::LIMITS, file)
+                .with_context(|| format!("reading zip '{path}'"))?;
+            let bytes = guard
+                .read_named(&mut archive, MANIFEST_NAME)?
                 .with_context(|| format!("no {MANIFEST_NAME} entry in '{path}'"))?;
-            let mut text = String::new();
-            entry
-                .read_to_string(&mut text)
-                .with_context(|| format!("reading {MANIFEST_NAME} from '{path}'"))?;
+            let text = String::from_utf8_lossy(&bytes).into_owned();
             ron::from_str(&text).with_context(|| format!("parsing {MANIFEST_NAME} from '{path}'"))
         }
         SkribShape::LegacySqlite => {

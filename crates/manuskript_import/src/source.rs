@@ -65,6 +65,16 @@ const LEGACY_MARKER: &str = "VERSION";
 const MAX_MEMBERS: usize = 100_000;
 const MAX_TOTAL_BYTES: u64 = 1 << 30; // 1 GiB
 
+/// What a zipped `.msk` may hold, before and while it inflates (see
+/// [`skrib_format::zip_guard`]). The entry count and total match the folder reader's
+/// [`MAX_MEMBERS`]/[`MAX_TOTAL_BYTES`]; one member (a novel's `revisions.xml`, measured
+/// at 55 MB) may be a good part of the whole.
+const LIMITS: skrib_format::zip_guard::ZipLimits = skrib_format::zip_guard::ZipLimits {
+    max_entries: MAX_MEMBERS,
+    max_member_bytes: 512 << 20,
+    max_total_bytes: MAX_TOTAL_BYTES,
+};
+
 /// Which container the project was read from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Container {
@@ -205,19 +215,17 @@ impl ManuskriptSource {
     fn from_zip(archive_path: &Path) -> Result<Self> {
         let file = fs::File::open(archive_path)
             .with_context(|| format!("opening '{}'", archive_path.display()))?;
-        let mut archive = zip::ZipArchive::new(file)
+        // A `.msk` is a zip from an untrusted source, so it is read through the shared
+        // guard: the entry count, every member's declared size, and every member's
+        // real inflation are all bounded, and the ratio catches a bomb the size
+        // ceilings alone would not. This replaces the hand-rolled member/total checks
+        // that trusted each header's declared size and never weighed the ratio.
+        let (mut archive, mut guard) = skrib_format::zip_guard::ZipGuard::open(LIMITS, file)
             .with_context(|| format!("reading '{}' as an archive", archive_path.display()))?;
 
         let mut files = BTreeMap::new();
         let mut notices = Vec::new();
-        let mut total: u64 = 0;
-        if archive.len() > MAX_MEMBERS {
-            bail!(
-                "'{}' holds {} entries, past the {MAX_MEMBERS} this importer will read",
-                archive_path.display(),
-                archive.len()
-            );
-        }
+        guard.check_directory(&mut archive, |_| true)?;
         for i in 0..archive.len() {
             let mut entry = archive
                 .by_index(i)
@@ -228,17 +236,8 @@ impl ManuskriptSource {
             let Some(name) = normalise_member(entry.name()) else {
                 continue;
             };
-            total = total.saturating_add(entry.size());
-            if total > MAX_TOTAL_BYTES {
-                bail!(
-                    "'{}' expands past the {} MiB this importer will read",
-                    archive_path.display(),
-                    MAX_TOTAL_BYTES / (1 << 20)
-                );
-            }
-            let mut buf = Vec::new();
-            entry
-                .read_to_end(&mut buf)
+            let buf = guard
+                .read(&mut entry)
                 .with_context(|| format!("reading '{name}' from '{}'", archive_path.display()))?;
             note_if_not_utf8(&name, &buf, &mut notices);
             files.insert(name, buf);

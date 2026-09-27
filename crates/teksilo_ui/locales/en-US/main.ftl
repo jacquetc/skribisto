@@ -2184,6 +2184,7 @@ import-diagnostic-file-unreadable = “{ $path }” could not be read: { $detail
 # A file refused unread because its XML nests deeper than the app will read.
 # $limit is the ceiling, a number.
 import-diagnostic-nested-too-deep = “{ $path }” was not read: its content is nested more than { $limit } levels deep. No real document comes near that, and reading it could crash Skribisto, so it is left out. The other files still import.
+import-diagnostic-archive-too-large = “{ $path }” was not read: it is a compressed file built to unpack far larger than it is, which could exhaust memory and crash Skribisto, so it is left out. The other files still import.
 import-diagnostic-lossy-decode = { $count ->
     [one] One character in “{ $path }” did not decode. Re-save the file as UTF-8 to keep it.
    *[other] { $count } characters in “{ $path }” did not decode. Re-save the file as UTF-8 to keep them.

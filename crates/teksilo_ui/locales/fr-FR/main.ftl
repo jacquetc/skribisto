@@ -2172,6 +2172,7 @@ import-diagnostic-file-unreadable = « { $path } » n’a pas pu être lu : {
 # Fichier refusé sans être lu : son XML est imbriqué au-delà de ce que
 # l’application accepte. $limit est le plafond, un nombre.
 import-diagnostic-nested-too-deep = « { $path } » n’a pas été lu : son contenu est imbriqué sur plus de { $limit } niveaux. Aucun document réel n’en approche, et le lire pourrait provoquer l’arrêt brutal de Skribisto ; il est donc écarté. Les autres fichiers sont importés quand même.
+import-diagnostic-archive-too-large = « { $path } » n’a pas été lu : c’est un fichier compressé conçu pour se décompresser bien au-delà de sa taille, ce qui pourrait saturer la mémoire et provoquer l’arrêt brutal de Skribisto ; il est donc écarté. Les autres fichiers sont importés quand même.
 import-diagnostic-lossy-decode = { $count ->
     [one] Un caractère de « { $path } » n’a pas pu être décodé. Enregistrez le fichier en UTF-8 pour le conserver.
    *[other] { $count } caractères de « { $path } » n’ont pas pu être décodés. Enregistrez le fichier en UTF-8 pour les conserver.

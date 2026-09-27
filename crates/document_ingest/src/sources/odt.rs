@@ -57,7 +57,6 @@
 //! this for `* * *`, under the style name `Horizontal Line`.)
 
 use std::collections::HashMap;
-use std::io::Read;
 
 use anyhow::{Result, anyhow};
 use roxmltree::{Document, Node};
@@ -291,12 +290,22 @@ fn read_parts(bytes: &[u8], origin: &str) -> Result<Parts> {
             meta: None,
         });
     }
-    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes))
-        .map_err(|e| anyhow!("not a readable OpenDocument container: {e}"))?;
-    let content = read_member(&mut zip, "content.xml")?
+    // Every member inflates under the shared guard, so a crafted `.odt` (a bomb, or a
+    // zip64 header declaring an enormous member) is refused before it fills memory —
+    // the refusal reaching the review as `ImportDiagnostic::ArchiveTooLarge`.
+    let (mut zip, mut guard) = skrib_format::zip_guard::ZipGuard::open(
+        crate::sources::DOCUMENT_ZIP_LIMITS,
+        std::io::Cursor::new(bytes),
+    )
+    .map_err(|e| anyhow!("not a readable OpenDocument container: {e}"))?;
+    // The three parts this scanner reads, weighed before any inflates.
+    guard.check_directory(&mut zip, |name| {
+        matches!(name, "content.xml" | "styles.xml" | "meta.xml")
+    })?;
+    let content = read_member(&mut guard, &mut zip, "content.xml")?
         .ok_or_else(|| anyhow!("no content.xml in the container"))?;
-    let styles = read_member(&mut zip, "styles.xml")?;
-    let meta = read_member(&mut zip, "meta.xml")?;
+    let styles = read_member(&mut guard, &mut zip, "styles.xml")?;
+    let meta = read_member(&mut guard, &mut zip, "meta.xml")?;
     Ok(Parts {
         content_part: "content.xml".to_string(),
         content,
@@ -306,16 +315,13 @@ fn read_parts(bytes: &[u8], origin: &str) -> Result<Parts> {
 }
 
 fn read_member<R: std::io::Read + std::io::Seek>(
+    guard: &mut skrib_format::zip_guard::ZipGuard,
     zip: &mut zip::ZipArchive<R>,
     name: &str,
 ) -> Result<Option<String>> {
-    let Ok(mut file) = zip.by_name(name) else {
-        return Ok(None);
-    };
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)
-        .map_err(|e| anyhow!("{name} could not be read: {e}"))?;
-    Ok(Some(String::from_utf8_lossy(&buffer).into_owned()))
+    Ok(guard
+        .read_named(zip, name)?
+        .map(|bytes| String::from_utf8_lossy(&bytes).into_owned()))
 }
 
 // ---------------------------------------------------------------------------

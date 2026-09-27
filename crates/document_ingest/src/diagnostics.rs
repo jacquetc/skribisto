@@ -53,6 +53,15 @@ pub enum ImportDiagnostic {
         part: String,
         limit: usize,
     },
+    /// The file is a zip container built to unpack far larger than it is — a
+    /// decompression bomb, or a header declaring a member's size as an enormous
+    /// number it does not really hold. Reading it could exhaust memory and abort the
+    /// process (see `skrib_format::zip_guard`), so it is refused unread, like
+    /// [`Self::NestedTooDeep`].
+    ///
+    /// `part` is the member refused (`word/document.xml`, `content.xml`), kept for
+    /// the record; empty when it was the archive as a whole or its entry count.
+    ArchiveTooLarge { path: String, part: String },
     /// The file is not valid UTF-8 and had no byte-order mark to explain itself.
     /// It was decoded anyway, lossily — `replacements` counts the characters that
     /// did not survive, so the writer can judge whether to re-save and retry.
@@ -244,7 +253,10 @@ impl ImportDiagnostic {
         use DiagnosticSeverity::*;
         use ImportDiagnostic::*;
         match self {
-            FileUnreadable { .. } | NestedTooDeep { .. } | UnsupportedFormat { .. } => Error,
+            FileUnreadable { .. }
+            | NestedTooDeep { .. }
+            | ArchiveTooLarge { .. }
+            | UnsupportedFormat { .. } => Error,
             EmptyFile { .. } | NoHeadings { .. } | DecodedFromBom { .. } => Info,
             LossyDecode { .. }
             | FrontMatterNotFlat { .. }
@@ -282,6 +294,7 @@ impl ImportDiagnostic {
         match self {
             FileUnreadable { path, .. }
             | NestedTooDeep { path, .. }
+            | ArchiveTooLarge { path, .. }
             | LossyDecode { path, .. }
             | DecodedFromBom { path, .. }
             | EmptyFile { path }
@@ -321,6 +334,7 @@ impl ImportDiagnostic {
         match self {
             FileUnreadable { .. } => "file-unreadable",
             NestedTooDeep { .. } => "nested-too-deep",
+            ArchiveTooLarge { .. } => "archive-too-large",
             LossyDecode { .. } => "lossy-decode",
             DecodedFromBom { .. } => "decoded-from-bom",
             EmptyFile { .. } => "empty-file",
@@ -366,6 +380,12 @@ impl fmt::Display for ImportDiagnostic {
                     f,
                     "{path}: {part} nests deeper than {limit} levels, refused"
                 )
+            }
+            ArchiveTooLarge { path, part } if part.is_empty() => {
+                write!(f, "{path}: unpacks far larger than it is, refused")
+            }
+            ArchiveTooLarge { path, part } => {
+                write!(f, "{path}: {part} unpacks far larger than it is, refused")
             }
             LossyDecode { path, replacements } => {
                 write!(f, "{path}: {replacements} character(s) did not decode")

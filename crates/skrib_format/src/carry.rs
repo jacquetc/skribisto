@@ -163,11 +163,12 @@ fn load_folder(root: &std::path::Path) -> BTreeMap<String, CarriedFile> {
 }
 
 fn load_zip(path: &std::path::Path) -> BTreeMap<String, CarriedFile> {
-    use std::io::Read;
     let Ok(file) = std::fs::File::open(path) else {
         return BTreeMap::new();
     };
-    let Ok(mut archive) = zip::ZipArchive::new(file) else {
+    let Ok((mut archive, mut guard)) =
+        crate::zip_guard::ZipGuard::open(crate::zip_io::LIMITS, file)
+    else {
         return BTreeMap::new();
     };
     // Names first, from the central directory, so the decision of what to
@@ -195,12 +196,20 @@ fn load_zip(path: &std::path::Path) -> BTreeMap<String, CarriedFile> {
 
     let mut out = BTreeMap::new();
     for name in unmodelled {
-        let Ok(mut entry) = archive.by_name(&name) else {
-            continue;
-        };
-        let mut bytes = Vec::new();
-        if entry.read_to_end(&mut bytes).is_ok() {
-            out.insert(name, CarriedFile::new(bytes));
+        // Bounded by the shared guard: a carried file this build does not model is
+        // still a zip member from an untrusted bundle, so it inflates under the same
+        // ratio and ceiling as any other. One past its budget is dropped along with
+        // the archive's running total, exactly as it would be on extraction.
+        match guard.read_named(&mut archive, &name) {
+            Ok(Some(bytes)) => {
+                out.insert(name, CarriedFile::new(bytes));
+            }
+            Ok(None) => {}
+            // A member past the budget: stop carrying. Carry is best-effort by
+            // design (a missing carry set is a normal state), and a bundle whose
+            // unmodelled members are a bomb is one this build will refuse to open
+            // through `read_zip` anyway.
+            Err(_) => break,
         }
     }
     out

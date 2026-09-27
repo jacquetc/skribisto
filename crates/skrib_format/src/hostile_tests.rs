@@ -59,6 +59,15 @@ fn chain(err: &super::SkribFormatError) -> String {
     }
 }
 
+/// Whether a read failure is the typed zip refusal, through the `Unreadable` wrapper
+/// `read_bundle` returns it in.
+fn is_zip_refusal(err: &super::SkribFormatError) -> bool {
+    match err {
+        super::SkribFormatError::Unreadable(e) => super::zip_guard::refused(e).is_some(),
+        _ => false,
+    }
+}
+
 /// A file outside any bundle, standing in for whatever the attacker is after.
 fn secret_outside() -> (tempfile::TempDir, std::path::PathBuf) {
     let dir = tempfile::tempdir().expect("tmp");
@@ -258,8 +267,39 @@ fn a_decompression_bomb_is_refused_rather_than_filling_the_disk() {
     );
 
     let err = read_bundle(&archive.to_string_lossy()).expect_err("a bomb must be refused");
-    assert!(chain(&err).contains("expands"), "{}", chain(&err));
+    assert!(
+        is_zip_refusal(&err),
+        "the bomb must be refused as a typed zip refusal: {}",
+        chain(&err)
+    );
+    assert!(chain(&err).contains("unpacks"), "{}", chain(&err));
 }
+
+/// A zip64 header declaring a member's size as an enormous number it does not hold
+/// — the shape that aborts a reader reserving the declared size — is refused, before
+/// a byte is inflated.
+///
+/// The over-declared member is the manifest itself, so the refusal comes from the
+/// version gate that reads it (through the same guard), which is the very first thing
+/// `read_bundle` does — proving the door is bounded even before extraction.
+#[test]
+fn a_zip64_over_declared_member_is_refused_before_inflating() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let archive = dir.path().join("Novel.skrib");
+    let bytes = super::zip_guard::fixtures::over_declared_zip(MANIFEST_NAME_FOR_TEST, 16 << 30);
+    std::fs::write(&archive, &bytes).unwrap();
+
+    let err = read_bundle(&archive.to_string_lossy())
+        .expect_err("an over-declared manifest must be refused");
+    assert!(
+        is_zip_refusal(&err),
+        "must be a typed zip refusal: {}",
+        chain(&err)
+    );
+}
+
+/// The manifest entry name, as [`crate::shape::MANIFEST_NAME`] spells it.
+const MANIFEST_NAME_FOR_TEST: &str = "project.skrib";
 
 /// The one that is not a file-system escape but a process kill: the Djot parser
 /// recurses per nested container with no limit, and a stack overflow aborts

@@ -19,6 +19,8 @@ Description:
 - "A project, Markdown or HTML file crafted to nest its contents thousands of levels deep can no longer close Skribisto: the project is refused with a message, or the file’s words are kept as plain text"
 - "A paragraph typed after a long run of spaces no longer makes the project refuse to open the next time"
 - "An OpenDocument file asking for an enormous run of spaces imports with that run shortened, and the import review says so"
+- "A compressed document or project built to unpack far larger than it is, a zip bomb, is refused instead of filling the computer’s memory"
+- "A list indented dozens of levels deep no longer makes the project refuse to open"
 ---
 Version: 3.0.4
 Date: 2026-09-16

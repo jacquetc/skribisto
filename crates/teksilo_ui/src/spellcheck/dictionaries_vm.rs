@@ -491,18 +491,28 @@ fn cached_zip(url: &str, dest_dir: &std::path::Path) -> Result<Vec<u8>, String> 
     Ok(bytes)
 }
 
-/// Read one member of a zip archive to bytes.
+/// Read one member of a downloaded zip archive to bytes, bounded by the shared guard.
+///
+/// A dictionary zip is fetched over the network, so it is untrusted: the previous
+/// `Vec::with_capacity(file.size())` reserved whatever the member's header declared,
+/// which a crafted zip64 header could set to an enormous number and abort the process
+/// on the reservation. [`skrib_format::zip_guard`] refuses that over the central
+/// directory, and bounds the real inflation besides.
 fn zip_member(zip_bytes: &[u8], member: &str) -> Result<Vec<u8>, String> {
-    use std::io::Read;
-    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(zip_bytes))
-        .map_err(|e| format!("open zip: {e}"))?;
-    let mut file = archive
-        .by_name(member)
-        .map_err(|e| format!("zip member {member:?}: {e}"))?;
-    let mut buf = Vec::with_capacity(file.size() as usize);
-    file.read_to_end(&mut buf)
-        .map_err(|e| format!("read zip member {member:?}: {e}"))?;
-    Ok(buf)
+    // A grammalecte dictionary is a few tens of megabytes; the ceilings are generous
+    // headroom over that, and refuse a download built to exhaust memory.
+    const LIMITS: skrib_format::zip_guard::ZipLimits = skrib_format::zip_guard::ZipLimits {
+        max_entries: 10_000,
+        max_member_bytes: 512 << 20,
+        max_total_bytes: 512 << 20,
+    };
+    let (mut archive, mut guard) =
+        skrib_format::zip_guard::ZipGuard::open(LIMITS, std::io::Cursor::new(zip_bytes))
+            .map_err(|e| format!("open zip: {e}"))?;
+    guard
+        .read_named(&mut archive, member)
+        .map_err(|e| format!("read zip member {member:?}: {e}"))?
+        .ok_or_else(|| format!("zip member {member:?}: not found"))
 }
 
 /// Whether `code` is usable as an on-disk basename (`{code}.aff`): non-empty, at least one
@@ -569,6 +579,37 @@ mod tests {
         let missing = missing_from(&tags, installed);
 
         assert_eq!(missing, vec!["fr-FR".to_string()]);
+    }
+
+    /// A downloaded dictionary zip is untrusted, so a member built to unpack far
+    /// larger than it is is refused rather than reserved and read. Before the guard,
+    /// the `Vec::with_capacity(file.size())` reserved whatever the header declared,
+    /// which a zip64 header could set to an enormous number and abort the process on
+    /// the reservation.
+    #[test]
+    fn a_dictionary_zip_bomb_is_refused() {
+        use skrib_format::zip_guard::fixtures::{compressible_zip, over_declared_zip};
+
+        // A member declaring 16 GiB it does not hold: the reservation abort.
+        let liar = over_declared_zip("fr.dic", 16 << 30);
+        assert!(
+            zip_member(&liar, "fr.dic").is_err(),
+            "an over-declared dictionary member must be refused"
+        );
+
+        // A member honestly declaring more than a dictionary may hold.
+        let bomb = compressible_zip("fr.dic", 600 << 20);
+        assert!(
+            zip_member(&bomb, "fr.dic").is_err(),
+            "a dictionary decompression bomb must be refused"
+        );
+
+        // An honest small member still reads.
+        let honest = compressible_zip("fr.dic", 1 << 20);
+        assert!(
+            zip_member(&honest, "fr.dic").is_ok(),
+            "an ordinary dictionary member must still read"
+        );
     }
 
     /// The custom-code guard: accepts tag-shaped codes, rejects empty, separator-bearing, and

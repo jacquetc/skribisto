@@ -143,6 +143,9 @@ proptest = { workspace = true }
 # leaning on text-document, which exposes no source offsets — that reasoning is about the
 # *reader*, and does not apply to a *test* proving the writer and reader are consistent).
 text-document = { workspace = true }
+# The crafted archives (bombs, over-declared members) the zip-bomb tests import
+# through the real scanners.
+skrib_format = { workspace = true, features = ["hostile-fixtures"] }
 
 [lints]
 workspace = true

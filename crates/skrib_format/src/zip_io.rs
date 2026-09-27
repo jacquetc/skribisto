@@ -48,34 +48,31 @@ pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
 /// million entries is refused before any of them is created.
 const MAX_ENTRIES: usize = 200_000;
 
-/// Ceiling on the total *uncompressed* bytes an extract will write.
+/// Ceiling on the total *uncompressed* bytes an extract will write, and on any one
+/// member of it.
 ///
 /// Generous on purpose: an illustrated project is legitimately hundreds of
 /// megabytes, and refusing to open a real book is a worse failure than a slow
-/// one. The ratio guard below is what actually stops a bomb; this is the
-/// backstop for the shape the ratio guard cannot see — a merely enormous file.
+/// one. The ratio guard in [`zip_guard`](crate::zip_guard) is what actually stops a
+/// bomb; this is the backstop for the shape the ratio guard cannot see — a merely
+/// enormous file. One member (a single embedded image) may be as large as the whole,
+/// so the two ceilings are one number.
 const MAX_TOTAL_BYTES: u64 = 8 << 30;
 
-/// Above [`RATIO_FLOOR_BYTES`], refuse an archive that has expanded more than
-/// this many times over the bytes consumed to produce it.
-///
-/// A zip bomb's whole trick is a ratio in the thousands. Real bundle content
-/// does not come close: Djot prose deflates around 3-4x, RON manifests rather
-/// more, and images are written `Stored` (ratio 1) by `zip_dir` precisely
-/// because they are already compressed.
-const MAX_RATIO: u64 = 200;
-
-/// Below this much written, the ratio is not consulted — a few small, highly
-/// compressible manifests can legitimately show a large ratio, and refusing a
-/// 2 KB project would be absurd.
-const RATIO_FLOOR_BYTES: u64 = 64 << 20;
+/// What a `.skrib` archive may hold: the shared guard's limits, set here with the
+/// numbers a project justifies.
+pub(crate) const LIMITS: crate::zip_guard::ZipLimits = crate::zip_guard::ZipLimits {
+    max_entries: MAX_ENTRIES,
+    max_member_bytes: MAX_TOTAL_BYTES,
+    max_total_bytes: MAX_TOTAL_BYTES,
+};
 
 pub fn read_zip(path: &Path) -> Result<WorkBundle> {
     let dir = tempfile::tempdir().context("creating extract dir")?;
     let file = File::open(path).with_context(|| format!("opening {}", path.display()))?;
-    let mut archive =
-        zip::ZipArchive::new(file).with_context(|| format!("reading zip {}", path.display()))?;
-    extract_guarded(&mut archive, dir.path())
+    let (mut archive, mut guard) = crate::zip_guard::ZipGuard::open(LIMITS, file)
+        .with_context(|| format!("reading zip {}", path.display()))?;
+    extract_guarded(&mut archive, &mut guard, dir.path())
         .with_context(|| format!("extracting zip {}", path.display()))?;
     read_folder(dir.path())
 }
@@ -90,25 +87,24 @@ pub fn read_zip(path: &Path) -> Result<WorkBundle> {
 /// read through it escapes; and it has **no ceiling of any kind**, so a
 /// decompression bomb is bounded only by the disk.
 ///
+/// Size is [`zip_guard`](crate::zip_guard)'s job: every member is inflated through
+/// the shared `guard`, which stops it one byte past its budget and holds the archive
+/// to the same ratio. What stays here is what only an *extraction* has to refuse —
+/// an escaping name, a name this crate spells differently, a symbolic link — none of
+/// which the size guard can see.
+///
 /// A `.skrib` is written by [`zip_dir`], which emits directories and regular
 /// files and nothing else, so refusing every other entry kind costs no
 /// legitimate bundle anything — including one written by the Plume or Manuskript
 /// importers, which build a `WorkBundle` and hand it to the same writer.
 fn extract_guarded<R: std::io::Read + std::io::Seek>(
     archive: &mut zip::ZipArchive<R>,
+    guard: &mut crate::zip_guard::ZipGuard,
     dest: &Path,
 ) -> Result<()> {
-    use std::io::Read;
-
-    if archive.len() > MAX_ENTRIES {
-        anyhow::bail!(
-            "archive declares {} entries, more than the {MAX_ENTRIES} a project may hold",
-            archive.len()
-        );
-    }
-
-    let mut written: u64 = 0;
-    let mut compressed: u64 = 0;
+    // Refuse the entry count and any member declaring more than it may before a byte
+    // is inflated. Every member is extracted, so every one is weighed.
+    guard.check_directory(archive, |_| true)?;
 
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i)?;
@@ -145,50 +141,24 @@ fn extract_guarded<R: std::io::Read + std::io::Seek>(
             anyhow::bail!("entry '{}' is a symbolic link", raw.escape_debug());
         }
 
-        let declared = entry.size();
-        if written.saturating_add(declared) > MAX_TOTAL_BYTES {
-            anyhow::bail!("archive expands past the {MAX_TOTAL_BYTES} byte ceiling");
-        }
-
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("creating {}", parent.display()))?;
         }
 
-        // The budget is bounded **per entry**, not only in total, and by this
-        // entry's own compressed size rather than by what is left of the
-        // ceiling. A between-entries ratio check cannot see a bomb that is one
-        // entry: a single ~8 MB deflate stream expanding to 8 GiB would be
-        // written out in full — into `$TMPDIR`, which is commonly tmpfs, i.e.
-        // RAM — and only refused afterwards.
-        //
-        // `take` is what actually bounds it: `entry.size()` is a claim by the
-        // archive, so it decides nothing on its own.
-        let entry_budget = RATIO_FLOOR_BYTES
-            .max(entry.compressed_size().saturating_mul(MAX_RATIO))
-            .min(MAX_TOTAL_BYTES - written);
+        // The guard is what bounds the write: it stops one byte past this member's
+        // budget (its own compressed size times the ratio, above the floor) and past
+        // what is left of the archive's ceiling, so a single ~8 MB deflate stream
+        // expanding to 8 GiB is refused mid-write rather than filling `$TMPDIR`
+        // (commonly tmpfs, i.e. RAM) first.
         let mut out =
             File::create(&target).with_context(|| format!("creating {}", target.display()))?;
-        let copied = std::io::copy(&mut (&mut entry).take(entry_budget + 1), &mut out)
-            .with_context(|| format!("writing {}", target.display()))?;
-        if copied > entry_budget {
+        if let Err(e) = guard.copy(&mut entry, &mut out) {
             // Remove the partial file rather than leaving it for `read_folder`
             // to meet as a truncated manifest.
+            drop(out);
             let _ = std::fs::remove_file(&target);
-            anyhow::bail!(
-                "entry '{}' expands past the {MAX_RATIO}x limit on its compressed size",
-                raw.escape_debug()
-            );
-        }
-
-        written += copied;
-        compressed += entry.compressed_size();
-
-        if written > RATIO_FLOOR_BYTES && written > compressed.max(1).saturating_mul(MAX_RATIO) {
-            anyhow::bail!(
-                "archive expands {}x over its compressed size, past the {MAX_RATIO}x limit",
-                written / compressed.max(1)
-            );
+            return Err(e);
         }
     }
 

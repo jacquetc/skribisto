@@ -130,6 +130,7 @@ impl SourceScanner for DocxScanner {
 
 /// [`DocxScanner::scan`], on the parser stack.
 fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<SourceDocument> {
+    refuse_oversized_parts(bytes)?;
     refuse_unreadable_parts(bytes)?;
     let docx =
         docx_rs::read_docx(bytes).map_err(|e| anyhow!("not a readable Word document: {e:?}"))?;
@@ -369,6 +370,35 @@ fn refuse_unreadable_parts(bytes: &[u8]) -> Result<()> {
         skrib_format::xml_depth::check(&part, &data)?;
         check_as_docx_rs_reads(&part, &data, &demand)?;
     }
+    Ok(())
+}
+
+/// Refuse the file before `docx-rs` reads it if it is a zip built to unpack far
+/// larger than it is: a decompression bomb, or a header declaring a member's size as
+/// an enormous number it does not really hold.
+///
+/// **This must run before [`docx_rs::read_docx`]**, which is the one reader here that
+/// does not go through [`skrib_format::zip_guard`]: it reserves each part's *declared*
+/// size before reading a byte of it (`Vec::with_capacity`, in `docx-rs`'s own
+/// `reader/read_zip.rs`), so a zip64 header claiming an exabyte aborts the process on
+/// that reservation, and a member whose stream inflates past its declared size fills
+/// memory as `docx-rs` reads it to the end. The guard weighs every member's declared
+/// size over the central directory, then inflates each one under the ratio and the
+/// ceiling without keeping it — so once this passes, every part `docx-rs` opens
+/// reserves and reads no more than its budget.
+///
+/// Not a zip at all is `Ok`: `read_docx` says so, and parses nothing.
+fn refuse_oversized_parts(bytes: &[u8]) -> Result<()> {
+    let Ok((mut archive, mut guard)) = skrib_format::zip_guard::ZipGuard::open(
+        crate::sources::DOCUMENT_ZIP_LIMITS,
+        std::io::Cursor::new(bytes),
+    ) else {
+        return Ok(());
+    };
+    // Every member, because `docx-rs` follows the document's relationships to parts
+    // this check cannot predict, and reads every image besides.
+    guard.check_directory(&mut archive, |_| true)?;
+    guard.verify_all(&mut archive)?;
     Ok(())
 }
 
@@ -823,8 +853,14 @@ fn looks_like_a_heading(id: &str) -> bool {
 
 /// A DrawingML length in pixels at 96 to the inch, the unit the editor measures a picture
 /// in. An English Metric Unit is 1/914,400 of an inch, so a pixel is 9,525 of them.
+///
+/// The `+ 4762` that rounds to the nearest pixel overflows `u32` for an `emu` within
+/// 4,762 of `u32::MAX` — a panic in a debug build, a wrong size in release — so the
+/// rounding is saturating. A picture that large is not one anyone drew (`u32::MAX`
+/// EMU is about 470 metres), but a `.docx`'s sizes are numbers from an untrusted
+/// file, and a scanner must not abort on one.
 fn emu_to_pixels(emu: u32) -> u32 {
-    (emu + 9_525 / 2) / 9_525
+    emu.saturating_add(9_525 / 2) / 9_525
 }
 
 /// A `w:jc` value as the edge the paragraph is laid against.
@@ -2693,6 +2729,20 @@ mod tests {
         assert!(looks_like_a_heading("HeadingChapter"));
         assert!(looks_like_a_heading("TitleMain"));
         assert!(!looks_like_a_heading("BodyText"));
+    }
+
+    /// A picture size within 4,762 EMU of `u32::MAX` used to overflow the `+ 4762`
+    /// that rounds to the nearest pixel: a panic in debug, a wrong size in release.
+    /// It saturates now, so the largest a `.docx` can claim comes back as a bounded
+    /// pixel count rather than aborting the scan.
+    #[test]
+    fn emu_to_pixels_saturates_rather_than_overflowing() {
+        assert_eq!(emu_to_pixels(0), 0);
+        assert_eq!(emu_to_pixels(9_525), 1);
+        assert_eq!(emu_to_pixels(9_525 * 96), 96);
+        // Within the rounding constant of the ceiling: the old code panicked here.
+        assert_eq!(emu_to_pixels(u32::MAX), u32::MAX / 9_525);
+        assert_eq!(emu_to_pixels(u32::MAX - 1), u32::MAX / 9_525);
     }
 
     #[test]

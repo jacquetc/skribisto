@@ -417,6 +417,9 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
         // The part refused, and the ceiling it went past. The sentence uses only the
         // ceiling; the part is there for anyone reading the row as data.
         NestedTooDeep { part, limit, .. } => (part.clone(), *limit as i64),
+        // The member refused, for anyone reading the row as data; the sentence itself
+        // names no size, only that the file would unpack far larger than it is.
+        ArchiveTooLarge { part, .. } => (part.clone(), 0),
         LossyDecode { replacements, .. } => (String::new(), *replacements as i64),
         DecodedFromBom { encoding, .. } => ((*encoding).to_string(), 0),
         EmptyFile { .. } | NoHeadings { .. } => (String::new(), 0),

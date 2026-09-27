@@ -380,6 +380,7 @@ fn exhaustive_over_every_variant(d: &document_ingest::ImportDiagnostic) {
     match d {
         FileUnreadable { .. }
         | NestedTooDeep { .. }
+        | ArchiveTooLarge { .. }
         | LossyDecode { .. }
         | DecodedFromBom { .. }
         | EmptyFile { .. }
@@ -437,6 +438,10 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
             path: "/tmp/a.odt".into(),
             part: "content.xml".into(),
             limit: 256,
+        },
+        D::ArchiveTooLarge {
+            path: "/tmp/a.docx".into(),
+            part: "word/document.xml".into(),
         },
         D::LossyDecode {
             path: "/tmp/a.md".into(),
