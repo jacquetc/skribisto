@@ -48,8 +48,8 @@ pub struct ConvertedDjot {
 /// `djot`, converted from markup whose plain text is `text`, as prose a load accepts.
 ///
 /// A converter writes whatever the markup nests, and markup can nest deeper than a bundle
-/// may: two hundred quoted levels, or a list or a code block indented four hundred
-/// columns. Stored as written, such prose is refused by the next load of the project
+/// may: two hundred quoted levels, or a list indented four hundred columns. Stored as
+/// written, such prose is refused by the next load of the project
 /// ([`crate::djot_depth`]), which then cannot be opened at all. So when the Djot would be
 /// refused, the words are kept instead, as plain text, which is always accepted.
 ///
@@ -1177,13 +1177,11 @@ mod tests {
             .map(|level| format!("{}- Level {level}.", "  ".repeat(level)))
             .collect::<Vec<_>>()
             .join("\n");
-        let indented_code = format!("```\n{}Deep words.\n```", " ".repeat(300));
         let quoted_html = format!(
             "{}<p>Deep words.</p>{}",
             "<blockquote>".repeat(150),
             "</blockquote>".repeat(150)
         );
-        let preformatted_html = format!("<pre>{}Deep words.</pre>", " ".repeat(300));
         let conversions = [
             (
                 "quoted Markdown",
@@ -1193,15 +1191,7 @@ mod tests {
                 "a nested Markdown list",
                 markdown_to_djot_and_text(&listed_markdown),
             ),
-            (
-                "an indented code block",
-                markdown_to_djot_and_text(&indented_code),
-            ),
             ("quoted HTML", html_to_djot_and_text(&quoted_html)),
-            (
-                "preformatted HTML",
-                html_to_djot_and_text(&preformatted_html),
-            ),
         ];
         for (shape, converted) in conversions {
             let converted = converted.expect("convert");
@@ -1225,6 +1215,37 @@ mod tests {
                 listed.text.contains(&format!("Level {level}.")),
                 "every item's words arrive: {:?}",
                 listed.text
+            );
+        }
+
+        // Indentation opens no container, so a code block set four hundred columns in
+        // nests nothing: it is kept as written, its indentation with it, and the load
+        // accepts it (`djot_depth`'s "a line that opens nothing counts nothing").
+        let indented_code = format!("```\n{}Deep words.\n```", " ".repeat(300));
+        let preformatted_html = format!("<pre>{}Deep words.</pre>", " ".repeat(300));
+        for (shape, converted) in [
+            (
+                "an indented code block",
+                markdown_to_djot_and_text(&indented_code),
+            ),
+            (
+                "preformatted HTML",
+                html_to_djot_and_text(&preformatted_html),
+            ),
+        ] {
+            let converted = converted.expect("convert");
+            assert!(!converted.flattened, "{shape}: {:?}", converted.djot);
+            assert!(
+                crate::djot_depth::check(&converted.djot).is_ok(),
+                "{shape}: a load must accept {:?}",
+                converted.djot
+            );
+            assert!(
+                converted
+                    .text
+                    .contains(&format!("{}Deep words.", " ".repeat(300))),
+                "{shape}: the code keeps its indentation: {:?}",
+                converted.text
             );
         }
 

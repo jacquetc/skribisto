@@ -125,6 +125,42 @@ const FIELD_ELEMENTS: &[&str] = &[
     "hidden-text",
 ];
 
+/// The most spaces one `<text:s text:c="…"/>` is read as.
+///
+/// ODF writes a run of spaces past the first as one element carrying its length, and the
+/// length is the file's to choose. Taken as written, `text:c="4000000000"` asked for four
+/// gigabytes of spaces, and a longer number for more than an allocation can hold, which
+/// ends the process rather than the import. What a real document puts there is blank
+/// space laid out by hand: a line of a manuscript page holds about a hundred and fifty
+/// spaces of a twelve-point serif, so a thousand is more than six lines of nothing but
+/// space. A longer run is cut to this many and reported
+/// ([`ImportDiagnostic::SpacesShortened`]); the words around it are untouched.
+pub(crate) const MAX_SPACE_RUN: usize = 1_000;
+
+/// How many spaces a `<text:s>` stands for, at most [`MAX_SPACE_RUN`], and whether the
+/// count it gave was cut to that.
+///
+/// `text:c` is a positive integer of any length, so a number too long for a `usize` is
+/// still a count, and a long one. A missing or unreadable count is one space, as ODF
+/// has it.
+fn space_run(node: Node<'_, '_>) -> (usize, bool) {
+    let Some(value) = node.attribute((NS_TEXT, "c")).map(str::trim) else {
+        return (1, false);
+    };
+    match value.parse::<usize>() {
+        Ok(count) if count <= MAX_SPACE_RUN => (count, false),
+        Ok(_) => (MAX_SPACE_RUN, true),
+        Err(_) => {
+            let digits = value.strip_prefix('+').unwrap_or(value);
+            if !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit()) {
+                (MAX_SPACE_RUN, true)
+            } else {
+                (1, false)
+            }
+        }
+    }
+}
+
 pub struct OdtScanner;
 
 impl SourceScanner for OdtScanner {
@@ -730,6 +766,9 @@ struct Walker<'a> {
     /// One entry per note whose reference reached the prose, deduplicated by label.
     footnotes: Vec<rich::RichFootnote>,
     orphan_replies: usize,
+    /// `<text:s>` runs whose count was cut to [`MAX_SPACE_RUN`], in prose, comments and
+    /// notes alike.
+    spaces_shortened: usize,
     /// A page ended after the last block (`fo:break-after="page"`), so the next block the
     /// walk produces starts a new one.
     page_break_pending: bool,
@@ -819,6 +858,7 @@ impl<'a> Walker<'a> {
             footnotes_dropped: 0,
             footnotes: Vec::new(),
             orphan_replies: 0,
+            spaces_shortened: 0,
             page_break_pending: false,
         }
     }
@@ -877,6 +917,13 @@ impl<'a> Walker<'a> {
             if count > 0 {
                 self.diagnostics.push(diagnostic);
             }
+        }
+        if self.spaces_shortened > 0 {
+            self.diagnostics.push(ImportDiagnostic::SpacesShortened {
+                path: self.origin.clone(),
+                count: self.spaces_shortened,
+                limit: MAX_SPACE_RUN,
+            });
         }
 
         attach_comment_marks(&mut self.annotations, &self.comment_marks);
@@ -1153,10 +1200,8 @@ impl<'a> Walker<'a> {
                     self.inline(child, build, style, Some(url), depth + 1);
                 }
                 (Some(NS_TEXT), "s") => {
-                    let count: usize = child
-                        .attribute((NS_TEXT, "c"))
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or(1);
+                    let (count, shortened) = space_run(child);
+                    self.spaces_shortened += usize::from(shortened);
                     let spaces = " ".repeat(count);
                     build.len += count;
                     // Written spaces are the producer's own, never collapsed, and a raw
@@ -1373,6 +1418,7 @@ impl<'a> Walker<'a> {
             self.annotation_inline(p, base, None, &mut body, depth + 1);
             body.break_paragraph();
         }
+        self.spaces_shortened += body.spaces_shortened;
         let paragraphs: Vec<Vec<Run>> = body.finish();
         let resolved = node
             .attribute((NS_LOEXT, "resolved"))
@@ -1469,6 +1515,7 @@ impl<'a> Walker<'a> {
             self.annotation_inline(p, base, None, &mut body, depth + 2);
             body.break_paragraph();
         }
+        self.spaces_shortened += body.spaces_shortened;
         let paragraphs = body.finish();
         if paragraphs.is_empty() {
             // A note with an empty body: the marker would cite nothing.
@@ -1555,10 +1602,8 @@ impl<'a> Walker<'a> {
                     self.annotation_inline(child, style, Some(url), out, depth + 1);
                 }
                 (Some(NS_TEXT), "s") => {
-                    let count: usize = child
-                        .attribute((NS_TEXT, "c"))
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or(1);
+                    let (count, shortened) = space_run(child);
+                    out.spaces_shortened += usize::from(shortened);
                     out.after_space = false;
                     out.push(Run {
                         text: " ".repeat(count),
@@ -1641,6 +1686,10 @@ struct AnnotationBody {
     current: Vec<Run>,
     /// The [`collapse_space`] state of the paragraph in progress.
     after_space: bool,
+    /// `<text:s>` runs cut to [`MAX_SPACE_RUN`] in this body. Counted here because
+    /// [`Walker::annotation_inline`] reads the walker without changing it; whoever
+    /// finishes the body adds this to the walker's own count.
+    spaces_shortened: usize,
 }
 
 impl Default for AnnotationBody {
@@ -1649,6 +1698,7 @@ impl Default for AnnotationBody {
             paragraphs: Vec::new(),
             current: Vec::new(),
             after_space: true,
+            spaces_shortened: 0,
         }
     }
 }

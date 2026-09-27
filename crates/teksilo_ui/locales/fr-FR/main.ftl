@@ -2242,6 +2242,12 @@ import-diagnostic-list-nesting-flattened = { $count ->
     [one] { $count } élément de liste de { $path } était imbriqué sur plus de { $limit } niveaux. Il arrive au niveau { $limit }, le plus profond que Skribisto conserve, avec son texte et sa mise en forme.
    *[other] { $count } éléments de liste de { $path } étaient imbriqués sur plus de { $limit } niveaux. Ils arrivent au niveau { $limit }, le plus profond que Skribisto conserve, avec leur texte et leur mise en forme.
 }
+# Suites d’espaces plus longues que ce que l’importation conserve, raccourcies à cette
+# longueur. $count est leur nombre ; $limit le nombre d’espaces conservées au plus, un nombre.
+import-diagnostic-spaces-shortened = { $count ->
+    [one] { $count } suite d’espaces de { $path } comptait plus de { $limit } espaces : elle arrive raccourcie à { $limit }. Le texte qui l’entoure est intact.
+   *[other] { $count } suites d’espaces de { $path } comptaient plus de { $limit } espaces : elles arrivent raccourcies à { $limit }. Le texte qui les entoure est intact.
+}
 import-diagnostic-epigraph-not-carried = « { $title } » est précédé d’une épigraphe, mais un élément de type « { $kind } » ne peut pas en porter. La citation est conservée en tête de son texte.
 import-diagnostic-epigraph-placement-ambiguous = Une épigraphe se trouve entre « { $title } » et « { $below } » et pourrait précéder l’un ou l’autre. Elle a été attribuée à « { $title } », où se place habituellement une épigraphe.
 import-document-diagnostics = { $errors ->

@@ -182,6 +182,19 @@ pub enum ImportDiagnostic {
         count: usize,
         limit: usize,
     },
+    /// Runs of spaces the file asked for more than `limit` of at once, which arrive `limit`
+    /// spaces long, the words around them untouched.
+    ///
+    /// OpenDocument writes a run of spaces as one element carrying its length, and the
+    /// length is the file's to choose: taken as written, one element could ask for
+    /// gigabytes of spaces and end the process rather than the import. No run typed or laid
+    /// out by hand comes near the limit (see `sources::odt::MAX_SPACE_RUN`), so only an odd
+    /// or a hostile file raises this.
+    SpacesShortened {
+        path: String,
+        count: usize,
+        limit: usize,
+    },
     /// Replies could not be recovered as replies and became comments of their own.
     /// ODF has no standardised threading, so this is the honest outcome for a file
     /// whose producer did not use one this scanner recognises.
@@ -254,6 +267,7 @@ impl ImportDiagnostic {
             | ProseNotVerbatim { .. }
             | StyledSpacesNotCarried { .. }
             | ListNestingFlattened { .. }
+            | SpacesShortened { .. }
             | EpigraphNotCarried { .. } => Warning,
             // Nothing was lost and nothing needs correcting — the epigraph landed on one
             // of the two rows it could have. Said once so a writer who meant the other
@@ -289,7 +303,8 @@ impl ImportDiagnostic {
             | CommentRepliesFlattened { path, .. }
             | ProseNotVerbatim { path, .. }
             | StyledSpacesNotCarried { path, .. }
-            | ListNestingFlattened { path, .. } => Some(path),
+            | ListNestingFlattened { path, .. }
+            | SpacesShortened { path, .. } => Some(path),
             DuplicateTitle { .. }
             | HeadingLevelJump { .. }
             | IllegalCombination { .. }
@@ -331,6 +346,7 @@ impl ImportDiagnostic {
             ProseNotVerbatim { .. } => "prose-not-verbatim",
             StyledSpacesNotCarried { .. } => "styled-spaces-not-carried",
             ListNestingFlattened { .. } => "list-nesting-flattened",
+            SpacesShortened { .. } => "spaces-shortened",
             EpigraphNotCarried { .. } => "epigraph-not-carried",
             EpigraphPlacementAmbiguous { .. } => "epigraph-placement-ambiguous",
         }
@@ -448,6 +464,12 @@ impl fmt::Display for ImportDiagnostic {
                 write!(
                     f,
                     "{path}: {count} list item(s) nested past {limit} levels placed at level {limit}"
+                )
+            }
+            SpacesShortened { path, count, limit } => {
+                write!(
+                    f,
+                    "{path}: {count} run(s) of more than {limit} spaces shortened to {limit}"
                 )
             }
         }

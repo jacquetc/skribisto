@@ -405,6 +405,7 @@ fn exhaustive_over_every_variant(d: &document_ingest::ImportDiagnostic) {
         | ProseNotVerbatim { .. }
         | StyledSpacesNotCarried { .. }
         | ListNestingFlattened { .. }
+        | SpacesShortened { .. }
         | EpigraphNotCarried { .. }
         | EpigraphPlacementAmbiguous { .. } => {}
     }
@@ -545,6 +546,11 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
             count: 4,
             limit: 16,
         },
+        D::SpacesShortened {
+            path: "/tmp/a.odt".into(),
+            count: 2,
+            limit: 1_000,
+        },
         D::EpigraphNotCarried {
             title: "A scene".into(),
             kind: CreateType::Scene,
@@ -641,6 +647,37 @@ fn flattened_list_items_are_counted_with_their_level_in_both_locales() {
             let text = d.message("", None).resolve_now();
             assert!(text.contains("deep.odt"), "{locale}: {text}");
             assert!(text.contains("16"), "{locale}: {text}");
+            assert!(text.contains(&count.to_string()), "{locale}: {text}");
+            assert!(
+                !text.contains("{$") && !text.contains("{ $"),
+                "{locale} left an argument unfilled: {text}"
+            );
+        });
+    }
+}
+
+/// Runs of spaces cut to the longest kept name the file, how many runs and that length, in
+/// both shipped locales, singular and plural. `fr-FR` is not checked at compile time, so its
+/// sentence is resolved here.
+#[test]
+fn shortened_runs_of_spaces_are_counted_with_their_length_in_both_locales() {
+    for (count, locale) in [(1, "en-US"), (3, "en-US"), (1, "fr-FR"), (3, "fr-FR")] {
+        let raised = document_ingest::ImportDiagnostic::SpacesShortened {
+            path: "/tmp/spaced.odt".into(),
+            count,
+            limit: 1_000,
+        };
+        crate::test_support::with_shipped_messages(locale, || {
+            let dto = frontend::import_management::diagnostic_to_dto(&raised, 0);
+            let (_, _, parsed) = plan_from_dto(
+                &DocumentImportRows::Empty,
+                &ImportDiagnosticRows::Reported(vec![dto]),
+            );
+            let d = parsed.first().expect("the DTO round-trips");
+            assert!(d.is_warning(), "the words arrive, the run shorter");
+            let text = d.message("", None).resolve_now();
+            assert!(text.contains("spaced.odt"), "{locale}: {text}");
+            assert!(text.contains("1000"), "{locale}: {text}");
             assert!(text.contains(&count.to_string()), "{locale}: {text}");
             assert!(
                 !text.contains("{$") && !text.contains("{ $"),

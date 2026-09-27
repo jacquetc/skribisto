@@ -711,8 +711,13 @@ fn inline_style(style: RunStyle) -> DjotInlineStyle {
 /// nothing. Every row is padded to the widest one: the editor keeps a short row as it is,
 /// but writes back only as many cells of a long row as its first row has, so a ragged
 /// table left as it came would lose cells on the first save.
+///
+/// Every row, that is, while squaring the table at most doubles the cells it holds (see
+/// [`padded_widths`]); past that, only the first row is widened, which is all the first
+/// save needs to keep every cell.
 fn render_table(rows: &[Vec<Vec<Run>>], fidelity: Fidelity) -> Rendered {
     let width = rows.iter().map(Vec::len).max().unwrap_or(0);
+    let widths = padded_widths(rows);
     let mut lines: Vec<String> = Vec::with_capacity(rows.len() + 1);
     let mut expected: Vec<Expected> = Vec::new();
     // Offset of the next cell in the table's own plain text, where cells are joined by
@@ -720,9 +725,9 @@ fn render_table(rows: &[Vec<Vec<Run>>], fidelity: Fidelity) -> Rendered {
     let mut source = 0usize;
     let mut first_cell = true;
     let mut blanks = 0usize;
-    for (row_index, row) in rows.iter().enumerate() {
-        let mut cells: Vec<String> = Vec::with_capacity(width);
-        for column in 0..width {
+    for ((row_index, row), row_width) in rows.iter().enumerate().zip(widths) {
+        let mut cells: Vec<String> = Vec::with_capacity(row_width);
+        for column in 0..row_width {
             let Some(runs) = row.get(column) else {
                 cells.push(String::new());
                 expected.push(Expected {
@@ -770,6 +775,33 @@ fn render_table(rows: &[Vec<Vec<Run>>], fidelity: Fidelity) -> Rendered {
         styled_blanks: blanks,
         list_flattened: false,
     }
+}
+
+/// How many cells each row of a table is written with.
+///
+/// Squaring the table is what every table a word processor writes needs: its rows are
+/// short only where cells were merged, and the padding that makes up for them is a
+/// fraction of the cells the file holds. Squaring is also the one place the importer
+/// turns a count into cells the file does not contain, and the count is the file's to
+/// choose: a first row of twenty thousand cells over twenty thousand rows of one cell
+/// each, a few hundred kilobytes of markup, asked for four hundred million empty cells,
+/// which is an allocation the process dies of rather than an import that fails. So a
+/// table is squared only while that adds no more cells than it holds; past that its first
+/// row alone is widened to the widest, and the other rows keep the cells the file gave
+/// them, which the editor keeps as they are. Either way no cell is lost, and a table is
+/// written with at most twice the cells of the one in the file.
+fn padded_widths(rows: &[Vec<Vec<Run>>]) -> Vec<usize> {
+    let width = rows.iter().map(Vec::len).max().unwrap_or(0);
+    let held: usize = rows.iter().map(Vec::len).sum();
+    // Every row is at most `width` long, so this is the padding squaring would add.
+    let padding = rows.len().saturating_mul(width).saturating_sub(held);
+    if padding <= held {
+        return vec![width; rows.len()];
+    }
+    rows.iter()
+        .enumerate()
+        .map(|(index, row)| if index == 0 { width } else { row.len() })
+        .collect()
 }
 
 #[cfg(test)]

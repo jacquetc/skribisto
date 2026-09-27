@@ -11,7 +11,7 @@
 
 use super::*;
 use proptest::prelude::*;
-use text_document::TextDocument;
+use text_document::{ListStyle, TextDocument};
 
 /// The stack `std::thread::spawn` gives a long operation's worker by default.
 const LONG_OPERATION_STACK: usize = 2 << 20;
@@ -143,10 +143,43 @@ fn deeply_stacked_divs_are_refused() {
     assert!(err.depth > MAX_DEPTH);
 }
 
+/// Indentation in front of no marker opens nothing, however long it runs: a
+/// paragraph whose first words sit behind a thousand spaces or tabs is one paragraph.
+/// The previous guard counted half a level per byte of it, and refused the project a
+/// writer had typed it into (see the module note).
 #[test]
-fn runaway_indentation_is_refused() {
-    let text = format!("{}item\n", " ".repeat(1_000));
-    assert!(check(&text).is_err());
+fn indentation_alone_opens_nothing_however_long() {
+    for blank in [" ", "\t", " \t", "\r"] {
+        for text in [
+            format!("{}item\n", blank.repeat(1_000)),
+            format!(
+                "First.\n\n{}Second.\n\n{}\n",
+                blank.repeat(400),
+                blank.repeat(700)
+            ),
+            format!("- a list item\n\n{}continued far in\n", blank.repeat(900)),
+            format!("> a quotation\n>{}still in it\n", blank.repeat(900)),
+            format!(
+                "```\n{}code keeps its indentation\n```\n",
+                blank.repeat(900)
+            ),
+        ] {
+            assert!(check(&text).is_ok(), "{blank:?}: {text:.60?}");
+            assert!(parse_on_a_long_operation_stack(text).is_ok(), "{blank:?}");
+        }
+    }
+}
+
+/// Indentation in front of a marker is still counted, one level per byte, since it
+/// may be continuing that many list items: the rule the fix above leaves alone.
+#[test]
+fn indentation_in_front_of_a_marker_is_still_counted() {
+    for marker in ["- ", "1. ", "[^a]: ", ": ", "> ", "| a |"] {
+        let text = format!("{}{marker}item\n", " ".repeat(MAX_DEPTH));
+        assert!(check(&text).is_err(), "{marker:?}");
+        let text = format!("{}{marker}item\n", " ".repeat(MAX_DEPTH - 1));
+        assert!(check(&text).is_ok(), "{marker:?}");
+    }
 }
 
 /// Closing fences must bring the depth back down, or a long document with
@@ -481,5 +514,193 @@ proptest! {
             prop_assert!(refused.line <= text.split('\n').count());
             prop_assert!(refused.depth > MAX_DEPTH);
         }
+    }
+}
+
+// ── What the editor stores, a load accepts ──────────────────────────────────────────
+
+/// One piece of what a writer can type: a word, a run of spaces or tabs of any length,
+/// any character a Djot marker is made of, alone or as a marker, or repeated in a long
+/// run, and the break between two paragraphs.
+fn typed_piece() -> impl Strategy<Value = String> {
+    let blank = prop::sample::select(vec![" ", "\t", " \t", "\t ", "\r", "\u{A0}", "\u{3000}"]);
+    let marker = prop::sample::select(vec![
+        "-", "*", "+", ">", ":", "|", "[", "]", "^", "(", ")", ".", "#", "{", "}", "`", "~", "=",
+        "_", "!", "\\", "\"", "'", "<", "&", "$", "%", "1.", "a)", "(iv)", "XII.", "- ", "* ",
+        "+ ", "> ", ": ", "1. ", "[^a]: ", "[^a]:", "[l]: ", "- [ ] ", "* [x] ", "::: c", ":::",
+        "```", "~~~", "| a |", "* * *", "{.c}", "# ", "10:30:45", "Mr. ",
+    ]);
+    prop_oneof![
+        3 => "[A-Za-z]{1,9}",
+        3 => (blank.clone(), 1usize..600).prop_map(|(blank, n)| blank.repeat(n)),
+        3 => marker.clone().prop_map(str::to_string),
+        1 => (marker, 2usize..300).prop_map(|(marker, n)| marker.repeat(n)),
+        1 => (blank, 1usize..300, "[a-z]{1,6}")
+            .prop_map(|(blank, n, word)| format!("{}{word}", blank.repeat(n))),
+        1 => Just("\n".to_string()),
+    ]
+}
+
+/// A stretch of typing: paragraphs, and whatever their lines open with.
+fn typed_text() -> impl Strategy<Value = String> {
+    prop::collection::vec(typed_piece(), 0..16).prop_map(|pieces| pieces.concat())
+}
+
+/// One paragraph of a document the writer edited, and how they shaped it.
+#[derive(Debug, Clone)]
+enum Edit {
+    /// Typed as it stands.
+    Typed(String),
+    /// Typed with a character format on: bold, italic, underlined or struck through.
+    Formatted(String, u8),
+    /// Made a list item, then Tabbed `depth` levels in.
+    Listed(String, ListStyle, u8),
+    /// Made a quotation, `depth` levels deep, as Tab inside one nests it.
+    Quoted(String, u8),
+    /// A footnote's reference at the caret, then the typing after it.
+    Noted(String),
+}
+
+fn edit() -> impl Strategy<Value = Edit> {
+    let style = prop::sample::select(vec![
+        ListStyle::Disc,
+        ListStyle::Decimal,
+        ListStyle::LowerAlpha,
+        ListStyle::UpperRoman,
+    ]);
+    prop_oneof![
+        2 => typed_text().prop_map(Edit::Typed),
+        1 => (typed_text(), 0u8..4).prop_map(|(text, format)| Edit::Formatted(text, format)),
+        1 => (typed_text(), style, 0u8..6).prop_map(|(text, style, depth)| {
+            Edit::Listed(text, style, depth)
+        }),
+        1 => (typed_text(), 1u8..4).prop_map(|(text, depth)| Edit::Quoted(text, depth)),
+        1 => typed_text().prop_map(Edit::Noted),
+    ]
+}
+
+/// Type `text` at the caret as the editor takes it in, from the keyboard or a paste:
+/// every line break, `\r\n`, `\r` or `\n`, a new paragraph (`teksilo`'s
+/// `insert_multiline_plain`, and Enter), and the rest inserted as it stands. The editor
+/// never puts a line break inside a paragraph.
+fn type_at(cursor: &text_document::TextCursor, text: &str) {
+    let text = text.replace("\r\n", "\n").replace('\r', "\n");
+    for (index, line) in text.split('\n').enumerate() {
+        if index > 0 {
+            let _ = cursor.insert_block();
+        }
+        if !line.is_empty() {
+            let _ = cursor.insert_text(line);
+        }
+    }
+}
+
+/// What `edits` store as, made the way the editor makes them: each one a paragraph
+/// after the last, through the cursor calls the editor's keys and menus make, and
+/// written with the Djot writer every text surface saves through (prose, a comment, a
+/// reply, a footnote, a note template). A call the editor would refuse in that place
+/// is refused here too, and ignored, as the editor ignores it.
+fn edited_djot(edits: &[Edit]) -> String {
+    use text_document::{ListFormat, MoveMode, MoveOperation, TextFormat};
+    let doc = TextDocument::new();
+    let cursor = doc.cursor();
+    for (index, edit) in edits.iter().enumerate() {
+        cursor.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
+        if index > 0 {
+            let _ = cursor.insert_block();
+        }
+        match edit {
+            Edit::Typed(text) => type_at(&cursor, text),
+            Edit::Formatted(text, format) => {
+                // Typed, then selected and formatted, as Ctrl+B and its siblings do.
+                let start = cursor.position();
+                type_at(&cursor, text);
+                cursor.set_position(start, MoveMode::KeepAnchor);
+                let format = TextFormat {
+                    font_bold: Some(*format == 0),
+                    font_italic: Some(*format == 1),
+                    font_underline: Some(*format == 2),
+                    font_strikeout: Some(*format == 3),
+                    ..TextFormat::default()
+                };
+                let _ = cursor.merge_char_format(&format);
+                cursor.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
+            }
+            Edit::Listed(text, style, depth) => {
+                type_at(&cursor, text);
+                let _ = cursor.create_list(style.clone());
+                // Tab in a list item, as `teksilo`'s editor answers it: the item leaves
+                // its list for a new one a level further in.
+                for level in 1..=*depth {
+                    let _ = cursor.remove_current_block_from_list();
+                    let _ = cursor.create_list(style.clone());
+                    let _ = cursor.set_current_list_format(&ListFormat {
+                        indent: Some(level),
+                        ..ListFormat::default()
+                    });
+                }
+            }
+            Edit::Quoted(text, depth) => {
+                type_at(&cursor, text);
+                for _ in 0..*depth {
+                    let _ = cursor.increase_blockquote_depth();
+                }
+            }
+            Edit::Noted(text) => {
+                // What Insert footnote puts at the caret (`FootnotesViewModel::insert_at`).
+                let _ = cursor.insert_djot("[^fn1]");
+                cursor.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
+                type_at(&cursor, text);
+            }
+        }
+    }
+    doc.to_djot()
+        .expect("the editor writes its document as Djot")
+}
+
+/// What the editor stores for `text` set as a document's whole text: what a scene's
+/// prose, a comment's body or a footnote's is, once typed.
+fn typed_djot(text: &str) -> String {
+    let doc = TextDocument::new();
+    doc.set_plain_text(text).expect("set the typed text");
+    doc.to_djot()
+        .expect("the editor writes its document as Djot")
+}
+
+/// Accepted by the load, and parsed from a long operation's stack.
+fn a_load_accepts(djot: String) -> Result<(), TestCaseError> {
+    if let Err(refused) = check(&djot) {
+        return Err(TestCaseError::fail(format!(
+            "the editor stored {:.120?}, and the load refuses it: {refused}",
+            djot
+        )));
+    }
+    let parsed = parse_on_a_long_operation_stack(djot);
+    prop_assert!(parsed.is_ok(), "{:?}", parsed);
+    Ok(())
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 96, ..ProptestConfig::default() })]
+
+    /// Whatever a writer types, the Djot the editor stores for it is accepted by the next
+    /// load and parses from a long operation's stack. A paragraph typed after two hundred
+    /// spaces or tabs used to be stored as written and refused on the next load, which
+    /// then would not open the project at all.
+    #[test]
+    fn whatever_the_editor_stores_for_typing_a_load_accepts(text in typed_text()) {
+        a_load_accepts(typed_djot(&text))?;
+    }
+
+    /// The same of a document shaped as well as typed: formatting, a nested list, a
+    /// nested quotation and a footnote's reference, each with typing of any shape in it,
+    /// and the body of a comment typed into its card beside it.
+    #[test]
+    fn whatever_the_editor_stores_for_a_shaped_document_a_load_accepts(
+        edits in prop::collection::vec(edit(), 1..7),
+        remark in prop::collection::vec(edit(), 1..3),
+    ) {
+        a_load_accepts(edited_djot(&edits))?;
+        a_load_accepts(edited_djot(&remark))?;
     }
 }

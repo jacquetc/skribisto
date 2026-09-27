@@ -261,6 +261,12 @@ impl Diagnostic {
                 count = count,
                 limit = detail
             )),
+            // `detail` is the length every run was cut to, a number sent as text.
+            "spaces-shortened" => tr!(import_diagnostic_spaces_shortened(
+                path = path,
+                count = count,
+                limit = detail
+            )),
             // Same shape as `illegal-combination`: the row knows its own title and type,
             // so neither travels over the wire.
             "epigraph-not-carried" => tr!(import_diagnostic_epigraph_not_carried(

@@ -653,3 +653,58 @@ fn a_pre_v12_remark_that_looks_nested_opens_as_its_words() {
         }
     }
 }
+
+/// Not a hostile bundle: the writer's own. The editor stores a paragraph's leading
+/// spaces and tabs as they were typed, so a paragraph typed after four hundred of them
+/// is saved exactly so, and the load used to count half a level of nesting for every
+/// one of them and refuse the whole project, which then would not open at all. Typed
+/// into every place a bundle stores Djot, saved in both shapes, it opens, every body
+/// comes back as it was saved, and every one parses from a long operation's stack.
+#[test]
+fn a_paragraph_typed_after_four_hundred_spaces_or_tabs_opens() {
+    for blank in [" ", "\t", " \t"] {
+        let typed = format!(
+            "{}Set far in.\n\nThen back at the margin.\n\n{}\n",
+            blank.repeat(400 / blank.len()),
+            blank.repeat(400 / blank.len())
+        );
+        let doc = text_document::TextDocument::new();
+        doc.set_plain_text(&typed).expect("type");
+        let saved = doc
+            .to_djot()
+            .expect("the editor writes its document as Djot");
+        assert!(
+            saved.starts_with(&blank.repeat(400 / blank.len())),
+            "{blank:?}: the editor stores the paragraph's leading blanks as typed: {saved:.40?}"
+        );
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            let mut bundle = fixture();
+            for place in PlantedIn::ALL {
+                plant(&mut bundle, place, &saved);
+            }
+            let dir = tempfile::tempdir().expect("tmp");
+            let path = dir
+                .path()
+                .join("Novel.skrib")
+                .to_string_lossy()
+                .into_owned();
+            write_bundle(&path, shape, &bundle).expect("write");
+            let loaded = match read_bundle(&path) {
+                Ok(loaded) => loaded,
+                Err(err) => panic!(
+                    "{blank:?}, {shape:?}: the project does not open: {}",
+                    chain(&err)
+                ),
+            };
+            assert_eq!(
+                every_stored_djot(&loaded)
+                    .iter()
+                    .filter(|djot| **djot == saved)
+                    .count(),
+                PlantedIn::ALL.len(),
+                "{blank:?}, {shape:?}: every body comes back as it was saved"
+            );
+            parse_every_prose(&loaded);
+        }
+    }
+}

@@ -426,6 +426,76 @@ fn a_table_is_proved_cell_by_cell_and_padded_square() {
     }
 }
 
+/// A table whose squaring would more than double it keeps its short rows as they came, with
+/// only the first row widened: every real cell is proved and survives the editor's first
+/// save, and nothing is written that the file did not hold beyond the first row's padding.
+#[test]
+fn a_table_mostly_of_short_rows_is_widened_in_its_first_row_only() {
+    let rows = vec![
+        vec![vec![plain_run("a")]],
+        vec![vec![plain_run("b")]],
+        vec![vec![plain_run("c")]],
+        vec![
+            vec![plain_run("d")],
+            vec![styled("e", bold())],
+            vec![plain_run("f")],
+            vec![plain_run("g")],
+            vec![plain_run("h")],
+        ],
+    ];
+    assert_eq!(padded_widths(&rows), vec![5, 1, 1, 5]);
+    let proven = prove(&[Source::Table { rows: &rows }], Frame::Blocks).expect("prove");
+    assert!(proven.members[0].exact, "{:?}", proven.djot);
+    let cells: Vec<String> = proven.members[0]
+        .segments
+        .iter()
+        .map(|s| slice(&proven.text, s.stored()))
+        .collect();
+    assert_eq!(cells, vec!["a", "b", "c", "d", "e", "f", "g", "h"]);
+    // "a\nb\nc\nd\ne\nf\ng\nh" is the table's own plain text.
+    assert_eq!(proven.members[0].segments[4].source_start, 8);
+
+    let resaved = open(&proven.djot).to_djot().expect("export");
+    for cell in ["a", "b", "c", "d", "*e*", "f", "g", "h"] {
+        assert!(
+            resaved.contains(&format!("| {cell} |")) || resaved.contains(&format!("| {cell}")),
+            "{cell:?} lost on save: {resaved:?}"
+        );
+    }
+}
+
+/// The widths the emitter squares a table to never add more cells than the table holds,
+/// and never leave the first row narrower than another, which is what the editor's first
+/// save needs to keep every cell.
+#[test]
+fn squaring_never_more_than_doubles_a_table() {
+    let cell = || vec![plain_run("x")];
+    let shapes: Vec<Vec<usize>> = vec![
+        vec![],
+        vec![1],
+        vec![3, 3, 3],
+        vec![1, 5, 5, 5],
+        vec![5, 1, 1, 1, 1, 1, 1],
+        vec![1, 1, 1, 1, 1, 1, 9],
+        vec![20_000, 1, 1, 1],
+    ];
+    for lengths in shapes {
+        let rows: Vec<Vec<Vec<Run>>> = lengths.iter().map(|&n| vec![cell(); n]).collect();
+        let widths = padded_widths(&rows);
+        let held: usize = lengths.iter().sum();
+        let written: usize = widths.iter().sum();
+        assert!(
+            written <= 2 * held,
+            "{lengths:?}: {written} written for {held}"
+        );
+        for (w, n) in widths.iter().zip(&lengths) {
+            assert!(w >= n, "{lengths:?}: a row lost a cell");
+        }
+        let widest = lengths.iter().copied().max().unwrap_or(0);
+        assert!(widths.first().is_none_or(|w| *w == widest), "{lengths:?}");
+    }
+}
+
 /// An epigraph run is one blockquote, however many paragraphs it holds: the compiler
 /// marks every blockquote it meets as an epigraph.
 #[test]
@@ -877,6 +947,54 @@ proptest! {
             .map(|s| slice(&proven.text, s.stored()))
             .collect();
         prop_assert_eq!(stored, cells);
+    }
+
+    /// A table of short rows with one wide row anywhere in it, the shape whose squaring
+    /// would more than double it, proves cell by cell with only its first row widened,
+    /// every real cell's text where its segment says, and every cell kept by the editor's
+    /// first save.
+    #[test]
+    fn a_table_of_short_rows_and_one_wide_row_reads_back_cell_by_cell(
+        short in prop::collection::vec(prop::collection::vec(cell(), 1..3), 3..9),
+        wide in prop::collection::vec(cell(), 6..14),
+        at in any::<prop::sample::Index>(),
+    ) {
+        let mut rows = short;
+        let at = at.index(rows.len() + 1);
+        rows.insert(at, wide);
+        let table = RichBlock::Table { rows: rows.clone() };
+        prop_assume!(!table.is_blank());
+        let proven = prove(&[Source::Table { rows: &rows }], Frame::Blocks).expect("prove");
+        prop_assert!(proven.members[0].exact && !proven.members[0].reported, "{:?}", proven.djot);
+        let reading = read_djot(&proven.djot).expect("parse");
+        prop_assert_eq!(&reading.text, &proven.text);
+        let held: usize = rows.iter().map(Vec::len).sum();
+        prop_assert!(reading.blocks.len() <= 2 * held, "{:?}", proven.djot);
+        let cells: Vec<String> = rows
+            .iter()
+            .flatten()
+            .map(|runs| {
+                let text: String = runs.iter().map(|r| r.text.replace(['\n', '\r'], " ")).collect();
+                skrib_format::trim_djot_whitespace(&text).to_string()
+            })
+            .collect();
+        let stored: Vec<String> = proven.members[0]
+            .segments
+            .iter()
+            .map(|s| slice(&proven.text, s.stored()))
+            .collect();
+        prop_assert_eq!(&stored, &cells);
+        // The editor's first save keeps every cell's text.
+        let resaved = open(&proven.djot).to_djot().expect("export");
+        let reread = read_djot(&resaved).expect("parse the save");
+        let texts: Vec<&str> = reread
+            .blocks
+            .iter()
+            .map(|b| b.text.as_str())
+            .filter(|t| !t.is_empty())
+            .collect();
+        let wanted: Vec<&str> = cells.iter().map(String::as_str).filter(|t| !t.is_empty()).collect();
+        prop_assert_eq!(texts, wanted, "{:?} saved as {:?}", proven.djot, resaved);
     }
 
     /// An epigraph run of any paragraphs is one blockquote that reads back exactly.

@@ -441,6 +441,8 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
         // How many items, and the level they were placed at, as the two fields. The
         // level is a number sent as text, the way `HeadingLevelJump` sends its first.
         ListNestingFlattened { count, limit, .. } => (limit.to_string(), *count as i64),
+        // How many runs, and the length each was cut to, in the same two fields.
+        SpacesShortened { count, limit, .. } => (limit.to_string(), *count as i64),
         UnknownStyleLevel { style, .. } => (style.clone(), 0),
         // The comment's own opening words, so the writer recognises which note the
         // importer could not place. Its body, not the prose it was about — a

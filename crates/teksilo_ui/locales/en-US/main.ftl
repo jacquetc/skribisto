@@ -2264,6 +2264,12 @@ import-diagnostic-list-nesting-flattened = { $count ->
     [one] { $count } list item in { $path } was nested more than { $limit } levels deep. It arrives at level { $limit }, the deepest Skribisto keeps, with its words and formatting.
    *[other] { $count } list items in { $path } were nested more than { $limit } levels deep. They arrive at level { $limit }, the deepest Skribisto keeps, with their words and formatting.
 }
+# Runs of spaces longer than the importer keeps, cut to that length. $count is how many
+# runs; $limit is the most spaces a run keeps, a number.
+import-diagnostic-spaces-shortened = { $count ->
+    [one] { $count } run of spaces in { $path } was longer than { $limit } spaces, and arrives shortened to { $limit }. The words around it are all there.
+   *[other] { $count } runs of spaces in { $path } were longer than { $limit } spaces, and arrive shortened to { $limit }. The words around them are all there.
+}
 import-diagnostic-epigraph-not-carried = “{ $title }” is headed by an epigraph, but a { $kind } cannot hold one. The quotation is kept at the top of its text instead.
 import-diagnostic-epigraph-placement-ambiguous = An epigraph sits between “{ $title }” and “{ $below }” and could head either. It was given to “{ $title }”, which is where an epigraph usually goes.
 import-document-diagnostics = { $errors ->

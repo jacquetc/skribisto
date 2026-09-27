@@ -17,6 +17,8 @@ Description:
 - "An imported document, or a Plume Creator or Manuskript project, whose formatting is nested past what a project can hold arrives as its words with a note, instead of producing a project that will not open again"
 - "A damaged or truncated Word file is reported as unreadable instead of freezing the import for good"
 - "A project, Markdown or HTML file crafted to nest its contents thousands of levels deep can no longer close Skribisto: the project is refused with a message, or the file’s words are kept as plain text"
+- "A paragraph typed after a long run of spaces no longer makes the project refuse to open the next time"
+- "An OpenDocument file asking for an enormous run of spaces imports with that run shortened, and the import review says so"
 ---
 Version: 3.0.4
 Date: 2026-09-16

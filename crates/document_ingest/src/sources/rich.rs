@@ -87,9 +87,10 @@ use emit::{Frame, MemberProof, Segment, Source};
 /// Word's numbering has nine levels (`w:ilvl` 0 to 8) and LibreOffice's ten, so sixteen
 /// keeps every level either application can write, with six to spare for a producer that
 /// writes more. It is also far inside what stored prose may nest: the deepest item is
-/// written thirty columns in, which `skrib_format::djot_depth` counts as fifteen of its
-/// [`skrib_format::MAX_DJOT_DEPTH`] levels, leaving room for any blockquote or footnote
-/// around it. A list written deeper than that ceiling is not merely unusual: the next load
+/// written thirty columns in, which `skrib_format::djot_depth` counts, with its marker, as
+/// thirty-one of its [`skrib_format::MAX_DJOT_DEPTH`] levels, leaving room for any
+/// blockquote or footnote around it. A list written deeper than that ceiling is not merely
+/// unusual: the next load
 /// refuses the whole project over it, and from `text-document` 1.12.3 the parser reads such
 /// a line as literal text rather than as a list.
 pub const MAX_LIST_LEVELS: usize = 16;

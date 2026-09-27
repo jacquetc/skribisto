@@ -70,10 +70,24 @@
 //! least one byte of each line they continue), or by nothing at all (a div, until
 //! its closing fence). So the whitespace in front of the last marker on a line
 //! counts one level per byte, except for the one byte after a `>` that the
-//! blockquote itself consumes. A line that opens nothing needs no such count: it
-//! is never deeper than the lines that opened what it continues. It is still held
-//! to the old half-a-level per byte of indentation, so that a run of indentation
-//! the previous guard refused is refused still.
+//! blockquote itself consumes.
+//!
+//! # A line that opens nothing counts nothing
+//!
+//! Indentation alone opens no container. `jotdown` identifies a line's block after
+//! trimming every byte of its leading whitespace (`IdentifiedBlock::new`), and Djot
+//! has no indented code block: a line of whitespace and words is a paragraph, a
+//! leaf, however far it is indented. Indentation only decides whether a line goes on
+//! *continuing* a list item, a footnote or a definition opened on an earlier line
+//! (`Kind::continues`, which asks for more whitespace than the item's own marker
+//! had), and a line continuing a container sits exactly as deep as the line that
+//! opened it, which was measured when it was read. So a line with no marker adds
+//! nothing past the divs still open around it.
+//!
+//! The previous guard counted one level per two bytes of such indentation, and the
+//! editor writes a paragraph's leading spaces and tabs back as they were typed: a
+//! paragraph opening with 194 of them saved, and the next load refused the whole
+//! project, locking the writer out of their own work.
 //!
 //! **Whitespace here is ASCII whitespace**, the only kind the parser reads as
 //! indentation or as the space that ends a marker (`jotdown`'s block scanner tests
@@ -146,7 +160,8 @@ pub fn check(text: &str) -> Result<(), TooDeep> {
     for (index, line) in text.split('\n').enumerate() {
         let start = line_start(line, Grammar::Djot, MAX_DEPTH);
         divs.read(&start);
-        let depth = divs.count() + start.containers.max(start.indent / 2);
+        // Indentation in front of no marker is not counted: see the module note.
+        let depth = divs.count() + start.containers;
         if depth > MAX_DEPTH {
             return Err(TooDeep {
                 depth,
@@ -218,8 +233,6 @@ pub(crate) struct LineStart<'a> {
     /// marker could continue. The scan stops once this passes its limit, so past the
     /// limit it is only known to be past it.
     pub containers: usize,
-    /// The line's leading whitespace, in bytes.
-    pub indent: usize,
     /// How many `>` the line opens with before any other marker, whitespace aside.
     pub quotes: usize,
     /// Whether those `>` are all the line opens before [`Self::rest`], each followed
@@ -234,10 +247,6 @@ pub(crate) struct LineStart<'a> {
 /// opens containers with them, stopping once more than `limit` are counted.
 pub(crate) fn line_start(line: &str, grammar: Grammar, limit: usize) -> LineStart<'_> {
     let bytes = line.as_bytes();
-    let indent = bytes
-        .iter()
-        .take_while(|byte| byte.is_ascii_whitespace())
-        .count();
     // From this offset to the end the line is nothing but `-`, `*` and whitespace,
     // which is where a `-` or `*` may be a thematic break rather than a bullet.
     let decoration_from = bytes
@@ -331,7 +340,6 @@ pub(crate) fn line_start(line: &str, grammar: Grammar, limit: usize) -> LineStar
         .trim_start_matches(|c: char| c.is_ascii_whitespace());
     LineStart {
         containers,
-        indent,
         quotes,
         only_quotes,
         rest,
