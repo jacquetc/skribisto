@@ -15,6 +15,7 @@ Description:
 - "An imported Word or OpenDocument file keeps its centred and right-aligned paragraphs, its page breaks, its superscript and subscript, its double spaces, and its straight quotes, dashes and ellipses as they were written"
 - "Importing a plain-text file keeps every character as written: asterisks, underscores and other marks are no longer read as formatting"
 - "An imported document, or a Plume Creator or Manuskript project, whose formatting is nested past what a project can hold arrives as its words with a note, instead of producing a project that will not open again"
+- "A damaged or truncated Word file is reported as unreadable instead of freezing the import for good"
 ---
 Version: 3.0.4
 Date: 2026-09-16

@@ -43,8 +43,9 @@ odt = ["dep:zip", "dep:roxmltree"]
 # `word/document.xml`: two constructs a manuscript really uses — a comment anchored
 # to a point rather than a range, and a horizontal rule — live in elements the typed
 # reader does not surface. See `sources::docx::RawScan`.
-# `quick-xml` measures a part's depth the way `docx-rs` itself reads it, before
-# `docx-rs` does. See `sources::docx::check_as_docx_rs_reads`.
+# `quick-xml` measures a part's depth the way `docx-rs` itself reads it, and
+# whether `docx-rs` can finish reading it at all, before `docx-rs` does. See
+# `sources::docx::check_as_docx_rs_reads`.
 docx = ["dep:zip", "dep:roxmltree", "dep:docx-rs", "dep:quick-xml"]
 
 [dependencies]

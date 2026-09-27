@@ -72,8 +72,18 @@
 //!
 //! It is a small number of extra reads over the same zip, and each answers a question
 //! the typed tree cannot. The alternative was silent loss on every one of them.
+//!
+//! ## A part `docx-rs` could not finish is refused before it is read
+//!
+//! `docx_rs::read_docx` does not return on a part cut short, one with a syntax error or
+//! an ill-formed tag somewhere a reader reads past, or a style sheet or relationships
+//! part whose root is not the element its loop waits for: it spins on the import's
+//! thread for good, and no cancel reaches it. Every part it will read is checked first
+//! (`check_as_docx_rs_reads`, and `Demand` for why each shape spins), and a file holding
+//! such a part is reported as unreadable, naming the part. A part well-formed to its end,
+//! under the root element its reader waits for, is never refused.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use anyhow::{Result, anyhow};
 use docx_rs::{
@@ -106,9 +116,10 @@ impl SourceScanner for DocxScanner {
     }
 
     /// The whole scan runs on `skrib_format`'s parser stack, after every part that
-    /// will be parsed has been checked against `MAX_XML_DEPTH` (see
-    /// `refuse_deep_parts`). `docx-rs` descends once for every table nested in a
-    /// table cell, about 50 KB of stack each in a debug build, and cannot be
+    /// will be parsed has been checked against `MAX_XML_DEPTH`, and every part
+    /// `docx-rs` reads checked for being one it can finish reading (see
+    /// `refuse_unreadable_parts`). `docx-rs` descends once for every table nested
+    /// in a table cell, about 50 KB of stack each in a debug build, and cannot be
     /// stopped once it has started; the check is what bounds it, and the stack is
     /// what gives the bound room.
     fn scan(&self, bytes: &[u8], display_name: &str, origin: &str) -> Result<SourceDocument> {
@@ -119,7 +130,7 @@ impl SourceScanner for DocxScanner {
 
 /// [`DocxScanner::scan`], on the parser stack.
 fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<SourceDocument> {
-    refuse_deep_parts(bytes)?;
+    refuse_unreadable_parts(bytes)?;
     let docx =
         docx_rs::read_docx(bytes).map_err(|e| anyhow!("not a readable Word document: {e:?}"))?;
 
@@ -158,7 +169,7 @@ fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<Sourc
 }
 
 // ---------------------------------------------------------------------------
-// Depth
+// What reaches docx-rs
 // ---------------------------------------------------------------------------
 
 /// The package-level relationship naming the main document part, and the one
@@ -168,35 +179,173 @@ const OFFICE_DOCUMENT: &str =
 const CUSTOM_PROPERTIES: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties";
 
+/// The style sheet, whose part `docx-rs` reads until a `styles` end tag.
+const STYLES: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles";
+/// A header and a footer, each of whose parts has relationships of its own that
+/// `read_docx` reads.
+const HEADER: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header";
+const FOOTER: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer";
+
 /// The document-level relationships whose targets `docx-rs` parses as XML: every
 /// type `read_docx` follows out of the document's own `.rels` except `image` and
 /// `hyperlink`, spelled and matched exactly as its `reader/namespace.rs` spells
 /// them. `docx-rs` is pinned to one release (`=0.4.22`, see Cargo.toml), and this
 /// list is part of what moving off it has to re-read.
 const XML_RELATIONSHIPS: [&str; 9] = [
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+    STYLES,
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings",
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
+    HEADER,
+    FOOTER,
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
     "http://schemas.microsoft.com/office/2011/relationships/commentsExtended",
 ];
 
-/// Refuse the file if any part this scan will parse as XML nests past
-/// `MAX_XML_DEPTH`.
+/// The root element of a relationships part, as `docx-rs` names it.
+const RELATIONSHIPS_ROOT: &str = "Relationships";
+/// The root element of the style sheet, as `docx-rs` names it.
+const STYLES_ROOT: &str = "styles";
+
+/// What `docx-rs` needs of a part to finish reading it.
+///
+/// `docx-rs` 0.4.22 reads a part through an event reader that answers every call
+/// past the end of its input with one more `EndDocument`, and most of its readers
+/// are loops that leave only at the end tag of the element they were entered on,
+/// passing over `EndDocument` like any other event they have no use for
+/// (`_ => {}`). Several also catch a child's error and read on (`if let Ok(table)
+/// = Table::read(..)`), and after a syntax error `quick-xml` reports nothing but
+/// the end of the input, while `ignore_element`, which skips a tracked move or a
+/// property change, passes over errors altogether. So a reader still waiting for
+/// its end tag when the input runs out waits for ever, at full speed, on the
+/// thread the import runs on, and no cancel reaches it. [`check_as_docx_rs_reads`]
+/// refuses such a part before `docx-rs` sees it.
+///
+/// None of this can happen to a part that is well-formed to its end: every reader
+/// leaves at the end tag carrying the local name it was entered on, a child reader
+/// always leaves at or before its own element's end, and so the only readers left
+/// when the input runs out are the whole-part loops. All of those stop at the end
+/// of the input except two, which is what [`Demand::roots`] is for.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct Demand {
+    /// Read by those element readers, so it must be well-formed to its end: every
+    /// element it opens closed, and no syntax error or ill-formed tag anywhere.
+    /// False for a part read only by a loop that stops at the end of its input,
+    /// whatever the input holds: `[Content_Types].xml` and `_rels/.rels`, read by
+    /// iterators, and the raw pass's own parts, read by `roxmltree`. Those are left
+    /// as lenient as they were.
+    to_its_end: bool,
+    /// The name its root element must carry, for a part whose whole read stops at
+    /// an end tag of that name rather than at the end of its input: `styles` for the
+    /// style sheet (`Styles::from_xml`), `Relationships` for a part's relationships
+    /// (`read_rels_xml`). Read in anything else, even a well-formed part, such a
+    /// loop never stops. Two names for one part named for both, which no part can
+    /// satisfy.
+    roots: BTreeSet<&'static str>,
+}
+
+impl Demand {
+    /// Read by the element readers.
+    fn to_its_end() -> Self {
+        Demand {
+            to_its_end: true,
+            roots: BTreeSet::new(),
+        }
+    }
+
+    /// Read by the element readers, by a loop that stops only at the end of `root`.
+    fn root(root: &'static str) -> Self {
+        Demand {
+            to_its_end: true,
+            roots: BTreeSet::from([root]),
+        }
+    }
+
+    /// Everything either demand asks, for a part read both ways.
+    fn merge(&mut self, other: Demand) {
+        self.to_its_end |= other.to_its_end;
+        self.roots.extend(other.roots);
+    }
+}
+
+/// A part `docx-rs` would never finish reading, refused before it is handed over.
+///
+/// Reported as the file being unreadable (`ImportDiagnostic::FileUnreadable`), which
+/// is what it is: a Word document with a part cut short or damaged is refused by
+/// Word as well. Its message completes that diagnostic's sentence, "could not be
+/// read: …".
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct UnfinishedPart {
+    /// The member refused: `word/document.xml`, `word/_rels/document.xml.rels`.
+    part: String,
+    flaw: Flaw,
+}
+
+/// Why a part was refused.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Flaw {
+    /// A syntax error or an ill-formed tag, in the parser's own words, on the
+    /// 1-based `line`.
+    Malformed { error: String, line: usize },
+    /// The part ends on `line` with `open` elements still open.
+    CutShort { open: usize, line: usize },
+    /// The root element is not the one the part must have; `found` is `None` when
+    /// there is no element at all.
+    Root {
+        expected: &'static str,
+        found: Option<String>,
+    },
+}
+
+impl std::fmt::Display for UnfinishedPart {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let part = &self.part;
+        match &self.flaw {
+            Flaw::Malformed { error, line } => {
+                write!(f, "its part {part} is damaged at line {line} ({error})")
+            }
+            Flaw::CutShort { open: 1, line } => write!(
+                f,
+                "its part {part} is cut short at line {line}, with an element still open"
+            ),
+            Flaw::CutShort { open, line } => write!(
+                f,
+                "its part {part} is cut short at line {line}, with {open} elements still open"
+            ),
+            Flaw::Root {
+                expected,
+                found: Some(found),
+            } => write!(
+                f,
+                "its part {part} should hold a <{expected}> element and holds <{found}> instead"
+            ),
+            Flaw::Root {
+                expected,
+                found: None,
+            } => write!(
+                f,
+                "its part {part} should hold a <{expected}> element and holds none"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for UnfinishedPart {}
+
+/// Refuse the file if a part this scan will parse as XML nests past
+/// `MAX_XML_DEPTH`, or is one `docx-rs` would never finish reading ([`Demand`]).
 ///
 /// **Which parts is the whole question**, because a `.docx` also carries images and
 /// embedded objects, and a binary checked as if it were XML reads as a random
 /// depth that a large enough picture always exceeds. So the set is exactly what
 /// the two readers will parse, found the way they find it: the fixed names, the
-/// main part wherever `_rels/.rels` points, and every target of an XML-bearing
-/// type in that part's own relationships, which `docx-rs` follows whatever the
-/// target is called. The relationship files themselves are read with `docx-rs`'s
-/// own readers (loops, not recursions, so safe to run on anything), so a
-/// relationship this check cannot see is one `docx-rs` cannot follow either.
+/// main part wherever `_rels/.rels` points, every target of an XML-bearing type in
+/// that part's own relationships, which `docx-rs` follows whatever the target is
+/// called, and the relationships of every header and footer. The relationship
+/// files themselves are read with `docx-rs`'s own readers, so a relationship this
+/// check cannot see is one `docx-rs` cannot follow either; the main part's are
+/// checked before they are read (see [`xml_parts`]).
 ///
 /// **Each part is measured once for each parser that reads it**, because the two
 /// do not agree on where a document's markup is. The raw pass parses with
@@ -208,26 +357,36 @@ const XML_RELATIONSHIPS: [&str; 9] = [
 /// ill-formed end tag where `roxmltree` stops. Measured only `roxmltree`'s way, a
 /// short preamble was enough to hide any nesting behind it from the check and
 /// hand the whole of it to `docx-rs`.
-fn refuse_deep_parts(bytes: &[u8]) -> Result<()> {
+fn refuse_unreadable_parts(bytes: &[u8]) -> Result<()> {
     let Ok(mut archive) = zip::ZipArchive::new(std::io::Cursor::new(bytes)) else {
         // Not a zip at all: `read_docx` says so, and parses nothing.
         return Ok(());
     };
-    for part in xml_parts(&mut archive) {
-        let Ok(mut member) = archive.by_name(&part) else {
+    for (part, demand) in xml_parts(&mut archive)? {
+        let Some(data) = read_member(&mut archive, &part) else {
             continue;
         };
-        let mut data = Vec::new();
-        if std::io::Read::read_to_end(&mut member, &mut data).is_err() {
-            continue;
-        }
         skrib_format::xml_depth::check(&part, &data)?;
-        check_as_docx_rs_reads(&part, &data)?;
+        check_as_docx_rs_reads(&part, &data, &demand)?;
     }
     Ok(())
 }
 
-/// Refuse `xml` if `docx-rs` would read it nested past `MAX_XML_DEPTH`.
+/// The bytes of the member `name`, or `None` when there is no such member or it
+/// cannot be read, in which case `docx-rs` has nothing to parse either.
+fn read_member(
+    archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+    name: &str,
+) -> Option<Vec<u8>> {
+    let mut member = archive.by_name(name).ok()?;
+    let mut data = Vec::new();
+    std::io::Read::read_to_end(&mut member, &mut data).ok()?;
+    Some(data)
+}
+
+/// Refuse `xml` if `docx-rs` would read it nested past `MAX_XML_DEPTH`
+/// (`skrib_format::XmlTooDeep`), or would never finish reading it as `demand`
+/// describes ([`UnfinishedPart`]).
 ///
 /// Measured with the parser `docx-rs` reads with, configured as its
 /// `EventReader::new` configures it and fed through the same `BufReader`, so this
@@ -239,15 +398,18 @@ fn refuse_deep_parts(bytes: &[u8]) -> Result<()> {
 /// the end of the input and nothing follows; after an ill-formed one, an end tag
 /// that does not match, it goes on, and several of `docx-rs`'s readers catch a
 /// child's error (`if let Ok(table) = Table::read(..)`) and go on reading the
-/// same stream, so the elements after it are parsed and have to be counted.
+/// same stream, so the elements after it are parsed and have to be counted. That
+/// is also why the depth is refused first: a part both damaged and nested too deep
+/// is named for the nesting, which is the refusal with a sentence of its own.
 ///
 /// One kind of element is left out of the count: one whose local name holds a NUL
 /// byte. `docx-rs` recognises an element by comparing its local name with names
 /// that hold none, so such an element can never enter one of its readers. It is
 /// what every tag of a part genuinely written in UTF-16 looks like to a parser
 /// reading it byte by byte, which `quick-xml` does, and counting them would refuse
-/// such a file as nested past the ceiling when `docx-rs` reads nothing from it.
-fn check_as_docx_rs_reads(part: &str, xml: &[u8]) -> Result<(), skrib_format::XmlTooDeep> {
+/// such a file as nested past the ceiling, or as cut short, when `docx-rs` reads
+/// nothing from it.
+fn check_as_docx_rs_reads(part: &str, xml: &[u8], demand: &Demand) -> Result<()> {
     use quick_xml::events::Event;
 
     let mut reader = quick_xml::Reader::from_reader(std::io::BufReader::new(xml));
@@ -256,17 +418,24 @@ fn check_as_docx_rs_reads(part: &str, xml: &[u8]) -> Result<(), skrib_format::Xm
     config.check_end_names = true;
     config.expand_empty_elements = false;
 
+    let line_at = |offset: u64| {
+        let offset = usize::try_from(offset).unwrap_or(xml.len()).min(xml.len());
+        1 + xml[..offset].iter().filter(|&&b| b == b'\n').count()
+    };
     let refuse = |depth: usize, read_to: u64| {
-        let read_to = usize::try_from(read_to).unwrap_or(xml.len()).min(xml.len());
-        skrib_format::XmlTooDeep {
+        anyhow::Error::new(skrib_format::XmlTooDeep {
             part: part.to_string(),
             depth,
-            line: 1 + xml[..read_to].iter().filter(|&&b| b == b'\n').count(),
-        }
+            line: line_at(read_to),
+        })
     };
     let mut buf = Vec::new();
     let mut depth = 0usize;
     let mut errors_in_a_row = 0usize;
+    // The first thing in the part that would keep a reader waiting for ever.
+    let mut flaw: Option<Flaw> = None;
+    // The local name of the first element `docx-rs` could recognise: the root.
+    let mut root: Option<String> = None;
     loop {
         buf.clear();
         let event = reader.read_event_into(&mut buf);
@@ -275,12 +444,14 @@ fn check_as_docx_rs_reads(part: &str, xml: &[u8]) -> Result<(), skrib_format::Xm
         }
         match event {
             Ok(Event::Start(tag)) if names_an_element(tag.name().as_ref()) => {
+                root.get_or_insert_with(|| local_name(tag.name().as_ref()));
                 depth += 1;
                 if depth > skrib_format::MAX_XML_DEPTH {
                     return Err(refuse(depth, reader.buffer_position()));
                 }
             }
             Ok(Event::Empty(tag)) if names_an_element(tag.name().as_ref()) => {
+                root.get_or_insert_with(|| local_name(tag.name().as_ref()));
                 if depth + 1 > skrib_format::MAX_XML_DEPTH {
                     return Err(refuse(depth + 1, reader.buffer_position()));
                 }
@@ -288,48 +459,128 @@ fn check_as_docx_rs_reads(part: &str, xml: &[u8]) -> Result<(), skrib_format::Xm
             Ok(Event::End(tag)) if names_an_element(tag.name().as_ref()) => {
                 depth = depth.saturating_sub(1);
             }
-            Ok(Event::Eof) => return Ok(()),
+            Ok(Event::Eof) => {
+                if depth > 0 && flaw.is_none() {
+                    flaw = Some(Flaw::CutShort {
+                        open: depth,
+                        line: line_at(reader.buffer_position()),
+                    });
+                }
+                break;
+            }
             Ok(_) => {}
-            Err(_) => {
+            Err(error) => {
+                if flaw.is_none() {
+                    flaw = Some(Flaw::Malformed {
+                        error: error.to_string(),
+                        line: line_at(reader.error_position()),
+                    });
+                }
                 // An ill-formed error consumes what it rejected, a syntax error
                 // ends the stream, and reading from memory has no I/O error, so
                 // the stream reaches its end long before this. The count only
                 // guarantees that the loop does.
                 errors_in_a_row += 1;
                 if errors_in_a_row > xml.len() {
-                    return Ok(());
+                    break;
                 }
             }
         }
     }
+
+    let unfinished = |flaw: Flaw| {
+        anyhow::Error::new(UnfinishedPart {
+            part: part.to_string(),
+            flaw,
+        })
+    };
+    if demand.to_its_end
+        && let Some(flaw) = flaw
+    {
+        return Err(unfinished(flaw));
+    }
+    if let Some(expected) = demand
+        .roots
+        .iter()
+        .find(|expected| root.as_deref() != Some(**expected))
+    {
+        return Err(unfinished(Flaw::Root {
+            expected,
+            found: root,
+        }));
+    }
+    Ok(())
 }
 
 /// Whether `docx-rs` could recognise an element by this qualified name: whether
 /// its local part, everything after the first `:` as `docx-rs` splits it, is free
 /// of NUL bytes. See [`check_as_docx_rs_reads`].
 fn names_an_element(name: &[u8]) -> bool {
-    let local = name
-        .iter()
-        .position(|&b| b == b':')
-        .map_or(name, |colon| &name[colon + 1..]);
-    !local.contains(&0)
+    !local_part(name).contains(&0)
 }
 
-/// The names of every part [`refuse_deep_parts`] has to check, normalised the way
-/// `docx-rs`'s `read_zip` normalises a name before looking it up.
-fn xml_parts(archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>) -> Vec<String> {
+/// The local part of a qualified name, split at the first `:` as `docx-rs` splits
+/// it.
+fn local_part(name: &[u8]) -> &[u8] {
+    name.iter()
+        .position(|&b| b == b':')
+        .map_or(name, |colon| &name[colon + 1..])
+}
+
+/// [`local_part`], as text.
+fn local_name(name: &[u8]) -> String {
+    String::from_utf8_lossy(local_part(name)).into_owned()
+}
+
+/// A member name as `docx-rs`'s `read_zip` normalises it before looking it up.
+fn normalise_part(name: &str) -> String {
+    name.replace('\\', "/").trim_start_matches('/').to_string()
+}
+
+/// The name `docx-rs` reads `part`'s relationships from: `_rels/` beside it, then
+/// its stem with `xml.rels` put in place of its last extension. Spelled as the
+/// private `find_rels_filename` spells it, quirk included (`main.v1.xml` has its
+/// relationships in `_rels/main.xml.rels`), and normalised as `read_zip` normalises
+/// it. `None` where `docx-rs` finds no name either.
+fn rels_part_for(part: &std::path::Path) -> Option<String> {
+    let dir = part.parent()?;
+    let base = part.file_stem()?;
+    let rels = dir.join("_rels").join(base).with_extension("xml.rels");
+    Some(normalise_part(rels.to_str()?))
+}
+
+/// Add `demand` to what is asked of the part `name`.
+fn want(parts: &mut BTreeMap<String, Demand>, name: &str, demand: Demand) {
+    parts.entry(normalise_part(name)).or_default().merge(demand);
+}
+
+/// Every part [`refuse_unreadable_parts`] has to check, by the name `docx-rs`'s
+/// `read_zip` looks it up by, with what `docx-rs` needs of it.
+///
+/// **The main part's relationships are checked here, before they are read.**
+/// Finding most of the parts means reading those relationships with `docx-rs`'s
+/// own `read_document_rels`, whose loop stops only at a `Relationships` end tag
+/// and passes over the end of its input: a relationships part cut short, empty,
+/// or holding anything else would stop this very check, as it would stop
+/// `read_docx`. Those are refused here instead.
+fn xml_parts(
+    archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+) -> Result<BTreeMap<String, Demand>> {
     use docx_rs::FromXML;
 
-    let mut parts: Vec<String> = [
+    let mut parts: BTreeMap<String, Demand> = BTreeMap::new();
+    for name in [
+        // Read by `docx-rs`'s iterators, which stop at the end of their input.
         "[Content_Types].xml",
         "_rels/.rels",
-        // The raw pass's three, read by these names whatever the relationships say.
+        // The raw pass's three, read by these names whatever the relationships
+        // say, with `roxmltree`.
         "word/document.xml",
         "word/comments.xml",
         "word/footnotes.xml",
-    ]
-    .map(str::to_string)
-    .to_vec();
+    ] {
+        want(&mut parts, name, Demand::default());
+    }
 
     let package = docx_rs::read_zip(archive, "_rels/.rels")
         .ok()
@@ -343,24 +594,33 @@ fn xml_parts(archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>) -> Vec<Strin
         .as_ref()
         .and_then(|rels| rels.find_target(CUSTOM_PROPERTIES))
     {
-        parts.push(custom.2.clone());
+        want(&mut parts, &custom.2, Demand::to_its_end());
     }
-    parts.push(main.clone());
+    want(&mut parts, &main, Demand::to_its_end());
+
+    if let Some(main_rels) = rels_part_for(std::path::Path::new(&main))
+        && let Some(data) = read_member(archive, &main_rels)
+    {
+        check_as_docx_rs_reads(&main_rels, &data, &Demand::root(RELATIONSHIPS_ROOT))?;
+    }
     if let Ok(rels) = docx_rs::read_document_rels(archive, &main) {
         for kind in XML_RELATIONSHIPS {
             for (_, path, _) in rels.find_target_path(kind).unwrap_or_default() {
-                parts.push(path.to_string_lossy().into_owned());
+                let demand = if kind == STYLES {
+                    Demand::root(STYLES_ROOT)
+                } else {
+                    Demand::to_its_end()
+                };
+                want(&mut parts, &path.to_string_lossy(), demand);
+                if (kind == HEADER || kind == FOOTER)
+                    && let Some(own) = rels_part_for(&path)
+                {
+                    want(&mut parts, &own, Demand::root(RELATIONSHIPS_ROOT));
+                }
             }
         }
     }
-
-    let mut parts: Vec<String> = parts
-        .iter()
-        .map(|name| name.replace('\\', "/").trim_start_matches('/').to_string())
-        .collect();
-    parts.sort_unstable();
-    parts.dedup();
-    parts
+    Ok(parts)
 }
 
 // ---------------------------------------------------------------------------
@@ -1422,7 +1682,7 @@ fn walk_raw_paragraph(
 }
 
 /// Parse one part of the raw pass through `skrib_format::xml_depth`, so it is
-/// bounded like everything else. [`refuse_deep_parts`] has already checked these
+/// bounded like everything else. [`refuse_unreadable_parts`] has already checked these
 /// three by name, so a refusal cannot reach here from [`DocxScanner::scan`].
 fn parse_part<'a>(part: &str, xml: &'a str) -> Result<roxmltree::Document<'a>> {
     skrib_format::xml_depth::parse(part, xml, skrib_format::xml_depth::Dtd::Refuse)
@@ -2468,6 +2728,116 @@ mod tests {
         assert!(parse_date("not a date").is_none());
     }
 
+    /// The name of a part's relationships is `docx-rs`'s own, quirk included: asked
+    /// for the relationships of each main part below, `read_document_rels` finds the
+    /// member [`rels_part_for`] names and reads the relationship in it.
+    #[test]
+    fn a_parts_relationships_are_found_where_docx_rs_looks_for_them() {
+        use std::io::Write;
+        for main in [
+            "word/document.xml",
+            "word/main.v1.xml",
+            "document.xml",
+            "a/b/c.xml",
+        ] {
+            let rels_name = rels_part_for(std::path::Path::new(main)).expect("a name");
+            let mut out = std::io::Cursor::new(Vec::new());
+            {
+                let mut writer = zip::ZipWriter::new(&mut out);
+                let options = zip::write::SimpleFileOptions::default();
+                writer
+                    .start_file(rels_name.as_str(), options)
+                    .expect("member");
+                writer
+                    .write_all(
+                        format!(
+                            "<Relationships><Relationship Id=\"rId1\" Type=\"{STYLES}\" \
+                             Target=\"styles.xml\"/></Relationships>"
+                        )
+                        .as_bytes(),
+                    )
+                    .expect("member bytes");
+                writer.finish().expect("finish");
+            }
+            let bytes = out.into_inner();
+            let mut archive = zip::ZipArchive::new(std::io::Cursor::new(&bytes[..])).expect("zip");
+            let rels = docx_rs::read_document_rels(&mut archive, main)
+                .unwrap_or_else(|e| panic!("{main}: docx-rs reads {rels_name}: {e:?}"));
+            assert!(
+                rels.find_target_path(STYLES).is_some(),
+                "{main}: the relationship in {rels_name} is read"
+            );
+        }
+        assert_eq!(
+            rels_part_for(std::path::Path::new("word/main.v1.xml")).as_deref(),
+            Some("word/_rels/main.xml.rels")
+        );
+    }
+
+    /// Each way a part can keep `docx-rs` reading for ever, measured on the part alone,
+    /// named with where it was found. A lenient part (read by a loop that stops at the
+    /// end of its input) is refused only for its depth, as before.
+    #[test]
+    fn a_part_docx_rs_would_never_finish_is_named_with_where() {
+        let unfinished = |xml: &str, demand: &Demand| {
+            check_as_docx_rs_reads("word/document.xml", xml.as_bytes(), demand)
+                .err()
+                .map(|e| e.to_string())
+        };
+        let read = Demand::to_its_end();
+
+        let cut = unfinished("<w:document>\n<w:body>\n<w:p>", &read).unwrap_or_default();
+        assert!(cut.contains("cut short at line 3"), "{cut}");
+        assert!(cut.contains("3 elements still open"), "{cut}");
+        let one = unfinished("<w:document>", &read).unwrap_or_default();
+        assert!(one.contains("an element still open"), "{one}");
+
+        let damaged =
+            unfinished("<w:document>\n<w:p></w:x></w:document>", &read).unwrap_or_default();
+        assert!(damaged.contains("damaged at line 2"), "{damaged}");
+
+        let syntax = unfinished("<w:document>\n\n<!- ></w:document>", &read).unwrap_or_default();
+        assert!(syntax.contains("damaged at line 3"), "{syntax}");
+
+        let rooted = Demand::root(STYLES_ROOT);
+        let other = unfinished("<w:docDefaults/>", &rooted).unwrap_or_default();
+        assert!(
+            other.contains("<styles>") && other.contains("<docDefaults>"),
+            "{other}"
+        );
+        let none = unfinished("", &rooted).unwrap_or_default();
+        assert!(none.contains("holds none"), "{none}");
+
+        // Whole, each is read.
+        for (xml, demand) in [
+            (
+                "<w:document>\n<w:body>\n<w:p/></w:body></w:document>",
+                &read,
+            ),
+            ("<w:styles><w:style/></w:styles>", &rooted),
+            ("", &read),
+        ] {
+            assert_eq!(unfinished(xml, demand), None, "{xml:?}");
+        }
+        // Lenient, the damage is left to the reader that copes with it.
+        assert_eq!(unfinished("<Types><Default", &Demand::default()), None);
+    }
+
+    /// A part genuinely written in UTF-16 is, to a parser reading it byte by byte, one
+    /// start tag after another, every name holding NUL bytes: never closed, and never
+    /// recognised by `docx-rs` either. It is not taken for a part cut short.
+    #[test]
+    fn a_part_in_utf16_is_not_taken_for_one_cut_short() {
+        let text = "<?xml version=\"1.0\" encoding=\"UTF-16\"?><w:document><w:body><w:p><w:r>\
+                    <w:t>Words.</w:t></w:r></w:p></w:body></w:document>";
+        let mut utf16 = vec![0xFF, 0xFE];
+        for unit in text.encode_utf16() {
+            utf16.extend_from_slice(&unit.to_le_bytes());
+        }
+        let checked = check_as_docx_rs_reads("word/document.xml", &utf16, &Demand::to_its_end());
+        assert!(checked.is_ok(), "{checked:?}");
+    }
+
     /// How deep `docx-rs`'s own event reader goes into `xml`: the stream its
     /// readers consume, counted as [`check_as_docx_rs_reads`] counts and read past
     /// errors as they can be.
@@ -2555,7 +2925,9 @@ mod tests {
         ];
         for (shape, xml, past) in shapes {
             let deepest = depth_docx_rs_reads(&xml);
-            let refused = check_as_docx_rs_reads("part", &xml).err();
+            let refused = check_as_docx_rs_reads("part", &xml, &Demand::default())
+                .err()
+                .and_then(|e| skrib_format::xml_depth::too_deep(&e).cloned());
             assert_eq!(
                 deepest > skrib_format::MAX_XML_DEPTH,
                 past,
