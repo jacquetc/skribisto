@@ -20,7 +20,7 @@ use common::entities::ContentRole;
 use skrib_format::{
     BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BundledBinder, BundledItem,
     DictWordFile, FORMAT_VERSION, InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle,
-    WorkFile, binder_dir_name, html_to_djot, new_unique_id, plain_text_to_djot_verbatim,
+    WorkFile, binder_dir_name, html_to_djot_and_text, new_unique_id, plain_text_to_djot_verbatim,
     prose_file_name, prose_kind, prose_relpath,
 };
 use skribisto_model::SubRoleExt;
@@ -97,6 +97,16 @@ pub fn build_bundle(
             manuscript_name,
             &mut manuscript_items,
         );
+    }
+
+    // Said once for the whole project: a text is converted more than once on the way
+    // (a separator's is only looked at), and a line per conversion would repeat itself.
+    if !b.flattened.is_empty() {
+        b.warnings.push(format!(
+            "{} rich text(s) were nested deeper than a Skribisto project can hold; their \
+             words were kept as plain text, without their formatting",
+            b.flattened.len()
+        ));
     }
 
     // Dictionary.
@@ -287,6 +297,10 @@ struct Builder<'a> {
     /// a node whose index falls past the end simply has no status.
     status_ids: Vec<u64>,
     warnings: Vec<String>,
+    /// The rich texts whose markup nested past what a project may hold, stored as plain
+    /// text instead (`skrib_format::html_to_djot_and_text`), each by a hash of its HTML so
+    /// a text converted twice is counted once.
+    flattened: std::collections::HashSet<u64>,
     imported_items: u64,
     skipped_trashed: u64,
     /// Progress reporter (percent in the 20‑88 % band, current item label).
@@ -318,6 +332,7 @@ impl<'a> Builder<'a> {
             statuses: Vec::new(),
             status_ids: Vec::new(),
             warnings: Vec::new(),
+            flattened: std::collections::HashSet::new(),
             imported_items: 0,
             skipped_trashed: 0,
             report,
@@ -992,14 +1007,22 @@ impl<'a> Builder<'a> {
     fn convert(&mut self, html: Option<&str>) -> String {
         match html {
             None => String::new(),
-            Some(h) => match html_to_djot(h) {
+            Some(h) => match html_to_djot_and_text(h) {
                 // Qt writes a full HTML boilerplate even for an *empty* document
                 // (a single empty paragraph), which converts to whitespace, not
                 // "". Collapse a whitespace-only result to empty so the emptiness
                 // checks (skip empty groups / synopses / overflow children) fire;
                 // real prose is returned verbatim.
-                Ok(d) if d.trim().is_empty() => String::new(),
-                Ok(d) => d,
+                Ok(converted) if converted.djot.trim().is_empty() => String::new(),
+                Ok(converted) => {
+                    if converted.flattened {
+                        use std::hash::{Hash, Hasher};
+                        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                        h.hash(&mut hasher);
+                        self.flattened.insert(hasher.finish());
+                    }
+                    converted.djot
+                }
                 Err(e) => {
                     self.warnings
                         .push(format!("could not convert some rich text: {e}"));
@@ -1438,6 +1461,67 @@ mod tests {
             !prose.contains("Lizzy"),
             "aliases must not be duplicated into the synopsis: {prose:?}"
         );
+    }
+
+    /// A text nested past what a project may hold is stored as prose the next load
+    /// accepts, its words kept, and the project says so once, however many times the
+    /// text is converted on the way.
+    #[test]
+    fn a_text_nested_past_what_a_project_holds_keeps_its_words_and_is_reported_once() {
+        let deep = format!(
+            "{}<p>Deep words.</p>{}",
+            "<blockquote>".repeat(150),
+            "</blockquote>".repeat(150)
+        );
+        let source = PlumeSource::for_tests_with_html(&[("text/T1.html", &deep)]);
+        let tree = PlumeTree {
+            project_name: "P".into(),
+            roots: vec![node(PlumeKind::Scene, 1, "A", "")],
+        };
+        let attendance = PlumeAttendance {
+            spinbox_label: String::new(),
+            groups: vec![],
+        };
+        let info = PlumeInfo {
+            title: "T".into(),
+            created_at: None,
+            updated_at: None,
+        };
+        let m = build_bundle(
+            &tree,
+            &attendance,
+            &info,
+            &[],
+            &source,
+            "Manuscript",
+            "Story Bible",
+            &[],
+            &|_, _| {},
+            &AtomicBool::new(false),
+        );
+        let prose: Vec<&String> = m
+            .bundle
+            .binders
+            .iter()
+            .flat_map(|b| b.items.iter())
+            .flat_map(|i| i.prose.values())
+            .filter(|p| !p.is_empty())
+            .collect();
+        let [prose] = prose.as_slice() else {
+            panic!("one prose file with words, got {prose:?}");
+        };
+        assert!(
+            skrib_format::djot_depth::check(prose).is_ok(),
+            "the next load must accept {prose:?}"
+        );
+        assert!(prose.contains("Deep words"), "{prose:?}");
+        let said: Vec<&String> = m
+            .warnings
+            .iter()
+            .filter(|w| w.contains("nested deeper"))
+            .collect();
+        assert_eq!(said.len(), 1, "{:?}", m.warnings);
+        assert!(said[0].starts_with("1 rich text"), "{}", said[0]);
     }
 
     // --- Plume `status` → the workflow ladder --------------------------------

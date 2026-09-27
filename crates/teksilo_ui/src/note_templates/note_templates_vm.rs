@@ -344,6 +344,11 @@ fn file_label(path: &Path) -> String {
 /// Djot end to end, so converting at import means the stored body is exactly what
 /// `insert_djot` will paste, with no per-insert conversion and no chance of the two
 /// dialects diverging later. Anything that is not `.md` is taken as Djot verbatim.
+///
+/// A file nested deeper than a project may hold (`skrib_format::MAX_DJOT_DEPTH`) is
+/// refused, and so reported among the files skipped. Stored, its body would make the next
+/// load of the project refuse to open it at all; and a Markdown file converted as its
+/// words alone would be a template without the structure that made it one.
 fn read_template_file(path: &Path) -> Result<TemplateRow> {
     let meta = std::fs::metadata(path).with_context(|| format!("reading {}", path.display()))?;
     if meta.len() as usize > MAX_TEMPLATE_BYTES {
@@ -359,8 +364,15 @@ fn read_template_file(path: &Path) -> Result<TemplateRow> {
         .and_then(|e| e.to_str())
         .is_some_and(|e| e.eq_ignore_ascii_case("md") || e.eq_ignore_ascii_case("markdown"));
     let body = if is_markdown {
-        markdown_to_djot(&text)?
+        let converted = skrib_format::markdown_to_djot_and_text(&text)?;
+        if converted.flattened {
+            bail!("{} is nested too deeply for a template", path.display());
+        }
+        converted.djot
     } else {
+        if skrib_format::djot_depth::check(&text).is_err() {
+            bail!("{} is nested too deeply for a template", path.display());
+        }
         text
     };
     let stem = path
@@ -373,16 +385,6 @@ fn read_template_file(path: &Path) -> Result<TemplateRow> {
         body,
         starred: false,
     })
-}
-
-/// Markdown → Djot in one hop, through `text-document`'s own document model.
-///
-/// Not the two-hop `html_to_djot(markdown_to_html(..))`: that round-trips through Qt-shaped
-/// rich-text HTML and loses structure the direct path keeps.
-fn markdown_to_djot(markdown: &str) -> Result<String> {
-    let doc = teksilo::text_document::TextDocument::new();
-    doc.set_markdown(markdown)?.wait()?;
-    Ok(doc.to_djot()?)
 }
 
 #[cfg(test)]
@@ -467,13 +469,33 @@ mod tests {
 
     #[test]
     fn markdown_becomes_djot_with_its_structure_intact() {
-        let djot =
-            markdown_to_djot("# Title\n\nSome **bold** text.\n\n- one\n- two\n").expect("convert");
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("outline.md");
+        std::fs::write(&path, "# Title\n\nSome **bold** text.\n\n- one\n- two\n").unwrap();
+        let djot = read_template_file(&path).expect("read").body;
         assert!(djot.contains("# Title"), "heading survives: {djot}");
+        assert!(djot.contains("*bold*"), "strong survives: {djot}");
         assert!(
-            djot.contains("one") && djot.contains("two"),
+            djot.contains("- one") && djot.contains("- two"),
             "list survives: {djot}"
         );
+    }
+
+    /// A file nested deeper than a project may hold is refused, whichever way it is
+    /// written. Stored, it would stop the project from opening on its next load.
+    #[test]
+    fn a_file_nested_past_what_a_project_holds_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let deep = format!("{}Deep words.\n", "> ".repeat(150));
+        for name in ["deep.djot", "deep.md"] {
+            let path = dir.path().join(name);
+            std::fs::write(&path, &deep).unwrap();
+            assert!(read_template_file(&path).is_err(), "{name} must be refused");
+        }
+        // Nesting a project holds is imported as it is.
+        let path = dir.path().join("quoted.djot");
+        std::fs::write(&path, "> > A quotation within a quotation.\n").unwrap();
+        assert!(read_template_file(&path).is_ok());
     }
 
     /// `.djot` input is stored verbatim — no conversion, no normalisation.

@@ -52,6 +52,18 @@ impl PlumeSource {
             html: HashMap::new(),
         }
     }
+
+    /// [`Self::for_tests`], carrying the HTML members given as `(member path, html)`,
+    /// e.g. `("text/T1.html", "<p>Words.</p>")`.
+    pub(super) fn for_tests_with_html(members: &[(&str, &str)]) -> Self {
+        Self {
+            html: members
+                .iter()
+                .map(|(path, html)| (path.to_string(), html.to_string()))
+                .collect(),
+            ..Self::for_tests()
+        }
+    }
 }
 
 impl PlumeSource {

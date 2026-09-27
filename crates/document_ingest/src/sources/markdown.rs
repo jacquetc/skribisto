@@ -117,31 +117,37 @@ fn segment(
     diagnostics: &mut Vec<ImportDiagnostic>,
 ) -> Result<Vec<SourceBlock>> {
     let mut blocks = Vec::new();
-    // The half-open byte range of the prose accumulated since the last boundary.
-    let mut prose: Option<(usize, usize)> = None;
+    // The half-open byte range of every top-level block of the prose accumulated since
+    // the last boundary, in order.
+    let mut prose: Vec<(usize, usize)> = Vec::new();
     let mut depth = 0usize;
     let mut pending_heading: Option<(u8, usize, usize)> = None;
     let mut heading_text = String::new();
     let mut html_blocks = 0usize;
     let mut nested_rules = 0usize;
     let mut images = Vec::new();
+    // Paragraphs stored as plain text because their markup nested past what a project may
+    // hold (see `skrib_format::markdown_to_djot_and_text`).
+    let mut flattened = 0usize;
 
-    let flush_prose = |prose: &mut Option<(usize, usize)>, blocks: &mut Vec<SourceBlock>| {
-        if let Some((start, end)) = prose.take() {
-            let raw = &body[start..end];
-            if !raw.trim().is_empty() {
-                // Both answers from one parse: the Djot that gets stored, and the
-                // plain text an annotation would be measured against. Markdown
-                // carries no annotations, but a block must describe itself the
-                // same way whichever scanner made it.
-                let (djot, text) = skrib_format::markdown_to_djot_and_text(raw)?;
-                if !djot.trim().is_empty() {
-                    blocks.push(SourceBlock::Prose { djot, text });
+    let flush_prose =
+        |prose: &mut Vec<(usize, usize)>, blocks: &mut Vec<SourceBlock>, flattened: &mut usize| {
+            let parts = std::mem::take(prose);
+            let (Some((start, _)), Some((_, end))) = (parts.first(), parts.last()) else {
+                return Ok(());
+            };
+            if !body[*start..*end].trim().is_empty() {
+                let run = convert_run(body, &parts)?;
+                *flattened += run.flattened;
+                if !run.djot.trim().is_empty() {
+                    blocks.push(SourceBlock::Prose {
+                        djot: run.djot,
+                        text: run.text,
+                    });
                 }
             }
-        }
-        Ok::<(), anyhow::Error>(())
-    };
+            Ok::<(), anyhow::Error>(())
+        };
 
     for (event, range) in Parser::new_ext(body, options()).into_offset_iter() {
         match &event {
@@ -149,11 +155,11 @@ fn segment(
                 if depth == 0 {
                     match classify(&body[range.clone()], tag) {
                         Boundary::SceneBreak(tier) => {
-                            flush_prose(&mut prose, &mut blocks)?;
+                            flush_prose(&mut prose, &mut blocks, &mut flattened)?;
                             blocks.push(SourceBlock::SceneBreak { tier });
                         }
                         Boundary::Heading { level } => {
-                            flush_prose(&mut prose, &mut blocks)?;
+                            flush_prose(&mut prose, &mut blocks, &mut flattened)?;
                             heading_text.clear();
                             pending_heading = Some((level, range.start, range.end));
                         }
@@ -177,7 +183,7 @@ fn segment(
             // most common way a manuscript from another tool spells one, and the
             // conversion layer would delete it if it were left in the prose.
             Event::Rule if depth == 0 => {
-                flush_prose(&mut prose, &mut blocks)?;
+                flush_prose(&mut prose, &mut blocks, &mut flattened)?;
                 let tier = scene_break::tier_of_plain_line(body[range.clone()].trim())
                     .unwrap_or(SceneBreakTier::Minor);
                 blocks.push(SourceBlock::SceneBreak { tier });
@@ -206,7 +212,7 @@ fn segment(
             images.push(dest_url.to_string());
         }
     }
-    flush_prose(&mut prose, &mut blocks)?;
+    flush_prose(&mut prose, &mut blocks, &mut flattened)?;
 
     if html_blocks > 0 {
         diagnostics.push(ImportDiagnostic::RawHtmlDropped {
@@ -218,6 +224,12 @@ fn segment(
         diagnostics.push(ImportDiagnostic::NestedBreakDropped {
             path: origin.to_string(),
             count: nested_rules,
+        });
+    }
+    if flattened > 0 {
+        diagnostics.push(ImportDiagnostic::ProseNotVerbatim {
+            path: origin.to_string(),
+            count: flattened,
         });
     }
     for target in images {
@@ -250,11 +262,86 @@ fn classify(raw_span: &str, tag: &Tag<'_>) -> Boundary {
     }
 }
 
-fn extend(prose: &mut Option<(usize, usize)>, start: usize, end: usize) {
-    match prose {
-        Some((_, e)) => *e = (*e).max(end),
-        None => *prose = Some((start, end)),
+/// Add the top-level block at `start..end` to the prose run. A range overlapping the last
+/// one widens it instead, so the parts stay in order and apart, and the run still spans
+/// from the first block's start to the furthest end any of them reached.
+fn extend(prose: &mut Vec<(usize, usize)>, start: usize, end: usize) {
+    match prose.last_mut() {
+        Some((_, last_end)) if start < *last_end => *last_end = (*last_end).max(end),
+        _ => prose.push((start, end)),
     }
+}
+
+/// A prose run as it is stored.
+struct ConvertedRun {
+    djot: String,
+    text: String,
+    /// How many of its paragraphs were stored as plain text.
+    flattened: usize,
+}
+
+/// Convert the prose run made of the top-level blocks `parts` of `body`.
+///
+/// Both answers come from one parse: the Djot that gets stored, and the plain text an
+/// annotation would be measured against. Markdown carries no annotations, but a block must
+/// describe itself the same way whichever scanner made it.
+///
+/// The run is converted whole, which keeps what one paragraph borrows from another (a link
+/// whose reference is defined further down). Markup nesting past what a project may hold
+/// makes the converter keep only the words of everything it was handed
+/// (`skrib_format::markdown_to_djot_and_text`), so a run where that happened is converted
+/// again a top-level block at a time: only the blocks nested too deep lose their
+/// formatting, and a chapter keeps its italics around one pathological quotation.
+fn convert_run(body: &str, parts: &[(usize, usize)]) -> Result<ConvertedRun> {
+    let (Some((start, _)), Some((_, end))) = (parts.first(), parts.last()) else {
+        return Ok(ConvertedRun {
+            djot: String::new(),
+            text: String::new(),
+            flattened: 0,
+        });
+    };
+    let whole = skrib_format::markdown_to_djot_and_text(&body[*start..*end])?;
+    // One paragraph per line of what a flattened conversion kept.
+    let whole_run = |whole: skrib_format::ConvertedDjot| {
+        let flattened = if whole.flattened {
+            whole.text.lines().count()
+        } else {
+            0
+        };
+        ConvertedRun {
+            djot: whole.djot,
+            text: whole.text,
+            flattened,
+        }
+    };
+    if !whole.flattened || parts.len() == 1 {
+        return Ok(whole_run(whole));
+    }
+
+    let mut djot: Vec<String> = Vec::with_capacity(parts.len());
+    let mut flattened = 0usize;
+    for (start, end) in parts {
+        let part = skrib_format::markdown_to_djot_and_text(&body[*start..*end])?;
+        if part.flattened {
+            flattened += part.text.lines().count();
+        }
+        if !part.djot.trim().is_empty() {
+            djot.push(part.djot);
+        }
+    }
+    let djot = djot.join("\n\n");
+    // Each part is within the ceiling on its own, and blocks separated by a blank line do
+    // not nest inside one another; should a part leave something open that the next one
+    // closes over, the words of the whole run are what is stored.
+    if skrib_format::djot_depth::check(&djot).is_err() {
+        return Ok(whole_run(whole));
+    }
+    let (text, _) = skrib_format::djot_plain_text(&djot)?;
+    Ok(ConvertedRun {
+        djot,
+        text,
+        flattened,
+    })
 }
 
 /// Footnote *definitions* — lines like `[^1]: the note`.
@@ -457,6 +544,45 @@ mod tests {
         // It must not have been promoted to a real scene break either — only a
         // top-level break is structural.
         assert!(breaks(&doc).is_empty());
+    }
+
+    /// A quotation nested two hundred deep converts to Djot the next load of the project
+    /// would refuse. Its words are stored as plain text instead, the paragraphs around it
+    /// keep their formatting, and the writer is told how many paragraphs lost theirs.
+    #[test]
+    fn markdown_nested_past_what_a_project_holds_arrives_as_words_and_is_reported() {
+        let src = format!(
+            "# Chapter\n\nAbove, *leaning*.\n\n{}Deep words.\n\nBelow, **firmly**.\n",
+            "> ".repeat(200)
+        );
+        let doc = scan(&src);
+        let prose: Vec<(&str, &str)> = doc
+            .blocks
+            .iter()
+            .filter_map(|b| match b {
+                SourceBlock::Prose { djot, text } => Some((djot.as_str(), text.as_str())),
+                _ => None,
+            })
+            .collect();
+        let [(djot, text)] = prose.as_slice() else {
+            panic!("one prose block: {:?}", doc.blocks);
+        };
+        assert!(
+            skrib_format::djot_depth::check(djot).is_ok(),
+            "the next load must accept {djot:?}"
+        );
+        assert_eq!(*text, "Above, leaning.\nDeep words.\nBelow, firmly.");
+        assert!(
+            djot.contains("_leaning_") && djot.contains("*firmly*"),
+            "the paragraphs around it keep their formatting: {djot:?}"
+        );
+        assert!(
+            doc.diagnostics
+                .iter()
+                .any(|d| matches!(d, ImportDiagnostic::ProseNotVerbatim { count: 1, .. })),
+            "{:?}",
+            doc.diagnostics
+        );
     }
 
     #[test]

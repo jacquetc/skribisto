@@ -157,6 +157,10 @@ pub enum ImportDiagnostic {
     /// paragraphs are not carried. Should the words themselves not read back even then, the
     /// paragraph is counted here too, since what the writer should do is the same: compare
     /// it with the original.
+    ///
+    /// Markdown raises it for the other reason a paragraph can lose its formatting: markup
+    /// nested past what a project may hold (`skrib_format::MAX_DJOT_DEPTH`), stored as its
+    /// words, one paragraph per line, rather than as prose the next load would refuse.
     ProseNotVerbatim { path: String, count: usize },
     /// Stretches of blank space that were underlined or struck through, a line left to fill
     /// in by hand most often, arrive without their line: as plain spaces, or not at all at

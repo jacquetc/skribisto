@@ -458,3 +458,34 @@ fn the_context_is_read_but_never_written() {
     assert_eq!(escape_djot_text("x", context), "x");
     assert_eq!(escape_djot_text("-", context), "\\-");
 }
+
+/// Characters that open a block, or could be counted as nesting, where a line starts.
+const NESTING: &[char] = &[
+    '>', '>', '>', ':', ':', ' ', ' ', '\t', '\u{c}', '\r', '\u{a0}', '\u{3000}', '-', '*', '+',
+    '[', '^', ']', '1', '.', 'x',
+];
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 400, ..ProptestConfig::default() })]
+
+    /// Plain text is stored as prose a load always accepts, however it opens its lines:
+    /// the verbatim writer is the fallback every importer uses when markup nests too
+    /// deep, so it must never be refused itself.
+    #[test]
+    fn plain_text_is_always_within_the_depth_a_load_accepts(
+        lines in prop::collection::vec(
+            prop::collection::vec(prop::sample::select(NESTING), 0..400)
+                .prop_map(|chars| chars.into_iter().collect::<String>()),
+            1..4,
+        ),
+    ) {
+        let text = lines.join("\n");
+        let djot = plain_text_to_djot_verbatim(&text);
+        prop_assert!(
+            crate::djot_depth::check(&djot).is_ok(),
+            "{:?} for {:?}",
+            crate::djot_depth::check(&djot),
+            text
+        );
+    }
+}

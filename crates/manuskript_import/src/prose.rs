@@ -40,16 +40,32 @@ pub fn to_djot(declared_type: &str, body: &str, what: &str) -> Converted {
     // are read as Markdown, which is what Manuskript's own coercion to `md`
     // amounts to, and which leaves plain text plain.
     let converted = if declared_type == "html" {
-        skrib_format::html_to_djot(body)
+        skrib_format::html_to_djot_and_text(body)
     } else {
-        skrib_format::markdown_to_djot(body)
+        skrib_format::markdown_to_djot_and_text(body)
     };
     match converted {
-        Ok(djot) => Converted { djot, notice: None },
+        Ok(converted) if converted.flattened => Converted {
+            djot: converted.djot,
+            notice: Some(format!(
+                "The text of '{what}' is nested deeper than a Skribisto project can hold; its \
+                 words were kept as plain text, without their formatting."
+            )),
+        },
+        Ok(converted) => Converted {
+            djot: converted.djot,
+            notice: None,
+        },
         Err(e) => Converted {
             // Keeping the source is better than keeping nothing: the writer can
-            // see their words and clean up the markup themselves.
-            djot: body.to_string(),
+            // see their words and clean up the markup themselves. Kept as it is
+            // unless the next load of the project would refuse it for its nesting;
+            // then as plain text, which keeps every character and always loads.
+            djot: if skrib_format::djot_depth::check(body).is_ok() {
+                body.to_string()
+            } else {
+                skrib_format::plain_text_to_djot_verbatim(body)
+            },
             notice: Some(format!(
                 "The text of '{what}' could not be converted ({e}); it was kept exactly as it \
                  was written."
@@ -104,6 +120,34 @@ mod tests {
                 out.djot
             );
             assert!(out.notice.is_none());
+        }
+    }
+
+    /// A body nested past what a project may hold is stored as prose the next load
+    /// accepts, its words kept, and the writer is told.
+    #[test]
+    fn a_body_nested_past_what_a_project_holds_keeps_its_words_and_says_so() {
+        let bodies = [
+            ("md", format!("{}Deep words.", "> ".repeat(150))),
+            (
+                "html",
+                format!(
+                    "{}<p>Deep words.</p>{}",
+                    "<blockquote>".repeat(150),
+                    "</blockquote>".repeat(150)
+                ),
+            ),
+        ];
+        for (declared, body) in bodies {
+            let out = to_djot(declared, &body, "a scene");
+            assert!(
+                skrib_format::djot_depth::check(&out.djot).is_ok(),
+                "{declared}: a load must accept {:?}",
+                out.djot
+            );
+            assert!(out.djot.contains("Deep words"), "{declared}: {}", out.djot);
+            let notice = out.notice.unwrap_or_default();
+            assert!(notice.contains("a scene"), "{declared}: {notice}");
         }
     }
 

@@ -70,6 +70,16 @@ impl std::error::Error for TooDeep {}
 /// currently-open `:::` div fences, and one level per two columns of leading
 /// indentation (the coarsest list-nesting unit Djot admits). Their sum is the
 /// bound for that line.
+///
+/// **Whitespace here is ASCII whitespace**, the only kind the parser reads as
+/// indentation or as the space that ends a blockquote marker (`jotdown`'s block
+/// scanner tests `is_ascii_whitespace` at every one of those points). Counting
+/// Unicode whitespace instead got it wrong both ways. A paragraph opening with
+/// a hundred no-break spaces, which the parser reads as text, measured two
+/// hundred columns of indentation, and a project holding one could no longer be
+/// opened. And a run of `>` separated by form feeds or carriage returns, each of
+/// which the parser takes as the space after a marker, stopped the count after
+/// the first `>` while the parser nested one blockquote per marker.
 pub fn check(text: &str) -> Result<(), TooDeep> {
     let mut open_divs = 0usize;
 
@@ -77,7 +87,7 @@ pub fn check(text: &str) -> Result<(), TooDeep> {
         // A div fence is `:::` optionally followed by a class; a bare `:::`
         // closes the innermost one. Both are counted before the depth test, so a
         // line that only closes a fence is judged at the depth it leaves behind.
-        let trimmed = line.trim_start();
+        let trimmed = line.trim_start_matches(|c: char| c.is_ascii_whitespace());
         if let Some(rest) = trimmed.strip_prefix(":::") {
             // A **closing** fence is colons and nothing else. Djot lets a fence
             // be longer than three so that one div can nest inside another, so
@@ -85,7 +95,7 @@ pub fn check(text: &str) -> Result<(), TooDeep> {
             // any non-empty remainder as a class made a closing `::::` count as
             // a second opener. `open_divs` then never came back down, and about
             // fifty legitimately nested pairs were enough to refuse the project.
-            let rest = rest.trim();
+            let rest = rest.trim_matches(|c: char| c.is_ascii_whitespace());
             if rest.is_empty() || rest.chars().all(|c| c == ':') {
                 open_divs = open_divs.saturating_sub(1);
             } else {
@@ -108,7 +118,7 @@ pub fn check(text: &str) -> Result<(), TooDeep> {
         for ch in trimmed.chars() {
             match ch {
                 '>' => quotes += 1,
-                ' ' | '\t' => {}
+                c if c.is_ascii_whitespace() => {}
                 _ => break,
             }
         }
@@ -187,6 +197,34 @@ mod tests {
             check(&text).is_ok(),
             "nested fences must not accumulate depth"
         );
+    }
+
+    /// Only ASCII whitespace indents a Djot line. A paragraph opening with no-break
+    /// spaces, ideographic spaces or narrow no-break spaces is a paragraph whose text
+    /// starts with them, however many there are, and so is one where a run of `>`
+    /// follows them.
+    #[test]
+    fn unicode_spaces_at_a_line_start_are_text_not_indentation() {
+        for space in ['\u{A0}', '\u{3000}', '\u{202F}', '\u{2003}'] {
+            let text = format!(
+                "{}A title set in the middle of the page.\n",
+                space.to_string().repeat(300)
+            );
+            assert!(check(&text).is_ok(), "{space:?} is not indentation");
+            let text = format!("{space}{}x\n", ">".repeat(300));
+            assert!(check(&text).is_ok(), "{space:?} then `>` is text");
+        }
+    }
+
+    /// Every ASCII whitespace character the parser accepts after a blockquote marker
+    /// keeps the count going, not only the space and the tab.
+    #[test]
+    fn a_marker_run_separated_by_any_ascii_whitespace_is_counted_whole() {
+        for space in ['\u{C}', '\r', ' ', '\t'] {
+            let text = format!("{}deep\n", format!(">{space}").repeat(300));
+            let err = check(&text).expect_err("300 levels must be refused");
+            assert!(err.depth > MAX_DEPTH, "{space:?}: {err:?}");
+        }
     }
 
     #[test]

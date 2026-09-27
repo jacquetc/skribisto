@@ -29,12 +29,58 @@ use text_document::{ReplaceFormatPolicy, ReplaceOptions, ReplaceRange, TextDocum
 /// with no error.
 pub use text_document::HTML_FOOTNOTE_ATTR;
 
-/// Convert Qt rich-text HTML to Djot. Blank input → empty string.
-pub fn html_to_djot(html: &str) -> Result<String> {
-    Ok(html_to_djot_and_text(html)?.0)
+/// Prose converted from another markup language, as Djot a bundle can hold.
+///
+/// What [`html_to_djot_and_text`] and [`markdown_to_djot_and_text`] return: the Djot to
+/// store, its plain text, and whether the markup had to be given up to store it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ConvertedDjot {
+    /// The Djot to store. Always within [`crate::MAX_DJOT_DEPTH`], so a load accepts it.
+    pub djot: String,
+    /// Its plain text, from the same parse as `djot`.
+    pub text: String,
+    /// Whether the markup nested past [`crate::MAX_DJOT_DEPTH`], so the words were stored
+    /// as plain text, one paragraph per line, rather than as prose the next load of the
+    /// project would refuse. A caller that can tell the writer should.
+    pub flattened: bool,
 }
 
-/// HTML → (Djot, plain text), from **one** parse.
+/// `djot`, converted from markup whose plain text is `text`, as prose a load accepts.
+///
+/// A converter writes whatever the markup nests, and markup can nest deeper than a bundle
+/// may: two hundred quoted levels, or a list or a code block indented four hundred
+/// columns. Stored as written, such prose is refused by the next load of the project
+/// ([`crate::djot_depth`]), which then cannot be opened at all. So when the Djot would be
+/// refused, the words are kept instead, as plain text, which is always accepted.
+///
+/// The Djot refused is never parsed on the way: its plain text comes from the parse that
+/// wrote it, and the plain Djot written in its place is what is read back.
+fn within_depth(djot: String, text: String) -> Result<ConvertedDjot> {
+    if crate::djot_depth::check(&djot).is_ok() {
+        return Ok(ConvertedDjot {
+            djot,
+            text,
+            flattened: false,
+        });
+    }
+    let djot = plain_text_to_djot_verbatim(&text);
+    let (text, _) = djot_plain_text(&djot)?;
+    Ok(ConvertedDjot {
+        djot,
+        text,
+        flattened: true,
+    })
+}
+
+/// Convert Qt rich-text HTML to Djot. Blank input → empty string.
+///
+/// Markup nested past what a bundle may hold arrives as plain text, as
+/// [`html_to_djot_and_text`] describes.
+pub fn html_to_djot(html: &str) -> Result<String> {
+    Ok(html_to_djot_and_text(html)?.djot)
+}
+
+/// HTML → Djot and plain text, from **one** parse.
 ///
 /// Asking for the two separately would parse the same HTML twice, and leave open the
 /// possibility of the two answers coming from different parses of different input.
@@ -43,9 +89,12 @@ pub fn html_to_djot(html: &str) -> Result<String> {
 /// collapse a double space and have no reading for a centred paragraph, so they write
 /// Djot directly and prove it with [`read_djot`]. This stays for HTML that really is
 /// HTML: legacy content and the Plume and Manuskript bodies stored as it.
-pub fn html_to_djot_and_text(html: &str) -> Result<(String, String)> {
+///
+/// HTML nesting past [`crate::MAX_DJOT_DEPTH`] is stored as its words alone, and says so
+/// ([`ConvertedDjot::flattened`]).
+pub fn html_to_djot_and_text(html: &str) -> Result<ConvertedDjot> {
     if html.trim().is_empty() {
-        return Ok((String::new(), String::new()));
+        return Ok(ConvertedDjot::default());
     }
     // Qt rich text puts CSS in a `<head><style>`; text-document's HTML parser
     // emits the contents of unknown elements as text, so strip non-content
@@ -53,7 +102,7 @@ pub fn html_to_djot_and_text(html: &str) -> Result<(String, String)> {
     let cleaned = strip_block(&strip_block(html, "style"), "script");
     let doc = TextDocument::new();
     doc.set_html(&cleaned)?.wait()?;
-    Ok((doc.to_djot()?, doc.to_plain_text()?))
+    within_depth(doc.to_djot()?, doc.to_plain_text()?)
 }
 
 /// Remove every `<tag …>…</tag>` block (case-insensitive). Byte offsets line up
@@ -108,19 +157,25 @@ pub fn markdown_to_html(markdown: &str) -> Result<String> {
 /// through as source. And YAML front matter is not recognised either: a leading
 /// `---\ntitle: …\n---` parses as a setext heading and corrupts into
 /// `## title: …`, so it must be stripped first.
+///
+/// Markdown nested past what a bundle may hold arrives as plain text, as
+/// [`markdown_to_djot_and_text`] describes.
 pub fn markdown_to_djot(markdown: &str) -> Result<String> {
-    Ok(markdown_to_djot_and_text(markdown)?.0)
+    Ok(markdown_to_djot_and_text(markdown)?.djot)
 }
 
-/// Markdown → (Djot, plain text), from **one** parse. The Markdown twin of
+/// Markdown → Djot and plain text, from **one** parse. The Markdown twin of
 /// [`html_to_djot_and_text`], and for the same reason.
-pub fn markdown_to_djot_and_text(markdown: &str) -> Result<(String, String)> {
+///
+/// Markdown nesting past [`crate::MAX_DJOT_DEPTH`] is stored as its words alone, and says
+/// so ([`ConvertedDjot::flattened`]).
+pub fn markdown_to_djot_and_text(markdown: &str) -> Result<ConvertedDjot> {
     if markdown.trim().is_empty() {
-        return Ok((String::new(), String::new()));
+        return Ok(ConvertedDjot::default());
     }
     let doc = TextDocument::new();
     doc.set_markdown(markdown)?.wait()?;
-    Ok((doc.to_djot()?, doc.to_plain_text()?))
+    within_depth(doc.to_djot()?, doc.to_plain_text()?)
 }
 
 /// The **addressable** text of a Djot string, plus every block's start offset.
@@ -1008,21 +1063,94 @@ mod tests {
     /// One parse, two answers — and they must be answers about the same document.
     #[test]
     fn the_djot_and_the_plain_text_of_one_conversion_agree() {
-        let (djot, text) =
+        let converted =
             html_to_djot_and_text("<p>A <strong>bold</strong> word.</p><p>Second one.</p>")
                 .expect("convert");
-        assert_eq!(djot, "A *bold* word.\n\nSecond one.");
-        assert_eq!(text, "A bold word.\nSecond one.");
-        assert_eq!(djot_plain_text(&djot).expect("convert").0, text);
+        assert_eq!(converted.djot, "A *bold* word.\n\nSecond one.");
+        assert_eq!(converted.text, "A bold word.\nSecond one.");
+        assert_eq!(
+            djot_plain_text(&converted.djot).expect("convert").0,
+            converted.text
+        );
+        assert!(!converted.flattened);
     }
 
     #[test]
     fn markdown_emphasis_survives_into_both_answers() {
-        let (djot, text) = markdown_to_djot_and_text("He was *utterly* lost.").expect("convert");
+        let converted = markdown_to_djot_and_text("He was *utterly* lost.").expect("convert");
         assert_eq!(
-            djot, "He was _utterly_ lost.",
+            converted.djot, "He was _utterly_ lost.",
             "Djot italics, not Markdown's"
         );
-        assert_eq!(text, "He was utterly lost.");
+        assert_eq!(converted.text, "He was utterly lost.");
+        assert!(!converted.flattened);
+    }
+
+    /// Markup nested past what a bundle may hold is kept as its words, in a form the next
+    /// load accepts, and says so. Converted as written, each of these was prose the load
+    /// refuses, which would have left the project unopenable.
+    #[test]
+    fn markup_nested_past_the_ceiling_is_stored_as_words_a_load_accepts() {
+        let quoted_markdown = format!("{}Deep words.", "> ".repeat(150));
+        let listed_markdown = (0..120)
+            .map(|level| format!("{}- Level {level}.", "  ".repeat(level)))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let indented_code = format!("```\n{}Deep words.\n```", " ".repeat(300));
+        let quoted_html = format!(
+            "{}<p>Deep words.</p>{}",
+            "<blockquote>".repeat(150),
+            "</blockquote>".repeat(150)
+        );
+        let preformatted_html = format!("<pre>{}Deep words.</pre>", " ".repeat(300));
+        let conversions = [
+            (
+                "quoted Markdown",
+                markdown_to_djot_and_text(&quoted_markdown),
+            ),
+            (
+                "a nested Markdown list",
+                markdown_to_djot_and_text(&listed_markdown),
+            ),
+            (
+                "an indented code block",
+                markdown_to_djot_and_text(&indented_code),
+            ),
+            ("quoted HTML", html_to_djot_and_text(&quoted_html)),
+            (
+                "preformatted HTML",
+                html_to_djot_and_text(&preformatted_html),
+            ),
+        ];
+        for (shape, converted) in conversions {
+            let converted = converted.expect("convert");
+            assert!(converted.flattened, "{shape}: the markup could not be kept");
+            assert!(
+                crate::djot_depth::check(&converted.djot).is_ok(),
+                "{shape}: a load must accept {:?}",
+                converted.djot
+            );
+            assert_eq!(
+                djot_plain_text(&converted.djot).expect("parse").0,
+                converted.text,
+                "{shape}: the text is what the stored Djot reads back as"
+            );
+        }
+        let quoted = markdown_to_djot_and_text(&quoted_markdown).expect("convert");
+        assert_eq!(quoted.text, "Deep words.");
+        let listed = markdown_to_djot_and_text(&listed_markdown).expect("convert");
+        for level in [0, 60, 119] {
+            assert!(
+                listed.text.contains(&format!("Level {level}.")),
+                "every item's words arrive: {:?}",
+                listed.text
+            );
+        }
+
+        // Nesting a bundle holds is kept as it is.
+        let kept =
+            markdown_to_djot_and_text(&format!("{}Words.", "> ".repeat(20))).expect("convert");
+        assert!(!kept.flattened);
+        assert!(kept.djot.starts_with("> > "), "{:?}", kept.djot);
     }
 }
