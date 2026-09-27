@@ -38,12 +38,39 @@ fn folder_project() -> (tempfile::TempDir, String, std::path::PathBuf) {
 }
 
 /// Repoint the first `path:` in one of the bundle's `.ron` manifests at `evil`.
+///
+/// `evil` goes in as the string it is, escaped the way RON reads a string back:
+/// a Windows path is full of backslashes, and spliced in raw they are escapes the
+/// parser refuses, so the manifest would fail to parse before the rule under test
+/// was ever reached.
 fn repoint_first_path(manifest: &std::path::Path, evil: &str) {
     let text = std::fs::read_to_string(manifest).expect("read manifest");
     let start = text.find("path: \"").expect("a path field") + "path: \"".len();
     let end = start + text[start..].find('"').expect("closing quote");
-    let doctored = format!("{}{}{}", &text[..start], evil, &text[end..]);
+    let doctored = format!("{}{}{}", &text[..start], ron_escaped(evil), &text[end..]);
     std::fs::write(manifest, doctored).expect("write manifest");
+}
+
+/// `text` as it goes between the quotes of a RON string: every backslash and
+/// every quote behind a backslash of its own.
+fn ron_escaped(text: &str) -> String {
+    text.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+/// What [`repoint_first_path`] splices in reads back as the string it was, so the
+/// fixtures that name a file by its absolute path test the rule they are about on
+/// Windows too, where that path is full of backslashes.
+#[test]
+fn a_spliced_path_reads_back_as_the_string_it_was() {
+    for evil in [
+        r"C:\Users\writer\AppData\Local\Temp\.tmpA1b2C3\id_rsa",
+        r"\\server\share\id_rsa",
+        r#"a "quoted" name"#,
+        "../../../../escaped.djot",
+    ] {
+        let literal = format!("\"{}\"", ron_escaped(evil));
+        assert_eq!(ron::from_str::<String>(&literal).as_deref(), Ok(evil));
+    }
 }
 
 /// The whole error chain of a read failure, as one string.
@@ -319,7 +346,7 @@ fn prose_nested_deeply_enough_to_crash_the_parser_is_refused_at_the_bundle() {
     let start = items.find("path: \"").expect("a prose path") + "path: \"".len();
     let end = start + items[start..].find('"').unwrap();
     let rel = &items[start..end];
-    std::fs::write(root.join(rel), format!("{}deep\n", ">".repeat(4_000))).unwrap();
+    std::fs::write(root.join(rel), format!("{}deep\n", "> ".repeat(4_000))).unwrap();
 
     let err = read_bundle(&path).expect_err("unbounded nesting must be refused");
     let msg = chain(&err);
@@ -583,6 +610,127 @@ fn every_shape_of_nesting_past_the_ceiling_is_refused_at_the_bundle_by_name() {
                     }
                 }
             }
+        }
+    }
+}
+
+/// Djot the parser cannot be given though it nests nothing (a heading deeper than it
+/// counts, which panics it on the thread that opens the row, paragraphs of openers
+/// nothing closes, which it takes minutes to read, and paragraphs that keep something
+/// open over thousands of lines, which overflow its stack), in every place a bundle
+/// stores Djot and in both shapes: refused at the bundle, naming the file, the body and
+/// the line.
+#[test]
+fn djot_the_parser_cannot_be_given_is_refused_at_the_bundle_by_name() {
+    for (name, hostile, says) in super::djot_depth::tests::beyond_the_parser() {
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            for place in PlantedIn::ALL {
+                let mut bundle = fixture();
+                let planted = plant(&mut bundle, place, &hostile);
+                let dir = tempfile::tempdir().expect("tmp");
+                let path = dir
+                    .path()
+                    .join("Novel.skrib")
+                    .to_string_lossy()
+                    .into_owned();
+                write_bundle(&path, shape, &bundle).expect("write");
+
+                match read_bundle(&path) {
+                    Err(err) => {
+                        let msg = chain(&err);
+                        assert!(msg.contains(says), "{name}, {shape:?}, {place:?}: {msg}");
+                        assert!(msg.contains(&planted.file), "{name}, {place:?}: {msg}");
+                        assert!(msg.contains(&planted.what), "{name}, {place:?}: {msg}");
+                        assert!(msg.contains("at line "), "{name}: names the line: {msg}");
+                    }
+                    Ok(loaded) => {
+                        parse_every_prose(&loaded);
+                        panic!("{name}, {shape:?}, {place:?}: loaded");
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Paragraphs holding more lines than the ceiling, which the load joins into one line
+/// rather than refusing, in every place a bundle stores Djot, in a folder and in a zip:
+/// the project opens, each body joined, and every piece of Djot it holds parses from a
+/// long operation's stack. Before, each was refused by name, and the project with it.
+#[test]
+fn a_paragraph_the_load_joins_opens_from_every_place() {
+    for (name, held, _) in super::djot_depth::tests::joined_by_the_load() {
+        let Ok(joined) = super::djot_depth::admit(held.clone()) else {
+            panic!("{name}: the load joins it");
+        };
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            let mut bundle = fixture();
+            for place in PlantedIn::ALL {
+                plant(&mut bundle, place, &held);
+            }
+            let dir = tempfile::tempdir().expect("tmp");
+            let path = dir
+                .path()
+                .join("Novel.skrib")
+                .to_string_lossy()
+                .into_owned();
+            write_bundle(&path, shape, &bundle).expect("write");
+            let loaded = match read_bundle(&path) {
+                Ok(loaded) => loaded,
+                Err(err) => panic!("{name}, {shape:?}: {}", chain(&err)),
+            };
+            let stored = every_stored_djot(&loaded);
+            assert_eq!(
+                stored.iter().filter(|djot| **djot == joined).count(),
+                PlantedIn::ALL.len(),
+                "{name}, {shape:?}: every body is kept, joined"
+            );
+            assert!(stored.iter().all(|djot| *djot != held), "{name}, {shape:?}");
+            parse_every_prose(&loaded);
+        }
+    }
+}
+
+/// What the editor writes for a preformatted passage of six hundred lines, pasted and
+/// formatted from end to end (in italics after the paste, pasted in italics, made a
+/// link...), saved as a row's prose and as a comment's body: the project opens again,
+/// in either shape, and the editor reads the prose it gets back as the prose it wrote.
+/// Before, the next load refused the project from 129 lines on.
+#[test]
+fn a_formatted_pasted_passage_the_editor_saved_opens_again() {
+    for (name, djot) in super::djot_depth::tests::formatted_passages(600) {
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            let mut bundle = fixture();
+            let planted = [PlantedIn::Prose, PlantedIn::CommentBody];
+            for place in planted {
+                plant(&mut bundle, place, &djot);
+            }
+            let dir = tempfile::tempdir().expect("tmp");
+            let path = dir
+                .path()
+                .join("Novel.skrib")
+                .to_string_lossy()
+                .into_owned();
+            write_bundle(&path, shape, &bundle).expect("write");
+            let loaded = match read_bundle(&path) {
+                Ok(loaded) => loaded,
+                Err(err) => panic!("{name}, {shape:?}: {}", chain(&err)),
+            };
+            let Ok(joined) = super::djot_depth::admit(djot.clone()) else {
+                panic!("{name}: the load joins it");
+            };
+            let stored = every_stored_djot(&loaded);
+            assert_eq!(
+                stored.iter().filter(|stored| **stored == joined).count(),
+                planted.len(),
+                "{name}, {shape:?}"
+            );
+            assert_eq!(
+                super::djot_depth::tests::reading(joined),
+                super::djot_depth::tests::reading(djot.clone()),
+                "{name}: the editor reads it as it wrote it"
+            );
+            parse_every_prose(&loaded);
         }
     }
 }

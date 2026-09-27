@@ -1859,6 +1859,98 @@ fn new_work_replaces_open_project() {
     assert!(b.binders[0].items.is_empty());
 }
 
+/// A New Work the writer agreed to let replace a project is its own project from its
+/// very first save: nothing of the project it replaced comes with it, neither the
+/// history of that project's prose nor the files it carried for an extension. The
+/// first save used to read both out of the file it was replacing, so the new project
+/// held every version of the old manuscript, to be sent wherever it was sent.
+#[test]
+fn a_new_work_saved_over_another_project_keeps_nothing_of_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir
+        .path()
+        .join("tidewrack.skrib")
+        .to_string_lossy()
+        .into_owned();
+
+    // The project being replaced: a history of its prose, and an extension's file.
+    let mut replaced = sample_bundle();
+    skrib::history::record(&mut replaced, Utc::now());
+    assert!(!replaced.history.is_empty());
+    replaced.carried.insert(
+        "extension/plot.beats.ron".into(),
+        skrib::CarriedFile::new(b"(beats: [(at: 0.5)])".to_vec()),
+    );
+    skrib::write_bundle(&path, SkribShape::ZipFile, &replaced).unwrap();
+    let before = skrib::read_bundle(&path).unwrap();
+    assert!(!before.history.is_empty() && !before.carried.is_empty());
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    new_work(&db, &hub, &path, false, NewWorkTemplate::Novel);
+    // Saved as the app saves a project it has just created: to the file it names.
+    SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            media_root: String::new(),
+            work_id: live_work_id(&db),
+            file_name: String::new(),
+            overwrite: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("the first save of the new project");
+
+    let saved = skrib::read_bundle(&path).unwrap();
+    assert_ne!(
+        saved.manifest.work.unique_id,
+        replaced.manifest.work.unique_id
+    );
+    assert!(
+        saved.carried.is_empty(),
+        "the replaced project's files came along: {:?}",
+        saved.carried.keys().collect::<Vec<_>>()
+    );
+    let old_rows: std::collections::BTreeSet<uuid::Uuid> = replaced
+        .history
+        .entries
+        .iter()
+        .map(|entry| entry.item_uid)
+        .collect();
+    assert!(
+        saved
+            .history
+            .entries
+            .iter()
+            .all(|entry| !old_rows.contains(&entry.item_uid)),
+        "the replaced project's history came along"
+    );
+    for hash in replaced.history.referenced_hashes() {
+        assert!(
+            !saved.history.blobs.contains_key(&hash),
+            "a version of the replaced manuscript is in the new project"
+        );
+    }
+
+    // Its own saves go on from its own file as ever: a second one keeps its history.
+    let first = saved.history.entries.len();
+    SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            media_root: String::new(),
+            work_id: live_work_id(&db),
+            file_name: String::new(),
+            overwrite: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("a second save");
+    assert_eq!(
+        skrib::read_bundle(&path).unwrap().history.entries.len(),
+        first
+    );
+}
+
 // ── Concurrency / robustness regression tests (save-system review F1–F4) ─────
 
 /// Materialise the sample project (folder shape) on disk and load it into a

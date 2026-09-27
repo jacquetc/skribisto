@@ -40,9 +40,13 @@ use std::rc::Rc;
 use crate::models::{ParatextPreset, ParatextPresetsService};
 
 use teksilo::prelude::*; // EventContext, Signal, tr!
-use teksilo::widgets::{Toast, ValidationState};
+use teksilo::widgets::{
+    MessageBox, MessageBoxButtons, StandardButton, StepStatus, StepperController, Toast,
+    ValidationState,
+};
 
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages, folder_state};
+use crate::shared::import_destination::{OpenRefusal, refuse_if_open_saying};
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
@@ -247,6 +251,54 @@ fn location_check(location: &Signal<String>) -> CachedValidation {
     CachedValidation::new(&[location], move || folder_state(&dir.get(), &LOCATION))
 }
 
+/// What is already at the target `<folder>/<slug>`, as the Name field reports it.
+///
+/// A file there is a project Create would replace, so it is a warning, and Create
+/// asks before replacing it, as the project importers do. A folder there is refused
+/// outright: a folder project cannot be replaced by writing a new one into it without
+/// leaving the old one's files behind in it.
+fn target_state(target: &str) -> ValidationState {
+    if target.is_empty() {
+        return ValidationState::None;
+    }
+    let path = std::path::Path::new(target);
+    if path.is_dir() {
+        ValidationState::Error(tr!(new_work_target_is_folder()))
+    } else if path.exists() {
+        ValidationState::Warning(tr!(new_work_target_exists()))
+    } else {
+        ValidationState::None
+    }
+}
+
+/// The target's verdict, worked out whenever the folder, the name or the format is set.
+fn target_check(
+    location: &Signal<String>,
+    name: &Signal<String>,
+    format_idx: &Signal<usize>,
+) -> CachedValidation {
+    let (dir, stem, format) = (location.clone(), name.clone(), format_idx.clone());
+    CachedValidation::new(&[location, name], move || {
+        target_state(&build_target_path(&dir.get(), &stem.get(), format.get()))
+    })
+    .also_on(format_idx)
+}
+
+/// The words New Work refuses a target that is open in a window with.
+static TARGET_OPEN: OpenRefusal = OpenRefusal {
+    title: || tr!(new_work_target_open_title()),
+    text: |name| tr!(new_work_target_open_text(name = name)),
+};
+
+/// One press of Create, as it was asked: the project to create and what it starts
+/// with, taken from the form at that moment. The overwrite question can wait while the
+/// form is edited behind it, and OK creates what was asked about.
+#[derive(Clone)]
+struct CreateRequest {
+    dto: NewWorkDto,
+    starters: crate::app::ProjectStarters,
+}
+
 /// The user's home directory (`$HOME` / `%USERPROFILE%`), or `""` — a starting
 /// point for the Location field; the picker lets them choose any folder.
 fn default_location() -> String {
@@ -273,6 +325,8 @@ pub struct NewWorkViewModel {
     location: Signal<String>,
     /// [`LOCATION`]'s verdict on `location`, cached.
     location_check: CachedValidation,
+    /// What is already at the target the form names, cached ([`target_state`]).
+    target_check: CachedValidation,
     /// Selected default-language locale tag (`Some("en-US")`), or `None`.
     language: Signal<Option<String>>,
     /// Template segment index (`0..=4`).
@@ -405,10 +459,13 @@ impl NewWorkViewModel {
     ) -> Self {
         let (presets, preselected) = load_paratext_presets();
         let location = Signal::new(default_location());
+        let name = Signal::new(String::new());
+        let format_idx = Signal::new(0);
         Self {
-            name: Signal::new(String::new()),
+            target_check: target_check(&location, &name, &format_idx),
+            name,
             author: Signal::new(String::new()),
-            format_idx: Signal::new(0),
+            format_idx,
             location_check: location_check(&location),
             location,
             language: Signal::new(current_locale_tag()),
@@ -484,10 +541,13 @@ impl NewWorkViewModel {
     ) -> Self {
         let (presets, preselected) = load_paratext_presets();
         let location = Signal::new(default_location());
+        let name = Signal::new(String::new());
+        let format_idx = Signal::new(0);
         Self {
-            name: Signal::new(String::new()),
+            target_check: target_check(&location, &name, &format_idx),
+            name,
             author: Signal::new(String::new()),
-            format_idx: Signal::new(0),
+            format_idx,
             location_check: location_check(&location),
             location,
             language: Signal::new(current_locale_tag()),
@@ -609,16 +669,21 @@ impl NewWorkViewModel {
     /// Inline validation for the Work name field: blank → "enter a name"; a name
     /// made only of forbidden/whitespace characters (which would slugify to an
     /// empty, fileless stem) → "no usable characters".
+    ///
+    /// A usable name then reports what is already at the target it makes, from the
+    /// cached check: a project Create will ask before replacing, or a folder it refuses.
     pub fn name_validation(&self) -> Signal<ValidationState> {
-        self.name.map(|n| {
-            if n.trim().is_empty() {
-                ValidationState::Error(tr!(new_work_name_required()))
-            } else if slugify(n).is_empty() {
-                ValidationState::Error(tr!(new_work_name_invalid()))
-            } else {
-                ValidationState::None
-            }
-        })
+        self.name
+            .zip(&self.target_check.signal())
+            .map(|(n, target)| {
+                if n.trim().is_empty() {
+                    ValidationState::Error(tr!(new_work_name_required()))
+                } else if slugify(n).is_empty() {
+                    ValidationState::Error(tr!(new_work_name_invalid()))
+                } else {
+                    target.clone()
+                }
+            })
     }
 
     /// Inline validation for the Location field — the folder must exist, be a
@@ -629,8 +694,11 @@ impl NewWorkViewModel {
     }
 
     /// Whether the wizard may leave its first step — a non-blank name **and** a
-    /// valid location. Reads the location's cached verdict, so neither typing
-    /// the name nor painting the gate touches the filesystem.
+    /// valid location, and no folder at the target they name. Reads the cached
+    /// verdicts, so painting the gate never touches the filesystem. Typing does,
+    /// once per change: each keystroke in the name looks at the target on disk
+    /// again, as a change of the format does, and a change of the location runs
+    /// the location's own check as well, which writes a probe file.
     ///
     /// This is the Stepper's only gate: it sits on the Details step, which is
     /// where both of those fields live, so Next stays off until creation could
@@ -647,7 +715,9 @@ impl NewWorkViewModel {
             return Signal::new(true);
         }
         let name_ok = self.name.map(|n| !slugify(n).is_empty());
-        name_ok.and(&self.location_check.passes())
+        name_ok
+            .and(&self.location_check.passes())
+            .and(&self.target_check.passes())
     }
 
     /// The paratext titles the chosen preset asks for, verbatim.
@@ -754,12 +824,21 @@ impl NewWorkViewModel {
     /// there is `eprintln!`-only (see `App::build`), matching the argv/Open
     /// path's existing error handling. Nothing is open in the Launcher window,
     /// so there is nothing to close.
+    ///
+    /// Either way the target is looked at first. A project open in a window there is
+    /// refused, in the words the importers refuse one with, since creating over it
+    /// would replace the project the window shows and the window's next save would
+    /// write it back over the new one. A project merely there is replaced only once the
+    /// writer has said so, in a question: while it is open the wizard stays on its
+    /// last step (`false`), OK creates the project that was asked about, and Cancel
+    /// sets `wizard`'s last step back from the error that `false` marks it with.
+    ///
     /// Returns whether the work was created — the wizard's Finish gate. `false`
     /// keeps the writer on the last step with it marked in error, instead of a
     /// flow that reports itself finished over a project that does not exist.
     /// Only the in-place path can fail synchronously; the deferred ones have
     /// handed the work to another window by the time anything could go wrong.
-    pub fn create(&self, ctx: &mut EventContext) -> bool {
+    pub fn create(&self, ctx: &mut EventContext, wizard: Option<&StepperController>) -> bool {
         if cfg!(feature = "mocks") {
             // A mocks build has no backend to create into, and the gate that
             // normally guarantees a usable name and a writable folder is off
@@ -770,20 +849,73 @@ impl NewWorkViewModel {
             ctx.dismiss_modal();
             return true;
         }
-        // The gate read a verdict cached when the folder was last chosen; the
-        // folder may have gone since. Checked again against the disk. A failure
-        // holds the wizard, and since the Location field saying why is on the
-        // first step while the writer is on the last, the reason is also put in
-        // front of them here, the way the other failure below is.
-        if !self.location_check.recheck() {
-            let reason = self
-                .location_check
-                .refusal()
-                .map(|reason| reason.resolve_now())
-                .unwrap_or_default();
-            ctx.show_toast(Toast::error(tr!(could_not_create_work(error = reason))));
+        // The gate read verdicts cached when the fields were last set; the disk
+        // may have moved on since. Both are checked again. A failure holds the
+        // wizard, and since the fields saying why are on the first step while the
+        // writer is on the last, the reason is also put in front of them here, the
+        // way the other failure below is.
+        for check in [&self.location_check, &self.target_check] {
+            if !check.recheck() {
+                let reason = check
+                    .refusal()
+                    .map(|reason| reason.resolve_now())
+                    .unwrap_or_default();
+                ctx.show_toast(Toast::error(tr!(could_not_create_work(error = reason))));
+                return false;
+            }
+        }
+        let request = CreateRequest {
+            dto: self.dto(),
+            starters: self.starters(),
+        };
+        let target = request.dto.file_name.clone();
+        // Creating a project where one is open would replace the one a window is
+        // showing, and that window's next save would write it straight back over
+        // the new one: both lose work. Refused, as the importers refuse it.
+        if refuse_if_open_saying(ctx, &target, &TARGET_OPEN) {
             return false;
         }
+        if std::path::Path::new(&target).exists() {
+            let vm = self.clone();
+            let wizard = wizard.cloned();
+            let name = std::path::Path::new(&target)
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_else(|| target.clone());
+            MessageBox::warning(tr!(new_work_overwrite_title()))
+                .text(tr!(new_work_overwrite_text(name = name)))
+                .buttons(MessageBoxButtons::OkCancel)
+                .on_result(move |answer, c| {
+                    if answer.button != StandardButton::Ok {
+                        // Declined: the wizard waits on its last step, not in error.
+                        if let Some(wizard) = &wizard {
+                            wizard.set_status(wizard.current(), StepStatus::Active);
+                        }
+                        return;
+                    }
+                    // The question can sit open while the writer opens that very
+                    // project in another window, so the refusal is asked again at
+                    // the last moment.
+                    if !refuse_if_open_saying(c, &target, &TARGET_OPEN) {
+                        vm.commit(c, request.clone(), Dismiss::TopOverlay);
+                    }
+                })
+                .present(ctx);
+            // Held on the last step while the question is open; OK finishes it.
+            return false;
+        }
+        self.commit(ctx, request, Dismiss::Modal)
+    }
+
+    /// Create the project `request` names, where [`CreateTarget`] says, and close the
+    /// form. `dismiss` is how: from the form's own button, its modal; from the
+    /// overwrite question's answer, whose context stands at the tree's root, the
+    /// topmost overlay, which is the form once the question has gone.
+    fn commit(&self, ctx: &mut EventContext, request: CreateRequest, dismiss: Dismiss) -> bool {
+        let close_form = |ctx: &mut EventContext| match dismiss {
+            Dismiss::Modal => ctx.dismiss_modal(),
+            Dismiss::TopOverlay => ctx.dismiss_top_overlay(),
+        };
         match &self.target {
             CreateTarget::InPlace(ids) => {
                 crate::app::close_outgoing_work(&self.app_ctx, ids.work_id.get());
@@ -798,10 +930,10 @@ impl NewWorkViewModel {
                 // `wiring::project_events` takes this instead, once the seed has landed:
                 // the same ordering, and the same reason, as the cold-start import.
                 if let Some(pending) = &self.pending_starters {
-                    pending.arm(self.starters());
+                    pending.arm(request.starters);
                 }
-                match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
-                    Ok(()) => ctx.dismiss_modal(),
+                match work_management_commands::new_work(&self.app_ctx, &request.dto) {
+                    Ok(()) => close_form(ctx),
                     Err(e) => {
                         // Nothing was created, so nothing must stay armed: the next
                         // project made in this window would otherwise inherit a palette
@@ -824,9 +956,9 @@ impl NewWorkViewModel {
                 // very first window (see `window_config`'s doc) — every later
                 // window, like this one, discards it.
                 let (config, _state) = factory.window_config(PendingAction::New {
-                    dto: self.dto(),
+                    dto: request.dto,
                     then_import: self.purpose == NewWorkPurpose::FromDocuments,
-                    starters: self.starters(),
+                    starters: request.starters,
                 });
                 ctx.open_window(config);
                 if *close_presenting_window {
@@ -836,12 +968,19 @@ impl NewWorkViewModel {
                     // form goes away. Dismissing is not optional — the modal
                     // would otherwise stay up over a window that has just
                     // handed the user's request to a different one.
-                    ctx.dismiss_modal();
+                    close_form(ctx);
                 }
             }
         }
         true
     }
+}
+
+/// How [`NewWorkViewModel::commit`] closes the form.
+#[derive(Clone, Copy)]
+enum Dismiss {
+    Modal,
+    TopOverlay,
 }
 
 /// The Location field, looked at again while the wizard is on screen and it is
@@ -850,16 +989,24 @@ impl NewWorkViewModel {
 /// edit.
 impl DiskChecked for NewWorkViewModel {
     fn disk_verdicts(&self) -> Vec<Signal<ValidationState>> {
-        vec![self.location_validation()]
+        vec![self.location_validation(), self.target_check.signal()]
     }
 
     fn refused_on_disk(&self) -> bool {
-        !self.location.get().trim().is_empty() && self.location_check.refuses()
+        (!self.location.get().trim().is_empty() && self.location_check.refuses())
+            || self.target_check.refuses()
     }
 
+    /// Each check is looked at again only when it refuses itself. The folder's check
+    /// writes a probe file into the folder, so looking at a folder it accepted, every
+    /// second a folder sits at the target, would write into the writer's folder every
+    /// second. The target sits in the folder, so it follows a refused folder.
     fn retry_refused(&self) {
-        if self.refused_on_disk() {
+        if !self.location.get().trim().is_empty() && self.location_check.refuses() {
             self.location_check.recheck();
+            self.target_check.recheck();
+        } else if self.target_check.refuses() {
+            self.target_check.recheck();
         }
     }
 }
@@ -1183,7 +1330,7 @@ mod tests {
         );
         let mut tree =
             crate::test_support::tree_with_toast_registry(&Rc::new(AppContext::new()), &toasts);
-        press(&mut tree, move |c| answer.set(finishing.create(c)));
+        press(&mut tree, move |c| answer.set(finishing.create(c, None)));
         assert!(
             !created.get(),
             "Finish must not create into a folder that is gone"
@@ -1203,6 +1350,243 @@ mod tests {
             "the message names the Location's own reason: {:?}",
             told.title
         );
+    }
+
+    /// A New Work over a real, initialised backend, its form filled in with `name`
+    /// in `folder`, and a tree to press its buttons in.
+    #[cfg(not(feature = "mocks"))]
+    fn filled_in(
+        name: &str,
+        folder: &std::path::Path,
+    ) -> (
+        NewWorkViewModel,
+        Rc<AppContext>,
+        teksilo::core::widget_tree::WidgetTree,
+    ) {
+        let app_ctx = Rc::new(AppContext::new());
+        frontend::commands::handling_app_lifecycle_commands::initialize_app(&app_ctx)
+            .expect("initialize the app");
+        let vm = NewWorkViewModel::new(
+            app_ctx.clone(),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingStarters::default(),
+        );
+        vm.location().set(folder.to_string_lossy().into_owned());
+        vm.name().set(name.into());
+        let tree = crate::test_support::tree_with_events(&app_ctx);
+        (vm, app_ctx, tree)
+    }
+
+    /// The titles of the projects the backend holds.
+    #[cfg(not(feature = "mocks"))]
+    fn works(app_ctx: &AppContext) -> Vec<String> {
+        frontend::commands::work_commands::get_all_work(app_ctx)
+            .expect("get_all_work")
+            .into_iter()
+            .map(|work| work.title)
+            .collect()
+    }
+
+    /// Answer the question `tree` has waiting with `button`.
+    #[cfg(not(feature = "mocks"))]
+    fn answer(
+        tree: &mut teksilo::core::widget_tree::WidgetTree,
+        question: teksilo::core::ModalRequest,
+        button: StandardButton,
+    ) {
+        let teksilo::core::ModalContent::Deferred(builder) = question.content else {
+            panic!("a MessageBox presents deferred content");
+        };
+        builder(tree);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 600.0));
+        let id = tree
+            .find_by_label(&button.default_label().resolve_now())
+            .expect("the question offers the button");
+        crate::test_support::click(tree, id);
+    }
+
+    /// A project already at the target is named on the Name field, and Create asks
+    /// before replacing it, as the importers do: Cancel creates nothing and leaves the
+    /// wizard as it was, OK creates the project that was asked about. It used to be
+    /// replaced without a word, the writer's novel and all.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn a_project_at_the_target_is_replaced_only_once_the_writer_says_so() {
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let existing = dir.path().join("tidewrack.skrib");
+        std::fs::write(&existing, b"PK").unwrap();
+        for button in [StandardButton::Cancel, StandardButton::Ok] {
+            let (vm, app_ctx, mut tree) = filled_in("Tidewrack", dir.path());
+            assert!(
+                matches!(vm.name_validation().get(), ValidationState::Warning(_)),
+                "the Name field says a project is already there"
+            );
+            assert!(vm.can_create().get(), "a warning, not a refusal");
+
+            let wizard = StepperController::new(4);
+            let (creating, controller) = (vm.clone(), wizard.clone());
+            let created = Rc::new(std::cell::Cell::new(true));
+            let answer_set = created.clone();
+            crate::test_support::press(&mut tree, move |c| {
+                answer_set.set(creating.create(c, Some(&controller)))
+            });
+            assert!(!created.get(), "the wizard waits for the answer");
+            // What the Stepper does with a `false`.
+            wizard.set_status(wizard.current(), StepStatus::Error);
+            let question = tree
+                .drain_pending_modal_requests()
+                .pop()
+                .expect("the writer is asked first")
+                .request;
+            assert_eq!(
+                question.title,
+                Some(tr!(new_work_overwrite_title()).resolve_now())
+            );
+            assert!(works(&app_ctx).is_empty(), "nothing before the answer");
+
+            answer(&mut tree, question, button);
+            if button == StandardButton::Cancel {
+                assert!(works(&app_ctx).is_empty(), "Cancel creates nothing");
+                assert_eq!(
+                    wizard.status(wizard.current()),
+                    StepStatus::Active,
+                    "and leaves the wizard as it was"
+                );
+            } else {
+                assert_eq!(works(&app_ctx), vec!["Tidewrack".to_string()]);
+            }
+        }
+        assert_eq!(std::fs::read(&existing).unwrap(), b"PK");
+    }
+
+    /// A project open in a window is never replaced: Create refuses it with the reason,
+    /// before asking anything, and again if the project is opened while the question
+    /// waits.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn a_project_open_in_a_window_is_never_the_target() {
+        use crate::shell::open_registry;
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let existing = dir.path().join("tidewrack.skrib");
+        std::fs::write(&existing, b"PK").unwrap();
+        let target = existing.to_string_lossy().into_owned();
+        let refusal = tr!(new_work_target_open_title()).resolve_now();
+
+        let (vm, app_ctx, mut tree) = filled_in("Tidewrack", dir.path());
+        open_registry::claim(&target, "Tidewrack");
+        let creating = vm.clone();
+        crate::test_support::press(&mut tree, move |c| {
+            assert!(!creating.create(c, None));
+        });
+        open_registry::release(&target);
+        assert_eq!(
+            crate::test_support::drain_dialog_titles(&mut tree),
+            vec![refusal.clone()]
+        );
+        assert!(works(&app_ctx).is_empty());
+
+        // Opened while the question waits: OK is answered with the refusal.
+        let creating = vm.clone();
+        crate::test_support::press(&mut tree, move |c| {
+            assert!(!creating.create(c, None));
+        });
+        let question = tree
+            .drain_pending_modal_requests()
+            .pop()
+            .expect("the question")
+            .request;
+        open_registry::claim(&target, "Tidewrack");
+        answer(&mut tree, question, StandardButton::Ok);
+        open_registry::release(&target);
+        assert_eq!(
+            crate::test_support::drain_dialog_titles(&mut tree),
+            vec![refusal]
+        );
+        assert!(works(&app_ctx).is_empty(), "nothing is created over it");
+        assert_eq!(std::fs::read(&existing).unwrap(), b"PK");
+    }
+
+    /// A project an import is still writing is not a target either: the import would
+    /// replace the new project when it finished.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn a_project_an_import_is_writing_is_never_the_target() {
+        use crate::shell::open_registry;
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("tidewrack.skrib");
+        let (vm, app_ctx, mut tree) = filled_in("Tidewrack", dir.path());
+        let _claim = open_registry::claim_import(&target.to_string_lossy());
+        let creating = vm.clone();
+        crate::test_support::press(&mut tree, move |c| {
+            assert!(!creating.create(c, None));
+        });
+        assert_eq!(
+            crate::test_support::drain_dialog_titles(&mut tree),
+            vec![tr!(target_importing_title()).resolve_now()]
+        );
+        assert!(works(&app_ctx).is_empty());
+    }
+
+    /// A folder at the target is refused on the Name field, which holds the wizard on
+    /// its first step: replacing a folder project would leave its files in the new one.
+    /// The format is part of the target, so switching it looks again.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn a_folder_at_the_target_is_refused_on_the_name() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir(dir.path().join("tidewrack")).unwrap();
+        let (vm, _app_ctx, _tree) = filled_in("Tidewrack", dir.path());
+        let (verdict, gate) = (vm.name_validation(), vm.can_create());
+        assert!(matches!(verdict.get(), ValidationState::None));
+        assert!(gate.get());
+
+        vm.format_idx().set(1);
+        assert!(matches!(verdict.get(), ValidationState::Error(_)));
+        assert!(!gate.get(), "Next stays off over a folder");
+
+        vm.format_idx().set(0);
+        assert!(matches!(verdict.get(), ValidationState::None));
+        assert!(gate.get());
+    }
+
+    /// While a folder sits at the target, the form looks at the target again every
+    /// second, and only at the target: the folder's own check writes a probe file into
+    /// the folder, and it accepted the folder. Before, each of those looks wrote and
+    /// removed a file in the writer's folder, which a sync client or a removable drive
+    /// sees. The folder is left untouched, its modification time with it.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_folder_at_the_target_is_looked_at_again_without_writing_to_the_folder() {
+        use crate::shared::form_checks::DiskChecked;
+        let dir = tempfile::tempdir().unwrap();
+        let (vm, _app_ctx, _tree) = filled_in("Tidewrack", dir.path());
+        vm.format_idx().set(1);
+        std::fs::create_dir(dir.path().join("tidewrack")).unwrap();
+        vm.format_idx().set(0);
+        vm.format_idx().set(1);
+        assert!(vm.refused_on_disk(), "a folder at the target is refused");
+        let touched = || {
+            std::fs::metadata(dir.path())
+                .and_then(|m| m.modified())
+                .ok()
+        };
+        let before = touched();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        for _ in 0..3 {
+            vm.retry_refused();
+        }
+        assert_eq!(touched(), before, "nothing was written into the folder");
+        assert!(
+            vm.refused_on_disk(),
+            "still refused while the folder is there"
+        );
+
+        std::fs::remove_dir(dir.path().join("tidewrack")).unwrap();
+        vm.retry_refused();
+        assert!(!vm.refused_on_disk(), "the target is looked at again");
     }
 
     /// Under `mocks` that gate is off, or an untouched wizard could not be

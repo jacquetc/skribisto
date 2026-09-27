@@ -4148,3 +4148,96 @@ fn a_title_is_escaped_for_markup_and_symbols_and_keeps_its_typography() {
         );
     }
 }
+
+// ── What a row leaves open is closed before the next ─────────────────────────────────
+
+/// A book of one chapter per scene given, each scene's prose `scene`.
+fn book_of_scenes(scenes: &[&str]) -> (Gathered, Vec<u64>) {
+    let mut items = vec![iwc(
+        100,
+        SR::BookBegin,
+        "en",
+        vec![c(1, ContentRole::BookTitle, "My Novel")],
+    )];
+    for (n, scene) in scenes.iter().enumerate() {
+        let n = n as u64;
+        items.push(iwc(
+            200 + n,
+            SR::ChapterScene,
+            "en",
+            vec![
+                c(
+                    1_000 + 2 * n,
+                    ContentRole::ChapterTitle,
+                    &format!("Door {n}"),
+                ),
+                c(1_001 + 2 * n, ContentRole::SceneText, scene),
+            ],
+        ));
+    }
+    let include = items.iter().map(|row| row.item.id).collect();
+    (gathered(items, "en"), include)
+}
+
+/// Scenes that each leave a div open, as only a damaged or hand-edited file can: every
+/// one loads on its own, and the book they make still exports as a book. Without the
+/// fences that close each scene, 130 chapters nested 130 divs deep, past the ceiling of
+/// 128 `text-document` parses to, and every format printed the whole book's Djot source
+/// as one paragraph. Two scenes of 65 open divs each reached the same ceiling.
+#[test]
+fn scenes_that_leave_divs_open_still_export_as_a_book() {
+    let one = "::: aside\nShe closed the door behind her.";
+    let deep = format!(
+        "{}She closed the door behind her.",
+        "::: aside\n".repeat(65)
+    );
+    for scenes in [vec![one; 130], vec![deep.as_str(); 2]] {
+        for scene in &scenes {
+            assert!(skrib_format::djot_depth::check(scene).is_ok());
+        }
+        let (g, include) = book_of_scenes(&scenes);
+        let p = preset("neutral");
+        let html = render_to_string(&req(&g, &include, &p, ExportFormat::Html)).unwrap();
+        assert!(!html.contains(":::"), "the book's source was printed");
+        assert_eq!(
+            html.matches("She closed the door behind her.").count(),
+            scenes.len()
+        );
+        let last = format!("Door {}", scenes.len() - 1);
+        assert!(html.contains(&last), "{last} is missing");
+    }
+}
+
+/// A code block a scene leaves open would take in everything after it, the next
+/// chapter's heading and prose among them, as code.
+#[test]
+fn a_code_block_a_scene_leaves_open_ends_with_the_scene() {
+    let (g, include) = book_of_scenes(&[
+        "Before.\n\n```\ncode that never closes",
+        "The wind rose over the hills.",
+    ]);
+    let p = preset("neutral");
+    let html = render_to_string(&req(&g, &include, &p, ExportFormat::Html)).unwrap();
+    let prose = html
+        .find("The wind rose over the hills.")
+        .expect("the second scene");
+    let before = &html[..prose];
+    assert_eq!(
+        before.matches("<pre").count(),
+        before.matches("</pre>").count(),
+        "the second scene is inside the first one's code block: {html}"
+    );
+    assert!(html.contains("code that never closes"));
+}
+
+/// What closes a row is only ever what it left open: prose that closes its own divs and
+/// code blocks goes into the book exactly as it was.
+#[test]
+fn prose_that_closes_what_it_opens_goes_in_as_it_was() {
+    let scene = "::: aside\nA note.\n:::\n\n```\ncode\n```\n\nThe end.";
+    assert_eq!(skrib_format::closing_fences(scene), "");
+    let (g, include) = book_of_scenes(&[scene, scene]);
+    let p = preset("neutral");
+    let djot = render_to_string(&req(&g, &include, &p, ExportFormat::Djot)).unwrap();
+    assert_eq!(djot.matches("The end.").count(), 2);
+}

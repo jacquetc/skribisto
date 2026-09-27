@@ -770,10 +770,11 @@ impl Widget for NewWorkPanel {
             // Create Work. `create` dismisses on success; on failure it toasts
             // and returns `false`, which keeps the wizard on its last step and
             // marks that step in error rather than reporting a flow that
-            // finished when nothing was created. From documents, the import
-            // wizard opens over the new project the moment it exists
-            // (`PendingAction::New`'s `then_import`).
-            .on_finish(move |ctx, _ctrl| create_vm.create(ctx));
+            // finished when nothing was created. It also holds the wizard there
+            // while it asks whether to replace a project already at the target.
+            // From documents, the import wizard opens over the new project the
+            // moment it exists (`PendingAction::New`'s `then_import`).
+            .on_finish(move |ctx, ctrl| create_vm.create(ctx, Some(ctrl)));
 
         // Which flow this is, in the Stepper's own chrome slot. `Top` is not the
         // default — chrome is QWizard's watermark slot, so it lands in a leading

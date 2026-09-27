@@ -19,9 +19,14 @@
 //!   open in a window, the window keeps the old project in memory: until its
 //!   next save the writer's file on disk is the import rather than what they are
 //!   looking at, and that save then writes the old project straight back over
-//!   the import. Both halves lose work, so the import refuses and says why.
+//!   the import. Both halves lose work, so the import refuses and says why. The
+//!   same goes the other way for as long as the import runs: it holds its target
+//!   ([`crate::shell::open_registry::claim_import`]), and the doors that open a
+//!   project refuse one an import is writing.
 
+use std::cell::RefCell;
 use std::path::Path;
+use std::rc::Rc;
 
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
@@ -178,6 +183,75 @@ impl ImportDestination {
     }
 }
 
+/// The target of the import a form is running, held for as long as it runs: see
+/// [`open_registry::claim_import`]. Cheap to clone; clones share the hold.
+#[derive(Clone, Default)]
+pub(crate) struct TargetHold(Rc<RefCell<Option<open_registry::ImportClaim>>>);
+
+impl TargetHold {
+    /// Hold `target` for an import about to start, in place of anything held before.
+    pub(crate) fn hold(&self, target: &str) {
+        let claim = open_registry::claim_import(target);
+        self.0.replace(Some(claim));
+    }
+
+    /// Hold `target` for an import about to start, then look again for a window
+    /// holding it open, or opening it: when one does, let go, say why in the importers'
+    /// words, and return `false`.
+    ///
+    /// The look before (when Import was pressed) cannot see a load another copy of
+    /// Skribisto started since, and a load claims its project before it starts
+    /// (`open_registry::claim_for_load`). Claiming first and looking second, as that
+    /// load does the other way round, is what guarantees one of the two sees the other.
+    pub(crate) fn hold_unless_open(&self, ctx: &mut EventContext, target: &str) -> bool {
+        self.hold(target);
+        if open_project_at(ctx, target).is_none() {
+            return true;
+        }
+        self.release();
+        present_refusal(ctx, target, &IMPORT_OPEN);
+        false
+    }
+
+    /// Let go of the target: the import completed, failed, was cancelled or never
+    /// started.
+    pub(crate) fn release(&self) {
+        self.0.replace(None);
+    }
+}
+
+/// Refuse to start an import while `active`, the operation the same form started last,
+/// still runs: tell the writer why and return `true`. Returns `false`, having shown
+/// nothing, when it does not.
+///
+/// A form tracks one import at a time: its progress notice, its Cancel button and the
+/// hold on its target ([`TargetHold`]) all belong to that one. A second started beside
+/// it would take all three over, and the first import's target would be let go of while
+/// that import still meant to replace it. Asked when Import is pressed, and again at the
+/// last moment, since an overwrite question can wait while another window starts one.
+///
+/// `words` are the form's own: a title and a text, the text taking no argument.
+pub(crate) fn refuse_if_busy(
+    ctx: &mut EventContext,
+    active: &Signal<Option<String>>,
+    words: &BusyRefusal,
+) -> bool {
+    if active.get().is_none() {
+        return false;
+    }
+    MessageBox::warning((words.title)())
+        .text((words.text)())
+        .buttons(MessageBoxButtons::Ok)
+        .present(ctx);
+    true
+}
+
+/// The words [`refuse_if_busy`] is said in, by the form that refuses.
+pub(crate) struct BusyRefusal {
+    pub(crate) title: fn() -> LocalizedString,
+    pub(crate) text: fn() -> LocalizedString,
+}
+
 /// The open project sitting at `target`, if any.
 ///
 /// Compared by the one spelling every door agrees on (`open_registry::canonical`:
@@ -195,7 +269,9 @@ pub(crate) fn open_project_at(ctx: &EventContext, target: &str) -> Option<String
         .app_state::<WorkRegistry>()
         .map(open_in_this_process)
         .unwrap_or_default();
-    let elsewhere = open_registry::scan().into_iter().map(|entry| entry.path);
+    let elsewhere = open_registry::scan_open()
+        .into_iter()
+        .map(|entry| entry.path);
     matching_open_project(target, here.into_iter().chain(elsewhere))
 }
 
@@ -225,18 +301,78 @@ fn matching_open_project(target: &str, open: impl IntoIterator<Item = String>) -
 /// Refuse an import aimed at a project that is open: tell the writer why, and
 /// return `true`. Returns `false`, having shown nothing, when `target` is free.
 pub(crate) fn refuse_if_open(ctx: &mut EventContext, target: &str) -> bool {
+    refuse_if_open_saying(ctx, target, &IMPORT_OPEN)
+}
+
+/// The words a refusal of an open target is said in: a title, and a text naming the
+/// project by its file name.
+pub(crate) struct OpenRefusal {
+    pub(crate) title: fn() -> LocalizedString,
+    pub(crate) text: fn(String) -> LocalizedString,
+}
+
+static IMPORT_OPEN: OpenRefusal = OpenRefusal {
+    title: || tr!(import_target_open_title()),
+    text: |name| tr!(import_target_open_text(name = name)),
+};
+
+/// [`refuse_if_open`], in the words of whatever else would write a whole project over
+/// `target`: New Work creating one in its place, for one.
+///
+/// A target an import is still writing is refused the same way, in words of its own
+/// ([`refuse_if_importing`]).
+pub(crate) fn refuse_if_open_saying(
+    ctx: &mut EventContext,
+    target: &str,
+    words: &OpenRefusal,
+) -> bool {
+    if refuse_if_importing(ctx, target, &TARGET_IMPORTING) {
+        return true;
+    }
     if open_project_at(ctx, target).is_none() {
         return false;
     }
+    present_refusal(ctx, target, words);
+    true
+}
+
+/// Refuse to start writing a project over `target` while an import is writing it
+/// ([`open_registry::importing`]): tell the writer why, in `words`, and return `true`.
+/// Returns `false`, having shown nothing, when no import is.
+///
+/// The import replaces its target when it finishes, whatever was written there
+/// meanwhile. Every door that writes a whole project to a path the writer chose asks
+/// this first: New Work and the importers (through [`refuse_if_open_saying`]), Save As
+/// and a backup's restore.
+pub(crate) fn refuse_if_importing(
+    ctx: &mut EventContext,
+    target: &str,
+    words: &OpenRefusal,
+) -> bool {
+    if !open_registry::importing(target) {
+        return false;
+    }
+    present_refusal(ctx, target, words);
+    true
+}
+
+/// The refusal of a target an import is writing, for a door where the writer can
+/// pick another name.
+pub(crate) static TARGET_IMPORTING: OpenRefusal = OpenRefusal {
+    title: || tr!(target_importing_title()),
+    text: |name| tr!(target_importing_text(name = name)),
+};
+
+/// Say why `target` is refused, naming it by its file name.
+fn present_refusal(ctx: &mut EventContext, target: &str, words: &OpenRefusal) {
     let name = Path::new(target)
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| target.to_string());
-    MessageBox::warning(tr!(import_target_open_title()))
-        .text(tr!(import_target_open_text(name = name)))
+    MessageBox::warning((words.title)())
+        .text((words.text)(name))
         .buttons(MessageBoxButtons::Ok)
         .present(ctx);
-    true
 }
 
 #[cfg(test)]

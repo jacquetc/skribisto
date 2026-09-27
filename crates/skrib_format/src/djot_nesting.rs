@@ -3,13 +3,11 @@
 
 //! The nesting `jotdown` 0.10 builds, counted exactly and without recursing.
 //!
-//! [`djot_depth::check`](crate::djot_depth::check) refuses prose on the larger of two
-//! counts, and this is the second. The first, its marker count, reads each line on its
-//! own and keeps list items in a stack of indents; it deliberately over-counts some
-//! shapes (every `>` of a run, every `[label]:`), but a count built line by line cannot
-//! see a container a line continues without restating it, and so it is not an upper
-//! bound. A list item goes on through a paragraph line at any indentation, after a line
-//! that was not blank:
+//! [`djot_depth::check`](crate::djot_depth::check) refuses prose on this count, and on
+//! nothing else about its nesting. A count of the markers each line opens with, read
+//! line by line, cannot do it: it cannot see a container a line continues without
+//! restating it, since a list item goes on through a paragraph line at any
+//! indentation, after a line that was not blank,
 //!
 //! ```text
 //! - item
@@ -19,8 +17,15 @@
 //! a paragraph line, which both continue
 //! ```
 //!
-//! and seven hundred such steps, a line of one space more each, passed the marker
-//! count at depth 1 and ended the process the first time the row was parsed.
+//! (seven hundred such steps, a line of one space more each, once passed such a count
+//! at depth 1 and ended the process the first time the row was parsed), and it counts
+//! markers on lines that open nothing, a code block's line of `>` among them, which
+//! locked writers out of projects the parser reads without nesting anything.
+//!
+//! The scan also reports what else of each line the other limits need: the heading it
+//! opens, the sections open after it, and the words it holds for the inline pass
+//! (`djot_inline`). And it closes, for the compiler, what a text leaves open at its end
+//! ([`closing_fences`]).
 //!
 //! # How it counts
 //!
@@ -170,38 +175,39 @@ fn identify(view: &[u8]) -> (Block, usize) {
     found.unwrap_or((Block::Paragraph, indent))
 }
 
-/// The length of the attribute block `line` opens with (the line from its `{` to its
-/// end, line break included), or 0 if it does not open with a complete one: `jotdown`
-/// 0.10's `attr::valid`. A line is an attribute block only when this reaches exactly the
-/// end of its content.
-fn attributes_len(line: &[u8]) -> usize {
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    enum State {
-        Start,
-        Whitespace,
-        CommentFirst,
-        Comment,
-        CommentNewline,
-        ClassFirst,
-        Class,
-        IdentifierFirst,
-        Identifier,
-        Key,
-        ValueFirst,
-        Value,
-        ValueQuoted,
-        ValueEscape,
-        ValueNewline,
-        ValueContinued,
-        Done,
-        Invalid,
-    }
-    fn is_name(byte: u8) -> bool {
-        byte.is_ascii_alphanumeric() || matches!(byte, b':' | b'_' | b'-')
-    }
-    fn step(state: State, c: u8) -> State {
-        use State::*;
-        match state {
+/// The state of `jotdown` 0.10's attribute validator (`attr::State`), one byte at a
+/// time: a block attribute line here, and an inline attribute set in `djot_inline`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum AttrState {
+    Start,
+    Whitespace,
+    CommentFirst,
+    Comment,
+    CommentNewline,
+    ClassFirst,
+    Class,
+    IdentifierFirst,
+    Identifier,
+    Key,
+    ValueFirst,
+    Value,
+    ValueQuoted,
+    ValueEscape,
+    ValueNewline,
+    ValueContinued,
+    Done,
+    Invalid,
+}
+
+impl AttrState {
+    /// The state after `c`, as `attr::State::step` takes it. `Done` and `Invalid` are
+    /// never stepped from: every caller stops on either.
+    pub(crate) fn step(self, c: u8) -> AttrState {
+        use AttrState::*;
+        fn is_name(byte: u8) -> bool {
+            byte.is_ascii_alphanumeric() || matches!(byte, b':' | b'_' | b'-')
+        }
+        match self {
             Start if c == b'{' => Whitespace,
             Start => Invalid,
             Whitespace => match c {
@@ -236,17 +242,22 @@ fn attributes_len(line: &[u8]) -> usize {
             ValueQuoted if c == b'\\' => ValueEscape,
             ValueQuoted | ValueEscape => ValueQuoted,
             ValueNewline | ValueContinued => ValueContinued,
-            // Never stepped from: the loop below stops on either.
-            Done | Invalid => state,
+            Done | Invalid => self,
         }
     }
+}
 
-    let mut state = State::Start;
+/// The length of the attribute block `line` opens with (the line from its `{` to its
+/// end, line break included), or 0 if it does not open with a complete one: `jotdown`
+/// 0.10's `attr::valid`. A line is an attribute block only when this reaches exactly the
+/// end of its content.
+fn attributes_len(line: &[u8]) -> usize {
+    let mut state = AttrState::Start;
     for (at, &byte) in line.iter().enumerate() {
-        state = step(state, byte);
+        state = state.step(byte);
         match state {
-            State::Done => return at + 1,
-            State::Invalid => return 0,
+            AttrState::Done => return at + 1,
+            AttrState::Invalid => return 0,
             _ => {}
         }
     }
@@ -508,26 +519,107 @@ impl Leaf {
     }
 }
 
+/// The kind of block whose words a line holds, as `jotdown` hands them to its inline
+/// parser: the leaves whose text is inline Djot. A code block and a link definition
+/// hold raw text, and every other block holds none.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum InlineKind {
+    /// A paragraph, a definition's term among them.
+    Paragraph,
+    /// A heading, which `jotdown` reads twice: once to name it, once to show it.
+    Heading,
+    /// One row of a table. `jotdown` reads each of its cells on its own, and so does
+    /// `djot_inline`, which splits the row the way `jotdown` does.
+    TableRow,
+    /// A table's caption, from its `^ ` to the end of the table.
+    Caption,
+}
+
+/// What one line holds for the inline parser: nothing, the first line of a new block
+/// of words, or more of the one before. `from` is the byte offset in the line where
+/// the words start, past every container marker and the block's own.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(crate) enum Inline {
+    #[default]
+    None,
+    Starts {
+        kind: InlineKind,
+        from: usize,
+    },
+    Continues {
+        kind: InlineKind,
+        from: usize,
+    },
+}
+
+/// What [`Nesting::read_line`] learnt of one line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct LineRead {
+    /// How many containers the line sits in.
+    pub(crate) depth: usize,
+    /// The level of the heading the line opens, if it opens one: the count of `#`
+    /// `jotdown` stores in 16 bits.
+    pub(crate) heading: Option<usize>,
+    /// How many sections are open after the line: each top-level heading opens one,
+    /// inside every open section of a lower level, and `jotdown` counts them among
+    /// the containers a list's depth is stored in, in 16 bits as well.
+    pub(crate) sections: usize,
+    /// The words the line holds for the inline parser.
+    pub(crate) inline: Inline,
+}
+
 /// The containers open at the line being read, outermost first, and the block last
 /// opened inside the innermost of them: the state of one scan of one text.
 #[derive(Debug, Default)]
 pub(crate) struct Nesting {
     frames: Vec<Frame>,
     leaf: Leaf,
+    /// The levels of the open sections, lowest first: `jotdown`'s `open_sections`, a
+    /// heading closing every section of its own level or deeper and opening its own.
+    sections: Vec<usize>,
+    /// The heading the line being read opens, noted as it is read.
+    heading: Option<usize>,
+    /// The words the line being read holds, noted as it is read.
+    inline: Inline,
+}
+
+/// Where `view`, a part of `line`, starts in it.
+fn offset_in(line: &[u8], view: &[u8]) -> usize {
+    (view.as_ptr() as usize).saturating_sub(line.as_ptr() as usize)
 }
 
 impl Nesting {
     /// Read the next line of the text, its line break included, and return how many
     /// containers it sits in. Opens no more than `limit + 1` containers on it, so a line
     /// past `limit` is only known to be past it.
+    #[cfg(test)]
     pub(crate) fn read(&mut self, line: &str, limit: usize) -> usize {
-        let mut view = line.as_bytes();
+        self.read_line(line, limit).depth
+    }
+
+    /// Read the next line of the text, its line break included, and report what it
+    /// holds: see [`LineRead`]. Opens no more than `limit + 1` containers on it, so a
+    /// line past `limit` is only known to be past it.
+    pub(crate) fn read_line(&mut self, line: &str, limit: usize) -> LineRead {
+        self.heading = None;
+        self.inline = Inline::None;
+        let depth = self.scan(line.as_bytes(), limit);
+        LineRead {
+            depth,
+            heading: self.heading,
+            sections: self.sections.len(),
+            inline: self.inline,
+        }
+    }
+
+    fn scan(&mut self, line: &[u8], limit: usize) -> usize {
+        let mut view = line;
         let mut level = 0;
         while let Some(frame) = self.frames.get_mut(level) {
             if !frame.continues(view) {
                 // It ends before this line, and all it held with it.
                 self.frames.truncate(level);
-                return self.open(view, limit);
+                return self.open(line, view, limit);
             }
             if matches!(frame, Frame::Div { closed: true, .. }) {
                 // A div's closing fence belongs to it and to nothing inside it.
@@ -538,15 +630,60 @@ impl Nesting {
             view = frame.strip(view);
             level += 1;
         }
+        let caption_before = matches!(self.leaf, Leaf::Table { caption: true, .. });
         if self.leaf.continues(view) {
+            self.note_continuation(line, view, caption_before);
             return self.depth();
         }
-        self.open(view, limit)
+        self.open(line, view, limit)
+    }
+
+    /// Note the words a line holds that the block before goes on through: `view` is the
+    /// line as the containers around that block leave it.
+    fn note_continuation(&mut self, line: &[u8], view: &[u8], caption_before: bool) {
+        let from = offset_in(line, view);
+        self.inline = match self.leaf {
+            Leaf::Paragraph => Inline::Continues {
+                kind: InlineKind::Paragraph,
+                from,
+            },
+            Leaf::Heading(_) => {
+                // A heading's later line may restate its `#`, which is markup there
+                // and not words (`jotdown`'s `parse_block` strips it).
+                let (block, marker_end) = identify(view);
+                let from = if matches!(block, Block::Heading(_)) {
+                    from + marker_end
+                } else {
+                    from
+                };
+                Inline::Continues {
+                    kind: InlineKind::Heading,
+                    from,
+                }
+            }
+            Leaf::Table { caption: true, .. } if caption_before => Inline::Continues {
+                kind: InlineKind::Caption,
+                from,
+            },
+            Leaf::Table { caption: true, .. } => {
+                // The line that starts the caption: its words follow the `^ `.
+                let (whitespace, _) = trimmed(view);
+                Inline::Starts {
+                    kind: InlineKind::Caption,
+                    from: from + whitespace + 2,
+                }
+            }
+            Leaf::Table { .. } if !is_blank(view) => Inline::Starts {
+                kind: InlineKind::TableRow,
+                from,
+            },
+            _ => Inline::None,
+        };
     }
 
     /// Read `view` as the first line of a new block inside the innermost open container,
     /// opening every container its markers open.
-    fn open(&mut self, mut view: &[u8], limit: usize) -> usize {
+    fn open(&mut self, line: &[u8], mut view: &[u8], limit: usize) -> usize {
         self.leaf = Leaf::None;
         while self.frames.len() <= limit {
             let (block, marker_end) = identify(view);
@@ -554,10 +691,26 @@ impl Nesting {
                 Block::Blank | Block::Atom => break,
                 Block::Paragraph => {
                     self.leaf = Leaf::Paragraph;
+                    self.inline = Inline::Starts {
+                        kind: InlineKind::Paragraph,
+                        from: offset_in(line, view),
+                    };
                     break;
                 }
                 Block::Heading(level) => {
                     self.leaf = Leaf::Heading(level);
+                    self.heading = Some(level);
+                    // Only a heading outside every container opens a section.
+                    if self.frames.is_empty() {
+                        while self.sections.last().is_some_and(|&open| open >= level) {
+                            self.sections.pop();
+                        }
+                        self.sections.push(level);
+                    }
+                    self.inline = Inline::Starts {
+                        kind: InlineKind::Heading,
+                        from: offset_in(line, view) + marker_end.min(view.len()),
+                    };
                     break;
                 }
                 Block::LinkDefinition => {
@@ -568,6 +721,10 @@ impl Nesting {
                     self.leaf = Leaf::Table {
                         caption: false,
                         blank: false,
+                    };
+                    self.inline = Inline::Starts {
+                        kind: InlineKind::TableRow,
+                        from: offset_in(line, view),
                     };
                     break;
                 }
@@ -620,6 +777,82 @@ impl Nesting {
     fn depth(&self) -> usize {
         self.frames.len() + usize::from(matches!(self.leaf, Leaf::Table { .. }))
     }
+
+    /// The fences that close what the text read so far leaves open at its end, for
+    /// text that goes on after it: see [`closing_fences`].
+    fn closers(&self) -> Option<String> {
+        // Only the divs outside every other container outlive the text: a quotation
+        // ends at the blank line after it, and a list item or a footnote at the first
+        // line after a blank one that is not indented into it.
+        let outer = self
+            .frames
+            .iter()
+            .take_while(|frame| matches!(frame, Frame::Div { closed: false, .. }))
+            .count();
+        let open_code =
+            self.frames.len() == outer && matches!(self.leaf, Leaf::Code { closed: false, .. });
+        if outer == 0 && !open_code {
+            return None;
+        }
+        let innermost = if outer == 0 {
+            None
+        } else {
+            self.frames.get(outer - 1)
+        };
+        Some(match (innermost, &self.leaf) {
+            // The div's content ends with the div, a code block in it included, once
+            // no code fence holds it open.
+            (Some(Frame::Div { len, raw: None, .. }), _) => ":".repeat(*len),
+            (
+                Some(Frame::Div {
+                    raw: Some((mark, len)),
+                    ..
+                }),
+                _,
+            ) => char::from(*mark).to_string().repeat(*len),
+            (_, Leaf::Code { mark, len, .. }) => char::from(*mark).to_string().repeat(*len),
+            _ => return None,
+        })
+    }
+}
+
+/// The lines that close every div and code block `text` leaves open at its end, for
+/// a caller that writes `text`, then a blank line, then these, then more Djot: the
+/// compiler, which puts one row's prose after another.
+///
+/// A div stays open until a bare fence closes it, and a code block until its own
+/// closing fence, so without them the next row's text is read inside whatever the
+/// last one left open, and a book of such rows nests one level deeper with each.
+/// Nothing else outlives the blank line: a quotation ends at it, and a list item or a
+/// footnote at the first line after it that is not indented into them, which each
+/// fence is not. A code block left open keeps that blank line as one of its own.
+///
+/// Worked out with the scan itself, one fence at a time: a fence can clear a code
+/// fence a div was holding open rather than close the div, and only reading it back
+/// tells which. Each returned line ends in a line break, and a blank line follows the
+/// last. Empty when the text leaves nothing open.
+pub fn closing_fences(text: &str) -> String {
+    let mut nesting = Nesting::default();
+    for line in text.split_inclusive('\n') {
+        nesting.read_line(line, usize::MAX);
+    }
+    // The blank line the caller writes after the text.
+    nesting.read_line("\n", usize::MAX);
+    let mut out = String::new();
+    // Each fence closes a div or clears the code fence one holds open, and one more
+    // closes a code block outside every div, so this many are always enough.
+    for _ in 0..=2 * nesting.frames.len() {
+        let Some(fence) = nesting.closers() else {
+            break;
+        };
+        let line = format!("{fence}\n");
+        nesting.read_line(&line, usize::MAX);
+        out.push_str(&line);
+    }
+    if !out.is_empty() {
+        out.push('\n');
+    }
+    out
 }
 
 #[cfg(test)]

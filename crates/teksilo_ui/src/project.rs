@@ -22,7 +22,7 @@ mod project_switch_vm;
 pub mod project_switcher;
 mod quit_sequencer_vm;
 
-pub use open_failure::open_failure_toast;
+pub use open_failure::{import_in_flight_toast, open_failure_toast};
 pub use project_lifecycle_vm::ProjectLifecycleViewModel;
 pub(crate) use project_lifecycle_vm::reload_personal_words;
 pub use project_switch_vm::{

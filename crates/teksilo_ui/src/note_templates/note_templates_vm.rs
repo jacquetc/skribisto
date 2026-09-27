@@ -370,10 +370,10 @@ fn read_template_file(path: &Path) -> Result<TemplateRow> {
         }
         converted.djot
     } else {
-        if skrib_format::djot_depth::check(&text).is_err() {
-            bail!("{} is nested too deeply for a template", path.display());
+        match skrib_format::djot_depth::admit(text) {
+            Ok(text) => text,
+            Err(_) => bail!("{} is nested too deeply for a template", path.display()),
         }
-        text
     };
     let stem = path
         .file_stem()

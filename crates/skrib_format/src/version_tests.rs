@@ -995,7 +995,11 @@ fn one_row_reads_each_backup_once_and_answers_every_role_as_the_backups_do() {
 /// aborted the process: a blob that gets through is parsed here the same way.
 #[test]
 fn a_backup_blob_nested_past_the_djot_ceiling_is_refused_by_name() {
-    for (name, deep) in super::djot_depth::tests::past_the_parsers_limit() {
+    let nested = super::djot_depth::tests::past_the_parsers_limit()
+        .into_iter()
+        .map(|(name, text)| (name, text, "nests"));
+    // With the Djot the parser cannot be given though it nests nothing.
+    for (name, deep, says) in nested.chain(super::djot_depth::tests::beyond_the_parser()) {
         let dir = tempfile::tempdir().expect("tmp");
         let mut b = bundle();
         let (uid, fid) = a_scene(&b);
@@ -1019,11 +1023,75 @@ fn a_backup_blob_nested_past_the_djot_ceiling_is_refused_by_name() {
             Err(e) => {
                 let msg = format!("{e:#}");
                 assert!(msg.contains(blob), "{name}: names the blob: {msg}");
-                assert!(msg.contains("nests"), "{name}: {msg}");
+                assert!(msg.contains(says), "{name}: {msg}");
             }
             Ok(text) => {
                 let parsed = super::djot_depth::tests::parse_on_a_long_operation_stack(text);
                 panic!("{name}: a blob past the ceiling was handed over: {parsed:?}");
+            }
+        }
+    }
+}
+
+/// A past version whose paragraph holds more lines than the ceiling is handed to the
+/// diff pane joined into one line, as the load joins the live prose, and a comment's or
+/// a reply's body beside it the same way, in either shape of backup. Before, the version
+/// was refused as unreadable, and so was the comment thread.
+#[test]
+fn a_backup_blob_whose_lines_the_load_joins_is_handed_over_joined() {
+    for (name, held, _) in super::djot_depth::tests::joined_by_the_load() {
+        let Ok(joined) = super::djot_depth::admit(held.clone()) else {
+            panic!("{name}: the load joins it");
+        };
+        let dir = tempfile::tempdir().expect("tmp");
+        let mut b = bundle();
+        let (uid, fid) = a_scene(&b);
+        set_scene(&mut b, fid, &held);
+        let path = write_backup(&b, dir.path(), now(), 1);
+        let src = backups_in(dir.path(), &b);
+        let v = super::versions::VersionRef {
+            path: std::path::PathBuf::from(&path),
+            taken_at: now(),
+            source: SourceKind::Backup,
+        };
+        let index = src.index(&v).expect("index");
+        let Some((blob, _)) = index
+            .row(uid)
+            .and_then(|row| row.prose_for(&ContentRole::SceneText))
+        else {
+            panic!("{name}: the scene has a blob in the backup");
+        };
+        match src.prose(&v, blob) {
+            Ok(text) => assert_eq!(text, joined, "{name}"),
+            Err(e) => panic!("{name}: {e:#}"),
+        }
+
+        for shape in [SkribShape::ZipFile, SkribShape::ExplodedFolder] {
+            for reply in [false, true] {
+                let dir = tempfile::tempdir().expect("tmp");
+                let mut b = bundle();
+                let (blob, _) = plant_in_a_thread(&mut b, reply, &held);
+                let path = write_backup_shaped(&b, dir.path(), now(), shape);
+                let src = backups_in(dir.path(), &b);
+                let v = super::versions::VersionRef {
+                    path: std::path::PathBuf::from(&path),
+                    taken_at: now(),
+                    source: SourceKind::Backup,
+                };
+                let threads = match src.comments(&v, &blob) {
+                    Ok(threads) => threads,
+                    Err(e) => panic!("{name}, {shape:?}, reply {reply}: {e:#}"),
+                };
+                let bodies: Vec<&String> = threads
+                    .iter()
+                    .flat_map(|c| std::iter::once(&c.body).chain(c.replies.iter().map(|r| &r.body)))
+                    .collect();
+                assert!(
+                    bodies.contains(&&joined),
+                    "{name}, {shape:?}, reply {reply}"
+                );
+                assert!(!bodies.contains(&&held), "{name}, {shape:?}, reply {reply}");
+                assert_eq!(parse_every_body(&threads), Ok(()), "{name}, {shape:?}");
             }
         }
     }
@@ -1093,7 +1161,11 @@ fn parse_every_body(threads: &[super::CommentFile]) -> Result<(), String> {
 /// ceiling it handed every one of them over, and the parse below aborted the process.
 #[test]
 fn a_backup_comment_nested_past_the_djot_ceiling_is_refused_by_name() {
-    for (name, deep) in super::djot_depth::tests::past_the_parsers_limit() {
+    let nested = super::djot_depth::tests::past_the_parsers_limit()
+        .into_iter()
+        .map(|(name, text)| (name, text, "nests"));
+    // With the Djot the parser cannot be given though it nests nothing.
+    for (name, deep, says) in nested.chain(super::djot_depth::tests::beyond_the_parser()) {
         for shape in [SkribShape::ZipFile, SkribShape::ExplodedFolder] {
             for reply in [false, true] {
                 let dir = tempfile::tempdir().expect("tmp");
@@ -1114,7 +1186,7 @@ fn a_backup_comment_nested_past_the_djot_ceiling_is_refused_by_name() {
                             msg.contains(&sidecar),
                             "{name}, {shape:?}: names the sidecar: {msg}"
                         );
-                        assert!(msg.contains("nests"), "{name}, {shape:?}: {msg}");
+                        assert!(msg.contains(says), "{name}, {shape:?}: {msg}");
                         assert!(
                             msg.contains(if reply {
                                 "reply 1 to comment"

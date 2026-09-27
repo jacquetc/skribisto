@@ -789,6 +789,8 @@ could-not-open-work = Impossible d’ouvrir « { $file } »
 # nouveau), $supported la plus récente que cette version comprend.
 could-not-open-work-too-new = « { $file } » nécessite une version plus récente de Skribisto
 could-not-open-work-too-new-detail = Enregistré au format Skribisto { $written_by } ; son ouverture nécessite le format { $requires } ou plus récent, or cette version ne prend en charge que le format { $supported } au maximum. Mettez Skribisto à jour pour l’ouvrir.
+could-not-open-work-importing = « { $file } » est en cours d’écriture par un import
+could-not-open-work-importing-detail = Un import réécrit ce projet et n’est pas terminé. Ouvrez-le une fois l’import achevé : ouvert maintenant, il montrerait le projet que l’import remplace, et son prochain enregistrement réécrirait ce projet par-dessus l’import.
 could-not-open-example = Impossible d’ouvrir l’exemple : { $error }
 # Le navigateur (ou ce qui traite les liens http) n'a pas pu être lancé pour l'un
 # des liens de la barre latérale d'accueil. $url est affichée pour pouvoir être
@@ -969,6 +971,19 @@ new-work-location-required = Choisissez un emplacement
 new-work-location-missing = Ce dossier n’existe pas
 new-work-location-not-folder = Ce chemin n’est pas un dossier
 new-work-location-readonly = Ce dossier n’est pas accessible en écriture
+new-work-target-exists = Un projet de ce nom se trouve déjà dans ce dossier. La création de l’œuvre demandera confirmation avant de le remplacer
+new-work-target-is-folder = Un dossier de ce nom se trouve déjà à cet emplacement. Choisissez un autre nom
+new-work-overwrite-title = Remplacer le projet existant ?
+new-work-overwrite-text = « { $name } » existe déjà dans ce dossier. Le remplacer par le nouveau projet ?
+new-work-target-open-title = Ce projet est ouvert
+new-work-target-open-text = « { $name } » est ouvert dans Skribisto. Créer un nouveau projet à sa place remplacerait le projet sur lequel vous travaillez, et votre prochain enregistrement réécrirait ce projet par-dessus le nouveau. Choisissez un autre nom ou un autre dossier, ou fermez d’abord le projet.
+target-importing-title = Un import écrit ce projet
+target-importing-text = Un import écrit encore « { $name } ». Attendez qu’il soit terminé, ou choisissez un autre nom.
+import-plume-busy-title = Un autre projet Plume Creator est en cours d’import
+import-plume-busy-text = Les projets Plume Creator s’importent un à la fois. Attendez que l’import en cours soit terminé, ou annulez-le, puis relancez celui-ci.
+import-manuskript-busy-title = Un autre projet Manuskript est en cours d’import
+import-manuskript-busy-text = Les projets Manuskript s’importent un à la fois. Attendez que l’import en cours soit terminé, ou annulez-le, puis relancez celui-ci.
+backup-restore-importing-text = Un import écrit encore « { $name } », le projet sur lequel cette sauvegarde serait restaurée. Restaurez-la une fois l’import terminé.
 
 ## Libellés des modèles de nouvelle œuvre (transmis au backend, qui ne fait pas d'i18n)
 new-work-manuscript = Manuscrit

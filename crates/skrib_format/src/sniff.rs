@@ -137,28 +137,56 @@ fn is_digits(s: &str, len: usize) -> bool {
 mod tests {
     use super::*;
 
+    /// The guessed original, as a path: it is built with the platform's own
+    /// separator, so on Windows `/b` and `mynovel.skrib` are joined by a `\`, and
+    /// only a comparison of paths says whether the two name the same file.
+    fn guessed(path: &str) -> Option<std::path::PathBuf> {
+        sniff_backup_filename(path).map(std::path::PathBuf::from)
+    }
+
+    fn expected(path: &str) -> Option<std::path::PathBuf> {
+        Some(std::path::PathBuf::from(path))
+    }
+
     #[test]
     fn filename_fallback_matches_stamped_backup() {
         assert_eq!(
-            sniff_backup_filename("/home/u/backups/mynovel-20260101-153000.skrib"),
-            Some("/home/u/backups/mynovel.skrib".to_string())
+            guessed("/home/u/backups/mynovel-20260101-153000.skrib"),
+            expected("/home/u/backups/mynovel.skrib")
         );
     }
 
     #[test]
     fn filename_fallback_matches_collision_suffix() {
         assert_eq!(
-            sniff_backup_filename("/b/mynovel-20260101-153000-2.skrib"),
-            Some("/b/mynovel.skrib".to_string())
+            guessed("/b/mynovel-20260101-153000-2.skrib"),
+            expected("/b/mynovel.skrib")
         );
     }
 
     #[test]
     fn filename_fallback_keeps_hyphenated_name() {
         assert_eq!(
-            sniff_backup_filename("/b/my-great-novel-20260101-153000.skrib"),
-            Some("/b/my-great-novel.skrib".to_string())
+            guessed("/b/my-great-novel-20260101-153000.skrib"),
+            expected("/b/my-great-novel.skrib")
         );
+    }
+
+    /// The comparison above is the platform's: a guess joined with a backslash is
+    /// the same file as the one written with a slash on Windows, and a different
+    /// name is still a different file everywhere.
+    #[test]
+    fn the_guess_is_compared_as_a_path() {
+        assert_ne!(
+            guessed("/b/mynovel-20260101-153000.skrib"),
+            expected("/b/othernovel.skrib")
+        );
+        if cfg!(windows) {
+            assert_eq!(
+                Some(std::path::PathBuf::from("/b\\mynovel.skrib")),
+                expected("/b/mynovel.skrib")
+            );
+        }
     }
 
     #[test]

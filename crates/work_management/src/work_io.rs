@@ -231,6 +231,29 @@ pub(crate) fn loaded_binder_item_uids(loaded: &skrib_format::LoadedWork) -> Vec<
         .collect()
 }
 
+/// Whether the bundle at `source` is another project than the one being written,
+/// whose `unique_id` is `unique_id`.
+///
+/// A save reads the history log and the files the format does not model from its
+/// source, which for an ordinary save is the project's own file. When a New Work
+/// the writer agreed to let replace a project is first saved, that file is the
+/// project it replaces, and carrying its log forward would put every version of the
+/// replaced manuscript inside the new one, to travel with it wherever it is sent.
+/// Only a readable manifest naming another project counts: a source with no manifest
+/// (none yet, or a legacy file) has nothing of another project's to carry.
+fn holds_another_project(source: &str, unique_id: &str) -> bool {
+    if unique_id.is_empty() {
+        return false;
+    }
+    match skrib::peek_manifest(source) {
+        Ok(manifest) => {
+            let theirs = &manifest.work.unique_id;
+            !theirs.is_empty() && theirs != unique_id
+        }
+        Err(_) => false,
+    }
+}
+
 pub fn serialize_and_write(
     g: &Gathered,
     target: String,
@@ -266,6 +289,10 @@ pub fn serialize_and_write(
     // the book.
     let contributed = crate::bundle_contributors::collect(&bundle, &g.work.unique_id, kind);
 
+    // A source holding another project is one this write replaces, not one it goes
+    // on from: its history and the files it carries are that project's own.
+    let foreign = holds_another_project(history.source(), &g.work.unique_id);
+
     // Files the format does not model travel with the project, on every write
     // path. Read from the *source* bundle, never the target: `save_as` and
     // `backup_now` must bring the original's unmodelled files with them, and
@@ -274,7 +301,11 @@ pub fn serialize_and_write(
     // Both `HistoryAction` variants name the same source for the same reason,
     // so this is lifted out of the match rather than repeated inside it — one
     // write path forgetting the call is how a writer loses data silently.
-    bundle.carried = skrib::carry::load(history.source());
+    bundle.carried = if foreign {
+        Default::default()
+    } else {
+        skrib::carry::load(history.source())
+    };
 
     // The contributors' files then land **over** the on-disk read. That
     // direction is the whole point of the hook and is the only correct one:
@@ -286,9 +317,16 @@ pub fn serialize_and_write(
         bundle.carried.insert(path, skrib::CarriedFile::new(bytes));
     }
 
+    let past = |source: &str| {
+        if foreign {
+            skrib::history::HistoryLog::default()
+        } else {
+            skrib::history::load(source)
+        }
+    };
     match history {
         HistoryAction::Carry { source } => {
-            bundle.history = skrib::history::load(&source);
+            bundle.history = past(&source);
         }
         HistoryAction::Record {
             source,
@@ -296,7 +334,7 @@ pub fn serialize_and_write(
             min_keep,
         } => {
             let now = chrono::Utc::now();
-            bundle.history = skrib::history::load(&source);
+            bundle.history = past(&source);
             skrib::history::record(&mut bundle, now);
             skrib::history::thin(&mut bundle.history, &policy, min_keep, now);
         }

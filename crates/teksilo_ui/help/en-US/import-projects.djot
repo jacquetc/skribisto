@@ -22,6 +22,10 @@ The file name cannot be a project that is open in Skribisto, in this window or a
 Importing over it would replace the project you are working on, so the import refuses and says
 why. Choose another name, or close that project first.
 
+While the import runs, the file it will write is kept for it. Until the import has finished,
+Skribisto does not open that file, and does not start writing a project there, whether from
+*New Work*, another import, saving a project under that name or restoring a backup over it.
+
 ## Pointing at a Manuskript project
 
 Manuskript saves a project in either of these shapes, and both are accepted:

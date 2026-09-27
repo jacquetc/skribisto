@@ -53,12 +53,26 @@ pub struct ConvertedDjot {
 /// ([`crate::djot_depth`]), which then cannot be opened at all. So when the Djot would be
 /// refused, the words are kept instead, as plain text, which is always accepted.
 ///
+/// Before that, a paragraph holding more lines than a load accepts is joined into one
+/// line, as the load would join it ([`crate::djot_depth::admit`]): a preformatted passage
+/// kept its line breaks in the markup, and formatted from end to end it holds every one of
+/// them. Joined, it keeps its formatting, and its plain text is read again from the joined
+/// Djot, where those breaks are spaces.
+///
 /// The Djot refused is never parsed on the way: its plain text comes from the parse that
 /// wrote it, and the plain Djot written in its place is what is read back.
 fn within_depth(djot: String, text: String) -> Result<ConvertedDjot> {
     if crate::djot_depth::check(&djot).is_ok() {
         return Ok(ConvertedDjot {
             djot,
+            text,
+            flattened: false,
+        });
+    }
+    if let Ok(joined) = crate::djot_depth::admit(djot) {
+        let (text, _) = djot_plain_text(&joined)?;
+        return Ok(ConvertedDjot {
+            djot: joined,
             text,
             flattened: false,
         });

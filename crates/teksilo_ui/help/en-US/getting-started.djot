@@ -29,6 +29,10 @@ project and opens it.
   from an empty binder to three parts and twenty-four chapters. *Flat chapters* makes each
   chapter one text with no scenes under it.
 
+If a project of that name is already in the folder, *Create Work* asks before replacing it. A
+project open in a window, in this copy of Skribisto or another, is never replaced: choose
+another name or folder, or close that project first.
+
 ## Examples
 
 *Examples* lists the sample projects that ship with Skribisto.

@@ -3806,7 +3806,11 @@ fn a_note_whose_formatting_changed_arrives_with_the_change() {
 /// Margin text that would nest far past the parser's limit if it were stored as the
 /// Djot it looks like, one entry per line. A line break inside a comment or a note
 /// starts a new paragraph, so the several-line shapes are several paragraphs.
-fn margin_text_that_looks_nested() -> Vec<(&'static str, Vec<String>)> {
+///
+/// Each shape says whether the parser would read it, as Djot, nested past the ceiling:
+/// a run of `>` with no space between them is a paragraph's first word to it instead,
+/// and is here because the guard once refused it all the same.
+fn margin_text_that_looks_nested() -> Vec<(&'static str, Vec<String>, bool)> {
     let levels = 700;
     let one_line = |marker: &str| vec![format!("{}deep", marker.repeat(levels))];
     let fences = (0..levels)
@@ -3818,19 +3822,20 @@ fn margin_text_that_looks_nested() -> Vec<(&'static str, Vec<String>)> {
         .chain(std::iter::once("deep".to_string()))
         .collect();
     vec![
-        ("bullets", one_line("- ")),
-        ("blockquotes", one_line("> ")),
+        ("bullets", one_line("- "), true),
+        ("blockquotes", one_line("> "), true),
         (
             "a blockquote run",
             vec![format!("{}deep", ">".repeat(4_000))],
+            false,
         ),
-        ("ordered items", one_line("1. ")),
-        ("roman numerals in parentheses", one_line("(iv) ")),
-        ("task items", one_line("- [ ] ")),
-        ("footnote definitions", one_line("[^a]: ")),
-        ("definition items", one_line(": ")),
-        ("a div opened on every line", fences),
-        ("fences each one colon shorter", shrinking),
+        ("ordered items", one_line("1. "), true),
+        ("roman numerals in parentheses", one_line("(iv) "), true),
+        ("task items", one_line("- [ ] "), true),
+        ("footnote definitions", one_line("[^a]: "), true),
+        ("definition items", one_line(": "), true),
+        ("a div opened on every line", fences, true),
+        ("fences each one colon shorter", shrinking, true),
     ]
 }
 
@@ -3935,10 +3940,11 @@ fn assert_margins_stored_within_the_ceiling(shape: &str, mut ctx: Ctx, file: Str
 fn an_odt_margin_that_looks_nested_is_stored_as_words_a_load_accepts() {
     let mut cases: Vec<(String, String, String)> = margin_text_that_looks_nested()
         .into_iter()
-        .map(|(shape, lines)| {
-            assert!(
+        .map(|(shape, lines, nests)| {
+            assert_eq!(
                 skrib_format::djot_depth::check(&lines.join("\n")).is_err(),
-                "{shape}: read as Djot, the text nests past the ceiling"
+                nests,
+                "{shape}: read as Djot, the text nests past the ceiling, or nests nothing"
             );
             let margin = lines
                 .iter()
@@ -3976,7 +3982,7 @@ fn an_odt_margin_that_looks_nested_is_stored_as_words_a_load_accepts() {
 /// the Djot one is what meets them.
 #[test]
 fn a_docx_margin_that_looks_nested_is_stored_as_words_a_load_accepts() {
-    for (shape, lines) in margin_text_that_looks_nested() {
+    for (shape, lines, _) in margin_text_that_looks_nested() {
         // Djot that reads back as exactly these lines, one paragraph each.
         let literal = skrib_format::plain_text_to_djot_verbatim(&lines.join("\n"));
         let note = literal.replace("\n\n", "\n\n    ");

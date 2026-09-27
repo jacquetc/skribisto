@@ -31,11 +31,20 @@ pub(crate) fn parse_on_a_long_operation_stack(djot: String) -> Result<String, St
         .expect("the parse must not unwind")
 }
 
+/// The nesting refusal `check` gives `text`: it must be refused, and for how deeply it
+/// nests.
+fn refused_for_nesting(text: &str, why: &str) -> TooDeep {
+    match check(text) {
+        Err(DjotRefusal::TooDeep(refused)) => refused,
+        other => panic!("{why}: {other:?}"),
+    }
+}
+
 /// Every marker `jotdown` 0.10 opens a container with at the start of a line, as
 /// the text that opens one more level when it is repeated on one line.
-const ONE_LINE_MARKERS: [&str; 20] = [
+const ONE_LINE_MARKERS: [&str; 19] = [
     "- ", "* ", "+ ", "1. ", "1) ", "(1) ", "a. ", "B) ", "(c) ", "iv. ", "XII) ", "(ix) ",
-    "- [ ] ", "* [x] ", "+ [X] ", "[^a]: ", "[^note]:", "[link]: ", ": ", "> ",
+    "- [ ] ", "* [x] ", "+ [X] ", "[^a]: ", "[^note]:", ": ", "> ",
 ];
 
 /// `levels` of `marker` on one line, then a word, which the last one holds.
@@ -84,8 +93,8 @@ pub(crate) fn past_the_parsers_limit() -> Vec<(&'static str, String)> {
         + "\ndeep\n";
     vec![
         (
-            "a run of blockquote markers",
-            format!("{}deep\n", ">".repeat(4_000)),
+            "a run of blockquote markers, a tab after each",
+            format!("{}deep\n", ">\t".repeat(4_000)),
         ),
         ("bullets on one line", one_line("- ", levels)),
         ("ordered items on one line", one_line("1. ", levels)),
@@ -117,6 +126,79 @@ pub(crate) fn past_the_parsers_limit() -> Vec<(&'static str, String)> {
         (
             "quoted list items stepping in between paragraph lines",
             lazy_staircase("1. ", levels, "> "),
+        ),
+    ]
+}
+
+/// How many lines the paragraphs below hold something open over: past the 3,952 that
+/// overflow a 2 MiB stack in a release build, and far past the 721 of a debug one.
+const PAST_THE_LINES_THE_PARSER_HOLDS: usize = 4_000;
+
+/// Djot the parser cannot be given though it nests nothing past the ceiling, and a word
+/// its refusal is said with: a heading deeper than the parser can count, which panics
+/// it, paragraphs of openers nothing closes, which it takes minutes to read, and blocks
+/// that keep one thing open over thousands of lines no join can shorten, which overflow
+/// its stack.
+pub(crate) fn beyond_the_parser() -> Vec<(&'static str, String, &'static str)> {
+    let lines = PAST_THE_LINES_THE_PARSER_HOLDS;
+    vec![
+        (
+            "a link's destination left open over thousands of lines",
+            format!("[a link](https://example.com/\n{}", "more/\n".repeat(lines)),
+            "cannot be joined",
+        ),
+        (
+            "a heading holding a quotation mark open over thousands of lines",
+            format!("# \"She said\n{}", "# and went on\n".repeat(lines)),
+            "cannot be joined",
+        ),
+        (
+            "a heading deeper than the parser counts",
+            format!("{} Zeus\n", "#".repeat(MAX_HEADING_LEVEL + 1)),
+            "heading",
+        ),
+        (
+            "a paragraph of unclosed brackets",
+            "[".repeat(40_000),
+            "brackets",
+        ),
+        (
+            "a paragraph of unclosed formatting marks",
+            "{+{-".repeat(10_000),
+            "brackets",
+        ),
+    ]
+}
+
+/// Paragraphs that keep one thing open over thousands of lines, which the parser would
+/// overflow its stack on, and which [`admit`] joins into one line rather than refusing:
+/// their line breaks are spaces to the parser, or, in a code span, turn into spaces. Each
+/// with whether the joined paragraph reads exactly as it did.
+pub(crate) fn joined_by_the_load() -> Vec<(&'static str, String, bool)> {
+    let lines = PAST_THE_LINES_THE_PARSER_HOLDS;
+    vec![
+        (
+            "a quotation mark left open over thousands of lines",
+            format!("\"She said\n{}", "and went on\n".repeat(lines)),
+            true,
+        ),
+        (
+            "an attribute set read on over thousands of lines",
+            format!("{{a=b\n{}", "c=d\n".repeat(lines)),
+            true,
+        ),
+        (
+            "emphasis over thousands of lines of a quotation",
+            format!(
+                "> _She said\n{}> and stopped_\n",
+                "> and went on\n".repeat(lines)
+            ),
+            true,
+        ),
+        (
+            "a code span left open over thousands of lines",
+            format!("`code\n{}", "more code\n".repeat(lines)),
+            false,
         ),
     ]
 }
@@ -156,20 +238,25 @@ fn ordinary_prose_passes() {
     }
 }
 
-/// A blockquote marker run is the cheapest way to reach the parser's
-/// recursion, and the shape that was measured aborting the process.
+/// A blockquote marker run is the cheapest way to reach the parser's recursion, and
+/// the shape that was measured aborting the process: each `>` followed by a space.
+/// Without the spaces the run is a paragraph's first word to the parser, and nests
+/// nothing.
 #[test]
 fn a_deep_blockquote_run_is_refused() {
-    let text = format!("{}deep\n", ">".repeat(2_000));
-    let err = check(&text).expect_err("2000 levels must be refused");
+    let err = refused_for_nesting(&format!("{}deep\n", "> ".repeat(2_000)), "2000 levels");
     assert_eq!(err.line, 1);
     assert!(err.depth > MAX_DEPTH);
+
+    let unspaced = format!("{}deep\n", ">".repeat(2_000));
+    assert!(check(&unspaced).is_ok());
+    assert!(parse_on_a_long_operation_stack(unspaced).is_ok());
 }
 
 #[test]
 fn deeply_stacked_divs_are_refused() {
     let text = "::: a\n".repeat(500);
-    let err = check(&text).expect_err("500 open divs must be refused");
+    let err = refused_for_nesting(&text, "500 open divs");
     assert!(err.depth > MAX_DEPTH);
 }
 
@@ -220,11 +307,14 @@ fn a_lone_indented_marker_opens_one_level_however_far_it_is_indented() {
     }
 }
 
-/// Genuine nesting is still counted: a list whose items step in one column a level,
-/// one item per line, nests one level per step, exactly as jotdown reads it — so the
-/// depth is the number of steps, not the number of indentation bytes.
+/// A list whose items step in one column a level, one item per line, is one item: its
+/// later lines are more of its paragraph, however far in they step, since a paragraph
+/// goes on through every line that is not blank. The marker count this guard used to
+/// refuse on read one level per step, and turned away a hundred of them; the parser
+/// nests nothing past the first. With a blank line between the items it is the parser's
+/// own nesting, and counted as such (`a_list_nested_by_one_space_a_level_is_counted_per_space`).
 #[test]
-fn a_list_stepping_in_one_column_a_level_is_counted_per_step() {
+fn a_list_stepping_in_one_column_a_level_without_blank_lines_is_one_item() {
     let stepped = |levels: usize| {
         (0..levels)
             .map(|level| format!("{}- level {level}", " ".repeat(level)))
@@ -232,9 +322,11 @@ fn a_list_stepping_in_one_column_a_level_is_counted_per_step() {
             .join("\n")
             + "\n"
     };
-    assert!(check(&stepped(MAX_DEPTH)).is_ok());
-    let err = check(&stepped(MAX_DEPTH + 1)).expect_err("one step past the ceiling");
-    assert!(err.depth > MAX_DEPTH);
+    for levels in [MAX_DEPTH, MAX_DEPTH + 1, 4 * MAX_DEPTH] {
+        let text = stepped(levels);
+        assert!(check(&text).is_ok(), "{levels}");
+        assert!(parse_on_a_long_operation_stack(text).is_ok(), "{levels}");
+    }
 }
 
 /// A list item goes on through a paragraph line at no indentation after a line that was
@@ -252,8 +344,10 @@ fn a_list_continued_by_paragraph_lines_is_refused_at_its_real_depth() {
         assert!(check(&at_the_ceiling).is_ok(), "{marker:?} {prefix:?}");
         assert!(parse_on_a_long_operation_stack(at_the_ceiling).is_ok());
 
-        let err = check(&lazy_staircase(marker, MAX_DEPTH - quotes + 1, prefix))
-            .expect_err("one step past the ceiling");
+        let err = refused_for_nesting(
+            &lazy_staircase(marker, MAX_DEPTH - quotes + 1, prefix),
+            "one step past the ceiling",
+        );
         assert_eq!(err.depth, MAX_DEPTH + 1, "{marker:?} {prefix:?}");
         assert_eq!(
             err.line,
@@ -308,17 +402,27 @@ fn unicode_spaces_at_a_line_start_are_text_not_indentation() {
 fn a_marker_run_separated_by_any_ascii_whitespace_is_counted_whole() {
     for space in ['\u{C}', '\r', ' ', '\t'] {
         let text = format!("{}deep\n", format!(">{space}").repeat(300));
-        let err = check(&text).expect_err("300 levels must be refused");
+        let err = refused_for_nesting(&text, "300 levels");
         assert!(err.depth > MAX_DEPTH, "{space:?}: {err:?}");
     }
 }
 
 #[test]
 fn the_error_names_the_line() {
-    let text = format!("fine\n{}deep\n", ">".repeat(300));
-    let err = check(&text).unwrap_err();
-    assert_eq!(err.line, 2);
-    assert!(err.to_string().contains("line 2"), "{err}");
+    let text = format!("fine\n\n{}deep\n", "> ".repeat(300));
+    let err = check(&text).expect_err("300 levels");
+    assert_eq!(err.line(), 3);
+    assert!(err.to_string().contains("line 3"), "{err}");
+}
+
+/// A paragraph goes on through a line that looks like a blockquote, however many `> `
+/// it opens with: without a blank line before it, the line is more of the paragraph's
+/// words, and nests nothing.
+#[test]
+fn a_quote_marker_run_after_a_paragraph_line_is_its_words() {
+    let text = format!("fine\n{}deep\n", "> ".repeat(300));
+    assert!(check(&text).is_ok());
+    assert!(parse_on_a_long_operation_stack(text).is_ok());
 }
 
 /// The hole this guard used to have: a container opened on one line, of any
@@ -332,7 +436,7 @@ fn every_container_a_line_can_open_is_counted_to_the_ceiling() {
             "{marker:?} at the ceiling must pass"
         );
         let text = format!("Before.\n\n{}", one_line(marker, MAX_DEPTH + 1));
-        let err = check(&text).expect_err(&format!("{marker:?} past the ceiling"));
+        let err = refused_for_nesting(&text, &format!("{marker:?} past the ceiling"));
         assert_eq!(err.line, 3, "{marker:?}: the refusal names the line");
         assert!(err.depth > MAX_DEPTH, "{marker:?}: {err:?}");
     }
@@ -362,6 +466,7 @@ fn text_that_only_looks_like_a_marker_is_not_counted() {
         format!("{}\n", "* ".repeat(300)),
         format!("{}\n", "[a] ".repeat(300)),
         format!("{}\n", "abc. ".repeat(300)),
+        format!("{}deep\n", "[link]: ".repeat(300)),
     ] {
         assert!(check(&text).is_ok(), "should pass: {text:.40}");
     }
@@ -379,7 +484,7 @@ fn a_list_nested_by_one_space_a_level_is_counted_per_space() {
             .join("\n")
     };
     assert!(check(&nested(MAX_DEPTH)).is_ok());
-    let err = check(&nested(MAX_DEPTH + 1)).expect_err("one level past");
+    let err = refused_for_nesting(&nested(MAX_DEPTH + 1), "one level past");
     assert_eq!(err.line, 2 * MAX_DEPTH + 1, "the deepest item's line");
 }
 
@@ -388,7 +493,7 @@ fn a_list_nested_by_one_space_a_level_is_counted_per_space() {
 #[test]
 fn a_div_opened_after_a_quote_on_every_line_is_counted() {
     let text = "> ::: note\n".repeat(MAX_DEPTH);
-    let err = check(&text).expect_err("a div per line, inside one quote");
+    let err = refused_for_nesting(&text, "a div per line, inside one quote");
     assert!(err.depth > MAX_DEPTH);
 }
 
@@ -527,9 +632,9 @@ fn indented_list() -> impl Strategy<Value = String> {
 ///
 /// It starts after a blank line. Without one, a paragraph line before it reads every
 /// line of it as more of that paragraph (none of them is blank outside the quotation),
-/// and a paragraph of hundreds of lines meets a different limit of the parser, which
-/// this ceiling does not bound: its inline pass recurses once per line that an
-/// emphasis or a quote left open spans.
+/// and a paragraph of hundreds of lines meets a different limit of the parser: its
+/// inline pass recurses once per line that an emphasis or a quote left open spans,
+/// which [`MAX_HELD_LINES`] bounds rather than the nesting ceiling.
 fn lazy_list() -> impl Strategy<Value = String> {
     let marker = prop::sample::select(vec!["- ", "1. ", "[^a]: ", ": ", "- [ ] "]);
     let prefix = prop::sample::select(vec!["", "> ", "> > "]);
@@ -588,7 +693,8 @@ proptest! {
             Ok(()) => prop_assert!(levels <= MAX_DEPTH, "{levels} levels passed"),
             Err(refused) => {
                 prop_assert!(levels > MAX_DEPTH, "{} levels refused: {:?}", levels, refused);
-                prop_assert_eq!(refused.line, 2 * before + 1);
+                prop_assert_eq!(refused.line(), 2 * before + 1);
+                prop_assert!(refused.too_deep().is_some(), "{:?}", refused);
             }
         }
     }
@@ -604,13 +710,31 @@ proptest! {
         }
     }
 
-    /// A refusal always names a line the text has.
+    /// A refusal always names a line the text has, and a limit the text passes there:
+    /// the nesting, or, when the soup reads as one long paragraph (a line with no space
+    /// after its `>` starts one, and every line after it goes on with it), the lines it
+    /// holds open, as deep as the parser's calls would go by that line.
     #[test]
     fn a_refusal_names_a_line_of_the_text(text in marker_soup()) {
         if let Err(refused) = check(&text) {
-            prop_assert!(refused.line >= 1);
-            prop_assert!(refused.line <= text.split('\n').count());
-            prop_assert!(refused.depth > MAX_DEPTH);
+            prop_assert!(refused.line() >= 1);
+            prop_assert!(refused.line() <= text.split('\n').count());
+            match &refused {
+                DjotRefusal::TooDeep(deep) => prop_assert!(deep.depth > MAX_DEPTH),
+                DjotRefusal::HeldOpenTooLong { line } => {
+                    let to_the_line = text.split('\n').take(*line).collect::<Vec<_>>().join("\n");
+                    let unbounded = crate::djot_inline::Limits {
+                        max_held: usize::MAX,
+                        ..crate::djot_inline::Limits::default()
+                    };
+                    let held = scan(&to_the_line, unbounded).map(|cost| cost.held_lines);
+                    prop_assert!(
+                        matches!(held, Ok(lines) if lines > MAX_HELD_LINES),
+                        "{:?}: {:?}", refused, held
+                    );
+                }
+                other => prop_assert!(false, "{:?}", other),
+            }
         }
     }
 }
@@ -878,8 +1002,596 @@ proptest! {
             Err(refused) => {
                 // Refused only when the depth genuinely reaches the ceiling — within a
                 // small constant of `levels`, not half of it.
-                prop_assert!(refused.depth > MAX_DEPTH);
-                prop_assert!(levels + 2 >= refused.depth, "counted {} for {levels} levels", refused.depth);
+                let depth = refused.too_deep().map_or(0, |deep| deep.depth);
+                prop_assert!(depth > MAX_DEPTH, "{:?}", refused);
+                prop_assert!(levels + 2 >= depth, "counted {} for {levels} levels", depth);
+            }
+        }
+    }
+}
+
+// ── Lines that nest nothing are never refused ────────────────────────────────────────
+
+/// Lines a writer can put in a code block, as many as they like on one line, that
+/// open containers anywhere else.
+fn marker_lines() -> Vec<String> {
+    vec![
+        ">".repeat(100),
+        "> ".repeat(100),
+        ">> ".repeat(100),
+        format!("{}end", "+ ".repeat(100)),
+        format!("{}x", "- ".repeat(100)),
+        "1. ".repeat(120),
+        ": ".repeat(100),
+        "[^a]: ".repeat(100),
+        "::: note ".repeat(100),
+    ]
+}
+
+/// A code block keeps its lines as they were written, and the parser reads them as its
+/// text: however many markers a line of one opens with, it nests nothing. The marker
+/// count this guard used to refuse on read them as containers, and past 96 of them
+/// locked the writer out of a project whose code block the editor had saved.
+#[test]
+fn a_code_blocks_lines_nest_nothing() {
+    for line in marker_lines() {
+        for fence in ["```", "~~~", "`````", "```rust"] {
+            let close: String = fence
+                .chars()
+                .take_while(|c| matches!(c, '`' | '~'))
+                .collect();
+            let text = format!("Before.\n\n{fence}\ncode\n{line}\n{close}\n\nAfter.\n");
+            assert!(check(&text).is_ok(), "{fence} {line:.20}");
+            assert!(parse_on_a_long_operation_stack(text).is_ok());
+        }
+    }
+}
+
+/// A paragraph goes on through every line that is not blank, and its later lines are
+/// its words whatever they open with. The editor writes a preformatted paste as one
+/// paragraph with its line breaks kept, so a pasted line of markers is one of these.
+#[test]
+fn a_paragraphs_later_lines_nest_nothing() {
+    for line in marker_lines() {
+        let text = format!("start\n{line}\nend\n");
+        assert!(check(&text).is_ok(), "{line:.20}");
+        assert!(parse_on_a_long_operation_stack(text).is_ok());
+    }
+}
+
+/// What the editor stores for a code block that holds a line of markers, typed or
+/// imported, and for a preformatted paste of one, loads again, markers and all.
+#[test]
+fn the_editors_code_block_and_preformatted_paste_load_again() {
+    use text_document::{MoveMode, MoveOperation};
+    for line in marker_lines() {
+        let doc = TextDocument::new();
+        doc.set_markdown(&format!(
+            "Before.\n\n```\ncode\n{}\n```\n\nAfter.\n",
+            line.trim_end()
+        ))
+        .and_then(|operation| operation.wait())
+        .expect("the editor takes the Markdown");
+        let imported = doc
+            .to_djot()
+            .expect("the editor writes its document as Djot");
+        assert!(check(&imported).is_ok(), "{imported:.200}");
+        assert!(parse_on_a_long_operation_stack(imported).is_ok());
+
+        let doc = TextDocument::new();
+        doc.set_plain_text("Before.").expect("typed");
+        let cursor = doc.cursor();
+        cursor.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
+        let _ = cursor.insert_block();
+        cursor
+            .insert_html(&format!("<pre>start\n{line}\nend</pre>"))
+            .expect("the editor takes the paste");
+        let pasted = doc
+            .to_djot()
+            .expect("the editor writes its document as Djot");
+        assert!(check(&pasted).is_ok(), "{pasted:.200}");
+        assert!(parse_on_a_long_operation_stack(pasted).is_ok());
+    }
+}
+
+// ── A heading the parser cannot count ────────────────────────────────────────────────
+
+/// A heading of 65,536 `#` panics the parser, which stores its level in 16 bits; the
+/// deepest it can store loads and parses. Refused wherever the heading sits: alone, in a
+/// quotation, in a list item, after a paragraph's blank line.
+#[test]
+fn a_heading_deeper_than_the_parser_counts_is_refused() {
+    let at = "#".repeat(MAX_HEADING_LEVEL);
+    let past = "#".repeat(MAX_HEADING_LEVEL + 1);
+    for (prefix, line) in [("", 1), ("> ", 1), ("- ", 1), ("Words.\n\n", 3)] {
+        let text = format!("{prefix}{past} Zeus\n");
+        match check(&text) {
+            Err(DjotRefusal::HeadingTooDeep { level, line: at }) => {
+                assert_eq!(level, MAX_HEADING_LEVEL + 1, "{prefix:?}");
+                assert_eq!(at, line, "{prefix:?}");
+            }
+            other => panic!("{prefix:?}: {other:?}"),
+        }
+        let text = format!("{prefix}{at} Zeus\n");
+        assert!(check(&text).is_ok(), "{prefix:?}");
+        assert!(parse_on_a_long_operation_stack(text).is_ok(), "{prefix:?}");
+    }
+    // Only a heading is one: the same run followed by a word is a paragraph's text, and
+    // on a paragraph's later line it is more of the paragraph.
+    for text in [
+        format!("{past}x\n"),
+        format!("words\n{past} Zeus\n"),
+        format!("```\n{past} Zeus\n```\n"),
+    ] {
+        assert!(check(&text).is_ok(), "{text:.40}");
+        assert!(parse_on_a_long_operation_stack(text).is_ok());
+    }
+}
+
+/// The refusal says what it refused, and where.
+#[test]
+fn the_heading_refusal_names_the_heading_and_its_line() {
+    let text = format!("Words.\n\n{} Zeus\n", "#".repeat(70_000));
+    let refused = check(&text).expect_err("a heading of 70,000 levels");
+    assert_eq!(refused.line(), 3);
+    let said = refused.to_string();
+    assert!(said.contains("70000") && said.contains("line 3"), "{said}");
+}
+
+/// The parser also stores, in 16 bits, how many containers are open around a list,
+/// sections included, and each heading outside every container opens a section inside
+/// the ones of lower levels. The ceiling leaves room for the document, the list and
+/// every container a list item may sit in.
+#[test]
+fn the_sections_ceiling_leaves_the_parser_room_for_a_list() {
+    let open_at_a_list = 1 + MAX_SECTIONS + (MAX_DEPTH - 1) + 1;
+    assert_eq!(open_at_a_list, usize::from(u16::MAX));
+}
+
+/// Sections are counted as the parser opens and closes them: one per heading deeper
+/// than every open one, a heading closing the sections of its own level and deeper, and
+/// a heading inside a container opening none.
+#[test]
+fn sections_are_counted_as_the_parser_opens_them() {
+    let sections = |text: &str| {
+        let mut nesting = crate::djot_nesting::Nesting::default();
+        text.split_inclusive('\n')
+            .map(|line| nesting.read_line(line, MAX_DEPTH).sections)
+            .last()
+            .unwrap_or(0)
+    };
+    let chain: String = (1..=50)
+        .map(|level| format!("{} h\n\n", "#".repeat(level)))
+        .collect();
+    assert_eq!(sections(&chain), 50);
+    assert_eq!(sections(&format!("{chain}### back up\n")), 3);
+    assert_eq!(sections(&format!("{chain}> ## quoted\n")), 50);
+    assert_eq!(sections(&format!("{chain}- # listed\n")), 50);
+}
+
+// ── Joined, not refused ──────────────────────────────────────────────────────────────
+
+/// How `text-document` reads `djot`, as its own Djot and its plain text, parsed on a stack
+/// deep enough for any paragraph here: the reading a load must leave as it was. `None`
+/// when `text-document` refuses it.
+pub(crate) fn reading(djot: String) -> Option<(String, String)> {
+    std::thread::Builder::new()
+        .stack_size(256 << 20)
+        .spawn(move || {
+            let doc = TextDocument::new();
+            doc.set_djot_sync(&djot).ok()?;
+            Some((doc.to_djot().ok()?, doc.to_plain_text().ok()?))
+        })
+        .expect("spawn the parse thread")
+        .join()
+        .expect("the parse must not unwind")
+}
+
+/// What the editor stores after `html` is pasted as a paragraph of its own below the
+/// words "Epigraph:", and `format`, if any, applied to all of it afterwards.
+fn pasted_passage(html: &str, format: Option<text_document::TextFormat>) -> String {
+    use text_document::{MoveMode, MoveOperation};
+    let doc = TextDocument::new();
+    doc.set_plain_text("Epigraph:").expect("typed");
+    let cursor = doc.cursor_at(doc.character_count());
+    cursor.insert_block().expect("a new paragraph");
+    let start = doc.character_count();
+    cursor
+        .insert_html(html)
+        .expect("the editor takes the paste");
+    if let Some(format) = format {
+        let cursor = doc.cursor_at(start);
+        cursor.move_position(MoveOperation::End, MoveMode::KeepAnchor, 1);
+        cursor
+            .merge_char_format(&format)
+            .expect("the editor formats the passage");
+    }
+    doc.to_djot()
+        .expect("the editor writes its document as Djot")
+}
+
+/// Lines of a pasted passage, one per line of its `<pre>`.
+fn verses(lines: usize) -> String {
+    (0..lines)
+        .map(|i| format!("verse {i} of the poem\n"))
+        .collect()
+}
+
+/// Every way the editor formats a pasted preformatted passage from end to end: a
+/// format applied after the paste, one the paste carried in, and a passage pasted into
+/// a quotation or a list.
+pub(crate) fn formatted_passages(lines: usize) -> Vec<(&'static str, String)> {
+    use text_document::{CharVerticalAlignment, TextFormat};
+    let pre = format!("<pre>{}</pre>", verses(lines));
+    let after = |format: TextFormat| pasted_passage(&pre, Some(format));
+    vec![
+        (
+            "italic",
+            after(TextFormat {
+                font_italic: Some(true),
+                ..TextFormat::default()
+            }),
+        ),
+        (
+            "bold",
+            after(TextFormat {
+                font_bold: Some(true),
+                ..TextFormat::default()
+            }),
+        ),
+        (
+            "underlined",
+            after(TextFormat {
+                font_underline: Some(true),
+                ..TextFormat::default()
+            }),
+        ),
+        (
+            "struck out",
+            after(TextFormat {
+                font_strikeout: Some(true),
+                ..TextFormat::default()
+            }),
+        ),
+        (
+            "a link",
+            after(TextFormat {
+                anchor_href: Some("https://example.com".to_string()),
+                is_anchor: Some(true),
+                ..TextFormat::default()
+            }),
+        ),
+        (
+            "superscript",
+            after(TextFormat {
+                vertical_alignment: Some(CharVerticalAlignment::SuperScript),
+                ..TextFormat::default()
+            }),
+        ),
+        (
+            "pasted in italics",
+            pasted_passage(&format!("<pre><em>{}</em></pre>", verses(lines)), None),
+        ),
+        (
+            "pasted in italics into a quotation",
+            pasted_passage(
+                &format!(
+                    "<blockquote><pre><em>{}</em></pre></blockquote>",
+                    verses(lines)
+                ),
+                None,
+            ),
+        ),
+        (
+            "pasted in italics into a list",
+            pasted_passage(
+                &format!("<ul><li><pre><em>{}</em></pre></li></ul>", verses(lines)),
+                None,
+            ),
+        ),
+    ]
+}
+
+/// A preformatted passage the writer pasted and formatted from end to end is written as
+/// one paragraph over all its lines, every one of them held open. Two hundred lines of
+/// it load as they are; six hundred pass the ceiling, and the load joins them into one
+/// line instead of refusing the project, the editor reading the joined paragraph exactly
+/// as the one it wrote. Before, 129 lines of it were refused, and the project with them.
+#[test]
+fn a_pasted_passage_formatted_across_its_lines_opens_as_the_editor_wrote_it() {
+    for (name, djot) in formatted_passages(200) {
+        assert_eq!(check(&djot), Ok(()), "{name}, 200 lines");
+        assert_eq!(admit(djot.clone()).as_ref(), Ok(&djot), "{name}, 200 lines");
+    }
+    for (name, djot) in formatted_passages(600) {
+        assert!(
+            matches!(check(&djot), Err(DjotRefusal::HeldOpenTooLong { .. })),
+            "{name}: {:?}",
+            check(&djot)
+        );
+        let joined = match admit(djot.clone()) {
+            Ok(joined) => joined,
+            Err(refused) => panic!("{name}: the load refused what the editor wrote: {refused}"),
+        };
+        assert_ne!(joined, djot, "{name}");
+        assert_eq!(check(&joined), Ok(()), "{name}");
+        assert!(joined.lines().count() < 10, "{name}: {joined:.300}");
+        let before = reading(djot);
+        assert!(before.is_some(), "{name}");
+        assert_eq!(
+            reading(joined.clone()),
+            before,
+            "{name}: the editor reads it as it was"
+        );
+        assert!(parse_on_a_long_operation_stack(joined).is_ok(), "{name}");
+    }
+}
+
+/// A passage pasted as code, or in a monospaced font, is written as one code span over
+/// all its lines, and the parser keeps its line breaks. Up to the ceiling it loads as it
+/// is. Past it, those line breaks are the only ones there are to join: the load writes
+/// them as spaces, keeping every word and the code formatting, rather than refusing the
+/// project.
+#[test]
+fn a_code_span_over_a_pasted_passage_runs_on_rather_than_being_refused() {
+    let code =
+        |lines: usize| pasted_passage(&format!("<pre><code>{}</code></pre>", verses(lines)), None);
+    let within = code(400);
+    assert_eq!(admit(within.clone()).as_ref(), Ok(&within));
+
+    let past = code(600);
+    assert!(matches!(
+        check(&past),
+        Err(DjotRefusal::HeldOpenTooLong { .. })
+    ));
+    let joined = match admit(past.clone()) {
+        Ok(joined) => joined,
+        Err(refused) => panic!("the load refused what the editor wrote: {refused}"),
+    };
+    assert_eq!(check(&joined), Ok(()));
+    let Some((_, before)) = reading(past) else {
+        panic!("the editor reads what it wrote");
+    };
+    let Some((_, after)) = reading(joined.clone()) else {
+        panic!("the editor reads the joined passage");
+    };
+    let Some((first, passage)) = before.split_once('\n') else {
+        panic!("two paragraphs: {before:.200}");
+    };
+    assert!(passage.matches('\n').count() >= 600, "{passage:.200}");
+    assert_eq!(after, format!("{first}\n{}", passage.replace('\n', " ")));
+    assert!(parse_on_a_long_operation_stack(joined).is_ok());
+}
+
+/// A project saved by Skribisto 3.0.4, whose `text-document` wrote a straight quotation
+/// mark as it was and kept the line breaks of a plain-text paste: one quotation mark
+/// nothing closes holds every line after it. It opened in 3.0.4, and opens again, read
+/// as it was then.
+#[test]
+fn a_project_saved_by_3_0_4_with_an_unclosed_quotation_mark_opens() {
+    for lines in [130, 600, 4_000] {
+        let djot = format!(
+            "Before.\n\nHe said \"let us begin\n{}and that was all.\n",
+            "and then the next line of the paste\n".repeat(lines)
+        );
+        let joined = match admit(djot.clone()) {
+            Ok(joined) => joined,
+            Err(refused) => panic!("{lines} lines: {refused}"),
+        };
+        assert_eq!(check(&joined), Ok(()), "{lines} lines");
+        if lines <= MAX_HELD_LINES {
+            assert_eq!(joined, djot, "{lines} lines load as they are");
+        }
+        assert_eq!(reading(joined), reading(djot), "{lines} lines");
+    }
+}
+
+/// Joining never makes a line read as another kind of block: a paragraph opening with a
+/// `|` and ending, hundreds of lines later, with one would join into a table row. That
+/// paragraph is refused as it was, and the joins that change nothing are all it is
+/// offered.
+#[test]
+fn a_join_that_would_turn_a_paragraph_into_a_table_row_is_not_made() {
+    let text = format!("| \"a quotation\n{}the end |\n", "and more\n".repeat(600));
+    let Some(joins) = joins_in(&text, MAX_HELD_LINES + 1) else {
+        panic!("nothing but the lines held stands in the way");
+    };
+    assert_eq!(joins.len(), 601);
+    assert_eq!(join_lines(&text, &joins), None);
+    assert!(matches!(
+        admit(text),
+        Err(DjotRefusal::HeldOpenTooLong { line }) if line == MAX_HELD_LINES + 2
+    ));
+}
+
+/// What joining cannot shorten is refused as before: a link's destination, which the
+/// parser rebuilds from its lines without their breaks; a heading's lines, each of which
+/// states the heading again; and lines opening with an attribute set, which a space would
+/// attach to the word before it.
+#[test]
+fn breaks_the_parser_reads_as_something_else_are_left_and_refused() {
+    for (name, text) in [
+        (
+            "a link's destination",
+            format!("[a link](https://example.com/\n{}", "more/\n".repeat(600)),
+        ),
+        (
+            "a heading",
+            format!("# \"She said\n{}", "# and went on\n".repeat(600)),
+        ),
+        (
+            "lines opening with attributes",
+            format!("\"She said\n{}", "{.aside} and went on\n".repeat(600)),
+        ),
+    ] {
+        assert!(
+            matches!(admit(text), Err(DjotRefusal::HeldOpenTooLong { .. })),
+            "{name}"
+        );
+    }
+    let refused = DjotRefusal::HeldOpenTooLong { line: 600 }.to_string();
+    assert!(refused.contains("cannot be joined"), "{refused}");
+    assert!(!refused.contains("crash"), "{refused}");
+}
+
+/// When joining brings the lines held within the ceiling but the text passes another
+/// limit further on, the refusal names that one, at its own line.
+#[test]
+fn past_the_joined_lines_the_next_limit_is_the_one_refused() {
+    let text = format!(
+        "\"She said\n{}\n{}",
+        "and went on\n".repeat(600),
+        one_line("- ", MAX_DEPTH + 1)
+    );
+    assert!(matches!(
+        check(&text),
+        Err(DjotRefusal::HeldOpenTooLong { .. })
+    ));
+    match admit(text) {
+        Err(DjotRefusal::TooDeep(deep)) => assert_eq!(deep.line, 603),
+        other => panic!("{other:?}"),
+    }
+}
+
+/// The shapes [`joined_by_the_load`] lists are admitted, and parse from a long
+/// operation's stack; those it says are read as they were are.
+#[test]
+fn every_joinable_shape_is_admitted_and_parses() {
+    for (name, text, exact) in joined_by_the_load() {
+        assert!(check(&text).is_err(), "{name}");
+        let joined = match admit(text.clone()) {
+            Ok(joined) => joined,
+            Err(refused) => panic!("{name}: {refused}"),
+        };
+        if exact {
+            assert_eq!(reading(joined.clone()), reading(text), "{name}");
+        }
+        assert!(parse_on_a_long_operation_stack(joined).is_ok(), "{name}");
+    }
+}
+
+/// One piece of a line of words: every character that opens, closes or escapes
+/// something inline, alone and in the pairs the lexer reads as one, and plain words and
+/// whitespace between them.
+fn inline_piece() -> impl Strategy<Value = &'static str> {
+    prop::sample::select(vec![
+        "word",
+        "a",
+        "Zeus",
+        " ",
+        "  ",
+        "\t",
+        "_",
+        "*",
+        "\"",
+        "'",
+        "[",
+        "]",
+        "(",
+        ")",
+        "{",
+        "}",
+        "{_",
+        "_}",
+        "{*",
+        "*}",
+        "{+",
+        "+}",
+        "{-",
+        "-}",
+        "{=",
+        "=}",
+        "{^",
+        "^}",
+        "{~",
+        "~}",
+        "^",
+        "~",
+        "`",
+        "``",
+        "\\",
+        "\\\\",
+        "-",
+        "--",
+        "---",
+        "...",
+        "<",
+        ">",
+        ":",
+        "|",
+        "!",
+        "![",
+        "$",
+        "=",
+        "+",
+        "#",
+        "%",
+        ".c",
+        "#i",
+        "a=b",
+        "https://example.com",
+        "<https://example.com>",
+        ":smile:",
+        "[^1]",
+        "](u)",
+        "][r]",
+        "][]",
+        "{.c}",
+        "{#i}",
+        "{a=\"b\"}",
+        "{%c%}",
+        "`x`{=html}",
+    ])
+}
+
+/// A paragraph of one to six lines of pieces, in a container: none, a quotation, a list
+/// item (its later lines indented or lazy), a footnote or a div.
+fn paragraph_in_a_container() -> impl Strategy<Value = String> {
+    let line = prop::collection::vec(inline_piece(), 1..9).prop_map(|pieces| pieces.concat());
+    let lines = prop::collection::vec(line, 1..7);
+    let container = prop::sample::select(vec![
+        ("", ""),
+        ("> ", "> "),
+        ("- ", "  "),
+        ("- ", ""),
+        ("[^n]: ", "  "),
+        ("> - ", ">   "),
+    ]);
+    (lines, container, any::<bool>()).prop_map(|(lines, (first, then), div)| {
+        let body = lines
+            .iter()
+            .enumerate()
+            .map(|(index, line)| format!("{}{line}", if index == 0 { first } else { then }))
+            .collect::<Vec<_>>()
+            .join("\n");
+        if div {
+            format!("::: d\n{body}\n:::")
+        } else {
+            body
+        }
+    })
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 512, ..ProptestConfig::default() })]
+
+    /// Joining a paragraph's lines where the load would join them changes nothing the
+    /// editor reads, whatever the words hold: every line break of every paragraph is
+    /// joined here, not only those of a paragraph past the ceiling, and the document the
+    /// editor builds from the joined text is the one it builds from the text.
+    #[test]
+    fn joining_a_paragraphs_lines_changes_nothing_the_editor_reads(
+        paragraphs in prop::collection::vec(paragraph_in_a_container(), 1..4),
+    ) {
+        let text = paragraphs.join("\n\n") + "\n";
+        let Some(joins) = joins_in(&text, 0) else {
+            return Ok(());
+        };
+        let spaces: Vec<_> = joins.into_iter().filter(|join| !join.in_code).collect();
+        if let Some(joined) = join_lines(&text, &spaces) {
+            let before = reading(text.clone());
+            if before.is_some() {
+                prop_assert_eq!(reading(joined.clone()), before, "{:?} became {:?}", text, joined);
             }
         }
     }

@@ -133,8 +133,7 @@ fn markdown_without_nesting_keeps_every_word_and_nothing_else() {
     );
     for line in flat.split('\n') {
         assert!(
-            crate::djot_depth::line_start(line, crate::djot_depth::Grammar::Markdown, 1).containers
-                <= 1,
+            super::line_start(line, 1).containers <= 1,
             "{line:?} opens nothing but a table row"
         );
     }

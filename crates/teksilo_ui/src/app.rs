@@ -2347,28 +2347,48 @@ impl Widget for App {
             self.initial_loaded = true;
             match self.initial_action.take() {
                 Some(PendingAction::Load(path)) => {
-                    if let Err(e) = work_management_commands::load_work(
-                        &self.app_ctx,
-                        &LoadWorkDto {
-                            media_root: crate::media_paths::media_root_string(),
-                            file_name: path.clone(),
+                    // Claimed before the load, so an import started meanwhile, here or
+                    // in another copy, sees it open and backs out; refused when an
+                    // import is writing it already: loaded now, this window would hold
+                    // the project the import replaces, and its first save would write
+                    // that project back over the import. Said as any failure to open is.
+                    match crate::shell::open_registry::claim_for_load(&path) {
+                        None => {
+                            let toast = crate::project::import_in_flight_toast(&path);
+                            ctx.run_after_mount(move |ctx| {
+                                ctx.show_toast(toast);
+                            });
+                        }
+                        Some(claim) => match work_management_commands::load_work(
+                            &self.app_ctx,
+                            &LoadWorkDto {
+                                media_root: crate::media_paths::media_root_string(),
+                                file_name: path.clone(),
+                            },
+                        ) {
+                            Ok(_) => claim.keep(),
+                            Err(e) => {
+                                // The claim goes with the failed load.
+                                drop(claim);
+                                // A toast, not the `eprintln!` this used to be: an argv
+                                // launch is the one open path with no dialog behind it,
+                                // so a failure here left the writer looking at an empty
+                                // window with the explanation on a terminal nobody is
+                                // watching. `build` has only a `BuildContext`, which
+                                // cannot present anything, but `run_after_mount` hands
+                                // back a real `EventContext` once this window exists,
+                                // which is exactly what a toast needs. The enclosing
+                                // `initial_loaded` guard already makes this a genuine
+                                // one-shot, so the per-enqueue caveat on
+                                // `run_after_mount` (a rebuilding widget enqueuing
+                                // twice) cannot apply.
+                                let toast = crate::project::open_failure_toast(&path, &e);
+                                eprintln!("skribisto: could not open '{path}': {e:#}");
+                                ctx.run_after_mount(move |ctx| {
+                                    ctx.show_toast(toast);
+                                });
+                            }
                         },
-                    ) {
-                        // A toast, not the `eprintln!` this used to be: an argv launch
-                        // is the one open path with no dialog behind it, so a failure
-                        // here left the writer looking at an empty window with the
-                        // explanation on a terminal nobody is watching. `build` has only
-                        // a `BuildContext`, which cannot present anything — but
-                        // `run_after_mount` hands back a real `EventContext` once this
-                        // window exists, which is exactly what a toast needs. The
-                        // enclosing `initial_loaded` guard already makes this a genuine
-                        // one-shot, so the per-enqueue caveat on `run_after_mount`
-                        // (a rebuilding widget enqueuing twice) cannot apply.
-                        let toast = crate::project::open_failure_toast(&path, &e);
-                        eprintln!("skribisto: could not open '{path}': {e:#}");
-                        ctx.run_after_mount(move |ctx| {
-                            ctx.show_toast(toast);
-                        });
                     }
                 }
                 Some(PendingAction::New {

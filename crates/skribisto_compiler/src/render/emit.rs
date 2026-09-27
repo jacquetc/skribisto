@@ -141,7 +141,30 @@ pub(super) fn push_para(out: &mut String, text: &str, rtl: bool, extra: &[String
 /// whether any actual prose block reached the document. A scene whose entire
 /// content is a break marker emits furniture but no prose, and must not be
 /// counted as an emitted item.
+///
+/// Whatever the prose leaves open at its end is closed after it
+/// ([`skrib_format::closing_fences`]): a div until a bare fence, a code block until its
+/// own. Left open, the next row's heading and prose would be read inside it, and a book
+/// whose rows each leave one open would nest a level deeper with every row, until
+/// `text-document` gave up on the whole book at its ceiling and printed its source. A
+/// load holds each row to a depth on its own; this is what keeps the rows on their own
+/// once they are put together.
 pub(super) fn push_prose(
+    out: &mut String,
+    djot: &str,
+    rtl: bool,
+    preset: &Preset,
+    scan_markers: bool,
+    pending: &mut Vec<String>,
+    lead: &[String],
+) -> (usize, bool) {
+    let emitted = push_prose_blocks(out, djot, rtl, preset, scan_markers, pending, lead);
+    out.push_str(&skrib_format::closing_fences(djot.trim()));
+    emitted
+}
+
+/// [`push_prose`], short of closing what the prose leaves open.
+fn push_prose_blocks(
     out: &mut String,
     djot: &str,
     rtl: bool,

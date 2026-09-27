@@ -374,24 +374,37 @@ impl ProjectSwitchViewModel {
                 form(ctx);
             }
             PendingSwitch::OpenWork(path) => {
+                // Claimed before the load, so an import started meanwhile, here or in
+                // another copy, sees it open and backs out. Refused when an import is
+                // writing it already, before anything is closed, so the window keeps
+                // the project it had.
+                let Some(claim) = crate::shell::open_registry::claim_for_load(&path) else {
+                    ctx.show_toast(super::import_in_flight_toast(&path));
+                    return;
+                };
                 // Close the SAME window's own outgoing Work before replacing it —
                 // see the module doc and `close_outgoing_work`'s own doc. This is
                 // the terminal step (no further confirmation follows), so closing
                 // here, immediately before `load_work`, never leaves the window
                 // showing nothing for longer than this one synchronous call.
                 crate::app::close_outgoing_work(&self.app_ctx, outgoing_work_id);
-                if let Err(e) = work_management_commands::load_work(
+                match work_management_commands::load_work(
                     &self.app_ctx,
                     &LoadWorkDto {
                         media_root: crate::media_paths::media_root_string(),
                         file_name: path.clone(),
                     },
                 ) {
-                    // The outgoing Work is already closed at this point (see
-                    // above), so there is no live Work to target any more —
-                    // this window's own audience is about to become the new
-                    // (never-opened) one. Origin-window default is correct.
-                    ctx.show_toast(super::open_failure_toast(&path, &e));
+                    Ok(_) => claim.keep(),
+                    Err(e) => {
+                        // The claim goes with the failed load. The outgoing Work is
+                        // already closed at this point (see above), so there is no
+                        // live Work to target any more: this window's own audience
+                        // is about to become the new (never-opened) one.
+                        // Origin-window default is correct.
+                        drop(claim);
+                        ctx.show_toast(super::open_failure_toast(&path, &e));
+                    }
                 }
             }
         }
@@ -667,6 +680,57 @@ mod tests {
         }
         defer_headless(&earlier_clone, PendingSwitch::NewWork, Some(7));
         assert_eq!(saves.get(), 1, "the earlier clone must see the new hook");
+    }
+
+    /// A project an import is still writing is not opened in place: the window keeps
+    /// the project it has, and the writer is told why. Opened, the window would show
+    /// the project the import is replacing, and its next save would write that project
+    /// back over the import. Once the import lets go of it, it opens as any other.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn a_project_an_import_is_writing_is_not_opened_in_place() {
+        use crate::shell::open_registry;
+        use crate::test_support::{IsolatedOpenRegistry, RealProject, press};
+        use frontend::commands::work_commands::get_all_work;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let project = RealProject::empty_novel();
+        project.save();
+        let target = project.path.to_string_lossy().into_owned();
+        let vm = ProjectSwitchViewModel::new(
+            project.app_ctx.clone(),
+            Signal::new(false),
+            Signal::new(false),
+            Signal::new(true),
+        );
+        let mut tree = crate::test_support::tree_with_events(&project.app_ctx);
+        let open_ids = |app_ctx: &AppContext| -> Vec<u64> {
+            get_all_work(app_ctx)
+                .expect("get_all_work")
+                .into_iter()
+                .map(|work| work.id)
+                .collect()
+        };
+
+        let claim = open_registry::claim_import(&target);
+        let (switching, path, work) = (vm.clone(), target.clone(), project.work_id);
+        press(&mut tree, move |c| {
+            switching.request(c, PendingSwitch::OpenWork(path.clone()), Some(work))
+        });
+        assert_eq!(
+            open_ids(&project.app_ctx),
+            vec![project.work_id],
+            "the window keeps the project it had"
+        );
+
+        drop(claim);
+        let (switching, path, work) = (vm.clone(), target.clone(), project.work_id);
+        press(&mut tree, move |c| {
+            switching.request(c, PendingSwitch::OpenWork(path.clone()), Some(work))
+        });
+        let now = open_ids(&project.app_ctx);
+        assert_eq!(now.len(), 1);
+        assert_ne!(now, vec![project.work_id], "then it opens as any other");
     }
 
     /// The probes are what make a parked switch honest: a change only an

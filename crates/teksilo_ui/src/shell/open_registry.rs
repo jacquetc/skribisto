@@ -55,6 +55,11 @@ pub struct OpenEntry {
     /// Canonicalized absolute path of the `.skrib`.
     pub path: String,
     pub title: String,
+    /// Not open in a window: an import is writing the project there, and nothing may
+    /// open or write it until the import has finished ([`claim_import`]). Absent from
+    /// the lock files of builds before it, which read as `false`.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub importing: bool,
 }
 
 thread_local! {
@@ -62,6 +67,11 @@ thread_local! {
     /// A map (not a single slot) because one process may hold several projects
     /// open at once.
     static CLAIMED: RefCell<HashMap<String, PathBuf>> = RefCell::new(HashMap::new());
+
+    /// The paths this process's imports are writing: canonical path -> how many
+    /// [`ImportClaim`]s hold it. Kept whether or not a lock file could be written, so
+    /// this process refuses them even with no lock directory at all.
+    static IMPORTING: RefCell<HashMap<String, usize>> = RefCell::new(HashMap::new());
 
     /// Test-only override for [`dir`], so tests never touch the real
     /// `XDG_RUNTIME_DIR` / app data dir.
@@ -327,6 +337,7 @@ pub fn claim(path: &str, title: &str) {
         pid: my_pid(),
         path: canon.clone(),
         title: title.to_string(),
+        importing: false,
     };
     if let Ok(json) = serde_json::to_string(&entry)
         && std::fs::write(&lock, json).is_ok()
@@ -373,6 +384,153 @@ fn remove_own_lock(lock: &Path) {
     {
         let _ = std::fs::remove_file(lock);
     }
+}
+
+/// An import writing the project at a path, for as long as this lives.
+///
+/// # The race this closes
+///
+/// An import checks that its target is not open when Import (or the overwrite
+/// question's OK) is pressed, then converts for as long as the project takes, then
+/// replaces the file. A window that opened the old project in between would keep it
+/// in memory, and its next save would write it straight back over the import. With
+/// the target claimed for the whole of that time, the load doors
+/// ([`importing`]'s callers) refuse to open it, and New Work and the other importers
+/// refuse to write it, here and in every other running copy of Skribisto.
+///
+/// A lock file like an open project's, marked [`OpenEntry::importing`], so another
+/// instance sees the claim; released, file and all, when the claim is dropped, which
+/// an import does as it completes, fails or is cancelled.
+#[must_use = "the claim lasts only as long as it is held"]
+#[derive(Debug)]
+pub struct ImportClaim {
+    canon: String,
+    lock: Option<PathBuf>,
+}
+
+impl Drop for ImportClaim {
+    fn drop(&mut self) {
+        IMPORTING.with(|importing| {
+            let mut importing = importing.borrow_mut();
+            if let Some(count) = importing.get_mut(&self.canon) {
+                *count = count.saturating_sub(1);
+                if *count == 0 {
+                    importing.remove(&self.canon);
+                }
+            }
+        });
+        if let Some(lock) = &self.lock {
+            remove_own_lock(lock);
+        }
+    }
+}
+
+/// The lock file naming `pid`'s import claim on `project_path`: beside its open
+/// claims, under another name, so a claim of either kind never overwrites the other.
+fn import_lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
+    let d = dir()?;
+    let mut h = DefaultHasher::new();
+    canonical(project_path).hash(&mut h);
+    Some(d.join(format!("import-{pid}-{:016x}.lock", h.finish())))
+}
+
+/// Claim `path` for an import writing it. See [`ImportClaim`].
+pub fn claim_import(path: &str) -> ImportClaim {
+    let canon = canonical(path);
+    IMPORTING.with(|importing| *importing.borrow_mut().entry(canon.clone()).or_insert(0) += 1);
+    let entry = OpenEntry {
+        pid: my_pid(),
+        path: canon.clone(),
+        title: String::new(),
+        importing: true,
+    };
+    let lock = import_lock_path_for(my_pid(), path).filter(|lock| {
+        serde_json::to_string(&entry).is_ok_and(|json| std::fs::write(lock, json).is_ok())
+    });
+    ImportClaim { canon, lock }
+}
+
+/// A claim on a project a window is about to load, made before the load starts and
+/// kept once it has succeeded: see [`claim_for_load`].
+#[must_use = "the claim is released when this is dropped, unless it is kept"]
+#[derive(Debug)]
+pub struct LoadClaim {
+    /// The path claimed, when this made the claim and has to let go of it.
+    made: Option<String>,
+}
+
+impl LoadClaim {
+    /// The load succeeded: the claim stays, as the claim of the project now open, and
+    /// is released with it (on `CloseWork`, or at exit).
+    pub fn keep(mut self) {
+        self.made = None;
+    }
+}
+
+impl Drop for LoadClaim {
+    fn drop(&mut self) {
+        if let Some(path) = self.made.take() {
+            release(&path);
+        }
+    }
+}
+
+/// Claim `path` as open before loading it, or `None` when an import is writing it.
+///
+/// # Claim, then check
+///
+/// A load takes seconds (twenty for a large project in a debug build), and a window
+/// claimed its project only once the load was done. An import started in another
+/// copy of Skribisto in the meantime saw no claim, went ahead, and replaced the file
+/// under a window that went on to write the old project back over it. So a load
+/// claims first and then looks for an import, and an import claims first and then
+/// looks for a project open or being opened (`shared::import_destination`). Whichever
+/// of the two looks second sees the other's claim and backs out: both are never
+/// missed.
+///
+/// The claim is titled after the file until the load names the project. When this
+/// process already holds `path` open, nothing new is claimed and nothing is released.
+pub fn claim_for_load(path: &str) -> Option<LoadClaim> {
+    if importing(path) {
+        return None;
+    }
+    let canon = canonical(path);
+    let held = CLAIMED.with(|claimed| claimed.borrow().contains_key(&canon));
+    let claim = if held {
+        LoadClaim { made: None }
+    } else {
+        let title = Path::new(path)
+            .file_stem()
+            .map(|stem| stem.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        claim(path, &title);
+        LoadClaim {
+            made: Some(path.to_string()),
+        }
+    };
+    // Dropped on the way out when an import claimed the path meanwhile.
+    (!importing(path)).then_some(claim)
+}
+
+/// Whether an import, in this instance or another, is writing the project at `path`.
+///
+/// Reads the lock directory, so it runs when a project is about to be opened or
+/// written, never in a derived signal.
+pub fn importing(path: &str) -> bool {
+    let canon = canonical(path);
+    IMPORTING.with(|importing| importing.borrow().contains_key(&canon))
+        || scan()
+            .into_iter()
+            .any(|entry| entry.importing && canonical(&entry.path) == canon)
+}
+
+/// [`scan`], without the projects an import is writing: every project open in a
+/// window of some instance.
+pub fn scan_open() -> Vec<OpenEntry> {
+    scan()
+        .into_iter()
+        .filter(|entry| !entry.importing)
+        .collect()
 }
 
 /// Every project currently open across live instances (undeduped — the same
@@ -486,6 +644,7 @@ mod tests {
         std::fs::create_dir_all(&d).unwrap();
         set_dir_override(Some(d.clone()));
         CLAIMED.with(|c| c.borrow_mut().clear());
+        IMPORTING.with(|c| c.borrow_mut().clear());
         PID_OVERRIDE.with(|m| m.borrow_mut().clear());
         d
     }
@@ -497,9 +656,144 @@ mod tests {
             pid,
             path: canonical(path),
             title: title.to_string(),
+            importing: false,
         };
         std::fs::write(&lock, serde_json::to_string(&entry).unwrap()).unwrap();
         lock
+    }
+
+    /// An import claim is seen by this instance and by any other through its lock
+    /// file, is not counted as a project open in a window, and goes, file and all,
+    /// when it is dropped.
+    #[test]
+    fn an_import_claim_lasts_as_long_as_it_is_held() {
+        setup("import-claim");
+        let path = "/tmp/skribisto-registry-test-import.skrib";
+        assert!(!importing(path));
+        let claim = claim_import(path);
+        assert!(importing(path));
+        let seen = scan();
+        assert_eq!(seen.len(), 1);
+        assert!(
+            seen[0].importing,
+            "another instance reads the lock as an import"
+        );
+        assert!(scan_open().is_empty(), "no window holds it");
+        drop(claim);
+        assert!(!importing(path));
+        assert!(scan().is_empty(), "the lock file went with it");
+    }
+
+    /// A load claims its project before it starts, so an import started while it runs
+    /// sees a project open there. The claim goes when the load fails, and stays, as the
+    /// open project's own claim, once it has succeeded.
+    #[test]
+    fn a_load_claims_its_project_before_it_starts() {
+        setup("load-claim");
+        let path = "/tmp/skribisto-registry-test-load.skrib";
+        let Some(failed) = claim_for_load(path) else {
+            panic!("nothing stands in the way");
+        };
+        let seen = scan_open();
+        assert_eq!(seen.len(), 1, "seen as open while it loads");
+        assert_eq!(seen[0].title, "skribisto-registry-test-load");
+        drop(failed);
+        assert!(scan_open().is_empty(), "a failed load lets go of it");
+
+        let Some(loaded) = claim_for_load(path) else {
+            panic!("nothing stands in the way");
+        };
+        loaded.keep();
+        assert_eq!(scan_open().len(), 1, "a load that succeeded keeps it");
+        release(path);
+        assert!(scan_open().is_empty());
+    }
+
+    /// A load of a project an import holds, here or in another copy, is refused and
+    /// leaves no claim behind; so is one whose claim an import's lands beside before it
+    /// looks, which the second look finds.
+    #[test]
+    fn a_load_of_a_project_an_import_holds_is_refused_and_claims_nothing() {
+        let dir = setup("load-while-importing");
+        let path = "/tmp/skribisto-registry-test-load-importing.skrib";
+        let import = claim_import(path);
+        assert!(claim_for_load(path).is_none());
+        assert!(scan_open().is_empty(), "no claim is left behind");
+        drop(import);
+
+        let fake_pid = 999_203;
+        PID_OVERRIDE.with(|m| m.borrow_mut().insert(fake_pid, true));
+        let entry = OpenEntry {
+            pid: fake_pid,
+            path: canonical(path),
+            title: String::new(),
+            importing: true,
+        };
+        std::fs::write(
+            dir.join(format!("import-{fake_pid}-0.lock")),
+            serde_json::to_string(&entry).unwrap(),
+        )
+        .unwrap();
+        assert!(claim_for_load(path).is_none(), "a peer's import too");
+        assert!(scan_open().is_empty());
+        PID_OVERRIDE.with(|m| m.borrow_mut().insert(fake_pid, false));
+    }
+
+    /// A project this process already holds open is not claimed again, and a load of it
+    /// that fails does not let go of the claim the open window holds.
+    #[test]
+    fn a_load_of_a_project_already_open_here_keeps_its_claim() {
+        setup("load-held");
+        let path = "/tmp/skribisto-registry-test-load-held.skrib";
+        claim(path, "Held");
+        let Some(failed) = claim_for_load(path) else {
+            panic!("nothing stands in the way");
+        };
+        drop(failed);
+        let seen = scan_open();
+        assert_eq!(seen.len(), 1, "the open window's claim stays");
+        assert_eq!(seen[0].title, "Held");
+        release(path);
+    }
+
+    /// Another instance's import is refused here too, through its lock file alone.
+    #[test]
+    fn a_peers_import_claim_is_seen_here() {
+        let dir = setup("peer-import");
+        let path = "/tmp/skribisto-registry-test-peer-import.skrib";
+        let fake_pid = 999_202;
+        PID_OVERRIDE.with(|m| m.borrow_mut().insert(fake_pid, true));
+        let entry = OpenEntry {
+            pid: fake_pid,
+            path: canonical(path),
+            title: String::new(),
+            importing: true,
+        };
+        std::fs::write(
+            dir.join(format!("import-{fake_pid}-0.lock")),
+            serde_json::to_string(&entry).unwrap(),
+        )
+        .unwrap();
+        assert!(importing(path));
+        PID_OVERRIDE.with(|m| m.borrow_mut().insert(fake_pid, false));
+        assert!(!importing(path), "a dead peer's claim is reaped");
+    }
+
+    /// A lock file written before the field existed reads as a project open in a
+    /// window, as it was.
+    #[test]
+    fn a_lock_without_the_import_mark_is_an_open_project() {
+        let entry: OpenEntry =
+            serde_json::from_str(r#"{"pid":1,"path":"/a.skrib","title":"A"}"#).unwrap();
+        assert!(!entry.importing);
+        let written = serde_json::to_string(&OpenEntry {
+            pid: 1,
+            path: "/a.skrib".into(),
+            title: "A".into(),
+            importing: false,
+        })
+        .unwrap();
+        assert!(!written.contains("importing"), "{written}");
     }
 
     /// **The macOS budget.** There is no `XDG_RUNTIME_DIR` on macOS, so the

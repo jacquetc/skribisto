@@ -32,13 +32,19 @@ mod carry_tests;
 /// Which versions of a row are worth showing, and where its timeline begins and ends.
 pub mod changes;
 pub mod convert;
-/// A ceiling on Djot nesting, so a hostile bundle cannot abort the process
-/// through the parser's unbounded recursion. `pub` because the boundary it
-/// guards is the format's, and a caller reading prose from anywhere else wants
-/// the same check.
+/// What the Djot parser cannot be given, refused as a bundle is read: nesting past
+/// its recursion's reach, a heading deeper than it can count, a paragraph it would
+/// take minutes to read, and one that holds something open over more lines than is
+/// safe, which the read joins into one line instead wherever that changes nothing the
+/// editor reads. `pub` because the boundary it guards is the format's, and a caller
+/// reading prose from anywhere else wants the same check.
 pub mod djot_depth;
+/// The work the Djot parser's inline pass does and the lines it holds open, counted
+/// as it would do them, which [`djot_depth`] refuses past their ceilings.
+mod djot_inline;
 /// The nesting the Djot parser builds, counted exactly, which [`djot_depth`] refuses
-/// past its ceiling beside its own marker count.
+/// past its ceiling, and the fences that close what a text leaves open
+/// ([`closing_fences`]).
 mod djot_nesting;
 mod errors;
 mod fingerprint;
@@ -129,7 +135,8 @@ pub use convert::{
     push_djot_run, push_djot_run_with, push_djot_verbatim_run, read_djot, rewrite_djot_text,
     trim_djot_whitespace,
 };
-pub use djot_depth::{MAX_DEPTH as MAX_DJOT_DEPTH, TooDeep};
+pub use djot_depth::{DjotRefusal, MAX_DEPTH as MAX_DJOT_DEPTH, TooDeep};
+pub use djot_nesting::closing_fences;
 pub use errors::SkribFormatError;
 pub use fingerprint::content_fingerprint;
 pub use loaded::{

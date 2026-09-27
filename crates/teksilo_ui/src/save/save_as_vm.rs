@@ -155,7 +155,16 @@ impl SaveAsViewModel {
     /// captured (F1), not a fresh live read — at this exact instant the two
     /// agree, but reading the same snapshot [`Self::start`] recorded keeps this
     /// in lockstep with every later handler below, which cannot re-read live.
+    ///
+    /// A `target` an import is still writing is refused before anything is flushed
+    /// or started, and the writer is told why: the import replaces that file when it
+    /// finishes, and this window, which would by then claim it, would write its own
+    /// project back over the import at its next save.
     pub fn begin(&self, ctx: &mut EventContext, target: String, as_folder: bool) {
+        use crate::shared::import_destination::{TARGET_IMPORTING, refuse_if_importing};
+        if refuse_if_importing(ctx, &target, &TARGET_IMPORTING) {
+            return;
+        }
         match self.start_flushed(target.clone(), as_folder) {
             Ok((work_id, op_id)) => {
                 let toast = if as_folder {
@@ -346,8 +355,8 @@ mod tests {
     /// no-op-ish long op that finds nothing to write — what is under test is the
     /// flush that happens *before* it, which is the invariant Save As used to
     /// violate. (`begin` itself needs a real `&mut EventContext` for its toasts,
-    /// and this crate has no `EventContext` harness — same constraint the backup
-    /// scheduler's flush tests work around, and why `start_flushed` is ctx-free.)
+    /// which is why `start_flushed` is ctx-free; the test that drives `begin`
+    /// reaches one through `test_support::press`.)
     fn test_vm() -> SaveAsViewModel {
         let app_ctx = Rc::new(AppContext::new());
         let single_work = SingleWork::new(app_ctx.clone());
@@ -382,6 +391,44 @@ mod tests {
             "Save As must flush the live editor buffers into the store, or the \
              background op serializes the pre-edit prose"
         );
+    }
+
+    /// A Save As aimed at the file an import is writing is refused with the words
+    /// every such door uses, before the editors are flushed or anything starts; once
+    /// the import lets go, the same Save As starts.
+    #[test]
+    fn a_save_as_over_a_file_an_import_is_writing_is_refused() {
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("Tidewrack.skrib");
+        let target = target.to_string_lossy().into_owned();
+        let vm = test_vm();
+        let flushed = Rc::new(Cell::new(0u32));
+        {
+            let flushed = flushed.clone();
+            vm.set_flush_hook(Rc::new(move || flushed.set(flushed.get() + 1)));
+        }
+        let mut tree = crate::test_support::tree_with_events(&vm.app_ctx);
+        let claim = crate::shell::open_registry::claim_import(&target);
+        let saving = (vm.clone(), target.clone());
+        crate::test_support::press(&mut tree, move |c| {
+            saving.0.begin(c, saving.1.clone(), false);
+        });
+        assert_eq!(
+            crate::test_support::drain_dialog_titles(&mut tree),
+            vec![tr!(target_importing_title()).resolve_now()]
+        );
+        assert_eq!(flushed.get(), 0, "nothing is flushed for a refused Save As");
+        assert!(vm.pending.borrow().is_empty(), "nothing started");
+
+        drop(claim);
+        let saving = (vm.clone(), target);
+        crate::test_support::press(&mut tree, move |c| {
+            saving.0.begin(c, saving.1.clone(), false);
+        });
+        assert!(crate::test_support::drain_dialog_titles(&mut tree).is_empty());
+        assert_eq!(flushed.get(), 1);
+        assert_eq!(vm.pending.borrow().len(), 1, "the Save As started");
     }
 
     #[test]

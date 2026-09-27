@@ -135,3 +135,65 @@ fn a_line_opens_no_more_than_one_past_the_limit() {
     let mut nesting = Nesting::default();
     assert_eq!(nesting.read(&"> ".repeat(10_000), 96), 97);
 }
+
+/// How deep a line written after `text`, a blank line and its closing fences sits: zero
+/// when the fences closed everything the text left open.
+fn depth_after_closing(text: &str) -> usize {
+    let written = format!("{text}\n\n{}", closing_fences(text));
+    let mut nesting = Nesting::default();
+    for line in written.split_inclusive('\n') {
+        nesting.read(line, usize::MAX);
+    }
+    nesting.read("# The next chapter\n", usize::MAX)
+}
+
+/// Every div and code block a text leaves open is closed, whatever holds it open:
+/// divs inside divs, a longer fence, a code fence a div saw open, a code block alone.
+/// A bare fence closes the outermost div it is long enough for, and everything inside
+/// it, so divs of one fence length close with one. What a quotation or a list item held
+/// ends with them, and needs no fence.
+#[test]
+fn closing_fences_close_everything_a_text_leaves_open() {
+    for (text, fences) in [
+        ("Words.", ""),
+        ("::: aside\nWords.", ":::\n\n"),
+        ("::: a\n::: b\nWords.", ":::\n\n"),
+        (":::: outer\n::: inner\nWords.", ":::\n::::\n\n"),
+        ("```\ncode", "```\n\n"),
+        ("~~~~ lang\ncode", "~~~~\n\n"),
+        ("::: a\n```\ncode", "```\n:::\n\n"),
+        ("::: a\n- item\n\n  ```x\n", "```\n:::\n\n"),
+        ("> ::: quoted\n> Words.", ""),
+        ("- ::: listed\n  Words.", ""),
+        ("::: a\nWords.\n:::", ""),
+    ] {
+        assert_eq!(closing_fences(text), fences, "{text:?}");
+        assert_eq!(depth_after_closing(text), 0, "{text:?}");
+    }
+    let deep = "::: aside\n".repeat(200);
+    assert_eq!(closing_fences(&deep), ":::\n\n");
+    assert_eq!(depth_after_closing(&deep), 0);
+    let descending: String = (0..200)
+        .map(|i| format!("{}\n", ":".repeat(203 - i)))
+        .collect();
+    assert_eq!(closing_fences(&descending).lines().count(), 201);
+    assert_eq!(depth_after_closing(&descending), 0);
+}
+
+proptest::proptest! {
+    /// Whatever a text of divs, code fences, quotations and list items leaves open, the
+    /// line after its closing fences sits at the top level.
+    #[test]
+    fn nothing_outlives_the_closing_fences(
+        lines in proptest::collection::vec(
+            proptest::sample::select(vec![
+                "::: a", ":::: b", ":::", "::::", "```", "```x", "~~~", "````", "- item", "  - in",
+                "> quoted", "> ::: q", "[^n]: note", "  more", "", "words", "| a |", "# h",
+            ]),
+            0..40,
+        )
+    ) {
+        let text = lines.join("\n");
+        proptest::prop_assert_eq!(depth_after_closing(&text), 0, "{:?}", text);
+    }
+}

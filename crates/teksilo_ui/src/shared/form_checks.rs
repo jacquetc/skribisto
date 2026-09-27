@@ -26,7 +26,7 @@
 //!   out of reach; [`retry_refusals`] looks at the disk again, once a second,
 //!   for the fields a form on screen refuses.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::path::Path;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
@@ -47,7 +47,7 @@ pub(crate) struct CachedValidation {
     verdict: Signal<ValidationState>,
     recheck: Rc<dyn Fn()>,
     /// Keeps the input observers registered for as long as a clone exists.
-    _watch: Rc<Vec<ObserverHandle>>,
+    _watch: Rc<RefCell<Vec<ObserverHandle>>>,
 }
 
 impl CachedValidation {
@@ -79,8 +79,19 @@ impl CachedValidation {
         Self {
             verdict,
             recheck,
-            _watch: Rc::new(watch),
+            _watch: Rc::new(RefCell::new(watch)),
         }
+    }
+
+    /// Also run the check again every time `input` is set: an input of another type
+    /// than the ones [`CachedValidation::new`] was given, such as a choice beside two
+    /// text fields.
+    pub(crate) fn also_on<U: Clone + 'static>(self, input: &Signal<U>) -> Self {
+        let recheck = self.recheck.clone();
+        self._watch
+            .borrow_mut()
+            .push(input.observe(move |_| recheck()));
+        self
     }
 
     /// The cached verdict, for a field's `.validation(..)`. Reading it never

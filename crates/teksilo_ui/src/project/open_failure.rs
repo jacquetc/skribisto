@@ -84,6 +84,16 @@ fn open_failure_parts(path: &str, error: &anyhow::Error) -> (LocalizedString, Lo
     }
 }
 
+/// The toast for a project not opened because an import is still writing it: opened
+/// now, it would show the project the import replaces, and its next save would write
+/// that project back over the import (see `open_registry::claim_import`).
+pub fn import_in_flight_toast(path: &str) -> Toast {
+    Toast::error(tr!(could_not_open_work_importing(
+        file = display_name(path)
+    )))
+    .body(tr!(could_not_open_work_importing_detail()))
+}
+
 /// The file name to show for `path` — its last component, or the whole thing if it has
 /// none (a bare relative name, or a path ending in `..`).
 fn display_name(path: &str) -> String {

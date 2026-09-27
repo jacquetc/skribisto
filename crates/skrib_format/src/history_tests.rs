@@ -262,6 +262,56 @@ fn rewrite_zip_member(path: &str, member: &str, contents: &[u8]) {
     writer.finish().expect("finish zip");
 }
 
+/// A blob whose paragraph holds more lines than the ceiling, which `read_bundle` joins
+/// into one line rather than refusing, is kept by `history::load` the same way: joined,
+/// with every entry naming it. Before, such a blob was dropped with its entries, and a
+/// pasted preformatted passage cost its row the whole of its past, at every later save
+/// as well, since a save carries forward only the log it reads.
+#[test]
+fn history_load_keeps_a_blob_whose_lines_the_load_joins_in_both_shapes() {
+    for (name, held, _) in super::djot_depth::tests::joined_by_the_load() {
+        let Ok(joined) = super::djot_depth::admit(held.clone()) else {
+            panic!("{name}: the load joins it");
+        };
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            let mut b = bundle();
+            history::record(&mut b, now());
+            let recorded = b.history.entries.len();
+            let planted = b.history.entries[0].hash.clone();
+
+            let dir = tempfile::tempdir().expect("tmp");
+            let path = dir
+                .path()
+                .join("Novel.skrib")
+                .to_string_lossy()
+                .into_owned();
+            write_bundle(&path, shape, &b).expect("write");
+            let member = history::blob_relpath(&planted);
+            match shape {
+                SkribShape::ExplodedFolder => {
+                    let root = super::shape::folder_root(&path);
+                    std::fs::write(root.join(&member), &held).expect("plant the blob");
+                }
+                _ => rewrite_zip_member(&path, &member, held.as_bytes()),
+            }
+
+            let loaded = history::load(&path);
+            assert_eq!(
+                loaded.blobs.get(&planted),
+                Some(&joined),
+                "{name}, {shape:?}: kept, its lines joined"
+            );
+            assert_eq!(
+                loaded.entries.len(),
+                recorded,
+                "{name}, {shape:?}: every entry is kept"
+            );
+            let parsed = super::djot_depth::tests::parse_on_a_long_operation_stack(joined.clone());
+            assert!(parsed.is_ok(), "{name}, {shape:?}: {parsed:?}");
+        }
+    }
+}
+
 /// `history::load` is how the Versions dock reads a project's past, and it parses
 /// every blob it shows. `read_bundle` refuses a blob nested past the Djot ceiling
 /// (the parser's recursion is unbounded and a stack overflow aborts the process);
@@ -272,7 +322,16 @@ fn rewrite_zip_member(path: &str, member: &str, contents: &[u8]) {
 /// the Versions dock would, and aborts the test binary.
 #[test]
 fn history_load_drops_a_blob_nested_past_the_djot_ceiling_in_both_shapes() {
-    for (name, deep) in super::djot_depth::tests::past_the_parsers_limit() {
+    // With the Djot the parser cannot be given though it nests nothing: a heading
+    // deeper than it counts, paragraphs it takes minutes to read, and paragraphs that
+    // keep something open over more lines than its stack holds.
+    let beyond = super::djot_depth::tests::beyond_the_parser()
+        .into_iter()
+        .map(|(name, text, _)| (name, text));
+    for (name, deep) in super::djot_depth::tests::past_the_parsers_limit()
+        .into_iter()
+        .chain(beyond)
+    {
         for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
             let mut b = bundle();
             history::record(&mut b, now());

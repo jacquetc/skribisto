@@ -410,10 +410,11 @@ fn convert_run(
     let djot = djot.join("\n\n");
     // Each part is within the ceiling on its own, and blocks separated by a blank line do
     // not nest inside one another; should a part leave something open that the next one
-    // closes over, the words of the whole run are what is stored.
-    if skrib_format::djot_depth::check(&djot).is_err() {
+    // closes over, the words of the whole run are what is stored. Lines a load would join
+    // are joined here the same way.
+    let Ok(djot) = skrib_format::djot_depth::admit(djot) else {
         return Ok(whole_run(whole, 0));
-    }
+    };
     let (text, _) = skrib_format::djot_plain_text(&djot)?;
     Ok(ConvertedRun {
         djot,

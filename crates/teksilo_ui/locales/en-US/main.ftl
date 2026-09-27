@@ -798,6 +798,8 @@ could-not-open-work = Could not open "{ $file }"
 # this build understands.
 could-not-open-work-too-new = "{ $file }" needs a newer Skribisto
 could-not-open-work-too-new-detail = Saved by Skribisto format { $written_by }; opening it needs format { $requires } or newer, and this build supports up to format { $supported }. Update Skribisto to open it.
+could-not-open-work-importing = "{ $file }" is being written by an import
+could-not-open-work-importing-detail = An import is writing over this project and has not finished. Open it once the import is done: opened now, it would show the project the import is replacing, and its next save would write that project back over the import.
 could-not-open-example = Could not open example: { $error }
 # The browser (or whatever handles http links) could not be started for one of
 # the Welcome sidebar's links. $url is shown so the address can still be copied.
@@ -971,6 +973,19 @@ new-work-location-required = Choose a location
 new-work-location-missing = This folder does not exist
 new-work-location-not-folder = This path is not a folder
 new-work-location-readonly = This folder is not writable
+new-work-target-exists = A project with this name is already in this folder. Creating the work will ask before replacing it
+new-work-target-is-folder = A folder with this name is already in this location. Choose another name
+new-work-overwrite-title = Replace the existing project?
+new-work-overwrite-text = “{ $name }” already exists in this folder. Replace it with the new project?
+new-work-target-open-title = This project is open
+new-work-target-open-text = “{ $name }” is open in Skribisto. Creating a new project in its place would replace the project you are working on, and your next save would write that project back over the new one. Choose another name or folder, or close the project first.
+target-importing-title = An import is writing this project
+target-importing-text = An import is still writing “{ $name }”. Wait until it has finished, or choose another name.
+import-plume-busy-title = Another Plume Creator project is being imported
+import-plume-busy-text = Plume Creator projects are imported one at a time. Wait until the import under way has finished, or cancel it, then start this one again.
+import-manuskript-busy-title = Another Manuskript project is being imported
+import-manuskript-busy-text = Manuskript projects are imported one at a time. Wait until the import under way has finished, or cancel it, then start this one again.
+backup-restore-importing-text = An import is still writing “{ $name }”, the project this backup would be restored over. Restore the backup once the import has finished.
 
 ## New-work template labels (passed to the backend, which can't do i18n)
 new-work-manuscript = Manuscript

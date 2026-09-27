@@ -58,7 +58,15 @@ use crate::backup::BackupContext;
 use crate::singles::SingleWork;
 use crate::toast_scope::ToastWorkExt;
 
+use crate::shared::import_destination::{OpenRefusal, refuse_if_importing};
 use crate::shared::long_op::{TrackedOp, event_id, parse_payload};
+
+/// The refusal of a restore over an original an import is writing. Not the words the
+/// other doors use: a restore cannot pick another name, it can only wait.
+static RESTORE_IMPORTING: OpenRefusal = OpenRefusal {
+    title: || tr!(target_importing_title()),
+    text: |name| tr!(backup_restore_importing_text(name = name)),
+};
 
 struct BackupRestorePending {
     /// The long-operation id bundled with the Work it was captured for (F4)
@@ -153,9 +161,17 @@ impl BackupRestoreViewModel {
     /// There is no risk of matching *ourselves*: this window is in backup mode, so
     /// its own open-registry claim is on the backup, and `target` is the original
     /// the backup was made from.
+    ///
+    /// An original an import is still writing is refused first, and outright: the
+    /// import replaces it when it finishes, and this window, which would by then
+    /// claim it, would write the restored project back over the import at its next
+    /// save.
     fn check_open_elsewhere(&self, ctx: &mut EventContext, target: String) {
+        if refuse_if_importing(ctx, &target, &RESTORE_IMPORTING) {
+            return;
+        }
         let canon = crate::shell::open_registry::canonical(&target);
-        let peer = crate::shell::open_registry::scan()
+        let peer = crate::shell::open_registry::scan_open()
             .into_iter()
             .find(|e| crate::shell::open_registry::canonical(&e.path) == canon);
         let Some(entry) = peer else {
@@ -215,12 +231,19 @@ impl BackupRestoreViewModel {
         // nothing is dirty; must happen on the UI thread, before the op starts.
         self.flush();
 
-        // Re-check the peer race just before writing (advisory, best-effort).
+        // Re-check the import and the peer race just before writing (advisory,
+        // best-effort): the confirmation may have waited a long time.
+        if refuse_if_importing(ctx, &target, &RESTORE_IMPORTING) {
+            return;
+        }
         let canon = crate::shell::open_registry::canonical(&target);
-        if crate::shell::open_registry::scan().into_iter().any(|e| {
-            e.pid != crate::shell::open_registry::my_pid()
-                && crate::shell::open_registry::canonical(&e.path) == canon
-        }) {
+        if crate::shell::open_registry::scan_open()
+            .into_iter()
+            .any(|e| {
+                e.pid != crate::shell::open_registry::my_pid()
+                    && crate::shell::open_registry::canonical(&e.path) == canon
+            })
+        {
             return self.check_open_elsewhere(ctx, target);
         }
 
@@ -513,6 +536,59 @@ mod tests {
             session.backup_mode.clone(),
             session.backup_context.clone(),
         )
+    }
+
+    /// A restore over an original an import is still writing is refused, in words
+    /// that say to wait, both when it is asked for and when it is confirmed: nothing is
+    /// copied aside and nothing starts. Once the import lets go, the restore goes on to
+    /// its confirmation.
+    #[test]
+    fn a_restore_over_an_original_an_import_is_writing_is_refused() {
+        use crate::test_support::{drain_dialog_titles, press};
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempdir().unwrap();
+        let original = dir.path().join("Tidewrack.skrib");
+        std::fs::write(&original, b"PK").unwrap();
+        let original = original.to_string_lossy().into_owned();
+        let session = crate::sessions::WorkSession::for_test();
+        let restore = restore_vm_for(&session, 1);
+        session.backup_context.set(Some(BackupContext {
+            path: dir
+                .path()
+                .join("backup.skrib")
+                .to_string_lossy()
+                .into_owned(),
+            backup_of: Some(original.clone()),
+            backup_created_at: None,
+            authoritative: true,
+        }));
+        let mut tree = crate::test_support::tree_with_events(&restore.app_ctx);
+        let refused = vec![tr!(target_importing_title()).resolve_now()];
+        let claim = crate::shell::open_registry::claim_import(&original);
+
+        let asking = restore.clone();
+        press(&mut tree, move |c| asking.begin(c));
+        assert_eq!(drain_dialog_titles(&mut tree), refused, "asked for");
+
+        let confirmed = (restore.clone(), original.clone());
+        press(&mut tree, move |c| {
+            confirmed.0.do_restore(c, confirmed.1.clone())
+        });
+        assert_eq!(drain_dialog_titles(&mut tree), refused, "confirmed");
+        assert!(restore.pending.borrow().is_none(), "nothing started");
+        assert_eq!(
+            std::fs::read_dir(dir.path()).unwrap().count(),
+            1,
+            "nothing was copied aside"
+        );
+
+        drop(claim);
+        let asking = restore.clone();
+        press(&mut tree, move |c| asking.begin(c));
+        assert_eq!(
+            drain_dialog_titles(&mut tree),
+            vec![tr!(backup_restore_confirm_title()).resolve_now()]
+        );
     }
 
     #[test]

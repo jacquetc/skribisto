@@ -59,13 +59,11 @@ pub fn to_djot(declared_type: &str, body: &str, what: &str) -> Converted {
         Err(e) => Converted {
             // Keeping the source is better than keeping nothing: the writer can
             // see their words and clean up the markup themselves. Kept as it is
-            // unless the next load of the project would refuse it for its nesting;
-            // then as plain text, which keeps every character and always loads.
-            djot: if skrib_format::djot_depth::check(body).is_ok() {
-                body.to_string()
-            } else {
-                skrib_format::plain_text_to_djot_verbatim(body)
-            },
+            // (its lines joined where the next load of the project would join them)
+            // unless that load would refuse it; then as plain text, which keeps every
+            // character and always loads.
+            djot: skrib_format::djot_depth::admit(body.to_string())
+                .unwrap_or_else(|_| skrib_format::plain_text_to_djot_verbatim(body)),
             notice: Some(format!(
                 "The text of '{what}' could not be converted ({e}); it was kept exactly as it \
                  was written."

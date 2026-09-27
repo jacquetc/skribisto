@@ -924,6 +924,10 @@ fn disallowed_content_is_dropped() {
 }
 
 /// Recursively snapshot every file's bytes + mtime under `root`.
+///
+/// Keyed by the path below `root` as the bundle's manifests spell it, its
+/// components joined by `/` on every platform, so a key compares equal to the
+/// manifest path of the file it holds on Windows as well.
 fn snapshot(root: &Path) -> BTreeMap<String, (std::time::SystemTime, Vec<u8>)> {
     let mut map = BTreeMap::new();
     for entry in walkdir::WalkDir::new(root) {
@@ -933,9 +937,10 @@ fn snapshot(root: &Path) -> BTreeMap<String, (std::time::SystemTime, Vec<u8>)> {
                 .path()
                 .strip_prefix(root)
                 .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
+                .components()
+                .map(|part| part.as_os_str().to_str().unwrap())
+                .collect::<Vec<_>>()
+                .join("/");
             let meta = entry.metadata().unwrap();
             map.insert(
                 rel,

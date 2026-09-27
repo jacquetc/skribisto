@@ -59,7 +59,7 @@ pub fn last_opened(dto: &RecentWorkDto) -> String {
 /// Split the registry's live instances and the recents list into the popover's two sections.
 ///
 /// Pure over its inputs, so the dedup rule is testable without a registry, a filesystem or a
-/// widget tree. `entries` comes from `open_registry::scan()`, `recents` from the recents
+/// widget tree. `entries` comes from `open_registry::scan_open()`, `recents` from the recents
 /// model, `my_pid` from `open_registry::my_pid()`, `my_path` from the CALLING window's own
 /// `SingleWorkInfo::file_name()` (already canonicalized the same way `open_registry` claims
 /// are — see the module doc — so a plain string comparison is enough).
@@ -164,6 +164,7 @@ mod tests {
             pid,
             path: path.to_string(),
             title: format!("work-{pid}"),
+            importing: false,
         }
     }
 

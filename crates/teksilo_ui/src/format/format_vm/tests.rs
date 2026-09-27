@@ -802,6 +802,50 @@ fn clear_formatting_terminates_on_a_blockquote() {
     assert!(!vm.blockquote().get());
 }
 
+/// One Clear formatting takes a quotation off however deep Tab nested it, and one undo
+/// puts every level back. It used to stop after sixteen, leaving the paragraph quoted
+/// and the quote button lit, with nothing saying how many more presses it needed.
+#[test]
+fn clear_formatting_unwraps_every_level_of_a_deep_quotation() {
+    for levels in [2usize, 17, 64, 100] {
+        let (vm, editor) = vm_over("Hello");
+        let handle = editor.handle();
+        handle.toggle_blockquote();
+        for _ in 1..levels {
+            handle.increase_blockquote_depth();
+        }
+        vm.sync_now();
+        let quoted = handle.to_djot();
+        assert!(
+            blockquote_levels_bound(&quoted) >= levels.min(64),
+            "{levels}: {quoted:.80}"
+        );
+
+        vm.clear_formatting();
+        assert!(!handle.is_in_blockquote(), "{levels} levels: still quoted");
+        assert!(!vm.blockquote().get(), "{levels} levels: the button is lit");
+
+        handle.undo();
+        vm.sync_now();
+        assert_eq!(
+            handle.to_djot(),
+            quoted,
+            "{levels}: one undo puts every level back"
+        );
+    }
+}
+
+#[test]
+fn the_quotation_bound_is_the_most_markers_on_a_line() {
+    assert_eq!(blockquote_levels_bound(""), 0);
+    assert_eq!(blockquote_levels_bound("Plain words."), 0);
+    assert_eq!(blockquote_levels_bound("> a\n>\n> > b\n\nc"), 2);
+    assert_eq!(
+        blockquote_levels_bound(&format!("{}deep", "> ".repeat(64))),
+        64
+    );
+}
+
 #[test]
 fn refresh_re_reads_only_when_the_editor_reports_a_change() {
     let (vm, editor) = vm_over("Hello world");

@@ -4193,6 +4193,78 @@ fn flushing_prose_records_nothing_on_the_project_history() {
     assert!(stored.contains("Sentence 9."), "the text was persisted");
 }
 
+/// A preformatted passage pasted into a scene and formatted from end to end is held by
+/// the Djot parser over all its lines, and past `skrib_format::djot_depth::MAX_HELD_LINES`
+/// of them a parse on a small stack can run out of it. The flush stores it with its
+/// lines joined, as the next load would join them, so an export or a second opening in
+/// this same session never parses the held form; the editor reads the stored row as the
+/// passage it shows. Before, the row held every line until the project was reopened.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn a_formatted_pasted_passage_is_stored_with_its_lines_joined() {
+    use teksilo::text_document::{MoveMode, MoveOperation, TextDocument, TextFormat};
+
+    /// How the editor reads `djot` back, on a stack deep enough for the held form.
+    fn reading(djot: String) -> (String, String) {
+        std::thread::Builder::new()
+            .stack_size(64 << 20)
+            .spawn(move || {
+                let doc = TextDocument::new();
+                doc.set_djot_sync(&djot).expect("the row reads back");
+                (doc.to_djot().unwrap(), doc.to_plain_text().unwrap())
+            })
+            .expect("spawn the reading thread")
+            .join()
+            .expect("the reading must not unwind")
+    }
+
+    let (ctx, field) = scene_prose_field();
+    let verses: String = (0..600)
+        .map(|i| format!("verse {i} of the poem\n"))
+        .collect();
+    field
+        .doc
+        .cursor_at(0)
+        .insert_html(&format!("<pre>{verses}the last verse</pre>"))
+        .expect("the editor takes the paste");
+    let cursor = field.doc.cursor_at(0);
+    cursor.move_position(MoveOperation::End, MoveMode::KeepAnchor, 1);
+    cursor
+        .merge_char_format(&TextFormat {
+            font_italic: Some(true),
+            ..TextFormat::default()
+        })
+        .expect("the editor formats the passage");
+    let written = field.doc.to_djot().expect("the editor writes Djot");
+    assert!(
+        skrib_format::djot_depth::check(&written).is_err(),
+        "the editor holds every line of the passage"
+    );
+
+    field.flush().expect("flush");
+
+    let id = field.content_id().expect("the row exists");
+    let stored = frontend::commands::content_commands::get_content(&ctx, &id)
+        .unwrap()
+        .unwrap()
+        .data;
+    assert_eq!(skrib_format::djot_depth::check(&stored), Ok(()));
+    assert_eq!(
+        Ok(stored.clone()),
+        skrib_format::djot_depth::admit(written.clone()),
+        "stored as the load would join it"
+    );
+    assert_eq!(
+        reading(stored),
+        reading(written),
+        "read back as the passage the editor wrote"
+    );
+    assert!(
+        !field.is_stale(),
+        "and the field is not flushed again for it"
+    );
+}
+
 // ── The epigraph's attribution line ─────────────────────────────────────────
 //
 // Every writer keys the attribution off `Alignment::Right` inside a

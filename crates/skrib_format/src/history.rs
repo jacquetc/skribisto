@@ -387,9 +387,10 @@ pub fn thin(log: &mut HistoryLog, policy: &RetentionPolicy, min_keep: u32, now: 
 /// error: there is nothing to carry, which is a normal state (a brand-new project,
 /// a first save after upgrading), not a failure.
 ///
-/// Every blob is held to the same Djot depth ceiling `read_bundle` applies to
-/// them ([`crate::djot_depth`]), and one past it is dropped along with its
-/// entries, exactly as `read_bundle` drops it. This is not the reader behind the
+/// Every blob is admitted as `read_bundle` admits the live prose
+/// ([`crate::djot_depth::admit`]): one whose paragraphs hold too many lines is kept
+/// with those lines joined, and one the Djot parser still cannot be given is dropped
+/// along with its entries, exactly as `read_bundle` drops it. This is not the reader behind the
 /// save path alone: the Versions dock opens the log through here
 /// (`versions::LogVersions::open`) and parses the blobs it shows, so a blob the
 /// bundle reader would have refused, reached this way, aborted the process from
@@ -417,7 +418,7 @@ fn load_folder(root: &std::path::Path) -> HistoryLog {
             continue;
         }
         if let Ok(t) = std::fs::read_to_string(root.join(blob_relpath(&hash)))
-            && crate::djot_depth::check(&t).is_ok()
+            && let Ok(t) = crate::djot_depth::admit(t)
         {
             blobs.insert(hash, t);
         }
@@ -452,7 +453,7 @@ fn load_zip(path: &std::path::Path) -> HistoryLog {
         }
         if let Ok(Some(bytes)) = guard.read_named(&mut archive, &blob_relpath(&hash)) {
             let t = String::from_utf8_lossy(&bytes).into_owned();
-            if crate::djot_depth::check(&t).is_ok() {
+            if let Ok(t) = crate::djot_depth::admit(t) {
                 blobs.insert(hash, t);
             }
         }

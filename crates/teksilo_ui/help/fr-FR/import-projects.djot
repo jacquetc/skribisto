@@ -23,6 +23,11 @@ Le nom de fichier ne peut pas être celui d’un projet ouvert dans Skribisto, d
 dans une autre. Importer par-dessus remplacerait le projet sur lequel vous travaillez : l’import
 refuse donc, et dit pourquoi. Choisissez un autre nom, ou fermez d’abord ce projet.
 
+Tant que l’import tourne, le fichier qu’il va écrire lui est réservé. Jusqu’à la fin de l’import,
+Skribisto n’ouvre pas ce fichier et ne commence pas à y écrire un projet, que ce soit par
+*Nouvelle œuvre*, par un autre import, en enregistrant un projet sous ce nom ou en y restaurant
+une sauvegarde.
+
 ## Désigner un projet Manuskript
 
 Manuskript enregistre un projet sous l’une ou l’autre de ces formes, et les deux sont acceptées :

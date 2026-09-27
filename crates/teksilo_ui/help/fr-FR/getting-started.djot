@@ -32,6 +32,10 @@ L’assistant compte trois étapes. *Suivant* et *Précédent* passent de l’un
   classeur vide jusqu’à trois parties et vingt-quatre chapitres. *Chapitres à plat* fait de
   chaque chapitre un texte unique, sans scène en dessous.
 
+Si un projet de ce nom se trouve déjà dans le dossier, *Créer l’œuvre* demande avant de le
+remplacer. Un projet ouvert dans une fenêtre, dans cette copie de Skribisto ou une autre, n’est
+jamais remplacé : choisissez un autre nom ou un autre dossier, ou fermez d’abord ce projet.
+
 ## Exemples
 
 *Exemples* liste les projets d’exemple fournis avec Skribisto.

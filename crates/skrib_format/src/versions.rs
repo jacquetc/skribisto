@@ -409,18 +409,17 @@ impl VersionSource for BackupVersions {
         // The diff pane parses this, so it reaches the same unbounded Djot
         // recursion the live editor does — and a past version comes out of a
         // backup, which travels exactly as a project does.
-        crate::djot_depth::check(&text).with_context(|| format!("version blob {blob_path}"))?;
-        Ok(text)
+        crate::djot_depth::admit(text).with_context(|| format!("version blob {blob_path}"))
     }
 
     fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>> {
         let sidecar = comments_sidecar(blob_path);
         match read_entry(&v.path, &sidecar) {
             Ok(text) => {
-                let threads: Vec<CommentFile> = ron::from_str(&text).unwrap_or_default();
+                let mut threads: Vec<CommentFile> = ron::from_str(&text).unwrap_or_default();
                 // The same refusal `prose` gives a blob past the ceiling, and for the
                 // same reason: whoever asks for these parses every body in them.
-                crate::djot_depth::check_comments(&threads)
+                crate::djot_depth::admit_comments(&mut threads)
                     .with_context(|| format!("version comments {sidecar}"))?;
                 Ok(threads)
             }

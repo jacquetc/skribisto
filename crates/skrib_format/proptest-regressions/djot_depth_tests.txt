@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 14c7a3cbc4266cb161f776dd0b8faa566f90c2322ac033ef2da822d89490b411 # shrinks to text = ">- words\n~~~\n:::\n::: c\n::: c\n:::\n~~~\n:::\n```\n::: c\n:::\n```x\n::: c\n:::\n```\n:::\n:::\n```x\n```x\n```x\n:::\n::: c\n:::\n:::\n:::\n:::\n::: c\n~~~\n```x\n:::\n:::\n:::\n```\n:::\n:::\n:::\n:::\n:::\n```\n:::\n:::\n```\n:::\n```x\n:::\n:::\n```\n~~~\n```x\n```x\n:::\n:::\n:::\n```\n~~~\n:::\n:::\n:::\n::: c\n::: c\n~~~\n:::\n```\n> ```x\n> ~~~\n> ::::::::::\n> :::::::::\n> ::::::::\n> ::::::::\n> ~~~\n> ```\n> ::::::\n> ::::::\n> ```x\n> :::::\n> :::::\n> ~~~\n> ::::\n> ```\n> ::: c\n> ::: c\n> ```x\n> :::\n> :::\n> :::\n> ```x\n> :::\n> ::: c\n> :::\n> ~~~\n> ```\n> :::\n> ~~~\n> :::\n> :::\n> ```x\n> :::\n> ~~~\n> :::\n> ~~~\n> ::: c\n> ```x\n> :::\n> ```\n> ```x\n> :::\n> :::\n> ```\n> :::\n> :::\n> ~~~\n> ```\n> ::: c\n> :::\n> :::\n> :::\n> :::\n> :::\n> ~~~\n> ~~~\n> ```x\n> ```\n> ::: c\n> ```x\n> ```\n> ~~~\n> ```x\n> ::: c\n> :::\n> ```\n> ::: words\n"
+cc f6419f1d217158b2c94f1fedb2624a406bff652f18ff979c97715d8e65b8ff81 # shrinks to paragraphs = ["[^\n]"]

@@ -39,8 +39,7 @@
 //!
 //! # What is counted
 //!
-//! **Markdown**, line by line, as the Djot guard counts Djot ([`crate::djot_depth`],
-//! which holds the scan both share): every marker that opens a container at the
+//! **Markdown**, line by line: every marker that opens a container at the
 //! start of a line, blockquote (`>`, with or without the space), list item and
 //! footnote definition, however many share the line, and one level per column of
 //! whitespace in front of the last one, since a list item continues only on lines
@@ -76,8 +75,6 @@
 //! leaves the other half for the elements the tree builder adds on its own. The Qt
 //! rich text Plume, Manuskript and older Skribisto projects store rarely nests ten.
 
-use crate::djot_depth::{Grammar, line_start};
-
 /// The most nested block containers Markdown may declare before it is converted.
 pub const MAX_MARKDOWN_DEPTH: usize = crate::djot_depth::MAX_DEPTH;
 
@@ -108,7 +105,7 @@ impl std::error::Error for MarkupTooDeep {}
 /// Refuse `markdown` if its block nesting could exceed [`MAX_MARKDOWN_DEPTH`].
 pub fn check_markdown(markdown: &str) -> Result<(), MarkupTooDeep> {
     for (index, line) in markdown.split('\n').enumerate() {
-        let start = line_start(line, Grammar::Markdown, MAX_MARKDOWN_DEPTH);
+        let start = line_start(line, MAX_MARKDOWN_DEPTH);
         if start.containers > MAX_MARKDOWN_DEPTH {
             return Err(MarkupTooDeep {
                 depth: start.containers,
@@ -128,7 +125,7 @@ pub fn check_markdown(markdown: &str) -> Result<(), MarkupTooDeep> {
 pub(crate) fn markdown_without_nesting(markdown: &str) -> String {
     let mut out = String::with_capacity(markdown.len());
     for line in markdown.split('\n') {
-        let rest = line_start(line, Grammar::Markdown, usize::MAX)
+        let rest = line_start(line, usize::MAX)
             .rest
             .trim_end_matches(|c: char| c.is_ascii_whitespace());
         if rest.is_empty() {
@@ -682,6 +679,214 @@ impl<'a> Iterator for Tokens<'a> {
             }
         }
     }
+}
+
+/// How many levels one byte of leading whitespace can continue in Markdown as
+/// `pulldown-cmark` reads it: a tab reaches the next tab stop, up to four columns,
+/// and every column can continue a list.
+fn width(byte: u8) -> usize {
+    if byte == b'\t' { 4 } else { 1 }
+}
+
+/// What the markers at the start of one line add up to.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct LineStart<'a> {
+    /// An upper bound on the containers the line opens or continues through its own
+    /// markers: one per marker, and one per level the whitespace in front of the last
+    /// marker could continue. The scan stops once this passes its limit, so past the
+    /// limit it is only known to be past it.
+    pub containers: usize,
+    /// How many `>` the line opens with before any other marker, whitespace aside.
+    pub quotes: usize,
+    /// Whether those `>` are all the line opens before [`Self::rest`], each followed
+    /// by whitespace or the end of the line, so that what follows is read inside
+    /// exactly that many blockquotes.
+    pub only_quotes: bool,
+    /// The line after its markers and the whitespace between them.
+    pub rest: &'a str,
+}
+
+/// Read the markers at the start of `line` (no line break in it) as Markdown opens
+/// containers with them, stopping once more than `limit` are counted.
+///
+/// Every marker Djot opens a container with is counted as well, since Markdown
+/// opens its own with nearly the same ones, which only ever over-counts.
+pub(crate) fn line_start(line: &str, limit: usize) -> LineStart<'_> {
+    let bytes = line.as_bytes();
+    // From this offset to the end the line is nothing but `-`, `*` and whitespace,
+    // which is where a `-` or `*` may be a thematic break rather than a bullet.
+    let decoration_from = bytes
+        .iter()
+        .rposition(|&byte| !matches!(byte, b'-' | b'*') && !byte.is_ascii_whitespace())
+        .map_or(0, |last| last + 1);
+
+    let mut containers = 0usize;
+    // Levels the whitespace since the last marker could continue, counted once
+    // another marker follows it.
+    let mut pending = 0usize;
+    // Whether a marker other than `>` has opened a container on this line: every
+    // container after it is new, and whitespace in front of a new one continues
+    // nothing.
+    let mut opened = false;
+    // Whether the next whitespace byte ends the `>` before it.
+    let mut after_quote = false;
+    let mut quotes = 0usize;
+    let mut only_quotes = true;
+    let mut at = 0usize;
+
+    while containers <= limit {
+        let Some(&byte) = bytes.get(at) else {
+            break;
+        };
+        if byte.is_ascii_whitespace() {
+            let width = width(byte);
+            if after_quote {
+                pending += width - 1;
+            } else if !opened {
+                pending += width;
+            }
+            after_quote = false;
+            at += 1;
+            continue;
+        }
+        after_quote = false;
+        let ends_marker = |offset: usize| {
+            bytes
+                .get(offset)
+                .is_none_or(|byte| byte.is_ascii_whitespace())
+        };
+
+        let marker = match byte {
+            b'>' => {
+                if !opened {
+                    quotes += 1;
+                    if !ends_marker(at + 1) {
+                        only_quotes = false;
+                    }
+                }
+                after_quote = true;
+                Some(1)
+            }
+            b'-' | b'*' if at >= decoration_from && is_thematic_break(&bytes[at..]) => None,
+            b'-' | b'*' | b'+' => ends_marker(at + 1).then_some(1),
+            b':' => ends_marker(at + 1).then_some(1),
+            b'[' => match definition(&bytes[at..]) {
+                Some(len) => Some(len),
+                None if opened && task_box(&bytes[at..]) => {
+                    // The box belongs to the bullet before it: nothing new opens.
+                    at += 3;
+                    continue;
+                }
+                None => None,
+            },
+            b'|' => {
+                // A table row: one container, and its cells hold no blocks. The row
+                // itself stays in `rest`, as the words it holds.
+                containers += pending + 1;
+                only_quotes = false;
+                break;
+            }
+            _ => ordered_marker(&bytes[at..]),
+        };
+        let Some(len) = marker else {
+            break;
+        };
+        containers += pending + 1;
+        pending = 0;
+        if byte != b'>' {
+            opened = true;
+            only_quotes = false;
+        }
+        at += len;
+    }
+
+    let rest = line
+        .get(at.min(line.len())..)
+        .unwrap_or_default()
+        .trim_start_matches(|c: char| c.is_ascii_whitespace());
+    LineStart {
+        containers,
+        quotes,
+        only_quotes,
+        rest,
+    }
+}
+
+/// Whether `from`, starting at a `-` or `*`, is a thematic break: three or more of
+/// that one mark and nothing else but whitespace. A break opens nothing, and both
+/// parsers test for one before they test for a bullet.
+///
+/// Markdown needs the marks to match, and `jotdown` takes a mixture as well. Only a
+/// run of matching marks is taken for a break here, so a mixed one counts as the
+/// bullets Markdown reads it as, which is more than `jotdown` reads.
+fn is_thematic_break(from: &[u8]) -> bool {
+    let Some(&mark) = from.first() else {
+        return false;
+    };
+    let mut marks = 0usize;
+    for &byte in from {
+        if byte == mark {
+            marks += 1;
+        } else if !byte.is_ascii_whitespace() {
+            return false;
+        }
+    }
+    marks >= 3
+}
+
+/// The length of a footnote or link definition's `[label]:` opening `from`, or
+/// `None`. The label runs to the first `]`, as `jotdown` reads it.
+fn definition(from: &[u8]) -> Option<usize> {
+    let close = from.get(1..)?.iter().position(|&byte| byte == b']')? + 1;
+    (from.get(close + 1) == Some(&b':')).then_some(close + 2)
+}
+
+/// Whether `from` is a task list's box, `[ ]`, `[x]` or `[X]`, then whitespace or
+/// the end of the line.
+fn task_box(from: &[u8]) -> bool {
+    matches!(from.get(..3), Some([b'[', b' ' | b'x' | b'X', b']']))
+        && from.get(3).is_none_or(u8::is_ascii_whitespace)
+}
+
+/// The length of an ordered list marker opening `from`, or `None`.
+///
+/// `jotdown` 0.10's `maybe_ordered_list_item`, without its length limits (which
+/// only ever turn a marker away): an optional `(`, then digits, a run of roman
+/// numerals all of one case, or one letter, then `)` (always, after a `(`) or `.`,
+/// then whitespace or the end of the line. Markdown's own markers, digits then `.`
+/// or `)`, are among them.
+fn ordered_marker(from: &[u8]) -> Option<usize> {
+    fn roman_lower(byte: &u8) -> bool {
+        matches!(byte, b'i' | b'v' | b'x' | b'l' | b'c' | b'd' | b'm')
+    }
+    fn roman_upper(byte: &u8) -> bool {
+        matches!(byte, b'I' | b'V' | b'X' | b'L' | b'C' | b'D' | b'M')
+    }
+    let paren = from.first() == Some(&b'(');
+    let number = usize::from(paren);
+    let first = *from.get(number)?;
+    let digits = from.get(number..).unwrap_or_default();
+    let run = if first.is_ascii_digit() {
+        digits
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count()
+    } else if roman_lower(&first) {
+        digits.iter().take_while(|byte| roman_lower(byte)).count()
+    } else if roman_upper(&first) {
+        digits.iter().take_while(|byte| roman_upper(byte)).count()
+    } else if first.is_ascii_alphabetic() {
+        1
+    } else {
+        return None;
+    };
+    let delimiter = number + run;
+    let closes = match from.get(delimiter) {
+        Some(b')') => true,
+        Some(b'.') => !paren,
+        _ => false,
+    };
+    (closes && from.get(delimiter + 1).is_none_or(u8::is_ascii_whitespace)).then_some(delimiter + 1)
 }
 
 #[cfg(test)]

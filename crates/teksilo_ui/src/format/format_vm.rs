@@ -90,10 +90,21 @@ pub const DIR_LTR: usize = 1;
 /// Index of "right to left", set explicitly.
 pub const DIR_RTL: usize = 2;
 
-/// A blockquote's nesting depth is not queryable through `EditorHandle`, so
-/// [`FormatViewModel::clear_formatting`] unwraps one level at a time and stops
-/// here. Deeper than this in a manuscript is a corrupt document, not a style.
-const MAX_BLOCKQUOTE_UNWRAP: usize = 16;
+/// The most blockquote levels the caret's block could sit in: the most `>` any one
+/// line of the editor's own Djot holds.
+///
+/// `EditorHandle` reports whether the caret is in a quotation but not how deep, so
+/// [`FormatViewModel::clear_formatting`] unwraps one level at a time, and needs a
+/// bound that no quotation it meets can outrun. Every level of a quotation is a `>` on
+/// the line its block is written on, so no block sits deeper than this. A fixed bound
+/// could not be right: a writer can Tab a quotation deeper than any number picked in
+/// advance, and the sweep must still take every level off in one press.
+fn blockquote_levels_bound(djot: &str) -> usize {
+    djot.lines()
+        .map(|line| line.bytes().filter(|&byte| byte == b'>').count())
+        .max()
+        .unwrap_or(0)
+}
 
 /// The "nothing compared yet" value for [`FormatViewModel`]'s change gate.
 ///
@@ -1319,7 +1330,7 @@ impl FormatViewModel {
     ///
     /// Clears the six character marks over the selection, then flattens the
     /// caret's blocks: heading to normal, alignment to left, list membership
-    /// dropped, blockquote unwrapped to depth zero. Without a selection the
+    /// dropped, blockquote unwrapped to depth zero, every level of it. Without a selection the
     /// character half is inherently a no-op — there is no range to re-format —
     /// so this degrades to the block half, which is still worth having with the
     /// caret parked in a centred H2.
@@ -1389,13 +1400,16 @@ impl FormatViewModel {
                 handle.clear_direction();
             }
             handle.remove_from_list();
-            // Depth is not queryable, so unwrap one level at a time and bound
-            // the loop — a command that cannot make progress must still
-            // terminate.
-            let mut unwrapped = 0;
-            while handle.is_in_blockquote() && unwrapped < MAX_BLOCKQUOTE_UNWRAP {
-                handle.decrease_blockquote_depth();
-                unwrapped += 1;
+            // Depth is not queryable, so unwrap one level at a time, bounded by the
+            // deepest the document holds: every level comes off, and a command that
+            // cannot make progress still terminates.
+            if handle.is_in_blockquote() {
+                let bound = blockquote_levels_bound(&handle.to_djot());
+                let mut unwrapped = 0;
+                while handle.is_in_blockquote() && unwrapped < bound {
+                    handle.decrease_blockquote_depth();
+                    unwrapped += 1;
+                }
             }
         });
 

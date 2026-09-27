@@ -205,7 +205,7 @@ impl Widget for OpenProjectsMenu {
         // apart from this window's own — see `sections`'s doc.
         let my_path = single_work_info.file_name().get();
         let split = vm::sections(
-            open_registry::scan(),
+            open_registry::scan_open(),
             &recents,
             open_registry::my_pid(),
             my_path.as_deref(),

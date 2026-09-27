@@ -42,7 +42,9 @@ use skrib_format::XmlTooDeep;
 
 use crate::intents::AppIntent;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
-use crate::shared::import_destination::{DestinationMessages, ImportDestination, refuse_if_open};
+use crate::shared::import_destination::{
+    BusyRefusal, DestinationMessages, ImportDestination, TargetHold, refuse_if_busy, refuse_if_open,
+};
 use crate::shared::import_failure;
 use crate::shared::import_warnings::{LiveNotice, PLUME as WARNINGS};
 use crate::shared::long_op::{event_id, parse_payload, payload_id};
@@ -111,6 +113,12 @@ fn source_state(source: &str) -> ValidationState {
     ValidationState::None
 }
 
+/// Why a second import is refused while this form's first still runs.
+static BUSY: BusyRefusal = BusyRefusal {
+    title: || tr!(import_plume_busy_title()),
+    text: || tr!(import_plume_busy_text()),
+};
+
 #[derive(Clone)]
 pub struct ImportPlumeViewModel {
     /// The chosen `.plume` / `.plume_backup` source path.
@@ -123,6 +131,9 @@ pub struct ImportPlumeViewModel {
     /// start, cleared when it completes / is cancelled / fails. Drives event
     /// filtering (only events for *this* op touch the toast) and the Cancel button.
     active: Signal<Option<String>>,
+    /// The target the running import is writing, held until it completes, fails or
+    /// is cancelled, so nothing opens or writes it meanwhile.
+    target_hold: TargetHold,
     /// The warnings notice of the latest import that had any, while it is on
     /// screen: the next one takes its place rather than piling up beside it.
     warnings_notice: LiveNotice,
@@ -142,6 +153,7 @@ impl ImportPlumeViewModel {
             source_check,
             destination: ImportDestination::new(&DESTINATION),
             active: Signal::new(None),
+            target_hold: TargetHold::default(),
             warnings_notice: LiveNotice::default(),
             app_ctx,
         }
@@ -231,6 +243,9 @@ impl ImportPlumeViewModel {
     /// "Import": check every field against the disk again, refuse a target that
     /// is a project open in a window, confirm an overwrite, then start.
     pub fn import(&self, ctx: &mut EventContext) {
+        if refuse_if_busy(ctx, &self.active, &BUSY) {
+            return;
+        }
         // The verdicts on screen were worked out when the fields last changed,
         // and the disk may have moved on since. Both checks run, so every field
         // shows its fresh verdict, before either answer is acted on.
@@ -286,6 +301,16 @@ impl ImportPlumeViewModel {
     /// `on_long_op_*`. Only a failure to *start* is handled inline; the actual
     /// import errors arrive as a `Failed` event.
     fn run_import(&self, ctx: &mut EventContext, request: ImportPlumeCreatorFileDto) {
+        // Asked again here: an overwrite question can wait while another window
+        // starts an import from this same form, which this one would take over.
+        if refuse_if_busy(ctx, &self.active, &BUSY) {
+            return;
+        }
+        // Held before the conversion starts, so there is no moment it runs unheld,
+        // and looked at again once held, for a load another copy started meanwhile.
+        if !self.target_hold.hold_unless_open(ctx, &request.output_path) {
+            return;
+        }
         match import_management_commands::import_plume_creator_file(&self.app_ctx, &request) {
             Ok(op_id) => {
                 self.active.set(Some(op_id));
@@ -300,6 +325,7 @@ impl ImportPlumeViewModel {
                 ctx.show_toast(self.progress_toast(0.0, ""));
             }
             Err(e) => {
+                self.target_hold.release();
                 self.show_error(ctx, &format!("{e:#}"));
             }
         }
@@ -418,6 +444,7 @@ impl ImportPlumeViewModel {
             return;
         }
         self.active.set(None);
+        self.target_hold.release();
         match import_management_commands::get_import_plume_creator_file_result(
             &self.app_ctx,
             &op_id,
@@ -470,6 +497,7 @@ impl ImportPlumeViewModel {
             return;
         }
         self.active.set(None);
+        self.target_hold.release();
         ctx.show_toast(
             import_toast(Toast::info(tr!(import_plume_cancelled())))
                 .auto_dismiss_after(Duration::from_secs(4)),
@@ -490,6 +518,7 @@ impl ImportPlumeViewModel {
             return;
         }
         self.active.set(None);
+        self.target_hold.release();
         let error = payload
             .get("error")
             .and_then(|e| e.as_str())
@@ -922,6 +951,229 @@ mod tests {
         };
         let finishing = vm.clone();
         press(tree, move |c| finishing.on_long_op_completed(c, &completed));
+    }
+
+    /// For as long as the conversion runs, its target is held: no window opens it and
+    /// nothing else writes it, in this Skribisto or another one, since the import
+    /// replaces it when it finishes. A second import to the same file is refused while
+    /// the first runs. The hold goes once the import is done, and the project it wrote
+    /// then opens as any other.
+    #[test]
+    fn the_target_is_held_while_the_import_runs() {
+        use crate::shell::open_registry;
+        use crate::test_support::{IsolatedOpenRegistry, drain_dialog_titles, press};
+        use frontend::common::event::{Event, LongOperationEvent, Origin};
+        use std::time::Instant;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let source = lonely_plume(dir.path());
+        let target = dir
+            .path()
+            .join("novel.skrib")
+            .to_string_lossy()
+            .into_owned();
+        let app_ctx = Rc::new(AppContext::new());
+        let filled_for = |vm: &ImportPlumeViewModel| {
+            vm.source().set(source.to_string_lossy().into_owned());
+            vm.location().set(dir.path().to_string_lossy().into_owned());
+            vm.name().set("novel".into());
+        };
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        filled_for(&vm);
+        let (mut tree, _toasts, _archive) = tree_with_archive(&app_ctx);
+        assert!(!open_registry::importing(&target));
+
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        let op_id = vm.active.get().expect("the import started");
+        assert!(open_registry::importing(&target), "held while it runs");
+
+        let other = ImportPlumeViewModel::new(app_ctx.clone());
+        filled_for(&other);
+        let second = other.clone();
+        press(&mut tree, move |c| second.import(c));
+        assert!(
+            drain_dialog_titles(&mut tree).contains(&tr!(target_importing_title()).resolve_now()),
+            "a second import to the same file is refused"
+        );
+        assert!(other.active.get().is_none());
+
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
+            assert!(Instant::now() < deadline, "the import never finished");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(
+            open_registry::importing(&target),
+            "held until the writer is told it is done"
+        );
+        let completed = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Completed),
+            ids: Vec::new(),
+            data: Some(format!(r#"{{"id":"{op_id}"}}"#)),
+        };
+        let finishing = vm.clone();
+        press(&mut tree, move |c| {
+            finishing.on_long_op_completed(c, &completed)
+        });
+        assert!(!open_registry::importing(&target), "let go of once done");
+    }
+
+    /// A second import from the form, to another file, while the first still runs is
+    /// refused, when Import is pressed and at the last moment (an overwrite question's
+    /// OK): it would take the first one's progress notice and Cancel button over, and
+    /// let go of the first one's target while that import still meant to replace it.
+    /// The first keeps its target until it is done.
+    #[test]
+    fn a_second_import_waits_until_the_first_has_finished() {
+        use crate::shell::open_registry;
+        use crate::test_support::{IsolatedOpenRegistry, drain_dialog_titles, press};
+        use frontend::common::event::{Event, LongOperationEvent, Origin};
+        use std::time::Instant;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let source = lonely_plume(dir.path());
+        let target_in = |name: &str| {
+            dir.path()
+                .join(format!("{name}.skrib"))
+                .to_string_lossy()
+                .into_owned()
+        };
+        let (first, second) = (target_in("novel"), target_in("second"));
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location().set(dir.path().to_string_lossy().into_owned());
+        vm.name().set("novel".into());
+        let (mut tree, _toasts, _archive) = tree_with_archive(&app_ctx);
+
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        let op_id = vm.active.get().expect("the first import started");
+        let busy = tr!(import_plume_busy_title()).resolve_now();
+
+        vm.name().set("second".into());
+        let pressing = vm.clone();
+        press(&mut tree, move |c| pressing.import(c));
+        assert!(
+            drain_dialog_titles(&mut tree).contains(&busy),
+            "Import is refused"
+        );
+        let request = vm.dto(true);
+        assert_eq!(request.output_path, second);
+        let confirming = vm.clone();
+        press(&mut tree, move |c| {
+            confirming.run_import(c, request.clone())
+        });
+        assert!(
+            drain_dialog_titles(&mut tree).contains(&busy),
+            "an overwrite question's OK is refused too"
+        );
+        assert_eq!(
+            vm.active.get(),
+            Some(op_id.clone()),
+            "the first is still the one"
+        );
+        assert!(
+            open_registry::importing(&first),
+            "the first target is still held"
+        );
+        assert!(!open_registry::importing(&second));
+
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
+            assert!(Instant::now() < deadline, "the import never finished");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let completed = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Completed),
+            ids: Vec::new(),
+            data: Some(format!(r#"{{"id":"{op_id}"}}"#)),
+        };
+        let finishing = vm.clone();
+        press(&mut tree, move |c| {
+            finishing.on_long_op_completed(c, &completed)
+        });
+        assert!(!open_registry::importing(&first));
+        assert!(
+            !std::path::Path::new(&second).exists(),
+            "nothing was written there"
+        );
+    }
+
+    /// A window that started loading the target after Import was pressed claimed it
+    /// before loading (`open_registry::claim_for_load`). The import, which looks again
+    /// once it holds the target, backs out and says the project is open, rather than
+    /// replacing the file under that window. Before, nothing looked after the press.
+    #[test]
+    fn an_import_backs_out_when_a_load_claimed_its_target_since() {
+        use crate::shell::open_registry;
+        use crate::test_support::{IsolatedOpenRegistry, drain_dialog_titles, press};
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let source = lonely_plume(dir.path());
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location().set(dir.path().to_string_lossy().into_owned());
+        vm.name().set("novel".into());
+        let (mut tree, _toasts, _archive) = tree_with_archive(&app_ctx);
+        let request = vm.dto(false);
+        let target = request.output_path.clone();
+
+        let Some(loading) = open_registry::claim_for_load(&target) else {
+            panic!("nothing stands in the way of the load");
+        };
+        let starting = vm.clone();
+        press(&mut tree, move |c| starting.run_import(c, request.clone()));
+        assert_eq!(
+            drain_dialog_titles(&mut tree),
+            vec![tr!(import_target_open_title()).resolve_now()]
+        );
+        assert!(vm.active.get().is_none(), "nothing started");
+        assert!(!open_registry::importing(&target), "the hold was let go of");
+        drop(loading);
+    }
+
+    /// A cancelled import lets go of its target as well.
+    #[test]
+    fn a_cancelled_import_lets_go_of_its_target() {
+        use crate::shell::open_registry;
+        use crate::test_support::{IsolatedOpenRegistry, press};
+        use frontend::common::event::{Event, LongOperationEvent, Origin};
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let source = lonely_plume(dir.path());
+        let target = dir
+            .path()
+            .join("novel.skrib")
+            .to_string_lossy()
+            .into_owned();
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location().set(dir.path().to_string_lossy().into_owned());
+        vm.name().set("novel".into());
+        let (mut tree, _toasts, _archive) = tree_with_archive(&app_ctx);
+
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        let op_id = vm.active.get().expect("the import started");
+        assert!(open_registry::importing(&target));
+        let cancelled = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Cancelled),
+            ids: Vec::new(),
+            data: Some(format!(r#"{{"id":"{op_id}"}}"#)),
+        };
+        let cancelling = vm.clone();
+        press(&mut tree, move |c| {
+            cancelling.on_long_op_cancelled(c, &cancelled)
+        });
+        assert!(!open_registry::importing(&target));
     }
 
     /// End to end: a real import of a Plume project the importer has to report

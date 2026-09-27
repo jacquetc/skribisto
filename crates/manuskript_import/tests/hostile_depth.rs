@@ -314,10 +314,42 @@ fn deep_outline_zip(root: &std::path::Path, folders: usize) -> String {
     path.to_string_lossy().into_owned()
 }
 
-/// The same project as a folder on disk.
+/// The longest path, in bytes, a folder project built here may put below its
+/// temporary directory.
+///
+/// macOS refuses any path argument longer than 1,024 bytes (`MAXPATHLEN`), before
+/// it looks at a single folder, and its temporary directory
+/// (`/var/folders/…/T/.tmpXXXXXX/`) takes about 70 of them. The folders a walk
+/// recurses through are what these tests measure, not how long their names are,
+/// so the names are kept short enough to leave that directory room to spare on
+/// every platform the suite runs on.
+const FOLDER_PROJECT_PATH_BUDGET: usize = 640;
+
+/// The member path of a text item sitting `folders` folders deep in a project
+/// folder on disk: the top folder named as [`outline_member`] names it, so the
+/// test can find it by title, and every folder below it one letter long.
+fn compact_outline_member(folders: usize) -> String {
+    let mut path = String::from("outline/0-Level_1/");
+    for _ in 2..folders {
+        path.push_str("a/");
+    }
+    path.push_str("0-Bottom.md");
+    path
+}
+
+/// The same project as a folder on disk, `folders` folders deep, built from
+/// [`compact_outline_member`] so its deepest path fits every platform's limit.
 fn deep_outline_folder(root: &std::path::Path, folders: usize) -> String {
     let project = root.join("Hostile");
-    let item = project.join(outline_member(folders));
+    let member = compact_outline_member(folders);
+    let below_temp = format!("Hostile/{member}");
+    assert!(
+        below_temp.len() <= FOLDER_PROJECT_PATH_BUDGET,
+        "a {folders}-folder project needs {} bytes below the temporary directory, more \
+         than the {FOLDER_PROJECT_PATH_BUDGET} a macOS path leaves it",
+        below_temp.len()
+    );
+    let item = project.join(&member);
     let Some(parent) = item.parent() else {
         panic!("{} has a parent", item.display());
     };
@@ -411,7 +443,7 @@ fn a_project_folder_one_level_past_the_ceiling_is_refused_by_name() {
         output_in(dir.path()),
     ));
 
-    let member = outline_member(MAX_XML_DEPTH + 1);
+    let member = compact_outline_member(MAX_XML_DEPTH + 1);
     let Some((folder, _item)) = member.rsplit_once('/') else {
         panic!("{member} sits in a folder");
     };
