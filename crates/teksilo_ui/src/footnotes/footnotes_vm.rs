@@ -686,4 +686,155 @@ mod tests {
             "the delete itself must have actually run"
         );
     }
+
+    /// A real project's scene holding `Hello world.`, after a paragraph `before`
+    /// when there is one, a note put in after `Hello` through
+    /// [`FootnotesViewModel::insert_at`] with an editor's own handle (the way Insert
+    /// footnote runs it), and the scene written once.
+    ///
+    /// Holds what the tests below type through, and the `Hello[^label] world.` the
+    /// note's paragraph was written as.
+    #[cfg(not(feature = "mocks"))]
+    struct SceneWithANote {
+        project: crate::test_support::RealProject,
+        uid: uuid::Uuid,
+        doc: Rc<crate::models::OpenDoc>,
+        handle: EditorHandle,
+        label: String,
+        annotated: String,
+        // Held for the scene's lifetime: the store owns the open document.
+        _docs: OpenDocsStore,
+    }
+
+    #[cfg(not(feature = "mocks"))]
+    impl SceneWithANote {
+        fn new(before: Option<&str>) -> Self {
+            use teksilo::widgets::rich_text::RichTextEditor;
+
+            let project = crate::test_support::RealProject::empty_novel();
+            let (item_id, uid) = project.scenes()[0];
+            let docs = OpenDocsStore::new(project.app_ctx.clone());
+            let model =
+                FootnotesListModel::new(project.app_ctx.clone(), project.ids.clone(), docs.clone());
+            let vm = FootnotesViewModel::new(model, docs.clone(), project.ids.stack_id.clone());
+
+            let doc = docs.open(item_id).expect("the scene opens");
+            let (handle, binding) = {
+                let prose = doc.main.as_ref().expect("a scene has prose");
+                (
+                    RichTextEditor::editor(prose.doc.clone()).handle(),
+                    vm.binding(prose.content()),
+                )
+            };
+            // Where the note's paragraph starts: after `before` and its paragraph
+            // break.
+            let start = before.map_or(0, |text| text.chars().count() + 1);
+            if let Some(text) = before {
+                handle.insert_text(text);
+                handle.insert_block();
+            }
+            handle.insert_text("Hello world.");
+            // The caret after the word the note annotates.
+            handle.select_range(start + 5, start + 5);
+            vm.insert_at(&handle, &binding).expect("the note is made");
+            let label = vm
+                .caret_label()
+                .get()
+                .expect("the new note is under the caret");
+            let annotated = format!("Hello[^{label}] world.");
+            let scene = Self {
+                project,
+                uid,
+                doc,
+                handle,
+                label,
+                annotated,
+                _docs: docs,
+            };
+            let written = match before {
+                Some(text) => format!("{text}\n\n{}", scene.annotated),
+                None => scene.annotated.clone(),
+            };
+            assert_eq!(scene.written(), written);
+            scene
+        }
+
+        /// Flush the scene, as an autosave does, and return the Djot it wrote.
+        fn written(&self) -> String {
+            self.doc
+                .flush(self.project.ids.stack_id.get())
+                .expect("the scene is written");
+            self.doc.main.as_ref().expect("a scene has prose").djot()
+        }
+
+        /// Save the project, and assert the file holds `expected` as the scene's text
+        /// and the note beside it.
+        fn assert_saved(&self, expected: &str) {
+            self.project.save();
+            let (saved, notes) = crate::test_support::saved_scene(&self.project.path, self.uid);
+            assert_eq!(saved, expected, "the file holds the scene as it shows");
+            assert_eq!(
+                notes
+                    .iter()
+                    .map(|note| note.label.as_str())
+                    .collect::<Vec<_>>(),
+                [self.label.as_str()],
+                "and the note beside it"
+            );
+        }
+    }
+
+    /// **Regression.** Typing in front of a note's reference moves the reference
+    /// with the words it annotates, on screen and in the file.
+    ///
+    /// The reference moved its text but not its anchor: the save put `[^label]`
+    /// inside the annotated word, with a bare object-replacement character where
+    /// the reference had been.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn typing_in_front_of_a_note_keeps_it_with_its_words_through_the_save() {
+        let scene = SceneWithANote::new(None);
+        scene.handle.select_range(0, 0);
+        scene.handle.insert_text("Oh. ");
+        let expected = format!("Oh. {}", scene.annotated);
+        assert_eq!(scene.written(), expected);
+        scene.assert_saved(&expected);
+    }
+
+    /// **Regression.** Enter in front of a note's reference splits the paragraph and
+    /// the reference stays with its words.
+    ///
+    /// The reference's anchor stayed at its old offset in the first paragraph, past
+    /// that paragraph's new end, and the next save (every autosave) panicked.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn enter_in_front_of_a_note_keeps_it_with_its_words_through_the_save() {
+        let scene = SceneWithANote::new(None);
+        scene.handle.select_range(2, 2);
+        scene.handle.insert_block();
+        let expected = format!("He\n\n{}", &scene.annotated[2..]);
+        assert_eq!(scene.written(), expected);
+        scene.assert_saved(&expected);
+    }
+
+    /// **Regression.** Backspace joining a note's paragraph onto the one before it
+    /// keeps the reference.
+    ///
+    /// The join dropped the second paragraph's references and left their
+    /// object-replacement characters in the text as bare characters.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn backspace_joining_a_notes_paragraph_keeps_the_note_through_the_save() {
+        let scene = SceneWithANote::new(Some("Oh."));
+        // `Oh.` is 0..3, and the note's paragraph starts at 4.
+        let prose = scene.doc.main.as_ref().expect("a scene has prose");
+        prose
+            .doc
+            .cursor_at(4)
+            .delete_previous_char()
+            .expect("Backspace");
+        let expected = format!("Oh.{}", scene.annotated);
+        assert_eq!(scene.written(), expected);
+        scene.assert_saved(&expected);
+    }
 }

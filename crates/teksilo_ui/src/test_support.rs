@@ -239,3 +239,225 @@ pub(crate) fn with_shipped_messages(locale: &str, f: impl FnOnce()) {
     f();
     clear();
 }
+
+/// A project in a real backend, made the way New Work makes one and saved the way
+/// Save does, for a test that follows a writer's edit all the way into the file.
+///
+/// Real-backend only: under `--features mocks` the Layer A singles fabricate their
+/// rows, and nothing an edit does reaches a bundle.
+#[cfg(not(feature = "mocks"))]
+pub(crate) struct RealProject {
+    pub(crate) app_ctx: Rc<AppContext>,
+    pub(crate) ids: crate::app_ids::AppIds,
+    pub(crate) work_id: u64,
+    /// Where [`Self::save`] writes the project.
+    pub(crate) path: std::path::PathBuf,
+    _dir: tempfile::TempDir,
+}
+
+#[cfg(not(feature = "mocks"))]
+impl RealProject {
+    /// An empty novel (a Book, one chapter folder holding one empty Scene), not yet
+    /// on disk, with its ids seeded and an undo stack open.
+    pub(crate) fn empty_novel() -> Self {
+        use frontend::commands::{handling_app_lifecycle_commands, work_management_commands};
+        use frontend::work_management::{NewWorkDto, NewWorkTemplate};
+
+        let dir = tempfile::tempdir().expect("a directory for the project");
+        let path = dir.path().join("Novel.skrib");
+        let app_ctx = Rc::new(AppContext::new());
+        handling_app_lifecycle_commands::initialize_app(&app_ctx).expect("initialize the app");
+        work_management_commands::new_work(
+            &app_ctx,
+            &NewWorkDto {
+                goal_unit: Default::default(),
+                file_name: path.to_string_lossy().into_owned(),
+                title: String::new(),
+                is_folder: false,
+                template_kind: NewWorkTemplate::EmptyNovel,
+                labels: vec![],
+                language: vec!["en-US".to_string()],
+                author_name: String::new(),
+                chapter_scene_mode: false,
+                paratext_front: Vec::new(),
+                paratext_back: Vec::new(),
+            },
+        )
+        .expect("new_work seeds the store");
+        let work_id = frontend::commands::work_commands::get_all_work(&app_ctx)
+            .expect("get_all_work")
+            .pop()
+            .expect("new_work made a Work")
+            .id;
+        let ids = crate::app_ids::AppIds::new();
+        ids.seed(&app_ctx, work_id);
+        ids.open_stack(&app_ctx);
+        Self {
+            app_ctx,
+            ids,
+            work_id,
+            path,
+            _dir: dir,
+        }
+    }
+
+    /// The project's Scenes, in binder order: store id and durable uid.
+    pub(crate) fn scenes(&self) -> Vec<(u64, uuid::Uuid)> {
+        use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+        crate::models::binder_stream::ordered_binder_items(&self.app_ctx, self.work_id)
+            .into_iter()
+            .filter_map(|row| {
+                let item = frontend::commands::binder_item_commands::get_binder_item(
+                    &self.app_ctx,
+                    &row.id,
+                )
+                .ok()
+                .flatten()?;
+                (item.role == BinderItemRole::Item && item.sub_role == BinderItemSubRole::Scene)
+                    .then_some((item.id, item.uid))
+            })
+            .collect()
+    }
+
+    /// Add a Scene right after the row `after`, at its indent, in its binder: store
+    /// id and durable uid.
+    pub(crate) fn add_scene_after(&self, after: u64, title: &str) -> (u64, uuid::Uuid) {
+        use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+        use frontend::common::direct_access::binder::BinderRelationshipField;
+        use frontend::common::direct_access::work::WorkRelationshipField;
+        use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+        use frontend::direct_access::CreateBinderItemDto;
+
+        let indent = binder_item_commands::get_binder_item(&self.app_ctx, &after)
+            .expect("get_binder_item")
+            .expect("the row exists")
+            .indent;
+        let (binder_id, index) = work_commands::get_work_relationship(
+            &self.app_ctx,
+            &self.work_id,
+            &WorkRelationshipField::Binders,
+        )
+        .expect("the project's binders")
+        .into_iter()
+        .find_map(|binder_id| {
+            let items = binder_commands::get_binder_relationship(
+                &self.app_ctx,
+                &binder_id,
+                &BinderRelationshipField::BinderItems,
+            )
+            .ok()?;
+            let at = items.iter().position(|id| *id == after)?;
+            Some((binder_id, at + 1))
+        })
+        .expect("the row is in a binder");
+        let item = binder_item_commands::create_binder_item(
+            &self.app_ctx,
+            self.ids.stack_id.get(),
+            &CreateBinderItemDto {
+                title: title.to_string(),
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                activated: true,
+                is_exportable: true,
+                indent,
+                ..Default::default()
+            },
+            binder_id,
+            i32::try_from(index).expect("a binder of a few rows"),
+        )
+        .expect("the scene is made");
+        (item.id, item.uid)
+    }
+
+    /// Save to [`Self::path`] and wait for the write to finish.
+    pub(crate) fn save(&self) {
+        use frontend::commands::work_management_commands;
+        use frontend::work_management::SaveWorkDto;
+
+        let op_id = work_management_commands::save_work(
+            &self.app_ctx,
+            &SaveWorkDto {
+                media_root: crate::media_paths::media_root_string(),
+                work_id: self.work_id,
+                file_name: self.path.to_string_lossy().into_owned(),
+                overwrite: true,
+            },
+        )
+        .expect("the save starts");
+        // Take the completion signal and let go of the manager's lock before
+        // waiting: holding it would stall the very operation being waited on.
+        let completion = self
+            .app_ctx
+            .long_operation_manager
+            .lock()
+            .expect("the long-operation manager")
+            .completion_signal();
+        assert!(
+            completion.wait_for(&op_id, Some(std::time::Duration::from_secs(60))),
+            "the save never finished"
+        );
+        work_management_commands::get_save_work_result(&self.app_ctx, &op_id)
+            .expect("the save succeeded")
+            .expect("a finished save has a result");
+    }
+
+    /// Open the saved project in a backend of its own, as reopening the file does.
+    pub(crate) fn reopened(&self) -> Rc<AppContext> {
+        use frontend::commands::work_management_commands;
+        use frontend::work_management::LoadWorkDto;
+
+        let app_ctx = Rc::new(AppContext::new());
+        work_management_commands::load_work(
+            &app_ctx,
+            &LoadWorkDto {
+                media_root: crate::media_paths::media_root_string(),
+                file_name: self.path.to_string_lossy().into_owned(),
+            },
+        )
+        .expect("the saved project opens");
+        app_ctx
+    }
+}
+
+/// What the file at `path`, read by [`skrib_format::read_bundle`] (the reader every
+/// open, backup and version goes through), holds for the row `uid`: its scene text,
+/// and the footnotes kept beside it.
+#[cfg(not(feature = "mocks"))]
+pub(crate) fn saved_scene(
+    path: &std::path::Path,
+    uid: uuid::Uuid,
+) -> (String, Vec<skrib_format::FootnoteFile>) {
+    use frontend::common::entities::ContentRole;
+
+    let bundle = match skrib_format::read_bundle(&path.to_string_lossy()) {
+        Ok(bundle) => bundle,
+        Err(e) => panic!("the saved project must read back: {e}"),
+    };
+    let Some(row) = bundle
+        .binders
+        .iter()
+        .flat_map(|binder| &binder.items)
+        .find(|row| row.item.uid == uid)
+    else {
+        panic!("the saved project holds no row {uid}");
+    };
+    let Some(prose_ref) = row
+        .item
+        .prose_refs
+        .iter()
+        .find(|prose_ref| prose_ref.role == ContentRole::SceneText)
+    else {
+        panic!("the saved row {uid} holds no scene text");
+    };
+    let text = row
+        .prose
+        .get(&prose_ref.file_id)
+        .cloned()
+        .unwrap_or_default();
+    let notes = row
+        .footnotes
+        .get(&prose_ref.file_id)
+        .cloned()
+        .unwrap_or_default();
+    (text, notes)
+}

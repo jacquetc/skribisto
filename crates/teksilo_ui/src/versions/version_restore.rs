@@ -575,4 +575,84 @@ mod tests {
             "expected a not-a-document refusal, got {err:?}",
         );
     }
+
+    // ── putting a version back over footnote references, through to the file ──
+
+    /// **Regression.** Putting a version back over a scene that cites notes, then
+    /// saving, reaches the file with the version's text.
+    ///
+    /// Skribisto keeps a note's body in its own store, so a scene's text holds the
+    /// references alone. The restore replaces the whole text in one edit
+    /// ([`replace_all`]), and the document kept the replaced references on the
+    /// paragraphs that took their place, at offsets past their end. The flush that
+    /// follows the restore ([`apply`] calls it, and every autosave after it) writes
+    /// the scene with `to_djot`, which sliced past the text and panicked: the writer
+    /// asked for a text back and lost the application.
+    ///
+    /// Driven through [`apply`] on a real project, as the Versions dock's "put back"
+    /// runs it, then through a real save, and read back with the reader every open
+    /// goes through.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_version_put_back_over_footnote_references_reaches_the_file() {
+        use frontend::commands::footnote_commands;
+        use frontend::direct_access::CreateFootnoteDto;
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let (item_id, uid) = project.scenes()[0];
+        let stack = project.ids.stack_id.get();
+        let docs = OpenDocsStore::new(project.app_ctx.clone());
+
+        // The scene as a saved project holds it: ten paragraphs, each citing a note
+        // of its own, the notes' bodies in the project's store. Written to the row,
+        // so the restore opens the scene from it the way a reopened project does.
+        let cited = (0..10)
+            .map(|i| format!("Line {i} has a note[^n{i}]."))
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        {
+            let doc = docs.open(item_id).expect("the scene opens");
+            let row = doc.main.as_ref().expect("a scene has prose").content();
+            row.set_data(cited.clone());
+            row.save_untracked().expect("the scene's text is stored");
+            let content_id = row.id().expect("storing the text made the row");
+            let now = chrono::Utc::now();
+            for i in 0..10 {
+                footnote_commands::create_footnote(
+                    &project.app_ctx,
+                    stack,
+                    &CreateFootnoteDto {
+                        uid: Default::default(),
+                        created_at: now,
+                        updated_at: now,
+                        content: Some(content_id),
+                        label: format!("n{i}"),
+                        body: format!("Note {i}."),
+                    },
+                    project.work_id,
+                    -1,
+                )
+                .expect("the note is made");
+            }
+        }
+        docs.release(item_id, stack);
+        project.save();
+        assert_eq!(
+            crate::test_support::saved_scene(&project.path, uid).0,
+            cited,
+            "the scene reached the file with its references before the restore"
+        );
+
+        // The version put back: thirty paragraphs, citing nothing.
+        let past = (0..30)
+            .map(|i| format!("Paragraph {i} of the text as it was."))
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        apply(&docs, item_id, &ContentRole::SceneText, &past, stack, None)
+            .expect("the version goes back");
+
+        project.save();
+        let (saved, _) = crate::test_support::saved_scene(&project.path, uid);
+        assert_eq!(saved, past, "the file holds the version put back, whole");
+    }
 }

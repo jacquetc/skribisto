@@ -1371,10 +1371,20 @@ fn scene_page_seeded(text: &str) -> (WidgetTree, WidgetId, ContentTab) {
     if let Some(field) = open_doc.main.as_ref().filter(|_| !text.is_empty()) {
         field.doc.set_plain_text(text).unwrap();
     }
+    page_for(&ctx, OpenDocsStore::new(ctx.clone()), open_doc)
+}
+
+/// A tab over `open_doc`, as the editors build one, mounted in a tree that has a
+/// settings store, and laid out and rendered once.
+fn page_for(
+    ctx: &Rc<AppContext>,
+    docs: OpenDocsStore,
+    open_doc: Rc<OpenDoc>,
+) -> (WidgetTree, WidgetId, ContentTab) {
     let tab = ContentTab::new(
         ctx.clone(),
         AppIds::new(),
-        OpenDocsStore::new(ctx.clone()),
+        docs,
         open_doc,
         Signal::new(700.0),
         Signal::new(true),
@@ -1400,7 +1410,7 @@ fn scene_page_seeded(text: &str) -> (WidgetTree, WidgetId, ContentTab) {
         crate::statuses::StatusesViewModel::new(ctx.clone(), AppIds::new()),
         crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
     );
-    let mut tree = crate::test_support::tree_with_settings(&ctx);
+    let mut tree = crate::test_support::tree_with_settings(ctx);
     let root = tree.add_boxed(tab_pane(&tab));
     tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 400.0));
     let _ = tree.render();
@@ -4879,4 +4889,203 @@ fn escape_cancels_after_clicking_into_the_open_editor() {
     tree.press_key(Key::Escape, Modifiers::NONE);
     tree.layout(p);
     assert_eq!(vm.editing_cell().get(), Option::None, "Escape did nothing");
+}
+
+// ── a scene's text, from the editor to the file and back into a tab ─────────────────
+
+/// The words of a Djot text, as a reader meets them.
+#[cfg(not(feature = "mocks"))]
+fn words_of(djot: &str) -> Vec<String> {
+    let doc = TextDocument::new();
+    doc.set_djot_sync(djot).expect("the Djot reads");
+    doc.to_plain_text()
+        .expect("the text")
+        .split_whitespace()
+        .map(str::to_string)
+        .collect()
+}
+
+/// **Regression.** A table put into the middle of a scene keeps the text after it
+/// where the writer sees it, through the save.
+///
+/// The pasted table's cells went into the document's text at the end of the scene's
+/// frame, after everything that followed the paste, so every position past the
+/// paste named the wrong text: typing at the start of the next paragraph wrote the
+/// words somewhere else, and the save wrote them there.
+///
+/// Driven through the editor's own handle (the way a paste of formatted text, or an
+/// inserted note template, reaches the document), the document's flush, a real save,
+/// and the reader every open goes through.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn a_table_put_in_mid_scene_keeps_the_text_after_it_in_place_through_the_save() {
+    use teksilo::widgets::rich_text::RichTextEditor;
+
+    let project = crate::test_support::RealProject::empty_novel();
+    let (item_id, uid) = project.scenes()[0];
+    let stack = project.ids.stack_id.get();
+    let docs = OpenDocsStore::new(project.app_ctx.clone());
+    let doc = docs.open(item_id).expect("the scene opens");
+    let prose = doc.main.as_ref().expect("a scene has prose");
+    let handle = RichTextEditor::editor(prose.doc.clone()).handle();
+    handle.insert_text("one");
+    handle.insert_block();
+    handle.insert_text("two");
+    handle.insert_block();
+    handle.insert_text("three");
+
+    // At the end of the first paragraph, text holding a table.
+    handle.select_range(3, 3);
+    handle.insert_djot("a\n\n| x | y |\n\nb");
+    // Then typing at the start of what was the second paragraph, which the paste
+    // pushed to position 13: `onea` at 0, the cells `x` at 7 and `y` at 9, `b` at
+    // 11.
+    handle.select_range(13, 13);
+    handle.insert_text("TWO ");
+    doc.flush(stack).expect("the scene is written");
+
+    project.save();
+    let (saved, _) = crate::test_support::saved_scene(&project.path, uid);
+    assert_eq!(
+        words_of(&saved),
+        ["onea", "x", "y", "b", "TWO", "two", "three"],
+        "the file holds the words where the writer put them: {saved:?}"
+    );
+}
+
+/// The deep shapes the editor writes reopen in a tab as what they are.
+///
+/// A paragraph typed after 194 spaces, which the editor saves as typed, and a list
+/// Tabbed 48 levels deep, which it saves two spaces a level. Both reach the file,
+/// the reader every open goes through accepts both, and a tab opened on each shows
+/// the paragraph as a paragraph and every item of the list at its own level.
+///
+/// `text-document` shows prose past its nesting ceiling as one paragraph of its own
+/// Djot source, and an edit there saves the source back as prose. It counted one
+/// level per two spaces in front of a line that opens nothing, so the paragraph
+/// counted 97, past its ceiling of 96, and the tab showed the writer the scene's
+/// raw source, spaces and all.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn deep_prose_the_editor_writes_reopens_in_a_tab_as_its_structure() {
+    use teksilo::text_document::{ListFormat, ListStyle, MoveMode, MoveOperation};
+    use teksilo::widgets::rich_text::RichTextEditor;
+
+    let project = crate::test_support::RealProject::empty_novel();
+    let stack = project.ids.stack_id.get();
+    let (spaced_id, spaced_uid) = project.scenes()[0];
+    let (listed_id, listed_uid) = project.add_scene_after(spaced_id, "A deep list");
+    let docs = OpenDocsStore::new(project.app_ctx.clone());
+
+    // Typed: a paragraph, Enter, then 194 spaces and the second paragraph.
+    let spaced = docs.open(spaced_id).expect("the first scene opens");
+    let prose = spaced.main.as_ref().expect("a scene has prose");
+    let handle = RichTextEditor::editor(prose.doc.clone()).handle();
+    handle.insert_text("First.");
+    handle.insert_block();
+    handle.insert_text(&format!("{}Indented paragraph.", " ".repeat(194)));
+    spaced.flush(stack).expect("the first scene is written");
+    let spaced_djot = prose.djot();
+    assert!(
+        spaced_djot.contains(&" ".repeat(194)),
+        "the editor saves the spaces as typed: {spaced_djot:?}"
+    );
+
+    // Tabbed: each item made a list item, then Tabbed one level past the one before,
+    // as the editor answers Tab in a list item (it leaves its list for a new one a
+    // level further in).
+    let listed = docs.open(listed_id).expect("the second scene opens");
+    let prose = listed.main.as_ref().expect("a scene has prose");
+    let cursor = prose.doc.cursor();
+    for level in 0..48u8 {
+        cursor.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
+        if level > 0 {
+            cursor.insert_block().expect("Enter");
+        }
+        cursor
+            .insert_text(&format!("level {level}"))
+            .expect("type the item");
+        cursor.create_list(ListStyle::Disc).expect("a list item");
+        for indent in 1..=level {
+            cursor
+                .remove_current_block_from_list()
+                .expect("leave the list");
+            cursor.create_list(ListStyle::Disc).expect("a deeper list");
+            cursor
+                .set_current_list_format(&ListFormat {
+                    indent: Some(indent),
+                    ..ListFormat::default()
+                })
+                .expect("Tab");
+        }
+    }
+    listed.flush(stack).expect("the second scene is written");
+    let listed_djot = prose.djot();
+
+    project.save();
+    for (uid, djot) in [(spaced_uid, &spaced_djot), (listed_uid, &listed_djot)] {
+        assert_eq!(
+            &crate::test_support::saved_scene(&project.path, uid).0,
+            djot,
+            "the reader takes the scene back as it was written"
+        );
+    }
+
+    // Reopened, as opening the file does, and each scene opened in a tab.
+    let ctx = project.reopened();
+    let docs = OpenDocsStore::new(ctx.clone());
+    let row_of = |uid: uuid::Uuid| {
+        frontend::commands::binder_item_commands::get_all_binder_item(&ctx)
+            .expect("the rows")
+            .into_iter()
+            .find(|item| item.uid == uid)
+            .map(|item| item.id)
+            .expect("the scene came back")
+    };
+    let blocks_shown = |tab: &ContentTab| {
+        let prose = tab.main().expect("a scene tab shows prose");
+        prose
+            .doc
+            .blocks()
+            .iter()
+            .map(|block| (block.text(), block.list().map(|list| list.indent())))
+            .collect::<Vec<_>>()
+    };
+
+    let (_tree, _root, tab) = page_for(
+        &ctx,
+        docs.clone(),
+        docs.open(row_of(spaced_uid))
+            .expect("the first scene opens"),
+    );
+    // Djot drops a paragraph's leading whitespace when it reads one, which no
+    // escaping can change; the words and the two paragraphs stay.
+    assert_eq!(
+        blocks_shown(&tab),
+        [
+            ("First.".to_string(), None),
+            ("Indented paragraph.".to_string(), None)
+        ],
+        "the tab shows the scene's text, not its Djot source"
+    );
+
+    let (_tree, _root, tab) = page_for(
+        &ctx,
+        docs.clone(),
+        docs.open(row_of(listed_uid))
+            .expect("the second scene opens"),
+    );
+    let expected: Vec<(String, Option<u8>)> = (0..48u8)
+        .map(|level| (format!("level {level}"), Some(level)))
+        .collect();
+    assert_eq!(
+        blocks_shown(&tab),
+        expected,
+        "the tab shows every item at its own level"
+    );
+    assert_eq!(
+        tab.main().expect("prose").djot(),
+        listed_djot,
+        "and saving the tab again writes the list back as it was"
+    );
 }
