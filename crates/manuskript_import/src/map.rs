@@ -1085,7 +1085,7 @@ impl Builder<'_> {
         // Already Djot: `crate::prose` converted it at the reader boundary, and
         // converting again would read Djot as Markdown and quietly demote every
         // bold run to italic.
-        let body = self.rewrite_prose(&row.text, &row.title);
+        let body = self.rewrite_djot_prose(&row.text, &row.title);
         let text = body.text.clone();
 
         // Offered whatever the row turned out to be; `make_item` drops whichever
@@ -1200,8 +1200,8 @@ impl Builder<'_> {
         item.item.reference_ids = ids;
     }
 
-    /// Replace inline reference markers with the words they stand for, recording
-    /// what they named.
+    /// Replace inline reference markers in **plain** text (a row's notes, which are
+    /// converted after) with the words they stand for, recording what they named.
     fn rewrite_prose(&self, text: &str, what: &str) -> refs::Scanned {
         if text.is_empty() {
             return refs::Scanned::default();
@@ -1213,6 +1213,33 @@ impl Builder<'_> {
                 .get(&(reference.kind, reference.id.clone()))
                 .cloned()
         })
+    }
+
+    /// [`Self::rewrite_prose`] for a row's body, which is already Djot. See
+    /// [`refs::rewrite_djot`] for why it cannot be treated as text.
+    fn rewrite_djot_prose(&mut self, djot: &str, what: &str) -> refs::Scanned {
+        if djot.is_empty() {
+            return refs::Scanned::default();
+        }
+        let targets = &self.reference_targets;
+        let scanned = refs::rewrite_djot(djot, |reference| {
+            targets
+                .get(&(reference.kind, reference.id.clone()))
+                .cloned()
+        });
+        match scanned {
+            Ok(scanned) => scanned,
+            Err(e) => {
+                self.warnings.push(format!(
+                    "The references in the text of '{what}' could not be resolved ({e:#}); \
+                     the text was kept as it was converted, markers included."
+                ));
+                refs::Scanned {
+                    text: djot.to_string(),
+                    references: Vec::new(),
+                }
+            }
+        }
     }
 
     /// Everything a `{C:…}`, `{W:…}`, `{P:…}` or `{T:…}` marker can point at.

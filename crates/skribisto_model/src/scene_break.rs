@@ -118,11 +118,12 @@ pub fn canonical_djot(tier: SceneBreakTier) -> &'static str {
 
 /// Undo Djot's punctuation escaping.
 ///
-/// text-document escapes on the way out — every `\ * _ ` ~ ^ [ ] ( ) { } | <`
-/// plus a leading `# > - + :` — so the persisted form of a typed `* * *` is
-/// `\* \* \*`. Djot's rule is that a backslash escapes any ASCII punctuation, so
-/// inverting it needs no table of its own (and cannot drift out of step with the
-/// escaper's exact character set).
+/// text-document escapes on the way out: every markup character, the quotes and the
+/// runs of `.` and `-` its parser would turn into smart punctuation, a colon that
+/// could close a symbol, and a leading block marker. So the persisted form of a
+/// typed `* * *` is `\* \* \*`, and of a typed `...` is `\.\.\.`. Djot's rule is
+/// that a backslash escapes any ASCII punctuation, so inverting it needs no table of
+/// its own (and cannot drift out of step with the escaper's exact character set).
 fn unescape_djot(s: &str) -> Cow<'_, str> {
     if !s.contains('\\') {
         return Cow::Borrowed(s);
@@ -316,6 +317,40 @@ mod tests {
             "* a bullet-looking line",
         ] {
             assert_eq!(tier_of_plain_line(line), None, "prose {line:?}");
+        }
+    }
+
+    /// The editor saves a line with `text-document`'s `to_djot`, which escapes runs of
+    /// `.` and `-` as well as the markup characters. Every mark in the vocabulary is
+    /// still a mark in that saved form, and a typed `...` or `---` alone on its line is
+    /// still prose, as it was before the save escaped it.
+    #[test]
+    fn marks_typed_in_the_editor_are_recognised_in_the_form_it_saves() {
+        let saved = |typed: &str| {
+            let doc = text_document::TextDocument::new();
+            doc.set_plain_text(typed).expect("type the line");
+            doc.to_djot().expect("save it")
+        };
+        for typed in MINOR_MARKERS.iter().chain(MAJOR_MARKERS) {
+            let djot = saved(typed);
+            assert_eq!(
+                tier_of_djot_block(&djot),
+                tier_of_plain_line(typed),
+                "{typed:?} saved as {djot:?}"
+            );
+            assert!(
+                might_contain_marker(&djot),
+                "{typed:?} saved as {djot:?} slips past the pre-filter"
+            );
+        }
+        for typed in ["...", "---", "--", "- - -", "\u{2026}"] {
+            let djot = saved(typed);
+            assert_eq!(
+                tier_of_djot_block(&djot),
+                None,
+                "{typed:?} saved as {djot:?}"
+            );
+            assert_eq!(strip_markers_djot(&djot), djot, "{typed:?} is prose");
         }
     }
 

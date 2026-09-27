@@ -418,3 +418,45 @@ fn markup_characters_survive_on_both_sides_of_a_real_change() {
         "the added text was mangled: {text}"
     );
 }
+
+/// The pane escapes text the parser has already read once, so it has to escape
+/// everything the parser acts on, as the editor's own save does. Prose saved as
+/// `10\:30\:45` and `std\:\:string` reads back as typed, and a pane that did not
+/// escape the colons again showed `1045` and `stdstring`, with jump-to-next-change
+/// landing short by the characters that went.
+#[test]
+fn text_the_editor_saves_escaped_is_shown_as_the_editor_shows_it() {
+    let before = "We met at 10\\:30\\:45 sharp.";
+    let after = "We met at 10\\:30\\:45 sharp.\n\nUse std\\:\\:string, it\\'s 9\\:20pm\\-\\-late.";
+    let r = rendered(before, after);
+    let text = plain(&r.djot);
+    assert_eq!(
+        text, "We met at 10:30:45 sharp.\nUse std::string, it's 9:20pm--late.",
+        "rendered as {:?}",
+        r.djot
+    );
+    let chars: Vec<char> = text.chars().collect();
+    assert_eq!(r.change_offsets.len(), 1);
+    let at = r.change_offsets[0];
+    let got: String = chars[at..(at + 3).min(chars.len())].iter().collect();
+    assert_eq!(got, "Use", "the offset pointed at {got:?}");
+
+    // A change inside a block, with a colon on either side of it.
+    let r = rendered("Meet at 10\\:30 sharp.", "Meet at 10\\:30\\:45 sharp.");
+    let text = plain(&r.djot);
+    assert!(text.contains("10:30:45"), "rendered as {:?}", r.djot);
+}
+
+/// A deleted or inserted paragraph shaped like `key=value` renders as `{-x=5-}`, which
+/// the block parser reads as a block attribute, so the paragraph vanished from the pane.
+#[test]
+fn a_whole_paragraph_shaped_like_an_attribute_stays_in_the_pane() {
+    for (before, after, shown) in [
+        ("x=5\n\nkept", "kept", "x=5"),
+        ("kept", "kept\n\ndebug=true", "debug=true"),
+    ] {
+        let r = rendered(before, after);
+        let text = plain(&r.djot);
+        assert!(text.contains(shown), "rendered {:?} as {text:?}", r.djot);
+    }
+}

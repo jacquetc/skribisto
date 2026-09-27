@@ -882,3 +882,98 @@ fn a_trashed_note_is_neither_found_nor_offered() {
         "a trashed note is not a name the scan can find, even where the prose still writes it"
     );
 }
+
+/// **Prose saved the way the editor saves typed text is matched as it was typed.**
+///
+/// The editor's save escapes what the Djot parser would otherwise rewrite (a straight
+/// apostrophe, a time's `:30:`), and the scan reads each row back to plain text before it
+/// matches, so the escapes are resolved and never seen. A name typed with a straight
+/// apostrophe is therefore found in prose typed the same way; while the save left the
+/// apostrophe to the parser, the prose read back curled.
+#[test]
+fn a_name_with_an_apostrophe_is_found_in_prose_saved_by_the_editor() {
+    let fx = fixture();
+    let name = "O'Neil";
+
+    let it = binder_item_commands::get_binder_item(&fx.ctx, &fx.character)
+        .expect("read")
+        .expect("the character exists");
+    let mut aliases = it.aliases.clone();
+    aliases.push(name.to_string());
+    binder_item_commands::update_binder_item(
+        &fx.ctx,
+        Some(fx.setup),
+        &UpdateBinderItemDto {
+            id: it.id,
+            created_at: it.created_at,
+            updated_at: now(),
+            uid: it.uid,
+            title: it.title.clone(),
+            sub_title: it.sub_title.clone(),
+            role: it.role.clone(),
+            sub_role: it.sub_role.clone(),
+            label: it.label.clone(),
+            activated: it.activated,
+            is_favorite: it.is_favorite,
+            is_exportable: it.is_exportable,
+            exclude_from_numbering: it.exclude_from_numbering,
+            indent: it.indent,
+            word_count_goal: it.word_count_goal,
+            char_count_goal: it.char_count_goal,
+            dict_language: it.dict_language.clone(),
+            aliases,
+        },
+    )
+    .expect("give the character a second name");
+
+    // Written through the same `to_djot` the editor saves with.
+    let saved =
+        skrib_format::html_to_djot("<p>At 10:30:45 O'Neil lit the lamp.</p>").expect("convert");
+    assert!(
+        saved.contains("O\\'Neil") && saved.contains("10\\:30\\:45"),
+        "stored the way the editor stores it: {saved:?}"
+    );
+    let binder =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
+    let scene = binder_item_commands::create_binder_item_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[item(BinderItemSubRole::Scene, "The lamp")],
+        binder,
+        -1,
+    )
+    .unwrap()[0]
+        .id;
+    content_commands::create_content_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role: ContentRole::SceneText,
+            data: saved,
+        }],
+        scene,
+        -1,
+    )
+    .unwrap();
+
+    let names = scan(&fx)
+        .into_iter()
+        .find_map(|h| match h {
+            MentionHit::Found {
+                owner_id,
+                target_id,
+                matched_names,
+                ..
+            } if owner_id == scene && target_id == fx.character => Some(matched_names),
+            _ => None,
+        })
+        .expect("the scene names the character");
+    assert_eq!(names, vec![name.to_string()]);
+}

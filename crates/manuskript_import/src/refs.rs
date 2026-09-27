@@ -49,42 +49,103 @@ pub struct Scanned {
 /// target does not exist — a plot deleted after a scene mentioned it, say. An
 /// unresolvable marker keeps its original form, because a writer who sees
 /// `{P:4:The rift}` in their prose can act on it, and one who sees nothing cannot.
+///
+/// `text` is plain text. For prose that is already Djot, use [`rewrite_djot`].
 pub fn rewrite(text: &str, resolve: impl Fn(&Reference) -> Option<String>) -> Scanned {
     let mut out = String::with_capacity(text.len());
     let mut references: Vec<Reference> = Vec::new();
-    let mut rest = text;
-
-    while let Some(open) = rest.find('{') {
-        out.push_str(&rest[..open]);
-        let after = &rest[open..];
-        match parse_marker(after) {
-            Some((reference, len)) => {
-                let shown = resolve(&reference).unwrap_or_else(|| reference.display.clone());
-                if shown.trim().is_empty() {
-                    // Nothing to show and nothing to link: keep the marker so the
-                    // writer can see what was there.
-                    out.push_str(&after[..len]);
-                } else {
-                    out.push_str(&shown);
-                    if !references.contains(&reference) {
-                        references.push(reference);
-                    }
-                }
-                rest = &after[len..];
-            }
-            None => {
-                // A brace that opens nothing. Emit it and carry on, so a scene that
-                // legitimately contains one is not mangled.
-                out.push('{');
-                rest = &after[1..];
-            }
-        }
+    let mut copied_to = 0;
+    for (span, reference) in markers(text) {
+        // Nothing to show and nothing to link: the marker stays so the writer can
+        // see what was there.
+        let Some(shown) = shown_for(&reference, &resolve) else {
+            continue;
+        };
+        out.push_str(&text[copied_to..span.start]);
+        out.push_str(&shown);
+        copied_to = span.end;
+        record(&mut references, reference);
     }
-    out.push_str(rest);
+    out.push_str(&text[copied_to..]);
 
     Scanned {
         text: out,
         references,
+    }
+}
+
+/// [`rewrite`] for prose that is already Djot, which a row's body is by the time the
+/// mapper sees it.
+///
+/// The markers are found in the prose as the editor will show it, and each is replaced
+/// through the document, so the name is escaped against the text around it and keeps the
+/// marker's formatting. Scanning the Djot string itself cannot work: a typed `{C:0:Peter}`
+/// is stored as `\{C\:0\:Peter\}`, and replacing from the `{` kept the backslash in front
+/// of it, so the writer read `\Peter`.
+///
+/// Returns `djot` unchanged when it holds no marker to replace.
+pub fn rewrite_djot(
+    djot: &str,
+    resolve: impl Fn(&Reference) -> Option<String>,
+) -> anyhow::Result<Scanned> {
+    let mut references: Vec<Reference> = Vec::new();
+    let text = skrib_format::rewrite_djot_text(djot, |prose| {
+        let mut edits = Vec::new();
+        // Markers come back as byte ranges; the document counts characters.
+        let (mut counted_to, mut chars_before) = (0, 0);
+        for (span, reference) in markers(prose) {
+            let Some(shown) = shown_for(&reference, &resolve) else {
+                continue;
+            };
+            chars_before += prose[counted_to..span.start].chars().count();
+            let len = prose[span.clone()].chars().count();
+            edits.push(skrib_format::TextEdit {
+                start: chars_before,
+                len,
+                replacement: shown,
+            });
+            chars_before += len;
+            counted_to = span.end;
+            record(&mut references, reference);
+        }
+        edits
+    })?;
+    Ok(Scanned { text, references })
+}
+
+/// Every marker in `text`, with the byte range it occupies, in order. A `{` that opens
+/// no marker is skipped and the scan carries on from the next character, so prose that
+/// legitimately contains a brace is not mangled.
+fn markers(text: &str) -> Vec<(std::ops::Range<usize>, Reference)> {
+    let mut found = Vec::new();
+    let mut from = 0;
+    while let Some(offset) = text[from..].find('{') {
+        let open = from + offset;
+        match parse_marker(&text[open..]) {
+            Some((reference, len)) => {
+                found.push((open..open + len, reference));
+                from = open + len;
+            }
+            None => from = open + 1,
+        }
+    }
+    found
+}
+
+/// The words a marker is replaced by: the target's name, else the marker's own display
+/// text. `None` when both are empty.
+fn shown_for(
+    reference: &Reference,
+    resolve: &impl Fn(&Reference) -> Option<String>,
+) -> Option<String> {
+    let shown = resolve(reference).unwrap_or_else(|| reference.display.clone());
+    (!shown.trim().is_empty()).then_some(shown)
+}
+
+/// Record `reference` once, however many times the prose names it.
+fn record(references: &mut Vec<Reference>, reference: Reference) {
+    if !references.contains(&reference) {
+        references.push(reference);
     }
 }
 
@@ -99,6 +160,11 @@ fn parse_marker(s: &str) -> Option<(Reference, usize)> {
     }
     let close = s.find('}')?;
     let inner = &s[1..close];
+    // Manuskript's `.*?` does not cross a line, and neither does a marker here: in
+    // converted prose a line break is a paragraph boundary.
+    if inner.contains('\n') {
+        return None;
+    }
     let mut parts = inner.splitn(3, ':');
     let kind_part = parts.next()?;
     let mut kind_chars = kind_part.chars();
@@ -216,6 +282,53 @@ mod tests {
             None
         });
         assert_eq!(out.text, "Act one: the rift");
+    }
+
+    /// Manuskript's own pattern does not cross a line, and in converted prose a line
+    /// break is a paragraph boundary no replacement can span.
+    #[test]
+    fn a_marker_never_spans_a_line() {
+        let out = rewrite("{C:0:Pe\nter}", named("Peter"));
+        assert_eq!(out.text, "{C:0:Pe\nter}");
+        assert!(out.references.is_empty());
+    }
+
+    /// In Djot a typed marker is escaped, `\{C\:0\:Peter\}`. It is found in the prose
+    /// the writer reads and replaced there, leaving no backslash behind, and the name is
+    /// escaped against its neighbours on the way back to Djot.
+    #[test]
+    fn a_marker_in_djot_is_replaced_in_the_prose_it_shows() {
+        let djot = skrib_format::markdown_to_djot("Then {C:0:Peter} spoke at 10:{T:1:30}:45.")
+            .expect("convert");
+        let out = rewrite_djot(&djot, |r| {
+            Some(if r.kind == 'C' { "Peter" } else { "30" }.into())
+        })
+        .expect("rewrite");
+        let (text, _) = skrib_format::djot_plain_text(&out.text).expect("read back");
+        assert_eq!(
+            text, "Then Peter spoke at 10:30:45.",
+            "stored as {:?}",
+            out.text
+        );
+        assert_eq!(out.references.len(), 2);
+    }
+
+    /// The marker's formatting is the name's: an italic marker gives an italic name.
+    #[test]
+    fn a_replaced_marker_keeps_its_formatting() {
+        let djot = skrib_format::markdown_to_djot("See _{C:0:Peter}_ now.").expect("convert");
+        let out = rewrite_djot(&djot, named("Paul")).expect("rewrite");
+        assert_eq!(out.text, "See _Paul_ now.");
+    }
+
+    /// Prose without a marker is not rewritten at all, not even re-canonicalised.
+    #[test]
+    fn djot_with_no_marker_is_returned_byte_for_byte() {
+        for djot in ["A *strong* word.", "A \\{brace\\} alone.", ""] {
+            let out = rewrite_djot(djot, named("X")).expect("rewrite");
+            assert_eq!(out.text, djot);
+            assert!(out.references.is_empty());
+        }
     }
 
     #[test]

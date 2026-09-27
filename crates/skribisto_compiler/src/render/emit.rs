@@ -70,14 +70,54 @@ pub(super) fn attr_line(rtl: bool, extra: &[String]) -> String {
     }
 }
 
+/// A heading whose text is plain text: a title the writer typed, generated furniture
+/// ("Chapter 3"), or the two joined. It is escaped here with [`escape_title`], so no
+/// caller can hand the parser a title raw.
 pub(super) fn push_heading(out: &mut String, level: u8, text: &str, rtl: bool, extra: &[String]) {
     out.push_str(&attr_line(rtl, extra));
     for _ in 0..level.clamp(1, 6) {
         out.push('#');
     }
     out.push(' ');
-    out.push_str(text.trim());
+    out.push_str(&escape_title(text.trim()));
     out.push_str("\n\n");
+}
+
+/// Djot for a title typed as plain text, with every character the parser would read as
+/// markup or as a symbol escaped.
+///
+/// Titles are stored as plain text and the compiled document is parsed as Djot, so a
+/// title written in raw was rewritten by the parser: a chapter called `10:30:45` lost
+/// `:30:` as a Djot symbol, `std::string` lost its colons, and `*Dawn*` came out bold
+/// without its stars. It goes through `text-document`'s inline escaper instead, the one
+/// the editor saves prose with.
+///
+/// The escapes of straight quotes and of runs of `-` and `.` are then taken back out, so
+/// the parser still curls those quotes and sets those runs as dashes and an ellipsis, as
+/// it always has in a title. Prose gets that typography from smart punctuation while it
+/// is typed; a title field has no smart punctuation, so without this a manuscript whose
+/// prose curls its quotes would carry straight ones in every heading.
+pub(super) fn escape_title(s: &str) -> String {
+    let escaped = text_document::escape_djot_inline(s);
+    let mut out = String::with_capacity(escaped.len());
+    // A backslash the escaper writes is always followed by the character it escapes, and
+    // a backslash of the title is itself written escaped, so the pairs read off in order.
+    let mut chars = escaped.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some(typographic @ ('\'' | '"' | '-' | '.')) => out.push(typographic),
+            Some(other) => {
+                out.push('\\');
+                out.push(other);
+            }
+            None => out.push('\\'),
+        }
+    }
+    out
 }
 
 pub(super) fn push_para(out: &mut String, text: &str, rtl: bool, extra: &[String]) {
@@ -331,14 +371,21 @@ pub(super) fn render_title_page(
         push_heading(&mut page, 1, w.title.trim(), rtl, &attrs);
     }
 
-    // The author's name is *data*, never markup — escaped so a name that happens to start
-    // like a list marker survives intact. The preposition is generated furniture and so is
-    // localized; the name itself never is.
+    // The author's name is *data*, never markup: escaped like a title, then guarded so a
+    // line that happens to start like a block marker stays a paragraph. The guard is
+    // `text-document`'s, which expects its input escaped already; `escape_block_leading`
+    // would escape the backslash of an escape again. The preposition is generated
+    // furniture and so is localized; the name itself never is.
     if !w.author_name.trim().is_empty() {
         let mut attrs = std::mem::take(&mut first);
         attrs.push("alignment=center".to_string());
         let byline = format!("{} {}", headings::by(&lang), w.author_name.trim());
-        push_para(&mut page, &escape_block_leading(&byline), rtl, &attrs);
+        push_para(
+            &mut page,
+            &text_document::guard_djot_block_start(&escape_title(&byline)),
+            rtl,
+            &attrs,
+        );
     }
     page
 }

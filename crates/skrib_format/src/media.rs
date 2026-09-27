@@ -131,8 +131,12 @@ pub fn asset_relpath(content_hash: &str, extension: &str) -> String {
 ///
 /// The alt runs inside `![…]`, so `]` would close it early and turn the rest of
 /// the text into stray markup — a book called *The Lighthouse \[Revised\]* is not
-/// exotic. `\` is escaped too, or it would escape whatever follows it into the
-/// document. `[` needs nothing: only `]` can end the span.
+/// exotic. And the parser reads it like any other inline text, so it rewrites it
+/// the same way: a description typed as `Anna's house at 10:30:45` came back as
+/// `Anna’s house at 1045`, the quote curled and `:30:` dropped as a Djot symbol.
+/// This is therefore `text-document`'s own inline escaper, the one its Djot
+/// exporter applies to an alt when the editor saves, so the text the writer typed
+/// is the text the parse holds from the first insertion on.
 ///
 /// Escaped, never *stripped*: a title is the writer's, and silently deleting
 /// characters from it to make it safe to embed loses the text while looking like
@@ -140,14 +144,7 @@ pub fn asset_relpath(content_hash: &str, extension: &str) -> String {
 /// (writing prose) and the compiler (writing a cover) must agree — two
 /// same-named copies had already drifted into escaping and deleting.
 pub fn escape_djot_alt(alt: &str) -> String {
-    let mut out = String::with_capacity(alt.len());
-    for c in alt.chars() {
-        if c == ']' || c == '\\' {
-            out.push('\\');
-        }
-        out.push(c);
-    }
-    out
+    text_document::escape_djot_inline(alt)
 }
 
 /// Every `assets/…` path an image in this Djot references, in first-seen order
@@ -312,11 +309,41 @@ mod tests {
     fn escape_djot_alt_escapes_rather_than_strips() {
         assert_eq!(
             escape_djot_alt("The Lighthouse [Revised]"),
-            "The Lighthouse [Revised\\]"
+            "The Lighthouse \\[Revised\\]"
         );
         assert_eq!(escape_djot_alt("back\\slash"), "back\\\\slash");
-        // `[` cannot end the span, so it is left exactly as the writer typed it.
-        assert_eq!(escape_djot_alt("a [ b"), "a [ b");
         assert_eq!(escape_djot_alt("plain title"), "plain title");
+    }
+
+    /// A description is parsed like any other text, so it has to be escaped for
+    /// everything the parser acts on, not only for its closing bracket. Typed as
+    /// `Anna's house at 10:30:45`, it read back as `Anna’s house at 1045`, the quote
+    /// curled and `:30:` dropped as a Djot symbol; `*not bold*` lost its stars.
+    #[test]
+    fn a_description_reads_back_exactly_as_typed() {
+        for alt in [
+            "Anna's house at 10:30:45",
+            "a--b... \"so\"",
+            "*not bold* and _not italic_",
+            "std::vector :smile:",
+            "The Lighthouse [Revised]",
+            "a [ b",
+            "back\\slash",
+            "plain title",
+        ] {
+            let djot = format!("![{}](assets/a.png)", escape_djot_alt(alt));
+            let doc = text_document::TextDocument::new();
+            doc.set_djot(&djot).expect("parse").wait().expect("parsed");
+            let read: Vec<String> = doc
+                .blocks()
+                .iter()
+                .flat_map(|block| block.fragments())
+                .filter_map(|fragment| match fragment {
+                    text_document::FragmentContent::Image { alt, .. } => Some(alt),
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(read, vec![alt.to_string()], "written as {djot:?}");
+        }
     }
 }

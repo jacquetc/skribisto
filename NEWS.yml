@@ -9,6 +9,8 @@ Description:
 - "Choosing where to save a new or imported project no longer writes and deletes a test file in that folder over and over while the dialog is open"
 - "An import can no longer overwrite a project that is open in a window, in this copy of Skribisto or another one"
 - "A Plume Creator or Manuskript project, or a Word or OpenDocument file, whose contents are nested far more deeply than any real file is refused with a message instead of closing Skribisto and every open window"
+- "Text you type comes back exactly as you typed it after the project is saved and opened again. A time such as 10:30:45 or a name such as std::vector no longer loses its colons and the characters between them, a paragraph that begins with I. or A. stays a paragraph instead of turning into a list item without its letter, and straight quotes, -- and ... stay as typed instead of becoming English curly quotes, dashes and an ellipsis. Turning them into typographic marks is left to smart punctuation, which follows your project’s language"
+- "Characters named in the text of a Manuskript project import as their plain name, without a stray backslash, and an image description or a chapter title keeps its colons and asterisks as typed"
 ---
 Version: 3.0.4
 Date: 2026-09-16

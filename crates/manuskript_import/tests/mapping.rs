@@ -27,6 +27,13 @@ fn build(project: &Project) -> Mapped {
     map::build_bundle(project, &names(), &|_, _| {}, &AtomicBool::new(false))
 }
 
+/// A row body as the reader hands it to the mapper: Manuskript's Markdown, already
+/// converted to Djot (`manuskript_import::prose::to_djot`). A marker typed as
+/// `{C:0:Peter}` arrives escaped, and the mapper has to find it in that form.
+fn converted(markdown: &str) -> String {
+    skrib_format::markdown_to_djot(markdown).expect("convert the fixture body")
+}
+
 fn scene(id: &str, title: &str, text: &str) -> OutlineItem {
     OutlineItem {
         id: Some(id.into()),
@@ -419,7 +426,11 @@ fn an_index_past_the_end_of_its_vocabulary_is_reported_and_left_unset() {
 // ── The story bible ─────────────────────────────────────────────────────────
 
 fn peopled() -> Project {
-    let mut row = scene("1", "Opening", "Then {C:0:Peter} spoke of {W:5:Jerusalem}.");
+    let mut row = scene(
+        "1",
+        "Opening",
+        &converted("Then {C:0:Peter} spoke of {W:5:Jerusalem}."),
+    );
     row.pov = Some("0".into());
     Project {
         characters: vec![
@@ -574,11 +585,38 @@ fn an_inline_reference_becomes_readable_words_and_a_link() {
     assert!(opening.item.reference_ids.contains(&jerusalem));
 }
 
+/// The words that replace a marker are what the writer reads, with nothing left of
+/// the marker's escaping and nothing of the name read as markup.
+///
+/// The body arrives as Djot, where a typed `{C:0:Peter}` is `\{C\:0\:Peter\}`, and the
+/// marker used to be replaced in that string from its `{`: the backslash before it
+/// stayed, and the prose read `\Peter spoke of \Jerusalem.` A name was also written
+/// into the Djot raw, so an apostrophe came back curled and asterisks as bold.
+#[test]
+fn a_replaced_marker_reads_back_as_exactly_the_name() {
+    let mut project = peopled();
+    project.characters[0].name = "Peter O'Neil".into();
+    project.world[0].children[0].name = "*Lark* Street".into();
+    let mapped = build(&project);
+    let opening = find(&mapped, 0, "Opening");
+    let djot = prose(opening, ContentRole::SceneText);
+    let (text, _) = skrib_format::djot_plain_text(&djot).expect("read the prose back");
+    assert_eq!(
+        text, "Then Peter O'Neil spoke of *Lark* Street.",
+        "stored as {djot:?}"
+    );
+    assert_eq!(
+        opening.item.reference_ids.len(),
+        2,
+        "both markers are links"
+    );
+}
+
 /// A row may reference one that has not been emitted yet, so the link is resolved
 /// in a second pass over the finished binder.
 #[test]
 fn a_reference_to_a_later_row_still_resolves() {
-    let first = scene("1", "First", "See {T:2:the ending}.");
+    let first = scene("1", "First", &converted("See {T:2:the ending}."));
     let last = scene("2", "The ending", "Here.");
     let mapped = build(&project_with(vec![first, last]));
     let ending = find(&mapped, 0, "The ending").item.file_id;

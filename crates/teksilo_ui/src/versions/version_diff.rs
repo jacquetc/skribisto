@@ -55,7 +55,9 @@
 
 use similar::{Algorithm, ChangeTag, DiffOp, TextDiff, capture_diff_slices};
 
-use teksilo::text_document::{DjotImportOptions, djot_to_plain_text};
+use teksilo::text_document::{
+    DjotImportOptions, djot_to_plain_text, escape_djot_inline, guard_djot_block_start,
+};
 
 /// Below this word-level similarity, two blocks Patience paired are reported as a
 /// replacement rather than as an edit.
@@ -677,11 +679,29 @@ fn hide_middle(
 
 /// One block as Djot: every run escaped, additions in `{+…+}`, deletions in
 /// `{-…-}`.
+///
+/// The escaping is `text-document`'s own, the one its Djot exporter uses when the
+/// editor saves, so the pane and the editor agree about every awkward string. It is
+/// applied to one stretch of the same mark at a time, and a `{+`/`{-` delimiter stands
+/// between two stretches, which keeps their edges from reading as one (`a-` and `-b`
+/// cannot form a `--` across `{+`). Runs that share a mark are joined first for the same
+/// reason: side by side with nothing between them, each escaped alone, they could.
+///
+/// The text is escaped *again* after the parser has read it once, so a stretch the
+/// parser acts on (`...`, a straight quote, `10:30:45`) has to be escaped here too, or
+/// the pane shows a change nobody made or drops the characters of a symbol.
 fn render_block(block: &DiffBlock) -> String {
-    let mut line = String::new();
+    let mut stretches: Vec<(RunOp, String)> = Vec::new();
     for run in &block.runs {
-        let escaped = escape_inline(&run.text);
-        match run.op {
+        match stretches.last_mut() {
+            Some((op, text)) if *op == run.op => text.push_str(&run.text),
+            _ => stretches.push((run.op, run.text.clone())),
+        }
+    }
+    let mut line = String::new();
+    for (op, text) in &stretches {
+        let escaped = escape_djot_inline(text);
+        match op {
             RunOp::Equal => line.push_str(&escaped),
             RunOp::Insert => {
                 line.push_str("{+");
@@ -695,65 +715,14 @@ fn render_block(block: &DiffBlock) -> String {
             }
         }
     }
-    guard_block_start(line)
+    // After the marks are placed, so a line that opens with one is guarded too: a whole
+    // paragraph deleted or added reads `{-x=5-}`, which is also a block attribute.
+    guard_djot_block_start(&line)
 }
 
 /// A block of plain text with no marks — the elision placeholder.
 fn render_block_text(text: &str) -> String {
-    guard_block_start(escape_inline(text))
-}
-
-/// Backslash-escape everything that could start Djot *inline* markup, so arbitrary
-/// prose survives a reparse verbatim.
-///
-/// The first group is the inline-markup set the shipped Djot exporter escapes
-/// (`document_io::export_djot_uc::escape_djot`). The second — `.`, `-`, `'`, `"` —
-/// is this renderer's own, and is needed because the exporter has a weaker
-/// obligation than this does: it emits from a model whose smart punctuation was
-/// already resolved, whereas this splices back text that has *already been through*
-/// the parser once. Without it a stretch reading `...` would re-enter as `…` and
-/// the pane would show a change nobody made.
-///
-/// Over-escaping is always safe: a backslash before any ASCII punctuation is a
-/// Djot escape yielding that character literally.
-fn escape_inline(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for c in s.chars() {
-        match c {
-            '\\' | '*' | '_' | '`' | '~' | '^' | '[' | ']' | '(' | ')' | '{' | '}' | '|' | '<'
-            | '.' | '-' | '\'' | '"' => {
-                out.push('\\');
-                out.push(c);
-            }
-            _ => out.push(c),
-        }
-    }
-    out
-}
-
-/// Neutralise a line's leading characters so they are not read as a block marker.
-///
-/// [`escape_inline`] already covers the inline set; this covers the block-only
-/// markers (`#`, `>`, `+`, `:`) and the ordered-list forms `<digits>.` and
-/// `<digits>)`. It runs *after* the `{+`/`{-` marks are placed, so it also sees a
-/// line that opens with one of them.
-fn guard_block_start(line: String) -> String {
-    let Some(first) = line.chars().next() else {
-        return line;
-    };
-    if matches!(first, '#' | '>' | '+' | ':') {
-        return format!("\\{line}");
-    }
-    if first.is_ascii_digit() {
-        let rest = line.trim_start_matches(|c: char| c.is_ascii_digit());
-        if rest.starts_with('.') || rest.starts_with(')') {
-            let digits = line.len() - rest.len();
-            // Escape the delimiter, not the digit: a backslash before a digit is
-            // literal, so `\1.` would render as `\1.`.
-            return format!("{}\\{}", &line[..digits], &line[digits..]);
-        }
-    }
-    line
+    guard_djot_block_start(&escape_djot_inline(text))
 }
 
 #[cfg(test)]

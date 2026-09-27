@@ -258,44 +258,61 @@ fn paragraphs(text: &str) -> impl Iterator<Item = &str> {
     text.lines().map(str::trim).filter(|l| !l.is_empty())
 }
 
+/// The typewriter quotation mark.
+///
+/// A writer with smart punctuation off types it whatever the language's own pair is, and
+/// the editor saves and reloads it as typed, so it marks speech in every language beside
+/// the pair [`markers_for`] resolves.
+const STRAIGHT_QUOTE: char = '"';
+
 /// Words inside quotation marks in one paragraph.
 ///
-/// Tracks open/close as a toggle rather than as a nesting depth: prose nests quotations at
-/// most one level deep and a toggle degrades gracefully on the unbalanced quotes that real
-/// drafts contain, where a depth counter would go negative and stay wrong for the rest of
-/// the scene.
+/// A quotation opens at the language's opening mark or at a [`STRAIGHT_QUOTE`], and
+/// closes at the mark that pairs with the one that opened it; the other kind of mark
+/// inside it is text. That keeps a straight-quoted word inside curly speech (or the
+/// reverse) from ending the speech early.
+///
+/// Tracks one open quotation at a time rather than a nesting depth: prose nests quotations
+/// at most one level deep and a toggle degrades gracefully on the unbalanced quotes that
+/// real drafts contain, where a depth counter would go negative and stay wrong for the rest
+/// of the scene.
 fn quoted_words(para: &str, markers: DialogueMarkers) -> usize {
     let (Some(open), Some(close)) = (markers.open_quote, markers.close_quote) else {
         return 0;
     };
 
-    let mut inside = false;
+    // The mark that closes the quotation open at this point, if one is.
+    let mut closer: Option<char> = None;
     let mut spans: Vec<(usize, usize)> = Vec::new();
     let mut span_start = 0usize;
 
     for (at, ch) in para.char_indices() {
-        if open == close {
-            // A symmetric mark cannot say which end it is; alternate.
-            if ch == open {
-                if inside {
-                    spans.push((span_start, at));
-                    inside = false;
+        match closer {
+            Some(expected) if ch == expected => {
+                spans.push((span_start, at));
+                closer = None;
+            }
+            Some(_) => {}
+            None => {
+                // A symmetric mark cannot say which end it is, so it alternates, which
+                // the same rule gives: it opens here and the next one closes.
+                let opened = if ch == open {
+                    Some(close)
+                } else if ch == STRAIGHT_QUOTE {
+                    Some(STRAIGHT_QUOTE)
                 } else {
-                    inside = true;
+                    None
+                };
+                if opened.is_some() {
+                    closer = opened;
                     span_start = at + ch.len_utf8();
                 }
             }
-        } else if ch == open && !inside {
-            inside = true;
-            span_start = at + ch.len_utf8();
-        } else if ch == close && inside {
-            spans.push((span_start, at));
-            inside = false;
         }
     }
     // An unclosed quotation runs to the end of the paragraph, which is what a writer
     // mid-draft almost always means.
-    if inside {
+    if closer.is_some() {
         spans.push((span_start, para.len()));
     }
 
@@ -408,6 +425,48 @@ mod tests {
         let s = measure("\u{201C}Come here,\u{201D} she said.", Some("en"), EN);
         // 2 spoken of 4 total.
         assert_eq!(s.dialogue, Some(0.5));
+    }
+
+    /// Speech typed with smart punctuation off is in straight quotes, and the editor now
+    /// saves and reloads them as typed. It is speech in every language, whichever pair
+    /// the project's house style would have inserted.
+    #[test]
+    fn straight_quoted_speech_saved_by_the_editor_counts_as_dialogue() {
+        for (typed, locale, markers) in [
+            ("\"Come here,\" she said.", "en", EN),
+            ("\"Viens ici\", dit Anne.", "fr", FR),
+        ] {
+            let doc = text_document::TextDocument::new();
+            doc.set_plain_text(typed).expect("type the paragraph");
+            let saved = doc.to_djot().expect("save it");
+            let read_back = text_document::djot_to_plain_text(
+                &saved,
+                &text_document::DjotImportOptions::default(),
+            );
+            assert_eq!(read_back, typed, "saved as {saved:?}");
+            let s = measure(&read_back, Some(locale), markers);
+            // 2 spoken of 4 total.
+            assert_eq!(s.dialogue, Some(0.5), "{typed:?}");
+        }
+    }
+
+    /// A straight quote inside the house pair, or the house pair inside straight quotes,
+    /// is one quotation: whichever mark opened it closes it.
+    #[test]
+    fn a_quotation_is_closed_by_the_mark_that_opened_it() {
+        let s = measure(
+            "\u{201C}He said \"no\" twice,\u{201D} she wrote.",
+            Some("en"),
+            EN,
+        );
+        // 4 spoken of 6 total.
+        assert_eq!(s.dialogue, Some(4.0 / 6.0));
+        let s = measure(
+            "\"He said \u{201C}no\u{201D} twice,\" she wrote.",
+            Some("en"),
+            EN,
+        );
+        assert_eq!(s.dialogue, Some(4.0 / 6.0));
     }
 
     #[test]

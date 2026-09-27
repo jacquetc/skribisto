@@ -3863,6 +3863,14 @@ fn rebuilding_a_pane_carries_the_caret_over() {
 /// below, which both need a genuine `Content` row to write to and read back.
 #[cfg(not(feature = "mocks"))]
 fn scene_prose_field() -> (Rc<AppContext>, ProseField) {
+    let (ctx, _item_id, field) = scene_item_and_prose_field();
+    (ctx, field)
+}
+
+/// [`scene_prose_field`], also returning the scene's id, for a test that opens the
+/// scene a second time the way a tab does.
+#[cfg(not(feature = "mocks"))]
+fn scene_item_and_prose_field() -> (Rc<AppContext>, u64, ProseField) {
     use frontend::commands::binder_commands;
     use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
 
@@ -3910,7 +3918,114 @@ fn scene_prose_field() -> (Rc<AppContext>, ProseField) {
         ContentRole::SceneText,
         None,
     );
-    (ctx, field)
+    (ctx, item.id, field)
+}
+
+/// Typed prose comes back from a save and a reload exactly as it was typed.
+///
+/// The editor saves a field with `to_djot` ([`ProseField::flush`]) and a tab loads
+/// it with `set_djot` ([`prose_field`], [`ProseField::reload`]). Djot's parser
+/// rewrites text on its own, and until text-document escaped for it, that cycle
+/// changed what the writer typed at the first save and for good: `10:30:45`
+/// became `1045` (`:30:` is a Djot symbol), a paragraph opening `I. ` became a
+/// list item without its numeral, and straight quotes, `--` and `...` became
+/// English curly quotes, dashes and an ellipsis, in a French text as much as an
+/// English one.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn typed_prose_comes_back_from_a_save_and_a_reload_as_typed() {
+    use frontend::commands::content_commands;
+
+    let (ctx, item_id, field) = scene_item_and_prose_field();
+    let paragraphs = [
+        "We met at 10:30:45 sharp, in std::string country.",
+        "I. Introduction",
+        "Il dit \"bonjour\" et c'est tout.",
+        "He paused -- then---nothing... or so 'they' said.",
+        "A. Martin arrived at 9:20pm-10:00pm.",
+    ];
+    let typed = paragraphs.join("\n");
+    // Typed the way live typing arrives: text through the cursor, Enter as a new
+    // block.
+    let cursor = field.doc.cursor_at(0);
+    for (i, paragraph) in paragraphs.iter().enumerate() {
+        if i > 0 {
+            cursor.insert_block().unwrap();
+        }
+        cursor.insert_text(paragraph).unwrap();
+    }
+    assert_eq!(field.doc.to_plain_text().unwrap(), typed);
+
+    field.flush().expect("the save");
+    let content_id = field.content_id().expect("the save creates the row");
+    let stored = content_commands::get_content(&ctx, &content_id)
+        .expect("the row reads back")
+        .expect("the row exists");
+
+    // A tab opening the scene again.
+    let reopened = prose_field(
+        &ctx,
+        &teksilo::text_document::DocumentBackend::new(),
+        item_id,
+        ContentRole::SceneText,
+        Some(&stored),
+    );
+    assert_eq!(
+        reopened.doc.to_plain_text().unwrap(),
+        typed,
+        "the text changed on the way back; stored as {:?}",
+        stored.data
+    );
+    assert_eq!(
+        reopened.djot(),
+        stored.data,
+        "saving the reopened scene would write something else"
+    );
+
+    // The same field reloading in place, the other way a field loads.
+    field.reload();
+    assert_eq!(field.doc.to_plain_text().unwrap(), typed);
+}
+
+/// A footnote marker placed right after a `!` keeps its anchor through a save and a
+/// reload. English puts the marker after the sentence's punctuation, and the saved
+/// `![^label]` used to open an image instead, so the reference came back as the literal
+/// text `[^…]` and the note lost its place in the prose.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn a_footnote_marker_after_an_exclamation_mark_survives_a_save_and_a_reload() {
+    use frontend::commands::content_commands;
+
+    let (ctx, item_id, field) = scene_item_and_prose_field();
+    let cursor = field.doc.cursor_at(0);
+    cursor.insert_text("It was over!").unwrap();
+    // How the Footnotes view-model places a marker.
+    cursor.insert_djot("[^n1]").unwrap();
+    cursor.insert_text(" she said.").unwrap();
+    let references = field.doc.footnote_references();
+    assert_eq!(references, vec![(12, "n1".to_string())]);
+    let typed = field.doc.to_plain_text().unwrap();
+
+    field.flush().expect("the save");
+    let content_id = field.content_id().expect("the save creates the row");
+    let stored = content_commands::get_content(&ctx, &content_id)
+        .expect("the row reads back")
+        .expect("the row exists");
+    let reopened = prose_field(
+        &ctx,
+        &teksilo::text_document::DocumentBackend::new(),
+        item_id,
+        ContentRole::SceneText,
+        Some(&stored),
+    );
+    assert_eq!(
+        reopened.doc.footnote_references(),
+        references,
+        "stored as {:?}",
+        stored.data
+    );
+    assert_eq!(reopened.doc.to_plain_text().unwrap(), typed);
+    assert_eq!(reopened.djot(), stored.data);
 }
 
 /// `is_stale` distinguishes "flushed and quiet" from "flushed, then edited

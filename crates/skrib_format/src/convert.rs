@@ -16,7 +16,7 @@
 //! Djot (this crate's actual prose format) instead of reproducing that dialect.
 
 use anyhow::Result;
-use text_document::TextDocument;
+use text_document::{ReplaceFormatPolicy, ReplaceOptions, ReplaceRange, TextDocument};
 
 /// The attribute an HTML producer marks a footnote reference with, re-exported
 /// from `text-document` so the importers can reach it.
@@ -155,6 +155,60 @@ pub fn djot_plain_text(djot: &str) -> Result<(String, Vec<usize>)> {
     Ok((text, starts))
 }
 
+/// One replacement for [`rewrite_djot_text`]: a character range of the document's
+/// addressable text, and the plain text to put there.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TextEdit {
+    /// The first character replaced, as an offset into the addressable text.
+    pub start: usize,
+    /// How many characters are replaced.
+    pub len: usize,
+    /// Plain text, never Djot: it is escaped on the way out.
+    pub replacement: String,
+}
+
+/// Replace ranges of a Djot string's **text**, keep its formatting, and return the new
+/// Djot.
+///
+/// `edits` is handed the addressable text (the editor's own view of the prose, as
+/// [`djot_plain_text`] returns it) and names the ranges to replace. The replacement is
+/// made on the document and written back by `text-document`'s exporter, which escapes the
+/// new text against the text around it.
+///
+/// Splicing plain text into the Djot string instead is not safe. A marker a writer typed
+/// as `{C:0:Peter}` is stored as `\{C\:0\:Peter\}`, so a splice that finds the `{` keeps
+/// the backslash in front of it, and `\Peter` reads back with a literal backslash. And a
+/// name written in raw can form Djot syntax with its neighbours that neither held alone: a
+/// colon on each side makes it a symbol, which the parser drops.
+///
+/// Returns `djot` byte for byte when there is nothing to replace. A replacement keeps the
+/// formatting of the text it replaces when one run covered all of it. A range that crosses
+/// a paragraph boundary, or overlaps another, is skipped, as
+/// [`TextDocument::replace_ranges`] documents.
+pub fn rewrite_djot_text(djot: &str, edits: impl FnOnce(&str) -> Vec<TextEdit>) -> Result<String> {
+    if djot.trim().is_empty() {
+        return Ok(djot.to_string());
+    }
+    let doc = TextDocument::new();
+    doc.set_djot(djot)?.wait()?;
+    let edits = edits(&doc.to_addressable_text()?);
+    if edits.is_empty() {
+        return Ok(djot.to_string());
+    }
+    let ranges: Vec<ReplaceRange> = edits
+        .into_iter()
+        .map(|e| ReplaceRange {
+            position: e.start,
+            length: e.len,
+            replacement: e.replacement,
+        })
+        .collect();
+    let options =
+        ReplaceOptions::default().with_format_policy(ReplaceFormatPolicy::PreserveIfFullyCovered);
+    doc.replace_ranges(&ranges, &options)?;
+    Ok(doc.to_djot()?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -193,6 +247,54 @@ mod tests {
         let (text, starts) = djot_plain_text("Before.\n\n\\* \\* \\*\n\nAfter.").expect("convert");
         assert_eq!(text, "Before.\n* * *\nAfter.");
         assert_eq!(starts.len(), 3);
+    }
+
+    /// Replace the first `needle` in `text` (a range counted in characters).
+    fn edit_at(text: &str, needle: &str, replacement: &str) -> TextEdit {
+        let byte = text.find(needle).expect("the needle is in the text");
+        TextEdit {
+            start: text[..byte].chars().count(),
+            len: needle.chars().count(),
+            replacement: replacement.to_string(),
+        }
+    }
+
+    /// The replacement is plain text, escaped against what surrounds it: `30` between
+    /// two colons would make `:30:` a Djot symbol, which the parser drops, if it were
+    /// spliced into the string raw.
+    #[test]
+    fn rewritten_text_reads_back_exactly_as_replaced() {
+        let djot = markdown_to_djot("Meet at 10:{X}:45, it's \"late\".").expect("convert");
+        let out =
+            rewrite_djot_text(&djot, |text| vec![edit_at(text, "{X}", "30")]).expect("rewrite");
+        assert_eq!(
+            djot_plain_text(&out).expect("read back").0,
+            "Meet at 10:30:45, it's \"late\".",
+            "rewritten to {out:?}"
+        );
+    }
+
+    /// Offsets are characters of the addressable text, so an accented letter or an
+    /// earlier paragraph does not shift the range.
+    #[test]
+    fn edits_address_characters_across_paragraphs() {
+        let djot = "Première ligne, déjà.\n\nPuis {X} et _{Y}_.";
+        let out = rewrite_djot_text(djot, |text| {
+            vec![edit_at(text, "{X}", "Élise"), edit_at(text, "{Y}", "Zoé")]
+        })
+        .expect("rewrite");
+        assert_eq!(out, "Première ligne, déjà.\n\nPuis Élise et _Zoé_.");
+    }
+
+    /// Nothing to replace: the Djot comes back byte for byte, not re-canonicalised.
+    #[test]
+    fn djot_with_nothing_to_replace_is_returned_untouched() {
+        for djot in ["An *odd*   spacing kept.", "", "   "] {
+            assert_eq!(
+                rewrite_djot_text(djot, |_| Vec::new()).expect("rewrite"),
+                djot
+            );
+        }
     }
 
     #[test]

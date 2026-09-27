@@ -3860,3 +3860,291 @@ fn an_untitled_chapter_is_named_by_the_manuscripts_own_language() {
         );
     }
 }
+
+/// Prose as the editor saves it reaches every format as it was typed.
+///
+/// The editor writes a scene with `text-document`'s `to_djot`, which now escapes what the
+/// Djot parser would otherwise rewrite: `:30:` in a time (a symbol, dropped), `::`, a
+/// paragraph opening like a list marker (`I. `), straight quotes, `--` and `...`. The
+/// compiler splices that stored Djot into the book and parses it again, so each writer
+/// sees the escapes resolved, never the backslashes and never the rewritten text.
+#[test]
+fn typed_punctuation_reaches_every_format_as_typed() {
+    let typed = [
+        "We met at 10:30:45 sharp, std::string in hand.",
+        "I. Introduction",
+        "He said \"so\" -- and then... nothing.",
+    ];
+    let saved = {
+        let doc = text_document::TextDocument::new();
+        doc.set_plain_text(&typed.join("\n")).unwrap();
+        doc.to_djot().unwrap()
+    };
+    let g = gathered(
+        vec![
+            iwc(
+                100,
+                SR::BookBegin,
+                "en",
+                vec![c(1, ContentRole::BookTitle, "My Novel")],
+            ),
+            iwc(
+                101,
+                SR::ChapterScene,
+                "en",
+                vec![
+                    c(2, ContentRole::ChapterTitle, "Storms"),
+                    c(3, ContentRole::SceneText, &saved),
+                ],
+            ),
+        ],
+        "en",
+    );
+    let p = preset("neutral");
+    let unchanged = [
+        "10:30:45",
+        "std::string",
+        "I. Introduction",
+        "-- and then... nothing",
+    ];
+    let rewritten = ["1045", "stdstring", "\u{2013}", "\u{2026}", "\u{201C}"];
+
+    // The compiled document, which every writer reads from.
+    let built = assemble(
+        &req(&g, &[100, 101], &p, ExportFormat::Html),
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let compiled = built.doc.to_plain_text().unwrap();
+    for line in typed {
+        assert!(compiled.contains(line), "{line:?} not in {compiled:?}");
+    }
+
+    let check = |what: &str, out: &str| {
+        for s in unchanged {
+            assert!(out.contains(s), "{what}: {s:?} missing from {out}");
+        }
+        for s in rewritten {
+            assert!(!out.contains(s), "{what}: rewritten text {s:?} in {out}");
+        }
+    };
+    for f in [ExportFormat::PlainText, ExportFormat::Html] {
+        check(
+            &format!("{f:?}"),
+            &render_to_string(&req(&g, &[100, 101], &p, f)).unwrap(),
+        );
+    }
+    // For LaTeX this holds of the `.tex` source only. TeX sets some of those characters
+    // by its own conventions when the file is typeset: `--` and `---` as dashes, and,
+    // under the default font encoding the preamble keeps, a straight `"` as a closing
+    // quote. The source is what this round trip controls.
+    check(
+        "Latex source",
+        &render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Latex)).unwrap(),
+    );
+    // Djot and Markdown escape punctuation of their own, so they are read back rather
+    // than searched.
+    let djot = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Djot)).unwrap();
+    check(
+        "Djot",
+        &djot_to_plain_text(&djot, &DjotImportOptions::default()),
+    );
+    let markdown = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Markdown)).unwrap();
+    let read_back = text_document::TextDocument::new();
+    read_back.set_markdown(&markdown).unwrap().wait().unwrap();
+    check("Markdown", &read_back.to_plain_text().unwrap());
+
+    for (fmt, ext) in [
+        (ExportFormat::Docx, "docx"),
+        (ExportFormat::Odt, "odt"),
+        (ExportFormat::Epub, "epub"),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(format!("typed.{ext}"));
+        render_to_file(
+            &req(&g, &[100, 101], &p, fmt),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
+        let bytes = std::fs::read(&path).unwrap();
+        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+        let mut text = String::new();
+        for i in 0..zip.len() {
+            let mut member = zip.by_index(i).unwrap();
+            let name = member.name().to_string();
+            if name.ends_with(".xml") || name.ends_with(".xhtml") {
+                std::io::Read::read_to_string(&mut member, &mut text).unwrap();
+            }
+        }
+        check(&format!("{fmt:?}"), &text);
+    }
+}
+
+/// A title is plain text, and the compiled document is parsed as Djot. Written in raw, a
+/// chapter called `10:30:45` came out as "1045" (`:30:` read as a symbol and dropped),
+/// `std::string` as "stdstring" and `*Dawn*` in bold without its stars, and the same held
+/// for a scene title, the title page's title and the author's name. The quotes and
+/// dashes a title holds are still set as they always were (see [`escape_title`]).
+#[test]
+fn a_typed_title_reaches_every_format_with_all_its_characters() {
+    let mut g = gathered(
+        vec![
+            iwc(
+                100,
+                SR::BookBegin,
+                "en",
+                vec![c(1, ContentRole::BookTitle, "My Novel")],
+            ),
+            iwc(
+                101,
+                SR::ChapterScene,
+                "en",
+                vec![
+                    c(
+                        2,
+                        ContentRole::ChapterTitle,
+                        "10:30:45 -- It's *Dawn* in std::string",
+                    ),
+                    c(3, ContentRole::SceneText, "The wind rose."),
+                ],
+            ),
+            titled(
+                iwc(
+                    102,
+                    SR::Scene,
+                    "en",
+                    vec![c(4, ContentRole::SceneText, "She walked on.")],
+                ),
+                "Room [101] at 9:20:15",
+            ),
+        ],
+        "en",
+    );
+    g.work.title = "The *Real* a::b".into();
+    g.work.author_name = "Anna O'Neil".into();
+    let p = Preset {
+        include_scene_titles: true,
+        ..preset("manuscript-shunn")
+    };
+    let ids = [100, 101, 102];
+
+    // The compiled document, which every writer reads from: every character is there, and
+    // the typography is the parser's, as before.
+    let built = assemble(
+        &req(&g, &ids, &p, ExportFormat::Html),
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let compiled = built.doc.to_plain_text().unwrap();
+    for title in [
+        "10:30:45 \u{2013} It\u{2019}s *Dawn* in std::string",
+        "Room [101] at 9:20:15",
+        "The *Real* a::b",
+        "by Anna O\u{2019}Neil",
+    ] {
+        assert!(compiled.contains(title), "{title:?} not in {compiled:?}");
+    }
+
+    let unchanged = [
+        "10:30:45",
+        "std::string",
+        "*Dawn*",
+        "[101]",
+        "9:20:15",
+        "*Real* a::b",
+    ];
+    let rewritten = ["1045", "stdstring", " 915"];
+    let check = |what: &str, out: &str| {
+        for s in unchanged {
+            assert!(out.contains(s), "{what}: {s:?} missing from {out}");
+        }
+        for s in rewritten {
+            assert!(!out.contains(s), "{what}: rewritten text {s:?} in {out}");
+        }
+    };
+    for f in [
+        ExportFormat::PlainText,
+        ExportFormat::Html,
+        ExportFormat::Latex,
+    ] {
+        check(
+            &format!("{f:?}"),
+            &render_to_string(&req(&g, &ids, &p, f)).unwrap(),
+        );
+    }
+    let djot = render_to_string(&req(&g, &ids, &p, ExportFormat::Djot)).unwrap();
+    check(
+        "Djot",
+        &djot_to_plain_text(&djot, &DjotImportOptions::default()),
+    );
+    let markdown = render_to_string(&req(&g, &ids, &p, ExportFormat::Markdown)).unwrap();
+    let read_back = text_document::TextDocument::new();
+    read_back.set_markdown(&markdown).unwrap().wait().unwrap();
+    check("Markdown", &read_back.to_plain_text().unwrap());
+
+    for (fmt, ext) in [
+        (ExportFormat::Docx, "docx"),
+        (ExportFormat::Odt, "odt"),
+        (ExportFormat::Epub, "epub"),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(format!("titles.{ext}"));
+        render_to_file(
+            &req(&g, &ids, &p, fmt),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
+        let bytes = std::fs::read(&path).unwrap();
+        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+        let mut text = String::new();
+        for i in 0..zip.len() {
+            let mut member = zip.by_index(i).unwrap();
+            let name = member.name().to_string();
+            if name.ends_with(".xml") || name.ends_with(".xhtml") {
+                std::io::Read::read_to_string(&mut member, &mut text).unwrap();
+            }
+        }
+        check(&format!("{fmt:?}"), &text);
+    }
+}
+
+/// What [`escape_title`] writes, and what a heading written with it reads back as: the
+/// markup and the symbols as typed, the quotes and the dashes set by the parser.
+#[test]
+fn a_title_is_escaped_for_markup_and_symbols_and_keeps_its_typography() {
+    for (title, written, read) in [
+        ("10:30:45", "10\\:30\\:45", "10:30:45"),
+        ("std::string", "std\\:\\:string", "std::string"),
+        ("*Dawn*", "\\*Dawn\\*", "*Dawn*"),
+        (
+            "[draft] _x_ `y` a\\b",
+            "\\[draft\\] \\_x\\_ \\`y\\` a\\\\b",
+            "[draft] _x_ `y` a\\b",
+        ),
+        (
+            "It's \"so\"",
+            "It's \"so\"",
+            "It\u{2019}s \u{201C}so\u{201D}",
+        ),
+        (
+            "Dawn -- then... dusk---",
+            "Dawn -- then... dusk---",
+            "Dawn \u{2013} then\u{2026} dusk\u{2014}",
+        ),
+        ("Plain title", "Plain title", "Plain title"),
+    ] {
+        assert_eq!(escape_title(title), written, "escaping {title:?}");
+        let heading = format!("# {written}");
+        assert_eq!(
+            djot_to_plain_text(&heading, &DjotImportOptions::default()),
+            read,
+            "{heading:?}"
+        );
+    }
+}

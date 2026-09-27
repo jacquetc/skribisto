@@ -1287,3 +1287,61 @@ fn an_offset_naming_no_hit_refuses_the_row() {
     assert_eq!(out.skipped_stale, vec![row], "refused, and said so");
     assert_eq!(prose(&ctx, content), before, "and wrote nothing");
 }
+
+/// Prose saved the way the editor saves typed text is searched as it was typed, and a
+/// replace writes it back so it still reads as typed.
+///
+/// `text-document` escapes what its Djot parser would otherwise rewrite: a time's `:30:`
+/// (a symbol, dropped), straight quotes, `--` and `...`. Search reads the stored Djot
+/// through that parser, so a query for `10:30:45` found nothing while the prose was
+/// stored unescaped (it read `1045`), and a replace rewrote the row with whatever the
+/// parse had made of it.
+#[test]
+fn typed_punctuation_is_found_and_replaced_as_typed() {
+    // `html_to_djot` writes through the same `to_djot` the editor saves with.
+    let saved = skrib_format::html_to_djot(
+        "<p>We met at 10:30:45. &quot;Wait... what?&quot; -- I said it twice.</p>",
+    )
+    .expect("convert");
+    assert!(
+        saved.contains("10\\:30\\:45"),
+        "stored the way the editor stores it: {saved:?}"
+    );
+    let (ctx, content) = one_scene("typed-punctuation", &saved);
+
+    for query in ["10:30:45", "\"Wait... what?\"", "-- I said"] {
+        let mut q = search(&ctx, query);
+        q.search_titles = false;
+        q.search_synopsis = false;
+        let out = search_management_commands::run_search(&ctx, &q).expect("run_search");
+        assert_eq!(out.match_count, 1, "{query:?} in {saved:?}");
+    }
+
+    let mut q = search(&ctx, "10:30:45");
+    q.search_titles = false;
+    q.search_synopsis = false;
+    search_management_commands::run_search(&ctx, &q).expect("run_search");
+    let out = search_management_commands::replace_in_project(
+        &ctx,
+        Some(undo_redo_commands::create_new_stack(&ctx)),
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "11:15:00".to_string(),
+            preserve_case: false,
+            excluded_result_ids: vec![],
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
+        },
+    )
+    .expect("replace_in_project");
+    assert_eq!(out.occurrences_replaced, 1);
+
+    let stored = prose(&ctx, content);
+    assert_eq!(
+        skrib_format::djot_plain_text(&stored).expect("read back").0,
+        "We met at 11:15:00. \"Wait... what?\" -- I said it twice.",
+        "stored as {stored:?}"
+    );
+}

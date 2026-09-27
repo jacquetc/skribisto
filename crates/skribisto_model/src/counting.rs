@@ -366,4 +366,27 @@ mod tests {
             count_prose("He was emphatic about it.", CountMethod::UnicodeWords).words
         );
     }
+
+    /// Stored prose counts as the text that was typed. The editor saves with
+    /// `text-document`'s `to_djot`, which escapes the times, quotes, dashes and ellipses
+    /// its parser would otherwise rewrite, so `10:30:45` is not counted as `1045` nor
+    /// `...` as one character.
+    #[test]
+    fn prose_saved_by_the_editor_counts_as_typed() {
+        let typed = "We met at 10:30:45. \"Wait... what?\" -- I. Nothing.";
+        let doc = text_document::TextDocument::new();
+        doc.set_plain_text(typed).expect("type the scene");
+        let saved = doc.to_djot().expect("save it");
+        for method in [
+            CountMethod::WhitespaceSplit,
+            CountMethod::UnicodeWords,
+            CountMethod::CjkHybrid,
+        ] {
+            assert_eq!(
+                count_prose(&saved, method),
+                count(typed, method),
+                "{method:?}, saved as {saved:?}"
+            );
+        }
+    }
 }

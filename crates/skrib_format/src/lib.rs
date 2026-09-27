@@ -108,8 +108,8 @@ pub use bundle::{
 };
 pub use convert::HTML_FOOTNOTE_ATTR;
 pub use convert::{
-    djot_plain_text, html_to_djot, html_to_djot_and_text, markdown_to_djot,
-    markdown_to_djot_and_text, markdown_to_html,
+    TextEdit, djot_plain_text, html_to_djot, html_to_djot_and_text, markdown_to_djot,
+    markdown_to_djot_and_text, markdown_to_html, rewrite_djot_text,
 };
 pub use djot_depth::{MAX_DEPTH as MAX_DJOT_DEPTH, TooDeep};
 pub use errors::SkribFormatError;
