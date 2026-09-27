@@ -88,7 +88,7 @@ fn rows(src: &ManuskriptSource, member: &str, notices: &mut Vec<String>) -> Vec<
     let Some(text) = src.text(member) else {
         return Vec::new();
     };
-    match model_xml::parse(&text) {
+    match model_xml::parse(member, &text) {
         Ok(rows) => rows,
         Err(e) => {
             notices.push(format!(
@@ -109,7 +109,7 @@ fn read_outline(
         ));
         return (Vec::new(), Vec::new());
     };
-    match outline_xml::parse(&text) {
+    match outline_xml::parse(OUTLINE_MEMBER, &text) {
         Ok(parsed) => {
             notices.extend(parsed.notices);
             (parsed.items, parsed.revisions)

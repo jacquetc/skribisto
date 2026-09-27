@@ -238,3 +238,81 @@ fn an_emptied_log_removes_its_index_rather_than_leaving_a_stale_one() {
         "an emptied log must not leave an index behind for the next load to resurrect",
     );
 }
+
+/// Replace one member of the zip at `path`, keeping every other member as it was.
+fn rewrite_zip_member(path: &str, member: &str, contents: &[u8]) {
+    use std::io::{Read, Write};
+    use zip::write::SimpleFileOptions;
+
+    let bytes = std::fs::read(path).expect("read zip");
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).expect("open zip");
+    let file = std::fs::File::create(path).expect("rewrite zip");
+    let mut writer = zip::ZipWriter::new(file);
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).expect("entry");
+        let name = entry.name().to_string();
+        let mut data = Vec::new();
+        entry.read_to_end(&mut data).expect("entry bytes");
+        writer
+            .start_file(name.as_str(), SimpleFileOptions::default())
+            .expect("start member");
+        let replaced = if name == member { contents } else { &data[..] };
+        writer.write_all(replaced).expect("write member");
+    }
+    writer.finish().expect("finish zip");
+}
+
+/// `history::load` is how the Versions dock reads a project's past, and it parses
+/// every blob it shows. `read_bundle` refuses a blob nested past the Djot ceiling
+/// (the parser's recursion is unbounded and a stack overflow aborts the process);
+/// `load` read the same blob unchecked, so the one reader that skipped the check
+/// was the one whose output is parsed. Both shapes, because they are two readers.
+#[test]
+fn history_load_drops_a_blob_nested_past_the_djot_ceiling_in_both_shapes() {
+    let deep = format!("{}deep\n", ">".repeat(4_000));
+    for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+        let mut b = bundle();
+        history::record(&mut b, now());
+        let recorded = b.history.entries.len();
+        assert!(recorded >= 2, "the fixture must record more than one row");
+        let hostile = b.history.entries[0].hash.clone();
+        let shared = b
+            .history
+            .entries
+            .iter()
+            .filter(|e| e.hash == hostile)
+            .count();
+
+        let dir = tempfile::tempdir().expect("tmp");
+        let path = dir
+            .path()
+            .join("Novel.skrib")
+            .to_string_lossy()
+            .into_owned();
+        write_bundle(&path, shape, &b).expect("write");
+        let member = history::blob_relpath(&hostile);
+        match shape {
+            SkribShape::ExplodedFolder => {
+                let root = super::shape::folder_root(&path);
+                std::fs::write(root.join(&member), &deep).expect("plant the blob");
+            }
+            _ => rewrite_zip_member(&path, &member, deep.as_bytes()),
+        }
+
+        let loaded = history::load(&path);
+
+        assert!(
+            !loaded.blobs.contains_key(&hostile),
+            "{shape:?}: a blob past the Djot ceiling must not be handed to anything that parses it",
+        );
+        assert!(
+            loaded.entries.iter().all(|e| e.hash != hostile),
+            "{shape:?}: its entries go with it, so the log never claims prose it cannot produce",
+        );
+        assert_eq!(
+            loaded.entries.len(),
+            recorded - shared,
+            "{shape:?}: every other row's history must survive",
+        );
+    }
+}

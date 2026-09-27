@@ -31,7 +31,7 @@ pub const PLOTS_MEMBER: &str = "plots.xml";
 
 /// Read every plot. A malformed file costs the plots and nothing else.
 pub fn read(text: &str, notices: &mut Vec<String>) -> Vec<Plot> {
-    let doc = match xml::parse(text) {
+    let doc = match xml::parse(PLOTS_MEMBER, text) {
         Ok(doc) => doc,
         Err(e) => {
             notices.push(format!(

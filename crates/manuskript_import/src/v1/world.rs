@@ -21,8 +21,12 @@ use crate::xml::{self, attr, attr_opt};
 pub const WORLD_MEMBER: &str = "world.opml";
 
 /// Read the tree. A malformed file costs the world tree and nothing else.
+///
+/// One nested past the XML ceiling is refused here too, as a notice, but an import
+/// never gets that far with one: [`crate::refuse_deep_xml`] has already refused the
+/// whole project by then.
 pub fn read(text: &str, notices: &mut Vec<String>) -> Vec<WorldItem> {
-    let doc = match xml::parse(text) {
+    let doc = match xml::parse(WORLD_MEMBER, text) {
         Ok(doc) => doc,
         Err(e) => {
             notices.push(format!(
@@ -41,11 +45,16 @@ pub fn read(text: &str, notices: &mut Vec<String>) -> Vec<WorldItem> {
     // The nodes hang under <body>; anything else at the top is OPML's own <head>.
     root.children()
         .filter(|n| n.is_element() && n.tag_name().name() == "body")
-        .flat_map(|body| children_of(body))
+        .flat_map(|body| children_of(body, 2))
         .collect()
 }
 
-fn children_of(node: roxmltree::Node) -> Vec<WorldItem> {
+/// `depth` is `node`'s own nesting, `<opml>` counting as one; see
+/// [`xml::may_descend`].
+fn children_of(node: roxmltree::Node, depth: usize) -> Vec<WorldItem> {
+    if !xml::may_descend(depth) {
+        return Vec::new();
+    }
     node.children()
         .filter(|n| n.is_element() && n.tag_name().name() == "outline")
         .map(|n| WorldItem {
@@ -54,7 +63,7 @@ fn children_of(node: roxmltree::Node) -> Vec<WorldItem> {
             description: attr(&n, "description"),
             passion: attr(&n, "passion"),
             conflict: attr(&n, "conflict"),
-            children: children_of(n),
+            children: children_of(n, depth + 1),
         })
         .collect()
 }

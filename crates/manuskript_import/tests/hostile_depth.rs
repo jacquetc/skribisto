@@ -1,0 +1,415 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Projects nested exactly to the XML ceiling, and one level past it.
+//!
+//! `roxmltree` recurses once per element, and a stack overflow aborts the process
+//! rather than unwinding: a `world.opml` a few kilobytes long used to take every
+//! window down with it. Each project here is generated in the test and imported on
+//! a thread with the 2 MiB stack a long operation gets, in the debug build the
+//! test suite runs in, which is where the margin is thinnest.
+//!
+//! At the ceiling the project imports, which is the measurement behind
+//! `skrib_format::MAX_XML_DEPTH`: every reader and every walk after it fits. One
+//! level past it the import is refused with the typed `XmlTooDeep`, naming the
+//! member, before any parser has seen a byte of it.
+
+use std::io::Write;
+use std::sync::atomic::AtomicBool;
+
+use manuskript_import::map::Names;
+use manuskript_import::{ImportSummary, import_with_progress};
+use skrib_format::{BundledItem, FoldersTooDeep, MAX_XML_DEPTH, XmlTooDeep};
+
+/// The stack `std::thread::spawn` gives a long operation's worker by default.
+const LONG_OPERATION_STACK: usize = 2 * 1024 * 1024;
+
+fn names() -> Names {
+    Names {
+        manuscript_binder: "Manuscript".into(),
+        story_bible_binder: "Story bible".into(),
+        characters_group: "Characters".into(),
+        world_group: "World".into(),
+        plots_group: "Plots".into(),
+        project_info_note: "Project information".into(),
+        summary_note: "Summary".into(),
+        importance: ["Minor".into(), "Secondary".into(), "Main".into()],
+    }
+}
+
+/// Import `source` into `out` on a thread with a long operation's stack, the way
+/// the use case runs it. An overflow would abort the test binary, not fail the
+/// test, which is exactly the failure this file exists to rule out.
+fn import_on_a_long_operation_stack(source: String, out: String) -> anyhow::Result<ImportSummary> {
+    std::thread::Builder::new()
+        .stack_size(LONG_OPERATION_STACK)
+        .spawn(move || {
+            import_with_progress(
+                &source,
+                &out,
+                false,
+                &names(),
+                &|_, _| {},
+                &AtomicBool::new(false),
+            )
+        })
+        .expect("spawn the import thread")
+        .join()
+        .expect("the import must not unwind")
+}
+
+/// Where a test writes its import: a `.skrib` inside `dir`.
+fn output_in(dir: &std::path::Path) -> String {
+    dir.join("imported.skrib").to_string_lossy().into_owned()
+}
+
+/// Every row of the project written to `out`, across both binders.
+fn rows_of(out: &str) -> Vec<BundledItem> {
+    let bundle = match skrib_format::read_bundle(out) {
+        Ok(bundle) => bundle,
+        Err(e) => panic!("reading back the imported project: {e}"),
+    };
+    bundle
+        .binders
+        .into_iter()
+        .flat_map(|binder| binder.items)
+        .collect()
+}
+
+/// The row titled `title`, which must be there.
+#[track_caller]
+fn row<'a>(rows: &'a [BundledItem], title: &str) -> &'a BundledItem {
+    match rows.iter().find(|row| row.item.title == title) {
+        Some(row) => row,
+        None => panic!("no row titled '{title}': the deepest level was dropped"),
+    }
+}
+
+/// A format-1 folder project holding nothing but `world.opml`.
+fn folder_project(root: &std::path::Path, world: &str) -> String {
+    let project = root.join("Hostile");
+    std::fs::create_dir_all(&project).expect("project folder");
+    std::fs::write(project.join("MANUSKRIPT"), "1").expect("marker");
+    std::fs::write(project.join("world.opml"), world).expect("world.opml");
+    project.to_string_lossy().into_owned()
+}
+
+/// `world.opml` whose deepest `<outline>` sits `depth` levels down, `<opml>`
+/// counting as one and `<body>` as two.
+fn world_nested_to(depth: usize) -> String {
+    let outlines = depth - 2;
+    let mut xml =
+        String::from("<?xml version='1.0' encoding='UTF-8'?>\n<opml version=\"1.0\"><body>");
+    for i in 0..outlines {
+        xml.push_str(&format!("<outline name=\"Place {i}\" ID=\"{i}\">"));
+    }
+    xml.push_str(&"</outline>".repeat(outlines));
+    xml.push_str("</body></opml>");
+    xml
+}
+
+/// A format-0 zipped project whose `outline.xml` nests `<outlineItem>` `depth`
+/// levels deep, the root holder counting as one. Every level is a folder but the
+/// last, which carries the prose.
+fn format_zero_project(root: &std::path::Path, depth: usize) -> String {
+    let mut outline = String::from("<outlineItem title=\"Root\" type=\"folder\">");
+    for i in 1..depth - 1 {
+        outline.push_str(&format!(
+            "<outlineItem title=\"Level {i}\" ID=\"{i}\" type=\"folder\">"
+        ));
+    }
+    outline.push_str(&format!(
+        "<outlineItem title=\"Bottom\" ID=\"{depth}\" type=\"md\" text=\"The words at the bottom.\"/>"
+    ));
+    outline.push_str(&"</outlineItem>".repeat(depth - 1));
+
+    let path = root.join("hostile.msk");
+    let file = std::fs::File::create(&path).expect("zip");
+    let mut zip = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default();
+    zip.start_file("outline.xml", options).expect("member");
+    zip.write_all(outline.as_bytes()).expect("outline.xml");
+    zip.finish().expect("finish");
+    path.to_string_lossy().into_owned()
+}
+
+fn refusal_of(result: anyhow::Result<ImportSummary>) -> XmlTooDeep {
+    let error = match result {
+        Ok(_) => panic!("a project nested past the ceiling must be refused"),
+        Err(error) => error,
+    };
+    skrib_format::xml_depth::too_deep(&error)
+        .cloned()
+        .unwrap_or_else(|| panic!("the refusal must be the typed one, got: {error:#}"))
+}
+
+#[test]
+fn a_world_tree_nested_to_the_ceiling_imports_from_a_long_operation_stack() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = folder_project(dir.path(), &world_nested_to(MAX_XML_DEPTH));
+    let out = output_in(dir.path());
+
+    import_on_a_long_operation_stack(source, out.clone()).expect("at the ceiling it imports");
+
+    // The first `<outline>` sits three levels down and the last at the ceiling,
+    // so the entries run from "Place 0" to "Place 253", each one level inside the
+    // one before it. The deepest is the entry a walk stopping one level short
+    // would lose, so it is the one to look for, at its own depth.
+    let rows = rows_of(&out);
+    let outlines = MAX_XML_DEPTH - 2;
+    let top = row(&rows, "Place 0");
+    let bottom = row(&rows, &format!("Place {}", outlines - 1));
+    assert_eq!(
+        bottom.item.indent - top.item.indent,
+        (outlines - 1) as i64,
+        "the deepest entry must arrive nested under all the others"
+    );
+}
+
+#[test]
+fn a_world_tree_one_level_past_the_ceiling_is_refused_by_name() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = folder_project(dir.path(), &world_nested_to(MAX_XML_DEPTH + 1));
+
+    let refused = refusal_of(import_on_a_long_operation_stack(
+        source,
+        output_in(dir.path()),
+    ));
+
+    assert_eq!(refused.part, "world.opml");
+    assert_eq!(refused.depth, MAX_XML_DEPTH + 1);
+}
+
+/// Manuskript's readers allow a DTD, and `roxmltree` expands an entity's value in
+/// place, at the depth of the reference. So a file whose own tags stop far short
+/// of the ceiling can still nest past it once expanded.
+#[test]
+fn nesting_hidden_in_an_entity_is_counted_where_it_is_expanded() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let hidden = format!(
+        "{}{}",
+        "<outline name=\"x\">".repeat(200),
+        "</outline>".repeat(200)
+    );
+    let world = format!(
+        "<!DOCTYPE opml [<!ENTITY deep '{hidden}'>]><opml version=\"1.0\"><body>{}&deep;{}</body></opml>",
+        "<outline name=\"y\">".repeat(60),
+        "</outline>".repeat(60)
+    );
+    let source = folder_project(dir.path(), &world);
+
+    let refused = refusal_of(import_on_a_long_operation_stack(
+        source,
+        output_in(dir.path()),
+    ));
+
+    assert_eq!(refused.part, "world.opml");
+}
+
+/// Format 0 keeps the whole manuscript in `outline.xml`, so this one reaches the
+/// deepest walk the importer has: every level becomes a row, nested in the one
+/// above it, through the same mapper a real project goes through.
+#[test]
+fn a_format_zero_outline_nested_to_the_ceiling_imports_from_a_long_operation_stack() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = format_zero_project(dir.path(), MAX_XML_DEPTH);
+    let out = output_in(dir.path());
+
+    import_on_a_long_operation_stack(source, out.clone()).expect("at the ceiling it imports");
+
+    // "Bottom" sits at the ceiling and is the only row carrying prose, so a walk
+    // stopping one level short would lose the one piece of writing in the file.
+    let rows = rows_of(&out);
+    let top = row(&rows, "Level 1");
+    let bottom = row(&rows, "Bottom");
+    assert_eq!(
+        bottom.item.indent - top.item.indent,
+        (MAX_XML_DEPTH - 2) as i64,
+        "the deepest row must arrive nested under all the others"
+    );
+    assert!(
+        bottom
+            .prose
+            .values()
+            .any(|text| text.contains("The words at the bottom.")),
+        "the deepest row must keep its prose, got {:?}",
+        bottom.prose
+    );
+}
+
+#[test]
+fn a_format_zero_outline_one_level_past_the_ceiling_is_refused_by_name() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = format_zero_project(dir.path(), MAX_XML_DEPTH + 1);
+
+    let refused = refusal_of(import_on_a_long_operation_stack(
+        source,
+        output_in(dir.path()),
+    ));
+
+    assert_eq!(refused.part, "outline.xml");
+    assert_eq!(refused.depth, MAX_XML_DEPTH + 1);
+}
+
+/// `roxmltree` goes on building the tree where an entity's value left it, so an
+/// entity that opens an `<outline>` and never closes it nests everything after
+/// each reference one level further. No single expansion is deep; a thousand of
+/// them are. This used to import, with every level past the ceiling silently
+/// dropped by the walk's own guard.
+#[test]
+fn nesting_built_from_entities_left_open_is_counted_as_it_builds() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let world = format!(
+        "<!DOCTYPE opml [<!ENTITY o '<outline name=\"Deep\">'>\
+         <!ENTITY c '<outline name=\"Bottom\"/></outline>'>]>\
+         <opml version=\"1.0\"><body>{}{}</body></opml>",
+        "&o;".repeat(1000),
+        "&c;".repeat(1000)
+    );
+    let source = folder_project(dir.path(), &world);
+
+    let refused = refusal_of(import_on_a_long_operation_stack(
+        source,
+        output_in(dir.path()),
+    ));
+
+    assert_eq!(refused.part, "world.opml");
+}
+
+// ---------------------------------------------------------------------------
+// Format 1 keeps the outline as folders, one per level
+// ---------------------------------------------------------------------------
+
+/// The member path of a text item sitting `folders` folders deep: `outline/`,
+/// then one folder per level down to it, the last level being the item itself.
+fn outline_member(folders: usize) -> String {
+    let mut path = String::from("outline/");
+    for level in 1..folders {
+        path.push_str(&format!("0-Level_{level}/"));
+    }
+    path.push_str("0-Bottom.md");
+    path
+}
+
+const BOTTOM_ITEM: &str = "title:          Bottom\nID:             1\ntype:           md\n\n\n\
+                           The words at the bottom.";
+
+/// A format-1 zipped project holding one text item `folders` folders deep.
+fn deep_outline_zip(root: &std::path::Path, folders: usize) -> String {
+    let path = root.join("hostile.msk");
+    let file = std::fs::File::create(&path).expect("zip");
+    let mut zip = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default();
+    zip.start_file("MANUSKRIPT", options).expect("marker");
+    zip.write_all(b"1").expect("marker");
+    zip.start_file(outline_member(folders), options)
+        .expect("member");
+    zip.write_all(BOTTOM_ITEM.as_bytes()).expect("item");
+    zip.finish().expect("finish");
+    path.to_string_lossy().into_owned()
+}
+
+/// The same project as a folder on disk.
+fn deep_outline_folder(root: &std::path::Path, folders: usize) -> String {
+    let project = root.join("Hostile");
+    let item = project.join(outline_member(folders));
+    let Some(parent) = item.parent() else {
+        panic!("{} has a parent", item.display());
+    };
+    std::fs::create_dir_all(parent).expect("the folders");
+    std::fs::write(project.join("MANUSKRIPT"), "1").expect("marker");
+    std::fs::write(&item, BOTTOM_ITEM).expect("item");
+    project.to_string_lossy().into_owned()
+}
+
+fn folder_refusal_of(result: anyhow::Result<ImportSummary>) -> FoldersTooDeep {
+    let error = match result {
+        Ok(_) => panic!("a project nested past the ceiling must be refused"),
+        Err(error) => error,
+    };
+    skrib_format::xml_depth::folders_too_deep(&error)
+        .cloned()
+        .unwrap_or_else(|| panic!("the refusal must be the typed one, got: {error:#}"))
+}
+
+/// The outline item at the bottom must arrive nested under every folder above
+/// it, with its prose, which is what a walk stopping one level short would lose.
+fn assert_the_bottom_arrived(out: &str, folders: usize) {
+    let rows = rows_of(out);
+    let top = row(&rows, "Level 1");
+    let bottom = row(&rows, "Bottom");
+    assert_eq!(
+        bottom.item.indent - top.item.indent,
+        (folders - 1) as i64,
+        "the deepest item must arrive nested under all the others"
+    );
+    assert!(
+        bottom
+            .prose
+            .values()
+            .any(|text| text.contains("The words at the bottom.")),
+        "the deepest item must keep its prose, got {:?}",
+        bottom.prose
+    );
+}
+
+/// A zip member's name can hold 64 KiB of folders, and the outline reader, the
+/// mapper and the tree they build recurse once per level of it. At the ceiling
+/// the project imports from a long operation's stack.
+#[test]
+fn an_outline_nested_to_the_ceiling_in_folders_imports_from_a_long_operation_stack() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = deep_outline_zip(dir.path(), MAX_XML_DEPTH);
+    let out = output_in(dir.path());
+
+    import_on_a_long_operation_stack(source, out.clone()).expect("at the ceiling it imports");
+
+    assert_the_bottom_arrived(&out, MAX_XML_DEPTH);
+}
+
+#[test]
+fn an_outline_one_folder_past_the_ceiling_is_refused_by_name() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = deep_outline_zip(dir.path(), MAX_XML_DEPTH + 1);
+
+    let refused = folder_refusal_of(import_on_a_long_operation_stack(
+        source,
+        output_in(dir.path()),
+    ));
+
+    assert_eq!(refused.part, outline_member(MAX_XML_DEPTH + 1));
+    assert_eq!(refused.depth, MAX_XML_DEPTH + 1);
+}
+
+/// A project folder is walked recursively before any member is read, one level
+/// per folder, on the long operation's own stack. At the ceiling it imports.
+#[test]
+fn a_project_folder_nested_to_the_ceiling_imports_from_a_long_operation_stack() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = deep_outline_folder(dir.path(), MAX_XML_DEPTH);
+    let out = output_in(dir.path());
+
+    import_on_a_long_operation_stack(source, out.clone()).expect("at the ceiling it imports");
+
+    assert_the_bottom_arrived(&out, MAX_XML_DEPTH);
+}
+
+/// One folder more and the walk stops where it is, naming the folder it would
+/// have entered.
+#[test]
+fn a_project_folder_one_level_past_the_ceiling_is_refused_by_name() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = deep_outline_folder(dir.path(), MAX_XML_DEPTH + 1);
+
+    let refused = folder_refusal_of(import_on_a_long_operation_stack(
+        source,
+        output_in(dir.path()),
+    ));
+
+    let member = outline_member(MAX_XML_DEPTH + 1);
+    let Some((folder, _item)) = member.rsplit_once('/') else {
+        panic!("{member} sits in a folder");
+    };
+    assert_eq!(refused.part, folder);
+    assert_eq!(refused.depth, MAX_XML_DEPTH + 1);
+}

@@ -23,7 +23,7 @@ use super::version::{check_root, parse_xml, version_newer_than};
 const ATTEND_TERMINAL: f64 = 0.6;
 
 pub fn parse(xml: &str) -> Result<PlumeAttendance> {
-    let doc = parse_xml(xml)?;
+    let doc = parse_xml("attendance", xml)?;
     let root = doc.root_element();
     check_root(&root, &["plume-attendance", "attendance"], "attendance")?;
     if version_newer_than(root.attribute("version"), ATTEND_TERMINAL) {

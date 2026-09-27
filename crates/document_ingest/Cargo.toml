@@ -42,7 +42,9 @@ odt = ["dep:zip", "dep:roxmltree"]
 # `word/document.xml`: two constructs a manuscript really uses — a comment anchored
 # to a point rather than a range, and a horizontal rule — live in elements the typed
 # reader does not surface. See `sources::docx::RawScan`.
-docx = ["dep:zip", "dep:roxmltree", "dep:docx-rs"]
+# `quick-xml` measures a part's depth the way `docx-rs` itself reads it, before
+# `docx-rs` does. See `sources::docx::check_as_docx_rs_reads`.
+docx = ["dep:zip", "dep:roxmltree", "dep:docx-rs", "dep:quick-xml"]
 
 [dependencies]
 # Every imported document's own digest, taken in `scan_bytes` where its bytes are
@@ -96,6 +98,16 @@ roxmltree = { version = "0.21.1", optional = true }
 # comments, and the `CommentExtended::new(para_id)` auto-collector is unchanged.
 # Verified by diffing the extracted crate sources rather than assumed.
 docx-rs = { version = "=0.4.22", optional = true }
+# The XML parser `docx-rs` 0.4.22 reads every part with, and so the one its depth
+# is measured with (`sources::docx::check_as_docx_rs_reads`): `roxmltree`
+# disagrees with it about where a DOCTYPE, a malformed comment or a processing
+# instruction ends, which is enough to hide a part's nesting from a check that
+# reads the part `roxmltree`'s way. Not a second copy: the requirement is the one
+# `docx-rs` states, so Cargo resolves both to the same package, and no feature is
+# asked for, so this one is built with exactly the features `docx-rs` enables.
+# Moving `docx-rs` off 0.4.22 means checking which `quick-xml` it reads with
+# and moving this with it.
+quick-xml = { version = "0.41", default-features = false, optional = true }
 # Spelled-out ordinals in headings — "Chapter Three", "Chapitre premier". A
 # per-language number-word table is the whole job, and this one already carries
 # eight of them (en/fr/de/es/it/pt/nl/da), compound forms included

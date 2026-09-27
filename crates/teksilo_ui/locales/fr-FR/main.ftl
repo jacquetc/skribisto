@@ -1041,6 +1041,10 @@ import-plume-details = Détails
 import-plume-warnings-title = Avertissements d’importation
 # Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
 import-plume-error-title = Impossible d’importer le projet
+# Projet refusé sans être lu : l’une de ses parties imbrique son XML au-delà
+# de ce que l’application accepte. $part est le nom de la partie (tree,
+# attendance, info) ; $limit est le plafond, un nombre.
+import-plume-nested-too-deep = Le projet n’a pas été importé : sa partie « { $part } » est imbriquée sur plus de { $limit } niveaux. Aucun projet Plume Creator n’en approche, et la lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
 import-plume-error-details = Détails
 
 ## Boîte de dialogue d'import de projet Manuskript
@@ -1106,6 +1110,15 @@ import-manuskript-details = Détails
 import-manuskript-warnings-title = À propos de cet import
 # Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
 import-manuskript-error-title = Impossible d’importer le projet
+# Projet refusé sans être lu : l’un de ses fichiers imbrique son XML au-delà
+# de ce que l’application accepte. $part est le nom de ce fichier dans le projet
+# (world.opml, plots.xml…) ; $limit est le plafond, un nombre.
+import-manuskript-nested-too-deep = Le projet n’a pas été importé : son fichier « { $part } » est imbriqué sur plus de { $limit } niveaux. Aucun projet Manuskript n’en approche, et le lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
+# Projet refusé sans être lu : l’un de ses fichiers est rangé dans des
+# dossiers imbriqués au-delà de ce que l’application accepte (Manuskript range
+# le plan d’un projet en dossiers, un par niveau). $limit est le plafond, un
+# nombre.
+import-manuskript-folders-too-deep = Le projet n’a pas été importé : l’un de ses fichiers se trouve à plus de { $limit } niveaux de dossiers de profondeur. Aucun projet Manuskript n’en approche, et le lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
 import-manuskript-error-details = Détails
 
 ## Import de projet, commun aux boîtes de dialogue Plume Creator et Manuskript
@@ -2156,6 +2169,9 @@ import-document-done = { $count ->
 import-document-undo = Annuler l’import
 # ── Diagnostics d'import ──────────────────────────────────────────────────────
 import-diagnostic-file-unreadable = « { $path } » n’a pas pu être lu : { $detail }. Les autres fichiers sont importés quand même.
+# Fichier refusé sans être lu : son XML est imbriqué au-delà de ce que
+# l’application accepte. $limit est le plafond, un nombre.
+import-diagnostic-nested-too-deep = « { $path } » n’a pas été lu : son contenu est imbriqué sur plus de { $limit } niveaux. Aucun document réel n’en approche, et le lire pourrait provoquer l’arrêt brutal de Skribisto ; il est donc écarté. Les autres fichiers sont importés quand même.
 import-diagnostic-lossy-decode = { $count ->
     [one] Un caractère de « { $path } » n’a pas pu être décodé. Enregistrez le fichier en UTF-8 pour le conserver.
    *[other] { $count } caractères de « { $path } » n’ont pas pu être décodés. Enregistrez le fichier en UTF-8 pour les conserver.

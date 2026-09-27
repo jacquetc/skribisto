@@ -1043,6 +1043,10 @@ import-plume-details = Details
 import-plume-warnings-title = Import warnings
 # Error toast: a short reason in the body, the full technical chain behind Details
 import-plume-error-title = Could not import the project
+# The project was refused unread because one of its parts nests its XML deeper
+# than the app will read. $part is the part's own name (tree, attendance, info);
+# $limit is the ceiling, a number.
+import-plume-nested-too-deep = The project was not imported: its “{ $part }” part is nested more than { $limit } levels deep. No Plume Creator project comes near that, and reading it could crash Skribisto. Nothing was written.
 import-plume-error-details = Details
 
 ## Import Manuskript project dialog
@@ -1108,6 +1112,14 @@ import-manuskript-details = Details
 import-manuskript-warnings-title = About this import
 # Error toast: short reason in the body, full technical chain behind “Details”
 import-manuskript-error-title = Could not import the project
+# The project was refused unread because one of its files nests its XML deeper
+# than the app will read. $part is that file's name inside the project
+# (world.opml, plots.xml…); $limit is the ceiling, a number.
+import-manuskript-nested-too-deep = The project was not imported: its file “{ $part }” is nested more than { $limit } levels deep. No Manuskript project comes near that, and reading it could crash Skribisto. Nothing was written.
+# The project was refused unread because one of its files sits in folders
+# nested deeper than the app will read (Manuskript keeps a project's outline
+# as folders, one per level). $limit is the ceiling, a number.
+import-manuskript-folders-too-deep = The project was not imported: one of its files sits more than { $limit } folders deep. No Manuskript project comes near that, and reading it could crash Skribisto. Nothing was written.
 import-manuskript-error-details = Details
 
 ## Project import, shared by the Plume Creator and Manuskript dialogs
@@ -2169,6 +2181,9 @@ import-document-undo = Undo
 # diagnostic gets its { $title } and { $kind } from the row it names, never from
 # the wire.
 import-diagnostic-file-unreadable = “{ $path }” could not be read: { $detail }. The other files still import.
+# A file refused unread because its XML nests deeper than the app will read.
+# $limit is the ceiling, a number.
+import-diagnostic-nested-too-deep = “{ $path }” was not read: its content is nested more than { $limit } levels deep. No real document comes near that, and reading it could crash Skribisto, so it is left out. The other files still import.
 import-diagnostic-lossy-decode = { $count ->
     [one] One character in “{ $path }” did not decode. Re-save the file as UTF-8 to keep it.
    *[other] { $count } characters in “{ $path }” did not decode. Re-save the file as UTF-8 to keep them.

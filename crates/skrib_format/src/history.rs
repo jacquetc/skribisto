@@ -386,6 +386,14 @@ pub fn thin(log: &mut HistoryLog, policy: &RetentionPolicy, min_keep: u32, now: 
 /// A missing, unreadable, or legacy bundle yields an empty log rather than an
 /// error: there is nothing to carry, which is a normal state (a brand-new project,
 /// a first save after upgrading), not a failure.
+///
+/// Every blob is held to the same Djot depth ceiling `read_bundle` applies to
+/// them ([`crate::djot_depth`]), and one past it is dropped along with its
+/// entries, exactly as `read_bundle` drops it. This is not the reader behind the
+/// save path alone: the Versions dock opens the log through here
+/// (`versions::LogVersions::open`) and parses the blobs it shows, so a blob the
+/// bundle reader would have refused, reached this way, aborted the process from
+/// there.
 pub fn load(path: &str) -> HistoryLog {
     use super::shape::{SkribShape, detect_shape, folder_root};
     match detect_shape(path) {
@@ -408,7 +416,9 @@ fn load_folder(root: &std::path::Path) -> HistoryLog {
         if blobs.contains_key(&hash) {
             continue;
         }
-        if let Ok(t) = std::fs::read_to_string(root.join(blob_relpath(&hash))) {
+        if let Ok(t) = std::fs::read_to_string(root.join(blob_relpath(&hash)))
+            && crate::djot_depth::check(&t).is_ok()
+        {
             blobs.insert(hash, t);
         }
     }
@@ -445,7 +455,7 @@ fn load_zip(path: &std::path::Path) -> HistoryLog {
         // dropped before the next `by_name` — which it is, at the end of this arm.
         if let Ok(mut entry) = archive.by_name(&blob_relpath(&hash)) {
             let mut t = String::new();
-            if entry.read_to_string(&mut t).is_ok() {
+            if entry.read_to_string(&mut t).is_ok() && crate::djot_depth::check(&t).is_ok() {
                 blobs.insert(hash, t);
             }
         }

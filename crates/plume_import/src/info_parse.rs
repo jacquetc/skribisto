@@ -12,7 +12,7 @@ use super::model::PlumeInfo;
 use super::version::{check_root, parse_xml};
 
 pub fn parse(xml: &str) -> Result<PlumeInfo> {
-    let doc = parse_xml(xml)?;
+    let doc = parse_xml("info", xml)?;
     let root = doc.root_element();
     check_root(&root, &["plume-information"], "info")?;
 

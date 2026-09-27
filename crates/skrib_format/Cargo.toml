@@ -32,6 +32,10 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 tempfile = "3"
 walkdir = "2"
 unicode-normalization = "0.1"
+# Every importer's XML goes through `xml_depth::parse`, which refuses a document
+# nested past the ceiling and then parses it on a stack deep enough for it. The
+# same parser and version the importers already use, so this adds no second one.
+roxmltree = "0.21.1"
 
 # Used only by the `build_example` tool, which reads each bundled example's
 # editorial-metadata spec.

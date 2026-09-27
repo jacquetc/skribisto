@@ -44,10 +44,12 @@ use frontend::AppContext;
 use frontend::commands::{import_management_commands, long_operation_commands};
 use frontend::common::event::{Event, LongOperationEvent, Origin};
 use frontend::import_management::ImportManuskriptProjectDto;
+use skrib_format::{FoldersTooDeep, XmlTooDeep};
 
 use crate::intents::AppIntent;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
 use crate::shared::import_destination::{DestinationMessages, ImportDestination, refuse_if_open};
+use crate::shared::import_failure;
 use crate::shared::import_warnings::{LiveNotice, MANUSKRIPT as WARNINGS};
 use crate::shared::long_op::{event_id, parse_payload, payload_id};
 
@@ -510,10 +512,10 @@ impl ImportManuskriptViewModel {
     /// Replace/raise the error toast: reason in the body, full message behind
     /// **Details**, persistent so the writer dismisses it themselves.
     fn show_error(&self, ctx: &mut EventContext, message: &str) {
-        let details = message.to_string();
+        let (body, details) = failure_text(message);
         ctx.show_toast(
             import_toast(Toast::error(tr!(import_manuskript_error_title())))
-                .body(lit!(message.to_string()))
+                .body(body)
                 .persistent()
                 .action(ToastAction::primary(
                     tr!(import_manuskript_error_details()),
@@ -547,6 +549,35 @@ impl DiskChecked for ImportManuskriptViewModel {
         }
         self.destination.retry_refused_folder();
     }
+}
+
+/// What the error toast says for a failed import's `message`, and what its
+/// **Details** shows: `shared::import_failure`'s answer, plus the one refusal
+/// only a Manuskript project can raise, a file sitting in folders nested past the
+/// ceiling (format 1 keeps the outline as folders, one per level).
+fn failure_text(message: &str) -> (LocalizedString, String) {
+    match FoldersTooDeep::from_failure_message(message) {
+        Some(refused) => (folders_too_deep(&refused), refused.to_string()),
+        None => import_failure::failure_text(message, nested_too_deep),
+    }
+}
+
+/// The error toast's sentence for a project refused because one of its files
+/// nests its XML past the ceiling (see `shared::import_failure`).
+fn nested_too_deep(refused: &XmlTooDeep) -> LocalizedString {
+    tr!(import_manuskript_nested_too_deep(
+        part = refused.part.clone(),
+        limit = refused.limit() as i64
+    ))
+}
+
+/// The error toast's sentence for a project refused because one of its files
+/// sits more folders deep than the ceiling. The path itself goes behind
+/// **Details**: at that depth it runs to hundreds of folder names.
+fn folders_too_deep(refused: &FoldersTooDeep) -> LocalizedString {
+    tr!(import_manuskript_folders_too_deep(
+        limit = refused.limit() as i64
+    ))
 }
 
 #[cfg(test)]
@@ -1050,5 +1081,55 @@ mod tests {
             dir.path().join("novel.skrib").exists(),
             "and the import landed"
         );
+    }
+
+    /// The refusal reaches the writer as a sentence in their language, naming the
+    /// file, in both shipped locales, with every argument filled in.
+    #[test]
+    fn a_nesting_refusal_is_worded_for_the_writer_in_both_locales() {
+        crate::shared::import_failure::assert_worded_in_both_locales("world.opml", nested_too_deep);
+    }
+
+    /// A project refused for its folders reaches the writer as a sentence in
+    /// their language naming the ceiling, in both shipped locales, with the path
+    /// behind **Details** and never the wire form in the body.
+    #[test]
+    fn a_folder_refusal_is_worded_for_the_writer_in_both_locales() {
+        let refused = FoldersTooDeep {
+            part: format!(
+                "outline/{}0-Scene.md",
+                "0-Part/".repeat(skrib_format::MAX_XML_DEPTH)
+            ),
+            depth: skrib_format::MAX_XML_DEPTH + 1,
+        };
+        let message = refused.failure_message();
+        for locale in ["en-US", "fr-FR"] {
+            crate::test_support::with_shipped_messages(locale, || {
+                let (body, details) = failure_text(&message);
+                let body = body.resolve_now();
+                assert!(
+                    body.contains(&skrib_format::MAX_XML_DEPTH.to_string()),
+                    "{locale}: {body}"
+                );
+                assert!(
+                    !body.contains("{$") && !body.contains("{ $"),
+                    "{locale} left an argument unfilled: {body}"
+                );
+                assert!(
+                    !body.contains("folders-nested-too-deep") && !body.contains("0-Part/"),
+                    "{locale} showed the wire form or the path: {body}"
+                );
+                assert_eq!(details, refused.to_string(), "{locale}");
+            });
+        }
+    }
+
+    /// The folder refusal is recognised ahead of the shared wording, and every
+    /// other failure still goes through it unchanged.
+    #[test]
+    fn any_other_failure_is_worded_as_the_shared_helper_words_it() {
+        let (body, details) = failure_text("reading 'x.msk': permission denied");
+        assert_eq!(body.resolve_now(), "reading 'x.msk': permission denied");
+        assert_eq!(details, "reading 'x.msk': permission denied");
     }
 }

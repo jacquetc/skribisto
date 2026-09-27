@@ -88,6 +88,11 @@ mod version_tests;
 /// Reading a project's past — backups and the history log behind one trait.
 pub mod versions;
 mod writer;
+/// A ceiling on XML nesting and a stack deep enough to parse under it, so a
+/// hostile or corrupt file an importer reads cannot abort the process through a
+/// parser's unbounded recursion. `pub` because every importer parses XML, and the
+/// same check has to guard each of them.
+pub mod xml_depth;
 mod zip_io;
 
 // On-disk bundle DTOs + the in-memory `WorkBundle`. Public so an external
@@ -124,6 +129,7 @@ pub use slug::{
 pub use sniff::{BackupSniff, sniff_backup, sniff_backup_filename};
 pub use tree_read::{Gathered, TreeReader, gather};
 pub use writer::{mark_existing_as_backup, verify_backup_at, write_bundle};
+pub use xml_depth::{FoldersTooDeep, MAX_DEPTH as MAX_XML_DEPTH, XmlTooDeep};
 
 /// Generate a fresh, stable project identity string (UUID v4). Used to mint a
 /// `Work.unique_id` for brand-new projects, to heal a load whose source carries

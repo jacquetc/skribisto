@@ -414,6 +414,9 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
     // only creates two places for them to disagree.
     let (detail, count) = match d {
         FileUnreadable { reason, .. } => (reason.clone(), 0),
+        // The part refused, and the ceiling it went past. The sentence uses only the
+        // ceiling; the part is there for anyone reading the row as data.
+        NestedTooDeep { part, limit, .. } => (part.clone(), *limit as i64),
         LossyDecode { replacements, .. } => (String::new(), *replacements as i64),
         DecodedFromBom { encoding, .. } => ((*encoding).to_string(), 0),
         EmptyFile { .. } | NoHeadings { .. } => (String::new(), 0),

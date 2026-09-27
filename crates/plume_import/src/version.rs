@@ -8,16 +8,21 @@
 //! attribute** only — exactly what Plume itself checks (`Hub::loadTemp`).
 
 use anyhow::{Result, bail};
+use skrib_format::xml_depth::{self, Dtd, XmlError};
 
 /// Parse Plume XML. **Must** allow a DTD: every Plume member starts with a
 /// `<!DOCTYPE …>` declaration, which roxmltree rejects by default.
-pub fn parse_xml(xml: &str) -> Result<roxmltree::Document<'_>> {
-    let opts = roxmltree::ParsingOptions {
-        allow_dtd: true,
-        ..Default::default()
-    };
-    roxmltree::Document::parse_with_options(xml, opts)
-        .map_err(|e| anyhow::anyhow!("parsing XML: {e}"))
+///
+/// Through `skrib_format::xml_depth`, so a member nested past `MAX_XML_DEPTH` is
+/// refused with a typed `XmlTooDeep` naming `part` before `roxmltree` can recurse
+/// into it, and the parse runs on a stack deep enough for anything under that.
+/// A DTD's entities are counted where they are expanded, which matters here more
+/// than anywhere: this is one of the two readers that allows one.
+pub fn parse_xml<'a>(part: &str, xml: &'a str) -> Result<roxmltree::Document<'a>> {
+    xml_depth::parse(part, xml, Dtd::Allow).map_err(|e| match e {
+        XmlError::Malformed(e) => anyhow::anyhow!("parsing XML: {e}"),
+        other => anyhow::Error::new(other),
+    })
 }
 
 /// Ensure `root`'s tag name is one of `allowed`; otherwise this isn't a Plume

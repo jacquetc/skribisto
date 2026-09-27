@@ -92,9 +92,10 @@ impl Row {
     }
 }
 
-/// Parse a `<model>` document into its data rows, in document order.
-pub fn parse(text: &str) -> Result<Vec<Row>> {
-    let doc = xml::parse(text)?;
+/// Parse a `<model>` document into its data rows, in document order. `member`
+/// names the file in a refusal.
+pub fn parse(member: &str, text: &str) -> Result<Vec<Row>> {
+    let doc = xml::parse(member, text)?;
     let root = doc.root_element();
     let Some(data) = root
         .children()
@@ -103,17 +104,23 @@ pub fn parse(text: &str) -> Result<Vec<Row>> {
         // A model with a header and no data is an empty table, not a broken file.
         return Ok(Vec::new());
     };
-    Ok(rows_of(data))
+    Ok(rows_of(data, 2))
 }
 
-fn rows_of(node: roxmltree::Node) -> Vec<Row> {
+/// `depth` is `node`'s own nesting, `<model>` counting as one; see
+/// [`xml::may_descend`]. A nested row sits two levels under its parent row, one
+/// for the row and one for the `<col>` holding it.
+fn rows_of(node: roxmltree::Node, depth: usize) -> Vec<Row> {
+    if !xml::may_descend(depth) {
+        return Vec::new();
+    }
     node.children()
         .filter(|n| n.is_element() && n.tag_name().name() == "row")
-        .map(row_of)
+        .map(|row| row_of(row, depth + 1))
         .collect()
 }
 
-fn row_of(node: roxmltree::Node) -> Row {
+fn row_of(node: roxmltree::Node, depth: usize) -> Row {
     let mut cells = Vec::new();
     for col in node
         .children()
@@ -140,7 +147,7 @@ fn row_of(node: roxmltree::Node) -> Row {
                     .map(str::trim)
                     .filter(|s| !s.is_empty())
                     .map(str::to_string),
-                children: rows_of(col),
+                children: rows_of(col, depth + 1),
             },
         ));
     }
@@ -165,7 +172,7 @@ mod tests {
 
     #[test]
     fn a_cells_text_stops_at_its_children() {
-        let rows = parse(WORLD).expect("parse");
+        let rows = parse("world.xml", WORLD).expect("parse");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].text(0), "Places");
         assert_eq!(rows[0].text(1), "0");
@@ -174,7 +181,7 @@ mod tests {
 
     #[test]
     fn children_hang_inside_the_cell_that_owns_them() {
-        let rows = parse(WORLD).expect("parse");
+        let rows = parse("world.xml", WORLD).expect("parse");
         let kids = rows[0].children(0);
         assert_eq!(kids.len(), 2);
         assert_eq!(kids[0].text(0), "Jerusalem");
@@ -187,13 +194,13 @@ mod tests {
 
     #[test]
     fn a_colour_is_found_on_whichever_cell_carries_it() {
-        let rows = parse(WORLD).expect("parse");
+        let rows = parse("world.xml", WORLD).expect("parse");
         assert_eq!(rows[0].color(), Some("#ffff0000"));
     }
 
     #[test]
     fn an_absent_cell_reads_as_empty_rather_than_failing() {
-        let rows = parse(WORLD).expect("parse");
+        let rows = parse("world.xml", WORLD).expect("parse");
         assert_eq!(rows[0].text(99), "");
         assert!(rows[0].text_opt(99).is_none());
         assert!(
@@ -205,12 +212,13 @@ mod tests {
 
     #[test]
     fn a_model_with_no_data_section_is_an_empty_table() {
-        let rows = parse(r#"<model version="0.1.1"><header/></model>"#).expect("parse");
+        let rows =
+            parse("world.xml", r#"<model version="0.1.1"><header/></model>"#).expect("parse");
         assert!(rows.is_empty());
     }
 
     #[test]
     fn a_malformed_document_is_an_error_the_caller_can_report() {
-        assert!(parse("<model><data>").is_err());
+        assert!(parse("world.xml", "<model><data>").is_err());
     }
 }

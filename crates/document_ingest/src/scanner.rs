@@ -125,10 +125,21 @@ impl ScannerRegistry {
             Ok(doc) => doc,
             Err(err) => {
                 let mut doc = SourceDocument::new(display_name, &origin);
-                doc.diagnostics.push(ImportDiagnostic::FileUnreadable {
-                    path: origin,
-                    reason: err.to_string(),
-                });
+                // A refusal of XML nested past the ceiling is its own diagnostic, so
+                // the writer is told why in their own language rather than handed
+                // the parser's English.
+                let diagnostic = match skrib_format::xml_depth::too_deep(&err) {
+                    Some(refused) => ImportDiagnostic::NestedTooDeep {
+                        path: origin,
+                        part: refused.part.clone(),
+                        limit: refused.limit(),
+                    },
+                    None => ImportDiagnostic::FileUnreadable {
+                        path: origin,
+                        reason: err.to_string(),
+                    },
+                };
+                doc.diagnostics.push(diagnostic);
                 doc
             }
         };

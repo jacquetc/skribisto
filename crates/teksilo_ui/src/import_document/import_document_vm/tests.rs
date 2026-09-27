@@ -379,6 +379,7 @@ fn exhaustive_over_every_variant(d: &document_ingest::ImportDiagnostic) {
     use document_ingest::ImportDiagnostic::*;
     match d {
         FileUnreadable { .. }
+        | NestedTooDeep { .. }
         | LossyDecode { .. }
         | DecodedFromBom { .. }
         | EmptyFile { .. }
@@ -426,6 +427,11 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
         D::FileUnreadable {
             path: "/tmp/a.md".into(),
             reason: "permission denied".into(),
+        },
+        D::NestedTooDeep {
+            path: "/tmp/a.odt".into(),
+            part: "content.xml".into(),
+            limit: 256,
         },
         D::LossyDecode {
             path: "/tmp/a.md".into(),
@@ -559,6 +565,37 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
             );
         }
     });
+}
+
+/// The one diagnostic that exists to stop a crash is read in the writer's own
+/// language in both shipped locales, with the file and the ceiling filled in.
+/// The coverage test above resolves `en-US` only; `fr-FR` is not checked at
+/// compile time, so it is resolved here.
+#[test]
+fn a_file_refused_for_its_nesting_is_named_in_both_locales() {
+    let raised = document_ingest::ImportDiagnostic::NestedTooDeep {
+        path: "/tmp/hostile.odt".into(),
+        part: "content.xml".into(),
+        limit: 256,
+    };
+    for locale in ["en-US", "fr-FR"] {
+        crate::test_support::with_shipped_messages(locale, || {
+            let dto = frontend::import_management::diagnostic_to_dto(&raised, 0);
+            let (_, _, parsed) = plan_from_dto(
+                &DocumentImportRows::Empty,
+                &ImportDiagnosticRows::Reported(vec![dto]),
+            );
+            let d = parsed.first().expect("the DTO round-trips");
+            assert!(d.is_error(), "a refused file contributed nothing");
+            let text = d.message("", None).resolve_now();
+            assert!(text.contains("hostile.odt"), "{locale}: {text}");
+            assert!(text.contains("256"), "{locale}: {text}");
+            assert!(
+                !text.contains("{$") && !text.contains("{ $"),
+                "{locale} left an argument unfilled: {text}"
+            );
+        });
+    }
 }
 
 /// Worst first. A file that could not be opened at all must not sit under

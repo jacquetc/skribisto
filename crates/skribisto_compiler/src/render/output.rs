@@ -120,7 +120,7 @@ pub fn render_to_file(
                 // The family name must match the bytes actually fed (substitute-aware).
                 font_family: crate::fonts::pdf_body_family(req.preset),
                 font_bytes: crate::fonts::pdf_font_bytes(req.preset, langs),
-                images: collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
+                images: pdf_images(req, &built.image_refs),
                 font_size_pt: req.preset.font_size_pt,
                 // Typst `leading` (the gap *between* lines, not a line-height multiple — Typst
                 // has no direct multiple), in em. Approximated as `multiple - 0.35`, anchoring
@@ -150,6 +150,41 @@ pub fn render_to_file(
     }
     progress(1.0);
     Ok((stats, receipt))
+}
+
+/// The media types the PDF arm hands Typst. The four raster formats, and only
+/// them: see [`pdf_images`].
+const PDF_IMAGE_TYPES: [&str; 4] = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+
+/// The images the PDF arm hands Typst: the raster ones, and nothing else.
+///
+/// Typst picks an image's reader from its file name, which `text-document`
+/// derives from the asset's media type (`png`, `jpg`, `webp`, `gif`, `svg`, and
+/// `bin` for anything else), and sniffs the bytes of a `bin`. So every other type
+/// can reach a vector reader: `usvg` for an SVG, or for a `bin` holding the SVG
+/// namespace or starting like gzip, and a PDF reader for one holding `%PDF-`.
+/// `usvg` parses with `roxmltree`, recursing once per element, then recurses
+/// once more per element and per `<use>` it follows, up to 1024 levels, all on
+/// the thread `text-document` compiles the PDF on, whose stack nothing here can
+/// size. A nested SVG a few kilobytes long overflowed it, and a stack overflow
+/// aborts the process, every window with it. Checking the XML's depth would not
+/// be enough either: a chain of `<use>` references is shallow XML and deep
+/// recursion.
+///
+/// Nothing the writer sees is lost that they could see before. An asset only
+/// ever enters a project through the editor as one of these four types, because
+/// the editor decodes nothing else, and it draws no other kind on the page; so a
+/// picture left out here, which can only have come from a project written
+/// elsewhere, becomes its description in the PDF, just as it is a blank in the
+/// editor. The other formats embed an image's bytes without reading them, and
+/// keep it.
+pub(super) fn pdf_images(
+    req: &RenderRequest,
+    image_refs: &[String],
+) -> text_document::ExportImages {
+    collect_images_where(req.gathered, req.media_dir, Some(image_refs), |mime| {
+        PDF_IMAGE_TYPES.contains(&mime)
+    })
 }
 
 /// A preset [`PageSize`] as (width, height) in millimetres — the unit `PdfExportOptions` uses.

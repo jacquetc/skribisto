@@ -202,26 +202,39 @@ pub(crate) fn first_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> 
 /// a `{ $count -> … }` plural selector resolves to its own id. A test comparing
 /// two such strings then compares two ids, and passes whatever the arguments.
 pub(crate) fn with_real_messages(f: impl FnOnce()) {
+    with_shipped_messages("en-US", f);
+}
+
+/// Run `f` with the shipped `.ftl` files of `locale` installed as the only locale,
+/// so `tr!(…).resolve_now()` returns exactly what a writer running in it reads.
+///
+/// For the locales `tr!` cannot check at compile time: keys are validated against
+/// `en-US` only, so a French message with a misspelt argument or a missing key
+/// compiles, and only resolving it says so.
+pub(crate) fn with_shipped_messages(locale: &str, f: impl FnOnce()) {
     use teksilo::i18n::config::I18nConfig;
     use teksilo::i18n::manager::I18nManager;
     use teksilo::i18n::thread_local::{clear, install};
 
+    // The app's own catalogue, so a `.ftl` file added to it reaches these tests
+    // too: `startup`'s drift test holds that list in step with the files on disk.
+    let Some(&(tag, files)) = crate::startup::app_locales()
+        .iter()
+        .find(|(tag, _)| *tag == locale)
+    else {
+        panic!("{locale} is not a locale the app ships");
+    };
+    let id: teksilo::i18n::LanguageIdentifier = match tag.parse() {
+        Ok(id) => id,
+        Err(e) => panic!("{tag} is not a locale: {e:?}"),
+    };
     clear();
     let cfg = I18nConfig::new()
-        .source_locale("en-US".parse().unwrap())
-        .supported_locales(["en-US".parse().unwrap()])
-        .compile_in(&[(
-            "en-US",
-            &[
-                include_str!("../locales/en-US/main.ftl"),
-                include_str!("../locales/en-US/tooltips.ftl"),
-                include_str!("../locales/en-US/tags.ftl"),
-                include_str!("../locales/en-US/templates.ftl"),
-                include_str!("../locales/en-US/story_bible.ftl"),
-            ],
-        )])
+        .source_locale(id.clone())
+        .supported_locales([id.clone()])
+        .compile_in(&[(tag, files)])
         .auto_detect_os_locale(false)
-        .fallback_locale("en-US".parse().unwrap());
+        .fallback_locale(id);
     install(I18nManager::from_config(&cfg));
     f();
     clear();

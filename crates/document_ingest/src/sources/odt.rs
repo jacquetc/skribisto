@@ -58,6 +58,7 @@ use std::io::Read;
 
 use anyhow::{Result, anyhow};
 use roxmltree::{Document, Node};
+use skrib_format::xml_depth::{Dtd, XmlError};
 
 use crate::block::SourceDocument;
 use crate::diagnostics::ImportDiagnostic;
@@ -131,60 +132,91 @@ impl SourceScanner for OdtScanner {
         "opendocument-text"
     }
 
+    /// The whole scan runs on `skrib_format`'s parser stack: the parse, the walk
+    /// that follows it, and the conversion of what the walk collected. Each part is
+    /// refused first if it nests past `MAX_XML_DEPTH` (see `parse_part`), and
+    /// every recursion in the walk is bounded by the same ceiling, so a document
+    /// that gets as far as the walk fits on that stack with room to spare.
     fn scan(&self, bytes: &[u8], display_name: &str, origin: &str) -> Result<SourceDocument> {
-        let parts = read_parts(bytes)?;
-        let content = Document::parse(&parts.content)
-            .map_err(|e| anyhow!("content.xml is not well-formed XML: {e}"))?;
-        let styles_doc = match &parts.styles {
-            Some(xml) => Some(
-                Document::parse(xml)
-                    .map_err(|e| anyhow!("styles.xml is not well-formed XML: {e}"))?,
-            ),
-            None => None,
-        };
-
-        let mut styles = StyleTable::default();
-        if let Some(d) = &styles_doc {
-            styles.collect(d.root_element());
-        }
-        styles.collect(content.root_element());
-
-        let mut doc = SourceDocument::new(display_name, origin);
-        if let Some(meta) = &parts.meta
-            && let Ok(m) = Document::parse(meta)
-            && let Some(title) = find_descendant(m.root_element(), NS_DC, "title")
-        {
-            let title = element_text(title);
-            if !title.trim().is_empty() {
-                doc.metadata.title = Some(title.trim().to_string());
-            }
-        }
-
-        let body = find_descendant(content.root_element(), NS_OFFICE, "text")
-            .ok_or_else(|| anyhow!("no <office:text> body"))?;
-
-        let mut walker = Walker::new(&styles, origin);
-        walker.walk_container(body);
-        let rich = walker.finish();
-
-        doc.diagnostics.extend(walker.diagnostics);
-        assemble(&rich, &mut doc)?;
-
-        if doc.blocks.is_empty() {
-            doc.diagnostics.push(ImportDiagnostic::EmptyFile {
-                path: origin.to_string(),
-            });
-        } else if !doc
-            .blocks
-            .iter()
-            .any(|b| matches!(b, crate::block::SourceBlock::Heading { .. }))
-        {
-            doc.diagnostics.push(ImportDiagnostic::NoHeadings {
-                path: origin.to_string(),
-            });
-        }
-        Ok(doc)
+        skrib_format::xml_depth::on_parser_stack(|| scan_document(bytes, display_name, origin))
+            .map_err(anyhow::Error::new)?
     }
+}
+
+/// [`OdtScanner::scan`], on the parser stack.
+fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<SourceDocument> {
+    let parts = read_parts(bytes, origin)?;
+    let content = parse_part(&parts.content_part, &parts.content)?;
+    let styles_doc = match &parts.styles {
+        Some(xml) => Some(parse_part("styles.xml", xml)?),
+        None => None,
+    };
+
+    let mut styles = StyleTable::default();
+    if let Some(d) = &styles_doc {
+        styles.collect(d.root_element());
+    }
+    styles.collect(content.root_element());
+
+    let mut doc = SourceDocument::new(display_name, origin);
+    // The title is optional and a `meta.xml` that does not parse costs only the
+    // title. One nested past the ceiling refuses the file like any other part.
+    let meta = match &parts.meta {
+        Some(xml) => match parse_part("meta.xml", xml) {
+            Ok(meta) => Some(meta),
+            Err(e) if skrib_format::xml_depth::too_deep(&e).is_some() => return Err(e),
+            Err(_) => None,
+        },
+        None => None,
+    };
+    if let Some(m) = &meta
+        && let Some(title) = find_descendant(m.root_element(), NS_DC, "title")
+    {
+        let title = element_text(title);
+        if !title.trim().is_empty() {
+            doc.metadata.title = Some(title.trim().to_string());
+        }
+    }
+
+    let body = find_descendant(content.root_element(), NS_OFFICE, "text")
+        .ok_or_else(|| anyhow!("no <office:text> body"))?;
+
+    let mut walker = Walker::new(&styles, origin);
+    walker.walk_container(body, element_depth(body));
+    let rich = walker.finish();
+
+    doc.diagnostics.extend(walker.diagnostics);
+    assemble(&rich, &mut doc)?;
+
+    if doc.blocks.is_empty() {
+        doc.diagnostics.push(ImportDiagnostic::EmptyFile {
+            path: origin.to_string(),
+        });
+    } else if !doc
+        .blocks
+        .iter()
+        .any(|b| matches!(b, crate::block::SourceBlock::Heading { .. }))
+    {
+        doc.diagnostics.push(ImportDiagnostic::NoHeadings {
+            path: origin.to_string(),
+        });
+    }
+    Ok(doc)
+}
+
+/// Parse one part through `skrib_format::xml_depth`: refused with a typed
+/// `XmlTooDeep` if it nests past the ceiling, otherwise parsed on the parser stack.
+fn parse_part<'a>(part: &str, xml: &'a str) -> Result<Document<'a>> {
+    skrib_format::xml_depth::parse(part, xml, Dtd::Refuse).map_err(|e| match e {
+        XmlError::Malformed(e) => anyhow!("{part} is not well-formed XML: {e}"),
+        other => anyhow::Error::new(other),
+    })
+}
+
+/// How deep `node` sits, the root element counting as one. Asked once, of the
+/// body the walk starts from; the walk carries the count down from there.
+fn element_depth(node: Node<'_, '_>) -> usize {
+    node.ancestors().filter(Node::is_element).count()
 }
 
 // ---------------------------------------------------------------------------
@@ -192,6 +224,9 @@ impl SourceScanner for OdtScanner {
 // ---------------------------------------------------------------------------
 
 struct Parts {
+    /// What a refusal calls `content`: `content.xml` in a zip, the file itself
+    /// when it is a flat `.fodt`.
+    content_part: String,
     content: String,
     styles: Option<String>,
     meta: Option<String>,
@@ -202,10 +237,14 @@ struct Parts {
 /// Flat ODF is one XML file holding what the zip splits in three, so it is read as
 /// `content` and left to answer for all of them — every element this scanner looks
 /// for is in the same document.
-fn read_parts(bytes: &[u8]) -> Result<Parts> {
+fn read_parts(bytes: &[u8], origin: &str) -> Result<Parts> {
     if !bytes.starts_with(b"PK") {
         let text = String::from_utf8_lossy(bytes).into_owned();
+        let file_name = std::path::Path::new(origin)
+            .file_name()
+            .map_or_else(|| origin.to_string(), |n| n.to_string_lossy().into_owned());
         return Ok(Parts {
+            content_part: file_name,
             content: text,
             styles: None,
             meta: None,
@@ -218,6 +257,7 @@ fn read_parts(bytes: &[u8]) -> Result<Parts> {
     let styles = read_member(&mut zip, "styles.xml")?;
     let meta = read_member(&mut zip, "meta.xml")?;
     Ok(Parts {
+        content_part: "content.xml".to_string(),
         content,
         styles,
         meta,
@@ -653,7 +693,15 @@ impl<'a> Walker<'a> {
     }
 
     /// Walk anything that holds block-level content.
-    fn walk_container(&mut self, node: Node<'_, '_>) {
+    ///
+    /// `depth` is `node`'s own nesting, the root counting as one, and every walk
+    /// below carries it the same way. The parse refused anything nested past
+    /// `MAX_XML_DEPTH`, so [`past_the_ceiling`] never stops a walk over a document
+    /// read here; it keeps each recursion bounded by that ceiling on its own terms.
+    fn walk_container(&mut self, node: Node<'_, '_>, depth: usize) {
+        if past_the_ceiling(depth) {
+            return;
+        }
         for child in node.children().filter(Node::is_element) {
             let name = child.tag_name().name();
             match (child.tag_name().namespace(), name) {
@@ -663,7 +711,7 @@ impl<'a> Walker<'a> {
                         .and_then(|v| v.parse::<u8>().ok())
                         .unwrap_or(1)
                         .max(1);
-                    self.paragraph(child, ParagraphKind::Heading { level });
+                    self.paragraph(child, ParagraphKind::Heading { level }, depth + 1);
                 }
                 (Some(NS_TEXT), "p") => {
                     // A rule-styled paragraph is a thematic break — see the module
@@ -693,6 +741,7 @@ impl<'a> Walker<'a> {
                             ParagraphKind::Heading {
                                 level: level.max(1),
                             },
+                            depth + 1,
                         ),
                         // …and a paragraph whose style names it an epigraph or a quotation is
                         // that, on the same terms: a value the document states about itself,
@@ -705,12 +754,13 @@ impl<'a> Walker<'a> {
                             self.paragraph(
                                 child,
                                 styled.map_or(ParagraphKind::Body, rich::kind_for_style),
+                                depth + 1,
                             )
                         }
                     }
                 }
-                (Some(NS_TEXT), "list") => self.walk_list(child, 0),
-                (Some(NS_TEXT), "section") => self.walk_container(child),
+                (Some(NS_TEXT), "list") => self.walk_list(child, 0, depth + 1),
+                (Some(NS_TEXT), "section") => self.walk_container(child, depth + 1),
                 (Some(NS_TEXT), "tracked-changes") => {
                     self.tracked_changes += child
                         .children()
@@ -737,25 +787,38 @@ impl<'a> Walker<'a> {
                 // Anything else that could hold paragraphs (index bodies, frames at
                 // body level, change marks). Recursing beats ignoring: an unread
                 // container is prose the writer wrote and never saw again.
-                _ => self.walk_container(child),
+                _ => self.walk_container(child, depth + 1),
             }
         }
     }
 
-    fn walk_list(&mut self, node: Node<'_, '_>, depth: u8) {
+    /// `list_depth` is how many lists this one sits inside; `depth` is its element
+    /// nesting, as for [`Self::walk_container`]. An item's content sits two levels
+    /// under the list, one for the `<text:list-item>` holding it.
+    fn walk_list(&mut self, node: Node<'_, '_>, list_depth: u8, depth: usize) {
+        if past_the_ceiling(depth) {
+            return;
+        }
         let ordered = self
             .styles
-            .list_is_ordered(node.attribute((NS_TEXT, "style-name")), depth);
+            .list_is_ordered(node.attribute((NS_TEXT, "style-name")), list_depth);
         for item in node.children().filter(Node::is_element) {
             if !matches!(item.tag_name().name(), "list-item" | "list-header") {
                 continue;
             }
             for child in item.children().filter(Node::is_element) {
                 match (child.tag_name().namespace(), child.tag_name().name()) {
-                    (Some(NS_TEXT), "p") | (Some(NS_TEXT), "h") => {
-                        self.paragraph(child, ParagraphKind::ListItem { ordered, depth })
+                    (Some(NS_TEXT), "p") | (Some(NS_TEXT), "h") => self.paragraph(
+                        child,
+                        ParagraphKind::ListItem {
+                            ordered,
+                            depth: list_depth,
+                        },
+                        depth + 2,
+                    ),
+                    (Some(NS_TEXT), "list") => {
+                        self.walk_list(child, list_depth.saturating_add(1), depth + 2)
                     }
-                    (Some(NS_TEXT), "list") => self.walk_list(child, depth.saturating_add(1)),
                     _ => {}
                 }
             }
@@ -782,7 +845,7 @@ impl<'a> Walker<'a> {
         }
     }
 
-    fn paragraph(&mut self, node: Node<'_, '_>, kind: ParagraphKind) {
+    fn paragraph(&mut self, node: Node<'_, '_>, kind: ParagraphKind, depth: usize) {
         let base = node
             .attribute((NS_TEXT, "style-name"))
             .map(|s| self.styles.text_style(s))
@@ -792,7 +855,7 @@ impl<'a> Walker<'a> {
             runs: Vec::new(),
             len: 0,
         };
-        self.inline(node, &mut build, base, None);
+        self.inline(node, &mut build, base, None, depth);
         self.flush_paragraph(build);
     }
 
@@ -814,14 +877,18 @@ impl<'a> Walker<'a> {
     }
 
     /// Walk one paragraph's inline content, accumulating runs and tracking where
-    /// each comment range opens and closes.
+    /// each comment range opens and closes. `depth` as for [`Self::walk_container`].
     fn inline(
         &mut self,
         node: Node<'_, '_>,
         build: &mut ParaBuild,
         style: RunStyle,
         link: Option<&str>,
+        depth: usize,
     ) {
+        if past_the_ceiling(depth) {
+            return;
+        }
         for child in node.children() {
             if child.is_text() {
                 let text = child.text().unwrap_or_default();
@@ -848,11 +915,11 @@ impl<'a> Walker<'a> {
                         .attribute((NS_TEXT, "style-name"))
                         .map(|s| merge(style, self.styles.text_style(s)))
                         .unwrap_or(style);
-                    self.inline(child, build, inner, link);
+                    self.inline(child, build, inner, link, depth + 1);
                 }
                 (Some(NS_TEXT), "a") => {
                     let url = child.attribute((NS_XLINK, "href")).unwrap_or_default();
-                    self.inline(child, build, style, Some(url));
+                    self.inline(child, build, style, Some(url), depth + 1);
                 }
                 (Some(NS_TEXT), "s") => {
                     let count: usize = child
@@ -890,13 +957,13 @@ impl<'a> Walker<'a> {
                     );
                     self.flush_paragraph(finished);
                 }
-                (Some(NS_OFFICE), "annotation") => self.open_annotation(child, build),
+                (Some(NS_OFFICE), "annotation") => self.open_annotation(child, build, depth + 1),
                 (Some(NS_OFFICE), "annotation-end") => {
                     if let Some(name) = child.attribute((NS_OFFICE, "name")) {
                         self.close_annotation(name, build);
                     }
                 }
-                (Some(NS_TEXT), "note") => self.note(child, build),
+                (Some(NS_TEXT), "note") => self.note(child, build, depth + 1),
                 (Some(NS_DRAW), "frame") | (Some(NS_DRAW), "g") => self.frame(child, build, style),
                 // A bookmark is ordinarily nothing to a manuscript importer — a
                 // cross-reference target, a table-of-contents entry, LibreOffice's own
@@ -913,10 +980,10 @@ impl<'a> Walker<'a> {
                 | (Some(NS_TEXT), "soft-page-break") => {}
                 (Some(NS_TEXT), field) if FIELD_ELEMENTS.contains(&field) => {
                     self.fields += 1;
-                    self.inline(child, build, style, link);
+                    self.inline(child, build, style, link, depth + 1);
                 }
                 // Unknown inline element: take its text rather than drop it.
-                _ => self.inline(child, build, style, link),
+                _ => self.inline(child, build, style, link, depth + 1),
             }
         }
     }
@@ -1023,7 +1090,8 @@ impl<'a> Walker<'a> {
         }
     }
 
-    fn open_annotation(&mut self, node: Node<'_, '_>, build: &ParaBuild) {
+    /// `depth` is the annotation's own nesting, as for [`Self::walk_container`].
+    fn open_annotation(&mut self, node: Node<'_, '_>, build: &ParaBuild, depth: usize) {
         let author = node
             .children()
             .find(|c| is(c, NS_DC, "creator"))
@@ -1053,7 +1121,7 @@ impl<'a> Walker<'a> {
                 .attribute((NS_TEXT, "style-name"))
                 .map(|s| self.styles.text_style(s))
                 .unwrap_or_default();
-            self.annotation_inline(p, base, None, &mut body);
+            self.annotation_inline(p, base, None, &mut body, depth + 1);
             body.break_paragraph();
         }
         let paragraphs: Vec<Vec<Run>> = body.finish();
@@ -1131,7 +1199,9 @@ impl<'a> Walker<'a> {
     /// and never stored, so carrying the source's would be a second answer to the
     /// same question, and a wrong one the moment the note lands anywhere else in the
     /// book.
-    fn note(&mut self, node: Node<'_, '_>, build: &mut ParaBuild) {
+    ///
+    /// `depth` is the note's own nesting, as for [`Self::walk_container`].
+    fn note(&mut self, node: Node<'_, '_>, build: &mut ParaBuild, depth: usize) {
         let Some(id) = node.attribute((NS_TEXT, "id")).map(sanitise_note_id) else {
             self.footnotes_dropped += 1;
             return;
@@ -1146,7 +1216,7 @@ impl<'a> Walker<'a> {
                 .attribute((NS_TEXT, "style-name"))
                 .map(|s| self.styles.text_style(s))
                 .unwrap_or_default();
-            self.annotation_inline(p, base, None, &mut body);
+            self.annotation_inline(p, base, None, &mut body, depth + 2);
             body.break_paragraph();
         }
         let paragraphs = body.finish();
@@ -1192,13 +1262,19 @@ impl<'a> Walker<'a> {
     /// comment, and no UI to comment on a comment either. Reusing `inline`
     /// directly would silently start counting those against the manuscript's
     /// own diagnostics for constructs that live in a margin note instead.
+    ///
+    /// `depth` as for [`Self::walk_container`].
     fn annotation_inline(
         &self,
         node: Node<'_, '_>,
         style: RunStyle,
         link: Option<&str>,
         out: &mut AnnotationBody,
+        depth: usize,
     ) {
+        if past_the_ceiling(depth) {
+            return;
+        }
         for child in node.children() {
             if child.is_text() {
                 let text = child.text().unwrap_or_default();
@@ -1222,11 +1298,11 @@ impl<'a> Walker<'a> {
                         .attribute((NS_TEXT, "style-name"))
                         .map(|s| merge(style, self.styles.text_style(s)))
                         .unwrap_or(style);
-                    self.annotation_inline(child, inner, link, out);
+                    self.annotation_inline(child, inner, link, out, depth + 1);
                 }
                 (Some(NS_TEXT), "a") => {
                     let url = child.attribute((NS_XLINK, "href")).unwrap_or_default();
-                    self.annotation_inline(child, style, Some(url), out);
+                    self.annotation_inline(child, style, Some(url), out, depth + 1);
                 }
                 (Some(NS_TEXT), "s") => {
                     let count: usize = child
@@ -1263,7 +1339,7 @@ impl<'a> Walker<'a> {
                 (Some(NS_TEXT), "line-break") => out.break_paragraph(),
                 // Unknown inline element: take its text rather than drop it,
                 // matching `Self::inline`'s own fallback.
-                _ => self.annotation_inline(child, style, link, out),
+                _ => self.annotation_inline(child, style, link, out, depth + 1),
             }
         }
     }
@@ -1382,6 +1458,12 @@ fn merge(outer: RunStyle, inner: RunStyle) -> RunStyle {
         strikethrough: outer.strikethrough || inner.strikethrough,
         code: outer.code || inner.code,
     }
+}
+
+/// Whether an element `depth` levels deep lies past the ceiling the parse holds
+/// every document to, and so must not be walked.
+fn past_the_ceiling(depth: usize) -> bool {
+    depth > skrib_format::MAX_XML_DEPTH
 }
 
 fn is(node: &Node<'_, '_>, ns: &str, name: &str) -> bool {

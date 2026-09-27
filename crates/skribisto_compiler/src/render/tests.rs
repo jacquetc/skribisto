@@ -1469,6 +1469,116 @@ fn pdf_export_writes_a_valid_pdf() {
     let _ = std::fs::remove_file(&path);
 }
 
+/// An SVG whose one shape sits inside `levels` nested groups.
+fn nested_svg(levels: usize) -> String {
+    format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\">{}\
+         <rect width=\"5\" height=\"5\"/>{}</svg>",
+        "<g>".repeat(levels),
+        "</g>".repeat(levels)
+    )
+}
+
+/// A book whose one scene shows a PNG, an SVG, and the same SVG stored under a
+/// generic media type, which Typst would sniff as SVG all the same.
+fn book_with_three_kinds_of_picture(svg: &str) -> (tempfile::TempDir, Gathered) {
+    let dir = tempfile::tempdir().unwrap();
+    let mut g = gathered(
+        vec![
+            iwc(
+                100,
+                SR::BookBegin,
+                "en",
+                vec![c(1, ContentRole::BookTitle, "My Novel")],
+            ),
+            iwc(
+                101,
+                SR::ChapterScene,
+                "en",
+                vec![c(
+                    3,
+                    ContentRole::SceneText,
+                    "A gull: ![a gull](assets/aaa.png) A map: ![a map](assets/bbb.svg) \
+                     A plan: ![a plan](assets/ccc.bin)",
+                )],
+            ),
+        ],
+        "en",
+    );
+    std::fs::write(dir.path().join("aaa.png"), png()).unwrap();
+    std::fs::write(dir.path().join("bbb.svg"), svg).unwrap();
+    std::fs::write(dir.path().join("ccc.bin"), svg).unwrap();
+    g.assets.push(asset(200, "aaa", false));
+    for (id, hash, mime_type) in [
+        (201, "bbb", "image/svg+xml"),
+        (202, "ccc", "application/octet-stream"),
+    ] {
+        g.assets.push(common::entities::Asset {
+            id,
+            content_hash: hash.into(),
+            file_name: format!("{hash}.svg"),
+            mime_type: mime_type.into(),
+            width: 10,
+            height: 10,
+            byte_size: svg.len() as u64,
+            ..Default::default()
+        });
+    }
+    (dir, g)
+}
+
+/// Typst reads an SVG with a recursive parser on a thread whose stack nothing
+/// here can size, so the PDF arm hands it the raster images and nothing else.
+/// Every other format still carries all three pictures.
+#[test]
+fn a_pdf_is_handed_the_raster_images_only() {
+    let (media, g) = book_with_three_kinds_of_picture(&nested_svg(2));
+    let p = preset("neutral");
+    let r = req_with_media(&g, &[100, 101], &p, ExportFormat::Pdf, media.path());
+    let refs: Vec<String> = ["assets/aaa.png", "assets/bbb.svg", "assets/ccc.bin"]
+        .map(str::to_string)
+        .to_vec();
+
+    let for_pdf = pdf_images(&r, &refs);
+    let kept: Vec<&str> = for_pdf.iter().map(|(src, _)| src.as_str()).collect();
+    assert_eq!(kept, ["assets/aaa.png"]);
+
+    let for_the_others = collect_images(&g, media.path(), Some(&refs));
+    assert_eq!(for_the_others.len(), 3);
+}
+
+/// A project carrying a deeply nested SVG used to take the whole process down
+/// when exported to PDF: `usvg` overflowed the stack of the thread the export
+/// compiles on, which no crash guard can catch. Exported here from a thread with
+/// a long operation's stack, in the debug build, where the margin is thinnest.
+#[cfg(feature = "pdf")]
+#[test]
+fn a_pdf_export_of_a_deeply_nested_svg_shows_its_description_instead() {
+    let (media, g) = book_with_three_kinds_of_picture(&nested_svg(20_000));
+    let out = tempfile::tempdir().unwrap();
+    let path = out.path().join("book.pdf");
+    let written = path.clone();
+    let outcome = std::thread::Builder::new()
+        .stack_size(2 * 1024 * 1024)
+        .spawn(move || {
+            let p = preset("neutral");
+            render_to_file(
+                &req_with_media(&g, &[100, 101], &p, ExportFormat::Pdf, media.path()),
+                &written,
+                &|_| {},
+                &AtomicBool::new(false),
+            )
+            .map(|_| ())
+            .map_err(|e| format!("{e:#}"))
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+    assert_eq!(outcome, Ok(()));
+    let bytes = std::fs::read(&path).unwrap();
+    assert!(bytes.starts_with(b"%PDF-"), "valid PDF magic bytes");
+}
+
 #[test]
 fn epub_export_writes_a_non_empty_file() {
     let g = flat_book();

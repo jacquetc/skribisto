@@ -41,6 +41,18 @@ pub enum ImportDiagnostic {
     // ── file-level: about a whole source ────────────────────────────────────
     /// The file could not be read at all.
     FileUnreadable { path: String, reason: String },
+    /// The file was refused unread: one of its XML parts nests its elements past
+    /// `skrib_format::MAX_XML_DEPTH`. A document nested that deeply crashes the
+    /// XML parser rather than being read, and no real one comes close (see
+    /// `skrib_format::xml_depth`), so it is named rather than attempted.
+    ///
+    /// `part` is the member refused (`content.xml`, `word/document.xml`), kept for
+    /// the record; the writer's sentence does not need it.
+    NestedTooDeep {
+        path: String,
+        part: String,
+        limit: usize,
+    },
     /// The file is not valid UTF-8 and had no byte-order mark to explain itself.
     /// It was decoded anyway, lossily — `replacements` counts the characters that
     /// did not survive, so the writer can judge whether to re-save and retry.
@@ -178,7 +190,7 @@ impl ImportDiagnostic {
         use DiagnosticSeverity::*;
         use ImportDiagnostic::*;
         match self {
-            FileUnreadable { .. } | UnsupportedFormat { .. } => Error,
+            FileUnreadable { .. } | NestedTooDeep { .. } | UnsupportedFormat { .. } => Error,
             EmptyFile { .. } | NoHeadings { .. } | DecodedFromBom { .. } => Info,
             LossyDecode { .. }
             | FrontMatterNotFlat { .. }
@@ -210,6 +222,7 @@ impl ImportDiagnostic {
         use ImportDiagnostic::*;
         match self {
             FileUnreadable { path, .. }
+            | NestedTooDeep { path, .. }
             | LossyDecode { path, .. }
             | DecodedFromBom { path, .. }
             | EmptyFile { path }
@@ -243,6 +256,7 @@ impl ImportDiagnostic {
         use ImportDiagnostic::*;
         match self {
             FileUnreadable { .. } => "file-unreadable",
+            NestedTooDeep { .. } => "nested-too-deep",
             LossyDecode { .. } => "lossy-decode",
             DecodedFromBom { .. } => "decoded-from-bom",
             EmptyFile { .. } => "empty-file",
@@ -278,6 +292,12 @@ impl fmt::Display for ImportDiagnostic {
         use ImportDiagnostic::*;
         match self {
             FileUnreadable { path, reason } => write!(f, "{path}: unreadable ({reason})"),
+            NestedTooDeep { path, part, limit } => {
+                write!(
+                    f,
+                    "{path}: {part} nests deeper than {limit} levels, refused"
+                )
+            }
             LossyDecode { path, replacements } => {
                 write!(f, "{path}: {replacements} character(s) did not decode")
             }

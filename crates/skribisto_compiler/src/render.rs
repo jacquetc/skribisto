@@ -74,11 +74,26 @@ fn collect_images(
     media_dir: &std::path::Path,
     only: Option<&[String]>,
 ) -> text_document::ExportImages {
+    collect_images_where(gathered, media_dir, only, |_| true)
+}
+
+/// [`collect_images`], keeping only the assets whose media type `keep` accepts.
+/// One the filter turns away degrades to its description, exactly as a missing
+/// file does.
+fn collect_images_where(
+    gathered: &Gathered,
+    media_dir: &std::path::Path,
+    only: Option<&[String]>,
+    keep: impl Fn(&str) -> bool,
+) -> text_document::ExportImages {
     let mut out = text_document::ExportImages::new();
     if media_dir.as_os_str().is_empty() {
         return out;
     }
     for asset in &gathered.assets {
+        if !keep(&asset.mime_type) {
+            continue;
+        }
         let ext = skrib_format::media::extension_for(&asset.mime_type);
         let relpath = skrib_format::media::asset_relpath(&asset.content_hash, &ext);
         if only.is_some_and(|want| !want.contains(&relpath)) {

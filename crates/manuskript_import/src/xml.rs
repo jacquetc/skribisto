@@ -8,16 +8,34 @@
 //! third-party-written file may carry one, so the parser is told to allow it —
 //! rejecting a project over a declaration nothing here reads would be a refusal
 //! with no benefit.
+//!
+//! Every parse goes through `skrib_format::xml_depth`, which refuses a member nested
+//! past `MAX_XML_DEPTH` before `roxmltree` can recurse into it and runs the parse on
+//! a stack deep enough for anything under that. The whole project is checked the
+//! same way before any member is read (see [`crate::refuse_deep_xml`]), so the
+//! refusal a reader could meet here is the second line of that defence, not the
+//! first.
 
 use anyhow::{Result, anyhow};
+use skrib_format::xml_depth::{self, Dtd, XmlError};
 
-/// Parse a Manuskript XML member.
-pub fn parse(text: &str) -> Result<roxmltree::Document<'_>> {
-    let opts = roxmltree::ParsingOptions {
-        allow_dtd: true,
-        ..Default::default()
-    };
-    roxmltree::Document::parse_with_options(text, opts).map_err(|e| anyhow!("parsing XML: {e}"))
+/// Parse a Manuskript XML member. `member` names it in a refusal.
+pub fn parse<'a>(member: &str, text: &'a str) -> Result<roxmltree::Document<'a>> {
+    xml_depth::parse(member, text, Dtd::Allow).map_err(|e| match e {
+        XmlError::Malformed(e) => anyhow!("parsing XML: {e}"),
+        other => anyhow::Error::new(other),
+    })
+}
+
+/// Whether a recursive walk may read the children of an element `depth` levels
+/// deep, the root counting as one.
+///
+/// Every tree these readers walk came out of [`parse`], which refused any
+/// document whose tree would nest past `MAX_XML_DEPTH`, levels an entity leaves
+/// open included, so this never stops a walk over a document read here. It keeps each recursion bounded by the same ceiling on its own terms,
+/// whatever handed it the node.
+pub fn may_descend(depth: usize) -> bool {
+    depth < skrib_format::MAX_XML_DEPTH
 }
 
 /// An element's attribute as an owned string, empty when absent.

@@ -215,7 +215,7 @@ fn read_revisions(
     let Some(text) = src.text(REVISIONS_MEMBER) else {
         return Vec::new();
     };
-    match outline_xml::parse(&text) {
+    match outline_xml::parse(REVISIONS_MEMBER, &text) {
         Ok(parsed) => {
             notices.extend(parsed.notices);
             parsed.revisions

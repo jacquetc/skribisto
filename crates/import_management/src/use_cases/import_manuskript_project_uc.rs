@@ -103,10 +103,8 @@ impl LongOperation for ImportManuskriptProjectUseCase {
         // `load_work`. `cancel_flag` is polled per row and at every phase
         // boundary; on cancel nothing is left on disk.
         //
-        // Flatten the error to its full `{:#}` chain: the `LongOperationManager`
-        // records only `e.to_string()` in the `Failed` event, which for a plain
-        // `anyhow` error is the outermost context alone — losing the root cause
-        // the UI's error toast wants to show.
+        // Spelled for the `Failed` event by `failure::for_long_operation`: the
+        // whole `{:#}` chain, or the typed depth refusal the UI words itself.
         let summary = manuskript::import_with_progress(
             &self.dto.source_path,
             &self.dto.output_path,
@@ -115,7 +113,7 @@ impl LongOperation for ImportManuskriptProjectUseCase {
             &report,
             &cancel_flag,
         )
-        .map_err(|e| anyhow::anyhow!("{e:#}"))?;
+        .map_err(crate::failure::for_long_operation)?;
 
         // Notify listeners (parity with every other use case).
         let uow = self.uow_factory.create();

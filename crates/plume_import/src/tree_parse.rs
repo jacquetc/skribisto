@@ -23,7 +23,7 @@ use super::version::{check_root, parse_xml, version_newer_than};
 const TREE_TERMINAL: f64 = 0.5;
 
 pub fn parse(xml: &str) -> Result<PlumeTree> {
-    let doc = parse_xml(xml)?;
+    let doc = parse_xml("tree", xml)?;
     let root = doc.root_element();
 
     check_root(&root, &["plume-tree", "plume"], "tree")?;
@@ -39,25 +39,33 @@ pub fn parse(xml: &str) -> Result<PlumeTree> {
             .attribute("projectName")
             .unwrap_or_default()
             .to_string(),
-        roots: parse_children(root, false),
+        roots: parse_children(root, 1, false),
     })
 }
 
 /// Parse the element children of `node`. A `<trash>` child contributes its own
 /// children as trashed subtrees; every other recognised child is a node.
-fn parse_children(node: roxmltree::Node, parent_trashed: bool) -> Vec<PlumeNode> {
+///
+/// `depth` is `node`'s own nesting, the root counting as one. The parse refused
+/// any tree that would nest past `MAX_XML_DEPTH`, levels an entity leaves open
+/// included, so the guard never stops a walk over a tree read here; it keeps this recursion bounded by the same ceiling on its own
+/// terms, whatever handed it the node.
+fn parse_children(node: roxmltree::Node, depth: usize, parent_trashed: bool) -> Vec<PlumeNode> {
     let mut out = Vec::new();
+    if depth >= skrib_format::MAX_XML_DEPTH {
+        return out;
+    }
     for child in node.children().filter(roxmltree::Node::is_element) {
         if child.tag_name().name() == "trash" {
-            out.extend(parse_children(child, true));
-        } else if let Some(n) = parse_node(child, parent_trashed) {
+            out.extend(parse_children(child, depth + 1, true));
+        } else if let Some(n) = parse_node(child, depth + 1, parent_trashed) {
             out.push(n);
         }
     }
     out
 }
 
-fn parse_node(node: roxmltree::Node, parent_trashed: bool) -> Option<PlumeNode> {
+fn parse_node(node: roxmltree::Node, depth: usize, parent_trashed: bool) -> Option<PlumeNode> {
     let kind = kind_of(node.tag_name().name())?;
     let is_trashed = parent_trashed || node.attribute("isTrashed") == Some("yes");
 
@@ -79,7 +87,7 @@ fn parse_node(node: roxmltree::Node, parent_trashed: bool) -> Option<PlumeNode> 
         badge: node.attribute("badge").unwrap_or_default().to_string(),
         status: parse_status(node.attribute("status")),
         attend,
-        children: parse_children(node, is_trashed),
+        children: parse_children(node, depth, is_trashed),
     })
 }
 

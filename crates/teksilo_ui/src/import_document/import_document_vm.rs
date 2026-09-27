@@ -148,6 +148,12 @@ impl Diagnostic {
                 path = path,
                 detail = detail
             )),
+            // `detail` is the refused part (`content.xml`); the sentence names the
+            // file and the ceiling, which is what a writer can act on.
+            "nested-too-deep" => tr!(import_diagnostic_nested_too_deep(
+                path = path,
+                limit = count
+            )),
             "lossy-decode" => tr!(import_diagnostic_lossy_decode(path = path, count = count)),
             "decoded-from-bom" => tr!(import_diagnostic_decoded_from_bom(
                 path = path,

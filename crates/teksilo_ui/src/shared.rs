@@ -42,6 +42,10 @@ pub mod images;
 // The destination folder and file name of the two project importers' forms,
 // and their refusal to write over a project that is open.
 pub(crate) mod import_destination;
+/// What the Plume and Manuskript import toasts say when the import fails:
+/// `pub(crate)` for the same reason as `long_op`, its two callers living in
+/// their own feature directories.
+pub(crate) mod import_failure;
 // The two project importers' warnings notice, and its replay from the
 // notification log.
 pub(crate) mod import_warnings;

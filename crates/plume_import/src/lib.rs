@@ -89,43 +89,21 @@ pub fn import_with_progress(
     let src = PlumeSource::open(source_path)?;
     bail_if_cancelled(cancel)?;
 
-    report(12.0, "Reading the outline…");
-    let tree = tree_parse::parse(&src.tree_xml).context("reading the Plume outline (tree)")?;
-    let attendance = match &src.attendance_xml {
-        Some(xml) => {
-            attend_parse::parse(xml).context("reading the Plume story bible (attendance)")?
-        }
-        None => PlumeAttendance {
-            spinbox_label: String::new(),
-            groups: Vec::new(),
-        },
-    };
-    // `info` is non-critical metadata (title + dates); a malformed one just falls
-    // back to the tree's project name.
-    let info = match &src.info_xml {
-        Some(xml) => info_parse::parse(xml).unwrap_or_default(),
-        None => PlumeInfo::default(),
-    };
-    let dict_words = src
-        .dict
-        .as_deref()
-        .map(dict_parse::parse)
-        .unwrap_or_default();
-    bail_if_cancelled(cancel)?;
-
-    report(20.0, "Converting chapters and scenes…");
-    let mapped = map::build_bundle(
-        &tree,
-        &attendance,
-        &info,
-        &dict_words,
-        &src,
-        manuscript_binder_name,
-        story_bible_binder_name,
-        status_names,
-        report,
-        cancel,
-    );
+    // Everything from the first parse to the finished bundle runs on the parser
+    // stack. The mapper recurses once per level of the outline, about 6.7 KB of
+    // stack a level in a debug build, so a tree nested to `MAX_XML_DEPTH` needs
+    // most of a long operation's 2 MiB on its own; progress is relayed back here.
+    let mapped = skrib_format::xml_depth::on_parser_stack_reporting(report, |report| {
+        read_and_map(
+            &src,
+            manuscript_binder_name,
+            story_bible_binder_name,
+            status_names,
+            report,
+            cancel,
+        )
+    })
+    .map_err(anyhow::Error::new)??;
     bail_if_cancelled(cancel)?;
 
     // Write to a sibling temp file, then atomically rename into place — so an
@@ -149,6 +127,65 @@ pub fn import_with_progress(
         skipped_trashed: mapped.skipped_trashed,
         warnings: mapped.warnings,
     })
+}
+
+/// Parse every member and map the project to a bundle: the part of an import that
+/// is as deep as the project it reads, run on the parser stack by
+/// [`import_with_progress`].
+fn read_and_map(
+    src: &PlumeSource,
+    manuscript_binder_name: &str,
+    story_bible_binder_name: &str,
+    status_names: &[String],
+    report: &dyn Fn(f32, &str),
+    cancel: &AtomicBool,
+) -> Result<map::Mapped> {
+    report(12.0, "Reading the outline…");
+    let tree = tree_parse::parse(&src.tree_xml).context("reading the Plume outline (tree)")?;
+    let attendance = match &src.attendance_xml {
+        Some(xml) => {
+            attend_parse::parse(xml).context("reading the Plume story bible (attendance)")?
+        }
+        None => PlumeAttendance {
+            spinbox_label: String::new(),
+            groups: Vec::new(),
+        },
+    };
+    // `info` is non-critical metadata (title + dates); a malformed one just falls
+    // back to the tree's project name. One nested past the XML ceiling is not
+    // malformed metadata but a file built to crash its reader, and refuses the
+    // project exactly as it would in `tree` or `attendance`: no Plume version writes
+    // anything within two hundred levels of it.
+    let info = match &src.info_xml {
+        Some(xml) => match info_parse::parse(xml) {
+            Ok(info) => info,
+            Err(e) if skrib_format::xml_depth::too_deep(&e).is_some() => {
+                return Err(e.context("reading the Plume project information (info)"));
+            }
+            Err(_) => PlumeInfo::default(),
+        },
+        None => PlumeInfo::default(),
+    };
+    let dict_words = src
+        .dict
+        .as_deref()
+        .map(dict_parse::parse)
+        .unwrap_or_default();
+    bail_if_cancelled(cancel)?;
+
+    report(20.0, "Converting chapters and scenes…");
+    Ok(map::build_bundle(
+        &tree,
+        &attendance,
+        &info,
+        &dict_words,
+        src,
+        manuscript_binder_name,
+        story_bible_binder_name,
+        status_names,
+        report,
+        cancel,
+    ))
 }
 
 /// Abort the import if the cancel token has been set, before any file is written.

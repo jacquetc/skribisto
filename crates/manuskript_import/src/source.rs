@@ -187,6 +187,7 @@ impl ManuskriptSource {
         read_dir_into(
             folder,
             folder,
+            0,
             &mut files,
             &mut notices,
             &mut newest,
@@ -424,9 +425,16 @@ fn normalise_member(raw: &str) -> Option<String> {
 }
 
 /// Walk a project folder into the member map, keyed exactly as the zip path keys.
+///
+/// `depth` is how many folders `dir` sits below `root`. The walk recurses once per
+/// folder, and a folder can be nested as deep as a path can be long, or without
+/// end when a link inside it points back up; so it stops at the ceiling every
+/// other tree an importer reads is held to, with the typed refusal the writer is
+/// shown, rather than wherever the stack gives out.
 fn read_dir_into(
     root: &Path,
     dir: &Path,
+    depth: usize,
     files: &mut BTreeMap<String, Vec<u8>>,
     notices: &mut Vec<String>,
     newest: &mut Option<DateTime<Utc>>,
@@ -443,7 +451,14 @@ fn read_dir_into(
             continue;
         }
         if path.is_dir() {
-            read_dir_into(root, &path, files, notices, newest, total)?;
+            if depth + 1 > skrib_format::MAX_XML_DEPTH {
+                let folder = path.strip_prefix(root).unwrap_or(&path);
+                return Err(anyhow::Error::new(skrib_format::FoldersTooDeep {
+                    part: folder.to_string_lossy().replace('\\', "/"),
+                    depth: depth + 1,
+                }));
+            }
+            read_dir_into(root, &path, depth + 1, files, notices, newest, total)?;
             continue;
         }
         let Ok(relative) = path.strip_prefix(root) else {

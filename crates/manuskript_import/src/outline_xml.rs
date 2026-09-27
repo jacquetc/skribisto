@@ -36,13 +36,13 @@ pub struct OutlineXml {
     pub notices: Vec<String>,
 }
 
-/// Parse an `<outlineItem>` tree.
-pub fn parse(text: &str) -> Result<OutlineXml> {
-    let doc = xml::parse(text)?;
+/// Parse an `<outlineItem>` tree. `member` names the file in a refusal.
+pub fn parse(member: &str, text: &str) -> Result<OutlineXml> {
+    let doc = xml::parse(member, text)?;
     let root = doc.root_element();
     let mut revisions = Vec::new();
     let mut notices = Vec::new();
-    let items = children_of(root, &mut revisions, &mut notices);
+    let items = children_of(root, 1, &mut revisions, &mut notices);
     Ok(OutlineXml {
         items,
         revisions,
@@ -50,19 +50,26 @@ pub fn parse(text: &str) -> Result<OutlineXml> {
     })
 }
 
+/// `depth` is `node`'s own nesting, the root counting as one; see
+/// [`xml::may_descend`].
 fn children_of(
     node: roxmltree::Node,
+    depth: usize,
     revisions: &mut Vec<Revision>,
     notices: &mut Vec<String>,
 ) -> Vec<OutlineItem> {
+    if !xml::may_descend(depth) {
+        return Vec::new();
+    }
     node.children()
         .filter(|n| n.is_element() && n.tag_name().name() == "outlineItem")
-        .map(|n| item_from(n, revisions, notices))
+        .map(|n| item_from(n, depth + 1, revisions, notices))
         .collect()
 }
 
 fn item_from(
     node: roxmltree::Node,
+    depth: usize,
     revisions: &mut Vec<Revision>,
     notices: &mut Vec<String>,
 ) -> OutlineItem {
@@ -107,7 +114,7 @@ fn item_from(
             .filter(|n| *n > 0),
         custom_icon: attr(&node, "customIcon"),
         text: converted.djot,
-        children: children_of(node, revisions, notices),
+        children: children_of(node, depth, revisions, notices),
     }
 }
 
@@ -164,7 +171,7 @@ mod tests {
             <outlineItem title="Old" ID="1" type="html"
                          text="&lt;p&gt;A &lt;b&gt;strong&lt;/b&gt; word.&lt;/p&gt;"/>
         </outlineItem>"#;
-        let parsed = parse(xml).expect("parse");
+        let parsed = parse("outline.xml", xml).expect("parse");
         let body = &parsed.items[0].text;
         assert!(!body.trim().is_empty(), "the scene must not vanish");
         assert!(body.contains("strong"), "{body}");
@@ -180,7 +187,7 @@ mod tests {
               <revision timestamp="1" text="&lt;p&gt;&lt;b&gt;then&lt;/b&gt;&lt;/p&gt;"/>
             </outlineItem>
         </outlineItem>"#;
-        let parsed = parse(xml).expect("parse");
+        let parsed = parse("outline.xml", xml).expect("parse");
         assert_eq!(parsed.revisions.len(), 1);
         let text = &parsed.revisions[0].text;
         assert!(text.contains("then"), "{text}");
@@ -206,7 +213,7 @@ mod tests {
 
     #[test]
     fn the_synthetic_root_is_not_a_row_and_its_children_are() {
-        let parsed = parse(SAMPLE).expect("parse");
+        let parsed = parse("outline.xml", SAMPLE).expect("parse");
         assert_eq!(parsed.items.len(), 1);
         assert_eq!(parsed.items[0].title, "Jerusalem");
         assert!(parsed.items[0].is_folder());
@@ -215,7 +222,7 @@ mod tests {
 
     #[test]
     fn a_row_carries_its_prose_in_an_attribute_and_its_vocabulary_indices() {
-        let parsed = parse(SAMPLE).expect("parse");
+        let parsed = parse("outline.xml", SAMPLE).expect("parse");
         let scene = &parsed.items[0].children[0].children[0];
         assert_eq!(scene.title, "Introduction");
         assert_eq!(scene.kind, OutlineKind::Text);
@@ -227,7 +234,7 @@ mod tests {
 
     #[test]
     fn revisions_come_out_flat_and_named_by_their_row() {
-        let parsed = parse(SAMPLE).expect("parse");
+        let parsed = parse("outline.xml", SAMPLE).expect("parse");
         assert_eq!(parsed.revisions.len(), 2);
         assert!(parsed.revisions.iter().all(|r| r.item_id == "1"));
         assert_eq!(parsed.revisions[0].timestamp, 1_455_033_267);
@@ -241,7 +248,7 @@ mod tests {
         let xml = r#"<outlineItem title="Root" type="folder">
             <outlineItem title="Nameless" type="md"><revision timestamp="1" text="x"/></outlineItem>
         </outlineItem>"#;
-        let parsed = parse(xml).expect("parse");
+        let parsed = parse("outline.xml", xml).expect("parse");
         assert_eq!(parsed.items.len(), 1);
         assert!(parsed.items[0].id.is_none());
         assert!(parsed.revisions.is_empty());
@@ -255,7 +262,7 @@ mod tests {
               <revision timestamp="99" text="yes"/>
             </outlineItem>
         </outlineItem>"#;
-        let parsed = parse(xml).expect("parse");
+        let parsed = parse("outline.xml", xml).expect("parse");
         assert_eq!(parsed.revisions.len(), 1);
         assert_eq!(parsed.revisions[0].timestamp, 99);
     }
@@ -266,7 +273,7 @@ mod tests {
         let xml = r#"<outlineItem title="Root" type="folder">
             <outlineItem title="A" ID="1" type="txt" summarySentance="The old spelling."/>
         </outlineItem>"#;
-        let parsed = parse(xml).expect("parse");
+        let parsed = parse("outline.xml", xml).expect("parse");
         assert_eq!(parsed.items[0].summary_sentence, "The old spelling.");
         // A pre-0.3.0 type is not a folder, whatever it is called.
         assert_eq!(parsed.items[0].kind, OutlineKind::Text);

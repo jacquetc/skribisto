@@ -38,10 +38,12 @@ use frontend::AppContext;
 use frontend::commands::{import_management_commands, long_operation_commands};
 use frontend::common::event::{Event, LongOperationEvent, Origin};
 use frontend::import_management::ImportPlumeCreatorFileDto;
+use skrib_format::XmlTooDeep;
 
 use crate::intents::AppIntent;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
 use crate::shared::import_destination::{DestinationMessages, ImportDestination, refuse_if_open};
+use crate::shared::import_failure;
 use crate::shared::import_warnings::{LiveNotice, PLUME as WARNINGS};
 use crate::shared::long_op::{event_id, parse_payload, payload_id};
 
@@ -499,10 +501,10 @@ impl ImportPlumeViewModel {
     /// Replace/raise the error toast: reason in the body, full message behind
     /// **Details** (persistent — the user dismisses it).
     fn show_error(&self, ctx: &mut EventContext, message: &str) {
-        let details = message.to_string();
+        let (body, details) = import_failure::failure_text(message, nested_too_deep);
         ctx.show_toast(
             import_toast(Toast::error(tr!(import_plume_error_title())))
-                .body(lit!(message.to_string()))
+                .body(body)
                 .persistent()
                 .action(ToastAction::primary(
                     tr!(import_plume_error_details()),
@@ -538,11 +540,27 @@ impl DiskChecked for ImportPlumeViewModel {
     }
 }
 
+/// The error toast's sentence for a project refused because one of its parts
+/// nests its XML past the ceiling (see `shared::import_failure`).
+fn nested_too_deep(refused: &XmlTooDeep) -> LocalizedString {
+    tr!(import_plume_nested_too_deep(
+        part = refused.part.clone(),
+        limit = refused.limit() as i64
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*; // brings `FileDialogResult` in via the parent's prelude glob
     use std::path::PathBuf;
     use teksilo::widgets::ValidationState;
+
+    /// The refusal reaches the writer as a sentence in their language, naming the
+    /// part, in both shipped locales, with every argument filled in.
+    #[test]
+    fn a_nesting_refusal_is_worded_for_the_writer_in_both_locales() {
+        crate::shared::import_failure::assert_worded_in_both_locales("tree", nested_too_deep);
+    }
 
     #[test]
     fn output_stem_strips_plume_extensions() {

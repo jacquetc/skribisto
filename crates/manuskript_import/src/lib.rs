@@ -45,7 +45,48 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result, bail};
 use chrono::{DateTime, FixedOffset, Utc};
-use skrib_format::{SkribShape, write_bundle};
+use skrib_format::{FoldersTooDeep, SkribShape, XmlTooDeep, write_bundle};
+
+/// Refuse the project if any XML member nests past `skrib_format::MAX_XML_DEPTH`.
+///
+/// Every member either generation parses as XML is named `.xml` or `.opml`
+/// (`world.opml`, `plots.xml`, `revisions.xml`, format 0's `outline.xml` and its
+/// four `<model>` dumps), so checking every member so named covers them all
+/// without keeping a second list of them here.
+///
+/// **The whole project is refused, not just the member.** Everywhere else a member
+/// that cannot be read costs only what it held, and that stays true for a member
+/// that is merely malformed. Nesting past the ceiling is different in kind: no
+/// Manuskript version writes anything within two hundred levels of it, so such a
+/// file was not damaged by accident. The refusal names the member, so a writer
+/// can see which file to look at.
+pub fn refuse_deep_xml(src: &ManuskriptSource) -> Result<(), XmlTooDeep> {
+    for member in src.members() {
+        let name = member.to_ascii_lowercase();
+        if !(name.ends_with(".xml") || name.ends_with(".opml")) {
+            continue;
+        }
+        if let Some(bytes) = src.bytes(member) {
+            skrib_format::xml_depth::check(member, bytes)?;
+        }
+    }
+    Ok(())
+}
+
+/// Refuse the project if any member sits more than `skrib_format::MAX_XML_DEPTH`
+/// folders deep.
+///
+/// Format 1 keeps the outline as folders under `outline/`, one per level, and the
+/// outline reader, the mapper and the tree they build all recurse once per level
+/// of it: no XML parser stands in front of that tree to refuse it, and a zip
+/// member's name can be 64 KiB of `a/a/a/…`. A folder project was already held to
+/// the same ceiling as it was walked (see `source`); this holds a zip to it, and
+/// refuses the whole project for the reason [`refuse_deep_xml`] does.
+pub fn refuse_deep_folders(src: &ManuskriptSource) -> Result<(), FoldersTooDeep> {
+    src.members()
+        .into_iter()
+        .try_for_each(skrib_format::xml_depth::check_folders)
+}
 
 /// What the import produced, for the UI's summary.
 pub struct ImportSummary {
@@ -82,16 +123,29 @@ pub fn import_with_progress(
 
     report(2.0, "Opening the Manuskript project…");
     let src = ManuskriptSource::open(source_path)?;
+    refuse_deep_folders(&src)?;
+    refuse_deep_xml(&src)?;
     let container = src.container;
     let newest = src.newest_modified;
     bail_if_cancelled(cancel)?;
 
-    report(12.0, "Reading the outline…");
-    let project = read_project(&src);
-    bail_if_cancelled(cancel)?;
-
-    report(20.0, "Converting chapters and scenes…");
-    let mut mapped = map::build_bundle(&project, names, report, cancel);
+    // Reading and mapping run on the parser stack, progress relayed back here.
+    // Both recurse once per level of whatever tree they walk, and the two checks
+    // above have held every such tree to `MAX_XML_DEPTH`: an XML member by its
+    // elements, the format-1 outline by its folders. At that ceiling a format-0
+    // outline takes the two together to about 0.9 MB of stack in a debug build,
+    // close to half of a long operation's 2 MiB.
+    let mut mapped = skrib_format::xml_depth::on_parser_stack_reporting(report, |report| {
+        report(12.0, "Reading the outline…");
+        let project = read_project(&src);
+        if cancel.load(Ordering::Relaxed) {
+            return None;
+        }
+        report(20.0, "Converting chapters and scenes…");
+        Some(map::build_bundle(&project, names, report, cancel))
+    })
+    .map_err(anyhow::Error::new)?
+    .ok_or_else(|| anyhow::anyhow!("import cancelled"))?;
     bail_if_cancelled(cancel)?;
 
     // Which copy was read, and how recent it is. A project that has been through
