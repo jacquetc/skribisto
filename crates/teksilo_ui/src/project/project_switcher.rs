@@ -50,6 +50,12 @@ impl SwitcherSections {
     }
 }
 
+/// When a recent project was last opened, as its **Recent** row shows it: on the writer's
+/// clock, like every other moment the app shows. The recents list stores it in UTC.
+pub fn last_opened(dto: &RecentWorkDto) -> String {
+    crate::shared::stamps::iso_stamp(dto.last_opened_at)
+}
+
 /// Split the registry's live instances and the recents list into the popover's two sections.
 ///
 /// Pure over its inputs, so the dedup rule is testable without a registry, a filesystem or a
@@ -167,6 +173,21 @@ mod tests {
             title: "recent".into(),
             ..Default::default()
         }
+    }
+
+    /// **The defect.** A recent project's row printed its UTC stamp, so a
+    /// project opened at breakfast in Tokyo read as opened the evening before.
+    #[test]
+    fn a_recent_row_says_when_it_was_opened_on_the_writers_clock() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let dto = RecentWorkDto {
+            last_opened_at: chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+                .expect("a valid instant")
+                .with_timezone(&chrono::Utc),
+            ..recent("/a.skrib")
+        };
+        assert_eq!(last_opened(&dto), "2026-03-04 08:30");
     }
 
     #[test]

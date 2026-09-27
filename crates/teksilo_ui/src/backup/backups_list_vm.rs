@@ -270,10 +270,12 @@ fn scan(uid: &str, project_path: &str, dirs: &[String]) -> Vec<BackupRow> {
         }
     }
     candidates.sort_by_key(|c| std::cmp::Reverse(c.timestamp));
+    // Stored in UTC, like every backup's stamp; shown on the writer's clock.
+    let zone = crate::shared::stamps::Zone::writer();
     candidates
         .into_iter()
         .map(|c| BackupRow {
-            date: c.timestamp.format("%Y-%m-%d %H:%M").to_string(),
+            date: zone.iso_stamp(c.timestamp),
             size: human_size(&c.path),
             path: c.path.to_string_lossy().into_owned(),
         })
@@ -336,6 +338,57 @@ mod tests {
             &[d.path().to_string_lossy().into_owned()],
         );
         assert!(rows.is_empty());
+    }
+
+    /// **The defect.** The Backups list printed each backup's UTC stamp, so a
+    /// backup taken at breakfast in Tokyo was listed at 23:30 the evening before.
+    #[test]
+    fn a_backup_is_listed_at_the_writers_time() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let d = tempfile::tempdir().unwrap();
+        let taken = chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+            .expect("a valid instant")
+            .with_timezone(&chrono::Utc);
+        let work = common::entities::Work {
+            unique_id: "work-uid".into(),
+            ..Default::default()
+        };
+        let mut bundle = skrib_format::from_entities(
+            &work,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            Default::default(),
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            skrib_format::ShapeTag::Zip,
+        );
+        let project = d.path().join("novel.skrib").to_string_lossy().into_owned();
+        skrib_format::mark_as_backup(&mut bundle, project.clone(), taken);
+        let backup = d.path().join("novel-20260303-233000.skrib");
+        skrib_format::write_bundle(
+            &backup.to_string_lossy(),
+            skrib_format::SkribShape::ZipFile,
+            &bundle,
+        )
+        .expect("write the backup");
+
+        let rows = scan(
+            "work-uid",
+            &project,
+            &[d.path().to_string_lossy().into_owned()],
+        );
+        assert_eq!(rows.len(), 1, "the backup is found");
+        assert_eq!(rows[0].date, "2026-03-04 08:30");
     }
 
     #[test]

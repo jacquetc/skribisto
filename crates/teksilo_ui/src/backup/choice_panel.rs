@@ -92,8 +92,8 @@ impl std::fmt::Debug for BackupChoicePanel {
 impl Widget for BackupChoicePanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         // A subtitle line naming the backup (date, if the manifest carried one).
-        let subtitle = match &self.context.backup_created_at {
-            Some(dt) => tr!(backup_choice_subtitle_dated(date = dt.clone())),
+        let subtitle = match self.context.taken_label() {
+            Some(date) => tr!(backup_choice_subtitle_dated(date = date)),
             None => tr!(backup_choice_subtitle()),
         };
         let restore = self.restore.clone();
@@ -279,5 +279,74 @@ mod tests {
         clear_backup_mode(&backup_mode, &backup_context);
         assert!(!backup_mode.get());
         assert!(backup_context.get().is_none());
+    }
+}
+
+/// What the card says, read back from a rendered card rather than from the
+/// helper it calls, so a card that stops calling it fails here.
+#[cfg(test)]
+mod rendered_tests {
+    use super::*;
+    use crate::shared::stamps::{Zone, override_writer_zone};
+    use frontend::AppContext;
+    use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
+
+    /// Every label and value the rendered card publishes, which is what a
+    /// screen reader hears and what the card prints.
+    fn spoken_text(context: BackupContext) -> Vec<String> {
+        let app_ctx = Rc::new(AppContext::new());
+        let restore = BackupRestoreViewModel::new(
+            app_ctx.clone(),
+            crate::app_ids::AppIds::new(),
+            crate::singles::SingleWork::new(app_ctx),
+            Signal::new(true),
+            Signal::new(None),
+        );
+        let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+        tree.add_boxed(Box::new(BackupChoicePanel::new(
+            restore,
+            context,
+            Signal::new(true),
+            Signal::new(None),
+        )));
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+        let _ = tree.render();
+        tree.sync_accessibility()
+            .nodes
+            .iter()
+            .flat_map(|(_, n)| [n.label(), n.value()])
+            .flatten()
+            .map(str::to_string)
+            .collect()
+    }
+
+    /// **The defect.** The card printed the manifest's RFC 3339 text as it was
+    /// stored: UTC, with its offset, seconds and fraction, so a backup taken at
+    /// breakfast in Tokyo said it was taken at 23:30 the evening before.
+    #[test]
+    fn the_card_says_when_the_backup_was_taken_on_the_writers_clock() {
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        crate::test_support::with_real_messages(|| {
+            let spoken = spoken_text(BackupContext {
+                path: "/b/novel-20260303-233041.skrib".into(),
+                backup_of: Some("/b/novel.skrib".into()),
+                backup_created_at: Some("2026-03-03T23:30:41.482913+00:00".into()),
+                authoritative: true,
+            });
+            let expected = tr!(backup_choice_subtitle_dated(
+                date = "2026-03-04 08:30".to_string()
+            ))
+            .resolve_now();
+            assert_eq!(expected, "Backup taken 2026-03-04 08:30.");
+            assert!(
+                spoken.contains(&expected),
+                "the card must read {expected:?}, and said: {spoken:?}",
+            );
+            assert!(
+                !spoken.iter().any(|t| t.contains("23:30")),
+                "nothing on the card is on UTC's clock: {spoken:?}",
+            );
+        });
     }
 }

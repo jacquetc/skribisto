@@ -15,15 +15,13 @@ use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use jiff::civil::Date;
 use teksilo::widgets::DateRange;
 
-/// Today, as the version surfaces date their rows.
+/// Today in UTC.
 ///
-/// **UTC**, deliberately, because that is the clock those surfaces already show:
-/// a `Change.at` is a `DateTime<Utc>` and is formatted without conversion, so a
-/// backup made at 23:00 in Berlin is listed under the previous day. Reading
-/// "today" off the local clock here would filter by one calendar and label by
-/// another, and a writer would watch a row they can see fall out of range.
-/// (Whether the surfaces should show local time at all is a real question, and a
-/// larger one than this preset.)
+/// For a cadence gate that must not move with the time zone (the update check:
+/// a gate on the local calendar would let a traveller check twice in one day),
+/// never for a surface. Everything the writer reads is dated on their own clock,
+/// and a date filter over it has to be too, or it filters by one calendar while
+/// the rows are labelled by another: that is `shared::stamps::Zone::today`.
 pub fn today_utc() -> Option<Date> {
     to_jiff_date(Utc::now())
 }
@@ -80,8 +78,9 @@ pub fn jiff_to_naive(d: Date) -> NaiveDate {
 /// `DateRangeEdit` carries no open-ended range, so a preset like this is the
 /// only way to express "recently" through it: the caller computes both ends and
 /// sets them. `today` is a parameter rather than read from the clock here so the
-/// arithmetic is testable; callers pass the same UTC day the version surfaces
-/// date their rows by.
+/// arithmetic is testable; callers pass the writer's today
+/// (`shared::stamps::Zone::today`), the calendar the version surfaces label
+/// their rows on.
 ///
 /// Saturates rather than wraps at the start of the calendar, which only matters
 /// to a corrupt timestamp but must not panic.

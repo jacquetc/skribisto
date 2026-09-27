@@ -2,43 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 use super::*;
+use crate::test_support::with_real_messages;
 use document_ingest::plan::PlannedRow;
-
-/// Run `f` with the **real shipped** `en-US` messages installed.
-///
-/// Not `I18nConfig::test_only` with a hand-copied list of patterns, which is
-/// the other precedent in this crate (`view_models::open_failure`): that
-/// proves a copy agrees with itself, and the whole point here is to catch a
-/// diagnostic whose key never reached `main.ftl`.
-///
-/// It also has to exist at all: with no manager installed, a message
-/// carrying a `{ $count -> … }` plural selector resolves to its own id —
-/// which would have made this test pass for the wrong reason on every
-/// plural diagnostic.
-fn with_real_messages(f: impl FnOnce()) {
-    use teksilo::i18n::config::I18nConfig;
-    use teksilo::i18n::manager::I18nManager;
-    use teksilo::i18n::thread_local::{clear, install};
-
-    clear();
-    let cfg = I18nConfig::new()
-        .source_locale("en-US".parse().unwrap())
-        .supported_locales(["en-US".parse().unwrap()])
-        .compile_in(&[(
-            "en-US",
-            &[
-                include_str!("../../../locales/en-US/main.ftl"),
-                include_str!("../../../locales/en-US/tooltips.ftl"),
-                include_str!("../../../locales/en-US/tags.ftl"),
-                include_str!("../../../locales/en-US/templates.ftl"),
-            ],
-        )])
-        .auto_detect_os_locale(false)
-        .fallback_locale("en-US".parse().unwrap());
-    install(I18nManager::from_config(&cfg));
-    f();
-    clear();
-}
 
 /// A container row: a real one carries no prose of its own.
 ///

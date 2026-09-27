@@ -91,15 +91,7 @@ pub fn restore_version(
         return refuse_backup(ctx, blocked);
     }
 
-    let when = req.taken_at.format("%Y-%m-%d %H:%M").to_string();
-    let body = if comments_at_risk > 0 {
-        tr!(versions_restore_confirm_with_comments(
-            date = when.clone(),
-            count = comments_at_risk as i64
-        ))
-    } else {
-        tr!(versions_restore_confirm_text(date = when.clone()))
-    };
+    let wording = RestoreWording::new(req.taken_at, comments_at_risk);
 
     let (docs, scheduler, editors, stack_id) = (
         docs.clone(),
@@ -108,8 +100,9 @@ pub fn restore_version(
         stack_id.clone(),
     );
     let app_ctx = app_ctx.clone();
-    MessageBox::warning(tr!(versions_restore_confirm_title(date = when.clone())))
-        .text(body)
+    let restored = wording.restored;
+    MessageBox::warning(wording.title)
+        .text(wording.body)
         .informative_text(tr!(versions_restore_confirm_undo_note()))
         .buttons(MessageBoxButtons::Custom(vec![
             StandardButton::Ok.into(),
@@ -127,7 +120,7 @@ pub fn restore_version(
                 stack_id.clone(),
                 app_ctx.clone(),
             );
-            let (target, past, when) = (target.clone(), req.past.clone(), when.clone());
+            let (target, past, restored) = (target.clone(), req.past.clone(), restored.clone());
             let item_id = req.item_id;
             // The destructive edit fires from the safety copy's success handler
             // and from nowhere else. `backup_now` returns early on three
@@ -159,7 +152,7 @@ pub fn restore_version(
                     editors.request_save();
                     let app_ctx = app_ctx.clone();
                     c.show_toast(
-                        Toast::success(tr!(versions_restored_toast(date = when.clone())))
+                        Toast::success(restored.clone())
                             .scoped_id(RESTORE_TOAST_ID, 0)
                             .auto_dismiss_after(UNDO_GRACE)
                             .action(crate::shared::undo_toast::undo_action(
@@ -174,6 +167,37 @@ pub fn restore_version(
             );
         })
         .present(ctx);
+}
+
+/// Everything a restore says about the version it puts back, each naming the
+/// moment that version was recorded on the writer's own clock.
+///
+/// Worded in one place, before the question is asked, so the dialog and the
+/// snackbar after it cannot date one version two ways.
+struct RestoreWording {
+    title: LocalizedString,
+    body: LocalizedString,
+    /// The snackbar once the text is back.
+    restored: LocalizedString,
+}
+
+impl RestoreWording {
+    fn new(taken_at: chrono::DateTime<chrono::Utc>, comments_at_risk: usize) -> Self {
+        let when = crate::shared::stamps::iso_stamp(taken_at);
+        let body = if comments_at_risk > 0 {
+            tr!(versions_restore_confirm_with_comments(
+                date = when.clone(),
+                count = comments_at_risk as i64
+            ))
+        } else {
+            tr!(versions_restore_confirm_text(date = when.clone()))
+        };
+        Self {
+            title: tr!(versions_restore_confirm_title(date = when.clone())),
+            body,
+            restored: tr!(versions_restored_toast(date = when)),
+        }
+    }
 }
 
 /// Say why, in the writer's terms. Every refusal is named — a restore that
@@ -208,4 +232,48 @@ fn refuse_backup(ctx: &mut EventContext, blocked: SafetyBlocker) {
             .scoped_id(RESTORE_TOAST_ID, 0)
             .auto_dismiss_after(std::time::Duration::from_secs(8)),
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shared::stamps::{Zone, override_writer_zone};
+
+    /// **The defect.** The confirmation and the snackbar dated the version on
+    /// UTC's clock, so a writer in Tokyo was asked to put back "the version of
+    /// 23:30" the evening before a morning save.
+    #[test]
+    fn every_sentence_dates_the_version_on_the_writers_clock() {
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let taken_at = chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+            .expect("a valid instant")
+            .with_timezone(&chrono::Utc);
+        let date = || "2026-03-04 08:30".to_string();
+
+        let plain = RestoreWording::new(taken_at, 0);
+        assert_eq!(
+            plain.title.resolve_now(),
+            tr!(versions_restore_confirm_title(date = date())).resolve_now(),
+        );
+        assert_eq!(
+            plain.body.resolve_now(),
+            tr!(versions_restore_confirm_text(date = date())).resolve_now(),
+        );
+        assert_eq!(
+            plain.restored.resolve_now(),
+            tr!(versions_restored_toast(date = date())).resolve_now(),
+        );
+
+        // A plural message resolves to its own id with no bundle installed,
+        // which would make this comparison pass whatever the date.
+        crate::test_support::with_real_messages(|| {
+            let with_comments = RestoreWording::new(taken_at, 2);
+            assert_eq!(
+                with_comments.body.resolve_now(),
+                "What you have now will be replaced by the text this item had on \
+                 2026-03-04 08:30. 2 comments are anchored in the current text and may be \
+                 left orphaned.",
+            );
+        });
+    }
 }

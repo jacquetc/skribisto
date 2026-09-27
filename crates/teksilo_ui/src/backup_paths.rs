@@ -176,7 +176,8 @@ pub struct RootUsage {
     /// Bundles found — a zip `.skrib` file or an exploded-folder bundle each count once.
     pub count: usize,
     pub bytes: u64,
-    /// The oldest bundle's date, as `YYYY-MM-DD`, or empty when nothing is kept.
+    /// The oldest bundle's date, as `YYYY-MM-DD` on the writer's calendar, or
+    /// empty when nothing is kept.
     ///
     /// Here for reassurance rather than for arithmetic. The strongest finding in
     /// the research behind this feature is that version history gets built and
@@ -202,6 +203,9 @@ pub fn scan_root_usage(root: &std::path::Path) -> RootUsage {
     let Ok(entries) = std::fs::read_dir(root) else {
         return usage;
     };
+    // Compared as instants and formatted once: the oldest *moment* is the
+    // oldest backup, and only its day is what the writer reads.
+    let mut oldest: Option<chrono::DateTime<chrono::Utc>> = None;
     for entry in entries.flatten() {
         let path = entry.path();
         let is_zip = path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("skrib");
@@ -213,17 +217,23 @@ pub fn scan_root_usage(root: &std::path::Path) -> RootUsage {
         }
         usage.count += 1;
         usage.bytes += byte_size(&path);
-        if let Some(day) = bundle_day(&path)
-            && (usage.oldest.is_empty() || day < usage.oldest)
+        if let Some(at) = bundle_time(&path)
+            && oldest.is_none_or(|o| at < o)
         {
-            usage.oldest = day;
+            oldest = Some(at);
         }
     }
+    // The stamp in a backup's name is UTC, like every stored moment. A backup
+    // written at 23:30 UTC was taken the next morning in Tokyo, and that is the
+    // day the writer remembers.
+    usage.oldest = oldest
+        .map(crate::shared::stamps::iso_day)
+        .unwrap_or_default();
     usage
 }
 
-/// One bundle's date as `YYYY-MM-DD`, from its `-YYYYMMDD-HHMMSS` stamp when it
-/// carries one and from its modification time otherwise.
+/// When one bundle was taken: its `-YYYYMMDD-HHMMSS` stamp when it carries one,
+/// and its modification time otherwise.
 ///
 /// The name is read by `retention::parse_stamp_from_filename` rather than by a
 /// second parser here — the same fallback order `retention::candidate_timestamp`
@@ -231,12 +241,11 @@ pub fn scan_root_usage(root: &std::path::Path) -> RootUsage {
 /// which backup is the oldest. A looser local reading (any eight digits, without
 /// checking that a six-digit time follows) dated `foo-12345678-1.skrib` from a
 /// segment that was never a timestamp at all.
-fn bundle_day(path: &std::path::Path) -> Option<String> {
-    let when = skrib_format::retention::parse_stamp_from_filename(path).or_else(|| {
+fn bundle_time(path: &std::path::Path) -> Option<chrono::DateTime<chrono::Utc>> {
+    skrib_format::retention::parse_stamp_from_filename(path).or_else(|| {
         let modified = std::fs::metadata(path).ok()?.modified().ok()?;
         Some(chrono::DateTime::<chrono::Utc>::from(modified))
-    })?;
-    Some(when.format("%Y-%m-%d").to_string())
+    })
 }
 
 /// Recursive size of a file or directory; unreadable entries contribute nothing.
@@ -327,22 +336,43 @@ mod tests {
         let dir = tempfile::tempdir().expect("tmp");
         let real = dir.path().join("Novel-20260314-093000.skrib");
         std::fs::write(&real, b"x").expect("write");
-        assert_eq!(bundle_day(&real).as_deref(), Some("2026-03-14"));
+        assert_eq!(
+            bundle_time(&real),
+            chrono::DateTime::parse_from_rfc3339("2026-03-14T09:30:00Z")
+                .ok()
+                .map(|t| t.with_timezone(&chrono::Utc)),
+        );
 
         // Eight digits, but the segment after them is not a `HHMMSS` time — so
         // this is not a stamped backup name and must fall back to the mtime,
-        // never to "2026-08-07" invented out of `12345678`.
+        // never to a moment invented out of `12345678`.
         let bogus = dir.path().join("foo-12345678-1.skrib");
         std::fs::write(&bogus, b"x").expect("write");
-        let day = bundle_day(&bogus).expect("a date from the file's own mtime");
-        assert_ne!(
-            day, "1234-56-78",
-            "an eight-digit run is not a date just because it is eight digits",
+        let modified = std::fs::metadata(&bogus)
+            .and_then(|m| m.modified())
+            .expect("a freshly written file has a modification time");
+        assert_eq!(
+            bundle_time(&bogus),
+            Some(chrono::DateTime::<chrono::Utc>::from(modified)),
+            "an eight-digit run is not a date just because it is eight digits: \
+             the fallback is the modification time",
         );
-        assert!(
-            day.starts_with("20"),
-            "the fallback is the modification time, which is a real date: {day}",
-        );
+    }
+
+    /// The oldest backup's day is the writer's. Backup names are stamped in
+    /// UTC, so one taken at 23:30 UTC on the 3rd was taken on the morning of the
+    /// 4th in Tokyo, and the settings pane used to say the 3rd.
+    #[test]
+    fn the_oldest_backup_is_dated_on_the_writers_calendar() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let d = tempfile::tempdir().unwrap();
+        std::fs::write(d.path().join("novel-20260303-233000.skrib"), b"x").unwrap();
+        std::fs::write(d.path().join("novel-20260310-120000.skrib"), b"x").unwrap();
+
+        let usage = scan_root_usage(d.path());
+        assert_eq!(usage.count, 2);
+        assert_eq!(usage.oldest, "2026-03-04");
     }
 
     #[test]

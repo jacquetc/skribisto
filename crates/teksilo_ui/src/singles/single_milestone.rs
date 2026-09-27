@@ -170,7 +170,7 @@ mod imp {
             let book = self.inner.book_item_id.get()?;
             let work_id = self.inner.ids.work_id.get()?;
             let now = Utc::now();
-            let today = now.date_naive();
+            let today = crate::shared::stamps::today();
             let dto = CreatePaceDto {
                 created_at: now,
                 updated_at: now,

@@ -860,3 +860,130 @@ fn an_empty_timeline_is_a_normal_answer_for_a_project_with_no_past() {
     assert!(t.is_empty());
     assert!(t.unreadable.is_empty());
 }
+
+// ── one row, read once ─────────────────────────────────────────────────────────
+
+use super::versions::{OneRow, RowAt, VersionIndex, VersionRef};
+
+/// A source that counts how often it is listed and how often a version's index
+/// is read, and otherwise answers as the source it wraps.
+struct Counted<'a> {
+    inner: &'a dyn VersionSource,
+    lists: std::cell::Cell<usize>,
+    indexes: std::cell::Cell<usize>,
+}
+
+impl<'a> Counted<'a> {
+    fn new(inner: &'a dyn VersionSource) -> Self {
+        Self {
+            inner,
+            lists: std::cell::Cell::new(0),
+            indexes: std::cell::Cell::new(0),
+        }
+    }
+}
+
+impl VersionSource for Counted<'_> {
+    fn list(&self) -> anyhow::Result<Vec<VersionRef>> {
+        self.lists.set(self.lists.get() + 1);
+        self.inner.list()
+    }
+    fn index(&self, v: &VersionRef) -> anyhow::Result<VersionIndex> {
+        self.indexes.set(self.indexes.get() + 1);
+        self.inner.index(v)
+    }
+    fn prose(&self, v: &VersionRef, blob_path: &str) -> anyhow::Result<String> {
+        self.inner.prose(v, blob_path)
+    }
+    fn comments(
+        &self,
+        v: &VersionRef,
+        blob_path: &str,
+    ) -> anyhow::Result<Vec<super::bundle::CommentFile>> {
+        self.inner.comments(v, blob_path)
+    }
+}
+
+/// Asking for each of a row's roles in turn reads each backup once, and every
+/// role gets the timeline the backups themselves give, an unreadable backup
+/// included.
+#[test]
+fn one_row_reads_each_backup_once_and_answers_every_role_as_the_backups_do() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let mut b = bundle();
+    let (uid, fid) = a_scene(&b);
+    set_scene(&mut b, fid, "the first wording");
+    write_backup(&b, dir.path(), now() + chrono::Duration::days(1), 1);
+    set_scene(&mut b, fid, "the second wording");
+    write_backup(&b, dir.path(), now() + chrono::Duration::days(2), 2);
+    // A third that is listed but cannot be indexed: a folder backup whose
+    // `items.ron` is corrupt, as in
+    // `an_unreadable_backup_is_not_mistaken_for_proof_that_a_row_did_not_exist`.
+    let mut broken = b.clone();
+    super::mark_as_backup(
+        &mut broken,
+        "/original/Novel.skrib".to_string(),
+        now() + chrono::Duration::days(3),
+    );
+    let broken_root = dir.path().join("Novel-20260803-100000.skrib");
+    write_bundle(
+        &broken_root.to_string_lossy(),
+        SkribShape::ExplodedFolder,
+        &broken,
+    )
+    .expect("write the broken backup");
+    let items = std::fs::read_dir(broken_root.join("binders"))
+        .expect("binders")
+        .flatten()
+        .map(|e| e.path().join("items.ron"))
+        .find(|p| p.is_file())
+        .expect("an items.ron to corrupt");
+    std::fs::write(&items, b"this is not RON").expect("corrupt the backup");
+
+    let backups = backups_in(dir.path(), &b);
+    let counted = Counted::new(&backups);
+    let once = OneRow::new(&counted, uid);
+    let roles = [
+        ContentRole::SceneText,
+        ContentRole::NoteText,
+        ContentRole::ParatextText,
+        ContentRole::EpigraphText,
+        ContentRole::SynopsisText,
+    ];
+    let versions = backups.list().expect("list").len();
+    for role in &roles {
+        let direct = timeline_for(&[&backups], uid, role).expect("timeline");
+        let through = timeline_for(&[&once], uid, role).expect("timeline");
+        assert_eq!(through, direct, "{role:?} answers as the backups do");
+    }
+    let scene = timeline_for(&[&once], uid, &ContentRole::SceneText).expect("timeline");
+    assert_eq!(scene.changes.len(), 2, "precondition: the scene has a past");
+    assert_eq!(
+        scene.unreadable.len(),
+        1,
+        "precondition: the broken backup is listed, and reported as unreadable",
+    );
+    assert_eq!(counted.lists.get(), 1, "the destinations are listed once");
+    assert_eq!(
+        counted.indexes.get(),
+        versions,
+        "each of the {versions} backups is read once, not once per role",
+    );
+
+    // Another row is not this one's to answer from what was kept.
+    let other = uuid::Uuid::from_u128(7);
+    assert_eq!(
+        once.row_at(
+            &backups.list().expect("list")[1],
+            other,
+            &ContentRole::SceneText
+        )
+        .expect("a readable backup"),
+        RowAt::Absent,
+    );
+    assert_eq!(
+        counted.indexes.get(),
+        versions + 1,
+        "a question about another row goes to the backups themselves",
+    );
+}

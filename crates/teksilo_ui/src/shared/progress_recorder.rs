@@ -21,7 +21,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use chrono::Utc;
+use chrono::{DateTime, NaiveTime, Utc};
 
 use frontend::AppContext;
 use frontend::commands::progress_management_commands;
@@ -129,14 +129,9 @@ impl ProgressRecorder {
         else {
             return;
         };
-        let day = Utc::now()
-            .date_naive()
-            .and_hms_opt(0, 0, 0)
-            .expect("midnight is valid")
-            .and_utc();
         let dto = RecordProgressSnapshotDto {
             work_id,
-            day,
+            day: snapshot_day(),
             total_word_count: res.total_word_count,
             total_char_count: res.total_char_count,
             book_item_ids: res.book_item_ids,
@@ -166,5 +161,40 @@ impl ProgressRecorder {
         } else {
             None
         }
+    }
+}
+
+/// The key today's snapshot is filed under: today **on the writer's calendar**,
+/// as midnight UTC.
+///
+/// Midnight UTC is only the encoding every Pace date uses (see
+/// `crate::date_convert`): the stored instant names a calendar day, and which
+/// day that is has to be the writer's. Taken from UTC's calendar instead, a
+/// writer in Los Angeles had the words of their evening credited to the next
+/// day, a day the Pace planner had not reached yet.
+fn snapshot_day() -> DateTime<Utc> {
+    crate::shared::stamps::today()
+        .and_time(NaiveTime::MIN)
+        .and_utc()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shared::stamps::{Zone, override_writer_zone};
+
+    /// **The defect.** The snapshot was filed under UTC's today. In a zone
+    /// more than a day ahead, the writer's today is never UTC's, so this fails
+    /// whatever the hour it runs at.
+    #[test]
+    fn todays_snapshot_is_filed_under_the_writers_day() {
+        let _ahead = override_writer_zone(Zone::a_day_ahead());
+        let day = snapshot_day();
+        assert_eq!(day.time(), NaiveTime::MIN, "a day key is a midnight");
+        assert!(
+            day.date_naive() > Utc::now().date_naive(),
+            "the writer's today, {}, is already past UTC's",
+            day.date_naive(),
+        );
     }
 }

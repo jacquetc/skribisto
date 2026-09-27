@@ -7,6 +7,7 @@
 // already recorded is replaced (idempotent — a save and an app-open on the same day don't
 // pile up rows). Short synchronous command, `undoable: false` (telemetry, not authored
 // content — never enters the undo history).
+// A row filed up to two days after `day` is replaced as well: see `CALENDAR_REACH`.
 use crate::RecordProgressSnapshotDto;
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
@@ -31,6 +32,25 @@ pub trait RecordProgressSnapshotUnitOfWorkFactoryTrait: Send + Sync {
 pub trait RecordProgressSnapshotUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_record_progress_snapshot_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
+
+/// How far after today a row can be filed while still holding a total counted
+/// before today's: two days.
+///
+/// The day a snapshot is recorded under is the writer's today, and which day
+/// that is depends on their time zone. A row filed under a later day than
+/// today is therefore not from the future. It was counted earlier, on a
+/// calendar that had already turned: before the snapshot moved from UTC's day
+/// to the writer's (a Los Angeles evening was filed under the next day), or
+/// before the writer moved west. The total recorded now is newer than that
+/// row's, so it supersedes it. Kept, it stood as the newest day of the history:
+/// the Pace planner read its older total as the current one until the writer's
+/// calendar reached that day, and counted the same words again the day after.
+///
+/// Two days because that is as far apart as two time zones' calendars can be
+/// (UTC−12 to UTC+14 is 26 hours). A row filed further ahead than that was not
+/// filed by a zone change but by a wrong clock, and a wrong clock is no reason
+/// to delete a stretch of the writer's history.
+const CALENDAR_REACH: chrono::TimeDelta = chrono::TimeDelta::days(2);
 
 /// Midnight-UTC of the given instant — the stable per-day key.
 fn truncate_to_day(dt: DateTime<Utc>) -> DateTime<Utc> {
@@ -94,11 +114,13 @@ impl RecordProgressSnapshotUseCase {
         let day_key = truncate_to_day(dto.day);
 
         // Keep every other day; every row for today (there should be one, but a corrupted
-        // or hand-edited history could hold several) is replaced by the fresh one.
+        // or hand-edited history could hold several) is replaced by the fresh one, and
+        // so is every row a zone change filed after today (see `CALENDAR_REACH`).
         let mut kept_ids: Vec<EntityId> = Vec::new();
         let mut replaced: Vec<EntityId> = Vec::new();
         for s in &existing {
-            if truncate_to_day(s.day) == day_key {
+            let day = truncate_to_day(s.day);
+            if day >= day_key && day <= day_key + CALENDAR_REACH {
                 replaced.push(s.id);
             } else {
                 kept_ids.push(s.id);

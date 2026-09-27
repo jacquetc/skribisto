@@ -324,8 +324,8 @@ impl ManuskriptSource {
                  folder in place when a project moves to single-file mode, so this may be an \
                  abandoned copy; importing the .msk instead would read the newer one.",
                 sibling.display(),
-                zip_at.format("%Y-%m-%d"),
-                folder_at.format("%Y-%m-%d"),
+                crate::writer_day(zip_at),
+                crate::writer_day(folder_at),
             ));
         }
     }
@@ -781,6 +781,43 @@ mod tests {
         let joined = src.notices.join(" ");
         assert!(joined.contains("abandoned copy"), "{joined}");
         assert!(joined.contains("A Novel.msk"), "{joined}");
+    }
+
+    /// Both copies are dated on the writer's calendar. Each was last changed
+    /// at 23:30 UTC, which is already the next morning in Tokyo, and the notice
+    /// used to give the UTC day for both.
+    #[test]
+    fn a_newer_zip_is_dated_on_the_writers_calendar() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("A Novel");
+        folder(&root, &v1_members());
+        let archive = dir.path().join("A Novel.msk");
+        zip_of(&archive, &v1_members());
+
+        // 2026-03-03T23:30:00Z for the folder, two days later for the zip.
+        let folder_at = SystemTime::UNIX_EPOCH + Duration::from_secs(1_772_580_600);
+        for member in v1_members() {
+            set_modified(&root.join(member.0), folder_at);
+        }
+        set_modified(&archive, folder_at + Duration::from_secs(2 * 24 * 60 * 60));
+
+        let notices = |root: &Path| {
+            ManuskriptSource::open(&root.to_string_lossy())
+                .expect("open")
+                .notices
+                .join(" ")
+        };
+        let on_utc = notices(&root);
+        assert!(
+            on_utc.contains("(2026-03-05 against 2026-03-03)"),
+            "{on_utc}"
+        );
+        let _tokyo = crate::override_writer_offset(9);
+        let in_tokyo = notices(&root);
+        assert!(
+            in_tokyo.contains("(2026-03-06 against 2026-03-04)"),
+            "{in_tokyo}"
+        );
     }
 
     /// The same two files, opened through the `.msk`, are not a staleness case:

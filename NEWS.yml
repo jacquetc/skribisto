@@ -1,3 +1,11 @@
+Version: 3.0.5
+Date: 2026-09-27
+Type: stable
+Description:
+- "Dates and times in the Versions dock, the Timeline, the backups list, the Trash, the project switcher, the Welcome window and the restore confirmations are shown in your own time zone. They were shown in UTC while presenting themselves as local time, which could put a version on the wrong day"
+- "Pace and daily progress credit words to the day you wrote them, on your own calendar. A writer west of UTC used to see evening words counted for the next day"
+- "The Versions dock lists the earlier versions of front and back matter, such as a preface, as it does for any other text"
+---
 Version: 3.0.4
 Date: 2026-09-16
 Type: stable

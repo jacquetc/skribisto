@@ -177,8 +177,17 @@ impl BackupSettingsViewModel {
     }
 
     // ── bookkeeping (dedup + "last backup" + nudge) ──
-    pub fn last_backup_at(&self, uid: &str) -> Option<String> {
-        self.service.last_backup_at(uid)
+
+    /// When this project was last backed up, as the settings pane shows it: on
+    /// the writer's clock. `None` when it never has been.
+    ///
+    /// The settings file keeps the moment as RFC 3339 text in UTC, which is what
+    /// the pane used to print ("Last backup: 2026-09-27T14:03:22.123456789+00:00").
+    /// Text that does not parse is shown as stored, since it is still the only
+    /// account of the moment there is.
+    pub fn last_backup_label(&self, uid: &str) -> Option<String> {
+        let raw = self.service.last_backup_at(uid)?;
+        Some(crate::shared::stamps::iso_stamp_from_rfc3339(&raw).unwrap_or(raw))
     }
 
     pub fn record_destination_success(
@@ -330,6 +339,29 @@ mod tests {
         );
         vm.mark_nudged("work-uid", "/Novel.skrib");
         assert_eq!(seen.get(), before);
+    }
+
+    /// The settings pane's "Last backup" is the writer's clock, not the stored
+    /// RFC 3339 text: a backup recorded at 23:30 UTC on the 3rd was taken on the
+    /// morning of the 4th in Tokyo.
+    #[test]
+    fn the_last_backup_reads_on_the_writers_clock() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let vm = vm();
+        assert_eq!(vm.last_backup_label("work-uid"), None, "never backed up");
+        vm.record_destination_success(
+            "work-uid",
+            "/Novel.skrib",
+            "/backups",
+            "hash",
+            "/backups/Novel-1.skrib",
+            "2026-03-03T23:30:12.123456789+00:00",
+        );
+        assert_eq!(
+            vm.last_backup_label("work-uid").as_deref(),
+            Some("2026-03-04 08:30"),
+        );
     }
 
     /// Every clone shares the one measurement, because there is one backup root.

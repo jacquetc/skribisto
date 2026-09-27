@@ -150,6 +150,13 @@ impl WelcomeViewModel {
         self.search.clone()
     }
 
+    /// The day a recent project was last opened, as its row shows it: on the
+    /// writer's own calendar. The recents list stores the moment in UTC, and a
+    /// project opened on a Tokyo morning is the previous day there.
+    pub fn last_opened_day(dto: &RecentWorkDto) -> String {
+        crate::shared::stamps::iso_day(dto.last_opened_at)
+    }
+
     /// The rows the recents list shows: the MRU seen through the query. Hand to
     /// `ListView::from_source`; resolve the indices it hands back with
     /// [`Self::recent_path`], never against the unfiltered model.
@@ -443,6 +450,21 @@ mod tests {
             Signal::new(true),  // comments_menu (default on)
             Signal::new(true),  // margin_lane_menu (default on)
         )
+    }
+
+    /// **The defect.** The recents list dated each project on UTC's calendar,
+    /// so one opened on a Tokyo morning was listed under the previous day.
+    #[test]
+    fn a_recent_project_is_dated_on_the_writers_calendar() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let dto = RecentWorkDto {
+            last_opened_at: chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+                .expect("a valid instant")
+                .with_timezone(&chrono::Utc),
+            ..Default::default()
+        };
+        assert_eq!(WelcomeViewModel::last_opened_day(&dto), "2026-03-04");
     }
 
     #[test]

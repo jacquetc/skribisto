@@ -70,6 +70,7 @@ use skrib_format::versions::{
 };
 
 use crate::models::{LiveRow, digest_of};
+use crate::shared::stamps::Zone;
 use crate::versions::ProjectHandle;
 
 /// One recorded moment of the whole project.
@@ -348,7 +349,7 @@ impl TimelineViewModel {
     /// What the axis draws: one bar per visible moment, or one per period when
     /// there are too many. See [`super::timeline_axis`].
     pub fn axis(&self) -> super::Axis {
-        super::axis_for(&self.visible_moments())
+        super::axis_for(&self.visible_moments(), &Zone::writer())
     }
 
     /// The selected **bar**'s index, clamped into the axis that exists.
@@ -402,14 +403,14 @@ impl TimelineViewModel {
         self.set_window(Some(span));
     }
 
-    /// Narrow the band to the last `days` days, ending today.
+    /// Narrow the band to the last `days` days, ending the writer's today.
     ///
     /// The preset `DateRangeEdit` does not have — see
     /// [`crate::date_convert::last_days`]. Writes the filter and folds it
     /// straight into the window rather than waiting for the next build, so the
     /// band has moved by the time the button's own frame is drawn.
     pub fn set_last_days(&self, days: u32) {
-        let Some(today) = crate::date_convert::today_utc() else {
+        let Some(today) = Zone::writer().today() else {
             return;
         };
         self.range
@@ -436,7 +437,7 @@ impl TimelineViewModel {
         self.window.set(window);
         // A new window is a new axis, so the old bar index means nothing. Land on
         // the newest bar, as the first scan does.
-        let last = super::axis_for(&self.visible_moments())
+        let last = super::axis_for(&self.visible_moments(), &Zone::writer())
             .bars
             .len()
             .saturating_sub(1) as f32;
@@ -448,6 +449,10 @@ impl TimelineViewModel {
     ///
     /// Safe to call from `build`, like the scan: a repeat call for the same range
     /// does nothing.
+    ///
+    /// The days are the writer's, read in their own zone: the band labels every
+    /// moment on their clock, so a filter that began at UTC's midnight would cut
+    /// a day the axis shows whole, and leave out the evening of the last one.
     pub fn sync_window(&self) {
         let range = self.range.get();
         if self.ranged.borrow().as_ref() == Some(&range) {
@@ -458,12 +463,13 @@ impl TimelineViewModel {
             None => self.set_window(None),
             // Inclusive of both days: a writer who picks 3rd–5th means the whole
             // of the 5th, and the widget only carries the day.
-            Some(r) => {
-                let start = crate::date_convert::from_jiff_date(r.start);
-                let end = crate::date_convert::from_jiff_date(r.end) + chrono::Duration::days(1)
-                    - chrono::Duration::seconds(1);
-                self.set_window(Some((start, end)));
-            }
+            Some(r) => match Zone::writer().day_span(r.start, r.end) {
+                Some(span) => self.set_window(Some(span)),
+                // Only a day outside what an instant can hold, which the date
+                // widget does not offer. Showing everything is the answer that
+                // hides nothing.
+                None => self.set_window(None),
+            },
         }
     }
 
@@ -612,7 +618,7 @@ impl TimelineViewModel {
         // shortest, so the surface does not open on a wall. Bars, not moments:
         // a bucketed axis has far fewer, and the raw count would put the thumb
         // off the end of what is drawn.
-        let last = super::axis_for(&self.visible_moments())
+        let last = super::axis_for(&self.visible_moments(), &Zone::writer())
             .bars
             .len()
             .saturating_sub(1) as f32;

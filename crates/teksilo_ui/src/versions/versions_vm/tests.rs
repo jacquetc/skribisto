@@ -10,11 +10,20 @@ fn synopsis_leads_because_it_can_be_read_at_a_glance() {
 }
 
 #[test]
-fn the_body_scope_covers_both_a_scene_and_a_note() {
+fn the_body_scope_covers_every_kind_of_rows_text() {
     // The dock must not need to know which kind of row it is showing.
     let roles = VersionScope::Prose.roles();
     assert!(roles.contains(&ContentRole::SceneText));
     assert!(roles.contains(&ContentRole::NoteText));
+    assert!(
+        roles.contains(&ContentRole::ParatextText),
+        "a preface's body is its own role, and without it the dock never looks",
+    );
+    assert_eq!(
+        roles.last(),
+        Some(&ContentRole::EpigraphText),
+        "a Part's epigraph is its only text, and comes after every body role",
+    );
 }
 
 #[test]
@@ -594,4 +603,417 @@ fn a_pinned_list_with_something_in_it_is_not_the_empty_case() {
     vm.toggle_pinned_only();
     assert_eq!(vm.visible_count(), 1);
     assert!(!vm.pinned_filter_found_nothing());
+}
+
+// ── the past of every kind of row ───────────────────────────────────────────
+
+/// Write a one-row project and save it twice, the way `save_work` does: carry
+/// the log forward, record the state, write. `bodies(n)` is the row's content
+/// at the `n`th save.
+fn saved_twice(
+    dir: &std::path::Path,
+    item: common::entities::BinderItem,
+    bodies: impl Fn(usize) -> Vec<common::entities::Content>,
+) -> String {
+    use common::entities::{Binder, Work};
+    use skrib_format::{BinderWithItems, ItemWithContents, ShapeTag, SkribShape};
+
+    let path = dir.join("Novel.skrib").to_string_lossy().into_owned();
+    let first_save = chrono::DateTime::parse_from_rfc3339("2026-09-01T09:00:00Z")
+        .expect("a valid instant")
+        .with_timezone(&chrono::Utc);
+    let project = |n: usize| {
+        let work = Work {
+            id: 1,
+            unique_id: "one-row-project".into(),
+            binders: vec![100],
+            ..Default::default()
+        };
+        let binders = vec![BinderWithItems {
+            binder: Binder {
+                id: 100,
+                uid: uuid::Uuid::from_u128(0x7003),
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            items: vec![ItemWithContents {
+                item: item.clone(),
+                contents: bodies(n),
+            }],
+        }];
+        skrib_format::from_entities(
+            &work,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            Default::default(),
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &binders,
+            ShapeTag::Zip,
+        )
+    };
+
+    let mut bundle = project(0);
+    skrib_format::history::record(&mut bundle, first_save);
+    skrib_format::write_bundle(&path, SkribShape::ZipFile, &bundle).expect("first save");
+
+    let mut bundle = project(1);
+    bundle.history = skrib_format::history::load(&path);
+    skrib_format::history::record(&mut bundle, first_save + chrono::Duration::hours(1));
+    skrib_format::write_bundle(&path, SkribShape::ZipFile, &bundle).expect("second save");
+    path
+}
+
+/// A row of the given kind.
+fn row(
+    uid: uuid::Uuid,
+    title: &str,
+    role: common::entities::BinderItemRole,
+    sub_role: common::entities::BinderItemSubRole,
+) -> common::entities::BinderItem {
+    common::entities::BinderItem {
+        id: 300,
+        uid,
+        title: title.into(),
+        role,
+        sub_role,
+        activated: true,
+        is_exportable: true,
+        ..Default::default()
+    }
+}
+
+/// One content row holding `text`.
+fn body(id: u64, role: ContentRole, text: &str) -> common::entities::Content {
+    common::entities::Content {
+        id,
+        uid: uuid::Uuid::from_u128(0x7100 + u128::from(id)),
+        activated: true,
+        role,
+        data: text.to_string(),
+        ..Default::default()
+    }
+}
+
+/// The prose scope's timeline for the one row of the project at `path`.
+fn prose_versions_of(path: String, uid: uuid::Uuid) -> (VersionsViewModel, TimelineView) {
+    let vm = VersionsViewModel::new();
+    vm.set_project(ProjectHandle {
+        path,
+        unique_id: "one-row-project".into(),
+        destinations: Vec::new(),
+        revision: 0,
+    });
+    vm.set_scope(VersionScope::Prose);
+    vm.load_for(Some(uid));
+    assert!(!vm.loading().get(), "with no executor the scan runs inline");
+    assert!(vm.error().get().is_empty(), "{}", vm.error().get());
+    let view = vm.view().get();
+    (vm, view)
+}
+
+/// **P-09.** A preface's body is `ParatextText`, which the prose scope did not
+/// name, so the dock looked for a scene's or a note's past on a row that has
+/// neither and reported a paratext with two saved wordings as having no history
+/// at all.
+#[test]
+fn a_paratext_row_with_two_recorded_wordings_shows_two_versions() {
+    use common::entities::{BinderItemRole, BinderItemSubRole};
+    let dir = tempfile::tempdir().expect("tmp");
+    let preface = uuid::Uuid::from_u128(0x7001);
+    let wordings = [
+        "For my mother.",
+        "For my mother, who read everything first.",
+    ];
+    let path = saved_twice(
+        dir.path(),
+        row(
+            preface,
+            "Preface",
+            BinderItemRole::Item,
+            BinderItemSubRole::Paratext,
+        ),
+        |n| vec![body(1, ContentRole::ParatextText, wordings[n])],
+    );
+
+    let (vm, view) = prose_versions_of(path, preface);
+    assert_eq!(view.role, Some(ContentRole::ParatextText));
+    assert_eq!(
+        vm.visible_count(),
+        2,
+        "two saved wordings of the preface are two versions",
+    );
+    assert_eq!(
+        view.texts,
+        vec![wordings[1].to_string(), wordings[0].to_string()],
+        "newest first, each with the wording it recorded",
+    );
+}
+
+/// A Part's only text is its epigraph, and the prose scope did not name that
+/// role either: a Part with two recorded epigraphs showed no history at all.
+#[test]
+fn a_parts_epigraph_with_two_recorded_wordings_shows_two_versions() {
+    use common::entities::{BinderItemRole, BinderItemSubRole};
+    let dir = tempfile::tempdir().expect("tmp");
+    let part = uuid::Uuid::from_u128(0x7004);
+    let wordings = ["All happy families.", "Happy families are all alike."];
+    let path = saved_twice(
+        dir.path(),
+        row(
+            part,
+            "Part One",
+            BinderItemRole::Folder,
+            BinderItemSubRole::Part,
+        ),
+        |n| vec![body(1, ContentRole::EpigraphText, wordings[n])],
+    );
+
+    let (vm, view) = prose_versions_of(path, part);
+    assert_eq!(view.role, Some(ContentRole::EpigraphText));
+    assert_eq!(vm.visible_count(), 2);
+    assert_eq!(
+        view.texts,
+        vec![wordings[1].to_string(), wordings[0].to_string()],
+    );
+}
+
+/// A chapter carries an epigraph *and* prose. "Text" is its prose: the
+/// epigraph is offered only to a row that has nothing else.
+#[test]
+fn a_chapters_text_is_its_prose_even_with_an_epigraph() {
+    use common::entities::{BinderItemRole, BinderItemSubRole};
+    let dir = tempfile::tempdir().expect("tmp");
+    let chapter = uuid::Uuid::from_u128(0x7005);
+    let path = saved_twice(
+        dir.path(),
+        row(
+            chapter,
+            "Chapter One",
+            BinderItemRole::Folder,
+            BinderItemSubRole::ChapterScene,
+        ),
+        |n| {
+            vec![
+                body(
+                    1,
+                    ContentRole::EpigraphText,
+                    ["Epigraph.", "An epigraph."][n],
+                ),
+                body(
+                    2,
+                    ContentRole::SceneText,
+                    ["It began.", "It began at night."][n],
+                ),
+            ]
+        },
+    );
+
+    let (_, view) = prose_versions_of(path, chapter);
+    assert_eq!(view.role, Some(ContentRole::SceneText));
+    assert_eq!(
+        view.texts,
+        vec!["It began at night.".to_string(), "It began.".to_string()],
+    );
+}
+
+// ── dates, on the writer's calendar ─────────────────────────────────────────
+
+fn at(rfc3339: &str) -> chrono::DateTime<chrono::Utc> {
+    chrono::DateTime::parse_from_rfc3339(rfc3339)
+        .expect("a valid test instant")
+        .with_timezone(&chrono::Utc)
+}
+
+/// A view whose changes were recorded at exactly `stamps`, newest first.
+fn view_at(stamps: &[&str]) -> TimelineView {
+    let mut view = view_with(&vec!["text"; stamps.len()], None);
+    for (change, stamp) in view.timeline.changes.iter_mut().zip(stamps) {
+        change.at = at(stamp);
+    }
+    view
+}
+
+/// **The defect.** A row saved at 21:00 on the 4th in New York is stamped the
+/// 5th in UTC. The list labels it the 4th now, and the date filter has to agree
+/// with the label, or a writer who picks the 4th watches that row disappear.
+#[test]
+fn the_date_filter_keeps_the_rows_its_labels_put_on_that_day() {
+    use crate::shared::stamps::{Zone, override_writer_zone};
+    use teksilo::widgets::DateRange;
+    let _new_york = override_writer_zone(Zone::new_york());
+    let vm = VersionsViewModel::new();
+    vm.view.set(view_at(&[
+        "2026-03-06T02:00:00Z", // 21:00 on the 5th in New York
+        "2026-03-05T02:00:00Z", // 21:00 on the 4th
+        "2026-03-04T15:00:00Z", // 10:00 on the 4th
+    ]));
+
+    let day = jiff::civil::date(2026, 3, 4);
+    vm.range().set(Some(DateRange::new(day, day)));
+    assert_eq!(
+        vm.visible_indices(),
+        vec![1, 2],
+        "both of the writer's saves on the 4th, and not the one on the 5th",
+    );
+}
+
+/// "The last thirty days" ends on the writer's today, not UTC's.
+#[test]
+fn the_recent_preset_ends_on_the_writers_today() {
+    use crate::shared::stamps::{Zone, override_writer_zone};
+    let _ahead = override_writer_zone(Zone::a_day_ahead());
+    let vm = VersionsViewModel::new();
+    vm.set_last_days(30);
+    let range = vm.range().get().expect("the preset sets a range");
+    assert_eq!(Some(range.end), Zone::a_day_ahead().today());
+    assert_ne!(
+        Some(range.end),
+        crate::date_convert::today_utc(),
+        "precondition: this zone's today is never UTC's",
+    );
+}
+
+// ── what one load reads ─────────────────────────────────────────────────────
+
+/// Backups that hold one row with no body text at all, as a Book's is, and
+/// count how often they are listed and read.
+struct BookInEveryBackup {
+    uid: uuid::Uuid,
+    versions: Vec<skrib_format::versions::VersionRef>,
+    lists: std::cell::Cell<usize>,
+    indexes: std::cell::Cell<usize>,
+}
+
+impl BookInEveryBackup {
+    fn new(uid: uuid::Uuid, count: i64) -> Self {
+        let first = at("2026-03-01T10:00:00Z");
+        Self {
+            uid,
+            versions: (0..count)
+                .map(|n| skrib_format::versions::VersionRef {
+                    path: format!("/backups/Novel-{n}.skrib").into(),
+                    taken_at: first + chrono::Duration::days(n),
+                    source: SourceKind::Backup,
+                })
+                .collect(),
+            lists: std::cell::Cell::new(0),
+            indexes: std::cell::Cell::new(0),
+        }
+    }
+}
+
+impl VersionSource for BookInEveryBackup {
+    fn list(&self) -> anyhow::Result<Vec<skrib_format::versions::VersionRef>> {
+        self.lists.set(self.lists.get() + 1);
+        Ok(self.versions.iter().rev().cloned().collect())
+    }
+
+    fn index(
+        &self,
+        v: &skrib_format::versions::VersionRef,
+    ) -> anyhow::Result<skrib_format::versions::VersionIndex> {
+        use common::entities::{BinderItemRole, BinderItemSubRole};
+        self.indexes.set(self.indexes.get() + 1);
+        Ok(skrib_format::versions::VersionIndex {
+            taken_at: v.taken_at,
+            rows: vec![skrib_format::versions::VersionRow {
+                uid: self.uid,
+                title: "The book".into(),
+                sub_title: String::new(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                indent: 0,
+                is_exportable: true,
+                prose: vec![(
+                    ContentRole::SynopsisText,
+                    "binders/01-manuscript/text/1-the-book.synopsis.djot".into(),
+                    skrib_format::versions::BlobStamp { bytes: 12 },
+                )],
+            }],
+        })
+    }
+
+    fn prose(
+        &self,
+        _v: &skrib_format::versions::VersionRef,
+        _blob_path: &str,
+    ) -> anyhow::Result<String> {
+        Ok("A book about a lighthouse.".into())
+    }
+
+    fn comments(
+        &self,
+        _v: &skrib_format::versions::VersionRef,
+        _blob_path: &str,
+    ) -> anyhow::Result<Vec<skrib_format::CommentFile>> {
+        Ok(Vec::new())
+    }
+}
+
+/// A log with nothing in it.
+struct NoLog;
+
+impl VersionSource for NoLog {
+    fn list(&self) -> anyhow::Result<Vec<skrib_format::versions::VersionRef>> {
+        Ok(Vec::new())
+    }
+
+    fn index(
+        &self,
+        v: &skrib_format::versions::VersionRef,
+    ) -> anyhow::Result<skrib_format::versions::VersionIndex> {
+        Ok(skrib_format::versions::VersionIndex {
+            taken_at: v.taken_at,
+            rows: Vec::new(),
+        })
+    }
+
+    fn prose(
+        &self,
+        _v: &skrib_format::versions::VersionRef,
+        _blob_path: &str,
+    ) -> anyhow::Result<String> {
+        anyhow::bail!("the log holds nothing")
+    }
+
+    fn comments(
+        &self,
+        _v: &skrib_format::versions::VersionRef,
+        _blob_path: &str,
+    ) -> anyhow::Result<Vec<skrib_format::CommentFile>> {
+        Ok(Vec::new())
+    }
+}
+
+/// The body scope tries four roles in turn, and a Book has none of them. Each
+/// try used to list the destinations and read every backup again, so the dock
+/// read every backup four times over before it could say the Book has no text
+/// on record.
+#[test]
+fn the_body_scope_reads_each_backup_once_for_a_row_with_no_body() {
+    let uid = uuid::Uuid::from_u128(0xB00C);
+    let backups = BookInEveryBackup::new(uid, 3);
+    let roles = VersionScope::Prose.roles();
+    assert_eq!(roles.len(), 4, "precondition: the scope tries four roles");
+
+    let view = collect_from(&NoLog, &backups, uid, roles).expect("a readable past");
+
+    assert!(view.timeline.changes.is_empty(), "a Book has no body text");
+    assert!(view.timeline.unreadable.is_empty(), "every backup was read");
+    assert_eq!(backups.lists.get(), 1, "the destinations are listed once");
+    assert_eq!(
+        backups.indexes.get(),
+        3,
+        "each of the three backups is read once, not once per role",
+    );
 }

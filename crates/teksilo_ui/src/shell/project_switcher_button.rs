@@ -251,7 +251,7 @@ impl Widget for OpenProjectsMenu {
                 for dto in &split.recent {
                     let title = dto.title.clone();
                     let path = dto.absolute_path.clone();
-                    let date = dto.last_opened_at.format("%Y-%m-%d %H:%M").to_string();
+                    let date = vm::last_opened(dto);
                     menu = menu.item(row(
                         false,
                         false,

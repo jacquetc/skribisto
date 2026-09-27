@@ -67,6 +67,7 @@ use teksilo_charts::{AxisConfig, BarChart};
 use skrib_format::retention::BucketUnit;
 use skrib_format::versions::{BackupVersions, LogVersions, SourceKind, VersionRef, VersionSource};
 
+use crate::shared::stamps;
 use crate::timeline::{Axis, ChangeKind, RowChange, TimelineViewModel};
 use crate::versions::ProjectHandle;
 
@@ -345,7 +346,7 @@ impl TimelinePanel {
         let coverage = match vm.coverage() {
             Some((n, oldest)) => tr!(timeline_coverage(
                 count = n as i64,
-                oldest = oldest.format("%Y-%m-%d").to_string()
+                oldest = stamps::iso_day(oldest)
             )),
             None => tr!(timeline_empty()),
         };
@@ -537,7 +538,7 @@ impl TimelinePanel {
         // empty date is better than refusing to draw the list.
         let when = moment
             .as_ref()
-            .map(|m| m.at.format("%Y-%m-%d %H:%M").to_string())
+            .map(|m| stamps::iso_stamp(m.at))
             .unwrap_or_default();
         let rows: Vec<ChangeRow> = changes.iter().enumerate().map(ChangeRow::new).collect();
         let model = teksilo::data::ListModel::from_vec(rows);
@@ -759,7 +760,7 @@ fn open_past(ctx: &mut EventContext, vm: &TimelineViewModel, index: usize) {
         _ => None,
     };
     let handle = vm.project().get();
-    let when = past.from.taken_at.format("%Y-%m-%d %H:%M").to_string();
+    let taken_at = past.from.taken_at;
     let gone = change.is_gone();
     // The way back, if there is one. Both halves are required and neither is
     // inferable from the other: `gone` describes the row, the sink describes the
@@ -782,7 +783,7 @@ fn open_past(ctx: &mut EventContext, vm: &TimelineViewModel, index: usize) {
             ModalRequest::deferred(move |t| {
                 t.add(PastReader::new(
                     title.clone(),
-                    when.clone(),
+                    taken_at,
                     gone,
                     recreate.clone(),
                     docs.clone(),
@@ -1038,7 +1039,11 @@ impl Widget for ReaderLegend {
 /// The modal: a header saying what, when, and what it is showing, then the prose.
 struct PastReader {
     title: String,
-    when: String,
+    /// When the version being read was recorded, as stored: on UTC's clock.
+    ///
+    /// Kept as the instant and dated only where it is drawn, so no caller can
+    /// hand the reader a date already read on the wrong clock.
+    taken_at: chrono::DateTime<chrono::Utc>,
     gone: bool,
     /// What it would take to put this row back, and who to hand it to.
     ///
@@ -1068,7 +1073,7 @@ struct PastReader {
 impl PastReader {
     fn new(
         title: String,
-        when: String,
+        taken_at: chrono::DateTime<chrono::Utc>,
         gone: bool,
         recreate: Option<(crate::app::DeletedRow, crate::timeline::RecreateFn)>,
         docs: ReaderDocs,
@@ -1077,7 +1082,7 @@ impl PastReader {
     ) -> Self {
         Self {
             title,
-            when,
+            taken_at,
             gone,
             recreate,
             docs,
@@ -1207,7 +1212,7 @@ impl Widget for PastReader {
         // which is what an edited row whose body did not move opens on — would be
         // telling the writer their scene was rewritten when it was not.
         let stamp = ReaderStamp {
-            when: self.when.clone(),
+            when: stamps::iso_stamp(self.taken_at),
             mode: self.mode.clone(),
             view: self.view.clone(),
             root: None,
@@ -1331,6 +1336,148 @@ mod tests {
                 "the timeline band laid out to zero width in the '{name}' state",
             );
         }
+    }
+
+    /// Everything the band says to assistive technology, which is everything it
+    /// prints: each `TextWidget` publishes its text.
+    fn spoken_text(tree: &mut WidgetTree) -> Vec<String> {
+        let _ = tree.render();
+        tree.sync_accessibility()
+            .nodes
+            .iter()
+            .flat_map(|(_, n)| [n.label(), n.value()])
+            .flatten()
+            .map(str::to_string)
+            .collect()
+    }
+
+    /// **The defect.** The band labelled every recorded moment on UTC's clock,
+    /// so a version saved at breakfast in Tokyo stood on the axis at 23:30 the
+    /// evening before. Read back from what the chart publishes for each bar,
+    /// which is what a screen reader hears and what the axis prints.
+    #[test]
+    fn the_band_labels_its_moments_on_the_writers_clock() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let vm = TimelineViewModel::new();
+        // Scan first, so the band's own build finds this project already
+        // scanned and keeps the moments seeded below rather than looking again.
+        vm.scan();
+        vm.seed_moments_for_test(three_evenings_in_utc());
+
+        let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+        tree.add_boxed(Box::new(TimelinePanel::new(vm)));
+        tree.layout(SizeProposal::exact(1200.0, 180.0));
+        let spoken = spoken_text(&mut tree);
+        for label in ["2026-03-04 08:30", "2026-03-05 08:30", "2026-03-06 08:30"] {
+            assert!(
+                spoken.iter().any(|t| t.contains(label)),
+                "the band must name the moment {label}, and said: {spoken:?}",
+            );
+        }
+        assert!(
+            !spoken.iter().any(|t| t.contains("23:30")),
+            "no moment is named on UTC's clock: {spoken:?}",
+        );
+    }
+
+    /// The line under the band dates the oldest version on the writer's
+    /// calendar, the same one the bars are labelled on.
+    #[test]
+    fn the_coverage_line_dates_the_oldest_version_on_the_writers_calendar() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        // A plural message resolves to its own id with no bundle installed,
+        // which would make the comparison below pass whatever the date.
+        crate::test_support::with_real_messages(|| {
+            let vm = TimelineViewModel::new();
+            vm.scan();
+            vm.seed_moments_for_test(three_evenings_in_utc());
+            let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+            tree.add_boxed(Box::new(TimelinePanel::new(vm)));
+            tree.layout(SizeProposal::exact(1200.0, 180.0));
+            let spoken = spoken_text(&mut tree);
+            let coverage = tr!(timeline_coverage(
+                count = 3_i64,
+                oldest = "2026-03-04".to_string()
+            ))
+            .resolve_now();
+            assert_eq!(coverage, "3 versions recorded, going back to 2026-03-04");
+            assert!(
+                spoken.contains(&coverage),
+                "the coverage line must read {coverage:?}, and said: {spoken:?}",
+            );
+        });
+    }
+
+    /// Three backups, each at 23:30 UTC on consecutive evenings from the 3rd:
+    /// the next morning each time in Tokyo.
+    fn three_evenings_in_utc() -> Vec<crate::timeline::Moment> {
+        use skrib_format::versions::VersionRef;
+        let first = chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+            .expect("a valid instant")
+            .with_timezone(&chrono::Utc);
+        (0..3)
+            .map(|i| {
+                let at = first + chrono::Duration::days(i);
+                crate::timeline::Moment {
+                    at,
+                    source: SourceKind::Backup,
+                    from: VersionRef {
+                        path: std::path::PathBuf::from("/x.skrib"),
+                        taken_at: at,
+                        source: SourceKind::Backup,
+                    },
+                    bytes: 1000,
+                }
+            })
+            .collect()
+    }
+
+    /// The change list names the moment it compares against on the writer's
+    /// clock, the same moment the band beside it has selected.
+    #[test]
+    fn the_change_list_names_its_moment_on_the_writers_clock() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        use crate::timeline::{ChangeKind, RowChange};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        // A plural message resolves to its own id with no bundle installed,
+        // which would make the comparison below pass whatever the date.
+        crate::test_support::with_real_messages(|| {
+            let vm = TimelineViewModel::new();
+            vm.scan();
+            vm.seed_moments_for_test(three_evenings_in_utc());
+
+            let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+            tree.add_boxed(Box::new(TimelinePanel::new(vm.clone())));
+            tree.layout(SizeProposal::exact(1200.0, 180.0));
+            let _ = spoken_text(&mut tree);
+            // The comparison ran once for the newest bar and found nothing,
+            // there being no project on disk; what it would have found is set
+            // here.
+            vm.changes().set(vec![RowChange {
+                uid: uuid::Uuid::from_u128(1),
+                title: "Opening".into(),
+                kind: ChangeKind::Changed,
+                source: None,
+                gone: None,
+            }]);
+            tree.layout(SizeProposal::exact(1200.0, 180.0));
+            let spoken = spoken_text(&mut tree);
+            let header = tr!(timeline_changed_since(
+                count = 1_i64,
+                date = "2026-03-06 08:30".to_string()
+            ))
+            .resolve_now();
+            assert_eq!(
+                header,
+                "1 item differs between 2026-03-06 08:30 and your project now"
+            );
+            assert!(
+                spoken.contains(&header),
+                "the list must say {header:?}, and said: {spoken:?}",
+            );
+        });
     }
 
     /// The dock's label, resolved fresh in [`timeline_dock`] every build
@@ -1544,6 +1691,63 @@ mod tests {
         );
     }
 
+    /// When the version a test reader shows was recorded.
+    fn recorded_at() -> chrono::DateTime<chrono::Utc> {
+        chrono::DateTime::parse_from_rfc3339("2026-03-14T09:00:00Z")
+            .expect("a valid instant")
+            .with_timezone(&chrono::Utc)
+    }
+
+    /// **The defect.** The reader dated the version it shows on UTC's clock:
+    /// "As it was on 2026-03-03 23:30" for a morning save in Tokyo. Read back
+    /// from what the rendered header says, in both of its forms.
+    #[test]
+    fn the_reader_dates_its_version_on_the_writers_clock() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let evening_utc = chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+            .expect("a valid instant")
+            .with_timezone(&chrono::Utc);
+        let date = || "2026-03-04 08:30".to_string();
+
+        for (mode, view, expected) in [
+            (
+                ReaderMode::Recorded,
+                VIEW_TEXT,
+                tr!(timeline_reader_stamp(date = date())),
+            ),
+            (
+                ReaderMode::Compared,
+                VIEW_DIFF,
+                tr!(timeline_reader_compared(date = date())),
+            ),
+        ] {
+            let docs = ReaderDocs {
+                diff: TextDocument::new(),
+                text: TextDocument::new(),
+            };
+            let _ = docs.text.set_djot_sync("The lamp went out.");
+            let _ = docs.diff.set_djot_sync("The lamp went out.");
+            let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+            tree.add_boxed(Box::new(PastReader::new(
+                "Chapter 5".into(),
+                evening_utc,
+                false,
+                None,
+                docs,
+                Signal::new(mode),
+                Signal::new(view),
+            )));
+            tree.layout(SizeProposal::exact(760.0, 620.0));
+            let spoken = spoken_text(&mut tree);
+            let expected = expected.resolve_now();
+            assert!(
+                spoken.contains(&expected),
+                "the header must read {expected:?}, and said: {spoken:?}",
+            );
+        }
+    }
+
     /// The reader as `open_past` builds it once the archive is open: a document
     /// already filled, and a mode saying what is in it.
     fn reader(title: &str, text: &str, gone: bool, mode: ReaderMode) -> PastReader {
@@ -1567,7 +1771,7 @@ mod tests {
         }
         PastReader::new(
             title.into(),
-            "2026-03-14 09:00".into(),
+            recorded_at(),
             gone,
             None,
             docs,
@@ -1693,7 +1897,7 @@ mod tests {
         let mut tree = WidgetTree::new();
         let id = tree.add_boxed(Box::new(PastReader::new(
             "The lost chapter".into(),
-            "2026-03-14 09:00".into(),
+            recorded_at(),
             gone,
             recreate,
             docs,
@@ -1799,7 +2003,7 @@ mod tests {
         let _ = docs.text.set_djot_sync("The lamp went out.");
         let id = tree.add_boxed(Box::new(PastReader::new(
             "Chapter 5".into(),
-            "2026-03-14 09:00".into(),
+            recorded_at(),
             false,
             None,
             docs,
@@ -1842,7 +2046,7 @@ mod tests {
         let _ = docs.text.set_djot_sync("The lamp went out.");
         let id = tree.add_boxed(Box::new(PastReader::new(
             "Chapter 5".into(),
-            "2026-03-14 09:00".into(),
+            recorded_at(),
             false,
             None,
             docs,

@@ -35,19 +35,14 @@ fn rec(work_id: u64, d: DateTime<Utc>, words: i64) -> RecordProgressSnapshotDto 
     }
 }
 
-#[test]
-fn record_progress_snapshot_upserts_by_day() {
-    let dir = tempfile::tempdir().unwrap();
-    let db = DbContext::new().unwrap();
-    let hub = Arc::new(EventHub::new());
-
-    // A fresh project creates the WorkInfo the snapshots hang off.
+/// A fresh project, which creates the WorkInfo the snapshots hang off.
+fn new_project(dir: &std::path::Path, db: &DbContext, hub: &Arc<EventHub>) -> u64 {
     work_management_controller::new_work(
-        &db,
-        &hub,
+        db,
+        hub,
         &NewWorkDto {
             goal_unit: Default::default(),
-            file_name: dir.path().join("Novel.skrib").to_str().unwrap().to_string(),
+            file_name: dir.join("Novel.skrib").to_str().unwrap().to_string(),
             title: String::new(),
             is_folder: false,
             template_kind: NewWorkTemplate::None,
@@ -60,7 +55,15 @@ fn record_progress_snapshot_upserts_by_day() {
         },
     )
     .expect("new_work");
-    let work_id = work_controller::get_all(&db).unwrap().pop().unwrap().id;
+    work_controller::get_all(db).unwrap().pop().unwrap().id
+}
+
+#[test]
+fn record_progress_snapshot_upserts_by_day() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    let work_id = new_project(dir.path(), &db, &hub);
 
     record_progress_snapshot(
         &db,
@@ -97,4 +100,75 @@ fn record_progress_snapshot_upserts_by_day() {
     )
     .unwrap();
     assert_eq!(snapshots(&db).len(), 2, "a new day adds a row");
+}
+
+/// A row filed under a day after today holds a total counted before today's.
+///
+/// Today is the writer's, so a row can sit under a later day without being from
+/// the future: a Los Angeles evening was filed under the next day while
+/// snapshots still followed UTC's calendar, and a writer who flies west goes
+/// back to a day they already had. Left in place, that row stood as the newest
+/// day of the history with an older total, and the Pace planner read it as the
+/// current count until the writer's calendar caught up.
+#[test]
+fn a_row_filed_under_a_later_day_gives_way_to_todays_total() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    let work_id = new_project(dir.path(), &db, &hub);
+
+    // The day before, and a wrong clock's row far ahead: neither was counted on
+    // another zone's calendar, so both stay.
+    record_progress_snapshot(
+        &db,
+        &hub,
+        &rec(work_id, day("2026-09-26T12:00:00+00:00"), 3000),
+    )
+    .unwrap();
+    record_progress_snapshot(
+        &db,
+        &hub,
+        &rec(work_id, day("2026-10-15T12:00:00+00:00"), 100),
+    )
+    .unwrap();
+    // 18:00 on the 27th in Los Angeles, filed under UTC's day: the 28th.
+    record_progress_snapshot(
+        &db,
+        &hub,
+        &rec(work_id, day("2026-09-28T01:00:00+00:00"), 4000),
+    )
+    .unwrap();
+
+    // 19:00 the same evening, filed under the writer's day: the 27th.
+    record_progress_snapshot(
+        &db,
+        &hub,
+        &rec(work_id, day("2026-09-27T00:00:00+00:00"), 4500),
+    )
+    .unwrap();
+
+    let mut rows: Vec<(DateTime<Utc>, i64)> = snapshots(&db)
+        .into_iter()
+        .map(|s| (s.day, s.total_word_count))
+        .collect();
+    rows.sort();
+    assert_eq!(
+        rows,
+        vec![
+            (day("2026-09-26T00:00:00+00:00"), 3000),
+            (day("2026-09-27T00:00:00+00:00"), 4500),
+            (day("2026-10-15T00:00:00+00:00"), 100),
+        ],
+        "the evening's older total, filed under the 28th, is superseded by the one \
+         counted after it; the days either side are kept",
+    );
+    let work_info = direct_access::work_info::work_info_controller::get_all(&db)
+        .unwrap()
+        .pop()
+        .unwrap();
+    assert_eq!(
+        work_info.progress_snapshots.len(),
+        3,
+        "the WorkInfo lists exactly the rows that are left",
+    );
 }

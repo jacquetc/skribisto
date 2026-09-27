@@ -144,3 +144,39 @@ pub(crate) fn first_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> 
         .into_iter()
         .find_map(|c| first_of_type(tree, c, suffix))
 }
+
+/// Run `f` with the **real shipped** `en-US` messages installed.
+///
+/// Not `I18nConfig::test_only` with a hand-copied list of patterns, which is
+/// the other precedent in this crate (`project::open_failure`): that proves a
+/// copy agrees with itself, and the point here is to assert the text a writer
+/// actually reads, from the message that actually shipped.
+///
+/// It also has to exist at all: with no manager installed, a message carrying
+/// a `{ $count -> … }` plural selector resolves to its own id. A test comparing
+/// two such strings then compares two ids, and passes whatever the arguments.
+pub(crate) fn with_real_messages(f: impl FnOnce()) {
+    use teksilo::i18n::config::I18nConfig;
+    use teksilo::i18n::manager::I18nManager;
+    use teksilo::i18n::thread_local::{clear, install};
+
+    clear();
+    let cfg = I18nConfig::new()
+        .source_locale("en-US".parse().unwrap())
+        .supported_locales(["en-US".parse().unwrap()])
+        .compile_in(&[(
+            "en-US",
+            &[
+                include_str!("../locales/en-US/main.ftl"),
+                include_str!("../locales/en-US/tooltips.ftl"),
+                include_str!("../locales/en-US/tags.ftl"),
+                include_str!("../locales/en-US/templates.ftl"),
+                include_str!("../locales/en-US/story_bible.ftl"),
+            ],
+        )])
+        .auto_detect_os_locale(false)
+        .fallback_locale("en-US".parse().unwrap());
+    install(I18nManager::from_config(&cfg));
+    f();
+    clear();
+}

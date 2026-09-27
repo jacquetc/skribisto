@@ -259,7 +259,7 @@ mod rows {
     use super::{TrashNode, TrashRootKind, TrashTreeKey};
 
     fn when(dto: &TrashInfoDto) -> String {
-        dto.trashed_at.format("%Y-%m-%d %H:%M").to_string()
+        crate::shared::stamps::iso_stamp(dto.trashed_at)
     }
 
     /// Find the binder whose order contains `item_id` (trashed items stay in
@@ -420,6 +420,26 @@ mod rows {
             // else: a stale TrashInfo (neither relationship) — render nothing.
         }
         rows
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        /// **The defect.** A trash row's date was UTC's, so a scene trashed at
+        /// breakfast in Tokyo read as trashed at 23:30 the evening before.
+        #[test]
+        fn a_trash_row_is_dated_on_the_writers_clock() {
+            use crate::shared::stamps::{Zone, override_writer_zone};
+            let _tokyo = override_writer_zone(Zone::tokyo());
+            let dto = TrashInfoDto {
+                trashed_at: chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+                    .expect("a valid instant")
+                    .with_timezone(&chrono::Utc),
+                ..Default::default()
+            };
+            assert_eq!(when(&dto), "2026-03-04 08:30");
+        }
     }
 }
 

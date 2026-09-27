@@ -177,16 +177,11 @@ pub fn recreate_row(
         return refuse(ctx, cx.ids.work_id.get(), why);
     }
 
-    let when = row.taken_at.format("%Y-%m-%d %H:%M").to_string();
     let shown_title = display_title(&row.title);
-    let where_to = destination.title.clone();
     MessageBox::question(tr!(versions_recreate_confirm_title(
         item = shown_title.clone()
     )))
-    .text(tr!(versions_recreate_confirm_text(
-        date = when,
-        destination = where_to
-    )))
+    .text(confirm_text(row.taken_at, destination.title.clone()))
     .informative_text(tr!(versions_recreate_confirm_undo_note()))
     .buttons(MessageBoxButtons::Custom(vec![
         StandardButton::Ok.into(),
@@ -225,6 +220,15 @@ pub fn recreate_row(
         commit(c, &cx, &req, place, &shown_title);
     })
     .present(ctx);
+}
+
+/// The question's body: when the row was recorded, on the writer's own clock,
+/// and where it will land.
+fn confirm_text(taken_at: chrono::DateTime<chrono::Utc>, destination: String) -> LocalizedString {
+    tr!(versions_recreate_confirm_text(
+        date = crate::shared::stamps::iso_stamp(taken_at),
+        destination = destination
+    ))
 }
 
 /// Why this recreation cannot go ahead **right now**, or `None`.
@@ -526,4 +530,29 @@ fn refuse(ctx: &mut EventContext, work_id: Option<u64>, why: RecreateRefusal) {
             .scoped_id(RECREATE_TOAST_ID, work_id)
             .auto_dismiss_after(std::time::Duration::from_secs(8)),
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shared::stamps::{Zone, override_writer_zone};
+
+    /// **The defect.** The question dated the recorded row on UTC's clock, so
+    /// a writer in Tokyo was offered back "the row as it was at 23:30" the
+    /// evening before the morning they last saw it.
+    #[test]
+    fn the_question_dates_the_row_on_the_writers_clock() {
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let taken_at = chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+            .expect("a valid instant")
+            .with_timezone(&chrono::Utc);
+        assert_eq!(
+            confirm_text(taken_at, "Part One".to_string()).resolve_now(),
+            tr!(versions_recreate_confirm_text(
+                date = "2026-03-04 08:30".to_string(),
+                destination = "Part One".to_string()
+            ))
+            .resolve_now(),
+        );
+    }
 }

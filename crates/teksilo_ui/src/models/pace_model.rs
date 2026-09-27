@@ -420,7 +420,7 @@ mod imp {
             let ctx = &self.app_ctx;
             let work_id = self.ids.work_id.get()?;
             let now = Utc::now();
-            let today = now.date_naive();
+            let today = crate::shared::stamps::today();
             let end = today + Duration::days(90);
             let dto = CreatePaceDto {
                 created_at: now,
@@ -480,7 +480,7 @@ mod imp {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    use chrono::{Datelike, Duration, NaiveDate, Utc};
+    use chrono::{Datelike, Duration, NaiveDate};
 
     use frontend::AppContext;
 
@@ -499,7 +499,7 @@ mod imp {
 
     impl PaceModel {
         pub fn new(_app_ctx: Rc<AppContext>, _ids: AppIds, _book_item_id: u64) -> Self {
-            let today = Utc::now().date_naive();
+            let today = crate::shared::stamps::today();
             let start = today - Duration::days(30);
             let end = today + Duration::days(60);
 

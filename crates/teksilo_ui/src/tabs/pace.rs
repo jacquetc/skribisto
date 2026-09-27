@@ -25,7 +25,7 @@ use teksilo::widgets::{
 use teksilo_charts::reference_line::ReferenceLine;
 use teksilo_charts::{BarChart, LineChart};
 
-use chrono::{Datelike, Duration, NaiveDate, Utc};
+use chrono::{Datelike, Duration, NaiveDate};
 use jiff::civil::Date;
 
 use crate::date_convert::{jiff_to_naive, naive_to_jiff, naive_to_jiff_opt};
@@ -201,7 +201,7 @@ pub(super) fn empty_state(vm: &PaceViewModel) -> impl Widget {
         .child(vspace(4.0))
         .child(
             Button::new(tr!(pace_start_planning())).on_activate_fn(move |_c| {
-                let today = Utc::now().date_naive();
+                let today = crate::shared::stamps::today();
                 vm.set_dates(today, today + Duration::days(90));
             }),
         )
@@ -218,7 +218,7 @@ pub(super) fn planner(
     end_local: &Signal<Option<Date>>,
     active_local: &Signal<bool>,
 ) -> impl Widget {
-    let today = Utc::now().date_naive();
+    let today = crate::shared::stamps::today();
 
     // Schedule section: goal + deadline + weekdays + active.
     let goal_field = FixedSize::new().width(160.0).child(

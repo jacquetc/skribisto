@@ -52,6 +52,7 @@ use teksilo::widgets::{
 use skrib_format::changes::Change;
 use skrib_format::versions::SourceKind;
 
+use crate::shared::stamps::Zone;
 use crate::versions::version_diff::{self, CollapseRule};
 use crate::versions::{TimelineView, VersionDiff, VersionsViewModel};
 use crate::widgets::DiffPane;
@@ -500,13 +501,14 @@ fn summary_line(diff: &VersionDiff) -> impl Widget + use<> {
 /// then diffed — and Restore would have written back — a different version than the
 /// one the writer had just read.
 fn visible_rows(view: &TimelineView, vm: &VersionsViewModel) -> Vec<VersionRow> {
+    let zone = Zone::writer();
     vm.visible_indices()
         .into_iter()
         .filter_map(|i| {
             let c = view.timeline.changes.get(i)?;
             Some(VersionRow {
                 index: i,
-                when: c.at.format("%Y-%m-%d %H:%M").to_string(),
+                when: zone.iso_stamp(c.at),
                 subtitle: subtitle_for(c),
                 magnitude: view.magnitudes.get(i).copied().flatten(),
                 pinned: vm.pin_state(c),
@@ -651,29 +653,34 @@ fn magnitude_bar(value: f32) -> impl Widget {
 /// only where the log actually recorded a loss, and a row whose whole past is
 /// still on record says nothing at all.
 fn boundaries(view: &TimelineView) -> impl Widget + use<> {
-    let timeline = &view.timeline;
     let mut col = VStack::new().spacing(2.0);
-    if let Some(at) = timeline.absent_at {
-        col = col.child(footnote_line(tr!(versions_did_not_exist(
-            date = at.format("%Y-%m-%d").to_string()
-        ))));
-    }
-    if let Some(at) = timeline.deleted_after {
-        col = col.child(footnote_line(tr!(versions_deleted_after(
-            date = at.format("%Y-%m-%d").to_string()
-        ))));
-    }
-    if !timeline.unreadable.is_empty() {
-        col = col.child(footnote_line(tr!(versions_unreadable(
-            count = timeline.unreadable.len() as i64
-        ))));
-    }
-    if timeline.thinned_away > 0 {
-        col = col.child(footnote_line(tr!(versions_thinned(
-            count = timeline.thinned_away as i64
-        ))));
+    for sentence in boundary_sentences(view) {
+        col = col.child(footnote_line(sentence));
     }
     Padding::symmetric(8.0, 6.0).child(col)
+}
+
+/// The sentences [`boundaries`] draws, in order, with each date on the
+/// writer's calendar: the day the row's own list is labelled on.
+fn boundary_sentences(view: &TimelineView) -> Vec<LocalizedString> {
+    let zone = Zone::writer();
+    let timeline = &view.timeline;
+    let mut out = Vec::new();
+    if let Some(at) = timeline.absent_at {
+        out.push(tr!(versions_did_not_exist(date = zone.iso_day(at))));
+    }
+    if let Some(at) = timeline.deleted_after {
+        out.push(tr!(versions_deleted_after(date = zone.iso_day(at))));
+    }
+    if !timeline.unreadable.is_empty() {
+        out.push(tr!(versions_unreadable(
+            count = timeline.unreadable.len() as i64
+        )));
+    }
+    if timeline.thinned_away > 0 {
+        out.push(tr!(versions_thinned(count = timeline.thinned_away as i64)));
+    }
+    out
 }
 
 /// One boundary sentence, left-aligned and **wrapping**.
@@ -877,6 +884,52 @@ mod tests {
             vm.selected_index(),
             Some(rows[0].index),
             "list position 0 must resolve to the timeline index of the first row",
+        );
+    }
+
+    /// **The defect.** Each row's date was UTC's, so a version saved at
+    /// breakfast in Tokyo was listed at 23:30 the evening before.
+    #[test]
+    fn a_rows_date_is_the_writers_clock() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let vm = VersionsViewModel::new();
+        let mut view = dated_view(1);
+        view.timeline.changes[0].at = chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+            .expect("a valid instant")
+            .with_timezone(&chrono::Utc);
+        vm.view().set(view.clone());
+        let rows = visible_rows(&view, &vm);
+        assert_eq!(rows[0].when, "2026-03-04 08:30");
+    }
+
+    /// The boundary sentences date their moments on the writer's calendar too:
+    /// "did not exist yet on" a day the list itself would call another.
+    #[test]
+    fn the_boundary_sentences_name_the_writers_day() {
+        use crate::shared::stamps::override_writer_zone;
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        let evening = chrono::DateTime::parse_from_rfc3339("2026-03-03T23:30:00Z")
+            .expect("a valid instant")
+            .with_timezone(&chrono::Utc);
+        let mut view = dated_view(1);
+        view.timeline.absent_at = Some(evening);
+        view.timeline.deleted_after = Some(evening);
+        let sentences: Vec<String> = boundary_sentences(&view)
+            .into_iter()
+            .map(|s| s.resolve_now())
+            .collect();
+        assert_eq!(
+            sentences,
+            vec![
+                tr!(versions_did_not_exist(date = "2026-03-04".to_string())).resolve_now(),
+                tr!(versions_deleted_after(date = "2026-03-04".to_string())).resolve_now(),
+            ],
+        );
+        assert!(
+            sentences[0].contains("2026-03-04"),
+            "the date reaches the sentence: {}",
+            sentences[0],
         );
     }
 

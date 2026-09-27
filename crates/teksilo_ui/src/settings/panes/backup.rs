@@ -230,7 +230,7 @@ pub fn work_backup_pane(
 
     // "Last backup" indicator / no-backups hint (computed when the pane opens).
     let status = {
-        let last = vm.last_backup_at(&uid);
+        let last = vm.last_backup_label(&uid);
         let off = vm.effective_for(&uid).is_effectively_off();
         match (last, off) {
             (_, true) => tr!(settings_backup_none_hint()),

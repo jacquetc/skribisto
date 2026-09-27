@@ -217,7 +217,7 @@ impl WelcomePanel {
         let list = ListView::from_source(vm.recents_source(), |_i, dto, selected| {
             let icon =
                 IconWidget::from_svg_icon(res!("assets/icons/binder/book.svg")).icon_size(20.0);
-            let date = dto.last_opened_at.format("%Y-%m-%d").to_string();
+            let date = WelcomeViewModel::last_opened_day(dto);
             Box::new(RecentRow::new(
                 icon,
                 dto.title.clone(),

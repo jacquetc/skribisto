@@ -15,10 +15,26 @@
 //! calendar question — "what did this look like last March" — and a calendar
 //! answers it in two steps rather than a scroll.
 //!
-//! The units come from [`BucketUnit`], which is retention's own GFS bucket key.
-//! The band groups a project's past exactly the way the backup sweep thins it,
-//! so a bar and a retention tier can never disagree about what "the same week"
-//! means.
+//! The units come from [`BucketUnit`], which is retention's own GFS bucket key:
+//! one definition of an hour, a day, a rolling week and a month, not a second
+//! copy that could drift from the first.
+//!
+//! ## Whose calendar
+//!
+//! The writer's. Every bar is *labelled* on the writer's clock, and so is every
+//! moment inside it once it is opened, so the band has to *group* on that clock
+//! too. Grouped on UTC's, a save at 21:00 on the 3rd in New York (02:00 on the
+//! 4th in UTC) landed in a bar whichever label it carried: called the 4th, it
+//! held a moment stamped the 3rd; called the 3rd, it held one stamped the 4th.
+//! So each moment is keyed by its wall-clock reading in the writer's zone, fed
+//! to [`BucketUnit::key`] as if that reading were UTC, which keys it by the
+//! writer's hours, days, weeks and months with retention's own arithmetic.
+//!
+//! Retention itself still buckets on UTC, and that is deliberate: it decides
+//! which backup *files* survive a sweep and labels nothing, while the band
+//! labels everything and decides nothing. The two therefore agree on what a day
+//! *is* and may disagree on where a writer's evening falls between two of them,
+//! which a writer can only ever see through the band.
 //!
 //! ## Why there is a terminal state
 //!
@@ -31,6 +47,7 @@ use chrono::{DateTime, Utc};
 use skrib_format::retention::BucketUnit;
 
 use super::timeline_vm::Moment;
+use crate::shared::stamps::Zone;
 
 /// The most bars a band this shape can carry.
 ///
@@ -88,15 +105,16 @@ impl Axis {
     }
 }
 
-/// Build the axis for `moments` (oldest first, already narrowed to the window).
-pub fn axis_for(moments: &[Moment]) -> Axis {
+/// Build the axis for `moments` (oldest first, already narrowed to the window),
+/// labelled and grouped on `zone`'s calendar. The band passes the writer's.
+pub fn axis_for(moments: &[Moment], zone: &Zone) -> Axis {
     if moments.len() <= MAX_BARS {
         return Axis {
             bars: moments
                 .iter()
                 .enumerate()
                 .map(|(i, m)| Bar {
-                    label: m.at.format("%Y-%m-%d %H:%M").to_string(),
+                    label: zone.iso_stamp(m.at),
                     bytes: m.bytes,
                     at: m.at,
                     moment: i,
@@ -107,11 +125,20 @@ pub fn axis_for(moments: &[Moment]) -> Axis {
             unit: None,
         };
     }
-    let unit = choose_unit(moments);
+    let unit = choose_unit(moments, zone);
     Axis {
-        bars: group(moments, unit),
+        bars: group(moments, unit, zone),
         unit: Some(unit),
     }
+}
+
+/// The bucket `at` falls in on `zone`'s calendar.
+///
+/// The wall-clock reading, re-read as if it were UTC, is what makes
+/// [`BucketUnit::key`] count the writer's hours and days rather than UTC's. See
+/// the module docs.
+fn bucket(unit: BucketUnit, zone: &Zone, at: DateTime<Utc>) -> i64 {
+    unit.key(&zone.civil(at).and_utc())
 }
 
 /// The finest unit whose buckets still fit the band.
@@ -121,21 +148,23 @@ pub fn axis_for(moments: &[Moment]) -> Axis {
 /// Falls back to the coarsest when even months are too many — a decade-old
 /// project with a backup an hour — because drawing 200 invisible bars is the
 /// failure this whole module exists to prevent.
-fn choose_unit(moments: &[Moment]) -> BucketUnit {
+fn choose_unit(moments: &[Moment], zone: &Zone) -> BucketUnit {
     for unit in BucketUnit::ASCENDING {
-        if distinct_buckets(moments, unit) <= MAX_BARS {
+        if distinct_buckets(moments, unit, zone) <= MAX_BARS {
             return unit;
         }
     }
     BucketUnit::Month
 }
 
-fn distinct_buckets(moments: &[Moment], unit: BucketUnit) -> usize {
+fn distinct_buckets(moments: &[Moment], unit: BucketUnit, zone: &Zone) -> usize {
     let mut last: Option<i64> = None;
     let mut n = 0;
     // `moments` is sorted, so distinct keys are consecutive runs — no set needed.
+    // (On the writer's clock too: an autumn change repeats the hour the clock
+    // has just left, so both passes through it are one run.)
     for m in moments {
-        let key = unit.key(&m.at);
+        let key = bucket(unit, zone, m.at);
         if last != Some(key) {
             n += 1;
             last = Some(key);
@@ -145,11 +174,11 @@ fn distinct_buckets(moments: &[Moment], unit: BucketUnit) -> usize {
 }
 
 /// Collapse `moments` into one bar per bucket, oldest first.
-fn group(moments: &[Moment], unit: BucketUnit) -> Vec<Bar> {
+fn group(moments: &[Moment], unit: BucketUnit, zone: &Zone) -> Vec<Bar> {
     let mut bars: Vec<Bar> = Vec::new();
     let mut key: Option<i64> = None;
     for (i, m) in moments.iter().enumerate() {
-        let k = unit.key(&m.at);
+        let k = bucket(unit, zone, m.at);
         match bars.last_mut() {
             Some(bar) if key == Some(k) => {
                 // Later moments in the same bucket: the bucket's height, date and
@@ -164,7 +193,7 @@ fn group(moments: &[Moment], unit: BucketUnit) -> Vec<Bar> {
             _ => {
                 key = Some(k);
                 bars.push(Bar {
-                    label: label_for(unit, m.at),
+                    label: label_for(unit, zone, m.at),
                     bytes: m.bytes,
                     at: m.at,
                     moment: i,
@@ -182,15 +211,16 @@ fn group(moments: &[Moment], unit: BucketUnit) -> Vec<Bar> {
     bars
 }
 
-/// What a period is called on the axis.
-fn label_for(unit: BucketUnit, at: DateTime<Utc>) -> String {
+/// What a period is called on the axis, read off its first moment on the same
+/// calendar the period was grouped on.
+fn label_for(unit: BucketUnit, zone: &Zone, at: DateTime<Utc>) -> String {
     match unit {
-        BucketUnit::Hour => at.format("%m-%d %H:00").to_string(),
-        BucketUnit::Day => at.format("%Y-%m-%d").to_string(),
+        BucketUnit::Hour => zone.format(at, "%m-%d %H:00"),
+        BucketUnit::Day => zone.iso_day(at),
         // The week's own first recorded moment, not an ISO week number: a writer
         // knows what "the week of the 3rd" means and does not know what week 14 is.
-        BucketUnit::Week => at.format("%Y-%m-%d").to_string(),
-        BucketUnit::Month => at.format("%Y-%m").to_string(),
+        BucketUnit::Week => zone.iso_day(at),
+        BucketUnit::Month => zone.format(at, "%Y-%m"),
     }
 }
 
@@ -227,7 +257,7 @@ mod tests {
 
     #[test]
     fn a_short_history_draws_its_moments_and_nothing_is_collapsed() {
-        let axis = axis_for(&spread(12, 30));
+        let axis = axis_for(&spread(12, 30), &Zone::utc());
         assert_eq!(axis.bars.len(), 12);
         assert!(!axis.opens(), "twelve moments are choosable directly");
         assert_eq!(
@@ -241,7 +271,7 @@ mod tests {
     #[test]
     fn a_period_is_represented_by_its_newest_moment() {
         let moments = spread(300, 730);
-        let axis = axis_for(&moments);
+        let axis = axis_for(&moments, &Zone::utc());
         assert!(axis.opens(), "precondition: these are periods");
         for bar in &axis.bars {
             let m = moments.get(bar.moment).expect("a bar names a real moment");
@@ -258,7 +288,7 @@ mod tests {
     /// the row's spacing alone exceeded its width, so every bar laid out to zero.
     #[test]
     fn two_years_of_backups_fit_the_band() {
-        let axis = axis_for(&spread(300, 730));
+        let axis = axis_for(&spread(300, 730), &Zone::utc());
         assert!(
             axis.bars.len() <= MAX_BARS,
             "{} bars is more than the band can draw",
@@ -278,7 +308,7 @@ mod tests {
         let mut moments = spread(300, 730);
         let mut guard = 0;
         loop {
-            let axis = axis_for(&moments);
+            let axis = axis_for(&moments, &Zone::utc());
             if !axis.opens() {
                 break;
             }
@@ -299,9 +329,12 @@ mod tests {
     #[test]
     fn the_unit_is_the_finest_one_that_fits() {
         // Ten days, several backups a day: days fit, hours would not.
-        assert_eq!(choose_unit(&spread(200, 10)), BucketUnit::Day);
+        assert_eq!(choose_unit(&spread(200, 10), &Zone::utc()), BucketUnit::Day);
         // Two years: months.
-        assert_eq!(choose_unit(&spread(300, 730)), BucketUnit::Month);
+        assert_eq!(
+            choose_unit(&spread(300, 730), &Zone::utc()),
+            BucketUnit::Month
+        );
     }
 
     /// A period's height is what the project had reached by its end — a number it
@@ -314,7 +347,7 @@ mod tests {
             moment(day + chrono::Duration::minutes(10), 500),
             moment(day + chrono::Duration::minutes(20), 300),
         ];
-        let bars = group(&moments, BucketUnit::Day);
+        let bars = group(&moments, BucketUnit::Day, &Zone::utc());
         assert_eq!(bars.len(), 1);
         assert_eq!(
             bars[0].bytes, 300,
@@ -328,7 +361,7 @@ mod tests {
     #[test]
     fn a_periods_span_covers_everything_it_counted() {
         let moments = spread(300, 730);
-        let axis = axis_for(&moments);
+        let axis = axis_for(&moments, &Zone::utc());
         for bar in &axis.bars {
             let (start, end) = bar.span.expect("a period carries its span");
             let inside = moments
@@ -345,18 +378,190 @@ mod tests {
 
     #[test]
     fn an_empty_history_produces_an_empty_axis() {
-        let axis = axis_for(&[]);
+        let axis = axis_for(&[], &Zone::utc());
         assert!(axis.is_empty());
         assert!(!axis.opens());
     }
 
-    /// The band and the backup sweep must agree about what a week is, or a bar
-    /// and a retention tier describe different sets.
+    /// The band counts hours, days and weeks with retention's own arithmetic,
+    /// so the two can never disagree about what a week *is*, only about which
+    /// clock it is read on (see the module docs).
     #[test]
     fn the_units_are_retentions_own_bucket_keys() {
         let a = DateTime::from_timestamp(1_700_000_000, 0).unwrap();
         let b = a + chrono::Duration::hours(1);
         assert_ne!(BucketUnit::Hour.key(&a), BucketUnit::Hour.key(&b));
         assert_eq!(BucketUnit::Day.key(&a), BucketUnit::Day.key(&b));
+        assert_eq!(
+            bucket(BucketUnit::Day, &Zone::utc(), a),
+            BucketUnit::Day.key(&a),
+            "on UTC's own clock the band's bucket is retention's, exactly",
+        );
+    }
+
+    // ── the writer's calendar ──────────────────────────────────────────────
+
+    fn at(rfc3339: &str) -> DateTime<Utc> {
+        DateTime::parse_from_rfc3339(rfc3339)
+            .expect("a valid test instant")
+            .with_timezone(&Utc)
+    }
+
+    /// Each bar with the moments it stands for: bars are consecutive runs of the
+    /// oldest-first moments, each ending on the moment it names.
+    fn members<'a>(axis: &'a Axis, moments: &'a [Moment]) -> Vec<(&'a Bar, &'a [Moment])> {
+        let mut first = 0;
+        axis.bars
+            .iter()
+            .map(|bar| {
+                let run = &moments[first..=bar.moment];
+                first = bar.moment + 1;
+                (bar, run)
+            })
+            .collect()
+    }
+
+    /// Every moment inside a period, read on `zone`'s clock the way the band
+    /// shows it once the period is opened, has to belong to the period its
+    /// label names.
+    fn assert_every_bar_holds_only_its_own_label(
+        axis: &Axis,
+        moments: &[Moment],
+        zone: &Zone,
+        read: impl Fn(&Zone, DateTime<Utc>) -> String,
+    ) {
+        for (bar, run) in members(axis, moments) {
+            for m in run {
+                assert_eq!(
+                    read(zone, m.at),
+                    bar.label,
+                    "the bar labelled '{}' holds a moment the band shows as {}",
+                    bar.label,
+                    zone.iso_stamp(m.at),
+                );
+            }
+        }
+    }
+
+    /// **The defect.** A moment bar was labelled on UTC's clock, so a version
+    /// saved at breakfast in Tokyo sat on the axis at 23:30 the evening before.
+    #[test]
+    fn a_moment_bar_reads_on_the_writers_clock() {
+        let moments = vec![moment(at("2026-03-03T23:30:00Z"), 100)];
+        let axis = axis_for(&moments, &Zone::tokyo());
+        assert!(!axis.opens());
+        assert_eq!(axis.bars[0].label, "2026-03-04 08:30");
+    }
+
+    /// A day bar is the writer's day. New York is five hours behind UTC in
+    /// March, so its evenings are the next day in UTC: grouped by UTC's day, each
+    /// bar held one evening and the following morning, and whichever of the two
+    /// days it was labelled with, the other moment was wrong.
+    #[test]
+    fn a_day_bar_holds_the_writers_day_where_utc_has_already_moved_on() {
+        let zone = Zone::new_york();
+        // Thirty days of three saves: 10:00, 21:00 and 22:30, New York time. The
+        // two evening saves are after midnight in UTC.
+        let first_morning = at("2026-01-05T15:00:00Z"); // 10:00 EST
+        let mut moments = Vec::new();
+        for d in 0..30 {
+            let morning = first_morning + chrono::Duration::days(d);
+            moments.push(moment(morning, 100));
+            moments.push(moment(morning + chrono::Duration::hours(11), 200));
+            moments.push(moment(
+                morning + chrono::Duration::minutes(12 * 60 + 30),
+                300,
+            ));
+        }
+        let axis = axis_for(&moments, &zone);
+        assert_eq!(axis.unit, Some(BucketUnit::Day), "precondition: days fit");
+        assert_eq!(axis.bars.len(), 30, "one bar per day the writer wrote on");
+        assert_eq!(axis.bars[0].label, "2026-01-05");
+        assert!(axis.bars.iter().all(|b| b.count == 3));
+        assert_every_bar_holds_only_its_own_label(&axis, &moments, &zone, Zone::iso_day);
+    }
+
+    /// Across a daylight-saving change the offset moves, and a moment half an
+    /// hour after midnight in Paris summer time is still the previous evening on
+    /// a winter clock. The spring change of 2026 is on 29 March.
+    #[test]
+    fn a_day_bar_follows_the_writers_calendar_across_a_daylight_saving_change() {
+        let zone = Zone::paris();
+        // 00:30, 12:00 and 23:30 Paris time on each day from 20 March to 8 April.
+        let mut moments = Vec::new();
+        let mut day = jiff::civil::date(2026, 3, 20);
+        for _ in 0..20 {
+            for (h, m) in [(0, 30), (12, 0), (23, 30)] {
+                moments.push(moment(zone.instant_of(day.at(h, m, 0, 0)), 100));
+            }
+            day = day.tomorrow().expect("a later day");
+        }
+        // The fixture has to be the writer's clock too, or it proves nothing.
+        assert_eq!(zone.iso_stamp(moments[3 * 10].at), "2026-03-30 00:30");
+        assert_eq!(
+            moments[3 * 10].at,
+            at("2026-03-29T22:30:00Z"),
+            "past the change, 00:30 in Paris is 22:30 the evening before in UTC",
+        );
+
+        let axis = axis_for(&moments, &zone);
+        assert_eq!(axis.unit, Some(BucketUnit::Day));
+        assert_eq!(axis.bars.len(), 20);
+        assert_eq!(axis.bars[10].label, "2026-03-30");
+        assert_every_bar_holds_only_its_own_label(&axis, &moments, &zone, Zone::iso_day);
+    }
+
+    /// An hour bar is the writer's hour, and the hour the clocks go back is one
+    /// bar: every moment in it reads 02:xx, so a label for either pass through
+    /// it names both. On 25 October 2026 Paris runs 02:00 to 03:00 twice.
+    #[test]
+    fn an_hour_bar_is_the_writers_hour_across_the_autumn_change() {
+        let zone = Zone::paris();
+        // Every twenty minutes from 22:00 UTC on the 24th (midnight in Paris)
+        // for fourteen real hours.
+        let start = at("2026-10-24T22:00:00Z");
+        let moments: Vec<Moment> = (0..42)
+            .map(|i| moment(start + chrono::Duration::minutes(20 * i), 100))
+            .collect();
+        let axis = axis_for(&moments, &zone);
+        assert_eq!(axis.unit, Some(BucketUnit::Hour), "precondition: hours fit");
+        assert_eq!(
+            axis.bars.len(),
+            13,
+            "fourteen real hours, one of them repeated on the wall clock",
+        );
+        let repeated = axis
+            .bars
+            .iter()
+            .find(|b| b.label == "10-25 02:00")
+            .expect("the repeated hour has a bar");
+        assert_eq!(repeated.count, 6, "both passes through 02:00 land in it");
+        assert_every_bar_holds_only_its_own_label(&axis, &moments, &zone, |z, t| {
+            z.format(t, "%m-%d %H:00")
+        });
+    }
+
+    /// Months are the writer's months: the last evening of January in New York
+    /// is already February in UTC.
+    #[test]
+    fn a_month_bar_is_the_writers_month() {
+        let zone = Zone::new_york();
+        // Twelve years of one save a month, each at 21:00 on the last day of
+        // the month in New York, which is the first of the next month in UTC.
+        let mut moments = Vec::new();
+        let mut month = jiff::civil::date(2014, 1, 1);
+        for _ in 0..144 {
+            let evening = month.last_of_month().at(21, 0, 0, 0);
+            moments.push(moment(zone.instant_of(evening), 100));
+            month = month
+                .checked_add(jiff::ToSpan::months(1))
+                .expect("a later month");
+        }
+        let axis = axis_for(&moments, &zone);
+        assert_eq!(axis.unit, Some(BucketUnit::Month));
+        assert_eq!(axis.bars[0].label, "2014-01");
+        assert_every_bar_holds_only_its_own_label(&axis, &moments, &zone, |z, t| {
+            z.format(t, "%Y-%m")
+        });
     }
 }

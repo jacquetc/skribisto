@@ -47,6 +47,20 @@ pub struct BackupContext {
     pub authoritative: bool,
 }
 
+impl BackupContext {
+    /// When the backup was taken, as the writer reads it: on their own clock.
+    ///
+    /// The manifest keeps the moment as RFC 3339 text in UTC, and that text used
+    /// to reach the screen as stored ("Backup taken
+    /// 2026-01-01T12:00:00.482913+00:00."). Text that does not parse is shown as
+    /// it is, since it is still the only account of the moment there is.
+    /// `None` when the manifest recorded no moment at all.
+    pub fn taken_label(&self) -> Option<String> {
+        let raw = self.backup_created_at.as_deref()?;
+        Some(crate::shared::stamps::iso_stamp_from_rfc3339(raw).unwrap_or_else(|| raw.to_string()))
+    }
+}
+
 /// Is `path` a backup file? (Authoritative manifest marker, or the filename
 /// fallback for pre-marker backups — see `skrib_format::sniff_backup`.)
 pub fn is_backup_path(path: &str) -> bool {
@@ -117,5 +131,40 @@ mod tests {
     #[test]
     fn empty_is_the_default_destination() {
         assert!(is_destination_available(""));
+    }
+
+    fn context_taken_at(stamp: Option<&str>) -> BackupContext {
+        BackupContext {
+            path: "/b/novel-20260303-233000.skrib".into(),
+            backup_of: Some("/b/novel.skrib".into()),
+            backup_created_at: stamp.map(str::to_string),
+            authoritative: true,
+        }
+    }
+
+    /// The backup choice card's "Backup taken …" used to print the manifest's
+    /// RFC 3339 text verbatim: UTC, with its offset, seconds and fraction.
+    #[test]
+    fn a_backup_says_when_it_was_taken_on_the_writers_clock() {
+        use crate::shared::stamps::{Zone, override_writer_zone};
+        let _tokyo = override_writer_zone(Zone::tokyo());
+        assert_eq!(
+            context_taken_at(Some("2026-03-03T23:30:41.482913+00:00"))
+                .taken_label()
+                .as_deref(),
+            Some("2026-03-04 08:30"),
+        );
+    }
+
+    #[test]
+    fn a_stamp_that_does_not_parse_is_still_shown_and_a_missing_one_is_not() {
+        assert_eq!(
+            context_taken_at(Some("last Tuesday"))
+                .taken_label()
+                .as_deref(),
+            Some("last Tuesday"),
+            "the only account of the moment there is",
+        );
+        assert_eq!(context_taken_at(None).taken_label(), None);
     }
 }

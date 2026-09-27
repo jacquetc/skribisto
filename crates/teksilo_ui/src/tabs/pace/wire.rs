@@ -97,7 +97,10 @@ impl Widget for PaceWire {
                 if let Some(jd) = *e {
                     let end = jiff_to_naive(jd);
                     // Keep the existing start; a Pace with no start yet begins today.
-                    let start = vm.start().get().unwrap_or_else(|| Utc::now().date_naive());
+                    let start = vm
+                        .start()
+                        .get()
+                        .unwrap_or_else(crate::shared::stamps::today);
                     vm.set_dates(start, end);
                 }
             });

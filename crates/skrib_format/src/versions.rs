@@ -47,6 +47,7 @@
 //! cross-session pair: comparing by path would report a change at every boundary
 //! and miss real ones. This is the single easiest thing to get wrong here.
 
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -200,17 +201,7 @@ pub trait VersionSource {
     /// once per examined moment.
     fn row_at(&self, v: &VersionRef, uid: uuid::Uuid, role: &ContentRole) -> Result<RowAt> {
         let index = self.index(v)?;
-        let Some(row) = index.row(uid) else {
-            return Ok(RowAt::Absent);
-        };
-        Ok(match row.prose_for(role) {
-            Some((blob_path, stamp)) => RowAt::Present {
-                blob_path: blob_path.to_string(),
-                stamp,
-                title: row.title.clone(),
-            },
-            None => RowAt::Absent,
-        })
+        Ok(row_at_in(index.row(uid), role))
     }
     /// How many recorded states of **one** row's **one** content role this source
     /// has removed as they aged.
@@ -239,6 +230,114 @@ pub trait VersionSource {
     /// same read path that recovers old prose also recovers *what the note on that
     /// paragraph said before it was resolved*.
     fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>>;
+}
+
+/// What a complete copy of the project says about one role of `row`, the row
+/// as that copy holds it, or `None` when it holds no such row.
+///
+/// A complete copy can testify both ways: prose it does not hold really was not
+/// there.
+fn row_at_in(row: Option<&VersionRow>, role: &ContentRole) -> RowAt {
+    let Some(row) = row else {
+        return RowAt::Absent;
+    };
+    match row.prose_for(role) {
+        Some((blob_path, stamp)) => RowAt::Present {
+            blob_path: blob_path.to_string(),
+            stamp,
+            title: row.title.clone(),
+        },
+        None => RowAt::Absent,
+    }
+}
+
+// ── one row, read once ─────────────────────────────────────────────────────────
+
+/// A complete-copy source narrowed to **one** row, reading each version once
+/// however many of the row's content roles are asked of it.
+///
+/// A caller that does not know which text a row holds asks for each role in
+/// turn until one has a past: the Versions dock tries a scene's text, then a
+/// note's, a preface's and an epigraph. Through the whole-index
+/// [`VersionSource::row_at`] default, each of those questions listed the
+/// destinations again and read every backup's index again, so a row holding
+/// none of those roles, such as a Book, paid for the whole scan once per role
+/// before the dock could say anything. This keeps the listing, and the one row
+/// each version holds, and answers every role from them.
+///
+/// Meant for a source whose `row_at` is that default, which is to say
+/// [`BackupVersions`]. [`LogVersions`] already answers one row from memory,
+/// and keeping its rows here would mean building its whole-project
+/// [`VersionSource::index`] instead.
+///
+/// A version that cannot be read fails every role it is asked about, so it
+/// stays [`crate::changes::Timeline::unreadable`] whichever role is used.
+pub struct OneRow<'a> {
+    source: &'a dyn VersionSource,
+    uid: uuid::Uuid,
+    /// The source's listing, the first time it is asked for. An error is kept
+    /// as its message: `anyhow::Error` cannot be cloned.
+    listed: RefCell<Option<std::result::Result<Vec<VersionRef>, String>>>,
+    /// The row each version held, by version.
+    rows: RefCell<RowsByVersion>,
+}
+
+/// What [`OneRow`] keeps per version: the row, `None` when the version does not
+/// hold it, or why the version could not be read.
+type RowsByVersion =
+    BTreeMap<(PathBuf, DateTime<Utc>), std::result::Result<Option<VersionRow>, String>>;
+
+impl<'a> OneRow<'a> {
+    /// `source` narrowed to the row `uid`.
+    pub fn new(source: &'a dyn VersionSource, uid: uuid::Uuid) -> Self {
+        Self {
+            source,
+            uid,
+            listed: RefCell::new(None),
+            rows: RefCell::new(BTreeMap::new()),
+        }
+    }
+}
+
+impl VersionSource for OneRow<'_> {
+    fn list(&self) -> Result<Vec<VersionRef>> {
+        let mut listed = self.listed.borrow_mut();
+        let listed = listed.get_or_insert_with(|| self.source.list().map_err(|e| format!("{e:#}")));
+        listed.clone().map_err(|e| anyhow::anyhow!(e))
+    }
+
+    fn index(&self, v: &VersionRef) -> Result<VersionIndex> {
+        self.source.index(v)
+    }
+
+    fn row_at(&self, v: &VersionRef, uid: uuid::Uuid, role: &ContentRole) -> Result<RowAt> {
+        if uid != self.uid {
+            return self.source.row_at(v, uid, role);
+        }
+        let mut rows = self.rows.borrow_mut();
+        let row = rows.entry((v.path.clone(), v.taken_at)).or_insert_with(|| {
+            self.source
+                .index(v)
+                .map(|index| index.row(uid).cloned())
+                .map_err(|e| format!("{e:#}"))
+        });
+        match row {
+            Ok(row) => Ok(row_at_in(row.as_ref(), role)),
+            Err(e) => Err(anyhow::anyhow!(e.clone())),
+        }
+    }
+
+    fn thinned_away(&self, uid: uuid::Uuid, role: &ContentRole) -> u32 {
+        self.source.thinned_away(uid, role)
+    }
+
+    fn prose(&self, v: &VersionRef, blob_path: &str) -> Result<String> {
+        self.source.prose(v, blob_path)
+    }
+
+    fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>> {
+        self.source.comments(v, blob_path)
+    }
 }
 
 // ── backups ────────────────────────────────────────────────────────────────────

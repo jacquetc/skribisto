@@ -687,3 +687,91 @@ fn a_recorded_role_with_no_blob_behind_it_is_not_carried() {
     assert_eq!(gone.prose.len(), 1);
     assert!(gone.prose.iter().all(|(_, blob)| !blob.is_empty()));
 }
+
+// ── the date filter, on the writer's calendar ──────────────────────────────
+
+fn moment_on(at: DateTime<Utc>) -> Moment {
+    Moment {
+        at,
+        source: SourceKind::Backup,
+        from: VersionRef {
+            path: PathBuf::from("/backups/Novel.skrib"),
+            taken_at: at,
+            source: SourceKind::Backup,
+        },
+        bytes: 10,
+    }
+}
+
+fn utc(rfc3339: &str) -> DateTime<Utc> {
+    DateTime::parse_from_rfc3339(rfc3339)
+        .expect("a valid test instant")
+        .with_timezone(&Utc)
+}
+
+/// **The defect.** A day picked in the filter began at UTC's midnight while the
+/// band labelled every moment on the writer's clock, so in Tokyo "the 4th" held
+/// the evening of the 4th and the morning of the 5th, and left out the morning
+/// of the 4th that the axis itself called the 4th.
+#[test]
+fn a_filtered_day_is_the_writers_day() {
+    use crate::shared::stamps::{Zone, override_writer_zone};
+    let _tokyo = override_writer_zone(Zone::tokyo());
+    let vm = TimelineViewModel::new();
+    vm.seed_moments_for_test(vec![
+        // 23:30 on the 3rd in Tokyo.
+        moment_on(utc("2026-03-03T14:30:00Z")),
+        // 08:30 on the 4th.
+        moment_on(utc("2026-03-03T23:30:00Z")),
+        // 23:59:59.5 on the 4th: stamped to the nanosecond, like a history entry.
+        moment_on(utc("2026-03-04T14:59:59.5Z")),
+        // 00:30 on the 5th.
+        moment_on(utc("2026-03-04T15:30:00Z")),
+    ]);
+
+    let day = jiff::civil::date(2026, 3, 4);
+    vm.range().set(Some(DateRange::new(day, day)));
+    vm.sync_window();
+    let shown: Vec<DateTime<Utc>> = vm.visible_moments().iter().map(|m| m.at).collect();
+    assert_eq!(
+        shown,
+        vec![utc("2026-03-03T23:30:00Z"), utc("2026-03-04T14:59:59.5Z"),],
+        "the 4th in Tokyo, from its first moment to its last",
+    );
+}
+
+/// On the day daylight saving starts the day is 23 hours long, and the filter
+/// has to end where the writer's day does, not 24 hours after it began.
+#[test]
+fn a_filtered_day_ends_where_a_short_day_does() {
+    use crate::shared::stamps::{Zone, override_writer_zone};
+    let _paris = override_writer_zone(Zone::paris());
+    let vm = TimelineViewModel::new();
+    vm.seed_moments_for_test(vec![
+        // 23:30 on 29 March in Paris, summer time.
+        moment_on(utc("2026-03-29T21:30:00Z")),
+        // 00:30 on the 30th: inside 24 hours of the 29th's start, but not the 29th.
+        moment_on(utc("2026-03-29T22:30:00Z")),
+    ]);
+    let day = jiff::civil::date(2026, 3, 29);
+    vm.range().set(Some(DateRange::new(day, day)));
+    vm.sync_window();
+    let shown: Vec<DateTime<Utc>> = vm.visible_moments().iter().map(|m| m.at).collect();
+    assert_eq!(shown, vec![utc("2026-03-29T21:30:00Z")]);
+}
+
+/// "The last thirty days" ends on the writer's today, not UTC's.
+#[test]
+fn the_recent_preset_ends_on_the_writers_today() {
+    use crate::shared::stamps::{Zone, override_writer_zone};
+    let _ahead = override_writer_zone(Zone::a_day_ahead());
+    let vm = TimelineViewModel::new();
+    vm.set_last_days(30);
+    let range = vm.range().get().expect("the preset sets a range");
+    assert_eq!(Some(range.end), Zone::a_day_ahead().today());
+    assert_ne!(
+        Some(range.end),
+        crate::date_convert::today_utc(),
+        "precondition: this zone's today is never UTC's",
+    );
+}

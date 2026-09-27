@@ -41,7 +41,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use skrib_format::changes::{Timeline, timeline_for};
-use skrib_format::versions::{BackupVersions, LogVersions, SourceKind, VersionSource};
+use skrib_format::versions::{BackupVersions, LogVersions, OneRow, SourceKind, VersionSource};
 use teksilo::data::{SelectionMode, SelectionModel};
 use teksilo::prelude::{AsyncRuntimeHandle, Signal, spawn_blocking};
 use teksilo::widgets::DateRange;
@@ -49,6 +49,7 @@ use teksilo::widgets::DateRange;
 use common::entities::ContentRole;
 
 use super::version_diff::{VersionDiff, diff_djot};
+use crate::shared::stamps::Zone;
 use skrib_format::changes::Change;
 
 /// Reading and writing a backup's pin.
@@ -84,14 +85,26 @@ pub enum VersionScope {
 impl VersionScope {
     /// The content role this scope reads, for a row of the given kind.
     ///
-    /// A Note's body is `NoteText` and a Scene's is `SceneText`; the dock does not
-    /// need to know which kind of row it is looking at, only which content the
-    /// row actually recorded — so both are offered and whichever the timeline has
-    /// is used.
+    /// A Note's body is `NoteText`, a Scene's is `SceneText` and a paratext's (a
+    /// preface, a dedication) is `ParatextText`; the dock does not need to know
+    /// which kind of row it is looking at, only which content the row actually
+    /// recorded, so every body role is offered, best first, and the first one
+    /// the timeline has is used. The order is the Timeline reader's own (see
+    /// `timeline_vm::READING_ORDER`), less the synopsis, which has its scope.
+    ///
+    /// `EpigraphText` comes last. A Part's epigraph is the only text it has, and
+    /// without it here the dock reported a Part with a recorded past as having
+    /// none. A chapter carries an epigraph *and* prose, and its prose comes
+    /// first: the chapter's text is what "Text" means there.
     pub fn roles(self) -> &'static [ContentRole] {
         match self {
             VersionScope::Synopsis => &[ContentRole::SynopsisText],
-            VersionScope::Prose => &[ContentRole::SceneText, ContentRole::NoteText],
+            VersionScope::Prose => &[
+                ContentRole::SceneText,
+                ContentRole::NoteText,
+                ContentRole::ParatextText,
+                ContentRole::EpigraphText,
+            ],
         }
     }
 }
@@ -420,8 +433,11 @@ impl VersionsViewModel {
     /// so "recently" can only be said by computing both ends. A no-op if the
     /// clock reports a date outside what the widget can hold, which is a corrupt
     /// system clock rather than anything a writer did.
+    ///
+    /// "Today" is the writer's today, the calendar every row of the list is
+    /// labelled on (see [`Self::in_range`]).
     pub fn set_last_days(&self, days: u32) {
-        let Some(today) = crate::date_convert::today_utc() else {
+        let Some(today) = Zone::writer().today() else {
             return;
         };
         self.range
@@ -446,11 +462,16 @@ impl VersionsViewModel {
     ///
     /// Both days inclusive: a writer who picks the 3rd to the 5th means the whole
     /// of the 5th, and `DateRangeEdit` only carries the day.
-    fn in_range(&self, at: chrono::DateTime<chrono::Utc>) -> bool {
+    ///
+    /// The day is the writer's, the one the row's own label shows. Read on
+    /// UTC's calendar instead, a version saved on the evening of the 4th in New
+    /// York fell on the 5th here while its row said the 4th, and a writer who
+    /// filtered to the 4th watched a row they could see drop out of the list.
+    fn in_range(&self, at: chrono::DateTime<chrono::Utc>, zone: &Zone) -> bool {
         let Some(range) = self.range.get() else {
             return true;
         };
-        let Some(day) = crate::date_convert::to_jiff_date(at) else {
+        let Some(day) = zone.date(at) else {
             // A date jiff cannot represent is a corrupt stamp, not a match.
             return false;
         };
@@ -475,12 +496,13 @@ impl VersionsViewModel {
     pub fn visible_indices(&self) -> Vec<usize> {
         let view = self.view.get();
         let only_pinned = self.pinned_only.get();
+        let zone = Zone::writer();
         view.timeline
             .changes
             .iter()
             .enumerate()
             .filter(|(_, c)| !only_pinned || self.pin_state(c) == Some(true))
-            .filter(|(_, c)| self.in_range(c.at))
+            .filter(|(_, c)| self.in_range(c.at, &zone))
             .map(|(i, _)| i)
             .collect()
     }
@@ -704,15 +726,32 @@ fn collect(
         project_path: handle.path.clone(),
     };
     let log = LogVersions::open(&handle.path);
+    collect_from(&log, &backups, uid, roles)
+}
+
+/// [`collect`] over the two sources it built.
+///
+/// Every role below asks every backup about the same row, so the backups are
+/// read through [`OneRow`]: each backup's index is read once, not once per
+/// role. The body scope tries four roles, and a row holding none of them (a
+/// Book, a plain folder) otherwise paid for the whole scan four times before
+/// the dock could say anything.
+fn collect_from(
+    log: &dyn VersionSource,
+    backups: &dyn VersionSource,
+    uid: uuid::Uuid,
+    roles: &[ContentRole],
+) -> Result<TimelineView, String> {
+    let backups_once = OneRow::new(backups, uid);
 
     let mut best = Timeline::default();
     let mut best_role = None;
     for role in roles {
-        let sources: [&dyn VersionSource; 2] = [&log, &backups];
+        let sources: [&dyn VersionSource; 2] = [log, &backups_once];
         match timeline_for(&sources, uid, role) {
             Ok(t) => {
                 if !t.is_empty() {
-                    return Ok(measure(t, role.clone(), &backups, &log));
+                    return Ok(measure(t, role.clone(), backups, log));
                 }
                 // Keep whatever boundaries a role reported even with no changes,
                 // so "did not exist yet" still reaches the writer.
@@ -729,8 +768,8 @@ fn collect(
         ..measure(
             best,
             roles.first().cloned().unwrap_or(ContentRole::SceneText),
-            &backups,
-            &log,
+            backups,
+            log,
         )
     })
 }
@@ -739,8 +778,8 @@ fn collect(
 fn measure(
     timeline: Timeline,
     role: ContentRole,
-    backups: &BackupVersions,
-    log: &LogVersions,
+    backups: &dyn VersionSource,
+    log: &dyn VersionSource,
 ) -> TimelineView {
     let texts: Vec<String> = timeline
         .changes
