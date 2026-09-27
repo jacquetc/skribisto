@@ -54,6 +54,11 @@ mod loaded;
 /// paths resolves through it, on top of [`safe_path`]'s containment check.
 mod locate;
 mod mapping;
+/// A ceiling on the nesting of the Markdown and HTML the converters read, so a hostile
+/// or corrupt document cannot abort the process through `text-document`'s recursion or
+/// lose its text past the depth its HTML reader stops at. `pub` because the importers
+/// that convert Markdown and HTML test their own documents against the same ceilings.
+pub mod markup_depth;
 pub mod media;
 mod migration;
 #[cfg(test)]
@@ -123,6 +128,7 @@ pub use loaded::{
     LoadedTrash, LoadedWork,
 };
 pub use mapping::{bundle_to_loaded, from_entities, mark_as_backup};
+pub use markup_depth::{MAX_HTML_DEPTH, MAX_MARKDOWN_DEPTH, MarkupTooDeep};
 pub use reader::{peek_manifest, read_bundle};
 pub use safe_path::{UnsafePath, bundle_relative, join_checked};
 pub use shape::{SkribShape, canonical_project_path, detect_shape};

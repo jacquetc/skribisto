@@ -987,3 +987,44 @@ fn one_row_reads_each_backup_once_and_answers_every_role_as_the_backups_do() {
         "a question about another row goes to the backups themselves",
     );
 }
+
+/// A past version comes out of a backup, which travels exactly as a project does, and
+/// the diff pane parses what `prose` hands it. Every shape of nesting past the Djot
+/// ceiling is refused by name there. Before the ceiling counted every kind of
+/// container, all but the first shape was handed over, and the diff pane's parse
+/// aborted the process: a blob that gets through is parsed here the same way.
+#[test]
+fn a_backup_blob_nested_past_the_djot_ceiling_is_refused_by_name() {
+    for (name, deep) in super::djot_depth::tests::past_the_parsers_limit() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let mut b = bundle();
+        let (uid, fid) = a_scene(&b);
+        set_scene(&mut b, fid, &deep);
+        let path = write_backup(&b, dir.path(), now(), 1);
+        let src = backups_in(dir.path(), &b);
+        let v = super::versions::VersionRef {
+            path: std::path::PathBuf::from(&path),
+            taken_at: now(),
+            source: SourceKind::Backup,
+        };
+        let index = src.index(&v).expect("index");
+        let Some((blob, _)) = index
+            .row(uid)
+            .and_then(|row| row.prose_for(&ContentRole::SceneText))
+        else {
+            panic!("{name}: the scene has a blob in the backup");
+        };
+
+        match src.prose(&v, blob) {
+            Err(e) => {
+                let msg = format!("{e:#}");
+                assert!(msg.contains(blob), "{name}: names the blob: {msg}");
+                assert!(msg.contains("nests"), "{name}: {msg}");
+            }
+            Ok(text) => {
+                let parsed = super::djot_depth::tests::parse_on_a_long_operation_stack(text);
+                panic!("{name}: a blob past the ceiling was handed over: {parsed:?}");
+            }
+        }
+    }
+}

@@ -498,6 +498,60 @@ mod tests {
         assert!(read_template_file(&path).is_ok());
     }
 
+    /// Read `name` holding `text` on a thread with the 2 MiB stack a long operation
+    /// gets, and parse whatever it would store as the editor would. A stack overflow
+    /// aborts the test binary rather than failing the test, which is the failure
+    /// this rules out.
+    fn read_on_a_long_operation_stack(name: &'static str, text: String) -> Result<String> {
+        std::thread::Builder::new()
+            .stack_size(2 << 20)
+            .spawn(move || {
+                let dir = tempfile::tempdir()?;
+                let path = dir.path().join(name);
+                std::fs::write(&path, text)?;
+                let body = read_template_file(&path)?.body;
+                let doc = teksilo::text_document::TextDocument::new();
+                doc.set_djot_sync(&body)?;
+                Ok(body)
+            })
+            .expect("spawn the read thread")
+            .join()
+            .expect("the read must not unwind")
+    }
+
+    /// Nesting that crashed the parser, whichever container it is built from, is
+    /// refused on the way in and never stored: 5,000 nested quotations aborted the
+    /// Markdown conversion, and a line of 700 list markers, footnote definitions or
+    /// divs opened inside a quotation passed the Djot guard and aborted the first
+    /// parse of the template. At the ceiling each is read as it is.
+    #[test]
+    fn a_file_nested_past_the_parsers_limit_is_refused_from_a_long_operation_stack() {
+        let past = [
+            ("deep.md", format!("{}Deep words.\n", "> ".repeat(5_000))),
+            ("bullets.djot", format!("{}Deep words.\n", "- ".repeat(700))),
+            (
+                "notes.djot",
+                format!("{}Deep words.\n", "[^a]: ".repeat(700)),
+            ),
+            ("divs.djot", "> ::: note\n".repeat(700)),
+        ];
+        for (name, text) in past {
+            let refused = read_on_a_long_operation_stack(name, text)
+                .expect_err(&format!("{name} must be refused"));
+            assert!(
+                refused.to_string().contains("nested too deeply"),
+                "{name}: {refused:#}"
+            );
+        }
+
+        let at = skrib_format::MAX_MARKDOWN_DEPTH;
+        let quoted = format!("{}Deep words.\n", "> ".repeat(at));
+        let body = read_on_a_long_operation_stack("quoted.md", quoted).expect("at the ceiling");
+        assert!(body.contains(&"> ".repeat(at)), "{body:.200}");
+        let listed = format!("{}Deep words.\n", "- ".repeat(skrib_format::MAX_DJOT_DEPTH));
+        read_on_a_long_operation_stack("listed.djot", listed).expect("at the ceiling");
+    }
+
     /// `.djot` input is stored verbatim — no conversion, no normalisation.
     #[test]
     fn a_djot_file_is_read_verbatim() {

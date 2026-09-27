@@ -13,6 +13,11 @@
 //! `skrib_format::MAX_XML_DEPTH`: every reader and every walk after it fits. One
 //! level past it the import is refused with the typed `XmlTooDeep`, naming the
 //! member, before any parser has seen a byte of it.
+//!
+//! A row's body is Markdown or HTML, with ceilings of its own
+//! (`skrib_format::MAX_MARKDOWN_DEPTH`, `skrib_format::MAX_HTML_DEPTH`). A body past
+//! them does not refuse the project: its words are kept as plain text and the
+//! writer is told which row.
 
 use std::io::Write;
 use std::sync::atomic::AtomicBool;
@@ -412,4 +417,98 @@ fn a_project_folder_one_level_past_the_ceiling_is_refused_by_name() {
     };
     assert_eq!(refused.part, folder);
     assert_eq!(refused.depth, MAX_XML_DEPTH + 1);
+}
+
+// ---------------------------------------------------------------------------
+// Bodies nested past what a project can hold
+// ---------------------------------------------------------------------------
+
+/// A format-1 folder project holding one text item, `Scene`, whose body is
+/// `body`, read as `declared` (`md`, or the pre-0.3.0 `html`).
+fn project_with_body(root: &std::path::Path, declared: &str, body: &str) -> String {
+    let project = root.join("Bodies");
+    std::fs::create_dir_all(project.join("outline")).expect("outline folder");
+    std::fs::write(project.join("MANUSKRIPT"), "1").expect("marker");
+    std::fs::write(
+        project.join("outline/0-Scene.md"),
+        format!("title:          Scene\nID:             1\ntype:           {declared}\n\n\n{body}"),
+    )
+    .expect("item");
+    project.to_string_lossy().into_owned()
+}
+
+/// The scene's stored prose, after importing `body` read as `declared` on a long
+/// operation's stack, and the warnings the import raised.
+fn import_body(declared: &str, body: &str) -> (String, Vec<String>) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = project_with_body(dir.path(), declared, body);
+    let out = output_in(dir.path());
+    let summary = import_on_a_long_operation_stack(source, out.clone()).expect("it imports");
+    let rows = rows_of(&out);
+    let prose = row(&rows, "Scene")
+        .prose
+        .values()
+        .cloned()
+        .collect::<Vec<_>>()
+        .join("\n");
+    (prose, summary.warnings)
+}
+
+/// Whether the import told the writer the scene's text was kept as its words,
+/// naming the file it came from.
+fn told_about_the_scene(warnings: &[String]) -> bool {
+    warnings
+        .iter()
+        .any(|w| w.contains("0-Scene.md") && w.contains("nested deeper"))
+}
+
+/// A Markdown body is converted on the import's parser stack, but `text-document`
+/// reads it on a thread of its own with 2 MiB of stack, which five thousand nested
+/// blockquotes aborted. At the ceiling the body keeps its structure; past it the
+/// words are kept as plain text, which the next load accepts, and the writer is
+/// told which row.
+#[test]
+fn a_markdown_body_nested_past_the_ceiling_keeps_its_words_and_names_the_row() {
+    let at = format!(
+        "{}Deep words.",
+        "> ".repeat(skrib_format::MAX_MARKDOWN_DEPTH)
+    );
+    let (prose, warnings) = import_body("md", &at);
+    assert!(
+        prose.contains(&"> ".repeat(skrib_format::MAX_MARKDOWN_DEPTH)),
+        "{prose:.200}"
+    );
+    assert!(!told_about_the_scene(&warnings), "{warnings:?}");
+
+    for levels in [skrib_format::MAX_MARKDOWN_DEPTH + 1, 5_000] {
+        let past = format!("Opening words.\n\n{}Deep words.", "> ".repeat(levels));
+        let (prose, warnings) = import_body("md", &past);
+        assert!(prose.contains("Deep words."), "{levels}: {prose:.200}");
+        assert!(skrib_format::djot_depth::check(&prose).is_ok(), "{levels}");
+        assert!(told_about_the_scene(&warnings), "{levels}: {warnings:?}");
+    }
+}
+
+/// An HTML body nested past the ceiling used to convert to nothing, without a
+/// word: `text-document`'s HTML reader stops at its own depth and drops the rest.
+/// Now its words are kept, and the writer is told which row.
+#[test]
+fn an_html_body_nested_past_the_ceiling_keeps_its_words_and_names_the_row() {
+    let nested = |levels: usize| {
+        format!(
+            "<p>Opening words.</p>{}<p>Deep words.</p>{}",
+            "<div>".repeat(levels),
+            "</div>".repeat(levels)
+        )
+    };
+    let (prose, warnings) = import_body("html", &nested(skrib_format::MAX_HTML_DEPTH - 1));
+    assert!(prose.contains("Deep words."), "{prose:.200}");
+    assert!(!told_about_the_scene(&warnings), "{warnings:?}");
+
+    for levels in [5_000, 200, skrib_format::MAX_HTML_DEPTH + 1] {
+        let (prose, warnings) = import_body("html", &nested(levels));
+        assert!(prose.contains("Opening words."), "{levels}: {prose:.200}");
+        assert!(prose.contains("Deep words."), "{levels}: {prose:.200}");
+        assert!(told_about_the_scene(&warnings), "{levels}: {warnings:?}");
+    }
 }

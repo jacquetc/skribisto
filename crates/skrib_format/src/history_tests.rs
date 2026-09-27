@@ -266,53 +266,59 @@ fn rewrite_zip_member(path: &str, member: &str, contents: &[u8]) {
 /// every blob it shows. `read_bundle` refuses a blob nested past the Djot ceiling
 /// (the parser's recursion is unbounded and a stack overflow aborts the process);
 /// `load` read the same blob unchecked, so the one reader that skipped the check
-/// was the one whose output is parsed. Both shapes, because they are two readers.
+/// was the one whose output is parsed. Both shapes, because they are two readers,
+/// and every shape of nesting, because the ceiling missed all but the first until
+/// it counted every kind of container: a blob that got through is parsed here, as
+/// the Versions dock would, and aborts the test binary.
 #[test]
 fn history_load_drops_a_blob_nested_past_the_djot_ceiling_in_both_shapes() {
-    let deep = format!("{}deep\n", ">".repeat(4_000));
-    for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
-        let mut b = bundle();
-        history::record(&mut b, now());
-        let recorded = b.history.entries.len();
-        assert!(recorded >= 2, "the fixture must record more than one row");
-        let hostile = b.history.entries[0].hash.clone();
-        let shared = b
-            .history
-            .entries
-            .iter()
-            .filter(|e| e.hash == hostile)
-            .count();
+    for (name, deep) in super::djot_depth::tests::past_the_parsers_limit() {
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            let mut b = bundle();
+            history::record(&mut b, now());
+            let recorded = b.history.entries.len();
+            assert!(recorded >= 2, "the fixture must record more than one row");
+            let hostile = b.history.entries[0].hash.clone();
+            let shared = b
+                .history
+                .entries
+                .iter()
+                .filter(|e| e.hash == hostile)
+                .count();
 
-        let dir = tempfile::tempdir().expect("tmp");
-        let path = dir
-            .path()
-            .join("Novel.skrib")
-            .to_string_lossy()
-            .into_owned();
-        write_bundle(&path, shape, &b).expect("write");
-        let member = history::blob_relpath(&hostile);
-        match shape {
-            SkribShape::ExplodedFolder => {
-                let root = super::shape::folder_root(&path);
-                std::fs::write(root.join(&member), &deep).expect("plant the blob");
+            let dir = tempfile::tempdir().expect("tmp");
+            let path = dir
+                .path()
+                .join("Novel.skrib")
+                .to_string_lossy()
+                .into_owned();
+            write_bundle(&path, shape, &b).expect("write");
+            let member = history::blob_relpath(&hostile);
+            match shape {
+                SkribShape::ExplodedFolder => {
+                    let root = super::shape::folder_root(&path);
+                    std::fs::write(root.join(&member), &deep).expect("plant the blob");
+                }
+                _ => rewrite_zip_member(&path, &member, deep.as_bytes()),
             }
-            _ => rewrite_zip_member(&path, &member, deep.as_bytes()),
+
+            let loaded = history::load(&path);
+
+            if let Some(kept) = loaded.blobs.get(&hostile) {
+                let parsed =
+                    super::djot_depth::tests::parse_on_a_long_operation_stack(kept.clone());
+                panic!("{name}, {shape:?}: a blob past the Djot ceiling was kept: {parsed:?}");
+            }
+            assert!(
+                loaded.entries.iter().all(|e| e.hash != hostile),
+                "{name}, {shape:?}: its entries go with it, so the log never claims prose it \
+                 cannot produce",
+            );
+            assert_eq!(
+                loaded.entries.len(),
+                recorded - shared,
+                "{name}, {shape:?}: every other row's history must survive",
+            );
         }
-
-        let loaded = history::load(&path);
-
-        assert!(
-            !loaded.blobs.contains_key(&hostile),
-            "{shape:?}: a blob past the Djot ceiling must not be handed to anything that parses it",
-        );
-        assert!(
-            loaded.entries.iter().all(|e| e.hash != hostile),
-            "{shape:?}: its entries go with it, so the log never claims prose it cannot produce",
-        );
-        assert_eq!(
-            loaded.entries.len(),
-            recorded - shared,
-            "{shape:?}: every other row's history must survive",
-        );
     }
 }

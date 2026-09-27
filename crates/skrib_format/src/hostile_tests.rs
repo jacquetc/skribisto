@@ -286,3 +286,120 @@ fn prose_nested_deeply_enough_to_crash_the_parser_is_refused_at_the_bundle() {
     assert!(msg.contains("nests"), "{msg}");
     assert!(msg.contains(rel), "the error should name the file: {msg}");
 }
+
+/// Where a test plants hostile prose in a bundle.
+#[derive(Debug, Clone, Copy)]
+enum PlantedIn {
+    /// The first row's first prose blob.
+    Prose,
+    /// The first note template's body.
+    TemplateBody,
+}
+
+/// Replace the prose at `place` in `bundle` with `text`, and return the bundle-relative
+/// path of the file it is written to, which a refusal has to name.
+fn plant(bundle: &mut super::WorkBundle, place: PlantedIn, text: &str) -> String {
+    match place {
+        PlantedIn::Prose => {
+            for binder in &mut bundle.binders {
+                for item in &mut binder.items {
+                    if let Some(prose_ref) = item.item.prose_refs.first() {
+                        item.prose.insert(prose_ref.file_id, text.to_string());
+                        return prose_ref.path.clone();
+                    }
+                }
+            }
+            panic!("the fixture must hold a prose blob");
+        }
+        PlantedIn::TemplateBody => {
+            let Some(template) = bundle.note_templates.first() else {
+                panic!("the fixture must hold a note template");
+            };
+            bundle
+                .note_template_bodies
+                .insert(template.file_id, text.to_string());
+            template.path.clone()
+        }
+    }
+}
+
+/// Parse every piece of prose `bundle` holds, rows and template bodies, on a long
+/// operation's stack: what opening, exporting or searching the project does.
+fn parse_every_prose(bundle: &super::WorkBundle) {
+    let rows = bundle
+        .binders
+        .iter()
+        .flat_map(|binder| &binder.items)
+        .flat_map(|item| item.prose.values());
+    for text in rows.chain(bundle.note_template_bodies.values()) {
+        if let Err(e) = super::djot_depth::tests::parse_on_a_long_operation_stack(text.clone()) {
+            panic!("the parser refused the prose: {e}");
+        }
+    }
+}
+
+/// Every shape of nesting a container can take, in a row's prose and in a note
+/// template's body, in a folder and in a zip: refused at the bundle, naming the file
+/// and the line. Before the guard counted every kind of container, every shape but
+/// the first loaded, and the first parse of the row aborted the process: this test
+/// then aborts in `parse_every_prose`.
+#[test]
+fn every_shape_of_nesting_past_the_ceiling_is_refused_at_the_bundle_by_name() {
+    for (name, hostile) in super::djot_depth::tests::past_the_parsers_limit() {
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            for place in [PlantedIn::Prose, PlantedIn::TemplateBody] {
+                let mut bundle = super::tests::build_bundle(ShapeTag::Folder);
+                let file = plant(&mut bundle, place, &hostile);
+                let dir = tempfile::tempdir().expect("tmp");
+                let path = dir
+                    .path()
+                    .join("Novel.skrib")
+                    .to_string_lossy()
+                    .into_owned();
+                write_bundle(&path, shape, &bundle).expect("write");
+
+                match read_bundle(&path) {
+                    Err(err) => {
+                        let msg = chain(&err);
+                        assert!(msg.contains("nests"), "{name}, {shape:?}, {place:?}: {msg}");
+                        assert!(
+                            msg.contains(&file),
+                            "{name}, {place:?}: names the file: {msg}"
+                        );
+                        assert!(msg.contains("at line "), "{name}: names the line: {msg}");
+                    }
+                    Ok(loaded) => {
+                        parse_every_prose(&loaded);
+                        panic!("{name}, {shape:?}, {place:?}: loaded past the ceiling");
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The same shapes at the ceiling load, and every prose blob parses from a long
+/// operation's stack.
+#[test]
+fn every_shape_of_nesting_at_the_ceiling_loads_and_parses() {
+    for marker in ["- ", "1. ", "(iv) ", "- [ ] ", "[^a]: ", ": ", "> "] {
+        let text = super::djot_depth::tests::one_line(marker, super::MAX_DJOT_DEPTH);
+        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+            let mut bundle = super::tests::build_bundle(ShapeTag::Folder);
+            plant(&mut bundle, PlantedIn::Prose, &text);
+            plant(&mut bundle, PlantedIn::TemplateBody, &text);
+            let dir = tempfile::tempdir().expect("tmp");
+            let path = dir
+                .path()
+                .join("Novel.skrib")
+                .to_string_lossy()
+                .into_owned();
+            write_bundle(&path, shape, &bundle).expect("write");
+            let loaded = match read_bundle(&path) {
+                Ok(loaded) => loaded,
+                Err(err) => panic!("{marker:?}, {shape:?}: {}", chain(&err)),
+            };
+            parse_every_prose(&loaded);
+        }
+    }
+}

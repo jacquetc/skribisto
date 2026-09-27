@@ -13,6 +13,10 @@
 //! past it the import is refused with the typed `XmlTooDeep`, naming the member,
 //! before any parser has seen a byte of it. Every Plume member carries a DOCTYPE,
 //! so this is also the reader where nesting can hide inside an entity.
+//!
+//! A text is HTML, with a ceiling of its own (`skrib_format::MAX_HTML_DEPTH`). A
+//! text past it does not refuse the project: its words are kept as plain text and
+//! the writer is told.
 
 use std::io::Write;
 use std::sync::atomic::AtomicBool;
@@ -221,4 +225,87 @@ fn an_info_member_past_the_ceiling_refuses_the_project() {
     ));
 
     assert_eq!(refused.part, "info");
+}
+
+// ---------------------------------------------------------------------------
+// Texts nested past what a project can hold
+// ---------------------------------------------------------------------------
+
+/// A project with one scene, `Scene`, whose text is `html`.
+fn project_with_text(root: &std::path::Path, html: String) -> String {
+    let tree = "<!DOCTYPE plume-tree><plume-tree version=\"0.5\" projectName=\"Texts\">\
+                <book number=\"1\" name=\"Book\"><chapter number=\"2\" name=\"Chapter\">\
+                <scene number=\"3\" name=\"Scene\"/></chapter></book></plume-tree>";
+    plume(root, &[("tree", tree.to_string()), ("text/T3.html", html)])
+}
+
+/// A Qt rich-text body whose one paragraph sits inside `levels` nested elements
+/// opened by `open` and closed by `close`, after a paragraph at the top.
+fn nested_text(open: &str, close: &str, levels: usize) -> String {
+    format!(
+        "<html><body><p>Opening words.</p>{}<p>Deep words.</p>{}</body></html>",
+        open.repeat(levels),
+        close.repeat(levels)
+    )
+}
+
+/// The scene's stored prose after importing `html` on a long operation's stack, and
+/// the warnings the import raised.
+fn import_text(html: String) -> (String, Vec<String>) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let source = project_with_text(dir.path(), html);
+    let out = output_in(dir.path());
+    let summary = import_on_a_long_operation_stack(source, out.clone()).expect("it imports");
+    let rows = rows_of(&out);
+    let prose = row(&rows, "Scene")
+        .prose
+        .values()
+        .cloned()
+        .collect::<Vec<_>>()
+        .join("\n");
+    (prose, summary.warnings)
+}
+
+fn told_about_flattening(warnings: &[String]) -> bool {
+    warnings.iter().any(|w| w.contains("nested deeper"))
+}
+
+/// Plume stores every text as Qt rich text. Nested past the reader's own depth, a
+/// scene's text used to convert to nothing, and the import said nothing about it:
+/// `text-document`'s HTML reader stops there and drops the rest. At the ceiling the
+/// text keeps its structure; past it the words are kept as plain text and the
+/// writer is told.
+#[test]
+fn a_text_nested_past_the_ceiling_keeps_its_words_and_says_so() {
+    let (prose, warnings) = import_text(nested_text(
+        "<blockquote>",
+        "</blockquote>",
+        skrib_format::MAX_HTML_DEPTH - 1,
+    ));
+    assert!(prose.contains("> > > "), "{prose:.200}");
+    assert!(prose.contains("Deep words."), "{prose:.200}");
+    assert!(!told_about_flattening(&warnings), "{warnings:?}");
+
+    for (open, close) in [
+        ("<blockquote>", "</blockquote>"),
+        ("<div>", "</div>"),
+        ("<ul><li>", "</li></ul>"),
+    ] {
+        for levels in [5_000, 200, skrib_format::MAX_HTML_DEPTH + 1] {
+            let (prose, warnings) = import_text(nested_text(open, close, levels));
+            assert!(
+                prose.contains("Opening words."),
+                "{open} × {levels}: {prose:.200}"
+            );
+            assert!(
+                prose.contains("Deep words."),
+                "{open} × {levels}: {prose:.200}"
+            );
+            assert!(skrib_format::djot_depth::check(&prose).is_ok());
+            assert!(
+                told_about_flattening(&warnings),
+                "{open} × {levels}: {warnings:?}"
+            );
+        }
+    }
 }

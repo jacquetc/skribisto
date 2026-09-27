@@ -63,13 +63,37 @@ fn within_depth(djot: String, text: String) -> Result<ConvertedDjot> {
             flattened: false,
         });
     }
-    let djot = plain_text_to_djot_verbatim(&text);
+    words_alone(&text)
+}
+
+/// `text` stored as its words alone: plain text, one paragraph per line, which a load
+/// always accepts, and reported as such.
+fn words_alone(text: &str) -> Result<ConvertedDjot> {
+    let djot = plain_text_to_djot_verbatim(text);
     let (text, _) = djot_plain_text(&djot)?;
     Ok(ConvertedDjot {
         djot,
         text,
         flattened: true,
     })
+}
+
+/// Run a conversion on the parser stack ([`crate::xml_depth::on_parser_stack`]).
+///
+/// `text-document` reads on a thread of its own, but writes the Djot, HTML and plain text
+/// it is asked for on the calling thread, recursing once per level of what it read. From
+/// a long operation's 2 MiB thread in a debug build, its Djot writer overflows at 477
+/// nested blockquotes and its HTML writer before 300. What a converter hands it is held
+/// to a ceiling first ([`crate::markup_depth`]), and this is the headroom above it,
+/// whatever thread the conversion was called from.
+fn on_parser_stack<T: Send>(work: impl FnOnce() -> Result<T> + Send) -> Result<T> {
+    match crate::xml_depth::on_parser_stack(work) {
+        Ok(converted) => converted,
+        Err(crate::xml_depth::XmlError::NoParserThread(e)) => Err(anyhow::anyhow!(
+            "could not start a thread to convert the text on: {e}"
+        )),
+        Err(other) => Err(anyhow::Error::new(other)),
+    }
 }
 
 /// Convert Qt rich-text HTML to Djot. Blank input → empty string.
@@ -90,19 +114,36 @@ pub fn html_to_djot(html: &str) -> Result<String> {
 /// Djot directly and prove it with [`read_djot`]. This stays for HTML that really is
 /// HTML: legacy content and the Plume and Manuskript bodies stored as it.
 ///
-/// HTML nesting past [`crate::MAX_DJOT_DEPTH`] is stored as its words alone, and says so
-/// ([`ConvertedDjot::flattened`]).
+/// HTML nesting past what a bundle can hold is stored as its words alone, and says so
+/// ([`ConvertedDjot::flattened`]). Past [`crate::markup_depth::MAX_HTML_DEPTH`] elements
+/// the HTML is not handed to the parser at all, since the parser silently drops text
+/// nested much deeper: its words are read out of the markup first, a paragraph for each
+/// block, and only those are parsed.
 pub fn html_to_djot_and_text(html: &str) -> Result<ConvertedDjot> {
     if html.trim().is_empty() {
         return Ok(ConvertedDjot::default());
     }
-    // Qt rich text puts CSS in a `<head><style>`; text-document's HTML parser
-    // emits the contents of unknown elements as text, so strip non-content
-    // blocks first to keep the stylesheet out of the converted text.
-    let cleaned = strip_block(&strip_block(html, "style"), "script");
-    let doc = TextDocument::new();
-    doc.set_html(&cleaned)?.wait()?;
-    within_depth(doc.to_djot()?, doc.to_plain_text()?)
+    let cleaned = without_style_and_script(html);
+    on_parser_stack(|| {
+        let doc = TextDocument::new();
+        if crate::markup_depth::check_clean_html(&cleaned).is_err() {
+            doc.set_html(&crate::markup_depth::html_without_nesting(&cleaned))?
+                .wait()?;
+            return words_alone(&doc.to_plain_text()?);
+        }
+        doc.set_html(&cleaned)?.wait()?;
+        within_depth(doc.to_djot()?, doc.to_plain_text()?)
+    })
+}
+
+/// `html` without its `<style>` and `<script>` blocks, as every reader of HTML here
+/// takes it.
+///
+/// Qt rich text puts CSS in a `<head><style>`; text-document's HTML parser emits the
+/// contents of unknown elements as text, so non-content blocks are stripped first to
+/// keep the stylesheet out of the converted text.
+pub(crate) fn without_style_and_script(html: &str) -> String {
+    strip_block(&strip_block(html, "style"), "script")
 }
 
 /// Remove every `<tag …>…</tag>` block (case-insensitive). Byte offsets line up
@@ -130,13 +171,43 @@ fn strip_block(html: &str, tag: &str) -> String {
 
 /// Convert Markdown to HTML. Blank input → empty string. Used by the 1.6→1.7
 /// step (which historically turned the then-Markdown content into HTML).
+///
+/// Markdown nested past [`crate::markup_depth::MAX_MARKDOWN_DEPTH`] is not handed to
+/// the parser: its words are, a paragraph for each line, and arrive as HTML paragraphs
+/// of plain text, as [`markdown_to_djot_and_text`] stores them.
 pub fn markdown_to_html(markdown: &str) -> Result<String> {
     if markdown.trim().is_empty() {
         return Ok(String::new());
     }
-    let doc = TextDocument::new();
-    doc.set_markdown(markdown)?.wait()?;
-    Ok(doc.to_html()?)
+    on_parser_stack(|| {
+        let doc = TextDocument::new();
+        if crate::markup_depth::check_markdown(markdown).is_err() {
+            doc.set_markdown(&crate::markup_depth::markdown_without_nesting(markdown))?
+                .wait()?;
+            return Ok(plain_text_to_html(&doc.to_plain_text()?));
+        }
+        doc.set_markdown(markdown)?.wait()?;
+        Ok(doc.to_html()?)
+    })
+}
+
+/// Plain text as HTML paragraphs, one per non-blank line, with the characters HTML
+/// would read as markup escaped.
+fn plain_text_to_html(text: &str) -> String {
+    let mut out = String::with_capacity(text.len() + text.len() / 4);
+    for line in plain_text_lines(text) {
+        out.push_str("<p>");
+        for c in line.chars() {
+            match c {
+                '&' => out.push_str("&amp;"),
+                '<' => out.push_str("&lt;"),
+                '>' => out.push_str("&gt;"),
+                c => out.push(c),
+            }
+        }
+        out.push_str("</p>");
+    }
+    out
 }
 
 /// Convert Markdown to Djot — the format `Content.data` actually holds. Blank
@@ -167,15 +238,25 @@ pub fn markdown_to_djot(markdown: &str) -> Result<String> {
 /// Markdown → Djot and plain text, from **one** parse. The Markdown twin of
 /// [`html_to_djot_and_text`], and for the same reason.
 ///
-/// Markdown nesting past [`crate::MAX_DJOT_DEPTH`] is stored as its words alone, and says
-/// so ([`ConvertedDjot::flattened`]).
+/// Markdown nesting past what a bundle can hold is stored as its words alone, and says
+/// so ([`ConvertedDjot::flattened`]). Past [`crate::markup_depth::MAX_MARKDOWN_DEPTH`]
+/// the Markdown is not handed to the parser at all: its container markers are taken off
+/// every line first, which leaves the same words with nothing to nest, and only those
+/// are parsed.
 pub fn markdown_to_djot_and_text(markdown: &str) -> Result<ConvertedDjot> {
     if markdown.trim().is_empty() {
         return Ok(ConvertedDjot::default());
     }
-    let doc = TextDocument::new();
-    doc.set_markdown(markdown)?.wait()?;
-    within_depth(doc.to_djot()?, doc.to_plain_text()?)
+    on_parser_stack(|| {
+        let doc = TextDocument::new();
+        if crate::markup_depth::check_markdown(markdown).is_err() {
+            doc.set_markdown(&crate::markup_depth::markdown_without_nesting(markdown))?
+                .wait()?;
+            return words_alone(&doc.to_plain_text()?);
+        }
+        doc.set_markdown(markdown)?.wait()?;
+        within_depth(doc.to_djot()?, doc.to_plain_text()?)
+    })
 }
 
 /// The **addressable** text of a Djot string, plus every block's start offset.

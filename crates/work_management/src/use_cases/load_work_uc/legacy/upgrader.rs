@@ -667,6 +667,63 @@ mod tests {
         assert_eq!(detect_version(&conn).unwrap(), 20);
     }
 
+    /// Legacy content reaches Djot through two converters: Markdown to HTML at 1.6 → 1.7,
+    /// HTML to Djot at 1.9 → 2.0. A 1.4 scene of five thousand nested quotations aborted
+    /// the first of them, whatever thread the upgrade ran on, since `text-document`
+    /// reads Markdown on a 2 MiB thread of its own. Upgraded from a long operation's
+    /// stack, such a scene now arrives as its words, as prose the load accepts; within
+    /// the HTML ceiling it keeps its quotations.
+    #[test]
+    fn a_scene_nested_past_the_ceilings_upgrades_to_its_words_from_a_long_operation_stack() {
+        let cases = [
+            (skrib_format::MAX_HTML_DEPTH - 2, true),
+            (skrib_format::MAX_MARKDOWN_DEPTH + 1, false),
+            (5_000, false),
+        ];
+        for (levels, keeps_quotations) in cases {
+            let conn = make_v1_4_db();
+            let scene = format!("Opening words.\n\n{}Deep words.", "> ".repeat(levels));
+            conn.execute(
+                "UPDATE tbl_sheet SET m_content = ?1 WHERE l_sheet_id = 2",
+                [scene],
+            )
+            .unwrap();
+            let project = std::thread::Builder::new()
+                .stack_size(2 << 20)
+                .spawn(move || {
+                    upgrade_to_v2(&conn)?;
+                    super::super::read_v2(&conn, ":memory:")
+                })
+                .expect("spawn the upgrade thread")
+                .join()
+                .expect("the upgrade must not unwind")
+                .expect("the upgrade");
+
+            let Some(scene) = project
+                .binders
+                .iter()
+                .flat_map(|b| &b.items)
+                .find(|item| item.title == "Scene A")
+            else {
+                panic!("{levels}: Scene A is upgraded");
+            };
+            let djot = scene
+                .contents
+                .iter()
+                .map(|content| content.data.as_str())
+                .collect::<Vec<_>>()
+                .join("\n");
+            assert!(djot.contains("Opening words."), "{levels}: {djot:.200}");
+            assert!(djot.contains("Deep words."), "{levels}: {djot:.200}");
+            assert!(skrib_format::djot_depth::check(&djot).is_ok(), "{levels}");
+            assert_eq!(
+                djot.contains("> > > "),
+                keeps_quotations,
+                "{levels}: {djot:.200}"
+            );
+        }
+    }
+
     #[test]
     fn full_chain_from_v1_4() {
         let conn = make_v1_4_db();
