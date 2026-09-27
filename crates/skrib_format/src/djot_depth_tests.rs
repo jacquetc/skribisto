@@ -43,6 +43,24 @@ pub(crate) fn one_line(marker: &str, levels: usize) -> String {
     format!("{}deep\n", marker.repeat(levels))
 }
 
+/// A list whose items each step in past the last by the width of their marker, with a
+/// paragraph line at no indentation after each and a blank line before the next. The
+/// paragraph line continues every item open above it, and each item strips at most its
+/// marker's width from the lines it continues, so each item nests inside the last:
+/// `levels` deep. `prefix` goes in front of every line, a quotation's `> ` for instance.
+fn lazy_staircase(marker: &str, levels: usize, prefix: &str) -> String {
+    let step = marker.trim_end().len();
+    (0..levels)
+        .map(|level| {
+            format!(
+                "{prefix}{}{marker}item {level}\n{prefix}lazy\n",
+                " ".repeat(step * level)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(&format!("{}\n", prefix.trim_end()))
+}
+
 /// How deep the hostile prose below nests: past the 617 containers at which the
 /// parser aborts a 2 MiB thread in a debug build.
 const PAST_THE_PARSERS_LIMIT: usize = 700;
@@ -87,6 +105,18 @@ pub(crate) fn past_the_parsers_limit() -> Vec<(&'static str, String)> {
         (
             "divs a code fence keeps open",
             format!("::: a\n{}", "- item\n\n  ```x\n:::\n".repeat(levels)),
+        ),
+        (
+            "list items stepping in between paragraph lines",
+            lazy_staircase("- ", levels, ""),
+        ),
+        (
+            "footnotes stepping in between paragraph lines",
+            lazy_staircase("[^a]: ", levels, ""),
+        ),
+        (
+            "quoted list items stepping in between paragraph lines",
+            lazy_staircase("1. ", levels, "> "),
         ),
     ]
 }
@@ -205,6 +235,32 @@ fn a_list_stepping_in_one_column_a_level_is_counted_per_step() {
     assert!(check(&stepped(MAX_DEPTH)).is_ok());
     let err = check(&stepped(MAX_DEPTH + 1)).expect_err("one step past the ceiling");
     assert!(err.depth > MAX_DEPTH);
+}
+
+/// A list item goes on through a paragraph line at no indentation after a line that was
+/// not blank, so a list whose items step in one marker's width at a time between such
+/// lines nests one level a step, however little each one is indented. At the ceiling it
+/// loads and parses; one step past it is refused at the deepest item's line.
+///
+/// The count of markers and indents alone read each paragraph line as closing every
+/// item, and let seven hundred steps through at depth 1; the first parse of the row
+/// aborted the process.
+#[test]
+fn a_list_continued_by_paragraph_lines_is_refused_at_its_real_depth() {
+    for (marker, prefix, quotes) in [("- ", "", 0), ("[^a]: ", "", 0), ("1. ", "> ", 1)] {
+        let at_the_ceiling = lazy_staircase(marker, MAX_DEPTH - quotes, prefix);
+        assert!(check(&at_the_ceiling).is_ok(), "{marker:?} {prefix:?}");
+        assert!(parse_on_a_long_operation_stack(at_the_ceiling).is_ok());
+
+        let err = check(&lazy_staircase(marker, MAX_DEPTH - quotes + 1, prefix))
+            .expect_err("one step past the ceiling");
+        assert_eq!(err.depth, MAX_DEPTH + 1, "{marker:?} {prefix:?}");
+        assert_eq!(
+            err.line,
+            3 * MAX_DEPTH + 1 - 3 * quotes,
+            "the deepest item's line"
+        );
+    }
 }
 
 /// Closing fences must bring the depth back down, or a long document with
@@ -466,6 +522,22 @@ fn indented_list() -> impl Strategy<Value = String> {
     })
 }
 
+/// A list whose items step in between paragraph lines, from a few levels to past the
+/// parser's limit, in a quotation or out of one.
+///
+/// It starts after a blank line. Without one, a paragraph line before it reads every
+/// line of it as more of that paragraph (none of them is blank outside the quotation),
+/// and a paragraph of hundreds of lines meets a different limit of the parser, which
+/// this ceiling does not bound: its inline pass recurses once per line that an
+/// emphasis or a quote left open spans.
+fn lazy_list() -> impl Strategy<Value = String> {
+    let marker = prop::sample::select(vec!["- ", "1. ", "[^a]: ", ": ", "- [ ] "]);
+    let prefix = prop::sample::select(vec!["", "> ", "> > "]);
+    (marker, prefix, 1usize..PAST_THE_PARSERS_LIMIT).prop_map(|(marker, prefix, levels)| {
+        format!("\n{}", lazy_staircase(marker, levels, prefix))
+    })
+}
+
 /// A document of lines built from markers and fences, as deep in places as the
 /// profile it is drawn from allows: some well within the ceiling, some just either
 /// side of it, and some far enough past it to reach the parser's limit if the guard
@@ -490,6 +562,7 @@ fn marker_soup() -> impl Strategy<Value = String> {
             2 => mixed,
             2 => fence_run(),
             1 => indented_list(),
+            1 => lazy_list(),
             1 => repeated,
             1 => Just(String::new()),
         ];

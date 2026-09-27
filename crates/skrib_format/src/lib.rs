@@ -37,6 +37,9 @@ pub mod convert;
 /// guards is the format's, and a caller reading prose from anywhere else wants
 /// the same check.
 pub mod djot_depth;
+/// The nesting the Djot parser builds, counted exactly, which [`djot_depth`] refuses
+/// past its ceiling beside its own marker count.
+mod djot_nesting;
 mod errors;
 mod fingerprint;
 mod folder_io;

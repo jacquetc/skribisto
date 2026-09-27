@@ -40,15 +40,32 @@
 //! The parser is the right place for a depth limit and this is not it (see the
 //! note at the bottom). What this module can do without reaching into that crate
 //! is bound the *input*: a container is only ever opened by a marker at the start
-//! of a line, and only ever continued by a marker, by indentation or by a fence
-//! that is still open, so counting those is an upper bound on how deep the parser
-//! can go.
+//! of a line, so the markers a line opens with, and the containers it continues,
+//! bound how deep the parser can go on it.
 //!
-//! It is deliberately an over-estimate. Every construct counted here *may* open a
-//! container and some will not (a `>` inside a code block is prose). Over-counting
-//! is the safe direction: it can only refuse a document that was closer to the
-//! ceiling than it looked, and the ceiling is set far above anything a person
-//! writes.
+//! The marker count is deliberately an over-estimate where it can be. Every
+//! construct counted here *may* open a container and some will not (a `>` inside a
+//! code block is prose). Over-counting is the safe direction: it can only refuse a
+//! document that was closer to the ceiling than it looked, and the ceiling is set
+//! far above anything a person writes.
+//!
+//! # Two counts
+//!
+//! The marker count reads each line on its own, so it can only know the containers
+//! a line continues by what the line restates: its `>`, its indentation, the fences
+//! still open. That is not all of them. A list item or a footnote also goes on
+//! through a paragraph line at any indentation, after a line that was not blank,
+//! and the next item one column further in then nests inside it: seven hundred such
+//! steps passed the marker count at depth 1, and aborted the process the first time
+//! the row was parsed.
+//!
+//! So [`check`](crate::djot_depth::check) also counts the nesting the parser builds,
+//! exactly, with the scan in `djot_nesting` (which follows `jotdown`'s block pass
+//! line by line, each open container continued by the parser's own rule), and refuses
+//! on the larger of the two. The marker count keeps its over-counts; the exact count
+//! is the upper bound.
+//! `text-document` refuses on that same exact count past its own ceiling of 128, so
+//! prose this module accepts is never shown there as its raw source.
 //!
 //! # What is counted, line by line
 //!
@@ -118,7 +135,7 @@
 //!
 //! [`MAX_DEPTH`](crate::MAX_DJOT_DEPTH) is 96. For scale: a blockquote inside a
 //! list inside a footnote inside a div is 4, and the Djot `text-document` writes
-//! for a list nested ten deep, two spaces a level, counts 19 here. No manuscript
+//! for a list nested ten deep, two spaces a level, counts 10 here. No manuscript
 //! reaches 96, and 96 is far below the 617 that overflows a debug build.
 
 use anyhow::Context;
@@ -176,16 +193,37 @@ impl std::error::Error for TooDeep {}
 /// Blockquotes (counted per `>` on the line, as jotdown re-states them every line),
 /// divs (via `OpenDivs`, which nothing on a later line has to mention) and a table
 /// row (one container whose cells hold no blocks) are added to the list depth. The
-/// count stays a conservative upper bound where the exact rule is intricate — a `>`
-/// not followed by a space, or a marker mixed with mid-line quotes — over-counting by
-/// a small constant rather than risking an under-count.
+/// count over-counts where the exact rule is intricate: a `>` not followed by a space,
+/// or a marker mixed with mid-line quotes.
+///
+/// # And the nesting the parser builds
+///
+/// A line's depth is the larger of that count and the exact nesting of the scan in
+/// `djot_nesting`, read in step with it: the stack of indents drops an item at a line
+/// that continues it without restating it (a paragraph line after a line that was not
+/// blank, or a quote opened inside it on a later line), and the exact scan keeps it.
 pub fn check(text: &str) -> Result<(), TooDeep> {
     let mut divs = OpenDivs::default();
     // The indents of the list/definition items open at the current line, strictly
     // increasing from the bottom. A blank or marker-less-but-empty line leaves it
     // untouched (a loose list stays open across the blank between its items).
     let mut open_lists: Vec<usize> = Vec::new();
+    // The nesting the parser builds, which the count below cannot see all of (see
+    // "Two counts" in the module note), read in step with it.
+    let mut nesting = crate::djot_nesting::Nesting::default();
+    let mut offset = 0usize;
     for (index, line) in text.split('\n').enumerate() {
+        // The same line as the parser reads it, its line break included. The empty
+        // piece `split` yields after a final line break is no line to the parser.
+        let end = offset + line.len();
+        let parsed_line = text.get(offset..(end + 1).min(text.len())).unwrap_or(line);
+        offset = end + 1;
+        let parsed = if parsed_line.is_empty() {
+            0
+        } else {
+            nesting.read(parsed_line, MAX_DEPTH)
+        };
+
         let start = line_start(line, Grammar::Djot, MAX_DEPTH);
         divs.read(&start);
 
@@ -208,7 +246,8 @@ pub fn check(text: &str) -> Result<(), TooDeep> {
             }
         }
 
-        let depth = divs.count() + layout.quotes + open_lists.len() + usize::from(layout.table);
+        let depth = (divs.count() + layout.quotes + open_lists.len() + usize::from(layout.table))
+            .max(parsed);
         if depth > MAX_DEPTH {
             return Err(TooDeep {
                 depth,
