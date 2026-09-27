@@ -39,6 +39,22 @@ pub(crate) const DOCUMENT_ZIP_LIMITS: skrib_format::zip_guard::ZipLimits =
         max_total_bytes: 2 << 30,
     };
 
+/// The most list levels imported prose keeps. A list item nested deeper arrives at the
+/// deepest of them, and is reported ([`crate::ImportDiagnostic::ListNestingFlattened`]).
+///
+/// Word's numbering has nine levels (`w:ilvl` 0 to 8) and LibreOffice's ten, so sixteen
+/// keeps every level either application can write, with six to spare for a producer that
+/// writes more. It is also far inside what stored prose may nest: the deepest item is
+/// written thirty columns in, which `skrib_format::djot_depth` counts, with its marker, as
+/// thirty-one of its [`skrib_format::MAX_DJOT_DEPTH`] levels, leaving room for any
+/// blockquote or footnote around it. A list written deeper than that ceiling is not merely
+/// unusual: the next load refuses the whole project over it, and from `text-document`
+/// 1.12.3 the parser reads such a line as literal text rather than as a list.
+///
+/// Here rather than in `rich` because Markdown keeps the same levels, and `rich` is built
+/// only for the two container formats.
+pub const MAX_LIST_LEVELS: usize = 16;
+
 #[cfg(feature = "docx")]
 pub mod docx;
 #[cfg(feature = "markdown")]

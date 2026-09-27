@@ -64,19 +64,30 @@ at least one of them needs a decision. That is the round trip, and
 ## Your text as you typed it
 
 From Word, OpenDocument and plain-text files, words arrive exactly as the file holds them.
-Straight quotes stay straight, a double space stays double, and `--`, `...` or a time such as
-`10:30:45` are not rewritten.
+Straight quotes stay straight, a double space stays double, a no-break or soft hyphen stays in
+its word, and `--`, `...` or a time such as `10:30:45` are not rewritten. Layout is not text: the
+indent at the start of a paragraph is left to your export style, and a tab inside a Word or
+OpenDocument paragraph arrives as a space. A text box, an equation or an embedded object is not
+text either: the wizard leaves each one out and says how many.
+
+A symbol inserted in Word from its Symbol font arrives as the character it shows, a Greek letter
+or an arrow for example. One from a font of pictures, such as Wingdings, arrives as the
+character the file stores for it, which most fonts show as an empty box.
 
 In a plain-text file, each line is a paragraph. A file wrapped at a fixed width, with a blank
 line between paragraphs, has its wrapped lines joined back into whole paragraphs. A short line
-in it, such as one line of an address, still ends its paragraph.
+in it, such as one line of an address, still ends its paragraph. A line of three or more
+hyphens is a scene break, the first line of the file included. A block at the very top between
+two `---` lines is read as the file's details only when every line in it gives the file's title,
+its author or its order.
 
 Word and OpenDocument files also bring:
 
 - bold, italic, underline, strikethrough, superscript and subscript
-- links
+- links, in the text and in comments
 - centred and right-aligned lines
 - page breaks
+- tables, with the rows of a table set inside another after the row that holds it
 
 Justified text follows your export style, not the file.
 
@@ -86,12 +97,13 @@ Comments in a Word or OpenDocument file arrive as real Skribisto comments, on th
 marked. A comment brings its author and its replies with it. See [comments](:help-comments).
 
 If the words a comment marked cannot be found, it is kept on the nearest paragraph, and the
-wizard says so. A comment on a heading arrives on the first paragraph under it. When no text
+wizard says so. A comment made on an empty paragraph goes to the paragraph before it, and the
+wizard says so too. A comment on a heading arrives on the first paragraph under it. When no text
 sits directly under that heading, as under a book title followed by a chapter title, it goes to
 the first paragraph after it, or to the last one before it when nothing follows.
 
 Footnotes arrive from those two formats too, each with its own text, called from the same place
-in the prose. Numbers are not carried.
+in the prose. Endnotes arrive as footnotes. Numbers are not carried.
 
 A note the wizard cannot place is reported rather than invented.
 
@@ -105,7 +117,9 @@ A strip under the tree carries the wizard's messages about the import.
 - A line left to fill in, drawn as underlined or struck-through blank space, arrives as plain
   spaces, or not at all where it starts or ends a paragraph. The wizard says how many.
 - A list nested more than sixteen levels deep arrives with its deeper items at the sixteenth
-  level, words and formatting kept. The wizard says how many.
+  level, words and formatting kept. The wizard says how many. In a Markdown file, a list
+  indented too far for a project to hold arrives as plain text instead, and its lines are
+  counted with the paragraphs that arrive as plain text.
 - A comment in a file with no text to keep it on, only headings for example, is not imported,
   and the wizard names it.
 - A file that cannot be read, or whose format nothing recognizes, is skipped and named. The

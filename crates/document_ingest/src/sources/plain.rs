@@ -51,8 +51,12 @@
 //!   plain-text writer reaches for, which is also what this format read as a heading
 //!   before.
 //!
-//! A metadata block at the very top (`---` … `---`) is read as front matter, as it is
-//! for Markdown.
+//! A block at the very top between two `---` lines is read as front matter only when it
+//! holds nothing but the title, the author or the order, one `key: value` line each
+//! (`front_matter::split_plain`). Anything else in it is the writer's text: its opening
+//! line is a scene break like any other, and the lines under it are prose. Read as
+//! Markdown reads it, a file that opens with a drawn break and draws another further down
+//! lost everything between the two.
 
 use anyhow::Result;
 use skribisto_model::scene_break::{self, SceneBreakTier};
@@ -86,7 +90,7 @@ impl SourceScanner for PlainTextScanner {
             return Ok(doc);
         }
 
-        let fm = front_matter::split(&decoded.text, origin);
+        let fm = front_matter::split_plain(&decoded.text, origin);
         doc.metadata = fm.metadata;
         doc.diagnostics.extend(fm.diagnostics);
         doc.blocks = segment(&decoded.text[fm.body_offset..])?;
@@ -732,5 +736,52 @@ mod tests {
         let doc = scan("---\ntitle: The Book\n---\nFirst line.");
         assert_eq!(doc.metadata.title.as_deref(), Some("The Book"));
         assert_eq!(prose_read_back(&doc), vec!["First line."]);
+
+        let doc = scan("---\nTitle: \"The Book\"\nauthor: Jane Doe\norder: 3\n\n---\nFirst line.");
+        assert_eq!(doc.metadata.title.as_deref(), Some("The Book"));
+        assert_eq!(doc.metadata.author.as_deref(), Some("Jane Doe"));
+        assert_eq!(doc.metadata.order_hint, Some(3));
+        assert_eq!(prose_read_back(&doc), vec!["First line."]);
+    }
+
+    /// A file that opens with a drawn break and draws another further down: the passage
+    /// between the two is the writer's first scene, and it was read as metadata and lost,
+    /// with nothing said. A line with a colon in it, a line without one, and a `...` line,
+    /// which also closes a YAML block, all stay prose.
+    #[test]
+    fn a_passage_between_two_drawn_breaks_at_the_top_is_kept() {
+        let breaks = |doc: &SourceDocument| {
+            doc.blocks
+                .iter()
+                .filter(|b| matches!(b, SourceBlock::SceneBreak { .. }))
+                .count()
+        };
+        let doc = scan("---\nIt was a dark night.\nThe rain fell: hard.\n---\nMorning came.\n");
+        assert_eq!(
+            paragraphs(&doc),
+            vec![
+                "It was a dark night.",
+                "The rain fell: hard.",
+                "Morning came."
+            ]
+        );
+        assert_eq!(breaks(&doc), 2, "{:?}", doc.blocks);
+        assert_eq!(doc.metadata, crate::block::SourceMetadata::default());
+
+        let doc = scan("---\nOpening scene.\nWait...\n...\nNext.\n");
+        assert_eq!(
+            paragraphs(&doc),
+            vec!["Opening scene.", "Wait...", "...", "Next."]
+        );
+
+        // A key the import does not read, or an order that is not a number, is a
+        // writer's line like any other.
+        for block in ["Note: a draft.", "title: Kept\ntags: none", "order: first"] {
+            let doc = scan(&format!("---\n{block}\n---\nBody.\n"));
+            let mut expected: Vec<String> = block.lines().map(str::to_string).collect();
+            expected.push("Body.".to_string());
+            assert_eq!(paragraphs(&doc), expected, "{block:?}");
+            assert_eq!(doc.metadata.title, None, "{block:?}");
+        }
     }
 }

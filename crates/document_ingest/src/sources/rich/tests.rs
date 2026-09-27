@@ -31,6 +31,7 @@ fn annotation(block_index: usize, start: usize, length: usize) -> RichAnnotation
         start,
         length,
         end: None,
+        between_blocks: false,
         uid: None,
         uid_tag: None,
         author: "Editor".into(),
@@ -284,6 +285,128 @@ fn a_comment_whose_paragraph_produced_nothing_is_reported_not_dropped() {
     );
 }
 
+/// A comment made where the file holds no text carries the index of the block after it,
+/// since none exists where it was made. Read as its own position it landed there,
+/// silently; it goes to the block before it instead, flagged for the planner to report,
+/// and to the block after it only when nothing comes before.
+#[test]
+fn a_comment_made_between_blocks_goes_to_the_block_before_it() {
+    let between = |block_index| RichAnnotation {
+        between_blocks: true,
+        ..annotation(block_index, 0, 0)
+    };
+    let doc = assemble_doc(
+        vec![
+            RichBlock::body(vec![Run::plain("Before.")]),
+            RichBlock::body(vec![Run::plain("After.")]),
+        ],
+        vec![between(1), annotation(1, 0, 0), between(0), between(2)],
+    );
+    let placed: Vec<(&str, bool)> = doc
+        .annotations
+        .iter()
+        .map(|a| (a.anchor.exact.as_str(), a.unanchored))
+        .collect();
+    assert_eq!(
+        placed,
+        vec![
+            ("Before.", true),
+            ("After.", false),
+            ("Before.", true),
+            ("After.", true),
+        ]
+    );
+}
+
+/// A comment on an empty line of a paragraph with words on another line stays in the
+/// paragraph: at the end of the line before, or at the start of the line after when it
+/// opens the paragraph. Only a paragraph with no words at all makes its comments between
+/// blocks, and a range still open is made so only when no line of the paragraph follows.
+#[test]
+fn a_comment_on_an_empty_line_stays_in_its_paragraph() {
+    let blocks = vec![
+        RichBlock::body(vec![Run::plain("Before.")]),
+        RichBlock::body(vec![Run::plain("First line")]),
+        RichBlock::body(vec![Run::plain("Second line")]),
+    ];
+    // A paragraph read as five lines, the first, third and fifth empty: a comment opens
+    // it, one sits between its two lines of words, one closes it; a range covering words
+    // is left alone; a range still open on the last line runs on past it.
+    let lines = [None, Some(1), None, Some(2), None];
+    let mut annotations = vec![
+        annotation(1, 0, 0),
+        annotation(2, 0, 0),
+        annotation(3, 0, 0),
+        annotation(2, 0, 4),
+        annotation(3, 0, 0),
+    ];
+    let empty = [
+        EmptyLine {
+            line: 0,
+            annotations: 0..1,
+        },
+        EmptyLine {
+            line: 2,
+            annotations: 1..2,
+        },
+        EmptyLine {
+            line: 4,
+            annotations: 2..5,
+        },
+    ];
+    settle_empty_lines(&mut annotations, &blocks, &lines, &empty, |index| {
+        index == 4
+    });
+    let placed: Vec<(usize, usize, bool)> = annotations
+        .iter()
+        .map(|a| (a.block_index, a.start, a.between_blocks))
+        .collect();
+    assert_eq!(
+        placed,
+        vec![
+            (1, 0, false),
+            (1, 10, false),
+            (2, 11, false),
+            (2, 0, false),
+            (3, 0, true),
+        ]
+    );
+
+    // A paragraph holding no words at all.
+    let mut annotations = vec![annotation(1, 0, 0)];
+    settle_empty_lines(
+        &mut annotations,
+        &blocks[..1],
+        &[None, None],
+        &[EmptyLine {
+            line: 1,
+            annotations: 0..1,
+        }],
+        |_| false,
+    );
+    assert!(annotations[0].between_blocks);
+    assert_eq!(annotations[0].block_index, 1);
+}
+
+/// What a scanner marks when a table produced no block: the comments opened in it that
+/// point at the next block and cover nothing. One that closes on words is cleared.
+#[test]
+fn only_the_comments_that_cover_nothing_are_marked_between_blocks() {
+    let mut annotations = vec![
+        annotation(0, 0, 3),
+        annotation(1, 0, 0),
+        annotation(1, 0, 0),
+        annotation(1, 0, 4),
+    ];
+    mark_between_blocks(&mut annotations, 1, 1);
+    let marked: Vec<bool> = annotations.iter().map(|a| a.between_blocks).collect();
+    assert_eq!(marked, vec![false, true, true, false]);
+    annotations[2].length = 6;
+    reaches_words(&mut annotations[2]);
+    assert!(annotations[1].between_blocks);
+    assert!(!annotations[2].between_blocks);
+}
+
 #[test]
 fn lists_and_quotes_convert_and_keep_one_line_each() {
     let doc = assemble_doc(
@@ -378,6 +501,7 @@ fn a_comments_own_emphasis_survives_as_djot() {
             start: 0,
             length: 0,
             end: None,
+            between_blocks: false,
             uid: None,
             uid_tag: None,
             author: "Editor".into(),
@@ -417,6 +541,7 @@ fn a_replys_own_emphasis_survives_as_djot_too() {
             start: 0,
             length: 0,
             end: None,
+            between_blocks: false,
             uid: None,
             uid_tag: None,
             author: "Editor".into(),
@@ -449,6 +574,7 @@ fn a_multi_paragraph_comment_keeps_both_paragraphs() {
             start: 0,
             length: 0,
             end: None,
+            between_blocks: false,
             uid: None,
             uid_tag: None,
             author: "Editor".into(),
@@ -484,6 +610,7 @@ fn a_blank_paragraph_in_a_comment_contributes_nothing() {
             start: 0,
             length: 0,
             end: None,
+            between_blocks: false,
             uid: None,
             uid_tag: None,
             author: "Editor".into(),

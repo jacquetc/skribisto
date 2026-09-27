@@ -62,9 +62,12 @@
 //! **No annotation becomes a comment on the whole document.** Neither format can express
 //! one and the comment panel cannot open one. A comment that cannot be placed on its words
 //! (its paragraph produced nothing, or failed the proof) becomes a comment on the nearest
-//! paragraph, flagged [`SourceAnnotation::unanchored`]. The planner reports it, once
-//! ([`ImportDiagnostic::CommentUnanchored`]), since only the planner knows whether the
-//! paragraph it landed on is stored at all.
+//! paragraph, the one before it first, flagged [`SourceAnnotation::unanchored`]. The
+//! planner reports it, once ([`ImportDiagnostic::CommentUnanchored`]), since only the
+//! planner knows whether the paragraph it landed on is stored at all. A scanner says which
+//! comments were made on an empty paragraph with [`mark_between_blocks`] and
+//! [`settle_empty_lines`]: the index such a comment carries is the next block's, and read as
+//! its own it would land there silently.
 
 use anyhow::Result;
 use skrib_format::DjotReading;
@@ -81,19 +84,7 @@ mod emit;
 
 use emit::{Frame, MemberProof, Segment, Source};
 
-/// The most list levels imported prose keeps. A list item nested deeper arrives at the
-/// deepest of them, and is reported ([`ImportDiagnostic::ListNestingFlattened`]).
-///
-/// Word's numbering has nine levels (`w:ilvl` 0 to 8) and LibreOffice's ten, so sixteen
-/// keeps every level either application can write, with six to spare for a producer that
-/// writes more. It is also far inside what stored prose may nest: the deepest item is
-/// written thirty columns in, which `skrib_format::djot_depth` counts, with its marker, as
-/// thirty-one of its [`skrib_format::MAX_DJOT_DEPTH`] levels, leaving room for any
-/// blockquote or footnote around it. A list written deeper than that ceiling is not merely
-/// unusual: the next load
-/// refuses the whole project over it, and from `text-document` 1.12.3 the parser reads such
-/// a line as literal text rather than as a list.
-pub const MAX_LIST_LEVELS: usize = 16;
+pub use super::MAX_LIST_LEVELS;
 
 /// Character formatting a container format can express and Djot can carry.
 ///
@@ -482,6 +473,18 @@ pub struct RichAnnotation {
     /// Where the range ends, when an editor laid it across several paragraphs and it ends
     /// in a later block than it starts in. `None` for a range inside one block.
     pub end: Option<AnnotationEnd>,
+    /// The comment was made where the file holds no text: on a paragraph holding no words,
+    /// its lines all empty. No block exists there, so `block_index` is the block that
+    /// followed it. (A comment on an empty line of a paragraph that has words on another
+    /// stays in that paragraph instead: see [`settle_empty_lines`].)
+    ///
+    /// Such a comment goes on the nearest paragraph, the one before it first, since a
+    /// comment on an empty line most often belongs to the passage it follows, and it is
+    /// reported. Read as a position of its own, it would land silently on the paragraph
+    /// after it, which may open the next chapter. A scanner sets this with
+    /// [`settle_empty_lines`] or [`mark_between_blocks`], and clears it the moment the
+    /// comment's range reaches words.
+    pub between_blocks: bool,
     /// The uid this comment carried in the source file, when the file is one
     /// Skribisto itself exported (the DOCX/ODT writers' own `skrb:uid` attribute —
     /// see [`crate::block::SourceAnnotation::uid`]). `None` for a comment an editor
@@ -588,6 +591,120 @@ pub fn attach_comment_marks(annotations: &mut [RichAnnotation], marks: &[Comment
             // one instead of silently acquiring a range.
             if a.length == 0 && mark.length > 0 {
                 a.length = mark.length;
+            }
+        }
+    }
+}
+
+/// Flag the comments a table opened where it produced no block, a table with no cells.
+///
+/// A scanner calls this when it has finished such a table: `from` is how many annotations
+/// there were before it started, and `next_block` the index the next block will take. (A
+/// paragraph's comments are placed by [`settle_empty_lines`], which knows its lines.) A
+/// comment opened in the table whose range still covers nothing points at
+/// `next_block` although it was made before it (see [`RichAnnotation::between_blocks`]).
+/// A range still open is flagged too, and cleared by [`reaches_words`] when it closes on
+/// words further on.
+pub fn mark_between_blocks(annotations: &mut [RichAnnotation], from: usize, next_block: usize) {
+    for annotation in annotations.iter_mut().skip(from) {
+        if annotation.block_index == next_block
+            && annotation.length == 0
+            && annotation.end.is_none()
+        {
+            annotation.between_blocks = true;
+        }
+    }
+}
+
+/// Clear [`RichAnnotation::between_blocks`] once a range has closed on words: it then
+/// starts where the next block starts, which is exactly where it was made.
+pub fn reaches_words(annotation: &mut RichAnnotation) {
+    if annotation.length > 0 || annotation.end.is_some() {
+        annotation.between_blocks = false;
+    }
+}
+
+/// An empty line of a paragraph, and the comments opened on it.
+///
+/// A line break ends one block and starts the next, so a paragraph is read as lines, the
+/// stretches between its breaks, and a line holding nothing produces no block. A scanner
+/// records each such line as it finishes it, and hands them all to [`settle_empty_lines`]
+/// once the paragraph is read.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EmptyLine {
+    /// Which line of the paragraph: how many line breaks come before it.
+    pub line: usize,
+    /// The annotations opened on it, as indices into the scanner's annotations.
+    pub annotations: std::ops::Range<usize>,
+}
+
+/// Place the comments a paragraph opened on its empty lines, once the paragraph is read.
+///
+/// `lines` holds, for each line of the paragraph, the block it produced, or `None` for an
+/// empty one; `empty` the comments opened on each empty line. Such a comment carries the
+/// index of whatever block is made next, since none was made where it sits.
+///
+/// **A comment that covers nothing stays in its paragraph when the paragraph has words.**
+/// It goes to the end of the line before it, or, when it opens the paragraph, to the start
+/// of the line after it: LibreOffice writes a comment made at the top of a new page before
+/// the paragraph's leading page break. It is where it was made, give or take the line
+/// break, so nothing is reported. Sent to the paragraph before, as a comment on an empty
+/// paragraph is, it left its own paragraph, and at the start of a scene the scene too.
+///
+/// Only a paragraph with no words at all makes its comments between blocks
+/// ([`RichAnnotation::between_blocks`]), for the planner to place on the paragraph before
+/// and report.
+///
+/// A range still open (`is_open`) runs on past its line. It starts on the paragraph's next
+/// line when there is one, exactly where it was made, and is otherwise made between blocks
+/// until [`reaches_words`] clears it.
+pub fn settle_empty_lines(
+    annotations: &mut [RichAnnotation],
+    blocks: &[RichBlock],
+    lines: &[Option<usize>],
+    empty: &[EmptyLine],
+    is_open: impl Fn(usize) -> bool,
+) {
+    for EmptyLine {
+        line,
+        annotations: opened,
+    } in empty
+    {
+        let split = (*line).min(lines.len());
+        let before = lines[..split].iter().rev().flatten().next().copied();
+        let after = lines
+            .get(split + 1..)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .next()
+            .copied();
+        for index in opened.clone() {
+            let open = is_open(index);
+            let Some(annotation) = annotations.get_mut(index) else {
+                continue;
+            };
+            if annotation.length > 0 || annotation.end.is_some() {
+                continue;
+            }
+            if open {
+                if after.is_none() {
+                    annotation.between_blocks = true;
+                }
+                continue;
+            }
+            match (before, after) {
+                (Some(block), _) => {
+                    annotation.block_index = block;
+                    annotation.start = blocks
+                        .get(block)
+                        .map_or(0, |b| b.plain_text().chars().count());
+                }
+                (None, Some(block)) => {
+                    annotation.block_index = block;
+                    annotation.start = 0;
+                }
+                (None, None) => annotation.between_blocks = true,
             }
         }
     }
@@ -971,15 +1088,21 @@ impl Assembly<'_> {
     /// a selector built by one set of rules and resolved by another is exactly the drift
     /// that module was moved down to prevent.
     fn place_annotation(&self, annotation: &RichAnnotation, out: &SourceDocument) -> Placed {
+        if annotation.between_blocks {
+            // Made before `block_index`, not on it: the block itself is a candidate only
+            // when nothing comes before it.
+            return self.place_on_nearest(annotation.block_index, annotation.block_index, out);
+        }
         let own = self
             .placement
             .get(annotation.block_index)
             .and_then(Option::as_ref);
+        let after = annotation.block_index.saturating_add(1);
         let Some(place) = own else {
-            return self.place_on_nearest(annotation.block_index, out);
+            return self.place_on_nearest(annotation.block_index, after, out);
         };
         let Some(block) = out.blocks.get(place.source_block) else {
-            return self.place_on_nearest(annotation.block_index, out);
+            return self.place_on_nearest(annotation.block_index, after, out);
         };
         let block_text = block.plain_text();
 
@@ -1047,12 +1170,21 @@ impl Assembly<'_> {
         }
     }
 
-    /// A paragraph comment on the placed paragraph nearest `block_index`: the one before
-    /// it when there is one, since a comment on an empty line most often belongs to the
-    /// passage it follows, and the one after it otherwise. `usize::MAX` (a comment the
-    /// scanner found no position for) lands on the last paragraph.
-    fn place_on_nearest(&self, block_index: usize, out: &SourceDocument) -> Placed {
-        let before = self.placement[..block_index.min(self.placement.len())]
+    /// A paragraph comment on the placed paragraph nearest a position: the last one before
+    /// `before_end` when there is one, since a comment on an empty line most often belongs
+    /// to the passage it follows, and otherwise the first one from `after_start` on.
+    ///
+    /// For a comment on a block that produced nothing, the two are that block's index and
+    /// the next one. For a comment made between blocks ([`RichAnnotation::between_blocks`])
+    /// both are the index of the block after it. `usize::MAX` (a comment the scanner found
+    /// no position for) lands on the last paragraph.
+    fn place_on_nearest(
+        &self,
+        before_end: usize,
+        after_start: usize,
+        out: &SourceDocument,
+    ) -> Placed {
+        let before = self.placement[..before_end.min(self.placement.len())]
             .iter()
             .rev()
             .flatten()
@@ -1060,7 +1192,7 @@ impl Assembly<'_> {
             .map(|p| (p, true));
         let after = self
             .placement
-            .get(block_index.saturating_add(1)..)
+            .get(after_start.min(self.placement.len())..)
             .into_iter()
             .flatten()
             .flatten()

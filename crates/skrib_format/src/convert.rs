@@ -244,19 +244,80 @@ pub fn markdown_to_djot(markdown: &str) -> Result<String> {
 /// every line first, which leaves the same words with nothing to nest, and only those
 /// are parsed.
 pub fn markdown_to_djot_and_text(markdown: &str) -> Result<ConvertedDjot> {
+    Ok(convert_markdown(markdown, None)?.0)
+}
+
+/// [`markdown_to_djot_and_text`], with every list item nested deeper than `levels`
+/// written at the deepest of them instead, beside the deepest items kept; and how many
+/// items were.
+///
+/// An item keeps its words, its marker and its formatting; only its depth changes. It is
+/// what the Word and OpenDocument importers do with a list nested past the levels
+/// imported prose keeps, so the same list arrives the same way whichever of the three
+/// formats holds it. Markdown nested past [`crate::markup_depth::MAX_MARKDOWN_DEPTH`] is
+/// stored as its words alone, as [`markdown_to_djot_and_text`] describes, and no item is
+/// counted then: nothing of its lists is left to move.
+pub fn markdown_to_djot_within_list_levels(
+    markdown: &str,
+    levels: usize,
+) -> Result<(ConvertedDjot, usize)> {
+    convert_markdown(markdown, Some(levels))
+}
+
+/// The two conversions above: `levels`, when given, is the depth lists are held to.
+fn convert_markdown(markdown: &str, levels: Option<usize>) -> Result<(ConvertedDjot, usize)> {
     if markdown.trim().is_empty() {
-        return Ok(ConvertedDjot::default());
+        return Ok((ConvertedDjot::default(), 0));
     }
     on_parser_stack(|| {
         let doc = TextDocument::new();
         if crate::markup_depth::check_markdown(markdown).is_err() {
             doc.set_markdown(&crate::markup_depth::markdown_without_nesting(markdown))?
                 .wait()?;
-            return words_alone(&doc.to_plain_text()?);
+            return Ok((words_alone(&doc.to_plain_text()?)?, 0));
         }
         doc.set_markdown(markdown)?.wait()?;
-        within_depth(doc.to_djot()?, doc.to_plain_text()?)
+        let moved = match levels {
+            Some(levels) => hold_list_levels(&doc, levels)?,
+            None => 0,
+        };
+        let converted = within_depth(doc.to_djot()?, doc.to_plain_text()?)?;
+        let moved = if converted.flattened { 0 } else { moved };
+        Ok((converted, moved))
     })
+}
+
+/// Put every list of `doc` nested deeper than `levels` at the deepest of them, and say
+/// how many list items that moved.
+///
+/// A list's depth is a property of the list, not of its items (`TextList::indent`, from
+/// 0 at the top), and the Djot writer writes an item two columns deeper for each level,
+/// so setting it is all it takes: the items of a list moved up are written beside those
+/// of the deepest list kept.
+fn hold_list_levels(doc: &TextDocument, levels: usize) -> Result<usize> {
+    let deepest = u8::try_from(levels.saturating_sub(1)).unwrap_or(u8::MAX);
+    let mut lists = std::collections::BTreeSet::new();
+    let mut items = 0usize;
+    for block in doc.blocks() {
+        if let Some(list) = block.list()
+            && list.indent() > deepest
+        {
+            lists.insert(list.id());
+            items += 1;
+        }
+    }
+    if lists.is_empty() {
+        return Ok(0);
+    }
+    let cursor = doc.cursor();
+    let format = text_document::ListFormat {
+        indent: Some(deepest),
+        ..Default::default()
+    };
+    for list in lists {
+        cursor.set_list_format(list, &format)?;
+    }
+    Ok(items)
 }
 
 /// The **addressable** text of a Djot string, plus every block's start offset.
@@ -1154,6 +1215,43 @@ mod tests {
             converted.text
         );
         assert!(!converted.flattened);
+    }
+
+    /// A list held to its levels keeps every item, its words and its formatting, and
+    /// writes the deeper ones beside the deepest kept, the next load reading them as list
+    /// items at that level.
+    #[test]
+    fn a_markdown_list_is_held_to_the_levels_asked_for() {
+        let markdown: String = (0..6)
+            .map(|level| format!("{}- item *{level}*\n", "  ".repeat(level)))
+            .collect();
+        let (held, moved) = markdown_to_djot_within_list_levels(&markdown, 3).expect("convert");
+        assert_eq!(moved, 3, "the items of the fourth, fifth and sixth levels");
+        assert!(!held.flattened);
+        assert_eq!(
+            held.text, "item 0\nitem 1\nitem 2\nitem 3\nitem 4\nitem 5",
+            "every item's words"
+        );
+        let doc = TextDocument::new();
+        doc.set_djot(&held.djot)
+            .expect("parse")
+            .wait()
+            .expect("parse");
+        let depths: Vec<u8> = doc
+            .blocks()
+            .iter()
+            .filter_map(|block| block.list().map(|list| list.indent()))
+            .collect();
+        assert_eq!(depths, vec![0, 1, 2, 2, 2, 2], "{}", held.djot);
+        assert!(held.djot.contains("- item _5_"), "{}", held.djot);
+
+        let (as_written, moved) =
+            markdown_to_djot_within_list_levels(&markdown, 16).expect("convert");
+        assert_eq!(moved, 0);
+        assert_eq!(
+            as_written,
+            markdown_to_djot_and_text(&markdown).expect("convert")
+        );
     }
 
     #[test]

@@ -778,6 +778,12 @@ struct Walker<'a> {
     /// A page ended after the last block (`fo:break-after="page"`), so the next block the
     /// walk produces starts a new one.
     page_break_pending: bool,
+    /// The paragraph being walked, one entry per line between its line breaks: the block
+    /// that line produced, or `None` for one that produced nothing.
+    lines: Vec<Option<usize>>,
+    /// Its empty lines and the comments opened on each, placed once the paragraph is read
+    /// ([`rich::settle_empty_lines`]).
+    empty_lines: Vec<rich::EmptyLine>,
 }
 
 /// The paragraph currently being built.
@@ -792,10 +798,14 @@ struct ParaBuild {
     /// Whether this is a table cell's text, where a line break is a space: a cell is one
     /// block of its table, never a paragraph of its own.
     in_cell: bool,
+    /// How many annotations there were when this stretch started: the ones after it were
+    /// opened in it, and are placed by [`rich::settle_empty_lines`] if it produces none.
+    first_annotation: usize,
 }
 
 impl ParaBuild {
-    fn new(kind: ParagraphKind, props: BlockProps) -> Self {
+    /// A paragraph starting now, when the walk holds `first_annotation` annotations.
+    fn new(kind: ParagraphKind, props: BlockProps, first_annotation: usize) -> Self {
         ParaBuild {
             kind,
             runs: Vec::new(),
@@ -803,18 +813,21 @@ impl ParaBuild {
             props,
             after_space: true,
             in_cell: false,
+            first_annotation,
         }
     }
 
     /// The rest of the same paragraph after a line break: same kind, same alignment and
-    /// direction, and not the start of a page.
-    fn continuation(&self) -> ParaBuild {
+    /// direction, and not the start of a page. `first_annotation` is the walk's count at
+    /// the break.
+    fn continuation(&self, first_annotation: usize) -> ParaBuild {
         ParaBuild::new(
             self.kind,
             BlockProps {
                 page_break_before: false,
                 ..self.props
             },
+            first_annotation,
         )
     }
 }
@@ -866,6 +879,8 @@ impl<'a> Walker<'a> {
             orphan_replies: 0,
             spaces_shortened: 0,
             page_break_pending: false,
+            lines: Vec::new(),
+            empty_lines: Vec::new(),
         }
     }
 
@@ -956,11 +971,7 @@ impl<'a> Walker<'a> {
             let name = child.tag_name().name();
             match (child.tag_name().namespace(), name) {
                 (Some(NS_TEXT), "h") => {
-                    let level = child
-                        .attribute((NS_TEXT, "outline-level"))
-                        .and_then(|v| v.parse::<u8>().ok())
-                        .unwrap_or(1)
-                        .max(1);
+                    let level = heading_level(child);
                     self.paragraph(child, ParagraphKind::Heading { level }, depth + 1);
                 }
                 (Some(NS_TEXT), "p") => {
@@ -985,17 +996,10 @@ impl<'a> Walker<'a> {
                     // `StyleTable::outline_level`. An empty one is not: a blank paragraph
                     // left in a heading style is spacing, and promoting it would open a
                     // titleless chapter.
-                    let declared = child
-                        .attribute((NS_TEXT, "style-name"))
-                        .and_then(|s| self.styles.outline_level(s));
-                    match declared {
-                        Some(level) if !element_text(child).trim().is_empty() => self.paragraph(
-                            child,
-                            ParagraphKind::Heading {
-                                level: level.max(1),
-                            },
-                            depth + 1,
-                        ),
+                    match self.declared_heading(child) {
+                        Some(level) => {
+                            self.paragraph(child, ParagraphKind::Heading { level }, depth + 1)
+                        }
                         // …and a paragraph whose style names it an epigraph or a quotation is
                         // that, on the same terms: a value the document states about itself,
                         // asked *after* the outline level so a style that somehow declared
@@ -1045,6 +1049,16 @@ impl<'a> Walker<'a> {
         }
     }
 
+    /// The heading depth a `<text:p>`'s style declares for it, when it declares one and
+    /// the paragraph holds text. See [`StyleTable::outline_level`]: a blank paragraph left
+    /// in a heading style is spacing, and promoting it would open a titleless chapter.
+    fn declared_heading(&self, paragraph: Node<'_, '_>) -> Option<u8> {
+        let level = paragraph
+            .attribute((NS_TEXT, "style-name"))
+            .and_then(|s| self.styles.outline_level(s))?;
+        (!element_text(paragraph).trim().is_empty()).then_some(level.max(1))
+    }
+
     /// `list_depth` is how many lists this one sits inside; `depth` is its element
     /// nesting, as for [`Self::walk_container`]. An item's content sits two levels
     /// under the list, one for the `<text:list-item>` holding it.
@@ -1061,14 +1075,29 @@ impl<'a> Walker<'a> {
             }
             for child in item.children().filter(Node::is_element) {
                 match (child.tag_name().namespace(), child.tag_name().name()) {
-                    (Some(NS_TEXT), "p") | (Some(NS_TEXT), "h") => self.paragraph(
+                    // A heading numbered through a list is still a heading: LibreOffice
+                    // writes one inside `<text:list-item>` whenever a list, rather than
+                    // the chapter numbering, puts the number on it, and saves a Word
+                    // file whose headings carry numbering of their own the same way. Read
+                    // as a list item, each chapter was one line of a list and the chapter
+                    // was never made, where the same file saved as `.docx` made it.
+                    (Some(NS_TEXT), "h") => self.paragraph(
                         child,
-                        ParagraphKind::ListItem {
-                            ordered,
-                            depth: list_depth,
+                        ParagraphKind::Heading {
+                            level: heading_level(child),
                         },
                         depth + 2,
                     ),
+                    (Some(NS_TEXT), "p") => {
+                        let kind = match self.declared_heading(child) {
+                            Some(level) => ParagraphKind::Heading { level },
+                            None => ParagraphKind::ListItem {
+                                ordered,
+                                depth: list_depth,
+                            },
+                        };
+                        self.paragraph(child, kind, depth + 2)
+                    }
                     (Some(NS_TEXT), "list") => {
                         self.walk_list(child, list_depth.saturating_add(1), depth + 2)
                     }
@@ -1087,7 +1116,9 @@ impl<'a> Walker<'a> {
     /// nothing else; a comment's author, date and body, or a note's text, are not the
     /// cell's words.
     fn walk_table(&mut self, node: Node<'_, '_>) {
-        let mut build = ParaBuild::new(ParagraphKind::Body, BlockProps::default());
+        let first_annotation = self.annotations.len();
+        let mut build =
+            ParaBuild::new(ParagraphKind::Body, BlockProps::default(), first_annotation);
         build.in_cell = true;
         let mut rows: Vec<Vec<Vec<Run>>> = Vec::new();
         let mut first_cell = true;
@@ -1119,7 +1150,10 @@ impl<'a> Walker<'a> {
                 rows.push(cells);
             }
         }
-        if !rows.is_empty() {
+        if rows.is_empty() {
+            // Nothing to hold a comment made in it.
+            rich::mark_between_blocks(&mut self.annotations, first_annotation, self.blocks.len());
+        } else {
             // A table carries no paragraph formatting, so a page break before it is not
             // carried either.
             self.page_break_pending = false;
@@ -1132,9 +1166,25 @@ impl<'a> Walker<'a> {
         let base = style_name
             .map(|s| self.styles.text_style(s))
             .unwrap_or_default();
-        let mut build = ParaBuild::new(kind, self.styles.paragraph_props(style_name));
+        let mut build = ParaBuild::new(
+            kind,
+            self.styles.paragraph_props(style_name),
+            self.annotations.len(),
+        );
+        // Kept aside rather than cleared, should a paragraph ever be read inside another.
+        let outer_lines = std::mem::take(&mut self.lines);
+        let outer_empty = std::mem::take(&mut self.empty_lines);
         self.inline(node, &mut build, base, None, depth);
         self.flush_paragraph(build);
+        let lines = std::mem::replace(&mut self.lines, outer_lines);
+        let empty_lines = std::mem::replace(&mut self.empty_lines, outer_empty);
+        rich::settle_empty_lines(
+            &mut self.annotations,
+            &self.blocks,
+            &lines,
+            &empty_lines,
+            |index| self.open.values().any(|open| open.annotation == index),
+        );
         if self.styles.breaks_page_after(style_name) {
             self.page_break_pending = true;
         }
@@ -1143,10 +1193,22 @@ impl<'a> Walker<'a> {
     /// Finish the paragraph under construction. Also what a deliberate line break does,
     /// the rest of the line starting a paragraph of its own: Djot has no line break inside
     /// a paragraph that the editor keeps.
+    ///
+    /// A line that holds nothing produces no block. Where the comments opened on it go is
+    /// decided once the whole paragraph is read ([`rich::settle_empty_lines`]): on another
+    /// line of the same paragraph when one holds words, and otherwise they were made
+    /// between blocks. Without saying so, each would land on the paragraph after it,
+    /// silently, although it most often belongs to the one before.
     fn flush_paragraph(&mut self, build: ParaBuild) {
         if build.runs.is_empty() {
+            self.empty_lines.push(rich::EmptyLine {
+                line: self.lines.len(),
+                annotations: build.first_annotation..self.annotations.len(),
+            });
+            self.lines.push(None);
             return;
         }
+        self.lines.push(Some(self.blocks.len()));
         let mut props = build.props;
         props.page_break_before |= std::mem::take(&mut self.page_break_pending);
         self.push_block(RichBlock::Paragraph {
@@ -1244,7 +1306,7 @@ impl<'a> Walker<'a> {
                     });
                 }
                 (Some(NS_TEXT), "line-break") => {
-                    let next = build.continuation();
+                    let next = build.continuation(self.annotations.len());
                     let finished = std::mem::replace(build, next);
                     self.flush_paragraph(finished);
                 }
@@ -1464,6 +1526,7 @@ impl<'a> Walker<'a> {
             start: build.len,
             length: 0,
             end: None,
+            between_blocks: false,
             uid,
             // Filled by `attach_comment_marks` once the whole document is walked — the
             // bookmark carrying it may close after this point, and on a file an editor has
@@ -1659,21 +1722,22 @@ impl<'a> Walker<'a> {
             return;
         };
         let current = self.blocks.len();
-        let annotation = &mut self.annotations[open.annotation];
-        if open.block == current {
-            annotation.length = build.len.saturating_sub(open.start);
-            return;
-        }
         let start_len = self
             .blocks
             .get(open.block)
             .map(|b| b.plain_text().chars().count())
             .unwrap_or(open.start);
-        annotation.length = start_len.saturating_sub(open.start);
-        annotation.end = (current > open.block).then_some(AnnotationEnd {
-            block_index: current,
-            offset: build.len,
-        });
+        let annotation = &mut self.annotations[open.annotation];
+        if open.block == current {
+            annotation.length = build.len.saturating_sub(open.start);
+        } else {
+            annotation.length = start_len.saturating_sub(open.start);
+            annotation.end = (current > open.block).then_some(AnnotationEnd {
+                block_index: current,
+                offset: build.len,
+            });
+        }
+        rich::reaches_words(annotation);
     }
 }
 
@@ -1817,6 +1881,16 @@ fn merge(outer: RunStyle, inner: RunStyle) -> RunStyle {
         superscript,
         subscript,
     }
+}
+
+/// The depth a `<text:h>` states, `text:outline-level`; a heading that states none, or
+/// zero, is at the first.
+fn heading_level(heading: Node<'_, '_>) -> u8 {
+    heading
+        .attribute((NS_TEXT, "outline-level"))
+        .and_then(|v| v.parse::<u8>().ok())
+        .unwrap_or(1)
+        .max(1)
 }
 
 /// Whether an element `depth` levels deep lies past the ceiling the parse holds

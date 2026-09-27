@@ -39,13 +39,14 @@
 //! genuine one-character heading.
 
 use anyhow::Result;
-use pulldown_cmark::{Event, Options, Parser, Tag};
+use pulldown_cmark::{BrokenLink, Event, Options, Parser, RefDefs, Tag, TagEnd};
 use skribisto_model::scene_break::{self, SceneBreakTier};
 
 use crate::block::{SourceBlock, SourceDocument};
 use crate::diagnostics::ImportDiagnostic;
 use crate::front_matter;
 use crate::scanner::SourceScanner;
+use crate::sources::MAX_LIST_LEVELS;
 use crate::text;
 
 /// Matches what `text-document`'s own Markdown reader enables, so this scan and
@@ -126,44 +127,69 @@ fn segment(
     let mut html_blocks = 0usize;
     let mut nested_rules = 0usize;
     let mut images = Vec::new();
-    // Paragraphs stored as plain text because their markup nested past what a project may
-    // hold (see `skrib_format::markdown_to_djot_and_text`).
-    let mut flattened = 0usize;
+    // What the conversions of the prose runs reported, summed.
+    let mut counts = RunCounts::default();
+    // How many lists are open at the current event, and the most that were open at once
+    // since the prose run began: a run holding a list nested past `MAX_LIST_LEVELS` is
+    // converted with its lists held to that depth.
+    let mut open_lists = 0usize;
+    let mut deepest_list = 0usize;
 
-    let flush_prose =
-        |prose: &mut Vec<(usize, usize)>, blocks: &mut Vec<SourceBlock>, flattened: &mut usize| {
-            let parts = std::mem::take(prose);
-            let (Some((start, _)), Some((_, end))) = (parts.first(), parts.last()) else {
-                return Ok(());
-            };
-            if !body[*start..*end].trim().is_empty() {
-                let run = convert_run(body, &parts)?;
-                *flattened += run.flattened;
-                if !run.djot.trim().is_empty() {
-                    blocks.push(SourceBlock::Prose {
-                        djot: run.djot,
-                        text: run.text,
-                    });
-                }
-            }
-            Ok::<(), anyhow::Error>(())
+    // Every link reference definition of the file, found by the label a run cites. A
+    // definition is no block of its own to the parser, so a run holds only those that come
+    // before its last block; the ones it cites from elsewhere are handed over with it
+    // (see `convert`).
+    let lookup = Parser::new_ext(body, options());
+    let definitions = lookup.reference_definitions();
+
+    let flush_prose = |prose: &mut Vec<(usize, usize)>,
+                       blocks: &mut Vec<SourceBlock>,
+                       counts: &mut RunCounts,
+                       deepest_list: &mut usize| {
+        let parts = std::mem::take(prose);
+        let deep_lists = std::mem::take(deepest_list) > MAX_LIST_LEVELS;
+        let (Some((start, _)), Some((_, end))) = (parts.first(), parts.last()) else {
+            return Ok(());
         };
+        if !body[*start..*end].trim().is_empty() {
+            let run = convert_run(body, &parts, definitions, deep_lists)?;
+            counts.flattened += run.flattened;
+            counts.lists_held += run.lists_held;
+            if !run.djot.trim().is_empty() {
+                blocks.push(SourceBlock::Prose {
+                    djot: run.djot,
+                    text: run.text,
+                });
+            }
+        }
+        Ok::<(), anyhow::Error>(())
+    };
 
     for (event, range) in Parser::new_ext(body, options()).into_offset_iter() {
+        match &event {
+            Event::Start(Tag::List(_)) => {
+                open_lists += 1;
+                deepest_list = deepest_list.max(open_lists);
+            }
+            Event::End(TagEnd::List(_)) => open_lists = open_lists.saturating_sub(1),
+            _ => {}
+        }
         match &event {
             Event::Start(tag) => {
                 if depth == 0 {
                     match classify(&body[range.clone()], tag) {
                         Boundary::SceneBreak(tier) => {
-                            flush_prose(&mut prose, &mut blocks, &mut flattened)?;
+                            flush_prose(&mut prose, &mut blocks, &mut counts, &mut deepest_list)?;
                             blocks.push(SourceBlock::SceneBreak { tier });
                         }
                         Boundary::Heading { level } => {
-                            flush_prose(&mut prose, &mut blocks, &mut flattened)?;
+                            flush_prose(&mut prose, &mut blocks, &mut counts, &mut deepest_list)?;
                             heading_text.clear();
                             pending_heading = Some((level, range.start, range.end));
                         }
-                        Boundary::Prose => extend(&mut prose, range.start, range.end),
+                        Boundary::Prose => {
+                            extend(&mut prose, line_start(body, range.start), range.end)
+                        }
                     }
                 }
                 depth += 1;
@@ -183,7 +209,7 @@ fn segment(
             // most common way a manuscript from another tool spells one, and the
             // conversion layer would delete it if it were left in the prose.
             Event::Rule if depth == 0 => {
-                flush_prose(&mut prose, &mut blocks, &mut flattened)?;
+                flush_prose(&mut prose, &mut blocks, &mut counts, &mut deepest_list)?;
                 let tier = scene_break::tier_of_plain_line(body[range.clone()].trim())
                     .unwrap_or(SceneBreakTier::Minor);
                 blocks.push(SourceBlock::SceneBreak { tier });
@@ -203,7 +229,7 @@ fn segment(
             }
             Event::Html(_) if depth == 0 => {
                 html_blocks += 1;
-                extend(&mut prose, range.start, range.end);
+                extend(&mut prose, line_start(body, range.start), range.end);
             }
             _ => {}
         }
@@ -212,7 +238,7 @@ fn segment(
             images.push(dest_url.to_string());
         }
     }
-    flush_prose(&mut prose, &mut blocks, &mut flattened)?;
+    flush_prose(&mut prose, &mut blocks, &mut counts, &mut deepest_list)?;
 
     if html_blocks > 0 {
         diagnostics.push(ImportDiagnostic::RawHtmlDropped {
@@ -226,10 +252,17 @@ fn segment(
             count: nested_rules,
         });
     }
-    if flattened > 0 {
+    if counts.flattened > 0 {
         diagnostics.push(ImportDiagnostic::ProseNotVerbatim {
             path: origin.to_string(),
-            count: flattened,
+            count: counts.flattened,
+        });
+    }
+    if counts.lists_held > 0 {
+        diagnostics.push(ImportDiagnostic::ListNestingFlattened {
+            path: origin.to_string(),
+            count: counts.lists_held,
+            limit: MAX_LIST_LEVELS,
         });
     }
     for target in images {
@@ -262,6 +295,22 @@ fn classify(raw_span: &str, tag: &Tag<'_>) -> Boundary {
     }
 }
 
+/// Where the line holding `at` starts, when nothing but spaces and tabs come before `at`
+/// on it, and `at` itself otherwise.
+///
+/// A top-level block's range starts after its indentation, and the indentation is part of
+/// what the block is: an indented code block handed over from its first character is a
+/// paragraph. Converted alone, as a prose run's first block is, its code became prose, and
+/// a bracket in it a link.
+fn line_start(body: &str, at: usize) -> usize {
+    let start = body[..at].rfind('\n').map_or(0, |newline| newline + 1);
+    if body[start..at].bytes().all(|b| b == b' ' || b == b'\t') {
+        start
+    } else {
+        at
+    }
+}
+
 /// Add the top-level block at `start..end` to the prose run. A range overlapping the last
 /// one widens it instead, so the parts stay in order and apart, and the run still spans
 /// from the first block's start to the furthest end any of them reached.
@@ -272,12 +321,25 @@ fn extend(prose: &mut Vec<(usize, usize)>, start: usize, end: usize) {
     }
 }
 
+/// What converting the prose runs reported, summed over the file.
+#[derive(Default)]
+struct RunCounts {
+    /// Paragraphs stored as plain text because their markup nested past what a project
+    /// may hold (see `skrib_format::markdown_to_djot_and_text`).
+    flattened: usize,
+    /// List items nested past [`MAX_LIST_LEVELS`], stored at that level.
+    lists_held: usize,
+}
+
 /// A prose run as it is stored.
 struct ConvertedRun {
     djot: String,
     text: String,
     /// How many of its paragraphs were stored as plain text.
     flattened: usize,
+    /// How many of its list items were nested past [`MAX_LIST_LEVELS`], and stored at
+    /// that level, their words, marker and formatting kept.
+    lists_held: usize,
 }
 
 /// Convert the prose run made of the top-level blocks `parts` of `body`.
@@ -287,22 +349,35 @@ struct ConvertedRun {
 /// describe itself the same way whichever scanner made it.
 ///
 /// The run is converted whole, which keeps what one paragraph borrows from another (a link
-/// whose reference is defined further down). Markup nesting past what a project may hold
-/// makes the converter keep only the words of everything it was handed
-/// (`skrib_format::markdown_to_djot_and_text`), so a run where that happened is converted
-/// again a top-level block at a time: only the blocks nested too deep lose their
-/// formatting, and a chapter keeps its italics around one pathological quotation.
-fn convert_run(body: &str, parts: &[(usize, usize)]) -> Result<ConvertedRun> {
+/// whose reference is defined further down). The definitions it cites from elsewhere in
+/// the file, found in `definitions`, go with it: one written after the run's last
+/// paragraph, at the end of a chapter or all together at the end of the file as Markdown
+/// writers often put them, is outside every run, and the link citing it used to arrive as
+/// its brackets.
+///
+/// Markup nesting past what a project may hold makes the converter keep only the words of
+/// everything it was handed (`skrib_format::markdown_to_djot_and_text`), so a run where
+/// that happened is converted again a top-level block at a time: only the blocks nested
+/// too deep lose their formatting, and a chapter keeps its italics around one pathological
+/// quotation. A run holding a list nested past [`MAX_LIST_LEVELS`] (`deep_lists`) has its
+/// deeper items written at that level, as a Word or OpenDocument list is.
+fn convert_run(
+    body: &str,
+    parts: &[(usize, usize)],
+    definitions: &RefDefs<'_>,
+    deep_lists: bool,
+) -> Result<ConvertedRun> {
     let (Some((start, _)), Some((_, end))) = (parts.first(), parts.last()) else {
         return Ok(ConvertedRun {
             djot: String::new(),
             text: String::new(),
             flattened: 0,
+            lists_held: 0,
         });
     };
-    let whole = skrib_format::markdown_to_djot_and_text(&body[*start..*end])?;
+    let (whole, lists_held) = convert(body, *start..*end, definitions, deep_lists)?;
     // One paragraph per line of what a flattened conversion kept.
-    let whole_run = |whole: skrib_format::ConvertedDjot| {
+    let whole_run = |whole: skrib_format::ConvertedDjot, lists_held: usize| {
         let flattened = if whole.flattened {
             whole.text.lines().count()
         } else {
@@ -312,19 +387,22 @@ fn convert_run(body: &str, parts: &[(usize, usize)]) -> Result<ConvertedRun> {
             djot: whole.djot,
             text: whole.text,
             flattened,
+            lists_held,
         }
     };
     if !whole.flattened || parts.len() == 1 {
-        return Ok(whole_run(whole));
+        return Ok(whole_run(whole, lists_held));
     }
 
     let mut djot: Vec<String> = Vec::with_capacity(parts.len());
     let mut flattened = 0usize;
+    let mut held = 0usize;
     for (start, end) in parts {
-        let part = skrib_format::markdown_to_djot_and_text(&body[*start..*end])?;
+        let (part, part_held) = convert(body, *start..*end, definitions, deep_lists)?;
         if part.flattened {
             flattened += part.text.lines().count();
         }
+        held += part_held;
         if !part.djot.trim().is_empty() {
             djot.push(part.djot);
         }
@@ -334,14 +412,87 @@ fn convert_run(body: &str, parts: &[(usize, usize)]) -> Result<ConvertedRun> {
     // not nest inside one another; should a part leave something open that the next one
     // closes over, the words of the whole run are what is stored.
     if skrib_format::djot_depth::check(&djot).is_err() {
-        return Ok(whole_run(whole));
+        return Ok(whole_run(whole, 0));
     }
     let (text, _) = skrib_format::djot_plain_text(&djot)?;
     Ok(ConvertedRun {
         djot,
         text,
         flattened,
+        lists_held: held,
     })
+}
+
+/// Convert `body[range]` with the link reference definitions it cites from elsewhere in
+/// the file ([`cited_elsewhere`]), and hold its lists to [`MAX_LIST_LEVELS`] when
+/// `deep_lists`. The second answer is how many list items that moved.
+///
+/// Those definitions are appended after a blank line, where they add no text: a
+/// definition prints nothing. They are left off when the range leaves a block open that
+/// would take them in as its own text (a fenced code block never closed, say), which the
+/// parse shows by reaching into them, and when the range is stored as its words alone,
+/// where no link is kept for them to serve and their lines would be words too.
+fn convert(
+    body: &str,
+    range: std::ops::Range<usize>,
+    definitions: &RefDefs<'_>,
+    deep_lists: bool,
+) -> Result<(skrib_format::ConvertedDjot, usize)> {
+    let markdown_to_djot = |markdown: &str| {
+        if deep_lists {
+            skrib_format::markdown_to_djot_within_list_levels(markdown, MAX_LIST_LEVELS)
+        } else {
+            Ok((skrib_format::markdown_to_djot_and_text(markdown)?, 0))
+        }
+    };
+    let own = &body[range.clone()];
+    let elsewhere: Vec<&str> = cited_elsewhere(body, range, definitions)
+        .into_iter()
+        .map(|(start, end)| body[start..end].trim())
+        .collect();
+    if !elsewhere.is_empty() {
+        let joined = format!("{own}\n\n{}\n", elsewhere.join("\n"));
+        let tail = own.len() + 2;
+        let absorbed = Parser::new_ext(&joined, options())
+            .into_offset_iter()
+            .any(|(_, range)| range.end > tail);
+        if !absorbed {
+            let converted = markdown_to_djot(&joined)?;
+            if !converted.0.flattened {
+                return Ok(converted);
+            }
+        }
+    }
+    markdown_to_djot(own)
+}
+
+/// The byte ranges in `body` of the link reference definitions `body[range]` cites and
+/// does not hold, in the file's order, each once.
+///
+/// Only those: a file whose links are all defined together at its end would otherwise
+/// hand every definition to every chapter, and parse and convert them all again for each,
+/// which made importing it several times slower. A citation is what the parser, reading
+/// the range alone, finds no definition for; the file's own table (`definitions`, the
+/// first definition of each label, matched as the parser matches labels) says where it
+/// is.
+fn cited_elsewhere(
+    body: &str,
+    range: std::ops::Range<usize>,
+    definitions: &RefDefs<'_>,
+) -> Vec<(usize, usize)> {
+    let mut cited: std::collections::BTreeSet<(usize, usize)> = Default::default();
+    let note = |link: BrokenLink<'_>| {
+        if let Some(definition) = definitions.get(link.reference.as_ref()) {
+            let (start, end) = (definition.span.start, definition.span.end);
+            if end <= range.start || start >= range.end {
+                cited.insert((start, end));
+            }
+        }
+        None
+    };
+    Parser::new_with_broken_link_callback(&body[range.clone()], options(), Some(note))
+        .for_each(drop);
+    cited.into_iter().collect()
 }
 
 /// Footnote *definitions* — lines like `[^1]: the note`.
@@ -594,6 +745,162 @@ mod tests {
                 .any(|d| matches!(d, ImportDiagnostic::NestedBreakDropped { .. })),
             "a top-level break is handled at depth == 0 and must not also be \
              counted as a dropped nested one: {:?}",
+            doc.diagnostics
+        );
+    }
+
+    /// Each prose run's Djot, in order.
+    fn prose_djot(doc: &SourceDocument) -> Vec<&str> {
+        doc.blocks
+            .iter()
+            .filter_map(|b| match b {
+                SourceBlock::Prose { djot, .. } => Some(djot.as_str()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// A link reference definition prints nothing, so the parser gives it no block, and a
+    /// definition after a passage's last paragraph fell outside the run converted. The
+    /// link arrived as its brackets. Writers put them at the end of a chapter, or all
+    /// together at the end of the file.
+    #[test]
+    fn a_link_defined_after_its_passage_keeps_its_address() {
+        let doc =
+            scan("# Chapter\n\nSee [the site][ref] now, *really*.\n\n[ref]: https://example.org\n");
+        assert_eq!(
+            prose_djot(&doc),
+            vec!["See [the site](https://example.org) now, _really_."]
+        );
+
+        let doc = scan(
+            "# One\n\nSee [a][r1] here.\n\n# Two\n\nAnd [b][r2] there.\n\n\
+             [r1]: https://one.example\n[r2]: https://two.example \"Two\"\n",
+        );
+        assert_eq!(
+            prose_djot(&doc),
+            vec![
+                "See [a](https://one.example) here.",
+                "And [b](https://two.example) there."
+            ]
+        );
+    }
+
+    /// A definition handed to a passage that leaves a block open would become that
+    /// block's text: a fence never closed runs to the end of the file, and whatever
+    /// follows it is code. The passage cites a label defined in the chapter before, so a
+    /// definition is handed to it; it is then converted without, its link arriving as the
+    /// brackets it was written with.
+    #[test]
+    fn a_definition_never_becomes_the_text_of_an_open_block() {
+        let doc = scan(
+            "# Zero\n\n[r]: https://one.example\n\n# One\n\nSee [a][r].\n\n```\nnever closed\n",
+        );
+        let prose = prose_djot(&doc);
+        assert_eq!(
+            prose,
+            vec!["See \\[a\\]\\[r\\].\n\n```\nnever closed\n```"],
+            "the code holds only its own line"
+        );
+    }
+
+    /// An indented code block opening a passage is code: the passage starts at the line
+    /// its first block is on, indentation included. It started at the block's first
+    /// character, which made the code a paragraph, and a bracket in it a link to whatever
+    /// the file defined under that label.
+    #[test]
+    fn an_indented_code_block_opening_a_passage_stays_code() {
+        let doc = scan(
+            "# One\n\n    indented code [x][r1]\n\n# Two\n\nWords.\n\n[r1]: https://one.example\n",
+        );
+        assert_eq!(
+            prose_djot(&doc),
+            vec!["```\nindented code [x][r1]\n```", "Words."]
+        );
+    }
+
+    /// A passage is handed the definitions it cites and holds nothing of its own for, each
+    /// once, a label matched as the parser matches one (whatever its case), and no other.
+    /// Every definition of the file went to every passage, and a book with its links
+    /// defined at the end took several times longer to import.
+    #[test]
+    fn a_passage_is_handed_only_the_definitions_it_cites() {
+        let body = "# One\n\nSee [a][r1], [again][r1] and [here][Own].\n\n[own]: https://own.example\n\n\
+                    # Two\n\nAnd [b][R2] and [c][r1], [not a link].\n\n\
+                    [r1]: https://one.example\n[r2]: https://two.example\n[r3]: https://three.example\n";
+        let lookup = Parser::new_ext(body, options());
+        let definitions = lookup.reference_definitions();
+        let cited_by = |passage: &str| {
+            let start = body.find(passage).expect("the passage is in the file");
+            let found = cited_elsewhere(body, start..start + passage.len(), definitions);
+            found
+                .into_iter()
+                .map(|(start, end)| body[start..end].trim())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            cited_by("See [a][r1], [again][r1] and [here][Own].\n\n[own]: https://own.example"),
+            vec!["[r1]: https://one.example"]
+        );
+        assert_eq!(
+            cited_by("And [b][R2] and [c][r1], [not a link]."),
+            vec!["[r1]: https://one.example", "[r2]: https://two.example"]
+        );
+    }
+
+    /// A list nested more than [`MAX_LIST_LEVELS`] deep arrives with its deeper items at
+    /// the deepest level kept, words and formatting kept, and the wizard says how many:
+    /// the rule a Word or OpenDocument list follows. Markdown's list used to arrive at
+    /// whatever depth it had, and say nothing.
+    #[test]
+    fn a_list_nested_past_sixteen_levels_is_held_there_and_reported() {
+        let mut src = String::from("Intro.\n\n");
+        for level in 0..20 {
+            src.push_str(&" ".repeat(level * 2));
+            src.push_str(&format!("- item *{level}*\n"));
+        }
+        src.push_str("\nAfter.\n");
+        let doc = scan(&src);
+        let prose = prose_djot(&doc);
+        let [djot] = prose.as_slice() else {
+            panic!("one prose run: {:?}", doc.blocks);
+        };
+        let deepest = djot
+            .lines()
+            .filter(|line| line.trim_start().starts_with("- "))
+            .map(|line| line.len() - line.trim_start().len())
+            .max()
+            .unwrap_or_default();
+        assert_eq!(deepest, (MAX_LIST_LEVELS - 1) * 2, "{djot}");
+        for level in 0..20 {
+            assert!(
+                djot.contains(&format!("- item _{level}_")),
+                "{level}: {djot}"
+            );
+        }
+        assert!(
+            doc.diagnostics.iter().any(|d| matches!(
+                d,
+                ImportDiagnostic::ListNestingFlattened {
+                    count: 4,
+                    limit: MAX_LIST_LEVELS,
+                    ..
+                }
+            )),
+            "{:?}",
+            doc.diagnostics
+        );
+
+        // Sixteen levels are kept as they are, and nothing is said.
+        let within: String = (0..MAX_LIST_LEVELS)
+            .map(|level| format!("{}- item {level}\n", " ".repeat(level * 2)))
+            .collect();
+        let doc = scan(&within);
+        assert!(
+            !doc.diagnostics
+                .iter()
+                .any(|d| matches!(d, ImportDiagnostic::ListNestingFlattened { .. })),
+            "{:?}",
             doc.diagnostics
         );
     }

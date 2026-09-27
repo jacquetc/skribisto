@@ -48,20 +48,26 @@
 //!
 //! ## The supplementary pass, and why it is not paranoia
 //!
-//! Three constructs a manuscript genuinely uses are invisible to the typed reader, and
-//! `RawScan` reads them straight out of the container's own XML — two from
-//! `word/document.xml`, one from `word/comments.xml`:
+//! Several constructs a manuscript genuinely uses are invisible to the typed reader, and
+//! `RawScan` reads them straight out of the container's own XML:
 //!
 //! * **A comment anchored to a point rather than a range.** LibreOffice's `.docx`
 //!   export writes these as a bare `w:commentReference` with no
 //!   `w:commentRangeStart` at all — verified by converting a document with one. Left
 //!   to the typed tree, every such comment would land on its row as a whole and
-//!   report itself unanchored. Read here, it becomes a comment on the paragraph the
-//!   reference sat in, which is what it is.
+//!   report itself unanchored. Read here, it becomes a comment on the paragraph, or the
+//!   table cell, the reference sat in, which is what it is.
+//! * **Footnotes and endnotes**, their references and their text, which the typed
+//!   reader does not surface at all. Word numbers the two kinds separately, so each has
+//!   its own map and its own label.
 //! * **A horizontal rule** — an empty paragraph carrying a bottom border and nothing
 //!   else. `ParagraphBorders` keeps every side private, so this cannot be asked of
 //!   the typed tree; and refusing to read it would make DOCX unable to carry a break
 //!   its writer can see, for the same reason the ODT scanner reads ODF's spelling.
+//! * **Where a link goes, and which part a picture is.** The typed reader gives a
+//!   hyperlink and a picture a relationship id and never what it names; the addresses
+//!   are in the relationships of the part holding them, the comments part having its
+//!   own.
 //! * **A comment's `skrb:uid` and `w:initials` (M-S7).** `docx_rs::Comment` (the
 //!   typed reader's own comment type) carries neither field at all — verified
 //!   against its actual source, not assumed (see `RawScan`'s own doc). Only
@@ -72,6 +78,10 @@
 //!
 //! It is a small number of extra reads over the same zip, and each answers a question
 //! the typed tree cannot. The alternative was silent loss on every one of them.
+//!
+//! Two things the typed reader cannot read at all are put right before either reader
+//! sees the file (`prepared_package`): a no-break or soft hyphen, which Word writes as
+//! an element of its own, and a main part with no relationships part.
 //!
 //! ## A part `docx-rs` could not finish is refused before it is read
 //!
@@ -132,6 +142,9 @@ impl SourceScanner for DocxScanner {
 fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<SourceDocument> {
     refuse_oversized_parts(bytes)?;
     refuse_unreadable_parts(bytes)?;
+    // Both readers below read the same prepared package, so they count the same text.
+    let package = prepared_package(bytes);
+    let bytes: &[u8] = &package;
     let docx =
         docx_rs::read_docx(bytes).map_err(|e| anyhow!("not a readable Word document: {e:?}"))?;
 
@@ -145,7 +158,7 @@ fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<Sourc
 
     let styles = StyleTable::new(&docx);
     let raw = RawScan::read(bytes).unwrap_or_default();
-    let comments = CommentTable::new(&docx, &styles, &raw.comment_attrs);
+    let comments = CommentTable::new(&docx, &styles, &raw);
     let mut walker = Walker::new(&styles, &comments, &raw, origin);
     walker.walk(&docx.document.children);
     let rich = walker.finish();
@@ -182,6 +195,9 @@ const CUSTOM_PROPERTIES: &str =
 
 /// The style sheet, whose part `docx-rs` reads until a `styles` end tag.
 const STYLES: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles";
+/// The comments part, which `docx-rs` reads for the comments' own text.
+const COMMENTS: &str =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
 /// A header and a footer, each of whose parts has relationships of its own that
 /// `read_docx` reads.
 const HEADER: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header";
@@ -196,7 +212,7 @@ const XML_RELATIONSHIPS: [&str; 9] = [
     STYLES,
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+    COMMENTS,
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings",
     HEADER,
     FOOTER,
@@ -402,6 +418,328 @@ fn refuse_oversized_parts(bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
+/// An empty relationships part: what a main part with no relationships of its own has.
+const EMPTY_RELATIONSHIPS: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\
+    <Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"/>";
+
+/// The package both readers read: the file itself, or a copy of it with what `docx-rs`
+/// would otherwise get wrong put right. Called once the file has passed
+/// [`refuse_oversized_parts`] and [`refuse_unreadable_parts`], so every part read here is
+/// one those let through.
+///
+/// * **A main part with no relationships.** OPC makes a part's relationships optional,
+///   and a package holding only `[Content_Types].xml`, `_rels/.rels` and
+///   `word/document.xml` is the smallest Word document there is, the shape many scripts
+///   write. `docx-rs` refuses it (`ZipError(FileNotFound)`) for want of
+///   `word/_rels/document.xml.rels`, so the copy carries an empty one.
+/// * **A no-break hyphen and a soft hyphen.** Word writes them as elements of their own,
+///   `<w:noBreakHyphen/>` and `<w:softHyphen/>`, where LibreOffice's ODF writes the
+///   characters. `docx-rs` has no reading for either element and drops it, so
+///   "twenty‑one" arrived as "twentyone". The copy spells each as the character it
+///   stands for, in a text element (see [`with_characters_as_text`]), in every part
+///   either reader takes text from.
+/// * **A symbol.** Word's Insert ▸ Symbol writes one from a symbol font as
+///   `<w:sym w:font w:char>`, which `docx-rs` reads and nothing then shows: "α" arrived
+///   as nothing at all. The copy spells it as a character too ([`symbol_character`]).
+///
+/// Rewriting the parts rather than patching the walk afterwards is what keeps the typed
+/// walk and the raw pass counting the same characters: both read the copy.
+///
+/// When nothing needs changing, which is nearly always, the file's own bytes are
+/// returned. Should the copy fail to build, which writing a zip into memory does not,
+/// the file's own bytes are returned too: those corrections are lost, not the file.
+fn prepared_package(bytes: &[u8]) -> std::borrow::Cow<'_, [u8]> {
+    use std::borrow::Cow;
+
+    let Ok(mut archive) = zip::ZipArchive::new(std::io::Cursor::new(bytes)) else {
+        return Cow::Borrowed(bytes);
+    };
+    let main = main_part(&mut archive);
+    let mut replaced: BTreeMap<String, Vec<u8>> = BTreeMap::new();
+    if let Some(rels) = rels_part_for(std::path::Path::new(&main))
+        && archive.by_name(&rels).is_err()
+    {
+        replaced.insert(rels, EMPTY_RELATIONSHIPS.as_bytes().to_vec());
+    }
+    let mut text_parts: BTreeSet<String> = [
+        "word/document.xml",
+        "word/comments.xml",
+        "word/footnotes.xml",
+        "word/endnotes.xml",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect();
+    text_parts.insert(normalise_part(&main));
+    if let Ok(rels) = docx_rs::read_document_rels(&mut archive, &main)
+        && let Some(targets) = rels.find_target_path(COMMENTS)
+    {
+        for (_, path, _) in targets {
+            text_parts.insert(normalise_part(&path.to_string_lossy()));
+        }
+    }
+    for part in text_parts {
+        if let Some(data) = read_member(&mut archive, &part)
+            && let Some(rewritten) = with_characters_as_text(&data)
+        {
+            replaced.insert(part, rewritten);
+        }
+    }
+    if replaced.is_empty() {
+        return Cow::Borrowed(bytes);
+    }
+    match rebuilt(&mut archive, &replaced) {
+        Ok(copy) => Cow::Owned(copy),
+        Err(_) => Cow::Borrowed(bytes),
+    }
+}
+
+/// The main document part, found as `docx-rs` finds it: through `_rels/.rels`, and
+/// `word/document.xml` when the package names none.
+fn main_part(archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>) -> String {
+    use docx_rs::FromXML;
+
+    docx_rs::read_zip(archive, "_rels/.rels")
+        .ok()
+        .and_then(|data| docx_rs::Rels::from_xml(&data[..]).ok())
+        .and_then(|rels| rels.find_target(OFFICE_DOCUMENT).map(|rel| rel.2.clone()))
+        .unwrap_or_else(|| "word/document.xml".to_string())
+}
+
+/// A copy of `archive` with the members in `replaced` holding those bytes instead, and
+/// added where the archive has no such member. Every other member is copied as it is
+/// stored, without being inflated again.
+fn rebuilt(
+    archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+    replaced: &BTreeMap<String, Vec<u8>>,
+) -> zip::result::ZipResult<Vec<u8>> {
+    use std::io::Write;
+
+    let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
+    let mut written: HashSet<String> = HashSet::new();
+    for index in 0..archive.len() {
+        let member = archive.by_index_raw(index)?;
+        let name = member.name().to_string();
+        if !written.insert(name.clone()) {
+            // Two stored names that read as the same one: the writer refuses a name twice,
+            // so the first is kept.
+            continue;
+        }
+        match replaced.get(&name) {
+            Some(data) => {
+                drop(member);
+                writer.start_file(name.as_str(), options)?;
+                writer.write_all(data)?;
+            }
+            None => writer.raw_copy_file(member)?,
+        }
+    }
+    for (name, data) in replaced {
+        if written.insert(name.clone()) {
+            writer.start_file(name.as_str(), options)?;
+            writer.write_all(data)?;
+        }
+    }
+    Ok(writer.finish()?.into_inner())
+}
+
+/// `xml` with every `<w:noBreakHyphen/>`, `<w:softHyphen/>` and `<w:sym>` written as the
+/// character it stands for, in a text element of the same namespace prefix: a `<w:t>`, or
+/// a `<w:delText>` inside a tracked deletion, where the text is somebody's removed words
+/// and both readers leave it out. `None` when the part holds none of them, or cannot be
+/// read to its end, in which case it is left as it is.
+///
+/// A no-break hyphen is U+2011 and a soft hyphen U+00AD. A symbol is the character
+/// [`symbol_character`] finds for it; one it finds none for is left as the element it
+/// was, which neither reader counts or shows.
+///
+/// The character goes in as a character reference, so the rewrite holds whatever
+/// encoding the part declares. Everything else is written back event for event, exactly
+/// as it was read.
+///
+/// An element spelled with an end tag rather than as an empty one is written as its
+/// character with everything up to its own end tag left out, one of the same name nested
+/// in it included, so no stray end tag is left behind. A part that ends before that end
+/// tag, cut short, is left as it is: nothing in the parts this rewrites holds them to
+/// their end before `docx-rs` reads them, and waiting for an end tag that never comes read
+/// the end of the part for ever.
+fn with_characters_as_text(xml: &[u8]) -> Option<Vec<u8>> {
+    use quick_xml::events::Event;
+
+    const NO_BREAK_HYPHEN: &[u8] = b"noBreakHyphen";
+    const SOFT_HYPHEN: &[u8] = b"softHyphen";
+    const SYMBOL: &[u8] = b"sym";
+    let holds = |needle: &[u8]| xml.windows(needle.len()).any(|w| w == needle);
+    // `sym` is also a piece of ordinary words ("symphony"), so it counts only as an
+    // element's name: after the `<` or the prefix's `:` opening a tag, and before what
+    // ends a name.
+    let names_symbol = || {
+        xml.windows(SYMBOL.len() + 2).any(|w| {
+            matches!(w[0], b'<' | b':')
+                && &w[1..=SYMBOL.len()] == SYMBOL
+                && matches!(
+                    w[SYMBOL.len() + 1],
+                    b' ' | b'\t' | b'\n' | b'\r' | b'/' | b'>'
+                )
+        })
+    };
+    if !holds(NO_BREAK_HYPHEN) && !holds(SOFT_HYPHEN) && !names_symbol() {
+        return None;
+    }
+
+    let mut reader = quick_xml::Reader::from_reader(xml);
+    let config = reader.config_mut();
+    config.trim_text(false);
+    config.check_end_names = false;
+    config.expand_empty_elements = false;
+    let mut writer = quick_xml::Writer::new(Vec::with_capacity(xml.len() + 64));
+    // How many tracked deletions (`w:del`, `w:moveFrom`) the reader is inside.
+    let mut removed = 0usize;
+    // Inside an element written as its character but spelled with an end tag, which is
+    // skipped up to it: its name, and how many elements of that name are open.
+    let mut skipping: Option<(Vec<u8>, usize)> = None;
+    let mut changed = false;
+    let character_of =
+        |tag: &quick_xml::events::BytesStart<'_>| match local_part(tag.name().as_ref()) {
+            NO_BREAK_HYPHEN => Some('\u{2011}'),
+            SOFT_HYPHEN => Some('\u{AD}'),
+            SYMBOL => {
+                let mut font: Option<String> = None;
+                let mut code: Option<String> = None;
+                for attribute in tag.attributes().flatten() {
+                    let value = String::from_utf8(attribute.value.to_vec()).ok();
+                    match local_part(attribute.key.as_ref()) {
+                        b"font" => font = value,
+                        b"char" => code = value,
+                        _ => {}
+                    }
+                }
+                symbol_character(font.as_deref(), code.as_deref()?)
+            }
+            _ => None,
+        };
+    loop {
+        let event = reader.read_event().ok()?;
+        if let Some((name, open)) = &mut skipping {
+            match &event {
+                // Cut short inside it: the part is left as it is.
+                Event::Eof => return None,
+                Event::Start(tag) if tag.name().as_ref() == name.as_slice() => *open += 1,
+                Event::End(end) if end.name().as_ref() == name.as_slice() => {
+                    *open -= 1;
+                    if *open == 0 {
+                        skipping = None;
+                    }
+                }
+                _ => {}
+            }
+            continue;
+        }
+        match &event {
+            Event::Eof => break,
+            Event::Start(tag) | Event::Empty(tag) => {
+                if let Some(character) = character_of(tag) {
+                    let qualified = tag.name().as_ref().to_vec();
+                    let prefix = &qualified[..qualified.len() - local_part(&qualified).len()];
+                    let element = if removed > 0 { "delText" } else { "t" };
+                    let reference = format!("&#x{:X};", u32::from(character));
+                    let out = writer.get_mut();
+                    for piece in [
+                        b"<".as_slice(),
+                        prefix,
+                        element.as_bytes(),
+                        b">",
+                        reference.as_bytes(),
+                        b"</",
+                        prefix,
+                        element.as_bytes(),
+                        b">",
+                    ] {
+                        out.extend_from_slice(piece);
+                    }
+                    if matches!(event, Event::Start(_)) {
+                        skipping = Some((qualified, 1));
+                    }
+                    changed = true;
+                    continue;
+                }
+                if matches!(event, Event::Start(_))
+                    && matches!(local_part(tag.name().as_ref()), b"del" | b"moveFrom")
+                {
+                    removed += 1;
+                }
+            }
+            Event::End(tag) if matches!(local_part(tag.name().as_ref()), b"del" | b"moveFrom") => {
+                removed = removed.saturating_sub(1);
+            }
+            _ => {}
+        }
+        writer.write_event(event).ok()?;
+    }
+    changed.then(|| writer.into_inner())
+}
+
+/// The character a `<w:sym>` stands for, from its `w:font` and its `w:char`, a code
+/// written in hexadecimal.
+///
+/// Word's Symbol font draws Greek letters, arrows and mathematical signs at the codes of
+/// ordinary letters, and Word stores them from `F020` to `F0FF`; each becomes the
+/// character it shows ([`symbol_font_character`]), so the "α" a writer picked arrives as
+/// "α". Any other font's code is the character the file names. For a font of pictures
+/// such as Wingdings that is a private-use character, which few fonts draw, the same one
+/// LibreOffice writes into an OpenDocument file for it; for a font of letters it is that
+/// letter.
+///
+/// `None` for a code that is not a number, or names a character a text element cannot
+/// hold (a control character), which would make the part unreadable.
+fn symbol_character(font: Option<&str>, code: &str) -> Option<char> {
+    let code = u32::from_str_radix(code.trim(), 16).ok()?;
+    let symbol_font = font.is_some_and(|font| font.trim().eq_ignore_ascii_case("Symbol"));
+    // The code as the font's own byte: Word adds `F000` to it, some writers do not.
+    let byte = match code {
+        0x20..=0xFF => u8::try_from(code).ok(),
+        0xF020..=0xF0FF => u8::try_from(code - 0xF000).ok(),
+        _ => None,
+    };
+    let character = match byte {
+        Some(byte) if symbol_font => {
+            symbol_font_character(byte).or_else(|| char::from_u32(0xF000 | u32::from(byte)))?
+        }
+        _ => char::from_u32(code)?,
+    };
+    (!character.is_control() && !matches!(character, '\u{FFFE}' | '\u{FFFF}')).then_some(character)
+}
+
+/// The character Word's Symbol font shows at `code`, as Unicode's own mapping for that
+/// font gives it (`VENDORS/APPLE/SYMBOL.TXT`), from `0x20` on. `None` where the font holds
+/// nothing, or a piece of a drawn sign that Unicode has no character for: the radical's
+/// extension at `0x60`.
+fn symbol_font_character(code: u8) -> Option<char> {
+    #[rustfmt::skip]
+    const FROM_0X20: [u16; 224] = [
+        0x0020, 0x0021, 0x2200, 0x0023, 0x2203, 0x0025, 0x0026, 0x220B, 0x0028, 0x0029, 0x2217, 0x002B, 0x002C, 0x2212, 0x002E, 0x002F,
+        0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x003A, 0x003B, 0x003C, 0x003D, 0x003E, 0x003F,
+        0x2245, 0x0391, 0x0392, 0x03A7, 0x0394, 0x0395, 0x03A6, 0x0393, 0x0397, 0x0399, 0x03D1, 0x039A, 0x039B, 0x039C, 0x039D, 0x039F,
+        0x03A0, 0x0398, 0x03A1, 0x03A3, 0x03A4, 0x03A5, 0x03C2, 0x03A9, 0x039E, 0x03A8, 0x0396, 0x005B, 0x2234, 0x005D, 0x22A5, 0x005F,
+        0x0000, 0x03B1, 0x03B2, 0x03C7, 0x03B4, 0x03B5, 0x03C6, 0x03B3, 0x03B7, 0x03B9, 0x03D5, 0x03BA, 0x03BB, 0x03BC, 0x03BD, 0x03BF,
+        0x03C0, 0x03B8, 0x03C1, 0x03C3, 0x03C4, 0x03C5, 0x03D6, 0x03C9, 0x03BE, 0x03C8, 0x03B6, 0x007B, 0x007C, 0x007D, 0x223C, 0x0000,
+        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+        0x20AC, 0x03D2, 0x2032, 0x2264, 0x2044, 0x221E, 0x0192, 0x2663, 0x2666, 0x2665, 0x2660, 0x2194, 0x2190, 0x2191, 0x2192, 0x2193,
+        0x00B0, 0x00B1, 0x2033, 0x2265, 0x00D7, 0x221D, 0x2202, 0x2022, 0x00F7, 0x2260, 0x2261, 0x2248, 0x2026, 0x23D0, 0x23AF, 0x21B5,
+        0x2135, 0x2111, 0x211C, 0x2118, 0x2297, 0x2295, 0x2205, 0x2229, 0x222A, 0x2283, 0x2287, 0x2284, 0x2282, 0x2286, 0x2208, 0x2209,
+        0x2220, 0x2207, 0x00AE, 0x00A9, 0x2122, 0x220F, 0x221A, 0x22C5, 0x00AC, 0x2227, 0x2228, 0x21D4, 0x21D0, 0x21D1, 0x21D2, 0x21D3,
+        0x25CA, 0x27E8, 0x00AE, 0x00A9, 0x2122, 0x2211, 0x239B, 0x239C, 0x239D, 0x23A1, 0x23A2, 0x23A3, 0x23A7, 0x23A8, 0x23A9, 0x23AA,
+        0x0000, 0x27E9, 0x222B, 0x2320, 0x23AE, 0x2321, 0x239E, 0x239F, 0x23A0, 0x23A4, 0x23A5, 0x23A6, 0x23AB, 0x23AC, 0x23AD, 0x0000,
+    ];
+    let unicode = *FROM_0X20.get(usize::from(code.checked_sub(0x20)?))?;
+    (unicode != 0)
+        .then(|| char::from_u32(u32::from(unicode)))
+        .flatten()
+}
+
 /// The bytes of the member `name`, or `None` when there is no such member or it
 /// cannot be read, in which case `docx-rs` has nothing to parse either.
 fn read_member(
@@ -603,11 +941,14 @@ fn xml_parts(
         // Read by `docx-rs`'s iterators, which stop at the end of their input.
         "[Content_Types].xml",
         "_rels/.rels",
-        // The raw pass's three, read by these names whatever the relationships
+        // The raw pass's parts, read by these names whatever the relationships
         // say, with `roxmltree`.
         "word/document.xml",
         "word/comments.xml",
         "word/footnotes.xml",
+        "word/endnotes.xml",
+        "word/_rels/document.xml.rels",
+        "word/_rels/comments.xml.rels",
     ] {
         want(&mut parts, name, Demand::default());
     }
@@ -943,7 +1284,7 @@ struct CommentTable {
 }
 
 impl CommentTable {
-    fn new(docx: &Docx, styles: &StyleTable, comment_attrs: &HashMap<usize, CommentAttrs>) -> Self {
+    fn new(docx: &Docx, styles: &StyleTable, raw: &RawScan) -> Self {
         // `w15:done` lives in commentsExtended, keyed by the *paragraph* id of the
         // comment's first paragraph — the same join `docx_rs` uses internally for
         // threading, and the only key the two parts share.
@@ -956,10 +1297,16 @@ impl CommentTable {
         let mut by_id = HashMap::new();
         for comment in docx.comments.inner() {
             order.push(comment.id);
-            let attrs = comment_attrs.get(&comment.id);
+            let attrs = raw.comment_attrs.get(&comment.id);
             by_id.insert(
                 comment.id,
-                meta_of(comment, &done_by_paragraph, styles, attrs),
+                meta_of(
+                    comment,
+                    &done_by_paragraph,
+                    styles,
+                    &raw.comment_links,
+                    attrs,
+                ),
             );
         }
         CommentTable { order, by_id }
@@ -974,9 +1321,10 @@ fn meta_of(
     comment: &Comment,
     done_by_paragraph: &HashMap<&str, bool>,
     styles: &StyleTable,
+    links: &HashMap<String, String>,
     attrs: Option<&CommentAttrs>,
 ) -> CommentMeta {
-    let mut builder = CommentBodyBuilder::new(styles);
+    let mut builder = CommentBodyBuilder::new(styles, links);
     let mut resolved = false;
     for child in &comment.children {
         if let CommentChild::Paragraph(paragraph) = child {
@@ -1011,14 +1359,17 @@ fn meta_of(
 /// each keeping its run's own formatting.
 struct CommentBodyBuilder<'a> {
     styles: &'a StyleTable,
+    /// The comments part's own links, by relationship id ([`RawScan::comment_links`]).
+    links: &'a HashMap<String, String>,
     paragraphs: Vec<Vec<Run>>,
     current: Vec<Run>,
 }
 
 impl<'a> CommentBodyBuilder<'a> {
-    fn new(styles: &'a StyleTable) -> Self {
+    fn new(styles: &'a StyleTable, links: &'a HashMap<String, String>) -> Self {
         CommentBodyBuilder {
             styles,
+            links,
             paragraphs: Vec::new(),
             current: Vec::new(),
         }
@@ -1057,10 +1408,7 @@ impl<'a> CommentBodyBuilder<'a> {
                     }
                 }
                 ParagraphChild::Hyperlink(hyperlink) => {
-                    let url = match &hyperlink.link {
-                        docx_rs::HyperlinkData::External { rid: _, path } => Some(path.clone()),
-                        docx_rs::HyperlinkData::Anchor { anchor } => Some(format!("#{anchor}")),
-                    };
+                    let url = link_target(&hyperlink.link, self.links);
                     self.children(&hyperlink.children, property, url.as_deref().or(link));
                 }
                 _ => {}
@@ -1099,6 +1447,27 @@ impl<'a> CommentBodyBuilder<'a> {
 
     fn finish(self) -> Vec<Vec<Run>> {
         self.paragraphs
+    }
+}
+
+/// The address a `w:hyperlink` goes to: `#bookmark` for one inside the document, and for
+/// any other the target of the relationship it names, looked up in `links` (the
+/// relationships of the part it sits in). `None` when that relationship is missing, and
+/// the words are kept without a link.
+///
+/// `docx-rs` reads the relationship id and never the address (its reader leaves `path`
+/// empty, "not used"), so the address is looked up here; a `path` it does fill is taken
+/// as it is.
+fn link_target(link: &docx_rs::HyperlinkData, links: &HashMap<String, String>) -> Option<String> {
+    match link {
+        docx_rs::HyperlinkData::External { rid, path } => {
+            if path.trim().is_empty() {
+                links.get(rid).cloned()
+            } else {
+                Some(path.clone())
+            }
+        }
+        docx_rs::HyperlinkData::Anchor { anchor } => Some(format!("#{anchor}")),
     }
 }
 
@@ -1149,36 +1518,42 @@ struct CommentAttrs {
 
 /// What the typed reader does not surface — see the module note.
 ///
-/// The paragraph-keyed fields (`references`, `rules`) are keyed by **top-level
-/// paragraph ordinal**: the *n*-th `w:p` that is a direct child of `w:body` is the
-/// *n*-th `DocumentChild::Paragraph`, in the same order, so the two passes agree
-/// without either knowing about the other. A paragraph inside a table or an
-/// `w:sdt` is deliberately not counted, on either side. `comment_attrs` needs no
-/// such join: it is keyed by the comment's own `w:id`, which both this pass and
-/// `docx_rs::Comment::id` read off the identical attribute.
+/// **Keyed by where the typed walk meets the same thing.** The body is read as one
+/// sequence of paragraphs and tables in document order, reached through any content
+/// control (`w:sdt`) or other wrapper around them, which is how `docx-rs` reads it: its
+/// body and content-control readers take every `w:p` and `w:tbl` they meet, whatever
+/// holds them. The *n*-th paragraph of that sequence is the *n*-th the typed walk meets
+/// ([`Walker::body_paragraph`]), and the same for tables, so the two passes agree without
+/// either knowing about the other. `comment_attrs` needs no such join: it is keyed by the
+/// comment's own `w:id`, which both this pass and `docx_rs::Comment::id` read off the
+/// identical attribute.
 #[derive(Default)]
 struct RawScan {
-    /// Paragraph ordinal → the point comments in it, as `(comment id, char offset)`.
-    references: HashMap<usize, Vec<(usize, usize)>>,
+    /// Paragraph ordinal → what sits between its characters: point comments, footnote and
+    /// endnote references ([`RawMark`]).
+    ///
+    /// Notes are found here, in the raw pass, because **`docx-rs`'s reader never produces
+    /// one**: nothing in its `src/reader/` constructs `RunChild::FootnoteReference`, so the
+    /// typed walk's arm for it is unreachable and a scanner that trusted it would see a
+    /// document with no notes in it. That is what made this the one silent loss in the
+    /// whole import: a `.docx` coming back from an editor lost its footnotes and said
+    /// nothing.
+    paragraph_marks: HashMap<usize, Vec<RawMark>>,
+    /// Table ordinal → the same, measured in the table's own plain text: its cells in
+    /// the order [`Walker::table`] reads them, joined by one character, a cell's
+    /// paragraphs by another.
+    table_marks: HashMap<usize, Vec<RawMark>>,
     /// Paragraph ordinals that are a horizontal rule.
     rules: HashSet<usize>,
     /// `w:id` → the `skrb:uid`/`w:initials` attributes only Skribisto's own writer
     /// puts on that comment's `<w:comment>` — see [`CommentAttrs`].
     comment_attrs: HashMap<usize, CommentAttrs>,
-    /// Paragraph ordinal → the footnote references in it, as `(w:id, char offset)`.
-    ///
-    /// Found here, in the raw pass, because **`docx-rs`'s reader never produces
-    /// one**: nothing in its `src/reader/` constructs `RunChild::FootnoteReference`,
-    /// so the typed walk's arm for it is unreachable and a scanner that trusted it
-    /// would see a document with no notes in it. That is what made this the one
-    /// silent loss in the whole import — a `.docx` coming back from an editor lost
-    /// its footnotes and said nothing.
-    ///
-    /// The same shape and the same coordinate space as [`Self::references`], so
-    /// a reference lands where the typed walk's text says it does.
-    footnotes: HashMap<usize, Vec<(usize, usize)>>,
     /// `w:id` → that footnote's own styled paragraphs, from `word/footnotes.xml`.
     footnote_bodies: HashMap<usize, Vec<Vec<Run>>>,
+    /// `w:id` → that endnote's own, from `word/endnotes.xml`. A map of its own, because
+    /// Word numbers footnotes and endnotes separately, both from 1: looked up among the
+    /// footnotes, endnote 1 cited footnote 1's text.
+    endnote_bodies: HashMap<usize, Vec<Vec<Run>>>,
     /// Paragraph ordinal → the direction and page break its own `w:pPr` states.
     ///
     /// Read here because `docx-rs` never reads `w:bidi` at all, and reads
@@ -1188,6 +1563,54 @@ struct RawScan {
     /// The same two properties for each paragraph style of `word/styles.xml`, and the
     /// document's defaults, for a paragraph that states neither itself.
     styles: RawStyles,
+    /// Relationship id → the address of each link the document's prose makes.
+    ///
+    /// Read here because `docx-rs` reads a hyperlink's relationship id and never its
+    /// address: the `path` it gives `HyperlinkData::External` is always empty. Every
+    /// external link Word writes is a relationship, so without this map every one of
+    /// them arrived as its words alone.
+    links: HashMap<String, String>,
+    /// The same for the links inside comments, whose relationships are the comments
+    /// part's own (`word/_rels/comments.xml.rels`), a part `docx-rs` never reads.
+    comment_links: HashMap<String, String>,
+    /// Relationship id → the picture it names: the part inside the file
+    /// (`word/media/image1.png`), or the address of a linked one. What `docx-rs` gives a
+    /// picture is the relationship id alone.
+    images: HashMap<String, String>,
+    /// How many equations the body holds ([`RawCount::equations`]). `docx-rs` reads each
+    /// as a run with no text, which the typed walk cannot tell from any other, so without
+    /// this count an equation vanished without a word.
+    equations: usize,
+}
+
+/// Something the raw pass found between a paragraph's characters, and where.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct RawMark {
+    kind: RawMarkKind,
+    /// Which stretch of the paragraph it sits in: how many line breaks come before it.
+    /// The typed walk makes a block of each stretch that holds anything
+    /// ([`Walker::stretches`]). Always 0 in a table, where a line break is a space.
+    stretch: usize,
+    /// Characters into that stretch, counted as the typed walk counts them.
+    offset: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RawMarkKind {
+    /// A bare `w:commentReference`, the comment with this id anchored to a point.
+    Comment(usize),
+    /// A `w:footnoteReference`.
+    Footnote(usize),
+    /// A `w:endnoteReference`.
+    Endnote(usize),
+}
+
+/// One relationship a part makes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Relationship {
+    kind: String,
+    target: String,
+    external: bool,
 }
 
 /// What a `w:pPr` states about a paragraph's direction and page break. `None` is silence,
@@ -1301,9 +1724,9 @@ impl RawStyles {
 impl RawScan {
     /// Returns `None` when `word/document.xml` cannot be read or parsed. That is
     /// not a failure worth stopping an import for: without it the scanner behaves
-    /// as it would have without this pass at all. `word/comments.xml` is read
+    /// as it would have without this pass at all. Every other part is read
     /// best-effort within the same zip open — a document with no comments has no
-    /// such member, and that is not an error either, just an empty `comment_attrs`.
+    /// `word/comments.xml`, and that is not an error either, just an empty map.
     fn read(bytes: &[u8]) -> Option<RawScan> {
         let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).ok()?;
         let xml = {
@@ -1329,42 +1752,185 @@ impl RawScan {
             .filter_map(|v| v.parse::<usize>().ok())
             .collect();
 
-        for (ordinal, paragraph) in body
-            .children()
-            .filter(|n| n.is_element() && n.tag_name().name() == "p")
-            .enumerate()
-        {
-            if is_horizontal_rule(paragraph) {
-                scan.rules.insert(ordinal);
-            }
-            let mut offset = 0usize;
-            let mut found: Vec<(usize, usize)> = Vec::new();
-            let mut footnotes: Vec<(usize, usize)> = Vec::new();
-            walk_raw_paragraph(
-                paragraph,
-                &mut offset,
-                &mut found,
-                &ranged,
-                &mut footnotes,
-                0,
-            );
-            if !footnotes.is_empty() {
-                scan.footnotes.insert(ordinal, footnotes);
-            }
-            if !found.is_empty() {
-                scan.references.insert(ordinal, found);
-            }
-            let props = RawParagraphProps::read(paragraph);
-            if props != RawParagraphProps::default() {
-                scan.paragraph_props.insert(ordinal, props);
+        let mut units = Vec::new();
+        collect_blocks(body, &mut units, 0);
+        let (mut paragraphs, mut tables) = (0usize, 0usize);
+        for unit in units {
+            match unit {
+                RawBlock::Paragraph(paragraph) => {
+                    let ordinal = paragraphs;
+                    paragraphs += 1;
+                    if is_horizontal_rule(paragraph) {
+                        scan.rules.insert(ordinal);
+                    }
+                    let mut count = RawCount::new(&ranged, false);
+                    count.walk(paragraph, 0);
+                    scan.equations += count.equations;
+                    if !count.marks.is_empty() {
+                        scan.paragraph_marks.insert(ordinal, count.marks);
+                    }
+                    let props = RawParagraphProps::read(paragraph);
+                    if props != RawParagraphProps::default() {
+                        scan.paragraph_props.insert(ordinal, props);
+                    }
+                }
+                RawBlock::Table(table) => {
+                    let ordinal = tables;
+                    tables += 1;
+                    let mut count = RawCount::new(&ranged, true);
+                    let mut first_cell = true;
+                    count.table(table, &mut first_cell, 0);
+                    scan.equations += count.equations;
+                    if !count.marks.is_empty() {
+                        scan.table_marks.insert(ordinal, count.marks);
+                    }
+                }
             }
         }
 
         scan.comment_attrs = read_comment_attrs(&mut zip).unwrap_or_default();
-        scan.footnote_bodies = read_footnote_bodies(&mut zip).unwrap_or_default();
+        scan.footnote_bodies = read_note_bodies(&mut zip, "word/footnotes.xml", "footnote");
+        scan.endnote_bodies = read_note_bodies(&mut zip, "word/endnotes.xml", "endnote");
         scan.styles = RawStyles::read(&mut zip).unwrap_or_default();
+        let document_relationships = read_relationships(&mut zip, "word/document.xml");
+        scan.links = links_of(&document_relationships);
+        scan.images = document_relationships
+            .iter()
+            .filter(|(_, rel)| rel.kind.ends_with("/image"))
+            .map(|(id, rel)| {
+                let target = if rel.external {
+                    rel.target.clone()
+                } else {
+                    part_target("word/document.xml", &rel.target)
+                };
+                (id.clone(), target)
+            })
+            .collect();
+        scan.comment_links = links_of(&read_relationships(&mut zip, "word/comments.xml"));
         Some(scan)
     }
+}
+
+/// A paragraph or a table of the body, in the order `docx-rs` meets them.
+#[derive(Clone, Copy)]
+enum RawBlock<'a, 'input> {
+    Paragraph(roxmltree::Node<'a, 'input>),
+    Table(roxmltree::Node<'a, 'input>),
+}
+
+/// Every paragraph and table under `node`, in document order, as `docx-rs`'s body and
+/// content-control readers take them: a `w:p` or a `w:tbl` is taken whole, whatever
+/// holds it; a `w:sectPr` holds none; anything else, a content control above all, is
+/// looked through. Bounded by [`MAX_RUN_NESTING`] on the terms [`RawCount::walk`] is.
+fn collect_blocks<'a, 'input>(
+    node: roxmltree::Node<'a, 'input>,
+    out: &mut Vec<RawBlock<'a, 'input>>,
+    depth: u32,
+) {
+    if depth >= MAX_RUN_NESTING {
+        return;
+    }
+    for child in node.children().filter(roxmltree::Node::is_element) {
+        match child.tag_name().name() {
+            "p" => out.push(RawBlock::Paragraph(child)),
+            "tbl" => out.push(RawBlock::Table(child)),
+            "sectPr" => {}
+            _ => collect_blocks(child, out, depth + 1),
+        }
+    }
+}
+
+/// The elements named `name` under `node`, looked for through any wrapper and not inside
+/// one another nor inside a nested table: the rows of a table, the cells of a row, as
+/// `docx-rs`'s table and row readers take them.
+fn children_named<'a, 'input>(
+    node: roxmltree::Node<'a, 'input>,
+    name: &str,
+    out: &mut Vec<roxmltree::Node<'a, 'input>>,
+    depth: u32,
+) {
+    if depth >= MAX_RUN_NESTING {
+        return;
+    }
+    for child in node.children().filter(roxmltree::Node::is_element) {
+        match child.tag_name().name() {
+            found if found == name => out.push(child),
+            "tbl" | "tblPr" | "tblGrid" | "trPr" | "tcPr" => {}
+            _ => children_named(child, name, out, depth + 1),
+        }
+    }
+}
+
+/// The relationships of `part`, by id, from the relationships part beside it. Empty when
+/// it has none or they cannot be read: a document without links has nothing to find.
+fn read_relationships<R: std::io::Read + std::io::Seek>(
+    zip: &mut zip::ZipArchive<R>,
+    part: &str,
+) -> HashMap<String, Relationship> {
+    let Some(name) = rels_part_for(std::path::Path::new(part)) else {
+        return HashMap::new();
+    };
+    let xml = {
+        let Ok(mut file) = zip.by_name(&name) else {
+            return HashMap::new();
+        };
+        let mut buffer = Vec::new();
+        if std::io::Read::read_to_end(&mut file, &mut buffer).is_err() {
+            return HashMap::new();
+        }
+        String::from_utf8_lossy(&buffer).into_owned()
+    };
+    let Ok(document) = parse_part(&name, &xml) else {
+        return HashMap::new();
+    };
+    document
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "Relationship")
+        .filter_map(|n| {
+            Some((
+                n.attribute("Id")?.to_string(),
+                Relationship {
+                    kind: n.attribute("Type").unwrap_or_default().to_string(),
+                    target: n.attribute("Target").unwrap_or_default().to_string(),
+                    external: n
+                        .attribute("TargetMode")
+                        .is_some_and(|mode| mode.eq_ignore_ascii_case("External")),
+                },
+            ))
+        })
+        .collect()
+}
+
+/// Relationship id → address, for the links among `relationships`.
+fn links_of(relationships: &HashMap<String, Relationship>) -> HashMap<String, String> {
+    relationships
+        .iter()
+        .filter(|(_, rel)| rel.kind.ends_with("/hyperlink") && !rel.target.trim().is_empty())
+        .map(|(id, rel)| (id.clone(), rel.target.clone()))
+        .collect()
+}
+
+/// The part a relationship of `part` points at: `target` resolved against the folder
+/// `part` sits in, or from the package root when it starts with `/`.
+fn part_target(part: &str, target: &str) -> String {
+    let (mut segments, rest): (Vec<&str>, &str) = match target.strip_prefix('/') {
+        Some(absolute) => (Vec::new(), absolute),
+        None => (
+            part.rsplit_once('/')
+                .map_or_else(Vec::new, |(folder, _)| folder.split('/').collect()),
+            target,
+        ),
+    };
+    for segment in rest.split('/') {
+        match segment {
+            "" | "." => {}
+            ".." => {
+                segments.pop();
+            }
+            name => segments.push(name),
+        }
+    }
+    segments.join("/")
 }
 
 /// Read `word/comments.xml` for the two attributes only Skribisto's own writer sets
@@ -1404,33 +1970,44 @@ fn read_comment_attrs<R: std::io::Read + std::io::Seek>(
     Some(out)
 }
 
-/// Read `word/footnotes.xml` for each footnote's own text.
+/// Read the notes part `part` for each note's own text: `word/footnotes.xml`, whose
+/// notes are `<w:footnote>`, or `word/endnotes.xml`, whose notes are `<w:endnote>`
+/// (`element`). Empty when the part is absent, as it is in a document with no notes of
+/// that kind, or cannot be read.
 ///
 /// Mirrors [`read_comment_attrs`], and for the same reason: `docx-rs`'s reader
-/// does not surface footnotes at all — not the part, not the `w:footnoteReference`
-/// that names one — so the only way to either is the raw member.
+/// does not surface notes at all, neither the part nor the reference that names one, so
+/// the only way to either is the raw member.
 ///
-/// Word puts two synthetic notes at the top of every file, the separator rule and
+/// Word puts two synthetic notes at the top of every such part, the separator rule and
 /// its continuation; both are chrome rather than content and are skipped by their
 /// `w:type`. What comes back is styled paragraphs on exactly the terms
 /// [`CommentBodyBuilder`] produces for a comment, so a note goes through
 /// `rich::assemble`'s single Djot conversion rather than acquiring a second one
-/// here — a footnote is prose the writer wrote, and the four marks
+/// here: a note is prose the writer wrote, and the four marks
 /// [`rich::RunStyle`] carries are the four they could have applied to it.
-fn read_footnote_bodies<R: std::io::Read + std::io::Seek>(
+fn read_note_bodies<R: std::io::Read + std::io::Seek>(
     zip: &mut zip::ZipArchive<R>,
-) -> Option<HashMap<usize, Vec<Vec<Run>>>> {
+    part: &str,
+    element: &str,
+) -> HashMap<usize, Vec<Vec<Run>>> {
     let xml = {
-        let mut file = zip.by_name("word/footnotes.xml").ok()?;
+        let Ok(mut file) = zip.by_name(part) else {
+            return HashMap::new();
+        };
         let mut buffer = Vec::new();
-        std::io::Read::read_to_end(&mut file, &mut buffer).ok()?;
+        if std::io::Read::read_to_end(&mut file, &mut buffer).is_err() {
+            return HashMap::new();
+        }
         String::from_utf8_lossy(&buffer).into_owned()
     };
-    let document = parse_part("word/footnotes.xml", &xml).ok()?;
+    let Ok(document) = parse_part(part, &xml) else {
+        return HashMap::new();
+    };
     let mut out = HashMap::new();
     for node in document
         .descendants()
-        .filter(|n| n.is_element() && n.tag_name().name() == "footnote")
+        .filter(|n| n.is_element() && n.tag_name().name() == element)
     {
         // `separator` / `continuationSeparator`: the horizontal rules Word draws
         // above a page's notes, present in every document and never authored.
@@ -1448,10 +2025,10 @@ fn read_footnote_bodies<R: std::io::Read + std::io::Seek>(
             out.insert(id, body);
         }
     }
-    Some(out)
+    out
 }
 
-/// The styled paragraphs of one `<w:footnote>`, from the raw tree.
+/// The styled paragraphs of one `<w:footnote>` or `<w:endnote>`, from the raw tree.
 ///
 /// The note opens with a run holding `<w:footnoteRef/>` — Word's own printed
 /// number — usually followed by a tab or a space. That run contributes no text, so
@@ -1485,7 +2062,7 @@ fn raw_note_paragraphs(note: roxmltree::Node<'_, '_>) -> Vec<Vec<Run>> {
 /// Collect one raw paragraph's text runs, carrying the four marks that survive.
 ///
 /// Recursion is bounded by [`MAX_RUN_NESTING`] on the same terms and for the same
-/// reason as [`walk_raw_paragraph`]: a hostile file's nesting is not a manuscript's,
+/// reason as [`RawCount::walk`]: a hostile file's nesting is not a manuscript's,
 /// and following it aborts the process rather than unwinding.
 fn raw_note_runs(node: roxmltree::Node<'_, '_>, out: &mut Vec<Run>, depth: u32) {
     if depth >= MAX_RUN_NESTING {
@@ -1583,13 +2160,28 @@ fn raw_toggle(rpr: roxmltree::Node<'_, '_>, name: &str) -> bool {
 /// [`crate::block::SourceFootnote::label`].
 pub const FOOTNOTE_LABEL_PREFIX: &str = "srcfn-";
 
+/// What an endnote's placeholder label starts with: a prefix of its own, so an endnote
+/// and a footnote sharing an id can never share a label. See [`FOOTNOTE_LABEL_PREFIX`].
+const ENDNOTE_LABEL_PREFIX: &str = "srcen-";
+
+/// How many characters `run` is in its block's plain text: one for an image or a note's
+/// reference (each one `IMAGE_PLACEHOLDER`), its own characters for anything else.
+fn counted_length(run: &Run) -> usize {
+    if run.image.is_some() || run.footnote.is_some() {
+        1
+    } else {
+        run.text.chars().count()
+    }
+}
+
 /// Insert a footnote-reference run `within` characters into `runs`, splitting the
 /// run that straddles that point.
 ///
-/// The offset is in characters of the runs' plain text, so an image (one
-/// `IMAGE_PLACEHOLDER`) counts as one and a run already carrying a footnote counts
-/// as none — which is what makes two notes in one sentence land in the right order
-/// rather than both at the same seam.
+/// The offset is in characters of the runs' plain text ([`counted_length`]), so an
+/// image counts as one, and so does a run already carrying a note's reference. An
+/// offset at such a reference goes before it: the notes of a paragraph are spliced
+/// from the last back ([`Walker::splice_notes`]), so two notes cited at one point
+/// arrive in the order they were cited rather than the reverse.
 fn insert_footnote_run(runs: &mut Vec<Run>, within: usize, label: &str) {
     let reference = Run {
         footnote: Some(label.to_string()),
@@ -1597,11 +2189,7 @@ fn insert_footnote_run(runs: &mut Vec<Run>, within: usize, label: &str) {
     };
     let mut seen = 0usize;
     for index in 0..runs.len() {
-        let len = if runs[index].image.is_some() || runs[index].footnote.is_some() {
-            1
-        } else {
-            runs[index].text.chars().count()
-        };
+        let len = counted_length(&runs[index]);
         if within < seen + len {
             let split = within - seen;
             if split == 0 {
@@ -1666,60 +2254,217 @@ fn is_horizontal_rule(paragraph: roxmltree::Node<'_, '_>) -> bool {
 /// content below the cap is not read.
 const MAX_RUN_NESTING: u32 = 64;
 
-/// Walk one paragraph's XML counting characters exactly as the typed walk does, and
-/// note where each bare `w:commentReference` sits.
+/// Counts a paragraph's or a table's characters exactly as the typed walk does, and notes
+/// where each bare `w:commentReference`, `w:footnoteReference` and `w:endnoteReference`
+/// sits among them.
 ///
-/// `w:delText` and anything under `w:moveFrom` are skipped, because the typed walk
-/// drops that text too — if the two counted differently, every comment after a
-/// tracked change would be placed by an offset nobody could reproduce.
-fn walk_raw_paragraph(
-    node: roxmltree::Node<'_, '_>,
-    offset: &mut usize,
-    found: &mut Vec<(usize, usize)>,
-    ranged: &HashSet<usize>,
-    footnotes: &mut Vec<(usize, usize)>,
-    depth: u32,
-) {
-    if depth >= MAX_RUN_NESTING {
-        return;
+/// If the two counted differently, every comment and note after the difference would be
+/// placed by an offset nobody could reproduce. So each rule below is the typed walk's:
+///
+/// * text is `w:t`; a tab is one character, and a picture is one ([`holds_picture`]);
+/// * an equation's own text (`m:t`) is none: `docx-rs` reads an equation's run for its
+///   `w:` children alone, so an equation arrives as nothing, and is counted
+///   ([`RawCount::equations`]) to be reported as an object left out, as a formula from an
+///   OpenDocument file is. Counted as text, it put every note and point comment after it
+///   that many characters late, most often past the end of the paragraph;
+/// * a line break or a carriage return ends one stretch of the paragraph and starts the
+///   next, since the typed walk makes a block of each ([`Walker::stretches`]); in a table
+///   cell it is one character, a space;
+/// * nothing inside a tracked deletion (`w:del`, `w:moveFrom`) counts, since that text is
+///   dropped; a comment reference there still names where its comment was, but a note
+///   whose reference was deleted is not cited;
+/// * a field's instruction, formatting (`w:pPr`, whose tab stops are `w:tab` too, and
+///   `w:rPr`), a content control's properties, and whatever sits inside a drawing, a
+///   legacy shape or an embedded object hold no text the typed walk reads: a text box's
+///   words are reported, not read;
+/// * of the choices a producer offers for something newer (`mc:AlternateContent`), inside
+///   a run only the first counts, since `docx-rs`'s run reader skips `mc:Fallback`; between
+///   runs both do, since its paragraph reader looks through both and reads the runs of
+///   each.
+struct RawCount<'r> {
+    ranged: &'r HashSet<usize>,
+    /// In a table, where a line break is a space and every mark is in stretch 0.
+    in_table: bool,
+    stretch: usize,
+    offset: usize,
+    marks: Vec<RawMark>,
+    /// The equations met (`m:oMath`), outside any tracked deletion: each arrives as nothing
+    /// and is reported with the embedded objects.
+    equations: usize,
+}
+
+impl<'r> RawCount<'r> {
+    fn new(ranged: &'r HashSet<usize>, in_table: bool) -> Self {
+        RawCount {
+            ranged,
+            in_table,
+            stretch: 0,
+            offset: 0,
+            marks: Vec::new(),
+            equations: 0,
+        }
     }
-    for child in node.children().filter(roxmltree::Node::is_element) {
-        match child.tag_name().name() {
-            "t" => *offset += text_of(child).chars().count(),
-            "tab" | "ptab" => *offset += 1,
-            "delText" | "moveFrom" | "instrText" | "delInstrText" => {}
-            "commentReference" => {
-                if let Some(id) = child
+
+    fn walk(&mut self, node: roxmltree::Node<'_, '_>, depth: u32) {
+        self.walk_in(node, depth, false, false);
+    }
+
+    /// `removed` is whether `node` sits inside a tracked deletion, `in_run` whether it
+    /// sits inside a run, where `docx-rs` skips a `mc:Fallback`. A run is any element
+    /// named `r`, an equation's `m:r` too: `docx-rs` recognises its elements by their local
+    /// name, and reads that one with its run reader.
+    fn walk_in(&mut self, node: roxmltree::Node<'_, '_>, depth: u32, removed: bool, in_run: bool) {
+        if depth >= MAX_RUN_NESTING {
+            return;
+        }
+        for child in node.children().filter(roxmltree::Node::is_element) {
+            let id = || {
+                child
                     .attribute((NS_W, "id"))
                     .and_then(|v| v.parse::<usize>().ok())
-                    && !ranged.contains(&id)
-                {
-                    found.push((id, *offset));
+            };
+            match child.tag_name().name() {
+                "t" if !removed && !is_math(child) => self.offset += text_of(child).chars().count(),
+                "tab" | "ptab" if !removed => self.offset += 1,
+                "br" | "cr" if !removed => {
+                    if self.in_table {
+                        self.offset += 1;
+                    } else {
+                        self.stretch += 1;
+                        self.offset = 0;
+                    }
+                }
+                "drawing" => {
+                    if !removed && holds_picture(child) {
+                        self.offset += 1;
+                    }
+                }
+                "commentReference" => {
+                    if let Some(id) = id()
+                        && !self.ranged.contains(&id)
+                    {
+                        self.mark(RawMarkKind::Comment(id));
+                    }
+                }
+                // **Does not advance the offset.** Word draws a superscript number
+                // here, but these offsets index the text the *typed* walk produces,
+                // and that walk contributes no character for a reference, so
+                // counting one would put every comment after a footnote one
+                // character late. The footnote run is spliced in afterwards, and
+                // `Walker::shift_offsets` moves what follows it.
+                "footnoteReference" if !removed => {
+                    if let Some(id) = id() {
+                        self.mark(RawMarkKind::Footnote(id));
+                    }
+                }
+                "endnoteReference" if !removed => {
+                    if let Some(id) = id() {
+                        self.mark(RawMarkKind::Endnote(id));
+                    }
+                }
+                "del" | "moveFrom" => self.walk_in(child, depth + 1, true, in_run),
+                "r" => self.walk_in(child, depth + 1, removed, true),
+                "oMath" if is_math(child) => {
+                    if !removed {
+                        self.equations += 1;
+                    }
+                    self.walk_in(child, depth + 1, removed, in_run);
+                }
+                "Fallback" if in_run => {}
+                "delText" | "instrText" | "delInstrText" | "pPr" | "rPr" | "sdtPr" | "sdtEndPr"
+                | "pict" | "object" => {}
+                _ => self.walk_in(child, depth + 1, removed, in_run),
+            }
+        }
+    }
+
+    fn mark(&mut self, kind: RawMarkKind) {
+        self.marks.push(RawMark {
+            kind,
+            stretch: self.stretch,
+            offset: self.offset,
+        });
+    }
+
+    /// Count a table as [`Walker::table`] reads it: row by row, a row's cells in order,
+    /// then the rows of the tables nested in them; a cell's paragraphs, including those
+    /// inside a content control, joined by one character, and one more between cells.
+    /// `first_cell` runs across the nested tables, which share the outer one's text.
+    fn table(&mut self, table: roxmltree::Node<'_, '_>, first_cell: &mut bool, depth: u32) {
+        if depth >= MAX_RUN_NESTING {
+            return;
+        }
+        let mut rows = Vec::new();
+        children_named(table, "tr", &mut rows, 0);
+        for row in rows {
+            let mut cells = Vec::new();
+            children_named(row, "tc", &mut cells, 0);
+            let mut nested = Vec::new();
+            for cell in cells {
+                if !*first_cell {
+                    self.offset += 1;
+                }
+                *first_cell = false;
+                let mut content = Vec::new();
+                collect_blocks(cell, &mut content, 0);
+                let mut first_paragraph = true;
+                for block in content {
+                    match block {
+                        RawBlock::Paragraph(paragraph) => {
+                            if !first_paragraph {
+                                self.offset += 1;
+                            }
+                            first_paragraph = false;
+                            self.walk(paragraph, 0);
+                        }
+                        RawBlock::Table(inner) => nested.push(inner),
+                    }
                 }
             }
-            // **Does not advance the offset.** Word draws a superscript number
-            // here, but these offsets index the text the *typed* walk produces,
-            // and that walk contributes no character for a reference — so
-            // counting one would put every comment after a footnote one
-            // character late. (An earlier revision of this arm did advance, on
-            // the reasoning that the reference occupies a rendered position.
-            // It does; it just is not in this coordinate space.)
-            "footnoteReference" | "endnoteReference" => {
-                let id = child
-                    .attribute((NS_W, "id"))
-                    .and_then(|v| v.parse::<usize>().ok());
-                if let Some(id) = id {
-                    footnotes.push((id, *offset));
-                }
+            for inner in nested {
+                self.table(inner, first_cell, depth + 1);
             }
-            _ => walk_raw_paragraph(child, offset, found, ranged, footnotes, depth + 1),
         }
     }
 }
 
+/// Whether `node` is Office Math markup (`m:`), in either of the namespaces OOXML spells
+/// it with: the transitional one Word writes, or the strict one.
+fn is_math(node: roxmltree::Node<'_, '_>) -> bool {
+    node.tag_name()
+        .namespace()
+        .is_some_and(|namespace| namespace.ends_with("/math"))
+}
+
+/// Whether a `w:drawing` shows a picture: what `docx-rs` reads as `DrawingData::Pic`, and
+/// the typed walk counts as one character. A drawing that is a text box or a shape counts
+/// as none.
+///
+/// Decided as `docx-rs` decides it: the drawing is whichever of a `pic:pic` and a
+/// `wps:txbx` comes last, each taken whole, so a picture set *inside* a text box belongs to
+/// the box, which the typed walk leaves out. Counting that picture put every note and point
+/// comment after the box one character late.
+fn holds_picture(drawing: roxmltree::Node<'_, '_>) -> bool {
+    fn last_read(node: roxmltree::Node<'_, '_>, last: &mut Option<bool>, depth: u32) {
+        if depth >= MAX_RUN_NESTING {
+            return;
+        }
+        for child in node.children().filter(roxmltree::Node::is_element) {
+            match child.tag_name().name() {
+                "pic" => *last = Some(true),
+                "txbx" => *last = Some(false),
+                _ => last_read(child, last, depth + 1),
+            }
+        }
+    }
+    let mut last = None;
+    last_read(drawing, &mut last, 0);
+    last == Some(true)
+}
+
 /// Parse one part of the raw pass through `skrib_format::xml_depth`, so it is
 /// bounded like everything else. [`refuse_unreadable_parts`] has already checked these
-/// three by name, so a refusal cannot reach here from [`DocxScanner::scan`].
+/// parts by name, so a refusal cannot reach here from [`DocxScanner::scan`].
 fn parse_part<'a>(part: &str, xml: &'a str) -> Result<roxmltree::Document<'a>> {
     skrib_format::xml_depth::parse(part, xml, skrib_format::xml_depth::Dtd::Refuse)
         .map_err(anyhow::Error::new)
@@ -1746,8 +2491,18 @@ struct Walker<'a> {
     styles: &'a StyleTable,
     comments: &'a CommentTable,
     raw: &'a RawScan,
-    /// How many top-level paragraphs have been processed — the key `RawScan` uses.
+    /// How many paragraphs of the body have been processed, those inside a content
+    /// control included: the key `RawScan` uses.
     paragraph_ordinal: usize,
+    /// The same for the body's tables.
+    table_ordinal: usize,
+    /// The paragraph being walked, one entry per stretch between its line breaks: the
+    /// block that stretch produced, or `None` for one that produced nothing. What a raw
+    /// mark's `stretch` is looked up in.
+    stretches: Vec<Option<usize>>,
+    /// The paragraph being walked: its empty stretches and the comments opened on each,
+    /// placed once the paragraph is read ([`rich::settle_empty_lines`]).
+    empty_lines: Vec<rich::EmptyLine>,
     origin: String,
     blocks: Vec<RichBlock>,
     annotations: Vec<RichAnnotation>,
@@ -1770,7 +2525,7 @@ struct Walker<'a> {
     embedded_objects: usize,
     fields: usize,
     /// References the walk could not put back into any block — see
-    /// [`Walker::splice_footnotes`]. Not a count of the document's footnotes: the
+    /// [`Walker::splice_notes`]. Not a count of the document's footnotes: the
     /// ones that *were* placed are in [`Self::footnotes`] and are carried.
     footnotes_dropped: usize,
     /// One entry per note whose reference reached the prose, in the order the
@@ -1791,12 +2546,16 @@ struct ParaBuild {
     /// Whether this is a table cell's text, where a line break is a space: a cell is one
     /// block of its table, never a paragraph of its own.
     in_cell: bool,
+    /// How many annotations there were when this stretch started: the ones after it were
+    /// opened in it, and are placed by [`rich::settle_empty_lines`] if it produces none.
+    first_annotation: usize,
 }
 
 impl ParaBuild {
     /// The rest of the same paragraph after a line break: same kind, same alignment and
-    /// direction, and not the start of a page.
-    fn continuation(&self) -> ParaBuild {
+    /// direction, and not the start of a page. `first_annotation` is the walk's count at
+    /// the break.
+    fn continuation(&self, first_annotation: usize) -> ParaBuild {
         ParaBuild {
             kind: self.kind,
             runs: Vec::new(),
@@ -1806,6 +2565,7 @@ impl ParaBuild {
                 ..self.props
             },
             in_cell: self.in_cell,
+            first_annotation,
         }
     }
 }
@@ -1822,6 +2582,9 @@ impl<'a> Walker<'a> {
             comments,
             raw,
             paragraph_ordinal: 0,
+            table_ordinal: 0,
+            stretches: Vec::new(),
+            empty_lines: Vec::new(),
             origin: origin.to_string(),
             blocks: Vec::new(),
             annotations: Vec::new(),
@@ -1847,19 +2610,9 @@ impl<'a> Walker<'a> {
     fn walk(&mut self, children: &[DocumentChild]) {
         for child in children {
             match child {
-                DocumentChild::Paragraph(paragraph) => {
-                    let ordinal = self.paragraph_ordinal;
-                    self.paragraph_ordinal += 1;
-                    self.top_level_paragraph(paragraph, ordinal);
-                }
-                DocumentChild::Table(table) => self.table(table),
-                DocumentChild::StructuredDataTag(tag) => {
-                    for child in &tag.children {
-                        if let docx_rs::StructuredDataTagChild::Paragraph(p) = child {
-                            self.paragraph(p, None);
-                        }
-                    }
-                }
+                DocumentChild::Paragraph(paragraph) => self.body_paragraph(paragraph),
+                DocumentChild::Table(table) => self.body_table(table),
+                DocumentChild::StructuredDataTag(tag) => self.body_control(tag),
                 DocumentChild::CommentStart(start) => {
                     // A range opened between paragraphs rather than inside one: it
                     // belongs to whatever comes next.
@@ -1873,6 +2626,60 @@ impl<'a> Walker<'a> {
                 DocumentChild::BookmarkEnd(end) => self.close_mark(end.id, None),
                 DocumentChild::TableOfContents(_) | DocumentChild::Section(_) => {}
             }
+        }
+    }
+
+    /// A content control of the body: its paragraphs and tables are the body's own, in
+    /// the order they come, as the raw pass counts them (see [`RawScan`]).
+    fn body_control(&mut self, tag: &docx_rs::StructuredDataTag) {
+        use docx_rs::StructuredDataTagChild as Child;
+        for child in &tag.children {
+            match child {
+                Child::Paragraph(paragraph) => self.body_paragraph(paragraph),
+                Child::Table(table) => self.body_table(table),
+                Child::StructuredDataTag(inner) => self.body_control(inner),
+                Child::CommentStart(start) => {
+                    let block = self.blocks.len();
+                    self.open_comment(start.id, block, 0);
+                }
+                Child::CommentEnd(end) => self.close_comment(end, None),
+                Child::BookmarkStart(start) => self.open_mark(start.id, &start.name, 0),
+                Child::BookmarkEnd(end) => self.close_mark(end.id, None),
+                // A run outside any paragraph is not something Word writes, and the raw
+                // pass reads none there either.
+                Child::Run(_) => {}
+            }
+        }
+    }
+
+    /// A paragraph of the body, and the ordinal the raw pass knows it by.
+    fn body_paragraph(&mut self, paragraph: &Paragraph) {
+        let ordinal = self.paragraph_ordinal;
+        self.paragraph_ordinal += 1;
+        self.top_level_paragraph(paragraph, ordinal);
+    }
+
+    /// A table of the body, with the point comments and notes the raw pass found in it.
+    fn body_table(&mut self, table: &Table) {
+        let ordinal = self.table_ordinal;
+        self.table_ordinal += 1;
+        let first_block = self.blocks.len();
+        let first_annotation = self.annotations.len();
+        self.table(table);
+        let block = (self.blocks.len() > first_block).then_some(first_block);
+        let raw = self.raw;
+        let marks = raw.table_marks.get(&ordinal).map_or(&[][..], Vec::as_slice);
+        for mark in marks {
+            if let RawMarkKind::Comment(id) = mark.kind {
+                match block {
+                    Some(block) => self.point_comment(id, block, mark.offset, false),
+                    None => self.point_comment(id, self.blocks.len(), 0, true),
+                }
+            }
+        }
+        self.splice_notes(marks, |_, mark| block.map(|block| (block, mark.offset)));
+        if block.is_none() {
+            rich::mark_between_blocks(&mut self.annotations, first_annotation, self.blocks.len());
         }
     }
 
@@ -1914,6 +2721,7 @@ impl<'a> Walker<'a> {
                         start: 0,
                         length: 0,
                         end: None,
+                        between_blocks: false,
                         uid: meta.uid,
                         // A comment with no range has nothing for a mark to bracket, so no
                         // mark can name it.
@@ -1947,10 +2755,10 @@ impl<'a> Walker<'a> {
                 },
             ),
             (
-                self.embedded_objects,
+                self.embedded_objects + self.raw.equations,
                 ImportDiagnostic::EmbeddedObjectDropped {
                     path: self.origin.clone(),
-                    count: self.embedded_objects,
+                    count: self.embedded_objects + self.raw.equations,
                 },
             ),
             (
@@ -1990,8 +2798,7 @@ impl<'a> Walker<'a> {
         }
     }
 
-    /// A paragraph that is a direct child of `w:body`, and so has an ordinal the
-    /// supplementary pass can key on.
+    /// A paragraph of the body, and so one the supplementary pass keys on by `ordinal`.
     fn top_level_paragraph(&mut self, paragraph: &Paragraph, ordinal: usize) {
         if self.raw.rules.contains(&ordinal) {
             // A horizontal rule. Emitted as its glyph so `skribisto_model` stays the
@@ -1999,57 +2806,290 @@ impl<'a> Walker<'a> {
             // gives ODF's spelling of the same construct. A scene break carries no
             // paragraph formatting, so a pending page break ends here.
             self.page_break_pending = false;
+            let block = self.blocks.len();
+            // What the rule's paragraph holds besides its border: a comment made on it and
+            // the bookmarks in it, all at the rule's own glyph. It holds no text, so a range
+            // opened and closed in it covers nothing, and like a comment with no range it
+            // becomes a comment on the break line. Left unread, the comment went to the
+            // last paragraph of the whole book.
+            self.rule_children(&paragraph.children);
             self.blocks.push(RichBlock::body(vec![Run::plain(
                 skribisto_model::scene_break::CANONICAL_MINOR,
             )]));
+            let raw = self.raw;
+            let marks = raw
+                .paragraph_marks
+                .get(&ordinal)
+                .map_or(&[][..], Vec::as_slice);
+            for mark in marks {
+                match mark.kind {
+                    RawMarkKind::Comment(id) => self.point_comment(id, block, 0, false),
+                    // A scene break's line holds its glyph alone and cites no note, so the
+                    // note is reported as not brought over, never dropped unsaid.
+                    RawMarkKind::Footnote(_) | RawMarkKind::Endnote(_) => {
+                        self.footnotes_dropped += 1;
+                    }
+                }
+            }
             return;
         }
-        let first_block = self.blocks.len();
-        self.paragraph(paragraph, Some(ordinal));
-        let produced = self.blocks.len() > first_block;
+        self.stretches.clear();
+        self.empty_lines.clear();
+        self.paragraph(paragraph, ordinal);
+        let stretches = std::mem::take(&mut self.stretches);
+        let empty_lines = std::mem::take(&mut self.empty_lines);
+        rich::settle_empty_lines(
+            &mut self.annotations,
+            &self.blocks,
+            &stretches,
+            &empty_lines,
+            |index| self.open.contains_key(&index),
+        );
+        let raw = self.raw;
+        let marks = raw
+            .paragraph_marks
+            .get(&ordinal)
+            .map_or(&[][..], Vec::as_slice);
 
-        for (id, offset) in self.raw.references.get(&ordinal).into_iter().flatten() {
-            self.point_comment(
-                *id,
-                if produced { first_block } else { usize::MAX },
-                *offset,
-            );
+        // A point comment on a line of its own that holds nothing stays in its paragraph,
+        // as a range covering nothing there does (see `rich::settle_empty_lines`). Only
+        // when the paragraph holds no words at all was it made between blocks.
+        for mark in marks {
+            if let RawMarkKind::Comment(id) = mark.kind {
+                match self.line_position(&stretches, mark.stretch, mark.offset) {
+                    Some((block, within)) => self.point_comment(id, block, within, false),
+                    None => self.point_comment(id, self.blocks.len(), 0, true),
+                }
+            }
         }
 
-        // After the comments, and safely so: a footnote run carries no text, so
-        // splicing one shifts none of the offsets just consumed. Doing it here
-        // rather than inside the build is what lets the reference find its place
-        // across a `<w:br>`, which restarts `ParaBuild::len` while the raw walk's
-        // offsets keep counting through the whole paragraph.
-        if let Some(refs) = self.raw.footnotes.get(&ordinal) {
-            let refs = refs.clone();
-            self.splice_footnotes(first_block, &refs);
+        // After the comments, and safely so: a note's reference carries no text, and
+        // `shift_offsets` moves every offset already placed after it. Doing it here
+        // rather than inside the build is what lets the reference find its block across
+        // a `<w:br>`, which ends one block and starts the next.
+        self.splice_notes(marks, |walker, mark| {
+            walker.line_position(&stretches, mark.stretch, mark.offset)
+        });
+    }
+
+    /// The comment ranges and bookmarks of a paragraph read as a horizontal rule, opened and
+    /// closed at the start of the rule's glyph, the block about to be pushed. Nothing else in
+    /// it is read: it holds no text ([`is_horizontal_rule`]), and a line break in it must not
+    /// make a block of its own.
+    fn rule_children(&mut self, children: &[ParagraphChild]) {
+        for child in children {
+            match child {
+                ParagraphChild::Run(run) => self.rule_run(run),
+                ParagraphChild::Insert(insert) => {
+                    for child in &insert.children {
+                        match child {
+                            InsertChild::Run(run) => self.rule_run(run),
+                            InsertChild::CommentStart(start) => {
+                                self.open_comment(start.id, self.blocks.len(), 0)
+                            }
+                            InsertChild::CommentEnd(end) => self.close_comment(end, Some(0)),
+                            InsertChild::Delete(_) => {}
+                        }
+                    }
+                }
+                ParagraphChild::Delete(delete) => {
+                    for child in &delete.children {
+                        match child {
+                            DeleteChild::CommentStart(start) => {
+                                self.open_comment(start.id, self.blocks.len(), 0)
+                            }
+                            DeleteChild::CommentEnd(end) => self.close_comment(end, Some(0)),
+                            DeleteChild::Run(_) => {}
+                        }
+                    }
+                }
+                ParagraphChild::MoveTo(move_to) => {
+                    for child in &move_to.children {
+                        match child {
+                            MoveToChild::Run(run) => self.rule_run(run),
+                            MoveToChild::CommentStart(start) => {
+                                self.open_comment(start.id, self.blocks.len(), 0)
+                            }
+                            MoveToChild::CommentEnd(end) => self.close_comment(end, Some(0)),
+                            MoveToChild::Delete(_) => {}
+                        }
+                    }
+                }
+                ParagraphChild::Hyperlink(hyperlink) => self.rule_children(&hyperlink.children),
+                ParagraphChild::StructuredDataTag(tag) => {
+                    for child in &tag.children {
+                        match child {
+                            docx_rs::StructuredDataTagChild::Run(run) => self.rule_run(run),
+                            docx_rs::StructuredDataTagChild::CommentStart(start) => {
+                                self.open_comment(start.id, self.blocks.len(), 0)
+                            }
+                            docx_rs::StructuredDataTagChild::CommentEnd(end) => {
+                                self.close_comment(end, Some(0))
+                            }
+                            docx_rs::StructuredDataTagChild::BookmarkStart(start) => {
+                                self.open_mark(start.id, &start.name, 0)
+                            }
+                            docx_rs::StructuredDataTagChild::BookmarkEnd(end) => {
+                                self.close_mark(end.id, Some(0))
+                            }
+                            docx_rs::StructuredDataTagChild::Paragraph(_)
+                            | docx_rs::StructuredDataTagChild::Table(_)
+                            | docx_rs::StructuredDataTagChild::StructuredDataTag(_) => {}
+                        }
+                    }
+                }
+                ParagraphChild::CommentStart(start) => {
+                    self.open_comment(start.id, self.blocks.len(), 0)
+                }
+                ParagraphChild::CommentEnd(end) => self.close_comment(end, Some(0)),
+                ParagraphChild::BookmarkStart(start) => self.open_mark(start.id, &start.name, 0),
+                ParagraphChild::BookmarkEnd(end) => self.close_mark(end.id, Some(0)),
+                ParagraphChild::MoveFrom(_)
+                | ParagraphChild::PageNum(_)
+                | ParagraphChild::NumPages(_) => {}
+            }
         }
     }
 
-    /// Put this paragraph's footnote references back into the runs they sat between.
+    /// The comment ranges inside one run of a horizontal rule. See [`Self::rule_children`].
+    fn rule_run(&mut self, run: &DocxRun) {
+        for child in &run.children {
+            match child {
+                RunChild::CommentStart(start) => self.open_comment(start.id, self.blocks.len(), 0),
+                RunChild::CommentEnd(end) => self.close_comment(end, Some(0)),
+                _ => {}
+            }
+        }
+    }
+
+    /// Where a note's reference or a point comment goes: [`Self::stretch_position`], and
+    /// when its stretch produced no block, the nearest line of the same paragraph that did.
+    /// The end of the one before it first, since a note most often closes what it follows
+    /// and a comment on an empty line most often belongs to the passage before it, and
+    /// otherwise the start of the one after it. `None` only when the paragraph produced no
+    /// block.
     ///
-    /// `refs` are `(w:id, offset)` in the paragraph's own plain-text space, which is
-    /// the concatenation of the blocks it produced — a `<w:br>` contributes a
-    /// character to neither side, so walking the produced blocks in order
-    /// reconstructs exactly the space the raw pass counted in.
+    /// Either keeps its paragraph silently: a reference alone after a trailing line break,
+    /// or before a leading one, cites its note from that paragraph, and a line of its own
+    /// holding nothing but the reference is not something the writer made. Dropping the
+    /// note, as this did for a while, lost one the same document read from OpenDocument
+    /// carried; sending the comment to the paragraph before, as it did for a while too,
+    /// moved one made at the top of a page into the page before, and said so.
+    ///
+    /// The end of the line before is where its words and pictures end
+    /// ([`Self::content_end`]), before any reference already spliced in there: the notes
+    /// are spliced from the last back, so those are the notes cited after this one, and
+    /// measured past them this note, cited first, would land after them.
+    fn line_position(
+        &self,
+        stretches: &[Option<usize>],
+        stretch: usize,
+        offset: usize,
+    ) -> Option<(usize, usize)> {
+        if let Ok(position) = self.stretch_position(stretches, stretch, offset) {
+            return Some(position);
+        }
+        let split = stretch.min(stretches.len());
+        let before = stretches[..split].iter().rev().flatten().next();
+        let after = stretches[split..].iter().flatten().next();
+        match (before, after) {
+            (Some(block), _) => Some((*block, self.content_end(*block))),
+            (None, Some(block)) => Some((*block, 0)),
+            (None, None) => None,
+        }
+    }
+
+    /// Where `block`'s own words and pictures end, in the characters
+    /// [`insert_footnote_run`] counts: its whole plain text, less the note references
+    /// that follow its last word or picture.
+    fn content_end(&self, block: usize) -> usize {
+        match self.blocks.get(block) {
+            Some(RichBlock::Paragraph { runs, .. }) => runs
+                .iter()
+                .rposition(|run| {
+                    run.footnote.is_none() && (run.image.is_some() || !run.text.is_empty())
+                })
+                .map_or(0, |last| runs[..=last].iter().map(counted_length).sum()),
+            Some(table) => table.plain_text().chars().count(),
+            None => 0,
+        }
+    }
+
+    /// Where the character `offset` into the paragraph's stretch `stretch` is:
+    /// `Ok((block, offset within it))`, or `Err(next block)` when that stretch produced
+    /// no block, the index of the block that follows it.
+    ///
+    /// A stretch the typed walk did not see (the raw pass counted a line break it did not
+    /// make) is read as the end of the paragraph's last block: a note at the end of the
+    /// paragraph it belongs to is much closer to right than no note at all. An offset past
+    /// the end of its block is clamped to that end, for the same reason.
+    fn stretch_position(
+        &self,
+        stretches: &[Option<usize>],
+        stretch: usize,
+        offset: usize,
+    ) -> Result<(usize, usize), usize> {
+        let length = |block: usize| {
+            self.blocks
+                .get(block)
+                .map_or(0, |b| b.plain_text().chars().count())
+        };
+        match stretches.get(stretch) {
+            Some(Some(block)) => Ok((*block, offset.min(length(*block)))),
+            Some(None) => Err(stretches
+                .get(stretch + 1..)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .next()
+                .copied()
+                .unwrap_or(self.blocks.len())),
+            None => match stretches.iter().rev().flatten().next() {
+                Some(block) => Ok((*block, length(*block))),
+                None => Err(self.blocks.len()),
+            },
+        }
+    }
+
+    /// Put the footnote and endnote references among `marks` back into the runs they sat
+    /// between, at the position `locate` finds for each, or count them as not carried.
+    ///
+    /// A footnote is labelled `srcfn-{id}` and an endnote `srcen-{id}`, each with the body
+    /// its own part defines: Word numbers the two kinds separately, both from 1, so an
+    /// endnote looked up among the footnotes cited footnote 1's text instead of its own.
+    /// Both arrive as footnotes, the one kind of note a project holds, as an endnote from
+    /// an OpenDocument file does.
     ///
     /// Splicing back-to-front matters: an earlier insertion would shift the runs a
     /// later offset is measured against, and two notes in one paragraph is ordinary
     /// (a sentence citing two sources). Iterating in reverse means every offset is
     /// still measured against the runs it was measured against when it was recorded.
-    fn splice_footnotes(&mut self, first_block: usize, refs: &[(usize, usize)]) {
-        let last_block = self.blocks.len();
-        for (id, offset) in refs.iter().rev() {
-            let Some(paragraphs) = self.raw.footnote_bodies.get(id) else {
-                // A reference naming a note `word/footnotes.xml` does not define.
-                // Carrying the marker with nothing behind it would put a citation
-                // in the book pointing at an empty note.
+    fn splice_notes(
+        &mut self,
+        marks: &[RawMark],
+        locate: impl Fn(&Self, &RawMark) -> Option<(usize, usize)>,
+    ) {
+        let raw = self.raw;
+        for mark in marks.iter().rev() {
+            let (bodies, prefix, id) = match mark.kind {
+                RawMarkKind::Footnote(id) => (&raw.footnote_bodies, FOOTNOTE_LABEL_PREFIX, id),
+                RawMarkKind::Endnote(id) => (&raw.endnote_bodies, ENDNOTE_LABEL_PREFIX, id),
+                RawMarkKind::Comment(_) => continue,
+            };
+            let Some(paragraphs) = bodies.get(&id) else {
+                // A reference naming a note its part does not define. Carrying the
+                // marker with nothing behind it would put a citation in the book
+                // pointing at an empty note.
                 self.footnotes_dropped += 1;
                 continue;
             };
-            let label = format!("{FOOTNOTE_LABEL_PREFIX}{id}");
-            if !self.place_footnote(first_block, last_block, *offset, &label) {
+            let label = format!("{prefix}{id}");
+            let Some((block, within)) = locate(self, mark) else {
+                // Its paragraph or table produced no block to hold the reference.
+                self.footnotes_dropped += 1;
+                continue;
+            };
+            if !self.insert_note(block, within, &label) {
                 self.footnotes_dropped += 1;
                 continue;
             }
@@ -2062,41 +3102,27 @@ impl<'a> Walker<'a> {
         }
     }
 
-    /// Insert one footnote run at `offset` within `first_block..last_block`.
-    ///
-    /// Returns whether it landed anywhere. An offset past the end of everything the
-    /// paragraph produced is clamped to the end of its last block rather than
-    /// refused: the two walks agree on ordinary prose, and where they cannot (a
-    /// field's result text, a construct the typed walk drops), a note at the end of
-    /// the paragraph it belongs to is much closer to right than no note at all.
-    fn place_footnote(
-        &mut self,
-        first_block: usize,
-        last_block: usize,
-        offset: usize,
-        label: &str,
-    ) -> bool {
-        let mut remaining = offset;
-        let mut target: Option<(usize, usize)> = None;
-        for index in first_block..last_block {
-            let len = self.blocks[index].plain_text().chars().count();
-            if remaining <= len {
-                target = Some((index, remaining));
-                break;
+    /// Insert one note's reference run `within` characters into `block`, a paragraph or
+    /// a table, whose plain text runs through its cells joined by one character each.
+    /// Returns whether there was such a block.
+    fn insert_note(&mut self, block: usize, within: usize, label: &str) -> bool {
+        match self.blocks.get_mut(block) {
+            Some(RichBlock::Paragraph { runs, .. }) => insert_footnote_run(runs, within, label),
+            Some(RichBlock::Table { rows }) => {
+                let mut cell_start = 0usize;
+                let mut cells = rows.iter_mut().flatten().peekable();
+                while let Some(cell) = cells.next() {
+                    let length: usize = cell.iter().map(counted_length).sum();
+                    if within <= cell_start + length || cells.peek().is_none() {
+                        insert_footnote_run(cell, within.saturating_sub(cell_start), label);
+                        break;
+                    }
+                    cell_start += length + 1;
+                }
             }
-            remaining -= len;
-            target = Some((index, len));
+            None => return false,
         }
-        let Some((index, within)) = target else {
-            return false;
-        };
-        let RichBlock::Paragraph { runs, .. } = &mut self.blocks[index] else {
-            // A table: its cells are their own coordinate space and a paragraph
-            // ordinal does not address them.
-            return false;
-        };
-        insert_footnote_run(runs, within, label);
-        self.shift_offsets(index, within);
+        self.shift_offsets(block, within);
         true
     }
 
@@ -2154,16 +3180,21 @@ impl<'a> Walker<'a> {
         }
     }
 
-    /// A comment anchored to a point rather than a range: it belongs to the
-    /// paragraph its reference sat in, which a zero length says downstream.
-    fn point_comment(&mut self, id: usize, block: usize, offset: usize) {
-        if block == usize::MAX {
-            // The paragraph produced nothing — `assemble` reports this and keeps the
-            // comment on its row rather than losing it.
-            self.open_comment(id, usize::MAX, 0);
-            return;
-        }
+    /// A comment anchored to a point rather than a range: it belongs to the paragraph,
+    /// or the table cell, its reference sat in, which a zero length says downstream.
+    ///
+    /// `between` says the reference sat where the file holds no text, a paragraph or a
+    /// table holding no words, so `block` is the block after it (see
+    /// [`RichAnnotation::between_blocks`]). Such a comment goes on the paragraph before
+    /// it and is reported; it used to land on the last paragraph of the whole document.
+    fn point_comment(&mut self, id: usize, block: usize, offset: usize, between: bool) {
+        let index = self.annotations.len();
         self.open_comment(id, block, offset);
+        if self.annotations.len() > index {
+            // No range end names a point comment, so it is never left open.
+            self.open.remove(&index);
+            self.annotations[index].between_blocks = between;
+        }
     }
 
     /// Count one tracked change and remember who made it.
@@ -2185,11 +3216,13 @@ impl<'a> Walker<'a> {
     }
 
     /// What the paragraph states about its alignment, direction and page break, its style
-    /// chain resolved. `ordinal` is its top-level position, the key of the raw pass's own
-    /// reading of its `w:pPr`; a paragraph inside a content control has none.
-    fn paragraph_props(&self, property: &ParagraphProperty, ordinal: Option<usize>) -> BlockProps {
-        let own = ordinal
-            .and_then(|o| self.raw.paragraph_props.get(&o))
+    /// chain resolved. `ordinal` is its position among the body's paragraphs, the key of
+    /// the raw pass's own reading of its `w:pPr`.
+    fn paragraph_props(&self, property: &ParagraphProperty, ordinal: usize) -> BlockProps {
+        let own = self
+            .raw
+            .paragraph_props
+            .get(&ordinal)
             .copied()
             .unwrap_or_default();
         let style = property.style.as_ref().map(|s| s.val.as_str());
@@ -2217,7 +3250,7 @@ impl<'a> Walker<'a> {
         }
     }
 
-    fn paragraph(&mut self, paragraph: &Paragraph, ordinal: Option<usize>) {
+    fn paragraph(&mut self, paragraph: &Paragraph, ordinal: usize) {
         let property = &paragraph.property;
         let kind = match self.styles.heading_level(property) {
             HeadingVerdict::Heading(level) => ParagraphKind::Heading { level },
@@ -2255,6 +3288,7 @@ impl<'a> Walker<'a> {
             len: 0,
             props: self.paragraph_props(property, ordinal),
             in_cell: false,
+            first_annotation: self.annotations.len(),
         };
         self.paragraph_children(&paragraph.children, property, &mut build, None);
         self.flush(build);
@@ -2307,10 +3341,7 @@ impl<'a> Walker<'a> {
                 }
                 ParagraphChild::MoveFrom(move_from) => self.tracked_change_by(&move_from.author),
                 ParagraphChild::Hyperlink(hyperlink) => {
-                    let url = match &hyperlink.link {
-                        docx_rs::HyperlinkData::External { rid: _, path } => Some(path.clone()),
-                        docx_rs::HyperlinkData::Anchor { anchor } => Some(format!("#{anchor}")),
-                    };
+                    let url = link_target(&hyperlink.link, &self.raw.links);
                     self.paragraph_children(
                         &hyperlink.children,
                         property,
@@ -2408,7 +3439,7 @@ impl<'a> Walker<'a> {
                 // Djot has no line break inside a paragraph that the editor keeps. A page
                 // break does the same, and the text after it starts the new page.
                 RunChild::Break(kind) => {
-                    let next = build.continuation();
+                    let next = build.continuation(self.annotations.len());
                     let finished = std::mem::replace(build, next);
                     self.flush(finished);
                     if *kind == Break::new(BreakType::Page) {
@@ -2416,20 +3447,29 @@ impl<'a> Walker<'a> {
                     }
                 }
                 RunChild::CarriageReturn(_) => {
-                    let next = build.continuation();
+                    let next = build.continuation(self.annotations.len());
                     let finished = std::mem::replace(build, next);
                     self.flush(finished);
                 }
                 RunChild::Drawing(drawing) => match &drawing.data {
                     Some(DrawingData::Pic(pic)) => {
+                        // The picture's part (`word/media/image1.png`), not the
+                        // relationship id `docx-rs` gives it, which names nothing
+                        // outside this one file's relationships.
+                        let source = self
+                            .raw
+                            .images
+                            .get(&pic.id)
+                            .cloned()
+                            .unwrap_or_else(|| pic.id.clone());
                         self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
                             path: self.origin.clone(),
-                            target: pic.id.clone(),
+                            target: source.clone(),
                         });
                         build.len += 1;
                         build.runs.push(Run::sized_image(
                             "",
-                            pic.id.clone(),
+                            source,
                             emu_to_pixels(pic.size.0),
                             emu_to_pixels(pic.size.1),
                         ));
@@ -2441,7 +3481,7 @@ impl<'a> Walker<'a> {
                 // Unreachable: `docx-rs`'s reader never constructs this variant
                 // (nothing in its `src/reader/` produces one), which is why both the
                 // reference and its body come from raw passes — see
-                // `RawScan::footnotes` and `read_footnote_bodies`. Kept as an explicit
+                // `RawScan::paragraph_marks` and `read_note_bodies`. Kept as an explicit
                 // arm so a future version of the crate that *does* produce it does not
                 // silently fall into the catch-all.
                 RunChild::FootnoteReference(_) => {}
@@ -2454,8 +3494,9 @@ impl<'a> Walker<'a> {
                     self.open_comment(start.id, self.blocks.len(), build.len)
                 }
                 RunChild::CommentEnd(end) => self.close_comment(end, Some(build.len)),
-                // A tracked deletion's text, an instruction's source, a symbol with
-                // no Unicode meaning: none of them are prose.
+                // A tracked deletion's text, an instruction's source, a symbol naming no
+                // character (every other one arrives as text, `with_characters_as_text`):
+                // none of them are prose.
                 RunChild::DeleteText(_)
                 | RunChild::DeleteInstrText(_)
                 | RunChild::InstrText(_)
@@ -2472,6 +3513,11 @@ impl<'a> Walker<'a> {
     /// text (cells joined by a line break, a cell's paragraphs by a space): the space a
     /// comment or a round-trip mark inside a cell is measured in, which is what lets
     /// `rich::assemble` place it on its words, and a cell keeps its formatting.
+    ///
+    /// A cell's paragraphs are all of them, those inside a content control included. A
+    /// table nested in a cell cannot be one inside a Djot table, so its rows follow the
+    /// row holding it, as the ODT scanner reads the same table: its words are kept, and
+    /// they used to be dropped without a word.
     fn table(&mut self, table: &Table) {
         let mut build = ParaBuild {
             kind: ParagraphKind::Body,
@@ -2479,39 +3525,11 @@ impl<'a> Walker<'a> {
             len: 0,
             props: BlockProps::default(),
             in_cell: true,
+            first_annotation: self.annotations.len(),
         };
         let mut rows: Vec<Vec<Vec<Run>>> = Vec::new();
         let mut first_cell = true;
-        for TableChild::TableRow(row) in &table.rows {
-            let mut cells: Vec<Vec<Run>> = Vec::new();
-            for TableRowChild::TableCell(cell) in &row.cells {
-                if !first_cell {
-                    build.len += 1;
-                }
-                first_cell = false;
-                let start = build.runs.len();
-                let mut first_paragraph = true;
-                for content in &cell.children {
-                    if let TableCellContent::Paragraph(paragraph) = content {
-                        if !first_paragraph {
-                            build.len += 1;
-                            build.runs.push(Run::plain(" "));
-                        }
-                        first_paragraph = false;
-                        self.paragraph_children(
-                            &paragraph.children,
-                            &paragraph.property,
-                            &mut build,
-                            None,
-                        );
-                    }
-                }
-                cells.push(build.runs.split_off(start));
-            }
-            if !cells.is_empty() {
-                rows.push(cells);
-            }
-        }
+        self.table_rows(table, &mut build, &mut rows, &mut first_cell);
         if !rows.is_empty() {
             // A table carries no paragraph formatting of its own, so a page break before
             // it is not carried either.
@@ -2520,12 +3538,114 @@ impl<'a> Walker<'a> {
         }
     }
 
+    /// The rows of `table` into `rows`, each followed by the rows of the tables nested in
+    /// its cells. `first_cell` runs across all of them, since they share one text.
+    fn table_rows<'t>(
+        &mut self,
+        table: &'t Table,
+        build: &mut ParaBuild,
+        rows: &mut Vec<Vec<Vec<Run>>>,
+        first_cell: &mut bool,
+    ) {
+        for TableChild::TableRow(row) in &table.rows {
+            let mut cells: Vec<Vec<Run>> = Vec::new();
+            let mut nested: Vec<&'t Table> = Vec::new();
+            for TableRowChild::TableCell(cell) in &row.cells {
+                if !*first_cell {
+                    build.len += 1;
+                }
+                *first_cell = false;
+                let start = build.runs.len();
+                let mut first_paragraph = true;
+                for content in &cell.children {
+                    match content {
+                        TableCellContent::Paragraph(paragraph) => {
+                            self.cell_paragraph(paragraph, build, &mut first_paragraph);
+                        }
+                        TableCellContent::Table(inner) => nested.push(inner),
+                        TableCellContent::StructuredDataTag(tag) => {
+                            self.cell_control(tag, build, &mut nested, &mut first_paragraph);
+                        }
+                        // `docx-rs`'s reader never makes one: a table of contents arrives
+                        // as the content control holding it.
+                        TableCellContent::TableOfContents(_) => {}
+                    }
+                }
+                cells.push(build.runs.split_off(start));
+            }
+            if !cells.is_empty() {
+                rows.push(cells);
+            }
+            for inner in nested {
+                self.table_rows(inner, build, rows, first_cell);
+            }
+        }
+    }
+
+    /// One paragraph of a cell, a space before it when it is not the cell's first.
+    fn cell_paragraph(
+        &mut self,
+        paragraph: &Paragraph,
+        build: &mut ParaBuild,
+        first_paragraph: &mut bool,
+    ) {
+        if !*first_paragraph {
+            build.len += 1;
+            build.runs.push(Run::plain(" "));
+        }
+        *first_paragraph = false;
+        self.paragraph_children(&paragraph.children, &paragraph.property, build, None);
+    }
+
+    /// A content control inside a cell: its paragraphs are the cell's, a table in it is
+    /// nested in the cell, and its comment and bookmark ends are where they sit in the
+    /// cell's text.
+    fn cell_control<'t>(
+        &mut self,
+        tag: &'t docx_rs::StructuredDataTag,
+        build: &mut ParaBuild,
+        nested: &mut Vec<&'t Table>,
+        first_paragraph: &mut bool,
+    ) {
+        use docx_rs::StructuredDataTagChild as Child;
+        for child in &tag.children {
+            match child {
+                Child::Paragraph(paragraph) => {
+                    self.cell_paragraph(paragraph, build, first_paragraph)
+                }
+                Child::Table(inner) => nested.push(inner),
+                Child::StructuredDataTag(inner) => {
+                    self.cell_control(inner, build, nested, first_paragraph)
+                }
+                Child::CommentStart(start) => {
+                    self.open_comment(start.id, self.blocks.len(), build.len)
+                }
+                Child::CommentEnd(end) => self.close_comment(end, Some(build.len)),
+                Child::BookmarkStart(start) => self.open_mark(start.id, &start.name, build.len),
+                Child::BookmarkEnd(end) => self.close_mark(end.id, Some(build.len)),
+                // A run outside any paragraph is not something Word writes, and the raw
+                // pass reads none there either.
+                Child::Run(_) => {}
+            }
+        }
+    }
+
+    /// Finish one stretch of a paragraph: the whole of it, or what came before a line
+    /// break. A stretch that holds nothing produces no block, and where the comments opened
+    /// in it go is decided once the whole paragraph is read, since that depends on whether
+    /// any other line of it holds words ([`rich::settle_empty_lines`]).
     fn flush(&mut self, build: ParaBuild) {
         if build.runs.is_empty() {
+            self.empty_lines.push(rich::EmptyLine {
+                line: self.stretches.len(),
+                annotations: build.first_annotation..self.annotations.len(),
+            });
+            self.stretches.push(None);
             return;
         }
         let mut props = build.props;
         props.page_break_before |= std::mem::take(&mut self.page_break_pending);
+        self.stretches.push(Some(self.blocks.len()));
         self.blocks.push(RichBlock::Paragraph {
             kind: build.kind,
             runs: build.runs,
@@ -2563,6 +3683,7 @@ impl<'a> Walker<'a> {
             start,
             length: 0,
             end: None,
+            between_blocks: false,
             uid: meta.uid,
             // Filled by `attach_comment_marks` after the walk — the bookmark carrying it
             // closes later, and on a file an editor has saved may even open first.
@@ -2606,7 +3727,9 @@ impl<'a> Walker<'a> {
         if let Some(offset) = at
             && open.block == current
         {
-            self.annotations[open.annotation].length = offset.saturating_sub(open.start);
+            let annotation = &mut self.annotations[open.annotation];
+            annotation.length = offset.saturating_sub(open.start);
+            rich::reaches_words(annotation);
             return;
         }
         // The range ran on past the paragraph it started in. Its length there runs to the
@@ -2631,6 +3754,7 @@ impl<'a> Walker<'a> {
         let annotation = &mut self.annotations[open.annotation];
         annotation.length = start_len.saturating_sub(open.start);
         annotation.end = end.filter(|e| e.block_index > open.block);
+        rich::reaches_words(annotation);
     }
 
     fn annotation_of_matches(&self, index: usize, end: &CommentRangeEnd) -> bool {
@@ -2776,6 +3900,96 @@ mod tests {
         assert!(parse_date("2026-01-02").is_some());
         assert!(parse_date("").is_none());
         assert!(parse_date("not a date").is_none());
+    }
+
+    /// Each hyphen element becomes its character in a text element of the same prefix, a
+    /// removed one in a `delText` inside a tracked deletion, and nothing else of the part
+    /// changes. A part holding none of the elements is left alone.
+    #[test]
+    fn a_hyphen_element_is_written_as_its_character() {
+        let xml = concat!(
+            r#"<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="w"><!-- softHyphen -->"#,
+            r#"<w:p><w:r><w:t xml:space="preserve">twenty &amp; </w:t><w:noBreakHyphen/><w:t>one</w:t></w:r>"#,
+            r#"<w:del w:id="1"><w:r><w:softHyphen></w:softHyphen></w:r></w:del>"#,
+            r#"<x:r xmlns:x="w"><x:softHyphen/></x:r></w:p></w:document>"#,
+        );
+        let rewritten = with_characters_as_text(xml.as_bytes()).expect("rewritten");
+        assert_eq!(
+            String::from_utf8(rewritten).expect("UTF-8"),
+            concat!(
+                r#"<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="w"><!-- softHyphen -->"#,
+                r#"<w:p><w:r><w:t xml:space="preserve">twenty &amp; </w:t><w:t>&#x2011;</w:t><w:t>one</w:t></w:r>"#,
+                r#"<w:del w:id="1"><w:r><w:delText>&#xAD;</w:delText></w:r></w:del>"#,
+                r#"<x:r xmlns:x="w"><x:t>&#xAD;</x:t></x:r></w:p></w:document>"#,
+            )
+        );
+        assert_eq!(
+            with_characters_as_text(
+                b"<w:document><w:p><w:r><w:t>plain symphony: sym</w:t></w:r></w:p></w:document>"
+            ),
+            None
+        );
+    }
+
+    /// A symbol becomes the character it shows, in a text element like a hyphen's: a
+    /// Symbol-font code the letter that font draws for it, any other font's code the
+    /// character it names. One naming no character a part can hold is left as it was.
+    #[test]
+    fn a_symbol_is_written_as_its_character() {
+        let xml = concat!(
+            r#"<w:document xmlns:w="w"><w:p><w:r><w:rPr><w:rFonts w:ascii="Symbol"/></w:rPr>"#,
+            r#"<w:sym w:font="Symbol" w:char="F061"/><w:sym w:font="Wingdings" w:char="F0E0"/>"#,
+            r#"<w:sym w:font="Symbol" w:char="0070"/><w:sym w:font="Symbol" w:char="F060"/>"#,
+            r#"<w:sym w:font="Times New Roman" w:char="00E9"/><w:sym w:font="Symbol" w:char="0007"/>"#,
+            r#"<w:sym w:font="Symbol" w:char="nothing"/></w:r>"#,
+            r#"<w:del w:id="1"><w:r><w:sym w:char="F0AE" w:font="Symbol"></w:sym></w:r></w:del>"#,
+            r#"</w:p></w:document>"#,
+        );
+        let rewritten = with_characters_as_text(xml.as_bytes()).expect("rewritten");
+        assert_eq!(
+            String::from_utf8(rewritten).expect("UTF-8"),
+            concat!(
+                r#"<w:document xmlns:w="w"><w:p><w:r><w:rPr><w:rFonts w:ascii="Symbol"/></w:rPr>"#,
+                r#"<w:t>&#x3B1;</w:t><w:t>&#xF0E0;</w:t>"#,
+                r#"<w:t>&#x3C0;</w:t><w:t>&#xF060;</w:t>"#,
+                r#"<w:t>&#xE9;</w:t><w:sym w:font="Symbol" w:char="0007"/>"#,
+                r#"<w:sym w:font="Symbol" w:char="nothing"/></w:r>"#,
+                r#"<w:del w:id="1"><w:r><w:delText>&#x2192;</w:delText></w:r></w:del>"#,
+                r#"</w:p></w:document>"#,
+            )
+        );
+    }
+
+    /// The Symbol font's letters are Greek at the codes of the Latin ones, and its
+    /// upper half holds arrows and mathematical signs.
+    #[test]
+    fn the_symbol_font_shows_greek_letters_arrows_and_signs() {
+        let shown: String = [b'a', b'b', b'g', b'W', b'D', 0xAE, 0xB3, 0xD6, 0xA5, 0xB4]
+            .into_iter()
+            .filter_map(symbol_font_character)
+            .collect();
+        assert_eq!(shown, "αβγΩΔ→≥√∞×");
+        assert_eq!(symbol_font_character(0x1F), None);
+        assert_eq!(symbol_font_character(0x80), None);
+        assert_eq!(symbol_font_character(0x60), None, "the radical's extension");
+        assert_eq!(symbol_font_character(0xFF), None);
+    }
+
+    /// A relationship's target is resolved against the folder of the part making it.
+    #[test]
+    fn a_relationship_target_is_found_from_its_part() {
+        assert_eq!(
+            part_target("word/document.xml", "media/image1.png"),
+            "word/media/image1.png"
+        );
+        assert_eq!(
+            part_target("word/document.xml", "../media/image1.png"),
+            "media/image1.png"
+        );
+        assert_eq!(
+            part_target("word/document.xml", "/word/media/./image1.png"),
+            "word/media/image1.png"
+        );
     }
 
     /// The name of a part's relationships is `docx-rs`'s own, quirk included: asked

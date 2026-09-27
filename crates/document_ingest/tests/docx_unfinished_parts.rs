@@ -528,3 +528,95 @@ fn the_same_documents_whole_are_read() {
     }
     assert!(wrong.is_empty(), "{wrong:#?}");
 }
+
+/// A part the import rewrites before `docx-rs` reads it, cut short inside a no-break
+/// hyphen, a soft hyphen or a symbol spelled with an end tag rather than as an empty
+/// element. Nothing holds the notes, or a comments part the document does not name, to
+/// their end, since `docx-rs` reads neither with a reader that waits for one; the rewrite
+/// waited for the element's end tag, which never came, and the import read for ever. Each
+/// is now read in a moment and its body's words arrive.
+///
+/// With it, an element spelled with an end tag and holding another of its own name: the
+/// rewrite stopped at the inner end tag and left the outer one behind, a stray end tag in
+/// a document that had none.
+#[test]
+fn a_part_cut_short_inside_a_hyphen_or_a_symbol_is_read_at_once() {
+    let cut = |root: &str, inner: &str| {
+        format!("<?xml version=\"1.0\"?><w:{root} xmlns:w=\"{W}\">{inner}")
+    };
+    let scanned = scan_all(vec![
+        (
+            "footnotes cut short inside a no-break hyphen",
+            Docx::plain()
+                .related(
+                    "footnotes",
+                    "footnotes.xml",
+                    &cut(
+                        "footnotes",
+                        "<w:footnote w:id=\"1\"><w:p><w:r><w:t>twenty</w:t><w:noBreakHyphen>",
+                    ),
+                )
+                .bytes(),
+        ),
+        (
+            "endnotes cut short inside a symbol",
+            Docx::plain()
+                .related(
+                    "endnotes",
+                    "endnotes.xml",
+                    &cut(
+                        "endnotes",
+                        "<w:endnote w:id=\"1\"><w:p><w:r><w:sym w:font=\"Symbol\" w:char=\"F061\">",
+                    ),
+                )
+                .bytes(),
+        ),
+        (
+            "comments the document does not name, cut short inside a soft hyphen",
+            Docx::plain()
+                .member(
+                    "word/comments.xml",
+                    &cut(
+                        "comments",
+                        "<w:comment w:id=\"0\"><w:p><w:r><w:t>soft</w:t><w:softHyphen>",
+                    ),
+                )
+                .bytes(),
+        ),
+        (
+            "a no-break hyphen holding another",
+            Docx::with_body(
+                "<w:p><w:r><w:t>twenty</w:t><w:noBreakHyphen><w:noBreakHyphen>\
+                 </w:noBreakHyphen></w:noBreakHyphen><w:t>one</w:t></w:r></w:p>",
+            )
+            .bytes(),
+        ),
+    ]);
+    let mut wrong = Vec::new();
+    for (shape, scanned) in scanned {
+        let doc = match scanned {
+            Ok(doc) => doc,
+            Err(why) => {
+                wrong.push(format!("{shape}: {why}"));
+                continue;
+            }
+        };
+        if doc
+            .diagnostics
+            .iter()
+            .any(|d| matches!(d, ImportDiagnostic::FileUnreadable { .. }))
+        {
+            wrong.push(format!("{shape}: read, got {:?}", doc.diagnostics));
+        }
+        if !prose(&doc).contains(WORDS) {
+            wrong.push(format!("{shape}: the words arrive: {:?}", prose(&doc)));
+        }
+        if shape.starts_with("a no-break hyphen") && !prose(&doc).contains("twenty\u{2011}one") {
+            wrong.push(format!(
+                "{shape}: one hyphen, in its word: {:?}",
+                prose(&doc)
+            ));
+        }
+    }
+    assert!(wrong.is_empty(), "{wrong:#?}");
+}

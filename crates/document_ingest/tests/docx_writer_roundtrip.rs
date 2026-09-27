@@ -151,6 +151,33 @@ fn the_docx_writer_produces_a_file_this_crates_docx_reader_recognises_and_reads_
     );
 }
 
+/// Every link this writer exports is a relationship of the document part, a link to a place in
+/// the book (`#…`) as much as an address on the web, and each comes back with its address. They
+/// came back as their words alone: `docx-rs` never reads a relationship's target. Keeping the
+/// `#…` one is what a writer's own link needs, the same way a `w:anchor` link has always been
+/// read, although a table of contents made in Word or LibreOffice then arrives with links to
+/// places the project does not hold.
+#[test]
+fn a_link_the_docx_writer_exports_keeps_its_address() {
+    let bytes =
+        write_docx("See [the door](https://example.com/door), then [the notes](#notes) below.\n");
+    let doc = scan(&bytes);
+    let djot: Vec<&str> = doc
+        .blocks
+        .iter()
+        .filter_map(|b| match b {
+            SourceBlock::Prose { djot, .. } => Some(djot.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        djot,
+        vec!["See [the door](https://example.com/door), then [the notes](#notes) below."],
+        "{:?}",
+        doc.diagnostics
+    );
+}
+
 // ---------------------------------------------------------------------------
 // M-S7: comment round trip, including `skrb:uid` and `w:initials`
 // ---------------------------------------------------------------------------

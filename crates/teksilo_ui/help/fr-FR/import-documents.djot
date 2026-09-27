@@ -70,19 +70,32 @@ l’assistant reste ouvert avec votre plan intact.
 ## Votre texte tel que vous l’avez tapé
 
 Depuis un fichier Word, OpenDocument ou texte brut, les mots arrivent exactement comme le
-fichier les contient. Les guillemets droits restent droits, une double espace reste double, et
-`--`, `...` ou une heure comme `10:30:45` ne sont pas réécrits.
+fichier les contient. Les guillemets droits restent droits, une double espace reste double, un
+trait d’union insécable ou conditionnel reste dans son mot, et `--`, `...` ou une heure comme
+`10:30:45` ne sont pas réécrits. La mise en page n’est pas du texte : le retrait en début de
+paragraphe relève de votre style d’export, et une tabulation dans un paragraphe Word ou
+OpenDocument arrive comme une espace. Une zone de texte, une équation ou un objet incorporé
+n’est pas du texte non plus : l’assistant les laisse de côté et indique combien.
+
+Un symbole inséré dans Word depuis sa police Symbol arrive comme le caractère qu’il affiche, une
+lettre grecque ou une flèche par exemple. Celui d’une police d’images, comme Wingdings, arrive
+comme le caractère que le fichier enregistre pour lui, que la plupart des polices affichent comme
+une case vide.
 
 Dans un fichier texte brut, chaque ligne est un paragraphe. Dans un fichier coupé à largeur fixe,
 avec une ligne vide entre les paragraphes, les lignes coupées sont réunies en paragraphes entiers.
-Une ligne courte, comme une ligne d’adresse, y termine toujours son paragraphe.
+Une ligne courte, comme une ligne d’adresse, y termine toujours son paragraphe. Une ligne de trois
+traits d’union ou plus est une coupure de scène, la première ligne du fichier comprise. Un bloc
+tout en haut, entre deux lignes `---`, n’est lu comme les informations du fichier que si chacune
+de ses lignes en donne le titre, l’auteur ou l’ordre.
 
 Les fichiers Word et OpenDocument apportent aussi :
 
 - le gras, l’italique, le souligné, le barré, l’exposant et l’indice
-- les liens
+- les liens, dans le texte comme dans les commentaires
 - les lignes centrées ou alignées à droite
 - les sauts de page
+- les tableaux, un tableau placé dans un autre arrivant en lignes après celle qui le contient
 
 La justification suit votre style d’export, pas le fichier.
 
@@ -93,13 +106,15 @@ Skribisto, sur les mots qu’ils annotaient. Un commentaire apporte avec lui son
 réponses. Voir [les commentaires](:help-comments).
 
 Si les mots qu’un commentaire annotait sont introuvables, il est conservé sur le paragraphe le
-plus proche, et l’assistant le signale. Un commentaire sur un titre arrive sur le premier
-paragraphe placé dessous. Si aucun texte ne se trouve juste sous ce titre, comme sous un titre
-de livre suivi d’un titre de chapitre, il va au premier paragraphe qui le suit, ou au dernier
-qui le précède quand rien ne suit.
+plus proche, et l’assistant le signale. Un commentaire posé sur un paragraphe vide va au
+paragraphe qui le précède, et l’assistant le signale aussi. Un commentaire sur un titre arrive
+sur le premier paragraphe placé dessous. Si aucun texte ne se trouve juste sous ce titre, comme
+sous un titre de livre suivi d’un titre de chapitre, il va au premier paragraphe qui le suit, ou
+au dernier qui le précède quand rien ne suit.
 
 Les notes de bas de page arrivent aussi depuis ces deux formats, chacune avec son propre texte,
-appelée depuis le même endroit du texte. Les numéros ne sont pas repris.
+appelée depuis le même endroit du texte. Les notes de fin arrivent comme des notes de bas de page.
+Les numéros ne sont pas repris.
 
 Une note dont l’assistant ne peut pas placer l’appel est signalée plutôt qu’inventée.
 
@@ -113,7 +128,9 @@ Un bandeau sous l’arborescence porte les messages de l’assistant sur l’imp
 - Une ligne à remplir, tracée par des espaces soulignées ou barrées, arrive en espaces simples,
   ou pas du tout si elle ouvre ou termine un paragraphe. L’assistant indique combien.
 - Une liste imbriquée sur plus de seize niveaux arrive avec ses éléments plus profonds au
-  seizième niveau, texte et mise en forme compris. L’assistant indique combien.
+  seizième niveau, texte et mise en forme compris. L’assistant indique combien. Dans un fichier
+  Markdown, une liste indentée trop loin pour qu’un projet la contienne arrive plutôt en texte
+  brut, et ses lignes sont comptées avec les paragraphes arrivés en texte brut.
 - Un commentaire d’un fichier sans texte où le conserver, qui ne contient que des titres par
   exemple, n’est pas importé, et l’assistant le nomme.
 - Un fichier qui ne peut pas être lu, ou dont le format n’est reconnu par rien, est ignoré et

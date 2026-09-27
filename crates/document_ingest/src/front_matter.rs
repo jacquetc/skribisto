@@ -42,9 +42,68 @@ impl FrontMatter {
 /// A fence must be the very first line — `---` further down is a thematic break
 /// or a setext underline, and treating it as metadata would eat a scene break.
 pub fn split(text: &str, path: &str) -> FrontMatter {
-    let Some((fence, rest_offset)) = opening_fence(text) else {
+    let Some(block) = fenced_block(text) else {
         return FrontMatter::none();
     };
+    read_block(text, &block, path)
+}
+
+/// The keys a plain-text file's metadata block may hold: the ones the import reads.
+const PLAIN_TEXT_KEYS: [&str; 5] = ["title", "author", "order", "weight", "position"];
+
+/// [`split`], for a plain-text file: a block between two fences is taken as front
+/// matter only when every line in it is a `key: value` pair whose key is one the import
+/// reads, the title, the author or the order (`PLAIN_TEXT_KEYS`).
+///
+/// A plain-text writer draws a scene break as a line of `-`, and the file's first line
+/// is no exception. Read as Markdown reads it, a file opening with such a line and
+/// drawing another further down lost everything between the two: every line without a
+/// colon was skipped, and every line with one became a metadata key nothing ever shows.
+/// Here a block holding anything else, a line of prose, a key nothing reads, a list, is
+/// the writer's own text, and the file is read whole, its first line a scene break.
+pub fn split_plain(text: &str, path: &str) -> FrontMatter {
+    let Some(block) = fenced_block(text) else {
+        return FrontMatter::none();
+    };
+    let mut keys = 0usize;
+    for line in text[block.inner_start..block.inner_end].lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let read = split_pair(trimmed, block.fence).is_some_and(|(key, value)| {
+            let key = key.trim().to_ascii_lowercase();
+            let value = unquote(value.trim());
+            match key.as_str() {
+                "title" | "author" => !value.is_empty(),
+                // An order is read only as a whole number.
+                _ => PLAIN_TEXT_KEYS.contains(&key.as_str()) && value.parse::<i64>().is_ok(),
+            }
+        });
+        if !read {
+            return FrontMatter::none();
+        }
+        keys += 1;
+    }
+    if keys == 0 {
+        return FrontMatter::none();
+    }
+    read_block(text, &block, path)
+}
+
+/// Where a metadata block opening the text sits.
+struct FencedBlock {
+    fence: &'static str,
+    /// Byte range of the lines between the two fences.
+    inner_start: usize,
+    inner_end: usize,
+    /// Byte offset just past the closing fence's line.
+    body_offset: usize,
+}
+
+/// The metadata block `text` opens with, if it opens with a fence closed further down.
+fn fenced_block(text: &str) -> Option<FencedBlock> {
+    let (fence, rest_offset) = opening_fence(text)?;
 
     // Find the closing fence: a line that is exactly the fence (YAML also allows
     // `...` to end a document, which some exporters emit).
@@ -68,13 +127,21 @@ pub fn split(text: &str, path: &str) -> FrontMatter {
     // An unterminated fence is not front matter — it is a document that happens
     // to start with a thematic break. Treating it as metadata would swallow the
     // whole manuscript.
-    let Some(inner_end) = inner_end else {
-        return FrontMatter::none();
-    };
+    let inner_end = inner_end?;
+    Some(FencedBlock {
+        fence,
+        inner_start: rest_offset,
+        inner_end,
+        body_offset,
+    })
+}
 
+/// The metadata `block` holds, and the body after it.
+fn read_block(text: &str, block: &FencedBlock, path: &str) -> FrontMatter {
+    let fence = block.fence;
     let mut metadata = SourceMetadata::default();
     let mut diagnostics = Vec::new();
-    for line in text[rest_offset..inner_end].lines() {
+    for line in text[block.inner_start..block.inner_end].lines() {
         let trimmed = line.trim();
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
@@ -110,7 +177,7 @@ pub fn split(text: &str, path: &str) -> FrontMatter {
 
     FrontMatter {
         metadata,
-        body_offset,
+        body_offset: block.body_offset,
         diagnostics,
     }
 }
