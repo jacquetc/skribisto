@@ -1255,7 +1255,7 @@ mod tests {
         vm.chapter_scene().set(true);
 
         let dto = vm.dto();
-        assert_eq!(dto.file_name, "~/Books/tidewrack");
+        assert_eq!(dto.file_name, joined("~/Books", "tidewrack"));
         assert!(dto.is_folder);
         assert_eq!(dto.template_kind, NewWorkTemplate::EmptyNovel);
         assert_eq!(dto.language, vec!["fr-FR".to_string()]);

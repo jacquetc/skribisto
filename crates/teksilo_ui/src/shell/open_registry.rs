@@ -987,6 +987,11 @@ mod tests {
         let upper = books.path().join("Novel.skrib");
         let lower = books.path().join("novel.skrib");
         std::fs::write(&upper, b"PK").unwrap();
+        if lower.exists() {
+            // A volume that ignores case, the default on macOS and Windows, holds one
+            // file under both names, so the two projects this proves cannot be made.
+            return;
+        }
         std::fs::write(&lower, b"PK").unwrap();
         let (upper, lower) = (
             upper.to_string_lossy().into_owned(),
@@ -1038,6 +1043,11 @@ mod tests {
         claim(&path, "Novel");
         assert_eq!(scan_open().len(), 1);
         std::fs::write(&stored, b"PK").unwrap();
+        if typed.exists() {
+            // APFS and HFS+ look both spellings up as one file, so the respelling this
+            // proves cannot be staged with a link there; the filesystem does it itself.
+            return;
+        }
         std::os::unix::fs::symlink(&stored, &typed).unwrap();
         assert_ne!(
             canonical(&path),
