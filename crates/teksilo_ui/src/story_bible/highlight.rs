@@ -690,14 +690,23 @@ mod tests {
     /// and sent the mention bar's chevron to the wrong place.
     #[test]
     fn a_table_ahead_of_a_name_does_not_shift_its_mark() {
+        use teksilo::text_document::{MoveMode, MoveOperation};
         let d = TextDocument::new();
         d.cursor().insert_table(2, 2).expect("insert a table");
-        let end = d.character_count();
-        let cursor = d.cursor_at(end);
+        // To the end of the text by moving there: over a table of empty cells
+        // `character_count()` is 0, and a cursor there types into the first cell.
+        let cursor = d.cursor();
+        cursor.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
         cursor.insert_block().expect("a block after the table");
         cursor
             .insert_text("Elizabeth waited.")
             .expect("prose after the table");
+        assert!(
+            d.blocks()
+                .iter()
+                .any(|b| b.text() == "Elizabeth waited." && b.table_cell().is_none()),
+            "the name follows the table, outside it"
+        );
 
         let addressable = d.to_addressable_text().expect("addressable text");
         let exported = d.to_plain_text().expect("exported text");

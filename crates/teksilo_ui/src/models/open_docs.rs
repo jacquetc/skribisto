@@ -2160,10 +2160,15 @@ mod tests {
         // the coarse flag and nothing else, and the flush correctly declines to
         // write text no edit produced. `remove_selected_text` + `insert_text`
         // are the primitives live typing goes through.
+        //
+        // Selected to the end of the text by moving there: `character_count()` counts
+        // no paragraph break, so a selection ending at it left the loaded text's last
+        // characters behind, one per paragraph break in it.
         let cursor = main.doc.cursor_at(0);
-        cursor.set_position(
-            main.doc.character_count(),
+        cursor.move_position(
+            teksilo::text_document::MoveOperation::End,
             teksilo::text_document::MoveMode::KeepAnchor,
+            1,
         );
         cursor
             .remove_selected_text()

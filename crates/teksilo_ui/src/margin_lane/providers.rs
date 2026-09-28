@@ -717,12 +717,25 @@ mod tests {
     /// A table, then a block, then `prose`: the shape that puts a `U+FFFC` anchor and
     /// its separator ahead of every offset in the text, which is the whole of what the
     /// two providers below are about.
+    ///
+    /// The cursor goes to the end of the text by moving there. `character_count()` is no
+    /// cursor position: it counts neither the anchor's separator nor the separator of a
+    /// block, so over a table of empty cells it is 0, a cursor there stands in the
+    /// table's first cell, and the prose was typed into that cell instead.
     fn doc_after_a_table(prose: &str) -> teksilo::text_document::TextDocument {
+        use teksilo::text_document::{MoveMode, MoveOperation};
         let d = teksilo::text_document::TextDocument::new();
         d.cursor().insert_table(2, 2).expect("insert a table");
-        let cursor = d.cursor_at(d.character_count());
+        let cursor = d.cursor();
+        cursor.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
         cursor.insert_block().expect("a block after the table");
         cursor.insert_text(prose).expect("prose after the table");
+        assert!(
+            d.blocks()
+                .iter()
+                .any(|b| b.text() == prose && b.table_cell().is_none()),
+            "the prose follows the table, outside it"
+        );
         d
     }
 

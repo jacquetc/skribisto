@@ -334,11 +334,18 @@ pub fn writing_column(
         // editor can perform, because only it exists once the tab is built. It
         // wins over the restored caret: the writer just asked to go somewhere
         // specific, which is a stronger intent than where they last left off.
+        //
+        // No seek below is clamped here. `TextCursor::set_position`, which
+        // `select_range` goes through, clamps to the document's own maximum cursor
+        // position, which counts the separator between every pair of blocks;
+        // `character_count` does not count them. Clamped against the smaller of the
+        // two, a jump to a comment or a note in the last paragraphs of a scene of
+        // many paragraphs came out as a bare caret short of it, by one character per
+        // paragraph break before it.
         let seek = comments.as_ref().and_then(|c| c.take_seek());
         match seek {
             Some((start, end)) => {
-                let last = doc.character_count();
-                handle.select_range(start.min(last), end.min(last));
+                handle.select_range(start, end);
             }
             // Only reached (and so only consumed — see below) when no comment seek
             // is pending: a comment seek always wins, and a footnote seek left
@@ -357,18 +364,13 @@ pub fn writing_column(
                     .and_then(|label| crate::footnotes::FootnoteBinding::position_of(doc, &label));
                 match note_seek {
                     Some(pos) => {
-                        let last = doc.character_count();
-                        handle.select_range(pos.min(last), (pos + 1).min(last));
+                        handle.select_range(pos, pos + 1);
                     }
                     None => {
-                        // Not clamped here. `TextCursor::set_position` clamps to the
-                        // document's own maximum cursor position, which counts the
-                        // separator between every pair of blocks; `character_count`
-                        // does not count them. Clamping against the smaller of the
-                        // two silently walks the caret back one character per
-                        // paragraph, so restoring the end of a 90 block chapter put
-                        // the writer 90 characters short of where they left off, and
-                        // the further into a document they were the worse it got.
+                        // Not clamped either, for the same reason: clamped, restoring
+                        // the end of a 90 block chapter put the writer 90 characters
+                        // short of where they left off, and the further into a
+                        // document they were the worse it got.
                         handle.select_range(vs.initial.caret, vs.initial.caret);
                     }
                 }

@@ -3820,6 +3820,138 @@ fn a_stale_caret_past_the_end_is_clamped_to_the_document() {
     );
 }
 
+/// A scene of forty paragraphs, typed the way the editor types them and then `last`,
+/// flushed so its text has a `Content` row, open in a store with the comments and
+/// footnotes view-models installed the way `App::build` wires them.
+#[cfg(not(feature = "mocks"))]
+struct LongScene {
+    project: crate::test_support::RealProject,
+    docs: OpenDocsStore,
+    open: Rc<OpenDoc>,
+    comments: crate::comments::CommentsViewModel,
+    footnotes: crate::footnotes::FootnotesViewModel,
+}
+
+#[cfg(not(feature = "mocks"))]
+impl LongScene {
+    fn typed(last: impl FnOnce(&teksilo::widgets::rich_text::EditorHandle)) -> Self {
+        use teksilo::widgets::rich_text::RichTextEditor;
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let ctx = project.app_ctx.clone();
+        let ids = project.ids.clone();
+        let docs = OpenDocsStore::new(ctx.clone());
+        let comments = crate::comments::CommentsViewModel::new(
+            crate::models::CommentsListModel::new(ctx.clone(), ids.clone()),
+            ctx.clone(),
+            ids.stack_id.clone(),
+        );
+        docs.set_comments(comments.clone());
+        let footnotes = crate::footnotes::FootnotesViewModel::new(
+            crate::models::FootnotesListModel::new(ctx.clone(), ids.clone(), docs.clone()),
+            docs.clone(),
+            ids.stack_id.clone(),
+        );
+        docs.set_footnotes(footnotes.clone());
+        let (scene_id, _) = project.scenes()[0];
+        let open = docs.open(scene_id).expect("the scene opens");
+        let prose = open.main.as_ref().expect("a scene has prose");
+        let handle = RichTextEditor::editor(prose.doc.clone()).handle();
+        for n in 0..40 {
+            if n > 0 {
+                handle.insert_block();
+            }
+            handle.insert_text(&format!("Paragraph {n} of the scene."));
+        }
+        last(&handle);
+        open.flush(ids.stack_id.get())
+            .expect("the scene is written");
+        Self {
+            project,
+            docs,
+            open,
+            comments,
+            footnotes,
+        }
+    }
+
+    fn content_id(&self) -> u64 {
+        self.open
+            .main
+            .as_ref()
+            .and_then(|prose| prose.content().id())
+            .expect("the flush gave the scene a Content row")
+    }
+
+    /// The scene opened in a tab, and the editor that tab built.
+    fn tab_editor(&self) -> (WidgetTree, teksilo::widgets::rich_text::EditorHandle) {
+        let (tree, _root, tab) =
+            page_for(&self.project.app_ctx, self.docs.clone(), self.open.clone());
+        let editor = tab
+            .view_state_ports()
+            .editor()
+            .expect("a Scene publishes its editor");
+        (tree, editor)
+    }
+}
+
+/// The comments dock's jump to a thread selects the thread's words in the tab it opens,
+/// however far down a scene of many paragraphs they are. The seek was clamped to the
+/// character count, which counts no paragraph break, so a thread in the last paragraphs of
+/// a long scene came out as a caret short of its words.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn a_comment_near_the_end_of_a_long_scene_is_jumped_to_whole() {
+    let scene = LongScene::typed(|handle| handle.insert_text(" The lamp went out."));
+    let prose = scene.open.main.as_ref().expect("prose");
+    let text = prose.doc.to_addressable_text().expect("addressable text");
+    let byte = text.find("lamp went").expect("the words are in the scene");
+    let start = text[..byte].chars().count();
+    let id = scene
+        .open
+        .comment_binding_main()
+        .expect("comments reach the scene")
+        .add_range(start, start + "lamp went".len())
+        .expect("the comment is made");
+
+    // Parked the way the dock parks it, from the thread's row.
+    let row = frontend::commands::comment_commands::get_comment(&scene.project.app_ctx, &id)
+        .expect("reading the comment")
+        .expect("the comment exists");
+    let (from, to) = (
+        row.range_start as usize,
+        (row.range_start + row.range_length) as usize,
+    );
+    assert_eq!((from, to), (start, start + 9), "anchored on its words");
+    scene.comments.request_seek(scene.content_id(), from, to);
+
+    let (_tree, editor) = scene.tab_editor();
+    assert_eq!(editor.selection(), (from, to));
+    assert_eq!(editor.selected_text(), "lamp went");
+}
+
+/// The footnotes dock's jump to a note selects its marker in the tab it opens, however
+/// far down a scene of many paragraphs it is, for the same reason as a comment above.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn a_footnote_near_the_end_of_a_long_scene_is_jumped_to_on_its_marker() {
+    let scene = LongScene::typed(|handle| {
+        handle.insert_text(" A cited line.");
+        handle.insert_djot("[^n1]");
+    });
+    let prose = scene.open.main.as_ref().expect("prose");
+    let marker = crate::footnotes::FootnoteBinding::position_of(&prose.doc, "n1")
+        .expect("the reference is in the scene");
+    assert!(
+        marker > prose.doc.character_count(),
+        "the marker is past the character count, where the clamp put the caret"
+    );
+    scene.footnotes.request_seek(scene.content_id(), "n1");
+
+    let (_tree, editor) = scene.tab_editor();
+    assert_eq!(editor.selection(), (marker, marker + 1));
+}
+
 /// A rebuild that has nothing to do with the writer — a Promote, a
 /// settings-driven relayout — mints a fresh editor over the same document.
 /// It must not throw the caret back to wherever the tab was first opened,
