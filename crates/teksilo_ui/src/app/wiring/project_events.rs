@@ -142,24 +142,16 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                 // Point this Work's document store at its media directory, before
                 // any tab opens: an image's bytes are resolved as its document
                 // loads, so a document built before this is known would show
-                // every picture as a correctly-sized blank.
-                if let Some(p) = path.as_deref() {
-                    let uid = frontend::commands::work_commands::get_work(
-                        &app_ctx,
-                        &ids.work_id.get().unwrap_or_default(),
-                    )
-                    .ok()
-                    .flatten()
-                    .map(|w| w.unique_id)
-                    .unwrap_or_default();
-                    session_for_nudge
-                        .open_docs
-                        .set_media_dir(skrib_format::media::media_dir(
-                            std::path::Path::new(p),
-                            &uid,
-                            std::path::Path::new(&crate::media_paths::media_root_string()),
-                            &uid,
-                        ));
+                // every picture as a correctly-sized blank. Resolved at each ask from
+                // where the project is then, as a save resolves it: a Save As moves it.
+                if path.is_some()
+                    && let Some(work_id) = ids.work_id.get()
+                {
+                    let app_ctx = app_ctx.clone();
+                    let root = crate::media_paths::media_root();
+                    session_for_nudge.open_docs.set_media_dir_resolver(move || {
+                        crate::media_paths::project_media_dir(&app_ctx, work_id, &root)
+                    });
                 }
 
                 // Sniff the manifest once: drives both the backup-mode branch
@@ -668,22 +660,17 @@ pub(in crate::app) fn install_lifecycle(
                     // media directory stays empty and every image command
                     // reports "open a project first" at a writer who has one
                     // open — until they save, close and reopen it.
-                    let uid = frontend::commands::work_commands::get_work(
-                        &app_ctx_for_teardown,
-                        &work_id,
-                    )
-                    .ok()
-                    .flatten()
-                    .map(|w| w.unique_id)
-                    .unwrap_or_default();
-                    my_session
-                        .open_docs
-                        .set_media_dir(skrib_format::media::media_dir(
-                            std::path::Path::new(""),
-                            &uid,
-                            std::path::Path::new(&crate::media_paths::media_root_string()),
-                            &uid,
-                        ));
+                    //
+                    // Resolved at each ask, never once here: a folder project's
+                    // first save makes the folder its pictures live in from then on,
+                    // and every later save reads them there, so the uid-keyed
+                    // directory stops being the answer the moment that save lands
+                    // (`media_paths::project_media_dir`).
+                    let app_ctx = app_ctx_for_teardown.clone();
+                    let root = crate::media_paths::media_root();
+                    my_session.open_docs.set_media_dir_resolver(move || {
+                        crate::media_paths::project_media_dir(&app_ctx, work_id, &root)
+                    });
                     if let Some(window_id) = window_id {
                         let stack_teardown = crate::app::build_stack_teardown(
                             app_ctx_for_teardown.clone(),

@@ -832,6 +832,9 @@ struct Inner {
     /// Works open at once have different media directories, and a document
     /// loaded against the wrong one shows blanks.
     media_dir: RefCell<std::path::PathBuf>,
+    /// What answers [`OpenDocsStore::media_dir`] when set: the directory resolved afresh at
+    /// each ask, since it moves with the project ([`OpenDocsStore::set_media_dir_resolver`]).
+    media_dir_resolver: RefCell<Option<Rc<dyn Fn() -> std::path::PathBuf>>>,
     /// The open project's punctuation rules, pushed down to every session on
     /// change and to each newly-opened document. `None` until resolved.
     punctuation: RefCell<Option<SmartPunctuationFlags>>,
@@ -954,9 +957,27 @@ impl OpenDocsStore {
         *self.inner.media_dir.borrow_mut() = dir;
     }
 
+    /// Resolve the open project's media directory with `resolve` each time it is asked for,
+    /// rather than once.
+    ///
+    /// The directory moves with the project: a new folder project's first save makes the
+    /// folder whose `assets/` it lives in from then on, and a Save As can move it again.
+    /// Resolved once when the Work opened, it kept naming the directory the project had
+    /// then, so a picture inserted or imported afterwards was written where no save reads
+    /// and dropped by the next one (`crate::media_paths::project_media_dir`).
+    pub fn set_media_dir_resolver(&self, resolve: impl Fn() -> std::path::PathBuf + 'static) {
+        *self.inner.media_dir_resolver.borrow_mut() = Some(Rc::new(resolve));
+    }
+
     /// The open project's media directory.
     pub fn media_dir(&self) -> std::path::PathBuf {
-        self.inner.media_dir.borrow().clone()
+        // Cloned out before it runs: the resolver reads the store, and holding this borrow
+        // across it would make any path back into this store a double borrow.
+        let resolver = self.inner.media_dir_resolver.borrow().clone();
+        match resolver {
+            Some(resolve) => resolve(),
+            None => self.inner.media_dir.borrow().clone(),
+        }
     }
 
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
@@ -979,6 +1000,7 @@ impl OpenDocsStore {
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(Vec::new()),
                 media_dir: RefCell::new(std::path::PathBuf::new()),
+                media_dir_resolver: RefCell::new(None),
                 punctuation: RefCell::new(None),
                 lang_cache: RefCell::new(None),
             }),
