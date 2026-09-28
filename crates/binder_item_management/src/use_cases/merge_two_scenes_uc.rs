@@ -370,11 +370,20 @@ fn work_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait, requested: EntityId) -> Resu
 }
 
 /// Append `b` onto `a` with a blank-line separator (paragraph break in Djot).
+///
+/// Only the line breaks at the join are trimmed, since the separator replaces them. A merge
+/// cuts no paragraph, so every paragraph keeps the blanks it opens and ends with, as a split
+/// keeps a paragraph's indentation (`teksilo_ui`'s `split_djot`): the ones the editor writes
+/// behind an empty `{}` never touch the join, and a no-break or ideographic space it writes
+/// bare there is text. `str::trim` knew none of that and took those last two, so merging a
+/// scene whose first paragraph opened with an ideographic-space indent lost the indent.
 fn join_text(a: &str, b: &str) -> String {
+    let line_break = |c: char| matches!(c, '\n' | '\r');
+    let b = b.trim_start_matches(line_break);
     if a.trim().is_empty() {
-        b.trim_start().to_string()
+        b.to_string()
     } else {
-        format!("{}\n\n{}", a.trim_end(), b.trim_start())
+        format!("{}\n\n{b}", a.trim_end_matches(line_break))
     }
 }
 
@@ -406,5 +415,28 @@ impl UndoRedoCommand for MergeTwoScenesUseCase {
     }
     fn as_any(&self) -> &dyn Any {
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::join_text;
+
+    /// The join adds one paragraph break and takes nothing from either side but the line
+    /// breaks it replaces: a trailing `{}`-guarded pair of spaces, a tab-indented first
+    /// paragraph, an ideographic-space indent and a closing no-break space all stay.
+    #[test]
+    fn a_join_keeps_every_paragraphs_own_blanks() {
+        assert_eq!(join_text("Alpha\n", "\nBeta"), "Alpha\n\nBeta");
+        assert_eq!(
+            join_text("Ends on two spaces  {}\n", "{}\tSet in by a tab."),
+            "Ends on two spaces  {}\n\n{}\tSet in by a tab."
+        );
+        assert_eq!(
+            join_text("Ends on a no-break space\u{a0}", "\u{3000}Indented."),
+            "Ends on a no-break space\u{a0}\n\n\u{3000}Indented."
+        );
+        // An empty target takes the source as it is.
+        assert_eq!(join_text(" \n", "\u{3000}Indented."), "\u{3000}Indented.");
     }
 }

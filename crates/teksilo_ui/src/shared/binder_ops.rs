@@ -27,7 +27,7 @@
 //! `binder_ordering` crate (backend-side) — neither of which may touch a unit of work, which
 //! is precisely why these backend-touching helpers could not live there.
 
-use teksilo::text_document::{MoveMode, TextDocument};
+use teksilo::text_document::{MoveMode, MoveOperation, TextDocument};
 
 use frontend::AppContext;
 use frontend::binder_item_management::{MoveDto, MovePlace};
@@ -434,20 +434,41 @@ pub(crate) fn opens_a_section(sub_role: &BinderItemSubRole) -> bool {
     sub_role.opens_chapter() || sub_role.opens_part() || sub_role.opens_book()
 }
 
-/// Split `doc` at char offset `caret` into two Djot strings, preserving inline formatting,
-/// via fragment extraction into fresh documents.
+/// Split `doc` at the caret offset `caret` into two Djot strings, preserving inline
+/// formatting, via fragment extraction into fresh documents.
 ///
-/// **A split at either boundary returns `Err`, not an empty half.** `caret` is clamped into
-/// range, but an empty selection produces an empty fragment, which `insert_fragment` rejects
-/// ("Invalid fragment_data JSON") — so `caret == 0` and `caret >= len` both fail. Every
-/// caller treats `Err` as "do nothing", which makes splitting at the very start or end a
-/// silent no-op. That is the sane outcome (neither would produce two useful halves), but it
-/// falls out of a serialization failure rather than a deliberate guard — so if a caller ever
-/// needs to *distinguish* "nothing to split" from "the split failed", this is the place to
-/// add an explicit boundary check rather than relying on the error.
+/// **The blanks at the cut go with neither half.** The spaces and tabs touching the caret
+/// inside the paragraph it cuts are left out of both halves ([`cut_at`]): a writer splitting
+/// at "Hello| world" gets "Hello" and "world", not a scene ending on a space and a new one
+/// opening with it. `text-document` keeps the blanks a paragraph opens or closes with through
+/// every save, so left in they would stay in both scenes. A paragraph's indentation is
+/// the exception: with nothing but blanks before the caret and words after it, the
+/// paragraph moves to the new scene whole, its leading blanks as the writer typed them.
+/// Blanks anywhere else, and any other space character (a no-break space, an ideographic
+/// space), are text and are kept.
+///
+/// **The after-half runs to the end of the main text**, found by moving a cursor there.
+/// `character_count()` is not that position: it leaves out the separator between each two
+/// paragraphs, so a range ending at it stopped one character short for every paragraph break
+/// in the scene and cut the scene's last words off the new one.
+///
+/// **A split with nothing on one side returns `Err`, not an empty half:** at the very start
+/// or end of the text, or with only blanks between the caret and that edge. Every caller
+/// treats `Err` as "do nothing", so such a split is a silent no-op, which is the sane
+/// outcome: neither would produce two scenes.
 pub(crate) fn split_djot(doc: &TextDocument, caret: usize) -> anyhow::Result<(String, String)> {
-    let n = doc.character_count();
-    let caret = caret.min(n);
+    let end = {
+        let c = doc.cursor();
+        c.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
+        c.position()
+    };
+    let (before_end, after_start) = cut_at(doc, caret.min(end))?;
+    if before_end == 0 {
+        anyhow::bail!("nothing before the caret to leave in the scene");
+    }
+    if after_start >= end {
+        anyhow::bail!("nothing after the caret to move to a new scene");
+    }
 
     let extract = |from: usize, to: usize| -> anyhow::Result<String> {
         let c = doc.cursor();
@@ -459,9 +480,31 @@ pub(crate) fn split_djot(doc: &TextDocument, caret: usize) -> anyhow::Result<(St
         Ok(tmp.to_djot()?)
     };
 
-    let before = extract(0, caret)?;
-    let after = extract(caret, n)?;
+    let before = extract(0, before_end)?;
+    let after = extract(after_start, end)?;
     Ok((before, after))
+}
+
+/// Where a split at `caret` ends the text it leaves behind and starts the text it moves:
+/// `(before_end, after_start)`, with the spaces and tabs touching the caret in its
+/// paragraph between the two.
+///
+/// Only that paragraph is looked at, and only spaces and tabs count as blanks: they are
+/// what the writer puts between words. A caret with nothing but blanks before it in its
+/// paragraph and words after it (at the paragraph's very start, or inside its indentation)
+/// cuts in front of the whole paragraph instead, so the indentation the writer typed opens
+/// the new scene with it. A paragraph of blanks alone goes with neither half.
+fn cut_at(doc: &TextDocument, caret: usize) -> anyhow::Result<(usize, usize)> {
+    let block = doc.block_at_caret(caret)?;
+    let text: Vec<char> = doc.text_at(block.start, block.length)?.chars().collect();
+    let at = caret.saturating_sub(block.start).min(text.len());
+    let is_blank = |c: &&char| matches!(**c, ' ' | '\t');
+    let blanks_before = text[..at].iter().rev().take_while(is_blank).count();
+    let blanks_after = text[at..].iter().take_while(is_blank).count();
+    if blanks_before == at && at + blanks_after < text.len() {
+        return Ok((block.start, block.start));
+    }
+    Ok((caret - blanks_before, caret + blanks_after))
 }
 
 #[cfg(test)]
@@ -609,33 +652,123 @@ mod tests {
         );
     }
 
-    /// Splitting cuts exactly at the caret and loses nothing.
-    #[test]
-    fn split_djot_cuts_at_the_caret() {
+    /// A document holding `text`, one paragraph per line, as the writer typed it.
+    fn typed(text: &str) -> TextDocument {
         let doc = TextDocument::new();
-        doc.cursor()
-            .insert_text("Hello world")
-            .expect("seed the document");
-
-        let (before, after) = split_djot(&doc, 5).expect("split");
-        assert_eq!(before.trim(), "Hello");
-        assert_eq!(after.trim(), "world");
+        doc.set_plain_text(text).expect("seed the document");
+        doc
     }
 
-    /// Splitting at either boundary fails rather than yielding an empty half — an empty
-    /// fragment cannot be serialized. Callers rely on this: they treat `Err` as "do
-    /// nothing", so a split at the very start or end is a silent no-op. Pinned here so the
-    /// day someone makes empty fragments legal, the callers get revisited too.
+    /// The text the editor shows for `djot`, one paragraph per line.
+    fn shown(djot: &str) -> String {
+        let doc = TextDocument::new();
+        doc.set_djot_sync(djot).expect("the half reads back");
+        doc.to_plain_text().expect("plain text")
+    }
+
+    /// Splitting mid-paragraph cuts at the caret, and the space at the cut goes with
+    /// neither half, whichever side of the caret it sat on. `text-document` keeps a
+    /// paragraph's edge blanks through a save since 1.12.3 (1.12.2 dropped them), so a
+    /// space left in would open the new scene, or end the old one, for good.
+    #[test]
+    fn split_djot_cuts_at_the_caret() {
+        let doc = typed("Hello world");
+
+        // "Hello| world": the space is after the caret.
+        let (before, after) = split_djot(&doc, 5).expect("split");
+        assert_eq!((before.as_str(), after.as_str()), ("Hello", "world"));
+
+        // "Hello |world": the space is before it.
+        let (before, after) = split_djot(&doc, 6).expect("split");
+        assert_eq!((before.as_str(), after.as_str()), ("Hello", "world"));
+    }
+
+    /// Every space and tab touching the caret goes, and nothing else: a no-break space is
+    /// a character the writer chose, and blanks elsewhere in the text are theirs too.
+    #[test]
+    fn split_djot_drops_only_the_spaces_and_tabs_at_the_cut() {
+        let doc = typed("Ends on two spaces  \nHello \t world");
+        let caret = "Ends on two spaces  \nHello \t".chars().count() - 1;
+        let (before, after) = split_djot(&doc, caret).expect("split");
+        assert_eq!(shown(&before), "Ends on two spaces  \nHello");
+        assert_eq!(shown(&after), "world");
+
+        let doc = typed("Hello\u{a0}world");
+        let (before, after) = split_djot(&doc, 6).expect("split");
+        assert_eq!(shown(&before), "Hello\u{a0}");
+        assert_eq!(shown(&after), "world");
+    }
+
+    /// At the very start of a paragraph the paragraph is not cut: it opens the new scene
+    /// whole, and a tab it opens with is the writer's indentation, kept as typed. A caret
+    /// inside that indentation cuts in front of the paragraph the same way.
+    #[test]
+    fn split_djot_at_a_paragraph_start_keeps_its_indentation() {
+        let doc = typed("Hello\n\tWorld");
+        for caret in [6, 7] {
+            let (before, after) = split_djot(&doc, caret).expect("split");
+            assert_eq!(shown(&before), "Hello", "caret {caret}");
+            assert_eq!(shown(&after), "\tWorld", "caret {caret}");
+        }
+    }
+
+    /// At the end of a paragraph the blanks it ends on are at the cut, so the old scene
+    /// does not end on them, and the next paragraph opens the new scene as it is.
+    #[test]
+    fn split_djot_at_a_paragraph_end_leaves_its_trailing_blanks_behind() {
+        let doc = typed("Hello  \n\tWorld");
+        for caret in [5, 7] {
+            let (before, after) = split_djot(&doc, caret).expect("split");
+            assert_eq!(shown(&before), "Hello", "caret {caret}");
+            assert_eq!(shown(&after), "\tWorld", "caret {caret}");
+        }
+    }
+
+    /// A paragraph of nothing but blanks, with the caret anywhere in it, is all cut:
+    /// the old scene ends on the paragraph before it and the new one opens on the next.
+    #[test]
+    fn split_djot_in_a_paragraph_of_blanks_leaves_it_out_of_both_halves() {
+        let doc = typed("Hello\n \t \nWorld");
+        for caret in [6, 7, 9] {
+            let (before, after) = split_djot(&doc, caret).expect("split");
+            assert_eq!(shown(&before), "Hello", "caret {caret}");
+            assert_eq!(shown(&after), "World", "caret {caret}");
+        }
+    }
+
+    /// The new scene gets the whole rest of the text. The end used to be read from
+    /// `character_count()`, which counts no paragraph break, so every break in the scene
+    /// cost the new scene one of its last characters.
+    #[test]
+    fn split_djot_keeps_the_last_words_of_a_scene_of_many_paragraphs() {
+        let doc = typed("One\nTwo\nThree\nFour");
+        let (before, after) = split_djot(&doc, 2).expect("split");
+        assert_eq!(shown(&before), "On");
+        assert_eq!(shown(&after), "e\nTwo\nThree\nFour");
+    }
+
+    /// Splitting at either boundary fails rather than yielding an empty half, as does a
+    /// split with only blanks between the caret and that boundary. Callers rely on this:
+    /// they treat `Err` as "do nothing", so such a split is a silent no-op.
     #[test]
     fn split_djot_refuses_a_boundary_split() {
-        let doc = TextDocument::new();
-        doc.cursor()
-            .insert_text("Hello")
-            .expect("seed the document");
-
+        let doc = typed("Hello");
         assert!(split_djot(&doc, 0).is_err(), "nothing before the caret");
         assert!(split_djot(&doc, 5).is_err(), "nothing after the caret");
         // A caret past the end clamps to the end, so it fails the same way.
         assert!(split_djot(&doc, 9_999).is_err(), "clamped to the end");
+
+        let doc = typed("  Hello  ");
+        assert!(
+            split_djot(&doc, 2).is_err(),
+            "only indentation before the caret"
+        );
+        assert!(split_djot(&doc, 7).is_err(), "only blanks after the caret");
+
+        let doc = typed("Hello\n   ");
+        assert!(
+            split_djot(&doc, 9).is_err(),
+            "only a paragraph of blanks after the caret"
+        );
     }
 }

@@ -315,6 +315,44 @@ fn merge_absorbs_a_scene_back_into_its_chapter_folder() {
     );
 }
 
+/// A merge cuts no paragraph, so each one keeps the blanks it opens and ends with, as a
+/// split keeps a paragraph's indentation: a last paragraph ending on two spaces, a first
+/// paragraph indented with an ideographic space, the way Chinese and Japanese prose is,
+/// and one opening with a tab. Each scene holds what the editor saves for its text, and
+/// the editor reads the merged row with all three.
+#[test]
+fn merge_keeps_the_blanks_each_paragraph_opens_and_ends_with() {
+    let target = "Ends on two spaces  {}";
+    let source = "\u{3000}Indented the way Chinese prose is.\n\n{}\tSet in by a tab.";
+    for djot in [target, source] {
+        assert_eq!(
+            skrib_format::djot_as_the_editor_writes_it(djot).unwrap(),
+            djot,
+            "the fixture is what the editor saves"
+        );
+    }
+    let (ctx, work_id, binder) = setup();
+    let a = make_scene(&ctx, binder, "A", target);
+    let b = make_scene(&ctx, binder, "B", source);
+
+    binder_item_management_commands::merge_two_scenes(
+        &ctx,
+        None,
+        &MergeTwoScenesDto {
+            work_id,
+            target_id: a,
+            source_id: b,
+        },
+    )
+    .unwrap();
+
+    let (shown, _) = skrib_format::djot_plain_text(&scene_text(&ctx, a)).unwrap();
+    assert_eq!(
+        shown,
+        "Ends on two spaces  \n\u{3000}Indented the way Chinese prose is.\n\tSet in by a tab."
+    );
+}
+
 /// Merging *away* a row that opens a structural section would destroy the
 /// structure: a `ChapterScene` source would delete a chapter boundary, and a
 /// `Folder/Chapter` source would orphan its child scenes. Both are rejected by the
