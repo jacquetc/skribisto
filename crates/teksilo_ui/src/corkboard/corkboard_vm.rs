@@ -31,6 +31,7 @@ use frontend::commands::{
     binder_item_commands, binder_item_management_commands, trash_management_commands,
     undo_redo_commands,
 };
+use frontend::common::entities::ContentRole;
 use frontend::trash_management::TrashSelectionDto;
 
 use skribisto_model::counting::CountingMethodSetting;
@@ -508,6 +509,14 @@ impl CorkboardViewModel {
         Some(doc)
     }
 
+    /// Have the comments model read where every comment is now, before a reload
+    /// re-anchors the reloaded text's comments from it (see `CommentsListModel::reread`).
+    fn reread_comments(&self) {
+        if let Some(comments) = self.inner.docs.comments() {
+            comments.model().reread();
+        }
+    }
+
     /// Flush + release every synopsis doc this corkboard holds. Called when the
     /// container changes (drill in/out) and when the pane is torn down (segment
     /// switch / tab close), so no card's edit is stranded. `OpenDocsStore::release`
@@ -591,22 +600,34 @@ impl CorkboardViewModel {
         let Some(syn) = doc.synopsis.as_ref() else {
             return;
         };
-        let Ok((before_synopsis, after_synopsis)) = split_djot(&syn.doc, caret) else {
+        let Ok(split) = split_djot(&syn.doc, caret) else {
             return;
         };
+        // The comments on the moved words go with them, as the stream's split does.
+        let comments = doc
+            .comment_binding_synopsis()
+            .map(|b| binder_ops::comments_moved_by_split(&b.live(), split.moved_from))
+            .unwrap_or_default();
         let whole_prose = doc.main.as_ref().map(|m| m.djot()).unwrap_or_default();
-        let _ = binder_item_management_commands::split_scene(
+        let _ = binder_ops::split_scene_carrying_comments(
             &self.inner.app_ctx,
+            &self.inner.ids,
             stack,
             &SplitSceneDto {
                 source_id: id,
                 before_text: whole_prose,
                 after_text: String::new(),
-                before_synopsis,
-                after_synopsis,
+                before_synopsis: split.before.clone(),
+                after_synopsis: split.after.clone(),
                 new_title: tr!(new_scene_title()).resolve_now(),
             },
+            ContentRole::SynopsisText,
+            &comments,
+            &split,
         );
+        if !comments.is_empty() {
+            self.reread_comments();
+        }
         // The source now holds only the before-halves — reflect that in the shared
         // doc, pumping a frame so the queued document events drain.
         doc.reload();
@@ -961,7 +982,8 @@ impl CorkboardViewModel {
             let _ = d.flush(stack);
         }
 
-        let merged = binder_item_management_commands::merge_two_scenes(
+        // The comments on the absorbed card's text go with it.
+        let merged = binder_ops::merge_scenes_carrying_comments(
             &self.inner.app_ctx,
             stack,
             &MergeTwoScenesDto {
@@ -974,6 +996,7 @@ impl CorkboardViewModel {
         if !merged {
             return;
         }
+        self.reread_comments();
 
         // The survivor absorbed both roles — reflect that in the shared doc so the
         // card (and any editor tab on it) shows the merged text instead of a stale

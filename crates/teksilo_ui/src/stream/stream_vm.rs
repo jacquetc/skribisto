@@ -45,10 +45,8 @@ use crate::comments::binding::CommentBinding;
 
 use frontend::AppContext;
 use frontend::binder_item_management::{MergeTwoScenesDto, MovePlace, SplitSceneDto};
-use frontend::commands::{
-    binder_item_commands, binder_item_management_commands, trash_management_commands,
-};
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+use frontend::commands::{binder_item_commands, trash_management_commands};
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::trash_management::TrashSelectionDto;
 
@@ -639,7 +637,9 @@ impl StreamViewModel {
         let stack = self.stack();
         let _ = prev.flush(stack);
         let _ = cur.flush(stack);
-        let _ = binder_item_management_commands::merge_two_scenes(
+        // The comments on the absorbed row's text go with it, and the model the reload
+        // below re-anchors from knows where they went.
+        let _ = binder_ops::merge_scenes_carrying_comments(
             &self.inner.app_ctx,
             stack,
             &MergeTwoScenesDto {
@@ -648,6 +648,7 @@ impl StreamViewModel {
                 source_id: id,
             },
         );
+        self.reread_comments();
         // `prev` absorbed `id`'s prose *and* synopsis — reflect both in the (reused)
         // editors. `set_djot` only queues a document event, so pump a frame for the
         // editors the user did not touch.
@@ -668,27 +669,54 @@ impl StreamViewModel {
         let _ = doc.flush(stack);
 
         let (prose, synopsis) = (doc.main.as_ref(), doc.synopsis.as_ref());
-        let (before_text, after_text, before_synopsis, after_synopsis) = match which {
-            SplitFlavour::Prose => {
-                let Some(m) = prose else { return };
-                let Ok((before, after)) = split_djot(&m.doc, caret) else {
-                    return;
-                };
-                let whole = synopsis.map(|s| s.djot()).unwrap_or_default();
-                (before, after, whole, String::new())
-            }
-            SplitFlavour::Synopsis => {
-                let Some(s) = synopsis else { return };
-                let Ok((before, after)) = split_djot(&s.doc, caret) else {
-                    return;
-                };
-                let whole = prose.map(|m| m.djot()).unwrap_or_default();
-                (whole, String::new(), before, after)
-            }
+        // The comments on the moved words go with them, read off the live anchors of the
+        // text being cut before anything changes it.
+        let moved = |binding: Option<CommentBinding>, from: usize| {
+            binding
+                .map(|b| binder_ops::comments_moved_by_split(&b.live(), from))
+                .unwrap_or_default()
         };
+        let (before_text, after_text, before_synopsis, after_synopsis, role, comments, split) =
+            match which {
+                SplitFlavour::Prose => {
+                    let Some(m) = prose else { return };
+                    let Ok(split) = split_djot(&m.doc, caret) else {
+                        return;
+                    };
+                    let whole = synopsis.map(|s| s.djot()).unwrap_or_default();
+                    let comments = moved(doc.comment_binding_main(), split.moved_from);
+                    (
+                        split.before.clone(),
+                        split.after.clone(),
+                        whole,
+                        String::new(),
+                        ContentRole::SceneText,
+                        comments,
+                        split,
+                    )
+                }
+                SplitFlavour::Synopsis => {
+                    let Some(s) = synopsis else { return };
+                    let Ok(split) = split_djot(&s.doc, caret) else {
+                        return;
+                    };
+                    let whole = prose.map(|m| m.djot()).unwrap_or_default();
+                    let comments = moved(doc.comment_binding_synopsis(), split.moved_from);
+                    (
+                        whole,
+                        String::new(),
+                        split.before.clone(),
+                        split.after.clone(),
+                        ContentRole::SynopsisText,
+                        comments,
+                        split,
+                    )
+                }
+            };
 
-        let _ = binder_item_management_commands::split_scene(
+        let _ = binder_ops::split_scene_carrying_comments(
             &self.inner.app_ctx,
+            &self.inner.ids,
             stack,
             &SplitSceneDto {
                 source_id: id,
@@ -698,7 +726,13 @@ impl StreamViewModel {
                 after_synopsis,
                 new_title: tr!(new_scene_title()).resolve_now(),
             },
+            role,
+            &comments,
+            &split,
         );
+        if !comments.is_empty() {
+            self.reread_comments();
+        }
         // `id` now holds only the before-halves — reflect them in the (reused) editors,
         // pumping a frame so the queued document events are drained.
         doc.reload();
@@ -723,6 +757,14 @@ impl StreamViewModel {
     }
 
     // ── helpers ──
+
+    /// Have the comments model read where every comment is now, before a reload
+    /// re-anchors the reloaded text's comments from it (see `CommentsListModel::reread`).
+    fn reread_comments(&self) {
+        if let Some(comments) = self.inner.docs.comments() {
+            comments.model().reread();
+        }
+    }
 
     fn stack(&self) -> Option<u64> {
         self.inner.ids.stack_id.get()

@@ -677,6 +677,17 @@ mod imp {
             self.refresh_for(self.inner.ids.work_id.get());
         }
 
+        /// Read the rows again now, rather than on the `Comment` events a write sends.
+        ///
+        /// For a caller that moved comments to another text and then reloads a
+        /// document: the reload re-anchors the comments this model says are on that
+        /// text, and the events reach this model on a later turn of the loop, so a
+        /// comment just moved away was re-anchored against the text it left, found
+        /// wanting and stored as having lost its words.
+        pub fn reread(&self) {
+            self.refresh();
+        }
+
         /// Reload against an explicit Work, rather than whatever `ids.work_id` says
         /// right now.
         ///
@@ -949,6 +960,9 @@ mod imp {
         pub fn orphans(&self) -> Vec<CommentRow> {
             self.rows().into_iter().filter(|r| r.orphaned).collect()
         }
+
+        /// Nothing to read again: the fabricated list is the only copy there is.
+        pub fn reread(&self) {}
 
         // ── Writes. Same signatures as the real impl so no consumer needs a
         // `#[cfg]`; they mutate the fabricated list in place, since a mock build

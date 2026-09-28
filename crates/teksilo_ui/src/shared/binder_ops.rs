@@ -30,19 +30,20 @@
 use teksilo::text_document::{MoveMode, MoveOperation, TextDocument};
 
 use frontend::AppContext;
-use frontend::binder_item_management::{MoveDto, MovePlace};
+use frontend::binder_item_management::{MergeTwoScenesDto, MoveDto, MovePlace, SplitSceneDto};
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands, content_commands,
-    work_commands,
+    binder_commands, binder_item_commands, binder_item_management_commands, comment_commands,
+    content_commands, undo_redo_commands, work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
-use frontend::direct_access::ContentDto;
+use frontend::common::undo_redo::UndoLabel;
 use frontend::direct_access::{
     BinderDto, BinderItemDto, CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto,
 };
+use frontend::direct_access::{CommentDto, ContentDto};
 
 use skribisto_model::SubRoleExt;
 
@@ -434,8 +435,8 @@ pub(crate) fn opens_a_section(sub_role: &BinderItemSubRole) -> bool {
     sub_role.opens_chapter() || sub_role.opens_part() || sub_role.opens_book()
 }
 
-/// Split `doc` at the caret offset `caret` into two Djot strings, preserving inline
-/// formatting, via fragment extraction into fresh documents.
+/// Split `doc` at the caret offset `caret` into two Djot strings, each half whole blocks
+/// that keep their formatting, block and inline.
 ///
 /// **The blanks at the cut go with neither half.** The spaces and tabs touching the caret
 /// inside the paragraph it cuts are left out of both halves ([`cut_at`]): a writer splitting
@@ -447,64 +448,495 @@ pub(crate) fn opens_a_section(sub_role: &BinderItemSubRole) -> bool {
 /// Blanks anywhere else, and any other space character (a no-break space, an ideographic
 /// space), are text and are kept.
 ///
-/// **The after-half runs to the end of the main text**, found by moving a cursor there.
-/// `character_count()` is not that position: it leaves out the separator between each two
-/// paragraphs, so a range ending at it stopped one character short for every paragraph break
-/// in the scene and cut the scene's last words off the new one.
+/// **A paragraph cut in two is two paragraphs of its kind**, the way Enter breaks one: a
+/// heading, a list item or a quotation keeps its heading level, its list or its quotation
+/// on both halves. The cut is made in a copy of the document, with a paragraph break put
+/// where it falls, and each half is then taken whole blocks at a time. A selection that
+/// ends inside a paragraph carries no block format (`text-document` pastes such a piece
+/// into the paragraph it lands in), so taken as a piece the half of a heading came out a
+/// plain paragraph, and so did a heading or a list item the caret ended.
+///
+/// **A table is never cut.** A caret anywhere in one cuts in front of it, and the table
+/// moves to the new scene whole, as an indented paragraph does. A selection that starts or
+/// ends inside a table takes the whole table, and one that starts there loses what follows
+/// the table, so a split in a cell used to put the table in both scenes and drop the
+/// scene's text after it. A half that starts with a table is taken from the paragraph break
+/// in front of it, and the half before it is made by deleting everything from that break on,
+/// which takes the table whole and leaves the paragraph before it as it was.
 ///
 /// **A split with nothing on one side returns `Err`, not an empty half:** at the very start
-/// or end of the text, or with only blanks between the caret and that edge. Every caller
-/// treats `Err` as "do nothing", so such a split is a silent no-op, which is the sane
-/// outcome: neither would produce two scenes.
-pub(crate) fn split_djot(doc: &TextDocument, caret: usize) -> anyhow::Result<(String, String)> {
-    let end = {
-        let c = doc.cursor();
-        c.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
-        c.position()
-    };
-    let (before_end, after_start) = cut_at(doc, caret.min(end))?;
-    if before_end == 0 {
+/// or end of the text, or with only blanks and empty paragraphs between the caret and that
+/// edge. Every caller treats `Err` as "do nothing", so such a split is a silent no-op, which
+/// is the sane outcome: neither would produce two scenes. The same goes for a cut that falls
+/// between two tables, which no half can be taken at without cutting one of them.
+pub(crate) fn split_djot(doc: &TextDocument, caret: usize) -> anyhow::Result<SceneSplit> {
+    let end = end_of(doc);
+    let cut = cut_at(doc, caret.min(end))?;
+    // What each half holds, read off the document before anything is copied: a half of
+    // blanks and paragraph breaks alone is no scene.
+    let (kept_to, moved_from) = cut.halves();
+    if is_blank(&doc.text_at(0, kept_to)?) {
         anyhow::bail!("nothing before the caret to leave in the scene");
     }
-    if after_start >= end {
+    if is_blank(&doc.text_at(moved_from, end.saturating_sub(moved_from))?) {
         anyhow::bail!("nothing after the caret to move to a new scene");
     }
 
-    let extract = |from: usize, to: usize| -> anyhow::Result<String> {
-        let c = doc.cursor();
-        c.set_position(from, MoveMode::MoveAnchor);
-        c.set_position(to, MoveMode::KeepAnchor);
-        let frag = c.selection();
-        let tmp = TextDocument::new();
-        tmp.cursor().insert_fragment(&frag)?;
-        Ok(tmp.to_djot()?)
-    };
+    // The cut is made on a copy, so the writer's document is not touched.
+    let scratch = exact_copy(doc, end)?;
+    let (before_break, after_break) = cut.apply(&scratch)?;
+    let scratch_end = end_of(&scratch);
 
-    let before = extract(0, before_end)?;
-    let after = extract(after_start, end)?;
-    Ok((before, after))
+    // The block right after `after_break` opens the new scene. On a table's anchor the
+    // caret's block is the table's first cell.
+    let opens_with_table = in_table(&scratch, after_break + 1)?;
+    let before = if opens_with_table {
+        if in_table(&scratch, before_break)? {
+            anyhow::bail!("the cut falls between two tables");
+        }
+        let before = exact_copy(&scratch, scratch_end)?;
+        let c = before.cursor();
+        c.set_position(before_break, MoveMode::MoveAnchor);
+        c.set_position(scratch_end, MoveMode::KeepAnchor);
+        c.remove_selected_text()?;
+        before.to_djot()?
+    } else {
+        // Taken up to the start of the next block, so the last block is taken past its
+        // paragraph break, whole, with its block format.
+        extract(&scratch, 0, before_break + 1)?
+    };
+    let after = if opens_with_table {
+        extract(&scratch, after_break, scratch_end)?
+    } else {
+        extract(&scratch, after_break + 1, scratch_end)?
+    };
+    // Where the moved text starts in `doc`, past the paragraph break when the cut fell at
+    // one, and how many paragraphs stand in front of it: where a comment on it moves from.
+    let first_moved = cut.first_moved();
+    let blocks_before = doc
+        .blocks()
+        .iter()
+        .filter(|block| block.position() < first_moved)
+        .count();
+    Ok(SceneSplit {
+        before,
+        after,
+        moved_from: first_moved,
+        blocks_before,
+    })
 }
 
-/// Where a split at `caret` ends the text it leaves behind and starts the text it moves:
-/// `(before_end, after_start)`, with the spaces and tabs touching the caret in its
-/// paragraph between the two.
+/// A scene's text cut in two by [`split_djot`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct SceneSplit {
+    /// The Djot left in the scene.
+    pub before: String,
+    /// The Djot moved to the new scene.
+    pub after: String,
+    /// Where the moved text starts in the document that was cut, in its cursor positions:
+    /// what was anchored there or later moved with it.
+    pub moved_from: usize,
+    /// How many paragraphs of the document that was cut stand before the moved text.
+    pub blocks_before: usize,
+}
+
+/// The comments a split moves to the new scene: the live ones anchored wholly in the text
+/// from `moved_from` on, a paragraph comment on a paragraph that moved included.
 ///
-/// Only that paragraph is looked at, and only spaces and tabs count as blanks: they are
-/// what the writer puts between words. A caret with nothing but blanks before it in its
+/// A comment over the cut stays with the scene it opens in, where its first words are.
+pub(crate) fn comments_moved_by_split(
+    live: &[crate::comments::session::LiveAnchor],
+    moved_from: usize,
+) -> Vec<u64> {
+    let mut moved: Vec<u64> = live
+        .iter()
+        .filter(|anchor| anchor.start >= moved_from)
+        .map(|anchor| anchor.comment_id)
+        .collect();
+    moved.sort_unstable();
+    moved.dedup();
+    moved
+}
+
+/// Split `dto.source_id` with `split_scene`, and carry every comment in `comments` to the
+/// new scene's `role` text, all as one step of the project's undo history. `split` is where
+/// the text was cut ([`split_djot`]).
+///
+/// A comment is tied to the text it was written on by that text's `Content` row, and the
+/// split gives the moved words a row of their own. Left pointing at the old one, a comment
+/// on them found its words gone at the next opening and was shown as having lost its text,
+/// while its words were in the next scene. Undoing the split takes the comments back.
+pub(crate) fn split_scene_carrying_comments(
+    app_ctx: &AppContext,
+    ids: &AppIds,
+    stack: Option<u64>,
+    dto: &SplitSceneDto,
+    role: ContentRole,
+    comments: &[u64],
+    split: &SceneSplit,
+) -> anyhow::Result<()> {
+    if comments.is_empty() {
+        return binder_item_management_commands::split_scene(app_ctx, stack, dto);
+    }
+    undo_redo_commands::begin_composite_labeled(
+        app_ctx,
+        stack,
+        Some(UndoLabel::act("split_scene")),
+    )?;
+    let outcome = (|| -> anyhow::Result<()> {
+        binder_item_management_commands::split_scene(app_ctx, stack, dto)?;
+        // The split puts the new scene right after the one it cut.
+        let (_, order, position) = locate(app_ctx, ids, dto.source_id)
+            .ok_or_else(|| anyhow::anyhow!("the split scene is in no binder"))?;
+        let new_scene = *order
+            .get(position + 1)
+            .ok_or_else(|| anyhow::anyhow!("no scene after the one split"))?;
+        let text = row_of(app_ctx, new_scene, &role)?;
+        // The moved text opens the new scene: what stood at `moved_from` stands at 0.
+        let back = |n: usize| i64::try_from(n).map(|n| -n).unwrap_or(i64::MIN);
+        carry_comments(
+            app_ctx,
+            stack,
+            comments,
+            text,
+            back(split.moved_from),
+            back(split.blocks_before),
+        )
+    })();
+    // Closed whatever happened: what was done is one step the writer can take back.
+    undo_redo_commands::end_composite(app_ctx);
+    outcome
+}
+
+/// Merge `dto.source_id` into `dto.target_id` with `merge_two_scenes`, and carry every
+/// comment on the source's text to the target's text of the same kind, where that text now
+/// is, all as one step of the project's undo history.
+///
+/// The merge moves the source's words to the end of the target and trashes the source.
+/// A comment left on the source's `Content` row went into the trash with it, while the
+/// words it was written on were live in the target, which showed none of the comments on
+/// them. Every comment on the source's row goes, one whose words were already lost
+/// included: they were lost from that text, which is the target's now.
+pub(crate) fn merge_scenes_carrying_comments(
+    app_ctx: &AppContext,
+    stack: Option<u64>,
+    dto: &MergeTwoScenesDto,
+) -> anyhow::Result<()> {
+    // What moves and how far, read before the merge changes anything.
+    let target_rows = contents_of(app_ctx, dto.target_id);
+    let source_rows = contents_of(app_ctx, dto.source_id);
+    let comment_ids = work_commands::get_work_relationship(
+        app_ctx,
+        &dto.work_id,
+        &WorkRelationshipField::Comments,
+    )?;
+    let comments: Vec<CommentDto> = comment_commands::get_comment_multi(app_ctx, &comment_ids)?
+        .into_iter()
+        .flatten()
+        .collect();
+    let mut carried: Vec<(ContentRole, Vec<u64>, (i64, i64))> = Vec::new();
+    for role in [ContentRole::SceneText, ContentRole::SynopsisText] {
+        let Some(source) = source_rows.iter().find(|row| row.role == role) else {
+            continue;
+        };
+        // The merge leaves a text of the source's alone when it holds nothing, as
+        // `merge_two_scenes` decides it, and a comment on it stays where it is.
+        if source.data.trim().is_empty() {
+            continue;
+        }
+        let moved: Vec<u64> = comments
+            .iter()
+            .filter(|comment| comment.content == Some(source.id))
+            .map(|comment| comment.id)
+            .collect();
+        if moved.is_empty() {
+            continue;
+        }
+        let ahead = match target_rows.iter().find(|row| row.role == role) {
+            Some(target) => text_ahead_of_a_join(&target.data)?,
+            None => (0, 0),
+        };
+        carried.push((role, moved, ahead));
+    }
+    if carried.is_empty() {
+        return binder_item_management_commands::merge_two_scenes(app_ctx, stack, dto);
+    }
+    undo_redo_commands::begin_composite_labeled(
+        app_ctx,
+        stack,
+        Some(UndoLabel::act("merge_two_scenes")),
+    )?;
+    let outcome = (|| -> anyhow::Result<()> {
+        binder_item_management_commands::merge_two_scenes(app_ctx, stack, dto)?;
+        for (role, moved, (chars, blocks)) in &carried {
+            let text = row_of(app_ctx, dto.target_id, role)?;
+            carry_comments(app_ctx, stack, moved, text, *chars, *blocks)?;
+        }
+        Ok(())
+    })();
+    undo_redo_commands::end_composite(app_ctx);
+    outcome
+}
+
+/// The id of `item`'s text of kind `role`.
+fn row_of(app_ctx: &AppContext, item: u64, role: &ContentRole) -> anyhow::Result<u64> {
+    contents_of(app_ctx, item)
+        .into_iter()
+        .find(|row| row.role == *role)
+        .map(|row| row.id)
+        .ok_or_else(|| anyhow::anyhow!("the scene holds no text of that kind"))
+}
+
+/// How far the text a merge appends after `djot` stands from the start: the cursor
+/// positions and the paragraphs of `djot` as the editor reads it, plus the paragraph break
+/// the join puts between the two. Nothing for a text of blanks, which the join replaces
+/// with the appended one (`merge_two_scenes`' `join_text`).
+fn text_ahead_of_a_join(djot: &str) -> anyhow::Result<(i64, i64)> {
+    if djot.trim().is_empty() {
+        return Ok((0, 0));
+    }
+    let doc = TextDocument::new();
+    doc.set_djot_sync(djot.trim_end_matches(['\n', '\r']))?;
+    let chars = i64::try_from(end_of(&doc) + 1)?;
+    let blocks = i64::try_from(doc.blocks().len())?;
+    Ok((chars, blocks))
+}
+
+/// Point each of `comments` at the text `content`, its stored place moved by `chars`
+/// positions and `blocks` paragraphs, to where its words now stand there.
+///
+/// The place is only where the anchoring looks first (`skribisto_model::comment_anchor`):
+/// one that no longer holds the quote is searched for. Moved with the words, it holds it,
+/// and a quote as short as one word is not found at the same offset of the other text,
+/// where other words stand.
+fn carry_comments(
+    app_ctx: &AppContext,
+    stack: Option<u64>,
+    comments: &[u64],
+    content: u64,
+    chars: i64,
+    blocks: i64,
+) -> anyhow::Result<()> {
+    for id in comments {
+        let Some(mut comment) = comment_commands::get_comment(app_ctx, id)? else {
+            continue;
+        };
+        comment.content = Some(content);
+        comment.range_start = comment.range_start.saturating_add_signed(chars);
+        comment.block_ordinal_hint = comment.block_ordinal_hint.saturating_add_signed(blocks);
+        comment.updated_at = chrono::Utc::now();
+        comment_commands::update_comment_with_relationships(app_ctx, stack, &comment)?;
+    }
+    Ok(())
+}
+
+/// The cursor position at the end of `doc`'s main text. `character_count()` is not that
+/// position: it leaves out the separator between each two paragraphs.
+fn end_of(doc: &TextDocument) -> usize {
+    let c = doc.cursor();
+    c.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
+    c.position()
+}
+
+/// Whether `text` holds nothing a scene would show: spaces, tabs and paragraph breaks
+/// alone. A picture, a note reference or a table stands in the text as a character of its
+/// own, and counts.
+fn is_blank(text: &str) -> bool {
+    text.chars().all(|c| matches!(c, ' ' | '\t' | '\n'))
+}
+
+/// `doc`'s main text from `from` to `to`, as the Djot of a document of its own.
+fn extract(doc: &TextDocument, from: usize, to: usize) -> anyhow::Result<String> {
+    let c = doc.cursor();
+    c.set_position(from, MoveMode::MoveAnchor);
+    c.set_position(to, MoveMode::KeepAnchor);
+    let tmp = TextDocument::new();
+    tmp.cursor().insert_fragment(&c.selection())?;
+    Ok(tmp.to_djot()?)
+}
+
+/// A document holding `doc`'s main text, `end` being where it ends, at the same positions,
+/// so a cut found in `doc` falls in the same place in it.
+///
+/// Read from `doc`'s Djot first, which is what a save stores and a reload reads. That drops
+/// an empty paragraph closing the text, which a copy of the whole text keeps; a copy of the
+/// whole text, pasted into a new document, puts an empty paragraph in front of a table that
+/// opens it. The first of the two to hold the same text at the same positions is used, and
+/// with neither, the split is refused rather than made at the wrong place.
+fn exact_copy(doc: &TextDocument, end: usize) -> anyhow::Result<TextDocument> {
+    let text = doc.text_at(0, end)?;
+    let holds_it = |copy: &TextDocument| {
+        end_of(copy) == end && copy.text_at(0, end).is_ok_and(|copied| copied == text)
+    };
+    let read = TextDocument::new();
+    read.set_djot_sync(&doc.to_djot()?)?;
+    if holds_it(&read) {
+        return Ok(read);
+    }
+    let c = doc.cursor();
+    c.set_position(0, MoveMode::MoveAnchor);
+    c.set_position(end, MoveMode::KeepAnchor);
+    let pasted = TextDocument::new();
+    pasted.cursor().insert_fragment(&c.selection())?;
+    if holds_it(&pasted) {
+        return Ok(pasted);
+    }
+    anyhow::bail!("no copy of the scene holds it at the positions it has")
+}
+
+/// Whether a caret at `position` stands in a table: in one of its cells, or on its anchor.
+fn in_table(doc: &TextDocument, position: usize) -> anyhow::Result<bool> {
+    let block = doc.block_at_caret(position)?;
+    Ok(doc
+        .block_by_id(block.block_id)
+        .is_some_and(|block| block.table_cell().is_some()))
+}
+
+/// Where a split falls, in the document's cursor positions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Cut {
+    /// In front of the block starting at `start`, which moves whole: the caret was at its
+    /// start or in its indentation, or anywhere in the table whose anchor is at `start`.
+    Before { start: usize },
+    /// A paragraph of blanks alone, or an empty one, from `start` to `end`, which goes with
+    /// neither half.
+    Dropped { start: usize, end: usize },
+    /// At `at`, the end of a paragraph's text, the blanks from there to `end` going with
+    /// neither half.
+    AtEnd { at: usize, end: usize },
+    /// Inside a paragraph: its text up to `keep` stays, from `moved` on it moves, and the
+    /// blanks between the two go with neither half.
+    Inside { keep: usize, moved: usize },
+}
+
+impl Cut {
+    /// Where the text left behind ends and where the text moved starts.
+    fn halves(self) -> (usize, usize) {
+        match self {
+            Cut::Before { start } => (start, start),
+            Cut::Dropped { start, end } => (start, end),
+            Cut::AtEnd { at, end } => (at, end),
+            Cut::Inside { keep, moved } => (keep, moved),
+        }
+    }
+
+    /// Where the moved text's first character stands: past the paragraph break when the cut
+    /// ends a paragraph, whether its last words or its blanks alone.
+    fn first_moved(self) -> usize {
+        match self {
+            Cut::Before { start } => start,
+            Cut::Inside { moved, .. } => moved,
+            Cut::Dropped { end, .. } | Cut::AtEnd { end, .. } => end + 1,
+        }
+    }
+
+    /// Make the cut in `scratch`, a copy of the document, so it falls between two blocks,
+    /// and say where: the paragraph break after the last block left behind, and the one in
+    /// front of the first block moved. They differ only when a paragraph goes with neither
+    /// half.
+    fn apply(self, scratch: &TextDocument) -> anyhow::Result<(usize, usize)> {
+        let remove = |from: usize, to: usize| -> anyhow::Result<()> {
+            if from < to {
+                let c = scratch.cursor();
+                c.set_position(from, MoveMode::MoveAnchor);
+                c.set_position(to, MoveMode::KeepAnchor);
+                c.remove_selected_text()?;
+            }
+            Ok(())
+        };
+        match self {
+            Cut::Before { start } => {
+                let at = start
+                    .checked_sub(1)
+                    .ok_or_else(|| anyhow::anyhow!("nothing before the caret"))?;
+                Ok((at, at))
+            }
+            Cut::Dropped { start, end } => {
+                remove(start, end)?;
+                let before = start
+                    .checked_sub(1)
+                    .ok_or_else(|| anyhow::anyhow!("nothing before the caret"))?;
+                Ok((before, start))
+            }
+            Cut::AtEnd { at, end } => {
+                remove(at, end)?;
+                Ok((at, at))
+            }
+            Cut::Inside { keep, moved } => {
+                remove(keep, moved)?;
+                // A paragraph break, the way Enter makes one: the new paragraph takes the
+                // heading level, the list and the quotation of the one it is cut from.
+                let c = scratch.cursor();
+                c.set_position(keep, MoveMode::MoveAnchor);
+                c.insert_block()?;
+                Ok((keep, keep))
+            }
+        }
+    }
+}
+
+/// Where a split at `caret` falls ([`Cut`]).
+///
+/// Only the caret's paragraph is looked at, and only spaces, tabs and the line breaks of a
+/// code block count as blanks: they are what the writer puts between words and lines. A caret with nothing but blanks before it in its
 /// paragraph and words after it (at the paragraph's very start, or inside its indentation)
-/// cuts in front of the whole paragraph instead, so the indentation the writer typed opens
-/// the new scene with it. A paragraph of blanks alone goes with neither half.
-fn cut_at(doc: &TextDocument, caret: usize) -> anyhow::Result<(usize, usize)> {
+/// cuts in front of the whole paragraph, so the indentation the writer typed opens the new
+/// scene with it. A paragraph of blanks alone goes with neither half. A caret in a table
+/// cuts in front of the table.
+fn cut_at(doc: &TextDocument, caret: usize) -> anyhow::Result<Cut> {
     let block = doc.block_at_caret(caret)?;
+    if let Some(cell) = doc
+        .block_by_id(block.block_id)
+        .and_then(|block| block.table_cell())
+    {
+        return Ok(Cut::Before {
+            start: table_anchor(doc, &cell.table)?,
+        });
+    }
     let text: Vec<char> = doc.text_at(block.start, block.length)?.chars().collect();
     let at = caret.saturating_sub(block.start).min(text.len());
-    let is_blank = |c: &&char| matches!(**c, ' ' | '\t');
+    // A line break stands inside a paragraph only in a code block, where it ends a line.
+    let is_blank = |c: &&char| matches!(**c, ' ' | '\t' | '\n');
     let blanks_before = text[..at].iter().rev().take_while(is_blank).count();
     let blanks_after = text[at..].iter().take_while(is_blank).count();
-    if blanks_before == at && at + blanks_after < text.len() {
-        return Ok((block.start, block.start));
-    }
-    Ok((caret - blanks_before, caret + blanks_after))
+    let block_end = block.start + text.len();
+    let keep = block.start + at - blanks_before;
+    let moved = block.start + at + blanks_after;
+    Ok(if keep == block.start && moved == block_end {
+        Cut::Dropped {
+            start: block.start,
+            end: block_end,
+        }
+    } else if keep == block.start {
+        Cut::Before { start: block.start }
+    } else if moved == block_end {
+        Cut::AtEnd {
+            at: keep,
+            end: block_end,
+        }
+    } else {
+        Cut::Inside { keep, moved }
+    })
+}
+
+/// Where `table`'s anchor stands, the one character the table occupies in the main text,
+/// in front of its first cell and a paragraph break.
+fn table_anchor(
+    doc: &TextDocument,
+    table: &teksilo::text_document::TextTable,
+) -> anyhow::Result<usize> {
+    let first_cell = (0..table.columns())
+        .find_map(|column| table.cell(0, column))
+        .and_then(|cell| cell.blocks().first().map(|block| block.position()))
+        .ok_or_else(|| anyhow::anyhow!("a table with no first cell"))?;
+    let anchor = first_cell
+        .checked_sub(2)
+        .filter(|&anchor| {
+            doc.text_at(anchor, 2)
+                .is_ok_and(|text| text == "\u{fffc}\n")
+        })
+        .ok_or_else(|| anyhow::anyhow!("no anchor in front of the table"))?;
+    Ok(anchor)
 }
 
 #[cfg(test)]
@@ -652,6 +1084,11 @@ mod tests {
         );
     }
 
+    /// The two halves [`super::split_djot`] cuts.
+    fn split_djot(doc: &TextDocument, caret: usize) -> anyhow::Result<(String, String)> {
+        super::split_djot(doc, caret).map(|split| (split.before, split.after))
+    }
+
     /// A document holding `text`, one paragraph per line, as the writer typed it.
     fn typed(text: &str) -> TextDocument {
         let doc = TextDocument::new();
@@ -770,5 +1207,257 @@ mod tests {
             split_djot(&doc, 9).is_err(),
             "only a paragraph of blanks after the caret"
         );
+    }
+
+    /// A document holding `djot`, as the editor reads it.
+    fn read(djot: &str) -> TextDocument {
+        let doc = TextDocument::new();
+        doc.set_djot_sync(djot).expect("seed the document");
+        doc
+    }
+
+    /// A split with the caret in a table cuts in front of the table, which moves whole to
+    /// the new scene with everything after it. A selection from inside a table takes the
+    /// table whole and drops what follows it, so a split in a cell used to leave the table
+    /// in both scenes and lose the text after it.
+    #[test]
+    fn split_djot_in_a_table_moves_the_table_whole_and_loses_nothing() {
+        let table = "| a | b |\n|---|---|\n| c | d |";
+        let doc = read(&format!("Before\n\n{table}\n\nAfter\n"));
+        // 6 ends "Before", 7 is the table's anchor, 9 to 16 are its cells, 17 opens "After".
+        for caret in 6..=16 {
+            let halves = split_djot(&doc, caret).expect("split");
+            assert_eq!(
+                halves,
+                ("Before".to_string(), format!("{table}\n\nAfter")),
+                "caret {caret}"
+            );
+        }
+        assert_eq!(
+            split_djot(&doc, 17).expect("split"),
+            (format!("Before\n\n{table}"), "After".to_string())
+        );
+
+        // A table opening the scene has nothing in front of it to leave behind.
+        let doc = read(&format!("{table}\n\nAfter\n"));
+        for caret in 0..=9 {
+            assert!(split_djot(&doc, caret).is_err(), "caret {caret}");
+        }
+        assert_eq!(
+            split_djot(&doc, 10).expect("split"),
+            (table.to_string(), "After".to_string())
+        );
+    }
+
+    /// A paragraph cut in two is two paragraphs of its kind, as Enter makes them, and one
+    /// the caret ends keeps its kind: a heading, a list item, a quotation and a code block
+    /// stay what they are on both halves. Taken as pieces of a paragraph, each came out a
+    /// plain paragraph (a code block as a code span per line).
+    #[test]
+    fn split_djot_keeps_the_kind_of_the_paragraph_it_cuts() {
+        for (djot, caret, before, after) in [
+            ("# Title\n\nBody text\n", 2, "# Ti", "# tle\n\nBody text"),
+            ("# Title\n\nBody text\n", 5, "# Title", "Body text"),
+            (
+                "- one\n- two\n- three\n",
+                1,
+                "- o",
+                "- ne\n\n- two\n\n- three",
+            ),
+            ("- one\n- two\n- three\n", 3, "- one", "- two\n\n- three"),
+            ("> one\n>\n> two\n", 1, "> o", "> ne\n>\n> two"),
+            ("> one\n>\n> two\n", 3, "> one", "> two"),
+            (
+                "Text\n\n```\ncode one\ncode two\n```\n\nEnd\n",
+                13,
+                "Text\n\n```\ncode one\n```",
+                "```\ncode two\n```\n\nEnd",
+            ),
+        ] {
+            assert_eq!(
+                split_djot(&read(djot), caret).expect("split"),
+                (before.to_string(), after.to_string()),
+                "{djot:?} at {caret}"
+            );
+        }
+    }
+
+    /// A half holding nothing but empty paragraphs, or paragraphs of blanks, is no scene:
+    /// the caret at the end of a scene's last words, over the empty paragraph Enter left
+    /// after them, or in front of its first words, under an empty paragraph, splits
+    /// nothing. It used to make a new scene with no words in it, or empty the old one.
+    #[test]
+    fn split_djot_refuses_a_half_of_empty_paragraphs() {
+        for (text, caret) in [
+            ("Hello\n", 5),
+            ("Hello\n   ", 5),
+            ("\nHello", 1),
+            ("   \nWorld", 4),
+        ] {
+            assert!(
+                split_djot(&typed(text), caret).is_err(),
+                "{text:?} at {caret}: {:?}",
+                split_djot(&typed(text), caret)
+            );
+        }
+    }
+
+    /// The comments a split moves are the ones anchored at the moved text's first character
+    /// or later: a comment over the cut stays where its first words are.
+    #[test]
+    fn a_split_moves_the_comments_anchored_in_the_moved_text() {
+        use crate::comments::session::LiveAnchor;
+        let anchor = |comment_id, start, end| LiveAnchor {
+            comment_id,
+            start,
+            end,
+            is_paragraph: false,
+            resolved: false,
+        };
+        let live = [
+            anchor(1, 0, 5),
+            anchor(2, 8, 14),
+            anchor(3, 10, 12),
+            anchor(4, 20, 25),
+        ];
+        assert_eq!(comments_moved_by_split(&live, 10), vec![3, 4]);
+        assert_eq!(comments_moved_by_split(&live, 0), vec![1, 2, 3, 4]);
+        assert!(comments_moved_by_split(&live, 26).is_empty());
+    }
+
+    /// A comment goes with the words it was written on: split into a new scene, where it
+    /// is found at the first place its anchoring looks, taken back by one undo with the
+    /// split, and merged back into the scene it came from, where it is found again. It used
+    /// to stay on the text it was cut from, where the next opening reported it had lost its
+    /// words, and a merge left it on the scene the merge trashed.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_comment_goes_with_its_words_through_a_split_and_back_through_a_merge() {
+        use frontend::binder_item_management::{MergeTwoScenesDto, SplitSceneDto};
+        use teksilo::widgets::rich_text::RichTextEditor;
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let ctx = project.app_ctx.clone();
+        let ids = project.ids.clone();
+        let stack = ids.stack_id.get();
+        let docs = crate::models::OpenDocsStore::new(ctx.clone());
+        docs.set_comments(crate::comments::CommentsViewModel::new(
+            crate::models::CommentsListModel::new(ctx.clone(), ids.clone()),
+            ctx.clone(),
+            ids.stack_id.clone(),
+        ));
+        let (scene, _) = project.scenes()[0];
+        let open = docs.open(scene).expect("the scene opens");
+        let prose = open.main.as_ref().expect("a scene has prose");
+        let handle = RichTextEditor::editor(prose.doc.clone()).handle();
+        handle.insert_text("The house was quiet.");
+        handle.insert_block();
+        handle.insert_text("Then the lamp went out.");
+        open.flush(stack).expect("the scene is written");
+        let old_text = row_of(&ctx, scene, &ContentRole::SceneText).expect("its text");
+
+        let text = prose.doc.to_addressable_text().expect("addressable text");
+        let at = |word: &str| {
+            let byte = text.find(word).expect("the word is in the scene");
+            text[..byte].chars().count()
+        };
+        let binding = open
+            .comment_binding_main()
+            .expect("comments reach the scene");
+        let on_house = binding
+            .add_range(at("house"), at("house") + 5)
+            .expect("a comment on the first paragraph");
+        let on_lamp = binding
+            .add_range(at("lamp"), at("lamp") + 4)
+            .expect("a comment on the second");
+        let comment = |id| {
+            comment_commands::get_comment(&ctx, &id)
+                .expect("reading a comment")
+                .expect("the comment exists")
+        };
+        // What the anchoring reads a comment against: its text, as the editor reads it.
+        let words_at = |djot: &str, id: u64| {
+            let doc = TextDocument::new();
+            doc.set_djot_sync(djot).expect("the text reads back");
+            let text: Vec<char> = doc
+                .to_addressable_text()
+                .expect("addressable text")
+                .chars()
+                .collect();
+            let row = comment(id);
+            let start = row.range_start as usize;
+            let end = start + row.range_length as usize;
+            text.get(start..end)
+                .map(|chars| chars.iter().collect::<String>())
+        };
+
+        // Split at the start of the second paragraph, as the stream's split does.
+        let split = super::split_djot(&prose.doc, at("Then")).expect("split");
+        let moved = comments_moved_by_split(&binding.live(), split.moved_from);
+        assert_eq!(moved, vec![on_lamp]);
+        split_scene_carrying_comments(
+            &ctx,
+            &ids,
+            stack,
+            &SplitSceneDto {
+                source_id: scene,
+                before_text: split.before.clone(),
+                after_text: split.after.clone(),
+                before_synopsis: String::new(),
+                after_synopsis: String::new(),
+                new_title: "Second".to_string(),
+            },
+            ContentRole::SceneText,
+            &moved,
+            &split,
+        )
+        .expect("the split");
+        let (second, _) = project.scenes()[1];
+        let new_text = row_of(&ctx, second, &ContentRole::SceneText).expect("the new text");
+        assert_eq!(
+            comment(on_lamp).content,
+            Some(new_text),
+            "moved with its words"
+        );
+        assert_eq!(words_at(&split.after, on_lamp).as_deref(), Some("lamp"));
+        assert_eq!(
+            comment(on_house).content,
+            Some(old_text),
+            "left with its own"
+        );
+
+        // One undo takes back the split and the move together.
+        undo_redo_commands::undo(&ctx, stack).expect("undo");
+        assert_eq!(project.scenes().len(), 1, "the split is undone");
+        assert_eq!(
+            comment(on_lamp).content,
+            Some(old_text),
+            "and the move with it"
+        );
+        undo_redo_commands::redo(&ctx, stack).expect("redo");
+        assert_eq!(comment(on_lamp).content, Some(new_text));
+
+        // Merged back, it comes home, found on its words in the merged text.
+        merge_scenes_carrying_comments(
+            &ctx,
+            stack,
+            &MergeTwoScenesDto {
+                work_id: project.work_id,
+                target_id: scene,
+                source_id: second,
+            },
+        )
+        .expect("the merge");
+        assert_eq!(
+            comment(on_lamp).content,
+            Some(old_text),
+            "back with its words"
+        );
+        let merged = content_commands::get_content(&ctx, &old_text)
+            .expect("reading the merged text")
+            .expect("the merged text")
+            .data;
+        assert_eq!(words_at(&merged, on_lamp).as_deref(), Some("lamp"));
+        assert_eq!(words_at(&merged, on_house).as_deref(), Some("house"));
     }
 }
