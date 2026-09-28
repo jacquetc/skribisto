@@ -73,6 +73,7 @@ const LIMITS: skrib_format::zip_guard::ZipLimits = skrib_format::zip_guard::ZipL
     max_entries: MAX_MEMBERS,
     max_member_bytes: 512 << 20,
     max_total_bytes: MAX_TOTAL_BYTES,
+    max_ratio: skrib_format::zip_guard::MAX_RATIO,
 };
 
 /// Which container the project was read from.

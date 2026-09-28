@@ -41,7 +41,8 @@
 //!
 //! # The budget
 //!
-//! A member may inflate to the larger of [`RATIO_FLOOR_BYTES`] and [`MAX_RATIO`]
+//! A member may inflate to the larger of [`RATIO_FLOOR_BYTES`] and its reader's
+//! ratio ([`ZipLimits::max_ratio`], [`MAX_RATIO`] for a document of any origin)
 //! times its compressed size, never past the reader's ceiling for one member
 //! ([`ZipLimits::max_member_bytes`]) nor past what is left of its ceiling for the
 //! archive ([`ZipLimits::max_total_bytes`]). Real content does not come near the
@@ -73,7 +74,10 @@ use zip::result::ZipError;
 use crate::errors::SkribFormatError;
 
 /// Above [`RATIO_FLOOR_BYTES`], refuse a member, or an archive, that has expanded
-/// more than this many times over the bytes consumed to produce it.
+/// more than this many times over the bytes consumed to produce it: the ratio for
+/// an archive whose members may be anything, such as a Word or OpenDocument file.
+/// A reader whose archives have a shape it knows sets a lower one in
+/// [`ZipLimits::max_ratio`].
 ///
 /// A zip bomb's whole trick is a ratio in the thousands. Real content does not come
 /// close: Djot prose deflates around 3-4x, XML and RON manifests rather more, and a
@@ -95,6 +99,9 @@ pub struct ZipLimits {
     pub max_member_bytes: u64,
     /// The most bytes the members read may unpack to, together.
     pub max_total_bytes: u64,
+    /// Above [`RATIO_FLOOR_BYTES`], the most times over its compressed size a member,
+    /// or the archive, may unpack to. [`MAX_RATIO`] unless the reader knows better.
+    pub max_ratio: u64,
 }
 
 /// What a refused failure message starts with when it has to cross a boundary
@@ -302,7 +309,7 @@ impl ZipGuard {
     fn member_budget(&self, compressed: u64) -> u64 {
         let compressed = compressed.min(self.archive_len);
         RATIO_FLOOR_BYTES
-            .max(compressed.saturating_mul(MAX_RATIO))
+            .max(compressed.saturating_mul(self.limits.max_ratio))
             .min(self.limits.max_member_bytes)
     }
 
@@ -405,7 +412,8 @@ impl ZipGuard {
             .compressed
             .saturating_add(entry.compressed_size())
             .min(self.archive_len);
-        let ratio_limit = RATIO_FLOOR_BYTES.max(self.compressed.saturating_mul(MAX_RATIO));
+        let ratio_limit =
+            RATIO_FLOOR_BYTES.max(self.compressed.saturating_mul(self.limits.max_ratio));
         if self.written > ratio_limit {
             return Err(anyhow::Error::new(ZipRefused::ArchiveTooLarge {
                 limit: ratio_limit,

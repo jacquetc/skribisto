@@ -282,7 +282,7 @@ fn a_decompression_bomb_is_refused_rather_than_filling_the_disk() {
     let archive = dir.path().join("Novel.skrib");
 
     // 512 MiB of zeroes deflates to a few hundred KiB — a ratio in the
-    // thousands, far past the 200x limit, and well past the 64 MiB floor below
+    // thousands, far past any reader's limit, and well past the 64 MiB floor below
     // which the ratio is not consulted.
     let zeroes = vec![0u8; 512 << 20];
     hostile_zip(
@@ -297,6 +297,54 @@ fn a_decompression_bomb_is_refused_rather_than_filling_the_disk() {
     assert!(
         is_zip_refusal(&err),
         "the bomb must be refused as a typed zip refusal: {}",
+        chain(&err)
+    );
+    assert!(chain(&err).contains("unpacks"), "{}", chain(&err));
+}
+
+/// A project that unpacks to about a hundred times its size is refused, although a
+/// Word or OpenDocument file may: the shared ratio of 200 let a crafted `.skrib` of about
+/// 40 MB unpack to 8 GiB, every byte of which a load reads into memory. Real projects
+/// unpack to a few times their size (see `zip_io::MAX_RATIO`).
+#[test]
+fn a_project_expanding_far_past_any_real_one_is_refused_below_the_shared_ratio() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let archive = dir.path().join("Novel.skrib");
+
+    // One byte that deflate cannot predict, then 255 zeroes, over 96 MiB: past the
+    // 64 MiB floor, at a ratio between a project's and the shared one.
+    let mut scene = vec![0u8; 96 << 20];
+    let mut seed: u32 = 0x9E37_79B9;
+    for chunk in scene.chunks_mut(256) {
+        seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        chunk[0] = (seed >> 24) as u8;
+    }
+    hostile_zip(
+        &archive,
+        &[
+            Entry::File("project.skrib", b"(format_version: 14)"),
+            Entry::File("binders/01-manuscript/scene.djot", &scene),
+        ],
+    );
+
+    // The case tests nothing unless the shared ratio would have let it through.
+    let file = std::fs::File::open(&archive).expect("open archive");
+    let mut zip = zip::ZipArchive::new(file).expect("read archive");
+    let member = zip
+        .by_name("binders/01-manuscript/scene.djot")
+        .expect("scene member");
+    let ratio = member.size() / member.compressed_size().max(1);
+    drop(member);
+    assert!(
+        ratio > super::zip_io::MAX_RATIO && ratio < super::zip_guard::MAX_RATIO,
+        "the scene unpacks {ratio} times over, outside the range this case covers"
+    );
+
+    let err = read_bundle(&archive.to_string_lossy())
+        .expect_err("a project expanding a hundred times over must be refused");
+    assert!(
+        is_zip_refusal(&err),
+        "it must be refused as a typed zip refusal: {}",
         chain(&err)
     );
     assert!(chain(&err).contains("unpacks"), "{}", chain(&err));

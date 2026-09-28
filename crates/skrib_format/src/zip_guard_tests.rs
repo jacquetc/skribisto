@@ -14,6 +14,7 @@ fn tiny_limits() -> ZipLimits {
         max_entries: 16,
         max_member_bytes: 4 * MIB,
         max_total_bytes: 8 * MIB,
+        max_ratio: MAX_RATIO,
     }
 }
 
@@ -107,6 +108,7 @@ fn a_compressible_member_past_the_member_ceiling_is_refused_while_inflating() {
         max_entries: 16,
         max_member_bytes: 2 * MIB,
         max_total_bytes: 64 * MIB,
+        max_ratio: MAX_RATIO,
     };
     // 8 MiB of zeros in an archive of a few KiB: its compressed size is tiny, so its
     // ratio budget is the floor, but the member ceiling caps it at 2 MiB.
@@ -127,6 +129,7 @@ fn the_ratio_refuses_a_high_expansion_member() {
         max_entries: 16,
         max_member_bytes: 4 << 30,
         max_total_bytes: 4 << 30,
+        max_ratio: MAX_RATIO,
     };
     // A guard whose floor is tiny, so the ratio is what decides.
     let bytes = compressible_zip("big", 8 * MIB);
@@ -149,6 +152,7 @@ fn the_total_ceiling_refuses_many_members_together() {
         max_entries: 64,
         max_member_bytes: 4 * MIB,
         max_total_bytes: 6 * MIB,
+        max_ratio: MAX_RATIO,
     };
     let mut buffer = std::io::Cursor::new(Vec::new());
     let mut writer = zip::ZipWriter::new(&mut buffer);
@@ -210,6 +214,7 @@ fn verify_all_refuses_a_bomb() {
         max_entries: 16,
         max_member_bytes: 2 * MIB,
         max_total_bytes: 8 * MIB,
+        max_ratio: MAX_RATIO,
     };
     let bytes = compressible_zip("big", 8 * MIB);
     let (mut archive, mut guard) = guard_for(limits, &bytes);

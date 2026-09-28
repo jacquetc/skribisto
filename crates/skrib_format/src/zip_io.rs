@@ -59,12 +59,27 @@ const MAX_ENTRIES: usize = 200_000;
 /// so the two ceilings are one number.
 const MAX_TOTAL_BYTES: u64 = 8 << 30;
 
+/// Above the guard's floor, the most times over its compressed size a `.skrib`, or
+/// one member of it, may unpack to.
+///
+/// A project has a shape this crate knows, so it gets far less room than the
+/// shared [`MAX_RATIO`](crate::zip_guard::MAX_RATIO), which is set for documents
+/// holding anything. Measured on the bundled examples: a whole project unpacks to
+/// about 2.5 times its archive, and its most compressible members, the binders'
+/// `items.ron`, to 11 to 13 times theirs. Pictures are stored, not deflated, so they
+/// unpack to their own size. Thirty-two leaves more than twice the most compressible
+/// member's room and still refuses what the shared ratio let through: a crafted
+/// project of about 40 MB unpacking to the 8 GiB ceiling, all of which a load reads
+/// into memory, prose, history and pictures alike.
+pub(crate) const MAX_RATIO: u64 = 32;
+
 /// What a `.skrib` archive may hold: the shared guard's limits, set here with the
 /// numbers a project justifies.
 pub(crate) const LIMITS: crate::zip_guard::ZipLimits = crate::zip_guard::ZipLimits {
     max_entries: MAX_ENTRIES,
     max_member_bytes: MAX_TOTAL_BYTES,
     max_total_bytes: MAX_TOTAL_BYTES,
+    max_ratio: MAX_RATIO,
 };
 
 pub fn read_zip(path: &Path) -> Result<WorkBundle> {

@@ -505,6 +505,7 @@ fn zip_member(zip_bytes: &[u8], member: &str) -> Result<Vec<u8>, String> {
         max_entries: 10_000,
         max_member_bytes: 512 << 20,
         max_total_bytes: 512 << 20,
+        max_ratio: skrib_format::zip_guard::MAX_RATIO,
     };
     let (mut archive, mut guard) =
         skrib_format::zip_guard::ZipGuard::open(LIMITS, std::io::Cursor::new(zip_bytes))

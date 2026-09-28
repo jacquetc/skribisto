@@ -47,6 +47,7 @@ const LIMITS: skrib_format::zip_guard::ZipLimits = skrib_format::zip_guard::ZipL
     max_entries: 100_000,
     max_member_bytes: 256 << 20,
     max_total_bytes: 512 << 20,
+    max_ratio: skrib_format::zip_guard::MAX_RATIO,
 };
 
 #[cfg(test)]

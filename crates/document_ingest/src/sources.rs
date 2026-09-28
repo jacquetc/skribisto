@@ -37,6 +37,8 @@ pub(crate) const DOCUMENT_ZIP_LIMITS: skrib_format::zip_guard::ZipLimits =
         max_member_bytes: 512 << 20,
         // The whole document, images included.
         max_total_bytes: 2 << 30,
+        // A document's parts are whatever its author put in it.
+        max_ratio: skrib_format::zip_guard::MAX_RATIO,
     };
 
 /// The most list levels imported prose keeps. A list item nested deeper arrives at the
