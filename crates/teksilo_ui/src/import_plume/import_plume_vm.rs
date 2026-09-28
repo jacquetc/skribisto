@@ -609,7 +609,12 @@ mod tests {
         vm.apply_source_defaults(&res);
         assert_eq!(vm.location().get(), "/books");
         assert_eq!(vm.name().get(), "My Novel");
-        assert_eq!(vm.target_path().get(), "/books/My Novel.skrib");
+        assert_eq!(
+            vm.target_path().get(),
+            PathBuf::from("/books")
+                .join("My Novel.skrib")
+                .to_string_lossy()
+        );
     }
 
     #[test]
@@ -638,7 +643,10 @@ mod tests {
         vm.location().set("/out".into());
         vm.name().set("a".into());
         assert_eq!(vm.dto(false).source_path, "/x/a.plume");
-        assert_eq!(vm.dto(false).output_path, "/out/a.skrib");
+        assert_eq!(
+            vm.dto(false).output_path,
+            PathBuf::from("/out").join("a.skrib").to_string_lossy()
+        );
         assert!(!vm.dto(false).overwrite);
         assert!(vm.dto(true).overwrite);
     }

@@ -170,10 +170,9 @@ impl BackupRestoreViewModel {
         if refuse_if_importing(ctx, &target, &RESTORE_IMPORTING) {
             return;
         }
-        let canon = crate::shell::open_registry::canonical(&target);
         let peer = crate::shell::open_registry::scan_open()
             .into_iter()
-            .find(|e| crate::shell::open_registry::canonical(&e.path) == canon);
+            .find(|e| crate::shell::open_registry::same_project(&e.path, &target));
         let Some(entry) = peer else {
             return self.confirm(ctx, target);
         };
@@ -236,12 +235,11 @@ impl BackupRestoreViewModel {
         if refuse_if_importing(ctx, &target, &RESTORE_IMPORTING) {
             return;
         }
-        let canon = crate::shell::open_registry::canonical(&target);
         if crate::shell::open_registry::scan_open()
             .into_iter()
             .any(|e| {
                 e.pid != crate::shell::open_registry::my_pid()
-                    && crate::shell::open_registry::canonical(&e.path) == canon
+                    && crate::shell::open_registry::same_project(&e.path, &target)
             })
         {
             return self.check_open_elsewhere(ctx, target);

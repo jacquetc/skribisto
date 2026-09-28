@@ -48,11 +48,17 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+mod spelling;
+
+pub(crate) use spelling::PathStyle;
+
 /// One open project, as advertised by its owning instance.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpenEntry {
     pub pid: u32,
-    /// Canonicalized absolute path of the `.skrib`.
+    /// Absolute path of the `.skrib`, as [`canonical`] spells it. Compare it with
+    /// another path through [`same_project`], never as a string: an earlier build
+    /// wrote whatever spelling it was handed.
     pub path: String,
     pub title: String,
     /// Not open in a window: an import is writing the project there, and nothing may
@@ -63,12 +69,12 @@ pub struct OpenEntry {
 }
 
 thread_local! {
-    /// This process's claims: canonical path -> the lock file that represents it.
+    /// This process's claims: [`project_key`] -> the lock file that represents it.
     /// A map (not a single slot) because one process may hold several projects
     /// open at once.
     static CLAIMED: RefCell<HashMap<String, PathBuf>> = RefCell::new(HashMap::new());
 
-    /// The paths this process's imports are writing: canonical path -> how many
+    /// The paths this process's imports are writing: [`project_key`] -> how many
     /// [`ImportClaim`]s hold it. Kept whether or not a lock file could be written, so
     /// this process refuses them even with no lock directory at all.
     static IMPORTING: RefCell<HashMap<String, usize>> = RefCell::new(HashMap::new());
@@ -84,6 +90,11 @@ thread_local! {
     /// foreign pid as alive (to keep its lock from being reaped mid-assertion) or
     /// dead (to exercise the stale-reap paths) without touching real processes.
     static PID_OVERRIDE: RefCell<HashMap<u32, bool>> = RefCell::new(HashMap::new());
+
+    /// Test-only override for the rules [`project_key`] compares by, so a test on
+    /// one platform proves what another compares.
+    static STYLE_OVERRIDE: std::cell::Cell<Option<PathStyle>> =
+        const { std::cell::Cell::new(None) };
 }
 
 /// This process's pid — the "is this my own window?" discriminator for the UI.
@@ -203,6 +214,25 @@ pub(crate) fn set_dir_override(path: Option<PathBuf>) {
     DIR_OVERRIDE.with(|d| *d.borrow_mut() = path);
 }
 
+/// Compare project paths in `style`'s rules instead of this platform's, for the
+/// duration of a test (this thread only). Crate-visible so the doors that ask the
+/// registry (New Work, the importers) can prove on Linux what Windows compares.
+#[cfg(test)]
+pub(crate) fn set_path_style_override(style: Option<PathStyle>) {
+    STYLE_OVERRIDE.with(|s| s.set(style));
+}
+
+/// The rules [`project_key`] compares by: this platform's, unless a test set others.
+fn path_style() -> PathStyle {
+    #[cfg(test)]
+    {
+        if let Some(style) = STYLE_OVERRIDE.with(std::cell::Cell::get) {
+            return style;
+        }
+    }
+    PathStyle::HOST
+}
+
 /// Which of this installation's two socket kinds a caller means.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SocketId {
@@ -301,14 +331,64 @@ pub fn socket_name(id: SocketId) -> Option<interprocess::local_socket::Name<'sta
     }
 }
 
-/// The form a claim is keyed by. Same rule as `shell::process::canon`, for the same
-/// reason: a folder project's two spellings (`…/Novel`, `…/Novel/project.skrib`)
-/// must be one claim, or a second instance opens the project a second time.
+/// The spelling a claim records: the path the filesystem gives the project, as far
+/// as the project exists.
+///
+/// A folder project's two spellings (`…/Novel`, `…/Novel/project.skrib`) are
+/// collapsed first, as `shell::process::canon` does, or a second instance opens the
+/// project a second time. Then the filesystem canonicalises the path or, when it
+/// does not exist, its folder, and the name is appended as written. A target an
+/// import or New Work is about to write does not exist yet, but its folder does
+/// (every door that writes one checks it), so this spells it the way it will be
+/// spelled once written: a claim made before the file appears and a check made
+/// after it (or the reverse) agree, and a folder reached through a symbolic link, a
+/// relative path or, on Windows, a short name such as `RUNNER~1` is the folder
+/// itself. When neither resolves, such as on an unreachable network share, the path
+/// is only made absolute, and unchanged if even that fails.
+///
+/// Compare two paths through [`same_project`], never by this alone: it keeps the
+/// case and the separators the writer or the filesystem gave it.
 pub(crate) fn canonical(path: &str) -> String {
     let path = skrib_format::canonical_project_path(path);
-    std::fs::canonicalize(&path)
+    resolved(Path::new(&path))
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or(path)
+}
+
+/// `path` made absolute and canonicalised by the filesystem, or when it does not
+/// exist, its folder canonicalised and its name appended, or when that does not
+/// either, only made absolute. `None` when even that fails (an empty path).
+///
+/// Only the folder is tried, not every ancestor up to the root: on an unreachable
+/// network share each attempt can wait out a timeout, and a target is only ever
+/// written into a folder that exists.
+fn resolved(path: &Path) -> Option<PathBuf> {
+    let absolute = std::path::absolute(path).ok()?;
+    if let Ok(full) = std::fs::canonicalize(&absolute) {
+        return Some(full);
+    }
+    let in_its_folder = absolute
+        .file_name()
+        .zip(absolute.parent())
+        .and_then(|(name, folder)| {
+            std::fs::canonicalize(folder)
+                .ok()
+                .map(|folder| folder.join(name))
+        });
+    Some(in_its_folder.unwrap_or(absolute))
+}
+
+/// What every spelling of one project's path has in common: [`canonical`], then
+/// the separators, verbatim prefix and case this platform's filesystem does not
+/// tell apart (see [`spelling`]). The key of every map below and the one thing a
+/// door compares.
+pub(crate) fn project_key(path: &str) -> String {
+    spelling::spelling_key(&canonical(path), path_style())
+}
+
+/// Whether `a` and `b` name the same project, whatever their spelling.
+pub(crate) fn same_project(a: &str, b: &str) -> bool {
+    project_key(a) == project_key(b)
 }
 
 /// The lock file naming `pid`'s claim on `project_path`. Pid is a parameter (not
@@ -317,7 +397,7 @@ pub(crate) fn canonical(path: &str) -> String {
 fn lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
     let d = dir()?;
     let mut h = DefaultHasher::new();
-    canonical(project_path).hash(&mut h);
+    project_key(project_path).hash(&mut h);
     Some(d.join(format!("open-{pid}-{:016x}.lock", h.finish())))
 }
 
@@ -329,13 +409,12 @@ fn lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
 /// *process* holds, including a sibling window's untouched, still-open Work
 /// (see `view_models::project_lifecycle::ProjectLifecycleViewModel::claim`'s doc).
 pub fn claim(path: &str, title: &str) {
-    let canon = canonical(path);
     let Some(lock) = lock_path_for(my_pid(), path) else {
         return;
     };
     let entry = OpenEntry {
         pid: my_pid(),
-        path: canon.clone(),
+        path: canonical(path),
         title: title.to_string(),
         importing: false,
     };
@@ -343,7 +422,7 @@ pub fn claim(path: &str, title: &str) {
         && std::fs::write(&lock, json).is_ok()
     {
         CLAIMED.with(|c| {
-            c.borrow_mut().insert(canon, lock);
+            c.borrow_mut().insert(project_key(path), lock);
         });
     }
 }
@@ -353,8 +432,8 @@ pub fn claim(path: &str, title: &str) {
 /// at shutdown, and it is the right way to drop a WINDOW's own previous claim
 /// before it claims a new path in place (see [`claim`]'s doc).
 pub fn release(path: &str) {
-    let canon = canonical(path);
-    let lock = CLAIMED.with(|c| c.borrow_mut().remove(&canon));
+    let key = project_key(path);
+    let lock = CLAIMED.with(|c| c.borrow_mut().remove(&key));
     if let Some(lock) = lock {
         remove_own_lock(&lock);
     }
@@ -404,7 +483,7 @@ fn remove_own_lock(lock: &Path) {
 #[must_use = "the claim lasts only as long as it is held"]
 #[derive(Debug)]
 pub struct ImportClaim {
-    canon: String,
+    key: String,
     lock: Option<PathBuf>,
 }
 
@@ -412,10 +491,10 @@ impl Drop for ImportClaim {
     fn drop(&mut self) {
         IMPORTING.with(|importing| {
             let mut importing = importing.borrow_mut();
-            if let Some(count) = importing.get_mut(&self.canon) {
+            if let Some(count) = importing.get_mut(&self.key) {
                 *count = count.saturating_sub(1);
                 if *count == 0 {
-                    importing.remove(&self.canon);
+                    importing.remove(&self.key);
                 }
             }
         });
@@ -430,24 +509,24 @@ impl Drop for ImportClaim {
 fn import_lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
     let d = dir()?;
     let mut h = DefaultHasher::new();
-    canonical(project_path).hash(&mut h);
+    project_key(project_path).hash(&mut h);
     Some(d.join(format!("import-{pid}-{:016x}.lock", h.finish())))
 }
 
 /// Claim `path` for an import writing it. See [`ImportClaim`].
 pub fn claim_import(path: &str) -> ImportClaim {
-    let canon = canonical(path);
-    IMPORTING.with(|importing| *importing.borrow_mut().entry(canon.clone()).or_insert(0) += 1);
+    let key = project_key(path);
+    IMPORTING.with(|importing| *importing.borrow_mut().entry(key.clone()).or_insert(0) += 1);
     let entry = OpenEntry {
         pid: my_pid(),
-        path: canon.clone(),
+        path: canonical(path),
         title: String::new(),
         importing: true,
     };
     let lock = import_lock_path_for(my_pid(), path).filter(|lock| {
         serde_json::to_string(&entry).is_ok_and(|json| std::fs::write(lock, json).is_ok())
     });
-    ImportClaim { canon, lock }
+    ImportClaim { key, lock }
 }
 
 /// A claim on a project a window is about to load, made before the load starts and
@@ -494,8 +573,8 @@ pub fn claim_for_load(path: &str) -> Option<LoadClaim> {
     if importing(path) {
         return None;
     }
-    let canon = canonical(path);
-    let held = CLAIMED.with(|claimed| claimed.borrow().contains_key(&canon));
+    let key = project_key(path);
+    let held = CLAIMED.with(|claimed| claimed.borrow().contains_key(&key));
     let claim = if held {
         LoadClaim { made: None }
     } else {
@@ -517,11 +596,11 @@ pub fn claim_for_load(path: &str) -> Option<LoadClaim> {
 /// Reads the lock directory, so it runs when a project is about to be opened or
 /// written, never in a derived signal.
 pub fn importing(path: &str) -> bool {
-    let canon = canonical(path);
-    IMPORTING.with(|importing| importing.borrow().contains_key(&canon))
+    let key = project_key(path);
+    IMPORTING.with(|importing| importing.borrow().contains_key(&key))
         || scan()
             .into_iter()
-            .any(|entry| entry.importing && canonical(&entry.path) == canon)
+            .any(|entry| entry.importing && project_key(&entry.path) == key)
 }
 
 /// [`scan`], without the projects an import is writing: every project open in a
@@ -646,6 +725,7 @@ mod tests {
         CLAIMED.with(|c| c.borrow_mut().clear());
         IMPORTING.with(|c| c.borrow_mut().clear());
         PID_OVERRIDE.with(|m| m.borrow_mut().clear());
+        STYLE_OVERRIDE.with(|s| s.set(None));
         d
     }
 
@@ -754,6 +834,88 @@ mod tests {
         assert_eq!(seen.len(), 1, "the open window's claim stays");
         assert_eq!(seen[0].title, "Held");
         release(path);
+    }
+
+    /// A hold on a target not written yet blocks every spelling of it. The filesystem
+    /// cannot canonicalise a file that is not there, so each of these used to compare
+    /// as another string, and a load, a New Work or a Save As into the file the import
+    /// was about to replace went ahead: a separator doubled, a `.` component, a
+    /// trailing separator, and the folder reached through a symbolic link, either way
+    /// round.
+    #[test]
+    fn a_hold_blocks_every_spelling_of_a_target_not_written_yet() {
+        setup("import-spellings");
+        let dir = tempfile::tempdir().unwrap();
+        let books = dir.path().join("Books");
+        std::fs::create_dir(&books).unwrap();
+        let target = books.join("Novel.skrib").to_string_lossy().into_owned();
+        let folder = books.to_string_lossy().into_owned();
+        let sep = std::path::MAIN_SEPARATOR;
+        let hold = claim_import(&target);
+        for spelling in [
+            format!("{folder}{sep}{sep}Novel.skrib"),
+            format!("{folder}{sep}.{sep}Novel.skrib"),
+            format!("{target}{sep}"),
+        ] {
+            assert!(importing(&spelling), "{spelling}");
+            assert!(claim_for_load(&spelling).is_none(), "{spelling}");
+        }
+        assert!(!importing(&books.join("Other.skrib").to_string_lossy()));
+        drop(hold);
+        #[cfg(unix)]
+        {
+            let shelf = dir.path().join("Shelf");
+            std::os::unix::fs::symlink(&books, &shelf).unwrap();
+            let through_link = shelf.join("Novel.skrib").to_string_lossy().into_owned();
+            let hold = claim_import(&target);
+            assert!(importing(&through_link), "the link names the same folder");
+            drop(hold);
+            let hold = claim_import(&through_link);
+            assert!(importing(&target), "and the other way round");
+            drop(hold);
+        }
+        assert!(scan().is_empty(), "every hold went with its lock file");
+    }
+
+    /// A hold made under one Windows spelling of a target blocks the others: the other
+    /// separator (the import forms built `C:\Books/Novel.skrib` where a file dialog
+    /// says `C:\Books\Novel.skrib`), another case, which NTFS does not tell apart, and
+    /// a trailing separator; in this instance, and in another one whose lock file
+    /// carries the spelling an earlier build wrote. Proved in Windows' rules whatever
+    /// the platform running the test.
+    #[test]
+    fn a_hold_blocks_the_windows_spellings_of_its_target() {
+        let dir = setup("import-windows-spellings");
+        let _style = crate::test_support::ForeignPathStyle::new(PathStyle::Windows);
+        let books = tempfile::tempdir().unwrap();
+        let folder = books.path().to_string_lossy().into_owned();
+        let hold = claim_import(&format!("{folder}/Second.skrib"));
+        for spelling in [
+            format!("{folder}\\Second.skrib"),
+            format!("{folder}\\second.skrib"),
+            format!("{folder}/SECOND.SKRIB"),
+            format!("{folder}\\\\Second.skrib\\"),
+        ] {
+            assert!(importing(&spelling), "{spelling}");
+        }
+        assert!(!importing(&format!("{folder}\\Other.skrib")));
+        drop(hold);
+
+        let fake_pid = 999_204;
+        PID_OVERRIDE.with(|m| m.borrow_mut().insert(fake_pid, true));
+        let entry = OpenEntry {
+            pid: fake_pid,
+            path: format!("{folder}/Third.skrib"),
+            title: String::new(),
+            importing: true,
+        };
+        std::fs::write(
+            dir.join(format!("import-{fake_pid}-0.lock")),
+            serde_json::to_string(&entry).unwrap(),
+        )
+        .unwrap();
+        assert!(importing(&format!("{folder}\\third.skrib")), "a peer's too");
+        PID_OVERRIDE.with(|m| m.borrow_mut().insert(fake_pid, false));
     }
 
     /// Another instance's import is refused here too, through its lock file alone.

@@ -147,6 +147,24 @@ impl Drop for IsolatedOpenRegistry {
     }
 }
 
+/// Has the open registry compare project paths in another platform's rules for as
+/// long as this lives, on this thread: how a test on Linux proves that two Windows
+/// spellings of one target are one project.
+pub(crate) struct ForeignPathStyle;
+
+impl ForeignPathStyle {
+    pub(crate) fn new(style: crate::shell::open_registry::PathStyle) -> Self {
+        crate::shell::open_registry::set_path_style_override(Some(style));
+        Self
+    }
+}
+
+impl Drop for ForeignPathStyle {
+    fn drop(&mut self) {
+        crate::shell::open_registry::set_path_style_override(None);
+    }
+}
+
 /// As [`tree_with_events`], plus whatever `state` the caller supplies: the general
 /// form [`tree_with_settings`]/[`tree_with_toast_registry`] each specialise for one
 /// type. Reach for this directly when a pane needs more than one `app_state` type at

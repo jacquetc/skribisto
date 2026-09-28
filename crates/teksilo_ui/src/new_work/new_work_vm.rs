@@ -35,6 +35,7 @@
 //! for the project an import is about to fill, which changes which questions are
 //! worth asking, not where the answers go.
 
+use std::path::Path;
 use std::rc::Rc;
 
 use crate::models::{ParatextPreset, ParatextPresetsService};
@@ -193,19 +194,24 @@ const MANUSCRIPT_TEMPLATE_INDICES: std::ops::RangeInclusive<usize> = 1..=4;
 /// Single file → `<dir>/<slug>.skrib`; Bundle → `<dir>/<slug>` (a folder). The
 /// slug is the trimmed, lowercased name with inner whitespace collapsed to `-`.
 /// An empty name yields `""` (nothing to create yet).
+///
+/// Joined as the platform joins paths, the way a file dialog spells them: put
+/// together with a `/` it was `C:\Books/tidewrack.skrib` on Windows, and trimming
+/// every separator off the folder turned the root folder into no folder at all.
+/// The slug holds no separator or drive (see [`slugify`]), so the join cannot leave
+/// the folder.
 fn build_target_path(dir: &str, name: &str, format_idx: usize) -> String {
     let slug = slugify(name);
     if slug.is_empty() {
         return String::new();
     }
-    let dir = dir.trim_end_matches(['/', '\\']);
-    let sep = if dir.is_empty() { "" } else { "/" };
-    if format_idx == 1 {
+    let leaf = if format_idx == 1 {
         // Bundle: a folder named after the work.
-        format!("{dir}{sep}{slug}")
+        slug
     } else {
-        format!("{dir}{sep}{slug}.skrib")
-    }
+        format!("{slug}.skrib")
+    };
+    Path::new(dir).join(leaf).to_string_lossy().into_owned()
 }
 
 /// Filesystem-forbidden characters (POSIX separators + the Windows set); each
@@ -1015,6 +1021,11 @@ impl DiskChecked for NewWorkViewModel {
 mod tests {
     use super::*;
 
+    /// `leaf` in `dir`, spelled as this platform joins a path.
+    fn joined(dir: &str, leaf: &str) -> String {
+        Path::new(dir).join(leaf).to_string_lossy().into_owned()
+    }
+
     /// The author typed into the New Work form must reach the DTO — otherwise the
     /// field is decorative and every project starts unattributed.
     #[test]
@@ -1069,7 +1080,7 @@ mod tests {
         vm.name().set("The Long Road".into());
 
         let dto = vm.dto();
-        assert_eq!(dto.file_name, "/books/the-long-road.skrib");
+        assert_eq!(dto.file_name, joined("/books", "the-long-road.skrib"));
         assert_eq!(dto.title, "The Long Road");
     }
 
@@ -1132,16 +1143,20 @@ mod tests {
         // Single file appends `.skrib`; bundle is a bare folder.
         assert_eq!(
             build_target_path("~/Novels", "Tidewrack", 0),
-            "~/Novels/tidewrack.skrib"
+            joined("~/Novels", "tidewrack.skrib")
         );
         assert_eq!(
             build_target_path("~/Novels", "Tidewrack", 1),
-            "~/Novels/tidewrack"
+            joined("~/Novels", "tidewrack")
         );
         // A trailing separator on the folder is not doubled.
         assert_eq!(
-            build_target_path("~/Novels/", "Tidewrack", 0),
-            "~/Novels/tidewrack.skrib"
+            build_target_path(
+                &format!("~/Novels{}", std::path::MAIN_SEPARATOR),
+                "Tidewrack",
+                0
+            ),
+            joined("~/Novels", "tidewrack.skrib")
         );
         // Empty name → nothing to create yet.
         assert_eq!(build_target_path("~/Novels", "   ", 0), "");
@@ -1219,10 +1234,10 @@ mod tests {
         let path = vm.target_path();
         vm.location().set("~/Books".into());
         vm.name().set("Tidewrack".into());
-        assert_eq!(path.get(), "~/Books/tidewrack.skrib");
+        assert_eq!(path.get(), joined("~/Books", "tidewrack.skrib"));
         // Switching to bundle drops the extension.
         vm.format_idx().set(1);
-        assert_eq!(path.get(), "~/Books/tidewrack");
+        assert_eq!(path.get(), joined("~/Books", "tidewrack"));
     }
 
     #[test]
@@ -1528,6 +1543,49 @@ mod tests {
             vec![tr!(target_importing_title()).resolve_now()]
         );
         assert!(works(&app_ctx).is_empty());
+    }
+
+    /// An import names its target after the source file, `Tidewrack.skrib`, and New
+    /// Work after the slug, `tidewrack.skrib`: on Windows and macOS, whose filesystems
+    /// compare names without regard to case, that is one file, and New Work refuses it
+    /// while the import writes it. The import's spelling is the one its form built on
+    /// Windows, with a `/` before the name. Proved in Windows' rules whatever the
+    /// platform running the test.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn a_project_an_import_is_writing_under_another_spelling_is_never_the_target() {
+        use crate::shell::open_registry;
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let _style = crate::test_support::ForeignPathStyle::new(open_registry::PathStyle::Windows);
+        let dir = tempfile::tempdir().unwrap();
+        let (vm, app_ctx, mut tree) = filled_in("Tidewrack", dir.path());
+        let _claim =
+            open_registry::claim_import(&format!("{}/Tidewrack.skrib", dir.path().display()));
+        let creating = vm.clone();
+        crate::test_support::press(&mut tree, move |c| {
+            assert!(!creating.create(c, None));
+        });
+        assert_eq!(
+            crate::test_support::drain_dialog_titles(&mut tree),
+            vec![tr!(target_importing_title()).resolve_now()]
+        );
+        assert!(works(&app_ctx).is_empty());
+    }
+
+    /// A folder that is the filesystem root keeps its root: trimming the separator
+    /// off it left a bare file name, which the process resolves against whatever
+    /// folder it happens to be working in.
+    #[test]
+    fn a_target_in_the_root_folder_stays_in_the_root() {
+        let root = if cfg!(windows) { r"C:\" } else { "/" };
+        assert_eq!(
+            build_target_path(root, "Tidewrack", 0),
+            joined(root, "tidewrack.skrib")
+        );
+        assert_eq!(
+            build_target_path(root, "Tidewrack", 1),
+            joined(root, "tidewrack")
+        );
     }
 
     /// A folder at the target is refused on the Name field, which holds the wizard on

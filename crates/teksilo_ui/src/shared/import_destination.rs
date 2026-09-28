@@ -25,7 +25,7 @@
 //!   project refuse one an import is writing.
 
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::{Component, Path, PathBuf};
 use std::rc::Rc;
 
 use teksilo::i18n::LocalizedString;
@@ -47,15 +47,29 @@ pub(crate) struct DestinationMessages {
 
 /// Build the target `<dir>/<name>.skrib` (empty when the name is blank). A
 /// trailing `.skrib` the writer typed is not doubled.
+///
+/// Joined as the platform joins paths. Put together with a `/`, the target was
+/// `C:\Books/Novel.skrib` on Windows, a spelling no file dialog gives, and trimming
+/// every separator off the folder turned the root folder into no folder at all and,
+/// on Unix, cut a backslash out of a folder's name.
+///
+/// The name is a name inside the folder: only its ordinary components are joined,
+/// since `Path::join` with an absolute or drive-prefixed argument would discard the
+/// folder the form shows and checks.
 pub(crate) fn build_target(dir: &str, name: &str) -> String {
     let name = name.trim();
     let name = name.strip_suffix(".skrib").unwrap_or(name).trim();
     if name.is_empty() {
         return String::new();
     }
-    let dir = dir.trim().trim_end_matches(['/', '\\']);
-    let sep = if dir.is_empty() { "" } else { "/" };
-    format!("{dir}{sep}{name}.skrib")
+    let file = format!("{name}.skrib");
+    let mut target = PathBuf::from(dir.trim());
+    for part in Path::new(&file).components() {
+        if let Component::Normal(part) = part {
+            target.push(part);
+        }
+    }
+    target.to_string_lossy().into_owned()
 }
 
 fn name_state(target: &str, messages: &DestinationMessages) -> ValidationState {
@@ -254,13 +268,13 @@ pub(crate) struct BusyRefusal {
 
 /// The open project sitting at `target`, if any.
 ///
-/// Compared by the one spelling every door agrees on (`open_registry::canonical`:
-/// `skrib_format::canonical_project_path`, then the filesystem's own canonical
-/// form), so a folder project named by its `project.skrib` and a path reached
-/// through a symlink are still recognised. Two sources, because neither alone is
-/// complete: this process's Work registry holds every project open in one of its
-/// windows, whether or not its lock file could be written; the open registry's
-/// lock files add every other running copy of Skribisto.
+/// Compared through `open_registry::project_key`, so a folder project named by its
+/// `project.skrib`, a path reached through a symlink and, on Windows, a path spelled
+/// with the other separator or in another case are still recognised. Two sources,
+/// because neither alone is complete: this process's Work registry holds every
+/// project open in one of its windows, whether or not its lock file could be
+/// written; the open registry's lock files add every other running copy of
+/// Skribisto.
 ///
 /// Reads the lock directory, so it runs when the writer presses Import, never in
 /// a derived signal.
@@ -292,10 +306,10 @@ fn matching_open_project(target: &str, open: impl IntoIterator<Item = String>) -
     if target.is_empty() {
         return None;
     }
-    let wanted = open_registry::canonical(target);
+    let wanted = open_registry::project_key(target);
     open.into_iter()
         .filter(|path| !path.trim().is_empty())
-        .find(|path| open_registry::canonical(path) == wanted)
+        .find(|path| open_registry::project_key(path) == wanted)
 }
 
 /// Refuse an import aimed at a project that is open: tell the writer why, and
@@ -393,19 +407,71 @@ mod tests {
 
     #[test]
     fn build_target_appends_skrib_once() {
+        let books = Path::new("/books").join("Le Visiteur.skrib");
+        let books = books.to_string_lossy();
+        assert_eq!(build_target("/books", "Le Visiteur"), books);
         assert_eq!(
-            build_target("/books", "Le Visiteur"),
-            "/books/Le Visiteur.skrib"
+            build_target(
+                &format!("/books{}", std::path::MAIN_SEPARATOR),
+                "Le Visiteur"
+            ),
+            books
         );
-        assert_eq!(
-            build_target("/books/", "Le Visiteur"),
-            "/books/Le Visiteur.skrib"
-        );
-        assert_eq!(
-            build_target("/books", "Le Visiteur.skrib"),
-            "/books/Le Visiteur.skrib"
-        );
+        assert_eq!(build_target("/books", "Le Visiteur.skrib"), books);
         assert_eq!(build_target("/books", "   "), "");
+    }
+
+    /// The target is spelled as the platform spells a path, the way a file dialog and
+    /// every other door hand it over: on Windows, with a `\` before the name. Built
+    /// with a `/` there, an import held `C:\Books/Novel.skrib` while the doors it had
+    /// to stop asked about `C:\Books\Novel.skrib`.
+    #[test]
+    fn the_target_is_the_folder_joined_with_the_file_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path().to_string_lossy().into_owned();
+        assert_eq!(
+            build_target(&folder, "Novel"),
+            dir.path().join("Novel.skrib").to_string_lossy()
+        );
+    }
+
+    /// A name is a name inside the folder the form shows: `Path::join` with an
+    /// absolute name would throw the folder away and aim the import elsewhere.
+    #[test]
+    fn a_name_never_takes_the_target_out_of_its_folder() {
+        for name in ["/etc/Novel", "../Novel", "./Novel", r"\Novel", "C:Novel"] {
+            let target = build_target("/books", name);
+            assert!(Path::new(&target).starts_with("/books"), "{name}: {target}");
+            assert!(target.ends_with("Novel.skrib"), "{name}: {target}");
+            assert!(!target.contains(".."), "{name}: {target}");
+        }
+    }
+
+    /// A folder that is the filesystem root keeps its root: trimming the separator
+    /// off it left a bare file name, which the process resolves against whatever
+    /// folder it happens to be working in.
+    #[test]
+    fn a_target_in_the_root_folder_stays_in_the_root() {
+        let root = if cfg!(windows) { r"C:\" } else { "/" };
+        assert_eq!(
+            build_target(root, "novel"),
+            Path::new(root).join("novel.skrib").to_string_lossy()
+        );
+    }
+
+    /// On Unix a backslash is a character of a folder's name, not a separator, so a
+    /// folder whose name ends with one is where the target goes. Trimming it away
+    /// aimed the import at a sibling folder the writer never chose.
+    #[cfg(unix)]
+    #[test]
+    fn a_backslash_ending_a_unix_folder_name_is_part_of_the_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path().join("Drafts\\");
+        std::fs::create_dir(&folder).unwrap();
+        assert_eq!(
+            build_target(&folder.to_string_lossy(), "novel"),
+            folder.join("novel.skrib").to_string_lossy()
+        );
     }
 
     /// The name's verdict follows both fields: a name that is free in one folder
