@@ -1293,14 +1293,12 @@ fn build_odt(djot: &str, make_comments: impl FnOnce(&TextDocument) -> DocumentCo
     doc.set_djot_sync(djot).expect("set_djot_sync");
     let comments = make_comments(&doc);
 
-    let path = std::env::temp_dir().join(format!(
-        "import_mgmt_odt_roundtrip_{}_{}.odt",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or_default()
-    ));
+    // A private directory per call, for the reason `build_docx` gives. The ODT twins
+    // kept the `{pid}_{nanos}` name after it was fixed there, and the Windows clock
+    // moves in steps of 100 ns: two tests exporting in the same step wrote one file,
+    // and one of them read back the other's comments.
+    let dir = tempfile::tempdir().expect("temp dir for the exported odt");
+    let path = dir.path().join("roundtrip.odt");
     doc.to_odt_with_options(
         &path.to_string_lossy(),
         OdtExportOptions {
@@ -1311,9 +1309,7 @@ fn build_odt(djot: &str, make_comments: impl FnOnce(&TextDocument) -> DocumentCo
     .expect("to_odt_with_options")
     .wait()
     .expect("odt export completes");
-    let bytes = std::fs::read(&path).expect("read exported odt");
-    let _ = std::fs::remove_file(&path);
-    bytes
+    std::fs::read(&path).expect("read exported odt")
 }
 
 /// One root comment on "needs review" (no uid — an editor's own first pass) with
@@ -2025,14 +2021,9 @@ fn build_odt_marked(
     doc.set_djot_sync(djot).expect("set_djot_sync");
     let (comments, marks) = make(&doc);
 
-    let path = std::env::temp_dir().join(format!(
-        "import_mgmt_odt_marked_{}_{}.odt",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or_default()
-    ));
+    // A private directory per call, as in `build_odt`.
+    let dir = tempfile::tempdir().expect("temp dir for the exported odt");
+    let path = dir.path().join("marked.odt");
     doc.to_odt_with_options(
         &path.to_string_lossy(),
         OdtExportOptions {
@@ -2044,9 +2035,7 @@ fn build_odt_marked(
     .expect("to_odt_with_options")
     .wait()
     .expect("odt export completes");
-    let bytes = std::fs::read(&path).expect("read exported odt");
-    let _ = std::fs::remove_file(&path);
-    bytes
+    std::fs::read(&path).expect("read exported odt")
 }
 
 /// A returning `.odt` whose comment is identified **only** by its mark: the uid is
@@ -3879,12 +3868,18 @@ fn fodt_with_margin(margin: &str) -> String {
     )
 }
 
-/// Parse `djot` on a thread with the 2 MiB stack a long operation gets, as the comment
-/// and footnote cards and the exporter do, and return its plain text. An overflow here
+/// Parse `djot` on a thread standing in for a long operation's, as the comment and
+/// footnote cards and the exporter do, and return its plain text. An overflow here
 /// aborts the test binary rather than failing the test, which is the signal.
+///
+/// The thread gets 512 KiB, a quarter of the 2 MiB a long operation's worker has:
+/// `jotdown` recurses once per container, and a pass on a quarter proves the real
+/// stack holds four times what a parse at the ceiling needs, which is the margin a
+/// platform with larger frames than Linux's relies on (`skrib_format::xml_depth`'s
+/// module note has the measurements).
 fn parse_on_a_long_operation_stack(djot: String) -> Result<String, String> {
     std::thread::Builder::new()
-        .stack_size(2 << 20)
+        .stack_size(512 * 1024)
         .spawn(move || {
             let doc = TextDocument::new();
             doc.set_djot_sync(&djot).map_err(|e| e.to_string())?;

@@ -43,6 +43,8 @@
 //! empty regardless of what was asked for on write. `docx_writer_roundtrip.rs` is where
 //! `author_initials` gets its real round-trip proof, since DOCX's `w:initials` actually carries it.
 
+mod support;
+
 use document_ingest::{AnnotationKind, ScannerRegistry, SourceBlock, SourceDocument};
 use std::path::Path;
 use text_document::{
@@ -72,14 +74,7 @@ fn write_odt() -> Vec<u8> {
     let doc = text_document::TextDocument::new();
     doc.set_djot_sync(SOURCE_DJOT).expect("set_djot_sync");
 
-    let path = std::env::temp_dir().join(format!(
-        "odt_writer_roundtrip_{}_{}.odt",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or_default()
-    ));
+    let path = support::unique_temp_path("odt_writer_roundtrip", "odt");
 
     doc.to_odt_with_options(
         &path.to_string_lossy(),
@@ -216,14 +211,7 @@ A second, unrelated paragraph follows.
 /// [`text_document::TextDocument::find`] on `doc` (to compute an exact anchor range) *before*
 /// deciding what to export, which `write_odt`'s all-in-one shape has no room for.
 fn export_odt_bytes(doc: &text_document::TextDocument, options: OdtExportOptions) -> Vec<u8> {
-    let path = std::env::temp_dir().join(format!(
-        "odt_writer_roundtrip_comments_{}_{}.odt",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or_default()
-    ));
+    let path = support::unique_temp_path("odt_writer_roundtrip_comments", "odt");
 
     doc.to_odt_with_options(&path.to_string_lossy(), options)
         .expect("to_odt_with_options")

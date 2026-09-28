@@ -23,6 +23,8 @@
 //! labels (`"cmt-root-1"`) `text-document`'s own writer-only tests use, which would not parse as
 //! a uid at all.
 
+mod support;
+
 use document_ingest::{AnnotationKind, ScannerRegistry, SourceBlock, SourceDocument};
 use std::path::Path;
 use text_document::{
@@ -49,14 +51,7 @@ fn write_docx_with_options(djot: &str, options: DocxExportOptions) -> Vec<u8> {
     let doc = text_document::TextDocument::new();
     doc.set_djot_sync(djot).expect("set_djot_sync");
 
-    let path = std::env::temp_dir().join(format!(
-        "docx_writer_roundtrip_{}_{}.docx",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or_default()
-    ));
+    let path = support::unique_temp_path("docx_writer_roundtrip", "docx");
 
     doc.to_docx_with_options(&path.to_string_lossy(), options)
         .expect("to_docx_with_options")
@@ -200,14 +195,7 @@ fn find_range(doc: &text_document::TextDocument, needle: &str) -> (u32, u32) {
 }
 
 fn export_docx_bytes(doc: &text_document::TextDocument, options: DocxExportOptions) -> Vec<u8> {
-    let path = std::env::temp_dir().join(format!(
-        "docx_writer_roundtrip_comments_{}_{}.docx",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or_default()
-    ));
+    let path = support::unique_temp_path("docx_writer_roundtrip_comments", "docx");
 
     doc.to_docx_with_options(&path.to_string_lossy(), options)
         .expect("to_docx_with_options")
