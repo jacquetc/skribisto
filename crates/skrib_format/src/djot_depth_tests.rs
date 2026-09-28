@@ -1080,7 +1080,11 @@ fn the_editors_code_block_and_preformatted_paste_load_again() {
             "Before.\n\n```\ncode\n{}\n```\n\nAfter.\n",
             line.trim_end()
         ))
-        .and_then(|operation| operation.wait())
+        .and_then(|operation| {
+            operation
+                .wait_timeout(std::time::Duration::from_secs(30))
+                .expect("the text-document operation did not finish within 30 s")
+        })
         .expect("the editor takes the Markdown");
         let imported = doc
             .to_djot()

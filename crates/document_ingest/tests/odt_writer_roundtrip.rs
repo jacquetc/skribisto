@@ -81,7 +81,8 @@ fn write_odt() -> Vec<u8> {
         text_document::OdtExportOptions::default(),
     )
     .expect("to_odt_with_options")
-    .wait()
+    .wait_timeout(std::time::Duration::from_secs(30))
+    .expect("the text-document operation did not finish within 30 s")
     .expect("odt export completes");
 
     let bytes = std::fs::read(&path).expect("read exported odt");
@@ -215,7 +216,8 @@ fn export_odt_bytes(doc: &text_document::TextDocument, options: OdtExportOptions
 
     doc.to_odt_with_options(&path.to_string_lossy(), options)
         .expect("to_odt_with_options")
-        .wait()
+        .wait_timeout(std::time::Duration::from_secs(30))
+        .expect("the text-document operation did not finish within 30 s")
         .expect("odt export completes");
 
     let bytes = std::fs::read(&path).expect("read exported odt");

@@ -647,7 +647,11 @@ mod tests {
         ];
         let djot = format!("{}\n\n[^n1]: It always is.", paragraphs_in.join("\n\n"));
         let doc = text_document::TextDocument::new();
-        doc.set_djot(&djot).expect("parse").wait().expect("parse");
+        doc.set_djot(&djot)
+            .expect("parse")
+            .wait_timeout(std::time::Duration::from_secs(30))
+            .expect("the text-document operation did not finish within 30 s")
+            .expect("parse");
         let exported = doc
             .to_plain_text_with(text_document::PlainTextExportOptions::presentation())
             .expect("export");

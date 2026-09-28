@@ -112,12 +112,14 @@ fn write(djot: &str, ext: &str, dir: &Path) -> PathBuf {
     if ext == "odt" {
         doc.to_odt_with_options(&p, text_document::OdtExportOptions::default())
             .expect("to_odt_with_options")
-            .wait()
+            .wait_timeout(std::time::Duration::from_secs(30))
+            .expect("the text-document operation did not finish within 30 s")
             .expect("odt write");
     } else {
         doc.to_docx_with_options(&p, text_document::DocxExportOptions::default())
             .expect("to_docx_with_options")
-            .wait()
+            .wait_timeout(std::time::Duration::from_secs(30))
+            .expect("the text-document operation did not finish within 30 s")
             .expect("docx write");
     }
     path

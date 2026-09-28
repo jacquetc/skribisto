@@ -479,3 +479,21 @@ pub(crate) fn saved_scene(
         .unwrap_or_default();
     (text, notes)
 }
+
+/// How long a test gives a text-document long operation, the import or export of a few
+/// lines, before calling it stuck.
+pub(crate) const OPERATION_LIMIT: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Waits for a text-document long operation, and fails the test if it has not finished
+/// within [`OPERATION_LIMIT`].
+///
+/// `Operation::wait` has no deadline, so an operation that never finished would hold
+/// its test, and the CI job running it, until the job's own timeout. Use as
+/// `doc.set_djot(text).and_then(finish)`.
+pub(crate) fn finish<T>(
+    operation: teksilo::text_document::Operation<T>,
+) -> teksilo::text_document::Result<T> {
+    operation.wait_timeout(OPERATION_LIMIT).unwrap_or_else(|| {
+        panic!("a text-document operation did not finish within {OPERATION_LIMIT:?}")
+    })
+}

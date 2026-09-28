@@ -20,8 +20,7 @@ fn vm_over(text: &str) -> (FormatViewModel, RichTextEditor) {
 fn vm_over_doc(text: &str) -> (FormatViewModel, RichTextEditor, TextDocument) {
     let doc = TextDocument::new();
     doc.set_markdown(text)
-        .expect("parse")
-        .wait()
+        .and_then(crate::test_support::finish)
         .expect("import");
     let editor = RichTextEditor::editor(doc.clone());
     let handle = editor.handle();
@@ -183,8 +182,7 @@ fn ids(n: usize) -> Vec<WidgetId> {
 fn loose_editor(text: &str) -> (RichTextEditor, EditorHandle) {
     let doc = TextDocument::new();
     doc.set_markdown(text)
-        .expect("parse")
-        .wait()
+        .and_then(crate::test_support::finish)
         .expect("import");
     let editor = RichTextEditor::editor(doc);
     let handle = editor.handle();
@@ -921,8 +919,7 @@ fn a_degenerate_table_is_refused() {
 fn a_synopsis_is_a_formattable_target_of_its_own_kind() {
     let doc = TextDocument::new();
     doc.set_markdown("a synopsis line")
-        .expect("parse")
-        .wait()
+        .and_then(crate::test_support::finish)
         .expect("import");
     let editor = RichTextEditor::editor(doc);
     editor.select_all();
@@ -1034,8 +1031,7 @@ fn losing_focus_clears_the_mirrors() {
     let flip: Rc<Cell<bool>> = Rc::new(Cell::new(true));
     let doc = TextDocument::new();
     doc.set_markdown("Hello")
-        .expect("parse")
-        .wait()
+        .and_then(crate::test_support::finish)
         .expect("import");
     let editor = RichTextEditor::editor(doc);
     editor.select_all();
@@ -1230,7 +1226,9 @@ fn an_editor_with_no_footnote_binding_is_not_a_target() {
 /// nothing selected — the shape "the caret is inside a link" needs.
 fn vm_at(text: &str, position: usize) -> (FormatViewModel, RichTextEditor, EditorHandle) {
     let doc = TextDocument::new();
-    doc.set_djot(text).expect("parse").wait().expect("import");
+    doc.set_djot(text)
+        .and_then(crate::test_support::finish)
+        .expect("import");
     let editor = RichTextEditor::editor(doc);
     let handle = editor.handle();
     handle.select_range(position, position);

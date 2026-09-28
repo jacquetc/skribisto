@@ -55,7 +55,8 @@ fn write_docx_with_options(djot: &str, options: DocxExportOptions) -> Vec<u8> {
 
     doc.to_docx_with_options(&path.to_string_lossy(), options)
         .expect("to_docx_with_options")
-        .wait()
+        .wait_timeout(std::time::Duration::from_secs(30))
+        .expect("the text-document operation did not finish within 30 s")
         .expect("docx export completes");
 
     let bytes = std::fs::read(&path).expect("read exported docx");
@@ -199,7 +200,8 @@ fn export_docx_bytes(doc: &text_document::TextDocument, options: DocxExportOptio
 
     doc.to_docx_with_options(&path.to_string_lossy(), options)
         .expect("to_docx_with_options")
-        .wait()
+        .wait_timeout(std::time::Duration::from_secs(30))
+        .expect("the text-document operation did not finish within 30 s")
         .expect("docx export completes");
 
     let bytes = std::fs::read(&path).expect("read exported docx");

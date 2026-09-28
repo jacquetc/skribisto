@@ -333,7 +333,11 @@ mod tests {
         ] {
             let djot = format!("![{}](assets/a.png)", escape_djot_alt(alt));
             let doc = text_document::TextDocument::new();
-            doc.set_djot(&djot).expect("parse").wait().expect("parsed");
+            doc.set_djot(&djot)
+                .expect("parse")
+                .wait_timeout(std::time::Duration::from_secs(30))
+                .expect("the text-document operation did not finish within 30 s")
+                .expect("parsed");
             let read: Vec<String> = doc
                 .blocks()
                 .iter()

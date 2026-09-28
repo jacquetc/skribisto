@@ -668,8 +668,7 @@ mod tests {
 
         let doc = TextDocument::new();
         doc.set_markdown("scene prose")
-            .expect("parse")
-            .wait()
+            .and_then(crate::test_support::finish)
             .expect("import");
         let editor = RichTextEditor::editor(doc);
         let handle = editor.handle();

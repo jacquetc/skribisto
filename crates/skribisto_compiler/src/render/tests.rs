@@ -3952,7 +3952,12 @@ fn typed_punctuation_reaches_every_format_as_typed() {
     );
     let markdown = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Markdown)).unwrap();
     let read_back = text_document::TextDocument::new();
-    read_back.set_markdown(&markdown).unwrap().wait().unwrap();
+    read_back
+        .set_markdown(&markdown)
+        .unwrap()
+        .wait_timeout(std::time::Duration::from_secs(30))
+        .expect("the text-document operation did not finish within 30 s")
+        .unwrap();
     check("Markdown", &read_back.to_plain_text().unwrap());
 
     for (fmt, ext) in [
@@ -4083,7 +4088,12 @@ fn a_typed_title_reaches_every_format_with_all_its_characters() {
     );
     let markdown = render_to_string(&req(&g, &ids, &p, ExportFormat::Markdown)).unwrap();
     let read_back = text_document::TextDocument::new();
-    read_back.set_markdown(&markdown).unwrap().wait().unwrap();
+    read_back
+        .set_markdown(&markdown)
+        .unwrap()
+        .wait_timeout(std::time::Duration::from_secs(30))
+        .expect("the text-document operation did not finish within 30 s")
+        .unwrap();
     check("Markdown", &read_back.to_plain_text().unwrap());
 
     for (fmt, ext) in [

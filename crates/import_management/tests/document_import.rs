@@ -1282,7 +1282,8 @@ fn build_docx(
         },
     )
     .expect("to_docx_with_options")
-    .wait()
+    .wait_timeout(std::time::Duration::from_secs(30))
+    .expect("the text-document operation did not finish within 30 s")
     .expect("docx export completes");
     std::fs::read(&path).expect("read exported docx")
 }
@@ -1307,7 +1308,8 @@ fn build_odt(djot: &str, make_comments: impl FnOnce(&TextDocument) -> DocumentCo
         },
     )
     .expect("to_odt_with_options")
-    .wait()
+    .wait_timeout(std::time::Duration::from_secs(30))
+    .expect("the text-document operation did not finish within 30 s")
     .expect("odt export completes");
     std::fs::read(&path).expect("read exported odt")
 }
@@ -2033,7 +2035,8 @@ fn build_odt_marked(
         },
     )
     .expect("to_odt_with_options")
-    .wait()
+    .wait_timeout(std::time::Duration::from_secs(30))
+    .expect("the text-document operation did not finish within 30 s")
     .expect("odt export completes");
     std::fs::read(&path).expect("read exported odt")
 }

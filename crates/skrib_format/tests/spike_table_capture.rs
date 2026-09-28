@@ -32,7 +32,11 @@ fn document_offset(doc: &TextDocument, needle: &str) -> usize {
 fn a_selection_offset_after_a_table_indexes_the_snapshot_text() {
     let djot = "intro\n\n| a | b |\n| - | - |\n| c | d |\n\nthe salt-bleached door";
     let doc = TextDocument::new();
-    doc.set_djot(djot).expect("set").wait().expect("wait");
+    doc.set_djot(djot)
+        .expect("set")
+        .wait_timeout(std::time::Duration::from_secs(30))
+        .expect("the text-document operation did not finish within 30 s")
+        .expect("wait");
 
     // What the editor widget would report for a selection of "salt-bleached".
     let selection_start = document_offset(&doc, "salt-bleached");
@@ -63,7 +67,11 @@ fn a_selection_offset_after_a_table_indexes_the_snapshot_text() {
 fn a_selection_offset_with_no_table_indexes_the_snapshot_text() {
     let djot = "intro\n\nthe salt-bleached door";
     let doc = TextDocument::new();
-    doc.set_djot(djot).expect("set").wait().expect("wait");
+    doc.set_djot(djot)
+        .expect("set")
+        .wait_timeout(std::time::Duration::from_secs(30))
+        .expect("the text-document operation did not finish within 30 s")
+        .expect("wait");
 
     let selection_start = document_offset(&doc, "salt-bleached");
     let snapshot = doc.to_addressable_text().expect("addressable");

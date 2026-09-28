@@ -186,7 +186,11 @@ fn a_paragraph_the_editor_wrote_costs_nothing_however_long() {
     html.push_str("</p>");
     let doc = text_document::TextDocument::new();
     doc.set_html(&html)
-        .and_then(|operation| operation.wait())
+        .and_then(|operation| {
+            operation
+                .wait_timeout(std::time::Duration::from_secs(30))
+                .expect("the text-document operation did not finish within 30 s")
+        })
         .expect("the editor takes the paste");
     let djot = doc
         .to_djot()

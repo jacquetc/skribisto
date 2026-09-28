@@ -2018,10 +2018,15 @@ mod tests {
             .main
             .as_ref()
             .expect("a Scene owns a main text document");
+        // Loaded as the app loads a document (`prose_field`), not as a long operation.
+        // A long operation on a document in a shared backend lets the backend's event
+        // pump hold the last reference to it, and text-document 1.12.3 deadlocks that
+        // pump when the document is destroyed there: the next sibling dropped in the
+        // backend then waits forever. That hung this test on CI for over an hour; the
+        // operation was never what the test is about.
         doomed_main
             .doc
-            .set_djot("doomed edit")
-            .and_then(|op| op.wait())
+            .set_djot_sync("doomed edit")
             .expect("staging the edit itself must succeed");
         store.insert_for_test(doomed.clone());
 
@@ -2305,7 +2310,12 @@ mod tests {
         // No `TabWidget` anywhere: two bare handles to the shared document.
         let a = main.doc.clone();
         let b = main.doc.clone();
-        let _ = a.set_djot("shared edit").and_then(|op| op.wait());
+        // Synchronous, for the reason given in `flush_all_visits_every_open_doc`: an
+        // import run as a long operation could leave the backend's pump holding the
+        // last reference to this document, and with text-document 1.12.3 dropping `doc`
+        // below then hung the test for good.
+        a.set_djot_sync("shared edit")
+            .expect("the edit through the first handle must land");
         assert!(
             b.to_djot().unwrap().contains("shared edit"),
             "an edit through one handle must be visible through the other"

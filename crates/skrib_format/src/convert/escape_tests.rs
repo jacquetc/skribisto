@@ -119,7 +119,10 @@ fn write_paragraph(runs: &[(String, DjotInlineStyle)]) -> (String, String, Vec<S
 /// The style of every character of the first block, as the editor's model reads it.
 fn styles_read_back(djot: &str) -> Vec<Styled> {
     let doc = TextDocument::new();
-    let parsed = doc.set_djot(djot).and_then(|op| op.wait());
+    let parsed = doc.set_djot(djot).and_then(|op| {
+        op.wait_timeout(std::time::Duration::from_secs(30))
+            .expect("the text-document operation did not finish within 30 s")
+    });
     assert!(parsed.is_ok(), "{djot:?} did not parse: {parsed:?}");
     let mut out = Vec::new();
     if let Some(block) = doc.blocks().first() {

@@ -378,7 +378,7 @@ mod tests {
             let body = p.rows()[0].body.clone();
             let doc = teksilo::text_document::TextDocument::new();
             doc.set_djot(&body)
-                .and_then(|op| op.wait())
+                .and_then(crate::test_support::finish)
                 .unwrap_or_else(|e| panic!("{p:?} body is not valid Djot: {e}"));
             let out = doc.to_djot().expect("export djot");
             assert!(

@@ -144,8 +144,7 @@ fn the_existing_fits_keep_their_sizing() {
 fn the_format_row_opens_showing_the_selections_state() {
     let doc = TextDocument::new();
     doc.set_markdown("hello world")
-        .expect("parse")
-        .wait()
+        .and_then(crate::test_support::finish)
         .expect("import");
     let editor = RichTextEditor::editor(doc);
     editor.select_all();
@@ -170,8 +169,7 @@ fn the_format_row_opens_showing_the_selections_state() {
 fn the_format_row_reports_what_the_editor_did() {
     let doc = TextDocument::new();
     doc.set_markdown("hello world")
-        .expect("parse")
-        .wait()
+        .and_then(crate::test_support::finish)
         .expect("import");
     let editor = RichTextEditor::editor(doc);
     editor.select_all();
@@ -197,8 +195,7 @@ fn the_format_row_reports_what_the_editor_did() {
 fn right_clicking_inside_a_selection_keeps_it() {
     let doc = TextDocument::new();
     doc.set_markdown("hello world")
-        .expect("parse")
-        .wait()
+        .and_then(crate::test_support::finish)
         .expect("import");
     let editor = RichTextEditor::editor(doc);
     let handle = editor.handle();
@@ -223,8 +220,7 @@ fn right_clicking_inside_a_selection_keeps_it() {
 fn editor_with_selection(range: (usize, usize)) -> (TextDocument, EditorHandle) {
     let doc = TextDocument::new();
     doc.set_markdown("Elizabeth Bennet walked into the room.")
-        .expect("parse")
-        .wait()
+        .and_then(crate::test_support::finish)
         .expect("import");
     let editor = RichTextEditor::editor(doc.clone());
     let handle = editor.handle();
