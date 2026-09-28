@@ -99,10 +99,10 @@ skribisto_fonts = { package = "skribisto-fonts", version = "3.0.4", path = "crat
 # Published sibling crates. Local checkouts are overlaid via `[patch.crates-io]`
 # in `.cargo/config.toml` (gitignored; the table is in the README).
 # CI and a plain clone resolve these from crates.io.
-text-document = "1.12"
-teksilo = "0.14.0"
-teksilo-charts = "0.14.0"
-teksilo-text = "0.14.0"
+text-document = "1.12.3"
+teksilo = "0.14.1"
+teksilo-charts = "0.14.1"
+teksilo-text = "0.14.1"
 
 [profile.dev]
 # Debuginfo, not the linker, was the dev loop's biggest single cost. Measured on

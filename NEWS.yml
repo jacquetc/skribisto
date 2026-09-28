@@ -21,6 +21,22 @@ Description:
 - "An OpenDocument file asking for an enormous run of spaces imports with that run shortened, and the import review says so"
 - "A compressed document or project built to unpack far larger than it is, a zip bomb, is refused instead of filling the computer’s memory"
 - "A list indented dozens of levels deep no longer makes the project refuse to open"
+- "Typewriter scrolling keeps the line you are typing at its place on the page again. Since 3.0.4 it only followed the caret, as ordinary scrolling does"
+- "A long scene opens, and an earlier version of it is put back, in a moment. A scene of several thousand paragraphs used to take seconds, and one of 16,000 close to a minute, during which the window did not respond"
+- "Putting back an earlier version of a text holding footnotes, pressing Backspace in a quotation, or deleting across the edge of a table no longer closes Skribisto. Typing or pressing Enter just before a footnote reference keeps the footnote where it was, and a table pasted in the middle of a text keeps the text after it in place"
+- "Copying, cutting or dragging text in a quotation takes each paragraph once. A nested quotation used to be copied two or three times over, and a cut then paste wrote it back doubled"
+- "Putting back an earlier version keeps its quotations and code blocks, which it used to turn into plain paragraphs"
+- "A passage pasted from a web page as preformatted text arrives as one paragraph per line, and every line stays as it was at the next opening. Its later lines used to come back as lists, headings or quotations, sometimes nested so deep that the project would not open"
+- "Export keeps every line of a passage holding line breaks, and every link or picture whose address holds a |, a parenthesis or a space. Quotations nested more than 55 levels deep export to Word, and more than 16 to PDF, instead of failing"
+- "Holding Tab in a quotation or a list stops at 64 quotation levels and 16 list levels. It used to go on for as long as the key repeated, and after about 97 presses the project would not open again"
+- "Tab and Shift+Tab on a list item in a quotation move it one level, as in the rest of the text. They used to take the item out of its list for good"
+- "Tab at the end of a list's last item moves the item one level instead of typing a tab, and no longer pushes a quoted paragraph after the list one quotation deeper"
+- "Splitting a scene keeps every word. The new scene lost one of its last characters for every paragraph after the caret, and a caret in a table put the table in both scenes and lost everything after it"
+- "Splitting a scene keeps the paragraph at the cut a heading, a list item, a quotation or a code block, leaves no stray space at the start of the new scene, and refuses to make an empty one"
+- "A comment goes with its words when a scene is split or two scenes are merged. It used to stay behind and report that it had lost its words"
+- "Jumping to a comment or a footnote near the end of a long scene lands on it. It used to stop a few lines short"
+- "Importing a Word or OpenDocument table with one row far wider than all the others says that its cells arrive as paragraphs, instead of dropping the grid in silence"
+- "The check for a new version of Skribisto uses an updated encryption library, which fixes a flaw in how it accepts a secure connection"
 ---
 Version: 3.0.4
 Date: 2026-09-16
