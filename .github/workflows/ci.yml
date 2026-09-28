@@ -63,10 +63,15 @@ jobs:
 
   # Linux runs first; Windows/macOS only start once Linux passes (saves runner
   # minutes on a Linux failure and gives a deterministic order).
+  #
+  # The budget is for a cold build. A release usually follows a bump of teksilo
+  # or text-document, which changes Cargo.lock and so misses every cache, and a
+  # cancelled job saves no cache for the next attempt: at 40 minutes the 3.0.5
+  # release commit was cut off in its test step after a cold build.
   test-linux:
     name: Test (linux)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -122,7 +127,8 @@ jobs:
           - name: mac
             os: macos-latest
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 40
+    # Cold-build budget, as for test-linux.
+    timeout-minutes: 75
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
