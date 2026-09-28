@@ -739,14 +739,18 @@ fn a_paragraph_the_load_joins_opens_from_every_place() {
     }
 }
 
-/// What the editor writes for a preformatted passage of six hundred lines, pasted and
-/// formatted from end to end (in italics after the paste, pasted in italics, made a
-/// link...), saved as a row's prose and as a comment's body: the project opens again,
-/// in either shape, and the editor reads the prose it gets back as the prose it wrote.
-/// Before, the next load refused the project from 129 lines on.
+/// A preformatted passage of six hundred lines, pasted and formatted from end to end (in
+/// italics after the paste, pasted in italics, made a link...), saved as a row's prose and
+/// as a comment's body, both as Skribisto 3.0.4 saved it, one paragraph over all its lines,
+/// and as the editor writes it now, one paragraph per line: the project opens again, in
+/// either shape, and the editor reads the prose it gets back as the prose that was saved.
+/// Before, the next load refused a project saved by 3.0.4 from 129 lines on.
 #[test]
 fn a_formatted_pasted_passage_the_editor_saved_opens_again() {
-    for (name, djot) in super::djot_depth::tests::formatted_passages(600) {
+    let saved = super::djot_depth::tests::formatted_passages_saved_by_3_0_4(600)
+        .into_iter()
+        .chain(super::djot_depth::tests::formatted_passages(600));
+    for (name, djot) in saved {
         for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
             let mut bundle = fixture();
             let planted = [PlantedIn::Prose, PlantedIn::CommentBody];
@@ -890,57 +894,79 @@ fn a_pre_v12_remark_that_looks_nested_opens_as_its_words() {
     }
 }
 
-/// Not a hostile bundle: the writer's own. The editor stores a paragraph's leading
-/// spaces and tabs as they were typed, so a paragraph typed after four hundred of them
-/// is saved exactly so, and the load used to count half a level of nesting for every
-/// one of them and refuse the whole project, which then would not open at all. Typed
-/// into every place a bundle stores Djot, saved in both shapes, it opens, every body
-/// comes back as it was saved, and every one parses from a long operation's stack.
+/// Not a hostile bundle: the writer's own. A paragraph typed after four hundred spaces or
+/// tabs is saved with them, and the load used to count half a level of nesting for every
+/// one of them and refuse the whole project, which then would not open at all. Two
+/// savings of it: Skribisto 3.0.4's, whose `text-document` wrote the blanks bare at the
+/// start of the line (and the next load dropped them, as Djot does there), and the
+/// editor's now, which writes them after an empty attribute, `{}`, so they read back as
+/// typed. Each, typed into every place a bundle stores Djot and saved in both shapes,
+/// opens, every body comes back as it was saved, and every one parses from a long
+/// operation's stack.
 #[test]
 fn a_paragraph_typed_after_four_hundred_spaces_or_tabs_opens() {
     for blank in [" ", "\t", " \t"] {
-        let typed = format!(
-            "{}Set far in.\n\nThen back at the margin.\n\n{}\n",
-            blank.repeat(400 / blank.len()),
-            blank.repeat(400 / blank.len())
-        );
+        let indent = blank.repeat(400 / blank.len());
+        let typed = format!("{indent}Set far in.\n\nThen back at the margin.\n\n{indent}\n");
+        // Byte for byte what `text-document` 1.12.2 wrote for it.
+        let saved_by_3_0_4 =
+            format!("{indent}Set far in.\n\n\n\nThen back at the margin.\n\n\n\n{indent}\n\n");
         let doc = text_document::TextDocument::new();
         doc.set_plain_text(&typed).expect("type");
-        let saved = doc
+        let saved_now = doc
             .to_djot()
             .expect("the editor writes its document as Djot");
         assert!(
-            saved.starts_with(&blank.repeat(400 / blank.len())),
-            "{blank:?}: the editor stores the paragraph's leading blanks as typed: {saved:.40?}"
+            saved_now.starts_with(&format!("{{}}{indent}Set far in.")),
+            "{blank:?}: the editor stores the paragraph's leading blanks as typed: {saved_now:.40?}"
         );
-        for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
-            let mut bundle = fixture();
-            for place in PlantedIn::ALL {
-                plant(&mut bundle, place, &saved);
-            }
-            let dir = tempfile::tempdir().expect("tmp");
-            let path = dir
-                .path()
-                .join("Novel.skrib")
-                .to_string_lossy()
-                .into_owned();
-            write_bundle(&path, shape, &bundle).expect("write");
-            let loaded = match read_bundle(&path) {
-                Ok(loaded) => loaded,
-                Err(err) => panic!(
-                    "{blank:?}, {shape:?}: the project does not open: {}",
-                    chain(&err)
-                ),
-            };
-            assert_eq!(
-                every_stored_djot(&loaded)
-                    .iter()
-                    .filter(|djot| **djot == saved)
-                    .count(),
-                PlantedIn::ALL.len(),
-                "{blank:?}, {shape:?}: every body comes back as it was saved"
-            );
-            parse_every_prose(&loaded);
+        let shown = text_document::TextDocument::new();
+        shown.set_djot_sync(&saved_now).expect("read back");
+        assert!(
+            shown
+                .to_plain_text()
+                .expect("plain text")
+                .starts_with(&format!("{indent}Set far in.")),
+            "{blank:?}: and reads them back"
+        );
+        for (by, saved) in [("3.0.4", saved_by_3_0_4), ("the editor now", saved_now)] {
+            let label = format!("{blank:?} saved by {by}");
+            opens_from_every_place(&label, &saved);
         }
+    }
+}
+
+/// `saved`, planted in every place a bundle stores Djot and written in both shapes, opens,
+/// every body comes back as it was saved, and every one parses from a long operation's
+/// stack.
+fn opens_from_every_place(label: &str, saved: &str) {
+    for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+        let mut bundle = fixture();
+        for place in PlantedIn::ALL {
+            plant(&mut bundle, place, saved);
+        }
+        let dir = tempfile::tempdir().expect("tmp");
+        let path = dir
+            .path()
+            .join("Novel.skrib")
+            .to_string_lossy()
+            .into_owned();
+        write_bundle(&path, shape, &bundle).expect("write");
+        let loaded = match read_bundle(&path) {
+            Ok(loaded) => loaded,
+            Err(err) => panic!(
+                "{label}, {shape:?}: the project does not open: {}",
+                chain(&err)
+            ),
+        };
+        assert_eq!(
+            every_stored_djot(&loaded)
+                .iter()
+                .filter(|djot| **djot == saved)
+                .count(),
+            PlantedIn::ALL.len(),
+            "{label}, {shape:?}: every body comes back as it was saved"
+        );
+        parse_every_prose(&loaded);
     }
 }

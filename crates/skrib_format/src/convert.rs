@@ -54,10 +54,12 @@ pub struct ConvertedDjot {
 /// refused, the words are kept instead, as plain text, which is always accepted.
 ///
 /// Before that, a paragraph holding more lines than a load accepts is joined into one
-/// line, as the load would join it ([`crate::djot_depth::admit`]): a preformatted passage
-/// kept its line breaks in the markup, and formatted from end to end it holds every one of
-/// them. Joined, it keeps its formatting, and its plain text is read again from the joined
-/// Djot, where those breaks are spaces.
+/// line, as the load would join it ([`crate::djot_depth::admit`]). Up to `text-document`
+/// 1.12.2 a preformatted passage kept its line breaks in the paragraph written for it, and
+/// formatted from end to end it held every one of them; from 1.12.3 the passage is written
+/// one paragraph per line, and the join stays for any paragraph that still holds its lines.
+/// Joined, it keeps its formatting, and its plain text is read again from the joined Djot,
+/// where those breaks are spaces.
 ///
 /// The Djot refused is never parsed on the way: its plain text comes from the parse that
 /// wrote it, and the plain Djot written in its place is what is read back.
@@ -430,25 +432,30 @@ pub fn rewrite_djot_text(djot: &str, edits: impl FnOnce(&str) -> Vec<TextEdit>) 
 // ── Text into Djot that reads back verbatim ─────────────────────────────────────
 //
 // text-document 1.12.2's own escaper (`escape_djot_inline`, `guard_djot_block_start`,
-// `plain_text_to_djot`) leaves several ordinary strings for the parser to rewrite on the
-// first load: `10:30:45` loses `:30:` as a symbol, a paragraph opening `I. ` becomes a
-// list item and loses its numeral, straight quotes are curled, `--` and `...` become a
+// `plain_text_to_djot`) left several ordinary strings for the parser to rewrite on the
+// first load: `10:30:45` lost `:30:` as a symbol, a paragraph opening `I. ` became a
+// list item and lost its numeral, straight quotes were curled, `--` and `...` became a
 // dash and an ellipsis. The functions below close those gaps on top of the upstream
 // ones, so an importer never stores text that the editor would change on opening it.
-// Every extra rule first checks whether the upstream function already escaped the
-// character, which makes it a no-op once text-document escapes it itself.
+// 1.12.3 escapes them itself; every extra rule first checks whether the upstream
+// function already escaped the character, so with 1.12.3 none escapes one twice.
 
-/// Whether the pinned Djot parser strips `c` from the edges of a paragraph.
+/// Whether the pinned Djot parser strips `c` from the edges of a paragraph, when nothing
+/// stands between it and the edge.
 ///
 /// These are the ASCII whitespace characters: space, tab, line feed, form feed and
-/// carriage return. A no-break space is not one of them and survives at an edge. A
-/// paragraph can only be read back without these at its two ends, so text is trimmed
-/// with [`trim_djot_whitespace`] before it is written or compared.
+/// carriage return. A no-break space is not one of them and survives at an edge. The
+/// editor keeps them too since `text-document` 1.12.3, which writes a paragraph's edge
+/// blanks after or before an empty attribute, `{}`. What Skribisto writes itself (an
+/// importer's paragraph, a plain-text field) leaves them out instead, as layout rather
+/// than text, so that text is trimmed with [`trim_djot_whitespace`] before it is written
+/// or compared.
 pub fn is_djot_whitespace(c: char) -> bool {
     c.is_ascii_whitespace()
 }
 
-/// `s` without the leading and trailing characters a Djot paragraph cannot keep.
+/// `s` without the leading and trailing characters a Djot paragraph drops when nothing
+/// guards them.
 pub fn trim_djot_whitespace(s: &str) -> &str {
     s.trim_matches(is_djot_whitespace)
 }
@@ -653,7 +660,7 @@ fn neutralise_block_start(line: &str) -> String {
 /// block, or `None` when it opens none.
 ///
 /// Mirrors the block identification of jotdown 0.10, the parser behind text-document
-/// 1.12.2, one arm per marker it recognises.
+/// (1.12.2 and 1.12.3 alike), one arm per marker it recognises.
 fn block_marker_escape(rest: &str) -> Option<usize> {
     let mut chars = rest.chars();
     let first = chars.next()?;
@@ -771,11 +778,14 @@ fn ordered_list_delimiter(rest: &str) -> Option<usize> {
 ///
 /// [`djot_plain_text`] of the result is `text` with each line trimmed of
 /// [Djot whitespace](is_djot_whitespace), blank lines removed, and the lines joined by
-/// one `\n`. `\r\n` and a lone `\r` both end a line. That shape is the target's, not a
-/// choice: the parser joins paragraphs with exactly one `\n`, strips a paragraph's edge
-/// whitespace and reads a newline inside a paragraph as a space, so one paragraph per
-/// line is the only shape that keeps every line, and no Djot brings back a blank line or
-/// a space at the edge of one.
+/// one `\n`. `\r\n` and a lone `\r` both end a line. The lines and the lost blank
+/// lines are the target's, not a choice: the parser joins paragraphs with exactly one
+/// `\n` and reads a newline inside a paragraph as a space, so one paragraph per line is
+/// the only shape that keeps every line, and no Djot brings back a blank line. The trim
+/// is this function's own: since `text-document` 1.12.3 a paragraph can keep its edge
+/// whitespace behind an empty attribute, `{}`, but in the fields and files converted
+/// here (an imported synopsis, a `.txt` file, a comment body the v12 migration rewrites)
+/// the spaces at a line's two ends are layout rather than writing.
 pub fn plain_text_to_djot_verbatim(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + text.len() / 8);
     for line in plain_text_lines(text) {

@@ -38,9 +38,11 @@
 //!
 //! # Joined, not refused
 //!
-//! The editor writes a paragraph over several lines when it holds a pasted preformatted
-//! passage, and one formatted from end to end, or opened by a quotation mark nothing
-//! closes, holds every one of its lines. A load does not refuse it:
+//! Up to `text-document` 1.12.2 (Skribisto 3.0.4) the editor wrote a paragraph over
+//! several lines when it held a pasted preformatted passage, and one formatted from end
+//! to end, or opened by a quotation mark nothing closes, held every one of its lines.
+//! From 1.12.3 a paste goes in one paragraph per line, but the projects saved before
+//! still hold such paragraphs. A load does not refuse one:
 //! [`admit`](crate::djot_depth::admit) writes the line breaks of such a paragraph as
 //! spaces, which is how the editor reads them, and hands on the joined text. The limits
 //! are refused only when joining cannot bring a text within them.
@@ -102,9 +104,10 @@
 //!
 //! [`MAX_HELD_LINES`](crate::djot_depth::MAX_HELD_LINES) is 512, a quarter of the 1,967
 //! held lines that fill the smallest stack a parse runs on (a 1 MiB Windows main thread)
-//! in a release build. The editor holds lines only in the paragraphs
-//! [`admit`](crate::djot_depth::admit) joins, so the ceiling itself is only ever met by
-//! Djot written by hand or crafted.
+//! in a release build. What the editor wrote up to `text-document` 1.12.2 holds lines only
+//! in the paragraphs [`admit`](crate::djot_depth::admit) joins, and from 1.12.3 it writes
+//! none (a pasted passage goes in one paragraph per line), so the ceiling itself is only
+//! ever met by Djot written by hand or crafted.
 
 use anyhow::Context;
 

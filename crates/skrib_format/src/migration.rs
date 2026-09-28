@@ -23,7 +23,7 @@ use anyhow::Result;
 use common::entities::{GoalUnit, MilestoneKind};
 
 use super::bundle::{FORMAT_VERSION, WorkBundle};
-// The Djot exporter's own escaper plus what text-document 1.12.2 leaves open, shared
+// The Djot exporter's own escaper plus what text-document 1.12.2 left open, shared
 // rather than reimplemented: a second definition would disagree with it about exactly the
 // awkward bodies (`- ` at a line start, a title in `[brackets]`, prose about `snake_case`)
 // while agreeing on everything easy.
@@ -150,8 +150,9 @@ fn step_v10_to_v11(bundle: &mut WorkBundle) {
 /// back emphasised, and one opening `- ` would become a list item. So every body is run
 /// through [`plain_text_to_djot_verbatim`]: the escaper the Djot **exporter** uses, so the
 /// two cannot disagree about which strings are awkward, plus the strings text-document
-/// 1.12.2 lets the parser rewrite. With the exporter's escaper alone, `Meet at 10:30:45`
-/// was kept as it was and read back as `Meet at 1045`, and `don't` came back curled.
+/// 1.12.2 let the parser rewrite (1.12.3 escapes them itself). With the 1.12.2 exporter's
+/// escaper alone, `Meet at 10:30:45` was kept as it was and read back as `Meet at 1045`,
+/// and `don't` came back curled.
 ///
 /// A body is rewritten only when the conversion changes it, which keeps ordinary bodies
 /// byte-identical on disk. That matters beyond tidiness: a body left untouched still reads
@@ -169,12 +170,13 @@ fn step_v10_to_v11(bundle: &mut WorkBundle) {
 /// # The two shapes that change, and why neither loses meaning
 ///
 /// A *plain-text* round trip through Djot cannot reproduce a **blank line** inside a body,
-/// nor **whitespace at either end** of a line. `text_document::djot_round_trip_is_lossy`
-/// names the first and trailing whitespace, and it is the right tool for a caller whose
-/// exact bytes matter. (A line's leading whitespace never survived either: the parser
-/// drops it at the start of a paragraph.)
+/// and [`plain_text_to_djot_verbatim`] trims the **whitespace at either end** of a line.
+/// `text_document::djot_round_trip_is_lossy` names the first, and it is the right tool for
+/// a caller whose exact bytes matter. The second is the conversion's own choice: from
+/// `text-document` 1.12.3 a paragraph keeps its edge whitespace when it is written behind
+/// an empty attribute, `{}`, while 1.12.2 wrote it bare and the parser dropped it there.
 ///
-/// It is deliberately not used here, because for this field the bytes are not the meaning.
+/// Neither check is made here, because for this field the bytes are not the meaning.
 /// A blank line in a plain-text comment body *is* the plain-text encoding of a paragraph
 /// break; once the body is Djot that break is carried by the paragraph structure itself,
 /// which is strictly more faithful than the character that stood in for it. The card

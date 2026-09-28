@@ -94,8 +94,9 @@ fn a_double_space_and_a_tab_neither_change_the_text_nor_move_what_follows() {
     assert_eq!(reread, proven.text, "the stored Djot reads back as proved");
     assert!(proven.members.iter().all(|m| m.exact && !m.reported));
 
-    // The leading tab of the second paragraph is not kept by the parser, and the map says
-    // so: its character 1 is the stored character 0 of that paragraph.
+    // The leading tab of the second paragraph is not written, a paragraph's indent being
+    // layout, and the map says so: its character 1 is the stored character 0 of that
+    // paragraph.
     let second = &proven.members[1].segments[0];
     assert_eq!(second.lead, 1);
     assert_eq!(
@@ -395,10 +396,20 @@ fn a_picture_keeps_its_display_size() {
 
 // ── blocks ──────────────────────────────────────────────────────────────────────────
 
-/// A table is proved cell by cell, like any paragraph, and padded square so the editor's
-/// first save keeps every cell.
+/// How many cells each row of a stored pipe table is written with. Every `|` the emitter
+/// writes inside a cell is behind a backslash, so a cell boundary is the only ` | ` there is.
+fn written_row_lengths(djot: &str) -> Vec<usize> {
+    djot.lines()
+        .filter(|line| line.starts_with("| "))
+        .map(|line| line.matches(" | ").count() + 1)
+        .collect()
+}
+
+/// A table is proved cell by cell, like any paragraph, and written with the cells the file
+/// holds: the parser completes the short first row itself, and the editor's first save
+/// keeps every cell.
 #[test]
-fn a_table_is_proved_cell_by_cell_and_padded_square() {
+fn a_table_is_proved_cell_by_cell() {
     let rows = vec![
         vec![vec![plain_run("a")], vec![plain_run("b | pipe")]],
         vec![
@@ -409,6 +420,12 @@ fn a_table_is_proved_cell_by_cell_and_padded_square() {
     ];
     let proven = prove(&[Source::Table { rows: &rows }], Frame::Blocks).expect("prove");
     assert!(proven.members[0].exact);
+    assert_eq!(
+        written_row_lengths(&proven.djot),
+        vec![2, 3],
+        "{:?}",
+        proven.djot
+    );
     let segments = &proven.members[0].segments;
     assert_eq!(segments.len(), 5, "one per real cell, none for the padding");
     // "a\nb | pipe\nc\nd\ne" is the table's own plain text.
@@ -426,11 +443,13 @@ fn a_table_is_proved_cell_by_cell_and_padded_square() {
     }
 }
 
-/// A table whose squaring would more than double it keeps its short rows as they came, with
-/// only the first row widened: every real cell is proved and survives the editor's first
-/// save, and nothing is written that the file did not hold beyond the first row's padding.
+/// A table of short rows with one wide row is written as the file holds it, no row widened.
+/// `text-document` sizes a table from its widest row since 1.12.3, so every real cell is
+/// proved, the short rows completed by the parser, and every cell survives the editor's
+/// first save. With 1.12.2, which sized a table from its first row, this emitter widened
+/// that row to the widest, or the first save dropped every cell past it.
 #[test]
-fn a_table_mostly_of_short_rows_is_widened_in_its_first_row_only() {
+fn a_ragged_table_is_written_as_the_file_holds_it() {
     let rows = vec![
         vec![vec![plain_run("a")]],
         vec![vec![plain_run("b")]],
@@ -443,9 +462,14 @@ fn a_table_mostly_of_short_rows_is_widened_in_its_first_row_only() {
             vec![plain_run("h")],
         ],
     ];
-    assert_eq!(padded_widths(&rows), vec![5, 1, 1, 5]);
     let proven = prove(&[Source::Table { rows: &rows }], Frame::Blocks).expect("prove");
     assert!(proven.members[0].exact, "{:?}", proven.djot);
+    assert_eq!(
+        written_row_lengths(&proven.djot),
+        vec![1, 1, 1, 5],
+        "{:?}",
+        proven.djot
+    );
     let cells: Vec<String> = proven.members[0]
         .segments
         .iter()
@@ -458,20 +482,19 @@ fn a_table_mostly_of_short_rows_is_widened_in_its_first_row_only() {
     let resaved = open(&proven.djot).to_djot().expect("export");
     for cell in ["a", "b", "c", "d", "*e*", "f", "g", "h"] {
         assert!(
-            resaved.contains(&format!("| {cell} |")) || resaved.contains(&format!("| {cell}")),
+            resaved.contains(&format!("| {cell} |")),
             "{cell:?} lost on save: {resaved:?}"
         );
     }
 }
 
-/// The widths the emitter squares a table to never add more cells than the table holds,
-/// and never leave the first row narrower than another, which is what the editor's first
-/// save needs to keep every cell.
+/// Every shape of table is written with exactly the cells the file holds, row by row, and
+/// its separator line sets off the first row as the file holds it: the emitter adds no cell
+/// the file does not contain, whatever count the file asks for.
 #[test]
-fn squaring_never_more_than_doubles_a_table() {
+fn a_table_is_written_with_the_cells_the_file_holds_and_no_more() {
     let cell = || vec![plain_run("x")];
     let shapes: Vec<Vec<usize>> = vec![
-        vec![],
         vec![1],
         vec![3, 3, 3],
         vec![1, 5, 5, 5],
@@ -481,18 +504,108 @@ fn squaring_never_more_than_doubles_a_table() {
     ];
     for lengths in shapes {
         let rows: Vec<Vec<Vec<Run>>> = lengths.iter().map(|&n| vec![cell(); n]).collect();
-        let widths = padded_widths(&rows);
-        let held: usize = lengths.iter().sum();
-        let written: usize = widths.iter().sum();
-        assert!(
-            written <= 2 * held,
-            "{lengths:?}: {written} written for {held}"
-        );
-        for (w, n) in widths.iter().zip(&lengths) {
-            assert!(w >= n, "{lengths:?}: a row lost a cell");
+        let written = render_table(&rows, Fidelity::Formatted).djot;
+        assert_eq!(written_row_lengths(&written), lengths);
+        let separator = written.lines().nth(1).unwrap_or_default();
+        assert_eq!(separator, format!("|{}", "---|".repeat(lengths[0])));
+    }
+}
+
+/// One wide row over `narrow` rows of one cell, `doubled` of which hold a second cell, the
+/// last narrow row left empty.
+fn wide_over_narrow(wide: usize, narrow: usize, doubled: usize) -> Vec<Vec<Vec<Run>>> {
+    let mut rows = vec![
+        (0..wide)
+            .map(|i| vec![plain_run(&format!("w{i}"))])
+            .collect(),
+    ];
+    for i in 0..narrow {
+        let mut row = vec![if i + 1 == narrow {
+            Vec::new()
+        } else {
+            vec![plain_run(&format!("r{i}"))]
+        }];
+        if i < doubled {
+            row.push(vec![plain_run(&format!("s{i}"))]);
         }
-        let widest = lengths.iter().copied().max().unwrap_or(0);
-        assert!(widths.first().is_none_or(|w| *w == widest), "{lengths:?}");
+        rows.push(row);
+    }
+    rows
+}
+
+/// The parser completes a table's short rows only while that keeps the table within
+/// 4,096 cells or sixteen times the cells it holds; past both it reads the cells that hold
+/// anything as paragraphs. The proof expects each shape on its own side of each limit, so
+/// the limits mirrored in `emit` cannot drift from the parser's without this failing: a
+/// table expected in the wrong shape does not read back. Either way every real cell is
+/// proved exactly, where its segment says, and kept by the editor's first save.
+#[test]
+fn a_table_is_read_as_a_grid_up_to_the_parsers_limit_and_as_paragraphs_past_it() {
+    // (wide, narrow, doubled, read as a grid): 64 by 64 is 4,096 cells, and one row more
+    // is past it with 128 cells of the table's own. 20 by 250 is 5,000 cells, which 313
+    // cells of its own allow and 312 do not.
+    for (wide, narrow, doubled, grid) in [
+        (64, 63, 0, true),
+        (64, 64, 0, false),
+        (20, 249, 44, true),
+        (20, 249, 43, false),
+    ] {
+        let rows = wide_over_narrow(wide, narrow, doubled);
+        let expected = if grid {
+            TableReading::Grid { width: wide }
+        } else {
+            TableReading::Paragraphs
+        };
+        assert_eq!(
+            table_reading(rows.iter().map(Vec::len)),
+            expected,
+            "{wide}, {narrow}, {doubled}"
+        );
+        let proven = prove(&[Source::Table { rows: &rows }], Frame::Blocks).expect("prove");
+        let member = &proven.members[0];
+        assert!(
+            member.exact && !member.reported,
+            "{wide}, {narrow}, {doubled}: {:.200?}",
+            proven.djot
+        );
+        assert_eq!(
+            proven.text.contains(text_document::TABLE_ANCHOR),
+            grid,
+            "{wide}, {narrow}, {doubled}: read as a table"
+        );
+        let cells: Vec<String> = rows
+            .iter()
+            .flatten()
+            .map(|runs| runs.iter().map(|r| r.text.as_str()).collect())
+            .collect();
+        let with_text: Vec<&str> = cells
+            .iter()
+            .map(String::as_str)
+            .filter(|t| !t.is_empty())
+            .collect();
+        let stored: Vec<String> = member
+            .segments
+            .iter()
+            .map(|s| slice(&proven.text, s.stored()))
+            .collect();
+        if grid {
+            assert_eq!(stored, cells, "{wide}, {narrow}, {doubled}");
+        } else {
+            assert_eq!(stored, with_text, "{wide}, {narrow}, {doubled}");
+        }
+
+        let resaved = open(&proven.djot).to_djot().expect("export");
+        let reread = read_djot(&resaved).expect("parse the save");
+        let kept: Vec<&str> = reread
+            .blocks
+            .iter()
+            .map(|b| b.text.as_str())
+            .filter(|t| !t.is_empty())
+            .collect();
+        assert_eq!(
+            kept, with_text,
+            "{wide}, {narrow}, {doubled}: the first save"
+        );
     }
 }
 
@@ -949,10 +1062,11 @@ proptest! {
         prop_assert_eq!(stored, cells);
     }
 
-    /// A table of short rows with one wide row anywhere in it, the shape whose squaring
-    /// would more than double it, proves cell by cell with only its first row widened,
-    /// every real cell's text where its segment says, and every cell kept by the editor's
-    /// first save.
+    /// A table of short rows with one wide row anywhere in it proves cell by cell, written
+    /// with the cells the file holds and no more, every real cell's text where its segment
+    /// says, and every cell kept by the editor's first save. Under 1.12.2, which sized a
+    /// table from its first row, the shape lost every cell past that row's width at the
+    /// first save unless the first row was widened, which this emitter no longer does.
     #[test]
     fn a_table_of_short_rows_and_one_wide_row_reads_back_cell_by_cell(
         short in prop::collection::vec(prop::collection::vec(cell(), 1..3), 3..9),
@@ -968,8 +1082,8 @@ proptest! {
         prop_assert!(proven.members[0].exact && !proven.members[0].reported, "{:?}", proven.djot);
         let reading = read_djot(&proven.djot).expect("parse");
         prop_assert_eq!(&reading.text, &proven.text);
-        let held: usize = rows.iter().map(Vec::len).sum();
-        prop_assert!(reading.blocks.len() <= 2 * held, "{:?}", proven.djot);
+        let lengths: Vec<usize> = rows.iter().map(Vec::len).collect();
+        prop_assert_eq!(written_row_lengths(&proven.djot), lengths, "{:?}", proven.djot);
         let cells: Vec<String> = rows
             .iter()
             .flatten()

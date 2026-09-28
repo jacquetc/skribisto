@@ -1048,8 +1048,9 @@ fn a_code_blocks_lines_nest_nothing() {
 }
 
 /// A paragraph goes on through every line that is not blank, and its later lines are
-/// its words whatever they open with. The editor writes a preformatted paste as one
-/// paragraph with its line breaks kept, so a pasted line of markers is one of these.
+/// its words whatever they open with. Skribisto 3.0.4 saved a preformatted paste as one
+/// paragraph with its line breaks kept (its `text-document`, 1.12.2, wrote it so), so a
+/// pasted line of markers in a project it saved is one of these.
 #[test]
 fn a_paragraphs_later_lines_nest_nothing() {
     for line in marker_lines() {
@@ -1219,7 +1220,8 @@ fn verses(lines: usize) -> String {
 
 /// Every way the editor formats a pasted preformatted passage from end to end: a
 /// format applied after the paste, one the paste carried in, and a passage pasted into
-/// a quotation or a list.
+/// a quotation or a list. What the editor writes for each, one paragraph per line since
+/// `text-document` 1.12.3.
 pub(crate) fn formatted_passages(lines: usize) -> Vec<(&'static str, String)> {
     use text_document::{CharVerticalAlignment, TextFormat};
     let pre = format!("<pre>{}</pre>", verses(lines));
@@ -1292,18 +1294,37 @@ pub(crate) fn formatted_passages(lines: usize) -> Vec<(&'static str, String)> {
     ]
 }
 
-/// A preformatted passage the writer pasted and formatted from end to end is written as
-/// one paragraph over all its lines, every one of them held open. Two hundred lines of
-/// it load as they are; six hundred pass the ceiling, and the load joins them into one
-/// line instead of refusing the project, the editor reading the joined paragraph exactly
-/// as the one it wrote. Before, 129 lines of it were refused, and the project with them.
+/// What Skribisto 3.0.4 saved for a preformatted passage of `lines` lines pasted and
+/// formatted from end to end: one paragraph over all of them, the format opened on the
+/// first line and closed after the last, so every line is held open. Its `text-document`,
+/// 1.12.2, wrote every way [`formatted_passages`] formats a passage in exactly this shape,
+/// and one pasted into a quotation or a list the same as one pasted in italics. Built here
+/// rather than through the editor, which writes the passage one paragraph per line from
+/// 1.12.3 on; projects saved before hold this shape, and the load still meets it.
+pub(crate) fn formatted_passages_saved_by_3_0_4(lines: usize) -> Vec<(&'static str, String)> {
+    let held = |open: &str, close: &str| format!("Epigraph:\n\n{open}{}{close}", verses(lines));
+    vec![
+        ("italic", held("_", "_")),
+        ("bold", held("*", "*")),
+        ("underlined", held("{+", "+}")),
+        ("struck out", held("{-", "-}")),
+        ("a link", held("[", "](https://example.com)")),
+        ("superscript", held("^", "^")),
+    ]
+}
+
+/// A preformatted passage Skribisto 3.0.4 saved, pasted and formatted from end to end, is
+/// one paragraph over all its lines, every one of them held open. Two hundred lines of it
+/// load as they are; six hundred pass the ceiling, and the load joins them into one line
+/// instead of refusing the project, the editor reading the joined paragraph exactly as the
+/// one saved. Before, 129 lines of it were refused, and the project with them.
 #[test]
-fn a_pasted_passage_formatted_across_its_lines_opens_as_the_editor_wrote_it() {
-    for (name, djot) in formatted_passages(200) {
+fn a_pasted_passage_saved_formatted_across_its_lines_opens_as_it_was_written() {
+    for (name, djot) in formatted_passages_saved_by_3_0_4(200) {
         assert_eq!(check(&djot), Ok(()), "{name}, 200 lines");
         assert_eq!(admit(djot.clone()).as_ref(), Ok(&djot), "{name}, 200 lines");
     }
-    for (name, djot) in formatted_passages(600) {
+    for (name, djot) in formatted_passages_saved_by_3_0_4(600) {
         assert!(
             matches!(check(&djot), Err(DjotRefusal::HeldOpenTooLong { .. })),
             "{name}: {:?}",
@@ -1311,7 +1332,7 @@ fn a_pasted_passage_formatted_across_its_lines_opens_as_the_editor_wrote_it() {
         );
         let joined = match admit(djot.clone()) {
             Ok(joined) => joined,
-            Err(refused) => panic!("{name}: the load refused what the editor wrote: {refused}"),
+            Err(refused) => panic!("{name}: the load refused what 3.0.4 saved: {refused}"),
         };
         assert_ne!(joined, djot, "{name}");
         assert_eq!(check(&joined), Ok(()), "{name}");
@@ -1327,15 +1348,39 @@ fn a_pasted_passage_formatted_across_its_lines_opens_as_the_editor_wrote_it() {
     }
 }
 
-/// A passage pasted as code, or in a monospaced font, is written as one code span over
-/// all its lines, and the parser keeps its line breaks. Up to the ceiling it loads as it
-/// is. Past it, those line breaks are the only ones there are to join: the load writes
-/// them as spaces, keeping every word and the code formatting, rather than refusing the
-/// project.
+/// From `text-document` 1.12.3 the editor writes a pasted preformatted passage one
+/// paragraph per line, in every way it is formatted from end to end, each line's format
+/// closed on its own line. Nothing is held open past a line, so six hundred lines load as
+/// the editor wrote them, and read back line for line.
+#[test]
+fn a_pasted_passage_is_written_as_its_lines_and_opens_as_they_are() {
+    let lines: Vec<String> = std::iter::once("Epigraph:".to_string())
+        .chain(verses(600).lines().map(str::to_string))
+        .collect();
+    let code = pasted_passage(&format!("<pre><code>{}</code></pre>", verses(600)), None);
+    let passages = formatted_passages(600)
+        .into_iter()
+        .chain(std::iter::once(("pasted as code", code)));
+    for (name, djot) in passages {
+        assert_eq!(check(&djot), Ok(()), "{name}");
+        assert_eq!(admit(djot.clone()).as_ref(), Ok(&djot), "{name}");
+        let Some((_, shown)) = reading(djot) else {
+            panic!("{name}: the editor reads what it wrote");
+        };
+        assert_eq!(shown.lines().collect::<Vec<_>>(), lines, "{name}");
+    }
+}
+
+/// A passage Skribisto 3.0.4 saved after it was pasted as code, or in a monospaced font,
+/// is one code span over all its lines, and the parser keeps its line breaks. Up to the
+/// ceiling it loads as it is. Past it, those line breaks are the only ones there are to
+/// join: the load writes them as spaces, keeping every word and the code formatting,
+/// rather than refusing the project. Built directly, as its `text-document` wrote it: the
+/// editor now writes such a passage one code span per line
+/// ([`a_pasted_passage_is_written_as_its_lines_and_opens_as_they_are`]).
 #[test]
 fn a_code_span_over_a_pasted_passage_runs_on_rather_than_being_refused() {
-    let code =
-        |lines: usize| pasted_passage(&format!("<pre><code>{}</code></pre>", verses(lines)), None);
+    let code = |lines: usize| format!("Epigraph:\n\n`{}`", verses(lines));
     let within = code(400);
     assert_eq!(admit(within.clone()).as_ref(), Ok(&within));
 
@@ -1346,11 +1391,11 @@ fn a_code_span_over_a_pasted_passage_runs_on_rather_than_being_refused() {
     ));
     let joined = match admit(past.clone()) {
         Ok(joined) => joined,
-        Err(refused) => panic!("the load refused what the editor wrote: {refused}"),
+        Err(refused) => panic!("the load refused what 3.0.4 saved: {refused}"),
     };
     assert_eq!(check(&joined), Ok(()));
     let Some((_, before)) = reading(past) else {
-        panic!("the editor reads what it wrote");
+        panic!("the editor reads what 3.0.4 saved");
     };
     let Some((_, after)) = reading(joined.clone()) else {
         panic!("the editor reads the joined passage");
@@ -1358,8 +1403,15 @@ fn a_code_span_over_a_pasted_passage_runs_on_rather_than_being_refused() {
     let Some((first, passage)) = before.split_once('\n') else {
         panic!("two paragraphs: {before:.200}");
     };
-    assert!(passage.matches('\n').count() >= 600, "{passage:.200}");
-    assert_eq!(after, format!("{first}\n{}", passage.replace('\n', " ")));
+    // As saved, the passage reads as its six hundred lines; joined, as one line holding
+    // every one of them, run on. The line break closing the last line becomes a space at
+    // the end of the code, where it changes nothing a reader sees, and `text-document`
+    // 1.12.3 reads no line after it in the saved form, so the ends are left out of it.
+    assert_eq!(passage.lines().count(), 600, "{passage:.200}");
+    assert_eq!(
+        after.trim_end(),
+        format!("{first}\n{}", passage.replace('\n', " ").trim_end())
+    );
     assert!(parse_on_a_long_operation_stack(joined).is_ok());
 }
 

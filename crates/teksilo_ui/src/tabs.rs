@@ -1575,11 +1575,14 @@ impl ProseField {
             return Ok(());
         }
         let djot = self.doc.to_djot()?;
-        // A paragraph holding more lines than a load accepts (a pasted preformatted
-        // passage, formatted from end to end) is stored with its lines joined, as the
-        // next load would join them (`skrib_format::djot_depth::admit`), so nothing in
-        // this session parses the held form either: an export, a search, the row opened
-        // again. Anything else a load would refuse is stored as the editor wrote it.
+        // A paragraph holding more lines than a load accepts is stored with its lines
+        // joined, as the next load would join them (`skrib_format::djot_depth::admit`),
+        // so nothing in this session parses the held form either: an export, a search,
+        // the row opened again. `text-document` 1.12.2 wrote one for a preformatted
+        // passage pasted and formatted from end to end; from 1.12.3 a paste goes in one
+        // paragraph per line, and the join stays for any other way a paragraph comes to
+        // hold its lines. Anything else a load would refuse is stored as the editor
+        // wrote it.
         let djot = skrib_format::djot_depth::admit(djot.clone()).unwrap_or(djot);
         self.content.set_data(djot.clone());
         self.content.save_untracked()?;

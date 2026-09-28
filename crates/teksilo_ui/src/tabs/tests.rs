@@ -4193,30 +4193,20 @@ fn flushing_prose_records_nothing_on_the_project_history() {
     assert!(stored.contains("Sentence 9."), "the text was persisted");
 }
 
-/// A preformatted passage pasted into a scene and formatted from end to end is held by
-/// the Djot parser over all its lines, and past `skrib_format::djot_depth::MAX_HELD_LINES`
-/// of them a parse on a small stack can run out of it. The flush stores it with its
-/// lines joined, as the next load would join them, so an export or a second opening in
-/// this same session never parses the held form; the editor reads the stored row as the
-/// passage it shows. Before, the row held every line until the project was reopened.
+/// A preformatted passage pasted into a scene and formatted from end to end is stored as
+/// its lines, one paragraph each, as `text-document` writes it since 1.12.3: nothing in it
+/// is held open past a line, so the flush stores exactly what the editor wrote and the row
+/// reads back as the passage the editor shows.
+///
+/// Up to 1.12.2 the editor wrote such a passage as one paragraph over all its lines, every
+/// one held open by the format, and past `skrib_format::djot_depth::MAX_HELD_LINES` of them
+/// a parse on a small stack could run out of it. The flush still stores a paragraph like
+/// that with its lines joined (`skrib_format::djot_depth::admit`); a paste no longer makes
+/// one, and `skrib_format`'s `djot_depth` tests hold the shapes a project saved before does.
 #[cfg(not(feature = "mocks"))]
 #[test]
-fn a_formatted_pasted_passage_is_stored_with_its_lines_joined() {
+fn a_formatted_pasted_passage_is_stored_as_its_lines() {
     use teksilo::text_document::{MoveMode, MoveOperation, TextDocument, TextFormat};
-
-    /// How the editor reads `djot` back, on a stack deep enough for the held form.
-    fn reading(djot: String) -> (String, String) {
-        std::thread::Builder::new()
-            .stack_size(64 << 20)
-            .spawn(move || {
-                let doc = TextDocument::new();
-                doc.set_djot_sync(&djot).expect("the row reads back");
-                (doc.to_djot().unwrap(), doc.to_plain_text().unwrap())
-            })
-            .expect("spawn the reading thread")
-            .join()
-            .expect("the reading must not unwind")
-    }
 
     let (ctx, field) = scene_prose_field();
     let verses: String = (0..600)
@@ -4236,9 +4226,10 @@ fn a_formatted_pasted_passage_is_stored_with_its_lines_joined() {
         })
         .expect("the editor formats the passage");
     let written = field.doc.to_djot().expect("the editor writes Djot");
-    assert!(
-        skrib_format::djot_depth::check(&written).is_err(),
-        "the editor holds every line of the passage"
+    assert_eq!(
+        skrib_format::djot_depth::check(&written),
+        Ok(()),
+        "no line of the passage is held open past its own"
     );
 
     field.flush().expect("flush");
@@ -4248,16 +4239,18 @@ fn a_formatted_pasted_passage_is_stored_with_its_lines_joined() {
         .unwrap()
         .unwrap()
         .data;
-    assert_eq!(skrib_format::djot_depth::check(&stored), Ok(()));
+    assert_eq!(stored, written, "stored as the editor wrote it");
+    let reread = TextDocument::new();
+    reread.set_djot_sync(&stored).expect("the row reads back");
+    let shown = reread.to_plain_text().expect("plain text");
+    let lines: Vec<&str> = verses
+        .lines()
+        .chain(std::iter::once("the last verse"))
+        .collect();
     assert_eq!(
-        Ok(stored.clone()),
-        skrib_format::djot_depth::admit(written.clone()),
-        "stored as the load would join it"
-    );
-    assert_eq!(
-        reading(stored),
-        reading(written),
-        "read back as the passage the editor wrote"
+        shown.lines().collect::<Vec<_>>(),
+        lines,
+        "read back line for line"
     );
     assert!(
         !field.is_stale(),
@@ -5030,13 +5023,16 @@ fn a_table_put_in_mid_scene_keeps_the_text_after_it_in_place_through_the_save() 
 /// A paragraph typed after 194 spaces, which the editor saves as typed, and a list
 /// Tabbed 48 levels deep, which it saves two spaces a level. Both reach the file,
 /// the reader every open goes through accepts both, and a tab opened on each shows
-/// the paragraph as a paragraph and every item of the list at its own level.
+/// the paragraph as a paragraph, its spaces in front of it, and every item of the list
+/// at its own level.
 ///
 /// `text-document` shows prose past its nesting ceiling as one paragraph of its own
 /// Djot source, and an edit there saves the source back as prose. It counted one
 /// level per two spaces in front of a line that opens nothing, so the paragraph
 /// counted 97, past its ceiling of 96, and the tab showed the writer the scene's
-/// raw source, spaces and all.
+/// raw source, spaces and all. From 1.12.3 it writes a paragraph's leading spaces after
+/// an empty attribute, `{}`, and counts nesting exactly; 1.12.2 wrote them bare, and
+/// its reader dropped them.
 #[cfg(not(feature = "mocks"))]
 #[test]
 fn deep_prose_the_editor_writes_reopens_in_a_tab_as_its_structure() {
@@ -5130,13 +5126,15 @@ fn deep_prose_the_editor_writes_reopens_in_a_tab_as_its_structure() {
         docs.open(row_of(spaced_uid))
             .expect("the first scene opens"),
     );
-    // Djot drops a paragraph's leading whitespace when it reads one, which no
-    // escaping can change; the words and the two paragraphs stay.
+    // The two paragraphs, the second with the 194 spaces it was typed after: the editor
+    // writes them after an empty attribute, `{}`, which keeps them through the save and
+    // the reopening (up to `text-document` 1.12.2 it wrote them bare, and the reader
+    // dropped them, as Djot does at a paragraph's start).
     assert_eq!(
         blocks_shown(&tab),
         [
             ("First.".to_string(), None),
-            ("Indented paragraph.".to_string(), None)
+            (format!("{}Indented paragraph.", " ".repeat(194)), None)
         ],
         "the tab shows the scene's text, not its Djot source"
     );

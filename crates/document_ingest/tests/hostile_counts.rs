@@ -237,8 +237,9 @@ fn odt_wide_then_narrow(wide: usize, narrow: usize) -> Vec<u8> {
 
 /// Ten thousand one-cell rows under a first row of ten thousand cells: squared, a hundred
 /// million cells, nearly all of them made up, and an allocation the process dies of. The
-/// table arrives with every cell the file holds, its first row as wide as the widest, and
-/// no more than twice the cells of the file.
+/// table is stored with every cell the file holds and not one more, each row as the file
+/// has it, and the parser reads a table that lopsided as the paragraphs of its cells rather
+/// than complete it, so no step of the import holds the squared table.
 #[test]
 fn an_odt_table_squared_past_twice_its_cells_arrives_with_its_own_cells() {
     let (wide, narrow) = (10_000, 10_000);
@@ -250,13 +251,15 @@ fn an_odt_table_squared_past_twice_its_cells_arrives_with_its_own_cells() {
     }
     let shape = table_shape(&djot(&doc));
     assert_eq!(shape.len(), 1 + narrow, "every row arrives");
-    assert_eq!(shape[0], wide, "the first row is the widest");
+    assert_eq!(shape[0], wide, "the first row keeps its cells");
     assert!(
         shape[1..].iter().all(|&cells| cells == 1),
         "the other rows keep their one cell"
     );
-    let held = wide + narrow;
-    assert!(shape.iter().sum::<usize>() <= 2 * held);
+    assert!(
+        !text.contains(text_document::TABLE_ANCHOR),
+        "read as the paragraphs of its cells"
+    );
 }
 
 /// The counts the ODT scanner reads and does not honour: a row repeated a million times,
@@ -326,7 +329,7 @@ fn docx_cell(text: &str, properties: &str) -> String {
 
 /// The same table in Word's markup: a first row of ten thousand cells over ten thousand
 /// rows of one. `w:gridSpan` says nothing here, as Word itself writes such a table only
-/// from merged cells; the file's cells are what the scanner reads.
+/// from merged cells; the file's cells are what the scanner reads, and all it writes.
 #[test]
 fn a_docx_table_squared_past_twice_its_cells_arrives_with_its_own_cells() {
     let (wide, narrow) = (10_000, 10_000);
@@ -346,12 +349,15 @@ fn a_docx_table_squared_past_twice_its_cells_arrives_with_its_own_cells() {
     }
     let shape = table_shape(&djot(&doc));
     assert_eq!(shape.len(), 1 + narrow, "every row arrives");
-    assert_eq!(shape[0], wide, "the first row is the widest");
+    assert_eq!(shape[0], wide, "the first row keeps its cells");
     assert!(
         shape[1..].iter().all(|&cells| cells == 1),
         "the other rows keep their one cell"
     );
-    assert!(shape.iter().sum::<usize>() <= 2 * (wide + narrow));
+    assert!(
+        !text.contains(text_document::TABLE_ANCHOR),
+        "read as the paragraphs of its cells"
+    );
 }
 
 /// Word's counts that could multiply a table, a span of a million columns, a vertical

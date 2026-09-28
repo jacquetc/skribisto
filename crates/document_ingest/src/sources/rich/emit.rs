@@ -85,7 +85,8 @@ pub(super) struct Segment {
     pub source_start: usize,
     /// Its length there, edge whitespace included.
     pub source_len: usize,
-    /// How many of its leading characters are whitespace the parser does not keep.
+    /// How many of its leading characters are whitespace left out of the Djot: the emitter
+    /// writes no blank space at the edges of a paragraph or a cell.
     pub lead: usize,
     /// Where its text starts in the run's addressable text.
     pub stored_start: usize,
@@ -422,10 +423,11 @@ fn without_line_breaks(text: &str) -> String {
 /// reads a style on spaces alone, but the editor drops it the first time it writes the
 /// paragraph back, so storing it would only postpone the loss to an edit that nobody would
 /// connect with the import. At a paragraph's start or end it is not written at all, since
-/// the parser keeps no blank space there, styled or not, and neither is a paragraph that
-/// holds nothing else ([`styled_blanks_in`]). Every one of them is counted, whichever way
-/// it went. Bold, italic or a raised position on spaces alone shows nothing, and is not
-/// counted.
+/// the emitter writes no blank space there, styled or not (a paragraph's indent is layout,
+/// left to the export style, and the parser would drop blanks written bare there anyway),
+/// and neither is a paragraph that holds nothing else ([`styled_blanks_in`]). Every one of
+/// them is counted, whichever way it went. Bold, italic or a raised position on spaces
+/// alone shows nothing, and is not counted.
 fn styled_blanks(items: &[Item]) -> usize {
     items
         .iter()
@@ -705,19 +707,64 @@ fn inline_style(style: RunStyle) -> DjotInlineStyle {
 
 // ── one table ───────────────────────────────────────────────────────────────────
 
-/// A pipe table, its first row set off by a separator line.
+/// How many cells a table may reach once the parser completes its short rows, however few
+/// it holds of its own: `text-document`'s `SQUARED_CELLS_ALWAYS` (`content_parser.rs`).
 ///
-/// The shape `text-document` writes a table back in, so the editor's first save changes
-/// nothing. Every row is padded to the widest one: the editor keeps a short row as it is,
-/// but writes back only as many cells of a long row as its first row has, so a ragged
-/// table left as it came would lose cells on the first save.
+/// Mirrored rather than imported, since `text-document` does not export it. A drift is not
+/// silent: a table the proof expects in the wrong shape does not read back as expected, and
+/// `a_table_is_read_as_a_grid_up_to_the_parsers_limit_and_as_paragraphs_past_it` fails on
+/// either side of the limit.
+const COMPLETED_CELLS_ALWAYS: usize = 4096;
+
+/// How many times the cells it holds a larger table may reach once its short rows are
+/// completed: `text-document`'s `SQUARED_CELLS_PER_OWN_CELL`, mirrored for the same reason.
+const COMPLETED_CELLS_PER_OWN_CELL: usize = 16;
+
+/// How the parser reads a pipe table, from the cells each of its rows holds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TableReading {
+    /// A table `width` cells wide: every row as long as its widest, a short row completed
+    /// with empty cells after its own.
+    Grid { width: usize },
+    /// The cells that hold anything, one paragraph each, in reading order, and no table.
+    Paragraphs,
+}
+
+/// How the parser reads a table whose rows hold `lengths` cells.
 ///
-/// Every row, that is, while squaring the table at most doubles the cells it holds (see
-/// [`padded_widths`]); past that, only the first row is widened, which is all the first
-/// save needs to keep every cell.
+/// From 1.12.3, `text-document` sizes a table from its widest row (1.12.2 sized it from its
+/// first, and every save dropped the cells a longer row held past it). A table that
+/// completing its short rows would make many times larger than the cells it holds, a few
+/// kilobytes of one wide row over thousands of one-cell rows, is read as the paragraphs of
+/// its cells instead: every word stays, the grid goes.
+fn table_reading(lengths: impl Iterator<Item = usize> + Clone) -> TableReading {
+    let width = lengths.clone().max().unwrap_or(0);
+    let rows = lengths.clone().count();
+    let own: usize = lengths.sum();
+    let completed = rows.saturating_mul(width);
+    let allowed = COMPLETED_CELLS_ALWAYS.max(own.saturating_mul(COMPLETED_CELLS_PER_OWN_CELL));
+    if completed <= allowed {
+        TableReading::Grid { width }
+    } else {
+        TableReading::Paragraphs
+    }
+}
+
+/// A pipe table, its first row set off by a separator line, every row written with the
+/// cells the file gives it and no more.
+///
+/// The parser completes a short row with empty cells ([`table_reading`]), which the proof
+/// expects, with no source, after the row's own; the editor's first save then writes every
+/// row as long as the widest, and keeps every cell. Padding a row here would add nothing the
+/// parser does not add itself, and padded cells count as the table's own when the parser
+/// weighs the completed grid against them: squared here, a few kilobytes of one wide row
+/// over thousands of one-cell rows would be stored, and read, as hundreds of millions of
+/// cells, where the parser reads the file's own cells as paragraphs. A table the parser
+/// reads as paragraphs is proved as those paragraphs: the cells that hold anything, each
+/// where its segment says.
 fn render_table(rows: &[Vec<Vec<Run>>], fidelity: Fidelity) -> Rendered {
-    let width = rows.iter().map(Vec::len).max().unwrap_or(0);
-    let widths = padded_widths(rows);
+    // A row the file gives no cell is still written as one empty cell, and read as one.
+    let reading = table_reading(rows.iter().map(|row| row.len().max(1)));
     let mut lines: Vec<String> = Vec::with_capacity(rows.len() + 1);
     let mut expected: Vec<Expected> = Vec::new();
     // Offset of the next cell in the table's own plain text, where cells are joined by
@@ -725,18 +772,9 @@ fn render_table(rows: &[Vec<Vec<Run>>], fidelity: Fidelity) -> Rendered {
     let mut source = 0usize;
     let mut first_cell = true;
     let mut blanks = 0usize;
-    for ((row_index, row), row_width) in rows.iter().enumerate().zip(widths) {
-        let mut cells: Vec<String> = Vec::with_capacity(row_width);
-        for column in 0..row_width {
-            let Some(runs) = row.get(column) else {
-                cells.push(String::new());
-                expected.push(Expected {
-                    text: String::new(),
-                    links: Vec::new(),
-                    source: None,
-                });
-                continue;
-            };
+    for (row_index, row) in rows.iter().enumerate() {
+        let mut cells: Vec<String> = Vec::with_capacity(row.len());
+        for runs in row {
             if !first_cell {
                 source += 1;
             }
@@ -757,16 +795,28 @@ fn render_table(rows: &[Vec<Vec<Run>>], fidelity: Fidelity) -> Rendered {
                 .map_or(start, |i| i + 1);
             let (inline, links) = render_inline(&items, &plain, start..end, fidelity);
             cells.push(inline);
-            expected.push(Expected {
-                text: chars[start..end].iter().collect(),
-                links,
-                source: Some((source, chars.len(), start)),
-            });
+            // Read as paragraphs, a cell holding nothing is no block at all. Its text is
+            // empty exactly when nothing was written for it: a picture or a note reference
+            // stands in the text as one character.
+            if start < end || matches!(reading, TableReading::Grid { .. }) {
+                expected.push(Expected {
+                    text: chars[start..end].iter().collect(),
+                    links,
+                    source: Some((source, chars.len(), start)),
+                });
+            }
             source += chars.len();
+        }
+        if let TableReading::Grid { width } = reading {
+            expected.extend((row.len()..width).map(|_| Expected {
+                text: String::new(),
+                links: Vec::new(),
+                source: None,
+            }));
         }
         lines.push(format!("| {} |", cells.join(" | ")));
         if row_index == 0 {
-            lines.push(format!("|{}", "---|".repeat(width)));
+            lines.push(format!("|{}", "---|".repeat(row.len().max(1))));
         }
     }
     Rendered {
@@ -775,33 +825,6 @@ fn render_table(rows: &[Vec<Vec<Run>>], fidelity: Fidelity) -> Rendered {
         styled_blanks: blanks,
         list_flattened: false,
     }
-}
-
-/// How many cells each row of a table is written with.
-///
-/// Squaring the table is what every table a word processor writes needs: its rows are
-/// short only where cells were merged, and the padding that makes up for them is a
-/// fraction of the cells the file holds. Squaring is also the one place the importer
-/// turns a count into cells the file does not contain, and the count is the file's to
-/// choose: a first row of twenty thousand cells over twenty thousand rows of one cell
-/// each, a few hundred kilobytes of markup, asked for four hundred million empty cells,
-/// which is an allocation the process dies of rather than an import that fails. So a
-/// table is squared only while that adds no more cells than it holds; past that its first
-/// row alone is widened to the widest, and the other rows keep the cells the file gave
-/// them, which the editor keeps as they are. Either way no cell is lost, and a table is
-/// written with at most twice the cells of the one in the file.
-fn padded_widths(rows: &[Vec<Vec<Run>>]) -> Vec<usize> {
-    let width = rows.iter().map(Vec::len).max().unwrap_or(0);
-    let held: usize = rows.iter().map(Vec::len).sum();
-    // Every row is at most `width` long, so this is the padding squaring would add.
-    let padding = rows.len().saturating_mul(width).saturating_sub(held);
-    if padding <= held {
-        return vec![width; rows.len()];
-    }
-    rows.iter()
-        .enumerate()
-        .map(|(index, row)| if index == 0 { width } else { row.len() })
-        .collect()
 }
 
 #[cfg(test)]

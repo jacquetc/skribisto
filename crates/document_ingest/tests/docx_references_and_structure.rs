@@ -1088,9 +1088,11 @@ fn text_in_nested_tables_and_content_controls_arrives() {
     ] {
         assert!(text.contains(words), "{words:?} in {text:?}");
     }
+    // Each row is written with the cells it holds; the parser completes the nested row's
+    // second cell itself.
     assert!(
         row.djot
-            .contains("| Outer A |  |\n|---|---|\n| NESTED TEXT |  |"),
+            .contains("| Outer A |  |\n|---|---|\n| NESTED TEXT |\n"),
         "the nested table's row follows the row holding it: {}",
         row.djot
     );

@@ -109,11 +109,12 @@
 //! openers nothing closes, followed by thousands of words, which only a crafted or
 //! damaged file holds.
 //!
-//! They do not always write a paragraph on one line. `text-document` keeps the line
-//! breaks of a pasted preformatted passage (a `<pre>`, for one) inside the paragraph's
-//! text, and writes each as a line break of the Djot.
-//! Formatted across those lines, or opened by a quotation mark nothing closes, such a
-//! paragraph holds every line of it, and one of a few hundred lines reaches
+//! They did not always write a paragraph on one line. Up to 1.12.2, `text-document` kept
+//! the line breaks of a pasted preformatted passage (a `<pre>`, for one) inside the
+//! paragraph's text, and wrote each as a line break of the Djot; from 1.12.3 it splits
+//! the passage into one paragraph per line. Formatted across those lines, or opened by a
+//! quotation mark nothing closes, such a paragraph in a project saved before holds every
+//! line of it, and one of a few hundred lines reaches
 //! [`MAX_HELD_LINES`](crate::djot_inline::MAX_HELD_LINES). A load joins those lines rather
 //! than refusing them (see above), so that ceiling is only ever held against Djot written
 //! some other way, by hand or in a crafted file.

@@ -55,7 +55,7 @@
 //! An annotation is captured against **one block's own plain text**, and the planner
 //! rebases it into the row that block lands in. The proof is what makes that rebasing
 //! exact: it reports where each paragraph's text starts in the stored prose and how much
-//! edge whitespace the parser dropped, and a comment is placed through that map rather
+//! edge whitespace was left out of it, and a comment is placed through that map rather
 //! than through arithmetic. A table is proved cell by cell like any paragraph, so a comment
 //! inside one keeps its words too.
 //!
