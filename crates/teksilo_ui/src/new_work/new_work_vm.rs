@@ -1572,6 +1572,47 @@ mod tests {
         assert!(works(&app_ctx).is_empty());
     }
 
+    /// The same file reached under another Unicode spelling of its name is refused as
+    /// well. On macOS a name an import takes from its source file is often
+    /// decomposed, as the disk gave it (`e` then a combining diaeresis), while the
+    /// name typed into New Work is precomposed, and APFS looks both up as one file.
+    /// In Greek, New Work lowercases a name's closing capital sigma to `ς` while the
+    /// import keeps `Σ` before `.skrib`, and NTFS and APFS fold both sigmas to one
+    /// letter. Proved in each platform's rules whatever the platform running the test.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn a_project_an_import_is_writing_under_another_unicode_spelling_is_never_the_target() {
+        use crate::shared::import_destination::build_target;
+        use crate::shell::open_registry::{self, PathStyle};
+        let greek = "\u{39f}\u{394}\u{39f}\u{3a3}";
+        for (style, source_name, typed) in [
+            (PathStyle::Mac, "Raphae\u{308}l", "Rapha\u{eb}l"),
+            (PathStyle::Windows, greek, greek),
+            (PathStyle::Mac, greek, greek),
+        ] {
+            let _registry = crate::test_support::IsolatedOpenRegistry::new();
+            let _style = crate::test_support::ForeignPathStyle::new(style);
+            let dir = tempfile::tempdir().unwrap();
+            let (vm, app_ctx, mut tree) = filled_in(typed, dir.path());
+            let _claim = open_registry::claim_import(&build_target(
+                &dir.path().to_string_lossy(),
+                source_name,
+            ));
+            let created = Rc::new(std::cell::Cell::new(true));
+            let (creating, outcome) = (vm.clone(), created.clone());
+            crate::test_support::press(&mut tree, move |c| {
+                outcome.set(creating.create(c, None));
+            });
+            assert!(!created.get(), "{style:?} {typed}: created");
+            assert_eq!(
+                crate::test_support::drain_dialog_titles(&mut tree),
+                vec![tr!(target_importing_title()).resolve_now()],
+                "{style:?} {typed}"
+            );
+            assert!(works(&app_ctx).is_empty(), "{style:?} {typed}");
+        }
+    }
+
     /// A folder that is the filesystem root keeps its root: trimming the separator
     /// off it left a bare file name, which the process resolves against whatever
     /// folder it happens to be working in.

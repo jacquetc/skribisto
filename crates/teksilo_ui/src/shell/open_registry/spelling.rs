@@ -17,9 +17,10 @@
 //! load went ahead into the file the import then replaced.
 //!
 //! [`spelling_key`] is the textual half of the answer: separators, a verbatim
-//! prefix, repeated or trailing separators, `.` components and case, each in the
-//! rules of one [`PathStyle`]. The filesystem half, which folder a symbolic link or
-//! a short name leads to, is the caller's, before it asks for a key.
+//! prefix, repeated or trailing separators, `.` components, case and, on macOS,
+//! Unicode normalisation, each in the rules of one [`PathStyle`]. The filesystem
+//! half, which folder a symbolic link or a short name leads to, is the caller's,
+//! before it asks for a key.
 //!
 //! The rules are the platform's, not the running host's, so a test on Linux can
 //! prove what a Windows machine compares.
@@ -30,7 +31,8 @@ pub(crate) enum PathStyle {
     /// Linux and the other Unixes: `/` separates, and names are compared exactly.
     Unix,
     /// macOS: `/` separates, and names are compared without regard to case, as APFS
-    /// and HFS+ do unless a volume was formatted otherwise.
+    /// and HFS+ do unless a volume was formatted otherwise, and without regard to
+    /// Unicode normalisation, as both always do.
     Mac,
     /// Windows: `\` and `/` both separate, `\\?\` is another spelling of the path it
     /// prefixes, and names are compared without regard to case, as NTFS does.
@@ -60,11 +62,29 @@ impl PathStyle {
     /// file two, and a guard would let a second writer in: the project is lost. A
     /// key that folds case on a volume that happens to be case-sensitive only
     /// refuses a target the writer can rename. So the platform's default decides,
-    /// and the error it risks is the recoverable one.
+    /// and the error it risks is the recoverable one. It stays so only because the
+    /// registry compares by this key but keeps each claim, and names each lock file,
+    /// by the spelling the claim was made in: two files sharing one of those let the
+    /// first to be let go of take the other's claim with it.
     fn folds_case(self) -> bool {
         match self {
             PathStyle::Unix => false,
             PathStyle::Mac | PathStyle::Windows => true,
+        }
+    }
+
+    /// Whether two names that are one text in two Unicode spellings (a precomposed
+    /// `ë`, or `e` then a combining diaeresis) are one file.
+    ///
+    /// APFS and HFS+ look a name up whatever its normalisation; ext4 and NTFS compare
+    /// the characters as stored. On a Mac a name read off the disk is often
+    /// decomposed while one typed into a form is precomposed, so an import named after
+    /// its source and New Work named by the writer can spell one file two ways, the
+    /// same loss as with case.
+    fn folds_normalisation(self) -> bool {
+        match self {
+            PathStyle::Mac => true,
+            PathStyle::Unix | PathStyle::Windows => false,
         }
     }
 }
@@ -86,10 +106,45 @@ pub(crate) fn spelling_key(path: &str, style: PathStyle) -> String {
         .filter(|name| !name.is_empty() && *name != ".")
         .collect();
     let key = format!("{root}{}", names.join(&separator.to_string()));
-    if style.folds_case() {
-        key.to_lowercase()
+    // Decomposed before the case is folded, as APFS does: a capital dotted I only
+    // has a lowercase counterpart letter for letter once it is `I` and a dot above.
+    let key = if style.folds_normalisation() {
+        skrib_format::nfd(&key)
     } else {
         key
+    };
+    if style.folds_case() {
+        key.chars().map(fold_case).collect()
+    } else {
+        key
+    }
+}
+
+/// `c` as a case-insensitive filesystem compares it: the lowercase of its
+/// uppercase, one character for one. NTFS's upcase table and APFS's case folding
+/// both map a name letter by letter this way.
+///
+/// Not `str::to_lowercase`, which lowercases a capital sigma to `ς` or `σ`
+/// depending on the letters after it: New Work, lowercasing a name alone, writes
+/// `οδος.skrib` for `ΟΔΟΣ`, while the key of an import's `ΟΔΟΣ.skrib` would read
+/// `σ`, since `.skrib` follows. Through the uppercase, `ς` and `σ` meet in `Σ`.
+///
+/// A letter whose other case is longer is kept as it is: neither filesystem maps
+/// one character to two, so `ß` (uppercase `SS`) is not `ss`, and on Windows `İ`
+/// (lowercase `i` and a combining dot) is not `i`. The Turkish dotless `ı` is kept
+/// too: its uppercase is `I`, but both filesystems keep it apart from `i`.
+fn fold_case(c: char) -> char {
+    if c == '\u{131}' {
+        return c;
+    }
+    let mut upper = c.to_uppercase();
+    let (Some(upper), None) = (upper.next(), upper.next()) else {
+        return c;
+    };
+    let mut lower = upper.to_lowercase();
+    match (lower.next(), lower.next()) {
+        (Some(lower), None) => lower,
+        _ => c,
     }
 }
 
@@ -224,6 +279,64 @@ mod tests {
             r"/Users/writer/Books\Novel.skrib",
             PathStyle::Mac
         ));
+    }
+
+    /// APFS and HFS+ look a name up whatever its Unicode normalisation, so on macOS
+    /// the decomposed spelling a name read off the disk often has (`e` then a
+    /// combining diaeresis) and the precomposed one a name typed into a form has are
+    /// one file. So are a capital dotted I and the `i` plus combining dot above that
+    /// New Work lowercases it to. ext4 and NTFS compare names without normalising
+    /// them, and keep the two spellings apart.
+    #[test]
+    fn a_mac_key_is_blind_to_unicode_normalisation() {
+        let composed = "/Users/writer/Books/Rapha\u{eb}l.skrib";
+        let decomposed = "/Users/writer/Books/Raphae\u{308}l.skrib";
+        assert!(same(composed, decomposed, PathStyle::Mac));
+        assert!(same(
+            "/Users/writer/\u{130}stanbul.skrib",
+            "/Users/writer/i\u{307}stanbul.skrib",
+            PathStyle::Mac
+        ));
+        for style in [PathStyle::Unix, PathStyle::Windows] {
+            assert!(!same(composed, decomposed, style), "{style:?}");
+        }
+    }
+
+    /// NTFS upcases a name one UTF-16 unit at a time, so a capital dotted I is not
+    /// the `i` plus combining dot above that New Work lowercases it to: two files,
+    /// and New Work may create one while an import writes the other.
+    #[test]
+    fn a_capital_dotted_i_is_not_its_lowercase_on_windows() {
+        assert!(!same(
+            "C:\\Books\\\u{130}stanbul.skrib",
+            "C:\\Books\\i\u{307}stanbul.skrib",
+            PathStyle::Windows
+        ));
+    }
+
+    /// Case is folded one letter at a time, as NTFS's upcase table and APFS's case
+    /// folding both compare names, never by the letters around it. A capital sigma
+    /// ending a word lowercases to `ς`, but not when `.skrib` follows it: New Work,
+    /// which lowercases the name alone, spells `οδος.skrib` the file an import named
+    /// after its source spells `ΟΔΟΣ.skrib`. The Turkish dotless `ı` is a letter of
+    /// its own to both filesystems, not another case of `i`.
+    #[test]
+    fn case_is_folded_letter_by_letter() {
+        for style in [PathStyle::Windows, PathStyle::Mac] {
+            for other in [
+                "/Books/\u{3bf}\u{3b4}\u{3bf}\u{3c2}.skrib",
+                "/Books/\u{3bf}\u{3b4}\u{3bf}\u{3c3}.skrib",
+            ] {
+                assert!(
+                    same("/Books/\u{39f}\u{394}\u{39f}\u{3a3}.skrib", other, style),
+                    "{style:?} {other}"
+                );
+            }
+            assert!(
+                !same("/Books/S\u{131}r.skrib", "/Books/Sir.skrib", style),
+                "{style:?}"
+            );
+        }
     }
 
     /// A key is itself a spelling of the path, so keying it again changes nothing.

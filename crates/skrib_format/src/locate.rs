@@ -66,6 +66,15 @@ pub fn nfc(s: &str) -> String {
     s.nfc().collect()
 }
 
+/// `s` in Unicode Normalization Form D: the decomposed form HFS+ stores names in and
+/// APFS compares them by, so the form in which two spellings of one name on a Mac
+/// agree before their case is folded (a capital dotted I only has a lowercase letter
+/// for letter once decomposed). Exported for the app's open registry, which compares
+/// project paths the way the filesystem holding them does.
+pub fn nfd(s: &str) -> String {
+    s.nfd().collect()
+}
+
 /// One directory's entries: NFC name → the name as the directory actually spells it.
 type Listing = HashMap<String, OsString>;
 

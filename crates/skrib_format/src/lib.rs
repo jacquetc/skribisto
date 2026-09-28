@@ -143,6 +143,7 @@ pub use loaded::{
     LoadedBinder, LoadedHoliday, LoadedItem, LoadedMilestone, LoadedPace, LoadedProgressSnapshot,
     LoadedTrash, LoadedWork,
 };
+pub use locate::nfd;
 pub use mapping::{bundle_to_loaded, from_entities, mark_as_backup};
 pub use markup_depth::{MAX_HTML_DEPTH, MAX_MARKDOWN_DEPTH, MarkupTooDeep};
 pub use reader::{peek_manifest, read_bundle};

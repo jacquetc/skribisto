@@ -69,9 +69,16 @@ pub struct OpenEntry {
 }
 
 thread_local! {
-    /// This process's claims: [`project_key`] -> the lock file that represents it.
-    /// A map (not a single slot) because one process may hold several projects
-    /// open at once.
+    /// This process's claims: the spelling [`canonical`] gave each project when it
+    /// was claimed -> the lock file that represents it. A map (not a single slot)
+    /// because one process may hold several projects open at once.
+    ///
+    /// Keyed by that spelling, never by [`project_key`]. The key folds case by the
+    /// platform's default, and a volume formatted case-sensitive (APFS offers it,
+    /// Windows sets it per folder) holds two projects whose names differ only in
+    /// case: one slot, and one lock file, for both let the first to close take the
+    /// other's claim with it, and every other copy of Skribisto then saw the one
+    /// still open as closed. The key is for comparing only.
     static CLAIMED: RefCell<HashMap<String, PathBuf>> = RefCell::new(HashMap::new());
 
     /// The paths this process's imports are writing: [`project_key`] -> how many
@@ -379,11 +386,20 @@ fn resolved(path: &Path) -> Option<PathBuf> {
 }
 
 /// What every spelling of one project's path has in common: [`canonical`], then
-/// the separators, verbatim prefix and case this platform's filesystem does not
-/// tell apart (see [`spelling`]). The key of every map below and the one thing a
-/// door compares.
+/// the separators, verbatim prefix, case and Unicode normalisation this platform's
+/// filesystem does not tell apart (see [`spelling`]). The one thing a door
+/// compares.
+///
+/// Never where a claim is stored: the key can be one for two files (see
+/// [`CLAIMED`]).
 pub(crate) fn project_key(path: &str) -> String {
-    spelling::spelling_key(&canonical(path), path_style())
+    key_of(&canonical(path))
+}
+
+/// [`project_key`] of a path [`canonical`] has already spelled, so a caller that
+/// needs both touches the filesystem once.
+fn key_of(spelled: &str) -> String {
+    spelling::spelling_key(spelled, path_style())
 }
 
 /// Whether `a` and `b` name the same project, whatever their spelling.
@@ -391,14 +407,42 @@ pub(crate) fn same_project(a: &str, b: &str) -> bool {
     project_key(a) == project_key(b)
 }
 
-/// The lock file naming `pid`'s claim on `project_path`. Pid is a parameter (not
-/// always [`my_pid`]) so tests can fake a foreign process's lock without
-/// spawning one.
-fn lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
+/// The lock file naming `pid`'s claim on the project [`canonical`] spells
+/// `spelled`. Named after the spelling, not the key, for the reason [`CLAIMED`] is
+/// keyed by it: two files must never share a lock file. Pid is a parameter (not
+/// always [`my_pid`]) so tests can fake a foreign process's lock without spawning
+/// one.
+fn lock_path_for(pid: u32, spelled: &str) -> Option<PathBuf> {
     let d = dir()?;
     let mut h = DefaultHasher::new();
-    project_key(project_path).hash(&mut h);
+    spelled.hash(&mut h);
     Some(d.join(format!("open-{pid}-{:016x}.lock", h.finish())))
+}
+
+/// The spelling this process claimed the project [`canonical`] spells `spelled`
+/// under, if it holds it: that spelling itself, or one that resolves to it now.
+///
+/// A claim can be made before its file exists (New Work claims the project it is
+/// about to write) and let go of once it does, and the filesystem may spell the
+/// file then otherwise than the claim did: HFS+ stores a name decomposed. So a claim
+/// is also found by resolving its own spelling again. Never by [`project_key`]
+/// alone: two files can share a key, and letting go of the other one's claim is the
+/// loss [`CLAIMED`] is keyed by spelling to prevent. Holding on to a claim too long
+/// only has other copies see the project open until this one exits.
+///
+/// Only the claims sharing the key are resolved again, which in practice is none:
+/// resolving every claim would have each release wait on the disk of every project
+/// open, a network share that has gone away among them.
+fn claimed_spelling(claimed: &HashMap<String, PathBuf>, spelled: &str) -> Option<String> {
+    if claimed.contains_key(spelled) {
+        return Some(spelled.to_string());
+    }
+    let key = key_of(spelled);
+    claimed
+        .keys()
+        .filter(|held| key_of(held) == key)
+        .find(|held| canonical(held) == spelled)
+        .cloned()
 }
 
 /// Claim `path` as open by this process, in addition to any claims already
@@ -409,12 +453,13 @@ fn lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
 /// *process* holds, including a sibling window's untouched, still-open Work
 /// (see `view_models::project_lifecycle::ProjectLifecycleViewModel::claim`'s doc).
 pub fn claim(path: &str, title: &str) {
-    let Some(lock) = lock_path_for(my_pid(), path) else {
+    let spelled = canonical(path);
+    let Some(lock) = lock_path_for(my_pid(), &spelled) else {
         return;
     };
     let entry = OpenEntry {
         pid: my_pid(),
-        path: canonical(path),
+        path: spelled.clone(),
         title: title.to_string(),
         importing: false,
     };
@@ -422,7 +467,7 @@ pub fn claim(path: &str, title: &str) {
         && std::fs::write(&lock, json).is_ok()
     {
         CLAIMED.with(|c| {
-            c.borrow_mut().insert(project_key(path), lock);
+            c.borrow_mut().insert(spelled, lock);
         });
     }
 }
@@ -432,8 +477,12 @@ pub fn claim(path: &str, title: &str) {
 /// at shutdown, and it is the right way to drop a WINDOW's own previous claim
 /// before it claims a new path in place (see [`claim`]'s doc).
 pub fn release(path: &str) {
-    let key = project_key(path);
-    let lock = CLAIMED.with(|c| c.borrow_mut().remove(&key));
+    let spelled = canonical(path);
+    let lock = CLAIMED.with(|c| {
+        let mut claimed = c.borrow_mut();
+        let held = claimed_spelling(&claimed, &spelled)?;
+        claimed.remove(&held)
+    });
     if let Some(lock) = lock {
         remove_own_lock(&lock);
     }
@@ -504,26 +553,32 @@ impl Drop for ImportClaim {
     }
 }
 
-/// The lock file naming `pid`'s import claim on `project_path`: beside its open
-/// claims, under another name, so a claim of either kind never overwrites the other.
-fn import_lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
+/// The lock file naming `pid`'s import claim on the project [`canonical`] spells
+/// `spelled`: beside its open claims, under another name, so a claim of either kind
+/// never overwrites the other. Named after the spelling, as [`lock_path_for`] is:
+/// two imports writing two files whose names differ only in case, on a
+/// case-sensitive volume, must not share one lock file, or the first to finish
+/// deletes the other's.
+fn import_lock_path_for(pid: u32, spelled: &str) -> Option<PathBuf> {
     let d = dir()?;
     let mut h = DefaultHasher::new();
-    project_key(project_path).hash(&mut h);
+    spelled.hash(&mut h);
     Some(d.join(format!("import-{pid}-{:016x}.lock", h.finish())))
 }
 
 /// Claim `path` for an import writing it. See [`ImportClaim`].
 pub fn claim_import(path: &str) -> ImportClaim {
-    let key = project_key(path);
+    let spelled = canonical(path);
+    let key = key_of(&spelled);
     IMPORTING.with(|importing| *importing.borrow_mut().entry(key.clone()).or_insert(0) += 1);
+    let lock = import_lock_path_for(my_pid(), &spelled);
     let entry = OpenEntry {
         pid: my_pid(),
-        path: canonical(path),
+        path: spelled,
         title: String::new(),
         importing: true,
     };
-    let lock = import_lock_path_for(my_pid(), path).filter(|lock| {
+    let lock = lock.filter(|lock| {
         serde_json::to_string(&entry).is_ok_and(|json| std::fs::write(lock, json).is_ok())
     });
     ImportClaim { key, lock }
@@ -573,8 +628,8 @@ pub fn claim_for_load(path: &str) -> Option<LoadClaim> {
     if importing(path) {
         return None;
     }
-    let key = project_key(path);
-    let held = CLAIMED.with(|claimed| claimed.borrow().contains_key(&key));
+    let spelled = canonical(path);
+    let held = CLAIMED.with(|claimed| claimed_spelling(&claimed.borrow(), &spelled).is_some());
     let claim = if held {
         LoadClaim { made: None }
     } else {
@@ -731,7 +786,7 @@ mod tests {
 
     /// Write a lock file as if `pid` (not this process) claimed `path`.
     fn write_foreign_lock(pid: u32, path: &str, title: &str) -> PathBuf {
-        let lock = lock_path_for(pid, path).expect("dir available");
+        let lock = lock_path_for(pid, &canonical(path)).expect("dir available");
         let entry = OpenEntry {
             pid,
             path: canonical(path),
@@ -916,6 +971,82 @@ mod tests {
         .unwrap();
         assert!(importing(&format!("{folder}\\third.skrib")), "a peer's too");
         PID_OVERRIDE.with(|m| m.borrow_mut().insert(fake_pid, false));
+    }
+
+    /// A volume formatted case-sensitive (APFS offers it, Windows sets it per folder)
+    /// holds two projects whose names differ only in case. Their keys are one, since
+    /// the key follows the platform's default, but they are two files, each with its
+    /// own claim: closing one, or finishing the import writing one, leaves the other
+    /// advertised to every other copy of Skribisto. Proved in macOS' rules on this
+    /// case-sensitive test filesystem.
+    #[test]
+    fn two_projects_whose_names_differ_only_in_case_keep_two_claims() {
+        setup("case-sensitive-volume");
+        let _style = crate::test_support::ForeignPathStyle::new(PathStyle::Mac);
+        let books = tempfile::tempdir().unwrap();
+        let upper = books.path().join("Novel.skrib");
+        let lower = books.path().join("novel.skrib");
+        std::fs::write(&upper, b"PK").unwrap();
+        std::fs::write(&lower, b"PK").unwrap();
+        let (upper, lower) = (
+            upper.to_string_lossy().into_owned(),
+            lower.to_string_lossy().into_owned(),
+        );
+
+        claim(&upper, "Upper");
+        claim(&lower, "Lower");
+        release(&lower);
+        // Released twice, as every window on a Work releases it when it closes.
+        release(&lower);
+        let titles: Vec<String> = scan_open().into_iter().map(|e| e.title).collect();
+        assert_eq!(
+            titles,
+            vec!["Upper".to_string()],
+            "closing one keeps the other"
+        );
+        release(&upper);
+        assert!(scan_open().is_empty());
+
+        let upper_import = claim_import(&upper);
+        let lower_import = claim_import(&lower);
+        drop(lower_import);
+        let held: Vec<String> = scan().into_iter().map(|e| e.path).collect();
+        assert_eq!(
+            held,
+            vec![canonical(&upper)],
+            "the import still running is seen"
+        );
+        drop(upper_import);
+        assert!(scan().is_empty());
+    }
+
+    /// A claim is let go of once the filesystem spells its project otherwise than it
+    /// did when the claim was made. New Work claims the file it is about to write,
+    /// and HFS+ then stores its name decomposed, so the path the window releases
+    /// resolves to a spelling the claim never had. Here, in macOS' rules, the name
+    /// claimed precomposed comes to be a symbolic link to the decomposed one: the
+    /// same change of spelling on this filesystem.
+    #[cfg(unix)]
+    #[test]
+    fn a_claim_is_let_go_of_once_the_filesystem_spells_it_otherwise() {
+        setup("release-respelled");
+        let _style = crate::test_support::ForeignPathStyle::new(PathStyle::Mac);
+        let books = tempfile::tempdir().unwrap();
+        let typed = books.path().join("Rapha\u{eb}l.skrib");
+        let stored = books.path().join("Raphae\u{308}l.skrib");
+        let path = typed.to_string_lossy().into_owned();
+        claim(&path, "Novel");
+        assert_eq!(scan_open().len(), 1);
+        std::fs::write(&stored, b"PK").unwrap();
+        std::os::unix::fs::symlink(&stored, &typed).unwrap();
+        assert_ne!(
+            canonical(&path),
+            path,
+            "the filesystem spells it otherwise now"
+        );
+        release(&path);
+        assert!(scan_open().is_empty(), "the claim went with its release");
+        assert!(CLAIMED.with(|c| c.borrow().is_empty()));
     }
 
     /// Another instance's import is refused here too, through its lock file alone.
