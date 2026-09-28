@@ -126,9 +126,10 @@ fn extract_guarded<R: std::io::Read + std::io::Seek>(
 
         // `enclosed_name` is the zip crate's own "is this name safe to join"
         // predicate; `bundle_relative` is this crate's, and is stricter (it also
-        // refuses backslashes and colons, which matter for a bundle that must
-        // mean the same tree on Windows and Unix). Requiring both is deliberate:
-        // they disagree only on names no writer here produces.
+        // refuses backslashes, which matter for a bundle that must mean the same
+        // tree on Windows and Unix; a colon it allows, see its module docs).
+        // Requiring both is deliberate: they disagree only on names no writer
+        // here produces.
         let raw = entry.name().to_string();
         let is_dir = entry.is_dir();
         let name = raw.strip_suffix('/').unwrap_or(&raw);

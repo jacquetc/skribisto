@@ -103,30 +103,51 @@ fn secret_outside() -> (tempfile::TempDir, std::path::PathBuf) {
     (dir, secret)
 }
 
+/// Every spelling of a real file's absolute path is refused, each by the first rule
+/// that catches it.
+///
+/// On Windows the file's own spelling, `C:\Users\…\id_rsa`, is full of backslashes,
+/// so the backslash rule refuses it before the absolute rule is reached. The same
+/// file spelled with `/`, `C:/Users/…/id_rsa`, is one Windows opens just as readily
+/// and holds no backslash: that is the spelling that proves the absolute rule there.
+/// A fixed Windows spelling is read on every platform, so the rule it meets is pinned
+/// on Linux too.
 #[test]
 fn an_absolute_asset_path_cannot_read_a_file_outside_the_bundle() {
     let (_outside, secret) = secret_outside();
-    // The ordinary fixture supplies no asset *bytes*, and `from_entities` drops
-    // an asset row whose bytes are missing rather than writing it dangling — so
-    // its `assets.ron` is empty and there would be no path to repoint.
-    let dir = tempfile::tempdir().expect("tmp");
-    let path = dir.path().join("Novel").to_string_lossy().into_owned();
-    let fixture = super::asset_tests::bundle_with_assets();
-    write_bundle(&path, SkribShape::ExplodedFolder, &fixture).expect("write");
-    let root = super::shape::folder_root(&path);
+    let native = secret.to_string_lossy().into_owned();
+    let native_rule = if native.contains('\\') {
+        "backslash"
+    } else {
+        "absolute"
+    };
+    for (evil, rule) in [
+        (native.clone(), native_rule),
+        (native.replace('\\', "/"), "absolute"),
+        (r"C:\Users\writer\.ssh\id_rsa".to_string(), "backslash"),
+    ] {
+        // The ordinary fixture supplies no asset *bytes*, and `from_entities` drops
+        // an asset row whose bytes are missing rather than writing it dangling, so
+        // its `assets.ron` is empty and there would be no path to repoint.
+        let dir = tempfile::tempdir().expect("tmp");
+        let path = dir.path().join("Novel").to_string_lossy().into_owned();
+        let fixture = super::asset_tests::bundle_with_assets();
+        write_bundle(&path, SkribShape::ExplodedFolder, &fixture).expect("write");
+        let root = super::shape::folder_root(&path);
 
-    repoint_first_path(&root.join("assets.ron"), &secret.to_string_lossy());
+        repoint_first_path(&root.join("assets.ron"), &evil);
 
-    let err = read_bundle(&path).expect_err("an absolute asset path must be refused");
-    let msg = chain(&err);
-    assert!(
-        msg.contains("asset"),
-        "error should name what it refused: {msg}"
-    );
-    assert!(
-        msg.contains("absolute"),
-        "error should name the rule: {msg}"
-    );
+        let err = read_bundle(&path).expect_err("an absolute asset path must be refused");
+        let msg = chain(&err);
+        assert!(
+            msg.contains("asset"),
+            "{evil}: error should name what it refused: {msg}"
+        );
+        assert!(
+            msg.contains(rule),
+            "{evil}: error should name the rule: {msg}"
+        );
+    }
 }
 
 #[test]

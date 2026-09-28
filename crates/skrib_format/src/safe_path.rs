@@ -220,6 +220,66 @@ mod tests {
         }
     }
 
+    /// Each absolute spelling Windows has, with the rule that refuses it.
+    ///
+    /// The backslash forms are decided by the string alone, so a Linux run proves
+    /// what Windows meets: they never reach the absolute rule, which is why an
+    /// assertion that a Windows temp path was refused *as absolute* failed there
+    /// although the path was refused. The `/` forms are rooted on every platform;
+    /// which of the two rooted rules names them depends on how the platform parses
+    /// a share or a drive, and both refuse.
+    #[test]
+    fn each_windows_absolute_form_is_refused_on_every_platform() {
+        for bad in [
+            r"C:\Users\writer\.ssh\id_rsa",
+            r"C:\",
+            r"\\server\share\id_rsa",
+            r"\\?\C:\Users\writer\.ssh\id_rsa",
+            r"\\?\UNC\server\share\id_rsa",
+            r"\\.\PhysicalDrive0",
+            r"\Users\writer\.ssh\id_rsa",
+        ] {
+            assert_eq!(
+                bundle_relative(bad).map_err(|e| e.reason),
+                Err("contains a backslash"),
+                "{bad}"
+            );
+        }
+        for bad in [
+            "//server/share/id_rsa",
+            "//?/C:/Users/writer/.ssh/id_rsa",
+            "//./PhysicalDrive0",
+            "/Users/writer/.ssh/id_rsa",
+        ] {
+            let reason = bundle_relative(bad).map_err(|e| e.reason);
+            assert!(
+                matches!(reason, Err("absolute" | "has a drive or UNC prefix")),
+                "{bad}: {reason:?}"
+            );
+        }
+    }
+
+    /// A drive letter and a colon mean a drive only on Windows, where both of its
+    /// `/` spellings are refused: `C:/…` is absolute, and the drive-relative `C:x`
+    /// resolves against the current folder of drive C, outside any bundle.
+    /// Everywhere else they are file names like any other, and stay inside.
+    #[test]
+    fn a_drive_letter_is_refused_where_it_names_a_drive() {
+        for form in ["C:/Users/writer/.ssh/id_rsa", "C:id_rsa", "C:"] {
+            let checked = bundle_relative(form);
+            if cfg!(windows) {
+                assert!(checked.is_err(), "{form} names a drive on Windows");
+            } else {
+                let root = Path::new("/tmp/bundle");
+                let joined = root.join(checked.expect("a name like any other here"));
+                assert!(
+                    joined.starts_with(root),
+                    "{form} left the bundle: {joined:?}"
+                );
+            }
+        }
+    }
+
     /// Containment is the rule; portability is not. A colon is illegal on
     /// Windows and never written here, but refusing it would make an existing
     /// project carrying one unopenable — and then unsavable — for a file
