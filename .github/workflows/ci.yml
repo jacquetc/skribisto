@@ -218,6 +218,12 @@ jobs:
           fi
           echo "Cargo.lock resolves from crates.io with no change."
 
+      # The script this job sends developers to must keep every crate at the
+      # version the lockfile was tested with, and refuse when crates.io
+      # cannot supply one, rather than take the newest release in silence.
+      - name: The relock script keeps every tested version
+        run: bash scripts/relock-crates-io-test.sh
+
   rustfmt:
     name: Format
     runs-on: ubuntu-latest
