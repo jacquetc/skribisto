@@ -76,6 +76,7 @@
           <li>An OpenDocument file asking for an enormous run of spaces imports with that run shortened, and the import review says so</li>
           <li>A compressed document or project built to unpack far larger than it is, a zip bomb, is refused instead of filling the computer’s memory</li>
           <li>A Plume Creator or Manuskript project built to multiply a few kilobytes into gigabytes of text as it is read is refused with a message, instead of filling the computer’s memory and closing Skribisto</li>
+          <li>A Word or OpenDocument file crafted to keep the import busy for hours or days is reported as unreadable in a moment. Such an import used to ignore Cancel until it ended</li>
           <li>A list indented dozens of levels deep no longer makes the project refuse to open</li>
           <li>Typewriter scrolling keeps the line you are typing at its place on the page again. Since 3.0.4 it only followed the caret, as ordinary scrolling does</li>
           <li>A long scene opens, and an earlier version of it is put back, in a moment. A scene of several thousand paragraphs used to take seconds, and one of 16,000 close to a minute, during which the window did not respond</li>

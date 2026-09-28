@@ -62,7 +62,8 @@
 //! in place, at the depth of the reference, so a value holding markup nests the
 //! document further than its own tags say. The scan measures each declared value
 //! the same way, follows references between values as far as `roxmltree` does
-//! (ten), and treats anything further as unbounded.
+//! (ten), and treats anything further as unbounded. A reference finds its name in
+//! a map, so the scan stays linear however many entities a DTD declares.
 //! [`parse`](crate::xml_depth::parse) refuses a document declaring an entity
 //! before the scan runs (see the next section), but
 //! [`check`](crate::xml_depth::check) is also called on its own, ahead of parsers
@@ -146,6 +147,7 @@
 use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::fmt;
 
 /// The most nested elements an XML document may reach, the root counting as one.
@@ -565,7 +567,8 @@ pub fn on_parser_stack_reporting<T: Send>(
 pub fn check(part: &str, xml: &[u8]) -> Result<(), XmlTooDeep> {
     let bytes = scannable(xml);
     let mut scan = Scan {
-        entities: Vec::new(),
+        values: Vec::new(),
+        by_name: HashMap::new(),
         measured: HashMap::new(),
     };
     scan.walk(&bytes, 0, true)
@@ -626,9 +629,21 @@ fn line_of(bytes: &[u8], at: usize) -> usize {
 /// One document's scan: the entities its DTD declared, and how each one's value
 /// moves the depth it is expanded at.
 struct Scan<'a> {
-    /// `(name, value)` in declaration order. Looked up first-match, as `roxmltree`
-    /// does, which is also the XML rule: the first declaration binds.
-    entities: Vec<(&'a [u8], &'a [u8])>,
+    /// The value of every name declared, in declaration order. A name declared
+    /// again keeps its first value, as `roxmltree` keeps it, which is also the XML
+    /// rule: the first declaration binds.
+    values: Vec<&'a [u8]>,
+    /// Each declared name's index in `values`.
+    ///
+    /// A map, because every reference in the document is looked up here. Found by
+    /// walking the declarations, a lookup cost as many comparisons as there were
+    /// names before it, so the scan cost declarations times references: 50,000
+    /// names referenced 200,000 times, 2.6 MB of XML, took a minute in a debug
+    /// build, and a part within an importer's size limits would take days, with no
+    /// parser started and nothing to cancel it. `roxmltree` finds a name the same
+    /// slow way, one more reason none of the readers here lets it expand a
+    /// declared entity.
+    by_name: HashMap<&'a [u8], usize>,
     /// `(entity index, reference level)` → what its value does to the depth, or
     /// `None` when it reaches past the ceiling or past `roxmltree`'s own
     /// reference limit. Memoised so a value referenced a thousand times is
@@ -748,7 +763,7 @@ impl<'a> Scan<'a> {
         if let Some(measured) = self.measured.get(&(index, level)) {
             return *measured;
         }
-        let value = self.entities.get(index).map(|&(_, value)| value)?;
+        let value = self.values.get(index).copied()?;
         let measured = self.walk(value, level, false).ok();
         self.measured.insert((index, level), measured);
         measured
@@ -758,9 +773,7 @@ impl<'a> Scan<'a> {
         if PREDEFINED.contains(&name) {
             return None;
         }
-        self.entities
-            .iter()
-            .position(|&(declared, _)| declared == name)
+        self.by_name.get(name).copied()
     }
 
     /// Skip a DOCTYPE whose `<!DOCTYPE` ends just before `at`, recording every
@@ -840,8 +853,11 @@ impl<'a> Scan<'a> {
                 .get(value_start..)
                 .and_then(|rest| rest.iter().position(|&b| b == quote))
                 .map_or(text.len(), |offset| value_start + offset);
-            if !name.is_empty() {
-                self.entities.push((name, &text[value_start..value_end]));
+            if !name.is_empty()
+                && let Entry::Vacant(slot) = self.by_name.entry(name)
+            {
+                slot.insert(self.values.len());
+                self.values.push(&text[value_start..value_end]);
             }
             at = value_end + 1;
         }
@@ -1139,6 +1155,78 @@ mod tests {
         }
         let text = format!("<!DOCTYPE r [{dtd}]><r>&l9;</r>");
         assert!(check("x", text.as_bytes()).is_ok());
+    }
+
+    /// `declarations` entities, and a root naming the last one declared
+    /// `references` times: the name a search in declaration order finds last.
+    fn many_entities(declarations: usize, references: usize) -> String {
+        let mut text = String::from("<!DOCTYPE r [");
+        for i in 0..declarations {
+            text.push_str(&format!("<!ENTITY e{i} 'x'>"));
+        }
+        let last = declarations.saturating_sub(1);
+        text.push_str(&format!(
+            "]><r>{}</r>",
+            format!("&e{last};").repeat(references)
+        ));
+        text
+    }
+
+    /// What `work` returned, or `None` when it was still running after `budget`.
+    /// It runs on a thread of its own, so a check that regresses fails the test
+    /// when the budget runs out rather than when the work finally ends.
+    fn within<T: Send + 'static>(
+        budget: std::time::Duration,
+        work: impl FnOnce() -> T + Send + 'static,
+    ) -> Option<T> {
+        let (done, outcome) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            // The receiver is gone only once the budget ran out; nothing waits then.
+            let _ = done.send(work());
+        });
+        outcome.recv_timeout(budget).ok()
+    }
+
+    /// Every reference is looked up among the declared names, so a lookup that
+    /// walked the declarations made the scan cost declarations times references:
+    /// this document, 2.6 MB, took a minute in a debug build. Each lookup now
+    /// costs the same however many names were declared, and the scan a fraction
+    /// of a second.
+    #[test]
+    fn a_lookup_costs_the_same_however_many_entities_are_declared() {
+        let text = many_entities(50_000, 200_000);
+        let bytes = text.len();
+        match within(std::time::Duration::from_secs(5), move || {
+            check("x", text.as_bytes()).is_ok()
+        }) {
+            Some(passed) => assert!(passed, "one level of text is not deep"),
+            None => panic!(
+                "checking 50,000 declarations named 200,000 times ({bytes} bytes) took \
+                 more than 5 s"
+            ),
+        }
+    }
+
+    /// XML binds a name to its first declaration, and `roxmltree` looks names up
+    /// that way too, so a later declaration of the same name is never the one
+    /// measured: not when it is deeper, and not when it is shallower.
+    #[test]
+    fn the_first_declaration_of_a_name_is_the_one_measured() {
+        let document = |first: usize, second: usize| {
+            format!(
+                "<!DOCTYPE r [<!ENTITY e '{}'><!ENTITY e '{}'>]><r>{}&e;{}</r>",
+                nested(first),
+                nested(second),
+                "<a>".repeat(100),
+                "</a>".repeat(100)
+            )
+        };
+        assert!(check("x", document(200, 1).as_bytes()).is_err());
+
+        let shallow_first = document(1, 200);
+        assert!(check("x", shallow_first.as_bytes()).is_ok());
+        let parsed = parse_measured_only("x", &shallow_first).expect("parses");
+        assert!(tree_depth(&parsed) <= MAX_DEPTH);
     }
 
     #[test]
