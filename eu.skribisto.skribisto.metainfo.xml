@@ -53,11 +53,44 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="3.0.4" date="2026-09-16T00:00:00Z">
+    <release type="stable" version="3.0.5" date="2026-09-28T00:00:00Z">
       <description>
         <ul>
-          <li>Skribisto made Gnome user session crash, fixed upstream in Teksilo 0.12.0</li>
-          <li>The left arrow key moves the caret again wherever two writing areas are open at once, which is every scene and every note, since each shows its synopsis beside its text. The key was being taken for a request to close a menu and never reached the words</li>
+          <li>Dates and times in the Versions dock, the Timeline, the backups list, the Trash, the project switcher, the Welcome window and the restore confirmations are shown in your own time zone. They were shown in UTC while presenting themselves as local time, which could put a version on the wrong day</li>
+          <li>Pace and daily progress credit words to the day you wrote them, on your own calendar. A writer west of UTC used to see evening words counted for the next day</li>
+          <li>The Versions dock lists the earlier versions of front and back matter, such as a preface, as it does for any other text</li>
+          <li>The warnings of a Plume Creator or Manuskript import stay on screen until you close them or the next import of the same kind brings its own, and can be opened again afterwards from the notifications. They used to disappear after ten seconds</li>
+          <li>Choosing where to save a new or imported project no longer writes and deletes a test file in that folder over and over while the dialog is open</li>
+          <li>An import can no longer overwrite a project that is open in a window, in this copy of Skribisto or another one</li>
+          <li>A Plume Creator or Manuskript project, or a Word or OpenDocument file, whose contents are nested far more deeply than any real file is refused with a message instead of closing Skribisto and every open window</li>
+          <li>The characters you type come back as you typed them after the project is saved and opened again. A time such as 10:30:45 or a name such as std::vector no longer loses its colons and the characters between them, a paragraph that begins with I. or A. stays a paragraph instead of turning into a list item without its letter, a paragraph opened with a tab or spaces keeps them, and straight quotes, -- and ... stay as typed instead of becoming English curly quotes, dashes and an ellipsis. Turning them into typographic marks is left to smart punctuation, which follows your project’s language</li>
+          <li>Characters named in the text of a Manuskript project import as their plain name, without a stray backslash, and an image description or a chapter title keeps its colons and asterisks as typed</li>
+          <li>Comments imported from a Word or OpenDocument file stay on the words they marked after a paragraph holding two spaces in a row or a tab. The comments of every later paragraph used to lose their place and fall back to the whole document</li>
+          <li>An imported Word or OpenDocument file keeps its centred and right-aligned paragraphs, its page breaks, its superscript and subscript, its double spaces, and its straight quotes, dashes and ellipses as they were written</li>
+          <li>Importing a plain-text file keeps every character as written: asterisks, underscores and other marks are no longer read as formatting</li>
+          <li>An imported document, or a Plume Creator or Manuskript project, whose formatting is nested past what a project can hold arrives as its words with a note, instead of producing a project that will not open again</li>
+          <li>A damaged or truncated Word file is reported as unreadable instead of freezing the import for good</li>
+          <li>A project or Markdown file crafted to nest its contents thousands of levels deep can no longer close Skribisto: the project is refused with a message, or the file’s words are kept as plain text</li>
+          <li>A paragraph typed after a long run of spaces no longer makes the project refuse to open the next time</li>
+          <li>An OpenDocument file asking for an enormous run of spaces imports with that run shortened, and the import review says so</li>
+          <li>A compressed document or project built to unpack far larger than it is, a zip bomb, is refused instead of filling the computer’s memory</li>
+          <li>A list indented dozens of levels deep no longer makes the project refuse to open</li>
+          <li>Typewriter scrolling keeps the line you are typing at its place on the page again. Since 3.0.4 it only followed the caret, as ordinary scrolling does</li>
+          <li>A long scene opens, and an earlier version of it is put back, in a moment. A scene of several thousand paragraphs used to take seconds, and one of 16,000 close to a minute, during which the window did not respond</li>
+          <li>Putting back an earlier version of a text holding footnotes, pressing Backspace in a quotation, or deleting across the edge of a table no longer closes Skribisto. Typing or pressing Enter just before a footnote reference keeps the footnote where it was, and a table pasted in the middle of a text keeps the text after it in place</li>
+          <li>Copying, cutting or dragging text in a quotation takes each paragraph once. A nested quotation used to be copied two or three times over, and a cut then paste wrote it back doubled</li>
+          <li>Putting back an earlier version keeps its quotations and code blocks, which it used to turn into plain paragraphs</li>
+          <li>A passage pasted from a web page as preformatted text arrives as one paragraph per line, and every line stays as it was at the next opening. Its later lines used to come back as lists, headings or quotations, sometimes nested so deep that the project would not open</li>
+          <li>Export keeps every line of a passage holding line breaks, and every link or picture whose address holds a |, a parenthesis or a space. Quotations nested more than 55 levels deep export to Word, and more than 16 to PDF, instead of failing</li>
+          <li>Holding Tab in a quotation or a list stops at 64 quotation levels and 16 list levels. It used to go on for as long as the key repeated, and after about 97 presses the project would not open again</li>
+          <li>Tab and Shift+Tab on a list item in a quotation move it one level, as in the rest of the text. They used to take the item out of its list for good</li>
+          <li>Tab at the end of a list's last item moves the item one level instead of typing a tab, and no longer pushes a quoted paragraph after the list one quotation deeper</li>
+          <li>Splitting a scene keeps every word. The new scene lost one of its last characters for every paragraph after the caret, and a caret in a table put the table in both scenes and lost everything after it</li>
+          <li>Splitting a scene keeps the paragraph at the cut a heading, a list item, a quotation or a code block, leaves no stray space at the start of the new scene, and refuses to make an empty one</li>
+          <li>A comment goes with its words when a scene is split or two scenes are merged. It used to stay behind and report that it had lost its words</li>
+          <li>Jumping to a comment or a footnote near the end of a long scene lands on it. It used to stop a few lines short</li>
+          <li>Importing a Word or OpenDocument table with one row far wider than all the others says that its cells arrive as paragraphs, instead of dropping the grid in silence</li>
+          <li>The check for a new version of Skribisto uses an updated encryption library, which fixes a flaw in how it accepts a secure connection</li>
         </ul>
       </description>
     </release>
