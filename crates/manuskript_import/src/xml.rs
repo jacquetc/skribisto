@@ -7,12 +7,15 @@
 //! Manuskript writes these with lxml and no DOCTYPE, but a hand-edited or
 //! third-party-written file may carry one, so the parser is told to allow it —
 //! rejecting a project over a declaration nothing here reads would be a refusal
-//! with no benefit.
+//! with no benefit. An entity declaration is the exception: allowed, `roxmltree`
+//! would expand it as often as the member names it, into more memory than the
+//! computer has, so a member declaring one is refused before it is parsed.
 //!
-//! Every parse goes through `skrib_format::xml_depth`, which refuses a member nested
-//! past `MAX_XML_DEPTH` before `roxmltree` can recurse into it and runs the parse on
-//! a stack deep enough for anything under that. The whole project is checked the
-//! same way before any member is read (see [`crate::refuse_deep_xml`]), so the
+//! Every parse goes through `skrib_format::xml_depth`, which refuses a member
+//! declaring an entity, or nested past `MAX_XML_DEPTH`, before `roxmltree` sees
+//! it, and runs the parse on a stack deep enough for anything under that. The
+//! whole project is checked the same two ways before any member is read (see
+//! [`crate::refuse_entity_declarations`] and [`crate::refuse_deep_xml`]), so the
 //! refusal a reader could meet here is the second line of that defence, not the
 //! first.
 

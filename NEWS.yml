@@ -21,6 +21,7 @@ Description:
 - "A paragraph typed after a long run of spaces no longer makes the project refuse to open the next time"
 - "An OpenDocument file asking for an enormous run of spaces imports with that run shortened, and the import review says so"
 - "A compressed document or project built to unpack far larger than it is, a zip bomb, is refused instead of filling the computer’s memory"
+- "A Plume Creator or Manuskript project built to multiply a few kilobytes into gigabytes of text as it is read is refused with a message, instead of filling the computer’s memory and closing Skribisto"
 - "A list indented dozens of levels deep no longer makes the project refuse to open"
 - "Typewriter scrolling keeps the line you are typing at its place on the page again. Since 3.0.4 it only followed the caret, as ordinary scrolling does"
 - "A long scene opens, and an earlier version of it is put back, in a moment. A scene of several thousand paragraphs used to take seconds, and one of 16,000 close to a minute, during which the window did not respond"

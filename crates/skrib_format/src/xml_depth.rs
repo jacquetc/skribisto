@@ -57,12 +57,16 @@
 //! about the document's own markup, `roxmltree` refuses the document at that point
 //! and stops, so its own tags never take it deeper than the scan measured.
 //!
-//! Entities are the other way to nest a document, and are counted too. With a DTD allowed (the Manuskript and Plume readers
-//! allow one), `roxmltree` expands `&name;` by parsing the declared value as
-//! content, in place, at the depth of the reference, so a value holding markup
-//! nests the document further than its own tags say. The scan measures each
-//! declared value the same way, follows references between values as far as
-//! `roxmltree` does (ten), and treats anything further as unbounded.
+//! Entities are the other way to nest a document, and are counted too. With a DTD
+//! allowed, `roxmltree` expands `&name;` by parsing the declared value as content,
+//! in place, at the depth of the reference, so a value holding markup nests the
+//! document further than its own tags say. The scan measures each declared value
+//! the same way, follows references between values as far as `roxmltree` does
+//! (ten), and treats anything further as unbounded.
+//! [`parse`](crate::xml_depth::parse) refuses a document declaring an entity
+//! before the scan runs (see the next section), but
+//! [`check`](crate::xml_depth::check) is also called on its own, ahead of parsers
+//! this module does not run, so it still measures every one.
 //!
 //! A value need not be balanced, either. `roxmltree` keeps building the tree where
 //! a value left it, so `<!ENTITY o '<outline>'>` referenced a thousand times opens
@@ -73,6 +77,35 @@
 //! does. What passes the scan is therefore a tree no deeper than
 //! [`MAX_DEPTH`](crate::xml_depth::MAX_DEPTH), which is what lets the recursive
 //! walks after a parse treat that ceiling as a guarantee.
+//!
+//! # Entities a document declares
+//!
+//! Depth is not the only thing an entity multiplies. `roxmltree` bounds the
+//! references made *inside* entity values (ten levels, 255 references under each
+//! one the document makes: its billion-laughs guard) but not the references the
+//! document itself makes, which it allows without limit. One 64 KiB entity named
+//! 4,096 times turns a 78 KB file into a 256 MiB string, and a member within an
+//! importer's size limits (256 to 512 MiB) into more memory than the computer
+//! has. Running out of memory aborts the process, every window with it.
+//!
+//! So a reader that allows a DTD refuses any document declaring an entity, before
+//! a parser sees it: [`parse`](crate::xml_depth::parse) calls
+//! [`check_entities`](crate::xml_depth::check_entities) first, and a caller that
+//! checks a whole project up front calls it too. No reader here needs one. Plume
+//! Creator writes a bare `<!DOCTYPE plume-tree>` and nothing inside it (the 1,130
+//! members of sixteen real `.plume` files, backups included, declare none),
+//! Manuskript writes no DOCTYPE at all, and the five predefined entities (`&lt;`,
+//! `&amp;`, …) need no declaration. A DOCTYPE alone is still read.
+//!
+//! The rule is read off the text, and deliberately wider than the grammar: any
+//! `<!ENTITY` after the first `<!DOCTYPE` refuses the document, in the internal
+//! subset or not. XML spells both keywords in capitals only and `roxmltree`
+//! declares nothing without them, so what it could expand is always refused. A
+//! narrower rule would have to find where the internal subset ends exactly as
+//! `roxmltree` does, quoted literals and comments included, and a single
+//! disagreement there would reopen the hole. The cost is a document holding
+//! `<!ENTITY` in a comment or a CDATA section after a DOCTYPE, which neither
+//! Plume nor Manuskript ever writes.
 //!
 //! # Folders
 //!
@@ -110,6 +143,7 @@
 //! here can size that thread. At the ceilings its HTML reader needs about 0.55 MiB
 //! on Linux, and its frames measured 5 % larger on macOS.
 
+use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::fmt;
@@ -190,6 +224,90 @@ impl fmt::Display for XmlTooDeep {
 }
 
 impl std::error::Error for XmlTooDeep {}
+
+/// What a refused document's failure message starts with when it declared an
+/// entity; see [`XmlDeclaresEntities::failure_message`].
+const ENTITIES_FAILURE_TAG: &str = "xml-declares-entities:";
+
+/// Why an XML document was refused before it was parsed: it declares an entity of
+/// its own, which a parser allowing a DTD would expand as often as the document
+/// names it. See the module note.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct XmlDeclaresEntities {
+    /// The file, or the member of a container, that was refused: `tree`,
+    /// `world.opml`.
+    pub part: String,
+    /// The 1-based line of the first declaration.
+    pub line: usize,
+}
+
+impl XmlDeclaresEntities {
+    /// This refusal as one line of text a reader can turn back into the value, for
+    /// the same reason and in the same shape as [`XmlTooDeep::failure_message`]:
+    /// the number first, the part last, so a part name holding a colon still reads
+    /// back whole.
+    pub fn failure_message(&self) -> String {
+        format!("{ENTITIES_FAILURE_TAG}{}:{}", self.line, self.part)
+    }
+
+    /// Recover a refusal from a failure message, or `None` when the message is
+    /// about something else.
+    pub fn from_failure_message(message: &str) -> Option<Self> {
+        let rest = message.strip_prefix(ENTITIES_FAILURE_TAG)?;
+        let (line, part) = rest.split_once(':')?;
+        Some(Self {
+            part: part.to_string(),
+            line: line.parse().ok()?,
+        })
+    }
+}
+
+impl fmt::Display for XmlDeclaresEntities {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} declares an XML entity at line {}. An entity the document names over \
+             and over can expand a small file into more memory than the computer has, \
+             so a document declaring one is refused unread",
+            self.part, self.line
+        )
+    }
+}
+
+impl std::error::Error for XmlDeclaresEntities {}
+
+/// Refuse `xml` if it declares an entity: if `<!ENTITY` appears anywhere after its
+/// first `<!DOCTYPE`.
+///
+/// Read off the text, so nothing is expanded to find out, and wider than the
+/// grammar on purpose (see the module note). Bytes, decoded as [`check`] decodes
+/// them, so a whole project can be checked before any member is read as text.
+pub fn check_entities(part: &str, xml: &[u8]) -> Result<(), XmlDeclaresEntities> {
+    let bytes = scannable(xml);
+    let Some(doctype) = find(&bytes, b"<!DOCTYPE", 0) else {
+        return Ok(());
+    };
+    match find(&bytes, b"<!ENTITY", doctype) {
+        Some(at) => Err(XmlDeclaresEntities {
+            part: part.to_string(),
+            line: line_of(&bytes, at),
+        }),
+        None => Ok(()),
+    }
+}
+
+/// The entity refusal inside `error`, wherever in its chain it sits, whether it
+/// arrived as an [`XmlDeclaresEntities`] or wrapped in an [`XmlError`].
+pub fn declares_entities(error: &anyhow::Error) -> Option<&XmlDeclaresEntities> {
+    error.chain().find_map(|cause| {
+        cause.downcast_ref::<XmlDeclaresEntities>().or_else(|| {
+            match cause.downcast_ref::<XmlError>() {
+                Some(XmlError::DeclaresEntities(refused)) => Some(refused),
+                _ => None,
+            }
+        })
+    })
+}
 
 /// What a refused project's failure message starts with when one of its members
 /// sat too many folders deep; see [`FoldersTooDeep::failure_message`].
@@ -276,6 +394,9 @@ pub enum Dtd {
 pub enum XmlError {
     /// Nested past [`MAX_DEPTH`]; refused before any parser saw it.
     TooDeep(XmlTooDeep),
+    /// Declares an entity while a DTD is allowed; refused before any parser could
+    /// expand it.
+    DeclaresEntities(XmlDeclaresEntities),
     /// Not well-formed XML, in `roxmltree`'s own words.
     Malformed(roxmltree::Error),
     /// The thread the parse runs on could not be started. Nothing was parsed.
@@ -286,6 +407,7 @@ impl fmt::Display for XmlError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             XmlError::TooDeep(too_deep) => too_deep.fmt(f),
+            XmlError::DeclaresEntities(refused) => refused.fmt(f),
             XmlError::Malformed(error) => error.fmt(f),
             XmlError::NoParserThread(error) => {
                 write!(f, "could not start a thread to read the XML on: {error}")
@@ -302,6 +424,12 @@ impl From<XmlTooDeep> for XmlError {
     }
 }
 
+impl From<XmlDeclaresEntities> for XmlError {
+    fn from(refused: XmlDeclaresEntities) -> Self {
+        XmlError::DeclaresEntities(refused)
+    }
+}
+
 /// The refusal inside `error`, wherever in its chain it sits, whether it arrived
 /// as an [`XmlTooDeep`] or wrapped in an [`XmlError`].
 pub fn too_deep(error: &anyhow::Error) -> Option<&XmlTooDeep> {
@@ -315,16 +443,25 @@ pub fn too_deep(error: &anyhow::Error) -> Option<&XmlTooDeep> {
     })
 }
 
-/// Parse `text` into a document, refusing it first if it nests past [`MAX_DEPTH`].
+/// Parse `text` into a document, refusing it first if it nests past [`MAX_DEPTH`]
+/// or, when `dtd` allows a DTD, if it declares an entity.
 ///
 /// `part` names the file or container member in the refusal. The parse itself runs
 /// on the parser stack (see [`on_parser_stack`]); the document it returns borrows
 /// `text` as `roxmltree` always does.
+///
+/// The entity check comes first. It is one pass over the text, and it keeps a
+/// hostile DTD away from the depth scan, whose entity bookkeeping it has no use
+/// for once declarations are refused. With [`Dtd::Refuse`], `roxmltree` refuses
+/// the whole DTD itself.
 pub fn parse<'input>(
     part: &str,
     text: &'input str,
     dtd: Dtd,
 ) -> Result<roxmltree::Document<'input>, XmlError> {
+    if dtd == Dtd::Allow {
+        check_entities(part, text.as_bytes())?;
+    }
     check(part, text.as_bytes())?;
     let allow_dtd = dtd == Dtd::Allow;
     on_parser_stack(move || {
@@ -426,26 +563,38 @@ pub fn on_parser_stack_reporting<T: Send>(
 /// are scanned as they are; UTF-16 is recognised by its byte-order mark and decoded
 /// first.
 pub fn check(part: &str, xml: &[u8]) -> Result<(), XmlTooDeep> {
-    let decoded;
-    let bytes = if let Some(rest) = xml.strip_prefix(b"\xEF\xBB\xBF") {
-        rest
-    } else if xml.starts_with(b"\xFF\xFE") || xml.starts_with(b"\xFE\xFF") {
-        decoded = decode_utf16(xml);
-        decoded.as_bytes()
-    } else {
-        xml
-    };
+    let bytes = scannable(xml);
     let mut scan = Scan {
         entities: Vec::new(),
         measured: HashMap::new(),
     };
-    scan.walk(bytes, 0, true)
+    scan.walk(&bytes, 0, true)
         .map(|_| ())
         .map_err(|(depth, at)| XmlTooDeep {
             part: part.to_string(),
             depth,
-            line: line_of(bytes, at),
+            line: line_of(&bytes, at),
         })
+}
+
+/// `xml` as bytes the scans can read: a UTF-8 byte-order mark dropped, UTF-16
+/// with a byte-order mark decoded, anything else as it is (see [`check`]).
+fn scannable(xml: &[u8]) -> Cow<'_, [u8]> {
+    if let Some(rest) = xml.strip_prefix(b"\xEF\xBB\xBF") {
+        Cow::Borrowed(rest)
+    } else if xml.starts_with(b"\xFF\xFE") || xml.starts_with(b"\xFE\xFF") {
+        Cow::Owned(decode_utf16(xml).into_bytes())
+    } else {
+        Cow::Borrowed(xml)
+    }
+}
+
+/// The offset of the first `needle` at or after `from`.
+fn find(text: &[u8], needle: &[u8], from: usize) -> Option<usize> {
+    text.get(from..)?
+        .windows(needle.len())
+        .position(|window| window == needle)
+        .map(|offset| from + offset)
 }
 
 /// UTF-16 with a byte-order mark, as UTF-8. A lone surrogate becomes U+FFFD, which
@@ -758,6 +907,14 @@ fn reference_name(text: &[u8], from: usize) -> Option<(&[u8], usize)> {
     (rest[end] == b';' && end > 0).then_some((&rest[..end], from + end + 1))
 }
 
+/// A global allocator that measures how far the heap rose during an import, for
+/// the tests showing an entity bomb was refused without being expanded.
+///
+/// Behind the `hostile-fixtures` feature, which only the dev-dependencies of the
+/// crates whose readers allow a DTD turn on.
+#[cfg(any(test, feature = "hostile-fixtures"))]
+pub mod fixtures;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -871,6 +1028,23 @@ mod tests {
         assert!(check("x", text.as_bytes()).is_err());
     }
 
+    /// [`parse`] with a DTD allowed, minus the entity refusal: the depth scan,
+    /// then `roxmltree` itself. For the tests of what the scan alone guarantees.
+    fn parse_measured_only<'input>(
+        part: &str,
+        text: &'input str,
+    ) -> Result<roxmltree::Document<'input>, XmlError> {
+        check(part, text.as_bytes())?;
+        on_parser_stack(move || {
+            let options = roxmltree::ParsingOptions {
+                allow_dtd: true,
+                ..roxmltree::ParsingOptions::default()
+            };
+            roxmltree::Document::parse_with_options(text, options)
+        })?
+        .map_err(XmlError::Malformed)
+    }
+
     /// How deep `document`'s elements go, the root counting as one.
     fn tree_depth(document: &roxmltree::Document<'_>) -> usize {
         document
@@ -903,11 +1077,13 @@ mod tests {
 
         // What passes, parsed by `roxmltree` itself, is a tree no deeper than the
         // ceiling; and the check is not simply refusing the shape, since the
-        // deepest that passes comes within a level or two of it.
+        // deepest that passes comes within a level or two of it. [`parse`] would
+        // refuse these documents for declaring entities before measuring them,
+        // so this is the scan alone, as a caller of [`check`] relies on it.
         let mut deepest_passing = 0;
         for pairs in [1, 100, 250, 251, 252, 253, 254, 255, 256, 257] {
             let text = unbalanced(pairs);
-            match parse("world.opml", &text, Dtd::Allow) {
+            match parse_measured_only("world.opml", &text) {
                 Ok(document) => {
                     let depth = tree_depth(&document);
                     assert!(
@@ -1130,5 +1306,159 @@ mod tests {
         .expect("outer");
         assert_eq!(outer.0, outer.1);
         assert_ne!(outer.0, std::thread::current().id());
+    }
+
+    // -----------------------------------------------------------------------
+    // Entities a document declares
+    // -----------------------------------------------------------------------
+
+    /// One entity named from the document itself, over and over: the shape
+    /// `roxmltree`'s billion-laughs guard lets through, since no reference sits
+    /// inside another.
+    fn amplified(value_bytes: usize, references: usize) -> String {
+        format!(
+            "<!DOCTYPE r [\n<!ENTITY e \"{}\">\n]><r a=\"{refs}\">{refs}</r>",
+            "a".repeat(value_bytes),
+            refs = "&e;".repeat(references)
+        )
+    }
+
+    #[test]
+    fn a_document_declaring_an_entity_is_refused_before_it_is_parsed() {
+        let text = amplified(1 << 10, 1 << 10);
+        match parse("tree", &text, Dtd::Allow) {
+            Err(XmlError::DeclaresEntities(refused)) => {
+                assert_eq!(
+                    refused,
+                    XmlDeclaresEntities {
+                        part: "tree".to_string(),
+                        line: 2,
+                    }
+                );
+            }
+            other => panic!("expected the entity refusal, got {other:?}"),
+        }
+    }
+
+    /// A DOCTYPE with nothing to expand is read as before: Plume's bare one, the
+    /// HTML 4 one Qt writes with an external identifier, and an internal subset
+    /// declaring only attributes. The five predefined entities need no
+    /// declaration.
+    #[test]
+    fn a_doctype_declaring_no_entity_is_read() {
+        for text in [
+            "<!DOCTYPE plume-tree><plume-tree version=\"0.5\"/>",
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \
+             \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html/>",
+            "<!DOCTYPE r [<!ATTLIST r a CDATA 'x'>]><r>&lt;&amp;&gt;&quot;&apos;</r>",
+            "<?xml version='1.0' encoding='UTF-8'?>\n<opml version=\"1.0\"><body/></opml>",
+        ] {
+            assert!(
+                parse("x", text, Dtd::Allow).is_ok(),
+                "should be read: {text}"
+            );
+        }
+    }
+
+    /// `<!ENTITY` declares nothing without a DOCTYPE before it, so text that only
+    /// mentions it is read.
+    #[test]
+    fn entity_text_with_no_doctype_before_it_is_no_declaration() {
+        for text in [
+            "<r><!-- <!ENTITY is not declared here --><![CDATA[<!ENTITY]]></r>",
+            "<!-- <!ENTITY e 'x'> --><!DOCTYPE r><r/>",
+        ] {
+            assert!(check_entities("x", text.as_bytes()).is_ok(), "{text}");
+            assert!(parse("x", text, Dtd::Allow).is_ok(), "{text}");
+        }
+    }
+
+    /// The rule is wider than the grammar, on purpose: a parameter entity, a
+    /// declaration hidden behind a quoted `>` or `]`, and `<!ENTITY` in a CDATA
+    /// section after a DOCTYPE are all refused, so no disagreement about where the
+    /// internal subset ends can let a declaration through.
+    #[test]
+    fn any_entity_after_a_doctype_is_refused() {
+        for text in [
+            "<!DOCTYPE r [<!ENTITY % p 'x'>]><r/>",
+            "<!DOCTYPE r [<!ATTLIST r a CDATA ']>'><!ENTITY e 'x'>]><r>&e;</r>",
+            "<!DOCTYPE r SYSTEM 'a>b' [<!ENTITY e 'x'>]><r>&e;</r>",
+            "<!DOCTYPE r><r><![CDATA[<!ENTITY]]></r>",
+        ] {
+            assert!(check_entities("x", text.as_bytes()).is_err(), "{text}");
+            assert!(
+                matches!(
+                    parse("x", text, Dtd::Allow),
+                    Err(XmlError::DeclaresEntities(_))
+                ),
+                "{text}"
+            );
+        }
+    }
+
+    /// A reader that refuses a DTD is left to `roxmltree`, which refuses the whole
+    /// DOCTYPE, declarations and all, exactly as it did.
+    #[test]
+    fn a_reader_refusing_the_dtd_is_unchanged() {
+        let text = amplified(16, 4);
+        assert!(matches!(
+            parse("x", &text, Dtd::Refuse),
+            Err(XmlError::Malformed(roxmltree::Error::DtdDetected))
+        ));
+    }
+
+    #[test]
+    fn a_declaration_is_found_in_utf16_and_after_a_byte_order_mark() {
+        let text = amplified(16, 4);
+        let mut le = vec![0xFF, 0xFE];
+        for unit in text.encode_utf16() {
+            le.extend_from_slice(&unit.to_le_bytes());
+        }
+        let mut bom = b"\xEF\xBB\xBF".to_vec();
+        bom.extend_from_slice(text.as_bytes());
+        for bytes in [le, bom] {
+            let refused = check_entities("x", &bytes).expect_err("declares one");
+            assert_eq!(refused.line, 2);
+        }
+    }
+
+    #[test]
+    fn an_entity_refusal_survives_the_trip_through_a_failure_message() {
+        let refused = XmlDeclaresEntities {
+            part: "odd:name.xml".to_string(),
+            line: 3,
+        };
+        let message = refused.failure_message();
+        assert_eq!(
+            XmlDeclaresEntities::from_failure_message(&message),
+            Some(refused.clone())
+        );
+        assert_eq!(XmlTooDeep::from_failure_message(&message), None);
+        assert_eq!(FoldersTooDeep::from_failure_message(&message), None);
+        let too_deep = XmlTooDeep {
+            part: "tree".to_string(),
+            depth: 257,
+            line: 1,
+        };
+        assert_eq!(
+            XmlDeclaresEntities::from_failure_message(&too_deep.failure_message()),
+            None
+        );
+    }
+
+    #[test]
+    fn an_entity_refusal_is_found_through_context_layers() {
+        let refused = XmlDeclaresEntities {
+            part: "world.opml".to_string(),
+            line: 1,
+        };
+        let wrapped = anyhow::Error::new(XmlError::DeclaresEntities(refused.clone()))
+            .context("reading the world")
+            .context("importing");
+        assert_eq!(declares_entities(&wrapped), Some(&refused));
+        assert_eq!(too_deep(&wrapped), None);
+        let direct = anyhow::Error::new(refused.clone()).context("importing");
+        assert_eq!(declares_entities(&direct), Some(&refused));
+        assert_eq!(declares_entities(&anyhow::anyhow!("something else")), None);
     }
 }

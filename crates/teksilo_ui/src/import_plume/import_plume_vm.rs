@@ -38,7 +38,7 @@ use frontend::AppContext;
 use frontend::commands::{import_management_commands, long_operation_commands};
 use frontend::common::event::{Event, LongOperationEvent, Origin};
 use frontend::import_management::ImportPlumeCreatorFileDto;
-use skrib_format::XmlTooDeep;
+use skrib_format::{XmlDeclaresEntities, XmlTooDeep};
 
 use crate::intents::AppIntent;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
@@ -530,7 +530,8 @@ impl ImportPlumeViewModel {
     /// Replace/raise the error toast: reason in the body, full message behind
     /// **Details** (persistent — the user dismisses it).
     fn show_error(&self, ctx: &mut EventContext, message: &str) {
-        let (body, details) = import_failure::failure_text(message, nested_too_deep);
+        let (body, details) =
+            import_failure::failure_text(message, nested_too_deep, declares_entities);
         ctx.show_toast(
             import_toast(Toast::error(tr!(import_plume_error_title())))
                 .body(body)
@@ -578,6 +579,13 @@ fn nested_too_deep(refused: &XmlTooDeep) -> LocalizedString {
     ))
 }
 
+/// The error toast's sentence for a project refused because one of its parts
+/// declares an XML entity, which no Plume Creator project does (see
+/// `shared::import_failure`).
+fn declares_entities(refused: &XmlDeclaresEntities) -> LocalizedString {
+    tr!(import_plume_declares_entities(part = refused.part.clone()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*; // brings `FileDialogResult` in via the parent's prelude glob
@@ -589,6 +597,16 @@ mod tests {
     #[test]
     fn a_nesting_refusal_is_worded_for_the_writer_in_both_locales() {
         crate::shared::import_failure::assert_worded_in_both_locales("tree", nested_too_deep);
+    }
+
+    /// A project refused for declaring an entity reaches the writer as a sentence
+    /// in their language, naming the part, in both shipped locales.
+    #[test]
+    fn an_entity_refusal_is_worded_for_the_writer_in_both_locales() {
+        crate::shared::import_failure::assert_entity_refusal_worded_in_both_locales(
+            "tree",
+            declares_entities,
+        );
     }
 
     #[test]

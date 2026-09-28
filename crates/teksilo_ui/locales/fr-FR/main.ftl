@@ -1060,6 +1060,10 @@ import-plume-error-title = Impossible d’importer le projet
 # de ce que l’application accepte. $part est le nom de la partie (tree,
 # attendance, info) ; $limit est le plafond, un nombre.
 import-plume-nested-too-deep = Le projet n’a pas été importé : sa partie « { $part } » est imbriquée sur plus de { $limit } niveaux. Aucun projet Plume Creator n’en approche, et la lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
+# Projet refusé sans être lu : l’une de ses parties déclare des entités XML,
+# qui pourraient occuper plus de mémoire que n’en a l’ordinateur une fois
+# développées. $part est le nom de la partie (tree, attendance, info).
+import-plume-declares-entities = Le projet n’a pas été importé : sa partie « { $part } » déclare des entités XML, ce qu’aucun projet Plume Creator ne fait. Les développer pourrait demander plus de mémoire que n’en a l’ordinateur et provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
 import-plume-error-details = Détails
 
 ## Boîte de dialogue d'import de projet Manuskript
@@ -1134,6 +1138,11 @@ import-manuskript-nested-too-deep = Le projet n’a pas été importé : son fi
 # le plan d’un projet en dossiers, un par niveau). $limit est le plafond, un
 # nombre.
 import-manuskript-folders-too-deep = Le projet n’a pas été importé : l’un de ses fichiers se trouve à plus de { $limit } niveaux de dossiers de profondeur. Aucun projet Manuskript n’en approche, et le lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
+# Projet refusé sans être lu : l’un de ses fichiers déclare des entités XML,
+# qui pourraient occuper plus de mémoire que n’en a l’ordinateur une fois
+# développées. $part est le nom de ce fichier dans le projet (world.opml,
+# plots.xml…).
+import-manuskript-declares-entities = Le projet n’a pas été importé : son fichier « { $part } » déclare des entités XML, ce qu’aucun projet Manuskript ne fait. Les développer pourrait demander plus de mémoire que n’en a l’ordinateur et provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
 import-manuskript-error-details = Détails
 
 ## Import de projet, commun aux boîtes de dialogue Plume Creator et Manuskript

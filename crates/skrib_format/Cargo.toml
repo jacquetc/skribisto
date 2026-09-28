@@ -19,10 +19,11 @@ publish = false
 name = "skrib_format"
 
 [features]
-# The crafted archives in `zip_guard::fixtures` — bombs and over-declared members
-# — for the tests of every reader `ZipGuard` protects. Off by default; each
-# reader's crate turns it on in its own dev-dependencies, so the fixtures never
-# reach a release build.
+# The crafted archives in `zip_guard::fixtures` (bombs and over-declared
+# members) for the tests of every reader `ZipGuard` protects, and the
+# peak-memory allocator in `xml_depth::fixtures` the entity-bomb tests measure
+# with. Off by default; each reader's crate turns it on in its own
+# dev-dependencies, so the fixtures never reach a release build.
 hostile-fixtures = []
 
 [dependencies]

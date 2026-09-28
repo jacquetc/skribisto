@@ -14,7 +14,8 @@
 //! `skrib_format::MAX_XML_DEPTH`: the reader and every walk after it fit. One level
 //! past it the import is refused with the typed `XmlTooDeep`, naming the member,
 //! before any parser has seen a byte of it. Every Plume member carries a DOCTYPE,
-//! so this is also the reader where nesting can hide inside an entity.
+//! so nesting could also hide inside an entity; a member declaring one is
+//! refused for that before its depth is measured (see `hostile_entities.rs`).
 //!
 //! A text is HTML, with a ceiling of its own (`skrib_format::MAX_HTML_DEPTH`). A
 //! text past it does not refuse the project: its words are kept as plain text and
@@ -24,7 +25,7 @@ use std::io::Write;
 use std::sync::atomic::AtomicBool;
 
 use plume_import::{ImportSummary, import_with_progress};
-use skrib_format::{BundledItem, MAX_XML_DEPTH, XmlTooDeep};
+use skrib_format::{BundledItem, MAX_XML_DEPTH, XmlDeclaresEntities, XmlTooDeep};
 
 /// The stack every import here runs on: 384 KiB, where a long operation's worker
 /// gets 2 MiB from `std::thread::spawn`.
@@ -132,6 +133,16 @@ fn refusal_of(result: anyhow::Result<ImportSummary>) -> XmlTooDeep {
         .unwrap_or_else(|| panic!("the refusal must be the typed one, got: {error:#}"))
 }
 
+fn entity_refusal_of(result: anyhow::Result<ImportSummary>) -> XmlDeclaresEntities {
+    let error = match result {
+        Ok(_) => panic!("a project hiding nesting in an entity must be refused"),
+        Err(error) => error,
+    };
+    skrib_format::xml_depth::declares_entities(&error)
+        .cloned()
+        .unwrap_or_else(|| panic!("the refusal must be the typed one, got: {error:#}"))
+}
+
 #[test]
 fn a_tree_nested_to_the_ceiling_imports_from_a_long_operation_stack() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -168,10 +179,11 @@ fn a_tree_one_level_past_the_ceiling_is_refused_by_name() {
 }
 
 /// `roxmltree` expands an entity's value in place, at the depth of the
-/// reference, so a tree whose own tags stop far short of the ceiling can still
-/// nest past it once expanded.
+/// reference, so a tree whose own tags stop far short of the ceiling could still
+/// nest past it once expanded. It never gets that far: a member declaring an
+/// entity is refused for that, before its depth is measured.
 #[test]
-fn nesting_hidden_in_an_entity_is_counted_where_it_is_expanded() {
+fn nesting_hidden_in_an_entity_is_refused_with_the_entity() {
     let dir = tempfile::tempdir().expect("tempdir");
     let hidden = format!(
         "{}{}",
@@ -185,7 +197,7 @@ fn nesting_hidden_in_an_entity_is_counted_where_it_is_expanded() {
     );
     let source = plume(dir.path(), &[("tree", tree)]);
 
-    let refused = refusal_of(import_on_a_long_operation_stack(
+    let refused = entity_refusal_of(import_on_a_long_operation_stack(
         source,
         output_in(dir.path()),
     ));
@@ -197,9 +209,10 @@ fn nesting_hidden_in_an_entity_is_counted_where_it_is_expanded() {
 /// entity that opens an act and never closes it nests everything after each
 /// reference one level further, and a second entity closes them again. No single
 /// expansion is deep; a thousand of them are, and used to import with every level
-/// past the ceiling silently dropped by the walk's own guard.
+/// past the ceiling silently dropped by the walk's own guard. Now the member is
+/// refused for declaring them.
 #[test]
-fn nesting_built_from_entities_left_open_is_counted_as_it_builds() {
+fn nesting_built_from_entities_left_open_is_refused_with_the_entities() {
     let dir = tempfile::tempdir().expect("tempdir");
     let tree = format!(
         "<!DOCTYPE plume-tree [<!ENTITY o '<act number=\"2\" name=\"Deep\">'>\
@@ -210,7 +223,7 @@ fn nesting_built_from_entities_left_open_is_counted_as_it_builds() {
     );
     let source = plume(dir.path(), &[("tree", tree)]);
 
-    let refused = refusal_of(import_on_a_long_operation_stack(
+    let refused = entity_refusal_of(import_on_a_long_operation_stack(
         source,
         output_in(dir.path()),
     ));

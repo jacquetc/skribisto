@@ -16,8 +16,10 @@ use skrib_format::xml_depth::{self, Dtd, XmlError};
 /// Through `skrib_format::xml_depth`, so a member nested past `MAX_XML_DEPTH` is
 /// refused with a typed `XmlTooDeep` naming `part` before `roxmltree` can recurse
 /// into it, and the parse runs on a stack deep enough for anything under that.
-/// A DTD's entities are counted where they are expanded, which matters here more
-/// than anywhere: this is one of the two readers that allows one.
+/// Allowing a DTD lets `roxmltree` expand the entities one declares, as often as
+/// the member names them, so a member declaring one is refused first with a
+/// typed `XmlDeclaresEntities`: no Plume version writes anything inside its
+/// DOCTYPE, and a bare DOCTYPE is still read.
 pub fn parse_xml<'a>(part: &str, xml: &'a str) -> Result<roxmltree::Document<'a>> {
     xml_depth::parse(part, xml, Dtd::Allow).map_err(|e| match e {
         XmlError::Malformed(e) => anyhow::anyhow!("parsing XML: {e}"),

@@ -1062,6 +1062,10 @@ import-plume-error-title = Could not import the project
 # than the app will read. $part is the part's own name (tree, attendance, info);
 # $limit is the ceiling, a number.
 import-plume-nested-too-deep = The project was not imported: its “{ $part }” part is nested more than { $limit } levels deep. No Plume Creator project comes near that, and reading it could crash Skribisto. Nothing was written.
+# The project was refused unread because one of its parts declares XML
+# entities, which could expand into more memory than the computer has. $part
+# is the part's own name (tree, attendance, info).
+import-plume-declares-entities = The project was not imported: its “{ $part }” part declares XML entities, which no Plume Creator project does. Expanding them could take more memory than the computer has and crash Skribisto. Nothing was written.
 import-plume-error-details = Details
 
 ## Import Manuskript project dialog
@@ -1135,6 +1139,10 @@ import-manuskript-nested-too-deep = The project was not imported: its file “{ 
 # nested deeper than the app will read (Manuskript keeps a project's outline
 # as folders, one per level). $limit is the ceiling, a number.
 import-manuskript-folders-too-deep = The project was not imported: one of its files sits more than { $limit } folders deep. No Manuskript project comes near that, and reading it could crash Skribisto. Nothing was written.
+# The project was refused unread because one of its files declares XML
+# entities, which could expand into more memory than the computer has. $part
+# is that file's name inside the project (world.opml, plots.xml…).
+import-manuskript-declares-entities = The project was not imported: its file “{ $part }” declares XML entities, which no Manuskript project does. Expanding them could take more memory than the computer has and crash Skribisto. Nothing was written.
 import-manuskript-error-details = Details
 
 ## Project import, shared by the Plume Creator and Manuskript dialogs

@@ -44,7 +44,7 @@ use frontend::AppContext;
 use frontend::commands::{import_management_commands, long_operation_commands};
 use frontend::common::event::{Event, LongOperationEvent, Origin};
 use frontend::import_management::ImportManuskriptProjectDto;
-use skrib_format::{FoldersTooDeep, XmlTooDeep};
+use skrib_format::{FoldersTooDeep, XmlDeclaresEntities, XmlTooDeep};
 
 use crate::intents::AppIntent;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
@@ -587,7 +587,7 @@ impl DiskChecked for ImportManuskriptViewModel {
 fn failure_text(message: &str) -> (LocalizedString, String) {
     match FoldersTooDeep::from_failure_message(message) {
         Some(refused) => (folders_too_deep(&refused), refused.to_string()),
-        None => import_failure::failure_text(message, nested_too_deep),
+        None => import_failure::failure_text(message, nested_too_deep, declares_entities),
     }
 }
 
@@ -597,6 +597,15 @@ fn nested_too_deep(refused: &XmlTooDeep) -> LocalizedString {
     tr!(import_manuskript_nested_too_deep(
         part = refused.part.clone(),
         limit = refused.limit() as i64
+    ))
+}
+
+/// The error toast's sentence for a project refused because one of its files
+/// declares an XML entity, which no Manuskript project does (see
+/// `shared::import_failure`).
+fn declares_entities(refused: &XmlDeclaresEntities) -> LocalizedString {
+    tr!(import_manuskript_declares_entities(
+        part = refused.part.clone()
     ))
 }
 
@@ -1257,6 +1266,16 @@ mod tests {
     #[test]
     fn a_nesting_refusal_is_worded_for_the_writer_in_both_locales() {
         crate::shared::import_failure::assert_worded_in_both_locales("world.opml", nested_too_deep);
+    }
+
+    /// A project refused for declaring an entity reaches the writer as a sentence
+    /// in their language, naming the file, in both shipped locales.
+    #[test]
+    fn an_entity_refusal_is_worded_for_the_writer_in_both_locales() {
+        crate::shared::import_failure::assert_entity_refusal_worded_in_both_locales(
+            "world.opml",
+            declares_entities,
+        );
     }
 
     /// A project refused for its folders reaches the writer as a sentence in

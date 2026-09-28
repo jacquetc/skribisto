@@ -156,7 +156,7 @@ pub use slug::{
 pub use sniff::{BackupSniff, sniff_backup, sniff_backup_filename};
 pub use tree_read::{Gathered, TreeReader, gather};
 pub use writer::{mark_existing_as_backup, verify_backup_at, write_bundle};
-pub use xml_depth::{FoldersTooDeep, MAX_DEPTH as MAX_XML_DEPTH, XmlTooDeep};
+pub use xml_depth::{FoldersTooDeep, MAX_DEPTH as MAX_XML_DEPTH, XmlDeclaresEntities, XmlTooDeep};
 pub use zip_guard::{MAX_RATIO, RATIO_FLOOR_BYTES, ZipGuard, ZipLimits, ZipRefused};
 
 /// Generate a fresh, stable project identity string (UUID v4). Used to mint a

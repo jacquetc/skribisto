@@ -152,14 +152,18 @@ fn read_and_map(
         },
     };
     // `info` is non-critical metadata (title + dates); a malformed one just falls
-    // back to the tree's project name. One nested past the XML ceiling is not
-    // malformed metadata but a file built to crash its reader, and refuses the
-    // project exactly as it would in `tree` or `attendance`: no Plume version writes
-    // anything within two hundred levels of it.
+    // back to the tree's project name. One nested past the XML ceiling, or one
+    // declaring an entity, is not malformed metadata but a file built to crash its
+    // reader, and refuses the project exactly as it would in `tree` or
+    // `attendance`: no Plume version writes anything within two hundred levels of
+    // the ceiling, nor any entity declaration.
     let info = match &src.info_xml {
         Some(xml) => match info_parse::parse(xml) {
             Ok(info) => info,
-            Err(e) if skrib_format::xml_depth::too_deep(&e).is_some() => {
+            Err(e)
+                if skrib_format::xml_depth::too_deep(&e).is_some()
+                    || skrib_format::xml_depth::declares_entities(&e).is_some() =>
+            {
                 return Err(e.context("reading the Plume project information (info)"));
             }
             Err(_) => PlumeInfo::default(),

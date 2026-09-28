@@ -45,14 +45,25 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result, bail};
 use chrono::{DateTime, FixedOffset, Utc};
-use skrib_format::{FoldersTooDeep, SkribShape, XmlTooDeep, write_bundle};
+use skrib_format::{FoldersTooDeep, SkribShape, XmlDeclaresEntities, XmlTooDeep, write_bundle};
+
+/// Every member either generation parses as XML, with its bytes.
+///
+/// Every such member is named `.xml` or `.opml` (`world.opml`, `plots.xml`,
+/// `revisions.xml`, format 0's `outline.xml` and its four `<model>` dumps), so
+/// taking every member so named covers them all without keeping a second list of
+/// them here.
+fn xml_members(src: &ManuskriptSource) -> impl Iterator<Item = (&str, &[u8])> {
+    src.members().into_iter().filter_map(|member| {
+        let name = member.to_ascii_lowercase();
+        if !(name.ends_with(".xml") || name.ends_with(".opml")) {
+            return None;
+        }
+        src.bytes(member).map(|bytes| (member, bytes))
+    })
+}
 
 /// Refuse the project if any XML member nests past `skrib_format::MAX_XML_DEPTH`.
-///
-/// Every member either generation parses as XML is named `.xml` or `.opml`
-/// (`world.opml`, `plots.xml`, `revisions.xml`, format 0's `outline.xml` and its
-/// four `<model>` dumps), so checking every member so named covers them all
-/// without keeping a second list of them here.
 ///
 /// **The whole project is refused, not just the member.** Everywhere else a member
 /// that cannot be read costs only what it held, and that stays true for a member
@@ -61,16 +72,22 @@ use skrib_format::{FoldersTooDeep, SkribShape, XmlTooDeep, write_bundle};
 /// file was not damaged by accident. The refusal names the member, so a writer
 /// can see which file to look at.
 pub fn refuse_deep_xml(src: &ManuskriptSource) -> Result<(), XmlTooDeep> {
-    for member in src.members() {
-        let name = member.to_ascii_lowercase();
-        if !(name.ends_with(".xml") || name.ends_with(".opml")) {
-            continue;
-        }
-        if let Some(bytes) = src.bytes(member) {
-            skrib_format::xml_depth::check(member, bytes)?;
-        }
-    }
-    Ok(())
+    xml_members(src).try_for_each(|(member, bytes)| skrib_format::xml_depth::check(member, bytes))
+}
+
+/// Refuse the project if any XML member declares an entity.
+///
+/// The readers allow a DTD, which lets `roxmltree` expand a declared entity as
+/// often as the member names it: one 64 KiB entity named four thousand times is
+/// a 256 MiB string from a 78 KB file, and a member within the size limits could
+/// ask for more memory than the computer has. Manuskript writes its XML with
+/// lxml and no DOCTYPE at all, so, as with [`refuse_deep_xml`], such a member was
+/// built rather than damaged, and **the whole project is refused**, naming it.
+/// Each reader refuses one on its own as well, but only as a notice that costs
+/// the member.
+pub fn refuse_entity_declarations(src: &ManuskriptSource) -> Result<(), XmlDeclaresEntities> {
+    xml_members(src)
+        .try_for_each(|(member, bytes)| skrib_format::xml_depth::check_entities(member, bytes))
 }
 
 /// Refuse the project if any member sits more than `skrib_format::MAX_XML_DEPTH`
@@ -124,6 +141,9 @@ pub fn import_with_progress(
     report(2.0, "Opening the Manuskript project…");
     let src = ManuskriptSource::open(source_path)?;
     refuse_deep_folders(&src)?;
+    // Before the depth scan, which would otherwise measure every entity a hostile
+    // member declares only for the project to be refused anyway.
+    refuse_entity_declarations(&src)?;
     refuse_deep_xml(&src)?;
     let container = src.container;
     let newest = src.newest_modified;

@@ -12,16 +12,20 @@
 ///
 /// A refusal of a project nested past the ceiling travels as its own
 /// `failure_message`, `XmlTooDeep`'s for XML and `FoldersTooDeep`'s for a
-/// Manuskript outline kept as folders, which the UI turns back into the typed
-/// value and words in the writer's own language. Anything else is flattened to
-/// its full `{:#}` chain: the manager records only `e.to_string()`, which for a
-/// plain `anyhow` error is the outermost context alone, losing the root cause the
-/// UI's error toast wants to show.
+/// Manuskript outline kept as folders, and so does the refusal of one whose XML
+/// declares an entity, `XmlDeclaresEntities`'s. The UI turns each back into the
+/// typed value and words it in the writer's own language. Anything else is
+/// flattened to its full `{:#}` chain: the manager records only `e.to_string()`,
+/// which for a plain `anyhow` error is the outermost context alone, losing the
+/// root cause the UI's error toast wants to show.
 pub(crate) fn for_long_operation(error: anyhow::Error) -> anyhow::Error {
     if let Some(refused) = skrib_format::xml_depth::too_deep(&error) {
         return anyhow::anyhow!(refused.failure_message());
     }
     if let Some(refused) = skrib_format::xml_depth::folders_too_deep(&error) {
+        return anyhow::anyhow!(refused.failure_message());
+    }
+    if let Some(refused) = skrib_format::xml_depth::declares_entities(&error) {
         return anyhow::anyhow!(refused.failure_message());
     }
     anyhow::anyhow!("{error:#}")
@@ -30,7 +34,8 @@ pub(crate) fn for_long_operation(error: anyhow::Error) -> anyhow::Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use skrib_format::{FoldersTooDeep, XmlTooDeep};
+    use skrib_format::xml_depth::XmlError;
+    use skrib_format::{FoldersTooDeep, XmlDeclaresEntities, XmlTooDeep};
 
     #[test]
     fn a_depth_refusal_reaches_the_ui_as_the_typed_value() {
@@ -60,6 +65,22 @@ mod tests {
     }
 
     #[test]
+    fn an_entity_refusal_reaches_the_ui_as_the_typed_value() {
+        let refused = XmlDeclaresEntities {
+            part: "tree".to_string(),
+            line: 2,
+        };
+        let error = anyhow::Error::new(XmlError::DeclaresEntities(refused.clone()))
+            .context("reading the Plume outline (tree)");
+        let message = for_long_operation(error).to_string();
+        assert_eq!(
+            XmlDeclaresEntities::from_failure_message(&message),
+            Some(refused)
+        );
+        assert_eq!(XmlTooDeep::from_failure_message(&message), None);
+    }
+
+    #[test]
     fn any_other_failure_keeps_its_whole_chain() {
         let error = anyhow::anyhow!("root cause").context("outer");
         let message = for_long_operation(error).to_string();
@@ -69,5 +90,6 @@ mod tests {
         );
         assert_eq!(XmlTooDeep::from_failure_message(&message), None);
         assert_eq!(FoldersTooDeep::from_failure_message(&message), None);
+        assert_eq!(XmlDeclaresEntities::from_failure_message(&message), None);
     }
 }

@@ -14,7 +14,9 @@
 //! At the ceiling the project imports, which is the measurement behind
 //! `skrib_format::MAX_XML_DEPTH`: every reader and every walk after it fits. One
 //! level past it the import is refused with the typed `XmlTooDeep`, naming the
-//! member, before any parser has seen a byte of it.
+//! member, before any parser has seen a byte of it. Nesting could also hide inside
+//! an entity, since the readers allow a DTD; a member declaring one is refused for
+//! that before its depth is measured (see `hostile_entities.rs`).
 //!
 //! A row's body is Markdown or HTML, with ceilings of its own
 //! (`skrib_format::MAX_MARKDOWN_DEPTH`, `skrib_format::MAX_HTML_DEPTH`). A body past
@@ -26,7 +28,7 @@ use std::sync::atomic::AtomicBool;
 
 use manuskript_import::map::Names;
 use manuskript_import::{ImportSummary, import_with_progress};
-use skrib_format::{BundledItem, FoldersTooDeep, MAX_XML_DEPTH, XmlTooDeep};
+use skrib_format::{BundledItem, FoldersTooDeep, MAX_XML_DEPTH, XmlDeclaresEntities, XmlTooDeep};
 
 /// The stack every import here runs on: 384 KiB, where a long operation's worker
 /// gets 2 MiB from `std::thread::spawn`.
@@ -162,6 +164,16 @@ fn refusal_of(result: anyhow::Result<ImportSummary>) -> XmlTooDeep {
         .unwrap_or_else(|| panic!("the refusal must be the typed one, got: {error:#}"))
 }
 
+fn entity_refusal_of(result: anyhow::Result<ImportSummary>) -> XmlDeclaresEntities {
+    let error = match result {
+        Ok(_) => panic!("a project hiding nesting in an entity must be refused"),
+        Err(error) => error,
+    };
+    skrib_format::xml_depth::declares_entities(&error)
+        .cloned()
+        .unwrap_or_else(|| panic!("the refusal must be the typed one, got: {error:#}"))
+}
+
 #[test]
 fn a_world_tree_nested_to_the_ceiling_imports_from_a_long_operation_stack() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -201,9 +213,10 @@ fn a_world_tree_one_level_past_the_ceiling_is_refused_by_name() {
 
 /// Manuskript's readers allow a DTD, and `roxmltree` expands an entity's value in
 /// place, at the depth of the reference. So a file whose own tags stop far short
-/// of the ceiling can still nest past it once expanded.
+/// of the ceiling could still nest past it once expanded. It never gets that far:
+/// a member declaring an entity refuses the project before any depth is measured.
 #[test]
-fn nesting_hidden_in_an_entity_is_counted_where_it_is_expanded() {
+fn nesting_hidden_in_an_entity_is_refused_with_the_entity() {
     let dir = tempfile::tempdir().expect("tempdir");
     let hidden = format!(
         "{}{}",
@@ -217,7 +230,7 @@ fn nesting_hidden_in_an_entity_is_counted_where_it_is_expanded() {
     );
     let source = folder_project(dir.path(), &world);
 
-    let refused = refusal_of(import_on_a_long_operation_stack(
+    let refused = entity_refusal_of(import_on_a_long_operation_stack(
         source,
         output_in(dir.path()),
     ));
@@ -274,9 +287,10 @@ fn a_format_zero_outline_one_level_past_the_ceiling_is_refused_by_name() {
 /// entity that opens an `<outline>` and never closes it nests everything after
 /// each reference one level further. No single expansion is deep; a thousand of
 /// them are. This used to import, with every level past the ceiling silently
-/// dropped by the walk's own guard.
+/// dropped by the walk's own guard. Now the project is refused for the
+/// declarations.
 #[test]
-fn nesting_built_from_entities_left_open_is_counted_as_it_builds() {
+fn nesting_built_from_entities_left_open_is_refused_with_the_entities() {
     let dir = tempfile::tempdir().expect("tempdir");
     let world = format!(
         "<!DOCTYPE opml [<!ENTITY o '<outline name=\"Deep\">'>\
@@ -287,7 +301,7 @@ fn nesting_built_from_entities_left_open_is_counted_as_it_builds() {
     );
     let source = folder_project(dir.path(), &world);
 
-    let refused = refusal_of(import_on_a_long_operation_stack(
+    let refused = entity_refusal_of(import_on_a_long_operation_stack(
         source,
         output_in(dir.path()),
     ));
