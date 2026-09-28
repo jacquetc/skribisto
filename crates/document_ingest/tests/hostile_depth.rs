@@ -5,9 +5,10 @@
 //!
 //! `roxmltree` recurses once per element and `docx-rs` once per table nested in a
 //! table cell, and a stack overflow aborts the process rather than unwinding. Every
-//! document here is generated in the test and scanned on a thread with the 2 MiB
-//! stack a long operation gets, in the debug build the test suite runs in, which
-//! is where the margin is thinnest.
+//! document here is generated in the test and scanned on a thread with less than a
+//! fifth of the 2 MiB stack a long operation gets, in the debug build the test suite
+//! runs in, which is where the margin is thinnest. The rest of the 2 MiB is room
+//! for platforms whose frames are larger than Linux's: see [`SMALL_STACK`].
 //!
 //! At the ceiling the document is read, through every recursive walk its scanner
 //! has, which is the measurement behind `skrib_format::MAX_XML_DEPTH`. One level
@@ -20,15 +21,24 @@ use std::path::Path;
 use document_ingest::{ImportDiagnostic, ScannerRegistry, SourceBlock, SourceDocument};
 use skrib_format::MAX_XML_DEPTH;
 
-/// The stack `std::thread::spawn` gives a long operation's worker by default.
-const LONG_OPERATION_STACK: usize = 2 * 1024 * 1024;
+/// The stack every scan here runs on: 384 KiB, where a long operation's worker
+/// gets 2 MiB from `std::thread::spawn`.
+///
+/// A frame is not the same size on every platform, and one that holds the standard
+/// library's `DirEntry` is five times larger on macOS than on Linux. A scan's own
+/// work on this thread does not grow with the nesting (the parse and every walk
+/// after it run on `skrib_format::xml_depth`'s parser stack), so a pass here on
+/// Linux still holds on a platform whose frames are five times larger. The full
+/// account is in `skrib_format::xml_depth`'s module note.
+const SMALL_STACK: usize = 384 * 1024;
 
-/// Scan `bytes` as the file `name` on a thread with a long operation's stack. An
-/// overflow would abort the test binary, not fail the test, which is exactly the
-/// failure this file exists to rule out.
+/// Scan `bytes` as the file `name` on a thread of its own, as the importer scans
+/// it, with [`SMALL_STACK`] rather than the long operation's 2 MiB. An overflow would
+/// abort the test binary, not fail the test, which is exactly the failure this file
+/// exists to rule out.
 fn scan_on_a_long_operation_stack(name: &'static str, bytes: Vec<u8>) -> SourceDocument {
     std::thread::Builder::new()
-        .stack_size(LONG_OPERATION_STACK)
+        .stack_size(SMALL_STACK)
         .spawn(move || ScannerRegistry::with_builtin_scanners().scan_bytes(Path::new(name), &bytes))
         .expect("spawn the scan thread")
         .join()

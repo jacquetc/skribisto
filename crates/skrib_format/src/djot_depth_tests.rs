@@ -4,23 +4,32 @@
 //! The Djot ceiling: what it refuses, what it lets through, and proof that what it
 //! lets through parses.
 //!
-//! The parses run on a thread with the 2 MiB stack a long operation gets, in the
-//! debug build the suite runs in, through `set_djot_sync`, which runs `jotdown` on
-//! the calling thread. A stack overflow is not a panic, so a regression here does
-//! not fail a test: it aborts the test binary, which is the signal.
+//! The parses run on a thread with a quarter of the 2 MiB stack a long operation
+//! gets ([`QUARTER_STACK`]), in the debug build the suite runs in, through
+//! `set_djot_sync`, which runs `jotdown` on the calling thread. A stack overflow is
+//! not a panic, so a regression here does not fail a test: it aborts the test
+//! binary, which is the signal.
 
 use super::*;
 use proptest::prelude::*;
 use text_document::{ListStyle, TextDocument};
 
-/// The stack `std::thread::spawn` gives a long operation's worker by default.
-const LONG_OPERATION_STACK: usize = 2 << 20;
+/// The stack every parse here runs on: 512 KiB, a quarter of the 2 MiB a long
+/// operation's worker gets from `std::thread::spawn`.
+///
+/// Unlike the importers, `jotdown` recurses once per container by design, on
+/// whatever thread parses, and the Djot ceiling is what bounds it: at
+/// [`MAX_DEPTH`] it needs about 350 KiB in a debug build on Linux. A pass on a
+/// quarter of the real stack proves the real one holds four times what the parse
+/// needs here, and its frames were measured about 6 % larger on macOS, well inside
+/// that. See [`crate::xml_depth`]'s module note.
+const QUARTER_STACK: usize = 512 * 1024;
 
-/// Parse `djot` on a thread with a long operation's stack and return its plain
-/// text, or the parser's own error.
+/// Parse `djot` on a thread standing in for a long operation's, with
+/// [`QUARTER_STACK`], and return its plain text, or the parser's own error.
 pub(crate) fn parse_on_a_long_operation_stack(djot: String) -> Result<String, String> {
     std::thread::Builder::new()
-        .stack_size(LONG_OPERATION_STACK)
+        .stack_size(QUARTER_STACK)
         .spawn(move || {
             let doc = TextDocument::new();
             doc.set_djot_sync(&djot).map_err(|e| e.to_string())?;

@@ -43,7 +43,7 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
 use chrono::{DateTime, Utc};
@@ -195,15 +195,7 @@ impl ManuskriptSource {
         let mut notices = Vec::new();
         let mut newest: Option<DateTime<Utc>> = None;
         let mut total: u64 = 0;
-        read_dir_into(
-            folder,
-            folder,
-            0,
-            &mut files,
-            &mut notices,
-            &mut newest,
-            &mut total,
-        )?;
+        read_dir_into(folder, &mut files, &mut notices, &mut newest, &mut total)?;
 
         let project_name = folder
             .file_name()
@@ -424,80 +416,94 @@ fn normalise_member(raw: &str) -> Option<String> {
     }
 }
 
-/// Walk a project folder into the member map, keyed exactly as the zip path keys.
+/// Walk the project folder `root` into the member map, keyed exactly as the zip
+/// path keys.
 ///
-/// `depth` is how many folders `dir` sits below `root`. The walk recurses once per
-/// folder, and a folder can be nested as deep as a path can be long, or without
-/// end when a link inside it points back up; so it stops at the ceiling every
-/// other tree an importer reads is held to, with the typed refusal the writer is
-/// shown, rather than wherever the stack gives out.
+/// A folder can be nested as deep as a path can be long, or without end when a link
+/// inside it points back up, so the walk stops at the ceiling every other tree an
+/// importer reads is held to, with the typed refusal the writer is shown.
+///
+/// It is a loop over the folders still to read, never a recursion. A recursive walk
+/// keeps a stack frame and an open directory for every level it is inside, and the
+/// frame is not the same size everywhere: on macOS the standard library's
+/// `DirEntry` carries the whole `dirent` record, a 1 KiB name buffer included, and
+/// a debug build's frame measured 8.7 KiB a level there against 1.7 KiB on Linux.
+/// A project nested to the ceiling overflowed a long operation's 2 MiB on macOS
+/// before the walk could refuse it, and an overflow aborts the whole app. Here the
+/// stack the walk needs does not grow with the nesting, and one directory is open
+/// at a time.
 fn read_dir_into(
     root: &Path,
-    dir: &Path,
-    depth: usize,
     files: &mut BTreeMap<String, Vec<u8>>,
     notices: &mut Vec<String>,
     newest: &mut Option<DateTime<Utc>>,
     total: &mut u64,
 ) -> Result<()> {
-    let entries = fs::read_dir(dir).with_context(|| format!("reading '{}'", dir.display()))?;
-    for entry in entries {
-        let entry = entry.with_context(|| format!("reading an entry of '{}'", dir.display()))?;
-        let path = entry.path();
-        let name = entry.file_name();
-        let name = name.to_string_lossy();
-        // Dot-entries are skipped for the same reason the zip path skips them.
-        if name.starts_with('.') {
-            continue;
-        }
-        if path.is_dir() {
-            if depth + 1 > skrib_format::MAX_XML_DEPTH {
-                let folder = path.strip_prefix(root).unwrap_or(&path);
-                return Err(anyhow::Error::new(skrib_format::FoldersTooDeep {
-                    part: folder.to_string_lossy().replace('\\', "/"),
-                    depth: depth + 1,
-                }));
-            }
-            read_dir_into(root, &path, depth + 1, files, notices, newest, total)?;
-            continue;
-        }
-        let Ok(relative) = path.strip_prefix(root) else {
-            continue;
-        };
-        let Some(key) = normalise_member(&relative.to_string_lossy()) else {
-            continue;
-        };
-        if files.len() >= MAX_MEMBERS {
-            bail!("this project holds more than {MAX_MEMBERS} files");
-        }
-        // A file that cannot be read costs that file and nothing else. A
-        // project folder is a directory on someone's disk: it collects broken
-        // symlinks, half-synced files and things the current user may not read,
-        // and none of that is a reason to refuse a manuscript.
-        let bytes = match fs::read(&path) {
-            Ok(bytes) => bytes,
-            Err(e) => {
-                notices.push(format!(
-                    "'{key}' could not be read ({e}) and was skipped; everything else was \
-                     imported."
-                ));
+    // Every folder found and not yet read, with how many folders it sits below
+    // `root`. Which one is read first does not matter: members are keyed by their
+    // path, and a folder lists its entries in no promised order anyway.
+    let mut pending: Vec<(PathBuf, usize)> = vec![(root.to_path_buf(), 0)];
+    while let Some((dir, depth)) = pending.pop() {
+        let entries = fs::read_dir(&dir).with_context(|| format!("reading '{}'", dir.display()))?;
+        for entry in entries {
+            let entry =
+                entry.with_context(|| format!("reading an entry of '{}'", dir.display()))?;
+            let path = entry.path();
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            // Dot-entries are skipped for the same reason the zip path skips them.
+            if name.starts_with('.') {
                 continue;
             }
-        };
-        *total = total.saturating_add(bytes.len() as u64);
-        if *total > MAX_TOTAL_BYTES {
-            bail!(
-                "this project is larger than the {} MiB this importer will read",
-                MAX_TOTAL_BYTES / (1 << 20)
-            );
+            if path.is_dir() {
+                if depth + 1 > skrib_format::MAX_XML_DEPTH {
+                    let folder = path.strip_prefix(root).unwrap_or(&path);
+                    return Err(anyhow::Error::new(skrib_format::FoldersTooDeep {
+                        part: folder.to_string_lossy().replace('\\', "/"),
+                        depth: depth + 1,
+                    }));
+                }
+                pending.push((path, depth + 1));
+                continue;
+            }
+            let Ok(relative) = path.strip_prefix(root) else {
+                continue;
+            };
+            let Some(key) = normalise_member(&relative.to_string_lossy()) else {
+                continue;
+            };
+            if files.len() >= MAX_MEMBERS {
+                bail!("this project holds more than {MAX_MEMBERS} files");
+            }
+            // A file that cannot be read costs that file and nothing else. A
+            // project folder is a directory on someone's disk: it collects broken
+            // symlinks, half-synced files and things the current user may not
+            // read, and none of that is a reason to refuse a manuscript.
+            let bytes = match fs::read(&path) {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    notices.push(format!(
+                        "'{key}' could not be read ({e}) and was skipped; everything else \
+                         was imported."
+                    ));
+                    continue;
+                }
+            };
+            *total = total.saturating_add(bytes.len() as u64);
+            if *total > MAX_TOTAL_BYTES {
+                bail!(
+                    "this project is larger than the {} MiB this importer will read",
+                    MAX_TOTAL_BYTES / (1 << 20)
+                );
+            }
+            if let Some(at) = modified_at(&path)
+                && newest.map(|n| at > n).unwrap_or(true)
+            {
+                *newest = Some(at);
+            }
+            note_if_not_utf8(&key, &bytes, notices);
+            files.insert(key, bytes);
         }
-        if let Some(at) = modified_at(&path)
-            && newest.map(|n| at > n).unwrap_or(true)
-        {
-            *newest = Some(at);
-        }
-        note_if_not_utf8(&key, &bytes, notices);
-        files.insert(key, bytes);
     }
     Ok(())
 }

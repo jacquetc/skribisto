@@ -8,7 +8,10 @@
 //! Before the ceiling, importing about a kilobyte of Markdown holding 500 nested
 //! blockquotes aborted the process from the long operation's 2 MiB thread, and
 //! 5,000 aborted `text-document`'s own reader. Every document here is scanned on a
-//! thread with that stack, in the debug build the test suite runs in.
+//! thread with less than a fifth of that stack, in the debug build the test suite
+//! runs in, so that a pass here holds on platforms whose frames are larger: see
+//! [`SMALL_STACK`]. `text-document`'s reader keeps its own thread, which this file
+//! cannot size.
 //!
 //! At the ceiling the document keeps its structure. Past it the words arrive as
 //! plain text, one paragraph per line, and the writer is told
@@ -19,15 +22,24 @@ use std::path::Path;
 use document_ingest::{ImportDiagnostic, ScannerRegistry, SourceBlock, SourceDocument};
 use skrib_format::MAX_MARKDOWN_DEPTH;
 
-/// The stack `std::thread::spawn` gives a long operation's worker by default.
-const LONG_OPERATION_STACK: usize = 2 * 1024 * 1024;
+/// The stack every scan here runs on: 384 KiB, where a long operation's worker
+/// gets 2 MiB from `std::thread::spawn`.
+///
+/// A frame is not the same size on every platform, and one that holds the standard
+/// library's `DirEntry` is five times larger on macOS than on Linux. A scan's own
+/// work on this thread does not grow with the nesting (the conversion runs on
+/// `skrib_format::xml_depth`'s parser stack), so a pass here on Linux still holds
+/// on a platform whose frames are five times larger. The full account is in
+/// `skrib_format::xml_depth`'s module note.
+const SMALL_STACK: usize = 384 * 1024;
 
-/// Scan `markdown` as `hostile.md` on a thread with a long operation's stack. An
-/// overflow would abort the test binary, not fail the test, which is exactly the
-/// failure this file exists to rule out.
+/// Scan `markdown` as `hostile.md` on a thread of its own, as the importer scans
+/// it, with [`SMALL_STACK`] rather than the long operation's 2 MiB. An overflow would
+/// abort the test binary, not fail the test, which is exactly the failure this file
+/// exists to rule out.
 fn scan_on_a_long_operation_stack(markdown: String) -> SourceDocument {
     std::thread::Builder::new()
-        .stack_size(LONG_OPERATION_STACK)
+        .stack_size(SMALL_STACK)
         .spawn(move || {
             ScannerRegistry::with_builtin_scanners()
                 .scan_bytes(Path::new("hostile.md"), markdown.as_bytes())

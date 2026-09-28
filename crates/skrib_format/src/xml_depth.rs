@@ -82,6 +82,33 @@
 //! 64 KiB of it, with no parser in front of the recursion. So the same ceiling
 //! applies, and [`FoldersTooDeep`](crate::xml_depth::FoldersTooDeep) is its
 //! refusal, travelling to the writer the same way.
+//!
+//! # Every platform, not only the one the tests ran on
+//!
+//! A frame is not the same size on every platform. Most of a debug build's frames
+//! measured within about 10 % of each other between x86-64 Linux and arm64 macOS,
+//! but a frame holding the standard library's `DirEntry` did not: on macOS it
+//! carries the whole `dirent` record, a 1 KiB name buffer included, and the
+//! Manuskript folder walk, recursive at the time, needed 8.7 KiB a level there
+//! against 1.7 KiB on Linux. A folder project nested to the ceiling passed every
+//! test on Linux and overflowed a long operation's stack on macOS. So nothing that
+//! grows with an input's nesting runs on the calling thread's stack: a walk is a
+//! loop, or it runs on the parser stack.
+//!
+//! The hostile-input tests hold every importer to that with less than a fifth of a
+//! long operation's stack: an import or a scan runs on 384 KiB. What one needs
+//! whatever the file, about 190 KiB in a debug build, is mostly fixed-size state
+//! (the zip writer's deflate tables) that costs the same everywhere, and the rest
+//! cannot hold 256 levels of anything costing more than 0.75 KiB a level. A pass on
+//! Linux therefore still holds where frames are five times larger. A Djot parse is
+//! the exception: `jotdown` recurses by design and the Djot ceiling is what bounds
+//! it, at about 350 KiB in a debug build, so those tests run on a quarter of the
+//! real stack instead.
+//!
+//! One recursion stays out of reach: `text-document` reads Markdown and HTML on a
+//! thread of its own, with the 2 MiB `std::thread::spawn` gives it, and nothing
+//! here can size that thread. At the ceilings its HTML reader needs about 0.55 MiB
+//! on Linux, and its frames measured 5 % larger on macOS.
 
 use std::cell::Cell;
 use std::collections::HashMap;

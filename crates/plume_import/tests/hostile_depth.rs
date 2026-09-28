@@ -5,8 +5,10 @@
 //!
 //! `roxmltree` recurses once per element, and a stack overflow aborts the process
 //! rather than unwinding. Every project here is generated in the test and imported
-//! on a thread with the 2 MiB stack a long operation gets, in the debug build the
-//! test suite runs in, which is where the margin is thinnest.
+//! on a thread with less than a fifth of the 2 MiB stack a long operation gets, in
+//! the debug build the test suite runs in, which is where the margin is thinnest.
+//! The rest of the 2 MiB is room for platforms whose frames are larger than
+//! Linux's: see [`SMALL_STACK`].
 //!
 //! At the ceiling the project imports, which is the measurement behind
 //! `skrib_format::MAX_XML_DEPTH`: the reader and every walk after it fit. One level
@@ -24,8 +26,17 @@ use std::sync::atomic::AtomicBool;
 use plume_import::{ImportSummary, import_with_progress};
 use skrib_format::{BundledItem, MAX_XML_DEPTH, XmlTooDeep};
 
-/// The stack `std::thread::spawn` gives a long operation's worker by default.
-const LONG_OPERATION_STACK: usize = 2 * 1024 * 1024;
+/// The stack every import here runs on: 384 KiB, where a long operation's worker
+/// gets 2 MiB from `std::thread::spawn`.
+///
+/// A frame is not the same size on every platform, and one that holds the standard
+/// library's `DirEntry` is five times larger on macOS than on Linux. An import needs
+/// about 190 KiB of this whatever the nesting, mostly the zip writer's fixed-size
+/// deflate state, which costs the same everywhere; what is left cannot hold 256
+/// levels of anything that recurses on the input, so a pass on Linux still holds on
+/// a platform whose frames are five times larger. The full account is in
+/// `skrib_format::xml_depth`'s module note.
+const SMALL_STACK: usize = 384 * 1024;
 
 /// A `.plume` zip holding `members`.
 fn plume(root: &std::path::Path, members: &[(&str, String)]) -> String {
@@ -60,12 +71,13 @@ fn tree_nested_to(depth: usize) -> String {
     xml
 }
 
-/// Import `source` into `out` on a thread with a long operation's stack. An
-/// overflow would abort the test binary, not fail the test, which is exactly the
-/// failure this file exists to rule out.
+/// Import `source` into `out` on a thread of its own, the way the use case runs it,
+/// with [`SMALL_STACK`] rather than the long operation's 2 MiB. An overflow would
+/// abort the test binary, not fail the test, which is exactly the failure this file
+/// exists to rule out.
 fn import_on_a_long_operation_stack(source: String, out: String) -> anyhow::Result<ImportSummary> {
     std::thread::Builder::new()
-        .stack_size(LONG_OPERATION_STACK)
+        .stack_size(SMALL_STACK)
         .spawn(move || {
             import_with_progress(
                 &source,
@@ -249,7 +261,7 @@ fn nested_text(open: &str, close: &str, levels: usize) -> String {
     )
 }
 
-/// The scene's stored prose after importing `html` on a long operation's stack, and
+/// The scene's stored prose after importing `html` on [`SMALL_STACK`], and
 /// the warnings the import raised.
 fn import_text(html: String) -> (String, Vec<String>) {
     let dir = tempfile::tempdir().expect("tempdir");

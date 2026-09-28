@@ -3,12 +3,14 @@
 
 //! The Markdown and HTML ceilings, and the converters that honour them.
 //!
-//! Every conversion here runs on a thread with the 2 MiB stack a long operation
-//! gets, in the debug build the suite runs in. A stack overflow is not a panic, so
-//! a regression does not fail a test: it aborts the test binary, which is the
-//! signal. Before the ceilings, `markdown_to_djot_and_text` aborted such a thread
-//! at 477 nested blockquotes and `markdown_to_html` before 300, and
-//! `html_to_djot_and_text` returned nothing, without a word of warning, for a
+//! Every conversion here runs on a thread with less than a fifth of the 2 MiB stack
+//! a long operation gets ([`SMALL_STACK`]), in the debug build the suite runs in,
+//! so that a pass here leaves room for platforms whose frames are larger than
+//! Linux's (see [`crate::xml_depth`]'s module note). A stack overflow is not a
+//! panic, so a regression does not fail a test: it aborts the test binary, which is
+//! the signal. Before the ceilings, `markdown_to_djot_and_text` aborted a long
+//! operation's thread at 477 nested blockquotes and `markdown_to_html` before 300,
+//! and `html_to_djot_and_text` returned nothing, without a word of warning, for a
 //! paragraph under 200 nested `<div>`s.
 
 use super::*;
@@ -17,13 +19,17 @@ use crate::convert::{
 };
 use proptest::prelude::*;
 
-/// The stack `std::thread::spawn` gives a long operation's worker by default.
-const LONG_OPERATION_STACK: usize = 2 << 20;
+/// The stack every conversion here runs on: 384 KiB, where a long operation's worker
+/// gets 2 MiB from `std::thread::spawn`. A conversion does its nesting-deep work on
+/// the parser stack ([`crate::xml_depth::on_parser_stack`]), so nothing on this
+/// thread grows with the input, and a pass on Linux still holds on a platform whose
+/// frames are five times larger.
+const SMALL_STACK: usize = 384 * 1024;
 
-/// Run `work` on a thread with a long operation's stack.
+/// Run `work` on a thread standing in for a long operation's, with [`SMALL_STACK`].
 fn on_a_long_operation_stack<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) -> T {
     std::thread::Builder::new()
-        .stack_size(LONG_OPERATION_STACK)
+        .stack_size(SMALL_STACK)
         .spawn(work)
         .expect("spawn the conversion thread")
         .join()
