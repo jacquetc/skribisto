@@ -5600,7 +5600,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-analysis-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5617,7 +5617,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-binder-item-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5634,7 +5634,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-binder-ordering"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "proptest",
@@ -5643,7 +5643,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-common"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5658,7 +5658,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-compiler"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "png",
@@ -5678,7 +5678,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-direct-access"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5691,7 +5691,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-document-ingest"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "blake3",
@@ -5713,7 +5713,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-export-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5729,11 +5729,11 @@ dependencies = [
 
 [[package]]
 name = "skribisto-fonts"
-version = "3.0.4"
+version = "3.0.5"
 
 [[package]]
 name = "skribisto-frontend"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5760,7 +5760,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-handling-app-lifecycle"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5773,7 +5773,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-import-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5795,7 +5795,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-macros"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -5805,7 +5805,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-manuskript-import"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "blake3",
@@ -5822,7 +5822,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-mention-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5838,7 +5838,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-model"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "proptest",
  "serde",
@@ -5850,7 +5850,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-note-template-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5861,7 +5861,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-plume-import"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5875,7 +5875,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-progress-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5894,7 +5894,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-search-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5909,7 +5909,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-skrib-format"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "blake3",
@@ -5931,7 +5931,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-spellcheck-engine"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "encoding_rs",
  "proptest",
@@ -5941,7 +5941,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-tag-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5954,7 +5954,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-trash-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -5969,7 +5969,7 @@ dependencies = [
 
 [[package]]
 name = "skribisto-work-management"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6665,7 +6665,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo_ui"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "anyhow",
  "backtrace",
