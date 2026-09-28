@@ -37,6 +37,7 @@ Description:
 - "Jumping to a comment or a footnote near the end of a long scene lands on it. It used to stop a few lines short"
 - "Importing a Word or OpenDocument table with one row far wider than all the others says that its cells arrive as paragraphs, instead of dropping the grid in silence"
 - "The check for a new version of Skribisto uses an updated encryption library, which fixes a flaw in how it accepts a secure connection"
+- "A picture inserted into a folder project after its first save, or into any project after Save As, is kept by the next save. It used to be written where the save does not look, and came back blank at the next opening"
 ---
 Version: 3.0.4
 Date: 2026-09-16
