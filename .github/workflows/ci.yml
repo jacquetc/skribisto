@@ -144,8 +144,11 @@ jobs:
       - name: Build
         run: cargo build --workspace --all-targets
 
+      # --no-fail-fast: without it the first failing test binary ends the step,
+      # and every binary after it goes unrun on this platform. The 3.0.5 legs
+      # ran 28 (Windows) and 62 (macOS) of 88, so one failure hid the rest.
       - name: Test
-        run: cargo test --workspace
+        run: cargo test --workspace --no-fail-fast
 
   check:
     name: Check (${{ matrix.name }})
