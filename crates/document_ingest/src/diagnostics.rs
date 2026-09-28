@@ -184,13 +184,25 @@ pub enum ImportDiagnostic {
     /// beside the deepest items kept, with their words, marker and formatting.
     ///
     /// Word stops at nine levels and LibreOffice at ten, so only an odd or a hostile file
-    /// raises this. Written as deep as the file has them, such an item would be stored as
-    /// prose the next load of the project refuses (see `sources::rich::MAX_LIST_LEVELS`).
+    /// raises this. Written as deep as the file has them, such an item would sit deeper
+    /// than a list pasted into the editor can, and a file nesting a list far enough would
+    /// be stored as prose the next load of the project refuses (see
+    /// `sources::rich::MAX_LIST_LEVELS`).
     ListNestingFlattened {
         path: String,
         count: usize,
         limit: usize,
     },
+    /// Tables that arrive as the paragraphs of their cells: every word in reading order,
+    /// with its formatting, and no grid.
+    ///
+    /// `text-document` completes a table's short rows to its widest one, and from 1.12.3
+    /// reads a table as those paragraphs instead when completing it would pass 4,096 cells
+    /// and sixteen times the cells it holds: a wide first row over a great many short ones,
+    /// which a word processor writes only from merged cells, and a crafted file writes to
+    /// make a few kilobytes ask for millions of cells. The importer writes such a table as
+    /// the file holds it, and says so here, rather than let a grid vanish unmentioned.
+    TableReadAsParagraphs { path: String, count: usize },
     /// Runs of spaces the file asked for more than `limit` of at once, which arrive `limit`
     /// spaces long, the words around them untouched.
     ///
@@ -279,6 +291,7 @@ impl ImportDiagnostic {
             | ProseNotVerbatim { .. }
             | StyledSpacesNotCarried { .. }
             | ListNestingFlattened { .. }
+            | TableReadAsParagraphs { .. }
             | SpacesShortened { .. }
             | EpigraphNotCarried { .. } => Warning,
             // Nothing was lost and nothing needs correcting — the epigraph landed on one
@@ -317,6 +330,7 @@ impl ImportDiagnostic {
             | ProseNotVerbatim { path, .. }
             | StyledSpacesNotCarried { path, .. }
             | ListNestingFlattened { path, .. }
+            | TableReadAsParagraphs { path, .. }
             | SpacesShortened { path, .. } => Some(path),
             DuplicateTitle { .. }
             | HeadingLevelJump { .. }
@@ -360,6 +374,7 @@ impl ImportDiagnostic {
             ProseNotVerbatim { .. } => "prose-not-verbatim",
             StyledSpacesNotCarried { .. } => "styled-spaces-not-carried",
             ListNestingFlattened { .. } => "list-nesting-flattened",
+            TableReadAsParagraphs { .. } => "table-read-as-paragraphs",
             SpacesShortened { .. } => "spaces-shortened",
             EpigraphNotCarried { .. } => "epigraph-not-carried",
             EpigraphPlacementAmbiguous { .. } => "epigraph-placement-ambiguous",
@@ -484,6 +499,12 @@ impl fmt::Display for ImportDiagnostic {
                 write!(
                     f,
                     "{path}: {count} list item(s) nested past {limit} levels placed at level {limit}"
+                )
+            }
+            TableReadAsParagraphs { path, count } => {
+                write!(
+                    f,
+                    "{path}: {count} table(s) imported as the paragraphs of their cells"
                 )
             }
             SpacesShortened { path, count, limit } => {

@@ -406,6 +406,7 @@ fn exhaustive_over_every_variant(d: &document_ingest::ImportDiagnostic) {
         | ProseNotVerbatim { .. }
         | StyledSpacesNotCarried { .. }
         | ListNestingFlattened { .. }
+        | TableReadAsParagraphs { .. }
         | SpacesShortened { .. }
         | EpigraphNotCarried { .. }
         | EpigraphPlacementAmbiguous { .. } => {}
@@ -550,6 +551,10 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
             path: "/tmp/a.odt".into(),
             count: 4,
             limit: 16,
+        },
+        D::TableReadAsParagraphs {
+            path: "/tmp/a.docx".into(),
+            count: 1,
         },
         D::SpacesShortened {
             path: "/tmp/a.odt".into(),

@@ -264,6 +264,10 @@ impl Diagnostic {
                 count = count,
                 limit = detail
             )),
+            "table-read-as-paragraphs" => tr!(import_diagnostic_table_read_as_paragraphs(
+                path = path,
+                count = count
+            )),
             // `detail` is the length every run was cut to, a number sent as text.
             "spaces-shortened" => tr!(import_diagnostic_spaces_shortened(
                 path = path,

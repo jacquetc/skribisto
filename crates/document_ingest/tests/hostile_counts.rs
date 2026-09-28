@@ -235,6 +235,24 @@ fn odt_wide_then_narrow(wide: usize, narrow: usize) -> Vec<u8> {
     ))
 }
 
+/// The table whose grid is lost is named in the import's report, once: the writer sees
+/// its cells arrive as paragraphs and is told why, rather than finding a grid gone.
+fn assert_grid_loss_reported(doc: &SourceDocument) {
+    let reported: Vec<&ImportDiagnostic> = doc
+        .diagnostics
+        .iter()
+        .filter(|d| matches!(d, ImportDiagnostic::TableReadAsParagraphs { .. }))
+        .collect();
+    assert!(
+        matches!(
+            reported.as_slice(),
+            [ImportDiagnostic::TableReadAsParagraphs { count: 1, .. }]
+        ),
+        "{:?}",
+        doc.diagnostics
+    );
+}
+
 /// Ten thousand one-cell rows under a first row of ten thousand cells: squared, a hundred
 /// million cells, nearly all of them made up, and an allocation the process dies of. The
 /// table is stored with every cell the file holds and not one more, each row as the file
@@ -260,6 +278,7 @@ fn an_odt_table_squared_past_twice_its_cells_arrives_with_its_own_cells() {
         !text.contains(text_document::TABLE_ANCHOR),
         "read as the paragraphs of its cells"
     );
+    assert_grid_loss_reported(&doc);
 }
 
 /// The counts the ODT scanner reads and does not honour: a row repeated a million times,
@@ -358,6 +377,7 @@ fn a_docx_table_squared_past_twice_its_cells_arrives_with_its_own_cells() {
         !text.contains(text_document::TABLE_ANCHOR),
         "read as the paragraphs of its cells"
     );
+    assert_grid_loss_reported(&doc);
 }
 
 /// Word's counts that could multiply a table, a span of a million columns, a vertical

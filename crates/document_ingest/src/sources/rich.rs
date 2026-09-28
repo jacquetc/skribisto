@@ -760,6 +760,7 @@ fn assemble_with(
         not_verbatim: 0,
         styled_blanks: 0,
         lists_flattened: 0,
+        tables_as_paragraphs: 0,
         read,
     };
 
@@ -918,6 +919,13 @@ fn assemble_with(
                 limit: MAX_LIST_LEVELS,
             });
     }
+    if assembly.tables_as_paragraphs > 0 {
+        out.diagnostics
+            .push(ImportDiagnostic::TableReadAsParagraphs {
+                path: out.origin.clone(),
+                count: assembly.tables_as_paragraphs,
+            });
+    }
     Ok(())
 }
 
@@ -980,6 +988,9 @@ struct Assembly<'r> {
     /// List items nested deeper than [`MAX_LIST_LEVELS`], written at that level: the count
     /// [`ImportDiagnostic::ListNestingFlattened`] reports.
     lists_flattened: usize,
+    /// Tables the parser reads as the paragraphs of their cells: the count
+    /// [`ImportDiagnostic::TableReadAsParagraphs`] reports.
+    tables_as_paragraphs: usize,
     /// The parser every run is proved with.
     read: &'r dyn Fn(&str) -> Result<DjotReading>,
 }
@@ -1015,6 +1026,7 @@ impl Assembly<'_> {
                 reported,
                 styled_blanks,
                 list_flattened,
+                table_as_paragraphs,
             } = proof;
             if reported {
                 self.not_verbatim += 1;
@@ -1022,6 +1034,9 @@ impl Assembly<'_> {
             self.styled_blanks += styled_blanks;
             if list_flattened {
                 self.lists_flattened += 1;
+            }
+            if table_as_paragraphs {
+                self.tables_as_paragraphs += 1;
             }
             self.placement[*index] = Some(Placement {
                 source_block,

@@ -46,12 +46,14 @@ pub(crate) const DOCUMENT_ZIP_LIMITS: skrib_format::zip_guard::ZipLimits =
 ///
 /// Word's numbering has nine levels (`w:ilvl` 0 to 8) and LibreOffice's ten, so sixteen
 /// keeps every level either application can write, with six to spare for a producer that
-/// writes more. It is also far inside what stored prose may nest: the deepest item is
-/// written thirty columns in, which `skrib_format::djot_depth` counts, with its marker, as
-/// thirty-one of its [`skrib_format::MAX_DJOT_DEPTH`] levels, leaving room for any
-/// blockquote or footnote around it. A list written deeper than that ceiling is not merely
-/// unusual: the next load refuses the whole project over it, and from `text-document`
-/// 1.12.3 the parser reads such a line as literal text rather than as a list.
+/// writes more. It is the depth `text-document` holds a pasted or inserted list to from
+/// 1.12.3, the deeper items kept at the sixteenth level as list items, so a list comes in
+/// from a document as deep as it would pasted and no deeper. It is also far inside what
+/// stored prose may nest: the deepest item is written thirty columns in, which
+/// `skrib_format::djot_depth` counts as sixteen of its [`skrib_format::MAX_DJOT_DEPTH`]
+/// levels, one per list, leaving room for any blockquote or footnote around it. A list
+/// nested past that ceiling is not merely unusual: the next load refuses the whole project
+/// over it.
 ///
 /// Here rather than in `rich` because Markdown keeps the same levels, and `rich` is built
 /// only for the two container formats.

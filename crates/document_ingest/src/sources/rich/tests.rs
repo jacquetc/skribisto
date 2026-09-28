@@ -633,6 +633,7 @@ fn an_annotation_with_no_paragraphs_converts_to_an_empty_body() {
         not_verbatim: 0,
         styled_blanks: 0,
         lists_flattened: 0,
+        tables_as_paragraphs: 0,
         read: &skrib_format::read_djot,
     };
     assert_eq!(assembly.body_to_djot(&[]).expect("convert"), "");

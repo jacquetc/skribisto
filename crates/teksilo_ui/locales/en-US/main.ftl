@@ -2280,6 +2280,12 @@ import-diagnostic-list-nesting-flattened = { $count ->
     [one] { $count } list item in { $path } was nested more than { $limit } levels deep. It arrives at level { $limit }, the deepest Skribisto keeps, with its words and formatting.
    *[other] { $count } list items in { $path } were nested more than { $limit } levels deep. They arrive at level { $limit }, the deepest Skribisto keeps, with their words and formatting.
 }
+# Tables too lopsided to complete into a grid, one row far wider than many short ones,
+# which arrive as the paragraphs of their cells. $count is how many tables.
+import-diagnostic-table-read-as-paragraphs = { $count ->
+    [one] { $count } table in { $path } has a row far wider than the rest, too lopsided to lay out as a grid. Its cells arrive as paragraphs, one after another, with their words and formatting.
+   *[other] { $count } tables in { $path } have a row far wider than the rest, too lopsided to lay out as a grid. Their cells arrive as paragraphs, one after another, with their words and formatting.
+}
 # Runs of spaces longer than the importer keeps, cut to that length. $count is how many
 # runs; $limit is the most spaces a run keeps, a number.
 import-diagnostic-spaces-shortened = { $count ->

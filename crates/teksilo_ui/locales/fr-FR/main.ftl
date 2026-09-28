@@ -2258,6 +2258,13 @@ import-diagnostic-list-nesting-flattened = { $count ->
     [one] { $count } élément de liste de { $path } était imbriqué sur plus de { $limit } niveaux. Il arrive au niveau { $limit }, le plus profond que Skribisto conserve, avec son texte et sa mise en forme.
    *[other] { $count } éléments de liste de { $path } étaient imbriqués sur plus de { $limit } niveaux. Ils arrivent au niveau { $limit }, le plus profond que Skribisto conserve, avec leur texte et leur mise en forme.
 }
+# Tableaux trop déséquilibrés pour être complétés en grille, une ligne bien plus large que
+# de nombreuses lignes courtes, qui arrivent comme les paragraphes de leurs cellules.
+# $count est le nombre de tableaux.
+import-diagnostic-table-read-as-paragraphs = { $count ->
+    [one] { $count } tableau de { $path } a une ligne bien plus large que les autres, trop déséquilibré pour être disposé en grille. Ses cellules arrivent comme des paragraphes, l’une après l’autre, avec leur texte et leur mise en forme.
+   *[other] { $count } tableaux de { $path } ont une ligne bien plus large que les autres, trop déséquilibrés pour être disposés en grille. Leurs cellules arrivent comme des paragraphes, l’une après l’autre, avec leur texte et leur mise en forme.
+}
 # Suites d’espaces plus longues que ce que l’importation conserve, raccourcies à cette
 # longueur. $count est leur nombre ; $limit le nombre d’espaces conservées au plus, un nombre.
 import-diagnostic-spaces-shortened = { $count ->

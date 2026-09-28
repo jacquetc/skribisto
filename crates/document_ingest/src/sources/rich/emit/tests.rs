@@ -542,11 +542,15 @@ fn wide_over_narrow(wide: usize, narrow: usize, doubled: usize) -> Vec<Vec<Vec<R
 #[test]
 fn a_table_is_read_as_a_grid_up_to_the_parsers_limit_and_as_paragraphs_past_it() {
     // (wide, narrow, doubled, read as a grid): 64 by 64 is 4,096 cells, and one row more
-    // is past it with 128 cells of the table's own. 20 by 250 is 5,000 cells, which 313
-    // cells of its own allow and 312 do not.
+    // is past it with 128 cells of the table's own. 100 by 41 is 4,100 cells over 140 of
+    // its own, the least a table past 4,096 can complete to with its own cells allowing
+    // less: 4,097 and 4,098 cells take more cells of their own than that, and 4,099 is a
+    // prime, so this pins the first limit from above as the first case does from below.
+    // 20 by 250 is 5,000 cells, which 313 cells of its own allow and 312 do not.
     for (wide, narrow, doubled, grid) in [
         (64, 63, 0, true),
         (64, 64, 0, false),
+        (100, 40, 0, false),
         (20, 249, 44, true),
         (20, 249, 43, false),
     ] {
@@ -605,6 +609,61 @@ fn a_table_is_read_as_a_grid_up_to_the_parsers_limit_and_as_paragraphs_past_it()
         assert_eq!(
             kept, with_text,
             "{wide}, {narrow}, {doubled}: the first save"
+        );
+    }
+}
+
+/// Cells a word processor fills with more than words (a styled word, a link, a picture,
+/// a note, blank space alone) are proved exactly on either side of the parser's limit: as
+/// the cells of a grid, and as the paragraphs of the cells that hold anything, each where
+/// its segment says, the link's destination and the picture kept. A cell of blank space
+/// alone is an empty cell of the grid, and no paragraph at all past the limit.
+#[test]
+fn odd_cells_are_proved_as_a_grid_and_as_paragraphs() {
+    let mut note = plain_run("");
+    note.footnote = Some("n1".to_string());
+    for (narrow, grid) in [(63, true), (64, false)] {
+        let mut rows = wide_over_narrow(64, narrow, 0);
+        rows[1] = vec![vec![styled("bold word", bold())]];
+        rows[2] = vec![vec![Run::linked(
+            "a link",
+            RunStyle::default(),
+            "https://example.com/a b",
+        )]];
+        rows[3] = vec![vec![Run::image("", "media/a.png")]];
+        rows[4] = vec![vec![plain_run("before "), note.clone()]];
+        rows[5] = vec![vec![plain_run("   ")]];
+        let proven = prove(&[Source::Table { rows: &rows }], Frame::Blocks).expect("prove");
+        let member = &proven.members[0];
+        assert!(
+            member.exact && !member.reported,
+            "{narrow}: {:.300?}",
+            proven.djot
+        );
+        assert_eq!(member.table_as_paragraphs, !grid);
+        let stored: Vec<String> = member
+            .segments
+            .iter()
+            .map(|s| slice(&proven.text, s.stored()))
+            .collect();
+        for cell in ["bold word", "a link", "\u{FFFC}", "before \u{FFFC}"] {
+            assert!(
+                stored.iter().any(|s| s == cell),
+                "{narrow}: {cell:?} in {stored:?}"
+            );
+        }
+        assert_eq!(
+            stored.iter().any(String::is_empty),
+            grid,
+            "{narrow}: the blank cell is a cell of the grid, and no paragraph past it"
+        );
+        let reading = read_djot(&proven.djot).expect("parse");
+        assert!(
+            reading
+                .blocks
+                .iter()
+                .any(|b| b.links == vec!["https://example.com/a%20b".to_string()]),
+            "{narrow}: the link keeps its destination"
         );
     }
 }
@@ -724,6 +783,55 @@ fn a_list_nested_past_the_levels_kept_is_written_within_what_a_load_accepts() {
         .filter(|block| block.list().is_some())
         .count();
     assert_eq!(in_lists, texts.len(), "every item is still a list item");
+}
+
+/// What the levels kept stand for, as `text-document` 1.12.3 behaves: a list pasted into
+/// the editor is held to [`MAX_LIST_LEVELS`], its deeper items at the last of them and
+/// still list items, while a list read from stored prose keeps every level it has, and the
+/// load of a project refuses one only past `skrib_format::MAX_DJOT_DEPTH` lists deep. None
+/// of them is read as literal text, which 1.12.3 was once expected to do past a ceiling.
+#[test]
+fn a_deep_list_is_held_to_the_levels_kept_when_pasted_and_refused_only_far_past_them() {
+    let list = |levels: usize| -> String {
+        (0..levels)
+            .map(|level| format!("{}- level {level}", "  ".repeat(level)))
+            .collect::<Vec<_>>()
+            .join("\n\n")
+    };
+    let levels = |doc: &TextDocument| -> Vec<Option<u8>> {
+        doc.blocks()
+            .iter()
+            .map(|block| block.list().map(|list| list.indent()))
+            .collect()
+    };
+    let deepest = |doc: &TextDocument| levels(doc).into_iter().flatten().max();
+
+    let pasted = TextDocument::new();
+    pasted
+        .cursor()
+        .insert_djot(&list(40))
+        .expect("the paste goes in");
+    assert!(
+        levels(&pasted).iter().all(Option::is_some),
+        "every pasted item is a list item"
+    );
+    assert_eq!(
+        deepest(&pasted).map(usize::from),
+        Some(MAX_LIST_LEVELS - 1),
+        "a paste is held to the levels kept"
+    );
+
+    let loaded = open(&list(40));
+    assert_eq!(levels(&loaded).len(), 40);
+    assert!(levels(&loaded).iter().all(Option::is_some));
+    assert_eq!(deepest(&loaded), Some(39), "a load keeps every level");
+
+    let ceiling = skrib_format::MAX_DJOT_DEPTH;
+    assert_eq!(skrib_format::djot_depth::check(&list(ceiling)), Ok(()));
+    assert!(
+        skrib_format::djot_depth::check(&list(ceiling + 1)).is_err(),
+        "one list past the ceiling is refused"
+    );
 }
 
 /// A run longer than one parse is proved a slice at a time, and the slices join exactly

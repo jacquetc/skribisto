@@ -129,6 +129,9 @@ pub(super) struct MemberProof {
     /// Whether the member is a list item nested deeper than [`MAX_LIST_LEVELS`], written
     /// at that level instead (see [`list_indent`]).
     pub list_flattened: bool,
+    /// Whether the member is a table the parser reads as the paragraphs of its cells, its
+    /// words kept and its grid gone ([`table_reading`]).
+    pub table_as_paragraphs: bool,
 }
 
 /// A run, written and proved.
@@ -160,6 +163,8 @@ struct Rendered {
     styled_blanks: usize,
     /// Whether it is a list item written shallower than its source nests it.
     list_flattened: bool,
+    /// Whether it is a table the parser reads as the paragraphs of its cells.
+    table_as_paragraphs: bool,
 }
 
 /// Write `sources` as one run in `frame`, prove every member with `read`, and fall back
@@ -236,6 +241,7 @@ pub(super) fn prove_with(
                         reported: failed[i] || !proof.matches || fidelity[i] == Fidelity::PlainText,
                         styled_blanks: rendered[i].styled_blanks,
                         list_flattened: rendered[i].list_flattened,
+                        table_as_paragraphs: rendered[i].table_as_paragraphs,
                     });
                 }
             }
@@ -250,6 +256,7 @@ pub(super) fn prove_with(
                         reported: true,
                         styled_blanks: rendered[i].styled_blanks,
                         list_flattened: rendered[i].list_flattened,
+                        table_as_paragraphs: rendered[i].table_as_paragraphs,
                     });
                 }
             }
@@ -521,6 +528,7 @@ fn render_paragraph(
             Fidelity::Formatted | Fidelity::Escaped => styled_blanks(&items),
         },
         list_flattened,
+        table_as_paragraphs: false,
     }
 }
 
@@ -529,10 +537,10 @@ fn render_paragraph(
 ///
 /// Two spaces a level, as `text-document` writes a nested list back, down to the deepest
 /// level the emitter writes ([`MAX_LIST_LEVELS`]). An item nested deeper is written at that
-/// level, beside the deepest items kept, rather than as prose the next load of the project
-/// would refuse (`skrib_format::djot_depth`), and that `text-document` from 1.12.3 reads as
-/// literal text rather than as a list. Its words, its marker and its formatting are all
-/// kept.
+/// level, beside the deepest items kept, as `text-document` from 1.12.3 places the deeper
+/// items of a list pasted into the editor, and far short of the nesting the next load of
+/// the project refuses (`skrib_format::djot_depth`). Its words, its marker and its
+/// formatting are all kept.
 fn list_indent(depth: u8) -> (String, bool) {
     let deepest = MAX_LIST_LEVELS.saturating_sub(1);
     let written = usize::from(depth).min(deepest);
@@ -824,6 +832,7 @@ fn render_table(rows: &[Vec<Vec<Run>>], fidelity: Fidelity) -> Rendered {
         expected,
         styled_blanks: blanks,
         list_flattened: false,
+        table_as_paragraphs: reading == TableReading::Paragraphs,
     }
 }
 

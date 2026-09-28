@@ -440,7 +440,8 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
         | FieldFlattened { count, .. }
         | CommentRepliesFlattened { count, .. }
         | ProseNotVerbatim { count, .. }
-        | StyledSpacesNotCarried { count, .. } => (String::new(), *count as i64),
+        | StyledSpacesNotCarried { count, .. }
+        | TableReadAsParagraphs { count, .. } => (String::new(), *count as i64),
         // How many items, and the level they were placed at, as the two fields. The
         // level is a number sent as text, the way `HeadingLevelJump` sends its first.
         ListNestingFlattened { count, limit, .. } => (limit.to_string(), *count as i64),
