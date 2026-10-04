@@ -1,4 +1,4 @@
-Skribisto keeps your work safe in two different ways, and it helps to know which one you need.
+Use backups to recover a project, or version history to recover earlier text.
 
 A *backup* is a copy of the whole project, saved as a separate file. Use it when the project
 file itself goes missing or is damaged.
@@ -20,7 +20,7 @@ project, and you can open, reveal or delete any of them.
 
 Backups go to a folder Skribisto looks after. You can add folders of your own.
 
-Old backups are thinned out so they do not fill your disk. You choose how:
+Older backups are deleted automatically to save disk space. Choose which ones to keep:
 
 - *Tiered* keeps roughly one an hour for a day, one a day for a week, one a week for a month,
   and one a month after that.
@@ -40,7 +40,7 @@ From that window you can:
 - *Restore…* puts the backup back in place of the original.
 
 *Restore* is the only thing here that changes your real project. Before it does, it sets your
-current project aside as a backup of its own, so nothing is lost either way.
+current project aside as a backup of its own, so you can recover it if needed.
 
 ## Version history
 

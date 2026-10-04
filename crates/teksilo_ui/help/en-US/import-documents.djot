@@ -1,129 +1,56 @@
-The *Import documents* wizard brings writing you did not create in Skribisto into a project. A
-file you sent out for someone to mark up comes back through [the round trip](:help-round-trip).
-A whole project made in another application arrives through
-[bringing a whole project across](:help-import-projects).
+Import Word, LibreOffice, Markdown or plain-text files into your project. For a manuscript
+returned by a reader, see [bringing back edits and comments](:help-round-trip). For Manuskript
+or Plume Creator, see [importing projects](:help-import-projects).
 
-## Opening the wizard
+## Import your files
 
-Choose *Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…*. To open it with a destination
-already chosen, right-click an item in the binder and choose *Import here…*.
+1. Choose *Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…*.
+   You can also right-click in the Binder and choose *Import here…*.
+2. On *Files*, drop your files or click *Browse…*. Supported files are `.docx`, `.odt`, `.md`
+   and `.txt`. Put them in the order you want, then click *Next*.
+3. On *Review*, check the proposed books, chapters and scenes. Change an item in the *Type*
+   column if needed. Uncheck *Import* to leave out an item and everything inside it.
+4. On *Destination*, choose where to put the imported writing. It goes inside a folder you
+   select, or just after any other selected item.
+5. Click *Import*. Nothing is added to the project before this step. Afterwards, the message
+   offers *Undo* for a few seconds.
 
-Nothing is written to your project until you press *Import* on the last step.
+If the files contain writing already in your project, a *Merge* step may appear. See
+[bringing back edits and comments](:help-round-trip) before continuing.
 
-## Choosing the files
+## Check how headings become chapters
 
-Drop files onto the *Files* page, or press *Browse…* to pick them. These formats are read:
+The wizard uses your document’s headings to divide it into books, parts, chapters and scenes.
+Under *Heading levels*, you can change what each heading level becomes. For example, if your
+main headings are chapter titles, assign that level to *Chapter*.
 
-- Markdown (`.md`)
-- Word (`.docx`)
-- OpenDocument (`.odt`)
-- plain text (`.txt`)
+If your files have chapter titles but no book title, *Add top level* adds a Book above them.
+A file with no headings is imported as one item.
 
-Reorder or remove any of them, then press *Next*.
+Books and parts cannot hold main text directly. When they have text to keep, *Its text* offers
+*Keep as paratext* (the default) or *Drop the text*. Keep it unless you want to discard that
+passage. [Paratext](:help-writing-model) includes writing such as a preface or dedication.
 
-## Reviewing the tree
+## What transfers
 
-*Review* shows the tree the wizard would build, before any of it exists. Its columns say what
-each item is and what it brings:
+Word and LibreOffice files bring common text formatting, links, alignment, page breaks and
+tables. Comments keep their authors and replies. Footnotes are imported too; endnotes become
+footnotes, and the notes are renumbered.
 
-- the type it was given, and the file it came from
-- its word count and its scene breaks
-- how many comments and footnotes it carries
-- the epigraph heading it, when the file had one
-- what becomes of text the item's own type cannot hold
+The imported text may look different from the original document. Paragraph indentation and
+justification follow your export style. Some formatting may be simplified.
 
-Change an item's type in its *Type* column. Untick *Import* to leave that item, and everything
-under it, out.
+*Text boxes, equations and embedded objects are left out.* Check the messages on *Review*
+for anything that could not be imported, and copy any missing writing from the original file.
+Symbols from picture fonts such as Wingdings may appear as empty boxes.
 
-## Setting whole heading levels
+## Check messages before finishing
 
-*Heading levels*, above the tree, says what a whole heading depth becomes. The depths your
-files use are taken in order down Book, Part, Chapter, Scene, starting at Book.
+Messages below the preview explain anything changed or left out. In particular:
 
-The deepest depth gets a type that can hold prose. For chapter files that carry no book heading
-of their own, *Add top level* inserts a Book above everything found.
+- If a comment cannot be attached to its original words, it may move to a nearby paragraph.
+  Check its position after importing. Comments with no text to attach to are left out.
+- A file that cannot be read is skipped; the other files can still be imported.
+- Complex formatting, tables or deeply nested lists may be simplified.
 
-Headings become Book, Part, Chapter or Scene, and stop there: nothing nests inside a scene. An
-item can also be retyped to Note or Paratext, off that ladder. See
-[the writing model](:help-writing-model) for what each type is.
-
-## Choosing where it lands
-
-On *Destination*, pick a binder or an item. The import goes inside what you chose if it is a
-folder, and just after it otherwise.
-
-A *Merge* step follows, but only when your files bring back items the project already holds and
-at least one of them needs a decision. That is the round trip, and
-[its own page](:help-round-trip) explains the choices.
-
-## Finishing
-
-*Import* writes everything in one step. A message then says how many items arrived and offers
-*Undo* for a few seconds. If the write is refused, the wizard stays open with your plan intact.
-
-## Your text as you typed it
-
-From Word, OpenDocument and plain-text files, words arrive exactly as the file holds them.
-Straight quotes stay straight, a double space stays double, a no-break or soft hyphen stays in
-its word, and `--`, `...` or a time such as `10:30:45` are not rewritten. Layout is not text: the
-indent at the start of a paragraph is left to your export style, and a tab inside a Word or
-OpenDocument paragraph arrives as a space. A text box, an equation or an embedded object is not
-text either: the wizard leaves each one out and says how many.
-
-A symbol inserted in Word from its Symbol font arrives as the character it shows, a Greek letter
-or an arrow for example. One from a font of pictures, such as Wingdings, arrives as the
-character the file stores for it, which most fonts show as an empty box.
-
-In a plain-text file, each line is a paragraph. A file wrapped at a fixed width, with a blank
-line between paragraphs, has its wrapped lines joined back into whole paragraphs. A short line
-in it, such as one line of an address, still ends its paragraph. A line of three or more
-hyphens is a scene break, the first line of the file included. A block at the very top between
-two `---` lines is read as the file's details only when every line in it gives the file's title,
-its author or its order.
-
-Word and OpenDocument files also bring:
-
-- bold, italic, underline, strikethrough, superscript and subscript
-- links, in the text and in comments
-- centred and right-aligned lines
-- page breaks
-- tables, with the rows of a table set inside another after the row that holds it
-
-Justified text follows your export style, not the file.
-
-## Comments and footnotes
-
-Comments in a Word or OpenDocument file arrive as real Skribisto comments, on the words they
-marked. A comment brings its author and its replies with it. See [comments](:help-comments).
-
-If the words a comment marked cannot be found, it is kept on the nearest paragraph, and the
-wizard says so. A comment made on an empty paragraph goes to the paragraph before it, and the
-wizard says so too. A comment on a heading arrives on the first paragraph under it. When no text
-sits directly under that heading, as under a book title followed by a chapter title, it goes to
-the first paragraph after it, or to the last one before it when nothing follows.
-
-Footnotes arrive from those two formats too, each with its own text, called from the same place
-in the prose. Endnotes arrive as footnotes. Numbers are not carried.
-
-A note the wizard cannot place is reported rather than invented.
-
-## What the wizard reports
-
-A strip under the tree carries the wizard's messages about the import.
-
-- A file with no headings arrives as one item.
-- A paragraph whose formatting cannot be brought over exactly arrives as plain text. The
-  wizard says how many did.
-- A line left to fill in, drawn as underlined or struck-through blank space, arrives as plain
-  spaces, or not at all where it starts or ends a paragraph. The wizard says how many.
-- A list nested more than sixteen levels deep arrives with its deeper items at the sixteenth
-  level, words and formatting kept. The wizard says how many. In a Markdown file, a list
-  indented too far for a project to hold arrives as plain text instead, and its lines are
-  counted with the paragraphs that arrive as plain text.
-- A comment in a file with no text to keep it on, only headings for example, is not imported,
-  and the wizard names it.
-- A file that cannot be read, or whose format nothing recognizes, is skipped and named. The
-  rest of the batch still comes in.
-- An item can carry text its own type cannot hold, since a Book or a Part holds none. The *Its
-  text* column then offers a choice. *Keep as paratext*, the default, gives that text a
-  paratext of its own just inside the item; *Drop the text* leaves it behind.
+For more about working with imported comments, see [comments](:help-comments).

@@ -1,5 +1,5 @@
-Skribisto protège votre travail de deux manières différentes, et il est utile de savoir
-laquelle vous cherchez.
+Les copies de secours permettent de récupérer un projet ; l’historique des versions,
+de retrouver un texte antérieur.
 
 Une *copie de secours* est une copie du projet entier, enregistrée dans un fichier à part.
 Elle sert quand le fichier du projet est perdu ou abîmé.
@@ -23,8 +23,8 @@ supprimer une.
 
 Les copies vont dans un dossier géré par Skribisto. Vous pouvez ajouter vos propres dossiers.
 
-Les anciennes copies sont éclaircies pour ne pas remplir votre disque. À vous de choisir
-comment :
+Les anciennes copies sont supprimées automatiquement pour libérer de la place. Choisissez
+celles à conserver :
 
 - *Par paliers* garde environ une copie par heure pendant un jour, une par jour pendant une
   semaine, une par semaine pendant un mois, puis une par mois.
@@ -36,8 +36,8 @@ vaut pour tous les projets.
 ### Ouvrir une copie de secours
 
 Ouvrir une copie de secours ne touche jamais au projet sur lequel vous travaillez. Elle
-s’ouvre dans sa propre fenêtre, que vous ne pouvez pas enregistrer par-dessus, et un bandeau
-reste visible pour vous le rappeler.
+s’ouvre dans une fenêtre séparée, en lecture seule. Un bandeau vous rappelle que vous
+consultez une copie de secours.
 
 Depuis cette fenêtre :
 
@@ -45,8 +45,8 @@ Depuis cette fenêtre :
 - *Restaurer…* remet la copie à la place de l’original.
 
 *Restaurer* est la seule action qui modifie votre vrai projet. Avant de le faire, elle met
-votre projet actuel de côté comme copie de secours, donc rien n’est perdu dans un sens ni dans
-l’autre.
+votre projet actuel de côté comme copie de secours, pour vous permettre de le récupérer si
+nécessaire.
 
 ## Historique des versions
 

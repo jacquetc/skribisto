@@ -4,16 +4,16 @@ déconnectée.
 
 ## Envoyer un fichier Word ou LibreOffice
 
-Exportez avec `Ctrl+Shift+E`, et choisissez sous *Format* le format *Word* (`.docx`) ou
+Exportez avec `Ctrl+Maj+E`, et choisissez sous *Format* le format *Word* (`.docx`) ou
 *LibreOffice* (`.odt`). Ces deux formats emportent vos commentaires.
 
-## Vérifier le style d’export
+## Préparer le retour du fichier
 
 Chaque style d’export a sa propre page *Envoi à un éditeur* :
 
 - *Inclure les commentaires* écrit vos fils de commentaires dans le fichier.
-- *Inclure les marqueurs d’aller-retour* écrit les identifiants qui permettent à un fichier de
-  retour de mettre à jour ce projet au lieu de s’y ajouter en double.
+- *Inclure les marqueurs d’aller-retour* permet à Skribisto de reconnaître vos chapitres au
+  retour du fichier. Laissez cette option activée pour mettre à jour le manuscrit existant.
 
 Pour les atteindre, ouvrez *Paramètres ▸ Compilation et export ▸ Formats d’export*. Un style
 intégré n’est pas modifiable : faites *Dupliquer*, puis *Modifier* sur votre copie, puis *Envoi
@@ -30,14 +30,13 @@ renvoie le fichier.
 [Importer des documents](:help-import-documents) pour les étapes qui précèdent *Fusion*.
 L’aller-retour se joue sur *Fusion*.
 
-Importez un seul exemplaire de retour à la fois. La mise en correspondance ne confronte qu’un
-exemplaire à votre projet : plusieurs ensemble ajouteraient un second livre au lieu d’en
-fusionner un.
+Importez la copie d’un seul lecteur à la fois. En importer plusieurs ensemble ajoute un
+autre livre au lieu de combiner les modifications avec les vôtres.
 
 ## Lire l’étape Fusion
 
-Skribisto associe chaque élément du fichier aux éléments présents dans la Destination que vous
-avez choisie : d’abord par son marqueur d’aller-retour, puis par le type et le titre.
+Choisissez la destination qui contient le manuscrit d’origine. Skribisto retrouve les
+chapitres et scènes du fichier parmi ceux qui s’y trouvent déjà.
 
 La colonne *État* dit ce qui s’est passé :
 
@@ -52,8 +51,8 @@ La colonne *État* dit ce qui s’est passé :
 Si votre lecteur a déplacé un chapitre, déplacez-le vous-même dans le plan.
 
 *Que faire* propose *Commentaires seulement* (ses remarques, votre texte), *Prendre cette
-version*, *Garder la mienne*, *Ajouter comme nouveau* et *Ignorer*. Le plus sûr est
-présélectionné, et certains états réduisent la liste :
+version*, *Garder la mienne*, *Ajouter comme nouveau* et *Ignorer*. Vérifiez l’action choisie pour chaque élément.
+Certains états limitent les choix :
 
 - *Nouveau* propose *Ajouter comme nouveau* ou *Ignorer*.
 - *Absent de ce fichier* ne propose que *Garder la mienne* : un chapitre absent de son
@@ -67,8 +66,10 @@ modifié, chacune disant ce qu’elle fait : *Prendre ce nouveau paragraphe*, *P
 réécriture* ou *Supprimer ce paragraphe*. Cochez celles que vous acceptez, et chaque paragraphe
 laissé de côté garde votre formulation.
 
-Les cases comptent sous *Commentaires seulement* et *Prendre cette version*. Pour ne rien
-garder de sa formulation, choisissez *Garder la mienne*.
+*Commentaires seulement* applique aussi les modifications de paragraphes cochées dans
+*Comparer*. Laissez ces cases décochées pour importer uniquement les commentaires.
+*Prendre cette version* utilise aussi vos choix de paragraphes ; choisissez *Garder la mienne*
+pour conserver votre texte.
 
 ## Modifications suivies
 

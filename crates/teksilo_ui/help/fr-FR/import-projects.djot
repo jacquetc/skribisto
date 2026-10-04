@@ -19,14 +19,7 @@ Le panneau demande :
 Rien n’est écrit avant que vous n’appuyiez sur *Importer*. L’import affiche sa progression, et
 *Annuler* ne laisse rien derrière lui.
 
-Le nom de fichier ne peut pas être celui d’un projet ouvert dans Skribisto, dans cette fenêtre ou
-dans une autre. Importer par-dessus remplacerait le projet sur lequel vous travaillez : l’import
-refuse donc, et dit pourquoi. Choisissez un autre nom, ou fermez d’abord ce projet.
-
-Tant que l’import tourne, le fichier qu’il va écrire lui est réservé. Jusqu’à la fin de l’import,
-Skribisto n’ouvre pas ce fichier et ne commence pas à y écrire un projet, que ce soit par
-*Nouvelle œuvre*, par un autre import, en enregistrant un projet sous ce nom ou en y restaurant
-une sauvegarde.
+Si le fichier de destination est un projet déjà ouvert dans Skribisto, choisissez un autre nom.
 
 ## Désigner un projet Manuskript
 
@@ -73,16 +66,17 @@ Quelques éléments de Manuskript n’ont pas de champ correspondant dans Skribi
 
 ## Comment les parties et les chapitres sont déduits
 
-Skribisto lit la profondeur de tout le plan et choisit une seule échelle pour l’ensemble :
+Skribisto utilise vos dossiers pour créer les parties et les chapitres :
 
 - Si aucun dossier n’en contient un autre, les dossiers deviennent des chapitres.
 - Si un dossier, où que ce soit, en contient un autre, les dossiers les plus extérieurs
   deviennent des parties, et ceux qu’ils contiennent des chapitres.
 
-Tout est enveloppé dans un Livre, sur lequel reposent le plan d’écriture, l’analyse et les
-portées d’export.
+Le manuscrit importé est regroupé dans un Livre pour le planifier, l’analyser et l’exporter
+dans son ensemble.
 
-C’est un point de départ : n’importe quel élément peut être retypé ensuite depuis le classeur.
+Vous pouvez ensuite changer le type d’un élément avec *Convertir en*, dans le menu du clic
+droit du Classeur.
 Voir [le modèle d’écriture](:help-writing-model) pour ce qu’est chaque type.
 
 ## Venir de Plume Creator
@@ -99,20 +93,16 @@ Choisissez un fichier `.plume` ou `.plume_backup`, de n’importe quelle version
 - Les étapes de révision de Plume deviennent les statuts du projet.
 - Votre dictionnaire personnel vient aussi.
 
-Les éléments mis à la corbeille de Plume ne sont **pas** migrés. Videz la corbeille, ou
-restaurez ce que vous voulez garder, avant d’importer. Plume ne transporte aucun nom d’auteur :
+Les éléments dans la corbeille de Plume ne sont **pas** importés. Restaurez dans Plume ceux
+que vous voulez garder avant l’import. Plume ne transporte aucun nom d’auteur :
 indiquez le vôtre dans *Paramètres ▸ Œuvre : <projet> ▸ Auteur*.
 
 ## Après l’import
 
 Un message propose *Ouvrir maintenant*, qui ouvre le nouveau projet.
 
-Les remarques de l’import arrivent dans leur propre message, en clair. Ses premières lignes
-s’affichent dans le message même, et *Détails* ouvre la liste complète. Il nomme exactement ce qui
-n’a pas pu être repris à l’identique, et reste affiché jusqu’à ce que vous le fermiez, ou qu’un
-import suivant apporte ses propres remarques. Dans les deux cas, il figure encore sous la cloche
-de la barre d’état et dans *Paramètres ▸ Apparence et comportement ▸ Notifications*, où *Détails*
-rouvre la liste.
+Si l’import signale des éléments qui n’ont pas pu être repris, cliquez sur *Détails* pour
+consulter la liste. Vous pouvez retrouver ce compte rendu sous la cloche de la barre d’état.
 
 Le nouveau projet est un unique fichier `.skrib`. Si vous gardiez l’ancien sous forme de dossier
 pour la gestion de versions, utilisez ensuite *Œuvre ▸ Enregistrer comme dossier…*. Voir

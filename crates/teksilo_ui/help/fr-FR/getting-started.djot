@@ -1,68 +1,53 @@
-Un projet Skribisto contient tout ce que vous écrivez : la structure du manuscrit, le texte et
-le synopsis de chaque scène, et les paramètres propres au projet. Le Lanceur ouvre un projet,
-et en commence un nouveau.
+Un projet rassemble votre manuscrit et vos notes. Voici comment commencer à écrire.
 
-## Le Lanceur
+## Créer votre premier projet
 
-La barre latérale comporte quatre sections : *Œuvres*, *Exemples*, *Apprendre* et *À propos*.
-En haut de la section *Œuvres* :
+1. Dans la fenêtre d’accueil (le *Lanceur*), cliquez sur *Nouvelle œuvre*.
+2. Dans *Détails*, donnez un nom au projet et choisissez où l’enregistrer. Choisissez
+   *Fichier unique* pour le conserver dans un seul fichier `.skrib`. Le nom d’auteur est facultatif.
+3. Dans *Langue et structure*, choisissez votre langue d’écriture. Vous pouvez garder les
+   autres réglages pour le moment.
+4. Dans *Modèle*, choisissez *Roman vide* pour construire votre roman chapitre par chapitre.
+   D’autres modèles proposent des chapitres déjà créés ; *Carnet* sert à prendre des notes.
+5. Cliquez sur *Créer l’œuvre*.
 
-- *Rechercher des œuvres* filtre la liste au fur et à mesure que vous tapez.
-- *Ouvrir* demande un fichier `.skrib` existant.
-- *Créer depuis…* démarre un projet à partir de ce que vous avez déjà : *Documents (Markdown,
-  Word, ODT)…*, *Plume Creator (.plume)…* ou *Manuskript (.msk)…*. Voir
-  [l’importation de documents](:help-import-documents) et
-  [l’importation de projets](:help-import-projects).
-- *Nouvelle œuvre* ouvre l’assistant Nouvelle œuvre.
+## Écrire votre première scène
 
-En dessous, *Œuvres récentes* liste les projets que vous avez ouverts récemment.
+Le panneau *Classeur*, à gauche, affiche vos chapitres, scènes et notes. Cliquez sur une scène
+pour l’ouvrir et commencer à écrire. Pour en ajouter une, sélectionnez un chapitre et utilisez
+le bouton de création en haut du *Classeur*. Son menu permet de choisir *Scène* ou un autre
+élément.
 
-## Commencer un nouveau projet
+À côté du texte principal, le *Synopsis* est un court résumé qui peut vous servir à préparer
+la scène. Vous pouvez le masquer dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*.
 
-L’assistant compte trois étapes. *Suivant* et *Précédent* passent de l’une à l’autre ;
-*Créer l’œuvre* crée le projet et l’ouvre.
+Pour renommer une scène ou un chapitre, faites un clic droit dessus et choisissez *Renommer*.
 
-- *Détails* : le *Nom de l’œuvre*, un *Auteur* facultatif, un *Format* et l’*Emplacement* où
-  enregistrer. *Fichier unique* est une archive `.skrib`, *Dossier* un dossier contenant chaque
-  texte et chaque ressource.
-- *Langue et structure* : la *Langue par défaut* des nouveaux textes et de la correction
-  orthographique, et *Compter en* mots ou en caractères. La *Structure du livre* pose les pages
-  liminaires et les annexes.
-- *Modèle* : *Aucun*, *Roman vide*, *Roman court*, *Roman*, *Roman en parties* ou *Carnet*, du
-  classeur vide jusqu’à trois parties et vingt-quatre chapitres. *Chapitres à plat* fait de
-  chaque chapitre un texte unique, sans scène en dessous.
+## Enregistrer et retrouver votre travail
 
-Si un projet de ce nom se trouve déjà dans le dossier, *Créer l’œuvre* demande avant de le
-remplacer. Un projet ouvert dans une fenêtre, dans cette copie de Skribisto ou une autre, n’est
-jamais remplacé : choisissez un autre nom ou un autre dossier, ou fermez d’abord ce projet.
+Appuyez sur `Ctrl+S` pour enregistrer vos modifications. Si vous avez activé l’enregistrement
+automatique dans les Paramètres, Skribisto enregistre pendant que vous écrivez et masque la
+commande d’enregistrement manuel. L’indicateur dans la barre d’état vous permet de vérifier
+si vos modifications sont enregistrées.
 
-## Exemples
+Au prochain démarrage, choisissez votre projet dans *Œuvres récentes*. Le bouton *Ouvrir*
+permet aussi de retrouver un fichier `.skrib`.
 
-*Exemples* liste les projets d’exemple fournis avec Skribisto.
+Skribisto crée également des [copies de secours](:help-backups-and-versions) pour retrouver
+un travail antérieur.
 
-## Le panneau Classeur
+## Reprendre un texte existant
 
-Le panneau *Classeur* se trouve à gauche de la fenêtre et affiche le projet sous forme
-d’arborescence : parties, chapitres, scènes et notes. Appuyez sur `F9`, ou utilisez
-*Affichage ▸ Plan*, pour l’afficher ou le masquer.
+Dans le Lanceur, *Créer depuis…* crée un projet à partir de
+[documents](:help-import-documents) ou d’un [projet Manuskript ou Plume Creator](:help-import-projects).
+Pour découvrir un projet d’exemple, ouvrez *Exemples* dans la barre latérale.
 
-- Cliquez sur un élément, ou appuyez sur `Entrée` quand il est en surbrillance, pour l’ouvrir
-  dans l’éditeur.
-- Appuyez sur `Ctrl+Entrée` pour l’ouvrir dans l’autre volet d’édition.
-- Faites un clic droit sur un élément pour *Renommer*, *Dupliquer*, *Convertir en* et
-  *Mettre à la corbeille*.
+## Adapter votre espace de travail
 
-## Texte et synopsis
+- Appuyez sur `F9`, ou choisissez *Affichage ▸ Plan*, pour afficher ou masquer le Classeur.
+- Appuyez sur `Ctrl+Entrée` sur un élément sélectionné pour l’ouvrir dans l’autre volet d’édition.
+- À la création du projet, *Chapitres à plat* permet d’écrire directement dans chaque chapitre,
+  sans le diviser en scènes. Le format *Dossier* conserve le projet dans un dossier plutôt
+  que dans un fichier unique.
 
-Chaque scène et chaque note contient deux textes : son texte principal et son *Synopsis*, un
-court résumé gardé à côté. Les deux sont visibles pendant que vous écrivez, sauf si vous
-masquez le synopsis dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*.
-
-## Ajouter des éléments
-
-L’en-tête du panneau *Classeur* porte un bouton de création qui nomme le type recommandé là où
-vous êtes, « ＋ Scène » lorsqu’une scène est sélectionnée. Son menu déroulant liste tout ce que
-vous pourriez ajouter d’autre : chapitres, notes, dossiers et le reste.
-
-Cela suffit pour commencer à écrire. Pour savoir comment les éléments d’un livre s’articulent,
-voir [le modèle d’écriture](:help-writing-model).
+Voir [livres, chapitres et scènes](:help-writing-model) pour organiser votre manuscrit.

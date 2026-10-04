@@ -6,13 +6,13 @@ comments and edits back into the project instead of a second, disconnected copy.
 Export with `Ctrl+Shift+E`, and under *Format* choose *Word* (`.docx`) or *LibreOffice*
 (`.odt`). Those two carry your comments out.
 
-## Check the export style
+## Prepare the file for its return
 
 Each export style has a *Sending to an editor* page of its own:
 
 - *Include comments* writes your comment threads into the file.
-- *Include round-trip markers* writes the identifiers that let a returning file update this
-  project instead of landing beside it as a second copy.
+- *Include round-trip markers* lets Skribisto recognize your chapters when the file comes back.
+  Leave this on to update the existing manuscript instead of importing another copy.
 
 To reach them, open *Settings ▸ Compile & Export ▸ Export Formats*. A built-in style cannot be
 edited, so press *Duplicate*, then *Edit* on your copy, then *Sending to an editor*.
@@ -28,13 +28,13 @@ back.
 [Import documents](:help-import-documents) for the steps before *Merge*. The round trip
 happens on *Merge*.
 
-Import one returning copy at a time: matching lines up a single copy against your project, so
-several at once would add a second book rather than merge one.
+Import one reader’s copy at a time. Importing several together adds another book instead
+of combining their changes with yours.
 
 ## Reading the Merge step
 
-Skribisto pairs each item in the file with the items inside the Destination you chose: first by
-its round-trip marker, then by type and title.
+Choose the destination containing the original manuscript. Skribisto matches the returning
+chapters and scenes to the ones already there.
 
 The *Status* column says what happened:
 
@@ -48,7 +48,7 @@ The *Status* column says what happened:
 If your reader moved a chapter, move it yourself in the outline.
 
 *What to do* offers *Comments only* (their notes, your wording), *Take this version*, *Keep
-mine*, *Add as new* and *Skip*. The safest is preselected, and some statuses narrow the list:
+mine*, *Add as new* and *Skip*. Review the selected action for each item. Some statuses limit the choices:
 
 - *New* offers *Add as new* or *Skip*.
 - *Not in this file* offers *Keep mine* alone: a chapter missing from their copy is no reason
@@ -61,8 +61,9 @@ removed, underlined what they added. Below it sits a tick box per changed paragr
 saying what it does: *Take this new paragraph*, *Take this rewrite* or *Drop this paragraph*.
 Tick the ones you accept, and every paragraph you leave keeps your wording.
 
-Ticks count under *Comments only* and *Take this version*. To keep none of their wording,
-choose *Keep mine*.
+*Comments only* also applies any paragraph changes you checked in *Compare*. Leave those
+boxes unchecked to import only comments. *Take this version* also uses your paragraph choices;
+choose *Keep mine* to keep your own text.
 
 ## Tracked changes
 

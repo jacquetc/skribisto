@@ -18,13 +18,7 @@ The panel asks for:
 Nothing is written until you press *Import*. The import shows its progress, and *Cancel* leaves
 nothing behind.
 
-The file name cannot be a project that is open in Skribisto, in this window or any other.
-Importing over it would replace the project you are working on, so the import refuses and says
-why. Choose another name, or close that project first.
-
-While the import runs, the file it will write is kept for it. Until the import has finished,
-Skribisto does not open that file, and does not start writing a project there, whether from
-*New Work*, another import, saving a project under that name or restoring a backup over it.
+If the destination is a project already open in Skribisto, choose another file name.
 
 ## Pointing at a Manuskript project
 
@@ -68,16 +62,15 @@ A few Manuskript things have no matching field in Skribisto:
 
 ## How parts and chapters are worked out
 
-Skribisto reads the depth of the whole outline and picks one ladder for all of it:
+Skribisto uses your folders to create parts and chapters:
 
 - If no folder holds another folder, folders become chapters.
 - If a folder anywhere holds another, the outermost folders become parts, and the folders
   inside them chapters.
 
-Everything is wrapped in one Book, which the writing plan, the analysis and the export scopes
-are built around.
+The imported manuscript is grouped into one Book, so you can plan, analyse and export it together.
 
-It is a starting point: any item can be retyped afterwards from the binder. See
+You can change an item’s type afterwards with *Convert to* in the Binder’s right-click menu. See
 [the writing model](:help-writing-model) for what each type is.
 
 ## Coming from Plume Creator
@@ -92,19 +85,16 @@ Choose a `.plume` or `.plume_backup` file, from any version of Plume.
 - Plume's revision stages become the project's statuses.
 - Your personal dictionary comes too.
 
-Items in Plume's rubbish bin are **not** migrated. Empty the bin, or restore what you want to
-keep, before importing. Plume carries no author name, so set yours in *Settings ▸ Work:
+Items in Plume’s rubbish bin are **not** imported. Restore any you want to keep in Plume
+before importing. Plume carries no author name, so set yours in *Settings ▸ Work:
 <project> ▸ Author*.
 
 ## After the import
 
 A message offers *Open now*, which opens the new project.
 
-The import's notes come in their own message, in plain language. Its first lines show in the
-message itself, and *Details* opens the whole list. It names exactly what could not be carried
-across, and it stays until you close it, or until a later import brings notes of its own. Either
-way it is still listed under the bell in the status bar and in *Settings ▸ Appearance & Behavior ▸
-Notifications*, where *Details* opens the list again.
+If the import reports anything it could not transfer, click *Details* to read the list.
+You can find that report again under the bell in the status bar.
 
 The new project is a single `.skrib` file. If you kept your old one as a folder for version
 control, use *Work ▸ Save as folder…* afterwards. See

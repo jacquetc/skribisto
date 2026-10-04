@@ -1,7 +1,12 @@
-## Le classeur organise, le type décide de la structure
+## Organiser votre manuscrit
 
-Le classeur, à gauche de la fenêtre, range votre projet comme il vous convient. Il ne
-décide pas de l’apparence du livre compilé. Ce rôle revient au *type* de chaque élément.
+Utilisez le *Classeur*, à gauche, pour ranger vos textes. Un roman se compose généralement
+d’un Livre contenant des chapitres, eux-mêmes divisés en scènes. Vous pouvez aussi écrire
+directement dans les chapitres.
+
+Chaque élément a un *type*, comme Chapitre ou Note. Il indique à Skribisto comment l’utiliser
+lors de l’export du livre : un simple dossier ne devient pas un chapitre parce qu’il contient
+des scènes.
 
 Chaque élément qui porte du texte a un texte principal et un synopsis côte à côte :
 planifiez dans un panneau, rédigez dans l’autre. Les livres, les parties, les dossiers de
@@ -11,16 +16,15 @@ notes et les dossiers simples portent un synopsis, mais pas de texte principal.
 
 Faites un clic droit sur un élément du classeur et choisissez *Ajouter*.
 
-- *Livre* : aussi structuré que vous le souhaitez, de quelques scènes à des parties et
-  des chapitres imbriqués.
+- *Livre* : un manuscrit, avec ses chapitres et ses scènes.
 - *Partie* : regroupe des chapitres sous un même titre.
 - *Chapitre* : se poursuit jusqu’au chapitre suivant, à la partie suivante, ou à la fin
   du livre.
 - *Scène* : votre texte, avec son propre synopsis.
 - *Note* : du texte et un synopsis, pour la recherche, des remarques ou des rappels.
 - *Entrée de bible narrative…* : une note pour un personnage, un lieu ou un objet, créée
-  avec ses étiquettes et ses alias déjà renseignés.
-- *Dossier de notes* : une note qui contient d’autres notes.
+  avec ses étiquettes et ses autres noms déjà renseignés.
+- *Dossier de notes* : regroupe des notes, avec un synopsis mais sans texte principal.
 - *Dossier* : un simple conteneur, avec un synopsis et aucun texte à lui.
 
 ## Deux formes de chapitre
@@ -33,16 +37,11 @@ Pour choisir la forme des *nouveaux* chapitres, ouvrez *Paramètres ▸ Œuvre :
 Structure* et réglez *Chapitres à plat*. Activé donne de simples éléments, désactivé des
 dossiers.
 
-## Changer le type d’un élément
+## Transformer une scène, un chapitre ou un dossier
 
-Faites un clic droit sur l’élément dans le classeur et ouvrez *Convertir en*.
-
-- Un dossier simple, un dossier de chapitre, une partie, un livre ou un dossier de notes
-  en n’importe lequel des quatre autres.
-- Un dossier de chapitre en chapitre à plat, et inversement.
-- Une scène en chapitre à plat ou en note, et inversement.
-
-Une conversion conserve le titre et le texte partout où le nouveau type a de la place.
+Faites un clic droit sur l’élément et choisissez *Convertir en* pour voir les types disponibles.
+Vous pouvez par exemple transformer une scène en note, ou un dossier de chapitre en chapitre
+à plat. Le titre et le texte sont conservés si le nouveau type peut les contenir.
 
 - Un dossier doit être vide avant de devenir un élément simple. Déplacez d’abord ce qu’il
   contient, ou mettez-le à la corbeille.
@@ -53,7 +52,7 @@ Une conversion conserve le titre et le texte partout où le nouveau type a de la
 
 Un projet peut contenir plusieurs livres, l’un après l’autre dans le même classeur. Un
 livre court depuis son début jusqu’à la première de ces trois limites : un élément *Fin
-du livre*, le début du livre suivant, ou le bord de son classeur.
+du livre*, le début du livre suivant, ou la fin de son classeur.
 
 ## Le paratexte : dans le livre, pas dans l’histoire
 

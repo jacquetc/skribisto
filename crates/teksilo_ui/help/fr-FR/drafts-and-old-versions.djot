@@ -15,16 +15,14 @@ Rangez-le dans un autre classeur.
   en haut du panneau *Classeur* contient *Nouveau classeur…*.
 - Faites glisser la copie sur ce classeur. Si le bouton nomme un seul classeur au lieu de
   *Tous les classeurs*, choisissez d’abord *Afficher tous les classeurs*, pour voir les
-  deux bouts du glissement.
+  deux classeurs.
 
-C’est tout. Si la réécriture se révèle la moins bonne des deux, ramenez-la.
+Pour reprendre l’ancien chapitre, déplacez la nouvelle version hors du livre, puis remettez
+l’ancienne à sa place.
 
-## Pourquoi un autre classeur suffit
+## Garder les anciens brouillons hors du livre
 
-Un livre va de son propre marqueur jusqu’au suivant, à l’intérieur du classeur où il se
-trouve. Voir [le modèle d’écriture](:help-writing-model).
-
-Un ancien chapitre rangé dans un autre classeur est donc hors du livre. Le nombre de mots,
+Un ancien chapitre rangé dans un autre classeur est hors du livre. Le nombre de mots,
 vos objectifs et votre rythme, et l’export le laissent de côté.
 
 ## Ce qui continue de fonctionner
@@ -43,7 +41,7 @@ brouillon, son entrée compte toujours ces scènes.
   l’ouvrir depuis le panneau *Corbeille* pour le lire, mais il y est rangé comme écarté,
   non comme conservé.
 - Le panneau *Versions* garde ce qu’un texte disait avant, et sait remettre un état plus
-  ancien en place. Adressez-vous à lui pour savoir « que disait ce paragraphe hier ». Il
+  ancien en place. Utilisez-le pour retrouver « que disait ce paragraphe hier ». Il
   travaille un élément à la fois, et restaurer remplace ce qui est là. Voir
   [les sauvegardes et les versions](:help-backups-and-versions).
 - *Inclure dans les exports*, dans l’Inspecteur, décide si un élément arrive dans le livre

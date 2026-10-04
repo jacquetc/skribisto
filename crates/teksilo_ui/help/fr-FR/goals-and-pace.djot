@@ -1,13 +1,15 @@
 ## Définir un objectif
 
-Sélectionnez un élément dans le classeur et ouvrez l’Inspecteur. Le champ *Objectif*, plus bas
-dans le panneau, accepte un nombre. Il affiche *Aucun objectif* tant qu’il vaut zéro.
+Sélectionnez un élément dans le classeur et ouvrez l’Inspecteur. Dans *Objectif*,
+saisissez le nombre de mots que vous voulez écrire. Si votre projet compte en caractères,
+saisissez plutôt un nombre de caractères. Mettez zéro pour supprimer l’objectif.
 
-Un objectif est un nombre propre à l’élément, pas la somme de ce qu’il contient.
+Définissez un objectif pour chaque chapitre ou scène que vous voulez suivre. L’objectif d’un
+chapitre n’est pas calculé automatiquement à partir de ceux de ses scènes.
 
 ## Où vous en êtes
 
-La progression face à un objectif suit l’élément partout. L’Inspecteur l’affiche sous le champ
+Vous pouvez consulter votre progression à plusieurs endroits. L’Inspecteur l’affiche sous le champ
 *Objectif*. La barre d’état l’affiche à côté du compte en direct, et le tableau *Vue d’ensemble*
 lui donne une colonne *Objectif*.
 
@@ -17,9 +19,9 @@ La progression se mesure sur le manuscrit lui-même : la prose de vos
 [scènes et chapitres](:help-writing-model). Un synopsis, une note ou un paratexte reste hors du
 compte, tout comme ce qui est à la corbeille.
 
-Désactiver un élément par *Inclure dans les exports*, dans l’Inspecteur, l’en sort aussi.
-L’exclusion ne s’hérite pas : utilisez *Appliquer aux enfants* pour la propager à toute une
-branche.
+Désactiver *Inclure dans les exports*, dans l’Inspecteur, retire aussi l’élément du compte.
+Le faire pour un chapitre n’exclut pas automatiquement ses scènes. Utilisez *Appliquer aux
+enfants* pour les exclure aussi.
 
 ## Mots ou caractères
 
@@ -31,28 +33,28 @@ Chaque élément garde deux nombres distincts : un objectif en mots et un object
 
 ## Répartir un objectif
 
-Un livre, une partie ou un dossier de chapitre porte un bouton *Répartir…* sur sa page propre. Il
-devient actif dès que ce conteneur a un objectif à lui. Il prévisualise le partage de cet
-objectif entre les parties, chapitres et scènes placés directement dedans. Choisissez la
-pondération des parts sous *Répartir* :
+Pour partager l’objectif d’un livre entre ses parties ou chapitres, ouvrez le livre et cliquez
+sur *Répartir…*. Définissez d’abord un objectif si le bouton est désactivé. Vous pouvez faire
+de même pour une partie ou un dossier de chapitre. L’aperçu montre les objectifs proposés.
+Sous *Répartir*, choisissez :
 
 - *Selon la longueur*, d’après ce qui est déjà écrit sous chacun ;
 - *Selon le nombre d’éléments* ;
 - *À parts égales*.
 
-Les enfants qui portent déjà un objectif le gardent, et les autres se partagent le reste. Activez
+Les chapitres et scènes qui ont déjà un objectif le gardent ; les autres se partagent le reste. Activez
 *Remplacer les objectifs déjà définis* pour recalculer chaque part.
 
 ## Planifier un rythme
 
-Un livre a un segment *Rythme* qui convertit son objectif en un chiffre journalier. S’il n’y a
-pas encore de plan, *Commencer la planification* fixe une échéance à quatre-vingt-dix jours.
+Ouvrez la section *Rythme* d’un livre et choisissez *Commencer la planification* pour définir
+un objectif quotidien.
 
 Remplissez *Objectif de mots* et *Échéance*, puis choisissez les jours de la semaine où vous
 écrivez. Skribisto calcule ce que demande chaque jour d’écriture restant, combien il en reste,
 et si vous êtes en avance ou en retard sur le rythme.
 
-Les périodes ajoutées sous *Congés* sont sautées.
+Ajoutez vos jours de repos sous *Congés* pour les exclure du calendrier d’écriture.
 
 Le rythme et les jalons comptent en mots, quelle que soit l’unité du projet.
 

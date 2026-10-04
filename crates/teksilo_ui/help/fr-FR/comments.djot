@@ -22,9 +22,9 @@ ne sont pas signés. Son bouton *Définir votre nom* ouvre *Paramètres ▸ Util
 
 ## Répondre, résoudre, supprimer
 
-Chaque fiche dans la marge porte un bouton en chevron. Derrière :
+Ouvrez le menu avec la petite flèche sur la fiche du commentaire :
 
-- *Répondre* ajoute un tour au fil.
+- *Répondre* ajoute une réponse à la discussion.
 - *Résoudre* marque le point comme réglé. La fiche quitte la marge et le commentaire reste dans
   les panneaux.
 - *Supprimer* efface un commentaire, *Supprimer la réponse* une seule réponse, et *Supprimer
@@ -71,8 +71,6 @@ même passage (« 3 lecteurs ») quand il y en a plus d’un.
 
 ## Quand un commentaire perd son texte
 
-Un commentaire mémorise les mots auxquels il était attaché, pas une position dans le fichier.
-
 Si ces mots sont supprimés ou réécrits au point d’être méconnaissables, le commentaire est
 marqué *Texte introuvable* au lieu d’être attaché à la mauvaise phrase. Le filtre *Orphelins*
 les retrouve.
@@ -81,5 +79,5 @@ les retrouve.
 
 Les fichiers Word et LibreOffice emportent vos commentaires et ramènent ceux de votre lecteur.
 Le style d’export propose pour cela *Inclure les commentaires* et *Inclure les marqueurs
-d’aller-retour*. Voir [l’aller-retour](:help-round-trip) pour envoyer un manuscrit et lire ce
-qui revient.
+d’aller-retour*. Voir [l’aller-retour](:help-round-trip) pour envoyer un manuscrit et récupérer les
+remarques de votre lecteur.

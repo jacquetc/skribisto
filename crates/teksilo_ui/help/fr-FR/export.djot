@@ -1,73 +1,45 @@
-## Ouvrir la boîte de dialogue Exporter
+Créez un fichier à partager, à imprimer ou à lire en dehors de Skribisto.
 
-Appuyez sur `Ctrl+Maj+E`, ou ouvrez *Œuvre ▸ Exporter*. Le sous-menu nomme ce que vous avez
-ouvert : *Exporter le livre*, *Exporter la partie*, *Exporter le chapitre*,
-*Exporter la scène*, *Exporter la note*, *Exporter le dossier*. Chacune ouvre la boîte de
-dialogue cadrée sur ce conteneur. *Choisir…*, comme `Ctrl+Maj+E`, l’ouvre plutôt sur un
-arbre à cases à cocher de tout votre classeur.
+## Exporter vos textes
 
-## Choisir quoi exporter
+1. Appuyez sur `Ctrl+Maj+E` pour ouvrir Exporter.
+2. Sous *Quoi exporter*, cochez les chapitres ou scènes à inclure.
+   Cocher un chapitre sélectionne aussi ses scènes.
+3. Choisissez un *Format* : Word ou LibreOffice pour les corrections et commentaires,
+   PDF pour l’impression, EPUB pour une liseuse.
+4. Choisissez un *Style* pour la présentation.
+5. Avec le bouton dossier à côté de *Destination*, choisissez le nom du fichier et son emplacement.
+6. Cliquez sur *Exporter*. Une fois l’export terminé, le message propose *Ouvrir* ou
+   *Afficher dans le dossier*.
 
-La colonne *Quoi exporter* propose le conteneur avec lequel vous êtes arrivé, ou
-*Sélection personnalisée* : un arbre à cases à cocher de tout votre classeur.
+Vous pouvez annuler l’export en cours. Si le fichier existe déjà, Skribisto demande confirmation
+avant de le remplacer.
 
-- L’arbre s’ouvre avec votre prose déjà cochée. Décochez ce que vous voulez laisser de côté.
-- Cocher un chapitre coche ses scènes. Un chapitre à moitié coché affiche un tiret.
-- Les éléments dont l’interrupteur *Inclure dans les exports* de l’Inspecteur est désactivé
-  sont masqués. *Afficher les non-exportables* les révèle, et en cocher un là ne vaut que
-  pour cet export.
+## Exporter un seul chapitre ou livre
 
-## Choisir un format
+Ouvrez l’élément, puis choisissez *Œuvre ▸ Exporter*. Le sous-menu propose notamment
+*Exporter le livre* ou *Exporter le chapitre*, avec cet élément déjà sélectionné.
+Utilisez *Choisir…* pour une sélection personnalisée.
 
-*Format* propose :
+Les éléments dont l’option *Inclure dans les exports* est désactivée dans l’Inspecteur sont
+masqués. *Afficher les non-exportables* les révèle. En cocher un l’inclut uniquement dans cet export.
 
-- *Word* (`.docx`) et *LibreOffice* (`.odt`), qui emportent les commentaires
-- *PDF* et *EPUB*, pour un livre fini
-- *HTML*, *Markdown*, *Djot*, *Texte* et *LaTeX*, tous en texte simple
+## Choisir la présentation
 
-## Choisir un style
+Un *Style* définit les titres, les coupures de scène, l’interligne, les sauts de page et les
+contenus supplémentaires à inclure, comme les synopsis, notes et commentaires. Les possibilités
+de mise en page varient selon le format.
 
-*Style* est un ensemble de choix enregistré qui façonne le résultat quel que soit le format
-retenu :
+Pour modifier un style intégré, faites-en d’abord une copie : ouvrez
+*Paramètres ▸ Compilation et export ▸ Formats d’export*, sélectionnez le style et choisissez
+*Dupliquer*. Choisissez ensuite *Modifier* sur la copie.
 
-- les titres de chapitre et de partie, numérotés ou non
-- les coupures de scène, l’interligne et la justification
-- l’inclusion des notes, synopsis, titres de scène, épigraphes et paratextes
-- les notes de bas de page : leur inclusion, et leur numérotation
-- si vos commentaires partent avec le fichier
-- où commence une nouvelle page
+Les autres formats disponibles sont HTML, Markdown, Djot, Texte et LaTeX.
 
-Un style s’applique partout où le format peut l’honorer.
+## Envoyer un manuscrit pour relecture
 
-## Créer votre propre style
+Word (`.docx`) et LibreOffice (`.odt`) peuvent inclure les commentaires. Dans le style d’export,
+activez *Inclure les commentaires* et laissez *Inclure les marqueurs d’aller-retour* activé
+pour que Skribisto retrouve les chapitres du projet au retour du fichier.
 
-Les styles intégrés ne se modifient pas. Pour créer le vôtre, ouvrez
-*Paramètres ▸ Compilation et export ▸ Formats d’export* et choisissez *Dupliquer* sur un
-intégré. La copie apparaît dans la même liste, après les styles intégrés, et *Modifier*
-l’ouvre.
-
-## Où va le fichier
-
-*Destination* est le fichier à écrire. Saisissez un chemin, ou choisissez-en un avec le
-bouton dossier à côté. Changer de format change l’extension pour vous. Si ce fichier existe
-déjà, Skribisto demande confirmation avant de le remplacer.
-
-## Lancer l’export
-
-Cliquez sur *Exporter*.
-
-L’export s’exécute en arrière-plan, et un message le suit :
-
-- Pendant l’export, un bouton *Annuler* l’interrompt.
-- Quand le fichier est écrit, le message le nomme et propose *Ouvrir* et
-  *Afficher dans le dossier*.
-
-## Récupérer un document
-
-- Avec *Inclure les commentaires* actif dans le style, `.docx` et `.odt` emportent chaque
-  commentaire ancré à son passage.
-- Réimporter ce fichier remet les commentaires à leur place. Cela dépend de l’option
-  *Inclure les marqueurs d’aller-retour* du style, active d’origine. Voir
-  [l’aller-retour](:help-round-trip) pour son fonctionnement.
-- Le Markdown et le texte simple reviennent via [l’import de documents](:help-import-documents),
-  mais sans aucun commentaire.
+Voir [récupérer les corrections et commentaires](:help-round-trip) pour la procédure complète.
