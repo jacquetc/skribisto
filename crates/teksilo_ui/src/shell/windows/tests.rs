@@ -602,6 +602,17 @@ const MENU_LOCALES: &[(&str, &str)] = &[
     ("uk-UA", include_str!("../../../locales/uk-UA/main.ftl")),
     ("ko-KR", include_str!("../../../locales/ko-KR/main.ftl")),
     ("ja-JP", include_str!("../../../locales/ja-JP/main.ftl")),
+    ("ar-SA", include_str!("../../../locales/ar-SA/main.ftl")),
+    ("cs-CZ", include_str!("../../../locales/cs-CZ/main.ftl")),
+    ("da-DK", include_str!("../../../locales/da-DK/main.ftl")),
+    ("el-GR", include_str!("../../../locales/el-GR/main.ftl")),
+    ("he-IL", include_str!("../../../locales/he-IL/main.ftl")),
+    ("hu-HU", include_str!("../../../locales/hu-HU/main.ftl")),
+    ("nb-NO", include_str!("../../../locales/nb-NO/main.ftl")),
+    ("nl-NL", include_str!("../../../locales/nl-NL/main.ftl")),
+    ("ro-RO", include_str!("../../../locales/ro-RO/main.ftl")),
+    ("sv-SE", include_str!("../../../locales/sv-SE/main.ftl")),
+    ("tr-TR", include_str!("../../../locales/tr-TR/main.ftl")),
     ("eo", include_str!("../../../locales/eo/main.ftl")),
 ];
 
@@ -690,6 +701,61 @@ fn added_locales_additional_menu_entries_have_unique_mnemonics() {
             "ja-JP",
             include_str!("../../../locales/ja-JP/main.ftl"),
             include_str!("../../../locales/ja-JP/templates.ftl"),
+        ),
+        (
+            "ar-SA",
+            include_str!("../../../locales/ar-SA/main.ftl"),
+            include_str!("../../../locales/ar-SA/templates.ftl"),
+        ),
+        (
+            "cs-CZ",
+            include_str!("../../../locales/cs-CZ/main.ftl"),
+            include_str!("../../../locales/cs-CZ/templates.ftl"),
+        ),
+        (
+            "da-DK",
+            include_str!("../../../locales/da-DK/main.ftl"),
+            include_str!("../../../locales/da-DK/templates.ftl"),
+        ),
+        (
+            "el-GR",
+            include_str!("../../../locales/el-GR/main.ftl"),
+            include_str!("../../../locales/el-GR/templates.ftl"),
+        ),
+        (
+            "he-IL",
+            include_str!("../../../locales/he-IL/main.ftl"),
+            include_str!("../../../locales/he-IL/templates.ftl"),
+        ),
+        (
+            "hu-HU",
+            include_str!("../../../locales/hu-HU/main.ftl"),
+            include_str!("../../../locales/hu-HU/templates.ftl"),
+        ),
+        (
+            "nb-NO",
+            include_str!("../../../locales/nb-NO/main.ftl"),
+            include_str!("../../../locales/nb-NO/templates.ftl"),
+        ),
+        (
+            "nl-NL",
+            include_str!("../../../locales/nl-NL/main.ftl"),
+            include_str!("../../../locales/nl-NL/templates.ftl"),
+        ),
+        (
+            "ro-RO",
+            include_str!("../../../locales/ro-RO/main.ftl"),
+            include_str!("../../../locales/ro-RO/templates.ftl"),
+        ),
+        (
+            "sv-SE",
+            include_str!("../../../locales/sv-SE/main.ftl"),
+            include_str!("../../../locales/sv-SE/templates.ftl"),
+        ),
+        (
+            "tr-TR",
+            include_str!("../../../locales/tr-TR/main.ftl"),
+            include_str!("../../../locales/tr-TR/templates.ftl"),
         ),
     ];
     let additions: &[(&str, &[&str])] = &[

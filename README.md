@@ -102,7 +102,10 @@ braille display. Please get in touch if you hit a glaring gap.
 - Exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text
 - Spell checking with downloadable dictionaries
 - Light and dark themes, per-editor typography, adjustable text scale
-- English, French, German (Germany), Italian, Spanish, Portuguese (Portugal), Polish, Finnish, Russian, Ukrainian, Korean (South Korea), Japanese and Esperanto user interface
+- User interface in Arabic (Saudi Arabia), Czech, Danish, Dutch, English, Esperanto,
+  Finnish, French, German (Germany), Greek, Hebrew, Hungarian, Italian, Japanese,
+  Korean (South Korea), Norwegian Bokmål, Polish, Portuguese (Portugal), Romanian,
+  Russian, Spanish, Swedish, Turkish and Ukrainian
 - Single instance: several projects can be open at once, each in its own window, without
   spawning a new process per project
 
@@ -119,8 +122,7 @@ per locale. The shorter ones are the same text the tooltips use, so they are tra
 and read in both places. See the [Translation](#translation) section for both.
 
 Full help articles are available in English, French, German, Italian, Spanish, Portuguese
-(Portugal), and Polish. Finnish, Russian, Ukrainian, Korean, Japanese, and Esperanto use English for the
-longer help articles.
+(Portugal), and Polish. Other interface languages use English for the longer help articles.
 
 ## Discussions
 

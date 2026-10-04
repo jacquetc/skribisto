@@ -2,6 +2,7 @@ Version: 3.0.5
 Date: 2026-09-28
 Type: stable
 Description:
+- "Added app interfaces in Arabic (Saudi Arabia), Czech, Danish, Greek, Hebrew, Hungarian, Norwegian Bokmål, Dutch, Romanian, Swedish and Turkish, including menus, dialogs, settings and tooltips. Longer help articles use English"
 - "Added interfaces in German (Germany), Italian, Spanish, Portuguese (Portugal), Polish, Finnish, Russian, Ukrainian, Korean (South Korea), Japanese and Esperanto, including menus, dialogs, settings and tooltips"
 - "Added help articles in German, Italian, Spanish, Portuguese (Portugal) and Polish. Finnish, Russian, Ukrainian, Korean, Japanese and Esperanto use English for the longer help articles"
 - "English and French help now gives clearer steps for starting a project, saving, importing and exporting, with less jargon and fewer technical details"

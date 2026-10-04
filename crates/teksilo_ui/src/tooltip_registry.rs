@@ -448,6 +448,17 @@ mod tests {
             ("uk-UA", include_str!("../locales/uk-UA/tooltips.ftl")),
             ("ko-KR", include_str!("../locales/ko-KR/tooltips.ftl")),
             ("ja-JP", include_str!("../locales/ja-JP/tooltips.ftl")),
+            ("ar-SA", include_str!("../locales/ar-SA/tooltips.ftl")),
+            ("cs-CZ", include_str!("../locales/cs-CZ/tooltips.ftl")),
+            ("da-DK", include_str!("../locales/da-DK/tooltips.ftl")),
+            ("el-GR", include_str!("../locales/el-GR/tooltips.ftl")),
+            ("he-IL", include_str!("../locales/he-IL/tooltips.ftl")),
+            ("hu-HU", include_str!("../locales/hu-HU/tooltips.ftl")),
+            ("nb-NO", include_str!("../locales/nb-NO/tooltips.ftl")),
+            ("nl-NL", include_str!("../locales/nl-NL/tooltips.ftl")),
+            ("ro-RO", include_str!("../locales/ro-RO/tooltips.ftl")),
+            ("sv-SE", include_str!("../locales/sv-SE/tooltips.ftl")),
+            ("tr-TR", include_str!("../locales/tr-TR/tooltips.ftl")),
             ("eo", include_str!("../locales/eo/tooltips.ftl")),
         ] {
             let targets = cascade_targets(ftl);

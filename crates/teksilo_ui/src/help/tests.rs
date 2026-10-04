@@ -264,6 +264,17 @@ fn no_tooltip_body_uses_an_em_dash() {
         ("uk-UA", include_str!("../../locales/uk-UA/tooltips.ftl")),
         ("ko-KR", include_str!("../../locales/ko-KR/tooltips.ftl")),
         ("ja-JP", include_str!("../../locales/ja-JP/tooltips.ftl")),
+        ("ar-SA", include_str!("../../locales/ar-SA/tooltips.ftl")),
+        ("cs-CZ", include_str!("../../locales/cs-CZ/tooltips.ftl")),
+        ("da-DK", include_str!("../../locales/da-DK/tooltips.ftl")),
+        ("el-GR", include_str!("../../locales/el-GR/tooltips.ftl")),
+        ("he-IL", include_str!("../../locales/he-IL/tooltips.ftl")),
+        ("hu-HU", include_str!("../../locales/hu-HU/tooltips.ftl")),
+        ("nb-NO", include_str!("../../locales/nb-NO/tooltips.ftl")),
+        ("nl-NL", include_str!("../../locales/nl-NL/tooltips.ftl")),
+        ("ro-RO", include_str!("../../locales/ro-RO/tooltips.ftl")),
+        ("sv-SE", include_str!("../../locales/sv-SE/tooltips.ftl")),
+        ("tr-TR", include_str!("../../locales/tr-TR/tooltips.ftl")),
     ] {
         for (number, line) in ftl.lines().enumerate() {
             if line.trim_start().starts_with('#') {
@@ -305,6 +316,17 @@ fn no_tooltip_body_uses_markup_the_parser_cannot_read() {
         ("uk-UA", include_str!("../../locales/uk-UA/tooltips.ftl")),
         ("ko-KR", include_str!("../../locales/ko-KR/tooltips.ftl")),
         ("ja-JP", include_str!("../../locales/ja-JP/tooltips.ftl")),
+        ("ar-SA", include_str!("../../locales/ar-SA/tooltips.ftl")),
+        ("cs-CZ", include_str!("../../locales/cs-CZ/tooltips.ftl")),
+        ("da-DK", include_str!("../../locales/da-DK/tooltips.ftl")),
+        ("el-GR", include_str!("../../locales/el-GR/tooltips.ftl")),
+        ("he-IL", include_str!("../../locales/he-IL/tooltips.ftl")),
+        ("hu-HU", include_str!("../../locales/hu-HU/tooltips.ftl")),
+        ("nb-NO", include_str!("../../locales/nb-NO/tooltips.ftl")),
+        ("nl-NL", include_str!("../../locales/nl-NL/tooltips.ftl")),
+        ("ro-RO", include_str!("../../locales/ro-RO/tooltips.ftl")),
+        ("sv-SE", include_str!("../../locales/sv-SE/tooltips.ftl")),
+        ("tr-TR", include_str!("../../locales/tr-TR/tooltips.ftl")),
     ] {
         for (number, line) in ftl.lines().enumerate() {
             if line.trim_start().starts_with('#') {
@@ -433,6 +455,17 @@ fn every_cascade_link_in_a_tooltip_body_resolves_to_a_topic() {
         ("uk-UA", include_str!("../../locales/uk-UA/tooltips.ftl")),
         ("ko-KR", include_str!("../../locales/ko-KR/tooltips.ftl")),
         ("ja-JP", include_str!("../../locales/ja-JP/tooltips.ftl")),
+        ("ar-SA", include_str!("../../locales/ar-SA/tooltips.ftl")),
+        ("cs-CZ", include_str!("../../locales/cs-CZ/tooltips.ftl")),
+        ("da-DK", include_str!("../../locales/da-DK/tooltips.ftl")),
+        ("el-GR", include_str!("../../locales/el-GR/tooltips.ftl")),
+        ("he-IL", include_str!("../../locales/he-IL/tooltips.ftl")),
+        ("hu-HU", include_str!("../../locales/hu-HU/tooltips.ftl")),
+        ("nb-NO", include_str!("../../locales/nb-NO/tooltips.ftl")),
+        ("nl-NL", include_str!("../../locales/nl-NL/tooltips.ftl")),
+        ("ro-RO", include_str!("../../locales/ro-RO/tooltips.ftl")),
+        ("sv-SE", include_str!("../../locales/sv-SE/tooltips.ftl")),
+        ("tr-TR", include_str!("../../locales/tr-TR/tooltips.ftl")),
     ] {
         for line in ftl.lines() {
             if line.trim_start().starts_with('#') {
@@ -778,7 +811,8 @@ fn added_tooltip_translations_preserve_clickable_cascade_links() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("locales");
     let expected = targets(include_str!("../../locales/en-US/tooltips.ftl"));
     for locale in [
-        "it-IT", "es-ES", "pt-PT", "pl-PL", "fi-FI", "ru-RU", "uk-UA", "ko-KR", "ja-JP",
+        "it-IT", "es-ES", "pt-PT", "pl-PL", "fi-FI", "ru-RU", "uk-UA", "ko-KR", "ja-JP", "ar-SA",
+        "cs-CZ", "da-DK", "el-GR", "he-IL", "hu-HU", "nb-NO", "nl-NL", "ro-RO", "sv-SE", "tr-TR",
     ] {
         let source = std::fs::read_to_string(root.join(locale).join("tooltips.ftl")).unwrap();
         assert_eq!(

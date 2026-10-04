@@ -190,7 +190,8 @@ pub(crate) fn is_known_window_label(
 /// against it too.
 pub(crate) const SUPPORTED_LOCALES: &[&str] = &[
     "en-US", "fr-FR", "eo", "de-DE", "it-IT", "es-ES", "pt-PT", "pl-PL", "fi-FI", "ru-RU", "uk-UA",
-    "ko-KR", "ja-JP",
+    "ko-KR", "ja-JP", "ar-SA", "cs-CZ", "da-DK", "el-GR", "he-IL", "hu-HU", "nb-NO", "nl-NL",
+    "ro-RO", "sv-SE", "tr-TR",
 ];
 
 // Teksilo does not yet ship Esperanto for its shared controls.
@@ -270,7 +271,8 @@ pub(crate) fn app_locales() -> &'static [(&'static str, &'static [&'static str])
         base = "../locales/",
         locales = [
             "en-US", "fr-FR", "eo", "de-DE", "it-IT", "es-ES", "pt-PT", "pl-PL", "fi-FI", "ru-RU",
-            "uk-UA", "ko-KR", "ja-JP"
+            "uk-UA", "ko-KR", "ja-JP", "ar-SA", "cs-CZ", "da-DK", "el-GR", "he-IL", "hu-HU",
+            "nb-NO", "nl-NL", "ro-RO", "sv-SE", "tr-TR"
         ],
         files = [
             "main.ftl",
@@ -943,6 +945,17 @@ mod tests {
             ("uk-UA", "Налаштування", false),
             ("ko-KR", "설정", false),
             ("ja-JP", "設定", false),
+            ("ar-SA", "الإعدادات", false),
+            ("cs-CZ", "Nastavení", false),
+            ("da-DK", "Indstillinger", false),
+            ("el-GR", "Ρυθμίσεις", false),
+            ("he-IL", "הגדרות", false),
+            ("hu-HU", "Beállítások", false),
+            ("nb-NO", "Innstillinger", false),
+            ("nl-NL", "Instellingen", false),
+            ("ro-RO", "Setări", false),
+            ("sv-SE", "Inställningar", false),
+            ("tr-TR", "Ayarlar", false),
         ] {
             manager.set_locale(tag.parse().unwrap());
             assert_eq!(
@@ -958,6 +971,81 @@ mod tests {
                 let body = topic.resolve(requested).unwrap();
                 assert_eq!(body.is_fallback, !translated_help, "{requested}");
                 assert_eq!(body.locale, if translated_help { tag } else { "en-US" });
+            }
+        }
+    }
+
+    #[test]
+    fn arabic_and_hebrew_switch_layout_direction_and_back() {
+        use teksilo::core::LayoutDirection;
+        let cfg = I18nConfig::new()
+            .supported_locales(SUPPORTED_LOCALES.iter().map(|tag| tag.parse().unwrap()))
+            .compile_in(app_locales());
+        let manager = I18nManager::from_config(&cfg);
+        for tag in ["ar-SA", "he-IL"] {
+            manager.set_locale("en-US".parse().unwrap());
+            assert!(manager.set_locale(tag.parse().unwrap()).direction_changed);
+            assert_eq!(
+                *manager.direction_signal().get_ref(),
+                LayoutDirection::RightToLeft
+            );
+            // File-name substitution still resolves inside an RTL message.
+            let text =
+                manager.resolve_app("could-not-open-work", &[("file", "draft.skrib".into())]);
+            assert!(text.contains("draft.skrib"), "{tag}: {text}");
+            assert!(
+                manager
+                    .set_locale("en-US".parse().unwrap())
+                    .direction_changed
+            );
+            assert_eq!(
+                *manager.direction_signal().get_ref(),
+                LayoutDirection::LeftToRight
+            );
+        }
+    }
+
+    #[test]
+    fn added_plural_categories_resolve_without_english_fallback() {
+        let cfg = I18nConfig::new()
+            .supported_locales(SUPPORTED_LOCALES.iter().map(|tag| tag.parse().unwrap()))
+            .compile_in(app_locales());
+        let manager = I18nManager::from_config(&cfg);
+        for (tag, cases) in [
+            (
+                "ar-SA",
+                vec![
+                    (0, "كلمة"),
+                    (1, "كلمة"),
+                    (2, "كلمتان"),
+                    (3, "كلمات"),
+                    (11, "كلمة"),
+                    (100, "كلمة"),
+                ],
+            ),
+            (
+                "cs-CZ",
+                vec![(1, "slovo"), (2, "slova"), (4, "slova"), (5, "slov")],
+            ),
+            ("he-IL", vec![(1, "מילה"), (2, "מילים"), (10, "מילים")]),
+            (
+                "ro-RO",
+                vec![
+                    (0, "cuvinte"),
+                    (1, "cuvânt"),
+                    (2, "cuvinte"),
+                    (20, "de cuvinte"),
+                ],
+            ),
+            ("tr-TR", vec![(1, "sözcük"), (2, "sözcük")]),
+        ] {
+            manager.set_locale(tag.parse().unwrap());
+            for (count, suffix) in cases {
+                let text = manager.resolve_app("statusbar-word-count", &[("count", count.into())]);
+                assert!(
+                    text.replace(['\u{2068}', '\u{2069}'], "").ends_with(suffix),
+                    "{tag}/{count}: {text}"
+                );
             }
         }
     }

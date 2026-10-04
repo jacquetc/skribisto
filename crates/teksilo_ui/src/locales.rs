@@ -26,7 +26,7 @@
 //! ## Only locales the app itself supports
 //!
 //! A bundle for a locale outside [`crate::run`]'s supported set is **dropped, with
-//! a message on stderr**. Adding, say, `nl-NL` here would make the language
+//! a message on stderr**. Adding, say, `bg-BG` here would make the language
 //! selectable while every string outside the extension stayed English, which is a
 //! worse outcome than not offering it — and dropping it silently is the failure
 //! mode this whole seam keeps guarding against.
@@ -148,12 +148,12 @@ mod tests {
     fn a_bundle_for_an_unsupported_locale_is_dropped() {
         let _h = register_locales(
             "test.unsupported",
-            vec![LocaleBundle::new("nl-NL", vec!["demo-y = Hallo\n"])],
+            vec![LocaleBundle::new("bg-BG", vec!["demo-y = Hallo\n"])],
         );
         assert!(
             !registered_locales(SUPPORTED)
                 .iter()
-                .any(|b| b.locale == "nl-NL"),
+                .any(|b| b.locale == "bg-BG"),
             "an unsupported locale must not reach the config"
         );
     }
