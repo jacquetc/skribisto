@@ -49,7 +49,7 @@ Skribisto is built under the following seven rules. They apply to your contribut
 3. Make your changes
 4. Ensure your code follows the project's conventions (see `.claude/CLAUDE.md` for the working guide)
 5. Build **both** feature sets green (`cargo build` and `cargo build -p teksilo_ui --features mocks`) and run `cargo test`
-6. Add both `en-US` and `fr-FR` strings for any user-visible text
+6. Add strings in every supported locale under `crates/teksilo_ui/locales/` for any user-visible text
 7. Submit a pull request
 
 ## Contributor License Agreement

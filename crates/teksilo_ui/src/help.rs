@@ -7,7 +7,7 @@
 //! ## Two tiers, one keyspace
 //!
 //! Skribisto already had a help system before it had a Help window:
-//! [`crate::tooltip_registry`] holds a bilingual web of writing-model and target
+//! [`crate::tooltip_registry`] holds a multilingual web of writing-model and target
 //! concepts, each a sentence plus a longer disclosure, cross-linked by
 //! `[label](:key)` and pinned by a drift test. It says so itself, in its own module
 //! doc: "a lightweight, in-place substitute for a separate Help document."
@@ -325,6 +325,26 @@ macro_rules! djot_topic {
             (
                 "fr-FR",
                 include_str!(concat!("../help/fr-FR/", $file, ".djot")),
+            ),
+            (
+                "de-DE",
+                include_str!(concat!("../help/de-DE/", $file, ".djot")),
+            ),
+            (
+                "it-IT",
+                include_str!(concat!("../help/it-IT/", $file, ".djot")),
+            ),
+            (
+                "es-ES",
+                include_str!(concat!("../help/es-ES/", $file, ".djot")),
+            ),
+            (
+                "pt-PT",
+                include_str!(concat!("../help/pt-PT/", $file, ".djot")),
+            ),
+            (
+                "pl-PL",
+                include_str!(concat!("../help/pl-PL/", $file, ".djot")),
             ),
         ])
     };

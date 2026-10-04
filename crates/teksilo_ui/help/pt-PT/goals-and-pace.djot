@@ -1,0 +1,52 @@
+## Definir um alvo
+
+Selecione um item no fichário e abra o Inspetor. Digite o número de palavras que você deseja escrever em * Alvo *. Se o seu projeto contar caracteres, insira um alvo de caracteres. Ajuste para zero para remover o alvo.
+
+Defina um alvo para cada capítulo ou cena que você deseja rastrear. O objectivo de um capítulo não é calculado automaticamente a partir dos objectivos das suas cenas.
+
+## Onde você está
+
+Você pode verificar o seu progresso em vários lugares. O Inspector mostra-o sob o campo *Objetivo*. A barra de estado mostra-a ao lado da contagem ao vivo, e a tabela *Visão geral* dá-lhe uma coluna *Objetivo*.
+
+## O que conta para um alvo
+
+O progresso é medido no próprio manuscrito: a prosa de suas [cenas e capítulos](:help-writing-model). Uma sinopse, uma nota ou um paratexto fica fora da contagem, e assim faz qualquer coisa no lixo.
+
+Desligar *Incluir nas exportações* no Inspetor também remove esse item da contagem. Desligar para um capítulo não exclui automaticamente as suas cenas. Use *Aplicar a crianças* para excluí-los também.
+
+## Palavras ou caracteres
+
+Uma escolha abrange todo o projecto. * Novo Projeto* pede por ele na frente, sob *Contar em*. Você pode alterá-lo mais tarde em *Definições ▸ Projeto: <projeto> ▸ Estrutura*, sob *Alvo*.
+
+Cada item mantém dois números separados: um alvo de palavras e um alvo de caracteres.
+
+## Partilhar um alvo
+
+Para dividir o alvo de um livro entre suas partes ou capítulos, abra o livro e clique em *Distribuir…*. Defina um alvo primeiro se o botão estiver desabilitado. Você pode fazer o mesmo para uma pasta de parte ou capítulo. A pré-visualização mostra os alvos propostos. Em *Compartilhar*, escolha:
+
+- * Por comprimento*, do que já está escrito sob cada um;
+- * Por peças *;
+- *Equilíbrio*.
+
+Capítulos e cenas com alvos existentes os mantêm; os outros compartilham o que resta. Activar * Substituir os alvos que já estão definidos* para recalcular todos eles.
+
+## Planeamento de um ritmo
+
+Abra a seção *Ritmo* de um livro e escolha *Iniciar o planejamento* para definir um objetivo diário de escrita.
+
+Preencha *Objetivo de palavras* e *Prazo*, em seguida, escolha os dias da semana em que você escreve. Skribisto descobre o que cada dia restante de escrita precisa, quantos são deixados, e se você está à frente ou atrás do ritmo.
+
+Adicione um tempo de folga em *Feriados* para deixar esses dias fora do plano.
+
+O ritmo e os marcos contam em palavras, seja qual for a unidade que o projeto usa.
+
+## Marcos
+
+Um marco marca uma data ao longo do caminho.
+
+- Em *Marcos* no planejador, adicione um para todo o livro: uma contagem de palavras que deve chegar até essa data.
+- Em uma parte ou capítulo dentro de um livro, definir uma data * Milestone* no Inspetor. Lê o alvo da própria palavra do item, e segue-o.
+
+## Quando o projeto é aberto
+
+Um livro aparece no cartão *Onde o livro está* uma vez que seu plano está ativo. *Não mostrar isso quando abrir* para-lo; *Projeto ▸ plano de escrita…* reabre-o.

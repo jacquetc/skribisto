@@ -432,12 +432,23 @@ mod tests {
     /// The cascade only works if every `[label](:key)` link in either locale
     /// points at a key we actually register. A typo (`:wm-scenes`) would render
     /// as dead text and silently break the "cited type shows its own tooltip"
-    /// contract, so pin it in both locales.
+    /// contract, so pin it in all supported locales.
     #[test]
-    fn every_cascade_link_resolves_in_both_locales() {
+    fn every_cascade_link_resolves_in_all_locales() {
         for (locale, ftl) in [
             ("en-US", include_str!("../locales/en-US/tooltips.ftl")),
             ("fr-FR", include_str!("../locales/fr-FR/tooltips.ftl")),
+            ("de-DE", include_str!("../locales/de-DE/tooltips.ftl")),
+            ("it-IT", include_str!("../locales/it-IT/tooltips.ftl")),
+            ("es-ES", include_str!("../locales/es-ES/tooltips.ftl")),
+            ("pt-PT", include_str!("../locales/pt-PT/tooltips.ftl")),
+            ("pl-PL", include_str!("../locales/pl-PL/tooltips.ftl")),
+            ("fi-FI", include_str!("../locales/fi-FI/tooltips.ftl")),
+            ("ru-RU", include_str!("../locales/ru-RU/tooltips.ftl")),
+            ("uk-UA", include_str!("../locales/uk-UA/tooltips.ftl")),
+            ("ko-KR", include_str!("../locales/ko-KR/tooltips.ftl")),
+            ("ja-JP", include_str!("../locales/ja-JP/tooltips.ftl")),
+            ("eo", include_str!("../locales/eo/tooltips.ftl")),
         ] {
             let targets = cascade_targets(ftl);
             assert!(

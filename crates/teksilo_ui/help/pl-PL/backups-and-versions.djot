@@ -1,0 +1,50 @@
+Kopie zapasowe służą do odzyskiwania projektu, a historia wersji do przywracania wcześniejszego tekstu.
+
+*Kopia zapasowa* zawiera cały projekt w osobnym pliku. Przydaje się, gdy plik projektu zaginie lub zostanie uszkodzony.
+
+*Historia wersji* zapisuje zmiany pojedynczej [sceny, notatki lub streszczenia](:help-writing-model). Pozwala odzyskać wcześniejsze sformułowanie albo usunięty fragment.
+
+## Kopie zapasowe
+
+Skribisto tworzy kopie automatycznie przy zamykaniu projektu oraz co dwie godziny podczas pracy.
+
+Aby utworzyć kopię teraz, wybierz *Projekt ▸ Utwórz kopię zapasową teraz*. Istniejące kopie znajdziesz w *Projekt ▸ Kopie zapasowe…*. Możesz je otwierać, pokazywać w folderze lub usuwać.
+
+### Miejsce zapisu i przechowywanie
+
+Kopie trafiają do folderu zarządzanego przez Skribisto. Możesz dodać własne foldery. Starsze kopie są automatycznie usuwane, aby oszczędzać miejsce:
+
+- Tryb *Warstwowy* zachowuje mniej więcej jedną kopię na godzinę przez dobę, jedną dziennie przez tydzień, jedną tygodniowo przez miesiąc, a potem jedną miesięcznie.
+- *Zachowaj ostatnie N* przechowuje wskazaną liczbę najnowszych kopii.
+
+Opcje te znajdują się w *Ustawienia ▸ Kopie zapasowe i synchronizacja ▸ Domyślne ustawienia kopii zapasowych* i dotyczą wszystkich projektów.
+
+### Otwórz kopię zapasową
+
+Otwarcie kopii nie zmienia bieżącego projektu. Kopia otwiera się w osobnym oknie, w którym zwykły zapis nie może jej nadpisać. Przypomina o tym widoczny komunikat.
+
+- *Zapisz jako…* zachowuje zawartość kopii jako osobny projekt.
+- *Przywróć…* zastępuje projekt oryginalny zawartością kopii.
+
+Tylko *Przywróć* zmienia właściwy projekt. Wcześniej Skribisto tworzy kopię jego obecnego stanu, aby można było do niego wrócić.
+
+## Historia wersji
+
+Historia dotyczy jednej sceny, notatki lub streszczenia naraz. Każdy wpis wskazuje swoje źródło:
+
+- *Historia projektu* rejestruje tekst przy każdym zapisie.
+- *Kopie zapasowe* pozwalają sięgnąć dalej w przeszłość.
+
+### Przejrzyj i przywróć wcześniejszy tekst
+
+Panel *Wersje* znajduje się po prawej stronie, obok Komentarzy i Formatu.
+
+*Przywróć tę wersję* przywraca starszy tekst. Najpierw powstaje kopia bezpieczeństwa, a `Ctrl+Z` cofa przywrócenie.
+
+Przypnij wersję pochodzącą z kopii zapasowej, aby usuwanie starych plików jej nie skasowało.
+
+### Odzyskaj usunięty element
+
+*Przywróć tę wersję* działa tylko dla elementów, które nadal istnieją. Aby odzyskać usuniętą scenę lub notatkę, wybierz *Widok ▸ Wróć do przeszłości*.
+
+*Odzyskaj ten element…* odtwarza go z dawnym tekstem w wybranym miejscu Segregatora. Operację możesz cofnąć przyciskiem w wyświetlonym komunikacie.

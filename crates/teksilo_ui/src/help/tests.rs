@@ -254,6 +254,16 @@ fn no_tooltip_body_uses_an_em_dash() {
     for (locale, ftl) in [
         ("en-US", include_str!("../../locales/en-US/tooltips.ftl")),
         ("fr-FR", include_str!("../../locales/fr-FR/tooltips.ftl")),
+        ("de-DE", include_str!("../../locales/de-DE/tooltips.ftl")),
+        ("it-IT", include_str!("../../locales/it-IT/tooltips.ftl")),
+        ("es-ES", include_str!("../../locales/es-ES/tooltips.ftl")),
+        ("pt-PT", include_str!("../../locales/pt-PT/tooltips.ftl")),
+        ("pl-PL", include_str!("../../locales/pl-PL/tooltips.ftl")),
+        ("fi-FI", include_str!("../../locales/fi-FI/tooltips.ftl")),
+        ("ru-RU", include_str!("../../locales/ru-RU/tooltips.ftl")),
+        ("uk-UA", include_str!("../../locales/uk-UA/tooltips.ftl")),
+        ("ko-KR", include_str!("../../locales/ko-KR/tooltips.ftl")),
+        ("ja-JP", include_str!("../../locales/ja-JP/tooltips.ftl")),
     ] {
         for (number, line) in ftl.lines().enumerate() {
             if line.trim_start().starts_with('#') {
@@ -285,6 +295,16 @@ fn no_tooltip_body_uses_markup_the_parser_cannot_read() {
     for (locale, ftl) in [
         ("en-US", include_str!("../../locales/en-US/tooltips.ftl")),
         ("fr-FR", include_str!("../../locales/fr-FR/tooltips.ftl")),
+        ("de-DE", include_str!("../../locales/de-DE/tooltips.ftl")),
+        ("it-IT", include_str!("../../locales/it-IT/tooltips.ftl")),
+        ("es-ES", include_str!("../../locales/es-ES/tooltips.ftl")),
+        ("pt-PT", include_str!("../../locales/pt-PT/tooltips.ftl")),
+        ("pl-PL", include_str!("../../locales/pl-PL/tooltips.ftl")),
+        ("fi-FI", include_str!("../../locales/fi-FI/tooltips.ftl")),
+        ("ru-RU", include_str!("../../locales/ru-RU/tooltips.ftl")),
+        ("uk-UA", include_str!("../../locales/uk-UA/tooltips.ftl")),
+        ("ko-KR", include_str!("../../locales/ko-KR/tooltips.ftl")),
+        ("ja-JP", include_str!("../../locales/ja-JP/tooltips.ftl")),
     ] {
         for (number, line) in ftl.lines().enumerate() {
             if line.trim_start().starts_with('#') {
@@ -403,6 +423,16 @@ fn every_cascade_link_in_a_tooltip_body_resolves_to_a_topic() {
     for (locale, ftl) in [
         ("en-US", include_str!("../../locales/en-US/tooltips.ftl")),
         ("fr-FR", include_str!("../../locales/fr-FR/tooltips.ftl")),
+        ("de-DE", include_str!("../../locales/de-DE/tooltips.ftl")),
+        ("it-IT", include_str!("../../locales/it-IT/tooltips.ftl")),
+        ("es-ES", include_str!("../../locales/es-ES/tooltips.ftl")),
+        ("pt-PT", include_str!("../../locales/pt-PT/tooltips.ftl")),
+        ("pl-PL", include_str!("../../locales/pl-PL/tooltips.ftl")),
+        ("fi-FI", include_str!("../../locales/fi-FI/tooltips.ftl")),
+        ("ru-RU", include_str!("../../locales/ru-RU/tooltips.ftl")),
+        ("uk-UA", include_str!("../../locales/uk-UA/tooltips.ftl")),
+        ("ko-KR", include_str!("../../locales/ko-KR/tooltips.ftl")),
+        ("ja-JP", include_str!("../../locales/ja-JP/tooltips.ftl")),
     ] {
         for line in ftl.lines() {
             if line.trim_start().starts_with('#') {
@@ -719,4 +749,42 @@ fn typing_in_the_shortcut_filter_narrows_the_sheet_without_recreating_the_field(
         after < before,
         "the query never reached the shortcut list ({before} -> {after} widgets)"
     );
+}
+
+#[test]
+fn added_tooltip_translations_preserve_clickable_cascade_links() {
+    fn targets(ftl: &str) -> std::collections::BTreeMap<String, usize> {
+        let mut targets = std::collections::BTreeMap::new();
+        for line in ftl
+            .lines()
+            .filter(|line| !line.trim_start().starts_with('#'))
+        {
+            let mut rest = line;
+            while let Some(open) = rest.find('[') {
+                rest = &rest[open + 1..];
+                let Some(close) = rest.find("](:") else { break };
+                // A second opening bracket means the first was literal text.
+                if rest[..close].contains('[') {
+                    continue;
+                }
+                let link = &rest[close + 3..];
+                let Some(end) = link.find(')') else { break };
+                *targets.entry(link[..end].to_owned()).or_insert(0) += 1;
+                rest = &link[end + 1..];
+            }
+        }
+        targets
+    }
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("locales");
+    let expected = targets(include_str!("../../locales/en-US/tooltips.ftl"));
+    for locale in [
+        "it-IT", "es-ES", "pt-PT", "pl-PL", "fi-FI", "ru-RU", "uk-UA", "ko-KR", "ja-JP",
+    ] {
+        let source = std::fs::read_to_string(root.join(locale).join("tooltips.ftl")).unwrap();
+        assert_eq!(
+            targets(&source),
+            expected,
+            "{locale}: missing or malformed help links"
+        );
+    }
 }

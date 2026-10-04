@@ -697,7 +697,7 @@ pub static SETTINGS: &[SettingSpec] = &[
     },
     SettingSpec {
         key: crate::LOCALE_KEY,
-        ty: "string (BCP-47: \"en-US\" | \"fr-FR\")",
+        ty: "string (BCP-47: \"en-US\" | \"fr-FR\" | \"eo\" | \"de-DE\" | \"it-IT\" | \"es-ES\" | \"pt-PT\" | \"pl-PL\" | \"fi-FI\" | \"ru-RU\" | \"uk-UA\" | \"ko-KR\" | \"ja-JP\")",
         // Not a constant: with this key unset the app asks the OS which
         // languages the writer reads, so on a French account the *default* is
         // `fr-FR` and printing a flat `en-US` here would be a dump that

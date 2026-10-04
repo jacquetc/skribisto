@@ -1,0 +1,59 @@
+Un commento è una nota nel margine, collegata a una frase o a un intero paragrafo. Segue le parole mentre continui a scrivere.
+
+## Aggiungi un commento
+
+Nel testo che stai scrivendo:
+
+- Seleziona le parole da commentare e premi `Ctrl+Alt+M`.
+- Posiziona il cursore in un paragrafo e premi `Ctrl+Alt+Maiusc+M` per commentarlo interamente.
+- Fai clic con il pulsante destro per scegliere *Commenta questo paragrafo*. Se hai selezionato del testo, compare anche *Aggiungi commento*.
+
+Gli stessi comandi sono nel menu *Formato*.
+
+Nel margine si apre una scheda vuota, con il cursore già al suo interno.
+
+## Firma i commenti
+
+Se non hai impostato un nome su questo computer, un messaggio indica che i commenti non sono firmati. Il pulsante *Imposta il tuo nome* apre *Impostazioni ▸ Utente*.
+
+## Rispondi, risolvi, elimina
+
+Apri il menu dalla piccola freccia sulla scheda del commento:
+
+- *Rispondi* aggiunge una risposta alla discussione.
+- *Risolvi* segna il punto come sistemato. La scheda lascia il margine, ma il commento resta nei pannelli.
+- *Elimina* rimuove un commento, *Elimina risposta* una sola risposta e *Elimina tutti i commenti qui* un intero gruppo. Segue un breve messaggio con il pulsante *Annulla*.
+
+Fai clic con il pulsante destro su una voce di uno dei pannelli per agire da lì. È anche il modo per riaprire un commento risolto, la cui scheda non è più nel margine.
+
+Commenti e risposte si modificano direttamente. Grassetto e corsivo sono nel menu contestuale del campo di testo.
+
+## Dove compaiono i commenti
+
+Le stesse discussioni appaiono in più punti:
+
+- Nel margine accanto al testo. Una frase commentata è evidenziata; un commento all'intero paragrafo ha una parentesi laterale. Una linea tratteggiata collega ciascun segno alla scheda.
+- Nel pannello *Commenti* a sinistra, che elenca i commenti del progetto.
+- Nel pannello *Questo documento* a destra, che elenca quelli dell'elemento in modifica.
+
+Facendo clic su un commento nei pannelli si apre il suo elemento. Se il testo esiste ancora, il cursore raggiunge le parole commentate. *Strumenti ▸ Commenti* mostra o nasconde segni e margine.
+
+## Filtra e ordina
+
+I pannelli condividono i filtri *Tutti*, *Aperti*, *Risolti* e *Orfani*. Cambiare il filtro in uno aggiorna anche l'altro.
+
+Un pulsante accanto ai filtri alterna l'ordine, anch'esso condiviso: *Ordine del documento*, *Più recenti prima*, *Raggruppati per lettore*.
+
+## Note di più lettori
+
+*Raggruppati per lettore* è utile per un manoscritto restituito da più persone. Le note di ciascun lettore sono riunite e ordinate secondo il documento, con il nome a sinistra.
+
+Quando più lettori commentano lo stesso passaggio, il commento ne indica il numero nei pannelli, per esempio "3 lettori".
+
+## Quando un commento perde il testo
+
+Se le parole vengono eliminate o riscritte tanto da non essere più riconoscibili, il commento viene segnato come *Ha perso il testo* invece di essere collegato alla frase sbagliata. Il filtro *Orfani* li trova.
+
+## Invia e ricevi commenti
+
+I file Word e LibreOffice esportano i tuoi commenti e riportano quelli dei lettori. Lo stile di esportazione offre *Includi commenti* e *Includi marcatori di reimportazione*. Consulta [invio e reimportazione](:help-round-trip) per inviare un manoscritto e importare le osservazioni.

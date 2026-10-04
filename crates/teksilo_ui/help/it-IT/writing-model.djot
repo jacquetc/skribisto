@@ -1,0 +1,46 @@
+## Organizza il manoscritto
+
+Usa il *Raccoglitore* a sinistra per disporre i testi. Un romanzo tipico contiene un Libro, dei capitoli e delle scene in ogni capitolo. Puoi anche scrivere direttamente nei capitoli.
+
+Ogni elemento ha un *tipo*, come Capitolo o Nota. Il tipo indica a Skribisto come usarlo nell'esportazione: una normale cartella non diventa un capitolo solo perché contiene scene.
+
+Ogni elemento con testo ha il testo principale e la sinossi affiancati: pianifica in un riquadro e scrivi nell'altro. Libri, parti, cartelle di note e cartelle normali hanno una sinossi ma nessun testo principale.
+
+## I tipi disponibili
+
+Fai clic con il pulsante destro su un elemento del raccoglitore e scegli *Aggiungi*.
+
+- *Libro*: un manoscritto con capitoli e scene.
+- *Parte*: raggruppa capitoli sotto un titolo.
+- *Capitolo*: si estende fino al capitolo successivo, alla parte successiva o alla fine del libro.
+- *Scena*: il tuo testo, con una sinossi propria.
+- *Nota*: testo e sinossi per ricerche, digressioni o promemoria.
+- *Voce della bibbia narrativa…*: una nota per un personaggio, un luogo o un oggetto, creata con etichette e altri nomi già compilati.
+- *Cartella di note*: raggruppa note, con una sinossi ma senza testo principale.
+- *Cartella*: un contenitore con sinossi e senza testo proprio.
+
+## Due forme di capitolo
+
+- Un *Capitolo cartella* contiene scene subordinate nel raccoglitore.
+- Un *Capitolo singolo* è un elemento in cui scrivere direttamente, senza scene subordinate.
+
+Per scegliere la forma dei *nuovi* capitoli, apri *Impostazioni ▸ Progetto: <progetto> ▸ Struttura* e imposta *Capitoli singoli*. Attivato significa elementi singoli, disattivato significa cartelle.
+
+## Cambia una scena, un capitolo o una cartella
+
+Fai clic con il pulsante destro sull'elemento e scegli *Converti in* per vedere i tipi disponibili. Puoi trasformare una scena in nota o un capitolo cartella in capitolo singolo. Titolo e testo vengono conservati se il nuovo tipo può contenerli.
+
+- Una cartella deve essere vuota prima di diventare un elemento singolo. Prima sposta o cestina il contenuto.
+- Una conversione che non saprebbe dove conservare il testo viene rifiutata, indicando cosa andrebbe perso.
+
+## Dove termina un libro
+
+Un progetto può contenere più libri consecutivi nello stesso raccoglitore. Un libro si estende dall'inizio fino al primo di questi limiti: un elemento *Fine del libro*, l'inizio del libro successivo o la fine del raccoglitore.
+
+## Paratesto: nel libro, fuori dalla storia
+
+Un *Paratesto* appartiene al libro ma non alla storia: prefazione, dedica, postfazione o colophon. Viene esportato nella posizione assegnata e non entra nel conteggio delle parole.
+
+Una *Cartella di paratesti* tiene i paratesti separati dal resto del raccoglitore.
+
+Se inizi ora, consulta [Primi passi](:help-getting-started) per aprire e salvare un progetto.

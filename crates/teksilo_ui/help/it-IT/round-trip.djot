@@ -1,0 +1,58 @@
+Invia il manoscritto per una revisione in Word o LibreOffice, poi riporta commenti e modifiche nel progetto, senza creare una seconda copia scollegata.
+
+## Invia un file Word o LibreOffice
+
+Esporta con `Ctrl+Maiusc+E` e scegli *Word* (`.docx`) o *LibreOffice* (`.odt`) come *Formato*. Questi due formati conservano i commenti.
+
+## Prepara il file per il ritorno
+
+Ogni stile di esportazione ha una pagina *Invio a un revisore*:
+
+- *Includi commenti* scrive le discussioni nel file.
+- *Includi marcatori di reimportazione* permette a Skribisto di riconoscere i capitoli restituiti. Lascialo attivo per aggiornare il manoscritto esistente invece di importarne un'altra copia.
+
+Apri *Impostazioni ▸ Compilazione ed esportazione ▸ Formati di esportazione*. Uno stile integrato non è modificabile: premi *Duplica*, poi *Modifica* sulla copia e infine *Invio a un revisore*.
+
+## Cosa fa il lettore
+
+Niente di particolare. Commenta e modifica in Word o LibreOffice come al solito, poi restituisce il file.
+
+## Reimporta il file
+
+*Progetto ▸ Importa da ▸ Documenti (Markdown, Word, ODT)…* apre la procedura. Consulta [importare documenti](:help-import-documents) per i passaggi precedenti a *Unisci*. La reimportazione avviene in *Unisci*.
+
+Importa una copia di un lettore alla volta. Importarne diverse insieme aggiunge un altro libro invece di unire le modifiche alle tue.
+
+## Leggi il passaggio Unisci
+
+Scegli la destinazione che contiene il manoscritto originale. Skribisto associa capitoli e scene restituiti a quelli esistenti.
+
+La colonna *Stato* indica cosa è successo:
+
+- *Identico*, *Modificato da loro*, *Modificato da te* o *Modificato da entrambi*, se il file conserva il testo originale per confrontare le due versioni.
+- *Identico* o *Diverso*, in caso contrario.
+- *Nuovo* per un elemento presente solo nel file; *Non in questo file* per uno presente solo nel progetto.
+- *Spostato* sostituisce questi stati se il file colloca altrove un elemento associato. Usa *Confronta* per verificare anche eventuali modifiche al testo.
+
+Se il lettore ha spostato un capitolo, spostalo tu nella struttura.
+
+*Cosa fare* offre *Solo commenti* (le loro note, il tuo testo), *Usa questa versione*, *Mantieni la mia*, *Aggiungi come nuovo* e *Ignora*. Controlla l'azione per ogni elemento. Alcuni stati limitano le scelte:
+
+- *Nuovo* offre *Aggiungi come nuovo* o *Ignora*.
+- *Non in questo file* offre solo *Mantieni la mia*: un capitolo assente dalla copia altrui non è un motivo per eliminare il tuo.
+
+## Accetta parte di una riscrittura
+
+*Confronta* mostra le due versioni come un unico testo annotato: barrato per le rimozioni, sottolineato per le aggiunte. Sotto c'è una casella per ogni paragrafo cambiato, con l'azione: *Accetta questo nuovo paragrafo*, *Accetta questa riscrittura* o *Elimina questo paragrafo*. Seleziona quelli da accettare; gli altri mantengono il tuo testo.
+
+*Solo commenti* applica anche le modifiche ai paragrafi selezionate in *Confronta*. Lasciale deselezionate per importare solo commenti. Anche *Usa questa versione* usa le scelte sui paragrafi; scegli *Mantieni la mia* per conservare il tuo testo.
+
+## Revisioni registrate
+
+Un file restituito durante una revisione viene importato con le modifiche già accettate: aggiunte conservate e cancellazioni eliminate. Il passaggio *Revisione* lo segnala e indica gli autori se registrati nel file.
+
+*Confronta* permette di accettarle o rifiutarle un paragrafo alla volta: non puoi accettare le modifiche di una persona e rifiutare quelle di un'altra nello stesso paragrafo.
+
+## Limiti
+
+- Un file proveniente da un altro strumento, o esportato senza marcatori, viene associato in base ai titoli: un capitolo rinominato non può essere riconosciuto.

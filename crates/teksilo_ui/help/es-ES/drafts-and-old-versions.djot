@@ -1,0 +1,30 @@
+## Donde un viejo capítulo va
+
+Has reescrito un capítulo y quieres el viejo donde aún puedes leerlo.
+
+Ponlo en otra carpeta.
+
+## Haciendo la copia
+
+- Seleccione el capítulo en el panel *Archivador*. Presione `Ctrl+D`, o elija *Documento ▸ Duplicar*. La copia guarda el mismo título y tierras después del original y todo debajo de él.
+- Seleccione la copia, la segunda de las dos. Duplicando deja tu selección en el original, así que renombra la copia sólo una vez que la hayas elegido, con *Documento ▸ Renombre*.
+- Un proyecto iniciado a partir de una plantilla novedosa ya tiene una carpeta *Notas*. Si el suyo no tiene ninguno, el botón en la parte superior del panel *Archivador* tiene *Nuevo binder…*.
+- Arrastre la copia en ese carpeta. Si el botón nombra un solo carpeta en lugar de *Todos los Binders*, elija *Mostrar todos los carpetas* primero, por lo que ambos extremos del programa de arrastre.
+
+Para usar el viejo capítulo de nuevo, mueva el capítulo reescrito fuera del libro y arrastre el viejo de nuevo en su lugar.
+
+## Mantener viejos borradores fuera del libro
+
+Un viejo capítulo en otro carpeta está fuera del libro. La palabra cuenta, sus objetivos y el ritmo, y la exportación lo dejan fuera.
+
+## Lo que aún funciona en él
+
+Todo sobre lectura y edición. El viejo capítulo guarda su título y su lugar en el carpeta que elegiste. Todavía se encuentra por la búsqueda, todavía deletreado, todavía respaldado.
+
+Tu Biblia de cuentos todavía funciona allí. Si un personaje es nombrado en el viejo borrador, su entrada aún cuenta esas escenas.
+
+## Las otras formas, y cuando encajan
+
+- *Papelera* es por algo que has decidido en contra. Un artículo destrozado deja el panel *Archivador* y deja de contar, y permanece recuperable. Aún puedes abrir uno del panel *Papelera* para leerlo, pero se archiva como descartado, no guardado.
+- El panel *Versiones* mantiene lo que un pedazo de texto dijo antes, y puede volver a poner un estado mayor. Enséñale a responder "qué dijo este párrafo ayer". Funciona un artículo a la vez, y restaurar reemplaza lo que está ahí ahora. See [backups and versions](:help-backups-and-versions).
+- * Include in exports*, in the Inspector, decides whether an item reached the finished book. Apágalo y el artículo se deja fuera cuando exporta el libro, y fuera de su palabra cuenta.

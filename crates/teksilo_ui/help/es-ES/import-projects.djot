@@ -1,0 +1,79 @@
+Una importación de proyecto lleva un proyecto entero a través de Manuskript o de Plume Creator: sus capítulos, su yeso, sus notas. Si lo que tienes es una carpeta de documentos en su lugar, vea [importando documentos](:help-import-documents).
+
+Una importación crea un proyecto **nuevo** Skribisto.
+
+## Inicio de una importación
+
+Con un proyecto abierto, elija *Proyecto ▸ Importación de*, luego *Manuskript (.msk)…* o *Plume Creator (.plume)…*. En el lanzador, los mismos importadores se sientan detrás *Crear desde…*.
+
+El panel pide:
+
+- el proyecto a leer;
+- una carpeta de destino;
+- un nombre de archivo para el `.skrib` que creará.
+
+Nada está escrito hasta que presione *Importación*. La importación muestra su progreso, y *Cancelar* no deja nada atrás.
+
+Si el destino es un proyecto ya abierto en Skribisto, elija otro nombre de archivo.
+
+## Señalando un proyecto Manuskript
+
+Manuskript guarda un proyecto en cualquiera de estas formas, y ambas son aceptadas:
+
+- **Modo de carga**, el habitual: un pequeño archivo `.msk` más una carpeta del mismo nombre a su lado. La carpeta sostiene el proyecto y el `.msk` sólo apunta a él, así que mantén los dos juntos.
+- **Modo de archivo único**: todo el proyecto se encuentra dentro del `.msk`.
+
+Utilice *Elija el archivo…* para un `.msk` y *Elija la carpeta…* para la carpeta; en modo de carpeta uno funciona. La importación le dice qué copia lee.
+
+## Lo que Manuskript trae consigo
+
+- Tu texto, tus notas y tus objetivos de palabra.
+- La garrapata "compilada", que se convierte en *Incluir en exportaciones*. Un artículo apagado se mantiene apagado, con todo dentro de él.
+- Los resúmenes de un artículo, se unieron a su única sinopsis: primero el resumen de una-sentencia, luego el más completo.
+- Tu elenco, tus entradas del mundo y tus parcelas, como notas en una carpeta *Biblia narrativa* junto al manuscrito, un grupo cada uno. El punto de vista de una escena apunta al personaje que denomina; las parcelas guardan sus pasos y sus vínculos.
+- Tus etiquetas, como etiquetas de colores.
+- Su lista de estado, como los propios estados del proyecto, bajo sus nombres.
+- Su historial de revisión: abre una escena, y sus versiones anteriores están en el panel *Versiones*.
+
+En su prosa, Manuskript almacenaba un marcador para un personaje, una entrada mundial, una parcela u otro elemento. Esos marcadores se vuelven a poner como las palabras que buscaban, con un enlace a lo que nombraron.
+
+## Lo que no tiene casa aquí
+
+Algunas Manuskript cosas no tienen campo de juego en Skribisto:
+
+- **Iconos de puntos por tema.**
+- **El color junto al nombre de un personaje.** Skribisto etiquetas de colores en su lugar.
+- **Los resúmenes anidados de todo el libro** (situación, oración, párrafo, página, completo). El más largo se convierte en la sinopsis del libro, y se mantienen unidos en una nota *Resumen* en la carpeta *Biblia narrativa*.
+- **Detalles sin un campo propio**, como la serie y el volumen. Aterrizan a su lado, en una nota *Proyecto*.
+
+## Cómo se resuelven partes y capítulos
+
+Skribisto utiliza sus carpetas para crear partes y capítulos:
+
+- Si ninguna carpeta contiene otra carpeta, las carpetas se convierten en capítulos.
+- Si una carpeta en cualquier lugar tiene otra, las carpetas más externas se convierten en partes, y las carpetas dentro de ellos capítulos.
+
+El manuscrito importado se agrupa en un Libro, por lo que puede planificar, analizar y exportar juntos.
+
+Puede cambiar el tipo de artículo después con *Convertir a* en el menú de clic derecho de Binder. Vea [el modelo de escritura](:help-writing-model) para lo que cada tipo es.
+
+## Viniendo desde Plume Creator
+
+Elija un archivo `.plume` o `.plume_backup`, de cualquier versión de Plume.
+
+- Libros, actos, capítulos y escenas llegan con su texto, sus sinopses y sus notas.
+- Un separador de escena se convierte en un descanso de escena en la prosa por encima de ella.
+- Los grupos de personajes y lugares de Plume se convierten en carpetas de notas, cada grupo con su propia etiqueta. Otros nombres de entrada llegan como su *También conocido como* lista.
+- Las entradas que aparece una escena se convierten en enlaces en esa escena.
+- Las etapas de revisión de Plume se convierten en los estados del proyecto.
+- Tu diccionario personal también viene.
+
+Los artículos en la basura de Plume son **no** importados. Restaurar todo lo que quieras mantener en Plume antes de importar. Plume no lleva nombre de autor, por lo que establece el suyo en *Configuración ▸ Proyecto: &gt; Proyecto ▸ Autor*.
+
+## Después de la importación
+
+Un mensaje ofrece *Abrir ahora*, que abre el nuevo proyecto.
+
+Si la importación reporta cualquier cosa que no pudiera transferir, haga clic en *Detalles* para leer la lista. Puede encontrar ese informe de nuevo bajo la campana en la barra de estado.
+
+El nuevo proyecto es un solo archivo `.skrib`. Si mantiene el antiguo como una carpeta para el control de versiones, utilice *Proyecto ▸ Guardar como carpeta…* después. See [backups and versions](:help-backups-and-versions).

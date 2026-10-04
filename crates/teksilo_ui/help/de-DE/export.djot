@@ -1,0 +1,45 @@
+Erstellen Sie eine Datei zum Teilen, Drucken oder Lesen außerhalb von Skribisto.
+
+## Ihre Texte exportieren
+
+1. Öffnen Sie mit `Strg+Umschalt+E` den Export.
+2. Markieren Sie unter *Zu exportierender Inhalt* die gewünschten Kapitel oder Szenen.
+   Das Auswählen eines Kapitels wählt auch seine Szenen aus.
+3. Wählen Sie ein *Format*: Word oder LibreOffice zum Bearbeiten und Kommentieren,
+   PDF zum Drucken oder EPUB für einen E-Book-Reader.
+4. Wählen Sie einen *Stil* für die Gestaltung.
+5. Wählen Sie über die Ordnerschaltfläche neben *Ziel* Dateiname und Speicherort.
+6. Klicken Sie auf *Exportieren*. Nach Abschluss bietet die Meldung *Öffnen* und *Im Ordner anzeigen*.
+
+Sie können den laufenden Export abbrechen. Existiert die Zieldatei bereits, fragt Skribisto
+vor dem Ersetzen nach.
+
+## Nur ein Kapitel oder Buch exportieren
+
+Öffnen Sie den Eintrag und wählen Sie *Projekt ▸ Exportieren*. Das Untermenü bietet etwa
+*Buch exportieren* oder *Kapitel exportieren* mit dem bereits ausgewählten Eintrag.
+Mit *Auswählen…* treffen Sie eine eigene Auswahl.
+
+Einträge, bei denen *In Exporte einschließen* im Inspektor deaktiviert ist, sind in der Auswahl
+verborgen. *Vom Export ausgeschlossene Einträge anzeigen* blendet sie ein. Ihre Auswahl gilt
+dann nur für diesen Export.
+
+## Die Gestaltung wählen
+
+Ein *Stil* bestimmt Überschriften, Szenentrenner, Zeilenabstände, Seitenumbrüche und zusätzliche
+Inhalte wie Zusammenfassungen, Notizen und Kommentare. Einige Formate unterstützen mehr
+Gestaltungsoptionen als andere.
+
+Um einen vorinstallierten Stil zu ändern, erstellen Sie zuerst eine Kopie: Öffnen Sie
+*Einstellungen ▸ Zusammenstellen und Exportieren ▸ Exportformate*, wählen Sie den Stil und
+*Duplizieren*. Wählen Sie anschließend bei der Kopie *Bearbeiten*.
+
+Weitere Formate sind HTML, Markdown, Djot, Text und LaTeX.
+
+## Ein Manuskript zur Rückmeldung senden
+
+Word (`.docx`) und LibreOffice (`.odt`) können Kommentare einschließen. Aktivieren Sie im
+Exportstil *Kommentare einschließen* und lassen Sie *Rückimport-Markierungen einschließen*
+aktiv, damit Skribisto zurückkommende Kapitel Ihrem Projekt zuordnen kann.
+
+Den ganzen Ablauf beschreibt [Änderungen und Kommentare zurückbringen](:help-round-trip).

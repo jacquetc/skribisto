@@ -1,0 +1,70 @@
+Mit Sicherungen stellen Sie ein Projekt wieder her, mit dem Versionsverlauf frühere Texte.
+
+Eine *Sicherung* ist eine Kopie des gesamten Projekts in einer separaten Datei. Verwenden Sie
+sie, wenn die Projektdatei fehlt oder beschädigt ist.
+
+Der *Versionsverlauf* zeichnet Änderungen an einer einzelnen
+[Szene, Notiz oder Zusammenfassung](:help-writing-model) auf. Damit holen Sie frühere
+Formulierungen oder gelöschte Inhalte zurück.
+
+## Sicherungen
+
+Skribisto erstellt selbstständig Sicherungen: beim Schließen des Projekts und alle zwei Stunden
+während der Arbeit.
+
+Für eine sofortige Sicherung wählen Sie *Projekt ▸ Jetzt Sicherung erstellen*.
+
+Unter *Projekt ▸ Sicherungen…* sehen Sie alle vorhandenen Sicherungen dieses Projekts und können
+sie öffnen, anzeigen oder löschen.
+
+### Speicherorte und Aufbewahrung
+
+Sicherungen landen in einem von Skribisto verwalteten Ordner. Sie können eigene Ordner hinzufügen.
+
+Alte Sicherungen werden automatisch gelöscht, um Platz zu sparen. Wählen Sie die Aufbewahrung:
+
+- *Gestaffelt* behält ungefähr eine Sicherung pro Stunde für einen Tag, eine pro Tag für eine
+  Woche, eine pro Woche für einen Monat und danach eine pro Monat.
+- *Letzte N behalten* behält die entsprechende Anzahl, beginnend mit den neuesten.
+
+Diese Optionen liegen unter *Einstellungen ▸ Sicherung und Synchronisierung ▸ Standards für
+Sicherungen* und gelten für alle Projekte.
+
+### Eine Sicherung öffnen
+
+Das Öffnen einer Sicherung verändert Ihr aktuelles Projekt nicht. Sie öffnet sich in einem
+eigenen Fenster und lässt sich nicht überschreiben. Ein dauerhaft sichtbarer Hinweis erinnert daran.
+
+In diesem Fenster können Sie:
+
+- Mit *Speichern unter…* den Sicherungsinhalt als separates Projekt behalten.
+- Mit *Wiederherstellen…* die Sicherung an die Stelle des Originals setzen.
+
+Nur *Wiederherstellen* verändert hier Ihr eigentliches Projekt. Zuvor wird der aktuelle Stand
+als eigene Sicherung abgelegt, sodass Sie ihn bei Bedarf zurückholen können.
+
+## Versionsverlauf
+
+Der Versionsverlauf verfolgt jeweils eine Szene, Notiz oder Zusammenfassung. Er nutzt zwei
+Quellen, die bei jedem Eintrag genannt werden:
+
+- *Der projektinterne Verlauf* speichert den Text bei jedem Speichern.
+- *Sicherungen* reichen weiter zurück, unabhängig von ihrem Alter.
+
+### Zurückblicken und Text wiederherstellen
+
+Der Bereich *Versionen* liegt rechts im Fenster neben Kommentaren und Format.
+
+*Diese Version wiederherstellen* setzt den älteren Text zurück. Skribisto erstellt zuvor eine
+Sicherheitskopie; `Strg+Z` macht den Vorgang rückgängig.
+
+Heften Sie eine Version aus einer Sicherung an, damit die automatische Bereinigung ihre Datei
+nie löscht.
+
+### Gelöschte Inhalte
+
+*Diese Version wiederherstellen* funktioniert nur für noch vorhandene Einträge. Für eine gelöschte
+Szene oder Notiz wählen Sie *Ansicht ▸ In der Zeit zurückgehen*.
+
+*Dies zurückholen…* erstellt den Eintrag mit seinem früheren Text an der gewünschten Stelle in
+der Projektmappe neu. Die Schaltfläche in der anschließenden Meldung macht dies rückgängig.

@@ -1,0 +1,30 @@
+## Dove conservare un vecchio capitolo
+
+Hai riscritto un capitolo e vuoi poter leggere ancora quello precedente.
+
+Mettilo in un altro raccoglitore.
+
+## Crea la copia
+
+- Seleziona il capitolo nel pannello *Raccoglitore*. Premi `Ctrl+D` oppure scegli *Documento ▸ Duplica*. La copia mantiene il titolo e viene inserita dopo l'originale e tutti i suoi elementi subordinati.
+- Seleziona la copia, la seconda delle due. Dopo la duplicazione rimane selezionato l'originale: scegli prima la copia, poi rinominala con *Documento ▸ Rinomina*.
+- Un progetto creato da un modello di romanzo ha già un raccoglitore *Note*. Se manca, il pulsante in cima al pannello *Raccoglitore* offre *Nuovo raccoglitore…*.
+- Trascina la copia su quel raccoglitore. Se il pulsante indica un solo raccoglitore invece di *Tutti i raccoglitori*, scegli prima *Mostra tutti i raccoglitori*, così origine e destinazione sono visibili.
+
+Per riutilizzare il vecchio capitolo, sposta quello riscritto fuori dal libro e trascina il vecchio al suo posto.
+
+## Tieni le vecchie bozze fuori dal libro
+
+Un vecchio capitolo in un altro raccoglitore è fuori dal libro. Non rientra nel conteggio delle parole, negli obiettivi, nel ritmo di scrittura o nell'esportazione.
+
+## Cosa continua a funzionare
+
+Tutto ciò che riguarda lettura e modifica. Il vecchio capitolo conserva titolo e posizione nel raccoglitore scelto. Rimane ricercabile, controllato ortograficamente e incluso nei backup.
+
+Anche la bibbia narrativa continua a funzionare. Se un personaggio è nominato nella vecchia bozza, la sua voce continua a contare quelle scene.
+
+## Le altre possibilità
+
+- Il *Cestino* serve per ciò che hai scartato. Un elemento cestinato scompare dal pannello *Raccoglitore* e dai conteggi, ma rimane recuperabile. Puoi aprirlo dal pannello *Cestino* per leggerlo, ma è classificato come scartato.
+- Il pannello *Versioni* conserva le forme precedenti di un testo e può ripristinarle. Usalo per sapere cosa diceva ieri un paragrafo. Agisce su un elemento alla volta e il ripristino sostituisce il contenuto attuale. Consulta [backup e versioni](:help-backups-and-versions).
+- *Includi nelle esportazioni*, nelle Proprietà, decide se un elemento entra nel libro finito. Disattivalo per escludere l'elemento dall'esportazione del libro e dal conteggio delle parole.

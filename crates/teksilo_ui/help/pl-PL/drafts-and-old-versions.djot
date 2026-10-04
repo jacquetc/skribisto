@@ -1,0 +1,30 @@
+## Where a old chapter go
+
+Zmieniłeś rozdział i chcesz ten stary, w którym nadal możesz go przeczytać.
+
+Włóż go do innego segregatora.
+
+## Sporządzanie kopii
+
+- Wybierz rozdział w panelu * Binder *. Naciśnij `Ctrl+D` lub wybierz * Document ▸ Duplicate *. Kopia zachowuje ten sam tytuł i ląduje po oryginale i wszystko pod nim.
+- Wybierz kopię, drugą z dwóch. Powielanie pozostawia wybór na oryginale, więc zmienić nazwę kopii tylko po wybraniu go, z * Document ▸ Zmień nazwę *.
+- Projekt rozpoczęty z nowego szablonu posiada już segregator * Notes *. Jeśli twój nie ma, przycisk na górze panelu * Binder * posiada * Nowy binder… *.
+- Przeciągnij kopię na segregator. Jeśli przycisk nazywa jeden segregator zamiast * Wszystkie segregatory *, wybierz * Pokaż wszystkie segregatory * najpierw, więc oba końce programu przeciągnij.
+
+Aby ponownie użyć starego rozdziału, przesuń przepisany rozdział z książki i przeciągnij stary z powrotem na swoje miejsce.
+
+## Trzymaj stare projekty z dala od książki
+
+Stary rozdział w innym segregatorze jest poza protokołem. Słowa się liczą, twoje cele i tempo, a eksport je pomija.
+
+## Co jeszcze na to działa?
+
+Wszystko o czytaniu i edytowaniu. Stary rozdział zachowuje swój tytuł i miejsce w segregatorze, który wybrałeś. Jest wciąż odnaleziona przez wyszukiwanie, wciąż sprawdzona, wciąż cofnięta.
+
+Twoja biblia wciąż tam pracuje. Jeśli postać jest nazwana w starym szkicu, jej wpis nadal liczy te sceny.
+
+## W inny sposób, a kiedy pasują
+
+- * Śmieci * jest za coś, przeciwko czemu zdecydowałeś. Zdemolowany element pozostawia panel * Binder * i zatrzymuje liczenie i pozostaje do odzyskania. Można jeszcze otworzyć jeden z panelu * Kosz *, aby go przeczytać, ale jest on złożony jako odrzucony, nie przechowywane.
+- Panel * Versions * zachowuje to, co powiedział wcześniej jeden tekst i może przywrócić starszy stan. Sięgnij po odpowiedź "co ten ustęp powiedział wczoraj". To działa jeden element na raz, a przywracanie zastępuje to, co jest teraz. Zob. [kopie zapasowe i wersje słowne](:help-backups-and-versions).
+- * Zawarte w eksporcie *, w Inspektorze, decyduje, czy produkt osiągnie ukończony książki. Wyłączcie go, a element zostanie pominięty przy eksporcie książki. Liczy się twoje słowo.

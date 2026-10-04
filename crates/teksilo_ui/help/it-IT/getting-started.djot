@@ -1,0 +1,37 @@
+Un progetto riunisce manoscritto e note. Ecco come iniziare a scrivere.
+
+## Crea il tuo primo progetto
+
+1. Nella finestra iniziale, fai clic su *Nuovo progetto*.
+2. In *Dettagli*, inserisci un nome e scegli dove salvarlo. Scegli *File singolo* per conservare il progetto in un file `.skrib`. Il nome dell'autore è facoltativo.
+3. In *Lingua e struttura*, scegli la lingua in cui scrivi. Per ora puoi lasciare invariate le altre impostazioni.
+4. In *Modello*, scegli *Romanzo vuoto* per costruire un romanzo capitolo per capitolo. Altri modelli offrono più capitoli iniziali; *Quaderno* è pensato per le note.
+5. Fai clic su *Crea progetto*.
+
+## Scrivi la tua prima scena
+
+Il pannello *Raccoglitore* a sinistra elenca capitoli, scene e note. Fai clic su una scena per aprirla e iniziare a scrivere. Per aggiungerne una, seleziona un capitolo e usa il pulsante di creazione in cima al *Raccoglitore*. Il menu permette di scegliere *Scena* o un altro tipo di elemento.
+
+Accanto al testo principale trovi la *Sinossi*: un breve riassunto per pianificare la scena. Puoi nasconderla in *Impostazioni ▸ Editor ▸ Comportamento dell'editor*.
+
+Per rinominare una scena o un capitolo, fai clic con il pulsante destro e scegli *Rinomina*.
+
+## Salva e riapri il progetto
+
+Premi `Ctrl+S` per salvare le modifiche. Se hai attivato il salvataggio automatico nelle Impostazioni, Skribisto salva mentre scrivi e nasconde il comando Salva manuale. L'indicatore nella barra di stato mostra se le modifiche sono state salvate.
+
+Alla prossima apertura di Skribisto, scegli il progetto da *Progetti recenti*. Usa *Apri* per cercare un file `.skrib` esistente.
+
+Skribisto crea anche [backup](:help-backups-and-versions), per recuperare il lavoro precedente.
+
+## Importa testi esistenti
+
+Nella finestra iniziale, *Crea da…* avvia un progetto da [documenti](:help-import-documents) o da un [progetto Manuskript o Plume Creator](:help-import-projects). Per esplorare un progetto di esempio, apri *Esempi* nella barra laterale.
+
+## Adatta lo spazio di lavoro
+
+- Premi `F9`, oppure scegli *Visualizza ▸ Struttura*, per mostrare o nascondere il Raccoglitore.
+- Premi `Ctrl+Invio` su un elemento selezionato per aprirlo nell'altro riquadro dell'editor.
+- Quando crei un progetto, *Capitoli singoli* permette di scrivere direttamente in ciascun capitolo senza dividerlo in scene. *Cartella progetto* salva il progetto come cartella anziché come file singolo.
+
+Consulta [libri, capitoli e scene](:help-writing-model) per saperne di più sull'organizzazione del manoscritto.

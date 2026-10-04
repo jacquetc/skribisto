@@ -1,0 +1,80 @@
+Ein Kommentar ist eine Randnotiz zu einem Ausdruck, Satz oder ganzen Absatz. Er bleibt beim
+zugehörigen Text, während Sie weiterschreiben.
+
+## Einen Kommentar hinzufügen
+
+Direkt im bearbeiteten Text:
+
+- Markieren Sie die zu kommentierenden Wörter und drücken Sie `Strg+Alt+M`.
+- Setzen Sie die Schreibmarke in einen Absatz und drücken Sie `Strg+Alt+Umschalt+M`,
+  um den ganzen Absatz zu kommentieren.
+- Das Kontextmenü bietet *Diesen Absatz kommentieren*. Sobald Text markiert ist,
+  erscheint zusätzlich *Kommentar hinzufügen*.
+
+Dieselben beiden Befehle stehen im Menü *Format*.
+
+Am Rand öffnet sich eine neue Karte mit leerem Eingabefeld; die Schreibmarke steht bereits darin.
+
+## Kommentare mit Ihrem Namen versehen
+
+Ist auf diesem Computer kein Name für Sie hinterlegt, weist eine Meldung auf die fehlende
+Namensangabe hin. *Namen festlegen* öffnet *Einstellungen ▸ Benutzer*.
+
+## Antworten, erledigen, löschen
+
+Öffnen Sie das Menü über den kleinen Pfeil auf einer Kommentarkarte:
+
+- *Antworten* fügt der Diskussion eine Antwort hinzu.
+- *Als erledigt markieren* kennzeichnet den Punkt als geklärt. Die Karte verschwindet vom Rand,
+  der Kommentar bleibt in den Seitenbereichen erhalten.
+- *Löschen* entfernt einen Kommentar, *Antwort löschen* eine einzelne Antwort und
+  *Alle Kommentare hier löschen* eine ganze Gruppe. Eine kurze Meldung bietet *Rückgängig* an.
+
+Klicken Sie in einem der Seitenbereiche mit der rechten Maustaste auf einen Eintrag, um ihn
+zu bearbeiten. Dort können Sie auch einen erledigten Kommentar wieder öffnen, dessen Karte
+nicht mehr am Rand steht.
+
+Kommentare und Antworten werden direkt bearbeitet. Fett und Kursiv finden Sie im Kontextmenü
+des Eingabefelds.
+
+## Wo Kommentare erscheinen
+
+Dieselben Gesprächsstränge erscheinen an mehreren Stellen:
+
+- Am Rand neben Ihrem Text. Kommentierte Wörter sind eingefärbt, Absatzkommentare erhalten
+  eine Klammer, und eine gepunktete Linie verbindet jede Markierung mit ihrer Karte.
+- Im Bereich *Kommentare* links, der alle Kommentare des Projekts auflistet.
+- Im Bereich *Dieses Dokument* rechts, der die Kommentare des bearbeiteten Eintrags auflistet.
+
+Ein Klick auf einen Kommentar in einem Seitenbereich öffnet seinen Eintrag. Ist sein Bezugstext
+noch vorhanden, springt die Schreibmarke dorthin. *Werkzeuge ▸ Kommentare* blendet Markierungen
+und Randbereich ein oder aus.
+
+## Filtern und sortieren
+
+Beide Seitenbereiche teilen dieselben Filter: *Alle*, *Offen*, *Erledigt* und *Verwaist*.
+Ändern Sie einen Filter, folgt der andere Bereich.
+
+Die Schaltfläche daneben wechselt die ebenfalls gemeinsame Reihenfolge:
+*In Dokumentreihenfolge*, *Neueste zuerst*, *Nach Leser gruppiert*.
+
+## Anmerkungen mehrerer Leser
+
+*Nach Leser gruppiert* eignet sich für Manuskripte, die von mehreren Personen zurückkommen.
+Es fasst die Anmerkungen jedes Lesers zusammen, innerhalb der Gruppe in Dokumentreihenfolge,
+mit dem Namen links.
+
+Beziehen sich mehrere Leser auf dieselbe Passage, zeigt der Kommentar in beiden Bereichen
+auch ihre Anzahl an, etwa „3 Leser“.
+
+## Wenn ein Kommentar seinen Text verliert
+
+Werden die Wörter gelöscht oder bis zur Unkenntlichkeit geändert, erhält der Kommentar den
+Status *Bezugstext verloren*, statt am falschen Satz zu hängen. Der Filter *Verwaist* findet ihn.
+
+## Kommentare hinaus- und zurückbringen
+
+Word- und LibreOffice-Dateien nehmen Ihre Kommentare mit und bringen die Ihrer Leser zurück.
+Dafür bietet der Exportstil *Kommentare einschließen* und *Rückimport-Markierungen einschließen*.
+Siehe [Austausch mit Lesern](:help-round-trip) zum Versenden eines Manuskripts und Importieren
+von Rückmeldungen.

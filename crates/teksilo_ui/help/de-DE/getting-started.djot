@@ -1,0 +1,54 @@
+Ein Projekt hält Ihr Manuskript und Ihre Notizen zusammen. So beginnen Sie mit dem Schreiben.
+
+## Ihr erstes Projekt erstellen
+
+1. Klicken Sie im Startfenster (der *Startseite*) auf *Neues Projekt*.
+2. Geben Sie unter *Details* einen Namen ein und wählen Sie den Speicherort. Mit *Einzelne Datei*
+   bleibt das Projekt in einer einzigen `.skrib`-Datei. Der Autorenname ist optional.
+3. Wählen Sie unter *Sprache und Struktur* Ihre Schreibsprache. Die übrigen Einstellungen
+   können Sie vorerst unverändert lassen.
+4. Wählen Sie unter *Vorlage* die Option *Leerer Roman*, wenn Sie Ihren Roman Kapitel für
+   Kapitel aufbauen möchten. Andere Vorlagen geben Ihnen mehr Kapitel vor; *Notizbuch* ist
+   für Notizen gedacht.
+5. Klicken Sie auf *Projekt erstellen*.
+
+## Ihre erste Szene schreiben
+
+Die *Projektmappe* links listet Kapitel, Szenen und Notizen auf. Klicken Sie auf eine Szene,
+um sie zu öffnen und zu schreiben. Zum Hinzufügen wählen Sie ein Kapitel und verwenden die
+Schaltfläche zum Erstellen oben in der *Projektmappe*. Im Menü wählen Sie *Szene* oder einen
+anderen Eintragstyp.
+
+Neben dem Haupttext steht die *Zusammenfassung*: ein kurzer Überblick zum Planen der Szene.
+Unter *Einstellungen ▸ Editor ▸ Editorverhalten* können Sie sie ausblenden.
+
+Zum Umbenennen einer Szene oder eines Kapitels klicken Sie mit der rechten Maustaste darauf
+und wählen *Umbenennen*.
+
+## Speichern und erneut öffnen
+
+Mit `Strg+S` speichern Sie Änderungen. Wenn automatisches Speichern in den Einstellungen
+aktiviert ist, speichert Skribisto beim Schreiben und blendet den manuellen Speicherbefehl aus.
+Die Speicheranzeige in der Statusleiste zeigt, ob Ihre Änderungen gespeichert sind.
+
+Wählen Sie beim nächsten Start Ihr Projekt unter *Zuletzt verwendete Projekte*. Mit *Öffnen*
+können Sie stattdessen eine vorhandene `.skrib`-Datei suchen.
+
+Skribisto erstellt auch [Sicherungen](:help-backups-and-versions), um frühere Arbeit wiederherzustellen.
+
+## Vorhandene Texte übernehmen
+
+Auf der Startseite erstellt *Erstellen aus…* ein Projekt aus
+[Dokumenten](:help-import-documents) oder einem
+[Manuskript- oder Plume-Creator-Projekt](:help-import-projects).
+Unter *Beispiele* in der Seitenleiste können Sie ein Beispielprojekt erkunden.
+
+## Den Arbeitsbereich anpassen
+
+- Mit `F9` oder *Ansicht ▸ Gliederung* blenden Sie die Projektmappe ein oder aus.
+- Mit `Strg+Eingabe` öffnen Sie den ausgewählten Eintrag im anderen Editorbereich.
+- Beim Erstellen eines Projekts ermöglicht *Einzelkapitel* das direkte Schreiben im Kapitel,
+  ohne es in Szenen aufzuteilen. *Ordner* speichert das Projekt als Ordner statt als einzelne Datei.
+
+Mehr zur Organisation Ihres Manuskripts erfahren Sie unter
+[Bücher, Kapitel und Szenen](:help-writing-model).

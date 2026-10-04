@@ -1,0 +1,32 @@
+Utwórz plik, który możesz udostępniać, drukować lub czytać poza Skribisto.
+
+## Eksportuj swoje pismo
+
+1. Naciśnij `Ctrl+Shift+E`, aby otworzyć Export.
+2. Pod * Co eksportować *, sprawdź rozdziały lub sceny, które chcesz włączyć. Sprawdzanie rozdziału również wybiera jego sceny.
+3. Wybierz * Format *. Użyj słowa lub LibreOffice do edycji i komentarzy, PDF do druku, lub EPUB do czytnika książek.
+4. Wybierz * Styl * dla układu.
+5. Użyj przycisku folderu obok * Destination *, aby wybrać nazwę pliku i gdzie go zapisać.
+6. Kliknij * Eksportuj *. Po zakończeniu kliknij * Otwórz * lub * Pokaż w folderze * w wiadomości.
+
+Możesz anulować podczas eksportu. Jeśli plik docelowy już istnieje, Skribisto pyta przed jego zastąpieniem.
+
+## Eksportuj tylko jeden rozdział lub książkę
+
+Otwórz element, a następnie wybierz * Project ▸ Export *. Podmenu oferuje polecenia takie jak * Export Book * lub * Export Chapter *, z zaznaczonym już elementem. Użyj * Choose… * dla własnego wyboru.
+
+Pozycje z * Zawarte w eksporcie * wyłączone w Inspektorze są ukryte przed wyborem. * Show not-exportable * ujawnia je. Wybierając jeden zawiera go tylko dla tego eksportu.
+
+## Wybierz układ
+
+A * Style * kontroluje nagłówki, przerwy w scenie, odstępy między wierszami, przerwy na stronie i które dodatkowe treści są zawarte, takie jak skróty, notatki i komentarze. Niektóre formaty obsługują więcej opcji układu niż inne.
+
+Aby zmienić built- in style, najpierw wykonaj kopię: open * Ustawienia ▸ Compile Eksportuj ▸ Eksportuj formaty *, wybierz styl i wybierz * Duplikaty *. Następnie wybierz * Edytuj * na kopii.
+
+Inne dostępne formaty to HTML, Markdown, Djot, Text i LaTeX.
+
+## Wyślij manuskrypt na informacje zwrotne
+
+Słowo (`.docx`) i LibreOffice (`.odt`) mogą zawierać uwagi. W stylu eksportu, włączyć * Włączyć komentarze * i zostawić * Włączyć markery rondo-podróży * na tak Skribisto może dopasować zwrócone rozdziały do projektu.
+
+Patrz: [przywracanie redakcji i komentarzy ](:help-round-trip) do pełnego procesu.

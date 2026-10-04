@@ -1,0 +1,60 @@
+## Das Manuskript organisieren
+
+Ordnen Sie Ihre Texte in der *Projektmappe* links an. Ein typischer Roman besteht aus einem
+Buch mit Kapiteln und Szenen innerhalb der Kapitel. Sie können auch direkt in Kapitel schreiben.
+
+Jeder Eintrag hat einen *Typ*, etwa Kapitel oder Notiz. Er bestimmt, wie Skribisto den Eintrag
+beim Buchexport verwendet. Ein gewöhnlicher Ordner wird nicht zum Kapitel, nur weil er Szenen enthält.
+
+Jeder Eintrag mit Erzähltext hat Haupttext und Zusammenfassung nebeneinander: Planen Sie in
+einem Bereich und schreiben Sie im anderen. Bücher, Teile, Notizordner und gewöhnliche Ordner
+haben eine Zusammenfassung, aber keinen Haupttext.
+
+## Verfügbare Eintragstypen
+
+Klicken Sie mit der rechten Maustaste auf einen Eintrag in der Projektmappe und wählen Sie *Hinzufügen*.
+
+- *Buch*: ein Manuskript mit seinen Kapiteln und Szenen.
+- *Teil*: fasst Kapitel unter einer Überschrift zusammen.
+- *Kapitel*: reicht bis zum nächsten Kapitel, zum nächsten Teil oder zum Buchende.
+- *Szene*: Ihr Text mit eigener Zusammenfassung.
+- *Notiz*: Text und Zusammenfassung für Recherche, Anmerkungen oder Erinnerungen.
+- *Eintrag in die Geschichtenbibel…*: eine Notiz für eine Figur, einen Ort oder Gegenstand,
+  deren Schlagwörter und Alternativnamen bereits beim Erstellen ausgefüllt werden.
+- *Notizordner*: gruppiert Notizen, mit Zusammenfassung, aber ohne Haupttext.
+- *Ordner*: ein einfacher Sammeleintrag mit Zusammenfassung und ohne eigenen Erzähltext.
+
+## Zwei Kapitelformen
+
+- Ein *Kapitelordner* enthält darunterliegende Szenen in der Projektmappe.
+- Ein *Einzelkapitel* ist ein einzelner Eintrag, in den Sie direkt schreiben, ohne Szenen darunter.
+
+Für die Form *neuer* Kapitel öffnen Sie *Einstellungen ▸ Projekt: <Projekt> ▸ Struktur*
+und setzen *Einzelkapitel*. Ein bedeutet einzelne Einträge, aus bedeutet Ordner.
+
+## Szene, Kapitel oder Ordner umwandeln
+
+Klicken Sie mit der rechten Maustaste auf den Eintrag und wählen Sie *Umwandeln in*, um die
+verfügbaren Typen zu sehen. Beispielsweise können Sie eine Szene in eine Notiz oder einen
+Kapitelordner in ein Einzelkapitel umwandeln. Titel und Text bleiben erhalten, sofern der neue
+Typ sie aufnehmen kann.
+
+- Ein Ordner muss leer sein, bevor er zu einem einzelnen Eintrag wird. Verschieben Sie
+  seinen Inhalt zuerst an eine andere Stelle oder in den Papierkorb.
+- Eine Umwandlung ohne Platz für vorhandenen Text wird abgelehnt und nennt den gefährdeten Inhalt.
+
+## Wo ein Buch endet
+
+Ein Projekt kann mehrere Bücher hintereinander in derselben Projektmappe enthalten. Ein Buch
+reicht von seinem Anfang bis zum ersten dieser drei Punkte: einem Eintrag *Buchende*, dem
+Anfang des nächsten Buchs oder dem Ende seiner Projektmappe.
+
+## Paratext: im Buch, außerhalb der Erzählung
+
+Ein *Paratext* gehört zum Buch, aber nicht zur Geschichte: Vorwort, Widmung, Nachwort oder
+Kolophon. Er wird an seiner Position exportiert und zählt nie zur Wortzahl des Manuskripts.
+
+Ein *Paratextordner* hält Paratexte getrennt vom Rest der Projektmappe.
+
+Neu bei Skribisto? [Erste Schritte](:help-getting-started) erklärt zunächst das Öffnen und
+Speichern eines Projekts.

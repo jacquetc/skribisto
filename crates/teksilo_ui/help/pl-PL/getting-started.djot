@@ -1,0 +1,37 @@
+Projekt przechowuje rękopis i notatki w jednym miejscu. Oto jak zacząć pisać.
+
+## Utwórz pierwszy projekt
+
+1. W oknie początkowym kliknij *Nowy projekt*.
+2. W sekcji *Szczegóły* wpisz nazwę i wybierz miejsce zapisu. Wybierz *Pojedynczy plik*, aby przechowywać projekt w jednym pliku `.skrib`. Nazwa autora jest opcjonalna.
+3. W sekcji *Język i struktura* wybierz język, w którym piszesz. Pozostałe ustawienia możesz na razie zostawić bez zmian.
+4. W sekcji *Szablon* wybierz *Pusta powieść*, aby budować ją rozdział po rozdziale. Inne szablony zawierają więcej rozdziałów na początek, a *Notatnik* służy do notatek.
+5. Kliknij *Utwórz projekt*.
+
+## Napisz pierwszą scenę
+
+*Segregator* po lewej stronie zawiera rozdziały, sceny i notatki. Kliknij scenę, aby ją otworzyć i zacząć pisać. Aby dodać nową, zaznacz rozdział i użyj przycisku tworzenia u góry Segregatora. Z menu wybierz *Scena* lub inny typ elementu.
+
+Obok tekstu głównego znajduje się *Streszczenie*: krótki opis przydatny podczas planowania sceny. Możesz je ukryć w *Ustawienia ▸ Edytor ▸ Zachowanie edytora*.
+
+Aby zmienić nazwę sceny lub rozdziału, kliknij go prawym przyciskiem i wybierz *Zmień nazwę*.
+
+## Zapisz i otwórz projekt ponownie
+
+Naciśnij `Ctrl+S`, aby zapisać zmiany. Jeśli włączysz automatyczny zapis w Ustawieniach, Skribisto zapisuje podczas pisania i ukrywa polecenie zapisu ręcznego. Wskaźnik na pasku stanu informuje, czy zmiany zostały zapisane.
+
+Przy następnym uruchomieniu wybierz projekt z listy *Ostatnie projekty*. Użyj *Otwórz*, aby znaleźć istniejący plik `.skrib`.
+
+Skribisto tworzy też [kopie zapasowe](:help-backups-and-versions), które pozwalają odzyskać wcześniejszą pracę.
+
+## Wczytaj istniejące teksty
+
+W oknie początkowym *Utwórz z…* tworzy projekt na podstawie [dokumentów](:help-import-documents) lub [projektu Manuskript albo Plume Creator](:help-import-projects). Otwórz *Przykłady* na pasku bocznym, aby obejrzeć przykładowy projekt.
+
+## Dostosuj obszar pracy
+
+- Naciśnij `F9` lub wybierz *Widok ▸ Struktura*, aby pokazać lub ukryć Segregator.
+- Naciśnij `Ctrl+Enter` na zaznaczonym elemencie, aby otworzyć go w drugim panelu edytora.
+- Podczas tworzenia projektu opcja *Rozdziały bez scen* pozwala pisać bezpośrednio w rozdziałach. *Folder projektu* zapisuje projekt jako folder zamiast pojedynczego pliku.
+
+Więcej o organizacji rękopisu znajdziesz w temacie [książki, rozdziały i sceny](:help-writing-model).

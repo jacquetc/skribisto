@@ -1,0 +1,55 @@
+Envía tu manuscrito para que alguien lo revise en Word o LibreOffice y después incorpora sus comentarios y cambios al proyecto, sin crear una copia independiente.
+
+## Envía un archivo Word o LibreOffice
+
+Abre la exportación con `Ctrl+Shift+E` y elige *Word* (`.docx`) o *LibreOffice* (`.odt`) como formato. Ambos pueden incluir comentarios.
+
+## Prepara el archivo para su regreso
+
+Cada estilo tiene una página *Envío a un editor*:
+
+- *Incluir comentarios* añade las conversaciones al archivo.
+- *Incluir marcadores de reimportación* permite reconocer los capítulos cuando vuelvan. Mantén esta opción activa para actualizar el manuscrito existente en lugar de importar otra copia.
+
+Abre *Configuración ▸ Compilación y exportación ▸ Formatos de exportación*. Los estilos integrados no se pueden editar: pulsa *Duplicar*, después *Editar* en la copia y abre *Envío a un editor*.
+
+## Qué hace el lector
+
+Nada especial: comenta y modifica el documento en Word o LibreOffice como de costumbre y te devuelve el archivo.
+
+## Reimporta el archivo
+
+Abre *Proyecto ▸ Importar desde ▸ Documentos (Markdown, Word, ODT)…*. Consulta [importar documentos](:help-import-documents) para los pasos anteriores a *Combinar*, donde se incorporan los cambios.
+
+Importa la copia de un lector cada vez. Importar varias juntas añade otro libro en lugar de combinar sus cambios con los tuyos.
+
+## Revisa el paso Combinar
+
+Elige la ubicación que contiene el manuscrito original. Skribisto asocia los capítulos y escenas devueltos con los existentes.
+
+La columna *Estado* indica:
+
+- *Igual*, *Modificado por el lector*, *Modificado por ti* o *Modificado por ambos*, si el archivo incluye el texto original para comparar ambas versiones.
+- *Igual* o *Diferente*, si no lo incluye.
+- *Nuevo* para un elemento que solo está en el archivo; *No está en este archivo* para uno que solo está en tu proyecto.
+- *Movido* sustituye los estados anteriores cuando un elemento asociado cambia de posición. Usa *Comparar* para comprobar si también cambió el texto.
+
+Si el lector ha movido un capítulo, muévelo tú en la estructura.
+
+*Qué hacer* ofrece *Solo comentarios* (sus notas, tu texto), *Usar esta versión*, *Conservar la mía*, *Añadir como nuevo* y *Omitir*. Revisa la acción seleccionada para cada elemento. *Nuevo* solo ofrece añadirlo u omitirlo. *No está en este archivo* solo permite conservar tu versión: la ausencia en la copia del lector no elimina tu capítulo.
+
+## Acepta parte de una reescritura
+
+*Comparar* muestra las dos versiones como un texto anotado: tachado para lo eliminado y subrayado para lo añadido. Debajo hay una casilla por cada párrafo modificado: *Aceptar este párrafo nuevo*, *Aceptar esta reescritura* o *Eliminar este párrafo*. Marca los cambios que aceptas; los demás conservan tu redacción.
+
+*Solo comentarios* también aplica los cambios de párrafo que hayas marcado en *Comparar*. Deja las casillas sin marcar para importar únicamente comentarios. *Usar esta versión* también respeta esas elecciones. Para conservar tu texto, elige *Conservar la mía*.
+
+## Control de cambios
+
+Un archivo que vuelve con revisiones pendientes se importa como si estuvieran aceptadas: se conservan las inserciones y se descartan las eliminaciones. El paso *Revisión* lo indica y muestra los autores si constan en el archivo.
+
+En *Comparar* puedes aceptar o rechazar cambios por párrafo. No puedes aceptar los de una persona y rechazar los de otra dentro del mismo párrafo.
+
+## Límites
+
+- Si el archivo procede de otra herramienta o se exportó sin marcadores, la asociación se hace por título y no puede reconocer un capítulo cuyo nombre haya cambiado.

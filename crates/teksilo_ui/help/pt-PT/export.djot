@@ -1,0 +1,32 @@
+Crie um ficheiro que você pode compartilhar, imprimir ou ler fora Skribisto.
+
+## Exportar a sua escrita
+
+1. Pressione `Ctrl+Shift+E` para abrir a exportação.
+2. Em * O que exportar*, verifique os capítulos ou cenas que você deseja incluir. Verificar um capítulo também seleciona suas cenas.
+3. Escolha um *Formato*. Use Word ou LibreOffice para edição e comentários, PDF para impressão ou EPUB para leitor de ebooks.
+4. Escolha um *Estilo* para o layout.
+5. Use o botão pasta ao lado *Destino* para escolher um nome de ficheiro e onde salvá-lo.
+6. Clique em *Exportar *. Quando terminar, clique em *Abrir* ou *Mostrar na pasta* na mensagem.
+
+Você pode cancelar enquanto a exportação é executada. Se o ficheiro de destino já existe, Skribisto pergunta antes de substituí-lo.
+
+## Exportar apenas um capítulo ou livro
+
+Abra o item e, em seguida, escolha *Projeto ▸ Exportar*. O submenu oferece comandos como *Exportar livro* ou *Exportar Capítulo*, com esse item já selecionado. Use *Escolha…* para uma seleção personalizada.
+
+Itens com *Incluir nas exportações* desligados no Inspetor estão ocultos da seleção. * Mostrar não exportável* revela-os. Selecionar um inclui-o apenas para esta exportação.
+
+## Escolha uma disposição
+
+A *Estilo* controla cabeçalhos, quebras de cena, espaçamento de linhas, quebras de página e que conteúdo extra está incluído, como sinopses, notas e comentários. Alguns formatos suportam mais opções de layout do que outros.
+
+Para alterar um estilo embutido, primeiro faça uma cópia: aberto *Definições ▸ Compile Export ▸ Exportar Formatos*, selecione o estilo e escolha *Duplicar*. Em seguida, escolha *Editar* na cópia.
+
+Outros formatos disponíveis são HTML, Markdown, Djot, Texto e LaTeX.
+
+## Enviar um manuscrito para feedback
+
+Palavra (`.docx`) e LibreOffice (`.odt`) podem incluir comentários. No estilo de exportação, ligue *Inclua comentários* e deixe *Inclua marcadores de ida e volta* para que Skribisto possa corresponder capítulos devolvidos ao seu projeto.
+
+Veja [trazer de volta edições e comentários](:help-round-trip) para o processo completo.

@@ -1,0 +1,50 @@
+Usa las copias de seguridad para recuperar un proyecto y el historial de versiones para recuperar un texto anterior.
+
+Una *copia de seguridad* contiene todo el proyecto en un archivo separado. Sirve si el archivo original desaparece o se daña.
+
+El *historial de versiones* conserva los cambios de una sola [escena, nota o sinopsis](:help-writing-model). Úsalo para recuperar una redacción anterior o algo que eliminaste.
+
+## Copias de seguridad
+
+Skribisto crea copias automáticamente al cerrar el proyecto y cada dos horas mientras trabajas.
+
+Para crear una ahora, elige *Proyecto ▸ Crear copia de seguridad ahora*. Para consultar las existentes, abre *Proyecto ▸ Copias de seguridad…*. Puedes abrirlas, mostrar su ubicación o eliminarlas.
+
+### Ubicación y conservación
+
+Las copias se guardan en una carpeta gestionada por Skribisto. Puedes añadir carpetas propias. Las más antiguas se eliminan automáticamente para ahorrar espacio:
+
+- La conservación *Por niveles* mantiene aproximadamente una por hora durante un día, una por día durante una semana, una por semana durante un mes y luego una por mes.
+- *Conservar las últimas N* mantiene ese número de copias, empezando por las más recientes.
+
+Estas opciones están en *Configuración ▸ Copia de seguridad y sincronización ▸ Valores predeterminados de copias de seguridad* y se aplican a todos los proyectos.
+
+### Abre una copia de seguridad
+
+Abrir una copia no modifica el proyecto actual. Se abre en una ventana independiente que no permite sobrescribir la copia con un guardado normal. Un aviso permanece visible.
+
+- *Guardar como…* conserva su contenido como otro proyecto.
+- *Restaurar…* sustituye el proyecto original por la copia.
+
+Solo *Restaurar* modifica tu proyecto real. Antes, Skribisto crea una copia del estado actual para que puedas recuperarlo.
+
+## Historial de versiones
+
+El historial sigue una escena, nota o sinopsis a la vez. Cada entrada indica su origen:
+
+- El *historial del proyecto* registra el texto cada vez que guardas.
+- Las *copias de seguridad* permiten retroceder más, según su antigüedad.
+
+### Consulta y recupera texto anterior
+
+El panel *Versiones* está a la derecha, junto a Comentarios y Formato.
+
+*Restaurar esta versión* recupera el texto anterior. Primero se crea una copia de seguridad y puedes deshacerlo con `Ctrl+Z`.
+
+Fija una versión procedente de una copia de seguridad para que la limpieza de archivos antiguos no la elimine.
+
+### Recupera un elemento eliminado
+
+*Restaurar esta versión* solo funciona con elementos que aún existen. Para una escena o nota eliminada, elige *Ver ▸ Volver al pasado*.
+
+*Recuperar este elemento…* lo recrea con su texto anterior donde elijas en el Archivador. Puedes deshacerlo desde el botón del mensaje que aparece.

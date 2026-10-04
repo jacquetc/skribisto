@@ -1,0 +1,56 @@
+Usa i backup per recuperare un progetto o la cronologia delle versioni per recuperare un testo precedente.
+
+Un *backup* è una copia dell'intero progetto, salvata come file separato. Serve quando il file del progetto scompare o è danneggiato.
+
+La *cronologia delle versioni* registra le modifiche di una singola [scena, nota o sinossi](:help-writing-model). Usala per recuperare una formulazione precedente o qualcosa che hai eliminato.
+
+## Backup
+
+Skribisto crea automaticamente backup alla chiusura del progetto e ogni due ore durante il lavoro.
+
+Per crearne uno subito, scegli *Progetto ▸ Crea backup ora*.
+
+Per vedere quelli esistenti, scegli *Progetto ▸ Backup…*. L'elenco mostra tutti i backup del progetto e permette di aprirli, mostrarli nella cartella o eliminarli.
+
+### Dove vengono salvati e quanti ne restano
+
+I backup vengono salvati in una cartella gestita da Skribisto. Puoi aggiungere cartelle personali.
+
+I più vecchi vengono eliminati automaticamente per risparmiare spazio. Scegli quali conservare:
+
+- *A livelli* conserva circa un backup all'ora per un giorno, uno al giorno per una settimana, uno alla settimana per un mese e poi uno al mese.
+- *Conserva gli ultimi N* mantiene quel numero di backup, a partire dai più recenti.
+
+Queste opzioni sono in *Impostazioni ▸ Backup e sincronizzazione ▸ Impostazioni predefinite dei backup* e valgono per tutti i progetti.
+
+### Apri un backup
+
+Aprire un backup non modifica il progetto su cui stai lavorando. Si apre in una finestra separata, senza possibilità di sovrascriverlo con un normale salvataggio; un avviso rimane visibile.
+
+Da quella finestra puoi scegliere:
+
+- *Salva con nome…* per conservare il contenuto come progetto separato.
+- *Ripristina…* per sostituire l'originale con il backup.
+
+Solo *Ripristina* modifica il progetto effettivo. Prima crea un backup del progetto attuale, così puoi recuperarlo se necessario.
+
+## Cronologia delle versioni
+
+La cronologia segue una scena, nota o sinossi alla volta. Proviene da due fonti, indicate in ogni voce:
+
+- *La cronologia del progetto* registra il testo a ogni salvataggio.
+- I *backup* permettono di risalire più indietro nel tempo.
+
+### Consulta e ripristina il testo
+
+Il pannello *Versioni* è a destra della finestra, accanto a Commenti e Formato.
+
+*Ripristina questa versione* rimette il testo precedente. Skribisto crea prima un backup di sicurezza e `Ctrl+Z` annulla il ripristino.
+
+Fissa una versione proveniente da un backup per impedire che la pulizia dei vecchi file la elimini.
+
+### Recupera un elemento eliminato
+
+*Ripristina questa versione* funziona solo per elementi ancora esistenti. Per una scena o nota eliminata, scegli *Visualizza ▸ Torna indietro nel tempo*.
+
+*Recupera questo elemento…* lo ricrea con il testo che aveva, nella posizione del raccoglitore che scegli. Per annullare usa il pulsante nel messaggio che appare.

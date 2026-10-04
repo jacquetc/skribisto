@@ -1,0 +1,86 @@
+Senden Sie Ihr Manuskript zur Bearbeitung in Word oder LibreOffice und bringen Sie Kommentare
+und Änderungen anschließend in Ihr Projekt zurück, statt eine zweite, unverbundene Kopie anzulegen.
+
+## Eine Word- oder LibreOffice-Datei senden
+
+Exportieren Sie mit `Strg+Umschalt+E` und wählen Sie unter *Format* entweder *Word* (`.docx`)
+oder *LibreOffice* (`.odt`). Beide Formate nehmen Ihre Kommentare mit.
+
+## Die Datei auf den Rückweg vorbereiten
+
+Jeder Exportstil hat eine eigene Seite *Zum Lektorat senden*:
+
+- *Kommentare einschließen* schreibt Ihre Kommentarstränge in die Datei.
+- *Rückimport-Markierungen einschließen* ermöglicht Skribisto, zurückkommende Kapitel zu erkennen.
+  Lassen Sie dies aktiv, um das vorhandene Manuskript zu aktualisieren, statt eine weitere Kopie
+  zu importieren.
+
+Öffnen Sie dazu *Einstellungen ▸ Zusammenstellen und Exportieren ▸ Exportformate*.
+Ein vorinstallierter Stil ist nicht bearbeitbar: Wählen Sie *Duplizieren*, bei Ihrer Kopie
+*Bearbeiten* und anschließend *Zum Lektorat senden*.
+
+## Was Ihre Leser tun
+
+Nichts Besonderes. Sie kommentieren und bearbeiten wie gewohnt in Word oder LibreOffice und
+senden die Datei anschließend zurück.
+
+## Die Datei zurückbringen
+
+*Projekt ▸ Importieren aus ▸ Dokumenten (Markdown, Word, ODT)…* öffnet den Importassistenten.
+Die Schritte vor *Zusammenführen* beschreibt [Dokumente importieren](:help-import-documents).
+Der Rückimport findet unter *Zusammenführen* statt.
+
+Importieren Sie jeweils nur die Kopie eines Lesers. Mehrere gleichzeitig hinzuzufügen würde
+ein weiteres Buch erzeugen, statt die Änderungen mit Ihren zusammenzuführen.
+
+## Den Schritt „Zusammenführen“ verstehen
+
+Wählen Sie das Ziel mit dem ursprünglichen Manuskript. Skribisto ordnet zurückkommende Kapitel
+und Szenen den vorhandenen zu.
+
+Die Spalte *Status* zeigt, was geschehen ist:
+
+- *Gleich*, *Extern bearbeitet*, *Von Ihnen bearbeitet* oder *Beidseitig bearbeitet*, wenn die Datei
+  den ursprünglichen Wortlaut zum Vergleich beider Seiten mitführt.
+- *Gleich* oder *Abweichend*, wenn das nicht der Fall ist.
+- *Neu* für einen nur in der Datei vorhandenen Eintrag; *Nicht in dieser Datei* für einen nur
+  bei Ihnen vorhandenen Eintrag.
+- *Verschoben* ersetzt diese Angaben, wenn ein zugeordneter Eintrag in der Datei an anderer Stelle
+  steht. Prüfen Sie dann mit *Vergleichen*, ob sich auch der Text geändert hat.
+
+Hat ein Leser ein Kapitel verschoben, verschieben Sie es selbst in der Gliederung.
+
+*Aktion* bietet *Nur Kommentare* (fremde Anmerkungen, Ihr Wortlaut), *Diese Version übernehmen*,
+*Meine behalten*, *Als neu hinzufügen* und *Überspringen*. Prüfen Sie die gewählte Aktion für
+jeden Eintrag. Manche Statuswerte begrenzen die Auswahl:
+
+- *Neu* bietet *Als neu hinzufügen* oder *Überspringen*.
+- *Nicht in dieser Datei* bietet nur *Meine behalten*: Ein in der fremden Kopie fehlendes Kapitel
+  ist kein Grund, Ihres zu löschen.
+
+## Teile einer Überarbeitung übernehmen
+
+*Vergleichen* zeigt beide Fassungen eines Eintrags als markierten Text: Durchgestrichen ist
+Entferntes, unterstrichen ist Hinzugefügtes. Darunter steht je geändertem Absatz ein Kontrollkästchen
+mit seiner Wirkung: *Diesen neuen Absatz übernehmen*, *Diese Überarbeitung übernehmen* oder
+*Diesen Absatz entfernen*. Markieren Sie, was Sie annehmen möchten; alle anderen Absätze behalten
+Ihren Wortlaut.
+
+*Nur Kommentare* übernimmt auch Absatzänderungen, die Sie unter *Vergleichen* markiert haben.
+Lassen Sie die Kästchen leer, um wirklich nur Kommentare zu importieren.
+*Diese Version übernehmen* berücksichtigt ebenfalls Ihre Absatzauswahl. Wählen Sie *Meine behalten*,
+um Ihren Text zu bewahren.
+
+## Nachverfolgte Änderungen
+
+Eine Datei mit noch offenen Überarbeitungen wird mit angenommenen Änderungen eingelesen:
+Einfügungen bleiben, Löschungen entfallen. Der Schritt *Prüfen* meldet dies und nennt die
+Bearbeitenden, sofern die Datei sie verzeichnet.
+
+Mit *Vergleichen* nehmen Sie Änderungen absatzweise an oder lehnen sie ab. Innerhalb desselben
+Absatzes können Sie nicht die Änderung einer Person annehmen und die einer anderen ablehnen.
+
+## Grenzen
+
+- Bei Dateien aus anderen Programmen oder Exporten ohne Markierungen erfolgt die Zuordnung
+  anhand der Titel. Ein umbenanntes Kapitel wird dabei nicht erkannt.

@@ -1,0 +1,50 @@
+Use as cópias de segurança para recuperar um projeto e o histórico de versões para recuperar texto anterior.
+
+Uma *cópia de segurança* contém todo o projeto num ficheiro separado. Use-a se o ficheiro original desaparecer ou ficar danificado.
+
+O *histórico de versões* regista as alterações de uma única [cena, nota ou sinopse](:help-writing-model). Permite recuperar uma redação anterior ou algo que eliminou.
+
+## Cópias de segurança
+
+O Skribisto cria cópias automaticamente ao fechar o projeto e a cada duas horas enquanto trabalha.
+
+Para criar uma agora, escolha *Projeto ▸ Criar cópia de segurança agora*. Para consultar as existentes, abra *Projeto ▸ Cópias de segurança…*. Pode abri-las, mostrar a sua localização ou eliminá-las.
+
+### Localização e conservação
+
+As cópias ficam numa pasta gerida pelo Skribisto. Pode adicionar pastas próprias. As mais antigas são eliminadas automaticamente para poupar espaço:
+
+- A conservação *Por níveis* mantém aproximadamente uma por hora durante um dia, uma por dia durante uma semana, uma por semana durante um mês e depois uma por mês.
+- *Manter as últimas N* conserva esse número de cópias, começando pelas mais recentes.
+
+Estas opções encontram-se em *Definições ▸ Cópia de segurança e sincronização ▸ Predefinições de cópias de segurança* e aplicam-se a todos os projetos.
+
+### Abra uma cópia de segurança
+
+Abrir uma cópia não altera o projeto atual. Abre uma janela independente que não permite substituir a cópia com uma gravação normal. Um aviso permanece visível.
+
+- *Guardar como…* conserva o conteúdo num projeto separado.
+- *Restaurar…* substitui o projeto original pela cópia.
+
+Só *Restaurar* altera o projeto real. Antes disso, o Skribisto cria uma cópia do estado atual, para que o possa recuperar.
+
+## Histórico de versões
+
+O histórico acompanha uma cena, nota ou sinopse de cada vez. Cada entrada indica a sua origem:
+
+- O *histórico do projeto* regista o texto sempre que guarda.
+- As *cópias de segurança* permitem recuar mais no tempo, conforme a sua antiguidade.
+
+### Consulte e recupere texto anterior
+
+O painel *Versões* fica à direita, junto a Comentários e Formato.
+
+*Restaurar esta versão* recupera o texto anterior. O Skribisto cria primeiro uma cópia de segurança e `Ctrl+Z` anula o restauro.
+
+Fixe uma versão proveniente de uma cópia de segurança para impedir que a limpeza dos ficheiros antigos a elimine.
+
+### Recupere um elemento eliminado
+
+*Restaurar esta versão* só funciona com elementos ainda existentes. Para uma cena ou nota eliminada, escolha *Ver ▸ Voltar atrás no tempo*.
+
+*Recuperar este elemento…* recria-o com o texto anterior, no local escolhido no Organizador. Para anular, use o botão na mensagem apresentada.

@@ -1,0 +1,52 @@
+## Establecer un objetivo
+
+Seleccione un artículo en la carpeta y abra el Inspector. Introduzca el número de palabras que desea escribir en *Objetivo*. Si su proyecto cuenta caracteres, ingrese un objetivo de carácter en su lugar. Ponlo a cero para eliminar el objetivo.
+
+Establezca un objetivo para cada capítulo o escena que desee seguir. El objetivo de un capítulo no se calcula automáticamente a partir de los objetivos de sus escenas.
+
+## ¿Dónde estás?
+
+Usted puede comprobar su progreso en varios lugares. The Inspector shows it under the *Objetivo* field. La barra de estado lo muestra junto al conteo en vivo, y la tabla *Sinopsis* le da una columna *Objetivo*.
+
+## Lo que cuenta con un objetivo
+
+El progreso se mide en el manuscrito mismo: la prosa de sus [escenas y capítulos](:help-writing-model). Una sinopsis, una nota o un paratexto se mantiene fuera del conteo, y también hace cualquier cosa en la basura.
+
+*Incluir en las exportaciones* en el Inspector también elimina ese artículo del recuento. Apagarla para un capítulo no excluye automáticamente sus escenas. Utilice *Aplicar a los niños* para excluirlos también.
+
+## Palabras o caracteres
+
+Una opción cubre todo el proyecto. *Nuevo proyecto* lo pide por delante, bajo *Cuenta en*. Puedes cambiarlo más tarde en *Stablecimientos ▸ Proyecto: יproject correctamente ▸ Estructura*, bajo *Etapas*.
+
+Cada artículo mantiene dos números separados: un objetivo de palabra y un objetivo de carácter.
+
+## Compartir un objetivo
+
+Para dividir el objetivo de un libro entre sus partes o capítulos, abra el libro y haga clic en *Distribuir…*. Establecer un objetivo primero si el botón está deshabilitado. Puedes hacer lo mismo por una carpeta de parte o capítulo. La vista previa muestra los objetivos propuestos. Bajo *Compartir*, elegir:
+
+- *Por longitud*, de lo que ya está escrito bajo cada uno;
+- *Por piezas*;
+- *Incluso*.
+
+Los capítulos y escenas con los objetivos existentes los mantienen; los otros comparten lo que queda. Enciende *Reemplazar objetivos que ya están establecidos* para recalcular todos ellos.
+
+## Planificación a ritmo
+
+Abrir la sección *Ritmo* de un libro y elegir *Iniciar la planificación* para establecer un objetivo de escritura diario.
+
+Rellene *Ordenar meta* y *Fecha límite*, luego elija los días de semana en los que escriba. Skribisto trabaja lo que cada día de escritura restante necesita, cuántos quedan, y si usted está por delante o por detrás del ritmo.
+
+Añadir tiempo libre bajo *Vacaciones* para dejar esos días fuera del plan.
+
+Pace y hitos cuentan en palabras, cualquiera que sea la unidad que el proyecto utilice.
+
+## Hitos
+
+Un hito marca una fecha en el camino.
+
+- Bajo *Hitos* en el planificador, agregue uno para todo el libro: una palabra cuente que debe alcanzar para esa fecha.
+- En parte o en un capítulo dentro de un libro, se establece una *fecha de piedra angular* en el Inspector. Lee el propio objetivo de palabra de ese artículo, y lo sigue.
+
+## Cuando el proyecto se abre
+
+Un libro aparece en la tarjeta *Donde se encuentra el libro* una vez que su plan está activo. *No mostrar esto cuando la apertura* lo detiene; *Proyecto ▸ El plan de escritura…* lo reopensó.

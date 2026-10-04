@@ -188,7 +188,14 @@ pub(crate) fn is_known_window_label(
 /// extension can never make a language selectable that the app itself has no
 /// strings for, and [`os_default_locale`] resolves the writer's OS languages
 /// against it too.
-pub(crate) const SUPPORTED_LOCALES: &[&str] = &["en-US", "fr-FR"];
+pub(crate) const SUPPORTED_LOCALES: &[&str] = &[
+    "en-US", "fr-FR", "eo", "de-DE", "it-IT", "es-ES", "pt-PT", "pl-PL", "fi-FI", "ru-RU", "uk-UA",
+    "ko-KR", "ja-JP",
+];
+
+// Teksilo does not yet ship Esperanto for its shared controls.
+const WIDGET_LOCALE_OVERRIDES: &[(&str, &[&str])] =
+    &[("eo", &[include_str!("../widget_locales/eo.ftl")])];
 
 /// What the interface language is when nobody has ever chosen one: the closest
 /// supported match for the writer's OS languages, or `en-US` if none of them is
@@ -261,7 +268,10 @@ pub(crate) fn app_locales() -> &'static [(&'static str, &'static [&'static str])
     // The drift test holds them in step instead.
     compile_in_locales!(
         base = "../locales/",
-        locales = ["en-US", "fr-FR"],
+        locales = [
+            "en-US", "fr-FR", "eo", "de-DE", "it-IT", "es-ES", "pt-PT", "pl-PL", "fi-FI", "ru-RU",
+            "uk-UA", "ko-KR", "ja-JP"
+        ],
         files = [
             "main.ftl",
             "tooltips.ftl",
@@ -382,7 +392,8 @@ pub(crate) fn build_ui_config(
         // to the fallback below.
         .auto_detect_os_locale(true)
         .fallback_locale("en-US".parse().unwrap())
-        .framework_locales(framework_locales());
+        .framework_locales(framework_locales())
+        .override_widget_strings(WIDGET_LOCALE_OVERRIDES);
 
     // Extension strings, folded in **after** the app's own. `compile_in` extends
     // (teksilo `b924a27e` — before that a second call silently discarded these
@@ -760,13 +771,14 @@ mod tests {
                 );
             }
         }
-        let [(_, first), (_, second)] = locales else {
-            panic!("expected exactly two locales");
-        };
-        assert_ne!(
-            first[0], second[0],
-            "two locales compiled in the same main.ftl"
-        );
+        for (index, (locale, resources)) in locales.iter().enumerate() {
+            for (other, other_resources) in &locales[index + 1..] {
+                assert_ne!(
+                    resources[0], other_resources[0],
+                    "{locale} and {other} compiled in the same main.ftl"
+                );
+            }
+        }
     }
 
     use super::*;
@@ -799,6 +811,233 @@ mod tests {
                 tag.parse::<teksilo::i18n::LanguageIdentifier>().is_ok(),
                 "{tag} is not a parseable BCP-47 tag"
             );
+        }
+    }
+
+    #[test]
+    fn german_resolves_app_controls_plurals_and_translated_help() {
+        let cfg = I18nConfig::new()
+            .supported_locales(SUPPORTED_LOCALES.iter().map(|tag| tag.parse().unwrap()))
+            .compile_in(app_locales())
+            .framework_locales(framework_locales());
+        let manager = I18nManager::from_config(&cfg);
+        manager.set_locale("de-DE".parse().unwrap());
+        assert_eq!(manager.resolve_app("settings-title", &[]), "Einstellungen");
+        assert_eq!(
+            manager.resolve_widget("messagebox-btn-save", &[]),
+            "Speichern"
+        );
+        assert_eq!(
+            manager.resolve_widget("calendar-month-long-january", &[]),
+            "Januar"
+        );
+        for (count, expected) in [(1, "1 Wort"), (2, "2 Wörter")] {
+            let text = manager.resolve_app("statusbar-word-count", &[("count", count.into())]);
+            assert_eq!(text.replace(['\u{2068}', '\u{2069}'], ""), expected);
+        }
+        let help = crate::help::topic(crate::help::DEFAULT_TOPIC).unwrap();
+        for locale in ["de-DE", "de-AT", "de-CH", "de"] {
+            let body = help.resolve(locale).unwrap();
+            assert!(!body.is_fallback, "{locale} must resolve to German help");
+            assert_eq!(body.locale, "de-DE");
+            assert!(body.source.contains("Ihr erstes Projekt"));
+        }
+        let name = teksilo::i18n::language_endonym(&"de-DE".parse().unwrap()).unwrap();
+        assert!(name.contains("Deutsch"));
+    }
+
+    #[test]
+    fn german_catalogues_parse_without_recovery() {
+        let manager = I18nManager::from_config(&I18nConfig::new());
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let locale = "de-DE".parse().unwrap();
+        for file in LOCALE_FILES {
+            manager
+                .reload_from_path(&locale, &root.join("locales/de-DE").join(file))
+                .unwrap_or_else(|err| panic!("de-DE/{file}: {err:?}"));
+        }
+    }
+
+    #[test]
+    fn esperanto_resolves_app_controls_plurals_and_help_fallback() {
+        let cfg = I18nConfig::new()
+            .supported_locales(SUPPORTED_LOCALES.iter().map(|tag| tag.parse().unwrap()))
+            .compile_in(app_locales())
+            .framework_locales(framework_locales())
+            .override_widget_strings(WIDGET_LOCALE_OVERRIDES);
+        let manager = I18nManager::from_config(&cfg);
+        manager.set_locale("eo".parse().unwrap());
+        assert_eq!(manager.resolve_app("settings-title", &[]), "Agordoj");
+        assert_eq!(
+            manager.resolve_widget("messagebox-btn-save", &[]),
+            "Konservi"
+        );
+        assert_eq!(
+            manager.resolve_widget("calendar-month-long-january", &[]),
+            "Januaro"
+        );
+        for (count, expected) in [(1, "1 vorto"), (2, "2 vortoj")] {
+            let text = manager.resolve_app("statusbar-word-count", &[("count", count.into())]);
+            let text = text.replace(['\u{2068}', '\u{2069}'], "");
+            assert_eq!(text, expected);
+        }
+        assert!(
+            manager
+                .resolve_app("help-not-translated", &[])
+                .contains("angle")
+        );
+        let help = crate::help::topic(crate::help::DEFAULT_TOPIC).unwrap();
+        let body = help.resolve("eo").unwrap();
+        assert!(body.is_fallback);
+        assert_eq!(body.locale, "en-US");
+        let name = teksilo::i18n::language_endonym(&"eo".parse().unwrap()).unwrap();
+        assert_eq!(name.to_lowercase(), "esperanto");
+    }
+
+    #[test]
+    fn esperanto_catalogues_parse_without_recovery() {
+        let manager = I18nManager::from_config(&I18nConfig::new());
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let locale = "eo".parse().unwrap();
+        // Runtime loading returns parser errors instead of accepting Fluent's
+        // recovered resource, so malformed entries cannot silently fall back.
+        for file in LOCALE_FILES {
+            manager
+                .reload_from_path(&locale, &root.join("locales/eo").join(file))
+                .unwrap_or_else(|err| panic!("eo/{file}: {err:?}"));
+        }
+        manager
+            .reload_from_path(&locale, &root.join("widget_locales/eo.ftl"))
+            .unwrap();
+    }
+
+    #[test]
+    fn all_supported_catalogues_parse_without_recovery() {
+        let manager = I18nManager::from_config(&I18nConfig::new());
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        for tag in SUPPORTED_LOCALES {
+            let locale = tag.parse().unwrap();
+            for file in LOCALE_FILES {
+                manager
+                    .reload_from_path(&locale, &root.join("locales").join(tag).join(file))
+                    .unwrap_or_else(|err| panic!("{tag}/{file}: {err:?}"));
+            }
+        }
+    }
+
+    #[test]
+    fn added_languages_resolve_controls_and_intended_help() {
+        let cfg = I18nConfig::new()
+            .supported_locales(SUPPORTED_LOCALES.iter().map(|tag| tag.parse().unwrap()))
+            .compile_in(app_locales())
+            .framework_locales(framework_locales());
+        let manager = I18nManager::from_config(&cfg);
+        let topic = crate::help::topic(crate::help::DEFAULT_TOPIC).unwrap();
+        for (tag, settings, translated_help) in [
+            ("it-IT", "Impostazioni", true),
+            ("es-ES", "Configuración", true),
+            ("pt-PT", "Definições", true),
+            ("pl-PL", "Ustawienia", true),
+            ("fi-FI", "Asetukset", false),
+            ("ru-RU", "Настройки", false),
+            ("uk-UA", "Налаштування", false),
+            ("ko-KR", "설정", false),
+            ("ja-JP", "設定", false),
+        ] {
+            manager.set_locale(tag.parse().unwrap());
+            assert_eq!(
+                manager.resolve_app("settings-title", &[]),
+                settings,
+                "{tag}"
+            );
+            let save = manager.resolve_widget("messagebox-btn-save", &[]);
+            assert_ne!(save, "Save", "{tag} must translate shared controls");
+            assert_ne!(save, "messagebox-btn-save", "{tag}");
+            assert!(teksilo::i18n::language_endonym(&tag.parse().unwrap()).is_some());
+            for requested in [tag, tag.split('-').next().unwrap()] {
+                let body = topic.resolve(requested).unwrap();
+                assert_eq!(body.is_fallback, !translated_help, "{requested}");
+                assert_eq!(body.locale, if translated_help { tag } else { "en-US" });
+            }
+        }
+    }
+
+    #[test]
+    fn korean_and_japanese_counts_use_the_other_form() {
+        let cfg = I18nConfig::new()
+            .supported_locales(SUPPORTED_LOCALES.iter().map(|tag| tag.parse().unwrap()))
+            .compile_in(app_locales());
+        let manager = I18nManager::from_config(&cfg);
+        for (tag, word_unit, character_unit) in [("ko-KR", "단어", "자"), ("ja-JP", "語", "文字")]
+        {
+            manager.set_locale(tag.parse().unwrap());
+            for (count, formatted) in [(0, "0"), (1, "1"), (2, "2"), (1000, "1,000")] {
+                let text = manager.resolve_app("statusbar-word-count", &[("count", count.into())]);
+                assert_eq!(
+                    text.replace(['\u{2068}', '\u{2069}'], ""),
+                    format!("{formatted}{word_unit}"),
+                    "{tag}"
+                );
+            }
+            let text = manager.resolve_app(
+                "goal-count-characters",
+                &[("n", 1000.into()), ("count", "1,000".into())],
+            );
+            assert_eq!(
+                text.replace(['\u{2068}', '\u{2069}'], ""),
+                format!("1,000{character_unit}"),
+                "{tag}"
+            );
+        }
+    }
+
+    #[test]
+    fn slavic_word_counts_follow_their_plural_rules() {
+        let cfg = I18nConfig::new()
+            .supported_locales(SUPPORTED_LOCALES.iter().map(|tag| tag.parse().unwrap()))
+            .compile_in(app_locales());
+        let manager = I18nManager::from_config(&cfg);
+        for (tag, cases) in [
+            (
+                "pl-PL",
+                [
+                    (1, "1 słowo"),
+                    (2, "2 słowa"),
+                    (5, "5 słów"),
+                    (21, "21 słów"),
+                    (22, "22 słowa"),
+                ],
+            ),
+            (
+                "ru-RU",
+                [
+                    (1, "1 слово"),
+                    (2, "2 слова"),
+                    (5, "5 слов"),
+                    (21, "21 слово"),
+                    (22, "22 слова"),
+                ],
+            ),
+            (
+                "uk-UA",
+                [
+                    (1, "1 слово"),
+                    (2, "2 слова"),
+                    (5, "5 слів"),
+                    (21, "21 слово"),
+                    (22, "22 слова"),
+                ],
+            ),
+        ] {
+            manager.set_locale(tag.parse().unwrap());
+            for (count, expected) in cases {
+                let text = manager.resolve_app("statusbar-word-count", &[("count", count.into())]);
+                assert_eq!(
+                    text.replace(['\u{2068}', '\u{2069}'], ""),
+                    expected,
+                    "{tag}"
+                );
+            }
         }
     }
 

@@ -102,7 +102,7 @@ braille display. Please get in touch if you hit a glaring gap.
 - Exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text
 - Spell checking with downloadable dictionaries
 - Light and dark themes, per-editor typography, adjustable text scale
-- English and French user interface, for now
+- English, French, German (Germany), Italian, Spanish, Portuguese (Portugal), Polish, Finnish, Russian, Ukrainian, Korean (South Korea), Japanese and Esperanto user interface
 - Single instance: several projects can be open at once, each in its own window, without
   spawning a new process per project
 
@@ -117,6 +117,10 @@ The topics are translated alongside the interface, though they are not `.ftl` fi
 longer pages are Djot, under [crates/teksilo_ui/help/](crates/teksilo_ui/help/), one directory
 per locale. The shorter ones are the same text the tooltips use, so they are translated once
 and read in both places. See the [Translation](#translation) section for both.
+
+Full help articles are available in English, French, German, Italian, Spanish, Portuguese
+(Portugal), and Polish. Finnish, Russian, Ukrainian, Korean, Japanese, and Esperanto use English for the
+longer help articles.
 
 ## Discussions
 

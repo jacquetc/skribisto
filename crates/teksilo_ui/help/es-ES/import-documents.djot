@@ -1,0 +1,37 @@
+Importar Word, LibreOffice, Markdown o archivos de texto simple en su proyecto. Para un manuscrito devuelto por un lector, véase [traer copias de seguridad y comentarios](:help-round-trip). Para Manuskript o Plume Creator, véase [proyectos importantes](:help-import-projects).
+
+## Importar sus archivos
+
+1. Elija *Proyecto ▸ Importación de ▸ Documentos (Markdown, Word, ODT)…*. También puede hacer clic con el botón derecho en el Binder y elegir *Importar aquí…*.
+2. En *Archivos*, suelte los archivos o haga clic en *Examinar…*. Los documentos compatibles son `.docx`, `.odt`, `.md` y `.txt`. Ponlos en el orden que quieras, luego haz clic en *Siguiente*.
+3. En *Revisión*, compruebe los libros propuestos, capítulos y escenas. Cambiar un elemento en la columna *Tipo* si es necesario. Desmarque *Importar* para dejar fuera un artículo y todo dentro de él.
+4. En *Destinación*, elija dónde poner la escritura importada. Va dentro de una carpeta que seleccione, o justo después de cualquier otro elemento seleccionado.
+5. Haga clic en *Importación*. Nada se añade al proyecto antes de este paso. Después, el mensaje ofrece *Deshacer* durante unos segundos.
+
+Si los archivos contienen la escritura ya en su proyecto, puede aparecer un paso *Combinar*. Ver [traer atrás ediciones y comentarios](:help-round-trip) antes de continuar.
+
+## Compruebe cómo las partidas se convierten en capítulos
+
+El mago utiliza los títulos de su documento para dividirlo en libros, partes, capítulos y escenas. Bajo * Niveles de carga*, puede cambiar lo que cada nivel de encabezado se convierte. Por ejemplo, si sus epígrafes principales son títulos de capítulo, asigne ese nivel a *Capítulo*.
+
+Si sus archivos tienen títulos de capítulo pero no título de libro, *Añadir nivel superior* agrega un libro sobre ellos. Un archivo sin títulos se importa como un elemento.
+
+Los libros y partes no pueden contener el texto principal directamente. Cuando tienen texto que guardar, *Su texto* ofrece *Manténgase como paratexto* (el predeterminado) o *Pase el texto*. Mantenlo a menos que quieras descartar ese pasaje. [Paratext](:help-writing-model) incluye la escritura como un prefacio o dedicación.
+
+## Qué transferencias
+
+Archivos de Word y LibreOffice traen formato de texto común, enlaces, alineación, pausas de página y tablas. Los comentarios guardan a sus autores y respuestas. También se importan notas de pie de página; las notas se convierten en notas de pie de página, y las notas se vuelven a numerar.
+
+El texto importado puede parecer diferente del documento original. La indentación y justificación del párrafo siguen su estilo de exportación. Algunos formatos pueden ser simplificados.
+
+* Cajas de texto, ecuaciones y objetos embebidos quedan fuera.* Compruebe los mensajes en *Revisión* para cualquier cosa que no pudiera ser importada, y copiar cualquier escritura que falta del archivo original. Los símbolos de fuentes de imágenes como Wingdings pueden aparecer como cajas vacías.
+
+## Compruebe los mensajes antes de terminar
+
+Los mensajes debajo de la vista previa explican algo cambiado o dejado fuera. En particular:
+
+- Si un comentario no se puede adjuntar a sus palabras originales, puede pasar a un párrafo cercano. Compruebe su posición después de importar. Los comentarios sin texto que se adjuntan a se dejan fuera.
+- Se salta un archivo que no se puede leer; los otros archivos pueden ser importados.
+- Es posible simplificar el formato complejo, las tablas o las listas anidadas profundamente.
+
+Para obtener más información sobre el trabajo con comentarios importados, véase [comments](:help-comments).

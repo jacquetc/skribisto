@@ -1,0 +1,72 @@
+## Ein Ziel festlegen
+
+Wählen Sie einen Eintrag in der Projektmappe und öffnen Sie den Inspektor. Geben Sie unter
+*Ziel* die gewünschte Wortzahl ein. Zählt Ihr Projekt Zeichen, geben Sie stattdessen ein
+Zeichenziel ein. Null entfernt das Ziel.
+
+Legen Sie für jedes Kapitel oder jede Szene, die Sie verfolgen möchten, ein Ziel fest.
+Ein Kapitelziel wird nicht automatisch aus den Zielen seiner Szenen berechnet.
+
+## Ihren Stand sehen
+
+Mehrere Stellen zeigen den Fortschritt: der Inspektor unter dem Feld *Ziel*, die Statusleiste
+neben der aktuellen Zählung und die Spalte *Ziel* in der *Übersicht*.
+
+## Was zum Ziel zählt
+
+Der Fortschritt misst das Manuskript selbst: den Text Ihrer
+[Szenen und Kapitel](:help-writing-model). Zusammenfassungen, Notizen, Paratexte und alles im
+Papierkorb bleiben unberücksichtigt.
+
+Wenn Sie im Inspektor *In Exporte einschließen* deaktivieren, entfällt der Eintrag auch aus
+der Zählung. Bei einem Kapitel schließt das seine Szenen nicht automatisch aus. Verwenden Sie
+*Auf Untereinträge anwenden*, um sie ebenfalls auszuschließen.
+
+## Wörter oder Zeichen
+
+Eine Wahl gilt für das ganze Projekt. *Neues Projekt* fragt unter *Zähleinheit* danach.
+Später können Sie dies unter *Einstellungen ▸ Projekt: <Projekt> ▸ Struktur* im Bereich
+*Ziele* ändern.
+
+Jeder Eintrag führt zwei getrennte Zahlen: ein Wortziel und ein Zeichenziel.
+
+## Ein Ziel verteilen
+
+Um das Buchziel auf Teile oder Kapitel aufzuteilen, öffnen Sie das Buch und klicken auf
+*Verteilen…*. Ist die Schaltfläche deaktiviert, legen Sie zuerst ein Ziel fest. Dasselbe geht
+bei einem Teil oder Kapitelordner. Die Vorschau zeigt die vorgeschlagenen Ziele.
+Unter *Verteilung* wählen Sie:
+
+- *Nach Länge*, anhand des bereits darunter Geschriebenen;
+- *Nach Einträgen*;
+- *Gleichmäßig*.
+
+Kapitel und Szenen mit vorhandenen Zielen behalten diese; die anderen teilen sich den Rest.
+Aktivieren Sie *Bereits festgelegte Ziele ersetzen*, um alle neu zu berechnen.
+
+## Das Schreibtempo planen
+
+Öffnen Sie den Bereich *Schreibtempo* eines Buchs und wählen Sie *Planung beginnen*, um ein
+tägliches Schreibziel festzulegen.
+
+Tragen Sie *Wortziel* und *Abgabetermin* ein und wählen Sie Ihre Schreibtage. Skribisto berechnet
+das Pensum pro verbleibendem Schreibtag, die Anzahl verbleibender Tage und ob Sie vor oder
+hinter dem Plan liegen.
+
+Tragen Sie unter *Freie Tage* Auszeiten ein, die nicht zum Plan zählen sollen.
+
+Schreibplanung und Meilensteine zählen unabhängig von der Projekteinheit in Wörtern.
+
+## Meilensteine
+
+Ein Meilenstein markiert ein Datum auf dem Weg zum Ziel.
+
+- Fügen Sie unter *Meilensteine* im Planer einen für das ganze Buch hinzu: die bis dahin
+  zu erreichende Wortzahl.
+- Legen Sie für einen Teil oder ein Kapitel im Buch ein *Meilensteindatum* im Inspektor fest.
+  Es verwendet das eigene Wortziel dieses Eintrags und folgt dessen Änderungen.
+
+## Beim Öffnen des Projekts
+
+Sobald sein Plan aktiv ist, erscheint ein Buch in der Karte *Stand des Buchs*.
+*Beim Öffnen nicht anzeigen* unterdrückt sie; *Projekt ▸ Schreibplan…* öffnet sie erneut.

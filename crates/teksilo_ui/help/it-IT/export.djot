@@ -1,0 +1,32 @@
+Crea un file da condividere, stampare o leggere fuori da Skribisto.
+
+## Esporta il testo
+
+1. Premi `Ctrl+Maiusc+E` per aprire Esporta.
+2. In *Cosa esportare*, seleziona capitoli o scene da includere. Selezionare un capitolo seleziona anche le sue scene.
+3. Scegli un *Formato*. Usa Word o LibreOffice per modifiche e commenti, PDF per la stampa o EPUB per un lettore di ebook.
+4. Scegli uno *Stile* per l'impaginazione.
+5. Usa il pulsante della cartella accanto a *Destinazione* per scegliere nome e posizione del file.
+6. Fai clic su *Esporta*. Al termine, scegli *Apri* o *Mostra nella cartella* nel messaggio.
+
+Puoi annullare durante l'esportazione. Se il file di destinazione esiste già, Skribisto chiede prima di sostituirlo.
+
+## Esporta un solo capitolo o libro
+
+Apri l'elemento e scegli *Progetto ▸ Esporta*. Il sottomenu offre comandi come *Esporta libro* o *Esporta capitolo*, con l'elemento già selezionato. Usa *Scegli…* per una selezione personalizzata.
+
+Gli elementi con *Includi nelle esportazioni* disattivato nelle Proprietà sono nascosti nella selezione. *Mostra gli elementi non esportabili* li rende visibili. Selezionarne uno lo include solo in questa esportazione.
+
+## Scegli l'impaginazione
+
+Uno *Stile* controlla titoli, stacchi di scena, interlinea, interruzioni di pagina e contenuti aggiuntivi come sinossi, note e commenti. Alcuni formati supportano più opzioni di altri.
+
+Per cambiare uno stile integrato, prima copialo: apri *Impostazioni ▸ Compilazione ed esportazione ▸ Formati di esportazione*, seleziona lo stile e scegli *Duplica*. Poi scegli *Modifica* sulla copia.
+
+Sono disponibili anche HTML, Markdown, Djot, Testo e LaTeX.
+
+## Invia un manoscritto per la revisione
+
+Word (`.docx`) e LibreOffice (`.odt`) possono includere commenti. Nello stile di esportazione attiva *Includi commenti* e lascia attivo *Includi marcatori di reimportazione*, così Skribisto può associare i capitoli restituiti al progetto.
+
+Consulta [reimportare modifiche e commenti](:help-round-trip) per la procedura completa.

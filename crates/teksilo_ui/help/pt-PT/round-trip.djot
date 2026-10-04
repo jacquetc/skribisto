@@ -1,0 +1,55 @@
+Envie o manuscrito para revisão no Word ou LibreOffice e depois incorpore os comentários e alterações no projeto, sem criar uma cópia desligada do original.
+
+## Envie um ficheiro Word ou LibreOffice
+
+Abra a exportação com `Ctrl+Shift+E` e escolha o formato *Word* (`.docx`) ou *LibreOffice* (`.odt`). Ambos podem incluir comentários.
+
+## Prepare o ficheiro para regressar
+
+Cada estilo de exportação tem uma página *Envio a um revisor*:
+
+- *Incluir comentários* coloca as discussões no ficheiro.
+- *Incluir marcadores de reimportação* permite reconhecer os capítulos quando o ficheiro regressar. Mantenha esta opção ativa para atualizar o manuscrito existente em vez de importar outra cópia.
+
+Abra *Definições ▸ Compilação e exportação ▸ Formatos de exportação*. Os estilos integrados não são editáveis: escolha *Duplicar*, depois *Editar* na cópia e abra *Envio a um revisor*.
+
+## O que faz o leitor
+
+Nada de especial: comenta e altera o documento no Word ou LibreOffice como habitualmente e devolve o ficheiro.
+
+## Reimporte o ficheiro
+
+Abra *Projeto ▸ Importar de ▸ Documentos (Markdown, Word, ODT)…*. Consulte [importar documentos](:help-import-documents) para os passos anteriores a *Unir*, onde se incorporam as alterações.
+
+Importe a cópia de um leitor de cada vez. Importar várias em conjunto adiciona outro livro em vez de combinar as alterações com as suas.
+
+## Reveja o passo Unir
+
+Escolha o destino que contém o manuscrito original. O Skribisto associa os capítulos e cenas devolvidos aos existentes.
+
+A coluna *Estado* indica:
+
+- *Igual*, *Alterado pelo leitor*, *Alterado por si* ou *Alterado por ambos*, se o ficheiro conservar o texto original para comparar as duas versões.
+- *Igual* ou *Diferente*, caso contrário.
+- *Novo* para um elemento que só existe no ficheiro; *Não está neste ficheiro* para um que só existe no projeto.
+- *Movido* substitui esses estados quando um elemento associado muda de posição. Use *Comparar* para verificar se o texto também mudou.
+
+Se o leitor moveu um capítulo, mova-o manualmente na estrutura.
+
+*O que fazer* oferece *Apenas comentários* (as notas do leitor, o seu texto), *Usar esta versão*, *Manter a minha*, *Adicionar como novo* e *Ignorar*. Reveja a ação de cada elemento. *Novo* só permite adicionar ou ignorar. *Não está neste ficheiro* só permite manter a sua versão: a ausência na cópia do leitor não justifica eliminar o seu capítulo.
+
+## Aceite parte de uma reescrita
+
+*Comparar* apresenta as duas versões num texto anotado: rasurado para eliminações e sublinhado para adições. Cada parágrafo alterado tem uma caixa de seleção com a ação: aceitar o novo parágrafo, aceitar a reescrita ou eliminar o parágrafo. Selecione o que aceita; os restantes parágrafos mantêm a sua redação.
+
+*Apenas comentários* também aplica as alterações de parágrafos selecionadas em *Comparar*. Deixe as caixas desmarcadas para importar apenas comentários. *Usar esta versão* também respeita essas escolhas. Escolha *Manter a minha* para conservar o seu texto.
+
+## Alterações registadas
+
+Um ficheiro devolvido com revisões pendentes é importado como se estivessem aceites: as inserções são mantidas e as eliminações aplicadas. O passo *Revisão* informa-o e identifica os autores quando registados no ficheiro.
+
+*Comparar* permite aceitar ou rejeitar por parágrafo. Não é possível aceitar as alterações de uma pessoa e rejeitar as de outra dentro do mesmo parágrafo.
+
+## Limites
+
+- Um ficheiro de outra ferramenta, ou exportado sem marcadores, é associado pelo título. Um capítulo cujo nome tenha mudado não pode ser reconhecido.

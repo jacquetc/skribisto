@@ -592,6 +592,17 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
 const MENU_LOCALES: &[(&str, &str)] = &[
     ("en-US", include_str!("../../../locales/en-US/main.ftl")),
     ("fr-FR", include_str!("../../../locales/fr-FR/main.ftl")),
+    ("de-DE", include_str!("../../../locales/de-DE/main.ftl")),
+    ("it-IT", include_str!("../../../locales/it-IT/main.ftl")),
+    ("es-ES", include_str!("../../../locales/es-ES/main.ftl")),
+    ("pt-PT", include_str!("../../../locales/pt-PT/main.ftl")),
+    ("pl-PL", include_str!("../../../locales/pl-PL/main.ftl")),
+    ("fi-FI", include_str!("../../../locales/fi-FI/main.ftl")),
+    ("ru-RU", include_str!("../../../locales/ru-RU/main.ftl")),
+    ("uk-UA", include_str!("../../../locales/uk-UA/main.ftl")),
+    ("ko-KR", include_str!("../../../locales/ko-KR/main.ftl")),
+    ("ja-JP", include_str!("../../../locales/ja-JP/main.ftl")),
+    ("eo", include_str!("../../../locales/eo/main.ftl")),
 ];
 
 /// The mnemonic a label declares, lower-cased to match `MenuBar`'s own
@@ -623,6 +634,138 @@ fn ftl_labels(ftl: &str) -> std::collections::HashMap<&str, &str> {
         .filter_map(|line| line.split_once(" = "))
         .map(|(key, value)| (key.trim(), value.trim()))
         .collect()
+}
+
+/// Include the newer menu entries and the template catalogue when checking
+/// new translations: collisions can panic when a menu opens in debug builds.
+#[test]
+fn added_locales_additional_menu_entries_have_unique_mnemonics() {
+    let catalogues = [
+        (
+            "de-DE",
+            include_str!("../../../locales/de-DE/main.ftl"),
+            include_str!("../../../locales/de-DE/templates.ftl"),
+        ),
+        (
+            "it-IT",
+            include_str!("../../../locales/it-IT/main.ftl"),
+            include_str!("../../../locales/it-IT/templates.ftl"),
+        ),
+        (
+            "es-ES",
+            include_str!("../../../locales/es-ES/main.ftl"),
+            include_str!("../../../locales/es-ES/templates.ftl"),
+        ),
+        (
+            "pt-PT",
+            include_str!("../../../locales/pt-PT/main.ftl"),
+            include_str!("../../../locales/pt-PT/templates.ftl"),
+        ),
+        (
+            "pl-PL",
+            include_str!("../../../locales/pl-PL/main.ftl"),
+            include_str!("../../../locales/pl-PL/templates.ftl"),
+        ),
+        (
+            "fi-FI",
+            include_str!("../../../locales/fi-FI/main.ftl"),
+            include_str!("../../../locales/fi-FI/templates.ftl"),
+        ),
+        (
+            "ru-RU",
+            include_str!("../../../locales/ru-RU/main.ftl"),
+            include_str!("../../../locales/ru-RU/templates.ftl"),
+        ),
+        (
+            "uk-UA",
+            include_str!("../../../locales/uk-UA/main.ftl"),
+            include_str!("../../../locales/uk-UA/templates.ftl"),
+        ),
+        (
+            "ko-KR",
+            include_str!("../../../locales/ko-KR/main.ftl"),
+            include_str!("../../../locales/ko-KR/templates.ftl"),
+        ),
+        (
+            "ja-JP",
+            include_str!("../../../locales/ja-JP/main.ftl"),
+            include_str!("../../../locales/ja-JP/templates.ftl"),
+        ),
+    ];
+    let additions: &[(&str, &[&str])] = &[
+        ("menu bar", &["menu-edit", "menu-document", "menu-image"]),
+        ("Work", &["cover-choose", "cover-clear"]),
+        (
+            "View",
+            &[
+                "menu-margin-lane",
+                "menu-footnotes",
+                "menu-timeline",
+                "menu-text-size-increase",
+                "menu-text-size-decrease",
+                "menu-text-size-reset",
+            ],
+        ),
+        (
+            "Format",
+            &[
+                "menu-format-link",
+                "menu-format-direction",
+                "menu-format-typo-marks",
+            ],
+        ),
+        ("Edit", &["menu-edit-undo", "menu-edit-redo"]),
+        ("Help", &["menu-help-check-updates"]),
+        (
+            "Document",
+            &[
+                "ctx-rename",
+                "ctx-duplicate",
+                "ctx-indent",
+                "ctx-outdent",
+                "menu-document-tidy-titles",
+                "menu-insert-template",
+                "footnotes-insert",
+                "image-insert",
+                "menu-save-as-template",
+                "ctx-trash",
+            ],
+        ),
+        (
+            "Binder",
+            &[
+                "ctx-open-to-side",
+                "ctx-add",
+                "ctx-promote",
+                "ctx-number",
+                "ctx-rename",
+                "ctx-duplicate",
+                "ctx-import-here",
+                "ctx-trash",
+            ],
+        ),
+    ];
+    for (locale, main, templates) in catalogues {
+        let mut labels = ftl_labels(main);
+        labels.extend(ftl_labels(templates));
+        for (scope, extra) in additions {
+            let existing = MENU_MNEMONIC_SCOPES
+                .iter()
+                .find(|(name, _)| name == scope)
+                .map(|(_, keys)| *keys)
+                .unwrap_or(&[]);
+            let mut claimed = std::collections::HashMap::new();
+            for key in existing.iter().chain(extra.iter()) {
+                let label = labels.get(key).expect("Translated menu key must exist");
+                if let Some(mnemonic) = mnemonic_of(label) {
+                    assert!(
+                        claimed.insert(mnemonic, key).is_none(),
+                        "{locale} {scope}: duplicate mnemonic {mnemonic} in {key}"
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[test]

@@ -1,0 +1,37 @@
+Um projeto reúne o manuscrito e as notas. Veja como começar a escrever.
+
+## Crie o seu primeiro projeto
+
+1. Na janela inicial, clique em *Novo projeto*.
+2. Em *Detalhes*, introduza um nome e escolha onde guardar. Selecione *Ficheiro único* para manter o projeto num ficheiro `.skrib`. O nome do autor é opcional.
+3. Em *Idioma e estrutura*, escolha o idioma em que escreve. Por enquanto, pode manter as restantes opções.
+4. Em *Modelo*, escolha *Romance vazio* para o construir capítulo a capítulo. Outros modelos incluem mais capítulos iniciais; *Caderno* destina-se a notas.
+5. Clique em *Criar projeto*.
+
+## Escreva a primeira cena
+
+O *Organizador*, à esquerda, apresenta capítulos, cenas e notas. Clique numa cena para a abrir e começar a escrever. Para adicionar outra, selecione um capítulo e use o botão de criação no topo do Organizador. O menu permite escolher *Cena* ou outro tipo de elemento.
+
+Ao lado do texto principal está a *Sinopse*: um resumo para planear a cena. Pode ocultá-la em *Definições ▸ Editor ▸ Comportamento do editor*.
+
+Para mudar o nome de uma cena ou capítulo, clique com o botão direito e escolha *Mudar o nome*.
+
+## Guarde e reabra o projeto
+
+Prima `Ctrl+S` para guardar as alterações. Se ativar a gravação automática nas Definições, o Skribisto guarda enquanto escreve e oculta o comando manual. O indicador na barra de estado mostra se as alterações foram guardadas.
+
+Na próxima abertura, escolha o projeto em *Projetos recentes*. Use *Abrir* para procurar um ficheiro `.skrib` existente.
+
+O Skribisto também cria [cópias de segurança](:help-backups-and-versions), que permitem recuperar trabalho anterior.
+
+## Importe textos existentes
+
+Na janela inicial, *Criar a partir de…* inicia um projeto a partir de [documentos](:help-import-documents) ou de um [projeto Manuskript ou Plume Creator](:help-import-projects). Abra *Exemplos* na barra lateral para explorar um projeto de exemplo.
+
+## Ajuste o espaço de trabalho
+
+- Prima `F9` ou escolha *Ver ▸ Estrutura* para mostrar ou ocultar o Organizador.
+- Prima `Ctrl+Enter` num elemento selecionado para o abrir no outro painel do editor.
+- Ao criar um projeto, *Capítulos simples* permite escrever diretamente em cada capítulo, sem o dividir em cenas. *Pasta de projeto* guarda o projeto como pasta em vez de ficheiro único.
+
+Consulte [livros, capítulos e cenas](:help-writing-model) para saber como organizar o manuscrito.

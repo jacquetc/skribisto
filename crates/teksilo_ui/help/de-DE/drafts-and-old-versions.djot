@@ -1,0 +1,47 @@
+## Wohin mit einem alten Kapitel?
+
+Sie haben ein Kapitel überarbeitet und möchten die alte Fassung weiterhin lesen können.
+
+Legen Sie sie in einer anderen Projektmappe ab.
+
+## Die Kopie erstellen
+
+- Wählen Sie das Kapitel in der *Projektmappe*. Drücken Sie `Strg+D` oder wählen Sie
+  *Dokument ▸ Duplizieren*. Die Kopie behält den Titel und erscheint nach dem Original
+  und all seinen Untereinträgen.
+- Wählen Sie die Kopie, also den zweiten Eintrag. Nach dem Duplizieren bleibt das Original
+  ausgewählt. Wählen Sie deshalb zuerst die Kopie und benennen Sie sie dann über
+  *Dokument ▸ Umbenennen* um.
+- Ein Projekt aus einer Romanvorlage hat bereits eine Projektmappe *Notizen*. Falls sie fehlt,
+  finden Sie *Neue Projektmappe…* in der Schaltfläche oben im Bereich *Projektmappe*.
+- Ziehen Sie die Kopie auf diese Projektmappe. Zeigt die Schaltfläche nur eine einzelne Mappe
+  statt *Alle Projektmappen*, wählen Sie zuerst *Alle Projektmappen anzeigen*, damit Quelle
+  und Ziel sichtbar sind.
+
+Um das alte Kapitel wiederzuverwenden, verschieben Sie die überarbeitete Fassung aus dem Buch
+und ziehen Sie die alte an ihren Platz zurück.
+
+## Alte Entwürfe außerhalb des Buchs halten
+
+Ein altes Kapitel in einer anderen Projektmappe liegt außerhalb des Buchs. Wortzählung,
+Ziele, Schreibplanung und Export lassen es aus.
+
+## Was weiterhin funktioniert
+
+Alles zum Lesen und Bearbeiten. Das alte Kapitel behält seinen Titel und seinen Platz in der
+gewählten Projektmappe. Es wird weiterhin gefunden, auf Rechtschreibung geprüft und gesichert.
+
+Auch die Geschichtenbibel funktioniert dort weiter. Wird eine Figur im alten Entwurf erwähnt,
+zählt ihr Eintrag diese Szenen weiterhin mit.
+
+## Andere Möglichkeiten und ihre Einsatzgebiete
+
+- Der *Papierkorb* ist für verworfene Inhalte. Ein Eintrag darin verschwindet aus der
+  *Projektmappe*, zählt nicht mehr mit und bleibt wiederherstellbar. Sie können ihn im
+  *Papierkorb* zum Lesen öffnen, er gilt aber als verworfen statt aufbewahrt.
+- Der Bereich *Versionen* bewahrt frühere Fassungen einzelner Texte und kann sie wiederherstellen.
+  Damit beantworten Sie etwa: „Was stand gestern in diesem Absatz?“ Er arbeitet mit jeweils
+  einem Eintrag; Wiederherstellen ersetzt dessen aktuellen Text. Siehe
+  [Sicherungen und Versionen](:help-backups-and-versions).
+- *In Exporte einschließen* im Inspektor entscheidet, ob ein Eintrag im fertigen Buch erscheint.
+  Deaktiviert bleibt er beim Buchexport und bei der Wortzählung außen vor.

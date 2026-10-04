@@ -1,0 +1,37 @@
+Import Word, LibreOffice, Markdown lub plików tekstowych do projektu. Dla manuskryptu zwróconego przez czytelnika, zobacz [przynosząc z powrotem edycje i komentarze ](:help-round-trip). Dla Manuskript lub Plume Creator, zob. [projekty importujące ](:help-import-projects).
+
+## Importuj pliki
+
+1. Wybierz * Projekt ▸ Import z ▸ Dokumenty (Markdown, Word, ODT) … *. Możesz również kliknąć prawym przyciskiem myszy w Binder i wybrać * Importuj here… *.
+2. Na * Pliki *, upuść pliki lub kliknij * Browse… *. Obsługiwane pliki to `.docx`, `.odt`, `.md` i `.txt`. Umieść je w kolejności, którą chcesz, a następnie kliknij * Dalej *.
+3. Na * Przegląd *, sprawdź proponowane książki, rozdziały i sceny. W razie potrzeby należy zmienić element w kolumnie * Type *. Cofnij * Import *, aby pominąć element i wszystko, co jest w środku.
+4. Na * Miejsce przeznaczenia *, wybrać, gdzie umieścić importowane pismo. Wchodzi do wybranego folderu lub zaraz po innym wybranym elemencie.
+5. Kliknij * Import *. Przed tym krokiem nic nie dodaje się do projektu. Następnie wiadomość oferuje * Cofnij * na kilka sekund.
+
+Jeśli pliki zawierają zapis już w projekcie, może pojawić się krok * Merge *. Patrz: [przywracanie redakcji i komentarzy ](:help-round-trip) przed kontynuacją.
+
+## Sprawdź, jak nagłówki stają się rozdziałami
+
+Czarodziej używa nagłówków twojego dokumentu, aby podzielić je na książki, części, rozdziały i sceny. Pod * Poziomy nagłówka *, można zmienić, co każdy poziom nagłówka staje. Na przykład, jeśli Twoje główne nagłówki są tytułami rozdziału, przypisz ten poziom do * Rozdział *.
+
+Jeśli pliki posiadają tytuły rozdziałów, ale nie mają tytułu książki, * Dodaj najwyższy poziom * dodaje nad nimi książkę. Plik bez nagłówków jest importowany jako jeden element.
+
+Książki i części nie mogą bezpośrednio zawierać głównego tekstu. Gdy mają tekst do zachowania, * Jego tekst * oferuje * Zachować jako paratext * (domyślnie) lub * Upuścić tekst *. [Paratext](:help-writing-model) zawiera pisanie takie jak wstępna lub dedykacja.
+
+## Jakie transfery
+
+Pliki Word i LibreOffice przynoszą wspólne formatowanie tekstu, linki, wyrównanie, przerwy na stronie i tabele. Komentarze zatrzymują autorów i odpowiedzi. Przypisy są również importowane; przypisy końcowe stają się przypisami, a notatki są zmieniane numerami.
+
+Przywieziony tekst może wyglądać inaczej niż oryginalny dokument. Paragraf wcięcia i uzasadnienie postępują według stylu eksportu. Niektóre formatowanie może zostać uproszczone.
+
+* Pozostały pola tekstowe, równania i wbudowane obiekty. * Sprawdź wiadomości na * Review * na wszystko, co nie może być zaimportowane, i skopiuj brakujące zapisu z oryginalnego pliku. Symbole z czcionek obrazkowych, takich jak Wingdings, mogą występować jako puste pola.
+
+## Zaznacz wiadomości przed zakończeniem
+
+Wiadomości poniżej podglądu wyjaśniają wszystko zmienione lub pominięte. W szczególności:
+
+- Jeżeli komentarz nie może być dołączony do jego oryginalnych słów, może on przejść do pobliskiego ustępu. Sprawdź jego pozycję po imporcie. Komentarze bez tekstu, do którego należy dołączyć są pomijane.
+- Plik, którego nie można odczytać, jest pomijany; pozostałe pliki mogą być nadal importowane.
+- Kompleksowe formatowanie, tabele lub głęboko zagnieżdżone listy mogą zostać uproszczone.
+
+Więcej informacji na temat współpracy z importowanymi komentarzami znajduje się w [komentarzach ](:help-comments).

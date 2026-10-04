@@ -1,0 +1,46 @@
+## Organiza tu manuscrito
+
+Utilice el *Archivador* a la izquierda para organizar su escritura. Una novela típica tiene un libro, capítulos dentro de él, y escenas dentro de cada capítulo. También puede escribir directamente en capítulos.
+
+Cada artículo tiene un *tipo*, como Capítulo o Nota. Esto dice Skribisto cómo utilizarlo al exportar su libro; una carpeta plana no se convierte en un capítulo sólo porque tiene escenas.
+
+Cada artículo que lleva prosa tiene un texto principal y una sinopsis lado a lado: plan en un panel, borrado en el otro. Libros, partes, carpetas de notas y carpetas simples llevan una sinopsis pero no texto principal.
+
+## Los tipos que puedes crear
+
+Haga clic con el botón derecho en un artículo en el carpeta y seleccione *Añadir*.
+
+- *Libro*: un manuscrito, con sus capítulos y escenas.
+- *Parte*: reúne capítulos bajo un título.
+- *Capítulo*: corre hasta el siguiente capítulo, la siguiente parte, o el final del libro.
+- *Escena*: tu escritura, con su propia sinopsis.
+- *Nota*: texto y sinopsis, para investigación, a un lado o recordatorios.
+- *Entrada de la biblia narrativa…*: una nota para un personaje, un lugar o un objeto, creada con sus etiquetas y nombres alternativos ya rellenados.
+- *Carpeta de notas*: notas de grupos junto, con una sinopsis pero sin texto principal.
+- *Carpeta*: un contenedor plano con una sinopsis y sin prosa propia.
+
+## Dos formas del capítulo
+
+- Una *Carpeta de capítulo* contiene escenas debajo de ella en el carpeta.
+- Un *Capítulo Flat* es un solo artículo en el que escribes directamente, sin escenas a continuación.
+
+Para elegir la forma *nuevos* capítulos toman, abierto *Configuración ▸ Proyecto: &gt; Proyecto ▸ Estructura* y conjunto *Capítulos falsos*. Por medio de elementos individuales, fuera significa carpetas.
+
+## Cambiar una escena, capítulo o carpeta
+
+Haga clic con el botón derecho y seleccione *Convertir a* para ver los tipos disponibles. Por ejemplo, puede convertir una escena en una nota, o una carpeta de capítulo en un capítulo plano. El título y el texto se guardan cuando el nuevo tipo puede retenerlos.
+
+- Una carpeta debe estar vacía antes de que pueda convertirse en un solo elemento. Mueve o traspasa sus contenidos primero.
+- Se rechaza una conversión con ninguna parte para poner el texto existente, y dice lo que se perdería.
+
+## Donde un libro termina
+
+Un proyecto puede contener varios libros, uno tras otro en el mismo carpeta. Un libro va desde donde comienza hasta la primera de tres cosas: un elemento *Fin del libro*, el comienzo del próximo libro, o el final de su carpeta.
+
+## Paratexto: en el libro, no en la historia
+
+Un *Paratexto* pertenece al libro pero no a su historia: un prefacio, una dedicación, una palabra posterior, una colofona. Exporta donde lo pones, y nunca cuenta hacia la cuenta de palabras.
+
+Una *Carpeta paratexto* mantiene los paratextos despejados del resto del carpeta.
+
+¿Eres nuevo a Skribisto? [Getting started](:help-getting-started) cubre la apertura y el ahorro de un proyecto primero.

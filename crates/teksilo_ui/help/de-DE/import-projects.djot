@@ -1,0 +1,104 @@
+Ein Projektimport übernimmt ein ganzes Projekt aus Manuskript oder Plume Creator: Kapitel,
+Figuren und Notizen. Haben Sie stattdessen einen Ordner mit Dokumenten, siehe
+[Dokumente importieren](:help-import-documents).
+
+Ein Import erstellt ein **neues** Skribisto-Projekt.
+
+## Einen Import starten
+
+Wählen Sie bei geöffnetem Projekt *Projekt ▸ Importieren aus* und dann *Manuskript (.msk)…*
+oder *Plume Creator (.plume)…*. Auf der Startseite finden Sie dieselben Importfunktionen unter
+*Erstellen aus…*.
+
+Der Dialog fragt nach:
+
+- dem einzulesenden Projekt;
+- einem Zielordner;
+- einem Dateinamen für die neue `.skrib`-Datei.
+
+Erst nach *Importieren* wird etwas geschrieben. Der Import zeigt seinen Fortschritt an;
+*Abbrechen* hinterlässt nichts.
+
+Ist das Ziel ein bereits in Skribisto geöffnetes Projekt, wählen Sie einen anderen Dateinamen.
+
+## Ein Manuskript-Projekt auswählen
+
+Manuskript speichert Projekte in zwei Formen; beide werden unterstützt:
+
+- **Ordnermodus**, der übliche Fall: eine kleine `.msk`-Datei neben einem gleichnamigen Ordner.
+  Der Ordner enthält das Projekt; die `.msk`-Datei verweist nur darauf. Bewahren Sie beide zusammen auf.
+- **Einzeldateimodus**: Das ganze Projekt liegt in der `.msk`-Datei.
+
+Verwenden Sie *Datei auswählen…* für eine `.msk`-Datei und *Ordner auswählen…* für den Ordner.
+Im Ordnermodus funktioniert beides. Der Import meldet, welche Kopie eingelesen wurde.
+
+## Was aus Manuskript übernommen wird
+
+- Ihre Texte, Notizen und Wortziele.
+- Das Häkchen „compile“ wird zu *In Exporte einschließen*. Ein deaktivierter Eintrag bleibt
+  samt Inhalt deaktiviert.
+- Die Zusammenfassungen eines Eintrags werden zu einer verbunden: zuerst der Ein-Satz-Überblick,
+  dann die ausführlichere Fassung.
+- Figuren, Welteneinträge und Handlungsstränge werden zu Notizen in einer Projektmappe
+  *Geschichtenbibel* neben dem Manuskript, jeweils in einer eigenen Gruppe. Die Erzählperspektive
+  einer Szene verweist auf die genannte Figur; Handlungsstränge behalten Schritte und Verknüpfungen.
+- Ihre Kennzeichnungen als farbige Schlagwörter.
+- Ihre Statusliste als eigene Statusstufen des Projekts unter Ihren Namen.
+- Ihren Überarbeitungsverlauf: Öffnen Sie eine Szene, um frühere Fassungen unter *Versionen* zu sehen.
+
+Manuskript speicherte im Text Markierungen für Figuren, Welteneinträge, Handlungsstränge oder
+andere Einträge. Sie werden durch die zugehörigen Wörter ersetzt, mit einer Verknüpfung zum
+benannten Eintrag.
+
+## Was hier kein entsprechendes Feld hat
+
+Einige Manuskript-Funktionen haben kein Gegenstück in Skribisto:
+
+- **Symbole pro Eintrag.**
+- **Die Farbe neben einem Figurennamen.** Skribisto färbt stattdessen Schlagwörter.
+- **Die gestuften Zusammenfassungen des ganzen Buchs** (Situation, Satz, Absatz, Seite, vollständig).
+  Die längste wird zur Buchzusammenfassung. Alle bleiben gemeinsam in einer Notiz *Zusammenfassung*
+  in der Projektmappe *Geschichtenbibel* erhalten.
+- **Angaben ohne eigenes Feld**, etwa Reihe und Band. Sie landen daneben in einer Notiz
+  *Projektinformationen*.
+
+## Wie Teile und Kapitel entstehen
+
+Skribisto leitet Teile und Kapitel aus Ihren Ordnern ab:
+
+- Enthält kein Ordner einen weiteren Ordner, werden Ordner zu Kapiteln.
+- Enthält irgendwo ein Ordner einen anderen, werden die äußersten Ordner zu Teilen und die
+  darinliegenden zu Kapiteln.
+
+Das importierte Manuskript wird zu einem Buch zusammengefasst, damit Sie es gemeinsam planen,
+analysieren und exportieren können.
+
+Sie können den Typ später über *Umwandeln in* im Kontextmenü der Projektmappe ändern.
+Die Typen erklärt [Wie ein Buch aufgebaut ist](:help-writing-model).
+
+## Aus Plume Creator wechseln
+
+Wählen Sie eine `.plume`- oder `.plume_backup`-Datei aus einer beliebigen Plume-Version.
+
+- Bücher, Akte, Kapitel und Szenen kommen mit Text, Zusammenfassungen und Notizen an.
+- Ein Szenentrenner wird zu einer Trennmarkierung im darüberliegenden Text.
+- Plumes Figuren- und Ortsgruppen werden zu Notizordnern mit jeweils eigenem Schlagwort.
+  Weitere Namen eines Eintrags erscheinen unter *Auch bekannt als*.
+- Die in einer Szene auftretenden Einträge werden zu Verknüpfungen an dieser Szene.
+- Plumes Überarbeitungsstufen werden zu Statusstufen des Projekts.
+- Ihr persönliches Wörterbuch wird ebenfalls übernommen.
+
+Einträge in Plumes Papierkorb werden **nicht** importiert. Stellen Sie gewünschte Einträge
+vor dem Import in Plume wieder her. Plume enthält keinen Autorennamen; tragen Sie ihn unter
+*Einstellungen ▸ Projekt: <Projekt> ▸ Autor* ein.
+
+## Nach dem Import
+
+Eine Meldung bietet *Jetzt öffnen* an, um das neue Projekt zu öffnen.
+
+Meldet der Import nicht übertragbare Inhalte, klicken Sie auf *Details*. Den Bericht finden
+Sie später auch unter der Glocke in der Statusleiste.
+
+Das neue Projekt ist eine einzelne `.skrib`-Datei. Wenn Sie bisher einen Ordner für die
+Versionsverwaltung verwendet haben, wählen Sie danach *Projekt ▸ Als Ordner speichern…*.
+Siehe [Sicherungen und Versionen](:help-backups-and-versions).

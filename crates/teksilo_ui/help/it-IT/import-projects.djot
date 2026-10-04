@@ -1,0 +1,79 @@
+L'importazione di un progetto trasferisce un intero progetto Manuskript o Plume Creator: capitoli, personaggi e note. Per una cartella di documenti, consulta [importare documenti](:help-import-documents).
+
+L'importazione crea un **nuovo** progetto Skribisto.
+
+## Avvia l'importazione
+
+Con un progetto aperto, scegli *Progetto ▸ Importa da*, poi *Manuskript (.msk)…* o *Plume Creator (.plume)…*. Nella finestra iniziale gli stessi importatori sono sotto *Crea da…*.
+
+Il pannello richiede:
+
+- il progetto da leggere;
+- una cartella di destinazione;
+- un nome per il file `.skrib` da creare.
+
+Non viene scritto nulla prima di premere *Importa*. L'avanzamento è visibile e *Annulla* non lascia file residui.
+
+Se la destinazione è un progetto già aperto in Skribisto, scegli un altro nome.
+
+## Scegli un progetto Manuskript
+
+Sono accettate entrambe le forme di salvataggio di Manuskript:
+
+- **Modalità cartella**, quella abituale: un piccolo file `.msk` accanto a una cartella con lo stesso nome. Il progetto è nella cartella e il file vi rimanda: tienili insieme.
+- **Modalità file singolo**: l'intero progetto è nel file `.msk`.
+
+Usa *Scegli file…* per un `.msk` e *Scegli cartella…* per la cartella; in modalità cartella funzionano entrambi. L'importazione indica quale copia ha letto.
+
+## Cosa viene importato da Manuskript
+
+- Testi, note e obiettivi in parole.
+- L'opzione di compilazione diventa *Includi nelle esportazioni*. Un elemento escluso rimane escluso, insieme al suo contenuto.
+- I riassunti di un elemento vengono uniti nella sinossi: prima quello in una frase, poi quello esteso.
+- Personaggi, voci del mondo e trame diventano note in un raccoglitore *Bibbia narrativa* accanto al manoscritto, in gruppi separati. Il punto di vista di una scena rimanda al personaggio indicato; le trame conservano passaggi e collegamenti.
+- Le diciture diventano etichette colorate.
+- L'elenco degli stati diventa quello del progetto, con i tuoi nomi.
+- La cronologia delle revisioni: apri una scena e trovi le versioni precedenti nel pannello *Versioni*.
+
+Nel testo, Manuskript memorizzava marcatori per personaggi, voci del mondo, trame o altri elementi. Vengono ripristinati come le parole che rappresentavano, con un collegamento all'elemento.
+
+## Cosa non ha un campo corrispondente
+
+Alcuni elementi di Manuskript non hanno un equivalente diretto:
+
+- **Icone dei singoli elementi.**
+- **Il colore accanto al nome di un personaggio.** Skribisto colora invece le etichette.
+- **I riassunti dell'intero libro a diversi livelli** (situazione, frase, paragrafo, pagina, completo). Il più lungo diventa la sinossi del libro; tutti vengono conservati in una nota *Riassunto* nel raccoglitore *Bibbia narrativa*.
+- **Dettagli senza un campo proprio**, come serie e volume, finiscono in una nota *Informazioni sul progetto*.
+
+## Come vengono ricavate parti e capitoli
+
+Skribisto usa le cartelle:
+
+- Se nessuna cartella ne contiene un'altra, le cartelle diventano capitoli.
+- Se almeno una cartella ne contiene un'altra, quelle più esterne diventano parti e quelle interne capitoli.
+
+Il manoscritto importato viene riunito in un Libro, per pianificarlo, analizzarlo ed esportarlo insieme.
+
+Puoi cambiare il tipo in seguito con *Converti in* nel menu contestuale del Raccoglitore. Consulta [il modello di scrittura](:help-writing-model).
+
+## Importare da Plume Creator
+
+Scegli un file `.plume` o `.plume_backup`, di qualsiasi versione di Plume.
+
+- Libri, atti, capitoli e scene mantengono testo, sinossi e note.
+- Un separatore di scena diventa uno stacco nel testo precedente.
+- I gruppi di personaggi e luoghi diventano cartelle di note, ognuno con un'etichetta. Gli altri nomi entrano nell'elenco *Altri nomi*.
+- Le voci presenti in una scena diventano collegamenti sulla scena.
+- Le fasi di revisione diventano stati del progetto.
+- Viene importato anche il dizionario personale.
+
+Gli elementi nel cestino di Plume **non** vengono importati. Ripristina in Plume quelli da conservare prima di importare. Plume non contiene un nome autore: impostalo in *Impostazioni ▸ Progetto: <progetto> ▸ Autore*.
+
+## Dopo l'importazione
+
+Un messaggio offre *Apri ora* per aprire il nuovo progetto.
+
+Se viene segnalato qualcosa non trasferibile, fai clic su *Dettagli* per leggere l'elenco. Il rapporto rimane disponibile sotto la campanella nella barra di stato.
+
+Il nuovo progetto è un file `.skrib` singolo. Se usavi una cartella per il controllo di versione, scegli poi *Progetto ▸ Salva come cartella…*. Consulta [backup e versioni](:help-backups-and-versions).

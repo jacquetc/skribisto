@@ -1,0 +1,61 @@
+Importieren Sie Word-, LibreOffice-, Markdown- oder einfache Textdateien in Ihr Projekt.
+Für Manuskripte, die von Lesern zurückkommen, siehe
+[Änderungen und Kommentare zurückbringen](:help-round-trip).
+Für Manuskript oder Plume Creator siehe [Projekte importieren](:help-import-projects).
+
+## Ihre Dateien importieren
+
+1. Wählen Sie *Projekt ▸ Importieren aus ▸ Dokumenten (Markdown, Word, ODT)…*.
+   Alternativ wählen Sie im Kontextmenü der Projektmappe *Hier importieren…*.
+2. Legen Sie unter *Dateien* Ihre Dateien ab oder klicken Sie auf *Durchsuchen…*.
+   Unterstützt werden `.docx`, `.odt`, `.md` und `.txt`. Ordnen Sie die Dateien wie gewünscht
+   und klicken Sie auf *Weiter*.
+3. Prüfen Sie unter *Prüfen* die vorgeschlagenen Bücher, Kapitel und Szenen. Ändern Sie bei
+   Bedarf die Spalte *Typ*. Deaktivieren Sie *Importieren*, um einen Eintrag samt Inhalt auszulassen.
+4. Wählen Sie unter *Ziel* den Ort für den importierten Text. Er landet in einem ausgewählten
+   Ordner oder unmittelbar nach einem anderen ausgewählten Eintrag.
+5. Klicken Sie auf *Importieren*. Erst jetzt wird dem Projekt etwas hinzugefügt.
+   Anschließend bietet die Meldung für einige Sekunden *Rückgängig* an.
+
+Enthalten die Dateien bereits im Projekt vorhandene Texte, kann der Schritt *Zusammenführen*
+erscheinen. Lesen Sie vor dem Fortfahren
+[Änderungen und Kommentare zurückbringen](:help-round-trip).
+
+## Prüfen, wie Überschriften zu Kapiteln werden
+
+Der Assistent nutzt Dokumentüberschriften, um Bücher, Teile, Kapitel und Szenen zu bilden.
+Unter *Überschriftenebenen* können Sie die Zuordnung ändern. Sind die Hauptüberschriften
+beispielsweise Kapiteltitel, weisen Sie dieser Ebene *Kapitel* zu.
+
+Haben die Dateien Kapiteltitel, aber keinen Buchtitel, fügt *Oberste Ebene hinzufügen*
+ein Buch darüber ein. Dateien ohne Überschriften werden als einzelner Eintrag importiert.
+
+Bücher und Teile können keinen Haupttext direkt aufnehmen. Haben sie Text, bietet *Sein Text*
+die Optionen *Als Paratext behalten* (Standard) und *Text verwerfen*. Behalten Sie ihn, sofern
+Sie die Passage nicht bewusst verwerfen möchten. [Paratext](:help-writing-model) umfasst etwa
+Vorworte und Widmungen.
+
+## Was übernommen wird
+
+Word- und LibreOffice-Dateien bringen übliche Textformatierungen, Links, Ausrichtung,
+Seitenumbrüche und Tabellen mit. Kommentare behalten Verfasser und Antworten. Fußnoten werden
+ebenfalls importiert; Endnoten werden zu Fußnoten und alle Noten werden neu nummeriert.
+
+Der importierte Text kann anders aussehen als das Original. Absatzeinzüge und Blocksatz
+folgen Ihrem Exportstil. Manche Formatierungen werden möglicherweise vereinfacht.
+
+*Textfelder, Formeln und eingebettete Objekte werden weggelassen.* Prüfen Sie die Meldungen
+unter *Prüfen* auf nicht übernommene Inhalte und kopieren Sie fehlende Texte aus der Originaldatei.
+Zeichen aus Symbolschriften wie Wingdings können als leere Kästchen erscheinen.
+
+## Meldungen vor dem Abschluss prüfen
+
+Meldungen unter der Vorschau erklären Änderungen und ausgelassene Inhalte. Insbesondere:
+
+- Kann ein Kommentar nicht an seinen ursprünglichen Wörtern verankert werden, kann er zu einem
+  benachbarten Absatz wandern. Prüfen Sie seine Position nach dem Import. Kommentare ohne
+  geeigneten Bezugstext werden weggelassen.
+- Eine unlesbare Datei wird übersprungen; die anderen Dateien lassen sich weiterhin importieren.
+- Komplexe Formatierungen, Tabellen oder tief verschachtelte Listen werden möglicherweise vereinfacht.
+
+Mehr zur Arbeit mit importierten Kommentaren finden Sie unter [Kommentare](:help-comments).

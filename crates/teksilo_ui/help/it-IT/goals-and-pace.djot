@@ -1,0 +1,52 @@
+## Imposta un obiettivo
+
+Seleziona un elemento nel raccoglitore e apri le Proprietà. Inserisci in *Obiettivo* il numero di parole che vuoi scrivere. Se il progetto conta caratteri, inserisci invece un obiettivo in caratteri. Imposta zero per rimuoverlo.
+
+Imposta un obiettivo per ogni capitolo o scena da seguire. L'obiettivo di un capitolo non viene calcolato automaticamente da quelli delle scene.
+
+## Controlla l'avanzamento
+
+Le Proprietà lo mostrano sotto *Obiettivo*. La barra di stato lo mostra accanto al conteggio corrente e la tabella *Panoramica* ha una colonna *Obiettivo*.
+
+## Cosa contribuisce all'obiettivo
+
+L'avanzamento misura il manoscritto: il testo di [scene e capitoli](:help-writing-model). Sinossi, note, paratesti ed elementi nel cestino non vengono conteggiati.
+
+Disattivare *Includi nelle esportazioni* nelle Proprietà esclude l'elemento dal conteggio. Farlo per un capitolo non esclude automaticamente le sue scene. Usa *Applica agli elementi contenuti* per escludere anche quelle.
+
+## Parole o caratteri
+
+Una sola scelta vale per l'intero progetto. *Nuovo progetto* la richiede sotto *Conta in*. Puoi cambiarla in *Impostazioni ▸ Progetto: <progetto> ▸ Struttura*, sotto *Obiettivi*.
+
+Ogni elemento mantiene due valori separati: un obiettivo in parole e uno in caratteri.
+
+## Ripartisci un obiettivo
+
+Per dividere l'obiettivo di un libro fra parti o capitoli, apri il libro e fai clic su *Distribuisci…*. Se il pulsante è disattivato, imposta prima un obiettivo. Puoi fare lo stesso per una parte o un capitolo cartella. L'anteprima mostra gli obiettivi proposti. In *Ripartisci*, scegli:
+
+- *Per lunghezza*, secondo il testo già scritto in ciascun elemento;
+- *Per elementi*;
+- *In parti uguali*.
+
+Capitoli e scene con obiettivi già impostati li conservano; gli altri si dividono il resto. Attiva *Sostituisci gli obiettivi già impostati* per ricalcolarli tutti.
+
+## Pianifica il ritmo
+
+Apri la sezione *Ritmo* di un libro e scegli *Inizia a pianificare* per impostare un obiettivo giornaliero.
+
+Compila *Obiettivo in parole* e *Scadenza*, poi scegli i giorni della settimana in cui scrivi. Skribisto calcola quanto serve ogni giorno rimanente, quanti giorni restano e se sei in anticipo o in ritardo.
+
+Aggiungi le pause in *Vacanze* per escludere quei giorni dal piano.
+
+Ritmo e traguardi contano in parole, qualunque sia l'unità del progetto.
+
+## Traguardi
+
+Un traguardo segna una data lungo il percorso.
+
+- In *Traguardi* nel pianificatore, aggiungine uno per l'intero libro: il numero di parole da raggiungere entro quella data.
+- Per una parte o un capitolo di un libro, imposta una *Data del traguardo* nelle Proprietà. Il traguardo segue l'obiettivo in parole dell'elemento.
+
+## All'apertura del progetto
+
+Un libro compare nella scheda *A che punto è il libro* quando il piano è attivo. *Non mostrare all'apertura* la disattiva; *Progetto ▸ Piano di scrittura…* la riapre.

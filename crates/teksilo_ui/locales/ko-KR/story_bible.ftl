@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+story-bible-modal-configure-title = 새 항목 설정
+story-bible-modal-name-label = 이름
+story-bible-modal-name-placeholder = 인물, 장소 등 기록할 대상…
+story-bible-modal-no-binders = 이 프로젝트에는 아직 항목을 보관할 문서 트리가 없습니다
+story-bible-modal-template-label = 템플릿으로 시작 (선택 사항)
+story-bible-modal-template-placeholder = 템플릿 없음
+story-bible-modal-body-label = 본문
+story-bible-modal-cancel = 취소
+story-bible-modal-create = 만들기
+story-bible-modal-create-and-open = 만들고 열기
+story-bible-modal-failed = 항목을 만들 수 없습니다
+ctx-add-as-note = 노트로 추가… (&N)
+ctx-add-as-note-all-tags = 모든 태그…
+ctx-add-as-note-untagged = 태그 없음
+story-bible-grid-label = 설정집
+story-bible-grid-untagged = 아직 태그 없음
+story-bible-grid-empty-title = 아직 등록된 항목이 없습니다
+story-bible-grid-empty-hint = 노트에 본문 검색용 태그를 지정하거나 선택한 텍스트로 노트를 만들면 여기에 표시됩니다.
+story-bible-grid-alias-count = 다른 이름 { $count }개
+story-bible-grid-mention-count = 프로젝트 전체에서 { $count }개 장면에 등장
+story-bible-books-filter-all = 모든 책
+story-bible-grid-not-searched = 아직 검색되지 않음: 설정집 태그가 필요합니다
+note-in-prose-pov = 시점
+note-in-prose-cast = 등장인물
+note-in-prose-pov-and-cast = 시점 · 등장인물
+note-in-prose-no-books = 이 프로젝트에는 아직 책이 없습니다
+note-in-prose-empty-book = 아직 이 책에서 등장하도록 지정되지 않음
+story-bible-capture-toast = "{ $name }" 설정집에 추가됨
+story-bible-capture-open = 열기
+story-bible-capture-undo = 실행 취소
+story-bible-capture-where-title = 이 노트를 어디에 보관할까요?
+story-bible-capture-where-prompt = 새 노트를 보관할 폴더를 선택하세요.
+story-bible-capture-where-confirm = 여기에 보관
+story-bible-capture-where-needs-folder = 이 노트를 담을 폴더를 선택하세요.
+story-bible-capture-where-tag = 한 번만 묻습니다. 앞으로 "{ $tag }" 태그가 있는 노트는 여기에 보관됩니다. 설정 ▸ 프로젝트 ▸ 태그에서 변경할 수 있습니다.
+story-bible-capture-where-untagged = 한 번만 묻습니다. 앞으로 태그가 없는 노트는 여기에 보관됩니다. 설정 ▸ 프로젝트 ▸ 태그에서 변경할 수 있습니다.
