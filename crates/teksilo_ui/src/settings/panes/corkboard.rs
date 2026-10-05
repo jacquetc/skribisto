@@ -97,7 +97,7 @@ pub(in crate::settings) fn corkboard_pane(
                 crate::CORKBOARD_MODAL_SIZE_MIN,
                 crate::CORKBOARD_MODAL_SIZE_MAX,
                 crate::EDITOR_TYPO_SIZE_STEP,
-                |v| format!("{:.0}%", v * 100.0),
+                |v| crate::shared::units::percent(v as f64),
             ),
         );
 

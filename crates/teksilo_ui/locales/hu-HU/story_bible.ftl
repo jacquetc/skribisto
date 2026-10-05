@@ -3,49 +3,45 @@
 
 story-bible-modal-configure-title = Az új bejegyzés beállítása
 story-bible-modal-name-label = Név
-story-bible-modal-name-placeholder = Egy karakter, egy hely, bármi, ami fontos.
-story-bible-modal-no-binders = Ennek a projektnek még nincs iratanyaga.
-story-bible-modal-template-label = sablontól kezdve (nem kötelező)
-story-bible-modal-template-placeholder = Nincs sablon
-story-bible-modal-body-label = Test
+story-bible-modal-name-placeholder = Egy szereplő, egy helyszín, bármi, amit érdemes nyilvántartani…
+story-bible-modal-no-binders = Ebben a projektben még nincs iratrendező, amelybe el lehetne helyezni
+story-bible-modal-template-label = Kezdés sablonból (nem kötelező)
+story-bible-modal-template-placeholder = Sablon nélkül
+story-bible-modal-body-label = Tartalom
 story-bible-modal-cancel = Mégse
 story-bible-modal-create = Létrehozás
-story-bible-modal-create-and-open = Létrehozás és nyitás
+story-bible-modal-create-and-open = Létrehozás és megnyitás
 story-bible-modal-failed = Nem sikerült létrehozni a bejegyzést
-
-ctx-add-as-note = Megjegyzés: (&N)
-ctx-add-as-note-all-tags = Összes címke
-ctx-add-as-note-untagged = Címkézés nélkül
-
-story-bible-grid-label = Történetlexikon
-story-bible-grid-untagged = Még nincs megjelölve
-story-bible-grid-empty-title = Itt még semmi nem volt.
-story-bible-grid-empty-hint = Tag egy megjegyzés, hogy megtalálja a prózában, vagy add hozzá egyet a kiválasztásból, és itt jelenik meg.
+ctx-add-as-note = Hozzáadás &jegyzetként…
+ctx-add-as-note-all-tags = Minden címke…
+ctx-add-as-note-untagged = Címke nélkül
+story-bible-grid-label = Történetbiblia
+story-bible-grid-untagged = Még nincs címkézve
+story-bible-grid-empty-title = Itt még nincs semmi nyilvántartva
+story-bible-grid-empty-hint = Lássa el egy jegyzetét prózában keresett címkével, vagy adjon hozzá egyet egy kijelölésből, és itt megjelenik.
 story-bible-grid-alias-count = { $count ->
-    [0] Álnév még nincs
-    [one] Más néven: { $count }
-   *[other] { $count } álnevek
+    [0] Még nincs álneve
+    [one] { $count } álnév
+   *[other] { $count } álnév
 }
 story-bible-grid-mention-count = { $count ->
-    [0] Még nincs megjelenés.
-    [one] Megjelenések a { $count }-es helyszínen az egész projekt
-   *[other] Megjelenések a { $count } jelenetek az egész projekt
+    [0] Még nem szerepel sehol
+    [one] { $count } jelenetben szerepel a teljes projektben
+   *[other] { $count } jelenetben szerepel a teljes projektben
 }
-story-bible-books-filter-all = Összes könyv
-story-bible-grid-not-searched = Még nem kerestük: kell egy story-bibliai címke
-
+story-bible-books-filter-all = Minden könyv
+story-bible-grid-not-searched = Még nincs keresve: történetbiblia-címke szükséges
 note-in-prose-pov = Nézőpont
 note-in-prose-cast = Szereplők
-note-in-prose-pov-and-cast = Szempontok · Szereplők
-note-in-prose-no-books = Ennek a projektnek még nincs könyve.
-note-in-prose-empty-book = Még nincs bejelentve ebben a könyvben.
-
-story-bible-capture-toast = "{ $name }A történeti bibliához hozzáadva
+note-in-prose-pov-and-cast = Nézőpont · Szereplők
+note-in-prose-no-books = Ebben a projektben még nincs Könyv
+note-in-prose-empty-book = Ebben a Könyvben még nincs megadva
+story-bible-capture-toast = „{ $name }” hozzáadva a történetbibliához
 story-bible-capture-open = Megnyitás
 story-bible-capture-undo = Visszavonás
-story-bible-capture-where-title = Hova kerülnek ezek a feljegyzések?
-story-bible-capture-where-prompt = Válassza ki az új bankjegyeket tartalmazó mappát.
-story-bible-capture-where-confirm = Fájl ide
-story-bible-capture-where-needs-folder = Válassza ki a mappát, hogy ezek a megjegyzések, hogy menjen be.
-story-bible-capture-where-tag = A feljegyzések { $tag } mostantól ide kerülnek, és később megváltoztathatod a Beállítások, Projektek, Címkék címkében.
-story-bible-capture-where-untagged = A címkék nélküli megjegyzések mostantól ide kerülnek, és később megváltoztathatod a Beállítások, Projektek, Címkék mezőben.
+story-bible-capture-where-title = Hová kerüljenek ezek a jegyzetek?
+story-bible-capture-where-prompt = Válassza ki a mappát, amelybe az új jegyzetek kerüljenek.
+story-bible-capture-where-confirm = Elhelyezés itt
+story-bible-capture-where-needs-folder = Válasszon egy mappát, amelybe ezek a jegyzetek kerülnek.
+story-bible-capture-where-tag = Csak egyszer kérdezzük. A „{ $tag }” címkéjű jegyzetek mostantól ide kerülnek; ezt később a Beállítások ▸ Projekt ▸ Címkék oldalon módosíthatja.
+story-bible-capture-where-untagged = Csak egyszer kérdezzük. A címke nélküli jegyzetek mostantól ide kerülnek; ezt később a Beállítások ▸ Projekt ▸ Címkék oldalon módosíthatja.

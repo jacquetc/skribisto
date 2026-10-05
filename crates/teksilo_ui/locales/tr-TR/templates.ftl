@@ -2,129 +2,129 @@
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 settings-page-templates = Şablonlar
-settings-templates-description = Yeniden yazılabilir parçaları yazabileceğiniz her şeye düşebilir: boş bir karakter sayfası, bir yer profili, bir dövme sayfası. Bu projede depolanırlar, böylece açan herkes aynı seti alır.
-settings-templates-filter = Filtre şablonları
+settings-templates-description = Yazdığınız her şeye ekleyebileceğiniz, yeniden kullanılabilir yazı parçaları: boş bir kişi kartı, bir mekân profili, bir sahne planı. Bu projede saklanırlar, böylece projeyi açan herkes aynı şablonları bulur.
+settings-templates-filter = Şablonları süz
 settings-templates-count = { $n ->
-    [0] Hiçbir şablon yok
+    [0] Şablon yok
     [one] 1 şablon
-   *[other] { $n } şablonları
+   *[other] { $n } şablon
 }
-settings-templates-empty = Bu proje henüz şablonları yok.
-settings-templates-empty-hint = Bir başlangıçtan birini ekleyin, bir tane ithal edin .md veya veya veya .djot Dosya, ya da bir şey yazın ve Doküman .Aptal'ı şablon olarak seçin.
-settings-templates-presets = Hazır ayar ekle
+settings-templates-empty = Bu projede henüz şablon yok.
+settings-templates-empty-hint = Hazır bir şablondan ekleyin, bir .md ya da .djot dosyası içe aktarın veya bir şey yazıp Belge ▸ Şablon olarak kaydet'i seçin.
+settings-templates-presets = Hazır şablon ekle
 settings-templates-import = İçe aktar…
 settings-templates-export = Dışa aktar…
-settings-templates-star = İlk önce ekleme menüsünde göster
-settings-templates-unstar = İlk önce gösteriyi bırak
+settings-templates-star = Ekle menüsünde en başta göster
+settings-templates-unstar = En başta göstermeyi bırak
 settings-templates-move-up = Yukarı taşı
 settings-templates-move-down = Aşağı taşı
-settings-templates-delete = Delete şablon
+settings-templates-delete = Şablonu sil
 settings-templates-name = Ad
 settings-templates-name-placeholder = Şablon adı
-settings-templates-body-placeholder = Metin bu şablon eklentileri
-settings-templates-duplicate-name = Başka bir şablon zaten "{ $name }" olarak adlandırılır.
+settings-templates-body-placeholder = Bu şablonun eklediği metin
+settings-templates-duplicate-name = "{ $name }" adlı başka bir şablon zaten var
 settings-templates-words = { $n ->
-    [one] 1 kelime kelime
-   *[other] { $n } kelime
+    [one] 1 sözcük
+   *[other] { $n } sözcük
 }
 
 templates-imported = { $added ->
-    [one] 1 şablon ithal edildi
-   *[other] { $added } ithal edildi
+    [one] 1 şablon içe aktarıldı
+   *[other] { $added } şablon içe aktarıldı
 }
-templates-imported-renamed = Bir çatışmadan kaçınmak için yeniden isimlendi: { $names }
-templates-imported-skipped = Okuyamadı: { $names }
+templates-imported-renamed = Çakışmayı önlemek için yeniden adlandırıldı: { $names }
+templates-imported-skipped = Okunamadı: { $names }
 templates-import-filter = Şablonlar (.md, .djot)
 templates-exported = { $n ->
-    [one] 1 şablon ihraç edildi
-   *[other] { $n } ihraç edilen şablonlar
+    [one] 1 şablon dışa aktarıldı
+   *[other] { $n } şablon dışa aktarıldı
 }
-templates-preset-applied = "{ $name }" eklendi.
+templates-preset-applied = "{ $name }" eklendi
 
-templates-delete-title = Bu şablonu delete mi?
-templates-delete-body = "{ $name }" bu projeden kaldırılacaktır. Bundan zaten yaratılan notlar etkilenmez.
+templates-delete-title = Bu şablon silinsin mi?
+templates-delete-body = "{ $name }" bu projeden kaldırılacak. Ondan önceden oluşturduğunuz notlar etkilenmez.
 templates-delete-confirm = Sil
 
-menu-document = Doküman Doküman (&D)
-menu-insert-template = Ekle şablon (&L)
+menu-document = B&elge
+menu-insert-template = Ş&ablon ekle
 menu-insert-template-none = Bu projede şablon yok
-menu-save-as-template = Şablon olarak tasarruf edin... (&V)
+menu-save-as-template = Şablon olarak &kaydet…
 
-save-as-template-title = Şablon olarak Kaydet
-save-as-template-explain = Düzenleme olduğunuz metin başka bir yerde bırakabileceğiniz bir şablon haline gelir.
+save-as-template-title = Şablon olarak kaydet
+save-as-template-explain = Düzenlediğiniz metin, başka her yere ekleyebileceğiniz bir şablona dönüşür.
 save-as-template-name = Ad
-save-as-template-placeholder = Karakter sayfası
+save-as-template-placeholder = Kişi kartı
 save-as-template-duplicate = "{ $name }" adlı bir şablon zaten var
-save-as-template-empty-editor = Bu editör boş. kurtarmak için hiçbir şey yok.
-save-as-template-confirm = Kaydet şablon
-save-as-template-saved = Bir şablon olarak "{ $name }" tasarruf etti
-template-inserted = "{ $name }"
+save-as-template-empty-editor = Bu düzenleyici boş. Kaydedilecek bir şey yok.
+save-as-template-confirm = Şablonu kaydet
+save-as-template-saved = "{ $name }" şablon olarak kaydedildi
+template-inserted = "{ $name }" eklendi
 
-note-template-preset-character-sheet = Karakter sayfası
-note-template-preset-location = Konum Konum Location
-note-template-preset-artifact = Object Object Object Object
-note-template-preset-beat-sheet = Beat page
-note-template-preset-faction = Hizip
+note-template-preset-character-sheet = Kişi kartı
+note-template-preset-location = Mekân
+note-template-preset-artifact = Nesne
+note-template-preset-beat-sheet = Sahne planı
+note-template-preset-faction = Grup
 note-template-preset-research-note = Araştırma notu
 
-note-template-set-essentials = Temel bilgiler
-note-template-set-everything = Her şablon
+note-template-set-essentials = Temel şablonlar
+note-template-set-everything = Tüm şablonlar
 
-note-template-section-identity = Kimlik Kimlik Kimliği
-note-template-section-appearance = Görünüm
-note-template-section-voice = Ses Ses Sesi
-note-template-section-psychology = İç hayat İçsel
-note-template-section-history = Tarih Tarihi Tarihi
-note-template-section-arc = Arc Arc
-note-template-section-first-impression = İlk izlenim İlk izlenim
-note-template-section-in-the-story = Hikayede
-note-template-section-the-thing-itself = nesnenin kendisi
-note-template-section-the-scene = Sahne The scene the scene
-note-template-section-the-shape = Şekil şekli
-note-template-section-what-it-is = Nedir?
-note-template-section-source = Source Source Source Source
-note-template-section-what-it-says = Ne diyor ki
+note-template-section-identity = Kimlik
+note-template-section-appearance = Görünüş
+note-template-section-voice = Ses
+note-template-section-psychology = İç dünya
+note-template-section-history = Geçmiş
+note-template-section-arc = Gelişim
+note-template-section-first-impression = İlk izlenim
+note-template-section-in-the-story = Hikâyede
+note-template-section-the-thing-itself = Nesnenin kendisi
+note-template-section-the-scene = Sahne
+note-template-section-the-shape = Yapı
+note-template-section-what-it-is = Ne olduğu
+note-template-section-source = Kaynak
+note-template-section-what-it-says = Ne söylediği
 
-note-template-field-full-name = Full name Full name
-note-template-field-known-as = Ayrıca Inspector'un Alias alanında da bilinen
-note-template-field-age = Yaş Çağı
-note-template-field-role-in-story = Hikayedeki Rolü
-note-template-field-build-and-features = Build ve ayırt edici özellikler
-note-template-field-habitual-bearing = Habitualating
-note-template-field-speech-patterns = Konuşma kalıpları ve sözlü tics
-note-template-field-what-they-never-say = Ne söylediklerini asla söylemiyorlar
-note-template-field-want = Ne istiyorlar istediklerini
-note-template-field-need = Ne ihtiyaçları var ama bunu bilmiyor
-note-template-field-fear = Ne korktukları
-note-template-field-flaw = Onlara mal olan kusurlar
-note-template-field-formative-event = Formative eventive event
-note-template-field-relationships = İlişkiler
-note-template-field-starts-as = Starts as As
-note-template-field-ends-as = Ends as ends
-note-template-field-what-you-notice-first = İlk önce fark ettiğiniz şey nedir?
+note-template-field-full-name = Tam adı
+note-template-field-known-as = Diğer adları, Denetçi'nin Diğer adları alanında izlenir
+note-template-field-age = Yaşı
+note-template-field-role-in-story = Hikâyedeki rolü
+note-template-field-build-and-features = Yapısı ve ayırt edici özellikleri
+note-template-field-habitual-bearing = Alışılmış duruşu
+note-template-field-speech-patterns = Konuşma biçimi ve dil alışkanlıkları
+note-template-field-what-they-never-say = Asla söylemediği
+note-template-field-want = Ne istediği
+note-template-field-need = Farkında olmadan neye ihtiyaç duyduğu
+note-template-field-fear = Neden korktuğu
+note-template-field-flaw = Ona pahalıya patlayan kusuru
+note-template-field-formative-event = Onu biçimlendiren olay
+note-template-field-relationships = İlişkileri
+note-template-field-starts-as = Başta nasıl
+note-template-field-ends-as = Sonda nasıl
+note-template-field-what-you-notice-first = İlk göze çarpan
 note-template-field-sound-and-smell = Ses ve koku
-note-template-field-light-and-weather = Işık ve hava durumu
-note-template-field-what-happened-here = Burada ne oldu burada
-note-template-field-who-lives-or-works-here = Kim yaşıyor ya da burada
-note-template-field-scenes-set-here = Sahneler buraya buraya buraya koydu
-note-template-field-why-it-matters = Neden önemli?
-note-template-field-appearance = Görünüm
-note-template-field-age-and-origin = Yaş ve köken
-note-template-field-what-it-does = Ne yapar
-note-template-field-who-holds-it = Kim tutar onu
+note-template-field-light-and-weather = Işık ve hava
+note-template-field-what-happened-here = Burada ne oldu
+note-template-field-who-lives-or-works-here = Burada kim yaşıyor ya da çalışıyor
+note-template-field-scenes-set-here = Burada geçen sahneler
+note-template-field-why-it-matters = Neden önemli
+note-template-field-appearance = Görünüşü
+note-template-field-age-and-origin = Yaşı ve kökeni
+note-template-field-what-it-does = Ne işe yaradığı
+note-template-field-who-holds-it = Kimin elinde
 note-template-field-who-wants-it = Kim istiyor
 note-template-field-pov = Bakış açısı
-note-template-field-time-and-place = Zaman ve yer
-note-template-field-goal = Hedef
-note-template-field-conflict = Çatışma Çatışma
-note-template-field-turn = Dönüm noktası
-note-template-field-exit-emotion = Sahne sonundaki duygu
-note-template-field-purpose = Amaç
-note-template-field-who-leads-it = Kim götürürse onu
-note-template-field-resources = Kaynakların Kaynakları Kaynaklar
-note-template-field-allies-and-enemies = Bütünler ve Düşmanlar
-note-template-field-what-it-wants-now = Şimdi ne istiyor
-note-template-field-where-from = Nereden geldi
-note-template-field-page-or-link = Sayfa veya bağlantı
-note-template-field-key-facts = Anahtar gerçekler
-note-template-field-how-it-is-used = Hikayede nasıl kullanılır
+note-template-field-time-and-place = Zaman ve mekân
+note-template-field-goal = Amaç
+note-template-field-conflict = Çatışma
+note-template-field-turn = Dönüm
+note-template-field-exit-emotion = Çıkıştaki duygu
+note-template-field-purpose = Amacı
+note-template-field-who-leads-it = Kim yönetiyor
+note-template-field-resources = Kaynakları
+note-template-field-allies-and-enemies = Dostları ve düşmanları
+note-template-field-what-it-wants-now = Şu an ne istiyor
+note-template-field-where-from = Nereden geldiği
+note-template-field-page-or-link = Sayfa ya da bağlantı
+note-template-field-key-facts = Temel bilgiler
+note-template-field-how-it-is-used = Hikâyede nasıl kullanıldığı

@@ -1,59 +1,84 @@
-Un comentario es una nota en el margen, adjunta a una frase, una frase o un párrafo entero. Se queda con las palabras mientras sigues escribiendo.
+Un comentario es una nota en el margen, vinculada a una expresión, una frase o un párrafo
+entero. Se queda con las palabras mientras usted sigue escribiendo.
 
-## Agregar un comentario
+## Añadir un comentario
 
-Desde el texto usted está escribiendo:
+Desde el texto que está escribiendo:
 
-- Seleccione las palabras para comentar y pulse `Ctrl+Alt+M`.
-- Ponga el cursor en un párrafo y presione `Ctrl+Alt+Shift+M` para comentar todo el párrafo.
-- Haga clic con el botón derecho en el texto para *Comentario sobre este párrafo*. *Agregar comentario* se une tan pronto como haya seleccionado algo.
+- Seleccione las palabras que quiere comentar y pulse `Ctrl+Alt+M`.
+- Ponga el cursor en un párrafo y pulse `Ctrl+Alt+Mayús+M` para comentar el párrafo entero.
+- Haga clic con el botón derecho en el texto para elegir *Comentar este párrafo*. *Añadir
+  comentario* aparece junto a él en cuanto ha seleccionado algo.
 
-Los mismos dos comandos están en el menú *Formato*.
+Las mismas dos órdenes están en el menú *Formato*.
 
-Una nueva tarjeta se abre en el margen, con una caja vacía y el cursor ya en ella.
+Se abre una tarjeta nueva en el margen, con un cuadro vacío y el cursor ya dentro.
 
-## Firme sus comentarios
+## Firmar sus comentarios
 
-Si no se establece ningún nombre para usted en este equipo, un mensaje dice que sus comentarios no están firmados. Su botón *Configurar su nombre* abre *Configuración ▸ Usuario*.
+Si no hay ningún nombre configurado para usted en este equipo, un mensaje le indica que sus
+comentarios no están firmados. Su botón *Indicar su nombre* abre *Configuración ▸ Usuario*.
 
 ## Responder, resolver, eliminar
 
-Abra el menú usando la flecha pequeña en una tarjeta de comentario:
+Abra el menú con la pequeña flecha de una tarjeta de comentario:
 
-- *Responder* añade una respuesta al debate.
-- *Resolver* marca el punto resuelto. La tarjeta deja el margen y el comentario permanece en los paneles.
-- *Eliminar* elimina un comentario, *Respuesta completa* una sola respuesta, y *Eliminar todos los comentarios aquí* un lote completo a la vez. Un breve mensaje sigue, con un botón *Deshacer*.
+- *Responder* añade una respuesta a la conversación.
+- *Resolver* marca el asunto como zanjado. La tarjeta sale del margen y el comentario se
+  queda en los paneles.
+- *Eliminar* quita un comentario, *Eliminar la respuesta* una sola respuesta, y *Eliminar
+  todos los comentarios de aquí* todo un grupo de una vez. A continuación aparece un mensaje
+  breve con un botón *Deshacer*.
 
-Haga clic derecho en una entrada en cualquiera de los paneles para actuar en ella allí. Ahí es donde reabrimos un comentario resuelto, ya que su tarjeta ha dejado el margen.
+Haga clic con el botón derecho en una entrada de cualquiera de los dos paneles para actuar
+sobre ella allí. Es ahí donde se vuelve a abrir un comentario resuelto, ya que su tarjeta ha
+salido del margen.
 
-Cada comentario y cada respuesta se edita en su lugar. Bold e itálico están en el menú de clic derecho de la caja que está escribiendo.
+Cada comentario y cada respuesta se editan en el sitio. La negrita y la cursiva están en el
+menú contextual del cuadro en el que escribe.
 
-## Donde aparecen los comentarios
+## Dónde aparecen los comentarios
 
-Los mismos hilos aparecen en más de un lugar:
+Las mismas conversaciones aparecen en más de un lugar:
 
-- En el margen al lado del texto usted está escribiendo. Una frase comentada está ordenada, un comentario de párrafo entero obtiene un soporte, y una línea punteada se une a cada marca en su tarjeta.
-- En el panel *Comentarios* a la izquierda de la ventana, enumerando los comentarios en el proyecto.
-- En el panel *Este documento* a la derecha, enumerar los comentarios sobre el artículo que está editando.
+- En el margen, junto al texto que está escribiendo. Una expresión comentada aparece
+  coloreada, un comentario de párrafo entero lleva un corchete, y una línea de puntos une
+  cada marca con su tarjeta.
+- En el panel *Comentarios*, a la izquierda de la ventana, que muestra los comentarios del
+  proyecto.
+- En el panel *Este documento*, a la derecha, que muestra los comentarios del elemento que
+  está editando.
 
-Hacer clic en un comentario en ambos paneles abre su artículo. Si el comentario todavía tiene su texto, el cursor aterriza sobre las palabras que se trata. *Herramientas ▸ Comentarios* oculta o muestra las marcas y el margen.
+Al hacer clic en un comentario de cualquiera de los dos paneles se abre su elemento. Si el
+comentario conserva su texto, el cursor se coloca en las palabras a las que se refiere.
+*Herramientas ▸ Comentarios* oculta o muestra las marcas y el margen.
 
-## Filtro y tipo
+## Filtrar y ordenar
 
-Los dos paneles comparten un conjunto de filtros: *Todos*, *Abrir*, *Resuelto* y *Sin texto asociado*. Cambia el filtro en uno y el otro sigue.
+Los dos paneles comparten un mismo juego de filtros: *Todos*, *Abiertos*, *Resueltos* y
+*Huérfanos*. Si cambia el filtro en uno, el otro lo sigue.
 
-Junto a ellos, un botón recorre el orden, compartió de la misma manera: *En orden de documento*, *Lo último primero*, *Grouped by lector*.
+Junto a ellos, un botón recorre los órdenes, compartidos de la misma manera: *En orden de
+documento*, *Más recientes primero*, *Agrupados por lector*.
 
 ## Notas de varios lectores
 
-*Gruido por lector* es para un manuscrito de varias personas. La agrupación reúne las notas de cada lector, las propias de cada lector todavía en orden de documentos, con el nombre de la izquierda.
+*Agrupados por lector* sirve para un manuscrito que vuelve de varias personas. Agrupar
+reúne las notas de cada lector, cada grupo en orden de documento, con el nombre a la
+izquierda.
 
-En cualquier panel, un comentario también dice cuántos lectores están en el mismo pasaje ("3 lectores") cuando más de uno es.
+En cualquiera de los dos paneles, un comentario indica además cuántos lectores han comentado
+el mismo pasaje («3 lectores») cuando son varios.
 
 ## Cuando un comentario pierde su texto
 
-Si esas palabras son eliminadas o reescritas en el pasado reconocimiento, el comentario está marcado *Perdido su texto* en lugar de adjuntar a la frase equivocada. El filtro *huérfano* los encuentra.
+Si esas palabras se eliminan o se reescriben hasta ser irreconocibles, el comentario se
+marca como *Ha perdido su texto* en lugar de vincularse a la frase equivocada. El filtro
+*Huérfanos* los encuentra.
 
-## Enviar comentarios fuera y atrás
+## Enviar comentarios y recibirlos de vuelta
 
-Archivos de Word y LibreOffice llevan sus comentarios y traen la espalda de su lector. Un estilo de exportación tiene *Incluir comentarios* y *Incluir marcadores de ida y vuelta* para ello. Ver [el viaje redondo](:help-round-trip) para enviar un manuscrito a un lector e importar sus comentarios.
+Los archivos de Word y de LibreOffice llevan sus comentarios fuera y traen de vuelta los de
+su lector. Un estilo de exportación tiene para ello *Incluir comentarios* e *Incluir
+marcadores de ida y vuelta*. Consulte [la ida y vuelta](:help-round-trip) para enviar un
+manuscrito a un lector e importar sus observaciones.

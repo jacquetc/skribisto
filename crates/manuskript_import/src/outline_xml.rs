@@ -24,6 +24,7 @@ use anyhow::Result;
 
 use crate::model::{OutlineItem, OutlineKind, Revision};
 use crate::xml::{self, attr, attr_opt};
+use skrib_format::import_notice::ImportNotice;
 
 /// One parsed `<outlineItem>` document.
 pub struct OutlineXml {
@@ -33,7 +34,7 @@ pub struct OutlineXml {
     /// Every revision found, flat, each naming the row it belongs to.
     pub revisions: Vec<Revision>,
     /// Anything the conversion had to report.
-    pub notices: Vec<String>,
+    pub notices: Vec<ImportNotice>,
 }
 
 /// Parse an `<outlineItem>` tree. `member` names the file in a refusal.
@@ -56,7 +57,7 @@ fn children_of(
     node: roxmltree::Node,
     depth: usize,
     revisions: &mut Vec<Revision>,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
 ) -> Vec<OutlineItem> {
     if !xml::may_descend(depth) {
         return Vec::new();
@@ -71,7 +72,7 @@ fn item_from(
     node: roxmltree::Node,
     depth: usize,
     revisions: &mut Vec<Revision>,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
 ) -> OutlineItem {
     let id = attr_opt(&node, "ID");
     let title = attr(&node, "title");
@@ -129,7 +130,7 @@ fn collect_revisions(
     declared: &str,
     title: &str,
     out: &mut Vec<Revision>,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
 ) {
     for rev in node
         .children()

@@ -1,30 +1,47 @@
 ## Para onde vai um capítulo antigo
 
-Você reescreveu um capítulo e você quer o antigo onde você ainda pode lê-lo.
+Reescreveu um capítulo e quer guardar o antigo num sítio onde ainda o possa ler.
 
-Põe-no noutra pasta.
+Coloque-o noutro arquivador.
 
-## Fazendo a cópia
+## Fazer a cópia
 
-- Selecione o capítulo no painel *Organizador*. Pressione `Ctrl+D`, ou escolha *Documento ▸ Duplicado*. A cópia mantém o mesmo título e terras após o original e tudo sob ele.
-- Selecione a cópia, o segundo dos dois. Duplicando deixa sua seleção no original, então renomeie a cópia apenas uma vez que você a tenha escolhido, com *Documento ▸ Renomear*.
-- Um projeto iniciado a partir de um modelo novo já tem um aglutinador *Notas*. Se o seu não tiver nenhum, o botão no topo do painel *Organizador* mantém * Novo aglutinante… *.
-- Arraste a cópia para a pasta. Se o botão nomear um único fichário em vez de *Todos os Binders*, escolha *Mostrar todos os fichários* primeiro, então ambos os fins do drag show.
+- Selecione o capítulo no painel *Arquivador*. Prima `Ctrl+D` ou escolha *Documento ▸
+  Duplicar*. A cópia mantém o mesmo título e fica depois do original e de tudo o que está
+  por baixo dele.
+- Selecione a cópia, a segunda das duas. Duplicar deixa a seleção no original, por isso só
+  mude o nome da cópia depois de a ter selecionado, com *Documento ▸ Mudar o nome*.
+- Um projeto criado a partir de um modelo de romance já tem um arquivador *Notas*. Se o seu
+  não tiver nenhum, o botão no topo do painel *Arquivador* contém *Novo arquivador…*.
+- Arraste a cópia para esse arquivador. Se o botão indicar um único arquivador em vez de
+  *Todos os arquivadores*, escolha primeiro *Mostrar todos os arquivadores*, para que as duas
+  pontas do arrastamento fiquem visíveis.
 
-Para usar o antigo capítulo novamente, mova o capítulo reescrito para fora do livro e arraste o antigo de volta para o seu lugar.
+Para voltar a usar o capítulo antigo, retire o capítulo reescrito do livro e arraste o antigo
+de volta para o seu lugar.
 
-## Mantenha os velhos rascunhos fora do livro.
+## Manter os rascunhos antigos fora do livro
 
-Um capítulo antigo em outro fichário está fora do livro. A contagem de palavras, os seus alvos e ritmo, e a exportação deixa-o de fora.
+Um capítulo antigo noutro arquivador está fora do livro. A contagem de palavras, as suas
+metas e o seu ritmo, e a exportação deixam-no de fora.
 
-## O que ainda funciona nele
+## O que continua a funcionar
 
-Tudo sobre leitura e edição. O antigo capítulo mantém o seu título e o seu lugar na pasta que escolheste. Ele ainda é encontrado por busca, ainda ortografado, ainda em backup.
+Tudo o que diz respeito a ler e editar. O capítulo antigo mantém o seu título e o seu lugar
+no arquivador que escolheu. Continua a ser encontrado pela pesquisa, a ter verificação
+ortográfica e a ser incluído nas cópias de segurança.
 
-A tua Bíblia da história ainda funciona lá. Se um personagem é nomeado no rascunho antigo, sua entrada ainda conta essas cenas.
+A sua bíblia da história também continua a funcionar aí. Se uma personagem for nomeada no
+rascunho antigo, a entrada dela continua a contar essas cenas.
 
-## As outras maneiras, e quando eles se encaixam
+## As outras formas, e quando servem
 
-- * Lixo* é para algo que você decidiu contra. Um item destruído deixa o painel *Organizador* e pára de contar, e permanece recuperável. Você ainda pode abrir um do painel * Trash* para lê-lo, mas ele é arquivado como descartado, não mantido.
-- O painel *Versões* mantém o que um pedaço de texto disse antes, e pode colocar um estado mais antigo de volta. Alcance-o para responder "o que este parágrafo disse ontem". Ele funciona um item de cada vez, e restaurar substitui o que está lá agora. Ver [backups e versões](:help-backups-and-versions).
-- *Incluir nas exportações*, no Inspetor, decide se um item atinge o livro terminado. Desligue-o e o item fica de fora quando você exporta o livro, e fora da sua palavra conta.
+- O *Lixo* é para aquilo de que desistiu. Um item enviado para o lixo sai do painel
+  *Arquivador* e deixa de contar, mas continua recuperável. Pode ainda abri-lo a partir do
+  painel *Lixo* para o ler, mas fica arquivado como descartado, não como guardado.
+- O painel *Versões* guarda o que um texto dizia antes e pode repor um estado anterior.
+  Recorra a ele para responder a «o que dizia este parágrafo ontem». Funciona um item de
+  cada vez, e restaurar substitui o que lá está agora. Consulte
+  [cópias de segurança e versões](:help-backups-and-versions).
+- *Incluir nas exportações*, no Inspetor, decide se um item chega ao livro final. Desative-o
+  e o item fica de fora quando exporta o livro, e também das suas contagens de palavras.

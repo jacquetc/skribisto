@@ -1,32 +1,44 @@
-Crie um ficheiro que você pode compartilhar, imprimir ou ler fora Skribisto.
+Crie um ficheiro que pode partilhar, imprimir ou ler fora do Skribisto.
 
 ## Exportar a sua escrita
 
-1. Pressione `Ctrl+Shift+E` para abrir a exportação.
-2. Em * O que exportar*, verifique os capítulos ou cenas que você deseja incluir. Verificar um capítulo também seleciona suas cenas.
-3. Escolha um *Formato*. Use Word ou LibreOffice para edição e comentários, PDF para impressão ou EPUB para leitor de ebooks.
-4. Escolha um *Estilo* para o layout.
-5. Use o botão pasta ao lado *Destino* para escolher um nome de ficheiro e onde salvá-lo.
-6. Clique em *Exportar *. Quando terminar, clique em *Abrir* ou *Mostrar na pasta* na mensagem.
+1. Prima `Ctrl+Shift+E` para abrir a janela Exportar.
+2. Em *O que exportar*, marque os capítulos ou as cenas que quer incluir.
+   Marcar um capítulo seleciona também as suas cenas.
+3. Escolha um *Formato*. Use Word ou LibreOffice para edição e comentários, PDF para
+   imprimir, ou EPUB para um leitor de livros eletrónicos.
+4. Escolha um *Estilo* para a paginação.
+5. Use o botão de pasta junto a *Destino* para escolher um nome de ficheiro e onde o guardar.
+6. Clique em *Exportar*. Quando terminar, clique em *Abrir* ou *Mostrar na pasta* na mensagem.
 
-Você pode cancelar enquanto a exportação é executada. Se o ficheiro de destino já existe, Skribisto pergunta antes de substituí-lo.
+Pode cancelar enquanto a exportação decorre. Se o ficheiro de destino já existir, o Skribisto
+pergunta antes de o substituir.
 
-## Exportar apenas um capítulo ou livro
+## Exportar apenas um capítulo ou um livro
 
-Abra o item e, em seguida, escolha *Projeto ▸ Exportar*. O submenu oferece comandos como *Exportar livro* ou *Exportar Capítulo*, com esse item já selecionado. Use *Escolha…* para uma seleção personalizada.
+Abra o item e escolha *Projeto ▸ Exportar*. O submenu oferece comandos como *Exportar livro*
+ou *Exportar capítulo*, com esse item já selecionado. Use *Escolher…* para uma seleção
+personalizada.
 
-Itens com *Incluir nas exportações* desligados no Inspetor estão ocultos da seleção. * Mostrar não exportável* revela-os. Selecionar um inclui-o apenas para esta exportação.
+Os itens com *Incluir nas exportações* desativado no Inspetor ficam ocultos na seleção.
+*Mostrar não exportáveis* revela-os. Selecionar um inclui-o apenas nesta exportação.
 
-## Escolha uma disposição
+## Escolher uma paginação
 
-A *Estilo* controla cabeçalhos, quebras de cena, espaçamento de linhas, quebras de página e que conteúdo extra está incluído, como sinopses, notas e comentários. Alguns formatos suportam mais opções de layout do que outros.
+Um *Estilo* controla os cabeçalhos, as quebras de cena, o espaçamento entre linhas, as quebras
+de página e o conteúdo adicional incluído, como sinopses, notas e comentários. Alguns formatos
+suportam mais opções de paginação do que outros.
 
-Para alterar um estilo embutido, primeiro faça uma cópia: aberto *Definições ▸ Compile Export ▸ Exportar Formatos*, selecione o estilo e escolha *Duplicar*. Em seguida, escolha *Editar* na cópia.
+Para alterar um estilo integrado, faça primeiro uma cópia: abra
+*Definições ▸ Compilação e exportação ▸ Formatos de exportação*, selecione o estilo e escolha
+*Duplicar*. Depois escolha *Editar* na cópia.
 
-Outros formatos disponíveis são HTML, Markdown, Djot, Texto e LaTeX.
+Os outros formatos disponíveis são HTML, Markdown, Djot, Texto e LaTeX.
 
-## Enviar um manuscrito para feedback
+## Enviar um manuscrito para receber opiniões
 
-Palavra (`.docx`) e LibreOffice (`.odt`) podem incluir comentários. No estilo de exportação, ligue *Inclua comentários* e deixe *Inclua marcadores de ida e volta* para que Skribisto possa corresponder capítulos devolvidos ao seu projeto.
+O Word (`.docx`) e o LibreOffice (`.odt`) podem incluir comentários. No estilo de exportação,
+ative *Incluir comentários* e deixe *Incluir marcadores de ida e volta* ativado, para que o
+Skribisto possa associar os capítulos devolvidos ao seu projeto.
 
-Veja [trazer de volta edições e comentários](:help-round-trip) para o processo completo.
+Consulte [trazer de volta edições e comentários](:help-round-trip) para o processo completo.

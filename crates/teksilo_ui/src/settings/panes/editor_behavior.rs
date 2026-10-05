@@ -271,13 +271,13 @@ pub(in crate::settings) fn editor_behavior_pane(
         .line(
             field_label(tr!(settings_text_width())),
             slider_field(vm.column_width(), 400.0, 1200.0, 20.0, |v| {
-                format!("{} px", v.round() as i32)
+                crate::shared::units::pixels(v as f64)
             }),
         )
         .line(
             field_label(tr!(settings_preview_width())),
             slider_field(vm.preview_width(), 400.0, 1200.0, 20.0, |v| {
-                format!("{} px", v.round() as i32)
+                crate::shared::units::pixels(v as f64)
             }),
         )
         // These three are general writing-surface options and apply in every mode; their

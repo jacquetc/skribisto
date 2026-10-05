@@ -5,7 +5,7 @@ Créez un fichier à partager, à imprimer ou à lire en dehors de Skribisto.
 1. Appuyez sur `Ctrl+Maj+E` pour ouvrir Exporter.
 2. Sous *Quoi exporter*, cochez les chapitres ou scènes à inclure.
    Cocher un chapitre sélectionne aussi ses scènes.
-3. Choisissez un *Format* : Word ou LibreOffice pour les corrections et commentaires,
+3. Choisissez un *Format* : Word ou LibreOffice pour les corrections et commentaires,
    PDF pour l’impression, EPUB pour une liseuse.
 4. Choisissez un *Style* pour la présentation.
 5. Avec le bouton dossier à côté de *Destination*, choisissez le nom du fichier et son emplacement.
@@ -26,11 +26,11 @@ masqués. *Afficher les non-exportables* les révèle. En cocher un l’inclut u
 
 ## Choisir la présentation
 
-Un *Style* définit les titres, les coupures de scène, l’interligne, les sauts de page et les
+Un *Style* définit les titres, les sauts de scène, l’interligne, les sauts de page et les
 contenus supplémentaires à inclure, comme les synopsis, notes et commentaires. Les possibilités
 de mise en page varient selon le format.
 
-Pour modifier un style intégré, faites-en d’abord une copie : ouvrez
+Pour modifier un style intégré, faites-en d’abord une copie : ouvrez
 *Paramètres ▸ Compilation et export ▸ Formats d’export*, sélectionnez le style et choisissez
 *Dupliquer*. Choisissez ensuite *Modifier* sur la copie.
 

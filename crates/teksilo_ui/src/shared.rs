@@ -33,6 +33,9 @@ mod caret_highlight;
 pub mod editor_size;
 pub mod external_link;
 mod focus_vm;
+/// Numbers with a unit, written the interface language's way: file sizes,
+/// percentages, pixel readouts.
+pub mod units;
 // Disk-touching field checks worked out once per edit, never per read: the
 // import dialogs and New Work. (Plain comments on these three: an outer doc
 // comment would make rustdoc resolve the modules' own intra-doc links here.)
@@ -57,6 +60,10 @@ pub mod list_naming;
 /// rather than as descendants of this module.
 pub(crate) mod long_op;
 mod progress_recorder;
+/// The progress toasts' `NN % · phase` body: the backend's phase codes
+/// translated, everything else shown as data. `pub(crate)` for the same reason
+/// as `long_op`.
+pub(crate) mod progress_text;
 pub mod project_links;
 pub mod slug;
 pub mod stamps;

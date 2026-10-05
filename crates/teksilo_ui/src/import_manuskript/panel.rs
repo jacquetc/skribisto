@@ -56,7 +56,7 @@ pub(crate) fn present_import_manuskript(ctx: &mut EventContext) {
             t.add(ImportManuskriptPanel::new(vm))
         })
         .presentation(teksilo::core::modal::ModalPresentation::InTree)
-        .title("Import Manuskript project")
+        .title(tr!(import_manuskript_title()).resolve_now())
         .close_behavior(teksilo::core::modal::ModalCloseBehavior::EscapeOrClickOutside)
         .size(600, 500),
     );
@@ -134,10 +134,11 @@ impl ImportManuskriptPanel {
                             ctx,
                             crate::models::FolderPurpose::ImportManuskript,
                             FileDialogRequest::pick_file()
-                                .title("Choose a Manuskript project")
-                                // A file-dialog filter label — a plain string,
-                                // like the other dialogs, not a localized key.
-                                .add_filter("Manuskript project", &["msk"]),
+                                .title(tr!(dialog_manuskript_file_title()).resolve_now())
+                                .add_filter(
+                                    tr!(dialog_filter_manuskript()).resolve_now(),
+                                    &["msk"],
+                                ),
                         );
                         let _ = ctx.pick_file(request, move |res, c| {
                             crate::models::remember_pick(
@@ -158,7 +159,7 @@ impl ImportManuskriptPanel {
                             ctx,
                             crate::models::FolderPurpose::ImportManuskript,
                             FileDialogRequest::pick_folder()
-                                .title("Choose a Manuskript project folder"),
+                                .title(tr!(dialog_manuskript_folder_title()).resolve_now()),
                         );
                         let _ = ctx.pick_folder(request, move |res, c| {
                             crate::models::remember_pick(

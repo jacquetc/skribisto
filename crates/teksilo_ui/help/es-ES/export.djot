@@ -1,32 +1,47 @@
 Cree un archivo que pueda compartir, imprimir o leer fuera de Skribisto.
 
-## Exporte su escritura
+## Exportar lo que ha escrito
 
-1. Pulse `Ctrl+Shift+E` para abrir Export.
-2. Bajo *Qué exportar*, compruebe los capítulos o escenas que desee incluir. Revisar un capítulo también selecciona sus escenas.
-3. Elige un *Formato*. Utilice Word o LibreOffice para editar y comentarios, PDF para imprimir, o EPUB para un lector de libros electrónicos.
-4. Elija un *Estilo* para el diseño.
-5. Utilice el botón de carpeta junto a *Destinación* para elegir un nombre de archivo y dónde guardarlo.
-6. Haga clic en *Exportar*. Cuando termine, haga clic en *Abrir* o *Mostrar en la carpeta* en el mensaje.
+1. Pulse `Ctrl+Mayús+E` para abrir Exportar.
+2. En *Qué exportar*, marque los capítulos o escenas que quiere incluir. Al marcar un
+   capítulo se seleccionan también sus escenas.
+3. Elija un *Formato*. Use Word o LibreOffice para editar y comentar, PDF para imprimir, o
+   EPUB para un lector de libros electrónicos.
+4. Elija un *Estilo* para la maquetación.
+5. Use el botón de carpeta junto a *Destino* para elegir un nombre de archivo y dónde
+   guardarlo.
+6. Haga clic en *Exportar*. Cuando termine, haga clic en *Abrir* o en *Mostrar en la carpeta*
+   en el mensaje.
 
-Usted puede cancelar mientras la exportación se ejecuta. Si el archivo de destino ya existe, Skribisto pregunta antes de reemplazarlo.
+Puede cancelar mientras la exportación está en curso. Si el archivo de destino ya existe,
+Skribisto pregunta antes de sustituirlo.
 
-## Exportar sólo un capítulo o libro
+## Exportar un solo capítulo o un solo libro
 
-Abra el artículo, luego elija *Proyecto ▸ Exportar*. El submenú ofrece comandos tales como *Exportar libro* o *Capítulo de exportación*, con ese artículo ya seleccionado. Utilice *Elige...* para una selección personalizada.
+Abra el elemento y elija *Proyecto ▸ Exportar*. El submenú ofrece órdenes como *Exportar
+libro* o *Exportar capítulo*, con ese elemento ya seleccionado. Use *Elegir…* para una
+selección personalizada.
 
-Los artículos con *Incluir en las exportaciones* apagados en el Inspector están ocultos de la selección. *Mostrar no exportable* los revela. La selección incluye sólo para esta exportación.
+Los elementos con *Incluir en las exportaciones* desactivado en el inspector no aparecen en
+la selección. *Mostrar lo no exportable* los muestra. Seleccionar uno lo incluye solo en
+esta exportación.
 
-## Elija un diseño
+## Elegir una maquetación
 
-Un *Estilo* controla los encabezados, las pausas de escena, el espaciamiento de líneas, las pausas de página y qué contenido extra está incluido, como sinopses, notas y comentarios. Algunos formatos soportan más opciones de diseño que otros.
+Un *Estilo* controla los encabezados, los separadores de escena, el interlineado, los saltos
+de página y qué contenido adicional se incluye, como sinopsis, notas y comentarios. Algunos
+formatos admiten más opciones de maquetación que otros.
 
-Para cambiar un estilo incorporado, primero hacer una copia: open *Configuración ▸ Compile Export ▸ Formatos de exportación*, seleccione el estilo y elija *Duplicar*. A continuación, seleccione *Editar* en la copia.
+Para cambiar un estilo integrado, haga primero una copia: abra
+*Configuración ▸ Compilación y exportación ▸ Formatos de exportación*, seleccione el estilo y
+elija *Duplicar*. Después elija *Editar* en la copia.
 
-Otros formatos disponibles son HTML, Markdown, Djot, Texto y LaTeX.
+Los demás formatos disponibles son HTML, Markdown, Djot, Texto y LaTeX.
 
-## Enviar un manuscrito para comentarios
+## Enviar un manuscrito para recibir observaciones
 
-La palabra (`.docx`) y LibreOffice (`.odt`) pueden incluir comentarios. En el estilo de exportación, encienda *Incluya comentarios* y deje *Incluya marcadores de ida y vuelta* para que Skribisto coincida con los capítulos devueltos a su proyecto.
+Word (`.docx`) y LibreOffice (`.odt`) pueden incluir comentarios. En el estilo de
+exportación, active *Incluir comentarios* y deje activado *Incluir marcadores de ida y
+vuelta* para que Skribisto pueda emparejar los capítulos devueltos con su proyecto.
 
-Ver [traer atrás edits y comentarios](:help-round-trip) para el proceso completo.
+Consulte [traer de vuelta cambios y comentarios](:help-round-trip) para el proceso completo.

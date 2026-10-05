@@ -45,7 +45,8 @@ under `--strict`.
                    ampersand, so neither counts.
     placement      key lives in a different .ftl file than it does in base
     plural         a variant key that is not a CLDR plural category for that
-                   language
+                   language (a selector naming no category at all selects on
+                   a text value, `[folder]` / `[scene]`, and is not checked)
     untranslated   value byte-identical to the base value *and* several words
                    long, so probably a stub rather than a cognate (opt-in:
                    --check-untranslated, threshold --untranslated-min-words)
@@ -137,6 +138,8 @@ CLDR_CATEGORIES = {
     "uk": {"one", "few", "many", "other"},
     "zh": {"other"},
 }
+
+ALL_PLURAL_CATEGORIES = set().union(*CLDR_CATEGORIES.values())
 
 # A value identical to the base one is usually fine, not a stub: French shares
 # "Note", "Format", "Synopsis", "Destination", "Structure" with English, and
@@ -564,7 +567,14 @@ def check_locale_internals(
                 )
             if categories is None:
                 continue
-            for _, key in VARIANT_RE.findall(span):
+            keys = [key for _, key in VARIANT_RE.findall(span)]
+            # A selector on a text argument (`{ $container -> [folder] … }`)
+            # names values, not plural categories. It is told apart by naming
+            # none at all: a plural selector always has `other`, and a stray
+            # `[two]` in French still sits beside it and is still reported.
+            if not ALL_PLURAL_CATEGORIES.intersection(keys):
+                continue
+            for key in keys:
                 # Numeric variants (`[0]`, `[1]`) are exact matches, not
                 # plural categories, and are always legal.
                 if not key or key.replace(".", "", 1).isdigit():

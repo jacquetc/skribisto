@@ -87,9 +87,9 @@ fn every_real_project_reads_into_a_manuscript_with_prose_in_it() {
 
         assert!(
             texts > 0,
-            "{} read as {} but has no text items",
+            "{} read as {:?} but has no text items",
             path.display(),
-            container.label()
+            container.notice_kind()
         );
         assert!(
             words > 0,
@@ -173,10 +173,10 @@ fn every_real_project_reads_into_a_manuscript_with_prose_in_it() {
         }
 
         eprintln!(
-            "{}: {} {:?} — {folders} folders, {texts} scenes, {words} words, \
+            "{}: {:?} {:?} — {folders} folders, {texts} scenes, {words} words, \
              {} characters, {} world rows, {} plots, {} revisions, {} labels, {} statuses",
             path.display(),
-            container.label(),
+            container.notice_kind(),
             format,
             project.characters.len(),
             project.world.len(),

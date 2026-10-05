@@ -15,7 +15,7 @@
 
 use std::rc::Rc;
 
-use teksilo::prelude::Signal;
+use teksilo::prelude::{Signal, tr};
 use teksilo::text_document::TextDocument;
 
 use crate::comments::CommentsViewModel;
@@ -277,14 +277,28 @@ impl CommentBinding {
                 // underscores — `crate::comments::preview::plain_preview` is the one
                 // shared conversion every such summary goes through.
                 let preview = crate::comments::preview::plain_preview(&row.body);
-                let mut summary = if row.author_name.is_empty() {
-                    preview
-                } else {
-                    format!("{}: {}", row.author_name, preview)
+                // One message per shape, so a language can order author, text and
+                // reply count its own way.
+                let replies = row.reply_count() as i64;
+                let summary = match (row.author_name.is_empty(), replies > 0) {
+                    (true, false) => preview,
+                    (true, true) => tr!(comments_a11y_summary_replies(
+                        text = preview,
+                        count = replies
+                    ))
+                    .resolve_now(),
+                    (false, false) => tr!(comments_a11y_summary_author(
+                        author = row.author_name.clone(),
+                        text = preview
+                    ))
+                    .resolve_now(),
+                    (false, true) => tr!(comments_a11y_summary_author_replies(
+                        author = row.author_name.clone(),
+                        text = preview,
+                        count = replies
+                    ))
+                    .resolve_now(),
                 };
-                if row.reply_count() > 0 {
-                    summary.push_str(&format!(" ({} replies)", row.reply_count()));
-                }
                 Some(teksilo::widgets::rich_text::TextAnnotationSpan {
                     start: a.start,
                     end: a.end,

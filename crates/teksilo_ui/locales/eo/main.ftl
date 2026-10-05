@@ -95,8 +95,8 @@ new-item-folder = Nova dosierujo
 new-item-paratext = Nova parateksto
 new-item-paratext-folder = Nova parateksta dosierujo
 new-item-story-bible-entry = Nova ero de la rakonta gvidilo
-placement-inside = interne
-placement-after = poste
+placement-inside = ene
+placement-after = post ĝi
 placement-after-parent = post la enhavanta ero
 placement-top-level = ĉe la plej alta nivelo
 ctx-promote = &Konverti al
@@ -147,8 +147,14 @@ session-time-limit-unit = min
 session-no-goal = Sen celo
 session-no-limit = Sen limo
 session-reset = Rekomenci la seancon
-session-readout = { $words } vortoj · { $time }
-session-readout-timed = { $words } vortoj · restas { $time }
+session-readout = { $words ->
+    [one] { $words } vorto
+   *[other] { $words } vortoj
+} · { $time }
+session-readout-timed = { $words ->
+    [one] { $words } vorto
+   *[other] { $words } vortoj
+} · restas { $time }
 statusbar-focus-exit = Eliri la sendistran reĝimon
 statusbar-focus-synopsis = Resumo
 statusbar-focus-go-prev = Antaŭa ero (Alt+Supren)
@@ -183,7 +189,7 @@ settings-sec-compile = Kompilado kaj eksporto
 settings-page-appearance = Aspekto
 settings-field-image-size-policy = Grandaj bildoj
 settings-image-policy-ask = Demandi ĉiufoje
-settings-image-policy-keep = Konservi la originalon
+settings-image-policy-keep = Teni la originalon
 settings-image-policy-downscale = Optimumigi
 settings-hint-image-size-policy = Kion fari se enmetita bildo estas pli granda ol bezonas la manuskripto.
 settings-page-notifications = Sciigoj
@@ -453,8 +459,8 @@ duplicate-n = { $count ->
    *[other] Duplikati { $count } kartojn
 }
 set-label-n = { $count ->
-    [one] Aldoni priskribon al { $count } karto
-   *[other] Aldoni priskribon al { $count } kartoj
+    [one] Agordi surskribon por { $count } karto
+   *[other] Agordi surskribon por { $count } kartoj
 }
 move-to-trash-n = { $count ->
     [one] Movi { $count } karton en la rubujon
@@ -474,11 +480,11 @@ corkboard-moved-ok = { $count ->
     [one] { $count } karto movita
    *[other] { $count } kartoj movitaj
 }
-corkboard-move-into-self = Grupo ne povas moviĝi en sin mem. Elektu celon ekster ĝi.
+corkboard-move-into-self = Grupo ne povas moviĝi en sin mem. Elektu cellokon ekster ĝi.
 corkboard-move-failed = Ne eblis movi tiujn kartojn tien.
 overview-col-title = Titolo
 overview-col-type = Tipo
-overview-col-label = Priskribo
+overview-col-label = Surskribo
 overview-col-tags = Etikedoj
 overview-col-books = Libroj
 overview-col-own-words = Vortoj
@@ -576,7 +582,7 @@ full-part = Tuta parto
 full-book = Tuta libro
 full-synopsis = Tuta resumo
 rename = Alinomi
-set-label = Agordi priskribon
+set-label = Agordi surskribon
 insert-scene = Enmeti scenon
 insert-chapter = Enmeti ĉapitron
 split-scene = Dividi scenon
@@ -622,7 +628,7 @@ binder-trash-confirm-title = Ĉu movi la kolektujon en la rubujon?
 binder-trash-confirm-text = «{ $name }» kaj ĉiuj ĝiaj eroj estos movitaj en la rubujon.
 dialog-rename = Alinomi
 dialog-new-binder = Nova kolektujo
-dialog-set-label = Agordi priskribon
+dialog-set-label = Agordi surskribon
 dialog-new-scene = Nova sceno
 close-work-question = Ĉu konservi ŝanĝojn antaŭ fermi la verkon?
 quit-question = Ĉu konservi ŝanĝojn antaŭ forlasi?
@@ -654,15 +660,24 @@ backup-error = Ne eblis sekurkopii: { $error }
 backing-up = Sekurkopiado…
 backup-nothing-open = Neniu projekto estas malfermita por sekurkopii.
 backup-already-running = Sekurkopiado jam okazas.
-backup-complete = Sekurkopiado finita ({ $ok } konservitaj, { $skipped } jam aktualaj)
-backup-partial = Sekurkopiado finita: { $ok } konservitaj, { $failed ->
-    [one] { $failed } celo malsukcesis
-   *[other] { $failed } celoj malsukcesis
+backup-complete = Sekurkopiado finita ({ $ok ->
+    [one] { $ok } konservita
+   *[other] { $ok } konservitaj
+}, { $skipped ->
+    [one] { $skipped } jam aktuala
+   *[other] { $skipped } jam aktualaj
+})
+backup-partial = Sekurkopiado finita: { $ok ->
+    [one] { $ok } konservita
+   *[other] { $ok } konservitaj
+}, { $failed ->
+    [one] { $failed } sekurkopiejo malsukcesis
+   *[other] { $failed } sekurkopiejoj malsukcesis
 }
 backup-no-destination-title = Neniu sekurkopiejo disponeblas
 backup-no-destination-text = Neniu agordita sekurkopiejo estas atingebla. Ekzemple, ekstera disko eble estas malkonektita. Rekonektu ĝin kaj reprovu, aŭ eliru sen sekurkopio.
 backup-failed-close-title = Ne eblis konservi la sekurkopion
-backup-failed-close-text = Ne eblis sekurkopii antaŭ fermo. Ĉiuj celoj malsukcesis: la disko eble estas malkonektita, plena aŭ skribprotektita. Solvu tion kaj reprovu, aŭ eliru sen sekurkopio.
+backup-failed-close-text = Neniu sekurkopio povis esti skribita antaŭ fermo. Ĉiuj sekurkopiejoj malsukcesis: la disko eble estas malkonektita, plena aŭ skribprotektita. Solvu tion kaj reprovu, aŭ eliru sen sekurkopio.
 backup-choice-title = Sekurkopio
 backup-choice-heading = Vi malfermis sekurkopion
 backup-choice-subtitle = Tio estas kopio de projekto je antaŭa momento.
@@ -731,7 +746,7 @@ settings-backup-usage = { $count ->
 settings-backup-usage-empty = Ankoraŭ nenio konservita ĉi tie
 settings-backup-usage-measuring = Mezurado…
 settings-backup-reveal-root = Montri dosierujon
-settings-backup-dest-none = Neniuj celoj. Sekurkopioj konserviĝas apud la projekto.
+settings-backup-dest-none = Neniuj sekurkopiejoj. Sekurkopioj konserviĝas apud la projekto.
 settings-backup-dest-remove = Forigi
 settings-backup-dest-add = Aldoni dosierujon…
 settings-backup-dest-refresh = Aktualigi
@@ -858,17 +873,17 @@ import-plume-story-bible-binder = Rakonta gvidilo
 import-plume-progress-title = Importado de Plume-projekto…
 import-plume-cancel-import = Nuligi
 import-plume-cancelled = Importo nuligita
-import-plume-done = Importitaj: { $imported ->
-    [one] { $imported } ero.
-   *[other] { $imported } eroj.
+import-plume-done = { $imported ->
+    [one] { $imported } ero importita.
+   *[other] { $imported } eroj importitaj.
 } { $skipped ->
     [one] { $skipped } ero en la rubujo ne estis importita.
    *[other] { $skipped } eroj en la rubujo ne estis importitaj.
 }
 import-plume-open-now = Malfermi nun
 import-plume-warnings = { $count ->
-    [one] 1 ero ne povis esti precize importita
-   *[other] { $count } eroj ne povis esti precize importitaj
+    [one] 1 afero ne povis esti precize importita
+   *[other] { $count } aferoj ne povis esti precize importitaj
 }
 import-plume-details = Detaloj
 import-plume-warnings-title = Importaj avertoj
@@ -948,9 +963,12 @@ export-export = Eksporti
 export-save-dialog-title = Eksporti al dosiero
 export-section-what = Kion eksporti
 export-section-style = Stilo
-export-section-destination = Celo
+export-section-destination = Celloko
 export-custom-selection = Propra elekto
-export-selected-count = { $count } elektitaj
+export-selected-count = { $count ->
+    [one] { $count } elektita
+   *[other] { $count } elektitaj
+}
 export-chip-chapters-none = Ĉapitroj: sen titoloj
 export-chip-chapters-numbered = Ĉapitroj: numeritaj
 export-chip-chapters-title = Ĉapitroj: nur titolo
@@ -958,7 +976,7 @@ export-chip-chapters-both = Ĉapitroj: numero + titolo
 export-chip-scene-break-glyph = Scena disigilo: { $glyph }
 export-chip-scene-break-blank = Scena disigilo: malplena linio
 export-chip-scene-break-none = Scena disigilo: neniu
-export-chip-major-break-glyph = Grava disigilo { $glyph }
+export-chip-major-break-glyph = Grava disigilo: { $glyph }
 export-chip-major-break-blank = Grava disigilo: malplena linio
 export-chip-major-break-none = Grava disigilo: neniu
 export-chip-major-break-same = Ambaŭ disigiloj samaj
@@ -980,9 +998,9 @@ export-overwrite-title = Ĉu anstataŭigi la ekzistantan dosieron?
 export-overwrite-text = «{ $name }» jam ekzistas. Ĉu anstataŭigi ĝin?
 export-progress-title = Eksportado…
 export-cancelled = Eksporto nuligita
-export-done = Eksportitaj: { $count ->
-    [one] { $count } ero
-   *[other] { $count } eroj
+export-done = { $count ->
+    [one] { $count } ero eksportita
+   *[other] { $count } eroj eksportitaj
 }
 export-open-file = Malfermi
 export-show-in-folder = Montri en dosierujo
@@ -991,11 +1009,17 @@ export-error-details = Detaloj
 backup-progress-start = Komenco…
 backup-progress-retention = Forigado de malnovaj sekurkopioj…
 backup-progress-done = Farite
-backup-progress-destination = Celo { $i } el { $n }
+backup-progress-destination = Sekurkopiejo { $i } el { $n }
 backup-details = Detaloj
 backup-issues-title = Sekurkopiaj problemoj
 backup-failed-title = Sekurkopiado malsukcesis
-backup-complete-prune-warning = Sekurkopiado finita ({ $ok } konservitaj, { $skipped } jam aktualaj). Ne eblis forigi kelkajn malnovajn sekurkopiojn
+backup-complete-prune-warning = Sekurkopiado finita ({ $ok ->
+    [one] { $ok } konservita
+   *[other] { $ok } konservitaj
+}, { $skipped ->
+    [one] { $skipped } jam aktuala
+   *[other] { $skipped } jam aktualaj
+}). Ne eblis forigi kelkajn malnovajn sekurkopiojn
 search = Serĉi
 search-query-placeholder = Serĉi…
 search-replace-placeholder = Anstataŭigi per…
@@ -1007,7 +1031,7 @@ search-opt-diacritics = Distingi supersignojn
 search-scope-body = Teksto
 search-scope-title = Titolo
 search-scope-synopsis = Resumo
-search-scope-label = Priskribo
+search-scope-label = Surskribo
 search-facet-book = Libroj
 search-facet-part = Partoj
 search-facet-chapter = Ĉapitroj
@@ -1017,20 +1041,20 @@ search-facet-folder = Dosierujoj
 search-tip-case = Distingi majusklojn kaj minusklojn: «Elena» kaj «elena» estas apartaj kongruoj.
 search-tip-whole-word = Trovi nur tutajn vortojn: «aro» ne kongruas ene de «aromo».
 search-tip-diacritics = Distingi supersignojn: «caro» ne kongruas kun «ĉaro».
-search-tip-body = Serĉi en la tekstoj de scenoj kaj notoj.
-search-tip-title = Serĉi en la titoloj de kolektujaj eroj.
-search-tip-synopsis = Serĉi en la resumo de ĉiu verkero.
-search-tip-label = Serĉi en la mallonga priskribo sub la titolo de kolektuja ero.
-search-tip-comment = Serĉi en komentoj kaj respondoj. Komentoj havas propran ŝaltilon ĉar ili temas pri la manuskripto sed ne apartenas al ĝi. Iliaj kongruoj restas nemarkitaj por anstataŭigo ĝis vi markas ilin.
+search-tip-body = Teksto: serĉi en la tekstoj de scenoj kaj notoj.
+search-tip-title = Titolo: serĉi en la titoloj de kolektujaj eroj.
+search-tip-synopsis = Resumo: serĉi en la resumo de ĉiu verkero.
+search-tip-label = Surskribo: serĉi en la mallonga noto sub la titolo de kolektuja ero.
+search-tip-comment = Komentoj: serĉi en komentoj kaj respondoj. Komentoj havas propran ŝaltilon ĉar ili temas pri la manuskripto sed ne apartenas al ĝi. Iliaj kongruoj restas nemarkitaj por anstataŭigo ĝis vi markas ilin.
 search-tip-book = Libroj: la libro kaj ĝiaj komencaj kaj finaj markiloj.
 search-tip-part = Partoj: disigiloj je parta nivelo.
-search-tip-chapter = Ĉapitroj, sendepende de ilia konservmaniero en la projekto.
+search-tip-chapter = Ĉapitroj: ĉapitroj, sendepende de ilia konservmaniero en la projekto.
 search-tip-scene = Scenoj: la eroj enhavantaj vian tekston.
-search-tip-note = Liberformaj notoj.
-search-tip-folder = Dosierujoj kaj disigiloj por organizado.
+search-tip-note = Notoj: liberformaj notoj.
+search-tip-folder = Dosierujoj: simplaj dosierujoj kaj disigiloj por organizado.
 search-tip-paratext = Teksto apartenanta al la libro sed ne al la rakonto: antaŭparolo, dediĉo, postparolo. Neniam kalkulata en la manuskripto.
 search-tip-preserve-case = Konservi usklecon: anstataŭaĵo sekvas la trovitan usklecon, do «ELENA» fariĝas «MARTA» kaj «Elena» fariĝas «Marta».
-search-tip-replace = Montri la anstataŭigan kampon kaj Anstataŭigi ĉiujn.
+search-tip-replace = Anstataŭigi: montri la anstataŭigan kampon kaj Anstataŭigi ĉiujn.
 search-error = Serĉo malsukcesis: { $message }
 search-no-matches = Neniuj kongruoj
 search-count = { $matches ->
@@ -1051,7 +1075,7 @@ search-occurrences = { $count }
 search-field-body = Teksto
 search-field-title = Titolo
 search-field-synopsis = Resumo
-search-field-label = Priskribo
+search-field-label = Surskribo
 search-field-epigraph = Epigrafo
 search-field-comment = Komento
 search-field-comment-reply = Respondo
@@ -1214,14 +1238,14 @@ settings-user-dict-import-tip = Aldoni vortojn el simpla tekstdosiero, po unu vo
 settings-user-dict-export-tip = Konservi la tutan liston en simpla tekstdosiero, po unu vorto en linio.
 settings-user-dict-txt-filter = Tekstdosieroj
 settings-user-dict-duplicate = Jam en la vortaro
-settings-user-dict-imported = Importitaj: { $count ->
-    [one] { $count } vorto
-   *[other] { $count } vortoj
+settings-user-dict-imported = { $count ->
+    [one] { $count } vorto importita
+   *[other] { $count } vortoj importitaj
 } ({ $duplicates } jam ĉeestis).
 settings-user-dict-import-failed = Ne eblis legi la vortliston: { $error }
-settings-user-dict-exported = Konservitaj: { $count ->
-    [one] { $count } vorto.
-   *[other] { $count } vortoj.
+settings-user-dict-exported = { $count ->
+    [one] { $count } vorto konservita.
+   *[other] { $count } vortoj konservitaj.
 }
 settings-user-dict-export-failed = Ne eblis konservi la vortliston: { $error }
 settings-page-text-replacements = Tekstaj anstataŭigoj
@@ -1246,9 +1270,9 @@ settings-text-repl-csv-filter = CSV-dosieroj
 settings-text-repl-import = Importi…
 settings-text-repl-export = Eksporti…
 settings-text-repl-imported = Importitaj: { $added }; preterlasitaj: { $skipped }
-settings-text-repl-exported = Eksportitaj: { $n ->
-    [one] 1 regulo
-   *[other] { $n } reguloj
+settings-text-repl-exported = { $n ->
+    [one] 1 regulo eksportita
+   *[other] { $n } reguloj eksportitaj
 }
 editor-menu-no-suggestions = Neniuj proponoj
 editor-menu-add-to-dictionary = Aldoni «{ $word }» al la vortaro
@@ -1326,7 +1350,10 @@ trash-empty-button = Malplenigi la rubujon…
 trash-restore = &Restarigi
 trash-restore-to = Restarigi &al…
 trash-delete-forever = &Forigi definitive
-trash-restored-ok = { $count } restarigitaj.
+trash-restored-ok = { $count ->
+    [one] { $count } ero restarigita.
+   *[other] { $count } eroj restarigitaj.
+}
 trash-restore-error = Ne eblis restarigi: { $error }
 trash-restore-orphaned = La originala loko de ĉi tiu ero ne plu ekzistas. Elektu kie restarigi ĝin.
 trash-restore-no-project = Neniu projekto estas malfermita, do estas nenio restarigenda.
@@ -1345,7 +1372,10 @@ trash-delete-forever-confirm-text = { $count ->
    *[other] { $count } eroj estos definitive forigitaj.
 } Ili forlasos la rubujon. Malfaro povos ankoraŭ revenigi ilin ĝis vi faros alian agon.
 trash-deleted-title = Definitive forigitaj
-trash-deleted-body = { $count } definitive forigitaj.
+trash-deleted-body = { $count ->
+    [one] { $count } ero definitive forigita.
+   *[other] { $count } eroj definitive forigitaj.
+}
 trash-undo = Malfari
 trash-restore-picker-title = Restarigi al…
 trash-restore-to-confirm-title = Ĉu restarigi ĉi tie?
@@ -1363,7 +1393,7 @@ settings-styles-sheet-font = Tiparo
 settings-styles-sheet-indent = Deŝovo de la unua linio
 settings-styles-sheet-para-spacing = Interalinea spaco
 settings-styles-sheet-page = Paĝgrando
-settings-styles-sheet-margins = Marĝenoj (S/D/M/L)
+settings-styles-sheet-margins = Marĝenoj (supra/dekstra/malsupra/maldekstra)
 settings-styles-sheet-title-page = Librotitolpaĝo
 settings-styles-sheet-heading-language = Titollingvo
 settings-styles-sheet-auto = Laŭ la teksto
@@ -1651,7 +1681,7 @@ analysis-empty-hidden = { $count ->
    *[other] { $count } malplenaj tekstoj kaŝitaj.
 }
 analysis-all-texts-empty = Ĉiuj tekstoj de ĉi tiu libro ankoraŭ estas malplenaj.
-binder-filter-count = { $shown } el { $total } montrataj
+binder-filter-count = Montrataj: { $shown } el { $total }
 binder-filter-clear = Forviŝi
 binder-filter-none = Nenio kongruas kun «{ $query }».
 settings-paratext-intro = Antaŭaj kaj finaj paĝoj por nova projekto. Ĉiu strukturo sekvas eldonan tradicion kaj uzas paĝtitolojn en ties lingvo. Vi povas alinomi ilin post kreado de la projekto.
@@ -1668,8 +1698,8 @@ image-no-project = Malfermu projekton antaŭ enmeti bildon.
 image-choose-title = Elekti bildon
 image-filter-label = Bildoj
 image-large-title = Tio estas granda bildo
-image-large-text = { $name } havas { $megapixels } megapikselojn ({ $width }×{ $height }). Konservi ĝin senŝanĝa enmetas la originalan dosieron en la projekton kaj en ĉiun sekurkopion kaj eksporton. Optimumigi konservas pli malgrandan kopion, kun maksimume 2560 pikseloj laŭ la plej longa flanko.
-image-large-keep = Konservi la originalon
+image-large-text = { $name } havas { $megapixels } megapikselojn ({ $width }×{ $height }). Teni ĝin senŝanĝa metas vian originalan dosieron en la projekton: ĝi akompanas ĉiun sekurkopion kaj ĉiun eksporton. Optimumigi anstataŭe konservas pli malgrandan kopion, kun maksimume 2560 pikseloj laŭ la plej longa flanko.
+image-large-keep = Teni la originalon
 image-large-downscale = Optimumigi
 image-large-remember = Ĉiam fari tiel, ne demandi denove
 image-not-recorded = La bildo estis konservita sed ne povis esti registrita en la projekto.
@@ -1687,7 +1717,7 @@ cover-clear = &Forigi la kovrilon
 cover-choose-title = Elekti kovrilon
 cover-set = Kovrilo agordita.
 cover-cleared = La kovrilo estis forigita. La bildo restas en la projekto.
-card-label = Priskribo
+card-label = Surskribo
 card-exportable = Eksportata
 card-numbered = Numerita
 card-created = Kreita
@@ -1718,22 +1748,22 @@ footnotes-empty = Ankoraŭ neniuj piednotoj. Metu la kursoron en scenon, poste u
 footnotes-filter-all = Ĉiuj
 footnotes-filter-document = Ĉi tiu dokumento
 footnotes-filter-orphaned = Sen referenco
-footnotes-orphaned = Nenio plu referencas ĉi tiun noton
+footnotes-orphaned = Nenio plu referencas ĉi tiun piednoton
 footnotes-untitled-home = Sentitola
-footnotes-body-placeholder = la noto mem
+footnotes-body-placeholder = la piednoto mem
 footnotes-insert-tooltip = Enmeti piednoton ĉe la kursoro (Ctrl+Alt+F)
 footnotes-actions = Piednotaj agoj
-footnotes-delete = &Forigi la noton kaj ĝian referencon
+footnotes-delete = &Forigi la piednoton kaj ĝian referencon
 footnotes-no-project = Malfermu projekton antaŭ enmeti piednoton.
 footnotes-no-caret = Metu la kursoron en scenan tekston por enmeti piednoton tie.
 footnotes-not-created = Ne eblis aldoni la piednoton al la projekto.
-footnotes-deleted-toast = Noto forigita
+footnotes-deleted-toast = Piednoto forigita
 footnotes-undo-delete = Malfari
 import-document-title = Importi dokumentojn
 import-document-close = Fermi
 import-document-step-files = Dosieroj
 import-document-step-review = Kontroli
-import-document-step-destination = Celo
+import-document-step-destination = Celloko
 import-document-step-reconcile = Kunfandi
 import-document-reconcile-hint = Kelkaj el ĉi tiuj eroj jam ekzistas en via projekto. Elektu kion fari por ĉiu.
 import-document-reconcile-all-new = Nenio en ĉi tiu dosiero kongruas kun via projekto: ĉiu ero estos aldonita kiel nova.
@@ -1749,7 +1779,7 @@ import-document-col-incoming = En ĉi tiu dosiero
 import-document-col-status = Stato
 import-document-col-action = Kion fari
 import-document-status-identical = Sama
-import-document-status-editor-edited = La leganto ŝanĝis ĝin
+import-document-status-editor-edited = La redaktoro ŝanĝis ĝin
 import-document-status-you-edited = Vi ŝanĝis ĝin
 import-document-status-conflict = Ambaŭ ŝanĝis ĝin
 import-document-status-different = Malsama
@@ -1788,7 +1818,7 @@ import-document-level-rules = Titolaj niveloj
 import-document-level-n = Titolo { $level }
 import-document-add-top-level = Aldoni supran nivelon
 import-document-add-top-level-tooltip = Enmeti Libron super ĉiuj analizitaj eroj, por ĉapitraj dosieroj sen librotitolo
-import-document-destination = Celo
+import-document-destination = Celloko
 import-document-destination-hint = Elektu kolektujon aŭ eron: novaj eroj aldoniĝas ene de dosierujo aŭ post sceno.
 import-document-destination-empty = Ankoraŭ neniuj kolektujoj. Unue kreu unu.
 import-document-plan-empty = Ankoraŭ nenio importenda.
@@ -2220,7 +2250,7 @@ help-concept-subtree-total = Sumo de enhavitaj celoj
 help-concept-milestone = Etapcelo
 help-concept-pace-plan = Ritmoplano
 help-concept-tag = Etikedo
-help-concept-label = Priskribo
+help-concept-label = Surskribo
 help-concept-point-of-view = Vidpunkto
 help-concept-epigraph = Epigrafo
 help-concept-footnote = Piednoto
@@ -2245,7 +2275,7 @@ margin-lane-provider-story-bible = Ero de la rakonta gvidilo
 margin-lane-provider-story-bible-hint = En la vido En la teksto de noto: kie tiu ero estas nomata kaj la scenoj laŭ ĝia vidpunkto. Ankaŭ markas tiujn nomojn en la teksto mem.
 margin-lane-mark-point-of-view = Rakontita laŭ ĉi tiu vidpunkto
 margin-lane-mark-named-here = Nomata ĉi tie
-margin-lane-provider-comments-hint = Kie noto estas ligita al la teksto
+margin-lane-provider-comments-hint = Kie komento estas ligita al la teksto
 margin-lane-provider-search = Serĉrezultoj
 margin-lane-provider-search-hint = Ĉiu kongruo de via lasta serĉo en la dokumento
 margin-lane-provider-boundaries = Komenco de ĉiu dokumento
@@ -2264,8 +2294,8 @@ settings-margin-lane-enabled-hint = La sama ŝaltilo kiel Vido ▸ Marĝenaj mar
 settings-margin-lane-enabled-more = Ĝi ne juĝas vian tekston: ĝi montras kie aferoj troviĝas, kaj vi mem interpretas tion.
 settings-group-margin-lane-marks = Kion marki
 settings-margin-lane-no-providers = Ankoraŭ nenio markas la strion.
-settings-group-margin-lane-texture = Dialoga strukturo
-settings-margin-lane-texture = Montri la dialogan strukturon
+settings-group-margin-lane-texture = Dialoga teksturo
+settings-margin-lane-texture = Montri la dialogan teksturon
 settings-margin-lane-texture-hint = Unu stango por ĉiu alineo: ĝia longo kaj la parolata proporcio.
 settings-margin-lane-texture-more = Ne mezurata por lingvoj sen difinita konvencio; tie la stango montras nur longon.
 settings-group-margin-lane-surfaces = Kie ĝi aperas
@@ -2340,3 +2370,151 @@ settings-done = Farite
 settings-cancel = Nuligi
 settings-apply = Apliki
 settings-ok = Bone
+
+progress-percent = { $percent }%
+progress-percent-with-label = { $percent }% · { $label }
+progress-import-opening = Malfermado de la projekto…
+progress-import-outline = Legado de la skizo…
+progress-import-converting = Konvertado de ĉapitroj kaj scenoj…
+progress-import-writing = Skribado de la .skrib-dosiero…
+progress-import-done = Farite
+progress-import-structure = Analizado de la strukturo…
+progress-export-start = Komencado…
+progress-export-writing = Skribado…
+progress-project-reading = Legado de la projekto…
+settings-sec-work-titled = Verko: { $title }
+import-notice-flattened-rich-texts = { $count ->
+    [one] Unu teksto estis pli profunde ingita ol Skribisto-projekto povas enhavi; ĝiaj vortoj estis konservitaj kiel simpla teksto, sen formatado.
+   *[other] { $count } tekstoj estis pli profunde ingitaj ol Skribisto-projekto povas enhavi; iliaj vortoj estis konservitaj kiel simpla teksto, sen formatado.
+}
+import-notice-free-text-badges = { $count ->
+    [one] Unu sceninsigno aspektas kiel libera teksto, ne kiel listo de statoj, do ĝi estis konservita kiel surskribo de la ero anstataŭ iĝi etikedo.
+   *[other] { $count } malsamaj sceninsignoj aspektas kiel libera teksto, ne kiel listo de statoj, do ili estis konservitaj kiel surskriboj de la eroj anstataŭ iĝi etikedoj.
+}
+import-notice-separator-text-dropped = La disigilo «{ $name }» enhavis tekston, kiu ne havas lokon en Skribisto-projekto; la teksto ne estis importita.
+import-notice-separator-without-scene = La disigilo «{ $name }» ne havis antaŭan scenon en sia ĉapitro, al kiu ĝi povus aliĝi, do ĝi ne estis importita.
+import-notice-chapter-without-scenes = La ĉapitro «{ $name }» ne havas scenojn, do ĝiaj disigiloj ne estis importitaj.
+import-notice-rich-text-unconverted = Iu formatita teksto ne povis esti konvertita ({ $error }); ĝi ne estis importita.
+import-notice-unresolved-cross-link = Ligilo al rolulara ero #{ $number } ne povis esti sekvita: la ero mankas aŭ estis en la rubujo.
+import-notice-read-copy = Legita la { $container ->
+    [single-file] unudosiera
+   *[folder] dosieruja
+} kopio de ĉi tiu projekto.
+import-notice-read-copy-dated = Legita la { $container ->
+    [single-file] unudosiera
+   *[folder] dosieruja
+} kopio de ĉi tiu projekto, laste ŝanĝita je { $day }.
+import-notice-original-format = Ĉi tiu projekto estas en la originala formato de Manuskript el 2016. Ĝi estis legita tute; nenio en ĝi estis ŝanĝita.
+import-notice-newer-single-file-beside = «{ $file }» estas pli nova ol ĉi tiu dosierujo ({ $file_day } kontraŭ { $folder_day }). Manuskript lasas la malnovan dosierujon surloke, kiam projekto transiras al unudosiera reĝimo, do ĉi tiu dosierujo eble estas forlasita kopio; importi anstataŭe la .msk-dosieron legus la pli novan.
+import-notice-pickle-skipped = «{ $file }» ne estis legita. Ĝi estas Python-pickle, kaj ŝargi tian el projekta dosiero estis sekureca difekto en Manuskript mem (CVE-2021-35196); la agordoj en ĝi estas montraj preferoj, ne verkaĵo.
+import-notice-file-unreadable = «{ $file }» ne legeblis ({ $error }) kaj estis preterlasita; ĉio alia estis importita.
+import-notice-not-utf8 = «{ $file }» ne estas valida UTF-8; la nelegeblaj signoj estis anstataŭigitaj, anstataŭ haltigi la importon.
+import-notice-table-unreadable = «{ $file }» ne legeblis ({ $error }); ĝia enhavo ne estis importita.
+import-notice-outline-missing = «{ $file }» mankas, do ĉi tiu projekto ne havas manuskripton por importi.
+import-notice-outline-unreadable = «{ $file }» ne legeblis ({ $error }); neniu manuskripto estis importita.
+import-notice-named-none-row = «{ $file }» komenciĝas per nomita vico («{ $name }») tie, kie Manuskript tenas sian malplenan eron «none». Ĝi estis preterlasita, por ke la sekvaj vicoj konservu la numerojn, kiujn la manuskripto uzas.
+import-notice-unknown-field = «{ $file }» havas kampon, kiun ĉi tiu importilo ne konas: «{ $field }». Ĝi ne estis importita.
+import-notice-colorless-labels = { $count ->
+    [one] «{ $file }» havas linion sen koloro. Ĝi estis importita sen koloro; Manuskript ĉesas ŝargi la projekton ĉe tia linio.
+   *[other] «{ $file }» havas { $count } liniojn sen koloro. Ili estis importitaj sen koloro; Manuskript ĉesas ŝargi la projekton ĉe tia linio.
+}
+import-notice-settings-unreadable = «{ $file }» ne legeblis ({ $error }); la lingvo de la projekto ne estis importita.
+import-notice-revisions-unreadable = «{ $file }» ne legeblis ({ $error }); la historio de la projekto ne estis importita, sed nenio alia estis tuŝita.
+import-notice-foreign-files = { $count ->
+    [one] Ĉi tiu projekto enhavas dosieron, kiu ne apartenas al la Manuskript-formato kaj ne estis importita: { $files }.
+   *[other] Ĉi tiu projekto enhavas { $count } dosierojn, kiuj ne apartenas al la Manuskript-formato kaj ne estis importitaj: { $files }.
+}
+import-notice-foreign-files-more = Ĉi tiu projekto enhavas { $count } dosierojn, kiuj ne apartenas al la Manuskript-formato kaj ne estis importitaj: { $files } kaj { $more ->
+    [one] unu plia
+   *[other] { $more } pliaj
+}.
+import-notice-not-a-character-file = «{ $file }» ne estas rolula dosiero de Manuskript kaj estis preterlasita.
+import-notice-not-a-text-item = «{ $file }» ne estas teksta ero de Manuskript kaj estis preterlasita el la skizo.
+import-notice-missing-blank-line = «{ $file }» ne havas malplenan linion post sia kapo. Ĝia lasta kampo estis konservita, kvankam Manuskript perdas ĝin.
+import-notice-folder-without-metadata = «{ $folder }» ne havas { $file }, do ĝi estis importita kiel simpla dosierujo kun la sama nomo. Manuskript preterlasas tian dosierujon kaj ĉion en ĝi.
+import-notice-rows-given-ids = { $count ->
+    [one] Unu vico de la skizo ne havis propran identigilon kaj ricevis unu. Manuskript forĵetas tian vicon, aŭ ĉesas ŝargi la projekton, se ĝi estas dosierujo.
+   *[other] { $count } vicoj de la skizo ne havis propran identigilon kaj ricevis unu. Manuskript forĵetas tian vicon, aŭ ĉesas ŝargi la projekton, se ĝi estas dosierujo.
+}
+import-notice-plots-unreadable = «{ $file }» ne legeblis ({ $error }); la intrigoj ne estis importitaj.
+import-notice-world-unreadable = «{ $file }» ne legeblis ({ $error }); la mondaj eroj ne estis importitaj.
+import-notice-world-not-opml = «{ $file }» ne estas OPML-dokumento; la mondaj eroj ne estis importitaj.
+import-notice-text-flattened = La teksto de «{ $title }» estas pli profunde ingita ol Skribisto-projekto povas enhavi; ĝiaj vortoj estis konservitaj kiel simpla teksto, sen formatado.
+import-notice-text-unconverted = La teksto de «{ $title }» ne povis esti konvertita ({ $error }); ĝi estis konservita ĝuste tia, kia ĝi estis skribita.
+import-notice-text-without-file-name = { $kind ->
+    [scene] La sceno-teksto
+    [note] La noto-teksto
+    [synopsis] La resumo
+   *[title] La titolo
+} de «{ $title }» ne povis ricevi dosiernomon, do ĝi ne estis importita.
+import-notice-unknown-label = «{ $title }» havas surskribon { $index }, kiu ne estas en la surskribolisto de ĉi tiu projekto. Ĝi estis importita sen surskribo.
+import-notice-unknown-status = «{ $title }» havas staton { $index }, kiu ne estas en la statolisto de ĉi tiu projekto. Ĝi estis importita sen stato.
+import-notice-unknown-point-of-view = «{ $title }» estas rakontata per rolulo, kiu ne estas en la rolularo de ĉi tiu projekto. Ĝia vidpunkto ne estis agordita.
+import-notice-unresolved-references = La referencoj en la teksto de «{ $title }» ne povis esti solvitaj ({ $error }); la teksto estis konservita tia, kia ĝi estis konvertita, kun la referencaj markoj.
+import-notice-custom-icons = { $count ->
+    [one] Unu ero havis propran piktogramon. Skribisto donas al ĉiu ero la piktogramon de ĝia tipo, do la piktogramo ne estis importita; nenio alia pri la ero ŝanĝiĝis.
+   *[other] { $count } eroj havis propran piktogramon. Skribisto donas al ĉiu ero la piktogramon de ĝia tipo, do la piktogramoj ne estis importitaj; nenio alia pri tiuj eroj ŝanĝiĝis.
+}
+import-notice-character-colors = { $count ->
+    [one] Unu rolulo havis koloron apud sia nomo. Skribisto kolorigas etikedojn, ne erojn, do la koloro ne estis importita; la rolulo mem ja estis.
+   *[other] { $count } roluloj havis koloron apud sia nomo. Skribisto kolorigas etikedojn, ne erojn, do la koloroj ne estis importitaj; ĉiuj roluloj mem ja estis.
+}
+import-notice-versions-kept = { $found ->
+    [one] Ĉi tiu projekto registris unu pli fruan version
+   *[other] Ĉi tiu projekto registris { $found } pli fruajn versiojn
+}; { $kept ->
+    [one] unu estis konservita
+   *[other] { $kept } estis konservitaj
+}, maldensigitaj same kiel Skribisto maldensigas sian propran historion. Ili troviĝas en la panelo Versioj.
+import-notice-versions-unplaced = { $count ->
+    [one] Unu pli frua versio apartenas al ero, kiu ne plu estas en la projekto, kaj ne povis esti lokita.
+   *[other] { $count } pli fruaj versioj apartenas al ero, kiu ne plu estas en la projekto, kaj ne povis esti lokitaj.
+}
+dialog-open-work-title = Malfermi Skribisto-verkon
+dialog-save-as-file-title = Konservi kiel unu .skrib-dosieron
+dialog-save-as-folder-title = Elektu gepatran dosierujon por la verko
+dialog-manuskript-file-title = Elektu Manuskript-projekton
+dialog-manuskript-folder-title = Elektu dosierujon de Manuskript-projekto
+dialog-filter-skrib = Skribisto-verko
+dialog-filter-manuskript = Manuskript-projekto
+dialog-filter-plume = Plume Creator-projekto
+dialog-filter-hunspell-aff = Hunspell-afiksa dosiero (.aff)
+dialog-filter-hunspell-dic = Hunspell-vortaro (.dic)
+dialog-filter-export = Eksportita dosiero
+shortcut-name-view-margin-lane = Ŝalti aŭ malŝalti marĝenajn markojn
+df-theme-paper = Papero
+df-theme-sepia = Sepio
+df-theme-night = Nokto
+df-theme-high-contrast = Alta kontrasto
+df-theme-midnight = Noktomezo
+welcome-example-byline = de { $author }
+welcome-sections-a11y = Sekcioj de la bonveniga fenestro
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } ({ $count ->
+    [one] 1 respondo
+   *[other] { $count } respondoj
+})
+comments-a11y-summary-author-replies = { $author }: { $text } ({ $count ->
+    [one] 1 respondo
+   *[other] { $count } respondoj
+})
+margin-lane-a11y-mark = { $label }, je { $percent } procentoj de la teksto
+margin-lane-a11y-marks = { $label }, { $count } markoj, je { $percent } procentoj de la teksto
+margin-lane-a11y-fallback = { $count ->
+    [one] Marĝenaj markoj, 1 marko
+   *[other] Marĝenaj markoj, { $count } markoj
+}
+export-choose-unnamed-binder = Sennoma kolektujo
+export-style-neutral = Neŭtrala
+export-style-manuscript-shunn = Norma manuskripto (Shunn)
+export-style-ebook-clean = Pura e-libro
+date-time-short = { $year }-{ $month }-{ $day } { $hour }:{ $minute }
+pace-day-label = { $day }/{ $month }
+byte-size-bytes = { $value } B
+byte-size-kb = { $value } KB
+byte-size-mb = { $whole },{ $tenth } MB
+byte-size-gb = { $whole },{ $tenth } GB
+unit-percent = { $value }%
+unit-pixels = { $value } px
+settings-paratext-error-no-name = Strukturo bezonas `name`.
+export-error-no-project = Neniu projekto estas malfermita por eksporti.

@@ -5,7 +5,7 @@ Un progetto riunisce manoscritto e note. Ecco come iniziare a scrivere.
 1. Nella finestra iniziale, fai clic su *Nuovo progetto*.
 2. In *Dettagli*, inserisci un nome e scegli dove salvarlo. Scegli *File singolo* per conservare il progetto in un file `.skrib`. Il nome dell'autore è facoltativo.
 3. In *Lingua e struttura*, scegli la lingua in cui scrivi. Per ora puoi lasciare invariate le altre impostazioni.
-4. In *Modello*, scegli *Romanzo vuoto* per costruire un romanzo capitolo per capitolo. Altri modelli offrono più capitoli iniziali; *Quaderno* è pensato per le note.
+4. In *Modello*, scegli *Romanzo vuoto* per costruire un romanzo capitolo per capitolo. Altri modelli offrono più capitoli iniziali; *Taccuino* è pensato per le note.
 5. Fai clic su *Crea progetto*.
 
 ## Scrivi la tua prima scena
@@ -32,6 +32,6 @@ Nella finestra iniziale, *Crea da…* avvia un progetto da [documenti](:help-imp
 
 - Premi `F9`, oppure scegli *Visualizza ▸ Struttura*, per mostrare o nascondere il Raccoglitore.
 - Premi `Ctrl+Invio` su un elemento selezionato per aprirlo nell'altro riquadro dell'editor.
-- Quando crei un progetto, *Capitoli singoli* permette di scrivere direttamente in ciascun capitolo senza dividerlo in scene. *Cartella progetto* salva il progetto come cartella anziché come file singolo.
+- Quando crei un progetto, *Capitoli singoli* permette di scrivere direttamente in ciascun capitolo senza dividerlo in scene. *Cartella* salva il progetto come cartella anziché come file singolo.
 
 Consulta [libri, capitoli e scene](:help-writing-model) per saperne di più sull'organizzazione del manoscritto.

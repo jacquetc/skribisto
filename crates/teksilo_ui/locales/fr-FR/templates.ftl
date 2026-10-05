@@ -86,7 +86,7 @@ note-template-preset-faction = Faction
 note-template-preset-research-note = Note de documentation
 
 ## Ensembles de départ, proposés à la création d'un projet
-note-template-set-essentials = L'essentiel
+note-template-set-essentials = L’essentiel
 note-template-set-everything = Tous les modèles
 
 ## Intitulés de section

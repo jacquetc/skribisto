@@ -104,7 +104,7 @@ impl LongOperation for ImportPlumeCreatorFileUseCase {
             output_path: summary.output_path,
             imported_items: summary.imported_items as i64,
             skipped_trashed: summary.skipped_trashed as i64,
-            warnings: summary.warnings,
+            warnings: summary.warnings.iter().map(|n| n.encode()).collect(),
         })
     }
 }

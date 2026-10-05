@@ -100,7 +100,8 @@ impl ParatextPreset {
     pub fn parse(id: &str, source: &str, editable: bool) -> Result<Self, String> {
         let raw: RawPreset = toml::from_str(source).map_err(|e| e.to_string())?;
         if raw.paratext.name.trim().is_empty() {
-            return Err("a preset needs a `name`".to_string());
+            // The one check of ours; a TOML syntax error is the parser's own message.
+            return Err(teksilo::prelude::tr!(settings_paratext_error_no_name()).resolve_now());
         }
         Ok(ParatextPreset {
             id: id.to_string(),

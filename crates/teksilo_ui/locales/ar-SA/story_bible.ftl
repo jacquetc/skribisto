@@ -1,51 +1,55 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-story-bible-modal-configure-title = الثقة في الدخول الجديد
+story-bible-modal-configure-title = إعداد المدخل الجديد
 story-bible-modal-name-label = الاسم
-story-bible-modal-name-placeholder = شخصية، مكان، أيّ شيء يستحقّ التقديم...
-story-bible-modal-no-binders = لا توجد شجرة مستندات لحفظ العنصر فيها بعد
-story-bible-modal-template-label = بدء من نموذج (اختياري)
-story-bible-modal-template-placeholder = لا نموذج
-story-bible-modal-body-label = الهيئة
+story-bible-modal-name-placeholder = شخصية، مكان، أي شيء يستحق التدوين…
+story-bible-modal-no-binders = لا توجد في هذا المشروع حافظة لتدوينه فيها بعد
+story-bible-modal-template-label = البدء من قالب (اختياري)
+story-bible-modal-template-placeholder = بلا قالب
+story-bible-modal-body-label = المتن
 story-bible-modal-cancel = إلغاء
-story-bible-modal-create = الإبداع
-story-bible-modal-create-and-open = الخلق والانفتاح
-story-bible-modal-failed = لا يمكن أن يخلق الدخول
-
-ctx-add-as-note = أضف كملاحظة... (&N)
-ctx-add-as-note-all-tags = كل البطاقات...
+story-bible-modal-create = إنشاء
+story-bible-modal-create-and-open = الإنشاء والفتح
+story-bible-modal-failed = تعذّر إنشاء المدخل
+ctx-add-as-note = إضافة كملاحظة… (&N)
+ctx-add-as-note-all-tags = كل الوسوم…
 ctx-add-as-note-untagged = بلا وسم
-
 story-bible-grid-label = مرجع القصة
-story-bible-grid-untagged = لم يُعلّم بعد
-story-bible-grid-empty-title = لم يسجل شيء هنا بعد
-story-bible-grid-empty-hint = اجمعي ملاحظة لتجديها في المحترفين، أو تضيفي واحدة من الإختيار، ويبدو هنا.
+story-bible-grid-untagged = لم يُوسم بعد
+story-bible-grid-empty-title = لم يُدوَّن شيء هنا بعد
+story-bible-grid-empty-hint = ضع على ملاحظة وسمًا للبحث عنها في النص، أو أضف واحدة من نص محدد، فتظهر هنا.
 story-bible-grid-alias-count = { $count ->
-    [0] لا اسم مستعار لحد الآن
-    [one] { $count } الاسم المستعار
-   *[other] { $count } الاسم المستعار
+    [0] لا أسماء بديلة بعد
+    [zero] لا أسماء بديلة بعد
+    [one] اسم بديل واحد
+    [two] اسمان بديلان
+    [few] { $count } أسماء بديلة
+    [many] { $count } اسمًا بديلًا
+   *[other] { $count } اسم بديل
 }
 story-bible-grid-mention-count = { $count ->
-    [0] لا مظهر بعد
-    [one] تظهر في مشهد عام { $count } عبر المشروع بأكمله
-   *[other] تظهر في { $count } مشهدا في جميع أنحاء المشروع
+    [0] لم يظهر في أي مشهد بعد
+    [zero] لم يظهر في أي مشهد بعد
+    [one] يظهر في مشهد واحد في المشروع كله
+    [two] يظهر في مشهدين في المشروع كله
+    [few] يظهر في { $count } مشاهد في المشروع كله
+    [many] يظهر في { $count } مشهدًا في المشروع كله
+   *[other] يظهر في { $count } مشهد في المشروع كله
 }
-story-bible-books-filter-all = جميع الكتب
-story-bible-grid-not-searched = لم يتم تفتيشه بعد: يحتاج إلى علامة قابلة للقصّة
-
+story-bible-books-filter-all = كل الكتب
+story-bible-grid-not-searched = لم يُبحث عنه بعد: يحتاج إلى وسم مرجع القصة
 note-in-prose-pov = وجهة النظر
-note-in-prose-cast = الشخصيات
-note-in-prose-pov-and-cast = وجهة النظر؛
+note-in-prose-cast = الحاضرون
+note-in-prose-pov-and-cast = وجهة النظر · الحاضرون
 note-in-prose-no-books = لا يوجد كتاب في هذا المشروع بعد
-note-in-prose-empty-book = لم يُعلن في هذا الكتاب بعد
-
-story-bible-capture-toast = "{ $name }" أضافت للقصة الإنجيل
+note-in-prose-empty-book = لم يُعلَن حضوره في هذا الكتاب بعد
+story-bible-capture-toast = أُضيف «{ $name }» إلى مرجع القصة
 story-bible-capture-open = فتح
 story-bible-capture-undo = تراجع
-story-bible-capture-where-title = إلى أين تذهب هذه الملاحظات؟
-story-bible-capture-where-prompt = اختر الملف الجديد يجب أن تُسجل فيه
-story-bible-capture-where-confirm = اطيري هنا
-story-bible-capture-where-needs-folder = اختر ملفاً لهذه الملاحظات لكي تدخل
-story-bible-capture-where-tag = مُسؤلة ذات مرة، مُلاحظات مُعلّمة "{ $tag }" ستصل من الآن وصاعداً، ويمكنك تغييرها لاحقاً في "ستينغز"، مشروع، تاغز.
-story-bible-capture-where-untagged = ملاحظات بدون بطاقة ستصل من الآن فصاعداً ويمكنك تغييرها لاحقاً في "ستينغز"
+story-bible-capture-where-title = أين توضع هذه الملاحظات؟
+story-bible-capture-where-prompt = اختر المجلد الذي تُدوَّن فيه الملاحظات الجديدة.
+story-bible-capture-where-confirm = التدوين هنا
+story-bible-capture-where-needs-folder = اختر مجلدًا توضع هذه الملاحظات بداخله.
+story-bible-capture-where-tag = يُسأل هذا مرة واحدة. ستوضع الملاحظات الموسومة بـ«{ $tag }» هنا من الآن فصاعدًا، ويمكنك تغيير ذلك لاحقًا في الإعدادات ▸ المشروع ▸ الوسوم.
+story-bible-capture-where-untagged = يُسأل هذا مرة واحدة. ستوضع الملاحظات التي بلا وسم هنا من الآن فصاعدًا، ويمكنك تغيير ذلك لاحقًا في الإعدادات ▸ المشروع ▸ الوسوم.

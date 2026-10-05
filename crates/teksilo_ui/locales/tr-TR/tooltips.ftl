@@ -1,102 +1,102 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-wm-book = Projenizde bir kitap.
-wm-book-more = Bir kitap sizin gibi basit ya da tabakalı. Kısa bir hikaye sadece birkaç [Sahne sahneleri sahneleri](:wm-scene) olabilir. Daha uzun bir Proje nest [parçalar parça parça parça parça parça parça parçaları](:wm-part) ve [Bölümler](:wm-chapter) istediğiniz kadar derin olabilir.
-wm-part = Bir parça gruplama bölümü.
-wm-part-more = Bir parça toplanır [Bölümler](:wm-chapter) Bir bölüm gibi, bir sonraki parçaya veya sonun sonuna kadar çalışır. [Kitap](:wm-book).
+wm-book = Projenizdeki bir kitap.
+wm-book-more = Bir kitap dilediğiniz kadar yalın ya da katmanlı olabilir. Kısa bir öykü yalnızca birkaç [sahneden](:wm-scene) oluşabilir. Daha uzun bir eser [kısımları](:wm-part) ve [bölümleri](:wm-chapter) istediğiniz derinlikte iç içe yerleştirebilir. Biçimini siz belirlersiniz.
+wm-part = Bölümleri bir araya getiren bir kısım.
+wm-part-more = Bir kısım [bölümleri](:wm-chapter) tek bir başlık altında toplar. Bir bölüm gibi, sonraki kısma ya da [kitabın](:wm-book) sonuna kadar sürer.
 wm-chapter = Kitabın bir bölümü.
-wm-chapter-more = Bir bölüm bir sonraki bölüme kadar burada, sonraki [Bölüm](:wm-part)'e veya [Kitabın sonu](:wm-end-of-book)'e geliyor: [Sahne sahneleri sahneleri](:wm-scene)'e sahip olan bir bölüm ya da kendi prototipini taşıyan düz bir bölüm. Yapı altında yeni bölümler hangileri kullanıyor.
-wm-scene = Prose bir sahne.
-wm-scene-more = Bir sahne yazınızı tutar. Her yazı kitabının iki tarafı vardır: ana metin ve [Özet](:wm-synopsis) ile plan yapmak için.
+wm-chapter-more = Bir bölüm buradan sonraki bölüme, sonraki [kısma](:wm-part) ya da [kitap sonuna](:wm-end-of-book) kadar sürer. İki biçimde olabilir: [sahneler](:wm-scene) barındıran bir bölüm klasörü ya da kendi metnini taşıyan düz bir bölüm. Yeni bölümlerin hangisini kullanacağını Ayarlar'da, Yapı altında seçin.
+wm-scene = Metin içeren bir sahne.
+wm-scene-more = Sahne yazınızı barındırır. Her yazı öğesinin iki yüzü vardır: ana metin ve planlama için bir [özet](:wm-synopsis). İkisi düzenleyicide birlikte açılır.
 wm-note = Bir not.
-wm-note-more = Bir not metni tutar ve [Özet](:wm-synopsis), araştırma için [Sahne](:wm-scene) gibi, bir kenara veya hatırlatmalar. Herhangi bir öğe [Kısım](:wm-chapter) içinde bir notun parçası olabilir.
-wm-note-folder = Diğer eşyaları tutan bir not.
-wm-note-folder-more = Aşağıdaki öğeler de içeren [Not](:wm-note), bu yüzden birlikte ilgili notları gruplayabilirsiniz. Kendi [Özet](:wm-synopsis) tutar ve içerideki öğeler kendi metinlerini tutar.
-wm-folder = Bir düzenleme klasörü.
-wm-folder-more = Ancak binder'deki eşyaları düzenlemek için bir konteyner size uygundur. [Özet](:wm-synopsis) taşır, ancak yazının içindeki öğeler.
-wm-end-of-book = Bir kitabın sona erdiği Marks.
-wm-end-of-book-more = Her kitap sürekli bir liste paylaşıyor, bu yüzden bir kitap sonunda nesting tarafından karar verilmez. Bu işaret, [Kitap](:wm-book)'in burada durmasına karar verir.Bir sonraki kitaba ait olan her şey.
-wm-story-bible-entry = Bir etiket, hikayeniz hakkında bir not.
-wm-story-bible-entry-more = Bir karakter hakkında [Not](:wm-note), bir yer ya da başka bir şey filing, bir isim, etiketler, takmalar ve bir başlangıç şablonu ile bir adımdaki her şeyi ayırt eder. sayfada hiçbir şey onu daha sonra ayırt ettiğinden, sıradan bir not olarak yeniden adlandırılabilir ya da başka herhangi bir şekilde dönüştürebilirsiniz.
-wm-synopsis = Bir yazı kitabının özeti.
-wm-synopsis-more = Herhangi bir yazı kitabına ek olarak, genellikle kısa bir paragraf ama sizin gibi uzun zamandır.prose var önce planlamak ve gezinmek için kullanın. editörün ana metninin yanında oturur.
+wm-note-more = Not, bir [sahne](:wm-scene) gibi metin ve [özet](:wm-synopsis) taşır; araştırma, ara notlar ya da hatırlatmalar içindir. Bir [bölümün](:wm-chapter) içinde duran bir not da dahil, her öğe derlenen kitabın parçası olabilir.
+wm-note-folder = Başka öğeler barındıran bir not.
+wm-note-folder-more = Altında öğeler de barındıran bir [not](:wm-note); böylece ilgili notları bir araya toplayabilirsiniz. Kendi [özetini](:wm-synopsis) taşır, içindeki öğeler de kendi metinlerini.
+wm-folder = Düzenleme amaçlı bir klasör.
+wm-folder-more = Öğeleri dizinde size uygun düştüğü gibi düzenlemek için bir kapsayıcı. Bir [özet](:wm-synopsis) taşır ama kendine ait metni yoktur. Yazı, içindeki öğelerdedir.
+wm-end-of-book = Bir kitabın bittiği yeri işaretler.
+wm-end-of-book-more = Tüm kitaplar tek ve kesintisiz bir listeyi paylaşır, bu yüzden bir kitabın sonu iç içe yerleşimle belirlenmez. Bu işaret, [kitabın](:wm-book) burada bittiğini söyler. Ondan sonra gelen her şey sonraki kitaba aittir.
+wm-story-bible-entry = Hikâyeniz hakkında etiketli, diğer adları olan bir not.
+wm-story-bible-entry-more = Bir kişi, bir yer ya da kaydetmeye değer başka bir şey hakkında, adı, etiketleri, diğer adları ve başlangıç şablonuyla tek adımda oluşturulan bir [not](:wm-note). Sonrasında sayfada onu ayıran hiçbir şey yoktur; diğerleri gibi yeniden adlandırabileceğiniz, yeniden etiketleyebileceğiniz ya da dönüştürebileceğiniz sıradan bir not olarak kalır.
+wm-synopsis = Bir yazı öğesinin özeti.
+wm-synopsis-more = Her yazı öğesine bağlı bir özet; genellikle kısa bir paragraf, ama dilediğiniz kadar uzun olabilir. Metin ortada yokken planlamak ve gezinmek için kullanın. Düzenleyicide ana metnin yanında durur.
 
-scene-break-minor = Sıradan bir sahne molası: Zaman, yer veya bir bölüm içinde bakış.
+scene-break-minor = Sıradan bir sahne arası: bir bölüm içinde zamanın, mekânın ya da bakış açısının değişmesi.
 scene-break-minor-more =
-    Marks a break *nereye koydun* [Sahne](:wm-scene)'in ortasında da dahil olmak üzere. İki öğeye prose etmek örgütsel bir seçimdir, bu yüzden asla kendi başına bir mola yaratmaz.
+    Bir arayı *onu koyduğunuz yerde* işaretler; bir [sahnenin](:wm-scene) ortasında bile. Metni iki öğeye bölmek bir düzenleme tercihidir, bu yüzden kendiliğinden hiçbir zaman ara oluşturmaz.
 
-    Uzaylar tarafından ayrılmış üç asterisk olarak prose içine alındı. Baskılar ihracat tarzına nasıl karar verildi, ne tür bir şekilde değil: Shunn Bir el yazması onu tek bir #, bir ticaret kağıt gerisi olarak bir dinkus olarak ayarlar ve çoğu Fransız, Almanca, İspanyolca, Rusça ve İtalyanca her şey işaretle açık bir boşluk olarak yayınlamaya karar verir.
-scene-break-major = Daha güçlü bir bölüm: büyük bir zaman atlayın veya bakış açısından belirleyici bir değişiklik.
+    Metne aralarında boşluk olan üç yıldız olarak yazılır. Nasıl yazdırılacağına yazdığınız şey değil, dışa aktarma biçemi karar verir: Shunn el yazması biçimi onu tek bir # olarak, ticari cep kitabı bir dinkus olarak, Fransız, Alman, İspanyol, Rus ve İtalyan yayıncılığının çoğu ise hiçbir işaret olmadan yalnızca bir boşluk olarak dizer.
+scene-break-major = Daha güçlü bir ayrım: büyük bir zaman atlaması ya da kesin bir bakış açısı değişikliği.
 scene-break-major-more =
-    Sıradan bir sahne molası olarak aynı fikir, bir adım yukarı. Bir düz molanın attığı zaman kullanın.
+    Sıradan sahne arasıyla aynı düşünce, bir basamak yukarısı. Sıradan bir ara sıçramayı hafife alacaksa bunu kullanın.
 
-    # # # # ve ihracat tarzı tarafından sıradan katmanından farklı olarak yazdırıldı. Shunn'in standart yazma formatı, # # # # tam olarak bu ayrıma karşı tek bir # # # # 'ye karşı.Bir geleneğin daha güçlü bir işareti var, her ikisi de aynı yazdırdı.
-wm-find-in-prose = Skribisto bu öğeyi Prose'de arar.
-wm-find-in-prose-more = Bu, yazdığınız şeyler için etiketler için tıklayın: karakterler, yerler, nesneler. Böyle bir etiket taşıyan herhangi bir eşya, kendi unvanıyla ve verdiğiniz diğer isimlerle karşılanır. [Sahne](:wm-scene) Herhangi bir şeyi el ile ilişkilendirmeden kim ve görünen şeyleri listeler.Bir isim yerine bir öğe tarif eden etiketler için bırakın, bir taslak statüsü veya sürekliliği kontrol etmek için bir hatırlatma. [Hikâye rehberi](:wm-story-bible).
-wm-story-bible = Her karakter, yer ve diğer etiket girişi, bir ağda toplandı.
-wm-story-bible-more = Herhangi bir not klasörün kendi sekmesinden açın. Kartlar grubu etiketi ile açın ve her isim kaç tane giriş yanıtları ve kaç sahneler ortaya çıktı, her şeyden çizildi, her şeyden çekildi. [Prose'de bul](:wm-find-in-prose) Projede etiket. Kitap tarafından filtre yalnızca kartların gösterdiği darlar; hangi girişlerin var olduğuna asla karar vermez.
+    # # # olarak yazılır ve dışa aktarma biçemi tarafından sıradan aradan farklı yazdırılır. Shunn'un standart el yazması biçimi tam da bu ayrım için tek bir # ile # # # kullanır. Daha güçlü bir işareti olmayan geleneklerde iki ara da aynı yazdırılır.
+wm-find-in-prose = Skribisto bu öğeyi metninizde arar.
+wm-find-in-prose-more = Bunu hakkında yazdığınız şeyleri adlandıran etiketler için açın: kişiler, yerler, nesneler. Böyle bir etiket taşıyan her öğe, başlığı ve ona verdiğiniz diğer adlarla metninizde aranır; böylece her [sahne](:wm-scene) elle bağlantı kurmanıza gerek kalmadan kimin ve neyin içinde geçtiğini listeler. Bir öğeyi adlandırmayıp niteleyen etiketler için kapalı bırakın, örneğin bir taslak durumu ya da süreklilik denetimi hatırlatması. Eşleşen her öğe [hikâye rehberinize](:wm-story-bible) de katılır.
+wm-story-bible = Her kişi, yer ve diğer etiketli kayıt, tek bir ızgarada toplanmış hâlde.
+wm-story-bible-more = Herhangi bir not klasörünün kendi sekmesinden açılır. Kartlar etikete göre gruplanır ve her kart, bir kaydın kaç diğer adla anıldığını ve projedeki her [metinde bul](:wm-find-in-prose) etiketinden yola çıkarak kaç sahnede geçtiğini gösterir. Kitaba göre süzmek yalnızca hangi kartların gösterileceğini daraltır; hangi kayıtların var olduğuna asla karar vermez.
 
-tooltip-go-to = Binder'deki herhangi bir öğeye atlayın (Ctrl+G)
-synopsis-collapse-tooltip = sinopsis sütunu
+tooltip-go-to = Dizindeki herhangi bir öğeye git (Ctrl+G)
+synopsis-collapse-tooltip = Özet sütununu gizle
 
-wm-paratext = Hikayenin bir parçası olmayan bir metin.
-wm-paratext-more = Bir preface, bir adanmış, bir sonraki kelime, bir colophon: Kitapa ait olan yazı yazmak ama onu nereye koyduğunuza kadar ihracat yapmak ve asla el yazmanın kelimesine saymamak. Nerede olursanız olun ülkeye ve yayıncıya farklılık gösterir.
-wm-paratext-folder = Paratexts için bir klasör.
-wm-paratext-folder-more = Bir yerlerde önyüzleri tutmak ve kelimelerden sonra, bu yüzden sadece binder'i karıştırmıyorlar: [Özet](:wm-synopsis) taşır, ancak ihraç edilen kitaba hiçbir şey ekler, kendi adı bile.
+wm-paratext = Öykünün parçası olmayan bir metin.
+wm-paratext-more = Önsöz, ithaf, sonsöz, kolofon: kitaba ait olan ama gövdesine ait olmayan yazılar. Nereye koyarsanız orada dışa aktarılır ve el yazmasının sözcük sayısına asla katılmaz. Nereye gideceği size kalmış: gelenekler ülkeden ülkeye ve yayınevinden yayınevine değişir.
+wm-paratext-folder = Yan metinler için bir klasör.
+wm-paratext-folder-more = Önsözleri ve sonsözleri dizini kalabalıklaştırmadan saklayacak bir yer. Yalnızca düzenleme amaçlıdır: bir [özet](:wm-synopsis) taşır ama dışa aktarılan kitaba hiçbir şey, kendi adını bile eklemez.
 
-goal-target = Bu parça ne kadar zamandır olduğu anlamına gelir.
-goal-target-more = Her şeye bir hedef oluşturun: bir [Sahne](:wm-scene), a) [Kısım](:wm-chapter), a) [Bölüm](:wm-part)Bütün bunlar [Kitap](:wm-book)Her biri kendi numarasıdır ve kendi başına duruyor, bu yüzden bir bölüm üzerinde bir hedef asla kitabını değiştirmiyor ve bir kitap hedefi asla içinde bölümlerden ibaret değildir.What does up is the writing: a container's. [İlerleme](:goal-progress) Onun altında yazılan her şeydir. Sıfırda bir hedef alın ve sadece set değildir. Sayıda sayılıyor. [kelimeler veya karakterler](:goal-unit)Ancak bu projenin kullandığına göre.
-goal-unit = Bu proje kelimelerde veya karakterlerde sayılıyorsa.
-goal-unit-more = Bir proje çapında bir seçim, çünkü uzun bir birim bir bölüm yerine el yazma ve pazarına aittir: Alman ve Fransız yayın ölçüleri işaretleri, 400-character çarşaflar, Çin'de binlerce karakter tarafından, çoğu İngilizce yayını yan yana tutulur ve her iki sayı da bir bölüme dönüştürülür, bu yüzden üniteyi diğer rakamdaki [Hedef](:goal-target)'i diğer rakama ayırın ve geri yüklemeyin, ilk olarak geri yüklemeyin.
-goal-progress = Hedefe karşı ne kadar yazılır.
-goal-progress-explained = Kendi uzunluğuna karşı bir parça ölçülüyor; [Aşağıda yazılan her şey](:goal-manuscript-words)'e karşı bir konteyner kırmızıdan yazılı olarak yeşile kadar ısınıyor ve bir kez daha parça planlandığında iyi bir şekilde ilerliyor, bu da bir bölümün devam etmesi için uzun süreye değer.
-goal-manuscript-words = Yazının ne kadar önemli olduğunu.
-goal-manuscript-words-more = Sadece ihraç edilecek prose: [Sahne sahneleri sahneleri](:wm-scene) ve [Bölümler](:wm-chapter) kendi metinlerini taşıyor. [Not](:wm-note) veya [Yan metin](:wm-paratext) yazının bir parçası değildir ve asla bir şey hesaba katmıyor. [İhracattan ayrıldıktan sonra](:goal-exportable).
-goal-exportable = Bu öğe ihracattan ayrılır.
-goal-exportable-more = Kendi uzunluğu hala gösteriyor, çünkü yazı hala orada, ancak toplam olarak değil, tam olarak ihraç edilen bir kitapta görünecektir gibi.Bir konteyner bırakmak parçalara içeriden ayrılmaz: Her bir öğe kendine cevap, bu da "Çocuklara Apply" düğmesine işaret eder.
-goal-distribute = Bu hedefin içeride ne olduğunu paylaşın.
-goal-distribute-more = Splits a a [Kitabın kitabı](:wm-book) veya veya veya [Bölüm's](:wm-part) Hemen hemen çocukları boyunca hedef, böylece parçalar tam olarak ekleniyor. Varsayılan olarak sadece hedef olmayanları doldurur ve kendi numaralarınızı yalnız bırakır.Yazdığı şey sıradandır. [Hedef hedefler hedefler hedefler hedefler hedefler](:goal-target)Daha sonra düzenlemek ve uzaklaşmak için ücretsiz: Bu bir eylem, ayakta bir düzenleme değil.
-goal-subtree-total = İçerideki hedeflerin ne kadar ekleneceği.
-goal-subtree-total-more = Aslında, bir hedef değil. Bu proje hiçbir zaman bir konteynerin hedefine ait değildir, bu yüzden konteynerin [Hedef](:goal-target) ile kendinizi karşılaştırabilirsiniz, ya da [Birini paylaş](:goal-distribute).
-goal-milestone = Bir şeye ulaşmak için bir tarih.
-goal-milestone-more = İki tür.Biri diyor ki, [Kitap](:wm-book) Bir tarihle belirli bir uzunlukta durmalıdır, kendi eğrisinde bir yol noktası. Diğeri belirli bir söylüyor [Kısım](:wm-chapter) veya veya veya [Bölüm](:wm-part) Var olmalıydıya [Kendi hedefi](:goal-target) O zaman, ve bu sayının bir kopyasını tutmak yerine yaşadığını okur, bu yüzden hedef de kilometreyi de güncelliyor. [Hız planı](:pace-plan).
-pace-plan = Kitapın yazı programı.
-pace-plan-more = [Hedef](:goal-target) ve bir tarih, yazdığınız günler ile, günde ne kadar ihtiyaç duyulana dönüştü.Kitapın kendi hedefini okur, bu yüzden burada ayarlayın ve Inspector'da aynı sayı iki yerdedir. Yol boyunca Waypoints [dönüm noktaları](:goal-milestone).
+goal-target = Bu parçanın ne uzunlukta olması gerektiği.
+goal-target-more = Her şeye bir hedef koyabilirsiniz: bir [sahneye](:wm-scene), bir [bölüme](:wm-chapter), bir [kısma](:wm-part), tüm [kitaba](:wm-book). Her biri kendi sayısıdır ve kendi başına durur; bir bölüme hedef koymak kitabın hedefini asla değiştirmez ve bir kitabın hedefi asla içindeki bölümlerin toplamı değildir. Toplanan şey yazının kendisidir: bir kapsayıcının [ilerlemesi](:goal-progress), altında yazılmış her şeydir. Hedefi sıfırda bırakırsanız belirlenmemiş olur. Sayı, bu proje hangisini kullanıyorsa [sözcük ya da karakter](:goal-unit) olarak sayılır.
+goal-unit = Bu projenin sözcükle mi karakterle mi saydığı.
+goal-unit-more = Proje genelinde bir seçimdir, çünkü uzunluk birimi tek bir bölüme değil, el yazmasına ve onun pazarına aittir: Alman ve Fransız yayıncılığı karakterle, Japon yayıncılığı 400 karakterlik sayfalarla, Çin yayıncılığı bin karakterlik birimlerle, İngilizce yayıncılığın çoğu ise sözcükle ölçer. İki sayı yan yana tutulur ve hiçbiri diğerine dönüştürülmez; bu yüzden birimi değiştirmek her [hedefi](:goal-target) öteki sayıya yöneltir, geri değiştirmek de ilkini geri getirir. Yapmadığı şey herhangi bir dönüştürmedir: önceden girilmiş hedeflerin elle güncellenmesi gerekir.
+goal-progress = Hedefe göre ne kadarının yazıldığı.
+goal-progress-explained = Kendi metni olan bir parça kendi uzunluğuyla, bir kapsayıcı ise [altında yazılmış her şeyle](:goal-manuscript-words) ölçülür. Yazı geldikçe çubuk kırmızıdan kehribara, oradan yeşile döner ve parça planlananı epeyce aştığında yeniden değişir; uyulması gereken bir uzunluğu olan bir bölümde bunu fark etmek yararlıdır.
+goal-manuscript-words = El yazmasına neler sayılır.
+goal-manuscript-words-more = Yalnızca gerçekten dışa aktarılacak metin: kendi metnini taşıyan [sahneler](:wm-scene) ve [bölümler](:wm-chapter). Bir [not](:wm-note) ya da bir [yan metin](:wm-paratext) el yazmasının parçası değildir ve ona asla sayılmaz. Çöp kutusundaki her şey ve [dışa aktarmanın dışında bırakılan](:goal-exportable) her şey de sayımdan düşer.
+goal-exportable = Bu öğe dışa aktarmanın dışında bırakıldı.
+goal-exportable-more = Yazı hâlâ orada olduğu için kendi uzunluğu yine gösterilir, ama hiçbir dışa aktarılan kitapta görünmeyeceği gibi hiçbir toplama da katılmaz. Bir kapsayıcıyı dışarıda bırakmak içindeki parçaları dışarıda bırakmaz: her öğe kendi adına karar verir; anahtarın yanındaki "Alt öğelere uygula" düğmesi bunun içindir.
+goal-distribute = Bu hedefi içindekilere dağıtın.
+goal-distribute-more = Bir [kitabın](:wm-book) ya da [kısmın](:wm-part) hedefini doğrudan alt öğelerine, parçaların toplamı tam olarak ona eşit olacak biçimde böler. Varsayılan olarak yalnızca henüz hedefi olmayanları doldurur ve sizin sayılarınıza dokunmaz. Yazdığı şeyler sıradan [hedeflerdir](:goal-target); sonradan düzenlemekte ve birbirinden uzaklaşmakta serbesttirler: bu kalıcı bir düzen değil, tek seferlik bir işlemdir.
+goal-subtree-total = İçerideki hedeflerin toplamı.
+goal-subtree-total-more = Bir hedef değil, bir bilgidir. Bu proje bir kapsayıcının hedefini asla içindekilerin toplamı olarak görmez, çünkü içindeki bir sahneye sayı verildiğinde bir klasörün sayısının kendiliğinden değişmesi tam da böyle olur. Bu satır yalnızca kendi sayılarınızın neye ulaştığını söyler; böylece onu kapsayıcının [hedefiyle](:goal-target) kendiniz karşılaştırabilir ya da [bir hedefi dağıtabilirsiniz](:goal-distribute).
+goal-milestone = Bir şeye ulaşmak için belirlenen tarih.
+goal-milestone-more = İki türü vardır. Biri, [kitabın](:wm-book) bir tarihe kadar belirli bir uzunluğa ulaşması gerektiğini söyler; kendi eğrisi üzerinde bir duraktır. Öteki, belirli bir [bölümün](:wm-chapter) ya da [kısmın](:wm-part) o tarihe kadar [kendi hedefine](:goal-target) ulaşmış olması gerektiğini söyler ve bu sayının bir kopyasını tutmak yerine onu canlı okur; bu yüzden hedefi düzenlemek ara hedefi de günceller. İkisi de kitabın [tempo planında](:pace-plan) görünür.
+pace-plan = Kitabın yazma takvimi.
+pace-plan-more = Bir [hedef](:goal-target) ve bir son tarih, yazdığınız günlerle birlikte günde ne kadar gerektiğine dönüştürülür. Kitabın kendi hedefini okur; bu yüzden onu burada ya da Denetçi'de belirlemek aynı sayıyı iki yerde belirlemektir. Yol üzerindeki duraklar [ara hedeflerdir](:goal-milestone).
 
-concept-tag = Herhangi bir öğeye koyabileceğiniz bir renk kodlanmış etiket, tüm proje boyunca yeniden kullanılabilir.
-concept-tag-more = Etiket onu işaretlemek için bir öğe: bir statü, bir yer, takip ettiğiniz bir iplik. Aynı etiket herhangi bir sayıda öğe üzerinde oturabilir ve bir öğe birkaç tane taşıyabilir.Kitapınızda bir şey olan [Prose'de bul](:wm-find-in-prose)'de, bir karakter veya bir yer, ve Skribisto onu prose'de aramaya başlar.
-concept-label = Bir öğenin başlığı altında yazdığınız kısa bir not, kendi gözleriniz için.
-concept-label-more = [Etiket](:concept-tag) değil: bir etiket tek başına bir öğeye ait, arkadaki renkli veya kataloga ait bir yazı, "1st arsa noktası" veya "bir isim" gibi bir şey gösterir.List it from the item's context menu, or edit it inline in the Overview's Label; it show as a small subtitle under the stream both.
-concept-point-of-view = Bir sahnenin kim tarafından yorumlanır: hikayenizin bir veya daha fazlası.
-concept-point-of-view-more = Inspector'da set, dökümün yanında. Henüz oyuncuda birini seçmek onları orada da ekliyor.Bir bakış açısıyla daha fazla yasal bir seçim, paylaşılan bir sahne veya bir göz orta kitabı değişikliği için faydalı, bir şey değil, bir şey yok Skribisto Bloklar. Adaylar eşyalardan gelir [Prose'de bul](:wm-find-in-prose) etiket, hikayenize bible koyar.
-concept-epigraph = Bir parçanın veya bir bölümün başında bir alıntı yapılır.
-concept-epigraph-more = Kendi alanı, [Kısım](:wm-chapter)'den veya [Bölüm](:wm-part)'in kendi prosesyonundan ayrı; [Sahne](:wm-scene) veya [Not](:wm-note) sıradan bir alıntı olarak yazmıyor; birkaç tane yaz ve her biri kendi blok alıntısı haline gelir, kendi epigrafi olarak yazdırılır.
-concept-footnote = Prose'de işaretlenen bir alıntı, bir sayı olarak yazdırın.
-concept-footnote-more = Referans kelimelerinizin içinde tek bir işarettir, bu yüzden bu konudaki kelimeler olarak hareket eder ve silinir. numarası asla depolanmaz: Skribisto Projeler her referansın tüm el yazısında oturduğu yerden tazelenir, bu yüzden bir ayaknote'nin kendi sözleri yazılardan ayrı sayılır, asla içine katlanmaz.
-concept-chapter-mode = Yeni bir bölüm sahnelerin veya tek bir düz öğenin bir klasörüdür.
-concept-chapter-mode-more = Ayarları, Yapı altında doğrudan [Kısım](:wm-chapter)'e yazıyorsunuz; tek fark da aşağıdaki sahneleri içerebileceğidir. Her iki kodlama da aynı kitaba derlenir ve onları bir projede özgürce karıştırabilirsiniz.
-concept-comment = Bir not tam bir prose yayılmasına yol açtı, marjda gösterilen.
-concept-comment-more = Bu, işaret ettiği sözleri ve onları çevreleyen şeyleri hatırlıyor, sabit bir pozisyon değil, bu yüzden sıradan bir düzenleme ve tam bir reload hayatta kalıyor.Bir konu daha bulunamazsa, yorum yanlış cümleye sürüklenmeyi tercih ediyor.
-concept-backup = Tüm projenin bir noktası-zaman kopyası, bunun yanında tuttu.
-concept-backup-more = Seçtiğiniz bir program üzerinde durun: açık, yakın, bir aralıkta veya herhangi bir karışımda, eski kopyalarla yaşlanma ya da sayın. kendi penceresinde bir yük açın: görünebilir ve hatta düzenleyebilirsiniz, ancak sadece Kaydet veya geri yükleme bir şey tutar. [sürüm sürüm sürüm sürüm sürüm sürüm sürüm sürüm sürüm sürüm sürüm sürüm sürüm sürüm](:concept-version), hangi bir öğenin kendi geçmişi izler.
-concept-version = Bir öğenin kendi geçmişi: metin veya sinopsis için her değişiklik.
-concept-version-more = Projenin kendi tasarruf tarihinin ve yedeklerinin bir araya gelmesinden inşa edilmiş, dosya başına bir değişiklik yerine bir giriş yapın ve sadece bu öğenin metnini ona geri yüklemek için bir giriş yapın; projenin geri kalanı önceden alındı ve bir güvenlik kopyası her şeyden farklı olarak [Yedek](:concept-backup)'den alınmıştır.
-concept-trash = Bir çöp eşyası gizlidir, taşındı: tam olarak nerede kaldı.
-concept-trash-more = Trashing sadece bir bayrak döndürür: öğe yerini binder'de tutar, kaldırıldıktan ziyade aktif olarak işaret eder. geri yükleyin ve o kesin noktada yeniden filtrelenmez. Boş Trash iyi için çöp eşyaları kaldırır ve bunların her biri başka bir proje düzenleme gibi geri alınabilir.
-concept-spellcheck = Alt kelimeler kurulu bir sözlük tanımaz, proje dili başına.
-concept-spellcheck-more = Her projenin kendi çalışma dili veya dili vardır; bir eşya onları başka bir dilde yazılmış bir sahne için onarabilir. Skribisto editörün bağlam menüsünden, her projeye devam eden kişisel bir sözlüğe sahip değildir.
-concept-search-replace = Projedeki her yerde bir kelime veya cümle bul, sadece açık belge değil.
-concept-search-replace-more = Her sahne, not, başlık, sinopsis ve etiket ile bak ve yorumlar ve ayaknotlar da. Vaka, tüm kelime eşleştirme ve aksaklık, üç ayrı anahtardır. Tüm yeniden yazmalar her incelemede tek bir geçiş ve bir adım, o yüzden Ctrl+Z bütünü geri almaz, sadece son değişiklik.
-concept-note-template = Üzerinde çalıştığınız her şeye eklediğiniz bir yeniden yazılabilir parça.
-concept-note-template-more = Boş bir karakter sayfası, bir yer profili, bir dövme sayfası: bir kez yazın ve ihtiyacınız olan yerde bırakın, herhangi bir öğede, sadece bir not alın. inşa edilmiş bir başlangıçtan başlayın, .md veya .djot dosyasını ithal edin veya bir şey yazın ve Belgeyi seçin Projede, böylece aynı seti açan bir ortak yazar.
-concept-text-replacement = Kendi kısa eliniz, tipiniz olarak otomatik olarak genişletildi.
-concept-text-replacement-more = Bir tetikleyici ve değiştirme seti, "btw" için "bu şekilde" ayarlayın ve proje başına geçiş yaptıktan sonra, [Akıllı Noktalama](:concept-smart-punctuation)'den farklı bir alan ya da boksajı genişletin. Case what you typed: capitalize the trigger and the growth capitalizes too. A Backspace right after an extensiones only that one substitution.
-concept-smart-punctuation = Locale-aware tipografi otomatik olarak sizin türüniz olarak uygulanır: alıntılar, dashes, elpses.
-concept-smart-punctuation-more = Curls doğrudan tipografik olanları, dönüşleri - bir en dash ve --- bir em dash'e, dönüş ... elpsis'e ve nereye döndüğünüzde, "-" olarak bir paragraf türü açıyor ve .skrib'te seyahat ediyor, böylece bir ortak yazar, [Kendi kurallarınız](:concept-text-replacement)'den uzaklaşıyor.
-concept-export-style = İhracat seçeneklerinin adı: başlıklar, spacing, hangileri dahil edilir.
-concept-export-style-more = Bir stil, seçtiğiniz her ihracatta yeniden kullanılabilir.Yapılan stiller sadece okunur; aslında değiştirebilirsiniz bir başlangıç noktası almak için bir tane. Seçenekleri arasında [round-trip işaretleyiciler](:concept-round-trip-marks), bir dosya editörü ve gerisi için bağlı olup olmadığıdır.
-concept-round-trip-marks = Düzenlenen DOCX veya ODT'in ev tanımasına izin veren görünmez kitap işaretleri.
-concept-round-trip-marks-more = Sadece iki formatta bir editör geri gönderebiliyor, DOCX ve ODT; diğer her ihracat hiçbir şey taşımaz. Özel bir özellik değil: LibreOffice striptizler kurtarma konusunda özel nitelikler değil, [ihracat tarzı](:concept-export-style)'e kadar geri dönülemez.
-concept-status = Bir öğe kendi iş akışınızda duruyor: Bir seferde bir aşama, ileriye doğru ilerliyor.
-concept-status-more = [Etiket](:concept-tag) Değil: Bir öğe tam olarak bir statüye sahiptir, aşamalar sipariş edilir ve proje listeye sahiptir, böylece istediğiniz zaman yeniden sipariş edebilir veya ekleyebilirsiniz. Bir bölüm veya kitabın yanında bir risk, Inspector'dan gelen parçalar anlamına gelir.
+concept-tag = Herhangi bir öğeye koyabileceğiniz, tüm projede yeniden kullanılabilen renk kodlu bir işaret.
+concept-tag-more = Bir öğeyi işaretlemek için etiketleyin: bir durum, bir yer, izlediğiniz bir olay örgüsü. Aynı etiket istediğiniz kadar öğede bulunabilir ve bir öğe birkaç etiket taşıyabilir. Kitabınızdaki bir şeyi, bir kişiyi ya da bir yeri adlandıran bir etiket için [metinde bul](:wm-find-in-prose) seçeneğini açın; Skribisto onu metninizde aramaya başlar.
+concept-label = Bir öğenin başlığının altına kendiniz için yazdığınız kısa bir not.
+concept-label-more = Bir [etiket](:concept-tag) değildir: açıklama yalnızca tek bir öğeye aittir; arkasında renk ya da katalog olmayan düz bir metindir, örneğin "1. dönüm noktası" ya da "bir ad gerekiyor". Öğenin bağlam menüsünden belirleyin ya da Genel bakış'taki Açıklama sütununda yerinde düzenleyin; hem ana hatta hem akışta başlığın altında küçük bir alt başlık olarak görünür.
+concept-point-of-view = Bir sahnenin kimin gözünden anlatıldığı: hikâyenizin kadrosundan bir ya da daha fazla kişi.
+concept-point-of-view-more = Denetçi'de, kadronun yanında belirlenir. Henüz kadroda olmayan birini seçmek onu oraya da ekler. Birden fazla bakış açısı geçerli bir seçimdir; ortak bir sahne ya da kitabın ortasında göz değiştirmek için yararlıdır ve Skribisto bunu engellemez. Adaylar, bir [metinde bul](:wm-find-in-prose) etiketinin hikâye rehberinize koyduğu öğelerden gelir.
+concept-epigraph = Bir kısmın ya da bölümün başına konan alıntı.
+concept-epigraph-more = [Bölümün](:wm-chapter) ya da [kısmın](:wm-part) kendi metninden ayrı, kendine ait bir alandır; bir [sahne](:wm-scene) ya da [not](:wm-note) epigraf taşımaz. Bir tane yazmak için sıradan bir alıntı yazın; birkaç tane yazarsanız her biri kendi blok alıntısı olur ve kendi epigrafı olarak yazdırılır. Sözcükleri asla el yazması sözcüğü olarak sayılmaz.
+concept-footnote = Metinde işaretlenen ve numaralı bir not olarak yazdırılan bir kaynak gösterme.
+concept-footnote-more = Gönderme, sözcüklerinizin içindeki tek bir işarettir; bu yüzden çevresindeki sözcükler gibi taşınır ve silinir. Numarası asla saklanmaz: Skribisto onu her göndermenin tüm el yazmasındaki yerinden her seferinde yeniden hesaplar; bu yüzden bir tane eklemek ondan sonraki tüm notları yeniden numaralar. Bir dipnotun kendi sözcükleri el yazmasından ayrı sayılır, asla ona katılmaz.
+concept-chapter-mode = Yeni bir bölümün sahnelerden oluşan bir klasör mü yoksa tek ve düz bir öğe mi olduğu.
+concept-chapter-mode-more = Ayarlar'da, Yapı altında belirlenir. Her iki durumda da doğrudan bir [bölümün](:wm-chapter) içine yazarsınız; tek fark, altında sahne de barındırıp barındıramayacağıdır. İki biçim de aynı kitaba derlenir ve bir projede ikisini dilediğiniz gibi karıştırabilirsiniz. Dönüştür, var olan bir bölümü tek sözcük kaybetmeden ikisi arasında değiştirir.
+concept-comment = Metnin belirli bir parçasına bağlanan ve kenar boşluğunda gösterilen not.
+concept-comment-more = Sabit bir konumu değil, gösterdiği sözcükleri ve çevrelerini hatırlar; bu yüzden olağan düzenlemelerden ve tam bir yeniden yüklemeden sağ çıkar. Bir tartışmayı sürdürmek için altına yanıt yazın. Alıntının kendisi artık bulunamıyorsa yorum, sessizce yanlış tümceye kaymak yerine bunu söyler.
+concept-backup = Tüm projenin belirli bir andaki, yanında tutulan kopyası.
+concept-backup-more = Seçtiğiniz bir takvimle alınır: açılışta, kapanışta, belirli aralıklarla ya da bunların bir karışımıyla; eski kopyalar yaşa ya da sayıya göre ayıklanır. Birini açmak onu kendi penceresinde yükler: bakabilir, hatta düzenleyebilirsiniz, ama yalnızca Farklı kaydet ya da Geri yükle bir şeyi korur. Tek bir öğenin kendi geçmişini izleyen [sürümden](:concept-version) farklıdır.
+concept-version = Tek bir öğenin kendi geçmişi: metnindeki ya da özetindeki her değişiklik.
+concept-version-more = Projenin kendi kaydetme geçmişi ile yedekleri birlikte kullanılarak, dosya başına değil değişiklik başına bir kayıtla oluşturulur. Neyin değiştiğini görmek için bir kayıt seçin ve yalnızca o öğenin metnini ona geri yükleyin; projenin geri kalanına dokunulmaz ve önce bir güvenlik kopyası alınır. Her şeyin kopyası olan [yedekten](:concept-backup) farklıdır.
+concept-trash = Çöp kutusuna atılan bir öğe taşınmaz, gizlenir: tam olarak bulunduğu yerde kalır.
+concept-trash-more = Çöp kutusuna atmak yalnızca bir işareti değiştirir: öğe dizindeki yerini korur, kaldırılmaz, etkin değil olarak işaretlenir. Geri yüklediğinizde tam o yerde yeniden belirir, yeniden yerleştirmeniz gerekmez. Çöp kutusunu boşalt, çöpteki öğeleri kalıcı olarak kaldırır ve bunların her biri, diğer tüm proje düzenlemeleri gibi geri alınabilir tek bir adımdır.
+concept-spellcheck = Kurulu hiçbir sözlüğün tanımadığı sözcüklerin, proje diline göre altını çizer.
+concept-spellcheck-more = Her projenin kendi çalışma dili ya da dilleri vardır; başka bir dilde yazılmış bir sahne için bir öğe bunları geçersiz kılabilir. Skribisto'nun bilmediği bir sözcüğü düzenleyicinin bağlam menüsünden, her projeye taşınan kişisel bir sözlüğe ekleyin. Yazım denetimini kapatmak, siz yeniden açana kadar onu her yerde durdurur.
+concept-search-replace = Bir sözcüğü ya da ifadeyi yalnızca açık belgede değil, projenin her yerinde bulur.
+concept-search-replace-more = Her sahneye, nota, başlığa, özete ve açıklamaya, ayrıca yorumlara ve dipnotlara bakar. Büyük/küçük harf, tam sözcük eşleştirme ve aksan eşleştirme üç ayrı anahtardır. Tümünü değiştir, gözden geçirilen her eşleşmeyi tek seferde ve tek bir geri alma adımında yeniden yazar; bu yüzden Ctrl+Z yalnızca son değişikliği değil, toplu işlemin tamamını geri alır.
+concept-note-template = Üzerinde çalıştığınız her şeye ekleyebileceğiniz, yeniden kullanılabilir bir yazı parçası.
+concept-note-template-more = Boş bir kişi kartı, bir mekân profili, bir sahne planı: bir kez yazın ve yalnızca notlara değil, gerektiği her öğeye ekleyin. Hazır bir şablonla başlayın, bir .md ya da .djot dosyası içe aktarın veya bir şey yazıp Belge ▸ Şablon olarak kaydet'i seçin. Projede saklanır, böylece onu açan bir ortak yazar aynı şablonları bulur.
+concept-text-replacement = Siz yazarken kendiliğinden açılan kendi kısaltmalarınız.
+concept-text-replacement-more = Bir tetikleyici ve onun yerine geçecek metni belirleyin, örneğin "bkz" için "bakınız"; ardından bir boşluk ya da noktalama işareti yazdığınız anda açılır. Büyük/küçük harf yazdığınızı izler: tetikleyiciyi büyük harfle başlatırsanız açılan metin de büyük harfle başlar. Açılımdan hemen sonra Geri silme yalnızca o değiştirmeyi geri alır. Proje başına açılır ve [akıllı noktalamadan](:concept-smart-punctuation) ayrıdır.
+concept-smart-punctuation = Siz yazarken kendiliğinden uygulanan, dile duyarlı tipografi: tırnaklar, tireler, üç noktalar.
+concept-smart-punctuation-more = Düz tırnakları tipografik tırnaklara çevirir, -- dizisini kısa çizgiye ve --- dizisini uzun çizgiye, ... dizisini üç nokta karakterine dönüştürür ve açtığınız yerde "- " ile başlayan bir paragrafı konuşma çizgisiyle açar. Proje başına belirlenir ve .skrib dosyasının içinde taşınır, böylece bir ortak yazar aynı kurallarla yazar. Kendiniz yazdığınız [kendi kurallarınızdan](:concept-text-replacement) ayrıdır.
+concept-export-style = Dışa aktarma seçeneklerinin adlandırılmış bir paketi: başlıklar, aralıklar, neyin dahil edileceği.
+concept-export-style-more = Hangi biçimi seçerseniz seçin, her dışa aktarmada yeniden kullanılan tek bir biçem. Hazır biçemler salt okunurdur; gerçekten değiştirebileceğiniz bir başlangıç noktası için birini çoğaltın. Seçenekleri arasında, bir editöre gidip dönecek bir dosya için [gidiş-dönüş işaretçilerinin](:concept-round-trip-marks) dahil edilip edilmeyeceği de vardır.
+concept-round-trip-marks = Düzenlenmiş bir DOCX ya da ODT dosyasının geri döndüğünde tanınmasını sağlayan görünmez yer işaretleri.
+concept-round-trip-marks-more = Yalnızca bir editörün geri gönderebileceği iki biçime, DOCX ve ODT'ye yazılır; başka hiçbir dışa aktarma bunları taşımaz. Özel bir öznitelik değil, bir yer işaretidir: LibreOffice kaydederken özel öznitelikleri siler ama yer işaretlerine dokunmaz. Her [dışa aktarma biçeminde](:concept-export-style), "Editöre gönderme" altında açılır.
+concept-status = Bir öğenin kendi iş akışınızdaki yeri: her seferinde tek bir aşama, ileriye doğru.
+concept-status-more = Bir [etiket](:concept-tag) değildir: bir öğenin tam olarak tek bir durumu vardır, aşamalar sıralıdır ve liste projeye aittir; bu yüzden onu istediğiniz zaman yeniden adlandırabilir, yeniden sıralayabilir ya da genişletebilirsiniz. Bir bölümün ya da kitabın yanındaki yıldız, altındaki parçaların hepsinin onunla aynı fikirde olmadığı anlamına gelir. Denetçi'den, bir karttan, bir akış öğesinden ya da buradan belirleyin.

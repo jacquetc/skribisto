@@ -1449,7 +1449,7 @@ fn present_export_panel(ctx: &mut EventContext, vm: ExportViewModel) {
     ctx.present_modal(
         ModalRequest::deferred(move |t| t.add(ExportPanel::new(vm)))
             .presentation(ModalPresentation::InTree)
-            .title("Export")
+            .title(tr!(export_title()).resolve_now())
             .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
             .size(760, 640),
     );
@@ -1878,7 +1878,7 @@ impl Widget for App {
                             t.add(NewWorkPanel::new(app_ctx, ids, starters))
                         })
                         .presentation(ModalPresentation::InTree)
-                        .title("New Work")
+                        .title(tr!(new_work_title()).resolve_now())
                         .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
                         .size(640, 620),
                     );
@@ -2495,8 +2495,8 @@ fn open_work_flow(
         ctx,
         crate::models::FolderPurpose::OpenProject,
         FileDialogRequest::pick_file()
-            .title("Open Skribisto work")
-            .add_filter("Skribisto work", &["skrib"]),
+            .title(tr!(dialog_open_work_title()).resolve_now())
+            .add_filter(tr!(dialog_filter_skrib()).resolve_now(), &["skrib"]),
     );
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {

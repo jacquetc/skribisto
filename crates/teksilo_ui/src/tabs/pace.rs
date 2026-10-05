@@ -268,9 +268,14 @@ pub(super) fn planner(
         ))
 }
 
-/// A short, locale-neutral day label for a chart category (`7/16`).
+/// A short day label for a chart category: month and day, in the order the
+/// interface language puts them (`7/16` in en-US, `16/7` in French).
 pub(super) fn day_label(date: NaiveDate) -> String {
-    format!("{}/{}", date.month(), date.day())
+    tr!(pace_day_label(
+        month = date.month() as i64,
+        day = date.day() as i64
+    ))
+    .resolve_now()
 }
 
 /// A form-row label - small, secondary, single line (matches the settings panes).

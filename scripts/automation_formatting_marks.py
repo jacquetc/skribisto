@@ -45,11 +45,11 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 # declares: the label, the character it writes, and whether it shows a chord.
 EXPECTED = [
     ("Espace insécable", " ", True),
-    ("Tiret insécable", "‑", True),
-    ("Trait d'union conditionnel", "­", False),
-    ("Espace insécable fine", " ", True),
+    ("Trait d’union insécable", "‑", True),
+    ("Trait d’union conditionnel", "­", False),
+    ("Espace fine insécable", " ", True),
     ("Espace de largeur nulle", "​", True),
-    ("Joint de mots", "⁠", False),
+    ("Gluon de mots", "⁠", False),
 ]
 
 

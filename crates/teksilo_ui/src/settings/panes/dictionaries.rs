@@ -231,14 +231,5 @@ fn now_rfc3339() -> String {
 
 /// A compact human size, e.g. `1.2 MB`.
 fn human_size(bytes: u64) -> String {
-    const KB: f64 = 1024.0;
-    const MB: f64 = KB * 1024.0;
-    let b = bytes as f64;
-    if b >= MB {
-        format!("{:.1} MB", b / MB)
-    } else if b >= KB {
-        format!("{:.0} KB", b / KB)
-    } else {
-        format!("{bytes} B")
-    }
+    crate::shared::units::byte_size(bytes)
 }

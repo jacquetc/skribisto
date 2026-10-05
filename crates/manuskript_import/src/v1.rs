@@ -17,6 +17,7 @@ use crate::mmd;
 use crate::model::{Info, Label, Project, Settings, Summary, normalise_color};
 use crate::outline_xml;
 use crate::source::ManuskriptSource;
+use skrib_format::import_notice::ImportNotice;
 
 const INFOS_MEMBER: &str = "infos.txt";
 const SUMMARY_MEMBER: &str = "summary.txt";
@@ -71,16 +72,16 @@ pub fn read(src: &ManuskriptSource) -> Project {
     }
 }
 
-fn read_info(src: &ManuskriptSource, notices: &mut Vec<String>) -> Info {
+fn read_info(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Info {
     let Some(text) = src.text(INFOS_MEMBER) else {
         return Info::default();
     };
     let file = mmd::parse(&text);
     for key in file.unknown_keys(INFO_KEYS) {
-        notices.push(format!(
-            "'{INFOS_MEMBER}' carries a field this importer does not know, '{key}'. It was not \
-             imported."
-        ));
+        notices.push(ImportNotice::UnknownField {
+            member: INFOS_MEMBER.to_string(),
+            field: key,
+        });
     }
     Info {
         title: file.get("Title").unwrap_or_default().to_string(),
@@ -94,16 +95,16 @@ fn read_info(src: &ManuskriptSource, notices: &mut Vec<String>) -> Info {
     }
 }
 
-fn read_summary(src: &ManuskriptSource, notices: &mut Vec<String>) -> Summary {
+fn read_summary(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Summary {
     let Some(text) = src.text(SUMMARY_MEMBER) else {
         return Summary::default();
     };
     let file = mmd::parse(&text);
     for key in file.unknown_keys(SUMMARY_KEYS) {
-        notices.push(format!(
-            "'{SUMMARY_MEMBER}' carries a field this importer does not know, '{key}'. It was not \
-             imported."
-        ));
+        notices.push(ImportNotice::UnknownField {
+            member: SUMMARY_MEMBER.to_string(),
+            field: key,
+        });
     }
     Summary {
         situation: file.get("Situation").unwrap_or_default().to_string(),
@@ -120,7 +121,7 @@ fn read_summary(src: &ManuskriptSource, notices: &mut Vec<String>) -> Summary {
 /// checking, so a colourless label crashes its load. Here a line with no colon is
 /// a label with no colour, which is the only reading that does not throw away a
 /// project over a hand edit.
-fn read_labels(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<Label> {
+fn read_labels(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Vec<Label> {
     let Some(text) = src.text(LABELS_MEMBER) else {
         return Vec::new();
     };
@@ -145,10 +146,10 @@ fn read_labels(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<Label> 
         }
     }
     if colourless > 0 {
-        notices.push(format!(
-            "'{LABELS_MEMBER}' has {colourless} line(s) with no colour. They were imported \
-             without one; Manuskript stops loading the project on such a line."
-        ));
+        notices.push(ImportNotice::ColourlessLabels {
+            member: LABELS_MEMBER.to_string(),
+            count: colourless as u64,
+        });
     }
     labels
 }
@@ -175,17 +176,17 @@ fn read_statuses(src: &ManuskriptSource) -> Vec<String> {
 /// JSON since the pickle was removed for the CVE. Everything else in the file is
 /// window state — pane sizes, the cork-board background, the frequency analyzer's
 /// word list — and belongs to the application the project is leaving.
-fn read_settings(src: &ManuskriptSource, notices: &mut Vec<String>) -> Settings {
+fn read_settings(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Settings {
     let Some(text) = src.text(SETTINGS_MEMBER) else {
         return Settings::default();
     };
     let parsed: serde_json::Value = match serde_json::from_str(&text) {
         Ok(v) => v,
         Err(e) => {
-            notices.push(format!(
-                "'{SETTINGS_MEMBER}' is not readable JSON ({e}); the project's language was not \
-                 imported."
-            ));
+            notices.push(ImportNotice::SettingsUnreadable {
+                member: SETTINGS_MEMBER.to_string(),
+                error: e.to_string(),
+            });
             return Settings::default();
         }
     };
@@ -210,7 +211,7 @@ fn read_settings(src: &ManuskriptSource, notices: &mut Vec<String>) -> Settings 
 /// third-party editor would have touched.
 fn read_revisions(
     src: &ManuskriptSource,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
 ) -> Vec<crate::model::Revision> {
     let Some(text) = src.text(REVISIONS_MEMBER) else {
         return Vec::new();
@@ -221,10 +222,10 @@ fn read_revisions(
             parsed.revisions
         }
         Err(e) => {
-            notices.push(format!(
-                "'{REVISIONS_MEMBER}' could not be read ({e}); the project's history was not \
-                 imported, but nothing else was affected."
-            ));
+            notices.push(ImportNotice::RevisionsUnreadable {
+                member: REVISIONS_MEMBER.to_string(),
+                error: e.to_string(),
+            });
             Vec::new()
         }
     }
@@ -237,7 +238,7 @@ fn read_revisions(
 /// deleted writers' images out of their own project folders. Nothing is deleted
 /// here, but a file that was not imported should be said out loud rather than left
 /// for the writer to discover missing.
-fn report_unaccounted_members(src: &ManuskriptSource, notices: &mut Vec<String>) {
+fn report_unaccounted_members(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) {
     let known_roots = [
         "MANUSKRIPT",
         "VERSION",
@@ -265,16 +266,8 @@ fn report_unaccounted_members(src: &ManuskriptSource, notices: &mut Vec<String>)
         return;
     }
     let shown: Vec<&str> = unaccounted.iter().copied().take(5).collect();
-    let more = unaccounted.len().saturating_sub(shown.len());
-    let tail = if more > 0 {
-        format!(" and {more} more")
-    } else {
-        String::new()
-    };
-    notices.push(format!(
-        "This project holds {} file(s) that are not part of the Manuskript format and were not \
-         imported: {}{tail}.",
-        unaccounted.len(),
-        shown.join(", ")
-    ));
+    notices.push(ImportNotice::ForeignFiles {
+        count: unaccounted.len() as u64,
+        shown: shown.iter().map(|m| m.to_string()).collect(),
+    });
 }

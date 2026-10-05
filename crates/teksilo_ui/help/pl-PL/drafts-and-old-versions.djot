@@ -1,30 +1,45 @@
-## Where a old chapter go
+## Gdzie trafia stary rozdział
 
-Zmieniłeś rozdział i chcesz ten stary, w którym nadal możesz go przeczytać.
+Rozdział został napisany od nowa, a chcesz zachować stary tak, aby wciąż można go było przeczytać.
 
-Włóż go do innego segregatora.
+Umieść go w innym segregatorze.
 
-## Sporządzanie kopii
+## Tworzenie kopii
 
-- Wybierz rozdział w panelu * Binder *. Naciśnij `Ctrl+D` lub wybierz * Document ▸ Duplicate *. Kopia zachowuje ten sam tytuł i ląduje po oryginale i wszystko pod nim.
-- Wybierz kopię, drugą z dwóch. Powielanie pozostawia wybór na oryginale, więc zmienić nazwę kopii tylko po wybraniu go, z * Document ▸ Zmień nazwę *.
-- Projekt rozpoczęty z nowego szablonu posiada już segregator * Notes *. Jeśli twój nie ma, przycisk na górze panelu * Binder * posiada * Nowy binder… *.
-- Przeciągnij kopię na segregator. Jeśli przycisk nazywa jeden segregator zamiast * Wszystkie segregatory *, wybierz * Pokaż wszystkie segregatory * najpierw, więc oba końce programu przeciągnij.
+- Zaznacz rozdział w panelu *Segregator*. Naciśnij `Ctrl+D` lub wybierz *Dokument ▸
+  Duplikuj*. Kopia ma ten sam tytuł i trafia za oryginał wraz z całą jego zawartością.
+- Zaznacz kopię, czyli drugi z dwóch elementów. Po duplikowaniu zaznaczony pozostaje oryginał,
+  więc zmieniaj nazwę kopii dopiero po jej wybraniu, poleceniem *Dokument ▸ Zmień nazwę*.
+- Projekt utworzony z szablonu powieści ma już segregator *Notatki*. Jeśli Twój go nie ma,
+  przycisk u góry panelu *Segregator* zawiera polecenie *Nowy segregator…*.
+- Przeciągnij kopię na ten segregator. Jeśli przycisk pokazuje nazwę jednego segregatora
+  zamiast *Wszystkie segregatory*, najpierw wybierz *Pokaż wszystkie segregatory*, aby widoczne
+  były oba końce przeciągania.
 
-Aby ponownie użyć starego rozdziału, przesuń przepisany rozdział z książki i przeciągnij stary z powrotem na swoje miejsce.
+Aby znów użyć starego rozdziału, przenieś nowy rozdział poza książkę i przeciągnij stary
+z powrotem na jego miejsce.
 
-## Trzymaj stare projekty z dala od książki
+## Stare wersje robocze poza książką
 
-Stary rozdział w innym segregatorze jest poza protokołem. Słowa się liczą, twoje cele i tempo, a eksport je pomija.
+Stary rozdział w innym segregatorze jest poza książką. Liczba słów, cele, tempo i eksport go
+pomijają.
 
-## Co jeszcze na to działa?
+## Co nadal działa
 
-Wszystko o czytaniu i edytowaniu. Stary rozdział zachowuje swój tytuł i miejsce w segregatorze, który wybrałeś. Jest wciąż odnaleziona przez wyszukiwanie, wciąż sprawdzona, wciąż cofnięta.
+Wszystko, co dotyczy czytania i edycji. Stary rozdział zachowuje tytuł i miejsce w wybranym
+segregatorze. Nadal jest uwzględniany w wyszukiwaniu, sprawdzaniu pisowni i kopiach zapasowych.
 
-Twoja biblia wciąż tam pracuje. Jeśli postać jest nazwana w starym szkicu, jej wpis nadal liczy te sceny.
+Biblia opowieści również tam działa. Jeśli w starej wersji pojawia się postać, jej wpis nadal
+liczy te sceny.
 
-## W inny sposób, a kiedy pasują
+## Inne sposoby i kiedy ich używać
 
-- * Śmieci * jest za coś, przeciwko czemu zdecydowałeś. Zdemolowany element pozostawia panel * Binder * i zatrzymuje liczenie i pozostaje do odzyskania. Można jeszcze otworzyć jeden z panelu * Kosz *, aby go przeczytać, ale jest on złożony jako odrzucony, nie przechowywane.
-- Panel * Versions * zachowuje to, co powiedział wcześniej jeden tekst i może przywrócić starszy stan. Sięgnij po odpowiedź "co ten ustęp powiedział wczoraj". To działa jeden element na raz, a przywracanie zastępuje to, co jest teraz. Zob. [kopie zapasowe i wersje słowne](:help-backups-and-versions).
-- * Zawarte w eksporcie *, w Inspektorze, decyduje, czy produkt osiągnie ukończony książki. Wyłączcie go, a element zostanie pominięty przy eksporcie książki. Liczy się twoje słowo.
+- *Kosz* służy do tego, z czego zrezygnowano. Element w koszu znika z panelu *Segregator*,
+  przestaje być liczony i można go odzyskać. Nadal da się go otworzyć z panelu *Kosz*, aby
+  go przeczytać, ale jest odłożony jako odrzucony, a nie zachowany.
+- Panel *Wersje* przechowuje wcześniejsze brzmienie jednego tekstu i może przywrócić starszy
+  stan. Sięgnij po niego, gdy chcesz sprawdzić, jak brzmiał ten akapit wczoraj. Działa na
+  jednym elemencie naraz, a przywrócenie zastępuje obecną treść. Zobacz
+  [kopie zapasowe i wersje](:help-backups-and-versions).
+- Opcja *Uwzględnij w eksporcie* w inspektorze decyduje, czy element trafi do gotowej książki.
+  Po jej wyłączeniu element jest pomijany przy eksporcie książki i w liczbie słów.

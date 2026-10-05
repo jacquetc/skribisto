@@ -22,6 +22,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result, bail};
+use skrib_format::import_notice::ImportNotice;
 use skrib_format::{SkribShape, write_bundle};
 
 use model::{PlumeAttendance, PlumeInfo};
@@ -34,7 +35,9 @@ pub struct ImportSummary {
     pub imported_items: u64,
     /// Meaningful (non-separator) Plume nodes that were trashed and skipped.
     pub skipped_trashed: u64,
-    pub warnings: Vec<String>,
+    /// What the writer should know about the conversion, as data: the UI words
+    /// each notice in the interface language.
+    pub warnings: Vec<ImportNotice>,
 }
 
 /// Convert the Plume project at `source_path` into a `.skrib` zip at `output_path`.
@@ -65,7 +68,10 @@ pub fn import(
 /// Convert the Plume project at `source_path` into a `.skrib` zip at
 /// `output_path`, reporting progress and honouring cancellation.
 ///
-/// `report(percent, label)` drives the UI's progress toast; `cancel` is polled
+/// `report(percent, label)` drives the UI's progress toast. `label` is either a
+/// phase code (`import.opening`, `import.outline`, …), which the UI translates —
+/// this crate has no catalogue — or the title of the entry being mapped, shown
+/// as data. `cancel` is polled
 /// at every phase boundary and once per mapped node. Cancellation leaves nothing
 /// on disk: the `.skrib` is written to a sibling temp file and atomically renamed
 /// into place only after the final cancel check, so an existing `output_path`
@@ -85,7 +91,7 @@ pub fn import_with_progress(
         bail!("'{output_path}' already exists (choose another name or allow overwrite)");
     }
 
-    report(2.0, "Opening the Plume project…");
+    report(2.0, "import.opening");
     let src = PlumeSource::open(source_path)?;
     bail_if_cancelled(cancel)?;
 
@@ -109,7 +115,7 @@ pub fn import_with_progress(
     // Write to a sibling temp file, then atomically rename into place — so an
     // existing target (overwrite) is only replaced once the write fully succeeds
     // and no late cancel arrived.
-    report(92.0, "Writing the .skrib…");
+    report(92.0, "import.writing");
     let tmp_path = format!("{output_path}.importing");
     write_bundle(&tmp_path, SkribShape::ZipFile, &mapped.bundle)
         .with_context(|| format!("writing '{output_path}'"))?;
@@ -120,7 +126,7 @@ pub fn import_with_progress(
     std::fs::rename(&tmp_path, output_path)
         .with_context(|| format!("finalising '{output_path}'"))?;
 
-    report(100.0, "Done");
+    report(100.0, "import.done");
     Ok(ImportSummary {
         output_path: output_path.to_string(),
         imported_items: mapped.imported_items,
@@ -140,7 +146,7 @@ fn read_and_map(
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Result<map::Mapped> {
-    report(12.0, "Reading the outline…");
+    report(12.0, "import.outline");
     let tree = tree_parse::parse(&src.tree_xml).context("reading the Plume outline (tree)")?;
     let attendance = match &src.attendance_xml {
         Some(xml) => {
@@ -177,7 +183,7 @@ fn read_and_map(
         .unwrap_or_default();
     bail_if_cancelled(cancel)?;
 
-    report(20.0, "Converting chapters and scenes…");
+    report(20.0, "import.converting");
     Ok(map::build_bundle(
         &tree,
         &attendance,

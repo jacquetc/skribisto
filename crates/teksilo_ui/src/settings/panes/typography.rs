@@ -69,7 +69,7 @@ pub(crate) fn typography_rows(
                 typo.size_range.min,
                 typo.size_range.max,
                 typo.size_range.step,
-                |v| format!("{:.0}%", v * 100.0),
+                |v| crate::shared::units::percent(v as f64),
             ),
         )
         .line(
@@ -81,19 +81,19 @@ pub(crate) fn typography_rows(
         .line(
             field_label(tr!(settings_field_first_line_indent())),
             slider_field(typo.first_line_indent.clone(), 0.0, 60.0, 2.0, |v| {
-                format!("{} px", v.round() as i32)
+                crate::shared::units::pixels(v as f64)
             }),
         )
         .line(
             field_label(tr!(settings_field_paragraph_spacing_before())),
             slider_field(typo.para_spacing_before.clone(), 0.0, 40.0, 2.0, |v| {
-                format!("{} px", v.round() as i32)
+                crate::shared::units::pixels(v as f64)
             }),
         )
         .line(
             field_label(tr!(settings_field_paragraph_spacing_after())),
             slider_field(typo.para_spacing_after.clone(), 0.0, 40.0, 2.0, |v| {
-                format!("{} px", v.round() as i32)
+                crate::shared::units::pixels(v as f64)
             }),
         )
 }

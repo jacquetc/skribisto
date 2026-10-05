@@ -1,102 +1,96 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
-
 wm-book = En bok i ditt projekt.
-wm-book-more = En bok är så enkel eller så skiktad som du vill. En kort historia kan vara bara några [scener](:wm-scene). Ett längre projekt kan bo [delar delar](:wm-part) och [Kapitel](:wm-chapter) så djupt som du vill. Formen är din.
-wm-part = En del gruppering kapitel.
-wm-part-more = En del samlar [Kapitel](:wm-chapter) under en rubrik. Som ett kapitel går den fram till nästa del eller slutet av [Bok](:wm-book).
+wm-book-more = En bok kan vara så enkel eller så mångskiktad som du vill. En novell kan bestå av bara några [scener](:wm-scene). Ett längre verk kan kapsla [delar](:wm-part) och [kapitel](:wm-chapter) så djupt du vill. Formen bestämmer du.
+wm-part = En del som grupperar kapitel.
+wm-part-more = En del samlar [kapitel](:wm-chapter) under en rubrik. Liksom ett kapitel sträcker den sig fram till nästa del eller till slutet av [boken](:wm-book).
 wm-chapter = Ett kapitel i boken.
-wm-chapter-more = Ett kapitel går härifrån fram till nästa kapitel, nästa [Del](:wm-part), eller [änden av boken](:wm-end-of-book). Det kommer i två former: en kapitelmapp som innehåller [scener](:wm-scene), eller ett platt kapitel som bär sin egen prosa. Välj vilken nya kapitel som används i Inställningar, under struktur.
-wm-scene = En scen av prosa.
-wm-scene-more = En scen håller ditt skrivande. Varje skrivobjekt har två sidor: huvudtexten och en [Synopsis](:wm-synopsis) att planera med. Båda öppnar tillsammans i redaktören.
+wm-chapter-more = Ett kapitel sträcker sig härifrån fram till nästa kapitel, nästa [del](:wm-part) eller [bokens slut](:wm-end-of-book). Det finns i två former: en kapitelmapp som innehåller [scener](:wm-scene), eller ett platt kapitel som har egen prosa. Välj vilken form nya kapitel får i Inställningar, under Struktur.
+wm-scene = En scen med prosa.
+wm-scene-more = En scen innehåller det du skriver. Varje skrivobjekt har två sidor: huvudtexten och en [synopsis](:wm-synopsis) att planera med. Båda öppnas tillsammans i redigeraren.
 wm-note = En anteckning.
-wm-note-more = En anteckning håller text och en [Synopsis](:wm-synopsis), som en [Scen](:wm-scene), för forskning, åt sidan eller påminnelser. Alla objekt kan vara en del av den sammanställda boken, inklusive en anteckning som sitter i en [Kapitel](:wm-chapter).
+wm-note-more = En anteckning har text och en [synopsis](:wm-synopsis), precis som en [scen](:wm-scene), för research, sidospår eller påminnelser. Alla objekt kan ingå i den kompilerade boken, även en anteckning som ligger inuti ett [kapitel](:wm-chapter).
 wm-note-folder = En anteckning som innehåller andra objekt.
-wm-note-folder-more = En [Anteckning](:wm-note) som också innehåller objekt under den, så att du kan gruppera relaterade anteckningar tillsammans. Det håller sin egen [Synopsis](:wm-synopsis), och objekten i hålla sin egen text.
-wm-folder = En organiserande mapp.
-wm-folder-more = En behållare för att ordna objekt i bindaren passar dig dock. Det bär en [Synopsis](:wm-synopsis) men ingen prosa av sig själv.
-wm-end-of-book = Marks där en bok slutar.
-wm-end-of-book-more = Varje bok delar en kontinuerlig lista, så en boks slut beslutas inte genom att häcka. Denna markör säger att [Bok](:wm-book) stannar här. Allt efter det hör till nästa bok.
-wm-story-bible-entry = En taggad, aliased note om din historia.
-wm-story-bible-entry-more = En [Anteckning](:wm-note) om en karaktär, en plats eller något annat värt arkivering, skapad med ett namn, taggar, alias och en startmall allt i ett steg. Ingenting på sidan skiljer det efteråt, eftersom det förblir en vanlig anteckning du kan byta namn, retag eller konvertera som någon annan.
+wm-note-folder-more = En [anteckning](:wm-note) som också innehåller objekt under sig, så att du kan gruppera anteckningar som hör ihop. Den har en egen [synopsis](:wm-synopsis), och objekten inuti har var sin egen text.
+wm-folder = En mapp för att organisera.
+wm-folder-more = En behållare för att ordna objekten i pärmen som det passar dig. Den har en [synopsis](:wm-synopsis) men ingen egen prosa. Det är objekten inuti som innehåller texten.
+wm-end-of-book = Markerar var en bok slutar.
+wm-end-of-book-more = Alla böcker delar en enda sammanhängande lista, så en boks slut avgörs inte av kapslingen. Den här markören säger att [boken](:wm-book) slutar här. Allt som kommer efter hör till nästa bok.
+wm-story-bible-entry = En taggad anteckning med alias om din berättelse.
+wm-story-bible-entry-more = En [anteckning](:wm-note) om en person, en plats eller något annat som är värt att arkivera, skapad med namn, taggar, alias och en startmall i ett enda steg. Efteråt skiljer sig inget på sidan, eftersom den förblir en vanlig anteckning som du kan byta namn på, tagga om eller konvertera som alla andra.
 wm-synopsis = En sammanfattning av ett skrivobjekt.
-wm-synopsis-more = En sammanfattning bifogad till något skrivobjekt, vanligtvis en kort paragraf men så länge du vill. Använd den för att planera och navigera innan prosa finns. Det sitter bredvid huvudtexten i redaktören.
-
-scene-break-minor = En vanlig scenbrytning: en tidsförskjutning, plats eller synpunkt i ett kapitel.
+wm-synopsis-more = En sammanfattning som hör till varje skrivobjekt, oftast ett kort stycke men så lång som du vill. Använd den för att planera och navigera innan prosan finns. Den står bredvid huvudtexten i redigeraren.
+scene-break-minor = En vanlig scenbrytning: ett byte av tid, plats eller perspektiv inom ett kapitel.
 scene-break-minor-more =
-    Markerar en paus *där du lägger den*, inklusive i mitten av en [Scen](:wm-scene). Splitting prosa i två objekt är ett organisatoriskt val, så det skapar aldrig en paus på egen hand.
+    Markerar en brytning *där du placerar den*, även mitt i en [scen](:wm-scene). Att dela prosa i två objekt är ett organisatoriskt val, så det skapar aldrig en brytning av sig självt.
 
-    Skrivs in i prosa som tre asterisker separerade av utrymmen. Hur det utskrifter bestäms av exportstilen, inte av vad du skriver: en Shunn manuskript sätter det som en enda #, en handelspapper som en dinkus, och de flesta franska, tyska, spanska, ryska och italienska publicering som en nakna klyfta utan markering alls.
-scene-break-major = En starkare uppdelning: en stor tid hoppa, eller en avgörande förändring av synpunkten.
+    Skrivs in i prosan som tre asterisker åtskilda av mellanslag. Hur den skrivs ut bestäms av exportstilen, inte av vad du skriver: ett Shunn-manus sätter den som ett enda #, en pocketutgåva som en dinkus, och de flesta franska, tyska, spanska, ryska och italienska förlag som ett tomrum helt utan markering.
+scene-break-major = En starkare indelning: ett stort tidshopp eller ett avgörande perspektivbyte.
 scene-break-major-more =
-    Samma idé som en vanlig scenbrytning, ett steg upp. Använd den när en vanlig paus skulle underskatta hoppet.
+    Samma idé som en vanlig scenbrytning, ett steg starkare. Använd den när en vanlig brytning skulle tona ned språnget.
 
-    Skrivs som # # #, och tryckt annorlunda från den vanliga nivån genom exportstilen. Shunn standard manuskriptformat sätter ett enda # mot # # # # för exakt denna distinktion. Där en tradition inte har något starkare märke, skriver båda nivåerna samma.
-wm-find-in-prose = Skribisto letar efter detta objekt i din prosa.
-wm-find-in-prose-more = Slå på detta för taggar som heter saker du skriver om: tecken, platser, objekt. Alla objekt som bär en sådan tagg matchas mot din prosa med sin titel och med de andra namnen du ger den, så varje [Scen](:wm-scene) listar vem och vad som visas i det utan att du länkar något för hand. Lämna det för taggar som beskriver ett objekt snarare än namn ett, till exempel ett utkast status eller en påminnelse om att kontrollera kontinuitet. Varje objekt som den matchar går också med din [Berättelsebibel](:wm-story-bible).
-wm-story-bible = Varje karaktär, plats och annan taggad post, samlad i ett rutnät.
-wm-story-bible-more = Öppna från alla anteckningar mappens egen flik. Kortgrupp med tag, och varje namn hur många aliases en post svarar på och hur många scener den har dykt upp, hämtad från varje [Hitta i prose](:wm-find-in-prose) tag i projektet. Filtrera med bok endast smala vilka kort visar; det bestämmer aldrig vilka poster som finns.
-
-tooltip-go-to = Hoppa till något objekt i bindemedel (Ctrl+G)
-synopsis-collapse-tooltip = Dölj synopsis-kolumnen
-
-wm-paratext = En text som inte är en del av historien.
-wm-paratext-more = Ett förord, ett engagemang, ett efterord, en colophon: skriva som hör till boken men inte till sin kropp. Exporteras var du än lägger den, och aldrig räknas i manuskriptets ordräkning. Där det går är upp till dig: konventioner skiljer sig från land och förläggare.
+    Skrivs som # # # och skrivs ut annorlunda än den vanliga nivån enligt exportstilen. Shunns standardformat för manus sätter ett enda # mot # # # för just den här skillnaden. Där en tradition saknar en starkare markering skrivs båda nivåerna ut likadant.
+wm-find-in-prose = Skribisto letar efter det här objektet i din prosa.
+wm-find-in-prose-more = Slå på detta för taggar som namnger det du skriver om: personer, platser, föremål. Varje objekt med en sådan tagg matchas mot din prosa via sin titel och de andra namn du ger det, så att varje [scen](:wm-scene) listar vem och vad som förekommer i den utan att du behöver länka något för hand. Låt det vara avstängt för taggar som beskriver ett objekt snarare än namnger det, som en utkaststatus eller en påminnelse om att kontrollera kontinuiteten. Varje objekt som matchas hamnar också i din [berättelsebibel](:wm-story-bible).
+wm-story-bible = Alla personer, platser och andra taggade poster, samlade i ett rutnät.
+wm-story-bible-more = Öppnas från varje anteckningsmapps egen flik. Korten grupperas efter tagg, och varje kort anger hur många alias posten svarar på och i hur många scener den har förekommit, hämtat från varje tagg med [sök i prosan](:wm-find-in-prose) i projektet. Att filtrera efter bok begränsar bara vilka kort som visas; det avgör aldrig vilka poster som finns.
+tooltip-go-to = Gå till valfritt objekt i pärmen (Ctrl+G)
+synopsis-collapse-tooltip = Dölj synopsisspalten
+wm-paratext = En text som inte är en del av berättelsen.
+wm-paratext-more = Ett förord, en dedikation, ett efterord, en kolofon: text som hör till boken men inte till dess huvuddel. Den exporteras där du placerar den och räknas aldrig in i manusets ordantal. Var den hamnar bestämmer du: konventionerna skiljer sig mellan länder och förlag.
 wm-paratext-folder = En mapp för paratexter.
-wm-paratext-folder-more = Någonstans för att hålla förord och efterord så att de inte rör bindemedel. Organisera endast: det bär en [Synopsis](:wm-synopsis) men lägger ingenting till den exporterade boken, inte ens sitt eget namn.
-
-goal-target = Hur länge detta stycke är tänkt att vara.
-goal-target-more = Ställ in ett mål på allt: en [Scen](:wm-scene), en [Kapitel](:wm-chapter), en [Del](:wm-part)Hela [Bok](:wm-book)Var och en är sitt eget nummer och står på egen hand, så att sätta ett mål på ett kapitel ändrar aldrig sin bok, och en boks mål är aldrig en summa av kapitlen inuti det. [Framsteg](:goal-progress) är allt skrivet under det. Lämna ett mål på noll och det är helt enkelt inte inställt. Numret räknas in [Ord eller karaktärer](:goal-unit)Oavsett vilket projektet använder.
-goal-unit = Oavsett om det här projektet räknas med ord eller karaktärer.
-goal-unit-more = Ett projektomfattande val, eftersom en längd enhet tillhör manuskriptet och dess marknad snarare än till en sektion: tyska och franska publiceringsåtgärden i skyltar, japanska i 400-karaktärsblad, kinesiska av de tusen tecknen, de flesta engelskspråkiga publicering i ord. Båda siffrorna hålls sida vid sida och aldrig omvandlas till den andra, så byta enhetspunkter varje [Mål](:goal-target) på den andra siffran och växla tillbaka återställer den första. Vad det inte gör är att konvertera någonting, så mål som redan har angetts för hand.
-goal-progress = Hur mycket är skrivet mot målet.
-goal-progress-explained = En bit med prosa av sin egen mäts mot sin egen längd; en behållare mot [Allt skrivet under det](:goal-manuscript-words). Baren värmer från rött genom bärnsten till grönt när skrivandet kommer in, och ändrar igen när biten har gått bra förbi vad som planerades, vilket är värt att märka när ett kapitel har en längd att hålla sig till.
-goal-manuscript-words = Vad räknas som manuskriptet.
-goal-manuscript-words-more = Endast prosa som faktiskt skulle exporteras: [scener](:wm-scene) och [Kapitel](:wm-chapter) som bär sin egen text. En [Anteckning](:wm-note) eller en [Paratext](:wm-paratext) är inte en del av manuskriptet och räknas aldrig mot en. Allt i papperskorgen faller ut, och så gör allt [lämnas utanför exporten](:goal-exportable).
-goal-exportable = Detta objekt lämnas utanför exporten.
-goal-exportable-more = Dess egen längd visar fortfarande, eftersom skrivandet fortfarande finns där, men det räknas inte mot totalt, precis som det kommer att visas i ingen exporterad bok. Att lämna en behållare lämnar inte bitarna inuti det: varje objekt svarar för sig själv, vilket är vad "Apply to children" -knappen bredvid växeln är för.
-goal-distribute = Dela detta mål ut över vad som finns inuti.
-goal-distribute-more = Splits en [Bokens](:wm-book) eller [Delens](:wm-part) mål över sina omedelbara barn så bitarna lägga upp till det exakt. Som standard det fyller bara de utan mål ännu och lämnar dina egna siffror ensam. Vad det skriver är vanliga [mål](:goal-target), fri att redigera efteråt och fri att glida isär: detta är en åtgärd, inte en stående arrangemang.
-goal-subtree-total = Vad målen inuti lägger till.
-goal-subtree-total-more = Ett faktum, inte ett mål. Detta projekt behandlar aldrig en behållares mål som summan av de inuti det, eftersom det är hur en mapp siffra hamnar på egen hand när en scen inuti det ges ett nummer. Denna linje berättar helt enkelt vad dina egna nummer kommer till, så du kan jämföra det med behållarens [Mål](:goal-target) själv, eller [dela ut en](:goal-distribute).
-goal-milestone = Ett datum för att nå något av.
-goal-milestone-more = Två typer. En säger att [Bok](:wm-book) bör stå vid en viss längd efter ett datum, en waypoint på sin egen kurva. Den andra säger att en viss [Kapitel](:wm-chapter) eller [Del](:wm-part) borde ha nått [sitt eget mål](:goal-target) då, och läser det numret lever snarare än att hålla en kopia av det, så redigera målet uppdaterar milstolpen också. Båda visas på bokens [Pace Plan](:pace-plan).
+wm-paratext-folder-more = En plats för förord och efterord, så att de inte belamrar pärmen. Bara för att organisera: den har en [synopsis](:wm-synopsis) men tillför ingenting till den exporterade boken, inte ens sitt eget namn.
+goal-target = Hur lång den här delen är tänkt att bli.
+goal-target-more = Ange ett mål för vad som helst: en [scen](:wm-scene), ett [kapitel](:wm-chapter), en [del](:wm-part), hela [boken](:wm-book). Varje mål är ett eget tal som står för sig självt, så ett mål för ett kapitel ändrar aldrig bokens, och bokens mål är aldrig summan av kapitlen i den. Det som däremot summeras är texten: en behållares [framsteg](:goal-progress) är allt som skrivits under den. Ett mål som står på noll är helt enkelt inte angivet. Talet räknas i [ord eller tecken](:goal-unit), beroende på vad projektet använder.
+goal-unit = Om projektet räknar i ord eller i tecken.
+goal-unit-more = Ett val för hela projektet, eftersom en längdenhet hör till manuset och dess marknad snarare än till ett enskilt avsnitt: tyska och franska förlag mäter i tecken, japanska i ark om 400 tecken, kinesiska i tusental tecken, de flesta engelskspråkiga förlag i ord. Båda talen sparas sida vid sida och inget av dem räknas någonsin om till det andra, så när du byter enhet pekar varje [mål](:goal-target) på det andra talet, och när du byter tillbaka återställs det första. Det som inte sker är någon omräkning, så mål som redan har angetts behöver uppdateras för hand.
+goal-progress = Hur mycket som är skrivet, jämfört med målet.
+goal-progress-explained = En del med egen prosa mäts mot sin egen längd; en behållare mot [allt som skrivits under den](:goal-manuscript-words). Stapeln går från rött via gult till grönt allteftersom texten kommer, och ändras igen när delen har gått långt över det planerade, vilket är bra att lägga märke till när ett kapitel har en längd att hålla sig till.
+goal-manuscript-words = Vad som räknas som manus.
+goal-manuscript-words-more = Bara prosa som faktiskt skulle exporteras: [scener](:wm-scene) och [kapitel](:wm-chapter) med egen text. En [anteckning](:wm-note) eller en [paratext](:wm-paratext) är inte en del av manuset och räknas aldrig in i det. Allt i papperskorgen faller bort, och likaså allt som är [uteslutet från exporten](:goal-exportable).
+goal-exportable = Det här objektet utesluts från exporten.
+goal-exportable-more = Dess egen längd visas fortfarande, eftersom texten finns kvar, men den räknas inte in i någon summa, precis som den inte kommer med i någon exporterad bok. Att utesluta en behållare utesluter inte delarna i den: varje objekt gäller för sig självt, och det är vad knappen ”Tillämpa på underobjekt” bredvid brytaren är till för.
+goal-distribute = Fördela det här målet på det som finns inuti.
+goal-distribute-more = Delar upp målet för en [bok](:wm-book) eller en [del](:wm-part) på dess närmaste underobjekt, så att delarna summeras exakt till det. Som standard fylls bara de i som saknar mål, och dina egna tal lämnas orörda. Det som skrivs är vanliga [mål](:goal-target), fria att redigera efteråt och fria att glida isär: det är en enstaka åtgärd, inte ett bestående arrangemang.
+goal-subtree-total = Vad målen här inuti blir sammanlagt.
+goal-subtree-total-more = Ett faktum, inte ett mål. Projektet behandlar aldrig en behållares mål som summan av målen inuti den, eftersom det är så en mapps tal börjar ändras av sig självt när en scen i den får ett tal. Den här raden visar bara vad dina egna tal blir sammanlagt, så att du själv kan jämföra med behållarens [mål](:goal-target), eller [fördela ett](:goal-distribute).
+goal-milestone = Ett datum då något ska vara uppnått.
+goal-milestone-more = Två sorter. Den ena säger att [boken](:wm-book) ska ha nått en viss längd vid ett visst datum, en etappunkt på dess egen kurva. Den andra säger att ett visst [kapitel](:wm-chapter) eller en viss [del](:wm-part) ska ha nått [sitt eget mål](:goal-target) till dess, och läser det talet direkt i stället för att spara en kopia, så att en ändring av målet också uppdaterar milstolpen. Båda visas i bokens [tempoplan](:pace-plan).
 pace-plan = Bokens skrivschema.
-pace-plan-more = En [Mål](:goal-target) och en tidsfrist, med de dagar du skriver på, förvandlades till hur mycket en dag behöver. Det läser bokens eget mål, så att ställa in den här och ställa in den i inspektören är samma nummer på två ställen. Waypoints längs vägen är [Milstolpar](:goal-milestone).
-
-concept-tag = En färgkodad etikett som du kan sätta på något objekt, återanvändbart över hela projektet.
-concept-tag-more = Tag ett objekt för att markera det: en status, en plats, en tråd du spårar. Samma tagg kan sitta på ett antal objekt, och ett objekt kan bära flera. Slå på [Hitta i prose](:wm-find-in-prose) för en tagg som namnger något i din bok, en karaktär eller en plats, och Skribisto börjar leta efter det i din prosa.
-concept-label = En kort anteckning du skriver under en artikel titel, för dina egna ögon.
-concept-label-more = Inte en [Tagg](:concept-tag): en etikett tillhör ett objekt ensam, vanlig text utan färg eller katalog bakom det, något som "1st plot point" eller "behöver ett namn". Ställ in det från objektets kontextmeny, eller redigera det inline i översiktens etikkolumn; det visar som en liten undertext under titeln, i konturen och i strömmen lika.
-concept-point-of-view = Vars ögon en scen berättas genom: en eller flera av din berättelses gjutning.
-concept-point-of-view-more = Beläget i inspektören, bredvid gjutningen. Välja någon ännu inte i gjutningen lägger dem där också. Mer än en synpunkt är ett juridiskt val, användbart för en delad scen eller en förändring av ögonen i mitten av boken, inte något Skribisto block. Kandidater kommer från objekten en [Hitta i prose](:wm-find-in-prose) tag sätter i din historia bibel.
-concept-epigraph = Ett citat som anges i huvudet på en del eller ett kapitel.
-concept-epigraph-more = Dess eget fält, separat från [Kapitel](:wm-chapter) eller [Del](:wm-part) egna prosa; en [Scen](:wm-scene) eller en [Anteckning](:wm-note) bär ingen. Skriv en som en vanlig citat; skriv flera och varje blir sin egen blockquote, tryckt som sin egen epigraf. Dess ord räknas aldrig som manuskriptord.
-concept-footnote = En citat markerad i prosa, tryckning som en numrerad anteckning.
-concept-footnote-more = Referensen är ett enda märke inuti dina ord, så det rör sig och raderar exakt som orden runt det gör. Dess nummer lagras aldrig: Skribisto Projekt det ut fräscht från var varje referens sitter i hela manuskriptet, så införa en ryggrad varje anteckning efter det. En fotnot egna ord räknas bort från manuskriptet, aldrig vikas in i det.
-concept-chapter-mode = Oavsett om ett nytt kapitel är en mapp av scener eller ett enda platt objekt.
-concept-chapter-mode-more = Ställ in Inställningar, under struktur. Du skriver direkt till en [Kapitel](:wm-chapter) antingen sätt; den enda skillnaden är om det också kan innehålla scener under det. Båda kodningarna sammanställer samma bok, och du kan blanda dem fritt i ett projekt. Främja konverterar ett befintligt kapitel mellan de två utan att förlora ett ord.
-concept-comment = En anteckning förankrad till en exakt sträcka av prosa, som visas i marginalen.
-concept-comment-more = Det kommer ihåg orden det pekar på och vad omger dem, inte en fast position, så det överlever vanlig redigering och en full reload. Svara under för att hålla en tråd går. Om det exakta citatet inte längre kan hittas, säger kommentaren så snarare än tyst glider till fel mening.
-concept-backup = En punkt-i-tid kopia av hela projektet, hålls bredvid det.
-concept-backup-more = Tas på ett schema du väljer: på öppet, på nära håll, på ett intervall eller någon blandning, med gamla kopior beskärda efter ålder eller genom räkning. Öppna en laddar den i sitt eget fönster: du kan se och till och med redigera, men bara Spara som eller återställa håller något. Olika från en [version version version version](:concept-version), som spårar ett objekts eget förflutna.
-concept-version = Ett objekts eget förflutna: varje förändring av texten eller synopsisen.
-concept-version-more = Byggd från projektets egen spara historia och dess säkerhetskopior tillsammans, en post per förändring snarare än en per fil. Välj en post för att se vad som ändrats och återställa endast objektets text till det; resten av projektet är orörd, och en säkerhetskopia tas först. Olika från en [Säkerhetskopia](:concept-backup), som är en kopia av allt.
-concept-trash = Ett papperskorsat objekt är dolt, inte flyttat: det stannar precis där det var.
-concept-trash-more = Trashing bara vänder en flagga: objektet håller sin plats i bindaren, markerad inaktiv snarare än bort. Återställ den och det återkommer på den exakta platsen, utan återfilering att göra. Empty Trash tar bort skräpposter för gott, och var och en av dessa är ett ogiltigt steg, som alla andra projektredigering.
-concept-spellcheck = Understryker ord som ingen installerad ordbok erkänner, per projektspråk.
-concept-spellcheck-more = Varje projekt har sitt eget arbetsspråk eller språk; ett objekt kan åsidosätta dem för en scen skriven på en annan tunga. Lägg till ett ord Skribisto vet inte från redaktörens kontextmeny, till en personlig ordbok som bär över till varje projekt. Turning stavkontroll av stoppar den överallt, tills du slår tillbaka den.
-concept-search-replace = Hittar ett ord eller fras överallt i projektet, inte bara det öppna dokumentet.
-concept-search-replace-more = Tittar igenom varje scen, notera, titel, synopsis och etikett, och genom kommentarer och fotnoter också. Fall, helordsmatchning och accentmatchning är tre separata switchar. Byt alla omskriver varje granskad match i ett pass och ett undo steg, så Ctrl + Z tar tillbaka hela satsen, aldrig bara den sista förändringen.
-concept-note-template = En återanvändbar bit av att skriva in dig i allt du arbetar på.
-concept-note-template-more = Ett tomt teckenblad, en platsprofil, ett slagplåt: skriv det en gång och släpp det där du behöver det, i något objekt, inte bara en anteckning. Börja från en inbyggd förinställd, importera en .md eller .djot-fil eller skriv något och välj Dokument - Spara som mall. Förvarad i projektet, så en medförfattare som öppnar den får samma uppsättning.
-concept-text-replacement = Din egen shorthand, expanderade automatiskt när du skriver.
-concept-text-replacement-more = Ställ en trigger och dess ersättare, "btw" för "förresten", och det expanderar det ögonblick du skriver ett utrymme eller skiljetecken efter det. Case följer vad du skrev: kapitalisera triggern och expansionen kapitaliserar också. En Backspace strax efter en expansion ångrar bara den ena substitutionen. Switched på per projekt, distinkt från [Smart Punctuation](:concept-smart-punctuation).
-concept-smart-punctuation = Locale-aware typografi tillämpas automatiskt när du skriver: citat, dashes, ellipser.
-concept-smart-punctuation-more = Curls raka citat till typografiska, förvandlas - till en en dash och - till en em dash, förvandlas ... till en ellipsis, och, där du slår på, öppnar en paragraf som är skriven som "-" med en dialog streck. Ställ in per projekt, och reser in i .skrib så en medförfattare skriver med samma regler. Distinct från [Dina egna regler](:concept-text-replacement), som du skriver själv.
-concept-export-style = Ett namngivet paket av exportval: rubriker, avstånd, vad som ingår.
-concept-export-style-more = En stil, återanvänds över varje export oavsett format du väljer. De inbyggda stilarna är lättlästa; duplicera en för att få en utgångspunkt du faktiskt kan ändra. Bland dess val är att inkludera [rundtur markörer](:concept-round-trip-marks), för en fil som är bunden för en redaktör och rygg.
-concept-round-trip-marks = Osynliga bokmärken som låter en redigerad DOCX eller ODT komma hem igen.
-concept-round-trip-marks-more = Skriven endast i de två formaten som en redaktör kan skicka tillbaka, DOCX och ODT; varje annan export bär ingen. Ett bokmärke, inte ett anpassat attribut: LibreOffice remsor anpassade attribut på spara men lämnar ett bokmärke intakt. Turned per [exportstil](:concept-export-style), under "Sändning till en redaktör".
-concept-status = Där ett objekt står i ditt eget arbetsflöde: ett steg i taget, framåt.
-concept-status-more = Inte en [Tagg](:concept-tag): ett objekt har exakt en status, stadierna beställs, och projektet äger listan, så att du kan byta namn, ordna eller lägga till det när du vill. En asterisk bredvid ett kapitel eller bok betyder delarna nedan inte alla håller med det. Ställ in den från inspektören, ett kort, en ström objekt, eller här.
+pace-plan-more = Ett [mål](:goal-target) och ett slutdatum, tillsammans med de dagar du skriver, omräknade till hur mycket som behövs per dag. Planen läser bokens eget mål, så att ange det här och ange det i inspektören är samma tal på två ställen. Etappunkterna på vägen är [milstolpar](:goal-milestone).
+concept-tag = En färgkodad märkning som du kan sätta på vilket objekt som helst och återanvända i hela projektet.
+concept-tag-more = Tagga ett objekt för att märka det: en status, en plats, en tråd du följer. Samma tagg kan sitta på hur många objekt som helst, och ett objekt kan ha flera. Slå på [sök i prosan](:wm-find-in-prose) för en tagg som namnger något i din bok, en person eller en plats, så börjar Skribisto leta efter det i din prosa.
+concept-label = En kort anteckning som du skriver under ett objekts titel, för dina egna ögon.
+concept-label-more = Inte en [tagg](:concept-tag): en etikett hör till ett enda objekt, vanlig text utan färg eller katalog bakom sig, något i stil med ”första vändpunkten” eller ”behöver ett namn”. Ange den från objektets snabbmeny, eller redigera den direkt i översiktens kolumn Etikett; den visas som en liten underrubrik under titeln, både i dispositionen och i flödet.
+concept-point-of-view = Genom vems ögon en scen berättas: en eller flera personer ur berättelsens persongalleri.
+concept-point-of-view-more = Anges i inspektören, bredvid persongalleriet. Väljer du någon som ännu inte finns i persongalleriet läggs personen till där också. Mer än ett perspektiv är ett tillåtet val, användbart för en delad scen eller ett perspektivbyte mitt i boken, inget som Skribisto hindrar. Kandidaterna kommer från de objekt som en tagg med [sök i prosan](:wm-find-in-prose) placerar i din berättelsebibel.
+concept-epigraph = Ett citat som står i början av en del eller ett kapitel.
+concept-epigraph-more = Ett eget fält, skilt från [kapitlets](:wm-chapter) eller [delens](:wm-part) egen prosa; en [scen](:wm-scene) eller en [anteckning](:wm-note) har inget. Skriv ett som ett vanligt citat; skriver du flera blir vart och ett ett eget blockcitat som skrivs ut som ett eget motto. Orden räknas aldrig som ord i manuset.
+concept-footnote = En hänvisning som markeras i prosan och skrivs ut som en numrerad not.
+concept-footnote-more = Referensen är ett enda tecken bland dina ord, så den flyttas och tas bort precis som orden runt omkring. Numret sparas aldrig: Skribisto räknar fram det på nytt utifrån var varje referens står i hela manuset, så när du infogar en numreras alla efterföljande fotnoter om. En fotnots egna ord räknas separat från manuset och läggs aldrig ihop med det.
+concept-chapter-mode = Om ett nytt kapitel är en mapp med scener eller ett enda platt objekt.
+concept-chapter-mode-more = Anges i Inställningar, under Struktur. Du skriver direkt i ett [kapitel](:wm-chapter) i båda fallen; den enda skillnaden är om det också kan innehålla scener under sig. Båda formerna kompileras till samma bok, och du kan blanda dem fritt i ett projekt. Konvertera till flyttar ett befintligt kapitel mellan de två formerna utan att ett ord går förlorat.
+concept-comment = En anteckning förankrad i en exakt del av prosan, som visas i marginalen.
+concept-comment-more = Den minns orden den pekar på och vad som omger dem, inte en fast position, så den klarar vanlig redigering och en fullständig omladdning. Svara under den för att hålla en tråd vid liv. Om det exakta citatet inte längre går att hitta säger kommentaren det, i stället för att tyst glida över till fel mening.
+concept-backup = En kopia av hela projektet vid en viss tidpunkt, sparad bredvid det.
+concept-backup-more = Tas enligt ett schema du väljer: när projektet öppnas, när det stängs, med ett visst intervall eller en kombination, och gamla kopior gallras efter ålder eller antal. Om du öppnar en läses den in i ett eget fönster: du kan titta och till och med redigera, men bara Spara som eller Återställ behåller något. Skiljer sig från en [version](:concept-version), som följer ett enskilt objekts historik.
+concept-version = Ett objekts egen historik: varje ändring av dess text eller synopsis.
+concept-version-more = Byggs upp av projektets egen sparhistorik och dess säkerhetskopior tillsammans, en post per ändring snarare än en per fil. Välj en post för att se vad som ändrades och återställ bara det objektets text till den; resten av projektet påverkas inte, och en extra säkerhetskopia tas först. Skiljer sig från en [säkerhetskopia](:concept-backup), som är en kopia av allt.
+concept-trash = Ett objekt i papperskorgen döljs, men flyttas inte: det stannar precis där det var.
+concept-trash-more = Att lägga något i papperskorgen ändrar bara en flagga: objektet behåller sin plats i pärmen och markeras som inaktivt i stället för att tas bort. Återställ det så dyker det upp igen på exakt samma plats, utan att något behöver sorteras in på nytt. Töm papperskorgen tar bort objekten permanent, och varje sådan åtgärd är ett steg som kan ångras, som alla andra ändringar i projektet.
+concept-spellcheck = Stryker under ord som ingen installerad ordlista känner igen, enligt projektets språk.
+concept-spellcheck-more = Varje projekt har ett eller flera egna arbetsspråk; ett objekt kan åsidosätta dem för en scen som är skriven på ett annat språk. Lägg till ett ord som Skribisto inte känner till från redigerarens snabbmeny, i en egen ordlista som följer med till alla projekt. Om du stänger av stavningskontrollen upphör den överallt, tills du slår på den igen.
+concept-search-replace = Hittar ett ord eller en fras överallt i projektet, inte bara i det öppna dokumentet.
+concept-search-replace-more = Söker igenom varje scen, anteckning, titel, synopsis och etikett, och även kommentarer och fotnoter. Skiftläge, matchning av hela ord och matchning av accenter är tre separata brytare. Ersätt alla skriver om varje granskad träff i ett enda svep och ett enda ångringssteg, så Ctrl+Z tar tillbaka hela omgången, aldrig bara den senaste ändringen.
+concept-note-template = Ett återanvändbart textstycke som du kan infoga i allt du arbetar med.
+concept-note-template-more = Ett tomt personblad, en platsbeskrivning, en scenplan: skriv den en gång och infoga den var du än behöver den, i vilket objekt som helst, inte bara i en anteckning. Utgå från en inbyggd förinställning, importera en .md- eller .djot-fil, eller skriv något och välj Dokument ▸ Spara som mall. Mallarna sparas i projektet, så en medförfattare som öppnar det får samma uppsättning.
+concept-text-replacement = Dina egna förkortningar, som expanderas automatiskt medan du skriver.
+concept-text-replacement-more = Ange en förkortning och vad den ska ersättas med, ”mvh” för ”med vänliga hälsningar”, så expanderas den i samma stund som du skriver ett mellanslag eller ett skiljetecken efter den. Skiftläget följer det du skrev: skriv förkortningen med stor bokstav så får expansionen också stor bokstav. Backsteg direkt efter en expansion ångrar bara just den ersättningen. Slås på per projekt, skild från [smart interpunktion](:concept-smart-punctuation).
+concept-smart-punctuation = Språkanpassad typografi som tillämpas automatiskt medan du skriver: citattecken, tankstreck, ellipser.
+concept-smart-punctuation-more = Gör raka citattecken typografiska, gör -- till ett kort tankstreck och --- till ett långt, gör ... till en ellips och, om du slår på det, inleder ett stycke som skrivs som ”- ” med ett repliksstreck. Anges per projekt och följer med i .skrib-filen, så att en medförfattare skriver med samma regler. Skild från [dina egna regler](:concept-text-replacement), som du skriver själv.
+concept-export-style = En namngiven samling exportval: rubriker, avstånd, vad som tas med.
+concept-export-style-more = En stil återanvänds för varje export, vilket format du än väljer. De inbyggda stilarna är skrivskyddade; duplicera en för att få en utgångspunkt som du faktiskt kan ändra. Bland valen finns om [returmarkörer](:concept-round-trip-marks) ska tas med, för en fil som ska till en redaktör och tillbaka.
+concept-round-trip-marks = Osynliga bokmärken som gör att en redigerad DOCX- eller ODT-fil känns igen när den kommer tillbaka.
+concept-round-trip-marks-more = Skrivs bara in i de två format som en redaktör kan skicka tillbaka, DOCX och ODT; ingen annan export innehåller dem. Ett bokmärke, inte ett eget attribut: LibreOffice tar bort egna attribut när filen sparas men lämnar bokmärken orörda. Slås på per [exportstil](:concept-export-style), under ”Skicka till en redaktör”.
+concept-status = Var ett objekt befinner sig i ditt eget arbetsflöde: ett steg i taget, framåt.
+concept-status-more = Inte en [tagg](:concept-tag): ett objekt har exakt en status, stegen är ordnade, och listan tillhör projektet, så du kan byta namn på, ordna om eller lägga till steg när du vill. En asterisk bredvid ett kapitel eller en bok betyder att delarna under det inte alla stämmer överens med det. Ange statusen från inspektören, ett kort, ett objekt i flödet eller här.

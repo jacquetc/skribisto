@@ -13,7 +13,7 @@ use std::rc::Rc;
 
 use skribisto_model::counting::CountingMethodSetting;
 use teksilo::canvas::svg::SvgIcon;
-use teksilo::i18n::{LocalizedString, localized};
+use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     Breadcrumb, BreadcrumbItem, Center, Divider, Expand, FixedSize, GroupHeader, HStack,
@@ -335,10 +335,9 @@ pub(crate) fn empty_content(icon: &'static SvgIcon) -> impl Widget {
 /// "Work" half of it (the project's own title is data and stays as typed).
 pub(crate) fn section_title(sec: Sec, work_title: &str) -> LocalizedString {
     match sec {
-        Sec::Work => {
-            let title = work_title.to_string();
-            localized(move || format!("{}: {}", tr!(settings_sec_work()).resolve_now(), title))
-        }
+        // One message rather than "Work" + ": " + title: the colon is French with a
+        // no-break space before it, and other languages order the two halves.
+        Sec::Work => tr!(settings_sec_work_titled(title = work_title.to_string())),
         other => other.label(),
     }
 }

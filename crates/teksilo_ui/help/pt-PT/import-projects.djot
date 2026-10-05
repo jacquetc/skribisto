@@ -1,79 +1,105 @@
-A importação de um projeto traz todo um projeto em torno de Manuskript ou de Plume Creator: seus capítulos, seu elenco, suas notas. Se o que você tem é uma pasta de documentos em vez disso, consulte [documentos de importação](:help-import-documents).
+Uma importação de projeto traz um projeto inteiro do Manuskript ou do Plume Creator: os seus
+capítulos, o seu elenco, as suas notas. Se o que tem é antes uma pasta de documentos, consulte
+[importar documentos](:help-import-documents).
 
-Uma importação cria um novo projeto ** Skribisto.
+Uma importação cria um **novo** projeto Skribisto.
 
-## Iniciando uma importação
+## Iniciar uma importação
 
-Com um projeto aberto, escolha *Projeto ▸ Importação de *, em seguida, *Manuskript (.msk)…* ou *Plume Creator (.plume)…*. No Launcher, os mesmos importadores sentam-se atrás *Criar a partir de …*.
+Com um projeto aberto, escolha *Projeto ▸ Importar de* e depois *Manuskript (.msk)…* ou
+*Plume Creator (.plume)…*. Na janela inicial, os mesmos importadores estão em *Criar a partir de…*.
 
-O painel solicita:
+O painel pede:
 
-- O projeto a ler;
+- o projeto a ler;
 - uma pasta de destino;
-- um nome de ficheiro para o `.skrib` que irá criar.
+- um nome de ficheiro para o `.skrib` que vai criar.
 
-Nada está escrito até que você pressione *Importar*. A importação mostra o seu progresso, e *Cancelar* não deixa nada para trás.
+Nada é escrito até premir *Importar*. A importação mostra o seu progresso, e *Cancelar* não
+deixa nada para trás.
 
-Se o destino é um projeto já aberto em Skribisto, escolha outro nome de ficheiro.
+Se o destino for um projeto já aberto no Skribisto, escolha outro nome de ficheiro.
 
-## Apontando para um projeto Manuskript
+## Indicar um projeto Manuskript
 
-Manuskript salva um projeto em qualquer uma dessas formas, e ambos são aceitos:
+O Manuskript guarda um projeto numa destas duas formas, e ambas são aceites:
 
-- ** Modo folder**, o usual: um minúsculo ficheiro `.msk` mais uma pasta com o mesmo nome ao lado. A pasta mantém o projeto e o `.msk` apenas aponta para ele, então mantenha os dois juntos.
-- **Modo de ficheiro único**: todo o projeto fica dentro do `.msk`.
+- **Modo pasta**, o habitual: um pequeno ficheiro `.msk` e uma pasta com o mesmo nome ao lado.
+  A pasta contém o projeto e o `.msk` apenas aponta para ela, por isso mantenha os dois juntos.
+- **Modo ficheiro único**: o projeto inteiro está dentro do `.msk`.
 
-Use *Escolha o ficheiro…* para um `.msk` e *Escolha a pasta…* para a pasta; no modo pasta qualquer um funciona. A importação diz- lhe qual a cópia que leu.
+Use *Escolher ficheiro…* para um `.msk` e *Escolher pasta…* para a pasta; no modo pasta,
+qualquer um dos dois funciona. A importação indica qual das cópias leu.
 
-## O que Manuskript traz consigo?
+## O que vem do Manuskript
 
-- O teu texto, as tuas notas e os teus objectivos.
-- O tique "compilar", que se torna *Incluir nas exportações*. Um item desligado fica desligado, com tudo dentro dele.
-- Resumos de um item, unidos em sua sinopse: o resumo de uma frase primeiro, em seguida, o mais completo.
-- Seu elenco, suas entradas mundiais e suas tramas, como notas em um aglutinador *Bíblia da História* ao lado do manuscrito, um grupo cada. O ponto de vista de uma cena aponta para o personagem que ela nomeia; os gráficos mantêm seus passos e seus links.
-- As suas etiquetas, como etiquetas coloridas.
-- Sua lista de status, como status próprio do projeto, sob seus nomes.
-- Seu histórico de revisão: abra uma cena, e suas versões anteriores estão no painel *Versões*.
+- O seu texto, as suas notas e os seus objetivos de palavras.
+- A marca «compilar», que se torna *Incluir nas exportações*. Um item desativado continua
+  desativado, com tudo o que contém.
+- Os resumos de um item, reunidos na sua sinopse única: primeiro o resumo de uma frase, depois
+  o mais completo.
+- O seu elenco, as entradas do seu mundo e os seus enredos, como notas num arquivador
+  *Bíblia da história* ao lado do manuscrito, um grupo para cada. O ponto de vista de uma cena
+  aponta para a personagem que indica; os enredos mantêm os seus passos e as suas ligações.
+- Os seus rótulos, como etiquetas coloridas.
+- A sua lista de estados, como os estados próprios do projeto, com os seus nomes.
+- O seu histórico de revisões: abra uma cena e as suas versões anteriores estão no painel
+  *Versões*.
 
-Em sua prosa, Manuskript armazenou um marcador para um personagem, uma entrada mundial, um enredo ou outro item. Esses marcadores são colocados de volta como as palavras que eles representavam, com um link para o que eles nomearam.
+Na sua prosa, o Manuskript guardava um marcador para uma personagem, uma entrada do mundo, um
+enredo ou outro item. Esses marcadores são repostos como as palavras que representavam, com uma
+ligação para aquilo que nomeavam.
 
-## O que não tem casa aqui
+## O que não tem lugar aqui
 
-Algumas Manuskript coisas não têm um campo correspondente em Skribisto:
+Algumas coisas do Manuskript não têm campo correspondente no Skribisto:
 
-- ** Ícones por item.**
-- ** A cor ao lado do nome de um caractere.** Skribisto tags de cores.
-- ** Os resumos aninhados de todo o livro** (situação, frase, parágrafo, página, completo). O mais longo torna-se a sinopse do livro, e eles são mantidos juntos em uma nota *Resumo * na bíblia * História * fichário.
-- **Detalhes sem campo próprio**, como a série e o volume. Eles pousam ao lado dele, em uma nota de *Informação do Projeto*.
+- **Os ícones por item.**
+- **A cor junto ao nome de uma personagem.** O Skribisto atribui cores às etiquetas.
+- **Os resumos encadeados do livro inteiro** (situação, frase, parágrafo, página, completo). O
+  mais longo torna-se a sinopse do livro, e todos são guardados juntos numa nota *Resumo* no
+  arquivador *Bíblia da história*.
+- **Os pormenores sem campo próprio**, como a série e o volume. Ficam ao lado, numa nota
+  *Informações do projeto*.
 
-## Como as partes e capítulos são trabalhados
+## Como são determinadas as partes e os capítulos
 
-Skribisto usa suas pastas para criar peças e capítulos:
+O Skribisto usa as suas pastas para criar partes e capítulos:
 
-- Se nenhuma pasta possui outra pasta, pastas se tornam capítulos.
-- Se uma pasta em qualquer lugar possui outra, as pastas mais externas se tornam partes, e as pastas dentro deles capítulos.
+- Se nenhuma pasta contiver outra pasta, as pastas tornam-se capítulos.
+- Se alguma pasta contiver outra, as pastas exteriores tornam-se partes, e as pastas no seu
+  interior capítulos.
 
-O manuscrito importado é agrupado em um Livro, para que você possa planejar, analisar e exportar juntos.
+O manuscrito importado é agrupado num único livro, para o poder planear, analisar e exportar
+em conjunto.
 
-Você pode alterar o tipo de item depois com *Converter em* no menu com o botão direito do mouse do Binder. Ver [o modelo de escrita](:help-writing-model) para o que é cada tipo.
+Pode alterar o tipo de um item mais tarde com *Converter em*, no menu de contexto do
+Arquivador. Consulte [o modelo de escrita](:help-writing-model) para saber o que é cada tipo.
 
-## Vindo de Plume Creator
+## Vindo do Plume Creator
 
 Escolha um ficheiro `.plume` ou `.plume_backup`, de qualquer versão do Plume.
 
-- Livros, atos, capítulos e cenas chegam com seu texto, suas sinopses e suas notas.
-- Um separador de cena torna-se uma quebra de cena na prosa acima dela.
-- Os grupos de personagens e lugares de Plume se tornam pastas de notas, cada grupo com sua própria tag. Os outros nomes de uma entrada chegam como sua lista *Também conhecida como *.
-- As entradas de uma cena em destaque tornam-se links nessa cena.
-- As etapas de revisão de Plume tornam-se status do projeto.
-- O teu dicionário pessoal também vem.
+- Os livros, atos, capítulos e cenas chegam com o seu texto, as suas sinopses e as suas notas.
+- Um separador de cena torna-se uma quebra de cena na prosa que o precede.
+- Os grupos de personagens e de lugares do Plume tornam-se pastas de notas, cada grupo com a
+  sua própria etiqueta. Os outros nomes de uma entrada chegam como a sua lista *Também
+  conhecido como*.
+- As entradas que figuravam numa cena tornam-se ligações nessa cena.
+- As etapas de revisão do Plume tornam-se os estados do projeto.
+- O seu dicionário pessoal também vem.
 
-Os itens no lixo da Plume são **not** importados. Restaurar qualquer que você deseja manter em Plume antes de importar. Plume não carrega nome de autor, então configure o seu em *Definições ▸ Projeto: <projeto> ▸ Autor*.
+Os itens no caixote do lixo do Plume **não** são importados. Restaure no Plume os que quiser
+manter antes de importar. O Plume não guarda o nome do autor, por isso defina o seu em
+*Definições ▸ Projeto: <projeto> ▸ Autor*.
 
-## Após a importação
+## Depois da importação
 
-Uma mensagem oferece *Abre agora.*, que abre o novo projeto.
+Uma mensagem oferece *Abrir agora*, que abre o novo projeto.
 
-Se a importação reporta algo que não pôde transferir, clique em *Detalhes* para ler a lista. Você pode encontrar esse relatório novamente sob o sino na barra de status.
+Se a importação indicar algo que não conseguiu transferir, clique em *Detalhes* para ler a
+lista. Pode voltar a encontrar esse relatório no sino da barra de estado.
 
-O novo projeto é um único ficheiro `.skrib`. Se você manteve o seu antigo como uma pasta para controle de versão, use *Projeto ▸ Guardar como pasta…* depois. Ver [backups e versões](:help-backups-and-versions).
+O novo projeto é um único ficheiro `.skrib`. Se mantinha o antigo como pasta para controlo de
+versões, use depois *Projeto ▸ Guardar como pasta…*. Consulte
+[cópias de segurança e versões](:help-backups-and-versions).

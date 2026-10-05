@@ -10,7 +10,7 @@ Rangez-le dans un autre classeur.
   *Document ▸ Dupliquer*. La copie garde le même titre et se place après l’original et tout
   ce qu’il contient.
 - Sélectionnez la copie, la seconde des deux. Dupliquer laisse votre sélection sur
-  l’original : ne renommez la copie qu’une fois choisie, avec *Document ▸ Renommer*.
+  l’original : ne renommez la copie qu’une fois choisie, avec *Document ▸ Renommer*.
 - Un projet créé à partir d’un modèle de roman a déjà un classeur *Notes*. Sinon, le bouton
   en haut du panneau *Classeur* contient *Nouveau classeur…*.
 - Faites glisser la copie sur ce classeur. Si le bouton nomme un seul classeur au lieu de
@@ -29,7 +29,7 @@ vos objectifs et votre rythme, et l’export le laissent de côté.
 
 Tout ce qui relève de la lecture et de l’écriture. L’ancien chapitre garde son titre et sa
 place dans le classeur choisi. Il reste trouvable par la recherche, vérifié par le
-correcteur orthographique, et sauvegardé.
+correcteur orthographique, et inclus dans les copies de secours.
 
 Votre bible narrative y fonctionne toujours. Si un personnage est nommé dans l’ancien
 brouillon, son entrée compte toujours ces scènes.
@@ -41,9 +41,9 @@ brouillon, son entrée compte toujours ces scènes.
   l’ouvrir depuis le panneau *Corbeille* pour le lire, mais il y est rangé comme écarté,
   non comme conservé.
 - Le panneau *Versions* garde ce qu’un texte disait avant, et sait remettre un état plus
-  ancien en place. Utilisez-le pour retrouver « que disait ce paragraphe hier ». Il
+  ancien en place. Utilisez-le pour retrouver « que disait ce paragraphe hier ». Il
   travaille un élément à la fois, et restaurer remplace ce qui est là. Voir
-  [les sauvegardes et les versions](:help-backups-and-versions).
+  [les copies de secours et les versions](:help-backups-and-versions).
 - *Inclure dans les exports*, dans l’Inspecteur, décide si un élément arrive dans le livre
   fini. Désactivez-le et l’élément est laissé de côté quand vous exportez le livre, et hors
   de vos totaux de mots.

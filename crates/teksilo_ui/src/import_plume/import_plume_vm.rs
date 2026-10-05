@@ -345,13 +345,9 @@ impl ImportPlumeViewModel {
     /// show.
     fn progress_toast(&self, percent: f32, message: &str) -> Toast {
         let vm = self.clone();
-        let body = if message.is_empty() {
-            format!("{percent:.0}%")
-        } else {
-            format!("{percent:.0}% · {message}")
-        };
+        let body = crate::shared::progress_text::progress_body(percent, message);
         import_toast(Toast::loading(tr!(import_plume_progress_title())))
-            .body(lit!(body))
+            .body(body)
             .action(
                 ToastAction::destructive(tr!(import_plume_cancel_import()), move |c| vm.cancel(c))
                     .closes_toast(false),

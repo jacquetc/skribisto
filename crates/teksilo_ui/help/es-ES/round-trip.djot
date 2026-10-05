@@ -1,55 +1,86 @@
-Envía tu manuscrito para que alguien lo revise en Word o LibreOffice y después incorpora sus comentarios y cambios al proyecto, sin crear una copia independiente.
+Envíe su manuscrito a alguien para que lo anote en Word o en LibreOffice, y después traiga
+sus comentarios y cambios de vuelta al proyecto, en lugar de una segunda copia desconectada.
 
-## Envía un archivo Word o LibreOffice
+## Enviar un archivo de Word o de LibreOffice
 
-Abre la exportación con `Ctrl+Shift+E` y elige *Word* (`.docx`) o *LibreOffice* (`.odt`) como formato. Ambos pueden incluir comentarios.
+Exporte con `Ctrl+Mayús+E` y, en *Formato*, elija *Word* (`.docx`) o *LibreOffice*
+(`.odt`). Esos dos formatos llevan sus comentarios.
 
-## Prepara el archivo para su regreso
+## Preparar el archivo para su vuelta
 
-Cada estilo tiene una página *Envío a un editor*:
+Cada estilo de exportación tiene su propia página *Envío a un editor*:
 
-- *Incluir comentarios* añade las conversaciones al archivo.
-- *Incluir marcadores de reimportación* permite reconocer los capítulos cuando vuelvan. Mantén esta opción activa para actualizar el manuscrito existente en lugar de importar otra copia.
+- *Incluir comentarios* escribe sus conversaciones de comentarios en el archivo.
+- *Incluir marcadores de ida y vuelta* permite a Skribisto reconocer sus capítulos cuando el
+  archivo vuelve. Déjelo activado para actualizar el manuscrito existente en lugar de
+  importar otra copia.
 
-Abre *Configuración ▸ Compilación y exportación ▸ Formatos de exportación*. Los estilos integrados no se pueden editar: pulsa *Duplicar*, después *Editar* en la copia y abre *Envío a un editor*.
+Para llegar a ellos, abra *Configuración ▸ Compilación y exportación ▸ Formatos de
+exportación*. Un estilo integrado no se puede editar, así que pulse *Duplicar*, luego
+*Editar* en su copia, y después *Envío a un editor*.
 
-## Qué hace el lector
+## Lo que hace su lector
 
-Nada especial: comenta y modifica el documento en Word o LibreOffice como de costumbre y te devuelve el archivo.
+Nada especial. Comenta y edita en Word o en LibreOffice como siempre, y le devuelve el
+archivo.
 
-## Reimporta el archivo
+## Traer el archivo de vuelta
 
-Abre *Proyecto ▸ Importar desde ▸ Documentos (Markdown, Word, ODT)…*. Consulta [importar documentos](:help-import-documents) para los pasos anteriores a *Combinar*, donde se incorporan los cambios.
+*Proyecto ▸ Importar desde ▸ Documentos (Markdown, Word, ODT)…* abre el asistente de
+importación. Consulte [Importar documentos](:help-import-documents) para los pasos
+anteriores a *Combinar*. La ida y vuelta se produce en *Combinar*.
 
-Importa la copia de un lector cada vez. Importar varias juntas añade otro libro en lugar de combinar sus cambios con los tuyos.
+Importe la copia de un solo lector cada vez. Importar varias a la vez añade otro libro en
+lugar de combinar sus cambios con los suyos.
 
-## Revisa el paso Combinar
+## Leer el paso Combinar
 
-Elige la ubicación que contiene el manuscrito original. Skribisto asocia los capítulos y escenas devueltos con los existentes.
+Elija el destino que contiene el manuscrito original. Skribisto empareja los capítulos y
+escenas que vuelven con los que ya están ahí.
 
-La columna *Estado* indica:
+La columna *Estado* indica lo que ha pasado:
 
-- *Igual*, *Modificado por el lector*, *Modificado por ti* o *Modificado por ambos*, si el archivo incluye el texto original para comparar ambas versiones.
-- *Igual* o *Diferente*, si no lo incluye.
-- *Nuevo* para un elemento que solo está en el archivo; *No está en este archivo* para uno que solo está en tu proyecto.
-- *Movido* sustituye los estados anteriores cuando un elemento asociado cambia de posición. Usa *Comparar* para comprobar si también cambió el texto.
+- *Igual*, *Lo editaron ellos*, *Lo editó usted* o *Lo editaron ambos*, cuando el archivo
+  lleva el texto original con el que comparar ambas partes.
+- *Igual* o *Diferente*, cuando no lo lleva.
+- *Nuevo* para un elemento que solo tiene el archivo, *No está en este archivo* para uno que
+  solo tiene usted.
+- *Movido* sustituye a los anteriores cuando el archivo pone un elemento emparejado en otro
+  lugar; use *Comparar* para ver si el texto también ha cambiado.
 
-Si el lector ha movido un capítulo, muévelo tú en la estructura.
+Si su lector movió un capítulo, muévalo usted mismo en el esquema.
 
-*Qué hacer* ofrece *Solo comentarios* (sus notas, tu texto), *Usar esta versión*, *Conservar la mía*, *Añadir como nuevo* y *Omitir*. Revisa la acción seleccionada para cada elemento. *Nuevo* solo ofrece añadirlo u omitirlo. *No está en este archivo* solo permite conservar tu versión: la ausencia en la copia del lector no elimina tu capítulo.
+*Qué hacer* ofrece *Solo comentarios* (sus notas, su redacción de usted), *Usar esta
+versión*, *Conservar la mía*, *Añadir como nuevo* y *Omitir*. Revise la acción elegida para
+cada elemento. Algunos estados limitan las opciones:
 
-## Acepta parte de una reescritura
+- *Nuevo* ofrece *Añadir como nuevo* u *Omitir*.
+- *No está en este archivo* solo ofrece *Conservar la mía*: que falte un capítulo en su copia
+  no es motivo para eliminar el suyo.
 
-*Comparar* muestra las dos versiones como un texto anotado: tachado para lo eliminado y subrayado para lo añadido. Debajo hay una casilla por cada párrafo modificado: *Aceptar este párrafo nuevo*, *Aceptar esta reescritura* o *Eliminar este párrafo*. Marca los cambios que aceptas; los demás conservan tu redacción.
+## Aceptar parte de una reescritura
 
-*Solo comentarios* también aplica los cambios de párrafo que hayas marcado en *Comparar*. Deja las casillas sin marcar para importar únicamente comentarios. *Usar esta versión* también respeta esas elecciones. Para conservar tu texto, elige *Conservar la mía*.
+*Comparar* muestra las dos versiones de un elemento como un solo texto marcado: lo tachado es
+lo que quitaron y lo subrayado lo que añadieron. Debajo hay una casilla por cada párrafo
+cambiado, que indica lo que hace: *Aceptar este párrafo nuevo*, *Aceptar esta reescritura* o
+*Quitar este párrafo*. Marque las que acepta; cada párrafo que deje sin marcar conserva su
+redacción.
 
-## Control de cambios
+*Solo comentarios* también aplica los cambios de párrafo que haya marcado en *Comparar*. Deje
+esas casillas sin marcar para importar solo los comentarios. *Usar esta versión* también
+tiene en cuenta sus elecciones de párrafo; elija *Conservar la mía* para mantener su propio
+texto.
 
-Un archivo que vuelve con revisiones pendientes se importa como si estuvieran aceptadas: se conservan las inserciones y se descartan las eliminaciones. El paso *Revisión* lo indica y muestra los autores si constan en el archivo.
+## Cambios con seguimiento
 
-En *Comparar* puedes aceptar o rechazar cambios por párrafo. No puedes aceptar los de una persona y rechazar los de otra dentro del mismo párrafo.
+Un archivo que vuelve en plena revisión llega con sus cambios ya aceptados: las inserciones
+se conservan y las eliminaciones se aplican. El paso *Revisión* lo indica, y nombra a quién
+hizo los cambios cuando el archivo lo registra.
 
-## Límites
+Aceptarlos o rechazarlos es para lo que sirve *Comparar*, párrafo a párrafo: no puede aceptar
+la modificación de una persona y rechazar la de otra dentro del mismo párrafo.
 
-- Si el archivo procede de otra herramienta o se exportó sin marcadores, la asociación se hace por título y no puede reconocer un capítulo cuyo nombre haya cambiado.
+## Limitaciones
+
+- Un archivo procedente de otra herramienta, o exportado con los marcadores desactivados,
+  recurre a la correspondencia por título, que no puede reconocer un capítulo renombrado.

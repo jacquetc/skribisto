@@ -22,7 +22,7 @@ settings-templates-delete = Elimina modello
 settings-templates-name = Nome
 settings-templates-name-placeholder = Nome del modello
 settings-templates-body-placeholder = Il testo inserito da questo modello
-settings-templates-duplicate-name = Esiste già un modello chiamato "{ $name }"
+settings-templates-duplicate-name = Esiste già un modello chiamato «{ $name }»
 settings-templates-words = { $n ->
     [one] 1 parola
    *[other] { $n } parole
@@ -38,9 +38,9 @@ templates-exported = { $n ->
     [one] 1 modello esportato
    *[other] { $n } modelli esportati
 }
-templates-preset-applied = Aggiunto "{ $name }"
+templates-preset-applied = Aggiunto «{ $name }»
 templates-delete-title = Eliminare questo modello?
-templates-delete-body = "{ $name }" verrà rimosso da questo progetto. Le note già create con questo modello non subiranno modifiche.
+templates-delete-body = «{ $name }» verrà rimosso da questo progetto. Le note già create con questo modello non subiranno modifiche.
 templates-delete-confirm = Elimina
 menu-document = &Documento
 menu-insert-template = Inserisci &un modello
@@ -50,11 +50,11 @@ save-as-template-title = Salva come modello
 save-as-template-explain = Il testo che stai modificando diventa un modello da inserire altrove.
 save-as-template-name = Nome
 save-as-template-placeholder = Scheda personaggio
-save-as-template-duplicate = Esiste già un modello chiamato "{ $name }"
+save-as-template-duplicate = Esiste già un modello chiamato «{ $name }»
 save-as-template-empty-editor = Questo editor è vuoto. Non c'è nulla da salvare.
 save-as-template-confirm = Salva modello
-save-as-template-saved = "{ $name }" salvato come modello
-template-inserted = Inserito "{ $name }"
+save-as-template-saved = «{ $name }» salvato come modello
+template-inserted = Inserito «{ $name }»
 note-template-preset-character-sheet = Scheda personaggio
 note-template-preset-location = Luogo
 note-template-preset-artifact = Oggetto

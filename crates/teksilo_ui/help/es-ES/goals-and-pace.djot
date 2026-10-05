@@ -1,52 +1,74 @@
-## Establecer un objetivo
+## Definir un objetivo
 
-Seleccione un artículo en la carpeta y abra el Inspector. Introduzca el número de palabras que desea escribir en *Objetivo*. Si su proyecto cuenta caracteres, ingrese un objetivo de carácter en su lugar. Ponlo a cero para eliminar el objetivo.
+Seleccione un elemento en el archivador y abra el inspector. Escriba en *Objetivo* el número
+de palabras que quiere escribir. Si su proyecto cuenta caracteres, escriba en su lugar un
+objetivo de caracteres. Póngalo a cero para quitar el objetivo.
 
-Establezca un objetivo para cada capítulo o escena que desee seguir. El objetivo de un capítulo no se calcula automáticamente a partir de los objetivos de sus escenas.
+Defina un objetivo para cada capítulo o escena que quiera seguir. El objetivo de un capítulo
+no se calcula automáticamente a partir de los objetivos de sus escenas.
 
-## ¿Dónde estás?
+## Dónde está
 
-Usted puede comprobar su progreso en varios lugares. The Inspector shows it under the *Objetivo* field. La barra de estado lo muestra junto al conteo en vivo, y la tabla *Sinopsis* le da una columna *Objetivo*.
+Puede consultar su progreso en varios lugares. El inspector lo muestra bajo el campo
+*Objetivo*. La barra de estado lo muestra junto al recuento en directo, y la tabla *Vista
+general* tiene una columna *Objetivo*.
 
-## Lo que cuenta con un objetivo
+## Qué cuenta para un objetivo
 
-El progreso se mide en el manuscrito mismo: la prosa de sus [escenas y capítulos](:help-writing-model). Una sinopsis, una nota o un paratexto se mantiene fuera del conteo, y también hace cualquier cosa en la basura.
+El progreso se mide sobre el propio manuscrito: la prosa de sus
+[escenas y capítulos](:help-writing-model). Una sinopsis, una nota o un paratexto quedan
+fuera del recuento, igual que todo lo que está en la papelera.
 
-*Incluir en las exportaciones* en el Inspector también elimina ese artículo del recuento. Apagarla para un capítulo no excluye automáticamente sus escenas. Utilice *Aplicar a los niños* para excluirlos también.
+Desactivar *Incluir en las exportaciones* en el inspector también quita ese elemento del
+recuento. Desactivarlo en un capítulo no excluye automáticamente sus escenas. Use *Aplicar a
+los hijos* para excluirlas también.
 
 ## Palabras o caracteres
 
-Una opción cubre todo el proyecto. *Nuevo proyecto* lo pide por delante, bajo *Cuenta en*. Puedes cambiarlo más tarde en *Stablecimientos ▸ Proyecto: יproject correctamente ▸ Estructura*, bajo *Etapas*.
+Una sola elección vale para todo el proyecto. *Nuevo proyecto* la pide desde el principio,
+en *Contar en*. Puede cambiarla después en *Configuración ▸ Proyecto: <proyecto> ▸
+Estructura*, en *Objetivos*.
 
-Cada artículo mantiene dos números separados: un objetivo de palabra y un objetivo de carácter.
+Cada elemento guarda dos números distintos: un objetivo de palabras y un objetivo de
+caracteres.
 
-## Compartir un objetivo
+## Repartir un objetivo
 
-Para dividir el objetivo de un libro entre sus partes o capítulos, abra el libro y haga clic en *Distribuir…*. Establecer un objetivo primero si el botón está deshabilitado. Puedes hacer lo mismo por una carpeta de parte o capítulo. La vista previa muestra los objetivos propuestos. Bajo *Compartir*, elegir:
+Para dividir el objetivo de un libro entre sus partes o capítulos, abra el libro y haga clic
+en *Repartir…*. Si el botón está desactivado, defina antes un objetivo. Puede hacer lo mismo
+con una parte o una carpeta de capítulo. La vista previa muestra los objetivos propuestos.
+En *Repartir*, elija:
 
-- *Por longitud*, de lo que ya está escrito bajo cada uno;
-- *Por piezas*;
-- *Incluso*.
+- *Por longitud*, según lo que ya hay escrito en cada uno;
+- *Por elementos*;
+- *Por igual*.
 
-Los capítulos y escenas con los objetivos existentes los mantienen; los otros comparten lo que queda. Enciende *Reemplazar objetivos que ya están establecidos* para recalcular todos ellos.
+Los capítulos y las escenas que ya tienen objetivo lo conservan; los demás se reparten lo
+que queda. Active *Sustituir los objetivos ya definidos* para recalcularlos todos.
 
-## Planificación a ritmo
+## Planificar un ritmo
 
-Abrir la sección *Ritmo* de un libro y elegir *Iniciar la planificación* para establecer un objetivo de escritura diario.
+Abra la sección *Ritmo* de un libro y elija *Empezar a planificar* para fijar un objetivo
+diario de escritura.
 
-Rellene *Ordenar meta* y *Fecha límite*, luego elija los días de semana en los que escriba. Skribisto trabaja lo que cada día de escritura restante necesita, cuántos quedan, y si usted está por delante o por detrás del ritmo.
+Rellene *Objetivo de palabras* y *Fecha límite*, y elija los días de la semana en que
+escribe. Skribisto calcula lo que necesita cada día de escritura restante, cuántos quedan y
+si va por delante o por detrás del ritmo.
 
-Añadir tiempo libre bajo *Vacaciones* para dejar esos días fuera del plan.
+Añada días de descanso en *Días libres* para dejarlos fuera del plan.
 
-Pace y hitos cuentan en palabras, cualquiera que sea la unidad que el proyecto utilice.
+El ritmo y los hitos cuentan en palabras, sea cual sea la unidad del proyecto.
 
 ## Hitos
 
-Un hito marca una fecha en el camino.
+Un hito marca una fecha del camino.
 
-- Bajo *Hitos* en el planificador, agregue uno para todo el libro: una palabra cuente que debe alcanzar para esa fecha.
-- En parte o en un capítulo dentro de un libro, se establece una *fecha de piedra angular* en el Inspector. Lee el propio objetivo de palabra de ese artículo, y lo sigue.
+- En *Hitos*, dentro del planificador, añada uno para todo el libro: un recuento de palabras
+  que debe alcanzar en esa fecha.
+- En una parte o un capítulo de un libro, defina una *Fecha del hito* en el inspector. Lee el
+  objetivo de palabras propio de ese elemento y lo sigue.
 
-## Cuando el proyecto se abre
+## Al abrir el proyecto
 
-Un libro aparece en la tarjeta *Donde se encuentra el libro* una vez que su plan está activo. *No mostrar esto cuando la apertura* lo detiene; *Proyecto ▸ El plan de escritura…* lo reopensó.
+Un libro aparece en la tarjeta *Dónde está el libro* en cuanto su plan está activo. *No
+mostrar esto al abrir* la desactiva; *Proyecto ▸ Plan de escritura…* la vuelve a abrir.

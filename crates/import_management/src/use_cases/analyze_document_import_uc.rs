@@ -159,7 +159,7 @@ impl LongOperation for AnalyzeDocumentImportUseCase {
         // ── work out the tree ───────────────────────────────────────────────
         progress_callback(OperationProgress::new(
             92.0,
-            Some("Working out the structure".to_string()),
+            Some("import.structure".to_string()),
         ));
 
         sort_documents(&mut docs);

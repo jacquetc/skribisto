@@ -648,10 +648,27 @@ fn ftl_labels(ftl: &str) -> std::collections::HashMap<&str, &str> {
 }
 
 /// Include the newer menu entries and the template catalogue when checking
-/// new translations: collisions can panic when a menu opens in debug builds.
+/// every locale: collisions can panic when a menu opens in debug builds. The
+/// list must name every shipped locale — `fr-FR` was once missing and carried
+/// two collisions (Help/Image on the menu bar, two View rows) past it.
 #[test]
 fn added_locales_additional_menu_entries_have_unique_mnemonics() {
     let catalogues = [
+        (
+            "en-US",
+            include_str!("../../../locales/en-US/main.ftl"),
+            include_str!("../../../locales/en-US/templates.ftl"),
+        ),
+        (
+            "fr-FR",
+            include_str!("../../../locales/fr-FR/main.ftl"),
+            include_str!("../../../locales/fr-FR/templates.ftl"),
+        ),
+        (
+            "eo",
+            include_str!("../../../locales/eo/main.ftl"),
+            include_str!("../../../locales/eo/templates.ftl"),
+        ),
         (
             "de-DE",
             include_str!("../../../locales/de-DE/main.ftl"),
@@ -758,6 +775,11 @@ fn added_locales_additional_menu_entries_have_unique_mnemonics() {
             include_str!("../../../locales/tr-TR/templates.ftl"),
         ),
     ];
+    let mut covered: Vec<&str> = catalogues.iter().map(|(locale, ..)| *locale).collect();
+    covered.sort_unstable();
+    let mut shipped = crate::startup::SUPPORTED_LOCALES.to_vec();
+    shipped.sort_unstable();
+    assert_eq!(covered, shipped, "every shipped locale must be checked");
     let additions: &[(&str, &[&str])] = &[
         ("menu bar", &["menu-edit", "menu-document", "menu-image"]),
         ("Work", &["cover-choose", "cover-clear"]),

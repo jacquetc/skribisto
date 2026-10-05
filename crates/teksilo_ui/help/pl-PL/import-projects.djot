@@ -1,79 +1,104 @@
-Import projektu przynosi cały projekt w poprzek Manuskript lub Plume Creator: jego rozdziały, odlewy, notatki. Jeśli masz folder dokumentów, zobacz [importujący dokumenty ](:help-import-documents).
+Import projektu przenosi cały projekt z programu Manuskript lub Plume Creator: rozdziały,
+postacie, notatki. Jeśli masz raczej folder dokumentów, zobacz
+[importowanie dokumentów](:help-import-documents).
 
-Import tworzy nowy projekt * * * Skribisto.
+Import tworzy **nowy** projekt Skribisto.
 
-## Rozpoczęcie przywozu
+## Rozpoczęcie importu
 
-Przy otwartym projekcie wybierz * Projekt ▸ Import z *, następnie * Manuskript (.msk) … * lub * Plume Creator (.plume) … *. W Launcher, ci sami importerzy siedzą za * Tworzenie z … *.
+Przy otwartym projekcie wybierz *Projekt ▸ Importuj z*, a następnie *Manuskript (.msk)…* lub
+*Plume Creator (.plume)…*. W oknie startowym te same importery znajdują się pod *Utwórz z…*.
 
-Panel prosi o:
+Okno prosi o:
 
-- projekt do odczytu;
+- projekt do odczytania;
 - folder docelowy;
-- nazwę pliku dla `.skrib`, który stworzy.
+- nazwę pliku `.skrib`, który zostanie utworzony.
 
-Nic nie jest napisane, dopóki nie naciśniesz * Import *. Import pokazuje swój postęp, a * Anuluj * nie zostawia nic.
+Nic nie zostaje zapisane, dopóki nie klikniesz *Importuj*. Import pokazuje postęp, a *Anuluj*
+nie pozostawia po sobie niczego.
 
-Jeśli celem jest projekt już otwarty w Skribisto, wybierz inną nazwę pliku.
+Jeśli miejscem docelowym jest projekt już otwarty w Skribisto, wybierz inną nazwę pliku.
 
-## Wskazywanie na projekt Manuskript
+## Wskazanie projektu Manuskript
 
-Manuskript zapisuje projekt w jednym z tych kształtów, i oba są akceptowane:
+Manuskript zapisuje projekt w jednej z dwóch postaci; obie są obsługiwane:
 
-- * * Tryb folderu * *, typowy: mały plik `.msk` plus folder o tej samej nazwie obok niego. Folder posiada projekt i `.msk` tylko wskazuje na niego, więc trzymać oba razem.
-- * * Tryb Single- file * *: cały projekt znajduje się wewnątrz `.msk`.
+- **Tryb folderu**, zwykły: mały plik `.msk` i obok niego folder o tej samej nazwie. Projekt
+  jest w folderze, a `.msk` tylko na niego wskazuje, więc trzymaj je razem.
+- **Tryb pojedynczego pliku**: cały projekt jest wewnątrz pliku `.msk`.
 
-Użyj * Wybierz plik … * dla `.msk` i * Wybierz folder… * dla folderu; w trybie folderu albo jeden działa. Import mówi, który egzemplarz przeczytał.
+Użyj *Wybierz plik…* dla pliku `.msk` i *Wybierz folder…* dla folderu; w trybie folderu
+działa jedno i drugie. Import informuje, którą kopię odczytał.
 
-## Co Manuskript przynosi z nim
+## Co przenosi Manuskript
 
-- Twój tekst, notatki i słowa gole.
-- The "compill" tick, which gets * Include in export *. Wyłączony element pozostaje wyłączony, ze wszystkim co jest w środku.
-- Podsumowania punktu, połączone z jego jedną synopsis: 1-zdanie streszczenie najpierw, a następnie pełniejsze.
-- Twój gips, twoje wpisy na świecie i twoje spiski, jak notatki w * Biblię Story * segregator obok rękopisu, po jednej grupie każdy. Punkt widzenia sceny wskazuje na znak, który nazywa; wykresy zachowują swoje kroki i linki.
-- Twoje etykiety, jako kolorowe znaczniki.
-- Twoja lista statusowa, jako własne statusy projektu, pod twoimi nazwiskami.
-- Historia Twojej rewizji: otwórz scenę, a jej wcześniejsze wersje są w panelu * Versions *.
+- Twój tekst, notatki i cele liczby słów.
+- Pole wyboru „kompiluj”, które staje się opcją *Uwzględnij w eksporcie*. Wyłączony element
+  pozostaje wyłączony wraz z całą zawartością.
+- Streszczenia elementu, połączone w jedno streszczenie: najpierw jednozdaniowe, potem
+  pełniejsze.
+- Postacie, elementy świata i wątki, jako notatki w segregatorze *Biblia opowieści* obok
+  rękopisu, każda grupa osobno. Punkt widzenia sceny wskazuje na wymienioną postać; wątki
+  zachowują swoje etapy i powiązania.
+- Etykiety, jako kolorowe znaczniki.
+- Listę statusów, jako własne statusy projektu, pod Twoimi nazwami.
+- Historię zmian: otwórz scenę, a jej wcześniejsze wersje znajdziesz w panelu *Wersje*.
 
-W prozie Manuskript przechowywano znacznik dla postaci, wejścia na świat, wykresu lub innego elementu. Te znaczniki są umieszczane z powrotem jako słowa, które oznaczały, z linkiem do tego, co nazwali.
+W prozie Manuskript zapisywał znacznik odsyłający do postaci, elementu świata, wątku lub innego
+elementu. Takie znaczniki są zamieniane z powrotem na słowa, które zastępowały, wraz z odnośnikiem
+do wskazanego elementu.
 
-## Co tu nie ma domu
+## Czego nie da się przenieść
 
-Kilka Manuskript rzeczy nie ma pasującego pola w Skribisto:
+Kilka rzeczy z Manuskriptu nie ma odpowiednika w Skribisto:
 
-- * * Per- element ikony. * *
-- * * Kolor obok nazwy postaci. * * Skribisto kolorów znaczników zamiast.
-- * * Zagnieżdżone streszczenia całej książki * * (sytuacja, zdanie, akapit, strona, pełna). Najdłuższa staje się synopsis książki, i są one trzymane razem w * Podsumowanie * notatki w * Biblię Story * segregator.
-- * * Szczegóły bez pola własnego * *, takie jak seria i głośność. Lądują obok niej, w notatce "Informacje o projekcie".
+- **Ikony poszczególnych elementów.**
+- **Kolor przy imieniu postaci.** Skribisto koloruje zamiast tego znaczniki.
+- **Zagnieżdżone streszczenia całej książki** (sytuacja, zdanie, akapit, strona, całość).
+  Najdłuższe staje się streszczeniem książki, a wszystkie są zachowane razem w notatce
+  *Podsumowanie* w segregatorze *Biblia opowieści*.
+- **Informacje bez własnego pola**, np. cykl i tom. Trafiają obok, do notatki *Informacje
+  o projekcie*.
 
-## Jak opracowywane są części i rozdziały
+## Jak powstają części i rozdziały
 
-Skribisto wykorzystuje foldery do tworzenia części i rozdziałów:
+Skribisto tworzy części i rozdziały na podstawie Twoich folderów:
 
-- Jeśli żaden folder nie posiada innego folderu, foldery stają się rozdziałami.
-- Jeśli folder gdzieś posiada inny, foldery najbardziej oddalone stają się częściami, a foldery wewnątrz nich rozdziały.
+- Jeśli żaden folder nie zawiera innego folderu, foldery stają się rozdziałami.
+- Jeśli gdziekolwiek folder zawiera inny folder, najbardziej zewnętrzne foldery stają się
+  częściami, a foldery w ich wnętrzu rozdziałami.
 
-Importowany rękopis jest pogrupowany w jedną księgę, więc można planować, analizować i eksportować go razem.
+Zaimportowany rękopis jest umieszczany w jednej książce, więc możesz go razem planować,
+analizować i eksportować.
 
-Następnie można zmienić typ elementu za pomocą * Konwertuj do * w prawym kliknięciu Bindera. Zobacz [wzór pisma ](:help-writing-model) dla każdego typu.
+Typ elementu możesz później zmienić poleceniem *Przekształć w* z menu kontekstowego
+segregatora. Opis poszczególnych typów znajdziesz w temacie
+[jak zbudowana jest książka](:help-writing-model).
 
-## Pochodzący z Plume Creator
+## Import z Plume Creator
 
-Wybierz plik `.plume` lub `.plume_backup` z dowolnej wersji Plume.
+Wybierz plik `.plume` lub `.plume_backup` z dowolnej wersji programu Plume.
 
-- Książki, akty, rozdziały i sceny pojawiają się wraz z ich tekstem, ich uwagami i notatkami.
-- Separator sceny staje się przełamaniem sceny w prozie nad nim.
-- Grupy znaków i miejsc Plume stają się folderami notatek, każda grupa z własnym znacznikiem. Inne nazwy wpisu przybywają jako jego * Znana również jako * lista.
-- Wpisy na scenie stały się linkami na tej scenie.
-- Etapy przeglądu Plume stają się statusami projektu.
-- Twój osobisty słownik też.
+- Książki, akty, rozdziały i sceny przychodzą ze swoim tekstem, streszczeniami i notatkami.
+- Separator scen staje się separatorem sceny w prozie nad nim.
+- Grupy postaci i miejsc z Plume stają się folderami notatek, każda grupa z własnym znacznikiem.
+  Inne nazwy wpisu trafiają na jego listę *Inne nazwy*.
+- Wpisy powiązane ze sceną stają się powiązaniami tej sceny.
+- Etapy redakcji z Plume stają się statusami projektu.
+- Przenoszony jest też słownik własny.
 
-Elementy w koszu na śmieci Plume 'a są importowane. Przywróć wszystkie, które chcesz zatrzymać w Plume przed importem. Plume nie posiada nazwy autora, więc ustaw swój w * Ustawienia ▸ Projekt: < projekt > ▸ Autor *.
+Elementy z kosza Plume **nie** są importowane. Te, które chcesz zachować, przywróć w Plume przed
+importem. Plume nie przechowuje nazwiska autora, więc ustaw je w *Ustawienia ▸ Projekt:
+<projekt> ▸ Autor*.
 
-## Po przywozie
+## Po imporcie
 
-Wiadomość oferuje * Otwórz teraz *, który otwiera nowy projekt.
+Komunikat oferuje przycisk *Otwórz teraz*, który otwiera nowy projekt.
 
-Jeśli zaimportowana informacja nie może zostać przekazana, kliknij * Szczegóły *, aby przeczytać listę. Możesz znaleźć ten raport ponownie pod dzwonkiem w pasku statusu.
+Jeśli import zgłosi coś, czego nie udało się przenieść, kliknij *Szczegóły*, aby przeczytać
+listę. Ten raport znajdziesz też pod ikoną dzwonka na pasku stanu.
 
-Nowy projekt to pojedynczy plik `.skrib`. Jeśli trzymasz swój stary jako folder do kontroli wersji, użyj * Projekt ▸ Zapisz jako folder… * później. Zob. [kopie zapasowe i wersje słowne](:help-backups-and-versions).
+Nowy projekt to pojedynczy plik `.skrib`. Jeśli stary projekt trzymałeś jako folder na potrzeby
+kontroli wersji, użyj potem polecenia *Projekt ▸ Zapisz jako folder…*. Zobacz
+[kopie zapasowe i wersje](:help-backups-and-versions).

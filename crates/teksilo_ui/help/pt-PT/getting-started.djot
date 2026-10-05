@@ -2,7 +2,7 @@ Um projeto reúne o manuscrito e as notas. Veja como começar a escrever.
 
 ## Crie o seu primeiro projeto
 
-1. Na janela inicial, clique em *Novo projeto*.
+1. Na janela de abertura (a *janela inicial*), clique em *Novo projeto*.
 2. Em *Detalhes*, introduza um nome e escolha onde guardar. Selecione *Ficheiro único* para manter o projeto num ficheiro `.skrib`. O nome do autor é opcional.
 3. Em *Idioma e estrutura*, escolha o idioma em que escreve. Por enquanto, pode manter as restantes opções.
 4. Em *Modelo*, escolha *Romance vazio* para o construir capítulo a capítulo. Outros modelos incluem mais capítulos iniciais; *Caderno* destina-se a notas.
@@ -10,7 +10,7 @@ Um projeto reúne o manuscrito e as notas. Veja como começar a escrever.
 
 ## Escreva a primeira cena
 
-O *Organizador*, à esquerda, apresenta capítulos, cenas e notas. Clique numa cena para a abrir e começar a escrever. Para adicionar outra, selecione um capítulo e use o botão de criação no topo do Organizador. O menu permite escolher *Cena* ou outro tipo de elemento.
+O painel *Arquivador*, à esquerda, apresenta capítulos, cenas e notas. Clique numa cena para a abrir e começar a escrever. Para adicionar outra, selecione um capítulo e use o botão de criação no topo do *Arquivador*. O menu permite escolher *Cena* ou outro tipo de item.
 
 Ao lado do texto principal está a *Sinopse*: um resumo para planear a cena. Pode ocultá-la em *Definições ▸ Editor ▸ Comportamento do editor*.
 
@@ -30,8 +30,8 @@ Na janela inicial, *Criar a partir de…* inicia um projeto a partir de [documen
 
 ## Ajuste o espaço de trabalho
 
-- Prima `F9` ou escolha *Ver ▸ Estrutura* para mostrar ou ocultar o Organizador.
-- Prima `Ctrl+Enter` num elemento selecionado para o abrir no outro painel do editor.
+- Prima `F9` ou escolha *Ver ▸ Estrutura* para mostrar ou ocultar o Arquivador.
+- Prima `Ctrl+Enter` num item selecionado para o abrir no outro painel do editor.
 - Ao criar um projeto, *Capítulos simples* permite escrever diretamente em cada capítulo, sem o dividir em cenas. *Pasta de projeto* guarda o projeto como pasta em vez de ficheiro único.
 
 Consulte [livros, capítulos e cenas](:help-writing-model) para saber como organizar o manuscrito.

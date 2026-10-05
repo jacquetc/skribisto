@@ -717,25 +717,26 @@ fn failure_detail_joins_reasons_and_delete_errors_and_is_none_when_empty() {
 
 #[test]
 fn progress_label_maps_every_machine_key() {
+    let label = |m: &str| progress_label(m).map(|l| l.resolve_now());
     assert_eq!(
-        progress_label("backup.start"),
-        String::from(tr!(backup_progress_start()))
+        label("backup.start"),
+        Some(String::from(tr!(backup_progress_start())))
     );
     assert_eq!(
-        progress_label("backup.retention"),
-        String::from(tr!(backup_progress_retention()))
+        label("backup.retention"),
+        Some(String::from(tr!(backup_progress_retention())))
     );
     assert_eq!(
-        progress_label("backup.done"),
-        String::from(tr!(backup_progress_done()))
+        label("backup.done"),
+        Some(String::from(tr!(backup_progress_done())))
     );
     assert_eq!(
-        progress_label("backup.destination:2:5"),
-        String::from(tr!(backup_progress_destination(i = 2, n = 5)))
+        label("backup.destination:2:5"),
+        Some(String::from(tr!(backup_progress_destination(i = 2, n = 5))))
     );
-    assert_eq!(progress_label("backup.destination:garbage"), "");
-    assert_eq!(progress_label("something-unknown"), "");
-    assert_eq!(progress_label(""), "");
+    assert_eq!(label("backup.destination:garbage"), None);
+    assert_eq!(label("something-unknown"), None);
+    assert_eq!(label(""), None);
 }
 
 #[test]

@@ -4,9 +4,12 @@
 settings-page-templates = テンプレート
 settings-templates-description = 人物設定シート、場所の紹介、展開構成表など、どの文書にも挿入できる再利用用のテキストです。プロジェクト内に保存されるため、開いた人は同じテンプレートを使用できます。
 settings-templates-filter = テンプレートを絞り込む
-settings-templates-count = テンプレート{ $n }件
+settings-templates-count = { $n ->
+    [0] テンプレートなし
+   *[other] テンプレート{ $n }件
+}
 settings-templates-empty = このプロジェクトにはまだテンプレートがありません。
-settings-templates-empty-hint = プリセットを追加するか、.mdまたは.djotファイルをインポートしてください。自分で書いてから、文書 ▸ テンプレートとして保存を選ぶこともできます。
+settings-templates-empty-hint = プリセットから追加するか、.md または .djot ファイルをインポートするか、文章を書いてから文書 ▸ テンプレートとして保存を選んでください。
 settings-templates-presets = プリセットを追加
 settings-templates-import = インポート…
 settings-templates-export = エクスポート…
@@ -21,18 +24,18 @@ settings-templates-body-placeholder = このテンプレートで挿入するテ
 settings-templates-duplicate-name = 「{ $name }」というテンプレートはすでにあります
 settings-templates-words = { $n }語
 templates-imported = テンプレート{ $added }件をインポートしました
-templates-imported-renamed = 名前の重複を避けるため変更しました: { $names }
-templates-imported-skipped = 読み込めませんでした: { $names }
+templates-imported-renamed = 名前の重複を避けるため変更しました：{ $names }
+templates-imported-skipped = 読み込めませんでした：{ $names }
 templates-import-filter = テンプレート (.md, .djot)
 templates-exported = テンプレート{ $n }件をエクスポートしました
 templates-preset-applied = 「{ $name }」を追加しました
 templates-delete-title = このテンプレートを削除しますか？
 templates-delete-body = このプロジェクトから「{ $name }」を削除します。このテンプレートから作成済みのノートには影響しません。
 templates-delete-confirm = 削除
-menu-document = 文書 (&D)
-menu-insert-template = テンプレートを挿入 (&L)
+menu-document = 文書(&D)
+menu-insert-template = テンプレートを挿入(&L)
 menu-insert-template-none = このプロジェクトにテンプレートはありません
-menu-save-as-template = テンプレートとして保存… (&V)
+menu-save-as-template = テンプレートとして保存(&V)…
 save-as-template-title = テンプレートとして保存
 save-as-template-explain = 編集中のテキストを、他の場所にも挿入できるテンプレートとして保存します。
 save-as-template-name = 名前
@@ -65,7 +68,7 @@ note-template-section-what-it-is = 概要
 note-template-section-source = 出典
 note-template-section-what-it-says = 内容
 note-template-field-full-name = 氏名
-note-template-field-known-as = 別名（プロパティの別名欄に登録）
+note-template-field-known-as = 別名（インスペクターの別名欄で管理）
 note-template-field-age = 年齢
 note-template-field-role-in-story = 物語での役割
 note-template-field-build-and-features = 体格と目立つ特徴

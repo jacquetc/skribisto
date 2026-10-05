@@ -1,4 +1,4 @@
-Les copies de secours permettent de récupérer un projet ; l’historique des versions,
+Les copies de secours permettent de récupérer un projet ; l’historique des versions,
 de retrouver un texte antérieur.
 
 Une *copie de secours* est une copie du projet entier, enregistrée dans un fichier à part.
@@ -10,7 +10,7 @@ formulation antérieure, ou quelque chose que vous avez supprimé.
 
 ## Copies de secours
 
-Skribisto en crée tout seul : à la fermeture du projet, et toutes les deux heures pendant que
+Skribisto en crée tout seul : à la fermeture du projet, et toutes les deux heures pendant que
 vous travaillez.
 
 Pour en créer une maintenant, choisissez *Œuvre ▸ Créer une copie de secours*.
@@ -24,13 +24,13 @@ supprimer une.
 Les copies vont dans un dossier géré par Skribisto. Vous pouvez ajouter vos propres dossiers.
 
 Les anciennes copies sont supprimées automatiquement pour libérer de la place. Choisissez
-celles à conserver :
+celles à conserver :
 
 - *Par paliers* garde environ une copie par heure pendant un jour, une par jour pendant une
   semaine, une par semaine pendant un mois, puis une par mois.
 - *Garder les N dernières* en garde ce nombre, les plus récentes d’abord.
 
-Tout cela se trouve dans *Paramètres ▸ Sauvegardes et synchro ▸ Réglages de sauvegarde*, et
+Tout cela se trouve dans *Paramètres ▸ Copies de secours et synchro ▸ Réglages des copies de secours*, et
 vaut pour tous les projets.
 
 ### Ouvrir une copie de secours
@@ -39,7 +39,7 @@ Ouvrir une copie de secours ne touche jamais au projet sur lequel vous travaille
 s’ouvre dans une fenêtre séparée, en lecture seule. Un bandeau vous rappelle que vous
 consultez une copie de secours.
 
-Depuis cette fenêtre :
+Depuis cette fenêtre :
 
 - *Enregistrer sous…* conserve le contenu de la copie dans un projet distinct.
 - *Restaurer…* remet la copie à la place de l’original.
@@ -51,7 +51,7 @@ nécessaire.
 ## Historique des versions
 
 L’historique des versions suit une scène, une note ou un synopsis à la fois. Il vient de deux
-endroits, et chaque entrée vous dit lequel :
+endroits, et chaque entrée vous dit lequel :
 
 - *L’historique interne du projet* enregistre le texte chaque fois que vous enregistrez.
 - *Les copies de secours* remontent plus loin, aussi anciennes soient-elles.

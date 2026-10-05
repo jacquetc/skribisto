@@ -264,15 +264,7 @@ fn byte_size(path: &std::path::Path) -> u64 {
 
 /// Human-readable byte count for the settings readout.
 pub fn human_bytes(bytes: u64) -> String {
-    const MB: u64 = 1_048_576;
-    const GB: u64 = 1_073_741_824;
-    if bytes >= GB {
-        format!("{:.1} GB", bytes as f64 / GB as f64)
-    } else if bytes >= MB {
-        format!("{:.1} MB", bytes as f64 / MB as f64)
-    } else {
-        format!("{} kB", bytes.div_ceil(1024))
-    }
+    crate::shared::units::byte_size(bytes)
 }
 
 #[cfg(test)]
@@ -478,12 +470,9 @@ mod tests {
 
     #[test]
     fn human_bytes_reads_naturally_at_each_scale() {
-        assert_eq!(human_bytes(0), "0 kB");
-        assert_eq!(
-            human_bytes(1),
-            "1 kB",
-            "a non-empty backup never reads as 0"
-        );
+        assert_eq!(human_bytes(0), "0 B");
+        assert_eq!(human_bytes(1), "1 B", "a non-empty backup never reads as 0");
+        assert_eq!(human_bytes(1025), "2 KB");
         assert_eq!(human_bytes(1_048_576), "1.0 MB");
         assert_eq!(human_bytes(1_073_741_824), "1.0 GB");
     }

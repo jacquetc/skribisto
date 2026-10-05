@@ -12,12 +12,12 @@ Para criar uma agora, escolha *Projeto ▸ Criar cópia de segurança agora*. Pa
 
 ### Localização e conservação
 
-As cópias ficam numa pasta gerida pelo Skribisto. Pode adicionar pastas próprias. As mais antigas são eliminadas automaticamente para poupar espaço:
+As cópias ficam numa pasta gerida pelo Skribisto. Pode adicionar pastas próprias. As mais antigas são eliminadas automaticamente para poupar espaço em disco:
 
 - A conservação *Por níveis* mantém aproximadamente uma por hora durante um dia, uma por dia durante uma semana, uma por semana durante um mês e depois uma por mês.
 - *Manter as últimas N* conserva esse número de cópias, começando pelas mais recentes.
 
-Estas opções encontram-se em *Definições ▸ Cópia de segurança e sincronização ▸ Predefinições de cópias de segurança* e aplicam-se a todos os projetos.
+Estas opções encontram-se em *Definições ▸ Cópias de segurança e sincronização ▸ Predefinições das cópias de segurança* e aplicam-se a todos os projetos.
 
 ### Abra uma cópia de segurança
 
@@ -43,8 +43,8 @@ O painel *Versões* fica à direita, junto a Comentários e Formato.
 
 Fixe uma versão proveniente de uma cópia de segurança para impedir que a limpeza dos ficheiros antigos a elimine.
 
-### Recupere um elemento eliminado
+### Algo que eliminou
 
-*Restaurar esta versão* só funciona com elementos ainda existentes. Para uma cena ou nota eliminada, escolha *Ver ▸ Voltar atrás no tempo*.
+*Restaurar esta versão* só funciona com algo que ainda existe. Para uma cena ou nota eliminada, escolha *Ver ▸ Voltar atrás no tempo*.
 
-*Recuperar este elemento…* recria-o com o texto anterior, no local escolhido no Organizador. Para anular, use o botão na mensagem apresentada.
+*Recuperar isto…* recria o item com o texto que tinha, no local do arquivador que escolher. Para anular, use o botão na mensagem apresentada.

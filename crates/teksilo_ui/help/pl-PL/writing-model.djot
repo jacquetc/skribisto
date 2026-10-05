@@ -1,46 +1,60 @@
-## Zorganizuj rękopis
+## Uporządkuj rękopis
 
-Użyj * Binder * po lewej, aby zorganizować swoje pisanie. Typowa powieść ma w sobie książkę, rozdziały i sceny w każdym rozdziale. Można również pisać bezpośrednio w rozdziałach.
+Do układania tekstu służy *Segregator* po lewej stronie. Typowa powieść ma książkę, w niej
+rozdziały, a w każdym rozdziale sceny. Można też pisać bezpośrednio w rozdziałach.
 
-Każdy element posiada * typ *, taki jak rozdział lub uwaga. To mówi Skribisto jak go używać podczas eksportu książki; zwykły folder nie staje się rozdziałem tylko dlatego, że posiada sceny.
+Każdy element ma *typ*, np. rozdział lub notatka. Typ mówi Skribisto, jak używać elementu
+przy eksporcie książki; zwykły folder nie staje się rozdziałem tylko dlatego, że zawiera sceny.
 
-Każdy element, który nosi prozę ma główny tekst i synopsis obok siebie: plan w jednej tafli, szkic w drugiej. Książki, części, foldery notatek i foldery proste posiadają synopsis, ale nie ma głównego tekstu.
+Każdy element z prozą ma obok siebie tekst główny i streszczenie: w jednym panelu planujesz,
+w drugim piszesz. Książki, części, foldery notatek i zwykłe foldery mają streszczenie, ale nie
+mają tekstu głównego.
 
 ## Typy, które można utworzyć
 
-Prawidł- kliknij element w segregatorze i wybierz * Dodaj *.
+Kliknij element w segregatorze prawym przyciskiem myszy i wybierz *Dodaj*.
 
-- * Księga *: rękopis, z jego rozdziałami i sceną.
-- * Część *: gromadzi rozdziały pod jedną pozycją.
-- * Rozdział *: działa do następnego rozdziału, następnej części lub końca książki.
-- * Scene *: your writing, with its own synopsis.
-- * Uwaga *: tekst i synopsis, dla badań, asides lub przypomnienia.
-- * Historia biblia entry… *: nota dla postaci, miejsce lub obiekt, stworzony z jego znaczników i alternatywnych nazw już wypełnione.
-- * Katalog notatek *: grupy nut razem, z synopsis, ale bez głównego tekstu.
-- * Folder *: zwykły kontener z synopsą i bez prozy własnej.
+- *Książka*: rękopis z rozdziałami i scenami.
+- *Część*: zbiera rozdziały pod jednym nagłówkiem.
+- *Rozdział*: trwa do następnego rozdziału, następnej części lub końca książki.
+- *Scena*: Twój tekst, z własnym streszczeniem.
+- *Notatka*: tekst i streszczenie, na materiały, dygresje lub przypomnienia.
+- *Wpis w biblii opowieści…*: notatka o postaci, miejscu lub przedmiocie, tworzona od razu
+  ze znacznikami i innymi nazwami.
+- *Folder notatek*: grupuje notatki; ma streszczenie, ale nie ma tekstu głównego.
+- *Folder*: zwykły kontener ze streszczeniem, bez własnej prozy.
 
-## Dwa kształty działu
+## Dwie postaci rozdziału
 
-- Folder * Rozdział * zawiera sceny pod nim w segregatorze.
-- A * Flat chapter * jest pojedynczym elementem, do którego piszesz bezpośrednio, bez żadnych scen poniżej.
+- *Rozdział jako folder* zawiera pod sobą sceny w segregatorze.
+- *Rozdział płaski* to pojedynczy element, w którym piszesz bezpośrednio, bez scen pod nim.
 
-Aby wybrać kształt * nowe * rozdziały biorą, otwarte * Ustawienia ▸ Projekt: < projekt > ▸ Struktura * i zestaw * Rozdziały płaskie *. Na znaczy pojedyncze przedmioty, poza oznacza foldery.
+Aby wybrać postać *nowych* rozdziałów, otwórz *Ustawienia ▸ Projekt: <projekt> ▸ Struktura*
+i ustaw *Rozdziały płaskie*. Włączone oznacza pojedyncze elementy, wyłączone oznacza foldery.
 
-## Zmień scenę, rozdział lub folder
+## Zmień typ sceny, rozdziału lub folderu
 
-Right- click the item and choose * Convert to * to see the available type. Na przykład, można zamienić scenę w notatkę, lub folder rozdziału w płaski rozdział. Tytuł i tekst są przechowywane, gdy nowy typ może je utrzymać.
+Kliknij element prawym przyciskiem myszy i wybierz *Przekształć w*, aby zobaczyć dostępne
+typy. Możesz na przykład zmienić scenę w notatkę albo rozdział-folder w rozdział płaski.
+Tytuł i tekst zostają zachowane, jeśli nowy typ może je przechowywać.
 
-- Folder musi być pusty, zanim stanie się jednym elementem. Najpierw przenieś lub wyrzuć jego zawartość.
-- Odmawia się konwersji bez miejsca, w którym można umieścić istniejący tekst, i mówi, co zostanie utracone.
+- Folder musi być pusty, zanim stanie się pojedynczym elementem. Najpierw przenieś jego
+  zawartość gdzie indziej lub do kosza.
+- Przekształcenie, po którym istniejący tekst nie miałby gdzie się podziać, jest odrzucane,
+  a komunikat mówi, co zostałoby utracone.
 
-## Gdzie kończy się jedna książka
+## Gdzie kończy się książka
 
-Projekt może zawierać kilka książek, jeden po drugim w tym samym segregatorze. Książka biegnie od miejsca, w którym zaczyna się aż do pierwszego z trzech elementów: * End of Book *, początku następnej książki lub końca jej segregatora.
+Projekt może zawierać kilka książek, jedna po drugiej w tym samym segregatorze. Książka trwa
+od swojego początku do pierwszego z trzech miejsc: elementu *Koniec książki*, początku
+następnej książki lub końca segregatora.
 
-## Paratext: w książce, nie w historii
+## Paratekst: w książce, ale nie w opowieści
 
-* Paratext * należy do książki, ale nie do jej historii: przedface, dedykacja, po słowie, siarka. Eksportuje tam, gdzie go umieścisz, i nigdy nie liczy się do liczenia słów.
+*Paratekst* należy do książki, ale nie do jej opowieści: przedmowa, dedykacja, posłowie,
+kolofon. Eksportuje się tam, gdzie go umieścisz, i nigdy nie wlicza się do liczby słów.
 
-Folder A * Paratext * trzyma paratexty z dala od reszty segregatora.
+*Folder paratekstów* oddziela parateksty od reszty segregatora.
 
-Nowość do Skribisto? [Pierwsze uruchomienie ](:help-getting-started) obejmuje otwarcie i uratowanie projektu najpierw.
+Dopiero zaczynasz? Temat [Twój pierwszy projekt](:help-getting-started) opisuje najpierw
+otwieranie i zapisywanie projektu.

@@ -45,6 +45,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result, bail};
 use chrono::{DateTime, FixedOffset, Utc};
+use skrib_format::import_notice::ImportNotice;
 use skrib_format::{FoldersTooDeep, SkribShape, XmlDeclaresEntities, XmlTooDeep, write_bundle};
 
 /// Every member either generation parses as XML, with its bytes.
@@ -114,7 +115,7 @@ pub struct ImportSummary {
     pub imported_revisions: u64,
     /// Everything the writer should know: what was not understood, what had
     /// nowhere to go, and which copy of the project was read.
-    pub warnings: Vec<String>,
+    pub warnings: Vec<ImportNotice>,
 }
 
 /// Convert the Manuskript project at `source_path` into a `.skrib` at
@@ -122,6 +123,9 @@ pub struct ImportSummary {
 ///
 /// `source_path` may be a zipped `.msk`, the one-byte `.msk` beside a project
 /// folder, or the folder itself.
+///
+/// `report`'s label is a phase code (`import.opening`, `import.outline`, …) the
+/// UI translates, or the title of the entry being mapped, shown as data.
 ///
 /// The `.skrib` is written to a sibling temp file and renamed into place only
 /// after the last cancel check, so an aborted or failed run leaves an existing
@@ -138,7 +142,7 @@ pub fn import_with_progress(
         bail!("'{output_path}' already exists (choose another name or allow overwrite)");
     }
 
-    report(2.0, "Opening the Manuskript project…");
+    report(2.0, "import.opening");
     let src = ManuskriptSource::open(source_path)?;
     refuse_deep_folders(&src)?;
     // Before the depth scan, which would otherwise measure every entity a hostile
@@ -156,12 +160,12 @@ pub fn import_with_progress(
     // outline takes the two together to about 0.9 MB of stack in a debug build,
     // close to half of a long operation's 2 MiB.
     let mut mapped = skrib_format::xml_depth::on_parser_stack_reporting(report, |report| {
-        report(12.0, "Reading the outline…");
+        report(12.0, "import.outline");
         let project = read_project(&src);
         if cancel.load(Ordering::Relaxed) {
             return None;
         }
-        report(20.0, "Converting chapters and scenes…");
+        report(20.0, "import.converting");
         Some(map::build_bundle(&project, names, report, cancel))
     })
     .map_err(anyhow::Error::new)?
@@ -172,17 +176,13 @@ pub fn import_with_progress(
     // both storage modes can have two, and only one of them is current.
     mapped.warnings.insert(
         0,
-        match newest {
-            Some(at) => format!(
-                "Read the {} copy of this project, last changed {}.",
-                container.label(),
-                writer_day(at)
-            ),
-            None => format!("Read the {} copy of this project.", container.label()),
+        ImportNotice::ReadCopy {
+            container: container.notice_kind(),
+            day: newest.map(writer_day),
         },
     );
 
-    report(92.0, "Writing the .skrib…");
+    report(92.0, "import.writing");
     let tmp_path = format!("{output_path}.importing");
     write_bundle(&tmp_path, SkribShape::ZipFile, &mapped.bundle)
         .with_context(|| format!("writing '{output_path}'"))?;
@@ -193,7 +193,7 @@ pub fn import_with_progress(
     std::fs::rename(&tmp_path, output_path)
         .with_context(|| format!("finalising '{output_path}'"))?;
 
-    report(100.0, "Done");
+    report(100.0, "import.done");
     Ok(ImportSummary {
         output_path: output_path.to_string(),
         imported_items: mapped.imported_items,
@@ -331,7 +331,11 @@ mod tests {
             &AtomicBool::new(false),
         );
         match summary {
-            Ok(s) => s.warnings.first().cloned().unwrap_or_default(),
+            Ok(s) => s
+                .warnings
+                .first()
+                .map(ToString::to_string)
+                .unwrap_or_default(),
             Err(e) => panic!("importing the fixture: {e:#}"),
         }
     }

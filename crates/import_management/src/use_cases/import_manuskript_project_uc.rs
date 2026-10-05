@@ -124,7 +124,7 @@ impl LongOperation for ImportManuskriptProjectUseCase {
             output_path: summary.output_path,
             imported_items: summary.imported_items as i64,
             imported_revisions: summary.imported_revisions as i64,
-            warnings: summary.warnings,
+            warnings: summary.warnings.iter().map(|n| n.encode()).collect(),
         })
     }
 }

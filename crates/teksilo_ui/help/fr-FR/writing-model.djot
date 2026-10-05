@@ -5,10 +5,10 @@ d’un Livre contenant des chapitres, eux-mêmes divisés en scènes. Vous pouve
 directement dans les chapitres.
 
 Chaque élément a un *type*, comme Chapitre ou Note. Il indique à Skribisto comment l’utiliser
-lors de l’export du livre : un simple dossier ne devient pas un chapitre parce qu’il contient
+lors de l’export du livre : un simple dossier ne devient pas un chapitre parce qu’il contient
 des scènes.
 
-Chaque élément qui porte du texte a un texte principal et un synopsis côte à côte :
+Chaque élément qui porte du texte a un texte principal et un synopsis côte à côte :
 planifiez dans un panneau, rédigez dans l’autre. Les livres, les parties, les dossiers de
 notes et les dossiers simples portent un synopsis, mais pas de texte principal.
 
@@ -16,16 +16,16 @@ notes et les dossiers simples portent un synopsis, mais pas de texte principal.
 
 Faites un clic droit sur un élément du classeur et choisissez *Ajouter*.
 
-- *Livre* : un manuscrit, avec ses chapitres et ses scènes.
-- *Partie* : regroupe des chapitres sous un même titre.
-- *Chapitre* : se poursuit jusqu’au chapitre suivant, à la partie suivante, ou à la fin
+- *Livre* : un manuscrit, avec ses chapitres et ses scènes.
+- *Partie* : regroupe des chapitres sous un même titre.
+- *Chapitre* : se poursuit jusqu’au chapitre suivant, à la partie suivante, ou à la fin
   du livre.
-- *Scène* : votre texte, avec son propre synopsis.
-- *Note* : du texte et un synopsis, pour la recherche, des remarques ou des rappels.
-- *Entrée de bible narrative…* : une note pour un personnage, un lieu ou un objet, créée
+- *Scène* : votre texte, avec son propre synopsis.
+- *Note* : du texte et un synopsis, pour la recherche, des remarques ou des rappels.
+- *Entrée de bible narrative…* : une note pour un personnage, un lieu ou un objet, créée
   avec ses étiquettes et ses autres noms déjà renseignés.
-- *Dossier de notes* : regroupe des notes, avec un synopsis mais sans texte principal.
-- *Dossier* : un simple conteneur, avec un synopsis et aucun texte à lui.
+- *Dossier de notes* : regroupe des notes, avec un synopsis mais sans texte principal.
+- *Dossier* : un simple conteneur, avec un synopsis et aucun texte à lui.
 
 ## Deux formes de chapitre
 
@@ -33,7 +33,7 @@ Faites un clic droit sur un élément du classeur et choisissez *Ajouter*.
 - Un *Chapitre à plat* est un seul élément dans lequel vous écrivez directement, sans
   scènes en dessous.
 
-Pour choisir la forme des *nouveaux* chapitres, ouvrez *Paramètres ▸ Œuvre : <projet> ▸
+Pour choisir la forme des *nouveaux* chapitres, ouvrez *Paramètres ▸ Œuvre : <projet> ▸
 Structure* et réglez *Chapitres à plat*. Activé donne de simples éléments, désactivé des
 dossiers.
 
@@ -51,16 +51,16 @@ Vous pouvez par exemple transformer une scène en note, ou un dossier de chapitr
 ## Où s’arrête un livre
 
 Un projet peut contenir plusieurs livres, l’un après l’autre dans le même classeur. Un
-livre court depuis son début jusqu’à la première de ces trois limites : un élément *Fin
+livre court depuis son début jusqu’à la première de ces trois limites : un élément *Fin
 du livre*, le début du livre suivant, ou la fin de son classeur.
 
-## Le paratexte : dans le livre, pas dans l’histoire
+## Le paratexte : dans le livre, pas dans l’histoire
 
-Un *Paratexte* appartient au livre mais pas à son histoire : une préface, une dédicace,
+Un *Paratexte* appartient au livre mais pas à son histoire : une préface, une dédicace,
 une postface, un colophon. Il s’exporte là où vous le placez, et n’est jamais compté dans
 le nombre de mots.
 
 Un *Dossier de paratextes* garde les paratextes à l’écart du reste du classeur.
 
-Nouveau sur Skribisto ? [Premiers pas](:help-getting-started) explique comment ouvrir et
+Nouveau sur Skribisto ? [Premiers pas](:help-getting-started) explique comment ouvrir et
 enregistrer un projet.

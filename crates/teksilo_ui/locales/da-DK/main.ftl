@@ -1,147 +1,188 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-menu-work = Projekt (&W)
-menu-new-work = Nyt projekt (&N)
-menu-open-work = Åbn projekt… (&O)
-menu-new-window = Nyt vindue (&W)
-menu-import-from = Import fra (&I)
-menu-create-from = Opret fra (&C)
-menu-import-plume = Plume Creator (.plume)… (&P)
-menu-import-document = Dokumenter (Markdown, Word, ODT) (&D)
-menu-import-manuskript = Manuskript (.msk)… (&M)
-menu-export = Eksportér (&X)
+# Skribisto: UI strings (source locale).
+# A single `&` marks the keyboard mnemonic of a menu label; `&&` is a literal `&`.
+
+## Menu bar: Work
+menu-work = &Projekt
+menu-new-work = &Nyt projekt
+menu-open-work = Å&bn projekt…
+menu-new-window = Nyt vin&due
+menu-import-from = &Importér fra
+# The Launcher's counterpart to `menu-import-from`, over the same two rows: these
+# produce a brand-new project, where the project window's importers land content
+# *in* the one already open.
+menu-create-from = &Opret fra
+menu-import-plume = &Plume Creator (.plume)…
+menu-import-document = &Dokumenter (Markdown, Word, ODT)…
+menu-import-manuskript = &Manuskript (.msk)…
+menu-export = &Eksportér
 menu-export-book = Eksportér bog
 menu-export-part = Eksportér del
-menu-export-chapter = Eksportkapitel
+menu-export-chapter = Eksportér kapitel
 menu-export-scene = Eksportér scene
-menu-export-note = Eksportbemærkning
+menu-export-note = Eksportér note
 menu-export-paratext = Eksportér paratekst
 menu-export-folder = Eksportér mappe
-menu-export-choose = Vælg plugins
-menu-export-none = Åbn et dokument til eksport
-menu-save = Gem (&S)
-menu-save-as-file = Gem som én fil… (&F)
-menu-save-as-folder = Gem som mappe… (&D)
-menu-backup = Sikkerhedskopiér nu (&B)
-menu-close-work = Luk projekt (&C)
-menu-welcome = Velkommen. (&L)
-menu-settings = Indstillinger (&E)
-menu-quit = Afslut (&Q)
+menu-export-choose = Vælg…
+menu-export-none = Åbn et dokument for at eksportere
+menu-save = &Gem
+menu-save-as-file = Gem som enkelt &fil…
+menu-save-as-folder = Gem som &mappe…
+menu-backup = &Sikkerhedskopiér nu
+menu-close-work = &Luk projekt
+menu-welcome = &Velkommen…
+menu-settings = Indstillinge&r
+menu-quit = &Afslut
 
-menu-view = Vis (&V)
-menu-outline = Disposition (&O)
-menu-search = Søg i projekt (&S)
-menu-timeline = Gå tilbage i tiden (&G)
-menu-search-preview = Søgeforhåndsvisning (&P)
-menu-fullscreen = Fuldskærm (&F)
-menu-focus-mode = Distraktion- fri tilstand (&D)
-menu-format = Format (&O)
-menu-scene-break = Indsæt scenebrud (&K)
-menu-major-scene-break = Indsæt større scenebrud (&M)
+## Menu bar: View
+menu-view = &Vis
+menu-outline = &Disposition
+menu-search = &Søg i projekt
+menu-timeline = &Gå tilbage i tiden
+menu-search-preview = Søgeforhånds&visning
+menu-fullscreen = F&uld skærm
+menu-focus-mode = Dis&traktionsfri tilstand
+menu-format = F&ormat
+menu-scene-break = Indsæt s&ceneskift
+menu-major-scene-break = Indsæt &stort sceneskift
 
-menu-go = Gå til (&G)
-menu-go-next-scene = Næste scene (&S)
-menu-go-prev-scene = Forrige scene (&V)
-menu-go-next-chapter = Næste kapitel (&C)
-menu-go-prev-chapter = Forrige kapitel (&H)
-menu-go-next-note = Næste note (&N)
-menu-go-prev-note = Forrige note (&T)
+## Menu bar: Go
+menu-go = &Gå
+menu-go-next-scene = Næste &scene
+menu-go-prev-scene = Forrige s&cene
+menu-go-next-chapter = Næste &kapitel
+menu-go-prev-chapter = Forrige ka&pitel
+menu-go-next-note = Næste &note
+menu-go-prev-note = Forrige no&te
 
-menu-tools = Værktøjer (&T)
-menu-help = Hjælp (&H)
+menu-tools = Værk&tøjer
+menu-help = &Hjælp
 
-ctx-add = Tilføj (&A)
-ctx-new-item = Nyt element (&N)
-ctx-new-folder = Ny mappe (&F)
-ctx-rename = Omdøb (&R)
-ctx-duplicate = Dupliker (&D)
-ctx-import-here = Importér her (&I)
-ctx-indent = Indsats (&I)
-ctx-outdent = Udestående (&O)
-ctx-trash = Flyt til papirkurv (&T)
-ctx-open-to-side = Åbn til siden (&S)
-ctx-open = Åbn (&O)
-ctx-reveal-in-outline = Afsked i omrids (&L)
-ctx-move-up = Flyt op (&U)
-ctx-move-down = Flyt ned (&N)
+## Binder context menu
+ctx-add = &Tilføj
+ctx-new-item = &Nyt element
+ctx-new-folder = Ny &mappe
+ctx-rename = &Omdøb
+ctx-duplicate = &Duplikér
+ctx-import-here = &Importér her…
+ctx-indent = &Indryk
+ctx-outdent = &Ryk ud
+ctx-trash = Flyt til &papirkurven
+ctx-open-to-side = Åbn ved &siden af
+ctx-open = Å&bn
+ctx-reveal-in-outline = Vis i dispositio&nen
+ctx-move-up = Flyt &op
+ctx-move-down = Flyt &ned
 
-ctx-tab-close = Luk (&C)
-ctx-tab-close-others = Luk andre faner (&O)
-ctx-tab-close-all = Luk alle faner (&L)
-ctx-tab-open-to-side = Åbn til siden (&S)
-ctx-tab-open-in-main = Åbn i hovedruden (&I)
-ctx-tab-move-to-side = Flyt til siden (&M)
-ctx-tab-move-to-main = Flyt til hovedruden (&M)
-ctx-tab-move-to-new-window = Flyt ind i et nyt vindue (&N)
-ctx-tab-move-window-unsaved = Gem dette projekt først: et andet vindue åbner på en fil på disk
-ctx-tab-pin = Pin dette faneblad (&P)
-ctx-tab-unpin = Fjern denne fane (&U)
-tab-pinned-tooltip = Pyntet: Luk andre og luk alt og lad det stå åbent
+## Editor tab context menu
+# Fresh `ctx-tab-*` keys, never a reuse of the `ctx-*` rows above: those double as
+# menu-BAR rows (shell/project_menus/document.rs), so retuning one of their
+# mnemonics to fit this menu would break the bar's own per-locale uniqueness.
+# Three rows are either/or: the split, the move and the pin each build exactly
+# one of their pair, so a letter may repeat across a pair but never within one
+# built menu, which is a debug_assert! panic in MenuList::build, not a warning.
+ctx-tab-close = &Luk
+ctx-tab-close-others = Luk &andre
+ctx-tab-close-all = Luk all&e
+# The split rows read directionally, from the pane the tab is already in, so the
+# writer never has to work out which half "the side" means. They duplicate: the
+# item ends up open in both panes over one shared document.
+ctx-tab-open-to-side = Åbn ved &siden af
+ctx-tab-open-in-main = Åbn &i hovedruden
+# The move rows read the same way, but the tab leaves the pane it came from.
+ctx-tab-move-to-side = &Flyt til siden
+ctx-tab-move-to-main = &Flyt til hovedruden
+ctx-tab-move-to-new-window = Flyt til et &nyt vindue
+# Why that last row is unavailable. A second window is opened onto the project's
+# file, so a project that has never been saved has nothing for it to open. A
+# tooltip on the disabled row, not a menu label, hence no mnemonic.
+ctx-tab-move-window-unsaved = Gem først projektet: et nyt vindue åbner en fil på disken
+ctx-tab-pin = Fast&gør denne fane
+ctx-tab-unpin = F&rigør denne fane
+# Tab tooltip, not a menu row: no mnemonic. It names the two commands a pin
+# actually protects against, because the tab itself shows only a glyph and a
+# missing close button, neither of which says what the pin is for.
+tab-pinned-tooltip = Fastgjort: »Luk andre« og »Luk alle« lader den stå åben
 
+## Create recommendations: logical type labels (SplitButton title + Add ▸ rows)
 create-book = Bog
 create-part = Del
 create-chapter = Kapitel
 create-scene = Scene
 create-note = Note
-create-note-folder = Notér mappe
+create-note-folder = Notemappe
 create-folder = Mappe
 create-paratext = Paratekst
-create-paratext-folder = Paratext- mappe
-create-book-end = Slutningen af bogen
-create-story-bible-entry = Story bible entry
+create-paratext-folder = Paratekstmappe
+create-book-end = Bogslut
+create-story-bible-entry = Opslag i historiebiblen…
+# Item-type names for the Overview's Type column (the rest reuse the create-* nouns).
 type-book-start = Bogstart
 type-text = Tekst
 
+## Create: the default title a new row is given.
+## Data, not chrome. Resolved once at creation and then owned by the writer,
+## so switching language never retitles anything already created.
+## (A scene reuses `new-scene-title`, shared with split-scene.)
 new-item-book = Ny bog
 new-item-part = Ny del
 new-item-chapter = Nyt kapitel
 new-item-note = Ny note
 new-item-note-folder = Ny notemappe
 new-item-folder = Ny mappe
-new-item-paratext = Ny paratext
-new-item-paratext-folder = Ny Paratext mappe
-new-item-story-bible-entry = Ny historie Bibelindgang
+new-item-paratext = Ny paratekst
+new-item-paratext-folder = Ny paratekstmappe
+new-item-story-bible-entry = Nyt opslag i historiebiblen
 
-placement-inside = Indenfor
+## Create recommendations: trailing placement hint on each row
+placement-inside = indeni
 placement-after = efter
-placement-after-parent = efter forælder
+placement-after-parent = efter overordnet
 placement-top-level = øverste niveau
 
+# (Writing-model rich tooltips live in this locale's tooltips.ftl.)
 
-ctx-promote = Konvertér til (&C)
+## Promote: convert a binder item to its paired type
+ctx-promote = &Konvertér til
 promote-chapter-folder = Kapitelmappe
-promote-flat-chapter = Selvstændigt kapitel
-promote-lossy-title = Ingen steder at opbevare teksten
-promote-lossy-text = En { $target } har ingen steder at holde disse: { $kinds }. Flyt eller klar denne tekst først, derefter konvertere.
-content-scene-text = Scene tekst
-content-note-text = Bemærk tekst
-content-book-title = Bogtitel
-content-book-subtitle = Bogundertekst
-content-part-title = Deltitel
-content-chapter-title = Kapitel titel
+promote-flat-chapter = Fladt kapitel
+promote-lossy-title = Ingen plads til teksten
+promote-lossy-text = En { $target } har ingen plads til disse: { $kinds }. Flyt eller ryd teksten først, og konvertér derefter.
+# Content-role names, for explaining what a conversion cannot carry over.
+content-scene-text = Scenetekst
+content-note-text = Notetekst
+content-book-title = Bogens titel
+content-book-subtitle = Bogens undertitel
+content-part-title = Delens titel
+content-chapter-title = Kapitlets titel
 content-epigraph-text = Motto
 content-paratext-text = Paratekst
-promote-blocked-title = Kapitel ikke tom
+promote-blocked-title = Kapitlet er ikke tomt
 promote-blocked-text = { $count ->
-    [one] Dette kapitel indeholder stadig { $count } element. Flyt eller skru det før konvertere det til et fladt kapitel.
-   *[other] Dette kapitel indeholder stadig { $count } elementer. Flyt eller skru dem før konvertere det til et fladt kapitel.
+    [one] Dette kapitel indeholder stadig { $count } element. Flyt det, eller læg det i papirkurven, før du konverterer kapitlet til et fladt kapitel.
+   *[other] Dette kapitel indeholder stadig { $count } elementer. Flyt dem, eller læg dem i papirkurven, før du konverterer kapitlet til et fladt kapitel.
 }
 
-inspector = Egenskaber
-inspector-empty = Åbn en genstand for at inspicere den.
-inspector-promote = Konvertér til +
-statusbar-toggle-outline = Slå bindemidlet til / fra
-statusbar-toggle-inspector = Slå inspektøren til og fra
-statusbar-save-unsaved = Ikke gemte ændringer. Klik for at gemme
-statusbar-save-saved = Alle ændringer gemt
-statusbar-save-autosave = Autogem er tændt. Ændringer gemmes som du skriver
-statusbar-saving = Redningsudstyr
+## Inspector (trailing dock) + status-bar dock toggles
+inspector = Inspektør
+inspector-empty = Åbn et element for at se dets egenskaber.
+inspector-promote = Konvertér til…
+statusbar-toggle-outline = Vis eller skjul ringbindet
+statusbar-toggle-inspector = Vis eller skjul inspektøren
+# The save indicator (status bar, next to the binder toggle).
+statusbar-save-unsaved = Ændringer er ikke gemt. Klik for at gemme
+statusbar-save-saved = Alle ændringer er gemt
+statusbar-save-autosave = Automatisk gem er slået til. Ændringer gemmes, mens du skriver
+statusbar-saving = Gemmer…
+# The focused item's live word count (status bar).
 statusbar-word-count = { $count ->
     [one] { $count } ord
    *[other] { $count } ord
 }
-statusbar-word-count-tooltip = Ord i scenen du laver redigering
+statusbar-word-count-tooltip = Ord i den scene, du redigerer
+# Words + characters, shown when "Show character count" is on (Settings ▸ Goals).
 statusbar-word-char-count = { $words ->
     [one] { $words } ord
    *[other] { $words } ord
@@ -149,300 +190,348 @@ statusbar-word-char-count = { $words ->
     [one] { $chars } tegn
    *[other] { $chars } tegn
 }
-session-toggle = Brænder session: start eller pause en fokuseret sprint
-session-configure = Indstil sessionsens ordmål og tidsgrænse
-session-configure-title = Brænder session
+# The writing session (status-bar sprint timer + word tracker).
+session-toggle = Skrivesession: start eller sæt en fokuseret skrivespurt på pause
+session-configure = Angiv sessionens ordmål og tidsgrænse
+session-configure-title = Skrivesession
 session-word-goal = Ordmål
-session-time-limit = Tidsfrist
+session-time-limit = Tidsgrænse
+# The spin box's non-editable trailing unit. An abbreviation, not a word that
+# agrees with the number: a `SpinBox` suffix is static text and cannot carry a
+# plural selector. The separating space is prepended in code (Qt's `" min"`
+# convention), so give the unit alone. Never shown at 0, which reads
+# `session-no-limit` instead.
 session-time-limit-unit = min.
 session-no-goal = Intet mål
 session-no-limit = Ingen grænse
 session-reset = Nulstil session
-session-readout = { $words } ord { $time }
-session-readout-timed = { $words } ord · { $time } venstre
-statusbar-focus-exit = Afslut distraktion- free mode
-statusbar-focus-synopsis = Resumé
-statusbar-focus-go-prev = Forrige punkt (Alt + Op)
-statusbar-focus-go-next = Næste punkt på dagsordenen (Alt + Ned)
+session-readout = { $words ->
+    [one] { $words } ord
+   *[other] { $words } ord
+} · { $time }
+session-readout-timed = { $words ->
+    [one] { $words } ord
+   *[other] { $words } ord
+} · { $time } tilbage
+# Distraction-free mode's always-visible control strip (Increment 2).
+statusbar-focus-exit = Afslut distraktionsfri tilstand
+# The strip's Next/Previous buttons (Increment 4) fire the same go.next/go.prev
+# actions as the shortcut and the Go menu's generic pair.
+statusbar-focus-synopsis = Synopsis
+statusbar-focus-go-prev = Forrige element (Alt+Op)
+statusbar-focus-go-next = Næste element (Alt+Ned)
 
+## Activity-rail actions (dockless commands in the icon rail)
 rail-settings = Indstillinger
 
+## Settings
 language = Sprog
 theme = Tema
 english = Engelsk
 french = Fransk
-light = Lys
-dark = Mørk
+light = Lyst
+dark = Mørkt
 settings-text-width = Tekstbredde
-settings-preview-width = Søg i forhåndsvisningsbredde
-settings-autosave = Autogem til disk
-settings-show-welcome = Vis starteren ved opstart
-settings-show-welcome-tip = Når det er slukket, genåbner det sidste projekt i stedet.
-settings-check-for-updates = Tjek for nye versioner
-settings-check-for-updates-tip = En gang om dagen på højst, Skribisto spørger projektet hjemmeside, hvilken version er aktuel. Anmodningen bærer ingen identifikator, og ikke engang den version, du kører: sammenligningen sker på denne computer.
+settings-preview-width = Bredde på søgeforhåndsvisning
+settings-autosave = Gem automatisk på disken
+settings-show-welcome = Vis startskærmen ved opstart
+settings-show-welcome-tip = Når den er slået fra, genåbnes det seneste projekt i stedet.
+settings-check-for-updates = Søg efter nye versioner
+settings-check-for-updates-tip = Højst én gang om dagen spørger Skribisto projektets websted, hvilken version der er den nyeste. Forespørgslen indeholder ingen identifikator, ikke engang den version, du bruger: sammenligningen foregår på denne computer.
 
+## Settings window: chrome
 settings-title = Indstillinger
 settings-close = Luk
-settings-search = Søgeindstillinger
+settings-search = Søg i indstillinger
 settings-reset = Nulstil til standard
 settings-done = Færdig
-settings-cancel = Annuller
+settings-cancel = Annullér
 settings-apply = Anvend
 settings-ok = OK
 settings-reset-confirm-title = Nulstil alle indstillinger til standard?
-settings-reset-confirm-body = Gendanner denne applikation, udseende, editor og skrivning indstillinger. Dit projekt er egne indstillinger, tastatur genveje og gemte stilarter er ikke påvirket. Det kan ikke fortrydes.
+settings-reset-confirm-body = Gendanner programmets indstillinger for udseende, editor og skrivning. Projektets egne indstillinger, tastaturgenveje og gemte typografier berøres ikke. Handlingen kan ikke fortrydes.
 settings-empty-title = Ingen indstillinger her endnu
-settings-empty-hint = Dette afsnit vil få muligheder i en fremtidig opdatering.
+settings-empty-hint = Dette afsnit får indstillinger i en fremtidig opdatering.
 
-settings-sec-appearance-behaviour = Udseende Opførsel
+## Settings window: categories
+settings-sec-appearance-behaviour = Udseende og adfærd
 settings-sec-editor = Editor
 settings-sec-spelling = Stavning
-settings-sec-backup = Sikkerhedskopiér synkronisering
-settings-sec-compile = Compile Export
+settings-sec-backup = Sikkerhedskopi og synkronisering
+settings-sec-compile = Kompilering og eksport
 settings-page-appearance = Udseende
 settings-field-image-size-policy = Store billeder
 settings-image-policy-ask = Spørg hver gang
 settings-image-policy-keep = Behold originalen
 settings-image-policy-downscale = Optimér
-settings-hint-image-size-policy = Hvad skal man gøre, når et indsat billede er større end manuskriptet behøver.
+settings-hint-image-size-policy = Hvad der skal ske, når et indsat billede er større, end manuskriptet har brug for.
 settings-page-notifications = Meddelelser
 settings-page-scene = Scene
-settings-page-synopsis = Resumé
+settings-page-synopsis = Synopsis
 settings-page-notes = Noter
-settings-page-editor-behavior = Editorens opførsel
-settings-page-goals = Mål Word Count
-settings-page-games = Skrivning spil
+settings-page-editor-behavior = Editorens adfærd
+settings-page-goals = Mål og ordantal
+settings-page-games = Skrivelege
 settings-page-corkboard = Opslagstavle
-settings-page-distraction-free = Distraktion- fri
+settings-page-distraction-free = Distraktionsfri
 settings-page-dictionaries = Ordbøger
-settings-page-autosave = Autogem
-settings-page-export = Eksportér formater
+settings-page-autosave = Automatisk gem
+settings-page-export = Eksportformater
 settings-page-paratext = Paratekststrukturer
-settings-page-keymap = Nøglekort
-settings-keymap-filter = Filtergenveje
+settings-page-keymap = Genvejstaster
+# Filter box on the Keymap page (filters the ShortcutSettings list by name / id / category).
+settings-keymap-filter = Filtrér genveje
 
+## Settings window: what each page is for
+# One line per page, shown under that page's link on its parent's page and,
+# for a parent, under its own title. Keep them to one line: they describe what
+# the page holds, not how to use it.
 settings-desc-sec-appearance-behaviour = Hvordan selve programmet ser ud, og hvad det gør, når det starter.
-settings-desc-sec-editor = Skrivende overflade: hvordan det ser ud, og hvad det gør, som du skriver.
-settings-desc-sec-spelling = Stavekontrol, og ordbøgerne bag det.
-settings-desc-sec-backup = Hvordan dit projekt når disken, og hvilke kopier der opbevares.
-settings-desc-sec-compile = Hvad efterlader Skribisto, og i hvilken form.
-settings-desc-sec-work = Indstillinger, der tilhører dette projekt og rejser i sin fil.
-settings-desc-sec-extensions = Sider bidraget med udvidelser installeret her.
-settings-desc-group-typography = En side pr. tekstform: skrivefelt, størrelse, linjehøjde og afstand.
-settings-desc-appearance = Grænseflade sprog, tema, tekststørrelse, og opsenderen ved opstart.
-settings-desc-notifications = Hver besked denne session har vist, og de handlinger, du kan spille igen.
-settings-desc-scene = Hvordan scene prosa er indstillet: typeface, størrelse, linje højde, led og afstand.
-settings-desc-synopsis = Hvordan synopsis ruden er indstillet, uafhængigt af manuskriptet.
-settings-desc-notes = Hvordan noter er sat, uafhængigt af manuskriptet.
-settings-desc-corkboard = Kortstørrelse, hvad et kort viser, og hvordan bestyrelsen arrangerer dem.
-settings-desc-distraction-free = Typografi, søjlebredde og kontrolbånd til fuldskærmsskrivning.
-settings-desc-distraction-free-themes = Temabiblioteket for fuldskærmsskrivning: de sendte og dine egne.
-settings-desc-editor-behavior = Tekstbredde, synopsis position, skrivemaskine scrolling og pleje højdepunkt.
-settings-desc-punctuation = Det typografiske hus stil nye projekter starter fra. Hvert projekt følger dette, medmindre det sætter sin egen.
-settings-desc-goals = Ord og tegn mål, og hvordan ord tælles.
-settings-desc-games = Restriktioner du sætter dig selv under udarbejdelsen, såsom Altid fremad.
-settings-desc-spellcheck = Den eneste kontakt, der tænder stavekontrol overalt.
-settings-desc-dictionaries = Installere, fjerne og gennemse stavefejl på denne maskine.
-settings-desc-autosave = Om dine edits er skrevet til disk på egen hånd.
-settings-desc-backup = Når kopier tages, hvor de opbevares, og hvor mange. Hvert projekt følger dette, medmindre det sætter sin egen.
-settings-desc-export = De stilarter hver eksport kompilerer gennem: de afsendt dem og din egen.
-settings-desc-paratext = Foran og bagside stof et nyt projekt kan starte med.
-settings-desc-keymap = Alle genveje, og hvad det er bundet til.
+settings-desc-sec-editor = Skrivefladen: hvordan den ser ud, og hvad den gør, mens du skriver.
+settings-desc-sec-spelling = Stavekontrol og ordbøgerne bag den.
+settings-desc-sec-backup = Hvordan dit arbejde kommer ned på disken, og hvilke kopier der gemmes.
+settings-desc-sec-compile = Hvad der forlader Skribisto, og i hvilken form.
+settings-desc-sec-work = Indstillinger, der hører til dette projekt og følger med i dets fil.
+settings-desc-sec-extensions = Sider fra de udvidelser, der er installeret her.
+settings-desc-group-typography = Én side pr. teksttype: skrifttype, størrelse, linjehøjde og afstand.
+settings-desc-appearance = Brugerfladens sprog, tema, tekststørrelse og startskærmen ved opstart.
+settings-desc-notifications = Alle meddelelser, der er vist i denne session, og de handlinger, du kan gentage.
+settings-desc-scene = Hvordan sceneteksten sættes: skrifttype, størrelse, linjehøjde, indrykning og afstand.
+settings-desc-synopsis = Hvordan synopsisruden sættes, uafhængigt af manuskriptet.
+settings-desc-notes = Hvordan noter sættes, uafhængigt af manuskriptet.
+settings-desc-corkboard = Kortstørrelse, hvad et kort viser, og hvordan tavlen arrangerer kortene.
+settings-desc-distraction-free = Typografi, kolonnebredde og kontrolbjælke til skrivning i fuld skærm.
+settings-desc-distraction-free-themes = Temabiblioteket til skrivning i fuld skærm: de medfølgende temaer og dine egne.
+settings-desc-editor-behavior = Tekstbredde, synopsens placering, skrivemaskinerulning og fremhævning omkring markøren.
+settings-desc-punctuation = Den typografiske husstil, som nye projekter starter med. Alle projekter følger den, medmindre de har deres egen.
+settings-desc-goals = Mål for ord og tegn, og hvordan ord tælles.
+settings-desc-games = Begrænsninger, du selv vælger, mens du skriver udkast, f.eks. Altid fremad.
+settings-desc-spellcheck = Den ene kontakt, der slår stavekontrol til og fra overalt.
+settings-desc-dictionaries = Installér, fjern og gennemse stavekontrollens ordbøger på denne computer.
+settings-desc-autosave = Om dine ændringer skrives til disken af sig selv.
+settings-desc-backup = Hvornår der tages kopier, hvor de gemmes, og hvor mange. Alle projekter følger dette, medmindre de har deres egen indstilling.
+settings-desc-export = De typografier, alle eksporter kompileres med: de medfølgende og dine egne.
+settings-desc-paratext = Det for- og efterstof, et nyt projekt kan starte med.
+settings-desc-keymap = Alle genveje, og hvad de er knyttet til.
 settings-page-user = Bruger
-settings-desc-user = Hvem du er, for de kommentarer du skriver.
+settings-desc-user = Hvem du er, til de kommentarer du skriver.
 settings-group-identity = Identitet
 settings-field-user-name = Dit navn
 settings-field-user-name-placeholder = Valgfrit
-settings-field-user-name-hint = Tegn de kommentarer og svar, du skriver. Distinkt fra et projekt Buds forfatternavn, som er bogen Buds byline og rejser inde i filen.
+settings-field-user-name-hint = Underskriver de kommentarer og svar, du skriver. Adskiller sig fra projektets forfatternavn, som er bogens byline og følger med i filen.
 settings-field-user-initials = Dine initialer
 settings-field-user-initials-placeholder = Fra dit navn
-settings-field-user-initials-hint = Hvad en tekstprocessor viser ved siden af din kommentar i marginen. Lad det være tomt at bruge dem, der vises, taget fra dit navn.
-settings-field-user-hint = Begge er valgfrie og gælder for hvert projekt på denne computer. Ændring af dem tegn de kommentarer, du skriver næste. Kommentarer allerede skrevet holde det navn, de blev skrevet under.
+settings-field-user-initials-hint = Det, et tekstbehandlingsprogram viser ud for din kommentar i margenen. Lad feltet være tomt for at bruge de viste initialer, som er taget fra dit navn.
+settings-field-user-hint = Begge er valgfrie og gælder for alle projekter på denne computer. Ændrer du dem, underskrives de kommentarer, du skriver fremover. Kommentarer, der allerede er skrevet, beholder det navn, de blev skrevet under.
 settings-desc-author = Navnet, der står på dette projekt.
-settings-desc-structure = Hvorvidt dette projekt er kapitler er mapper eller enkelte elementer.
-settings-desc-language = Sproget dette projekt er prosa er kontrolleret imod.
-settings-desc-work-backup = Dette projekt har sin egen backup politik, eller den generelle.
-settings-desc-personal-dictionary = De ord dette projekt behandler som korrekt stavet.
-settings-desc-tags = De farvekodede etiketter dette projekt markerer sine elementer med.
-settings-desc-templates = Den note skabeloner, du kan indsætte, mens du skriver i dette projekt.
-settings-desc-text-replacements = Genveje, der udvider som du skriver i dette projekt.
-settings-desc-work-punctuation = De citater, piskeslag og afstand dette projekt er prosa følger.
+settings-desc-structure = Om projektets kapitler er mapper eller enkeltelementer.
+settings-desc-language = Det sprog, projektets tekst kontrolleres efter.
+settings-desc-work-backup = Projektets egen politik for sikkerhedskopier, eller den generelle.
+settings-desc-personal-dictionary = De ord, projektet betragter som korrekt stavet.
+settings-desc-tags = De farvekodede mærker, projektet markerer sine elementer med.
+settings-desc-templates = De noteskabeloner, du kan indsætte, mens du skriver i dette projekt.
+settings-desc-text-replacements = Forkortelser, der udfoldes, mens du skriver i dette projekt.
+settings-desc-work-punctuation = De anførselstegn, tankestreger og mellemrum, projektets tekst følger.
 
+## Settings window: fields
 settings-group-typography = Typografi
-settings-group-writing-column = Skrivning kolonne
-settings-group-writing-view = Brænder visning
-settings-group-distraction-free-strip = Kontrolbånd
+settings-group-writing-column = Skrivekolonne
+settings-group-writing-view = Skrivevisning
+# The distraction-free control strip's optional items (Exit is never optional).
+settings-group-distraction-free-strip = Kontrolbjælke
 settings-group-theme = Tema
 settings-group-language = Sprog
 settings-group-startup = Opstart
 settings-group-updates = Opdateringer
-settings-group-autosave = Autogem
-settings-field-typeface = Skrifttype
+settings-group-autosave = Automatisk gem
+settings-field-typeface = Skrift
 settings-field-size = Tekststørrelse
 
-editor-size-changed-manuscript = Manuskript: { $percent }
-editor-size-changed-synopsis = Synopsis tekststørrelse: { $percent }
-editor-size-changed-notes = Noter tekststørrelse: { $percent }
-editor-size-changed-corkboard = Korkbræt kort tekststørrelse: { $percent }
-editor-size-changed-corkboard-expanded = Udvidet editor tekststørrelse: { $percent }
-editor-size-changed-distraction-free = Distraktion- fri tekststørrelse: { $percent }
+# The readout shown while Ctrl+Wheel / Ctrl+= / Ctrl+- / Ctrl+0 change an
+# editor's text size. One whole message per surface rather than a shared
+# "{ $surface }: { $percent }" template: the surface name is not a plain
+# substitution in every language, and a translator should get complete
+# sentences. $percent arrives already formatted ("110%").
+editor-size-changed-manuscript = Manuskriptets tekststørrelse: { $percent }
+editor-size-changed-synopsis = Synopsens tekststørrelse: { $percent }
+editor-size-changed-notes = Noternes tekststørrelse: { $percent }
+editor-size-changed-corkboard = Tekststørrelse på opslagstavlens kort: { $percent }
+editor-size-changed-corkboard-expanded = Tekststørrelse i den udvidede editor: { $percent }
+editor-size-changed-distraction-free = Tekststørrelse i distraktionsfri tilstand: { $percent }
 
-menu-text-size-increase = Forøg tekststørrelse (&I)
-menu-text-size-decrease = Formindsk tekststørrelse (&C)
-menu-text-size-reset = Nulstil tekststørrelse (&R)
+menu-text-size-increase = &Forstør tekst
+menu-text-size-decrease = Form&indsk tekst
+menu-text-size-reset = &Nulstil tekststørrelse
 settings-field-line-height = Linjehøjde
-settings-field-first-line-indent = First- line led
-settings-field-paragraph-spacing-before = Plads før punkt
-settings-field-paragraph-spacing-after = Plads efter punkt
+settings-field-first-line-indent = Indrykning af første linje
+settings-field-paragraph-spacing-before = Afstand før afsnit
+settings-field-paragraph-spacing-after = Afstand efter afsnit
 settings-field-column-width = Kolonnebredde
-settings-distraction-free-width-hint = Gælder kun, mens distraction- free tilstand er tændt. Din Scene, Synopsis og Notes kolonne bredder er uberørt.
-settings-distraction-free-title = Behold varenavnet
-settings-distraction-free-word-count = Hold ordet tæller
-settings-distraction-free-session = Behold skrivesession
-settings-distraction-free-go-to = Behold Gå til + - knappen
-settings-distraction-free-go = Hold de forrige og næste knapper
-settings-distraction-free-chrome-hint = Den Exit knappen altid bliver, uanset hvad du vælger her. Det er din vej ud, hvis Escape er optaget.
+settings-distraction-free-width-hint = Gælder kun, mens distraktionsfri tilstand er slået til. Kolonnebredderne for scene, synopsis og noter ændres ikke.
+settings-distraction-free-title = Behold elementets navn
+settings-distraction-free-word-count = Behold ordantallet
+settings-distraction-free-session = Behold skrivesessionen
+settings-distraction-free-go-to = Behold knappen Gå til…
+settings-distraction-free-go = Behold knapperne Forrige og Næste
+settings-distraction-free-chrome-hint = Knappen Afslut er der altid, uanset hvad du vælger her. Den er din vej ud, hvis Escape er optaget.
 settings-field-app-theme = Tema
-settings-theme-light = Lys
-settings-theme-dark = Mørk
-settings-field-text-scale = Grænsefladens tekststørrelse
-settings-field-language = Grænsefladesprog
-settings-synopsis-placement = Synopsisposition
+# The two entries of the Theme picker (the Fluent light / dark appearances).
+settings-theme-light = Lyst
+settings-theme-dark = Mørkt
+settings-field-text-scale = Brugerfladens tekststørrelse
+settings-field-language = Brugerfladens sprog
+settings-synopsis-placement = Synopsens placering
 settings-synopsis-placement-none = Ingen
-settings-synopsis-placement-top = Ovenfor
+settings-synopsis-placement-top = Over
 settings-synopsis-placement-side = Ved siden af
-settings-typewriter = Skrivemaskine scrolling
-settings-typewriter-tip = Holder den linje, du skriver på en fast højde, mens manuskriptet ruller under det. Ved at klikke stadig sætter pleje, hvor du klikker.
-settings-typewriter-position = Linjeposition
-settings-typewriter-position-top-third = Top tredje
-settings-typewriter-position-middle = Mellem
-settings-typewriter-position-bottom-quarter = Nederste kvartal
-settings-highlight-scope = Fremhæv omegnen af omsorgen
+settings-typewriter = Skrivemaskinerulning
+settings-typewriter-tip = Holder den linje, du skriver på, i en fast højde, mens manuskriptet ruller under den. Et klik placerer stadig markøren, hvor du klikker.
+settings-typewriter-position = Linjens placering
+settings-typewriter-position-top-third = Øverste tredjedel
+settings-typewriter-position-middle = Midten
+settings-typewriter-position-bottom-quarter = Nederste fjerdedel
+settings-highlight-scope = Fremhævning omkring markøren
 settings-highlight-scope-none = Ingen
-settings-highlight-scope-sentence = Dommen
+settings-highlight-scope-sentence = Sætning
 settings-highlight-scope-paragraph = Afsnit
-settings-highlight-scope-tip-none = Intet er skygget, som du skriver.
-settings-highlight-scope-tip-sentence = Skyg den sætning, du skriver, så det skiller sig ud fra dem omkring det.
-settings-highlight-scope-tip-paragraph = Shade hele det afsnit, du skriver, for at holde den passage, du arbejder på i betragtning.
-settings-group-container-views = Containervisning
-settings-remember-view = Husk den sidste visning for hver type element
-settings-remember-view-tip = Åbn en beholder på den visning, du sidst brugte til den type
+settings-highlight-scope-tip-none = Lad siden være ren. Intet skygges, mens du skriver.
+settings-highlight-scope-tip-sentence = Skyg den sætning, du skriver, så den skiller sig ud fra sætningerne omkring den.
+settings-highlight-scope-tip-paragraph = Skyg hele det afsnit, du skriver, så den passage, du arbejder på, bliver i syne.
+settings-group-container-views = Visninger af beholdere
+settings-remember-view = Husk den seneste visning for hver elementtype
+settings-remember-view-tip = Åbn en beholder i den visning, du sidst brugte for den type
 settings-remember-view-tip-more =
-    En bog, del og kapitel hver tilbyder flere visninger (sin egen side, den fulde
-    manuskript, den fulde synopsis). Tænd dette og hver type genåbner på
-    se du sidst valgte for det, fx skifte et kapitel til Full Chapter og
-    næste kapitel du åbner viser Full Chapter også. Hver type husker sin egen opfattelse.
-settings-group-counting = Ordoptælling
+    En bog, en del og et kapitel har hver flere visninger (sin egen side, hele
+    manuskriptet, hele synopsen). Slår du dette til, genåbner hver type i den
+    visning, du sidst valgte for den: skifter du f.eks. et kapitel til Helt kapitel,
+    viser det næste kapitel, du åbner, også Helt kapitel. Hver type husker sin egen visning.
+# Goals & Word Count pane
+settings-group-counting = Optælling af ord
 settings-counting-auto = Automatisk (efter sprog)
-settings-counting-whitespace = Split på mellemrum
-settings-counting-unicode-words = Unicode- ord
-settings-counting-cjk-hybrid = CJK- aware (per karakter)
-settings-counting-hint = Automatisk tæller kinesisk og japansk efter karakter og alle andre sprog efter ord. Ændre det kun, hvis tællingen ser forkert for dit sprog.
-settings-group-goals-display = Vis
-settings-show-characters = Vis tegntællingen i statuslinjen
-settings-autosave-hint = Ændringer er skrevet til disk automatisk, som du skriver.
+settings-counting-whitespace = Del ved mellemrum
+settings-counting-unicode-words = Unicode-ord
+settings-counting-cjk-hybrid = CJK-tilpasset (pr. tegn)
+settings-counting-hint = Automatisk tæller kinesisk og japansk i tegn og alle andre sprog i ord. Skift det kun, hvis optællingen ser forkert ud for dit sprog.
+settings-group-goals-display = Visning
+settings-show-characters = Vis tegnantallet på statuslinjen
+settings-autosave-hint = Ændringer skrives automatisk til disken, mens du skriver.
 
+## Settings: Work (the open project)
 settings-sec-work = Projekt
 settings-page-structure = Struktur
 settings-page-author = Forfatter
 settings-field-author-name = Forfatternavn
 settings-field-author-placeholder = Valgfrit
-settings-field-author-hint = Udseende på den kompilerede titelside og i eksporterede fil metadata. Lad det være blankt for at udelade det. Dette er bogen Buds byline. Navnet dine kommentarer er signeret med er i Indstillingsbruger.
-settings-group-chapters = Kapitel
-tidy-titles-title = Tideoverskrifter
-tidy-titles-none = Intet kapitel eller en del af titlen gentager blot sit eget nummer.
+settings-field-author-hint = Vises på den kompilerede titelside og i de eksporterede filers metadata. Lad feltet være tomt for at udelade det. Dette er bogens byline. Navnet, dine kommentarer underskrives med, findes under Indstillinger ▸ Bruger.
+settings-group-chapters = Kapitler
+tidy-titles-title = Ryd op i kapiteltitler
+tidy-titles-none = Ingen kapitel- eller deltitel gentager blot sit eget nummer.
 tidy-titles-lead = { $count ->
-        [one] Et kapitel eller en del har kun sit eget nummer.
-       *[other] { $count } kapitler og dele har kun deres eget nummer.
+        [one] Et kapitel eller en del har intet andet i titlen end sit eget nummer.
+       *[other] { $count } kapitler og dele har intet andet i titlen end deres eget nummer.
     }
-tidy-titles-explain = Rydning disse titler efterlader hver enkelt navngivet efter det nummer, bogen allerede kender, det samme nummer eksport udskrifter. Intet andet ændrer, og en fortryde sætter dem alle tilbage.
-menu-document-tidy-titles = Tideoverskrifter (&Y)
+tidy-titles-explain = Når disse titler ryddes, navngives hver enkelt med det nummer, bogen allerede kender, det samme nummer, som eksporten udskriver. Intet andet ændres, og én fortrydelse sætter dem alle tilbage.
+menu-document-tidy-titles = Ryd op i &kapiteltitler…
 settings-group-numbering = Nummerering
-settings-number-chapters = Antal kapitler og dele
-settings-number-chapters-tip = Kapitler og dele bærer et nummer, der er beregnet fra, hvor de sidder i bogen, vist ved siden af deres titel her, og trykt af eksporten.
-settings-number-chapters-tip-more = Nummeret er aldrig gemt i titlen, så det forbliver rigtigt, når du ombestille, indsætte eller slette. Slå dette fra og eksport udskriver titler alene, uanset eksport stil beder om. For at efterlade et kapitel ud (en prolog, en interlude), bruge Inspektør Numbering switch i stedet: der holder det i bogen, men stopper det at tage et nummer.
-settings-part-resets-chapter = Genstart kapitel numre på hver del
-settings-part-resets-chapter-tip = Off som standard: kapitler køre lige på tværs af de dele af en bog, så Buddy Part To Buddy åbner på kapitel Elleve.
-settings-part-resets-chapter-tip-more = Det er den sædvanlige handelspraksis, og hvad en læser forventer. Tænd den for en bog, hvis dele skal læses som separate bind, hvor hver enkelt åbner på kapitel 1.
+settings-number-chapters = Nummerér kapitler og dele
+settings-number-chapters-tip = Kapitler og dele får et nummer, der udledes af deres plads i bogen. Det vises ved siden af titlen her og udskrives af eksporten.
+settings-number-chapters-tip-more = Nummeret gemmes aldrig i titlen, så det forbliver korrekt, når du flytter, indsætter eller sletter. Slår du dette fra, udskriver eksporten kun titlerne, uanset hvad eksporttypografien beder om. Vil du udelade ét kapitel (en prolog, et mellemspil), så brug i stedet kontakten Nummerering i inspektøren: kapitlet bliver i bogen, men får intet nummer.
+settings-part-resets-chapter = Start kapitelnumre forfra i hver del
+settings-part-resets-chapter-tip = Slået fra som standard: kapitlerne nummereres fortløbende på tværs af bogens dele, så »Anden del« begynder med kapitel elleve.
+settings-part-resets-chapter-tip-more = Det er den gængse praksis i forlagsbranchen, og det en læser forventer. Slå det til for en bog, hvis dele skal læses som separate bind, hvor hvert bind begynder med kapitel et.
 settings-chapter-flat = Flade kapitler
-settings-chapter-flat-hint = På: et kapitel er et enkelt element. Du skriver ind i det, og det holder ingen scener. Off: et kapitel er en mappe. Du stadig skrive ind i det, men det kan holde scener så godt. Nye kapitler følger denne indstilling; eksisterende dem konvertere via Promote.
+settings-chapter-flat-hint = Til: et kapitel er et enkelt element. Du skriver i det, og det indeholder ingen scener. Fra: et kapitel er en mappe. Du kan stadig skrive i det, men det kan også indeholde scener. Nye kapitler følger denne indstilling; eksisterende konverteres med Konvertér til.
 
-settings-styles-builtin = Bygge-i stilarter
-settings-styles-user = Mine stilarter
-settings-styles-builtin-badge = Bygning-in
-settings-styles-duplicate = Dupliker
-settings-styles-edit = Rediger
+## Settings: Export styles (Compile & Export ▸ Export Formats)
+settings-styles-builtin = Indbyggede typografier
+settings-styles-user = Mine typografier
+settings-styles-builtin-badge = Indbygget
+settings-styles-duplicate = Duplikér
+settings-styles-edit = Redigér
 settings-styles-delete = Slet
 settings-styles-import = Importér…
 settings-styles-export = Eksportér…
 settings-styles-copy-suffix = (kopi)
-settings-styles-json-filter = Eksportér stil
-settings-styles-editor-title = Redigér stil
-settings-styles-editor-none = Vælg en brugerdefineret stil til at redigere det, eller duplikér en build- in one.
-settings-styles-imported = Importeret stil
-settings-styles-import-failed = Kunne ikke importere stil
-settings-styles-exported = Udførsel af stil
-settings-styles-export-failed = Kunne ikke eksportere stil
+settings-styles-json-filter = Eksporttypografi
+settings-styles-editor-title = Redigér typografi
+settings-styles-editor-none = Vælg en egen typografi for at redigere den, eller duplikér en indbygget.
+settings-styles-imported = Typografien er importeret
+settings-styles-import-failed = Typografien kunne ikke importeres
+settings-styles-exported = Typografien er eksporteret
+settings-styles-export-failed = Typografien kunne ikke eksporteres
+# Editor field labels
 settings-styles-field-name = Navn
-settings-styles-field-chapters = Kapitelsager
+settings-styles-field-chapters = Kapiteloverskrifter
 settings-styles-field-parts = Deloverskrifter
 settings-styles-field-scene-break = Sceneskift
-settings-styles-field-major-scene-break = Større scenebrud
+settings-styles-field-major-scene-break = Stort sceneskift
 settings-styles-field-spacing = Linjeafstand
-settings-styles-field-justify = Begrund tekst
-settings-styles-field-notes = Inkludér noter
-settings-styles-field-synopses = Inkludér synopser
-settings-styles-field-scene-titles = Inkludér scene- titler
-settings-styles-field-epigraphs = Inkludér epigrafer
-settings-styles-field-paratexts = Inkludér paratekter
-settings-styles-field-epigraph-placement = Epigraph- position
+settings-styles-field-justify = Lige margener
+settings-styles-field-notes = Medtag noter
+settings-styles-field-synopses = Medtag synopser
+settings-styles-field-scene-titles = Medtag scenetitler
+settings-styles-field-epigraphs = Medtag mottoer
+settings-styles-field-paratexts = Medtag paratekster
+settings-styles-field-epigraph-placement = Mottoets placering
 settings-styles-epigraph-after = Efter titlen
 settings-styles-epigraph-before = Før titlen
 settings-styles-field-footnotes = Medtag fodnoter
 settings-styles-field-footnote-numbering = Nummerering af fodnoter
-settings-styles-footnote-numbering-continuous = Løbende
-settings-styles-footnote-numbering-per-chapter = Genstart hvert kapitel
-settings-styles-footnote-numbering-per-book = Genstart hver bog
+settings-styles-footnote-numbering-continuous = Fortløbende
+settings-styles-footnote-numbering-per-chapter = Start forfra i hvert kapitel
+settings-styles-footnote-numbering-per-book = Start forfra i hver bog
 settings-styles-field-images = Billeder
-menu-image = Billede (&I)
+menu-image = &Billede
 settings-styles-images-beside = Ved siden af dokumentet
-settings-styles-images-embed = Inden i dokumentet
-settings-styles-images-omit = Bland dig udenom
-settings-styles-group-round-trip = Sender til en editor
-settings-styles-field-comments = Inkludér kommentarer
-settings-styles-field-round-trip-marks = Inkludér markeringer for rundkørsel
-settings-styles-round-trip-hint = DOCX og ODT kun. Markører er usynlige identifikatorer, der lader en returnerende fil opdatere dette projekt i stedet for at lande ved siden af det som en anden kopi.
+settings-styles-images-embed = Inde i dokumentet
+settings-styles-images-omit = Udelad
+settings-styles-group-round-trip = Sende til en redaktør
+settings-styles-field-comments = Medtag kommentarer
+settings-styles-field-round-trip-marks = Medtag returmarkører
+settings-styles-round-trip-hint = Kun DOCX og ODT. Markører er usynlige identifikatorer, som lader en returneret fil opdatere dette projekt i stedet for at havne ved siden af det som en ekstra kopi.
 settings-styles-group-pages = Sider
-settings-styles-field-cover = Åbn med omslaget
-settings-styles-field-word-count = Ordet tæller på titelsiden
-settings-styles-field-page-books = Ny side i hver bog
-settings-styles-field-page-parts = Ny side i hver del
-settings-styles-field-page-chapters = Ny side i hvert kapitel
-settings-styles-field-page-paratexts = Ny side på hver paratext
+settings-styles-field-cover = Begynd med omslaget
+settings-styles-field-word-count = Ordantal på titelsiden
+settings-styles-field-page-books = Ny side ved hver bog
+settings-styles-field-page-parts = Ny side ved hver del
+settings-styles-field-page-chapters = Ny side ved hvert kapitel
+settings-styles-field-page-paratexts = Ny side ved hver paratekst
+# Heading-scheme options
 settings-styles-heading-none = Ingen overskrift
-settings-styles-heading-numbered = Antal
+settings-styles-heading-numbered = Kun nummer
 settings-styles-heading-title = Kun titel
-settings-styles-heading-both = Antal + titel
-settings-styles-break-blank = Blank linje
+settings-styles-heading-both = Nummer og titel
+# Scene-break options (glyph values stay as typed)
+settings-styles-break-blank = Tom linje
 settings-styles-break-none = Ingen
+# Line-spacing options
 settings-styles-spacing-single = Enkelt
 settings-styles-spacing-onehalf = 1½
 settings-styles-spacing-double = Dobbelt
 
+## Welcome
 welcome-title = Velkommen til Skribisto
+# $version is stamped from the git tag at build time (see src/version.rs).
 welcome-version = Version { $version }
+# Shown under the version in the launcher sidebar, only when a newer release exists.
 welcome-update-available = Version { $version } er tilgængelig
 welcome-update-tip = Åbner downloadsiden i din browser.
-welcome-search = Søgeprojekter
+welcome-search = Søg i projekter
 welcome-open = Åbn
 welcome-new-work = Nyt projekt
-welcome-create-from = Opret fra plugins
-welcome-recent-works = Nylige projekter
-welcome-empty-recents = Ingen nye projekter endnu.
-welcome-no-matches = Intet nyligt projekt matcher din søgning.
-welcome-learn-soon = Guider og tips kommer snart.
-welcome-about-blurb = Skribisto, en rust + Teksilo omskrivning af skrive app.
-welcome-tagline = *Et roligt sted at skrive lange ting.*
+welcome-create-from = Opret fra…
+welcome-recent-works = Seneste projekter
+welcome-empty-recents = Ingen seneste projekter endnu.
+# Shown in place of the recents list when the search matched none of them,
+# distinct from having no recent works at all.
+welcome-no-matches = Intet af de seneste projekter matcher din søgning.
+welcome-learn-soon = Vejledninger og tips kommer snart.
+welcome-about-blurb = Skribisto, skriveprogrammet genskrevet i Rust og Teksilo.
+# The *…* is inline markup, not decoration: it italicizes the line (the widget
+# renders it in a serif italic). Keep the asterisks when translating.
+welcome-tagline = *Et stille sted at skrive lange ting.*
+# Tooltip and screen-reader name of the two icon links under the sidebar nav.
+# Product names: keep them as they are.
 welcome-github = GitHub
 welcome-discord = Discord
 nav-works = Projekter
@@ -450,90 +539,97 @@ nav-examples = Eksempler
 nav-learn = Lær
 nav-about = Om
 
-synopsis = Resumé
+## Editor tabs & panes
+synopsis = Synopsis
 epigraph = Motto
 pane-manuscript = Manuskript
 corkboard = Opslagstavle
 overview = Oversigt
 
+## Corkboard
 corkboard-card-count = { $count ->
     [one] { $count } kort
    *[other] { $count } kort
 }
 corkboard-child-count = { $count ->
-    [one] { $count } konto
-   *[other] { $count } poster
+    [one] { $count } element
+   *[other] { $count } elementer
 }
-corkboard-view-nested = Nøgne
+corkboard-view-nested = Indlejret
 corkboard-view-flat = Flad
-corkboard-layout-hint = Nested viser en container Buds direkte børn. Åbn et mappekort til at gå ind i det. Flat viser hver scene i hele beholderen på én gang.
+corkboard-layout-hint = Indlejret viser en beholders direkte underelementer. Åbn et mappekort for at gå ind i det. Flad viser alle scener i hele beholderen på én gang.
 corkboard-card-size = Kortstørrelse
-corkboard-search-placeholder = Filterkort
-corkboard-empty-title = Intet her endnu.
-corkboard-empty-hint = Brug en ny over for at tilføje den første.
+corkboard-search-placeholder = Filtrér kort…
+corkboard-empty-title = Intet her endnu
+corkboard-empty-hint = Brug »＋ Ny« ovenfor for at tilføje det første.
 corkboard-new = Ny
 corkboard-show-card-numbers = Nummerér kortene
-corkboard-modal-size = Udvidet editorstørrelse
-corkboard-scope-hint = Gælder for alle åbne bundkort, i hvert projekt.
-corkboard-sort-manuscript = Manuskriptordre
-corkboard-sort-title-asc = Afsnit A
-corkboard-sort-title-desc = Afsnit Z I A
+corkboard-modal-size = Størrelse på udvidet editor
+corkboard-scope-hint = Gælder for alle åbne opslagstavler i alle projekter.
+corkboard-sort-manuscript = Manuskriptets rækkefølge
+corkboard-sort-title-asc = Titel A–Å
+corkboard-sort-title-desc = Titel Å–A
 corkboard-card-number = Kort { $number }
 
-duplicate = Dupliker
+## Corkboard batch actions (the card kebab acts on the whole selection)
+duplicate = Duplikér
 duplicate-n = { $count ->
-    [one] Duplikat { $count } kort
-   *[other] Duplikat { $count } kort
+    [one] Duplikér { $count } kort
+   *[other] Duplikér { $count } kort
 }
 set-label-n = { $count ->
-    [one] Sæt etiket på { $count } kort
-   *[other] Sæt etiket på { $count } kort
+    [one] Angiv etiket på { $count } kort
+   *[other] Angiv etiket på { $count } kort
 }
 move-to-trash-n = { $count ->
     [one] Flyt { $count } kort til papirkurven
    *[other] Flyt { $count } kort til papirkurven
 }
-reveal-in-outline = Afkald i omrids
+reveal-in-outline = Vis i dispositionen
 
-corkboard-move-to = Flyt til @ title: group
+## Corkboard “Move to…” destination picker
+corkboard-move-to = Flyt til…
 corkboard-move-to-n = { $count ->
-    [one] Flyt { $count } kort til
-   *[other] Flyt { $count } kort til
+    [one] Flyt { $count } kort til…
+   *[other] Flyt { $count } kort til…
 }
-corkboard-move-picker-title = Flyt til @ title: group
-corkboard-move-picker-empty = Ingen bindemidler endnu. Opret en først.
-corkboard-move-picker-cancel = Annuller
-corkboard-move-here = Flyt her
+corkboard-move-picker-title = Flyt til…
+corkboard-move-picker-empty = Ingen ringbind endnu. Opret et først.
+corkboard-move-picker-cancel = Annullér
+corkboard-move-here = Flyt hertil
 corkboard-moved-ok = { $count ->
-    [one] { $count } kort flyttet
-   *[other] { $count } kort flyttet
+    [one] { $count } kort er flyttet
+   *[other] { $count } kort er flyttet
 }
-corkboard-move-into-self = En container kan ikke flyttes ind i sig selv. Vælg en destination uden for den.
-corkboard-move-failed = De kort kunne ikke flyttes der.
+corkboard-move-into-self = En beholder kan ikke flyttes ind i sig selv. Vælg en destination uden for den.
+corkboard-move-failed = Kortene kunne ikke flyttes dertil.
 
+## Overview (the container's contents as a sortable table)
 overview-col-title = Titel
 overview-col-type = Type
-overview-col-label = Kort beskrivelse
+overview-col-label = Etiket
 overview-col-tags = Mærker
+# Only ever built when the Work has two or more Books: see `overview_columns`'s
+# own gate, the same one every Books surface in this edition shares.
 overview-col-books = Bøger
 overview-col-own-words = Ord
 overview-col-total-words = I alt
 overview-row-count = { $count ->
-    [one] { $count } konto
-   *[other] { $count } poster
+    [one] { $count } element
+   *[other] { $count } elementer
 }
-overview-search-placeholder = Filterelementer
+overview-search-placeholder = Filtrér elementer…
 overview-expand-all = Udvid alle
-overview-collapse-all = Kollaps alle
+overview-collapse-all = Fold alle sammen
 overview-table-label = Indhold
-overview-empty-title = Intet her endnu.
-overview-gone-title = Beholderen er væk.
-overview-gone-hint = Den blev flyttet til papirkurven. Gendanne det, eller lukke denne fane.
-overview-empty-hint = Brug en ny over for at tilføje den første.
-corkboard-grid-label = Korkkort
+overview-empty-title = Intet her endnu
+overview-gone-title = Denne beholder findes ikke længere
+overview-gone-hint = Den blev flyttet til papirkurven. Gendan den, eller luk denne fane.
+overview-empty-hint = Brug »＋ Ny« ovenfor for at tilføje det første.
+corkboard-grid-label = Opslagstavlens kort
 corkboard-rename-field = Omdøb element
 corkboard-expand-synopsis = Udvid synopsis
-corkboard-synopsis-modal-title = Resumé
+corkboard-synopsis-modal-title = Synopsis
 corkboard-badge-scene = Scene
 corkboard-badge-chapter = Kapitel
 corkboard-badge-part = Del
@@ -545,478 +641,565 @@ corkboard-badge-text = Tekst
 corkboard-badge-end = Slut
 settings-group-corkboard-layout = Layout
 settings-group-corkboard-cards = Kort
-corkboard-show-word-count = Vis ord tæller på kort
+corkboard-show-word-count = Vis ordantal på kortene
 text-heading = Tekst
-no-content = Dette punkt har intet redigerbart indhold.
+no-content = Dette element har intet redigerbart indhold.
 untitled = Uden titel
 placeholder-title = Titel…
-placeholder-subtitle = Subtitle
-placeholder-chapter-title = Kapitel titel
+placeholder-subtitle = Undertitel…
+placeholder-chapter-title = Kapitlets titel…
 split-editor = Opdel editor
-close-split-view = Luk splitvisning
+close-split-view = Luk opdelt visning
 drop-open-here = Åbn her
-drop-open-to-side = Åbn til siden
+drop-open-to-side = Åbn ved siden af
 
+## Manuscript streams (Full Chapter / Part / Book + Full Synopsis)
+# The container's own page. "Chapter" is this chapter; "Full Chapter" is this chapter
+# and every scene in it.
 segment-chapter = Kapitel
 segment-part = Del
 segment-book = Bog
-segment-pace = Skrivetempo
+segment-pace = Tempo
 segment-notes = Noter
 segment-story-bible = Historiebibel
+# The three segments on an `Item/Note` tab: its own prose, its story-bible fields, and
+# (only when it carries a discoverable tag) the manuscript prose it has been declared
+# present in. See `teksilo_ui::tabs::item_note`.
 segment-note-own = Note
 segment-note-details = Detaljer
-segment-note-in-prose = I prose
-pace-placeholder = Pace planneren vises her.
-pace-empty-title = Planlæg denne bog Buds tempo
-pace-empty-body = Sæt et ord mål og en deadline, og Skribisto Projekter ud af den daglige tempo for at få dig der.
-pace-start-planning = Start planlægning
-pace-section-schedule = Skema
+segment-note-in-prose = I teksten
+pace-placeholder = Tempoplanlæggeren vises her.
+# Pace planner
+pace-empty-title = Planlæg bogens tempo
+pace-empty-body = Angiv et ordmål og en deadline, så beregner Skribisto det daglige tempo, der skal til for at nå i mål.
+pace-start-planning = Begynd planlægningen
+pace-section-schedule = Tidsplan
 pace-section-progress = Fremskridt
-pace-advancement = Fremskyndelse
+pace-advancement = Fremdrift
 pace-goal = Ordmål
 pace-deadline = Deadline
-pace-active = Pace aktiv
-pace-day-mon = Man
-pace-day-tue = Tir
-pace-day-wed = Ons
-pace-day-thu = Tor
-pace-day-fri = Fre
-pace-day-sat = Lø
-pace-day-sun = Sol
+pace-active = Tempo aktivt
+pace-day-mon = man
+pace-day-tue = tir
+pace-day-wed = ons
+pace-day-thu = tor
+pace-day-fri = fre
+pace-day-sat = lør
+pace-day-sun = søn
 pace-card-written = ord skrevet
 pace-card-of-goal = af målet
-pace-card-rate = ord / skrift dag
-pace-card-days-left = skriftligt dage tilbage
-pace-card-streak = dagstribe
+pace-card-rate = ord pr. skrivedag
+pace-card-days-left = skrivedage tilbage
+pace-card-streak = dage i træk
 pace-card-ahead = ord foran tempoet
-pace-card-behind = ord bag tempoet
-pace-charts-empty = Fremskridt diagrammer vises her, når dit ord tæller er registreret på en spare.
-pace-chart-progression = Ord skrevet vs. mål
+pace-card-behind = ord bagud i forhold til tempoet
+pace-charts-empty = Diagrammerne over fremskridt vises her, når dit ordantal er registreret ved en gemning.
+pace-chart-progression = Skrevne ord i forhold til målet
 pace-chart-words-per-day = Ord pr. dag
 pace-series-actual = Faktisk
 pace-series-target = Mål
-pace-series-words-per-day = Krydderier i form af frø
-pace-daily-target-line = Lige tempo: { $count ->
-    [one] { $count } ord / dag
-   *[other] { $count } ord / dag
+pace-series-words-per-day = Ord/dag
+pace-daily-target-line = Jævnt tempo: { $count ->
+    [one] { $count } ord/dag
+   *[other] { $count } ord/dag
 }
-pace-section-holidays = Ferie
+pace-section-holidays = Fridage
 pace-section-milestones = Milepæle
-pace-holidays-none = Ingen ferier, hver dag tæller.
-pace-holiday-label = Ferienavn
+pace-holidays-none = Ingen fridage. Alle planlagte dage tæller.
+pace-holiday-label = Fridagens navn
 pace-add-holiday = Tilføj
 pace-remove = Fjern
-pace-milestones-none = Ingen milepæle endnu. Sæt en på en del eller kapitel i inspektøren.
-full-chapter = Fuldstændigt kapitel
-full-part = Fuldstændig del
-full-book = Fuld bog
-full-synopsis = Fuld synopsis
+pace-milestones-none = Ingen milepæle endnu. Sæt en på en del eller et kapitel i inspektøren.
+full-chapter = Helt kapitel
+full-part = Hel del
+full-book = Hel bog
+full-synopsis = Hel synopsis
 rename = Omdøb
-set-label = Sæt etiket
+set-label = Angiv etiket
 insert-scene = Indsæt scene
 insert-chapter = Indsæt kapitel
 split-scene = Opdel scene
 move-up = Flyt op
 move-down = Flyt ned
-merge-with-previous = Sammenfletning med tidligere
-move-to-trash = Flyt til papirkurv
+merge-with-previous = Flet med forrige
+move-to-trash = Flyt til papirkurven
 rename-chapter = Omdøb kapitel
 add-scene = Tilføj ny scene
 add-chapter = Tilføj nyt kapitel
 new-scene-title = Ny scene
-placeholder-scene-name = Scenenenavn
+placeholder-scene-name = Scenens navn…
 menu-cut = Klip
 menu-copy = Kopiér
-menu-paste = Indsæt
-menu-paste-unformatted = Indsæt uden formatering
+menu-paste = Sæt ind
+menu-paste-unformatted = Sæt ind uden formatering
 menu-select-all = Markér alt
+# Tooltips on the editor context menu's formatting row. Icon-only buttons, so
+# the tooltip is their only accessible name, not decoration.
 format-bold = Fed
 format-italic = Kursiv
-format-underline = Underlinje
+format-underline = Understreget
 format-strikethrough = Gennemstreget
 
-binder = Dokumenttræ
+## Binder / recents
+binder = Ringbind
 no-work = Intet projekt indlæst
-no-recent-works = Ingen nyere projekter
-switcher-open-section = Aktuelt åbent
+no-recent-works = Ingen seneste projekter
+switcher-open-section = Åbne nu
 switcher-recent-section = Seneste
 switcher-this-window = dette vindue
-open-project-title = Åbne projekter
-open-project-question = Hvordan vil du åbne { $title }?
+open-project-title = Åbn projekt
+open-project-question = Hvordan vil du åbne »{ $title }«?
 open-in-new-window = Åbn i nyt vindue
 open-here = Åbn her
 
-binder-all = Alle bindere
-binder-show-all = Vis alle bindemidler
-binder-new = Nyt bindemiddel
-binder-default-name = Nyt bindemiddel
+## Binder switcher + search
+binder-all = Alle ringbind
+binder-show-all = Vis alle ringbind
+binder-new = Nyt ringbind…
+# Pre-filled in the "New binder" dialog, so the writer can just press Enter.
+# Stored literally from then on: a binder name is data, not a label.
+binder-default-name = Nyt ringbind
 binder-item-count = { $count ->
-    [one] { $count } konto
-   *[other] { $count } poster
+    [one] { $count } element
+   *[other] { $count } elementer
 }
-binder-search-placeholder = Filtrér omridset
-binder-search-scope = Søg i alle bindemidler
-binder-trash-confirm-title = Flytte bindemiddel til affald?
-binder-trash-confirm-text = { $name } og alle dens elementer vil blive flyttet til papirkurven.
+binder-search-placeholder = Filtrér dispositionen…
+binder-search-scope = Søg i alle ringbind
+binder-trash-confirm-title = Flyt ringbindet til papirkurven?
+binder-trash-confirm-text = »{ $name }« og alle dets elementer flyttes til papirkurven.
 
+## Dialogs
 dialog-rename = Omdøb
-dialog-new-binder = Nyt bindemiddel
-dialog-set-label = Sæt etiket
+dialog-new-binder = Nyt ringbind
+dialog-set-label = Angiv etiket
 dialog-new-scene = Ny scene
-close-work-question = Gem ændringer inden projektet lukkes?
-quit-question = Gem ændringer inden afslutning?
-quit-save-work-question = Gem ændringer til { $title } før du stopper?
-unsaved-changes = Dette projekt har ændringer, der ikke er gemt.
-new-work-unsaved-question = Gem ændringer før du opretter et nyt projekt?
-open-work-unsaved-question = Gem ændringer før du åbner et andet projekt?
-switch-backup-discard-title = Kassér ændringer til denne sikkerhedskopi?
-switch-backup-discard-text = Ændringer til en sikkerhedskopi kan ikke gemmes til det. Brug Gem som eller gendanne for at holde dem, eller kassere dem og åbne det andet projekt.
-switch-save-failed = Projektet kunne ikke reddes, så det blev erstattet: { $error }
-switch-save-not-started = Projektet kunne ikke reddes, så det blev ikke erstattet.
-close-save-failed = Projektet kunne ikke reddes, så det blev lukket: { $error }
-close-save-not-started = Projektet kunne ikke reddes, så det var lukket.
-save-not-started = Projektet kunne ikke reddes.
+close-work-question = Vil du gemme ændringerne, før projektet lukkes?
+quit-question = Vil du gemme ændringerne, før du afslutter?
+quit-save-work-question = Vil du gemme ændringerne i { $title }, før du afslutter?
+unsaved-changes = Projektet har ændringer, der ikke er gemt.
+# Shown by Quit when another open Work (not this window's own) still has
+# unsaved edits. The design's "one dialog listing every dirty Work" (see
+# app::commands::file's `app.quit` action). Quit is refused until those are
+# saved or closed from their own window.
+# Replacing the open work in this window (New Work, Open Work, "Open here", the
+# import toast's "Open now"), the same guard as closing, since the open work is
+# closed either way.
+new-work-unsaved-question = Vil du gemme ændringerne, før du opretter et nyt projekt?
+open-work-unsaved-question = Vil du gemme ændringerne, før du åbner et andet projekt?
+switch-backup-discard-title = Kassér ændringerne i denne sikkerhedskopi?
+switch-backup-discard-text = Ændringer i en sikkerhedskopi kan ikke gemmes i den. Brug Gem som eller Gendan for at beholde dem, eller kassér dem og åbn det andet projekt.
+switch-save-failed = Projektet kunne ikke gemmes, så det blev ikke erstattet: { $error }
+switch-save-not-started = Projektet kunne ikke gemmes, så det blev ikke erstattet.
+close-save-failed = Projektet kunne ikke gemmes, så det blev ikke lukket: { $error }
+close-save-not-started = Projektet kunne ikke gemmes, så det blev ikke lukket.
+save-not-started = Projektet kunne ikke gemmes.
 
-could-not-open-work = Kunne ikke åbne { $file }
-could-not-open-work-too-new = • { $file } • har brug for en nyere Skribisto
-could-not-open-work-too-new-detail = Reddet af Skribisto format { $written_by }; åbning det kræver format { $requires } eller nyere, og denne bygning understøtter op til format { $supported }. Opdatering Skribisto for at åbne det.
-could-not-open-work-importing = Der er ved at blive skrevet { $file }.
-could-not-open-work-importing-detail = En import skriver over dette projekt og er ikke færdig. Åbn det, når importen er færdig: åbnes nu, vil det vise projektet, at importen er ved at erstatte, og dens næste besparelse vil skrive det projekt tilbage over importen.
-could-not-open-example = Kunne ikke åbne eksempel: { $error }
-could-not-open-link = Kunne ikke åbne { $url }: { $error }
-could-not-create-work = Kunne ikke oprette projekt: { $error }
-saving-as-file = Lagring som { $target }
-saving-as-folder = Lagring som { $target } / Name
-saved-as = Reddet til { $target }
-save-error = Kunne ikke gemme: { $error }
-save-flush-failed = Redningen gik igennem, men disse dokumenter kunne ikke gives til det og er stadig ikke gemt: { $titles } ({ $error })
-backup-error = Kunne ikke sikkerhedskopiere: { $error }
-backing-up = Bakker op
-backup-nothing-open = Intet projekt er åbent for backup.
-backup-already-running = En backup er allerede i gang.
-backup-complete = Backup komplet ({ $ok } gemt, { $skipped } allerede nuværende)
-backup-partial = Backup færdig: { $ok } gemt, { $failed ->
+## Toasts
+# Toast title. Kept short because a toast title is one line and truncates; the cause goes
+# in the body, which is the untranslated error text itself. $file is the file's base name.
+could-not-open-work = »{ $file }« kunne ikke åbnes
+# A project saved by a newer Skribisto than this one: title and body.
+# $written_by is the version that wrote it, $requires the lowest version that can open it
+# (the two differ when the newer build happened to use nothing new), $supported the newest
+# this build understands.
+could-not-open-work-too-new = »{ $file }« kræver en nyere Skribisto
+could-not-open-work-too-new-detail = Gemt med Skribisto-format { $written_by }. Det kræver format { $requires } eller nyere at åbne det, og denne version understøtter op til format { $supported }. Opdatér Skribisto for at åbne det.
+could-not-open-work-importing = »{ $file }« er ved at blive skrevet af en import
+could-not-open-work-importing-detail = En import skriver over dette projekt og er ikke færdig. Åbn det, når importen er færdig: åbnede du det nu, ville det vise det projekt, importen er ved at erstatte, og den næste gemning ville skrive det projekt tilbage over importen.
+could-not-open-example = Eksemplet kunne ikke åbnes: { $error }
+# The browser (or whatever handles http links) could not be started for one of
+# the Welcome sidebar's links. $url is shown so the address can still be copied.
+could-not-open-link = { $url } kunne ikke åbnes: { $error }
+could-not-create-work = Projektet kunne ikke oprettes: { $error }
+saving-as-file = Gemmer som { $target }…
+saving-as-folder = Gemmer som { $target }/…
+saved-as = Gemt i { $target }
+save-error = Der kunne ikke gemmes: { $error }
+save-flush-failed = Gemningen gik igennem, men disse dokumenter kunne ikke overdrages til den og er stadig ikke gemt: { $titles } ({ $error })
+backup-error = Der kunne ikke tages en sikkerhedskopi: { $error }
+backing-up = Tager sikkerhedskopi…
+backup-nothing-open = Der er intet åbent projekt at sikkerhedskopiere.
+backup-already-running = En sikkerhedskopiering er allerede i gang.
+backup-complete = Sikkerhedskopieringen er fuldført ({ $ok } gemt, { $skipped } allerede ajour)
+backup-partial = Sikkerhedskopieringen er afsluttet: { $ok } gemt, { $failed ->
     [one] { $failed } destination mislykkedes
    *[other] { $failed } destinationer mislykkedes
 }
-backup-no-destination-title = Ingen sikkerhedskopiering tilgængelig
-backup-no-destination-text = Ingen af de konfigurerede backupdestinationer kan nås (for eksempel kan et eksternt drev frakobles). Sæt det ind og prøv igen, eller afslut uden sikkerhedskopiering.
+backup-no-destination-title = Intet sted til sikkerhedskopier er tilgængeligt
+backup-no-destination-text = Ingen af de konfigurerede destinationer for sikkerhedskopier kan nås (et eksternt drev er måske frakoblet). Tilslut det, og prøv igen, eller afslut uden at sikkerhedskopiere.
 backup-failed-close-title = Sikkerhedskopien kunne ikke gemmes
-backup-failed-close-text = Ingen sikkerhedskopi kunne skrives før lukning. Hver destination mislykkedes (drevet kan være blevet fjernet, eller det kan være fuld eller skrivebeskyttet). Fix det og prøve igen, eller afslutte uden sikkerhedskopiering.
+backup-failed-close-text = Der kunne ikke skrives en sikkerhedskopi før lukning. Alle destinationer mislykkedes (drevet er måske fjernet, fuldt eller skrivebeskyttet). Ret fejlen, og prøv igen, eller afslut uden at sikkerhedskopiere.
 
-backup-choice-title = Backup fil
+## Open-a-backup (choice modal + permanent banner + restore)
+backup-choice-title = Sikkerhedskopifil
 backup-choice-heading = Du har åbnet en sikkerhedskopi
-backup-choice-subtitle = Dette er en point-in-time backup af et projekt.
-backup-choice-subtitle-dated = Backup taget { $date }.
-backup-choice-body = Du kan åbne den og redigere frit, men ændringer kan kun holdes med Gem som. Den oprindelige projektfil er ikke rørt. Eller gendanne dette projekt til præcis denne sikkerhedskopi.
-backup-choice-open = Åbn sikkerhedskopi
-backup-choice-restore = Genopret dette projekt til dette punkt
+backup-choice-subtitle = Dette er en sikkerhedskopi af et projekt fra et bestemt tidspunkt.
+backup-choice-subtitle-dated = Sikkerhedskopi taget { $date }.
+backup-choice-body = Du kan åbne den og redigere frit, men ændringer kan kun beholdes med Gem som. Den oprindelige projektfil røres ikke. Du kan også gendanne projektet til præcis denne sikkerhedskopi.
+backup-choice-open = Åbn sikkerhedskopien
+backup-choice-restore = Gendan projektet til dette tidspunkt…
 backup-choice-not-a-backup = Nej, åbn den normalt
-backup-banner-title = Backup kopi: ændringer kan ikke gemmes her
-backup-banner-description = Brug Gem som at holde dine redigeringer i en ny fil, eller gendanne for at erstatte det oprindelige projekt med denne sikkerhedskopi.
+backup-banner-title = Sikkerhedskopi: ændringer kan ikke gemmes her
+backup-banner-description = Brug Gem som for at beholde dine ændringer i en ny fil, eller Gendan for at erstatte det oprindelige projekt med denne sikkerhedskopi.
 backup-banner-restore = Gendan…
-backup-banner-save-as = Gem så hurtigt som muligt
-backup-restore-original-missing = Kan ikke finde det oprindelige projekt til at gendanne over. Brug Gem som til at holde denne backup som et nyt projekt i stedet.
-backup-restore-close-elsewhere-title = Projekt åbent i et andet vindue
-backup-restore-close-elsewhere-text = Det projekt, du skal genoprette over er åbent i et andet vindue. Vær venlig at lukke det der først, så prøv igen.
-backup-restore-focus-window = Fokusér på det vindue
-backup-restore-confirm-title = Gendanne denne backup?
-backup-restore-confirm-text = Den nuværende version af projektet vil blive kopieret til side som en sikkerhedskopi, før den erstattes med denne.
+backup-banner-save-as = Gem som…
+backup-restore-original-missing = Det oprindelige projekt, der skulle gendannes over, kan ikke findes. Brug i stedet Gem som for at beholde sikkerhedskopien som et nyt projekt.
+backup-restore-close-elsewhere-title = Projektet er åbent i et andet vindue
+backup-restore-close-elsewhere-text = Det projekt, du gendanner over, er åbent i et andet vindue. Luk det først der, og prøv så igen.
+backup-restore-focus-window = Gå til det vindue
+backup-restore-confirm-title = Gendan denne sikkerhedskopi?
+backup-restore-confirm-text = Den nuværende version af projektet kopieres til side som en sikkerhedskopi, før den erstattes med denne.
 backup-restore-confirm-ok = Gendan
-backup-restore-error = Kunne ikke genoprette: { $error }
-backup-restored-ok = Projektet er genoprettet.
-backup-restored-with-safety = Projekt restaureret. Din tidligere version blev gemt til { $path }.
-close-backup-discard-title = Kassér ændringer til denne sikkerhedskopi?
-close-backup-discard-text = Ændringer til en sikkerhedskopi kan ikke gemmes til det. Brug Gem som for at holde dem, eller kassér og luk.
-quit-backup-discard-title = Kassere ændringer og stoppe?
-quit-backup-discard-work-question = Kassere ændringer til { $title } og stoppe?
-quit-backup-discard-text = Ændringer til en sikkerhedskopi kan ikke gemmes til det. Brug Gem som for at holde dem, eller kassere og afslutte.
-backup-nudge-text = Der oprettes ingen sikkerhedskopier til dette projekt.
-backup-nudge-action = Opsætning af sikkerhedskopier
+backup-restore-error = Der kunne ikke gendannes: { $error }
+backup-restored-ok = Projektet er gendannet.
+backup-restored-with-safety = Projektet er gendannet. Din tidligere version blev gemt i { $path }.
+close-backup-discard-title = Kassér ændringerne i denne sikkerhedskopi?
+close-backup-discard-text = Ændringer i en sikkerhedskopi kan ikke gemmes i den. Brug Gem som for at beholde dem, eller kassér dem og luk.
+quit-backup-discard-title = Kassér ændringerne og afslut?
+quit-backup-discard-work-question = Kassér ændringerne i { $title } og afslut?
+quit-backup-discard-text = Ændringer i en sikkerhedskopi kan ikke gemmes i den. Brug Gem som for at beholde dem, eller kassér dem og afslut.
+backup-nudge-text = Der er ikke sat sikkerhedskopiering op for dette projekt.
+backup-nudge-action = Opsæt sikkerhedskopiering…
 
-menu-backups-list = Sikkerhedskopier… (&K)
+## Backups list panel
+menu-backups-list = Sikkerheds&kopier…
 backups-title = Sikkerhedskopier
-backups-loading = Scanner efter sikkerhedskopier
-backups-empty = Ingen sikkerhedskopier fundet til dette projekt endnu.
+backups-loading = Søger efter sikkerhedskopier…
+backups-empty = Der er endnu ikke fundet sikkerhedskopier af dette projekt.
 backups-open = Åbn
-backups-reveal = Aflivning
+backups-reveal = Vis i mappe
 backups-delete = Slet denne sikkerhedskopi
-backups-delete-confirm-title = Slet denne backup?
-backups-delete-confirm-text = "{ $name }" slettes permanent. Det kan ikke fortrydes.
-backups-delete-error = Kunne ikke slette sikkerhedskopi: { $error }
-backups-refresh = Genopfrisk
+backups-delete-confirm-title = Slet denne sikkerhedskopi?
+backups-delete-confirm-text = »{ $name }« slettes permanent. Det kan ikke fortrydes.
+backups-delete-error = Sikkerhedskopien kunne ikke slettes: { $error }
+backups-refresh = Opdatér
 backups-close = Luk
 
-settings-page-backup = Sikkerhedskopieringsstandard
+## Backup settings panes
+settings-page-backup = Standard for sikkerhedskopier
 settings-page-work-backup = Sikkerhedskopier
-settings-backup-general-title = Standardindstillinger for sikkerhedskopi
-settings-backup-work-title = Backup til dette projekt
-settings-backup-inherit = Brug de generelle sikkerhedskopier
-settings-backup-inheriting = Dette projekt bruger de generelle backup indstillinger.
-settings-backup-none-hint = Ingen automatiske sikkerhedskopier er sat op (hver udløser er slukket).
-settings-backup-last = Sidste sikkerhedskopi: { $date }
+settings-backup-general-title = Standardindstillinger for sikkerhedskopier
+settings-backup-work-title = Sikkerhedskopier af dette projekt
+settings-backup-inherit = Brug de generelle indstillinger for sikkerhedskopier
+settings-backup-inheriting = Dette projekt bruger de generelle indstillinger for sikkerhedskopier.
+settings-backup-none-hint = Der er ikke sat automatiske sikkerhedskopier op (alle udløsere er slået fra).
+settings-backup-last = Seneste sikkerhedskopi: { $date }
 settings-backup-last-never = Ingen sikkerhedskopier endnu.
-settings-backup-open-list = Åbn sikkerhedskopier listName
-settings-backup-triggers = Hvornår du skal bakke op
-settings-backup-on-close = Bak op, når projektet lukkes
-settings-backup-on-open = Bak op, når projektet åbnes
-settings-backup-interval = Tilbage med jævne mellemrum, hver
-settings-backup-destinations = Backup destinationer
+settings-backup-open-list = Åbn listen over sikkerhedskopier…
+settings-backup-triggers = Hvornår der skal sikkerhedskopieres
+settings-backup-on-close = Sikkerhedskopiér, når projektet lukkes
+settings-backup-on-open = Sikkerhedskopiér, når projektet åbnes
+settings-backup-interval = Sikkerhedskopiér med jævne mellemrum, hvert
+settings-backup-destinations = Destinationer for sikkerhedskopier
 settings-backup-default-location = Standardplacering
 settings-backup-usage-since = { $count ->
-    [one] { $count } { $size } · ældste { $oldest }
-   *[other] { $count } Backup · { $size } · ældste { $oldest }
+    [one] { $count } sikkerhedskopi · { $size } · ældste { $oldest }
+   *[other] { $count } sikkerhedskopier · { $size } · ældste { $oldest }
 }
 settings-backup-usage = { $count ->
-    [one] { $count } backup { $size }
-   *[other] { $count } backup { $size }
+    [one] { $count } sikkerhedskopi · { $size }
+   *[other] { $count } sikkerhedskopier · { $size }
 }
-settings-backup-usage-empty = Intet holdt her endnu
-settings-backup-usage-measuring = Måleenheder
+settings-backup-usage-empty = Intet gemt her endnu
+settings-backup-usage-measuring = Måler…
 settings-backup-reveal-root = Vis mappe
-settings-backup-dest-none = Ingen destinationer. Backup gemmes ved siden af projektet.
+settings-backup-dest-none = Ingen destinationer. Sikkerhedskopier gemmes ved siden af projektet.
 settings-backup-dest-remove = Fjern
-settings-backup-dest-add = Tilføj mappe- pluginName
-settings-backup-dest-refresh = Genopfrisk
-settings-backup-retention = Hvor mange at beholde
-settings-backup-retention-tiered = Træet
-settings-backup-retention-keep-n = Behold sidste N
-settings-backup-retention-tip = Hvor gamle backups er beskåret.
-settings-backup-retention-tip-more = Træt holder en backup per time i en dag, per dag i en uge, per uge i en måned, og per måned efter, så nyere historie forbliver tæt og gamle historie thins ud. Hold sidste N simpelthen holder N nyeste kopier. I begge tilstande de nyeste kopier (minimum nedenfor) altid holdes.
-settings-backup-gfs-hourly = Timeløn (sidste 24 timer)
-settings-backup-gfs-daily = Daglig (sidste uge)
-settings-backup-gfs-weekly = Ugentlig (sidste måned)
-settings-backup-gfs-monthly = Månedlig
-settings-backup-keep-n = Nummer at beholde
-settings-backup-min-keep = Behold i det mindste altid
-settings-backup-dedup = Spring en sikkerhedskopi over når intet har ændret sig
+settings-backup-dest-add = Tilføj mappe…
+settings-backup-dest-refresh = Opdatér
+settings-backup-retention = Hvor mange der skal beholdes
+settings-backup-retention-tiered = Trinvis
+settings-backup-retention-keep-n = Behold de seneste N
+settings-backup-retention-tip = Hvordan gamle sikkerhedskopier tyndes ud.
+settings-backup-retention-tip-more = Trinvis beholder én sikkerhedskopi pr. time i et døgn, pr. dag i en uge, pr. uge i en måned og derefter pr. måned, så den nyere historik forbliver tæt, og den ældre tyndes ud. »Behold de seneste N« beholder blot de N nyeste kopier. I begge tilstande beholdes de nyeste kopier (minimummet nedenfor) altid.
+settings-backup-gfs-hourly = Hver time (seneste 24 t)
+settings-backup-gfs-daily = Dagligt (seneste uge)
+settings-backup-gfs-weekly = Ugentligt (seneste måned)
+settings-backup-gfs-monthly = Månedligt
+settings-backup-keep-n = Antal, der skal beholdes
+settings-backup-min-keep = Behold altid mindst
+settings-backup-dedup = Spring sikkerhedskopien over, når intet er ændret
 
+## New-work dialog
 new-work-title = Nyt projekt
 new-work-close = Luk
-new-work-name = Projektnavn
+new-work-name = Projektets navn
 new-work-name-placeholder = Uden titel
 new-work-author = Forfatter
 new-work-author-placeholder = Valgfrit
 new-work-format = Format
-new-work-single-file = Enkeltfil
-new-work-bundle = Samlet fil
-new-work-convert-later = Du kan konvertere mellem formater senere.
-new-work-location = Sted
-new-work-will-create = Vil skabe
+new-work-single-file = Enkelt fil
+new-work-bundle = Projektmappe
+new-work-convert-later = Du kan skifte mellem formaterne senere.
+new-work-location = Placering
+new-work-will-create = Opretter
 new-work-language = Standardsprog
-new-work-language-hint = Anvendes til nye tekster stavekontrol. Hver tekst kan skiftes til et andet sprog.
+new-work-language-hint = Bruges til nye tekster og stavekontrol. Hver tekst kan skiftes til et andet sprog.
 new-work-template = Skabelon
 new-work-template-none = Ingen
-new-work-template-empty-novel = Tomme novel
-new-work-template-light-novel = Lys novel
+new-work-template-empty-novel = Tom roman
+new-work-template-light-novel = Kort roman
 new-work-template-novel = Roman
-new-work-template-novel-in-parts = Novel i dele
+new-work-template-novel-in-parts = Roman i dele
 new-work-template-notebook = Notesbog
-new-work-cancel = Annuller
+new-work-cancel = Annullér
 new-work-create = Opret projekt
+# Wizard steps & navigation
 new-work-step-details = Detaljer
-new-work-step-language = Sprogstruktur
+new-work-step-language = Sprog og struktur
 new-work-step-template = Skabelon
 new-work-back = Tilbage
 new-work-next = Næste
+# The same wizard, opened from the Launcher's "From documents…"
 new-work-documents-title = Nyt projekt fra dokumenter
-new-work-step-import = Importér
-new-work-create-and-import = Opret importfil @ action: inmenu
-new-work-documents-next-title = Dine dokumenter kommer næste
-new-work-documents-next-body = Oprettelse af projektet åbner import guiden over det, hvor du vælger de dokumenter, gennemgå strukturen Skribisto læser fra dem, og vælge, hvor det lander. Intet er skrevet ind i projektet, indtil du bekræfter det der.
-new-work-documents-no-template = Dette projekt starter tomt med vilje: ingen skabelon, så de importerede dokumenter er det eneste i det.
-new-work-documents-chapter-scene-hint = Gælder for de kapitler, som importen skaber. Du kan ændre det senere i projektets indstillinger.
-new-work-single-file-desc = Et .skrib arkiv (zip). Bærbart, nemt at sikkerhedskopiere.
-new-work-bundle-desc = En mappe med hver tekst aktiv. Venligere til version kontrol.
-new-work-template-none-count = tomt bindemiddel
+new-work-step-import = Import
+new-work-create-and-import = Opret og importér…
+new-work-documents-next-title = Dine dokumenter kommer bagefter
+new-work-documents-next-body = Når projektet er oprettet, åbnes importguiden oven på det. Her vælger du dokumenterne, gennemgår den struktur, Skribisto læser ud af dem, og vælger, hvor den skal placeres. Intet skrives ind i projektet, før du bekræfter det der.
+new-work-documents-no-template = Projektet starter med vilje tomt: ingen skabelon, så de importerede dokumenter er det eneste i det.
+new-work-documents-chapter-scene-hint = Gælder for de kapitler, importen opretter. Du kan ændre det senere i projektets indstillinger.
+# Format tile descriptions
+new-work-single-file-desc = Ét .skrib-arkiv (zip). Let at flytte og at sikkerhedskopiere.
+new-work-bundle-desc = En mappe med alle tekster og ressourcer. Bedre egnet til versionsstyring.
+# Template row trailing counts
+new-work-template-none-count = tomt ringbind
 new-work-template-empty-novel-count = 1 kapitel
 new-work-template-light-novel-count = 15 kapitler
 new-work-template-novel-count = 20 kapitler
 new-work-template-novel-in-parts-count = 3 dele, 24 kapitler
-new-work-template-notebook-count = free-form-noter
+new-work-template-notebook-count = frie noter
+# ChapterScene toggle (novel templates)
 new-work-chapter-scene = Flade kapitler
-new-work-chapter-scene-tip = Hvert kapitel er et enkelt emne, du skriver direkte ind i, uden scener under det. Lad dette ligge til det klassiske layout, hvor et kapitel er en mappe: du skriver lige ind i det også, men det kan holde scener så godt.
-new-work-chapter-scene-tip-more = Du skriver ind i et kapitel begge veje. Den eneste forskel er, om det kan *indeholde* scener. Skribisto Buds bindertræ er organisatorisk kun, så begge layouts kompilere til den samme bog, kan du blande dem frit, og Promote konverterer et kapitel mellem de to uden at miste et ord.
-new-work-name-required = Indtast et navn for projektet
-new-work-name-invalid = Dette navn har ingen brugbare tegn
-new-work-location-required = Vælg et sted
-new-work-location-missing = Denne mappe eksisterer ikke
-new-work-location-not-folder = Denne sti er ikke en mappe
-new-work-location-readonly = Denne mappe er ikke skrivbar
-new-work-target-exists = Et projekt med dette navn er allerede i denne mappe. Oprettelse af projektet vil spørge, før du erstatter det
-new-work-target-is-folder = En mappe med dette navn er allerede i dette sted. Vælg et andet navn
+new-work-chapter-scene-tip = Hvert kapitel er et enkelt element, du skriver direkte i, uden scener under sig. Lad dette være slået fra for det klassiske layout, hvor et kapitel er en mappe: du skriver også direkte i den, men den kan desuden indeholde scener.
+new-work-chapter-scene-tip-more = Du skriver i et kapitel uanset hvad. Den eneste forskel er, om det kan *indeholde* scener. Skribistos ringbind er kun til organisering, så begge layouts kompileres til den samme bog. Du kan frit blande dem, og Konvertér til skifter et kapitel mellem de to uden at miste et eneste ord.
+# Field validation
+new-work-name-required = Angiv et navn til projektet
+new-work-name-invalid = Navnet indeholder ingen brugbare tegn
+new-work-location-required = Vælg en placering
+new-work-location-missing = Mappen findes ikke
+new-work-location-not-folder = Stien er ikke en mappe
+new-work-location-readonly = Der kan ikke skrives i mappen
+new-work-target-exists = Der findes allerede et projekt med dette navn i mappen. Du bliver spurgt, før det erstattes
+new-work-target-is-folder = Der findes allerede en mappe med dette navn på denne placering. Vælg et andet navn
 new-work-overwrite-title = Erstat det eksisterende projekt?
-new-work-overwrite-text = Der findes allerede { $name } i denne mappe. Erstat den med det nye projekt?
-new-work-target-open-title = Dette projekt er åbent
-new-work-target-open-text = "{ $name }Der er åbent i Skribisto. Oprettelse af et nyt projekt i stedet ville erstatte det projekt, du arbejder på, og din næste besparelse ville skrive dette projekt tilbage over den nye. Vælg et andet navn eller mappe, eller luk projektet først.
+new-work-overwrite-text = »{ $name }« findes allerede i mappen. Vil du erstatte det med det nye projekt?
+new-work-target-open-title = Projektet er åbent
+new-work-target-open-text = »{ $name }« er åbent i Skribisto. Et nyt projekt på samme sted ville erstatte det projekt, du arbejder på, og din næste gemning ville skrive det projekt tilbage over det nye. Vælg et andet navn eller en anden mappe, eller luk projektet først.
 target-importing-title = En import skriver dette projekt
-target-importing-text = En import er stadig skriftligt { $name }. Vent, indtil det er færdig, eller vælg et andet navn.
+target-importing-text = En import er stadig ved at skrive »{ $name }«. Vent, til den er færdig, eller vælg et andet navn.
 import-plume-busy-title = Et andet Plume Creator-projekt er ved at blive importeret
-import-plume-busy-text = Plume Creator projekter er importeret en ad gangen. Vent, indtil den igangværende import er færdig, eller annullere det, så starte denne igen.
+import-plume-busy-text = Plume Creator-projekter importeres ét ad gangen. Vent, til den igangværende import er færdig, eller annullér den, og start så denne igen.
 import-manuskript-busy-title = Et andet Manuskript-projekt er ved at blive importeret
-import-manuskript-busy-text = Manuskript projekter er importeret en ad gangen. Vent, indtil den igangværende import er færdig, eller annullere det, så starte denne igen.
-backup-restore-importing-text = En import skriver stadig { $name }, projektet denne sikkerhedskopi ville blive restaureret over. Genoprette sikkerhedskopi, når importen er færdig.
+import-manuskript-busy-text = Manuskript-projekter importeres ét ad gangen. Vent, til den igangværende import er færdig, eller annullér den, og start så denne igen.
+backup-restore-importing-text = En import er stadig ved at skrive »{ $name }«, det projekt, denne sikkerhedskopi ville blive gendannet over. Gendan sikkerhedskopien, når importen er færdig.
 
+## New-work template labels (passed to the backend, which can't do i18n)
 new-work-manuscript = Manuskript
 new-work-notes = Noter
-new-work-research = Forskning
+new-work-research = Research
 new-work-notebook = Notesbog
 new-work-scene = Scene
 new-work-note = Note
 new-work-front-matter = Forstof
-new-work-back-matter = Bagstof
-new-work-paratext = Bogstruktur
+new-work-back-matter = Efterstof
+new-work-paratext = Bogens struktur
 new-work-paratext-none = Ingen struktur
-new-work-paratext-hint = Forsiden og bagsiden stof en tradition åbner og lukker en bog med. Du kan flytte, omdøbe eller slette noget af det bagefter.
+new-work-paratext-hint = Det for- og efterstof, en tradition åbner og lukker en bog med. Du kan flytte, omdøbe eller slette alt sammen bagefter.
 new-work-tags = Mærker
 new-work-tags-none = Ingen mærker
-new-work-tags-hint = En startpalet til at mærke tegn, steder og resten. Valgfri, og hvert mærke kan omdøbes, genkendes eller slettes bagefter.
-new-work-note-templates = Note skabeloner
+new-work-tags-hint = En startpalet til at mærke personer, steder og alt det andet. Valgfri, og alle mærker kan omdøbes, få ny farve eller slettes bagefter.
+new-work-note-templates = Noteskabeloner
 new-work-note-templates-none = Ingen skabeloner
-new-work-note-templates-hint = Formen en historie- bible note starter i. Valgfri, og hver skabelon kan redigeres eller slettes bagefter.
+new-work-note-templates-hint = Den form, en note i historiebiblen starter med. Valgfri, og alle skabeloner kan redigeres eller slettes bagefter.
 new-work-characters = Personer
 new-work-places = Steder
 
-import-plume-title = Import Plume Creator projekt
+## Import Plume Creator dialog
+import-plume-title = Importér Plume Creator-projekt
 import-plume-close = Luk
-import-plume-source = Plume-projektet
-import-plume-source-hint = Vælg en .plume eller .plume_backup fil (enhver Plume Creator version).
+import-plume-source = Plume-projekt
+import-plume-source-hint = Vælg en .plume- eller .plume_backup-fil (fra enhver version af Plume Creator).
 import-plume-location = Destinationsmappe
 import-plume-name = Filnavn
-import-plume-name-placeholder = Projektnavn
-import-plume-will-create = Vil skabe
-import-plume-trash-warning = Trassed / slettede elementer migreres ikke.
-import-plume-cancel = Annuller
+import-plume-name-placeholder = Projektets navn
+import-plume-will-create = Opretter
+import-plume-trash-warning = ⚠ Elementer i papirkurven og slettede elementer overføres ikke.
+import-plume-cancel = Annullér
 import-plume-import = Importér
-import-plume-source-required = Vælg en Plume projektfil
-import-plume-source-missing = Denne fil eksisterer ikke
-import-plume-source-not-file = Denne sti er ikke en fil
+# Field validation
+import-plume-source-required = Vælg en Plume-projektfil
+import-plume-source-missing = Filen findes ikke
+import-plume-source-not-file = Stien er ikke en fil
 import-plume-location-required = Vælg en destinationsmappe
-import-plume-location-missing = Denne mappe eksisterer ikke
-import-plume-location-not-folder = Denne sti er ikke en mappe
-import-plume-location-readonly = Denne mappe er ikke skrivbar
-import-plume-name-required = Indtast et filnavn
-import-plume-name-exists = En fil med dette navn findes allerede her. Import bekræfter overskrivning
-import-plume-overwrite-title = Erstat eksisterende fil?
-import-plume-overwrite-text = Der findes allerede { $name }. Erstat det med det importerede projekt?
+import-plume-location-missing = Mappen findes ikke
+import-plume-location-not-folder = Stien er ikke en mappe
+import-plume-location-readonly = Der kan ikke skrives i mappen
+import-plume-name-required = Angiv et filnavn
+import-plume-name-exists = Der findes allerede en fil med dette navn her. Du bliver bedt om at bekræfte overskrivningen
+# Overwrite confirmation
+import-plume-overwrite-title = Erstat den eksisterende fil?
+import-plume-overwrite-text = »{ $name }« findes allerede. Vil du erstatte den med det importerede projekt?
+# Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuskript
 import-plume-story-bible-binder = Historiebibel
-import-plume-progress-title = Import af Plume-projektet
-import-plume-cancel-import = Annuller
-import-plume-cancelled = Importér annulleret
-import-plume-done = Importeret { $imported ->
-    [one] { $imported } konto.
-   *[other] { $imported } poster.
- } { $skipped ->
-    [one] { $skipped } skrottede genstande blev ikke migreret.
-   *[other] { $skipped } trash items was not migrated.
+# Progress toast (the import runs as a long operation)
+import-plume-progress-title = Importerer Plume-projekt…
+import-plume-cancel-import = Annullér
+import-plume-cancelled = Importen er annulleret
+# Result
+import-plume-done = { $imported ->
+    [one] { $imported } element er importeret.
+   *[other] { $imported } elementer er importeret.
+} { $skipped ->
+    [one] { $skipped } element i papirkurven blev ikke overført.
+   *[other] { $skipped } elementer i papirkurven blev ikke overført.
 }
 import-plume-open-now = Åbn nu
+# Shown when the importer could not carry something over verbatim.
 import-plume-warnings = { $count ->
-    [one] 1 ting kunne ikke importeres nøjagtigt
-   *[other] { $count } ting kunne ikke importeres præcist
+    [one] 1 ting kunne ikke importeres helt nøjagtigt
+   *[other] { $count } ting kunne ikke importeres helt nøjagtigt
 }
 import-plume-details = Detaljer
-import-plume-warnings-title = Importadvarsler
-import-plume-error-title = Kunne ikke importere projektet
-import-plume-nested-too-deep = Projektet blev ikke importeret: dets Mezzogiorno { $part } Mezzogiorno er indlejret mere end { $limit } niveauer dybt. Nr. Plume Creator projekt kommer tæt på, og læse det kunne gå ned Skribisto. Intet blev skrevet.
-import-plume-declares-entities = Projektet blev ikke importeret: dets Mex{ $part } Mexpart erklærer XML enheder, som ingen Plume Creator projekt gør. At udvide dem kunne tage mere hukommelse, end computeren har, og crash Skribisto. Intet blev skrevet.
+import-plume-warnings-title = Advarsler fra importen
+# Error toast: a short reason in the body, the full technical chain behind Details
+import-plume-error-title = Projektet kunne ikke importeres
+# The project was refused unread because one of its parts nests its XML deeper
+# than the app will read. $part is the part's own name (tree, attendance, info);
+# $limit is the ceiling, a number.
+import-plume-nested-too-deep = Projektet blev ikke importeret: dets del »{ $part }« er indlejret mere end { $limit } niveauer dybt. Intet Plume Creator-projekt kommer i nærheden af det, og at læse det kunne få Skribisto til at gå ned. Intet blev skrevet.
+# The project was refused unread because one of its parts declares XML
+# entities, which could expand into more memory than the computer has. $part
+# is the part's own name (tree, attendance, info).
+import-plume-declares-entities = Projektet blev ikke importeret: dets del »{ $part }« erklærer XML-entiteter, hvad intet Plume Creator-projekt gør. At udfolde dem kunne kræve mere hukommelse, end computeren har, og få Skribisto til at gå ned. Intet blev skrevet.
 import-plume-error-details = Detaljer
 
-import-manuskript-title = Import Manuskript projekt
+## Import Manuskript project dialog
+import-manuskript-title = Importér Manuskript-projekt
 import-manuskript-close = Luk
-import-manuskript-source = Manuskript projekt
-import-manuskript-source-hint = Vælg .msk filen eller projektmappen (en hvilken som helst Manuskript version).
-import-manuskript-source-file = Vælg filName
-import-manuskript-source-folder = Vælg mappe- pluginName
+import-manuskript-source = Manuskript-projekt
+# A Manuskript project is a .msk file plus, in its usual mode, a folder of the
+# same name beside it. Either one gets you there, and so does the folder itself.
+import-manuskript-source-hint = Vælg .msk-filen eller projektmappen (fra enhver version af Manuskript).
+import-manuskript-source-file = Vælg fil…
+import-manuskript-source-folder = Vælg mappe…
 import-manuskript-location = Destinationsmappe
 import-manuskript-name = Filnavn
-import-manuskript-name-placeholder = Projektnavn
-import-manuskript-will-create = Vil skabe
-import-manuskript-cancel = Annuller
+import-manuskript-name-placeholder = Projektets navn
+import-manuskript-will-create = Opretter
+import-manuskript-cancel = Annullér
 import-manuskript-import = Importér
-import-manuskript-source-required = Vælg et Manuskript projekt
-import-manuskript-source-missing = Denne fil eller mappe eksisterer ikke
+# Field validation
+import-manuskript-source-required = Vælg et Manuskript-projekt
+import-manuskript-source-missing = Filen eller mappen findes ikke
 import-manuskript-location-required = Vælg en destinationsmappe
-import-manuskript-location-missing = Denne mappe eksisterer ikke
-import-manuskript-location-not-folder = Denne sti er ikke en mappe
-import-manuskript-location-readonly = Denne mappe er ikke skrivbar
-import-manuskript-name-required = Indtast et filnavn
-import-manuskript-name-exists = En fil med dette navn findes allerede her. Import bekræfter overskrivning
-import-manuskript-overwrite-title = Erstat eksisterende fil?
-import-manuskript-overwrite-text = Der findes allerede { $name }. Erstat det med det importerede projekt?
+import-manuskript-location-missing = Mappen findes ikke
+import-manuskript-location-not-folder = Stien er ikke en mappe
+import-manuskript-location-readonly = Der kan ikke skrives i mappen
+import-manuskript-name-required = Angiv et filnavn
+import-manuskript-name-exists = Der findes allerede en fil med dette navn her. Du bliver bedt om at bekræfte overskrivningen
+# Overwrite confirmation
+import-manuskript-overwrite-title = Erstat den eksisterende fil?
+import-manuskript-overwrite-text = »{ $name }« findes allerede. Vil du erstatte den med det importerede projekt?
+# Names passed to the backend (which can't do i18n). Manuskript stores none of
+# these: it has no binders, no story-bible groups, and its importance scale is
+# three numbers whose names live in its own interface.
 import-manuskript-manuscript-binder = Manuskript
 import-manuskript-story-bible-binder = Historiebibel
 import-manuskript-characters-group = Personer
 import-manuskript-world-group = Verden
-import-manuskript-plots-group = Pletter
+import-manuskript-plots-group = Plot
 import-manuskript-project-info-note = Projektoplysninger
-import-manuskript-summary-note = Oversigt
+import-manuskript-summary-note = Resumé
 import-manuskript-importance-minor = Mindre
 import-manuskript-importance-secondary = Sekundær
-import-manuskript-importance-main = Vigtigste @ action: inmenu
-import-manuskript-progress-title = Import Manuskript projekt
-import-manuskript-cancel-import = Annuller
-import-manuskript-cancelled = Importér annulleret
+import-manuskript-importance-main = Hovedperson
+# Progress toast (the import is a long operation)
+import-manuskript-progress-title = Importerer Manuskript-projekt…
+import-manuskript-cancel-import = Annullér
+import-manuskript-cancelled = Importen er annulleret
+# Result
 import-manuskript-done = { $imported ->
-    [one] { $imported } vare importeret.
-   *[other] { $imported } produkter importeret.
- } { $revisions ->
+    [one] { $imported } element er importeret.
+   *[other] { $imported } elementer er importeret.
+} { $revisions ->
     [0] { "" }
-    [one] { $revisions } tidligere version kom med det.
-   *[other] { $revisions } tidligere versioner kom med dem.
+    [one] { $revisions } tidligere version fulgte med.
+   *[other] { $revisions } tidligere versioner fulgte med.
 }
 import-manuskript-open-now = Åbn nu
+# Shown when the importer could not carry everything across as it was.
 import-manuskript-warnings = { $count ->
-    [one] 1 ting at vide om denne import
-   *[other] { $count } ting at vide om denne import
+    [one] 1 ting, du bør vide om denne import
+   *[other] { $count } ting, du bør vide om denne import
 }
 import-manuskript-details = Detaljer
 import-manuskript-warnings-title = Om denne import
-import-manuskript-error-title = Kunne ikke importere projektet
-import-manuskript-nested-too-deep = Projektet blev ikke importeret: dets fil{ $part }Der er indlejret over { $limit } niveauer dybt. Manuskript projektet kommer tæt på det, og læse det kunne gå ned SkribistoDer er ikke skrevet noget.
-import-manuskript-folders-too-deep = Projektet blev ikke importeret: en af sine filer sidder mere end { $limit } mapper dybe. Nr. Manuskript projekt kommer tæt på, og læsning det kunne gå ned Skribisto. Intet blev skrevet.
-import-manuskript-declares-entities = Projektet blev ikke importeret: dets fil er { $part } Budskaber XML enheder, som ingen Manuskript projekt gør. At udvide dem kunne tage mere hukommelse, end computeren har, og crash Skribisto. Intet blev skrevet.
+# Error toast: short reason in the body, full technical chain behind “Details”
+import-manuskript-error-title = Projektet kunne ikke importeres
+# The project was refused unread because one of its files nests its XML deeper
+# than the app will read. $part is that file's name inside the project
+# (world.opml, plots.xml…); $limit is the ceiling, a number.
+import-manuskript-nested-too-deep = Projektet blev ikke importeret: dets fil »{ $part }« er indlejret mere end { $limit } niveauer dybt. Intet Manuskript-projekt kommer i nærheden af det, og at læse det kunne få Skribisto til at gå ned. Intet blev skrevet.
+# The project was refused unread because one of its files sits in folders
+# nested deeper than the app will read (Manuskript keeps a project's outline
+# as folders, one per level). $limit is the ceiling, a number.
+import-manuskript-folders-too-deep = Projektet blev ikke importeret: en af dets filer ligger mere end { $limit } mapper dybt. Intet Manuskript-projekt kommer i nærheden af det, og at læse det kunne få Skribisto til at gå ned. Intet blev skrevet.
+# The project was refused unread because one of its files declares XML
+# entities, which could expand into more memory than the computer has. $part
+# is that file's name inside the project (world.opml, plots.xml…).
+import-manuskript-declares-entities = Projektet blev ikke importeret: dets fil »{ $part }« erklærer XML-entiteter, hvad intet Manuskript-projekt gør. At udfolde dem kunne kræve mere hukommelse, end computeren har, og få Skribisto til at gå ned. Intet blev skrevet.
 import-manuskript-error-details = Detaljer
 
-import-target-open-title = Dette projekt er åbent
-import-target-open-text = "{ $name }Der er åbent i Skribisto. Importerer over det ville erstatte det projekt, du arbejder på, og din næste gemme ville skrive dette projekt tilbage over import. Vælg et andet filnavn, eller lukke projektet først.
+## Project import, shared by the Plume Creator and Manuskript dialogs
+# The chosen destination is a project open in a window, here or in another
+# running copy of Skribisto. The import is refused rather than written over it.
+import-target-open-title = Projektet er åbent
+import-target-open-text = »{ $name }« er åbent i Skribisto. En import over det ville erstatte det projekt, du arbejder på, og din næste gemning ville skrive det projekt tilbage over importen. Vælg et andet filnavn, eller luk projektet først.
+# Spoken by a screen reader when an import's warnings notice appears, never shown.
+# $result is the import's own result line ("Imported 12 items."), $notice the
+# notice's title ("2 things could not be imported exactly"). The notice is read out
+# over the result, so it says both.
 import-warnings-announcement = { $result } { $notice }.
 
-export-title = Eksportér
+## Export dialog
+export-title = Eksport
 export-close = Luk
-export-scope-label = Hvad?
+export-scope-label = Hvad
 export-format-label = Format
-export-style-label = Stil
+export-style-label = Eksporttypografi
 export-path-label = Fil
-export-browse = BrowseName
-export-show-non-exportable = Vis ikke - ekspresérbar
-export-choose-empty = Intet projekt at vælge imellem.
-export-cancel = Annuller
+export-browse = Gennemse…
+export-show-non-exportable = Vis elementer, der ikke eksporteres
+export-choose-empty = Intet projekt at vælge fra.
+export-cancel = Annullér
 export-export = Eksportér
 export-save-dialog-title = Eksportér til fil
-export-section-what = Eksportér
-export-section-style = Stil
-export-section-destination = Bestemmelsessted
-export-custom-selection = Brugervalgt markering
+# Left-pane section headers (normal case) + scope segmented control
+export-section-what = Hvad der skal eksporteres
+export-section-style = Eksporttypografi
+export-section-destination = Destination
+export-custom-selection = Brugerdefineret udvalg
 export-selected-count = { $count } valgt
-export-chip-chapters-none = Kapitel: ingen
-export-chip-chapters-numbered = Kapitel: nummereret
-export-chip-chapters-title = Kapitel: Kun titel
-export-chip-chapters-both = Kapitel: nummer + titel
+# Style-preset summary chips
+export-chip-chapters-none = Kapitler: ingen
+export-chip-chapters-numbered = Kapitler: nummererede
+export-chip-chapters-title = Kapitler: kun titel
+export-chip-chapters-both = Kapitler: nummer og titel
 export-chip-scene-break-glyph = Sceneskift: { $glyph }
-export-chip-scene-break-blank = Scene break: blank linje
-export-chip-scene-break-none = Scene pause: ingen
+export-chip-scene-break-blank = Sceneskift: tom linje
+export-chip-scene-break-none = Sceneskift: intet
 export-chip-major-break-glyph = Stort skift: { $glyph }
-export-chip-major-break-blank = Større brud: blank linje
-export-chip-major-break-none = Større brud: ingen
-export-chip-major-break-same = Begge breaktier er ens
-export-chip-spacing-single = Rum: enkelt
-export-chip-spacing-onehalf = Rum: 1 ½
-export-chip-spacing-double = Mellemrum: dobbelt
-export-chip-notes-included = Noter inkluderet
-export-chip-notes-excluded = Bemærkninger, der ikke er medtaget
-export-format-docx = Ord
+export-chip-major-break-blank = Stort skift: tom linje
+export-chip-major-break-none = Stort skift: intet
+export-chip-major-break-same = Begge slags skift ens
+export-chip-spacing-single = Linjeafstand: enkelt
+export-chip-spacing-onehalf = Linjeafstand: 1½
+export-chip-spacing-double = Linjeafstand: dobbelt
+export-chip-notes-included = Noter medtaget
+export-chip-notes-excluded = Noter udeladt
+# Output formats
+export-format-docx = Word
 export-format-odt = LibreOffice
 export-format-html = HTML
 export-format-markdown = Markdown
@@ -1025,533 +1208,590 @@ export-format-text = Tekst
 export-format-latex = LaTeX
 export-format-epub = EPUB
 export-format-pdf = PDF
-export-overwrite-title = Erstat eksisterende fil?
-export-overwrite-text = - Der findes allerede { $name }.
-export-progress-title = Eksporterende
-export-cancelled = Eksportér annulleret
-export-done = Eksporteret { $count ->
-    [one] { $count } konto
-   *[other] { $count } poster
+# Overwrite confirmation
+export-overwrite-title = Erstat den eksisterende fil?
+export-overwrite-text = »{ $name }« findes allerede. Vil du erstatte den?
+# Progress toast (the export runs as a long operation)
+export-progress-title = Eksporterer…
+export-cancelled = Eksporten er annulleret
+export-done = { $count ->
+    [one] { $count } element er eksporteret
+   *[other] { $count } elementer er eksporteret
 }
 export-open-file = Åbn
 export-show-in-folder = Vis i mappe
-export-error-title = Kunne ikke eksportere
+# Error toast: a short reason in the body, the full technical chain behind Details
+export-error-title = Der kunne ikke eksporteres
 export-error-details = Detaljer
 
-backup-progress-start = Startdato
-backup-progress-retention = Oprydning af gamle sikkerhedskopier
+## Backup scheduler (progress toast + failure/prune-warning details, backup review, T1-2/T1-7/T2-3/T2-8/T2-9)
+backup-progress-start = Starter…
+backup-progress-retention = Rydder op i gamle sikkerhedskopier…
 backup-progress-done = Færdig
-backup-progress-destination = Bestemmelsessted { $i } af { $n }
+backup-progress-destination = Destination { $i } af { $n }
 backup-details = Detaljer
-backup-issues-title = Sikkerhedskopiering
-backup-failed-title = Sikkerhedskopi mislykkedes
-backup-complete-prune-warning = Backup komplet ({ $ok } gemt, { $skipped } allerede nuværende). Nogle gamle sikkerhedskopier kunne ikke fjernes
+backup-issues-title = Problemer med sikkerhedskopiering
+backup-failed-title = Sikkerhedskopieringen mislykkedes
+backup-complete-prune-warning = Sikkerhedskopieringen er fuldført ({ $ok } gemt, { $skipped } allerede ajour). Nogle gamle sikkerhedskopier kunne ikke fjernes
 
+# Search & Replace
 search = Søg
 search-query-placeholder = Søg…
-search-replace-placeholder = Erstat med number
-search-replace-toggle = Skift til / fra
+search-replace-placeholder = Erstat med…
+search-replace-toggle = Vis eller skjul Erstat
 search-replace-all = Erstat alle
-search-opt-case = Match- tilfælde
+search-opt-case = Forskel på store og små bogstaver
 search-opt-whole-word = Hele ord
-search-opt-diacritics = Matchaccenter
-search-scope-body = Krop
+search-opt-diacritics = Forskel på accenter
+search-scope-body = Brødtekst
 search-scope-title = Titel
-search-scope-synopsis = Resumé
-search-scope-label = Kort beskrivelse
+search-scope-synopsis = Synopsis
+search-scope-label = Etiket
 search-facet-book = Bøger
 search-facet-part = Dele
-search-facet-chapter = Kapitel
+search-facet-chapter = Kapitler
 search-facet-scene = Scener
 search-facet-note = Noter
 search-facet-folder = Mapper
-search-tip-case = Match sag: behandle uppercase og lavercase som forskellige, så bland Elena og bland er separate kampe.
-search-tip-whole-word = Hele ord: matche kun komplette ord, så cat cat er ikke fundet inde kategori cate.
-search-tip-diacritics = Match accenter: behandle accented bogstaver som særskilte, så Buddcafe er ikke matche Buddcafé.
-search-tip-body = Krop: søge prosa af scener og noter.
-search-tip-title = Titel: søge efter titlerne på bindemiddel elementer.
-search-tip-synopsis = Synopsis: søge i hvert skrive element Buds resumé.
-search-tip-label = Etiket: søg i den korte note, der vises under et bindemiddel element has titel.
-search-tip-comment = Kommentarer: søg teksten af kommentar tråde og deres svar. En kommentar er om manuskriptet snarere end en del af det, så det har sin egen kontakt, og en erstatning efterlader kommentar matcher unticked indtil du sætter kryds dem.
-search-tip-book = Bøger: bogbeholderen og dens start- / slutmarkører.
-search-tip-part = Dele: dele til delniveau.
-search-tip-chapter = Kapitel: kapitler, uanset hvordan projektet gemmer dem.
-search-tip-scene = Scener: de elementer, der holder din prosa.
-search-tip-note = Noter: free-form noter.
-search-tip-folder = Mapper: plain organisere mapper og separatorer.
-search-tip-paratext = En tekst, der tilhører bogen, men ikke dens historie: et forord, en dedikation, et efterord. Aldrig talt i manuskriptet.
-search-tip-preserve-case = Reserve sag: en udskiftning tager den sag, det fandt, så skal ELENA bliver MARTA og Elena bliver Marta.
-search-tip-replace = Erstat: Vis erstatningsfeltet og Erstat alle.
-search-error = Søgning mislykkedes: { $message }
-search-no-matches = Ingen kampe
+# Rich tooltips for the option toggles
+search-tip-case = Forskel på store og små bogstaver: store og små bogstaver behandles forskelligt, så »Elena« og »elena« er to forskellige forekomster.
+search-tip-whole-word = Hele ord: kun hele ord findes, så »kat« findes ikke inde i »katalog«.
+search-tip-diacritics = Forskel på accenter: bogstaver med accent behandles som forskellige, så »cafe« matcher ikke »café«.
+search-tip-body = Brødtekst: søg i teksten i scener og noter.
+search-tip-title = Titel: søg i titlerne på ringbindets elementer.
+search-tip-synopsis = Synopsis: søg i hvert skriveelements resumé.
+search-tip-label = Etiket: søg i den korte note, der vises under titlen på et element i ringbindet.
+search-tip-comment = Kommentarer: søg i teksten i kommentartråde og deres svar. En kommentar handler om manuskriptet og er ikke en del af det, så den har sin egen kontakt, og en erstatning lader forekomster i kommentarer være umarkerede, indtil du markerer dem.
+search-tip-book = Bøger: bogbeholderen og dens start- og slutmarkører.
+search-tip-part = Dele: skillelinjer på delniveau.
+search-tip-chapter = Kapitler: kapitler, uanset hvordan projektet gemmer dem.
+search-tip-scene = Scener: de elementer, der indeholder din tekst.
+search-tip-note = Noter: frie noter.
+search-tip-folder = Mapper: almindelige organiseringsmapper og skillelinjer.
+search-tip-paratext = En tekst, der hører til bogen, men ikke til historien: et forord, en dedikation, et efterord. Tælles aldrig med i manuskriptet.
+search-tip-preserve-case = Bevar store/små bogstaver: en erstatning overtager skrivemåden for det fundne, så »ELENA« bliver til »MARTA«, og »Elena« bliver til »Marta«.
+search-tip-replace = Erstat: vis erstatningsfeltet og Erstat alle.
+search-error = Søgningen mislykkedes: { $message }
+search-no-matches = Ingen forekomster
 search-count =
     { $matches ->
-        [one] { $matches } match
-       *[other] { $matches } kampe
-    } in { $items ->
+        [one] { $matches } forekomst
+       *[other] { $matches } forekomster
+    } i { $items ->
         [one] { $items } dokument
        *[other] { $items } dokumenter
     }
 search-count-truncated =
     { $matches ->
-        [one] { $matches } match
-       *[other] { $matches } kampe
-    } in { $items ->
+        [one] { $matches } forekomst
+       *[other] { $matches } forekomster
+    } i { $items ->
         [one] { $items } dokument
        *[other] { $items } dokumenter
     } (kun de første resultater)
 search-occurrences = { $count }
-search-field-body = Krop
+search-field-body = Brødtekst
 search-field-title = Titel
-search-field-synopsis = Resumé
-search-field-label = Kort beskrivelse
+search-field-synopsis = Synopsis
+search-field-label = Etiket
 search-field-epigraph = Motto
 search-field-comment = Kommentar
 search-field-comment-reply = Svar
 search-field-footnote = Fodnote
-search-include-in-replace = Inkludér i Erstat alle
-search-collapse-all = Kollaps alle resultater
-search-replace-here = Erstat dette
-search-dismiss = Frafald fra resultaterne
-search-undo-dismiss = Bring det sidste afviste resultat tilbage
+search-include-in-replace = Medtag i Erstat alle
+search-collapse-all = Fold alle resultater sammen
+search-replace-here = Erstat denne
+search-dismiss = Fjern fra resultaterne
+search-undo-dismiss = Hent det senest fjernede resultat tilbage
 search-replace-nothing = (ingenting)
-search-replace-confirm-title = Erstatte alle tændstikker?
+search-replace-confirm-title = Erstat alle forekomster?
 search-replace-confirm-text =
-    Erstat { $occurrences ->
+    Vil du erstatte { $occurrences ->
         [one] { $occurrences } forekomst
        *[other] { $occurrences } forekomster
-    } of "{ $query }" with "{ $replacement }" across { $items ->
+    } af »{ $query }« med »{ $replacement }« i { $items ->
         [one] { $items } dokument
        *[other] { $items } dokumenter
-    } ? Du kan fortryde dette fra anmeldelsen bagefter.
-search-replace-done-title = Erstat komplet
+    }? Du kan fortryde det fra meddelelsen bagefter.
+search-replace-done-title = Erstatningen er fuldført
 search-replace-done =
     { $occurrences ->
         [one] { $occurrences } forekomst
        *[other] { $occurrences } forekomster
-    } replaced in { $items ->
+    } erstattet i { $items ->
         [one] { $items } dokument
        *[other] { $items } dokumenter
-    } .
+    }.
 search-replace-done-skipped =
     { $occurrences ->
         [one] { $occurrences } forekomst
        *[other] { $occurrences } forekomster
-    } replaced in { $items ->
+    } erstattet i { $items ->
         [one] { $items } dokument
        *[other] { $items } dokumenter
     }. { $skipped ->
         [one] { $skipped } felt
        *[other] { $skipped } felter
-    } sprunget (ændret siden søgningen).
+    } sprunget over (ændret siden søgningen).
 search-replace-undo = Fortryd
-search-replace-failed-title = Erstat mislykkedes
-search-replace-skipped-title = Intet erstattet
-search-replace-skipped-body = Antal tekster, der er ændret siden søgningen: { $fields }. Disse tekster blev ikke ændret. Søg igen for at se, hvor ordene er nu.
-search-replace-undo-failed-title = Fortryd mislykkedes
+search-replace-failed-title = Erstatningen mislykkedes
+search-replace-skipped-title = Intet blev erstattet
+search-replace-skipped-body =
+    { $fields ->
+        [one] Denne tekst
+       *[other] { $fields } af disse tekster
+    } er ændret siden søgningen, så { $fields ->
+        [one] den blev
+       *[other] de blev
+    } ikke rørt. Søg igen for at se, hvor ordene står nu.
+search-replace-undo-failed-title = Fortrydelsen mislykkedes
 search-preview = Forhåndsvisning
-search-preview-empty = Vælg et resultat for at få vist det her
-search-preview-no-prose = Dette match har ingen redigerbar tekst
-search-preview-prompt = For at se en forhåndsvisning her, køre en søgning.
+search-preview-empty = Vælg et resultat for at se det her
+search-preview-no-prose = Denne forekomst har ingen redigerbar tekst
+search-preview-prompt = Kør en søgning for at se en forhåndsvisning her.
 search-preview-open-search = Søg i projekt
-search-preview-footnote-prompt = Denne kamp er i en fodnote af egen tekst. Åbn den i Footnotes dock for at se og redigere den.
-search-preview-open-footnotes = Åbne fodnoter
+search-preview-footnote-prompt = Denne forekomst står i selve teksten i en fodnote. Åbn den i panelet Fodnoter for at se og redigere den.
+search-preview-open-footnotes = Åbn Fodnoter
 
-find-placeholder = Find i dette dokument
+# Per-editor find banner (Ctrl+F)
+find-placeholder = Find i dette dokument…
 find-count = { $current } af { $total }
 find-no-results = Ingen resultater
-find-close = Tæt find
-find-previous = Forrige kamp (Shift + Enter)
-find-next = Næste match (Enter)
-find-opt-case = Match- tilfælde
+find-close = Luk Find
+find-previous = Forrige forekomst (Skift+Enter)
+find-next = Næste forekomst (Enter)
+find-opt-case = Forskel på store og små bogstaver
 find-opt-whole-word = Hele ord
-find-replace-toggle = Skift til / fra (Ctrl + R)
-find-replace-placeholder = Erstat med number
+find-replace-toggle = Vis eller skjul Erstat (Ctrl+R)
+find-replace-placeholder = Erstat med…
 find-replace = Erstat
 find-replace-all = Erstat alle
-find-preserve-case = Reservekravstilfælde
+find-preserve-case = Bevar store/små bogstaver
 
-dict-download-title = Download{ $name }
-dict-download-done = Installeret { $name }
-dict-download-failed = Kunne ikke downloade { $name }: { $error }
-dict-removed = Fjernet { $name }
+## Dictionaries & spell-checking
+# Download toasts (app-local download, not a backend long operation)
+dict-download-title = Henter { $name }…
+dict-download-done = { $name } er installeret
+dict-download-failed = { $name } kunne ikke hentes: { $error }
+dict-removed = { $name } er fjernet
 dict-accept-first = Acceptér licensen, før du henter { $name }
+# Settings ▸ Dictionaries pane
 settings-dict-tab-installed = Installeret
-settings-dict-tab-get-more = Få mere
+settings-dict-tab-get-more = Hent flere
 settings-dict-tab-personal = Personlige ord
-dict-installed-empty = Ingen ordbøger fundet på denne computer endnu.
-dict-get-more-search = Søgesprog
+dict-installed-empty = Der er endnu ikke fundet ordbøger på denne computer.
+dict-get-more-search = Søg efter sprog
 dict-system-badge = på dit system
 dict-unusable-badge = ubrugelig
-dict-download-button = Download
-dict-downloading = Downloader
+dict-download-button = Hent
+dict-downloading = Henter…
 dict-installed-label = Installeret
 dict-remove = Fjern
 dict-view-license = Vis licens
 dict-approx-size = ~{ $size }
 dict-personal-empty = Ingen personlige ord i dette projekt endnu.
 dict-personal-add = Tilføj
-dict-personal-placeholder = Tilføj et ord
+dict-personal-placeholder = Tilføj et ord…
+# Missing-dictionary prompt after opening a project
 dict-missing-toast = { $count ->
-    [one] Dette projekt bruger { $count } ordbog du don 't har installeret
-   *[other] Dette projekt bruger { $count } ordbøger du ikke har installeret
+    [one] Projektet bruger { $count } ordbog, som du ikke har installeret
+   *[other] Projektet bruger { $count } ordbøger, som du ikke har installeret
 }
 dict-missing-action = Hent ordbøger
-dict-license-title = { $name } licens
-dict-license-accept = Acceptér download
-dict-license-cancel = Annuller
+# License modal
+dict-license-title = Licens for { $name }
+dict-license-accept = Acceptér og hent
+dict-license-cancel = Annullér
 dict-license-close = Luk
-dict-add-button = Tilføj ordforråd
+# Add a dictionary (sideload local .aff/.dic files)
+dict-add-button = Tilføj ordbog…
 dict-add-title = Tilføj en ordbog
 dict-add-close = Luk
 dict-add-name = Navn
-dict-add-name-placeholder = f.eks. min latinske ordbog
+dict-add-name-placeholder = f.eks. Min latinske ordbog
 dict-add-code = Sprogkode
-dict-add-code-placeholder = F.eks. la eller fr- FR- x- custom
-dict-add-code-hint = Det er, hvad du vælger som dokumentsprog.
-dict-add-aff = Påfiks fil (.aff)
-dict-add-dic = Tekstliste (.dic)
+dict-add-code-placeholder = f.eks. la eller fr-FR-x-custom
+dict-add-code-hint = En kort kode efter eget valg. Det er den, du vælger som et dokuments sprog.
+dict-add-aff = Affiksfil (.aff)
+dict-add-dic = Ordliste (.dic)
 dict-add-submit = Tilføj
-dict-add-cancel = Annuller
+dict-add-cancel = Annullér
 dict-add-name-required = Giv ordbogen et navn.
-dict-add-code-required = Indtast en sprogkode.
-dict-add-code-invalid = Brug kun bogstaver, tal og - _.
-dict-add-code-reserved = Det er en building- i ordbog kode. Vælg en anden.
+dict-add-code-required = Angiv en sprogkode.
+dict-add-code-invalid = Brug kun bogstaver, tal og - _ .
+dict-add-code-reserved = Det er koden for en indbygget ordbog. Vælg en anden.
 dict-add-file-required = Vælg en fil.
-dict-add-file-missing = Denne fil findes ikke.
-dict-add-code-taken = En ordbog for denne kode er allerede installeret.
-dict-add-done = Tilføjet { $name }
-dict-add-unusable = Disse filer er ikke en brugbar ordbog: { $error }
-dict-add-failed = Kunne ikke tilføje ordbogen: { $error }
-inspector-export = Eksportér
-inspector-exportable = Inklusive i eksporten
-ctx-number = Nummerér dette kapitel (&N)
-ctx-unnumber = Nummerér ikke dette kapitel (&N)
+dict-add-file-missing = Filen findes ikke.
+dict-add-code-taken = Der er allerede installeret en ordbog med den kode.
+dict-add-done = { $name } er tilføjet
+dict-add-unusable = Filerne er ikke en brugbar ordbog: { $error }
+dict-add-failed = Ordbogen kunne ikke tilføjes: { $error }
+# The Inspector's per-item export controls (M3)
+inspector-export = Eksport
+inspector-exportable = Medtag i eksporter
+ctx-number = &Nummerér dette kapitel
+ctx-unnumber = Nummerér &ikke dette kapitel
 inspector-numbering = Nummerering
 inspector-numbered = Nummereret
-inspector-numbered-tip = Dette kapitel indtager sin plads i bogens nummerering. Slå det fra for en prolog, en prolog eller en interlude.
-inspector-numbered-tip-more = Et umummereret kapitel forbliver i bogen præcis som det var: dets overskrift, dens prosa og dens ordtal er uberørt. Det udskriver simpelthen intet nummer, og bruger ikke et op: kapitlet efter en prolog er kapitel et, ikke kapitel to. At forlade det ud af eksporten i stedet er en anden kontakt, ovenfor, og at man fjerner kapitlet helt fra bogen.
-inspector-apply-to-children = Anvend på børn
-inspector-milestone = Milepæl-dato
+inspector-numbered-tip = Kapitlet indgår i bogens nummerering. Slå det fra for en prolog, en epilog eller et mellemspil.
+inspector-numbered-tip-more = Et unummereret kapitel bliver i bogen præcis, som det var: overskrift, tekst og ordantal røres ikke. Det udskriver blot intet nummer og bruger ikke et op: kapitlet efter en prolog er kapitel et, ikke kapitel to. At udelade det fra eksporten er en anden kontakt ovenfor, og den fjerner kapitlet helt fra bogen.
+inspector-apply-to-children = Anvend på underelementer
+# The Inspector's per-Part/Chapter milestone date (M5), shown on the Book's Pace.
+inspector-milestone = Dato for milepæl
 inspector-milestone-none = Ingen dato
 inspector-milestone-clear = Ryd
+# The language pill field (Inspector + Settings)
 inspector-tags = Mærker
 inspector-aliases = Også kendt som
 inspector-dict-language = Sprog
-inspector-apply-language-to-children = Anvend sprog på børn
+inspector-apply-language-to-children = Anvend sproget på underelementer
 settings-page-language = Sprog
 settings-field-dict-language = Sprog
-dict-tradeoff-hint = Hvert ekstra sprog accepterer flere ord, så færre fejl er fanget.
-lang-inherit-hint = Inherited: Denne scene bruger bogen eller projekt-sprog.
+dict-tradeoff-hint = Hvert ekstra sprog accepterer flere ord, så færre fejl bliver fanget.
+lang-inherit-hint = Arvet: scenen bruger bogens eller projektets sprog.
 lang-pill-list = Sprog
 lang-pill-add = Tilføj et sprog
 lang-pill-remove = Fjern { $name }
-lang-pill-mute = Drej stavekontrol for { $name }
-lang-pill-unmute = Tænd for stavekontrol for { $name }
+lang-pill-mute = Slå stavekontrol fra for { $name }
+lang-pill-unmute = Slå stavekontrol til for { $name }
 
+## Settings: Work ▸ Personal dictionary (per-project word list)
 settings-page-personal-dictionary = Personlig ordbog
-settings-user-dict-desc = Ord du tilføjer her behandles som korrekt stavet overalt i appen, og aldrig markeret igen.
-settings-user-dict-add-placeholder = Tilføj et ord
+settings-user-dict-desc = Ord, du tilføjer her, betragtes som korrekt stavet overalt i programmet og markeres aldrig igen.
+settings-user-dict-add-placeholder = Tilføj et ord…
 settings-user-dict-add = Tilføj ord
-settings-user-dict-search = Filterord
+settings-user-dict-search = Filtrér ord
 settings-user-dict-count = { $count ->
     [one] { $count } ord
    *[other] { $count } ord
 }
 settings-user-dict-rename = Omdøb
 settings-user-dict-remove = Fjern
-settings-user-dict-empty = Ingen ord endnu. Tilføj ord stavekontrollen bør ignorere, eller importere en liste.
+settings-user-dict-empty = Ingen ord endnu. Tilføj ord, som stavekontrollen skal ignorere, eller importér en liste.
 settings-user-dict-import = Importér…
 settings-user-dict-export = Eksportér…
-settings-user-dict-import-tip = Tilføj ord fra en almindelig tekstfil, et ord pr. linje. Eksisterende ord gemmes.
-settings-user-dict-export-tip = Gem hele listen til en almindelig tekstfil, et ord pr. linje.
+settings-user-dict-import-tip = Tilføj ord fra en ren tekstfil med ét ord pr. linje. Eksisterende ord bevares.
+settings-user-dict-export-tip = Gem hele listen i en ren tekstfil med ét ord pr. linje.
 settings-user-dict-txt-filter = Tekstfiler
-settings-user-dict-duplicate = Allerede i ordbogen
-settings-user-dict-imported = Importeret { $count ->
-    [one] { $count } ord
-   *[other] { $count } ord
-} ({ $duplicates } allerede til stede).
-settings-user-dict-import-failed = Kunne ikke læse ordlisten: { $error }
-settings-user-dict-exported = Gemt { $count ->
-    [one] { $count } ord.
-   *[other] { $count } ord.
+settings-user-dict-duplicate = Findes allerede i ordbogen
+settings-user-dict-imported = { $count ->
+    [one] { $count } ord er importeret
+   *[other] { $count } ord er importeret
+} ({ $duplicates } fandtes allerede).
+settings-user-dict-import-failed = Ordlisten kunne ikke læses: { $error }
+settings-user-dict-exported = { $count ->
+    [one] { $count } ord er gemt.
+   *[other] { $count } ord er gemt.
 }
-settings-user-dict-export-failed = Kunne ikke gemme ordlisten: { $error }
+settings-user-dict-export-failed = Ordlisten kunne ikke gemmes: { $error }
 
+## Settings: Work ▸ Text replacements (per-project custom lexicon)
 settings-page-text-replacements = Teksterstatninger
-settings-text-repl-desc = Erstat shorthand med den fulde tekst som du skriver: Memory bliver ved den måde, du skriver en plads eller punktuation.
+settings-text-repl-desc = Erstat forkortelser med den fulde tekst, mens du skriver: »bl.a.« bliver til »blandt andet«, så snart du skriver et mellemrum eller et tegn.
 settings-text-repl-enable = Brug teksterstatninger i dette projekt
-settings-text-repl-disabled-hint = Tænd dette for at definere kortslutning, der udvider sig som du skriver.
+settings-text-repl-disabled-hint = Slå dette til for at definere forkortelser, der udfoldes, mens du skriver.
 settings-text-repl-add = Tilføj regel
-settings-text-repl-trigger-placeholder = Stenografi
-settings-text-repl-replacement-placeholder = Hvad det bliver til
-settings-text-repl-added = Tilføjet: { $trigger }
-settings-text-repl-duplicate = Der findes allerede en regel for { $trigger }.
-settings-text-repl-filter = Filterregler
+settings-text-repl-trigger-placeholder = Forkortelse
+settings-text-repl-replacement-placeholder = Hvad den bliver til
+settings-text-repl-added = »{ $trigger }« er tilføjet
+settings-text-repl-duplicate = »{ $trigger }« har allerede en regel
+settings-text-repl-filter = Filtrér regler
 settings-text-repl-count = { $n ->
     [one] 1 regel
    *[other] { $n } regler
 }
 settings-text-repl-row-enabled = Brug denne regel
 settings-text-repl-delete = Slet reglen for { $trigger }
-settings-text-repl-deleted = Udgår reglen for "{ $trigger }"
+settings-text-repl-deleted = Reglen for »{ $trigger }« er slettet
 settings-text-repl-empty = Ingen regler endnu.
-settings-text-repl-csv-filter = CSV filer
+settings-text-repl-csv-filter = CSV-filer
 settings-text-repl-import = Importér…
 settings-text-repl-export = Eksportér…
-settings-text-repl-imported = Importeret { $added }, sprunget { $skipped }
-settings-text-repl-exported = Eksporteret { $n ->
-    [one] 1 regel
-   *[other] { $n } regler
+settings-text-repl-imported = { $added } importeret, { $skipped } sprunget over
+settings-text-repl-exported = { $n ->
+    [one] 1 regel er eksporteret
+   *[other] { $n } regler er eksporteret
 }
 
+## Editor: spelling (context menu + toast)
+# Shown in place of the corrections when a flagged word has none to offer.
 editor-menu-no-suggestions = Ingen forslag
-editor-menu-add-to-dictionary = Tilføj br. { $word } br.
-editor-menu-add-words-to-dictionary = Tilføj markerede ord til ordbog
-editor-dict-added = Tilføjet { $word } til din ordbog.
+editor-menu-add-to-dictionary = Føj »{ $word }« til ordbogen
+editor-menu-add-words-to-dictionary = Føj de markerede ord til ordbogen
+editor-dict-added = »{ $word }« er føjet til din ordbog.
 editor-dict-added-multi = { $count ->
-    [one] Tilføjet { $count } ord til din ordbog.
-   *[other] Tilføjet { $count } ord til din ordbog.
+    [one] { $count } ord er føjet til din ordbog.
+   *[other] { $count } ord er føjet til din ordbog.
 }
 toast-undo = Fortryd
 
-undo-superseded-title = Dette skridt er ikke længere det sidste.
-undo-superseded-body = Noget andet har ændret sig i dette projekt siden. Fortryd ville tage det tilbage i stedet, så det har været. Intet dette skridt er blevet vendt. Brug Rediger Fortryd til at træde tilbage gennem historien selv.
-undo-failed = Fortryd mislykkedes: { $error }
+## Taking one operation back
+##
+## The Undo on a notification is offered for one specific thing. If anything
+## else has happened since, it says so rather than taking back whatever now
+## happens to be last.
+undo-superseded-title = Det trin er ikke længere det seneste
+undo-superseded-body = Noget andet er ændret i projektet siden. Fortryd ville tage det tilbage i stedet, så det er ikke sket. Intet af det, trinnet gjorde, er rullet tilbage. Brug Redigér ▸ Fortryd for selv at gå tilbage gennem historikken.
+undo-failed = Fortrydelsen mislykkedes: { $error }
 
-menu-edit = Rediger (&E)
-menu-edit-undo = Fortryd (&U)
-menu-edit-redo = Annuller fortryd (&R)
-menu-edit-undo-target = Fortryd { $target } (&U)
-menu-edit-redo-target = Redo { $target } (&R)
+## The Edit menu
+##
+## The Undo row names what it will take back, because on a stack where prose and
+## structure both appear a bare "Undo" leaves the writer guessing whether the
+## next press retypes a word or resurrects a chapter.
+menu-edit = &Redigér
+menu-edit-undo = &Fortryd
+menu-edit-redo = &Gentag
+menu-edit-undo-target = &Fortryd { $target }
+menu-edit-redo-target = &Gentag { $target }
 shortcut-name-edit-undo = Fortryd
-shortcut-name-edit-redo = Annuller fortryd
-undo-target-typing = maskinskrivning
-undo-target-project = den seneste ændring af dette projekt
-prose-history-reset-title = Skrivning historik nulstilles
+shortcut-name-edit-redo = Gentag
+undo-target-typing = indtastning
+undo-target-project = seneste ændring af projektet
+prose-history-reset-title = Skrivehistorikken er nulstillet
 prose-history-reset-body = { $count ->
-    [one] En åben scene blev genoprettet fra en tidligere tilstand, så dens skrive historie ikke længere gælder.
-   *[other] { $count } åbne scener blev restaureret fra en tidligere tilstand, så deres skrive historie ikke længere gælder.
+    [one] En åben scene blev gendannet fra en tidligere tilstand, så dens skrivehistorik gælder ikke længere.
+   *[other] { $count } åbne scener blev gendannet fra en tidligere tilstand, så deres skrivehistorik gælder ikke længere.
 }
-undo-target-trash = Flytning til papirkurven
+undo-target-trash = flytning til papirkurven
 undo-target-restore = gendannelse fra papirkurven
-undo-target-delete-forever = sletning til gode
-undo-target-replace-all = om udskiftning på tværs af projektet
-undo-target-import = dokumentets import
+undo-target-delete-forever = endelig sletning
+undo-target-replace-all = erstatning i hele projektet
+undo-target-import = dokumentimporten
 undo-target-duplicate = duplikering
-undo-target-move = Flytning
+undo-target-move = flytning
 undo-target-merge = sammenfletning af to scener
-undo-target-split = Opdeling af en scene
-undo-target-promote = om ændring af typen
-undo-target-tidy-titles = rydning af kapiteltitler
-undo-target-import-tags = Importmærker
-undo-target-import-templates = Importér note- skabeloner
+undo-target-split = opdeling af en scene
+undo-target-promote = ændring af typen
+undo-target-tidy-titles = oprydning i kapiteltitlerne
+undo-target-import-tags = import af mærker
+undo-target-import-templates = import af noteskabeloner
 undo-target-create = oprettelse
 undo-target-remove = sletning
 undo-target-rename = omdøbning
-undo-target-edit = der redigerer
-menu-edit-find = Find… (&F)
-menu-edit-find-next = Find næste (&N)
-menu-edit-find-prev = Find tidligere (&V)
-menu-edit-replace = Find og erstat (&L)
-menu-edit-find-in-project = Find i projektdetaljer (&J)
-menu-edit-replace-in-project = Erstat i projektafdelingen (&I)
-undo-frozen = Fortryd (# Altid fremad # er tændt)
-redo-frozen = Redo (# Altid fremadrettet # er tændt)
-menu-edit-cut = Klip (&T)
-menu-edit-copy = Kopiér (&C)
-menu-edit-paste = Indsæt (&P)
-menu-edit-paste-plain = Indsæt uden formatering (&W)
-menu-edit-select-all = Markér alt (&A)
+undo-target-edit = den redigering
+menu-edit-find = Fin&d…
+menu-edit-find-next = Find &næste
+menu-edit-find-prev = Find fo&rrige
+menu-edit-replace = Find og &erstat…
+menu-edit-find-in-project = Søg i pro&jekt…
+menu-edit-replace-in-project = Erstat i projek&t…
+undo-frozen = Fortryd (»Altid fremad« er slået til)
+redo-frozen = Gentag (»Altid fremad« er slået til)
+menu-edit-cut = &Klip
+menu-edit-copy = K&opiér
+menu-edit-paste = Sæt &ind
+menu-edit-paste-plain = Sæt ind &uden formatering
+menu-edit-select-all = Markér &alt
 shortcut-name-edit-cut = Klip
 shortcut-name-edit-copy = Kopiér
-shortcut-name-edit-paste = Indsæt
-shortcut-name-edit-paste-plain = Indsæt uden formatering
+shortcut-name-edit-paste = Sæt ind
+shortcut-name-edit-paste-plain = Sæt ind uden formatering
 shortcut-name-edit-select-all = Markér alt
 
-titlebar-spellcheck-on = Stavekontrol er tændt. Klik for at stoppe kontrollen (F7)
-titlebar-spellcheck-off = Stavekontrol er slukket. Klik for at tjekke igen (F7)
-menu-spellcheck = Kontrolstavning (&C)
-menu-comments = Kommentarer (&M)
+## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
+titlebar-spellcheck-on = Stavekontrol er slået til. Klik for at stoppe kontrollen (F7)
+titlebar-spellcheck-off = Stavekontrol er slået fra. Klik for at kontrollere igen (F7)
+menu-spellcheck = &Kontrollér stavning
+menu-comments = Ko&mmentarer
 settings-page-spellcheck = Stavekontrol
 settings-group-spellcheck = Stavekontrol
-settings-spellcheck-enabled = Tjek stavning som jeg skriver
-settings-spellcheck-hint = Understøtter ord ingen installeret ordbog ved. At slå dette fra stopper al kontrol, i hvert projekt, indtil du tænder det igen. For at stoppe med kun at kontrollere et sprog, skal du fjerne dets kontrolmærke på projektets sprogfelt eller på et element.
+settings-spellcheck-enabled = Kontrollér stavningen, mens jeg skriver
+settings-spellcheck-hint = Understreger ord, som ingen installeret ordbog kender. Slår du dette fra, stopper al kontrol i alle projekter, indtil du slår det til igen. Vil du kun stoppe kontrollen af ét sprog, så fjern dets flueben i feltet Sprog for projektet eller for et element.
 
-menu-trash = Papirkurv (&T)
+## Trash panel
+menu-trash = &Papirkurv
 trash-title = Papirkurv
-trash-empty-state = Affald er tomt.
-trash-empty-button = Tomt affald
-trash-restore = Gendan (&R)
-trash-restore-to = Genopret til @ action: button (&T)
-trash-delete-forever = Slet for evigt (&D)
-trash-restored-ok = { $count } genoprettet.
-trash-restore-error = Kunne ikke genoprette: { $error }
-trash-restore-orphaned = Dette element er oprindelige sted er væk. Vælg, hvor at gendanne det.
-trash-restore-no-project = Intet projekt er åbent, så der er intet at genoprette.
+trash-empty-state = Papirkurven er tom.
+trash-empty-button = Tøm papirkurven…
+trash-restore = &Gendan
+trash-restore-to = Gendan &til…
+trash-delete-forever = &Slet permanent
+trash-restored-ok = { $count } gendannet.
+trash-restore-error = Der kunne ikke gendannes: { $error }
+trash-restore-orphaned = Elementets oprindelige plads findes ikke længere. Vælg, hvor det skal gendannes.
+trash-restore-no-project = Intet projekt er åbent, så der er intet at gendanne.
 trash-delete-no-project = Intet projekt er åbent, så der er intet at slette.
-trash-empty-confirm-title = Tøm affaldet?
+trash-empty-confirm-title = Tøm papirkurven?
 trash-empty-confirm-text = { $count ->
-    [one] { $count } trash entry vil blive permanent slettet.
-   *[other] { $count } trash indgange vil blive slettet permanent.
-} De efterlader affaldet for evigt. Undo kan stadig bringe dem tilbage indtil du gør noget andet.
-trash-emptied-title = Trash tømt
-trash-emptied-body = Alt i skraldespanden blev slettet permanent.
-trash-empty-no-project = Intet projekt er åbent, så der er intet affald at tømme.
-trash-delete-forever-confirm-title = Slet for evigt?
+    [one] { $count } element i papirkurven slettes permanent.
+   *[other] { $count } elementer i papirkurven slettes permanent.
+} De forlader papirkurven for altid. Fortryd kan stadig hente dem tilbage, indtil du gør noget andet.
+trash-emptied-title = Papirkurven er tømt
+trash-emptied-body = Alt i papirkurven blev slettet permanent.
+trash-empty-no-project = Intet projekt er åbent, så der er ingen papirkurv at tømme.
+trash-delete-forever-confirm-title = Slet permanent?
 trash-delete-forever-confirm-text = { $count ->
-    [one] { $count } post vil blive permanent slettet.
-   *[other] { $count } emner vil blive permanent slettet.
-} De efterlader affaldet for evigt. Undo kan stadig bringe dem tilbage indtil du gør noget andet.
-trash-deleted-title = Slettet for evigt
-trash-deleted-body = { $count } udgår permanent.
+    [one] { $count } element slettes permanent.
+   *[other] { $count } elementer slettes permanent.
+} De forlader papirkurven for altid. Fortryd kan stadig hente dem tilbage, indtil du gør noget andet.
+trash-deleted-title = Slettet permanent
+trash-deleted-body = { $count } slettet permanent.
 trash-undo = Fortryd
-trash-restore-picker-title = Genopret til @ action: button
+trash-restore-picker-title = Gendan til…
 trash-restore-to-confirm-title = Gendan her?
-trash-restore-to-confirm-text = Gendan { $item } til { $destination }?
+trash-restore-to-confirm-text = Vil du gendanne »{ $item }« i »{ $destination }«?
 trash-restore-picker-restore-here = Gendan her
-trash-restore-picker-cancel = Annuller
-trash-restore-picker-empty = Ingen bindemidler endnu. Opret en først.
-trash-banner-title = Dette punkt er i papirkurven
-trash-banner-description = Det vandt ikke vises i omridset eller eksport, indtil du gendanne det.
+trash-restore-picker-cancel = Annullér
+trash-restore-picker-empty = Ingen ringbind endnu. Opret et først.
+trash-banner-title = Dette element ligger i papirkurven
+trash-banner-description = Det vises ikke i dispositionen eller i eksporter, før du gendanner det.
 trash-banner-restore = Gendan…
 trash-tab-tooltip = I papirkurven
 
+# Composite tooltip: the full parameter sheet shown on an export-style row.
 settings-styles-sheet-yes = Ja
 settings-styles-sheet-no = Nej
 settings-styles-sheet-font = Skrifttype
-settings-styles-sheet-indent = First- line led
-settings-styles-sheet-para-spacing = Afstandsafstand
+settings-styles-sheet-indent = Indrykning af første linje
+settings-styles-sheet-para-spacing = Afstand mellem afsnit
 settings-styles-sheet-page = Sidestørrelse
-settings-styles-sheet-margins = Marginer (T / R / B / L)
-settings-styles-sheet-title-page = Book titelside
-settings-styles-sheet-heading-language = Kurssprog
+settings-styles-sheet-margins = Margener (T/H/B/V)
+settings-styles-sheet-title-page = Bogens titelside
+settings-styles-sheet-heading-language = Overskrifternes sprog
 settings-styles-sheet-auto = Følger teksten
-settings-styles-sheet-digits = Numre
+settings-styles-sheet-digits = Talsystem
 settings-styles-sheet-direction = Tekstretning
 settings-styles-sheet-formats = Formater
 settings-styles-sheet-all-formats = Alle
 
-settings-styles-editor-group = Typografiredigering
-settings-styles-editor-missing = Den stil er ikke længere tilgængelig.
+settings-styles-editor-group = Typografieditor
+settings-styles-editor-missing = Den typografi er ikke længere tilgængelig.
 
-settings-styles-page-letter = Brev
-settings-styles-digits-western = Regionskommando Vest (0 + 9)
-settings-styles-digits-eastern-arabic = Regionskommando Øst-Arabisk
+settings-styles-page-letter = Letter
+settings-styles-digits-western = Vestlige (0–9)
+settings-styles-digits-eastern-arabic = Østarabiske (٠–٩)
 settings-styles-direction-ltr = Venstre mod højre
 settings-styles-direction-rtl = Højre mod venstre
 
+## Format dock
 format-dock-title = Format
-format-panel-empty = Placer din markør i en scene, note, eller synopsis for at se formatering muligheder.
+format-panel-empty = Placér markøren i en scene, en note eller en synopsis for at se formateringsmulighederne.
+# Group headers.
 format-group-marks = Tekst
 format-group-block = Afsnit
 format-group-lists = Lister
 format-group-tables = Tabel
-format-group-breaks = Scene pauser
-format-superscript = Overskrift
+format-group-breaks = Sceneskift
+# Button tooltips. Icon-only buttons, so each tooltip is that button's only
+# accessible name, not decoration.
+format-superscript = Hævet skrift
 format-subscript = Sænket skrift
-format-link = Link
+format-link = Link…
+# The Link command: a hyperlink in the prose. One command, three doors (the
+# Format dock, the Format menu and Ctrl+K), so these strings are shared.
 link-dialog-insert-title = Indsæt link
 link-dialog-edit-title = Redigér link
 link-dialog-text-label = Tekst
-link-dialog-text-placeholder = de ord læseren ser
-link-dialog-url-label = Links til
-link-dialog-url-placeholder = example.com
+link-dialog-text-placeholder = de ord, læseren ser
+link-dialog-url-label = Linker til
+link-dialog-url-placeholder = eksempel.dk
 link-dialog-insert = Indsæt
 link-dialog-apply = Anvend
-link-dialog-cancel = Annuller
+link-dialog-cancel = Annullér
 link-dialog-remove = Fjern link
-link-scheme-refused = Kun web-og e-mail-links kan åbnes. { $url } blev efterladt alene.
-menu-format-link = Link (&N)
+# Refused because a document could otherwise make a click launch a program.
+link-scheme-refused = Kun web- og e-maillinks kan åbnes. { $url } blev ikke rørt.
+menu-format-link = L&ink…
 format-clear = Ryd formatering
-format-heading = Udgiftsniveau
+format-heading = Overskriftsniveau
 format-heading-normal = Normal tekst
-format-heading-1 = Udgiftsområde 1
-format-heading-2 = Udgiftsområde 2
-format-heading-3 = Udgiftsområde 3
-format-heading-4 = Udgiftsområde 4
-format-heading-5 = Udgiftsområde 5
-format-heading-6 = Udgiftsområde 6
-format-align-left = Justér til venstre
-format-align-center = Centralt
-format-direction-rtl = Højre-til-venstre afsnit
-format-blockquote = Blockcitat
-format-list-bullet = Bulletsliste
+format-heading-1 = Overskrift 1
+format-heading-2 = Overskrift 2
+format-heading-3 = Overskrift 3
+format-heading-4 = Overskrift 4
+format-heading-5 = Overskrift 5
+format-heading-6 = Overskrift 6
+format-align-left = Venstrejustér
+format-align-center = Centrér
+format-direction-rtl = Afsnit fra højre mod venstre
+format-blockquote = Blokcitat
+format-list-bullet = Punktopstilling
 format-list-numbered = Nummereret liste
-format-indent = Indsats
-format-outdent = Udestående
+format-indent = Forøg indrykning
+format-outdent = Formindsk indrykning
 format-table-insert = Indsæt tabel
 format-table-row-above = Indsæt række over
-format-table-row-below = Indsæt række nedenfor
+format-table-row-below = Indsæt række under
 format-table-col-before = Indsæt kolonne før
 format-table-col-after = Indsæt kolonne efter
 format-table-row-delete = Slet række
-format-table-col-delete = Slet søjle
+format-table-col-delete = Slet kolonne
 format-table-remove = Fjern tabel
 
-menu-format-marks-bold = Fed (&D)
-menu-format-marks-italic = Kursiv (&I)
-menu-format-marks-underline = Underlinje (&U)
-menu-format-marks-strike = Gennemstreget (&S)
-menu-format-marks-superscript = Overskrift (&P)
-menu-format-marks-subscript = Sænket skrift (&B)
-menu-format-marks-clear = Ryd formatering (&C)
-menu-format-heading = Udgiftsområde (&H)
-menu-format-heading-normal = Normal tekst (&N)
-menu-format-heading-1 = Udgiftsområde 1 (&1)
-menu-format-heading-2 = Udgiftsområde 2 (&2)
-menu-format-heading-3 = Udgiftsområde 3 (&3)
-menu-format-heading-4 = Udgiftsområde 4 (&4)
-menu-format-heading-5 = Udgiftsområde 5 (&5)
-menu-format-heading-6 = Udgiftsområde 6 (&6)
-menu-format-alignment = Justering (&A)
-menu-format-align-left = Justér til venstre (&L)
-menu-format-align-center = Centralt (&C)
-menu-format-direction = Retning (&E)
-menu-format-direction-auto = Automatisk (&A)
-menu-format-direction-ltr = Venstre mod højre (&L)
-menu-format-direction-rtl = Højre mod venstre (&R)
-menu-format-blockquote = Blockcitat (&Q)
-menu-format-lists = Lister (&L)
-menu-format-list-bullet = Skjulte liste (&B)
-menu-format-list-numbered = Nummereret liste (&N)
-menu-format-indent = Indsats (&I)
-menu-format-outdent = Udestående (&O)
-menu-format-table = Tabel (&T)
-menu-format-table-insert = Indsæt tabel (&I)
-menu-format-table-2x2 = 2 x 2 (&2)
-menu-format-table-3x3 = 3 x 3 (&3)
-menu-format-table-4x4 = 4 x 4 (&4)
-menu-format-table-row-above = Indsæt række over (&V)
-menu-format-table-row-below = Indsæt række nedenfor (&W)
-menu-format-table-col-before = Indsæt søjle før (&L)
-menu-format-table-col-after = Indsæt søjle efter (&T)
-menu-format-table-row-delete = Slet række (&D)
-menu-format-table-col-delete = Slet søjle (&C)
-menu-format-table-remove = Fjern tabel (&R)
+## Menu: Format
+menu-format-marks-bold = &Fed
+menu-format-marks-italic = &Kursiv
+menu-format-marks-underline = &Understreget
+menu-format-marks-strike = &Gennemstreget
+menu-format-marks-superscript = &Hævet skrift
+menu-format-marks-subscript = Sænk&et skrift
+menu-format-marks-clear = &Ryd formatering
+menu-format-heading = &Overskrift
+menu-format-heading-normal = &Normal tekst
+menu-format-heading-1 = Overskrift &1
+menu-format-heading-2 = Overskrift &2
+menu-format-heading-3 = Overskrift &3
+menu-format-heading-4 = Overskrift &4
+menu-format-heading-5 = Overskrift &5
+menu-format-heading-6 = Overskrift &6
+menu-format-alignment = &Justering
+menu-format-align-left = &Venstrejustér
+menu-format-align-center = &Centrér
+menu-format-direction = Ret&ning
+menu-format-direction-auto = &Automatisk
+menu-format-direction-ltr = &Venstre mod højre
+menu-format-direction-rtl = &Højre mod venstre
+menu-format-blockquote = &Blokcitat
+menu-format-lists = &Lister
+menu-format-list-bullet = &Punktopstilling
+menu-format-list-numbered = &Nummereret liste
+menu-format-indent = &Forøg indrykning
+menu-format-outdent = F&ormindsk indrykning
+menu-format-table = &Tabel
+menu-format-table-insert = &Indsæt tabel
+menu-format-table-2x2 = &2 × 2
+menu-format-table-3x3 = &3 × 3
+menu-format-table-4x4 = &4 × 4
+menu-format-table-row-above = Indsæt række &over
+menu-format-table-row-below = Indsæt række &under
+menu-format-table-col-before = Indsæt &kolonne før
+menu-format-table-col-after = Indsæt kolonne &efter
+menu-format-table-row-delete = &Slet række
+menu-format-table-col-delete = Slet ko&lonne
+menu-format-table-remove = &Fjern tabel
 
-menu-format-typo-marks = Formatering af markering (&F)
-menu-format-typo-nbsp = No- break Space (&N)
-menu-format-typo-nbhyphen = Ingen-break Hyphen (&H)
-menu-format-typo-soft-hyphen = Soft Hyphen (&S)
-menu-format-typo-nnbsp = Small No- break Space (&R)
-menu-format-typo-zwsp = Zerobredde mellemrum (&Z)
-menu-format-typo-word-joiner = Word Joiner (&W)
+## Formatting marks: the invisible characters a writer places by hand.
+## Mnemonics are unique within the submenu (N, H, S, r, Z, W).
+menu-format-typo-marks = For&materingstegn
+menu-format-typo-nbsp = &Hårdt mellemrum
+menu-format-typo-nbhyphen = H&ård bindestreg
+menu-format-typo-soft-hyphen = &Blød bindestreg
+menu-format-typo-nnbsp = &Smalt hårdt mellemrum
+menu-format-typo-zwsp = &Nulbredde-mellemrum
+menu-format-typo-word-joiner = &Ordsammenbinder
 
+## About panel
 
-menu-about = ca. Skribisto (&A)
-about-title = Omkring Skribisto
+menu-about = &Om Skribisto…
+about-title = Om Skribisto
 about-version = Version { $version }
 about-update-available = Version { $version } er tilgængelig
-about-update-see-notes = Se hvad der ændrede sig
-about-update-flathub = Flatthub holder kopien opdateret.
+about-update-see-notes = Se, hvad der er ændret
+about-update-flathub = Flathub holder denne kopi opdateret.
 about-update-distro = Din distribution holder denne kopi opdateret.
-about-tagline = En bog-skrive app til lang-form fiktion, skrevet i Rust med Teksilo toolkit.
-about-license = Løsladt under GNU General Public License, version 3.
+about-tagline = Et program til at skrive romaner og andre lange fiktionstekster, skrevet i Rust med Teksilo-værktøjssættet.
+about-license = Udgivet under GNU General Public License, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Luk
 
-native-menu-about = Omkring { $app }
+## Native (macOS) menu bar
+# Labels for the platform-standard App and Window menus mirrored into the macOS
+# global menu bar. No `&` mnemonics here: macOS has none, and the native bridge
+# resolves these without stripping one, so an ampersand would print literally.
+# The application name is data (the running edition's own name), so it arrives
+# as an argument: same rule as the window titles below.
+native-menu-about = Om { $app }
 native-menu-hide = Skjul { $app }
 native-menu-quit = Afslut { $app }
 native-menu-settings = Indstillinger…
@@ -1559,145 +1799,179 @@ native-menu-window = Vindue
 native-menu-minimize = Minimér
 native-menu-zoom = Zoom
 
+# Window titles. The application name is data (the running edition's own name),
+# so it arrives as an argument rather than being written into the value here.
 window-title = { $title } - { $app }
 window-title-numbered = { $title } - { $app } (vindue { $n })
 window-title-empty = { $app }
 
-first-run-window-title = Velkommen.
-first-run-title = Oprettet { $app }
-first-run-body = { $app } holder sine indstillinger adskilt fra Skribisto, så det starter tom. Dine præferencer, nylige projekter, ordbøger og vindue layout kan kopieres på tværs nu.
+# First-run settings import (an edition with its own config directory, finding
+# the community installation's settings beside it).
+first-run-window-title = Velkommen
+first-run-title = Opsæt { $app }
+first-run-body = { $app } gemmer sine indstillinger adskilt fra Skribisto og starter derfor tom. Dine præferencer, seneste projekter, ordbøger og vindueslayout kan kopieres over nu.
 first-run-from = Kopiér fra
 first-run-to = Kopiér til
-first-run-copy-note = Intet er flyttet eller fjernet. Skribisto holder hver eneste af sine egne indstillinger, og fortsætter med at arbejde præcis som før.
+first-run-copy-note = Intet flyttes eller fjernes. Skribisto beholder alle sine egne indstillinger og fungerer præcis som før.
 first-run-import = Importér indstillinger
-first-run-start-fresh = Start frisk
+first-run-start-fresh = Start forfra
 first-run-import-failed = Nogle indstillinger kunne ikke importeres: { $error }
 
-settings-page-punctuation = Punktueringsfejl
-settings-group-punctuation = Smart punktuering
-settings-page-work-punctuation = Punktuering
-settings-punctuation-override = Giv dette projekt sine egne tegnregler
-settings-punctuation-override-hint = Off: projektet følger ansøgningen præference. Disse regler rejser inden for .skrib, så en co-forfatter åbner filen skriver med den samme typografi.
-settings-punctuation-dashes = Drej -- til en en dash, --- til en em dash
-settings-punctuation-ellipsis = Gør... til en ellipse
-settings-punctuation-quotes = Krølliteringer og apostroffer
-settings-quote-style = Noteringsmærker
-settings-quote-style-locale = Sprogstandard
-settings-quote-style-curly = Det er det samme som det her.
-settings-quote-style-curly-single = English English
-settings-quote-style-guillemets = - Guillemets.
-settings-quote-style-low-high = Low- high
-settings-punctuation-spacing = Plads før;:!?
-settings-punctuation-spacing-hint = Fransk typografi sætter en smal no- break plads før;!? og en fuld en før:. Det gælder kun for tekst skrevet på fransk. Rummet inde guillemet Buddy kommer med guillemet citater selv.
+# ── Work ▸ Punctuation: the project's typographic house style ──────────────
+settings-page-punctuation = Standard for tegnsætning
+settings-group-punctuation = Smart tegnsætning
+settings-page-work-punctuation = Tegnsætning
+settings-punctuation-override = Giv dette projekt sine egne regler for tegnsætning
+settings-punctuation-override-hint = Fra: projektet følger programmets indstilling. Reglerne følger med i .skrib-filen, så en medforfatter, der åbner filen, skriver med samme typografi.
+settings-punctuation-dashes = Lav -- om til en kort tankestreg og --- om til en lang tankestreg
+settings-punctuation-ellipsis = Lav ... om til en ellipse (…)
+settings-punctuation-quotes = Brug typografiske anførselstegn og apostroffer
+settings-quote-style = Anførselstegn
+settings-quote-style-locale = Sprogets standard
+settings-quote-style-curly = “Dobbelte”
+settings-quote-style-curly-single = ‘Enkelte’
+settings-quote-style-guillemets = «Gåseøjne»
+settings-quote-style-low-high = „Lav-høj“
+settings-punctuation-spacing = Mellemrum før ; : ! ?
+settings-punctuation-spacing-hint = Fransk typografi sætter et smalt hårdt mellemrum før ; ! ? og et fuldt før :. Det gælder kun tekst skrevet på fransk. Mellemrummet inden for gåseøjnene « » følger med selve gåseøjne-anførselstegnene.
 settings-punctuation-sample = Dit sprog giver
-settings-punctuation-app-hint = Hvad hvert projekt gør, medmindre det tager sine egne regler i Projekt Medical Punctuation.
-settings-punctuation-dialogue = Åbn et afsnit, der er maskinskrevet som en dialog-dash
-settings-punctuation-dialogue-hint = For sprog, der markerer tale med en streg snarere end citationstegn: fransk, spansk, russisk og andre. Det kun brande i begyndelsen af et afsnit.
+settings-punctuation-app-hint = Det, alle projekter gør, medmindre de har deres egne regler under Projekt ▸ Tegnsætning.
+settings-punctuation-dialogue = Begynd et afsnit, der indledes med »- «, med en replikstreg
+settings-punctuation-dialogue-hint = Til sprog, der markerer replikker med en tankestreg i stedet for anførselstegn: fransk, spansk, russisk og andre. Det sker kun helt i begyndelsen af et afsnit.
 
-statusbar-go-to = Gå til den.
-go-to-placeholder = Søg i bindemidlet
-go-to-no-matches = Ingen ting matcher den søgning.
-menu-go-to = Gå til den. (&G)
+## Go to (jump to any item)
+statusbar-go-to = Gå til…
+go-to-placeholder = Søg i ringbindet
+go-to-no-matches = Intet element matcher søgningen.
+menu-go-to = &Gå til…
 
-settings-page-distraction-free-themes = Distraktionsfrie temaer
-settings-themes-builtin = Bygge-i temaer
-settings-themes-builtin-badge = Bygning-in
+# ── Distraction-free themes (Settings ▸ Editor ▸ Distraction-free themes) ──
+settings-page-distraction-free-themes = Distraktionsfri temaer
+settings-themes-builtin = Indbyggede temaer
+settings-themes-builtin-badge = Indbygget
 settings-themes-user = Mine temaer
 settings-themes-editor-group = Redigér tema
-settings-themes-editor-empty = Vælg et tema under min temaer for at redigere det.
-settings-themes-use = Anvendelse
-settings-themes-duplicate = Dupliker
-settings-themes-edit = Rediger
+settings-themes-editor-empty = Vælg et tema under »Mine temaer« for at redigere det.
+settings-themes-use = Brug
+settings-themes-duplicate = Duplikér
+settings-themes-edit = Redigér
 settings-themes-delete = Slet
 settings-themes-export = Eksportér…
 settings-themes-import = Importér…
-settings-themes-copy-suffix = Kopiér
+settings-themes-copy-suffix = kopi
 settings-themes-json-filter = Tema (JSON)
-settings-themes-imported = Tema importeret
-settings-themes-import-failed = Kunne ikke importere dette tema
-settings-themes-exported = Eksporten af tema
-settings-themes-export-failed = Kunne ikke eksportere dette tema
+settings-themes-imported = Temaet er importeret
+settings-themes-import-failed = Temaet kunne ikke importeres
+settings-themes-exported = Temaet er eksporteret
+settings-themes-export-failed = Temaet kunne ikke eksporteres
+# Shown on a theme whose text and page are below the WCAG AA contrast floor.
 settings-themes-low-contrast = lav kontrast
-settings-themes-low-contrast-band = fremhæve skjuler teksten
+# Shown when the page and the text are fine but the caret band is what hides
+# the prose: a different fault, and one the row's own swatches do not show.
+settings-themes-low-contrast-band = fremhævningen skjuler teksten
 settings-themes-field-name = Navn
 settings-themes-field-paper = Side
 settings-themes-field-ink = Tekst
 settings-themes-field-general = Baggrund
-settings-themes-field-widget-text = Styrestriptekst
-settings-themes-field-caret-band = Fremhæv omegnen af omsorgen
+settings-themes-field-widget-text = Tekst i kontrolbjælken
+# The shading drawn around the caret: the sentence or paragraph being written,
+# per Editor ▸ "Highlight around the caret". This field is the color it uses in
+# distraction-free mode.
+settings-themes-field-caret-band = Fremhævning omkring markøren
 
-statusbar-focus-settings = Distraktion- free indstillinger
-statusbar-focus-manage-themes = Håndtér temaer
+# The distraction-free strip's quick-settings gear, and the way through to the
+# full theme library from inside it.
+statusbar-focus-settings = Indstillinger for distraktionsfri tilstand
+statusbar-focus-manage-themes = Administrér temaer…
 
+## Comments: the two docks, the thread cards, and their actions.
 comments-title = Kommentarer
 comments-document-title = Dette dokument
 comments-empty-project = Ingen kommentarer i dette projekt endnu.
 comments-empty-document = Ingen kommentarer til dette dokument.
 comments-filter-all = Alle
-comments-filter-open = Åbn
-comments-filter-resolved = Opløst
-comments-filter-orphaned = Alfoner
-comments-status-open = Åbn
-comments-status-resolved = Opløst
-comments-status-orphaned = Mistede sin tekst
-comments-orphan-snippet = (Den kommenterede tekst er væk)
+comments-filter-open = Åbne
+comments-filter-resolved = Løste
+# Always shown, including at zero: an orphan nobody looks for is an orphan nobody fixes.
+comments-filter-orphaned = Forældreløse
+comments-status-open = Åben
+comments-status-resolved = Løst
+comments-status-orphaned = Teksten er væk
+comments-orphan-snippet = (den kommenterede tekst er væk)
+# A comment that resolved successfully yet has no live range to point at: an
+# import from a format with no text-position concept for it (a heading, a blank
+# paragraph, a table). Distinct from "Lost its text": nothing went missing, it
+# never had a position to begin with.
 comments-status-unplaced = Ingen tekstposition
 comments-unplaced-snippet = (ikke forankret i nogen tekst)
 comments-reply-count = { $count ->
     [one] { $count } svar
-   *[other] { $count } replies
+   *[other] { $count } svar
 }
 comments-menu-resolve = Markér som løst
-comments-menu-reopen = Genopen
+comments-menu-reopen = Genåbn
 comments-menu-delete = Slet
-comments-sort-document = I dokumentrækkefølge
+comments-sort-document = I dokumentets rækkefølge
 comments-sort-newest = Nyeste først
-comments-sort-reader = Grupperet af læsere
-comments-unsigned-author = Ikke signeret
+comments-sort-reader = Grupperet efter læser
+comments-unsigned-author = Uden underskrift
+# Shown on a thread that shares its passage with another reader's. Never at one:
+# a lone remark needs no number, and "1 reader" beside every card would drown the
+# two that say 3.
 comments-agreement = { $count ->
     [one] { $count } læser
    *[other] { $count } læsere
 }
 comments-menu-add = Tilføj kommentar
-comments-menu-add-paragraph = Kommentar til dette punkt
+comments-menu-add-paragraph = Kommentér dette afsnit
 overview-col-comments = Kommentarer
-overview-col-total-comments = Bemærkninger i alt
-comments-card-placeholder = Skriv en kommentar
+overview-col-total-comments = Kommentarer i alt
+comments-card-placeholder = Skriv en kommentar…
 comments-card-unknown-author = Ukendt forfatter
-comments-unsigned-toast = Dine kommentarer er ikke underskrevet: Intet navn er sat til dig på denne computer.
-comments-unsigned-action = Sæt dit navn
+comments-unsigned-toast = Dine kommentarer er uden underskrift: der er ikke angivet et navn for dig på denne computer.
+comments-unsigned-action = Angiv dit navn
 comments-card-reply = Svar
-comments-card-reply-placeholder = Svar
-comments-card-actions = Kommentaraktioner
-comments-reply-actions = Svar
+comments-card-reply-placeholder = Svar…
+comments-card-actions = Handlinger for kommentar
+comments-reply-actions = Handlinger for svar
 comments-menu-delete-reply = Slet svar
 comments-menu-delete-all = Slet alle kommentarer her
-comments-deleted-toast = Kommentar slettet
-comments-reply-deleted-toast = Svar slettet
+comments-deleted-toast = Kommentaren er slettet
+comments-reply-deleted-toast = Svaret er slettet
 comments-deleted-all-toast = { $count ->
-    [one] { $count } kommentar slettet
-   *[other] { $count } kommentarer slettet
+    [one] { $count } kommentar er slettet
+   *[other] { $count } kommentarer er slettet
 }
 comments-undo = Fortryd
 
+# ── Analysis (Book container segment) ────────────────────────────────────────
+# House rule for every string here: describe, never judge. No "too many", no
+# "weak", no "should". Every comparison is against the book's own median or its
+# own distribution, never a genre norm, and never a target value.
 analysis-segment = Analyse
 analysis-scope-book = Analyserer denne bog
-analysis-run = Løbeanalyse
-analysis-stale = Ændret siden dette løb
+analysis-run = Kør analyse
+analysis-stale = Ændret siden analysen
 analysis-not-run = Ikke analyseret endnu.
-analysis-running = Læsning af manuskriptet
-analysis-failed = Analysen kunne ikke afsluttes.
+analysis-running = Læser manuskriptet…
+analysis-failed = Analysen kunne ikke gøres færdig.
 analysis-no-scenes = Ingen scener i denne bog endnu.
 
 analysis-shape = Form
 
-analysis-arrivals = Ankomst
-analysis-arrivals-explainer = Hvordan tekst nåede dette projekt, mens det har været åbent. Der står, hvilken rute figurerne kom ned, og overhovedet intet om, hvem der skrev dem: En forfatter, der skriver andre steder og pastaer, har indsat, og en, der dikterer har dikteret. Der er ingen tal at sigte efter her.
+# ── How the text arrived ──────────────────────────────────────────────────────
+# A fact about input, never about authorship. Nothing here weighs one route
+# against another, and there is no total to reach and nothing to score.
+analysis-arrivals = Tilgang
+analysis-arrivals-explainer = Hvordan tekst er kommet ind i projektet, mens det har været åbent. Det fortæller, ad hvilken vej tegnene kom, og intet som helst om, hvem der skrev dem: en forfatter, der skriver udkast andetsteds og sætter ind, har sat ind, og en, der dikterer, har dikteret. Der er intet tal at sigte efter her.
+# The two scope caveats, said plainly rather than left to be assumed. Everything
+# else on this bar is about one book and the whole of its text; this is about the
+# whole project and only since it was opened.
 analysis-arrivals-scope = Hele projektet, ikke kun denne bog.
-analysis-arrivals-session = Siden du åbnede den, begynder optællingen igen.
-analysis-arrivals-nothing = Der er endnu ikke kommet nogen tekst på dette møde.
-analysis-arrivals-typed = Skrivet
-analysis-arrivals-pasted = Fastsat
+analysis-arrivals-session = Siden du åbnede det. Når projektet lukkes, starter optællingen forfra.
+analysis-arrivals-nothing = Der er endnu ikke kommet tekst ind i denne session.
+analysis-arrivals-typed = Skrevet
+analysis-arrivals-pasted = Sat ind
 analysis-arrivals-dictated = Dikteret
 analysis-arrivals-imported = Importeret
 analysis-arrivals-programmatic = Indsat for dig
@@ -1705,10 +1979,12 @@ analysis-arrivals-count = { $count ->
     [one] { $count } tegn
    *[other] { $count } tegn
 }
-analysis-arrivals-none = Ingen
+# Said where a route contributed nothing, so a reader is not left wondering
+# whether it was measured at all.
+analysis-arrivals-none = ingen
 
 analysis-words-per-scene = Ord pr. scene
-analysis-median-words = Denne bog er median scene kører { $count ->
+analysis-median-words = Bogens mediane scene er på { $count ->
     [one] { $count } ord.
    *[other] { $count } ord.
 }
@@ -1717,152 +1993,172 @@ analysis-median-line = Median: { $count ->
    *[other] { $count } ord
 }
 analysis-dialogue = Dialog
-analysis-dialogue-unsupported = Dialogen måles endnu ikke for dette sprog.
+# Said instead of showing 0%, which would read as "there is no dialogue here".
+analysis-dialogue-unsupported = Dialog måles endnu ikke for dette sprog.
 
-analysis-footnote-words = Fodnoteord
+analysis-footnote-words = Ord i fodnoter
+# Kept apart from the manuscript total on purpose. See the module doc on
+# AnalysisViewModel::run for why a footnote is authored prose but must not be folded
+# into how far along the story reads as being.
 analysis-footnote-words-count = { $count ->
-    [one] { $count } ord er i denne bog Buds fodnoter, holdes adskilt fra manuskriptet i alt.
-   *[other] { $count } ord er i denne bog Buds fodnoter, holdes adskilt fra manuskriptet i alt.
+    [one] { $count } ord står i bogens fodnoter og holdes uden for manuskriptets samlede antal.
+   *[other] { $count } ord står i bogens fodnoter og holdes uden for manuskriptets samlede antal.
 }
-analysis-footnote-words-pending = Tæller fodnoterne
+# The figure comes from its own operation and can still be catching up even once the
+# rest of this report is ready, said plainly rather than shown as a misleading 0.
+analysis-footnote-words-pending = Tæller fodnoterne…
 
-analysis-ignore-empty = Ignorér tekster uden noget skrevet endnu
-analysis-empty-hidden = { $count } tom { $count ->
-        [one] Tekst
-       *[other] tekster
-    } Skjult.
-analysis-all-texts-empty = Hver eneste tekst i denne bog er stadig tom.
+# Shape's charts draw one bar per text, so an outlined-but-unwritten book is mostly gaps.
+analysis-ignore-empty = Ignorér tekster, hvor der endnu ikke er skrevet noget
+analysis-empty-hidden =
+    { $count } { $count ->
+        [one] tom tekst
+       *[other] tomme tekster
+    } skjult.
+analysis-all-texts-empty = Alle tekster i denne bog er stadig tomme.
 
+# ── Binder filter feedback ───────────────────────────────────────────────────
+# The binder's search field lives in a popover, so once it is dismissed nothing
+# on screen says a filter is still narrowing the tree. These strings are what
+# say it. Without them a filtered-to-nothing binder is indistinguishable from
+# an empty project.
 binder-filter-count = { $shown } af { $total } vist
 binder-filter-clear = Ryd
-binder-filter-none = Intet matcher { $query }.
+binder-filter-none = Intet matcher »{ $query }«.
 
-settings-paratext-intro = Forsiden og bagsiden stof et nyt projekt kan starte med. Hver struktur tilhører en udgivelse tradition, og dens sidetitler er skrevet på denne tradition er eget sprog. Omdøb dem frit, når et projekt er oprettet.
+## Settings: paratext structures
+settings-paratext-intro = Det for- og efterstof, et nyt projekt kan starte med. Hver struktur hører til en udgivertradition, og dens sidetitler er skrevet på traditionens eget sprog. Omdøb dem frit, når projektet er oprettet.
 settings-paratext-structures = Strukturer
 settings-paratext-broken = Kunne ikke læses
-settings-paratext-edit = Rediger
-settings-paratext-duplicate = Dupliker
+settings-paratext-edit = Redigér
+settings-paratext-duplicate = Duplikér
 settings-paratext-delete = Slet
 settings-paratext-new = Ny struktur
 settings-paratext-save = Gem
-settings-paratext-editor-hint = Et navn, de sider, der skal laves før manuskriptet, og de sider, der skal laves efter det. Hvor de ender, er dit: de er almindelige genstande, når projektet eksisterer.
+settings-paratext-editor-hint = Et navn, de sider, der skal oprettes før manuskriptet, og de sider, der skal oprettes efter det. Hvor de havner, bestemmer du: de er almindelige elementer, når projektet først findes.
 
+## Images
 
-image-insert = Indsæt billederName (&M)
+image-insert = Indsæt &billede…
 image-no-project = Åbn et projekt, før du indsætter et billede.
 image-choose-title = Vælg et billede
 image-filter-label = Billeder
 image-large-title = Dette er et stort billede
 image-large-text =
-    { $name } er { $megapixels } megapixels ({ $width } × { $height }).
-    Holde det som det er gemmer din oprindelige fil i projektet: det rejser
-    med hver backup og hver eksport. Optimering gemmer en mindre kopi
-    i stedet, op til 2560 pixels på sin længste side.
+    { $name } er på { $megapixels } megapixel ({ $width }×{ $height }).
+    Beholder du det, som det er, gemmes din originale fil i projektet: den følger
+    med i alle sikkerhedskopier og alle eksporter. Optimér gemmer i stedet en mindre
+    kopi, højst 2560 pixel på den længste side.
 image-large-keep = Behold originalen
 image-large-downscale = Optimér
-image-large-remember = Gør det fra nu af, spørg ikke igen
+image-large-remember = Gør dette fremover, og spørg ikke igen
 image-not-recorded = Billedet blev gemt, men kunne ikke registreres i projektet.
 image-describe-title = Beskriv billedet
-image-describe-explain = Hvad billedet viser, for en læser, der ikke kan se det. Det er ikke en del af manuskriptet: det er aldrig tælles, gennemsøges eller eksporteres som prosa.
+image-describe-explain = Hvad billedet viser, til en læser, der ikke kan se det. Det er ikke en del af manuskriptet: det tælles, gennemsøges og eksporteres aldrig som tekst.
 image-describe-placeholder = et fyrtårn mod en grå himmel
-image-resize-title = Ændr størrelse på billedet
-image-resize-explain = En procentdel af den størrelse det er vist på nu. 100 efterlader det som det er.
-image-resize-invalid = Indtast et tal mellem 1 og 1000.
-image-menu-describe = Beskriv billedet (&D)
-image-menu-resize = Ændr størrelse på billedet (&R)
-image-menu-reset-size = Oprindelig størrelse (&Z)
+image-resize-title = Skift billedets størrelse
+image-resize-explain = En procentdel af den størrelse, det vises i nu. 100 lader det være, som det er.
+image-resize-invalid = Angiv et tal mellem 1 og 1000.
+image-menu-describe = &Beskriv billedet…
+image-menu-resize = &Skift billedets størrelse…
+image-menu-reset-size = &Oprindelig størrelse
 
-cover-choose = Bogomslag (&V)
-cover-clear = Fjern omslaget (&R)
+# The book's cover, chosen from the book, not typed into a scene.
+cover-choose = Bogens &omslag…
+cover-clear = Fjern omslage&t
 cover-choose-title = Vælg et omslag
-cover-set = Omslaget er klar.
-cover-cleared = Omslaget er fjernet. Billedet er stadig i projektet.
-card-label = Kort beskrivelse
-card-exportable = Eksporteret
+cover-set = Omslaget er valgt.
+cover-cleared = Omslaget er fjernet. Billedet findes stadig i projektet.
+# ── Outline row card ────────────────────────────────────────────────────────
+# The hover card on an outline row: what a row is, without opening it.
+card-label = Etiket
+card-exportable = Eksporteres
 card-numbered = Nummereret
 card-created = Oprettet
 card-modified = Ændret
-card-yes = Ja
-card-no = Nej
+card-yes = ja
+card-no = nej
 card-type = Type
-card-position = Stilling
-card-children = Børn
+card-position = Position
+card-children = Underelementer
 card-goal = Mål
 card-words = Ord
-card-synopsis = Resumé
+card-synopsis = Synopsis
 card-point-of-view = Synsvinkel
 card-aliases = Også kendt som
 
-export-orphan-footnotes-title = Fodnoter uden reference
+export-orphan-footnotes-title = Fodnoter uden henvisning
 export-comments-dropped =
     { $count ->
         [one] En kommentar kunne ikke placeres i den eksporterede tekst og blev udeladt.
-       *[other] { $count } bemærkninger kunne ikke medtages i den eksporterede tekst og blev udeladt.
+       *[other] { $count } kommentarer kunne ikke placeres i den eksporterede tekst og blev udeladt.
     }
 export-orphan-footnotes =
     { $count ->
-        [one] En fodnote er ikke længere refereret nogen steder i manuskriptet. Dens tekst vil ikke blive vist i den eksporterede bog.
-       *[other] { $count } fodnoter er ikke længere refereret nogen steder i manuskriptet. Deres tekst vil ikke blive vist i den eksporterede bog.
+        [one] En fodnote henvises der ikke længere til noget sted i manuskriptet. Dens tekst kommer ikke med i den eksporterede bog.
+       *[other] { $count } fodnoter henvises der ikke længere til noget sted i manuskriptet. Deres tekst kommer ikke med i den eksporterede bog.
     }
 
+## Footnotes
 
-menu-footnotes = Fodnoter (&N)
+menu-footnotes = F&odnoter
 footnotes-title = Fodnoter
-footnotes-insert = Indsæt fodnote (&F)
-footnotes-empty = Ingen fodnoter endnu. Sæt markøren i en scene, derefter bruge + ovenfor, eller Ctrl + Alt + F.
+footnotes-insert = Indsæt &fodnote
+footnotes-empty = Ingen fodnoter endnu. Placér markøren i en scene, og brug så + ovenfor eller Ctrl+Alt+F.
 footnotes-filter-all = Alle
 footnotes-filter-document = Dette dokument
-footnotes-filter-orphaned = Alfoner
-footnotes-orphaned = Intet peger på denne note mere
+footnotes-filter-orphaned = Forældreløse
+footnotes-orphaned = Intet henviser længere til denne note
 footnotes-untitled-home = Uden titel
 footnotes-body-placeholder = selve noten
-footnotes-insert-tooltip = Indsæt en fodnote på markøren (Ctrl + Alt + F)
-footnotes-actions = Fodnoteaktioner
-footnotes-delete = Slet note og reference hertil (&D)
-footnotes-no-project = Åbn et projekt, før der indsættes en fodnote.
-footnotes-no-caret = Sæt markøren i en scene-tekst for at indsætte en fodnote der.
-footnotes-not-created = Fodnoten kunne ikke tilføjes projektet.
-footnotes-deleted-toast = Bemærkning slettet
+footnotes-insert-tooltip = Indsæt en fodnote ved markøren (Ctrl+Alt+F)
+footnotes-actions = Handlinger for fodnote
+footnotes-delete = &Slet noten og henvisningen til den
+footnotes-no-project = Åbn et projekt, før du indsætter en fodnote.
+footnotes-no-caret = Placér markøren i en scenes tekst for at indsætte en fodnote der.
+footnotes-not-created = Fodnoten kunne ikke føjes til projektet.
+footnotes-deleted-toast = Noten er slettet
 footnotes-undo-delete = Fortryd
 
-import-document-title = Importdokumenter
+# ── Import documents (Markdown / Word / ODT / plain text) ─────────────────────
+import-document-title = Importér dokumenter
 import-document-close = Luk
 import-document-step-files = Filer
-import-document-step-review = Revision
-import-document-step-destination = Bestemmelsessted
-import-document-step-reconcile = Sammenflet
-import-document-reconcile-hint = Nogle af disse elementer er dem, du allerede har. Sig, hvad der skal ske med hver.
-import-document-reconcile-all-new = Intet i denne fil matcher dit projekt: hvert element vil blive tilføjet som nyt.
-import-document-duplicate-returns = Disse filer er mere end en kopi af det samme manuskript kommer tilbage. Importér dem en ad gangen: matchende kun linjer op en returnerende kopi mod dit projekt, så import flere sammen ville tilføje en anden kopi af bogen i stedet for at fusionere det.
-import-document-hunk-added = Tag dette nye punkt
-import-document-hunk-removed = Smid dette punkt
+import-document-step-review = Gennemgang
+import-document-step-destination = Destination
+import-document-step-reconcile = Flet
+import-document-reconcile-hint = Nogle af disse elementer har du allerede. Angiv, hvad der skal ske med hvert enkelt.
+import-document-reconcile-all-new = Intet i denne fil matcher dit projekt: alle elementer tilføjes som nye.
+import-document-duplicate-returns = Disse filer er flere kopier af det samme manuskript, der kommer tilbage. Importér dem én ad gangen: sammenligningen matcher kun én returneret kopi med dit projekt, så importerer du flere på én gang, tilføjes en ekstra kopi af bogen i stedet for at blive flettet ind.
+import-document-hunk-added = Tag dette nye afsnit
+import-document-hunk-removed = Fjern dette afsnit
 import-document-hunk-changed = Tag denne omskrivning
-import-document-col-stray-prose = Dens tekst
-import-document-stray-as-paratext = Hold som paratext
-import-document-stray-discard = Smid teksten
+import-document-col-stray-prose = Dets tekst
+import-document-stray-as-paratext = Behold som paratekst
+import-document-stray-discard = Fjern teksten
 import-document-col-current = I dit projekt
 import-document-col-incoming = I denne fil
 import-document-col-status = Status
-import-document-col-action = Hvad skal man gøre?
-import-document-status-identical = Samme
-import-document-status-editor-edited = De redigerede det
-import-document-status-you-edited = Du redigerede det
-import-document-status-conflict = Begge redigerede det
-import-document-status-different = Differe
+import-document-col-action = Hvad der skal ske
+import-document-status-identical = Ens
+import-document-status-editor-edited = De har redigeret det
+import-document-status-you-edited = Du har redigeret det
+import-document-status-conflict = Begge har redigeret det
+import-document-status-different = Forskellig
 import-document-status-new = Ny
 import-document-status-missing = Ikke i denne fil
 import-document-status-moved = Flyttet
-import-document-action-comments-only = Kun bemærkninger
+import-document-action-comments-only = Kun kommentarer
 import-document-action-take-import = Tag denne version
-import-document-action-keep-current = Behold mine
+import-document-action-keep-current = Behold min
 import-document-action-create-new = Tilføj som ny
 import-document-action-ignore = Spring over
 import-document-compare = Sammenlign
-import-document-compare-legend = Din version sammenlignet med denne fil. Read- kun.
+import-document-compare-legend = Din version sammenlignet med filens. Skrivebeskyttet.
 import-document-compare-close = Luk
-import-document-drop-title = Drop dokumenter her
-import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) og almindelig tekst (.txt)
-import-document-browse = BrowseName
+import-document-drop-title = Slip dokumenter her
+import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) og ren tekst (.txt)
+import-document-browse = Gennemse…
 import-document-move-up = Flyt op
 import-document-move-down = Flyt ned
 import-document-remove-file = Fjern
@@ -1875,125 +2171,148 @@ import-document-col-included = Importér
 import-document-col-title = Titel
 import-document-col-type = Type
 import-document-col-words = Ord
-import-document-col-breaks = Afbrydelser
+import-document-col-breaks = Sceneskift
 import-document-col-comments = Kommentarer
 import-document-col-footnotes = Fodnoter
 import-document-col-epigraph = Motto
 import-document-col-source = Kilde
-import-document-level-rules = Udgiftsniveauer
-import-document-level-n = Pos. { $level }
+import-document-level-rules = Overskriftsniveauer
+import-document-level-n = Overskrift { $level }
 import-document-add-top-level = Tilføj øverste niveau
-import-document-add-top-level-tooltip = Indsæt en bog over alle analyserede emner, for kapitelfiler som ikke har nogen bogoverskrift
-import-document-destination = Bestemmelsessted
-import-document-destination-hint = Vælg et bindemiddel eller element: nye elementer lander inde i en mappe, eller efter en scene.
-import-document-destination-empty = Ingen bindemidler endnu. Opret en først.
+import-document-add-top-level-tooltip = Indsæt en bog over alle analyserede elementer, til kapitelfiler uden en bogoverskrift
+import-document-destination = Destination
+import-document-destination-hint = Vælg et ringbind eller et element: nye elementer havner inde i en mappe eller efter en scene.
+import-document-destination-empty = Ingen ringbind endnu. Opret et først.
 import-document-plan-empty = Intet at importere endnu.
 import-document-summary = { $rows ->
-    [one] 1 post
-   *[other] { $rows } poster
+    [one] 1 element
+   *[other] { $rows } elementer
 } · { $breaks ->
-    [one] 1 scene break
-   *[other] { $breaks } scenepauser
+    [one] 1 sceneskift
+   *[other] { $breaks } sceneskift
 }
 import-document-back = Tilbage
-import-document-cancel = Annuller
+import-document-cancel = Annullér
 import-document-analyse = Næste
-import-document-analysing = Læsning af dokumenter
-import-document-step-analysing = Læsning
-import-document-cancel-analysis = Stop læsning
+import-document-analysing = Læser dokumenter…
+import-document-step-analysing = Læser
+import-document-cancel-analysis = Stop læsningen
 import-document-analyse-failed = Dokumenterne kunne ikke læses.
 import-document-details = Detaljer
 import-document-import = Importér
 import-document-done = { $count ->
-    [one] 1 vare importeret
-   *[other] { $count } importerede varer
+    [one] 1 element er importeret
+   *[other] { $count } elementer er importeret
 }
 import-document-undo = Fortryd
-import-diagnostic-file-unreadable = Der kunne ikke læses { $path }: { $detail }. De øvrige filer importerer stadig.
-import-diagnostic-nested-too-deep = Der blev ikke læst { $path }: dens indhold er indlejret mere end { $limit } niveauer dybt. Intet rigtigt dokument kommer i nærheden af det, og læsning det kunne gå ned Skribisto, så det er udeladt. De andre filer stadig importere.
-import-diagnostic-archive-too-large = "{ $path }Der blev ikke læst: det er en komprimeret fil bygget til at pakke langt større end det er, som kunne udstøde hukommelse og nedbrud SkribistoDe andre filer importerer stadig.
+# ── Import diagnostics ────────────────────────────────────────────────────────
+# One per `document_ingest::ImportDiagnostic::key()`. The variant's data arrives
+# as arguments; the sentence is assembled here, per locale. A row-scoped
+# diagnostic gets its { $title } and { $kind } from the row it names, never from
+# the wire.
+import-diagnostic-file-unreadable = »{ $path }« kunne ikke læses: { $detail }. De øvrige filer importeres stadig.
+# A file refused unread because its XML nests deeper than the app will read.
+# $limit is the ceiling, a number.
+import-diagnostic-nested-too-deep = »{ $path }« blev ikke læst: indholdet er indlejret mere end { $limit } niveauer dybt. Intet rigtigt dokument kommer i nærheden af det, og at læse det kunne få Skribisto til at gå ned, så det udelades. De øvrige filer importeres stadig.
+import-diagnostic-archive-too-large = »{ $path }« blev ikke læst: det er en komprimeret fil, der er bygget til at fylde langt mere udpakket, end den gør, hvilket kunne opbruge hukommelsen og få Skribisto til at gå ned, så den udelades. De øvrige filer importeres stadig.
 import-diagnostic-lossy-decode = { $count ->
-    [one] Et tegn i denne { $path } blev ikke afkodet. Re- gem filen som UTF-8 for at beholde den.
-   *[other] { $count } tegn i MB { $path } ikke dekodere. Re- gemme filen som UTF-8 at holde dem.
+    [one] Ét tegn i »{ $path }« kunne ikke afkodes. Gem filen igen som UTF-8 for at bevare det.
+   *[other] { $count } tegn i »{ $path }« kunne ikke afkodes. Gem filen igen som UTF-8 for at bevare dem.
 }
-import-diagnostic-decoded-from-bom = { $path } blev afkodet som { $detail }, ikke UTF-8.
-import-diagnostic-empty-file = - { $path } er tomt.
-import-diagnostic-no-headings = Der er ingen overskrifter på { $path }, så det kommer som en ting.
-import-diagnostic-unsupported-format = Intet læser .{ $detail }-filer, så { $path }-filer blev sprunget over.
-import-diagnostic-front-matter-not-flat = Frontmateriale i Mezzogiorno { $path }: Mezzogiorno { $detail } Mezzogiorno er ikke en simpel værdi og blev sprunget over.
+import-diagnostic-decoded-from-bom = »{ $path }« blev afkodet som { $detail }, ikke UTF-8.
+import-diagnostic-empty-file = »{ $path }« er tom.
+import-diagnostic-no-headings = »{ $path }« har ingen overskrifter, så den kommer ind som ét element.
+import-diagnostic-unsupported-format = Intet kan læse ».{ $detail }«-filer, så »{ $path }« blev sprunget over.
+import-diagnostic-front-matter-not-flat = Front matter i »{ $path }«: »{ $detail }« er ikke en simpel værdi og blev sprunget over.
 import-diagnostic-footnotes-degraded = { $count ->
-    [one] En fodnote i parentes{ $path }Ankomst som almindelig tekst: fodnoter er ikke læst fra Markdown.
-   *[other] { $count } fodnoter i MB { $path } Ankomst som almindelig tekst: fodnoter læses ikke fra Markdown.
+    [one] Én fodnote i »{ $path }« kommer ind som almindelig tekst: fodnoter læses ikke fra Markdown.
+   *[other] { $count } fodnoter i »{ $path }« kommer ind som almindelig tekst: fodnoter læses ikke fra Markdown.
 }
+# The sibling of the line above, and deliberately a different sentence. That one
+# says the reader cannot carry footnotes at all (Markdown); this one says it
+# carried the rest and names what it could not: a note with no text behind it, or
+# one whose reference sits where no prose block covers it, a chapter title being
+# the ordinary case.
 import-diagnostic-footnote-not-carried = { $count ->
-    [one] En fodnote i "{ $path }" kunne ikke tages med. De andre var.
-   *[other] { $count } fodnoter i parentes{ $path }- De andre kunne ikke overtages.
+    [one] Én fodnote i »{ $path }« kunne ikke tages med. De andre blev.
+   *[other] { $count } fodnoter i »{ $path }« kunne ikke tages med. De andre blev.
 }
 import-diagnostic-raw-html-dropped = { $count ->
-    [one] En blok af rå HTML i MB { $path } blev droppet.
-   *[other] { $count } blokke af rå HTML i MB { $path } blev tabt.
+    [one] Én blok rå HTML i »{ $path }« blev udeladt.
+   *[other] { $count } blokke rå HTML i »{ $path }« blev udeladt.
 }
 import-diagnostic-nested-break-dropped = { $count ->
-    [one] En scene bryde inde i et tilbud eller liste i Budding{ $path } blev droppet. Kun en pause på sin egen linje er holdt.
-   *[other] { $count } scene pauser inde citater eller lister i MB { $path } blev droppet. Kun en pause på sin egen linje er holdt.
+    [one] Ét sceneskift inde i et citat eller en liste i »{ $path }« blev udeladt. Kun et sceneskift på sin egen linje bevares.
+   *[other] { $count } sceneskift inde i citater eller lister i »{ $path }« blev udeladt. Kun et sceneskift på sin egen linje bevares.
 }
-import-diagnostic-image-not-ingested = Note { $path }; henviser til billedet; { $detail }; henvisningen kommer som tekst; selve billedet er ikke kopieret.
-import-diagnostic-duplicate-title = "{ $title }Det ser ud til, at { $count } gange. Hvis du har importeret disse filer før, dette vil duplikere dem.
-import-diagnostic-heading-level-jump = { $title }-jumps fra kursiveau { $from } til { $to }; det placeres et niveau under sin forælder.
-import-diagnostic-illegal-combination = Budd{ $title } Buddhares prose, men en { $kind } kan ikke holde nogen. Import holdes, indtil du ændrer sin type eller udelade det. Intet er importeret på nogen anden måde.
-import-diagnostic-tracked-changes-flattened = { $path } var midtrevision: { $count ->
-    [one] { $count } Sporændring blev accepteret
-   *[other] { $count } sporede ændringer blev accepteret
-} , og sletninger faldt. Det er den endelige tekst. For at holde nogen af dine egne formuleringer i stedet, skal du bruge Sammenlign i det sidste trin.
-import-diagnostic-tracked-changes-flattened-by = { $path } var midtrevision: { $count ->
-    [one] { $count } Sporet ændring af { $names } blev accepteret
-   *[other] { $count } sporede ændringer af { $names } blev accepteret
-} , og sletninger faldt. Det er den endelige tekst. For at holde nogen af dine egne formuleringer i stedet, skal du bruge Sammenlign i det sidste trin.
+import-diagnostic-image-not-ingested = »{ $path }« henviser til billedet »{ $detail }«. Henvisningen kommer ind som tekst; selve billedet kopieres ikke med.
+import-diagnostic-duplicate-title = »{ $title }« forekommer { $count } gange. Har du importeret disse filer før, vil de blive duplikeret.
+import-diagnostic-heading-level-jump = »{ $title }« springer fra overskriftsniveau { $from } til { $to }; det placeres ét niveau under sit overordnede element.
+import-diagnostic-illegal-combination = »{ $title }« indeholder tekst, men en { $kind } kan ikke rumme tekst. Importen holdes tilbage, indtil du ændrer typen eller udelader elementet. Ellers importeres der slet intet.
+# Two sentences, because the file may or may not say who. `$names` is a
+# ready-formatted list the app never splits; empty when the source records no
+# author, which is what an anonymised .docx looks like.
+import-diagnostic-tracked-changes-flattened = { $path } var midt i en revision: { $count ->
+    [one] { $count } registreret ændring blev accepteret
+   *[other] { $count } registrerede ændringer blev accepteret
+}, og sletninger blev fjernet. Det er den endelige tekst. Vil du i stedet beholde noget af din egen ordlyd, så brug Sammenlign i det sidste trin.
+import-diagnostic-tracked-changes-flattened-by = { $path } var midt i en revision: { $count ->
+    [one] { $count } registreret ændring af { $names } blev accepteret
+   *[other] { $count } registrerede ændringer af { $names } blev accepteret
+}, og sletninger blev fjernet. Det er den endelige tekst. Vil du i stedet beholde noget af din egen ordlyd, så brug Sammenlign i det sidste trin.
 import-diagnostic-text-box-dropped = { $count ->
-    [one] { $path } holder { $count } tekstboks. Dens tekst sidder uden for dokumentets flow, så hvor det hører til i et manuskript kan ikke besvares. Det er ikke importeret.
-   *[other] { $path } indeholder { $count } tekstbokse. Deres tekst sidder uden for dokumentets flow, så hvor det hører til i et manuskript, kan ikke besvares. De er ikke importeret.
+    [one] { $path } indeholder { $count } tekstfelt. Dets tekst står uden for dokumentets forløb, så det kan ikke afgøres, hvor den hører hjemme i et manuskript. Det importeres ikke.
+   *[other] { $path } indeholder { $count } tekstfelter. Deres tekst står uden for dokumentets forløb, så det kan ikke afgøres, hvor den hører hjemme i et manuskript. De importeres ikke.
 }
 import-diagnostic-embedded-object-dropped = { $count ->
-    [one] { $path } holder { $count } indlejret objekt: et diagram, en ligning eller lignende. Der er intet i et manuskript, der kunne holde det.
-   *[other] { $path } indeholder { $count } indlejrede objekter: et diagram, en ligning eller lignende. Der er intet i et manuskript, der kunne holde dem.
+    [one] { $path } indeholder { $count } indlejret objekt: et diagram, en ligning eller lignende. Der er intet i et manuskript, der kan rumme det.
+   *[other] { $path } indeholder { $count } indlejrede objekter: et diagram, en ligning eller lignende. Der er intet i et manuskript, der kan rumme dem.
 }
 import-diagnostic-field-flattened = { $count ->
-    [one] { $path } holder { $count } felt: et sidenummer, en krydsreference, en dato. Det holder teksten det var sidst viser og vil ikke opdatere igen.
-   *[other] { $path } indeholder { $count } felter: et sidenummer, en krydsreference, en dato. Hver holder teksten det sidst viste og vil ikke opdatere igen.
+    [one] { $path } indeholder { $count } felt: et sidetal, en krydshenvisning, en dato. Det beholder den tekst, det sidst viste, og opdateres ikke igen.
+   *[other] { $path } indeholder { $count } felter: et sidetal, en krydshenvisning, en dato. Hvert felt beholder den tekst, det sidst viste, og opdateres ikke igen.
 }
-import-diagnostic-unknown-style-level = { $path } bruger stil af { $detail }, som ligner en overskrift, men navne ikke niveau. Disse afsnit er importeret som prosa snarere end gættet på en dybde.
-import-diagnostic-comment-unanchored = Kommentaren var { $detail } i { $path } kunne ikke være knyttet til de ord, det var om. Det er holdt på sin genstand, hvor du kan flytte det.
-import-diagnostic-comment-not-carried = Kommentaren Note { $detail } i { $path } er ikke importeret, fordi intet i filen ankommer som tekst det kunne holdes på. Kopiér det fra filen, hvis du har brug for det.
+import-diagnostic-unknown-style-level = { $path } bruger typografien »{ $detail }«, der ligner en overskrift, men ikke angiver noget niveau. Disse afsnit importeres som tekst i stedet for at blive gættet ind på et niveau.
+import-diagnostic-comment-unanchored = Kommentaren »{ $detail }« i { $path } kunne ikke knyttes til de ord, den handlede om. Den bevares på sit element, hvor du kan flytte den.
+# The sibling of the line above, for the one case where there is no item to keep the
+# comment on: the file brought no text at all, or only headings.
+import-diagnostic-comment-not-carried = Kommentaren »{ $detail }« i { $path } importeres ikke, fordi intet i filen kommer ind som tekst, den kunne knyttes til. Kopiér den fra filen, hvis du har brug for den.
 import-diagnostic-comment-replies-flattened = { $count ->
-    [one] { $count } svarede i { $path } navngivet en kommentar, der ikke er i filen, så det ankommer som en kommentar af sin egen.
-   *[other] { $count } svar i { $path } navngivet en kommentar, der ikke er i filen, så de ankommer som kommentarer af deres egne.
+    [one] { $count } svar i { $path } henviste til en kommentar, der ikke findes i filen, så det kommer ind som en selvstændig kommentar.
+   *[other] { $count } svar i { $path } henviste til en kommentar, der ikke findes i filen, så de kommer ind som selvstændige kommentarer.
 }
 import-diagnostic-prose-not-verbatim = { $count ->
-    [one] { $count } afsnit i { $path } kunne ikke bringes over med sin formatering præcis som skrevet, så det ankommer som almindelig tekst. Sammenlign det med originalen.
-   *[other] { $count } stykker i { $path } kunne ikke bringes over med deres formatering præcis som skrevet, så de ankommer som almindelig tekst. Sammenlign dem med originalen.
+    [one] { $count } afsnit i { $path } kunne ikke overføres med formateringen præcis som skrevet, så det kommer ind som almindelig tekst. Sammenlign det med originalen.
+   *[other] { $count } afsnit i { $path } kunne ikke overføres med formateringen præcis som skrevet, så de kommer ind som almindelig tekst. Sammenlign dem med originalen.
 }
 import-diagnostic-styled-spaces-not-carried = { $count ->
-    [one] I { $path }, { $count } strækning af blank plads blev understreget eller slået igennem, en linje tilbage til at udfylde for eksempel. Skribisto holder hverken linje på rum alene, så det ankommer som almindeligt rum, eller slet ikke, hvor det starter eller slutter et afsnit.
-   *[other] I { $path }, { $count } strækninger af blank plads blev understreget eller slået igennem, linjer tilbage til at udfylde for eksempel. Skribisto holder hverken linje på rum alene, så de ankommer som almindeligt rum, eller slet ikke, hvor de starter eller slutter et afsnit.
+    [one] I { $path } var { $count } stykke tomt mellemrum understreget eller gennemstreget, f.eks. en linje til at udfylde. Skribisto bevarer ingen af de to streger på rene mellemrum, så det kommer ind som almindelige mellemrum, eller slet ikke, hvor det begynder eller afslutter et afsnit.
+   *[other] I { $path } var { $count } stykker tomt mellemrum understreget eller gennemstreget, f.eks. linjer til at udfylde. Skribisto bevarer ingen af de to streger på rene mellemrum, så de kommer ind som almindelige mellemrum, eller slet ikke, hvor de begynder eller afslutter et afsnit.
 }
+# List items nested deeper than the importer keeps, placed at the deepest level it keeps.
+# $count is how many items; $limit is that deepest level, a number.
 import-diagnostic-list-nesting-flattened = { $count ->
-    [one] { $count } listepunkt i { $path } blev indlejret mere end { $limit } niveauer dybt. Det ankommer til niveau { $limit }, den dybeste Skribisto holder, med sine ord og formatering.
-   *[other] { $count } liste poster i { $path } blev indlejret mere end { $limit } niveauer dybt. De ankommer til niveau { $limit }, den dybeste Skribisto holder, med deres ord og formatering.
+    [one] { $count } listepunkt i { $path } var indlejret mere end { $limit } niveauer dybt. Det kommer ind på niveau { $limit }, det dybeste Skribisto bevarer, med ord og formatering.
+   *[other] { $count } listepunkter i { $path } var indlejret mere end { $limit } niveauer dybt. De kommer ind på niveau { $limit }, det dybeste Skribisto bevarer, med ord og formatering.
 }
+# Tables too lopsided to complete into a grid, one row far wider than many short ones,
+# which arrive as the paragraphs of their cells. $count is how many tables.
 import-diagnostic-table-read-as-paragraphs = { $count ->
-    [one] { $count } tabel i { $path } har en række langt bredere end resten, alt for skævt til at lægge ud som et gitter. Dens celler ankommer som afsnit, den ene efter den anden, med deres ord og formatering.
-   *[other] { $count } tabeller i { $path } har en række langt bredere end resten, alt for skævt til at lægge ud som et gitter. Deres celler ankommer som afsnit, den ene efter den anden, med deres ord og formatering.
+    [one] { $count } tabel i { $path } har en række, der er langt bredere end resten, for skæv til at blive sat op som et gitter. Dens celler kommer ind som afsnit, det ene efter det andet, med ord og formatering.
+   *[other] { $count } tabeller i { $path } har en række, der er langt bredere end resten, for skæv til at blive sat op som et gitter. Deres celler kommer ind som afsnit, det ene efter det andet, med ord og formatering.
 }
+# Runs of spaces longer than the importer keeps, cut to that length. $count is how many
+# runs; $limit is the most spaces a run keeps, a number.
 import-diagnostic-spaces-shortened = { $count ->
-    [one] { $count } løb af pladser i { $path } var længere end { $limit } rum, og ankommer forkortet til { $limit }. Ordene omkring det er alle der.
-   *[other] { $count } løb af rum i { $path } var længere end { $limit } rum, og ankommer forkortet til { $limit }. Ordene omkring dem er alle der.
+    [one] { $count } række mellemrum i { $path } var længere end { $limit } mellemrum og kommer ind forkortet til { $limit }. Ordene omkring den er der alle sammen.
+   *[other] { $count } rækker mellemrum i { $path } var længere end { $limit } mellemrum og kommer ind forkortet til { $limit }. Ordene omkring dem er der alle sammen.
 }
-import-diagnostic-epigraph-not-carried = Mead{ $title } Meading by a epigraph, but a { $kind } cannot hold one. Citatet holdes øverst i sin tekst i stedet.
-import-diagnostic-epigraph-placement-ambiguous = En epigraph sidder mellem { $title } og { $below } og kunne hovedet enten. Det blev givet til { $title }, som er, hvor en epigraph normalt går.
+import-diagnostic-epigraph-not-carried = »{ $title }« indledes af et motto, men en { $kind } kan ikke rumme et. Citatet bevares i stedet øverst i teksten.
+import-diagnostic-epigraph-placement-ambiguous = Et motto står mellem »{ $title }« og »{ $below }« og kunne indlede begge. Det blev givet til »{ $title }«, hvor et motto normalt hører til.
 import-document-diagnostics = { $errors ->
     [0] { $warnings ->
-            [one] 1 ting at vide
-           *[other] { $warnings } ting at vide
+            [one] 1 ting, du bør vide
+           *[other] { $warnings } ting, du bør vide
         }
    *[other] { $errors ->
             [one] 1 fil kunne ikke læses
@@ -2002,33 +2321,36 @@ import-document-diagnostics = { $errors ->
 }
 import-document-diagnostics-none = Intet at rapportere.
 
+# ── Versions dock ──
 versions-title = Versioner
-versions-scope-synopsis = Resumé
+versions-scope-synopsis = Synopsis
 versions-scope-prose = Tekst
-versions-loading = Kigger gennem dine sikkerhedskopier
+versions-loading = Gennemgår dine sikkerhedskopier…
 versions-empty = Ingen tidligere version af dette endnu
-versions-error = Intet er gået tabt, men listen er måske ufuldstændig.
-versions-did-not-exist = Findes endnu ikke på { $date }
-versions-deleted-after = Udgået et stykke tid efter { $date }
+versions-error = Dine sikkerhedskopier kunne ikke læses. Intet er gået tabt, men listen er måske ufuldstændig
+versions-did-not-exist = Fandtes endnu ikke { $date }
+versions-deleted-after = Slettet et stykke tid efter { $date }
 versions-unreadable = { $count ->
-    [one] { $count } backup kunne ikke læses
+    [one] { $count } sikkerhedskopi kunne ikke læses
    *[other] { $count } sikkerhedskopier kunne ikke læses
 }
+# Counts what the project's own history dropped, which is why it names it: a
+# backup may still hold one of those states, and then it is in the list above.
 versions-thinned = { $count ->
-    [one] Ældre versioner tynde ud som de ældes. Projektets egen historie er allerede faldet { $count } tidligere tilstand af denne tekst.
-   *[other] Ældre versioner tynde ud som de ældes. Projektets egen historie er allerede faldet { $count } tidligere tilstande af denne tekst.
+    [one] Ældre versioner tyndes ud med alderen. Projektets egen historik har allerede smidt { $count } tidligere tilstand af denne tekst ud.
+   *[other] Ældre versioner tyndes ud med alderen. Projektets egen historik har allerede smidt { $count } tidligere tilstande af denne tekst ud.
 }
-versions-source-backup = Fra en backup
-versions-source-project = Fra projektets egen historie
-versions-list-caption = En indgang pr. ændring, ikke pr. sikkerhedskopi
-versions-pick-a-version = Vælg en version for at se hvad der ændrede sig
-versions-earliest = Der er intet ældre at sammenligne med.
-versions-no-change = Intet ændret i denne del af elementet
-versions-formatting-only = Kun formateringen ændret her. Ordene er de samme
-versions-show-unchanged = Vis uændret
-versions-hide-unchanged = Skjul uændret
+versions-source-backup = Fra en sikkerhedskopi
+versions-source-project = Fra projektets egen historik
+versions-list-caption = Én post pr. ændring, ikke pr. sikkerhedskopi
+versions-pick-a-version = Vælg en version for at se, hvad der er ændret
+versions-earliest = Den tidligste registrerede version. Der er intet ældre at sammenligne den med.
+versions-no-change = Intet er ændret i denne del af elementet
+versions-formatting-only = Kun formateringen er ændret her. Ordene er de samme
+versions-show-unchanged = Vis uændrede
+versions-hide-unchanged = Skjul uændrede
 versions-next-change = Næste ændring
-versions-near = i nærheden af { $text }
+versions-near = nær »{ $text }«
 versions-words-added = { $count ->
     [one] { $count } ord tilføjet
    *[other] { $count } ord tilføjet
@@ -2041,144 +2363,165 @@ versions-blocks-moved = { $count ->
     [one] { $count } afsnit flyttet
    *[other] { $count } afsnit flyttet
 }
-versions-pin = Pin backup denne version kom fra. Automatisk oprydning vil aldrig slette det
-versions-unpin = Fjern sikkerhedskopi denne version kom fra. Automatisk oprydning kan slette det igen
+# Names the backup, not the version: a pin is held against a file path, so it
+# keeps the whole snapshot this row's text was read out of. See versions-pin-note.
+versions-pin = Fastgør den sikkerhedskopi, denne version kommer fra. Automatisk oprydning sletter den aldrig
+versions-unpin = Frigør den sikkerhedskopi, denne version kommer fra. Automatisk oprydning kan slette den igen
 versions-pinned-only = Vis kun fastgjorte versioner
-versions-pin-note = Kun versioner fra en sikkerhedskopi kan fastgøres. En pin holder en fil, og projektets egen historie er ikke en.
-versions-pinned-empty = Intet her er fastlåst endnu
-versions-pinned-empty-log = Kun versioner fra en backup kan fastgøres. En nål holder en fil, og projektets egen historie er ikke en.
+versions-pin-note = Kun versioner fra en sikkerhedskopi kan fastgøres. En fastgørelse bevarer en fil, og projektets egen historik er ikke en fil.
+versions-pinned-empty = Intet her er fastgjort endnu
+# The same sentence with the reason, for a list that actually holds a version no
+# pin can reach. On an all-backup list the reason is true and irrelevant, and
+# reads as an explanation for an emptiness it did not cause.
+versions-pinned-empty-log = Intet her er fastgjort endnu. Kun versioner fra en sikkerhedskopi kan fastgøres. En fastgørelse bevarer en fil, og projektets egen historik er ikke en fil.
 versions-range-filter = Vis kun versioner mellem to datoer
-versions-filtered-empty = Ingen version matcher de filtre du sætter
+versions-filtered-empty = Ingen version matcher de filtre, du har valgt
 versions-clear-filters = Ryd filtrene
-versions-last-30-days = De sidste 30 dage
+# Also used by the Timeline band's filter row, like versions-error above it.
+versions-last-30-days = Seneste 30 dage
 versions-restore-button = Gendan denne version
 versions-restore-confirm-title = Erstat denne tekst med versionen fra { $date }?
-versions-restore-confirm-text = Det, De har nu, vil blive erstattet af den tekst, som dette punkt havde på { $date }.
-versions-restore-confirm-with-comments = Det, De har nu, vil blive erstattet af den tekst, som dette punkt havde på { $date }. { $count ->
-    [one] { $count } kommentarer er forankret i den aktuelle tekst og kan efterlades forældreløse.
-   *[other] { $count } kommentarer er forankret i den nuværende tekst og kan efterlades forældreløse.
+versions-restore-confirm-text = Det, du har nu, erstattes af den tekst, elementet havde { $date }.
+versions-restore-confirm-with-comments = Det, du har nu, erstattes af den tekst, elementet havde { $date }. { $count ->
+    [one] { $count } kommentar er forankret i den nuværende tekst og kan blive forældreløs.
+   *[other] { $count } kommentarer er forankret i den nuværende tekst og kan blive forældreløse.
 }
-versions-restore-confirm-undo-note = En backup er lavet først, og Ctrl + Z omgør dette i et trin.
-versions-restored-toast = Gendannede versionen fra { $date }
+versions-restore-confirm-undo-note = Der tages først en sikkerhedskopi, og Ctrl+Z fortryder det hele i ét trin.
+versions-restored-toast = Versionen fra { $date } er gendannet
 versions-undo = Fortryd
-versions-restore-row-gone = Denne post er ikke længere i dette projekt
-versions-restore-no-home = Dette punkt har ændret type siden da, og den gamle tekst har ingen steder at gå i det
-versions-restore-no-safety-copy = Din sikkerhedskopi kørte ikke, så intet blev ændret.
-versions-restore-failed = Genoprettelsen mislykkedes: { $error }
-versions-restore-backup-busy = En backup kører allerede. Prøv igen om et øjeblik
-versions-restore-in-backup-file = Du skal kigge på en backup-fil; åbne projektet selv for at gendanne ind i det
+versions-restore-row-gone = Elementet findes ikke længere i dette projekt
+versions-restore-no-home = Elementet har skiftet type siden da, og den gamle tekst har ingen plads i det
+versions-restore-no-safety-copy = Sikkerhedskopien blev ikke taget, så intet er ændret
+versions-restore-failed = Gendannelsen mislykkedes: { $error }
+versions-restore-backup-busy = En sikkerhedskopiering er allerede i gang. Prøv igen om lidt
+versions-restore-in-backup-file = Du ser på en sikkerhedskopifil; åbn selve projektet for at gendanne i det
 versions-restore-no-project = Intet projekt er åbent
-versions-recreate-button = Kom tilbage med den.
-versions-recreate-picker-title = Hvor skal den hen?
-versions-recreate-picker-empty = Dette projekt har ingen bindemiddel til at sætte det i
-versions-recreate-picker-confirm = Kom tilbage med det.
-versions-recreate-picker-cancel = Annuller
-versions-recreate-untitled = Denne post
-versions-recreate-confirm-title = Får du { $item } tilbage?
-versions-recreate-confirm-text = Det vil blive tilføjet til { $destination }, med den tekst, det havde på { $date }.
-versions-recreate-confirm-undo-note = Fortryd, på den besked, der følger, tager det lige tilbage ud.
-versions-recreated-toast = Der er { $item } tilbage i dit projekt
+# ── Bringing a deleted row back ──
+versions-recreate-button = Hent det tilbage…
+versions-recreate-picker-title = Hvor skal det placeres?
+versions-recreate-picker-empty = Projektet har intet ringbind at placere det i
+versions-recreate-picker-confirm = Hent det tilbage hertil
+versions-recreate-picker-cancel = Annullér
+versions-recreate-untitled = dette element
+versions-recreate-confirm-title = Hent »{ $item }« tilbage?
+versions-recreate-confirm-text = Det føjes til { $destination } med den tekst, det havde { $date }.
+# NOT "Ctrl+Z": that undoes the focused editor's *document*, and this creates a
+# binder row. The way back is the Undo on the toast, as it is for trash and
+# comments. See versions-recreated-toast.
+versions-recreate-confirm-undo-note = Fortryd i den meddelelse, der følger, fjerner det straks igen.
+versions-recreated-toast = »{ $item }« er tilbage i dit projekt
 versions-recreated-partial-toast = { $count ->
-    [one] { $item } er tilbage, men en af dens tekster kunne ikke læses
-   *[other] { $item } er tilbage, men { $count } af dens tekster kunne ikke læses
+    [one] »{ $item }« er tilbage, men en af dets tekster kunne ikke læses
+   *[other] »{ $item }« er tilbage, men { $count } af dets tekster kunne ikke læses
 }
-versions-recreate-already-here = Det er allerede i dit projekt.
-versions-recreate-no-destination = Vælg et sted i ringbind for at sætte det
-versions-recreate-unreadable = At backup kunne ikke læses, så intet blev tilføjet
-versions-recreate-failed = Kunne ikke bringe det tilbage: { $error }
-versions-changed-percent = { $percent }% af dette ændrede sig
+versions-recreate-already-here = Elementet findes allerede i dit projekt
+versions-recreate-no-destination = Vælg et sted i ringbindet at placere det
+versions-recreate-unreadable = Sikkerhedskopien kunne ikke læses, så intet blev tilføjet
+versions-recreate-failed = Det kunne ikke hentes tilbage: { $error }
+versions-changed-percent = { $percent } % af dette er ændret
 versions-hidden-paragraphs = { $count ->
-    [one] Note: { $count } uændret afsnit
-   *[other] - { $count } uændrede afsnit
+    [one] … { $count } uændret afsnit …
+   *[other] … { $count } uændrede afsnit …
 }
 
+# ── Timeline band ──
 timeline-title = Gå tilbage i tiden
 timeline-coverage = { $count ->
-    [one] { $count } version indspillet, går tilbage til { $oldest }
-   *[other] { $count } indspillede versioner, der går tilbage til { $oldest }
+    [one] { $count } version registreret, tilbage til { $oldest }
+   *[other] { $count } versioner registreret, tilbage til { $oldest }
 }
-timeline-loading = Kigger igennem dit projekt er forbi
+timeline-loading = Gennemgår dit projekts fortid…
 timeline-empty = Der er endnu ikke registreret nogen version af dette projekt
-timeline-no-changes = Intet har ændret sig siden da.
-timeline-no-text-changes = Ingen tekst har ændret sig siden da
-timeline-slider-label = Optaget version
-timeline-series-name = Projektstørrelse
-timeline-bars-caption = Hver bar er en indspillet version, så høj som projektet var dengang. Den fremhævede en er, hvad du skal kigge på.
-timeline-bars-caption-periods = For mange versioner til at vise én efter én, så hver bar er en { $period }, så høj som projektet var ved udgangen af det.
+timeline-no-changes = Intet er ændret siden da
+timeline-no-text-changes = Ingen tekst er ændret siden da
+timeline-slider-label = Registreret version
+timeline-series-name = Projektets størrelse
+timeline-bars-caption = Hver søjle er en registreret version, lige så høj som projektet var dengang. Den fremhævede er den, du ser på.
+timeline-bars-caption-periods = For mange versioner til at vise dem én for én, så hver søjle er en { $period }, lige så høj som projektet var ved dens slutning.
 timeline-unit-hour = time
 timeline-unit-day = dag
 timeline-unit-week = uge
 timeline-unit-month = måned
 timeline-range-filter = Vis kun versioner mellem to datoer
-timeline-range-empty = Ingen version blev registreret på disse datoer
+timeline-range-empty = Der blev ikke registreret nogen version i det tidsrum
 timeline-open-period = Åbn denne periode
-timeline-show-all = Vis hele historien
+timeline-show-all = Vis hele historikken
 timeline-changed-since = { $count ->
-    [one] { $count } post varierer mellem { $date } og dit projekt nu
-   *[other] { $count } poster varierer mellem { $date } og dit projekt nu
+    [one] { $count } element er forskelligt mellem { $date } og dit projekt nu
+   *[other] { $count } elementer er forskellige mellem { $date } og dit projekt nu
 }
 timeline-kind-added = Skrevet siden
 timeline-kind-removed = Ikke længere i projektet
-timeline-kind-changed = Edited siden
+timeline-kind-changed = Redigeret siden
 timeline-kind-moved = Flyttet siden
-timeline-not-yet-written = Dette eksisterede endnu ikke på det tidspunkt
-timeline-no-text-of-its-own = Dette har ingen egen tekst. Det er en kurs for, hvad der er inde i det
+timeline-not-yet-written = Dette fandtes endnu ikke på det tidspunkt
+timeline-no-text-of-its-own = Dette har ingen tekst selv. Det er en overskrift for det, der ligger inden i det
 timeline-reader-close = Luk
-timeline-reader-stamp = Som det var på { $date }
-timeline-reader-loading = Åbning af den registrerede version
-timeline-reader-unreadable = Denne optagelse kunne ikke læses. Sikkerhedskopien kan være blevet flyttet, slettet, eller være på et drev, der isn 't tilsluttet.
-timeline-reader-compared = Som det var på { $date }, sat imod, hvad det siger nu
-timeline-reader-diff-legend = Der er gået et stykke tid siden, og det er blevet understreget.
-timeline-reader-view-label = Hvad skal du vise
+timeline-reader-stamp = Som det var { $date }
+timeline-reader-loading = Åbner den registrerede version…
+timeline-reader-unreadable = Denne registrering kunne ikke læses. Sikkerhedskopien er måske flyttet, slettet eller ligger på et drev, der ikke er tilsluttet.
+timeline-reader-compared = Som det var { $date }, sat over for det, der står nu
+timeline-reader-diff-legend = Gennemstreget er forsvundet siden; understreget er tilføjet.
+timeline-reader-view-label = Hvad der skal vises
 timeline-reader-view-diff = Ændringer
 timeline-reader-view-text = Tekst
-timeline-reader-deleted = Dette er ikke længere i dit projekt. Du kan læse det og kopiere det her.
-timeline-prose-only-record = Dette punkt kommer fra projektets egen historie, som holder tekst og intet andet, så hvad der blev slettet eller flyttet, da det kan ikke vises. Vælg en backup for det.
+timeline-reader-deleted = Dette findes ikke længere i dit projekt. Du kan læse det og kopiere det ud herfra.
+timeline-prose-only-record = Dette punkt kommer fra projektets egen historik, som kun gemmer tekst og intet andet, så det, der er slettet eller flyttet siden, kan ikke vises. Vælg en sikkerhedskopi til det.
 
+# The Settings tree's section for pages an extension contributed.
 settings-sec-extensions = Udvidelser
 
+# Writing games pane: self-imposed drafting constraints
 settings-group-games-forward = Altid fremad
-settings-games-forward-toggle = Afspil altid fremad
+settings-games-forward-toggle = Spil »Altid fremad«
 settings-games-forward-hint =
-    Mens du spiller, intet du har skrevet kan tages tilbage: Backspace, Slet,
-    Klip, drag- and - drop og Fortryd er alle deaktiveret i de overflader, du vælger nedenfor.
-    Du kan stadig skrive, indsætte, formatere og bevæge dig frit rundt. Udkastet vokser kun.
+    Mens du spiller, kan intet af det, du har skrevet, tages tilbage: Backspace, Delete,
+    Klip, træk og slip og Fortryd er slået fra på de flader, du vælger nedenfor.
+    Du kan stadig skrive, sætte ind, formatere og bevæge dig frit rundt. Udkastet vokser kun.
 settings-games-session-warning =
-    Dette er et per-session valg: det er aldrig gemt. Lukning af projektet, eller stoppe
-    Skribisto, altid slutter spillet, og alt hvad du skrev, mens du spiller bliver
-    Umuligt igen i det øjeblik, det gør.
-settings-group-games-scope = Hvis den finder anvendelse
-settings-games-in-prose = Manuskript prose
+    Valget gælder kun denne session og gemmes aldrig. Når du lukker projektet eller afslutter
+    Skribisto, slutter spillet altid, og alt, hvad du skrev, mens du spillede, kan
+    fortrydes igen fra det øjeblik.
+settings-group-games-scope = Hvor det gælder
+settings-games-in-prose = Manuskriptets tekst
 settings-games-in-synopsis = Synopser
 settings-games-scope-hint =
-    Kommentarer, fodnoter og titler er aldrig frosne: de er, hvor du bemærker fix
-    Du har lige forbudt dig selv at lave.
+    Kommentarer, fodnoter og titler fryses aldrig: det er dér, du noterer den rettelse,
+    du lige har forbudt dig selv at lave.
 settings-games-inert-warning =
-    Altid fremad er på, men gælder for ingenting. Tik mindst en overflade over,
-    eller det ændrer intet som du skriver.
+    »Altid fremad« er slået til, men gælder ingen steder. Markér mindst én flade ovenfor,
+    ellers ændrer det intet, mens du skriver.
 
-games-title = Skrivning spil
+# Writing games dock (leading rail) + the status-bar warning while a game is on
+games-title = Skrivelege
 games-forward-name = Altid fremad
 games-forward-blurb =
-    Draft uden at tage noget tilbage. Sletning, skæring og udløsning er deaktiveret
-    Skriv den næste sætning i stedet for at lave den sidste.
-games-forward-playing = Afspiller: sletning er deaktiveret
-games-forward-idle = Ikke at spille
-games-session-note = Det slutter, når du lukker projektet.
-games-scope-prose-and-synopsis = Gælder for din prosa og synopser.
-games-scope-prose = Det gælder for din prosa.
-games-scope-synopsis = Det gælder dine synopser.
-games-scope-nothing = Finder ikke anvendelse endnu. Vælg en overflade i Indstillinger.
-games-settings-link = Skrivning af spilindstillinger
+    Skriv udkast uden at tage noget tilbage. Sletning, klip og fortryd er slået fra,
+    mens du spiller. Skriv den næste sætning i stedet for at rette den forrige.
+games-forward-playing = Spiller: sletning er slået fra
+games-forward-idle = Spiller ikke
+games-session-note = Slutter, når du lukker projektet.
+games-scope-prose-and-synopsis = Gælder din tekst og dine synopser.
+games-scope-prose = Gælder din tekst.
+games-scope-synopsis = Gælder dine synopser.
+games-scope-nothing = Gælder endnu ingen steder. Vælg en flade i Indstillinger.
+games-settings-link = Indstillinger for skrivelege…
 statusbar-games-forward = Altid fremad
 statusbar-games-forward-tooltip =
-    Altid fremad er på: sletning, skæring og udløsning er deaktiveret, mens du
-    draft. Klik for at stoppe med at spille.
+    »Altid fremad« er slået til: sletning, klip og fortryd er slået fra, mens du
+    skriver udkast. Klik for at stoppe spillet.
+# ── Word / character targets ──────────────────────────────────────────────────
+# The shared vocabulary every surface that shows a target uses: the Inspector, the
+# Overview column, the status bar, a container page and the Distribute preview. Plurals
+# select on the bare number (`$g` / `$n`) while the visible figure is the grouped string,
+# because a count printed with thin spaces is no longer a number Fluent can select on.
 goal-progress-words = { $g ->
-   *[other] Ord: { $count } / { $goal }
+    [one] { $count } af { $goal } ord
+   *[other] { $count } af { $goal } ord
 }
 goal-progress-characters = { $g ->
-   *[other] Tegn: { $count } / { $goal }
+    [one] { $count } af { $goal } tegn
+   *[other] { $count } af { $goal } tegn
 }
 goal-count-words = { $n ->
     [one] { $count } ord
@@ -2191,66 +2534,85 @@ goal-count-characters = { $n ->
 goal-unit-words = Ord
 goal-unit-characters = Tegn
 
+# The Inspector's per-item target.
 inspector-goal = Mål
 inspector-goal-none = Intet mål
 
+# The Overview's target column, and the note on a row the export leaves out.
 overview-col-goal = Mål
-overview-excluded-from-export = Venstre ud af eksporten, så det tæller til ingen total
+overview-excluded-from-export = Udeladt af eksporten, så det tæller ikke med i nogen sum
 
+# A container's own page: what the targets set inside it add up to. Deliberately not a
+# target itself, and worded so it cannot be read as one.
 goal-subtree-total-words = { $count ->
-    [one] { $items } mål inde tilføjer op til { $words } ord
-   *[other] { $items } mål inde tilføje op til { $words } ord
+    [one] { $items } mål herinde giver tilsammen { $words } ord
+   *[other] { $items } mål herinde giver tilsammen { $words } ord
 }
 goal-subtree-total-characters = { $count ->
-    [one] { $items } mål inde tilføjer op til { $words } tegn
-   *[other] { $items } mål inde tilføje op til { $words } tegn
+    [one] { $items } mål herinde giver tilsammen { $words } tegn
+   *[other] { $items } mål herinde giver tilsammen { $words } tegn
 }
 
+# The New Work panel's counting-unit picker, beside the language it is seeded from.
 new-work-goal-unit = Tæl i
-new-work-goal-unit-hint = Bruges til hvert ord eller karakter mål i dette projekt. Changable senere.
+new-work-goal-unit-hint = Bruges til alle mål for ord eller tegn i dette projekt. Kan ændres senere.
 
+# Settings ▸ Work ▸ Structure: the project's counting unit, and the warning shown before
+# switching it. No conversion happens, in either direction.
 settings-group-goal-unit = Mål
-settings-goal-unit-switch-title = Skift tællingsenhed
-settings-goal-unit-switch-text = De mål og milepæle, der allerede er fastsat for dette projekt, blev indtastet i { $from }. Skift til { $to } ikke konvertere dem, så alle eksisterende antal vil nu blive læst som { $to }.
-settings-goal-unit-switch-informative = Intet går tabt. Skift tilbage til enhver tid for at genoprette den oprindelige læsning, og opdater derefter de mål, du ønsker at holde.
+settings-goal-unit-switch-title = Skift tælleenhed
+settings-goal-unit-switch-text = De mål og milepæle, der allerede er sat for projektet, blev angivet i { $from }. Skifter du til { $to }, konverteres de ikke, så alle eksisterende tal vil nu blive læst som { $to }.
+settings-goal-unit-switch-informative = Intet går tabt. Skift tilbage når som helst for at få den oprindelige tolkning igen, og opdatér derefter de mål, du vil beholde.
 settings-goal-unit-switch-confirm = Skift
 
-goal-distribute-action = FordelingName
+# Distribute: sharing a container's target across the pieces inside it.
+goal-distribute-action = Fordel…
 distribute-title = Fordel målet
-distribute-empty = Der er intet i det her at dele målet ud til.
-distribute-weight = Del ud
+distribute-empty = Der er intet herinde at fordele målet på.
+distribute-weight = Fordel efter
 distribute-weight-length = Efter længde
-distribute-weight-rows = I stykker
-distribute-weight-even = Aftenweather condition
+distribute-weight-rows = Efter antal dele
+distribute-weight-even = Ligeligt
 distribute-overwrite = Erstat mål, der allerede er sat
-distribute-col-item = Konto
+distribute-col-item = Element
 distribute-col-current = Nu
 distribute-col-proposed = Efter
-distribute-total = Disse beløb udgør { $total } mod et mål på { $goal }.
-distribute-over-budget = De mål, der allerede er sat inde, kommer til { $over } mere end denne container. Hæv sit mål, lavere deres, eller erstatte dem.
+distribute-total = Tilsammen giver de { $total } mod et mål på { $goal }.
+distribute-over-budget = De mål, der allerede er sat herinde, giver { $over } mere end beholderens eget mål. Hæv dets mål, sænk deres, eller erstat dem.
 distribute-apply = Fordel
-distribute-cancel = Annuller
+distribute-cancel = Annullér
 
-milestone-target-gone = Målet slettet
+# Milestones on the Book's pace: a dated waypoint, of one of two kinds.
+milestone-target-gone = Målet er slettet
 milestone-no-target = Intet mål
 milestone-add = Tilføj
-milestone-add-label = Hvad skal man opnå?
+milestone-add-label = Hvad der skal være nået
 
+# The writing-plan summary shown once when a project with an active plan opens.
 pace-summary-title = Hvor bogen står
 pace-summary-remaining = { $words } tilbage
 pace-summary-open = Åbn planen
 pace-summary-close = Luk
-pace-summary-dont-show = Vis ikke dette når du åbner
-pace-summary-menu = Skrivning af plan
+pace-summary-dont-show = Vis ikke dette ved åbning
+# Work menu row that opens the same card on demand, greyed out when the project has
+# no active writing plan.
+pace-summary-menu = Skriveplan…
 
-menu-help-topics = Hjælp emner (&T)
-menu-help-shortcuts = Tastaturgenveje (&K)
-menu-help-website = Skribisto på nettet (&W)
-menu-help-report = Rapportér et problem (&R)
-menu-help-check-updates = Tjek for opdateringer (&U)
-menu-command-palette = Kommando PaletteComment (&C)
+# ── Help ─────────────────────────────────────────────────────────────────────
+# The Help window (crates/teksilo_ui/src/help/), its table of contents and the
+# keyboard-shortcuts sheet. Topic *bodies* are not here: they are Djot documents
+# under crates/teksilo_ui/help/<locale>/, one file per topic per locale.
+menu-help-topics = Hjælpe&emner
+menu-help-shortcuts = &Tastaturgenveje…
+menu-help-website = Skribisto på &nettet
+menu-help-report = &Rapportér et problem…
+menu-help-check-updates = Søg efter op&dateringer
+menu-command-palette = &Kommandopalet…
 
-learn-help-topics = Hjælp emner
+# The Learn pane's rows in the Launcher. Separate keys from the Help menu's rows
+# on purpose: a menu label carries an `&` mnemonic, and a Button renders that
+# ampersand literally ("Help &Topics"), which is what shipped for one build.
+learn-help-topics = Hjælpeemner
 learn-shortcuts = Tastaturgenveje
 learn-website = Skribisto på nettet
 
@@ -2259,40 +2621,48 @@ help-filter-topics = Filtrér emner
 help-no-matching-topic = Intet emne matcher.
 help-topic-missing = Dette emne er ikke længere tilgængeligt.
 help-back = Tilbage
-help-not-translated = Denne artikel findes endnu ikke på dansk. Den vises på engelsk.
+help-not-translated = Denne side er endnu ikke oversat, så den vises på engelsk.
 
 help-section-getting-started = Kom i gang
 help-section-writing = Skrivning
-help-section-reviewing = Gennemgang
+help-section-reviewing = Gennemsyn
 help-section-exchanging = Få ord ind og ud
-help-section-keeping = Holde dit projekt sikkert
+help-section-keeping = Pas på dit arbejde
 help-section-extensions = Udvidelser
 
 help-topic-getting-started = Dit første projekt
-help-topic-writing-model = Hvordan en bog er sat sammen
-help-topic-drafts-and-old-versions = Holde et ældre udkast
+help-topic-writing-model = Hvordan en bog er bygget op
+help-topic-drafts-and-old-versions = Gem et ældre udkast
 help-topic-goals-and-pace = Mål og tempo
 help-topic-comments = Kommentarer
 help-topic-round-trip = Send din bog til en læser
-help-topic-export = Eksportering
-help-topic-import-documents = Importdokumenter
-help-topic-import-projects = At bringe et helt projekt på tværs
-help-topic-backups-and-versions = Backup og versioner
+help-topic-export = Eksport
+help-topic-import-documents = Import af dokumenter
+help-topic-import-projects = Overfør et helt projekt
+help-topic-backups-and-versions = Sikkerhedskopier og versioner
 
 help-shortcuts-title = Tastaturgenveje
-help-shortcuts-filter = Filtergenveje
-help-shortcuts-no-matches = Ingen genvej passer.
-help-shortcuts-rebind = Skift genveje
+help-shortcuts-filter = Filtrér genveje
+help-shortcuts-no-matches = Ingen genvej matcher.
+help-shortcuts-rebind = Skift genveje…
 help-shortcuts-close = Luk
 
 command-palette-placeholder = Skriv en kommando
 
-shortcut-name-binder-duplicate = Dupliker
+# ── Shortcut names ───────────────────────────────────────────────────────────
+# The user-visible name of every rebindable `Shortcut` (`Shortcut::name`,
+# teksilo-core), reactive to a locale switch via `LocalizedString`/
+# `Prop<String>`. Read by Settings ▸ Keymap, the Help ▸ Keyboard shortcuts
+# sheet and the command palette. Kept in lockstep with the `Shortcut::new(...)`
+# calls in `app/commands/*.rs`, `binder/dock.rs` and `welcome/panel.rs`. Where
+# the same command already carries a menu label above, that exact wording is
+# reused here so the menu and the shortcut list agree.
+shortcut-name-binder-duplicate = Duplikér
 shortcut-name-comments-add = Tilføj kommentar
-shortcut-name-comments-add-paragraph = Kommentar til afsnit
-shortcut-name-spellcheck-toggle = Tjek stavning
-shortcut-name-editor-tab-close = Luk faneblad
-shortcut-name-editor-tab-pin = Pin- eller unpin- faneblad
+shortcut-name-comments-add-paragraph = Kommentér afsnit
+shortcut-name-spellcheck-toggle = Kontrollér stavning
+shortcut-name-editor-tab-close = Luk fane
+shortcut-name-editor-tab-pin = Fastgør eller frigør fane
 shortcut-name-editor-save = Gem
 shortcut-name-work-export = Eksportér…
 shortcut-name-work-new = Nyt projekt
@@ -2302,174 +2672,375 @@ shortcut-name-work-close = Luk projekt
 shortcut-name-app-settings = Indstillinger
 shortcut-name-app-quit = Afslut
 shortcut-name-editor-insert-footnote = Indsæt fodnote
-shortcut-name-format-scene-break = Indsæt Scene Break
-shortcut-name-format-major-scene-break = Indsæt større scene break
+shortcut-name-format-scene-break = Indsæt sceneskift
+shortcut-name-format-major-scene-break = Indsæt stort sceneskift
 shortcut-name-format-link = Indsæt link
-shortcut-name-format-mark-nbsp = Indsæt nulpunktsmellemrum
-shortcut-name-format-mark-nbhyphen = Indsæt not- break Hyphen
-shortcut-name-format-mark-nnbsp = Indsæt smallere nulpunktsmellemrum
-shortcut-name-format-mark-zwsp = Indsæt Zerobredde mellemrum
+shortcut-name-format-mark-nbsp = Indsæt hårdt mellemrum
+shortcut-name-format-mark-nbhyphen = Indsæt hård bindestreg
+shortcut-name-format-mark-nnbsp = Indsæt smalt hårdt mellemrum
+shortcut-name-format-mark-zwsp = Indsæt nulbredde-mellemrum
 shortcut-name-go-next = Næste
 shortcut-name-go-prev = Forrige
 shortcut-name-go-to = Gå til
-shortcut-name-outline-toggle = Slå omrids til / fra
-shortcut-name-preview-toggle = Slå forhåndsvisningsbånd til og fra
-shortcut-name-view-fullscreen = Slå fuldskærm til / fra
-shortcut-name-view-focus-mode = Slå distraktion- free tilstand til / fra
-shortcut-name-editor-size-increase = Forøg tekststørrelse
-shortcut-name-editor-size-decrease = Formindsk tekststørrelse
+shortcut-name-outline-toggle = Vis eller skjul disposition
+shortcut-name-preview-toggle = Vis eller skjul forhåndsvisningsbåndet
+shortcut-name-view-fullscreen = Fuld skærm til/fra
+shortcut-name-view-focus-mode = Distraktionsfri tilstand til/fra
+shortcut-name-editor-size-increase = Forstør tekst
+shortcut-name-editor-size-decrease = Formindsk tekst
 shortcut-name-editor-size-reset = Nulstil tekststørrelse
 shortcut-name-editor-find = Find
 shortcut-name-editor-replace = Erstat
-shortcut-name-editor-find-next = Næste match
-shortcut-name-editor-find-prev = Forrige Match
+shortcut-name-editor-find-next = Næste forekomst
+shortcut-name-editor-find-prev = Forrige forekomst
 shortcut-name-search-show = Søg i projekt
 shortcut-name-search-replace = Erstat i projekt
-shortcut-name-outline-open-to-side = Åbn til siden
-shortcut-name-help-topics = Hjælp emner
+shortcut-name-outline-open-to-side = Åbn ved siden af
+shortcut-name-help-topics = Hjælpeemner
 shortcut-name-help-shortcuts = Tastaturgenveje
 shortcut-name-help-website = Skribisto på nettet
 shortcut-name-help-report = Rapportér et problem
-shortcut-name-help-check-updates = Tjek for opdateringer
+shortcut-name-help-check-updates = Søg efter opdateringer
+# Raised only by the Help menu command, which the reader asked for.
 update-check-behind = Version { $version } er tilgængelig.
-update-check-current = Du kører den nyeste version.
-update-check-failed = Kunne ikke tjekke for en nyere version. { $error }
-shortcut-name-command-palette = Kommandopalette
-help-section-reference = Hvad er det?
+update-check-current = Du bruger den nyeste version.
+update-check-failed = Der kunne ikke søges efter en nyere version. { $error }
+shortcut-name-command-palette = Kommandopalet
+help-section-reference = Begreber
 
+# Titles for the glossary entries whose concept is not something you can create, so
+# there is no "＋ Create" label to reuse. See help.rs::concept_topics.
 help-concept-scene-break = Sceneskift
-help-concept-major-scene-break = Større scenebrud
-help-concept-find-in-prose = Find i prose
+help-concept-major-scene-break = Stort sceneskift
+help-concept-find-in-prose = Søg i teksten
 help-concept-story-bible = Historiebibel
 help-concept-goal-unit = Ord eller tegn
 help-concept-goal-progress = Fremskridt
 help-concept-manuscript-words = Hvad der tæller som manuskriptet
-help-concept-exportable = Forladt fra eksport
-help-concept-distribute = Deling et mål ud
-help-concept-subtree-total = Hvad målene inde i tilføjer op til
+help-concept-exportable = Udeladt af eksporten
+help-concept-distribute = Fordeling af et mål
+help-concept-subtree-total = Hvad målene herinde giver tilsammen
 help-concept-milestone = Milepæl
-help-concept-pace-plan = Passeplan
+help-concept-pace-plan = Tempoplan
 
+# Glossary titles for the feature-concept web. See help.rs::concept_topics.
 help-concept-tag = Mærke
-help-concept-label = Kort beskrivelse
+help-concept-label = Etiket
 help-concept-point-of-view = Synsvinkel
 help-concept-epigraph = Motto
 help-concept-footnote = Fodnote
-help-concept-chapter-mode = Kapitel form
+help-concept-chapter-mode = Kapitlets form
 help-concept-comment = Kommentar
 help-concept-backup = Sikkerhedskopi
 help-concept-version = Version
 help-concept-trash = Papirkurv
 help-concept-spellcheck = Stavekontrol
 help-concept-search-replace = Søg og erstat
-help-concept-note-template = Note skabelon
-help-concept-story-bible-entry = Indgang i historiebibel
+help-concept-note-template = Noteskabelon
+help-concept-story-bible-entry = Opslag i historiebiblen
 help-concept-text-replacement = Teksterstatning
-help-concept-smart-punctuation = Smart punktuering
-help-concept-export-style = Eksportér stil
-help-concept-round-trip-marks = Round- trip markeringer
+help-concept-smart-punctuation = Smart tegnsætning
+help-concept-export-style = Eksporttypografi
+help-concept-round-trip-marks = Returmarkører
 
+# The epigraph's attribution control. See tabs/shared/panes.rs::attribution_control.
 epigraph-mark-attribution = Kildelinje
-epigraph-mark-attribution-tip = Markér den linje, som omsorgen er i som citatet kilde, så det udskriver som en tildeling
-margin-lane-name = Marginmærker
+epigraph-mark-attribution-tip = Markér linjen med markøren som citatets kilde, så den udskrives som en kildeangivelse
+## Margin lane: the strip beside the scrollbar that maps a document
+margin-lane-name = Margenmærker
 margin-lane-provider-comments = Kommentarer
-margin-lane-provider-story-bible = Indgang i historiebibel
-margin-lane-provider-story-bible-hint = På en note Buds I prosa læsning, hvor denne indgang er navngivet, og scenerne fortalte gennem sine øjne. Også markerer disse navne i prosa selv.
+margin-lane-provider-story-bible = Opslag i historiebiblen
+margin-lane-provider-story-bible-hint = I en notes visning I teksten: hvor opslaget nævnes, og de scener, der fortælles gennem dets øjne. Markerer også navnene i selve teksten.
 margin-lane-mark-point-of-view = Fortalt herfra
-margin-lane-mark-named-here = Opkaldt her
-margin-lane-provider-comments-hint = Når teksten er vedlagt en note
-margin-lane-provider-search = Søg hits
-margin-lane-provider-search-hint = Hvert hit for hvad du sidst søgte efter, uanset hvor det er i dokumentet
-margin-lane-provider-boundaries = Hvor hvert dokument starter
-margin-lane-provider-boundaries-hint = En regel på toppen af hver scene i en stream, så du kan se, hvor du er
+margin-lane-mark-named-here = Nævnt her
+margin-lane-provider-comments-hint = Hvor en note er knyttet til teksten
+margin-lane-provider-search = Søgeresultater
+margin-lane-provider-search-hint = Alle resultater for det, du sidst søgte efter, uanset hvor i dokumentet de er
+margin-lane-provider-boundaries = Hvor hvert dokument begynder
+margin-lane-provider-boundaries-hint = En streg øverst i hver scene i et forløb, så du kan se, hvor du er
 margin-lane-provider-spelling = Stavning
-margin-lane-provider-spelling-hint = Hvor stavekontrollen har markeret et ord. Off, medmindre du beder om det: det markerer en maskine Buds mening om din prosa
-margin-lane-spelling = { $word }, muligt stavefejl
-margin-lane-search-hit = { $text }, match { $index } af { $total }
-margin-lane-search-current = { $text }, match { $index } af { $total }, den du er på
-margin-lane-boundary = Start på { $title }
+margin-lane-provider-spelling-hint = Hvor stavekontrollen har markeret et ord. Slået fra, medmindre du beder om det: det viser en maskines mening om din tekst
+margin-lane-spelling = { $word }, mulig stavefejl
+margin-lane-search-hit = { $text }, forekomst { $index } af { $total }
+margin-lane-search-current = { $text }, forekomst { $index } af { $total }, den du står ved
+margin-lane-boundary = Begyndelsen af { $title }
 margin-lane-boundary-untitled = et dokument uden titel
-settings-page-margin-lane = Marginmærker
-settings-desc-margin-lane = Striben ved siden af rullebjælken, og hvad den viser
-settings-margin-lane-enabled = Vis marginer
-settings-margin-lane-enabled-hint = Samme knap som Vis Margin mærker.
-settings-margin-lane-enabled-more = Det siger aldrig noget er galt: det viser dig, hvor tingene er, og overlader hvad du skal gøre af det til dig.
+settings-page-margin-lane = Margenmærker
+settings-desc-margin-lane = Feltet ved siden af rullepanelet, og hvad det viser
+settings-margin-lane-enabled = Vis margenfeltet
+settings-margin-lane-enabled-hint = Samme kontakt som Vis ▸ Margenmærker.
+settings-margin-lane-enabled-more = Det siger aldrig, at noget er forkert: det viser dig, hvor tingene er, og overlader det til dig, hvad du får ud af det.
 settings-group-margin-lane-marks = Hvad det markerer
-settings-margin-lane-no-providers = Intet markerer vejen endnu.
-settings-group-margin-lane-texture = Dialog tekstur
-settings-margin-lane-texture = Vis dialogtekstur
-settings-margin-lane-texture-hint = En bar pr. afsnit: hvor lang tid det er, og hvor meget af det tales.
-settings-margin-lane-texture-more = Ikke målt for sprog uden kurateret konvention, hvor baren viser længde alene.
-settings-group-margin-lane-surfaces = Hvis det viser sig
+settings-margin-lane-no-providers = Intet markerer feltet endnu.
+settings-group-margin-lane-texture = Dialogtekstur
+settings-margin-lane-texture = Vis dialogteksturen
+settings-margin-lane-texture-hint = Én bjælke pr. afsnit: hvor langt det er, og hvor meget af det der er replikker.
+settings-margin-lane-texture-more = Måles ikke for sprog uden en fastlagt konvention; der viser bjælken kun længden.
+settings-group-margin-lane-surfaces = Hvor det vises
 settings-margin-lane-surface-editor = Teksteditor
-settings-margin-lane-surface-stream = StreamsCity in Italy
+settings-margin-lane-surface-stream = Forløb
 settings-margin-lane-surface-search-preview = Søgeforhåndsvisning
-menu-margin-lane = Marginmærker (&M)
+menu-margin-lane = &Margenmærker
 
-status-preset-drafting = Udkast
-status-preset-passes = Revisionskort
+## Statuses: the project's workflow ladder.
+## A rung's name is project DATA: these are resolved once, when a ladder is seeded, and
+## stored literally from then on. They are not re-translated afterwards, and the writer is
+## free to rename any of them.
+status-preset-drafting = Skrivefaser
+status-preset-passes = Revisionsrunder
 status-preset-plume = Plume Creator
-status-todo = Til at gøre
+status-todo = Mangler
 status-draft = Udkast
 status-revised = Revideret
 status-final = Endelig
 status-outline = Disposition
-status-first-edit = Første redigering
-status-second-edit = 2. redigér
+status-first-edit = 1. redigering
+status-second-edit = 2. redigering
 status-done = Færdig
-status-plume-draft-1 = Første udkast
+status-plume-draft-1 = 1. udkast
 status-plume-draft-2 = 2. udkast
-status-plume-draft-3 = Tredje udkast
-status-plume-edit-1 = Første redigering
-status-plume-edit-2 = 2. redigér
-status-plume-edit-3 = 3. redigér
+status-plume-draft-3 = 3. udkast
+status-plume-edit-1 = 1. redigering
+status-plume-edit-2 = 2. redigering
+status-plume-edit-3 = 3. redigering
 status-plume-proofread = Korrekturlæst
-status-plume-finished = Færdig
+status-plume-finished = Afsluttet
 new-work-statuses = Arbejdsgang
-new-work-statuses-hint = De stadier, du flytter en scene igennem. Du kan omdøbe, ombestille eller tilføje til disse til enhver tid.
+new-work-statuses-hint = De faser, du fører en scene igennem. Du kan til enhver tid omdøbe dem, ændre rækkefølgen eller tilføje flere.
 status-none = Ingen status
 inspector-status = Status
 overview-col-status = Status
-overview-status-mixed = Følgende dele er uenige:
+overview-status-mixed = delene nedenunder er ikke enige
 help-concept-status = Status
 status-completion-title = Hvor bogen står
-status-completion-headline = { $done } af { $total } scener færdige
-status-completion-empty = Ingen scener endnu. Dette læser manuskriptet, så det udfylder som du skriver.
-status-completion-open = Hvor bogen står
+status-completion-headline = { $done } af { $total } scener er færdige
+status-completion-empty = Ingen scener endnu. Dette læser manuskriptet, så det fyldes ud, mens du skriver.
+status-completion-open = Hvor bogen står…
 
-settings-page-statuses = Statuser
-settings-desc-statuses = Omdøbe, ombestille, tilføje og fjerne de stadier, du flytter en scene gennem
+## Settings ▸ Work ▸ Statuses: the ladder editor.
+## The writer owns a rung's NAME and the ladder's ORDER; the app owns its category, and
+## the category owns the glyph and the colour. Only the category names below are
+## translated: a rung's name is the writer's own text and stays as they typed it.
+settings-page-statuses = Statusser
+settings-desc-statuses = Omdøb, omordn, tilføj og fjern de faser, du fører en scene igennem
 settings-statuses-add = Tilføj status
 settings-statuses-add-placeholder = Navn på ny status
 settings-statuses-desc =
-    De stadier en scene bevæger sig igennem, i rækkefølge, fra mindst færdig øverst til de fleste
-    færdig i bunden. Denne ordre er, hvad uden færdig end det betyder overalt andre steder
-    i app 'en, så sætte dem den måde, din proces rent faktisk kører.
-settings-statuses-apply-preset = Påfør et forudindstillet
+    De faser, en scene gennemløber, i rækkefølge fra mindst færdig øverst til mest
+    færdig nederst. Denne rækkefølge er det, »mindre færdig end« betyder overalt ellers
+    i programmet, så sæt dem op, som din proces faktisk forløber.
+settings-statuses-apply-preset = Anvend en forudindstilling…
 settings-statuses-preset-applied = { $added ->
-    [one] 1 tilføjet status
-   *[other] { $added } tilsatte statuer
+    [one] 1 status er tilføjet
+   *[other] { $added } statusser er tilføjet
 }
-settings-statuses-preset-refused = Dette projekt har allerede en stige. Presets kun udfylde en tom en. Slet de trin, du don 't ønsker først.
-settings-statuses-duplicate = Der er allerede { $name } på denne stige.
-settings-statuses-added = Tilføjet: { $name }
+settings-statuses-preset-refused = Projektet har allerede en statusstige. Forudindstillinger udfylder kun en tom stige. Slet først de trin, du ikke vil have.
+settings-statuses-duplicate = »{ $name }« findes allerede på denne stige
+settings-statuses-added = »{ $name }« er tilføjet
 settings-statuses-move-up = Flyt op (mindre færdig)
 settings-statuses-move-down = Flyt ned (mere færdig)
 settings-statuses-details-placeholder = Hvad denne fase betyder (valgfrit)
-settings-statuses-delete = Slet mv. { $name } mdr.
+settings-statuses-delete = Slet »{ $name }«
 settings-statuses-delete-in-use = { $count ->
-    [one] Slet Mex{ $name } Mex: 1 element er på det og vil miste sin status
-   *[other] Slet Budd{ $name } Buddha: { $count } elementer er på det og vil miste deres status
+    [one] Slet »{ $name }«: 1 element har denne status og mister den
+   *[other] Slet »{ $name }«: { $count } elementer har denne status og mister den
 }
-settings-statuses-deleted = Udgået fra { $name }
+settings-statuses-deleted = »{ $name }« er slettet
 settings-statuses-deleted-in-use = { $count ->
-    [one] Slettet{ $name }En genstand har ikke længere status.
-   *[other] Slettet i { $name }. { $count } poster har ikke længere status.
+    [one] »{ $name }« er slettet. 1 element har ikke længere en status.
+   *[other] »{ $name }« er slettet. { $count } elementer har ikke længere en status.
 }
-settings-statuses-empty-title = Ingen workflow endnu
-settings-statuses-empty-body = En status siger, hvor langt langs en scene er. Tilføj en ovenfor, eller start fra en forudindstillet.
+settings-statuses-empty-title = Ingen arbejdsgang endnu
+settings-statuses-empty-body = En status fortæller, hvor langt en scene er nået. Tilføj en ovenfor, eller start fra en forudindstilling.
 status-category-planned = Planlagt
-status-category-drafting = Udkast
+status-category-drafting = Skrives
 status-category-needs-work = Kræver arbejde
 status-category-revised = Revideret
 status-category-final = Endelig
+
+## Long-operation progress (shared::progress_text). The backend reports phase
+## codes it cannot translate; these are their labels. `progress-percent` is the
+## toast body on its own, `progress-percent-with-label` with the phase after it.
+progress-percent = { $percent } %
+progress-percent-with-label = { $percent } % · { $label }
+progress-import-opening = Åbner projektet…
+progress-import-outline = Læser dispositionen…
+progress-import-converting = Konverterer kapitler og scener…
+progress-import-writing = Skriver .skrib-filen…
+progress-import-done = Færdig
+progress-import-structure = Finder frem til strukturen…
+progress-export-start = Starter…
+progress-export-writing = Skriver…
+progress-project-reading = Læser projektet…
+# Settings: the open project's section title, "Work: <its title>".
+settings-sec-work-titled = Projekt: { $title }
+
+## Project-import notices (shared::import_warnings::notices): one line of the
+## Plume / Manuskript warnings list each. $file, $folder, $title, $name, $field
+## and $error are data (file names, titles, a parser's own message) and stay as
+## they are. $container is "single-file" or "folder"; $kind is "scene", "note",
+## "synopsis" or "title".
+import-notice-flattened-rich-texts = { $count ->
+    [one] Én tekst var indlejret dybere, end et Skribisto-projekt kan rumme; ordene blev bevaret som ren tekst uden formatering.
+   *[other] { $count } tekster var indlejret dybere, end et Skribisto-projekt kan rumme; ordene blev bevaret som ren tekst uden formatering.
+}
+import-notice-free-text-badges = { $count ->
+    [one] Ét sceneskilt ligner fri tekst snarere end en liste over statusser, så det blev bevaret som elementets etiket i stedet for at blive et mærke.
+   *[other] { $count } forskellige sceneskilte ligner fri tekst snarere end en liste over statusser, så de blev bevaret som elementernes etiketter i stedet for at blive mærker.
+}
+import-notice-separator-text-dropped = Skillelinjen »{ $name }« indeholdt tekst, som der ikke er plads til i et Skribisto-projekt; teksten blev ikke importeret.
+import-notice-separator-without-scene = Skillelinjen »{ $name }« havde ingen scene foran sig i sit kapitel at blive knyttet til, så den blev ikke importeret.
+import-notice-chapter-without-scenes = Kapitlet »{ $name }« har ingen scener, så dets skillelinjer blev ikke importeret.
+import-notice-rich-text-unconverted = Noget formateret tekst kunne ikke konverteres ({ $error }); den blev ikke importeret.
+import-notice-unresolved-cross-link = Et link til post nr. { $number } i persongalleriet kunne ikke følges: posten mangler eller lå i papirkurven.
+import-notice-read-copy = Projektets kopi { $container ->
+    [single-file] som enkelt fil
+   *[folder] som mappe
+} blev læst.
+import-notice-read-copy-dated = Projektets kopi { $container ->
+    [single-file] som enkelt fil
+   *[folder] som mappe
+} (senest ændret { $day }) blev læst.
+import-notice-original-format = Dette projekt er i Manuskripts oprindelige format fra 2016. Det blev læst i sin helhed; intet i det blev ændret.
+import-notice-newer-single-file-beside = »{ $file }« er nyere end denne mappe ({ $file_day } mod { $folder_day }). Manuskript lader den gamle mappe ligge, når et projekt skifter til enkeltfilstilstand, så denne mappe kan være en forladt kopi; importerer du .msk-filen i stedet, læses den nyere.
+import-notice-pickle-skipped = »{ $file }« blev ikke læst. Det er en Python-pickle, og at indlæse en sådan fra en projektfil var et sikkerhedshul i selve Manuskript (CVE-2021-35196); de indstillinger, den indeholder, er visningspræferencer, ikke skrivning.
+import-notice-file-unreadable = »{ $file }« kunne ikke læses ({ $error }) og blev sprunget over; alt andet blev importeret.
+import-notice-not-utf8 = »{ $file }« er ikke gyldig UTF-8; de tegn, der ikke kunne læses, blev erstattet i stedet for at standse importen.
+import-notice-table-unreadable = »{ $file }« kunne ikke læses ({ $error }); indholdet blev ikke importeret.
+import-notice-outline-missing = »{ $file }« mangler, så dette projekt har intet manuskript at importere.
+import-notice-outline-unreadable = »{ $file }« kunne ikke læses ({ $error }); intet manuskript blev importeret.
+import-notice-named-none-row = »{ $file }« begynder med en navngiven række (»{ $name }«) der, hvor Manuskript har sin tomme »none«-post. Den blev udeladt, så rækkerne efter den beholder de numre, manuskriptet bruger.
+import-notice-unknown-field = »{ $file }« har et felt, som denne import ikke kender: »{ $field }«. Det blev ikke importeret.
+import-notice-colorless-labels = { $count ->
+    [one] »{ $file }« har en linje uden farve. Den blev importeret uden; Manuskript holder op med at indlæse projektet ved sådan en linje.
+   *[other] »{ $file }« har { $count } linjer uden farve. De blev importeret uden; Manuskript holder op med at indlæse projektet ved sådan en linje.
+}
+import-notice-settings-unreadable = »{ $file }« kunne ikke læses ({ $error }); projektets sprog blev ikke importeret.
+import-notice-revisions-unreadable = »{ $file }« kunne ikke læses ({ $error }); projektets historik blev ikke importeret, men intet andet blev berørt.
+import-notice-foreign-files = { $count ->
+    [one] Dette projekt indeholder en fil, der ikke hører til Manuskript-formatet og ikke blev importeret: { $files }.
+   *[other] Dette projekt indeholder { $count } filer, der ikke hører til Manuskript-formatet og ikke blev importeret: { $files }.
+}
+import-notice-foreign-files-more = Dette projekt indeholder { $count } filer, der ikke hører til Manuskript-formatet og ikke blev importeret: { $files } og { $more ->
+    [one] én mere
+   *[other] { $more } mere
+}.
+import-notice-not-a-character-file = »{ $file }« er ikke en Manuskript-personfil og blev udeladt.
+import-notice-not-a-text-item = »{ $file }« er ikke et Manuskript-tekstelement og blev udeladt af dispositionen.
+import-notice-missing-blank-line = »{ $file }« har ingen tom linje efter sit hoved. Det sidste felt blev bevaret, selvom Manuskript mister det.
+import-notice-folder-without-metadata = »{ $folder }« har ingen { $file }, så den blev importeret som en almindelig mappe opkaldt efter biblioteket. Manuskript springer sådan et bibliotek og alt i det over.
+import-notice-rows-given-ids = { $count ->
+    [one] Én række i dispositionen havde intet eget ID og fik et. Manuskript dropper sådan en række eller holder op med at indlæse projektet, når den er en mappe.
+   *[other] { $count } rækker i dispositionen havde intet eget ID og fik et. Manuskript dropper sådan en række eller holder op med at indlæse projektet, når den er en mappe.
+}
+import-notice-plots-unreadable = »{ $file }« kunne ikke læses ({ $error }); plottene blev ikke importeret.
+import-notice-world-unreadable = »{ $file }« kunne ikke læses ({ $error }); verdensposterne blev ikke importeret.
+import-notice-world-not-opml = »{ $file }« er ikke et OPML-dokument; verdensposterne blev ikke importeret.
+import-notice-text-flattened = Teksten i »{ $title }« er indlejret dybere, end et Skribisto-projekt kan rumme; ordene blev bevaret som ren tekst uden formatering.
+import-notice-text-unconverted = Teksten i »{ $title }« kunne ikke konverteres ({ $error }); den blev bevaret præcis, som den var skrevet.
+import-notice-text-without-file-name = { $kind ->
+    [scene] Scenetekst
+    [note] Notetekst
+    [synopsis] Synopsis
+   *[title] Titel
+} i »{ $title }« kunne ikke få et filnavn, så den blev ikke importeret.
+import-notice-unknown-label = »{ $title }« har etiket { $index }, som ikke findes i projektets etiketliste. Elementet blev importeret uden etiket.
+import-notice-unknown-status = »{ $title }« har status { $index }, som ikke findes i projektets statusliste. Elementet blev importeret uden status.
+import-notice-unknown-point-of-view = »{ $title }« fortælles gennem en person, der ikke er i projektets persongalleri. Synsvinklen blev ikke angivet.
+import-notice-unresolved-references = Henvisningerne i teksten til »{ $title }« kunne ikke opløses ({ $error }); teksten blev bevaret, som den blev konverteret, inklusive henvisningsmarkører.
+import-notice-custom-icons = { $count ->
+    [one] Én række havde et brugerdefineret ikon. Skribisto giver hver række ikonet for dens type, så ikonet blev ikke importeret; intet andet ved rækken blev ændret.
+   *[other] { $count } rækker havde et brugerdefineret ikon. Skribisto giver hver række ikonet for dens type, så ikonerne blev ikke importeret; intet andet ved rækkerne blev ændret.
+}
+import-notice-character-colors = { $count ->
+    [one] Én person havde en farve ved sit navn. Skribisto farver mærker frem for rækker, så farven blev ikke importeret; selve personen blev.
+   *[other] { $count } personer havde en farve ved deres navn. Skribisto farver mærker frem for rækker, så farverne blev ikke importeret; selve personerne blev alle importeret.
+}
+import-notice-versions-kept = { $found ->
+    [one] Dette projekt havde registreret én tidligere version
+   *[other] Dette projekt havde registreret { $found } tidligere versioner
+}; { $kept ->
+    [one] én blev bevaret
+   *[other] { $kept } blev bevaret
+}, udtyndet på samme måde, som Skribisto udtynder sin egen historik. De findes i panelet Versioner.
+import-notice-versions-unplaced = { $count ->
+    [one] Én tidligere version hører til en række, der ikke længere er i projektet, og kunne ikke placeres.
+   *[other] { $count } tidligere versioner hører til en række, der ikke længere er i projektet, og kunne ikke placeres.
+}
+
+## Native file dialogs: the window title, and the label of the file-type filter.
+dialog-open-work-title = Åbn Skribisto-projekt
+dialog-save-as-file-title = Gem som en enkelt .skrib-fil
+dialog-save-as-folder-title = Vælg en overordnet mappe til projektet
+dialog-manuskript-file-title = Vælg et Manuskript-projekt
+dialog-manuskript-folder-title = Vælg en Manuskript-projektmappe
+dialog-filter-skrib = Skribisto-projekt
+dialog-filter-manuskript = Manuskript-projekt
+dialog-filter-plume = Plume Creator-projekt
+dialog-filter-hunspell-aff = Hunspell-affiksfil (.aff)
+dialog-filter-hunspell-dic = Hunspell-ordbog (.dic)
+dialog-filter-export = Eksporteret fil
+# Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
+shortcut-name-view-margin-lane = Vis eller skjul margenmærker
+
+## The built-in distraction-free themes' names (distraction_free::theme).
+df-theme-paper = Papir
+df-theme-sepia = Sepia
+df-theme-night = Nat
+df-theme-high-contrast = Høj kontrast
+df-theme-midnight = Midnat
+
+## Welcome ▸ Examples: the line under a bundled example's title.
+welcome-example-byline = af { $author }
+
+## Spoken by a screen reader only.
+# Welcome window: the name of the section tab bar.
+welcome-sections-a11y = Velkomstafsnit
+# A comment's anchored span in the editor: author, plain-text preview, replies.
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } ({ $count ->
+    [one] 1 svar
+   *[other] { $count } svar
+})
+comments-a11y-summary-author-replies = { $author }: { $text } ({ $count ->
+    [one] 1 svar
+   *[other] { $count } svar
+})
+# Margin marks beside the text: one mark, several merged into one, and the
+# lane's own name when nothing more specific was given.
+margin-lane-a11y-mark = { $label }, { $percent } procent inde i teksten
+margin-lane-a11y-marks = { $label }, { $count } mærker, { $percent } procent inde i teksten
+margin-lane-a11y-fallback = { $count ->
+    [one] Margenmærker, 1 mærke
+   *[other] Margenmærker, { $count } mærker
+}
+# Export ▸ Choose: the row standing for a binder that has no name.
+export-choose-unnamed-binder = Unavngivet ringbind
+# The built-in export styles named in words (the national manuscript presets
+# keep their own language's name).
+export-style-neutral = Neutral
+export-style-manuscript-shunn = Standardmanuskript (Shunn)
+export-style-ebook-clean = Enkel e-bog
+
+## Dates. Put the parts in the order your language writes a short date; the
+## parts arrive already zero-padded where that matters.
+# Comment cards, the outline card's Created/Modified.
+date-time-short = { $day }.{ $month }.{ $year } { $hour }.{ $minute }
+# Pace chart: a day on the axis, a milestone's date, a holiday.
+pace-day-label = { $day }.{ $month }.
+
+## File sizes (shared::byte_size). $whole and $tenth are the two sides of the
+## decimal mark: write your language's mark between them and its unit symbol.
+byte-size-bytes = { $value } B
+byte-size-kb = { $value } kB
+byte-size-mb = { $whole },{ $tenth } MB
+byte-size-gb = { $whole },{ $tenth } GB
+# A whole percentage (sliders, the Pace card, the text-size toast).
+unit-percent = { $value } %
+# A whole number of pixels (slider readouts).
+unit-pixels = { $value } px
+# Settings ▸ Paratext: a preset saved without a `name` line. `name` is the TOML
+# key the writer types and stays as it is.
+settings-paratext-error-no-name = En struktur skal have en `name`-linje.
+# Export: started with no project open (a menu raced a close).
+export-error-no-project = Der er intet åbent projekt at eksportere.

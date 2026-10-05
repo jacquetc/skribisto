@@ -358,7 +358,7 @@ impl WelcomePanel {
                     // as its author made it. See `binder::dock`.
                     .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                     .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
-                    .subtitle(lit!(ex.blurb))
+                    .subtitle(tr!(welcome_example_byline(author = ex.author)))
                     .leading_slot(icon)
                     .selected(selected),
             )
@@ -1029,7 +1029,7 @@ impl Widget for WelcomePanel {
         .tab_sizing(TabSizing::Fill)
         .show_scroll_arrows(false)
         .show_overflow_dropdown(false)
-        .access_label_literal("Welcome sections");
+        .access_label(tr!(welcome_sections_a11y()));
 
         // Right pane: a Switcher keyed off the bar's selection. `TabBar` and
         // `Switcher` both parse fine in `teksu!`; they stay plain builders here

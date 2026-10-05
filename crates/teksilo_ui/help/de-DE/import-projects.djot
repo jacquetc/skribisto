@@ -19,7 +19,7 @@ Der Dialog fragt nach:
 Erst nach *Importieren* wird etwas geschrieben. Der Import zeigt seinen Fortschritt an;
 *Abbrechen* hinterlässt nichts.
 
-Ist das Ziel ein bereits in Skribisto geöffnetes Projekt, wählen Sie einen anderen Dateinamen.
+Ist die Zieldatei ein bereits in Skribisto geöffnetes Projekt, wählen Sie einen anderen Dateinamen.
 
 ## Ein Manuskript-Projekt auswählen
 
@@ -42,7 +42,7 @@ Im Ordnermodus funktioniert beides. Der Import meldet, welche Kopie eingelesen w
 - Figuren, Welteneinträge und Handlungsstränge werden zu Notizen in einer Projektmappe
   *Geschichtenbibel* neben dem Manuskript, jeweils in einer eigenen Gruppe. Die Erzählperspektive
   einer Szene verweist auf die genannte Figur; Handlungsstränge behalten Schritte und Verknüpfungen.
-- Ihre Kennzeichnungen als farbige Schlagwörter.
+- Ihre Manuskript-Labels als farbige Schlagwörter.
 - Ihre Statusliste als eigene Statusstufen des Projekts unter Ihren Namen.
 - Ihren Überarbeitungsverlauf: Öffnen Sie eine Szene, um frühere Fassungen unter *Versionen* zu sehen.
 
@@ -57,7 +57,7 @@ Einige Manuskript-Funktionen haben kein Gegenstück in Skribisto:
 - **Symbole pro Eintrag.**
 - **Die Farbe neben einem Figurennamen.** Skribisto färbt stattdessen Schlagwörter.
 - **Die gestuften Zusammenfassungen des ganzen Buchs** (Situation, Satz, Absatz, Seite, vollständig).
-  Die längste wird zur Buchzusammenfassung. Alle bleiben gemeinsam in einer Notiz *Zusammenfassung*
+  Die längste wird zur Buchzusammenfassung. Alle bleiben gemeinsam in einer Notiz *Inhaltsangabe*
   in der Projektmappe *Geschichtenbibel* erhalten.
 - **Angaben ohne eigenes Feld**, etwa Reihe und Band. Sie landen daneben in einer Notiz
   *Projektinformationen*.

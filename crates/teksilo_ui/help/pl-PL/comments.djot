@@ -1,59 +1,79 @@
-Komentarz jest uwagą na marginesie, dołączoną do wyrażenia, zdania lub całego akapitu. Zostaje przy słowach, podczas gdy ty piszesz.
+Komentarz to uwaga na marginesie, dołączona do wyrażenia, zdania lub całego akapitu. Pozostaje
+przy tych słowach, gdy dalej piszesz.
 
 ## Dodaj komentarz
 
-Z tekstu, który piszesz:
+W pisanym tekście:
 
-- Wybierz słowa do komentowania i naciśnij `Ctrl+Alt+M`.
+- Zaznacz słowa, które chcesz skomentować, i naciśnij `Ctrl+Alt+M`.
 - Umieść kursor w akapicie i naciśnij `Ctrl+Alt+Shift+M`, aby skomentować cały akapit.
-- Kliknij prawym przyciskiem myszy w tekście dla * Komentarz do tego punktu *. * Dodaj komentarz * dołącza do niego jak tylko coś wybierzesz.
+- Kliknij tekst prawym przyciskiem myszy i wybierz *Skomentuj ten akapit*. Gdy coś zaznaczysz,
+  pojawi się też *Dodaj komentarz*.
 
-Te same dwa polecenia znajdują się w menu * Format *.
+Te same dwa polecenia są w menu *Format*.
 
-Nowa karta otwiera się na marginesie, z pustym polu i kursorem już w nim.
+Na marginesie otwiera się nowa karta z pustym polem, w którym już stoi kursor.
 
-## Podpisz swoje uwagi
+## Podpisuj komentarze
 
-Jeśli na tym komputerze nie ma dla ciebie nazwy, wiadomość głosi, że twoje komentarze są niepodpisane. Jego * Ustaw przycisk Nazwa * otwiera * Ustawienia ▸ Użytkownik *.
+Jeśli na tym komputerze nie ustawiono Twojego imienia i nazwiska, komunikat informuje, że
+Twoje komentarze nie są podpisane. Jego przycisk *Ustaw imię i nazwisko* otwiera
+*Ustawienia ▸ Użytkownik*.
 
-## Odpowiedz, rozwiąż, usuń
+## Odpowiadanie, rozwiązywanie, usuwanie
 
-Otwórz menu używając małej strzałki na karcie komentarza:
+Otwórz menu za pomocą małej strzałki na karcie komentarza:
 
-- * Odpowiedź * dodaje odpowiedź na dyskusję.
-- * Resoluve * marks the point settled. Karta zostawia margines, a komentarz pozostaje w panelach.
-- * Usuń * usuwa komentarz, * Usuń odpowiedź * pojedynczą odpowiedź, i * Usuń wszystkie komentarze tutaj * całą partię naraz. Następnie następuje krótka wiadomość z przyciskiem * Cofnij *.
+- *Odpowiedz* dodaje odpowiedź do dyskusji.
+- *Rozwiąż* oznacza sprawę jako załatwioną. Karta znika z marginesu, a komentarz pozostaje
+  w panelach.
+- *Usuń* usuwa komentarz, *Usuń odpowiedź* pojedynczą odpowiedź, a *Usuń wszystkie komentarze
+  w tym miejscu* całą grupę naraz. Pojawia się krótki komunikat z przyciskiem *Cofnij*.
 
-Right- kliknij wpis w każdym panelu, aby działać na nim tam. To jest miejsce, gdzie można ponownie otworzyć rozwiązany komentarz, ponieważ jego karta zostawiła margines.
+Kliknij wpis w dowolnym panelu prawym przyciskiem myszy, aby wykonać na nim działanie.
+Właśnie tam można ponownie otworzyć rozwiązany komentarz, bo jego karta zniknęła z marginesu.
 
-Każdy komentarz i każda odpowiedź są edytowane na miejscu. Odważny i kursywny znajdują się w prawym przyciskiem myszy menu pola, w którym piszesz.
+Każdy komentarz i każdą odpowiedź edytuje się bezpośrednio na miejscu. Pogrubienie i kursywa
+są w menu kontekstowym pola, w którym piszesz.
 
-## W przypadku wystąpienia uwag
+## Gdzie widać komentarze
 
-Te same wątki pojawiają się w więcej niż jednym miejscu:
+Te same wątki pojawiają się w kilku miejscach:
 
-- Na marginesie obok tekstu piszesz. Wyrażenie skomentowane jest przyciemniane, komentarz całego akapitu otrzymuje wspornik, a linia kropkowana dołącza każdy znak do swojej karty.
-- W panelu * Comments * po lewej stronie okna, wymieniając komentarze w projekcie.
-- W panelu * Ten dokument * po prawej stronie, wymieniając komentarze do edytowanego elementu.
+- Na marginesie obok pisanego tekstu. Skomentowane wyrażenie jest zabarwione, komentarz do
+  całego akapitu ma klamrę, a kropkowana linia łączy każde oznaczenie z jego kartą.
+- W panelu *Komentarze* po lewej stronie okna, z listą komentarzy w projekcie.
+- W panelu *Ten dokument* po prawej stronie, z listą komentarzy do edytowanego elementu.
 
-Kliknięcie komentarza w każdym panelu otwiera swój element. Jeśli komentarz nadal ma swój tekst, kursor ląduje na słowach, o których jest mowa. * Narzędzia ▸ Komentarze * ukrywa lub pokazuje znaki i margines.
+Kliknięcie komentarza w dowolnym panelu otwiera jego element. Jeśli komentarz wciąż ma swój
+tekst, kursor trafia na słowa, których dotyczy. *Narzędzia ▸ Komentarze* ukrywa lub pokazuje
+oznaczenia i margines.
 
-## Filtr i sortowanie
+## Filtrowanie i sortowanie
 
-Dwa panele dzielą jeden zestaw filtrów: * All *, * Open *, * Resoluted * i * Orpheded *. Zmienić filtr w jednym, a drugi następujące.
+Oba panele mają wspólny zestaw filtrów: *Wszystkie*, *Otwarte*, *Rozwiązane* i *Osierocone*.
+Zmiana filtra w jednym panelu zmienia go też w drugim.
 
-Obok nich, jeden przycisk cytuje kolejność, współdzielony w ten sam sposób: * W kolejności dokumentów *, * Newest first *, * Grouped by reader *.
+Obok nich jeden przycisk przełącza kolejność, również wspólną: *W kolejności w dokumencie*,
+*Od najnowszych*, *Pogrupowane według czytelnika*.
 
-## Uwagi kilku czytelników
+## Uwagi od kilku czytelników
 
-* Zgromowany przez czytelnika * jest dla rękopisu z powrotem od kilku osób. Grupowanie łączy notatki każdego czytelnika, każdy czytelnik jest nadal w porządku dokumentu, z nazwą po lewej stronie.
+*Pogrupowane według czytelnika* przydaje się, gdy rękopis wraca od kilku osób. Grupowanie
+zbiera uwagi każdego czytelnika razem, nadal w kolejności w dokumencie, z imieniem po lewej.
 
-W każdym panelu, komentarz mówi również, ile czytelników jest na tym samym fragmencie ("3 czytelników"), gdy więcej niż jeden jest.
+W obu panelach komentarz pokazuje też, ilu czytelników skomentowało ten sam fragment
+(„3 czytelników”), jeśli jest ich więcej niż jeden.
 
-## Kiedy komentarz traci tekst
+## Gdy komentarz traci swój tekst
 
-Jeśli te słowa są usunięte lub przepisywane w przeszłości, komentarz jest oznaczony * Stracił tekst *, a nie dołączony do niewłaściwego zdania. Filtr * Sieroty * je odnajduje.
+Jeśli słowa zostaną usunięte lub przerobione nie do poznania, komentarz zostaje oznaczony jako
+*Utracił swój tekst*, zamiast przyczepić się do niewłaściwego zdania. Takie komentarze
+znajdziesz filtrem *Osierocone*.
 
-## Wysyłanie komentarzy na zewnątrz i z powrotem
+## Wysyłanie komentarzy i ich powrót
 
-Word i LibreOffice plików przenieść swoje komentarze i przynieść czytelników z powrotem. Styl eksportu ma * Włączyć komentarze * i * Włączyć markery rondo-podróży * dla tego. Zobacz [okrągły trip](:help-round-trip), aby wysłać rękopis do czytelnika i importować ich opinie.
+Pliki Word i LibreOffice zabierają Twoje komentarze ze sobą i przynoszą z powrotem komentarze
+czytelnika. Służą do tego opcje stylu eksportu *Dołącz komentarze* i *Dołącz znaczniki
+ponownego importu*. Temat [wysyłanie książki do czytelnika](:help-round-trip) opisuje, jak
+wysłać rękopis czytelnikowi i zaimportować jego uwagi.

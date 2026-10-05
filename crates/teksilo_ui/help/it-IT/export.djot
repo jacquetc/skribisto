@@ -15,7 +15,7 @@ Puoi annullare durante l'esportazione. Se il file di destinazione esiste già, S
 
 Apri l'elemento e scegli *Progetto ▸ Esporta*. Il sottomenu offre comandi come *Esporta libro* o *Esporta capitolo*, con l'elemento già selezionato. Usa *Scegli…* per una selezione personalizzata.
 
-Gli elementi con *Includi nelle esportazioni* disattivato nelle Proprietà sono nascosti nella selezione. *Mostra gli elementi non esportabili* li rende visibili. Selezionarne uno lo include solo in questa esportazione.
+Gli elementi con *Includi nelle esportazioni* disattivato nelle Proprietà sono nascosti nella selezione. *Mostra gli elementi esclusi dall'esportazione* li rende visibili. Selezionarne uno lo include solo in questa esportazione.
 
 ## Scegli l'impaginazione
 

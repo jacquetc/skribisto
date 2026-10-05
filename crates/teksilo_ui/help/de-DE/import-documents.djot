@@ -5,14 +5,14 @@ Für Manuskript oder Plume Creator siehe [Projekte importieren](:help-import-pro
 
 ## Ihre Dateien importieren
 
-1. Wählen Sie *Projekt ▸ Importieren aus ▸ Dokumenten (Markdown, Word, ODT)…*.
+1. Wählen Sie *Projekt ▸ Importieren aus ▸ Dokumente (Markdown, Word, ODT)…*.
    Alternativ wählen Sie im Kontextmenü der Projektmappe *Hier importieren…*.
 2. Legen Sie unter *Dateien* Ihre Dateien ab oder klicken Sie auf *Durchsuchen…*.
    Unterstützt werden `.docx`, `.odt`, `.md` und `.txt`. Ordnen Sie die Dateien wie gewünscht
    und klicken Sie auf *Weiter*.
 3. Prüfen Sie unter *Prüfen* die vorgeschlagenen Bücher, Kapitel und Szenen. Ändern Sie bei
    Bedarf die Spalte *Typ*. Deaktivieren Sie *Importieren*, um einen Eintrag samt Inhalt auszulassen.
-4. Wählen Sie unter *Ziel* den Ort für den importierten Text. Er landet in einem ausgewählten
+4. Wählen Sie unter *Einfügeort* den Ort für den importierten Text. Er landet in einem ausgewählten
    Ordner oder unmittelbar nach einem anderen ausgewählten Eintrag.
 5. Klicken Sie auf *Importieren*. Erst jetzt wird dem Projekt etwas hinzugefügt.
    Anschließend bietet die Meldung für einige Sekunden *Rückgängig* an.

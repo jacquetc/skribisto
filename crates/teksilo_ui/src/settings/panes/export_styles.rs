@@ -63,6 +63,7 @@ fn row_of(p: &Preset) -> StyleRow {
 
 fn builtin_row_of(p: &Preset) -> StyleRow {
     StyleRow {
+        name: crate::export::preset_display_name(p).resolve_now(),
         builtin: true,
         ..row_of(p)
     }
@@ -653,7 +654,7 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
     VStack::new()
         .spacing(5.0)
         .child(
-            TextWidget::new(lit!(p.name.clone()))
+            TextWidget::new(crate::export::preset_display_name(p))
                 .style(TextStyleRole::SmallBold)
                 .color(TextRole::TooltipText),
         )

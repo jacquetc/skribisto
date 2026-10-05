@@ -5,144 +5,143 @@ menu-work = פרויקט (&W)
 menu-new-work = פרויקט חדש (&N)
 menu-open-work = פתיחת פרויקט… (&O)
 menu-new-window = חלון חדש (&W)
-menu-import-from = ייבוא (&I)
-menu-create-from = יצירת (&C)
+menu-import-from = ייבוא מתוך (&I)
+menu-create-from = יצירה מתוך (&C)
 menu-import-plume = Plume Creator (.plume)… (&P)
-menu-import-document = מסמכים (Markdown, Word, ODT) (&D)
+menu-import-document = מסמכים (Markdown, Word, ODT)… (&D)
 menu-import-manuskript = Manuskript (.msk)… (&M)
 menu-export = ייצוא (&X)
-menu-export-book = ייצוא Book
+menu-export-book = ייצוא ספר
 menu-export-part = ייצוא חלק
-menu-export-chapter = פרק ייצוא
-menu-export-scene = סצנת היצוא
-menu-export-note = המונחים Note
-menu-export-paratext = המונחים Paratext
-menu-export-folder = ייצוא Folder
-menu-export-choose = בחרו...
-menu-export-none = פתח מסמך לייצא
+menu-export-chapter = ייצוא פרק
+menu-export-scene = ייצוא סצנה
+menu-export-note = ייצוא פתק
+menu-export-paratext = ייצוא טקסט נלווה
+menu-export-folder = ייצוא תיקייה
+menu-export-choose = בחירה…
+menu-export-none = יש לפתוח מסמך כדי לייצא
 menu-save = שמירה (&S)
 menu-save-as-file = שמירה כקובץ יחיד… (&F)
 menu-save-as-folder = שמירה כתיקייה… (&D)
 menu-backup = גיבוי עכשיו (&B)
 menu-close-work = סגירת הפרויקט (&C)
-menu-welcome = ברוכים הבאים... (&L)
+menu-welcome = מסך הפתיחה… (&L)
 menu-settings = הגדרות (&E)
 menu-quit = יציאה (&Q)
 
 menu-view = תצוגה (&V)
 menu-outline = מתווה (&O)
 menu-search = חיפוש בפרויקט (&S)
-menu-timeline = חזור אחורה בזמן (&G)
-menu-search-preview = חיפוש Preview (&P)
+menu-timeline = חזרה בזמן (&G)
+menu-search-preview = תצוגה מקדימה של החיפוש (&P)
 menu-fullscreen = מסך מלא (&F)
-menu-focus-mode = המונחים: free Mode (&D)
+menu-focus-mode = מצב ללא הסחות דעת (&D)
 menu-format = עיצוב (&O)
-menu-scene-break = תגית: break (&K)
-menu-major-scene-break = המונחים: סצינה break (&M)
+menu-scene-break = הוספת מעבר סצנה (&K)
+menu-major-scene-break = הוספת מעבר סצנה ראשי (&M)
 
 menu-go = מעבר (&G)
 menu-go-next-scene = הסצנה הבאה (&S)
 menu-go-prev-scene = הסצנה הקודמת (&V)
 menu-go-next-chapter = הפרק הבא (&C)
 menu-go-prev-chapter = הפרק הקודם (&H)
-menu-go-next-note = ההערה הבאה (&N)
-menu-go-prev-note = ההערה הקודמת (&T)
+menu-go-next-note = הפתק הבא (&N)
+menu-go-prev-note = הפתק הקודם (&T)
 
 menu-tools = כלים (&T)
 menu-help = עזרה (&H)
 
 ctx-add = הוספה (&A)
-ctx-new-item = חדש Item (&N)
+ctx-new-item = פריט חדש (&N)
 ctx-new-folder = תיקייה חדשה (&F)
 ctx-rename = שינוי שם (&R)
 ctx-duplicate = שכפול (&D)
-ctx-import-here = ייבוא כאן... (&I)
-ctx-indent = הגדלת כניסה (&I)
-ctx-outdent = הקטנת כניסה (&O)
+ctx-import-here = ייבוא לכאן… (&I)
+ctx-indent = הגדלת הזחה (&I)
+ctx-outdent = הקטנת הזחה (&O)
 ctx-trash = העברה לאשפה (&T)
-ctx-open-to-side = פתוח לצד (&S)
+ctx-open-to-side = פתיחה בצד (&S)
 ctx-open = פתיחה (&O)
-ctx-reveal-in-outline = לגלות ב-Outline (&L)
+ctx-reveal-in-outline = הצגה במתווה (&L)
 ctx-move-up = הזזה למעלה (&U)
 ctx-move-down = הזזה למטה (&N)
 
 ctx-tab-close = סגירה (&C)
-ctx-tab-close-others = סגירת שאר הלשוניות (&O)
-ctx-tab-close-all = סגירת כל הלשוניות (&L)
-ctx-tab-open-to-side = פתוח לצד (&S)
-ctx-tab-open-in-main = פתוח בחלונית הראשית (&I)
-ctx-tab-move-to-side = לעבור לצד (&M)
-ctx-tab-move-to-main = לעבור אל המחבת הראשית (&M)
-ctx-tab-move-to-new-window = לעבור לחלון חדש (&N)
-ctx-tab-move-window-unsaved = שמור את הפרויקט הראשון: חלון שני נפתח על קובץ בדיסק
-ctx-tab-pin = פינו את הכרטיסיה (&P)
-ctx-tab-unpin = Unpin this tab (&U)
-tab-pinned-tooltip = Pinned: "Close others" ו-"Close All" השאירו אותו פתוח
+ctx-tab-close-others = סגירת האחרות (&O)
+ctx-tab-close-all = סגירת הכול (&L)
+ctx-tab-open-to-side = פתיחה בצד (&S)
+ctx-tab-open-in-main = פתיחה בחלונית הראשית (&I)
+ctx-tab-move-to-side = העברה לצד (&M)
+ctx-tab-move-to-main = העברה לחלונית הראשית (&M)
+ctx-tab-move-to-new-window = העברה לחלון חדש (&N)
+ctx-tab-move-window-unsaved = יש לשמור קודם את הפרויקט: חלון נוסף נפתח על קובץ שבדיסק
+ctx-tab-pin = הצמדת הלשונית (&P)
+ctx-tab-unpin = ביטול הצמדת הלשונית (&U)
+tab-pinned-tooltip = מוצמדת: "סגירת האחרות" ו"סגירת הכול" משאירות אותה פתוחה
 
 create-book = ספר
 create-part = חלק
 create-chapter = פרק
 create-scene = סצנה
-create-note = הערה
-create-note-folder = Note תיקיה
+create-note = פתק
+create-note-folder = תיקיית פתקים
 create-folder = תיקייה
 create-paratext = טקסט נלווה
-create-paratext-folder = תיקיית Paratext
+create-paratext-folder = תיקיית טקסט נלווה
 create-book-end = סוף הספר
-create-story-bible-entry = ספר תנ"ך נכנס...
-type-book-start = הספר מתחיל
+create-story-bible-entry = רשומה בתיק הסיפור…
+type-book-start = תחילת הספר
 type-text = טקסט
 
 new-item-book = ספר חדש
 new-item-part = חלק חדש
 new-item-chapter = פרק חדש
-new-item-note = הערה חדשה
-new-item-note-folder = תגית: Folder
+new-item-note = פתק חדש
+new-item-note-folder = תיקיית פתקים חדשה
 new-item-folder = תיקייה חדשה
-new-item-paratext = טקסט חדש
-new-item-paratext-folder = תגית: Folder
-new-item-story-bible-entry = שם הספר: Bible Entry
+new-item-paratext = טקסט נלווה חדש
+new-item-paratext-folder = תיקיית טקסט נלווה חדשה
+new-item-story-bible-entry = רשומה חדשה בתיק הסיפור
 
-placement-inside = בפנים
+placement-inside = בתוך
 placement-after = אחרי
-placement-after-parent = אחרי ההורה
-placement-top-level = הרמה העליונה
+placement-after-parent = אחרי פריט האב
+placement-top-level = ברמה העליונה
 
-
-ctx-promote = להמיר (&C)
+ctx-promote = המרה אל (&C)
 promote-chapter-folder = תיקיית פרק
-promote-flat-chapter = פרק עצמאי
-promote-lossy-title = אין מקום לשמור את הטקסט
-promote-lossy-text = { $target } אין מקום לשמור על אלה: { $kinds } נע או לנקות את הטקסט הראשון, ואז להמיר.
-content-scene-text = סצנות טקסט
-content-note-text = Note טקסט
-content-book-title = שם הספר
-content-book-subtitle = שם הספר Subtitle
-content-part-title = כותרת חלקית
-content-chapter-title = כותרת פרק
+promote-flat-chapter = פרק שטוח
+promote-lossy-title = אין היכן לשמור את הטקסט
+promote-lossy-text = לסוג "{ $target }" אין היכן לשמור את אלה: { $kinds }. יש להעביר או לנקות את הטקסט הזה תחילה, ואז להמיר.
+content-scene-text = טקסט הסצנה
+content-note-text = טקסט הפתק
+content-book-title = כותרת הספר
+content-book-subtitle = כותרת המשנה של הספר
+content-part-title = כותרת החלק
+content-chapter-title = כותרת הפרק
 content-epigraph-text = מוטו
 content-paratext-text = טקסט נלווה
-promote-blocked-title = פרק לא ריק
+promote-blocked-title = הפרק אינו ריק
 promote-blocked-text = { $count ->
-    [one] פרק זה עדיין מכיל { $count } פריט.הזיז או זבל לפני שהוא הופך אותו לפרק שטוח.
-   *[other] פרק זה עדיין מכיל { $count } פריטים.הזיזו או לקלקל אותם לפני שהמירו אותו לפרק שטוח.
+    [one] פרק זה עדיין מכיל פריט אחד. יש להעביר אותו או להעביר אותו לאשפה לפני המרת הפרק לפרק שטוח.
+   *[other] פרק זה עדיין מכיל { $count } פריטים. יש להעביר אותם או להעביר אותם לאשפה לפני המרת הפרק לפרק שטוח.
 }
 
 inspector = מאפיינים
-inspector-empty = פתח פריט כדי לבדוק אותו.
-inspector-promote = להמיר ל...
-statusbar-toggle-outline = עקבו אחרי The Cableer
-statusbar-toggle-inspector = להזיז את המפקח
-statusbar-save-unsaved = שינויים לא מרוצים.לחצו כדי לחסוך
-statusbar-save-saved = כל השינויים הצילו
-statusbar-save-autosave = שינויים נשמרים כפי שאתה כותב
-statusbar-saving = חיסכון...
+inspector-empty = יש לפתוח פריט כדי לראות את מאפייניו.
+inspector-promote = המרה אל…
+statusbar-toggle-outline = הצגה או הסתרה של המתווה
+statusbar-toggle-inspector = הצגה או הסתרה של חלונית המאפיינים
+statusbar-save-unsaved = יש שינויים שלא נשמרו. לחיצה לשמירה
+statusbar-save-saved = כל השינויים נשמרו
+statusbar-save-autosave = השמירה האוטומטית פעילה. השינויים נשמרים תוך כדי כתיבה
+statusbar-saving = מתבצעת שמירה…
 statusbar-word-count = { $count ->
     [one] { $count } מילה
     [two] { $count } מילים
    *[other] { $count } מילים
 }
-statusbar-word-count-tooltip = מילים בסצינה שאתה עורך
+statusbar-word-count-tooltip = מספר המילים בסצנה שבעריכה
 statusbar-word-char-count = { $words ->
     [one] { $words } מילה
     [two] { $words } מילים
@@ -152,874 +151,882 @@ statusbar-word-char-count = { $words ->
     [two] { $chars } תווים
    *[other] { $chars } תווים
 }
-session-toggle = כתיבה: להתחיל או לעצור טבילה ממוקדת
-session-configure = הגדר את מטרת המילה של הפגישה ואת הגבלת הזמן
-session-configure-title = כתיבה
+session-toggle = סשן כתיבה: התחלה או השהיה של ספרינט כתיבה ממוקד
+session-configure = הגדרת יעד המילים ומגבלת הזמן של הסשן
+session-configure-title = סשן כתיבה
 session-word-goal = יעד מילים
-session-time-limit = הגבלת זמן
-session-time-limit-unit = כורים
-session-no-goal = אין מטרה
-session-no-limit = אין גבול
-session-reset = מפגש איפוס
-session-readout = { $words } מילים: { $time }
-session-readout-timed = { $words } מילים: { $time } נותרו
-statusbar-focus-exit = מצב ללא הסחת דעת
+session-time-limit = מגבלת זמן
+session-time-limit-unit = דק׳
+session-no-goal = ללא יעד
+session-no-limit = ללא מגבלה
+session-reset = איפוס הסשן
+session-readout = { $words ->
+    [one] { $words } מילה · { $time }
+    [two] { $words } מילים · { $time }
+   *[other] { $words } מילים · { $time }
+}
+session-readout-timed = { $words ->
+    [one] { $words } מילה · נותרו { $time }
+    [two] { $words } מילים · נותרו { $time }
+   *[other] { $words } מילים · נותרו { $time }
+}
+statusbar-focus-exit = יציאה ממצב ללא הסחות דעת
 statusbar-focus-synopsis = תקציר
-statusbar-focus-go-prev = מוצרים קודמים (Alt+Up)
-statusbar-focus-go-next = פריט הבא (Alt+Down)
+statusbar-focus-go-prev = הפריט הקודם (Alt+חץ למעלה)
+statusbar-focus-go-next = הפריט הבא (Alt+חץ למטה)
 
 rail-settings = הגדרות
 
 language = שפה
 theme = ערכת נושא
-english = אנגלית אנגלית
-french = צרפתית צרפתית צרפתית
-light = אור אור
-dark = כהה כהה
-settings-text-width = רוחב טקסט
-settings-preview-width = המונחים: innovation
-settings-autosave = Autosave לדיסק
-settings-show-welcome = הצג את ההשקה בסטארט-אפ
-settings-show-welcome-tip = כשהפרויקט האחרון נפתח מחדש במקום.
-settings-check-for-updates = בדוק עבור גרסאות חדשות
-settings-check-for-updates-tip = פעם ביום, Skribisto שואל את האתר של הפרויקט אשר גירסה הנוכחית.הבקשה אינה נושאת מזהה, ואפילו לא את הגרסה שאתה פועל: ההשוואה מתרחשת במחשב זה.
+english = אנגלית
+french = צרפתית
+light = בהירה
+dark = כהה
+settings-text-width = רוחב הטקסט
+settings-preview-width = רוחב התצוגה המקדימה של החיפוש
+settings-autosave = שמירה אוטומטית לדיסק
+settings-show-welcome = הצגת מסך הפתיחה בעת ההפעלה
+settings-show-welcome-tip = כשהאפשרות כבויה, הפרויקט האחרון נפתח מחדש במקום זאת.
+settings-check-for-updates = בדיקה אם יש גרסאות חדשות
+settings-check-for-updates-tip = לכל היותר פעם ביום, Skribisto שואלת את אתר הפרויקט מהי הגרסה העדכנית. הבקשה אינה נושאת שום מזהה, ואפילו לא את הגרסה שבשימוש: ההשוואה מתבצעת במחשב הזה.
 
 settings-title = הגדרות
 settings-close = סגירה
-settings-search = הגדרות חיפוש
-settings-reset = איפוס ל- ברירת מחדל
+settings-search = חיפוש בהגדרות
+settings-reset = איפוס לברירות המחדל
 settings-done = סיום
 settings-cancel = ביטול
 settings-apply = החלה
-settings-ok = בסדר בסדר בסדר בסדר
-settings-reset-confirm-title = איפוס כל ההגדרות ל- ברירת מחדל?
-settings-reset-confirm-body = שחזור המראה של היישום הזה, עורך והגדרות כתיבה. הגדרות הפרויקט שלך, קיצורי דרך מקלדת וסגנונות נשמרים אינם מושפעים.זה לא יכול להיות לא אחד.
-settings-empty-title = אין הגדרות כאן עדיין
-settings-empty-hint = סעיף זה יקבל אפשרויות בעדכון עתידי.
+settings-ok = אישור
+settings-reset-confirm-title = לאפס את כל ההגדרות לברירות המחדל?
+settings-reset-confirm-body = פעולה זו משחזרת את הגדרות המראה, העורך והכתיבה של היישום. ההגדרות של הפרויקט עצמו, קיצורי המקלדת והסגנונות השמורים אינם מושפעים. לא ניתן לבטל את הפעולה.
+settings-empty-title = אין כאן הגדרות עדיין
+settings-empty-hint = אפשרויות יתווספו למקטע זה בעדכון עתידי.
 
-settings-sec-appearance-behaviour = התנהגות
+settings-sec-appearance-behaviour = מראה והתנהגות
 settings-sec-editor = עורך
-settings-sec-spelling = תגית: Spell
-settings-sec-backup = גיבוי Sync
-settings-sec-compile = המונחים:
+settings-sec-spelling = איות
+settings-sec-backup = גיבוי וסנכרון
+settings-sec-compile = הידור וייצוא
 settings-page-appearance = מראה
 settings-field-image-size-policy = תמונות גדולות
-settings-image-policy-ask = שאל כל פעם
-settings-image-policy-keep = שמור מקורי
-settings-image-policy-downscale = אופטימיזציה
-settings-hint-image-size-policy = מה לעשות כאשר תמונה מוכנסת גדולה יותר מהכתב יד צריך.
-settings-page-notifications = זיהויים
+settings-image-policy-ask = לשאול בכל פעם
+settings-image-policy-keep = לשמור על המקור
+settings-image-policy-downscale = למטב
+settings-hint-image-size-policy = מה לעשות כשתמונה שהוכנסה גדולה מכפי שכתב היד צריך.
+settings-page-notifications = התראות
 settings-page-scene = סצנה
 settings-page-synopsis = תקציר
-settings-page-notes = הערות
-settings-page-editor-behavior = התנהגות עורך
-settings-page-goals = תגית: Word Count
-settings-page-games = כתיבת משחקים
-settings-page-corkboard = לוח כרטיסים
-settings-page-distraction-free = המונחים: free
-settings-page-dictionaries = דיקטטורים
+settings-page-notes = פתקים
+settings-page-editor-behavior = התנהגות העורך
+settings-page-goals = יעדים וספירת מילים
+settings-page-games = משחקי כתיבה
+settings-page-corkboard = לוח שעם
+settings-page-distraction-free = ללא הסחות דעת
+settings-page-dictionaries = מילונים
 settings-page-autosave = שמירה אוטומטית
-settings-page-export = פורמטי היצוא
-settings-page-paratext = מבנה טקסט
-settings-page-keymap = מפת מפתח
-settings-keymap-filter = קיצורי דרך filter
+settings-page-export = פורמטי ייצוא
+settings-page-paratext = מבני טקסט נלווה
+settings-page-keymap = מיפוי מקשים
+settings-keymap-filter = סינון קיצורים
 
-settings-desc-sec-appearance-behaviour = איך היישום עצמו נראה, ומה הוא עושה כאשר הוא מתחיל.
-settings-desc-sec-editor = פני השטח של הכתיבה: איך זה נראה, ומה זה עושה כפי שאתה מקליד.
-settings-desc-sec-spelling = בדיקת כישוף, והדיונים שמאחוריה.
-settings-desc-sec-backup = איך הפרויקט שלך מגיע לדיסק, ומה נשמרים עותקים.
-settings-desc-sec-compile = מה משאיר Skribisto, ובאיזה צורה.
-settings-desc-sec-work = הגדרות השייכות לפרויקט הזה ולנסוע בתוך הקובץ שלו.
-settings-desc-sec-extensions = דפים שתרמו על ידי הרחבות שהותקנו כאן.
-settings-desc-group-typography = דף אחד לסוג של טקסט: סוג הפנים, גודל, גובה קו וספא.
-settings-desc-appearance = שפת ממשק, נושא, גודל טקסט, ואת משגר בסטארט-אפ.
-settings-desc-notifications = כל הודעה שהפגישה הזו הוכיחה, והפעולות שאתה יכול לשחק מחדש.
-settings-desc-scene = איך סצינה פרוזה מוגדר: סוג הפנים, גודל, גובה קו, בdents ו ספאcing.
-settings-desc-synopsis = כיצד נקבע הפנינת הסינופוזיס, באופן בלתי תלוי בכתב היד.
-settings-desc-notes = כיצד נקבעים הערות, באופן עצמאי מן כתב היד.
-settings-desc-corkboard = גודל כרטיס, מה כרטיס מראה, ואיך הלוח מסדר אותם.
-settings-desc-distraction-free = Typography, רוחב עמודה ופס בקרה עבור כתיבה מסך מלא.
-settings-desc-distraction-free-themes = ספריית הנושא לכתיבה מלאה של מסך: השולחים ושל עצמכם.
-settings-desc-editor-behavior = רוחב טקסט, מיקום synopsis, הקלדר גלילה ואת הדגשת Caret.
-settings-desc-punctuation = סגנון הבית האוטוביוגרפי מתחיל מכל פרויקט אחר כך, אלא אם כן הוא מגדיר את עצמו.
-settings-desc-goals = משמעות ומטרות אופי, וכיצד מילים נספרות.
-settings-desc-games = אתה מגדיר את עצמך בעת גיוס, כגון תמיד קדימה.
-settings-desc-spellcheck = מתג יחיד שהופך את בדיקת האיות בכל מקום.
-settings-desc-dictionaries = התקן, להסיר ולעיין במילות האיותיות על מכונה זו.
-settings-desc-autosave = בין אם העריכה שלך כתובה לדיסק בכוחות עצמם.
-settings-desc-backup = כאשר נלקחים עותקים, שם הם נשמרים, וכמה.כל פרויקט עוקב אחר זה, אלא אם כן הוא מגדיר את עצמו.
-settings-desc-export = הסגנונות שכל יצוא מתאספים דרכם: השולחים ושלכם.
-settings-desc-paratext = החלק הקדמי והחזרה של פרויקט חדש יכולים להתחיל איתו.
-settings-desc-keymap = כל קיצור דרך, ומה זה קשור.
-settings-page-user = המשתמש משתמש
-settings-desc-user = מי אתה, על ההערות שאתה כותב.
-settings-group-identity = זהות זהות
+settings-desc-sec-appearance-behaviour = איך היישום עצמו נראה, ומה הוא עושה בעת ההפעלה.
+settings-desc-sec-editor = משטח הכתיבה: איך הוא נראה, ומה הוא עושה בזמן ההקלדה.
+settings-desc-sec-spelling = בדיקת איות, והמילונים שמאחוריה.
+settings-desc-sec-backup = איך העבודה שלכם מגיעה לדיסק, ואילו עותקים נשמרים.
+settings-desc-sec-compile = מה יוצא מ־Skribisto, ובאיזו צורה.
+settings-desc-sec-work = הגדרות ששייכות לפרויקט הזה ונשמרות בתוך הקובץ שלו.
+settings-desc-sec-extensions = עמודים שהרחבות המותקנות כאן הוסיפו.
+settings-desc-group-typography = עמוד לכל סוג טקסט: גופן, גודל, גובה שורה וריווח.
+settings-desc-appearance = שפת הממשק, ערכת הנושא, גודל הטקסט ומסך הפתיחה בעת ההפעלה.
+settings-desc-notifications = כל הודעה שהוצגה בהפעלה הזו, והפעולות שאפשר לבצע שוב.
+settings-desc-scene = איך מעוצב טקסט הסצנות: גופן, גודל, גובה שורה, הזחות וריווח.
+settings-desc-synopsis = איך מעוצבת חלונית התקציר, בנפרד מכתב היד.
+settings-desc-notes = איך מעוצבים הפתקים, בנפרד מכתב היד.
+settings-desc-corkboard = גודל הכרטיסים, מה כרטיס מציג, ואיך הלוח מסדר אותם.
+settings-desc-distraction-free = טיפוגרפיה, רוחב עמודה ורצועת בקרה לכתיבה במסך מלא.
+settings-desc-distraction-free-themes = ספריית ערכות הנושא לכתיבה במסך מלא: אלה שמגיעות עם היישום ואלה שלכם.
+settings-desc-editor-behavior = רוחב הטקסט, מיקום התקציר, גלילת מכונת כתיבה וההדגשה סביב הסמן.
+settings-desc-punctuation = הסגנון הטיפוגרפי שממנו מתחילים פרויקטים חדשים. כל פרויקט פועל לפיו, אלא אם הגדיר סגנון משלו.
+settings-desc-goals = יעדי מילים ותווים, ואיך נספרות המילים.
+settings-desc-games = מגבלות שאתם מציבים לעצמכם בזמן כתיבת הטיוטה, כמו "תמיד קדימה".
+settings-desc-spellcheck = המתג היחיד שמפעיל ומכבה את בדיקת האיות בכל מקום.
+settings-desc-dictionaries = התקנה, הסרה ועיון במילוני האיות שבמחשב הזה.
+settings-desc-autosave = האם העריכות שלכם נכתבות לדיסק מעצמן.
+settings-desc-backup = מתי נוצרים עותקים, היכן הם נשמרים, וכמה מהם. כל פרויקט פועל לפי זה, אלא אם הגדיר מדיניות משלו.
+settings-desc-export = הסגנונות שכל ייצוא עובר דרכם: אלה שמגיעים עם היישום ואלה שלכם.
+settings-desc-paratext = הטקסט הנלווה בפתח הספר ובסופו שפרויקט חדש יכול להתחיל איתו.
+settings-desc-keymap = כל קיצור, ולמה הוא משויך.
+settings-page-user = משתמש
+settings-desc-user = מי אתם, לצורך ההערות שאתם כותבים.
+settings-group-identity = זהות
 settings-field-user-name = השם שלך
-settings-field-user-name-placeholder = אופציונלי
-settings-field-user-name-hint = סימנים להערות ותשובות שאתה כותב. Distinct from a Project's Author Name, שהוא קו הרקיע של הספר וטייל בתוך הקובץ.
-settings-field-user-initials = ההתחלות שלך
-settings-field-user-initials-placeholder = מהשם שלך
-settings-field-user-initials-hint = איזה מעבד מילים מראה לצד תגובתך בשוליים, השאירו אותו ריק לשימוש באלה המוצגים, שנלקחו מהשם שלך.
-settings-field-user-hint = שניהם אופציונליים ומתחוללים על כל פרויקט במחשב זה, משנים את ההערות שאתה כותב הבא.הערות שכבר נכתבו לשמור את השם שהם נכתבו תחתיו.
-settings-desc-author = השם שהולך על הפרויקט הזה.
-settings-desc-structure = בין אם הפרקים של הפרויקט הם תיקיות או פריטים בודדים.
-settings-desc-language = השפה של הפרויקט נבדקת נגד.
-settings-desc-work-backup = מדיניות הגיבוי של הפרויקט עצמה, או זו הכללית.
-settings-desc-personal-dictionary = הדברים שהפרויקט הזה מתייחס אליהם בצורה נכונה.
-settings-desc-tags = התוויות הצבעוניות שהפרויקט הזה מסמן את הפריטים שלו.
-settings-desc-templates = תבניות הפתק ניתן להוסיף תוך כדי כתיבה בפרויקט זה.
-settings-desc-text-replacements = קיצורים שמרחיבים כסוגים בפרויקט זה.
-settings-desc-work-punctuation = הציטוטים, הדאשים ומצמצילים את הפרוזה של הפרויקט הזה.
+settings-field-user-name-placeholder = רשות
+settings-field-user-name-hint = חותם את ההערות והתשובות שאתם כותבים. שונה משם המחבר של פרויקט, שמופיע על הספר ונשמר בתוך הקובץ.
+settings-field-user-initials = ראשי התיבות שלך
+settings-field-user-initials-placeholder = מתוך השם שלך
+settings-field-user-initials-hint = מה שמעבד תמלילים מציג לצד ההערה שלכם בשוליים. אם משאירים ריק, נעשה שימוש בראשי התיבות המוצגים, שנלקחו מהשם שלכם.
+settings-field-user-hint = שני השדות הם רשות וחלים על כל הפרויקטים במחשב הזה. שינוי שלהם חותם את ההערות הבאות שתכתבו. הערות שכבר נכתבו שומרות על השם שתחתיו נכתבו.
+settings-desc-author = השם שמופיע על הפרויקט הזה.
+settings-desc-structure = האם הפרקים בפרויקט הזה הם תיקיות או פריטים בודדים.
+settings-desc-language = השפה שמולה נבדק הטקסט של הפרויקט הזה.
+settings-desc-work-backup = מדיניות הגיבוי של הפרויקט הזה, או המדיניות הכללית.
+settings-desc-personal-dictionary = המילים שהפרויקט הזה מתייחס אליהן כמאויתות נכון.
+settings-desc-tags = התגים הצבעוניים שהפרויקט הזה מסמן בהם את הפריטים שלו.
+settings-desc-templates = תבניות הפתקים שאפשר להוסיף בזמן הכתיבה בפרויקט הזה.
+settings-desc-text-replacements = קיצורים שמתרחבים בזמן ההקלדה בפרויקט הזה.
+settings-desc-work-punctuation = המירכאות, המקפים והריווח שהטקסט של הפרויקט הזה פועל לפיהם.
 
 settings-group-typography = טיפוגרפיה
-settings-group-writing-column = כתיבת עמודה
-settings-group-writing-view = תגית View
-settings-group-distraction-free-strip = שליטה ברצועה
+settings-group-writing-column = עמודת הכתיבה
+settings-group-writing-view = תצוגת הכתיבה
+settings-group-distraction-free-strip = רצועת הבקרה
 settings-group-theme = ערכת נושא
 settings-group-language = שפה
-settings-group-startup = סטארט-אפ
+settings-group-startup = הפעלה
 settings-group-updates = עדכונים
 settings-group-autosave = שמירה אוטומטית
-settings-field-typeface = סוג הפנים
+settings-field-typeface = גופן
 settings-field-size = גודל הטקסט
 
-editor-size-changed-manuscript = גודל הטקסט: { $percent }
-editor-size-changed-synopsis = גודל הטקסט: { $percent }
-editor-size-changed-notes = גודל הטקסט: { $percent }
-editor-size-changed-corkboard = גודל טקסט קרטון: { $percent }
-editor-size-changed-corkboard-expanded = גודל טקסט מורחב: { $percent }
-editor-size-changed-distraction-free = גודל טקסט ללא הפרעה: { $percent }
+editor-size-changed-manuscript = גודל הטקסט של כתב היד: { $percent }
+editor-size-changed-synopsis = גודל הטקסט של התקציר: { $percent }
+editor-size-changed-notes = גודל הטקסט של הפתקים: { $percent }
+editor-size-changed-corkboard = גודל הטקסט בכרטיסי לוח השעם: { $percent }
+editor-size-changed-corkboard-expanded = גודל הטקסט בעורך המורחב: { $percent }
+editor-size-changed-distraction-free = גודל הטקסט במצב ללא הסחות דעת: { $percent }
 
-menu-text-size-increase = הגדלת גודל הטקסט (&I)
-menu-text-size-decrease = ירידה בגודל הטקסט (&C)
-menu-text-size-reset = גודל הטקסט (&R)
-settings-field-line-height = גובה קו
-settings-field-first-line-indent = קו ראשון Indent
-settings-field-paragraph-spacing-before = חלל לפני פסקה
-settings-field-paragraph-spacing-after = חלל לאחר פסקה
-settings-field-column-width = קו רוחב
-settings-distraction-free-width-hint = מתאים רק בעוד מצב ללא הסחת דעת הוא על הסצינה שלך, Synopsis ורוחב עמודה הערות הם בלתי נסבלים.
-settings-distraction-free-title = שמור את שם הפריט
-settings-distraction-free-word-count = שמור את המילה ספירה
-settings-distraction-free-session = שמור על ישיבת הכתיבה
-settings-distraction-free-go-to = שמור את ה-Go ל-
-settings-distraction-free-go = שמור על הכפתורים הקודמים והבאפנים
-settings-distraction-free-chrome-hint = כפתור היציאה נשאר תמיד, כל מה שאתה בוחר כאן, זה הדרך שלך אם Escape הוא עסוק.
+menu-text-size-increase = הגדלת הטקסט (&I)
+menu-text-size-decrease = הקטנת הטקסט (&C)
+menu-text-size-reset = איפוס גודל הטקסט (&R)
+settings-field-line-height = גובה שורה
+settings-field-first-line-indent = הזחת שורה ראשונה
+settings-field-paragraph-spacing-before = ריווח לפני פסקה
+settings-field-paragraph-spacing-after = ריווח אחרי פסקה
+settings-field-column-width = רוחב העמודה
+settings-distraction-free-width-hint = חל רק כשמצב ללא הסחות דעת פעיל. רוחב העמודות של הסצנה, התקציר והפתקים לא משתנה.
+settings-distraction-free-title = להשאיר את שם הפריט
+settings-distraction-free-word-count = להשאיר את ספירת המילים
+settings-distraction-free-session = להשאיר את סשן הכתיבה
+settings-distraction-free-go-to = להשאיר את הכפתור "מעבר אל…"
+settings-distraction-free-go = להשאיר את הכפתורים "הקודם" ו"הבא"
+settings-distraction-free-chrome-hint = הכפתור "יציאה" נשאר תמיד, מה שלא תבחרו כאן. זו הדרך החוצה אם מקש Escape תפוס.
 settings-field-app-theme = ערכת נושא
-settings-theme-light = אור אור
-settings-theme-dark = כהה כהה
-settings-field-text-scale = גודל טקסט
-settings-field-language = שפת  Interface
-settings-synopsis-placement = מיקום Synopsis
+settings-theme-light = בהירה
+settings-theme-dark = כהה
+settings-field-text-scale = גודל הטקסט בממשק
+settings-field-language = שפת הממשק
+settings-synopsis-placement = מיקום התקציר
 settings-synopsis-placement-none = ללא
 settings-synopsis-placement-top = מעל
 settings-synopsis-placement-side = לצד
-settings-typewriter = תגית: Scrolling
-settings-typewriter-tip = החזק את הקו שאתה כותב בגובה קבוע בעוד כתבי היד מגוללים תחתיו. Clicking עדיין מעמיד את הטיפול שבו אתה לוחץ.
-settings-typewriter-position = מיקום Line
-settings-typewriter-position-top-third = למעלה שליש
-settings-typewriter-position-middle = תיכון
-settings-typewriter-position-bottom-quarter = רבעון
-settings-highlight-scope = אור גבוה סביב הטיפול
+settings-typewriter = גלילת מכונת כתיבה
+settings-typewriter-tip = מחזיקה את השורה שבכתיבה בגובה קבוע בזמן שכתב היד נגלל מתחתיה. לחיצה עדיין מציבה את הסמן במקום הלחיצה.
+settings-typewriter-position = מיקום השורה
+settings-typewriter-position-top-third = השליש העליון
+settings-typewriter-position-middle = אמצע
+settings-typewriter-position-bottom-quarter = הרבע התחתון
+settings-highlight-scope = הדגשה סביב הסמן
 settings-highlight-scope-none = ללא
-settings-highlight-scope-sentence = עונש מאסר
+settings-highlight-scope-sentence = משפט
 settings-highlight-scope-paragraph = פסקה
-settings-highlight-scope-tip-none = השאירו את הדף פשוט, שום דבר לא מוצל כפי שאתם כותבים.
-settings-highlight-scope-tip-sentence = שייד את המשפט שאתה כותב, אז זה יוצא מאלה שסביבו.
-settings-highlight-scope-tip-paragraph = שים את כל הסעיף שאתה כותב, כדי לשמור על הקטע שאתה עובד עליו.
-settings-group-container-views = תצוגות Container
-settings-remember-view = זכור את הנוף האחרון עבור כל פריט
-settings-remember-view-tip = פתח מיכל על הנוף שהשתמשת בו לאחרונה עבור סוג זה
+settings-highlight-scope-tip-none = העמוד נשאר נקי. שום דבר לא מוצלל בזמן הכתיבה.
+settings-highlight-scope-tip-sentence = הצללת המשפט שבכתיבה, כך שיבלוט מהמשפטים שסביבו.
+settings-highlight-scope-tip-paragraph = הצללת כל הפסקה שבכתיבה, כדי שהקטע שעליו עובדים יישאר בעין.
+settings-group-container-views = תצוגות של מכלים
+settings-remember-view = לזכור את התצוגה האחרונה לכל סוג פריט
+settings-remember-view-tip = פתיחת מכל בתצוגה שבה השתמשתם לאחרונה עבור הסוג הזה
 settings-remember-view-tip-more =
-    ספר, חלק ופרק כל אחד מציע מספר צפיות (עמוד משלו, מלא
-    כתב היד, הסינופוזיס המלא) סובב את זה על כל סוג נפתח מחדש על
-    בפעם האחרונה בחרת בו, למשל, לעבור פרק אחד לפרק מלא ולפרק.
-    הפרק הבא שאתה פותח מראה גם פרק שלם.כל סוג זוכר את דעתו שלו.
-settings-group-counting = מילה ספירת
-settings-counting-auto = אוטומטי (בשפה)
-settings-counting-whitespace = פיצול בחללים
-settings-counting-unicode-words = מילים unicode
-settings-counting-cjk-hybrid = CJK-aware (per Character)
-settings-counting-hint = אוטומטי נחשב סיני ויפנית על ידי אופי וכל שפה אחרת במילים, לשנות את זה רק אם הספירה נראית לא נכונה עבור השפה שלך.
-settings-group-goals-display = Display Display
-settings-show-characters = הצג את הדמות ספירה בבר הסטטוס
-settings-autosave-hint = שינויים כתובים לדיסק באופן אוטומטי כפי שאתה כותב.
+    ספר, חלק ופרק מציעים כל אחד כמה תצוגות (העמוד שלו, כתב היד המלא,
+    התקציר המלא). כשהאפשרות פועלת, כל סוג נפתח מחדש בתצוגה שבחרתם
+    עבורו לאחרונה. למשל, אם תעבירו פרק אחד ל"פרק מלא", הפרק הבא שתפתחו
+    יוצג גם הוא כ"פרק מלא". כל סוג זוכר את התצוגה שלו.
+settings-group-counting = ספירת מילים
+settings-counting-auto = אוטומטית (לפי שפה)
+settings-counting-whitespace = פיצול לפי רווחים
+settings-counting-unicode-words = מילים לפי Unicode
+settings-counting-cjk-hybrid = מותאמת CJK (לפי תו)
+settings-counting-hint = הספירה האוטומטית סופרת סינית ויפנית לפי תווים וכל שפה אחרת לפי מילים. יש לשנות זאת רק אם הספירה נראית שגויה עבור השפה שלכם.
+settings-group-goals-display = תצוגה
+settings-show-characters = הצגת ספירת התווים בשורת המצב
+settings-autosave-hint = השינויים נכתבים לדיסק אוטומטית תוך כדי כתיבה.
 
 settings-sec-work = פרויקט
 settings-page-structure = מבנה
 settings-page-author = מחבר
 settings-field-author-name = שם המחבר
-settings-field-author-placeholder = אופציונלי
-settings-field-author-hint = מופיע בעמוד השער ובמטא־נתונים של הקובץ המיוצא. השאירו ריק כדי להשמיט. זהו שם מחבר הספר; השם לתגובות מוגדר בהגדרות ▸ משתמש.
+settings-field-author-placeholder = רשות
+settings-field-author-hint = מופיע בעמוד השער המהודר ובמטא־נתונים של הקבצים המיוצאים. אפשר להשאיר ריק כדי להשמיט אותו. זה שם המחבר שעל הספר. השם שבו נחתמות ההערות שלכם נמצא בהגדרות ▸ משתמש.
 settings-group-chapters = פרקים
-tidy-titles-title = טיבי פרק כותרות
-tidy-titles-none = שום פרק או כותרת חלקית לא רק חוזרים על המספר שלו.
+tidy-titles-title = סידור כותרות הפרקים
+tidy-titles-none = אין כותרת פרק או חלק שרק חוזרת על המספר שלה.
 tidy-titles-lead = { $count ->
-        [one] פרק אחד או חלק נקרא רק עם מספר משלו.
-       *[other] { $count } פרקים וחלקים אינם אלא מספר משלהם.
+        [one] { $count } פרק או חלק נושא ככותרת רק את המספר שלו.
+       *[other] { $count } פרקים וחלקים נושאים ככותרת רק את המספר שלהם.
     }
-tidy-titles-explain = קביעת הכותרים האלה מותירה כל אחד מהמספר שהספר כבר יודע, אותו מספר הדפסי היצוא.שום דבר אחר לא משתנה, ואחד מהם לא מחזיר את כולם.
-menu-document-tidy-titles = טיבי פרק כותרות... (&Y)
-settings-group-numbering = מספר
-settings-number-chapters = מספר פרקים וחלקים
-settings-number-chapters-tip = פרקים וחלקים נושאים מספר מתוך המקום שבו הם יושבים בספר, מוצגים ליד הכותרת שלהם כאן, והודפסו על ידי הייצוא.
-settings-number-chapters-tip-more = המספר לעולם אינו מאוחסן בכותרת, כך שהוא נשאר צודק כאשר אתה מסדר מחדש, להוסיף או למחוק. לכבות את זה ואת תדפיסי היצוא לבד, כל מה שסגנון הייצוא מבקש.כדי להשאיר פרק אחד בחוץ (פרולוג, אינטגרול), להשתמש במחליף המספרי של המפקח במקום: זה שומר אותו בספר אבל עוצר אותו מספר.
-settings-part-resets-chapter = מספרי פרק מנוחה בכל חלק
-settings-part-resets-chapter-tip = על ידי ברירת מחדל: פרקים לרוץ ישר על פני חלקי הספר, כך "חלק שני" נפתח על פרק 11.
-settings-part-resets-chapter-tip-more = זהו הנוהג הרגיל של המסחר, ומה קורא מצפה לו להפוך אותו לספר שחלקיו נועדו לקרוא ככרכים נפרדים, שבו כל אחד נפתח בפרק אחד.
+tidy-titles-explain = ניקוי הכותרות האלה משאיר כל אחד מהם מזוהה לפי המספר שהספר כבר יודע, אותו מספר שהייצוא מדפיס. שום דבר אחר לא משתנה, וביטול אחד מחזיר את כולן.
+menu-document-tidy-titles = סידור כותרות הפרקים… (&Y)
+settings-group-numbering = מספור
+settings-number-chapters = מספור פרקים וחלקים
+settings-number-chapters-tip = פרקים וחלקים נושאים מספר שמחושב לפי מקומם בספר, מוצג כאן לצד הכותרת שלהם ומודפס בייצוא.
+settings-number-chapters-tip-more = המספר אף פעם לא נשמר בכותרת, ולכן הוא נשאר נכון כשמסדרים מחדש, מוסיפים או מוחקים. אם האפשרות כבויה, הייצוא מדפיס את הכותרות בלבד, מה שלא יבקש סגנון הייצוא. כדי להשאיר פרק אחד מחוץ למספור (פרולוג, אינטרלוד), יש להשתמש במתג "מספור" בחלונית המאפיינים: כך הפרק נשאר בספר אך לא מקבל מספר.
+settings-part-resets-chapter = התחלת מספור הפרקים מחדש בכל חלק
+settings-part-resets-chapter-tip = כבוי כברירת מחדל: הפרקים ממוספרים ברצף לאורך כל חלקי הספר, כך ש"חלק שני" נפתח בפרק אחד־עשר.
+settings-part-resets-chapter-tip-more = זה הנוהג המקובל בהוצאה לאור, ומה שקוראים מצפים לו. כדאי להפעיל את האפשרות בספר שחלקיו אמורים להיקרא ככרכים נפרדים, שבהם כל חלק נפתח בפרק אחד.
 settings-chapter-flat = פרקים שטוחים
-settings-chapter-flat-hint = על: פרק הוא פריט אחד.אתה כותב בו, ואין לו סצנות: פרק הוא תיקיה.אתה עדיין כותב לתוכה, אבל זה יכול להחזיק סצנות גם.פרקים חדשים לעקוב אחר ההגדרה הזאת; אלה הקיימים להמיר באמצעות קידום.
+settings-chapter-flat-hint = פועל: פרק הוא פריט יחיד. כותבים בתוכו, והוא לא מכיל סצנות. כבוי: פרק הוא תיקייה. עדיין כותבים בתוכו, אבל הוא יכול להכיל גם סצנות. פרקים חדשים פועלים לפי ההגדרה הזו; פרקים קיימים מומרים באמצעות "המרה אל".
 
-settings-styles-builtin = סגנונות בנויים
-settings-styles-user = סגנונות שלי
-settings-styles-builtin-badge = נבנה-in
+settings-styles-builtin = סגנונות מובנים
+settings-styles-user = הסגנונות שלי
+settings-styles-builtin-badge = מובנה
 settings-styles-duplicate = שכפול
 settings-styles-edit = עריכה
 settings-styles-delete = מחיקה
 settings-styles-import = ייבוא…
 settings-styles-export = ייצוא…
-settings-styles-copy-suffix = (צילום)
-settings-styles-json-filter = סגנון היצוא
-settings-styles-editor-title = Edit סגנון
-settings-styles-editor-none = בחר סגנון מותאם אישית לערוך אותו, או לשכפל בסגנון בנוי.
-settings-styles-imported = סגנון מיובא
-settings-styles-import-failed = לא יכול לייבא סגנון
-settings-styles-exported = סגנון ייצוא
-settings-styles-export-failed = לא יכול לייצא סגנון
+settings-styles-copy-suffix = (עותק)
+settings-styles-json-filter = סגנון ייצוא
+settings-styles-editor-title = עריכת סגנון
+settings-styles-editor-none = יש לבחור סגנון מותאם אישית כדי לערוך אותו, או לשכפל סגנון מובנה.
+settings-styles-imported = הסגנון יובא
+settings-styles-import-failed = לא ניתן לייבא את הסגנון
+settings-styles-exported = הסגנון יוצא
+settings-styles-export-failed = לא ניתן לייצא את הסגנון
 settings-styles-field-name = שם
-settings-styles-field-chapters = כותרות פרק
-settings-styles-field-parts = חלק כותרות
-settings-styles-field-scene-break = סצנות פורצות
-settings-styles-field-major-scene-break = הסצנה הגדולה שוברת
-settings-styles-field-spacing = קו ספאק
-settings-styles-field-justify = Justify טקסט
-settings-styles-field-notes = כולל הערות
-settings-styles-field-synopses = כולל synops
-settings-styles-field-scene-titles = כולל כותרות סצנה
-settings-styles-field-epigraphs = כולל גרפים
-settings-styles-field-paratexts = כולל paratexts
-settings-styles-field-epigraph-placement = מיקום Epigraph
-settings-styles-epigraph-after = לאחר הכותרת
+settings-styles-field-chapters = כותרות פרקים
+settings-styles-field-parts = כותרות חלקים
+settings-styles-field-scene-break = מעבר סצנה
+settings-styles-field-major-scene-break = מעבר סצנה ראשי
+settings-styles-field-spacing = ריווח שורות
+settings-styles-field-justify = יישור לשני הצדדים
+settings-styles-field-notes = הכללת פתקים
+settings-styles-field-synopses = הכללת תקצירים
+settings-styles-field-scene-titles = הכללת כותרות סצנות
+settings-styles-field-epigraphs = הכללת מוטו
+settings-styles-field-paratexts = הכללת טקסטים נלווים
+settings-styles-field-epigraph-placement = מיקום המוטו
+settings-styles-epigraph-after = אחרי הכותרת
 settings-styles-epigraph-before = לפני הכותרת
-settings-styles-field-footnotes = כולל הערות שוליים
-settings-styles-field-footnote-numbering = תגית: Number
-settings-styles-footnote-numbering-continuous = רציף מתמשך
-settings-styles-footnote-numbering-per-chapter = כל פרק
-settings-styles-footnote-numbering-per-book = כל ספר
+settings-styles-field-footnotes = הכללת הערות שוליים
+settings-styles-field-footnote-numbering = מספור הערות השוליים
+settings-styles-footnote-numbering-continuous = רציף
+settings-styles-footnote-numbering-per-chapter = מחדש בכל פרק
+settings-styles-footnote-numbering-per-book = מחדש בכל ספר
 settings-styles-field-images = תמונות
-menu-image = צילום תמונה (&I)
-settings-styles-images-beside = להיות לצד המסמך
+menu-image = תמונה (&I)
+settings-styles-images-beside = לצד המסמך
 settings-styles-images-embed = בתוך המסמך
-settings-styles-images-omit = לצאת החוצה
-settings-styles-group-round-trip = שולח לעורך
-settings-styles-field-comments = כולל הערות
-settings-styles-field-round-trip-marks = כולל סמנים עגולים
-settings-styles-round-trip-hint = DOCX ו- ODT בלבד.מארקרס הם מזהים בלתי נראים שמאפשרים לעדכון קובץ חוזר של הפרויקט במקום לנחות לצדו כעתק שני.
-settings-styles-group-pages = דפים
-settings-styles-field-cover = פתוח עם הכיסוי
-settings-styles-field-word-count = Word Count on Title page
-settings-styles-field-page-books = דף חדש בכל ספר
-settings-styles-field-page-parts = דף חדש בכל חלק
-settings-styles-field-page-chapters = דף חדש בכל פרק
-settings-styles-field-page-paratexts = דף חדש בכל טקסט
-settings-styles-heading-none = אין כותרת
-settings-styles-heading-numbered = מספר רק
+settings-styles-images-omit = השמטה
+settings-styles-group-round-trip = שליחה לעורך
+settings-styles-field-comments = הכללת הערות
+settings-styles-field-round-trip-marks = הכללת סמני הלוך־חזור
+settings-styles-round-trip-hint = ‏DOCX ו־ODT בלבד. סמנים הם מזהים בלתי נראים שמאפשרים לקובץ חוזר לעדכן את הפרויקט הזה במקום להתווסף לצדו כעותק שני.
+settings-styles-group-pages = עמודים
+settings-styles-field-cover = פתיחה בכריכה
+settings-styles-field-word-count = ספירת מילים בעמוד השער
+settings-styles-field-page-books = עמוד חדש בכל ספר
+settings-styles-field-page-parts = עמוד חדש בכל חלק
+settings-styles-field-page-chapters = עמוד חדש בכל פרק
+settings-styles-field-page-paratexts = עמוד חדש בכל טקסט נלווה
+settings-styles-heading-none = ללא כותרות
+settings-styles-heading-numbered = מספר בלבד
 settings-styles-heading-title = כותרת בלבד
 settings-styles-heading-both = מספר + כותרת
-settings-styles-break-blank = קו Blank
+settings-styles-break-blank = שורה ריקה
 settings-styles-break-none = ללא
-settings-styles-spacing-single = רווקה
+settings-styles-spacing-single = יחיד
 settings-styles-spacing-onehalf = 1½
 settings-styles-spacing-double = כפול
 
-welcome-title = ברוכים הבאים ל-Skribisto
+welcome-title = ברוכים הבאים ל־Skribisto
 welcome-version = גרסה { $version }
 welcome-update-available = גרסה { $version } זמינה
-welcome-update-tip = פתח את דף ההורדה בדפדפן שלך.
-welcome-search = פרויקטי חיפוש
+welcome-update-tip = פותח את דף ההורדה בדפדפן.
+welcome-search = חיפוש פרויקטים
 welcome-open = פתיחה
 welcome-new-work = פרויקט חדש
-welcome-create-from = ליצור מתוך...
+welcome-create-from = יצירה מתוך…
 welcome-recent-works = פרויקטים אחרונים
-welcome-empty-recents = עדיין לא פרויקטים אחרונים.
-welcome-no-matches = שום פרויקט לא יתאים לחיפוש שלך.
-welcome-learn-soon = מדריכים וטיפים באים בקרוב.
-welcome-about-blurb = Skribisto, Rewrite + Teksilo של אפליקציית הכתיבה.
-welcome-tagline = מקום שקט לכתוב דברים ארוכים."
+welcome-empty-recents = אין עדיין פרויקטים אחרונים.
+welcome-no-matches = אין פרויקט אחרון שתואם לחיפוש.
+welcome-learn-soon = מדריכים וטיפים יגיעו בקרוב.
+welcome-about-blurb = ‏Skribisto, כתיבה מחדש של יישום הכתיבה ב־Rust וב־Teksilo.
+welcome-tagline = *מקום שקט לכתוב בו דברים ארוכים.*
 welcome-github = GitHub
 welcome-discord = Discord
 nav-works = פרויקטים
 nav-examples = דוגמאות
-nav-learn = למד ללמוד
+nav-learn = למידה
 nav-about = אודות
 
 synopsis = תקציר
 epigraph = מוטו
 pane-manuscript = כתב יד
-corkboard = לוח כרטיסים
-overview = סקירה
+corkboard = לוח שעם
+overview = סקירה כללית
 
 corkboard-card-count = { $count ->
     [one] { $count } כרטיס
-   *[other] { $count } קלפים
+   *[other] { $count } כרטיסים
 }
 corkboard-child-count = { $count ->
-    [one] { $count }
+    [one] { $count } פריט
    *[other] { $count } פריטים
 }
-corkboard-view-nested = תצוגה מקוננת
-corkboard-view-flat = שטוחה
-corkboard-layout-hint = ננזד מראה לילדים הישירים של מכולה, פתח כרטיס תיקיה כדי להיכנס אליו. Flat מראה כל סצנה במיכל כולו בבת אחת.
-corkboard-card-size = גודל כרטיס
-corkboard-search-placeholder = כרטיסי מסנן...
-corkboard-empty-title = אין כאן עדיין
-corkboard-empty-hint = השתמש ב"חדש" לעיל כדי להוסיף את הראשון.
+corkboard-view-nested = מקונן
+corkboard-view-flat = שטוח
+corkboard-layout-hint = "מקונן" מציג את הצאצאים הישירים של מכל. פתיחת כרטיס תיקייה נכנסת לתוכה. "שטוח" מציג בבת אחת את כל הסצנות שבמכל כולו.
+corkboard-card-size = גודל הכרטיסים
+corkboard-search-placeholder = סינון כרטיסים…
+corkboard-empty-title = אין כאן כלום עדיין
+corkboard-empty-hint = יש להשתמש ב"＋ חדש" שלמעלה כדי להוסיף את הראשון.
 corkboard-new = חדש
-corkboard-show-card-numbers = מספר הקלפים
-corkboard-modal-size = גודל העורך
-corkboard-scope-hint = מתאים לכל קורקורד פתוח, בכל פרויקט.
-corkboard-sort-manuscript = פקודת Manuscript
-corkboard-sort-title-asc = כינוי A-Z
-corkboard-sort-title-desc = תגית: Z-A
+corkboard-show-card-numbers = מספור הכרטיסים
+corkboard-modal-size = גודל העורך המורחב
+corkboard-scope-hint = חל על כל לוח שעם פתוח, בכל פרויקט.
+corkboard-sort-manuscript = סדר כתב היד
+corkboard-sort-title-asc = כותרת א–ת
+corkboard-sort-title-desc = כותרת ת–א
 corkboard-card-number = כרטיס { $number }
 
 duplicate = שכפול
 duplicate-n = { $count ->
-    [one] כרטיס { $count }
-   *[other] { $count } קלפים
+    [one] שכפול { $count } כרטיס
+   *[other] שכפול { $count } כרטיסים
 }
 set-label-n = { $count ->
-    [one] צילום: { $count } Card
-   *[other] תוויות: { $count } קלפים
+    [one] הגדרת תווית ל־{ $count } כרטיס
+   *[other] הגדרת תווית ל־{ $count } כרטיסים
 }
 move-to-trash-n = { $count ->
-    [one] { $count } כרטיס לפח האשפה
-   *[other] { $count } כרטיסים לפח האשפה
+    [one] העברת { $count } כרטיס לאשפה
+   *[other] העברת { $count } כרטיסים לאשפה
 }
-reveal-in-outline = התגלות ב-Comple
+reveal-in-outline = הצגה במתווה
 
-corkboard-move-to = לעבור ל...
+corkboard-move-to = העברה אל…
 corkboard-move-to-n = { $count ->
-    [one] כרטיס { $count } ל...
-   *[other] { $count } כרטיסים ל...
+    [one] העברת { $count } כרטיס אל…
+   *[other] העברת { $count } כרטיסים אל…
 }
-corkboard-move-picker-title = לעבור ל...
-corkboard-move-picker-empty = אף אחד לא יוצר קודם.
+corkboard-move-picker-title = העברה אל…
+corkboard-move-picker-empty = אין עדיין קלסרים. יש ליצור אחד קודם.
 corkboard-move-picker-cancel = ביטול
-corkboard-move-here = לחצו כאן
+corkboard-move-here = העברה לכאן
 corkboard-moved-ok = { $count ->
-    [one] { $count } כרטיס עבר
-   *[other] { $count } כרטיסים עברו
+    [one] { $count } כרטיס הועבר
+   *[other] { $count } כרטיסים הועברו
 }
-corkboard-move-into-self = מיכל לא יכול להיות נע בתוך עצמו, לבחור יעד בחוץ.
-corkboard-move-failed = לא ניתן להעביר את הקלפים האלה שם.
+corkboard-move-into-self = אי אפשר להעביר מכל אל תוך עצמו. יש לבחור יעד מחוץ לו.
+corkboard-move-failed = לא ניתן היה להעביר את הכרטיסים האלה לשם.
 
 overview-col-title = כותרת
 overview-col-type = סוג
-overview-col-label = תיאור קצר
-overview-col-tags = תגיות
-overview-col-books = ספרים ספרים
+overview-col-label = תווית
+overview-col-tags = תגים
+overview-col-books = ספרים
 overview-col-own-words = מילים
-overview-col-total-words = Total Total
+overview-col-total-words = סה״כ
 overview-row-count = { $count ->
-    [one] { $count }
+    [one] { $count } פריט
    *[other] { $count } פריטים
 }
-overview-search-placeholder = פילטרים...
-overview-expand-all = להרחיב את כל
-overview-collapse-all = התמוטטות כל
+overview-search-placeholder = סינון פריטים…
+overview-expand-all = הרחבת הכול
+overview-collapse-all = כיווץ הכול
 overview-table-label = תוכן
-overview-empty-title = אין כאן עדיין
-overview-gone-title = המכל הזה נעלם
-overview-gone-hint = הוא הועבר ל- Trash. לשחזר אותו, או לסגור את הכרטיסיה.
-overview-empty-hint = השתמש ב"חדש" לעיל כדי להוסיף את הראשון.
-corkboard-grid-label = כרטיסי קרטון
-corkboard-rename-field = שם פריט
-corkboard-expand-synopsis = הרחבת synopsis
+overview-empty-title = אין כאן כלום עדיין
+overview-gone-title = המכל הזה כבר לא קיים
+overview-gone-hint = הוא הועבר לאשפה. אפשר לשחזר אותו או לסגור את הלשונית הזו.
+overview-empty-hint = יש להשתמש ב"＋ חדש" שלמעלה כדי להוסיף את הראשון.
+corkboard-grid-label = כרטיסי לוח השעם
+corkboard-rename-field = שינוי שם הפריט
+corkboard-expand-synopsis = הרחבת התקציר
 corkboard-synopsis-modal-title = תקציר
 corkboard-badge-scene = סצנה
 corkboard-badge-chapter = פרק
 corkboard-badge-part = חלק
 corkboard-badge-book = ספר
-corkboard-badge-note = הערה
+corkboard-badge-note = פתק
 corkboard-badge-folder = תיקייה
 corkboard-badge-paratext = טקסט נלווה
 corkboard-badge-text = טקסט
-corkboard-badge-end = סוף סוף סוף
+corkboard-badge-end = סוף
 settings-group-corkboard-layout = פריסה
-settings-group-corkboard-cards = כרטיסי אשראי
-corkboard-show-word-count = תגית: Count on Cards
+settings-group-corkboard-cards = כרטיסים
+corkboard-show-word-count = הצגת ספירת המילים על הכרטיסים
 text-heading = טקסט
-no-content = פריט זה אין תוכן שניתן לערוך.
-untitled = ללא שם
+no-content = לפריט הזה אין תוכן שניתן לערוך.
+untitled = ללא כותרת
 placeholder-title = כותרת…
-placeholder-subtitle = כותרת...
-placeholder-chapter-title = כותרת פרק...
-split-editor = עורך ה-Split
-close-split-view = השקפה מפוצלת
-drop-open-here = פתוח כאן
-drop-open-to-side = פתוח לצד
+placeholder-subtitle = כותרת משנה…
+placeholder-chapter-title = כותרת הפרק…
+split-editor = פיצול העורך
+close-split-view = סגירת התצוגה המפוצלת
+drop-open-here = פתיחה כאן
+drop-open-to-side = פתיחה בצד
 
 segment-chapter = פרק
 segment-part = חלק
 segment-book = ספר
-segment-pace = פייספייס
-segment-notes = הערות
-segment-story-bible = מדריך הסיפור
-segment-note-own = הערה
+segment-pace = קצב
+segment-notes = פתקים
+segment-story-bible = תיק הסיפור
+segment-note-own = פתק
 segment-note-details = פרטים
-segment-note-in-prose = Prose
-pace-placeholder = מתכנן הפייס מופיע כאן.
-pace-empty-title = לתכנן את הקצב של הספר
-pace-empty-body = הגדר יעד מילה ותאריך מועד, ו- Skribisto פרויקטים יוצאים מהקצב היומי כדי להגיע אליכם לשם.
-pace-start-planning = התחל תכנון
+segment-note-in-prose = בטקסט
+pace-placeholder = מתכנן הקצב מופיע כאן.
+pace-empty-title = תכנון קצב הכתיבה של הספר הזה
+pace-empty-body = מגדירים יעד מילים ותאריך יעד, ו־Skribisto מחשבת את הקצב היומי שיביא אתכם לשם.
+pace-start-planning = התחלת התכנון
 pace-section-schedule = לוח זמנים
 pace-section-progress = התקדמות
-pace-advancement = קידום
+pace-advancement = מצב ההתקדמות
 pace-goal = יעד מילים
-pace-deadline = מועד סיום
-pace-active = פייס פעיל
-pace-day-mon = מונד מונ
-pace-day-tue = יום ג׳
-pace-day-wed = יום ד׳
-pace-day-thu = תור ת'
-pace-day-fri = פרי פרי
-pace-day-sat = Sat Sat
-pace-day-sun = השמש
-pace-card-written = מילים שנכתבו
-pace-card-of-goal = המטרה
-pace-card-rate = מילים / Writing Day
+pace-deadline = תאריך יעד
+pace-active = הקצב פעיל
+pace-day-mon = ב׳
+pace-day-tue = ג׳
+pace-day-wed = ד׳
+pace-day-thu = ה׳
+pace-day-fri = ו׳
+pace-day-sat = ש׳
+pace-day-sun = א׳
+pace-card-written = מילים נכתבו
+pace-card-of-goal = מהיעד
+pace-card-rate = מילים ליום כתיבה
 pace-card-days-left = ימי כתיבה נותרו
-pace-card-streak = יום treak
-pace-card-ahead = מילים לפני קצב
+pace-card-streak = ימים ברצף
+pace-card-ahead = מילים לפני הקצב
 pace-card-behind = מילים מאחורי הקצב
-pace-charts-empty = גרפים התקדמות מופיעים כאן ברגע שספירת המילה שלך נרשמת על מנת להציל.
-pace-chart-progression = מילים שנכתבו נגד מטרה
+pace-charts-empty = תרשימי ההתקדמות יופיעו כאן אחרי שספירת המילים תירשם בשמירה.
+pace-chart-progression = מילים שנכתבו לעומת היעד
 pace-chart-words-per-day = מילים ליום
 pace-series-actual = בפועל
 pace-series-target = יעד
-pace-series-words-per-day = מילים / יום
-pace-daily-target-line = גם קצב: { $count ->
-    [one] { $count } מילים / יום
-   *[other] { $count } מילים
+pace-series-words-per-day = מילים ליום
+pace-daily-target-line = קצב אחיד: { $count ->
+    [one] { $count } מילה ליום
+   *[other] { $count } מילים ליום
 }
-pace-section-holidays = חגים
+pace-section-holidays = חופשות
 pace-section-milestones = אבני דרך
-pace-holidays-none = אין חגים, כל יום מתוכנן נחשב.
-pace-holiday-label = שם נופש
+pace-holidays-none = אין חופשות. כל יום מתוכנן נספר.
+pace-holiday-label = שם החופשה
 pace-add-holiday = הוספה
 pace-remove = הסרה
-pace-milestones-none = אין עוד אבני דרך, הגדר אחד על חלק או פרק במפקח.
-full-chapter = פרק שלם
-full-part = חלק מלא
-full-book = ספר מלא
-full-synopsis = תקציר מלא
+pace-milestones-none = אין עדיין אבני דרך. אפשר להגדיר אבן דרך לחלק או לפרק בחלונית המאפיינים.
+full-chapter = הפרק המלא
+full-part = החלק המלא
+full-book = הספר המלא
+full-synopsis = התקציר המלא
 rename = שינוי שם
-set-label = המונחים:
-insert-scene = סצנת הכנס
-insert-chapter = פרק פרק
-split-scene = סצנת פיצול
+set-label = הגדרת תווית
+insert-scene = הוספת סצנה
+insert-chapter = הוספת פרק
+split-scene = פיצול הסצנה
 move-up = הזזה למעלה
 move-down = הזזה למטה
-merge-with-previous = מארג' עם הקודם
+merge-with-previous = מיזוג עם הקודמת
 move-to-trash = העברה לאשפה
-rename-chapter = שם הפרק
-add-scene = הוסף סצינה חדשה
-add-chapter = הוסף פרק חדש
+rename-chapter = שינוי שם הפרק
+add-scene = הוספת סצנה חדשה
+add-chapter = הוספת פרק חדש
 new-scene-title = סצנה חדשה
-placeholder-scene-name = שם סצנות...
+placeholder-scene-name = שם הסצנה…
 menu-cut = גזירה
 menu-copy = העתקה
 menu-paste = הדבקה
 menu-paste-unformatted = הדבקה ללא עיצוב
 menu-select-all = בחירת הכול
 format-bold = מודגש
-format-italic = זהic
-format-underline = המונחים:
-format-strikethrough = באמצעות Strike
+format-italic = נטוי
+format-underline = קו תחתון
+format-strikethrough = קו חוצה
 
-binder = עץ המסמכים
-no-work = שום פרויקט לא טעון
-no-recent-works = לא פרויקטים אחרונים
-switcher-open-section = היום פתוח
-switcher-recent-section = לאחרונה
+binder = קלסר
+no-work = לא נטען פרויקט
+no-recent-works = אין פרויקטים אחרונים
+switcher-open-section = פתוחים כעת
+switcher-recent-section = אחרונים
 switcher-this-window = החלון הזה
-open-project-title = פרוייקט פתוח
-open-project-question = איך אתה רוצה לפתוח "{ $title }"?
-open-in-new-window = נפתח בחלון חדש
-open-here = פתוח כאן
+open-project-title = פתיחת פרויקט
+open-project-question = איך לפתוח את "{ $title }"?
+open-in-new-window = פתיחה בחלון חדש
+open-here = פתיחה כאן
 
-binder-all = כל עצי המסמכים
-binder-show-all = הצג את כל הכבלים
-binder-new = מחבר חדש...
-binder-default-name = קושר חדש
+binder-all = כל הקלסרים
+binder-show-all = הצגת כל הקלסרים
+binder-new = קלסר חדש…
+binder-default-name = קלסר חדש
 binder-item-count = { $count ->
-    [one] { $count }
+    [one] { $count } פריט
    *[other] { $count } פריטים
 }
-binder-search-placeholder = מסנן את קווי המתאר...
-binder-search-scope = חפש את כל הכבלים
-binder-trash-confirm-title = מזיזים את האשפה?
-binder-trash-confirm-text = "{ $name }" וכל הפריטים יועברו לפח האשפה.
+binder-search-placeholder = סינון המתווה…
+binder-search-scope = חיפוש בכל הקלסרים
+binder-trash-confirm-title = להעביר את הקלסר לאשפה?
+binder-trash-confirm-text = "{ $name }" וכל הפריטים שבו יועברו לאשפה.
 
 dialog-rename = שינוי שם
-dialog-new-binder = קושר חדש
-dialog-set-label = המונחים:
+dialog-new-binder = קלסר חדש
+dialog-set-label = הגדרת תווית
 dialog-new-scene = סצנה חדשה
-close-work-question = לשמור שינויים לפני סגירת הפרויקט?
-quit-question = לשמור שינויים לפני היציאה?
-quit-save-work-question = לחסוך שינויים ב- { $title } לפני שהפסיקו?
-unsaved-changes = בפרויקט יש שינויים שלא נשמרו.
-new-work-unsaved-question = לחסוך שינויים לפני יצירת פרויקט חדש?
-open-work-unsaved-question = לחסוך שינויים לפני פתיחת פרויקט אחר?
-switch-backup-discard-title = שינויים בגיבוי הזה?
-switch-backup-discard-text = שינויים בגיבוי לא ניתן לשמור על זה. השתמש בהצלת או לשחזר כדי לשמור אותם, או למחוק אותם ולפתוח את הפרויקט השני.
-switch-save-failed = לא ניתן היה להציל את הפרויקט, ולכן לא הוחלף: { $error }
-switch-save-not-started = לא ניתן היה להציל את הפרויקט, אז לא הוחלף.
-close-save-failed = לא ניתן היה להציל את הפרויקט כך שלא נסגר: { $error }
-close-save-not-started = לא ניתן היה להציל את הפרויקט, כך שלא נסגר.
-save-not-started = לא ניתן להציל את הפרויקט.
+close-work-question = לשמור את השינויים לפני סגירת הפרויקט?
+quit-question = לשמור את השינויים לפני היציאה?
+quit-save-work-question = לשמור את השינויים ב־{ $title } לפני היציאה?
+unsaved-changes = בפרויקט הזה יש שינויים שלא נשמרו.
+new-work-unsaved-question = לשמור את השינויים לפני יצירת פרויקט חדש?
+open-work-unsaved-question = לשמור את השינויים לפני פתיחת פרויקט אחר?
+switch-backup-discard-title = לבטל את השינויים בגיבוי הזה?
+switch-backup-discard-text = לא ניתן לשמור שינויים בגיבוי עצמו. כדי לשמור אותם יש להשתמש ב"שמירה בשם" או ב"שחזור", או לבטל אותם ולפתוח את הפרויקט האחר.
+switch-save-failed = לא ניתן היה לשמור את הפרויקט, ולכן הוא לא הוחלף: { $error }
+switch-save-not-started = לא ניתן היה לשמור את הפרויקט, ולכן הוא לא הוחלף.
+close-save-failed = לא ניתן היה לשמור את הפרויקט, ולכן הוא לא נסגר: { $error }
+close-save-not-started = לא ניתן היה לשמור את הפרויקט, ולכן הוא לא נסגר.
+save-not-started = לא ניתן היה לשמור את הפרויקט.
 
 could-not-open-work = לא ניתן לפתוח את "{ $file }"
-could-not-open-work-too-new = הקובץ „{ $file }” דורש גרסה חדשה יותר של Skribisto
-could-not-open-work-too-new-detail = הקובץ נשמר בפורמט Skribisto { $written_by }. פתיחתו דורשת פורמט { $requires } או חדש יותר, וגרסה זו תומכת בפורמטים עד { $supported }. יש לעדכן את Skribisto כדי לפתוח אותו.
-could-not-open-work-importing = תהליך ייבוא כותב כעת אל „{ $file }”
-could-not-open-work-importing-detail = תהליך ייבוא מחליף את הפרויקט הזה ועדיין לא הסתיים. יש לפתוח אותו לאחר סיום הייבוא. פתיחה כעת תציג את הפרויקט הישן, והשמירה הבאה שלו תדרוס את הנתונים שיובאו.
-could-not-open-example = { $error }
-could-not-open-link = { $url }: { $error }
-could-not-create-work = לא ניתן ליצור פרויקט: { $error }
-saving-as-file = { $target }...
-saving-as-folder = שמירה על { $target }/
-saved-as = { $target }
-save-error = לא ניתן להציל: { $error }
-save-flush-failed = המחוספס עבר, אך לא ניתן להעביר את המסמכים הללו ועדיין לא מוצפים: { $titles } ({ $error })
-backup-error = לא יכול לגבות: { $error }
-backing-up = לקום...
-backup-nothing-open = שום פרויקט לא פתוח לחזרה.
-backup-already-running = גיבוי כבר מתקדם.
-backup-complete = גיבוי מלא ({ $ok }) הציל, { $skipped } כבר כיום)
-backup-partial = הגיבוי הסתיים: { $ok } הצילו { $failed ->
-    [one] { $failed } היעד נכשל
+could-not-open-work-too-new = "{ $file }" דורש גרסה חדשה יותר של Skribisto
+could-not-open-work-too-new-detail = נשמר בפורמט Skribisto { $written_by }; פתיחתו דורשת פורמט { $requires } ומעלה, והגרסה הזו תומכת עד פורמט { $supported }. יש לעדכן את Skribisto כדי לפתוח אותו.
+could-not-open-work-importing = ייבוא כותב כעת את "{ $file }"
+could-not-open-work-importing-detail = ייבוא כותב מעל הפרויקט הזה ועוד לא הסתיים. יש לפתוח אותו אחרי שהייבוא יסתיים: אם ייפתח עכשיו, יוצג הפרויקט שהייבוא מחליף, והשמירה הבאה תכתוב את הפרויקט הזה בחזרה מעל הייבוא.
+could-not-open-example = לא ניתן לפתוח את הדוגמה: { $error }
+could-not-open-link = לא ניתן לפתוח את { $url }: { $error }
+could-not-create-work = לא ניתן ליצור את הפרויקט: { $error }
+saving-as-file = שמירה בשם { $target }…
+saving-as-folder = שמירה בשם { $target }/…
+saved-as = נשמר אל { $target }
+save-error = לא ניתן לשמור: { $error }
+save-flush-failed = השמירה בוצעה, אבל לא ניתן היה להעביר אליה את המסמכים האלה והם עדיין לא נשמרו: { $titles } ({ $error })
+backup-error = לא ניתן לגבות: { $error }
+backing-up = מתבצע גיבוי…
+backup-nothing-open = אין פרויקט פתוח לגיבוי.
+backup-already-running = גיבוי כבר מתבצע.
+backup-complete = הגיבוי הושלם ({ $ok } נשמרו, { $skipped } כבר עדכניים)
+backup-partial = הגיבוי הסתיים: { $ok } נשמרו, { $failed ->
+    [one] { $failed } יעד נכשל
    *[other] { $failed } יעדים נכשלו
 }
 backup-no-destination-title = אין מיקום גיבוי זמין
-backup-no-destination-text = לא ניתן להגיע ליעדי הגיבוי שנקבעו (לדוגמה, כונן חיצוני עשוי להיות לא מחובר) לצרף אותו פנימה והחזרה, או לצאת ללא גיבוי.
-backup-failed-close-title = לא ניתן להציל את הגיבוי
-backup-failed-close-text = שום עותק גיבוי לא יכול להיות כתוב לפני הסגירה.כל יעד נכשל (ייתכן שהכונן הוסר, או שהוא עשוי להיות מלא או מוגן בכתב) לתקן אותו ולנסוע מחדש, או לצאת ללא גיבוי.
+backup-no-destination-text = אף אחד מיעדי הגיבוי שהוגדרו אינו נגיש (למשל, ייתכן שכונן חיצוני מנותק). אפשר לחבר אותו ולנסות שוב, או לצאת בלי לגבות.
+backup-failed-close-title = לא ניתן היה לשמור את הגיבוי
+backup-failed-close-text = לא ניתן היה לכתוב עותק גיבוי לפני הסגירה. כל היעדים נכשלו (ייתכן שהכונן הוסר, שהוא מלא או מוגן מפני כתיבה). אפשר לתקן את הבעיה ולנסות שוב, או לצאת בלי לגבות.
 
 backup-choice-title = קובץ גיבוי
 backup-choice-heading = פתחתם עותק גיבוי
-backup-choice-subtitle = זהו גיבוי זמני של פרויקט.
-backup-choice-subtitle-dated = הגיבוי קיבל { $date }.
-backup-choice-body = אתה יכול לפתוח אותו ולערוך באופן חופשי, אבל שינויים ניתן לשמור רק עם Save As. קובץ הפרויקט המקורי לא נגע או לשחזר את הפרויקט הזה בדיוק לגיבוי זה.
-backup-choice-open = פתח את הגיבוי
-backup-choice-restore = לשחזר את הפרויקט עד לנקודה זו...
-backup-choice-not-a-backup = תפתחי את זה בדרך כלל
-backup-banner-title = עותק גיבוי: שינויים לא ניתן להציל כאן
-backup-banner-description = השתמש לחסוך כדי לשמור את העריכה שלך בקובץ חדש, או לשחזר כדי להחליף את הפרויקט המקורי עם גיבוי זה.
+backup-choice-subtitle = זהו גיבוי של פרויקט מנקודת זמן מסוימת.
+backup-choice-subtitle-dated = הגיבוי נוצר ב־{ $date }.
+backup-choice-body = אפשר לפתוח אותו ולערוך בחופשיות, אבל ניתן לשמור את השינויים רק באמצעות "שמירה בשם". קובץ הפרויקט המקורי לא נפגע. לחלופין, אפשר לשחזר את הפרויקט בדיוק לגיבוי הזה.
+backup-choice-open = פתיחת הגיבוי
+backup-choice-restore = שחזור הפרויקט לנקודה הזו…
+backup-choice-not-a-backup = לא, לפתוח כרגיל
+backup-banner-title = עותק גיבוי: לא ניתן לשמור כאן שינויים
+backup-banner-description = יש להשתמש ב"שמירה בשם" כדי לשמור את העריכות בקובץ חדש, או ב"שחזור" כדי להחליף את הפרויקט המקורי בגיבוי הזה.
 backup-banner-restore = שחזור…
-backup-banner-save-as = הצילו כמו...
-backup-restore-original-missing = אי אפשר למצוא את הפרויקט המקורי כדי לשחזר את השימוש ב- Save As כדי לשמור על הגיבוי הזה כפרויקט חדש במקום.
-backup-restore-close-elsewhere-title = פרויקט פתוח בחלון אחר
-backup-restore-close-elsewhere-text = הפרויקט שאתם חוזרים אליו נפתח בחלון אחר, אנא סגרו אותו קודם לכן.
-backup-restore-focus-window = תתמקד בחלון
+backup-banner-save-as = שמירה בשם…
+backup-restore-original-missing = לא נמצא הפרויקט המקורי שעליו יש לשחזר. אפשר להשתמש ב"שמירה בשם" כדי לשמור את הגיבוי הזה כפרויקט חדש.
+backup-restore-close-elsewhere-title = הפרויקט פתוח בחלון אחר
+backup-restore-close-elsewhere-text = הפרויקט שעליו משחזרים פתוח בחלון אחר. יש לסגור אותו שם קודם, ואז לנסות שוב.
+backup-restore-focus-window = מעבר לחלון ההוא
 backup-restore-confirm-title = לשחזר את הגיבוי הזה?
-backup-restore-confirm-text = הגרסה הנוכחית של הפרויקט יועתקה בצד כגיבוי בטיחות לפני שהוחלפה עם זה.
+backup-restore-confirm-text = הגרסה הנוכחית של הפרויקט תועתק הצידה כגיבוי בטיחות לפני שתוחלף בגרסה הזו.
 backup-restore-confirm-ok = שחזור
 backup-restore-error = לא ניתן לשחזר: { $error }
-backup-restored-ok = הפרויקט חזר.
-backup-restored-with-safety = הפרויקט הוחזר לגרסה הקודמת שלך נשמר עד { $path }.
-close-backup-discard-title = שינויים בגיבוי הזה?
-close-backup-discard-text = שינויים בגיבוי לא ניתן להציל אותו. השתמש בהצלתם כדי לשמור אותם, או למחוק אותם ולסגור אותם.
-quit-backup-discard-title = להחליף שינויים ולהפסיק?
-quit-backup-discard-work-question = שינויים ב- { $title } והפסיקו?
-quit-backup-discard-text = שינויים בגיבוי לא ניתן לשמור על זה. השתמש לחסוך כדי לשמור אותם, או למחוק ולהפסיק.
-backup-nudge-text = אין גיבויים לפרויקט הזה.
-backup-nudge-action = הגדר גיבויים...
+backup-restored-ok = הפרויקט שוחזר.
+backup-restored-with-safety = הפרויקט שוחזר. הגרסה הקודמת נשמרה אל { $path }.
+close-backup-discard-title = לבטל את השינויים בגיבוי הזה?
+close-backup-discard-text = לא ניתן לשמור שינויים בגיבוי עצמו. כדי לשמור אותם יש להשתמש ב"שמירה בשם", או לבטל אותם ולסגור.
+quit-backup-discard-title = לבטל את השינויים ולצאת?
+quit-backup-discard-work-question = לבטל את השינויים ב־{ $title } ולצאת?
+quit-backup-discard-text = לא ניתן לשמור שינויים בגיבוי עצמו. כדי לשמור אותם יש להשתמש ב"שמירה בשם", או לבטל אותם ולצאת.
+backup-nudge-text = לא הוגדרו גיבויים לפרויקט הזה.
+backup-nudge-action = הגדרת גיבויים…
 
 menu-backups-list = גיבויים… (&K)
 backups-title = גיבויים
-backups-loading = סריקה לגיבויים...
+backups-loading = מחפש גיבויים…
 backups-empty = עדיין לא נמצאו גיבויים לפרויקט הזה.
 backups-open = פתיחה
-backups-reveal = לחשוף
-backups-delete = מחקו את הגיבוי
+backups-reveal = הצגה בתיקייה
+backups-delete = מחיקת הגיבוי הזה
 backups-delete-confirm-title = למחוק את הגיבוי הזה?
 backups-delete-confirm-text = "{ $name }" יימחק לצמיתות. לא ניתן לבטל פעולה זו.
 backups-delete-error = לא ניתן למחוק את הגיבוי: { $error }
-backups-refresh = מרעננים
+backups-refresh = רענון
 backups-close = סגירה
 
-settings-page-backup = גיבוי ברירת מחדל
+settings-page-backup = ברירות מחדל לגיבוי
 settings-page-work-backup = גיבויים
-settings-backup-general-title = הגדרות גיבוי Default
-settings-backup-work-title = גיבוי לפרויקט הזה
-settings-backup-inherit = השתמש בהגדרות הגיבוי הכלליות
-settings-backup-inheriting = פרויקט זה משתמש בהגדרות הגיבוי הכלליות.
-settings-backup-none-hint = אין גיבוי אוטומטי מוגדר (כל גורם כבוי).
+settings-backup-general-title = הגדרות גיבוי ברירת מחדל
+settings-backup-work-title = גיבויים לפרויקט הזה
+settings-backup-inherit = שימוש בהגדרות הגיבוי הכלליות
+settings-backup-inheriting = הפרויקט הזה משתמש בהגדרות הגיבוי הכלליות.
+settings-backup-none-hint = לא הוגדרו גיבויים אוטומטיים (כל הטריגרים כבויים).
 settings-backup-last = גיבוי אחרון: { $date }
-settings-backup-last-never = עדיין אין גיבויים.
-settings-backup-open-list = רשימת גיבוי פתוח...
-settings-backup-triggers = מתי לקום
-settings-backup-on-close = חזרה כאשר סוגרים את הפרויקט
-settings-backup-on-open = חזרה כאשר פותחים את הפרויקט
-settings-backup-interval = חזרה בזמן, כל
-settings-backup-destinations = יעדי הגיבוי
-settings-backup-default-location = מיקום Default
+settings-backup-last-never = אין גיבויים עדיין.
+settings-backup-open-list = פתיחת רשימת הגיבויים…
+settings-backup-triggers = מתי לגבות
+settings-backup-on-close = גיבוי בעת סגירת הפרויקט
+settings-backup-on-open = גיבוי בעת פתיחת הפרויקט
+settings-backup-interval = גיבוי תקופתי, כל
+settings-backup-destinations = יעדי גיבוי
+settings-backup-default-location = מיקום ברירת המחדל
 settings-backup-usage-since = { $count ->
-    [one] { $count } גיבוי - { $size } - המבוגר ביותר { $oldest }
-   *[other] { $count } גיבויים) { $size } המבוגר ביותר { $oldest }
+    [one] { $count } גיבוי · { $size } · הוותיק ביותר { $oldest }
+   *[other] { $count } גיבויים · { $size } · הוותיק ביותר { $oldest }
 }
 settings-backup-usage = { $count ->
-    [one] { $count } גיבוי - { $size }
-   *[other] { $count } גיבויים: { $size }
+    [one] { $count } גיבוי · { $size }
+   *[other] { $count } גיבויים · { $size }
 }
-settings-backup-usage-empty = שום דבר לא נשאר כאן עדיין
-settings-backup-usage-measuring = מרגיע...
-settings-backup-reveal-root = הצג תיקיות
-settings-backup-dest-none = אין יעדים, גיבויים נשמרים ליד הפרויקט.
+settings-backup-usage-empty = עדיין לא נשמר כאן דבר
+settings-backup-usage-measuring = מחשב…
+settings-backup-reveal-root = הצגת התיקייה
+settings-backup-dest-none = אין יעדים. הגיבויים נשמרים לצד הפרויקט.
 settings-backup-dest-remove = הסרה
-settings-backup-dest-add = הוסף תיקיה...
-settings-backup-dest-refresh = מרעננים
+settings-backup-dest-add = הוספת תיקייה…
+settings-backup-dest-refresh = רענון
 settings-backup-retention = כמה לשמור
-settings-backup-retention-tiered = קשר
-settings-backup-retention-keep-n = שמור אחרון N
-settings-backup-retention-tip = כמה גיבויים ישנים ננקטים.
-settings-backup-retention-tip-more = הוא שומר גיבוי אחד לשעה ליום, ליום למשך שבוע, לשבוע למשך חודש, ובמשך חודש מעבר לכך, כך שההיסטוריה האחרונה תישאר צפופה ועתיקה דממה החוצה. "שמור את ה-N האחרון" פשוט שומר על העותקים האחרונים של ה-N. בשני מצבי העותקים החדשים ביותר (המינימום להלן) נשמרים תמיד.
-settings-backup-gfs-hourly = 24 שעות (Last 24 h)
-settings-backup-gfs-daily = שבוע אחרון (Last Week)
-settings-backup-gfs-weekly = שבועי (חודש אחרון)
+settings-backup-retention-tiered = מדורג
+settings-backup-retention-keep-n = שמירת N האחרונים
+settings-backup-retention-tip = איך נמחקים גיבויים ישנים.
+settings-backup-retention-tip-more = "מדורג" שומר גיבוי אחד לכל שעה במשך יום, לכל יום במשך שבוע, לכל שבוע במשך חודש, ולכל חודש מעבר לכך, כך שההיסטוריה האחרונה נשארת צפופה וההיסטוריה הישנה מידלדלת. "שמירת N האחרונים" פשוט שומר את N העותקים האחרונים. בשני המצבים, העותקים החדשים ביותר (המינימום שלמטה) נשמרים תמיד.
+settings-backup-gfs-hourly = לכל שעה (24 השעות האחרונות)
+settings-backup-gfs-daily = יומי (השבוע האחרון)
+settings-backup-gfs-weekly = שבועי (החודש האחרון)
 settings-backup-gfs-monthly = חודשי
-settings-backup-keep-n = מספר כדי לשמור
-settings-backup-min-keep = תמיד לשמור לפחות
-settings-backup-dedup = דלג גיבוי כאשר שום דבר לא השתנה
+settings-backup-keep-n = מספר לשמירה
+settings-backup-min-keep = לשמור תמיד לפחות
+settings-backup-dedup = דילוג על גיבוי כששום דבר לא השתנה
 
 new-work-title = פרויקט חדש
 new-work-close = סגירה
 new-work-name = שם הפרויקט
-new-work-name-placeholder = ללא שם
+new-work-name-placeholder = ללא כותרת
 new-work-author = מחבר
-new-work-author-placeholder = אופציונלי
-new-work-format = עיצוב
+new-work-author-placeholder = רשות
+new-work-format = פורמט
 new-work-single-file = קובץ יחיד
-new-work-bundle = חבילת קבצים
-new-work-convert-later = אתה יכול להמיר בין פורמטים מאוחר יותר.
-new-work-location = מיקום Location
-new-work-will-create = ייצרו
-new-work-language = שפה Default
-new-work-language-hint = מומלץ לטקסטים חדשים איזכור.כל טקסט ניתן לעבור לשפה אחרת.
+new-work-bundle = תיקיית פרויקט
+new-work-convert-later = אפשר להמיר בין הפורמטים מאוחר יותר.
+new-work-location = מיקום
+new-work-will-create = ייווצר
+new-work-language = שפת ברירת המחדל
+new-work-language-hint = חלה על טקסטים חדשים ועל בדיקת האיות. אפשר להעביר כל טקסט לשפה אחרת.
 new-work-template = תבנית
 new-work-template-none = ללא
-new-work-template-empty-novel = הרומן הריק
-new-work-template-light-novel = לייט נובל
+new-work-template-empty-novel = רומן ריק
+new-work-template-light-novel = רומן קליל
 new-work-template-novel = רומן
 new-work-template-novel-in-parts = רומן בחלקים
 new-work-template-notebook = מחברת
 new-work-cancel = ביטול
-new-work-create = יצירת פרוייקט
+new-work-create = יצירת הפרויקט
 new-work-step-details = פרטים
-new-work-step-language = מבנה שפה
+new-work-step-language = שפה ומבנה
 new-work-step-template = תבנית
-new-work-back = בחזרה בחזרה
+new-work-back = הקודם
 new-work-next = הבא
 new-work-documents-title = פרויקט חדש ממסמכים
 new-work-step-import = ייבוא
-new-work-create-and-import = ליצור ייבוא...
-new-work-documents-next-title = המסמכים הבאים
-new-work-documents-next-body = יצירת הפרויקט פותחת את מכשף היבוא, שבו תבחרו את המסמכים, בחנו את המבנה Skribisto קורא מהם, ובחרו היכן הוא נוחת אל הפרויקט עד שתאשרו אותו.
-new-work-documents-no-template = פרויקט זה מתחיל ריק בכוונה: שום תבנית, כך שהמסמכים המיובאים הם הדבר היחיד בו.
-new-work-documents-chapter-scene-hint = בהתאם לפרקים שהייבוא יוצר, באפשרותך לשנות אותו מאוחר יותר בהגדרות הפרויקט.
-new-work-single-file-desc = אחד .skrib ארכיון (zip) Portable, קל לגבות.
-new-work-bundle-desc = תיקיה המחזיקה בכל נכס טקסט. Friendlier כדי לשלוט בגירסה.
-new-work-template-none-count = עניבה ריקה
-new-work-template-empty-novel-count = פרק 1
+new-work-create-and-import = יצירה וייבוא…
+new-work-documents-next-title = המסמכים שלכם בשלב הבא
+new-work-documents-next-body = יצירת הפרויקט פותחת מעליו את אשף הייבוא, שבו בוחרים את המסמכים, סוקרים את המבנה ש־Skribisto קוראת מהם, ובוחרים לאן הוא ייכנס. שום דבר לא נכתב לפרויקט עד שתאשרו זאת שם.
+new-work-documents-no-template = הפרויקט הזה מתחיל ריק בכוונה: ללא תבנית, כך שהמסמכים המיובאים יהיו הדבר היחיד שבו.
+new-work-documents-chapter-scene-hint = חל על הפרקים שהייבוא יוצר. אפשר לשנות זאת מאוחר יותר בהגדרות הפרויקט.
+new-work-single-file-desc = ארכיון ‎.skrib אחד (zip). נייד וקל לגיבוי.
+new-work-bundle-desc = תיקייה שמכילה כל טקסט וכל קובץ נלווה. ידידותית יותר לבקרת גרסאות.
+new-work-template-none-count = קלסר ריק
+new-work-template-empty-novel-count = פרק אחד
 new-work-template-light-novel-count = 15 פרקים
 new-work-template-novel-count = 20 פרקים
 new-work-template-novel-in-parts-count = 3 חלקים, 24 פרקים
-new-work-template-notebook-count = הערות חינם
+new-work-template-notebook-count = פתקים חופשיים
 new-work-chapter-scene = פרקים שטוחים
-new-work-chapter-scene-tip = כל פרק הוא פריט אחד שאתה כותב ישר לתוך, ללא סצנות מתחתיו, לעזוב את זה עבור הפריסה הקלאסית, שבו פרק הוא תיקיה: אתה כותב ישר לתוך זה, אבל זה יכול גם להחזיק סצינות.
-new-work-chapter-scene-tip-more = אתה כותב לתוך פרק בכל דרך.ההבדל היחיד הוא אם זה יכול * להכיל סצנות. Skribisto עץ הקושר הוא ארגוני בלבד, כך שתי הפריסה מתאספות לאותו ספר, אתה יכול לערבב אותם בחופשיות, ולקדם להמיר פרק בין השניים מבלי לאבד מילה.
-new-work-name-required = הכנס שם לפרויקט
-new-work-name-invalid = שם זה אין דמויות ניתנות
-new-work-location-required = בחר מיקום
-new-work-location-missing = התיקיה הזאת לא קיימת
-new-work-location-not-folder = נתיב זה אינו תיקיה
-new-work-location-readonly = התיקיה הזאת לא מדהימה
-new-work-target-exists = פרויקט עם שם זה כבר בתיקיה זו, יצירת הפרויקט תבקש לפני החלפתו.
-new-work-target-is-folder = תיקיה עם שם זה כבר במיקום זה.בחר שם אחר.
+new-work-chapter-scene-tip = כל פרק הוא פריט יחיד שכותבים ישירות לתוכו, בלי סצנות מתחתיו. אפשר להשאיר את האפשרות כבויה לפריסה הקלסית, שבה פרק הוא תיקייה: גם לתוכה כותבים ישירות, אבל היא יכולה להכיל גם סצנות.
+new-work-chapter-scene-tip-more = בשני המקרים כותבים בתוך הפרק. ההבדל היחיד הוא אם הוא יכול *להכיל* סצנות. עץ הקלסר של Skribisto משמש לארגון בלבד, ולכן שתי הפריסות מהודרות לאותו ספר, אפשר לשלב ביניהן בחופשיות, ו"המרה אל" ממירה פרק בין השתיים בלי לאבד אף מילה.
+new-work-name-required = יש להזין שם לפרויקט
+new-work-name-invalid = בשם הזה אין תווים שניתן להשתמש בהם
+new-work-location-required = יש לבחור מיקום
+new-work-location-missing = התיקייה הזו אינה קיימת
+new-work-location-not-folder = הנתיב הזה אינו תיקייה
+new-work-location-readonly = אין הרשאת כתיבה לתיקייה הזו
+new-work-target-exists = כבר יש פרויקט בשם הזה בתיקייה הזו. יצירת הפרויקט תבקש אישור לפני שתחליף אותו
+new-work-target-is-folder = כבר יש תיקייה בשם הזה במיקום הזה. יש לבחור שם אחר
 new-work-overwrite-title = להחליף את הפרויקט הקיים?
-new-work-overwrite-text = "{ $name }" כבר קיימת בתיקיה זו.תחליף אותה בפרויקט החדש?
+new-work-overwrite-text = "{ $name }" כבר קיים בתיקייה הזו. להחליף אותו בפרויקט החדש?
 new-work-target-open-title = הפרויקט הזה פתוח
-new-work-target-open-text = "{ $name }"הוא פתוח פנימה Skribistoיצירת פרויקט חדש במקומו תחליף את הפרויקט שאתם עובדים עליו, וההצלת הבאה שלכם תכתב את הפרויקט הזה שוב על פני החדש.בחר שם אחר או תיקיה, או לסגור את הפרויקט קודם.
-target-importing-title = יבוא כותב את הפרויקט הזה
-target-importing-text = יבוא הוא עדיין כותב "{ $name }" לחכות עד שהוא סיים, או לבחור שם אחר.
-import-plume-busy-title = פרויקט נוסף של Plume Creator יובא
-import-plume-busy-text = Plume Creator פרויקטים ייבאו אחד בכל פעם.חכה עד שהייבוא, או ביטולו, ואז התחילו את זה שוב.
-import-manuskript-busy-title = פרויקט נוסף של Manuskript יובא
-import-manuskript-busy-text = Manuskript פרויקטים ייבאו אחד בכל פעם.חכה עד שהייבוא, או ביטולו, ואז התחילו את זה שוב.
-backup-restore-importing-text = יבוא הוא עדיין כותב "{ $name }", הפרויקט יוחזר מחדש.
+new-work-target-open-text = "{ $name }" פתוח ב־Skribisto. יצירת פרויקט חדש במקומו תחליף את הפרויקט שעליו אתם עובדים, והשמירה הבאה תכתוב את הפרויקט ההוא בחזרה מעל החדש. יש לבחור שם או תיקייה אחרים, או לסגור את הפרויקט קודם.
+target-importing-title = ייבוא כותב את הפרויקט הזה
+target-importing-text = ייבוא עדיין כותב את "{ $name }". יש להמתין עד שיסתיים, או לבחור שם אחר.
+import-plume-busy-title = פרויקט Plume Creator אחר נמצא בייבוא
+import-plume-busy-text = פרויקטים של Plume Creator מיובאים אחד בכל פעם. יש להמתין עד שהייבוא הנוכחי יסתיים, או לבטל אותו, ואז להתחיל את הייבוא הזה מחדש.
+import-manuskript-busy-title = פרויקט Manuskript אחר נמצא בייבוא
+import-manuskript-busy-text = פרויקטים של Manuskript מיובאים אחד בכל פעם. יש להמתין עד שהייבוא הנוכחי יסתיים, או לבטל אותו, ואז להתחיל את הייבוא הזה מחדש.
+backup-restore-importing-text = ייבוא עדיין כותב את "{ $name }", הפרויקט שהגיבוי הזה ישוחזר מעליו. יש לשחזר את הגיבוי אחרי שהייבוא יסתיים.
 
 new-work-manuscript = כתב יד
-new-work-notes = הערות
-new-work-research = מחקר מחקר
+new-work-notes = פתקים
+new-work-research = מחקר
 new-work-notebook = מחברת
 new-work-scene = סצנה
-new-work-note = הערה
-new-work-front-matter = נושא החזית
-new-work-back-matter = בחזרה חומר
+new-work-note = פתק
+new-work-front-matter = עמודי הפתיחה
+new-work-back-matter = עמודי הסיום
 new-work-paratext = מבנה הספר
-new-work-paratext-none = אין מבנה
-new-work-paratext-hint = "החזית והחזרה" מסורת נפתחת ומסגורה ספר עם.You can Moving, rename orמחיקתו לאחר מכן.
-new-work-tags = תגיות
-new-work-tags-none = אין תגים
-new-work-tags-hint = לוח מתחיל עבור דמויות מתייגות, מקומות ואת השאר. Optional, וכל תג יכול להיות שונה, צבע מחדש או נמחק לאחר מכן.
-new-work-note-templates = Note תבניות
-new-work-note-templates-none = אין תבניות
-new-work-note-templates-hint = הצורה של הערה מבוססת סיפור מתחילה ב- Optional, וכל תבנית ניתן לערוך או למחוק לאחר מכן.
+new-work-paratext-none = ללא מבנה
+new-work-paratext-hint = החומר שבפתח הספר ובסופו, שמסורת מסוימת פותחת וחותמת בו ספר. אפשר להעביר, לשנות שם או למחוק כל חלק ממנו אחר כך.
+new-work-tags = תגים
+new-work-tags-none = ללא תגים
+new-work-tags-hint = פלטה התחלתית לתיוג דמויות, מקומות וכל השאר. רשות, ואפשר לשנות את השם, הצבע או למחוק כל תג אחר כך.
+new-work-note-templates = תבניות פתקים
+new-work-note-templates-none = ללא תבניות
+new-work-note-templates-hint = הצורה שבה מתחיל פתק בתיק הסיפור. רשות, ואפשר לערוך או למחוק כל תבנית אחר כך.
 new-work-characters = דמויות
 new-work-places = מקומות
 
-import-plume-title = פרויקט Plume Creator
+import-plume-title = ייבוא פרויקט Plume Creator
 import-plume-close = סגירה
-import-plume-source = פרוייקט Plume
-import-plume-source-hint = בחר קובץ .plume או .plume_backup (כל גרסה Plume Creator).
-import-plume-location = תיקיית יעד
-import-plume-name = שם קובץ
+import-plume-source = פרויקט Plume
+import-plume-source-hint = יש לבחור קובץ ‎.plume או ‎.plume_backup (כל גרסה של Plume Creator).
+import-plume-location = תיקיית היעד
+import-plume-name = שם הקובץ
 import-plume-name-placeholder = שם הפרויקט
-import-plume-will-create = ייצרו
-import-plume-trash-warning = פריטים נמחקים / פריטים נמחקים אינם מועברים.
+import-plume-will-create = ייווצר
+import-plume-trash-warning = ⚠ פריטים שבאשפה או שנמחקו אינם מועברים.
 import-plume-cancel = ביטול
 import-plume-import = ייבוא
-import-plume-source-required = בחר קובץ פרוייקט Plume
-import-plume-source-missing = קובץ זה אינו קיים
-import-plume-source-not-file = הנתיב הזה הוא לא קובץ
-import-plume-location-required = בחרו תיקיית יעד
-import-plume-location-missing = התיקיה הזאת לא קיימת
-import-plume-location-not-folder = נתיב זה אינו תיקיה
-import-plume-location-readonly = התיקיה הזאת לא מדהימה
-import-plume-name-required = הזן שם קובץ
-import-plume-name-exists = קובץ עם שם זה כבר קיים כאן.ייבוא יאשר את Overwrite
-import-plume-overwrite-title = להחליף קובץ קיים?
-import-plume-overwrite-text = "{ $name }כבר קיים, להחליף אותו בפרויקט המיובא?
+import-plume-source-required = יש לבחור קובץ פרויקט של Plume
+import-plume-source-missing = הקובץ הזה אינו קיים
+import-plume-source-not-file = הנתיב הזה אינו קובץ
+import-plume-location-required = יש לבחור תיקיית יעד
+import-plume-location-missing = התיקייה הזו אינה קיימת
+import-plume-location-not-folder = הנתיב הזה אינו תיקייה
+import-plume-location-readonly = אין הרשאת כתיבה לתיקייה הזו
+import-plume-name-required = יש להזין שם קובץ
+import-plume-name-exists = כבר קיים כאן קובץ בשם הזה. הייבוא יבקש אישור לפני שיחליף אותו
+import-plume-overwrite-title = להחליף את הקובץ הקיים?
+import-plume-overwrite-text = "{ $name }" כבר קיים. להחליף אותו בפרויקט המיובא?
 import-plume-manuscript-binder = כתב יד
-import-plume-story-bible-binder = מדריך הסיפור
-import-plume-progress-title = יבוא פרויקט פלאים...
+import-plume-story-bible-binder = תיק הסיפור
+import-plume-progress-title = מייבא פרויקט Plume…
 import-plume-cancel-import = ביטול
-import-plume-cancelled = ייבוא בוטלה
-import-plume-done = ייבוא { $imported ->
-    [one] { $imported } פריטים
-   *[other] { $imported } פריטים
- } { $skipped ->
-    [one] { $skipped } לא הוגר.
-   *[other] { $skipped } פריטים מזוהמים לא היגרו.
+import-plume-cancelled = הייבוא בוטל
+import-plume-done = { $imported ->
+    [one] יובא פריט אחד.
+   *[other] יובאו { $imported } פריטים.
+} { $skipped ->
+    [one] { $skipped } פריט שהיה באשפה לא הועבר.
+   *[other] { $skipped } פריטים שהיו באשפה לא הועברו.
 }
-import-plume-open-now = עכשיו פתוח
+import-plume-open-now = פתיחה עכשיו
 import-plume-warnings = { $count ->
-    [one] דבר אחד לא ניתן לייבא בדיוק
-   *[other] { $count } דברים לא ניתן לייבא בדיוק
+    [one] דבר אחד לא ניתן היה לייבא במדויק
+   *[other] { $count } דברים לא ניתן היה לייבא במדויק
 }
 import-plume-details = פרטים
-import-plume-warnings-title = אזהרות יבוא
-import-plume-error-title = לא יכול לייבא את הפרויקט
-import-plume-nested-too-deep = הפרויקט לא יובא: חלק "{ $part }" שלו ממוקם יותר מ-{ $limit } רמות עמוק.לא Plume Creator הפרויקט מתקרב לזה, וקריאה שהוא יכול לקרוס Skribisto.
-import-plume-declares-entities = הפרויקט לא יובא: חלקו "{ $part }" מצהיר על ישויות XML, שפרויקט של Plume Creator אינו יכול לקחת יותר זיכרון מהמחשב, ולרסק Skribisto.
+import-plume-warnings-title = אזהרות ייבוא
+import-plume-error-title = לא ניתן לייבא את הפרויקט
+import-plume-nested-too-deep = הפרויקט לא יובא: החלק "{ $part }" שלו מקונן ליותר מ־{ $limit } רמות. אף פרויקט Plume Creator לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
+import-plume-declares-entities = הפרויקט לא יובא: החלק "{ $part }" שלו מצהיר על ישויות XML, דבר שאף פרויקט Plume Creator לא עושה. הרחבתן עלולה לדרוש יותר זיכרון ממה שיש במחשב ולגרום לקריסה של Skribisto. שום דבר לא נכתב.
 import-plume-error-details = פרטים
 
-import-manuskript-title = פרויקט Manuskript
+import-manuskript-title = ייבוא פרויקט Manuskript
 import-manuskript-close = סגירה
 import-manuskript-source = פרויקט Manuskript
-import-manuskript-source-hint = בחר את קובץ .msk או תיקיית הפרויקט (כל Manuskript גרסה).
-import-manuskript-source-file = בחרו קובץ...
-import-manuskript-source-folder = בחרו תיקיות...
-import-manuskript-location = תיקיית יעד
-import-manuskript-name = שם קובץ
+import-manuskript-source-hint = יש לבחור את קובץ ‎.msk או את תיקיית הפרויקט (כל גרסה של Manuskript).
+import-manuskript-source-file = בחירת קובץ…
+import-manuskript-source-folder = בחירת תיקייה…
+import-manuskript-location = תיקיית היעד
+import-manuskript-name = שם הקובץ
 import-manuskript-name-placeholder = שם הפרויקט
-import-manuskript-will-create = ייצרו
+import-manuskript-will-create = ייווצר
 import-manuskript-cancel = ביטול
 import-manuskript-import = ייבוא
-import-manuskript-source-required = בחר פרויקט Manuskript
-import-manuskript-source-missing = קובץ או תיקיה אלה אינם קיימים
-import-manuskript-location-required = בחרו תיקיית יעד
-import-manuskript-location-missing = התיקיה הזאת לא קיימת
-import-manuskript-location-not-folder = נתיב זה אינו תיקיה
-import-manuskript-location-readonly = התיקיה הזאת לא מדהימה
-import-manuskript-name-required = הזן שם קובץ
-import-manuskript-name-exists = קובץ עם שם זה כבר קיים כאן.ייבוא יאשר את Overwrite
-import-manuskript-overwrite-title = להחליף קובץ קיים?
-import-manuskript-overwrite-text = "{ $name }כבר קיים, להחליף אותו בפרויקט המיובא?
+import-manuskript-source-required = יש לבחור פרויקט Manuskript
+import-manuskript-source-missing = הקובץ או התיקייה האלה אינם קיימים
+import-manuskript-location-required = יש לבחור תיקיית יעד
+import-manuskript-location-missing = התיקייה הזו אינה קיימת
+import-manuskript-location-not-folder = הנתיב הזה אינו תיקייה
+import-manuskript-location-readonly = אין הרשאת כתיבה לתיקייה הזו
+import-manuskript-name-required = יש להזין שם קובץ
+import-manuskript-name-exists = כבר קיים כאן קובץ בשם הזה. הייבוא יבקש אישור לפני שיחליף אותו
+import-manuskript-overwrite-title = להחליף את הקובץ הקיים?
+import-manuskript-overwrite-text = "{ $name }" כבר קיים. להחליף אותו בפרויקט המיובא?
 import-manuskript-manuscript-binder = כתב יד
-import-manuskript-story-bible-binder = מדריך הסיפור
+import-manuskript-story-bible-binder = תיק הסיפור
 import-manuskript-characters-group = דמויות
-import-manuskript-world-group = העולם העולמי
-import-manuskript-plots-group = מגרשים
-import-manuskript-project-info-note = פרויקט מידע
-import-manuskript-summary-note = סיכום
-import-manuskript-importance-minor = קטינים
-import-manuskript-importance-secondary = משני
-import-manuskript-importance-main = ראשי
-import-manuskript-progress-title = פרויקט Manuskript
+import-manuskript-world-group = עולם
+import-manuskript-plots-group = עלילות
+import-manuskript-project-info-note = מידע על הפרויקט
+import-manuskript-summary-note = תקציר
+import-manuskript-importance-minor = שולית
+import-manuskript-importance-secondary = משנית
+import-manuskript-importance-main = ראשית
+import-manuskript-progress-title = מייבא פרויקט Manuskript…
 import-manuskript-cancel-import = ביטול
-import-manuskript-cancelled = ייבוא בוטלה
+import-manuskript-cancelled = הייבוא בוטל
 import-manuskript-done = { $imported ->
-    [one] { $imported } פריטים מיובאים.
-   *[other] { $imported } פריטים מיובאים.
- } { $revisions ->
+    [one] יובא פריט אחד.
+   *[other] יובאו { $imported } פריטים.
+} { $revisions ->
     [0] { "" }
-    [one] { $revisions } הגרסה הקודמת הגיעה.
-   *[other] { $revisions } גרסאות קודמות הגיעו איתם.
+    [one] גרסה קודמת אחת הגיעה יחד איתם.
+   *[other] { $revisions } גרסאות קודמות הגיעו יחד איתם.
 }
-import-manuskript-open-now = עכשיו פתוח
+import-manuskript-open-now = פתיחה עכשיו
 import-manuskript-warnings = { $count ->
-    [one] דבר אחד לדעת על הייבוא הזה
-   *[other] { $count } דברים כדי לדעת על יבוא זה
+    [one] דבר אחד שכדאי לדעת על הייבוא הזה
+   *[other] { $count } דברים שכדאי לדעת על הייבוא הזה
 }
 import-manuskript-details = פרטים
-import-manuskript-warnings-title = אודות ייבוא זה
-import-manuskript-error-title = לא יכול לייבא את הפרויקט
-import-manuskript-nested-too-deep = הפרויקט לא יובא: הקובץ שלו "{ $part }" טמון יותר מ -{ $limit } רמות עמוק. No Manuskript הפרויקט מתקרב לזה, וקריאה שיכולה לקרוס Skribisto.
-import-manuskript-folders-too-deep = הפרויקט לא יובא: אחד מהקבצים שלו יושב יותר מ-{ $limit } תיקיות עמוקות, פרויקט No Manuskript מתקרב לזה, וקריאה זו עלולה להתרסק Skribisto.
-import-manuskript-declares-entities = הפרויקט לא יובא: הקובץ שלו "{ $part }" מצהיר על ישויות XML, שפרויקט Manuskript אינו כולל זיכרון רב יותר מהמחשב, והתנגש ב-Skribisto.
+import-manuskript-warnings-title = על הייבוא הזה
+import-manuskript-error-title = לא ניתן לייבא את הפרויקט
+import-manuskript-nested-too-deep = הפרויקט לא יובא: הקובץ "{ $part }" שלו מקונן ליותר מ־{ $limit } רמות. אף פרויקט Manuskript לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
+import-manuskript-folders-too-deep = הפרויקט לא יובא: אחד הקבצים שלו נמצא בעומק של יותר מ־{ $limit } תיקיות. אף פרויקט Manuskript לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
+import-manuskript-declares-entities = הפרויקט לא יובא: הקובץ "{ $part }" שלו מצהיר על ישויות XML, דבר שאף פרויקט Manuskript לא עושה. הרחבתן עלולה לדרוש יותר זיכרון ממה שיש במחשב ולגרום לקריסה של Skribisto. שום דבר לא נכתב.
 import-manuskript-error-details = פרטים
 
 import-target-open-title = הפרויקט הזה פתוח
-import-target-open-text = "{ $name }" פתוח ב-Skribisto, ייבוא מעליו יחליף את הפרויקט שאתם עובדים עליו, וההצלה הבאה שלכם תכתב את הפרויקט הזה בחזרה מעל לייבוא.
+import-target-open-text = "{ $name }" פתוח ב־Skribisto. ייבוא מעליו יחליף את הפרויקט שעליו אתם עובדים, והשמירה הבאה תכתוב את הפרויקט ההוא בחזרה מעל הייבוא. יש לבחור שם קובץ אחר, או לסגור את הפרויקט קודם.
 import-warnings-announcement = { $result } { $notice }.
 
 export-title = ייצוא
 export-close = סגירה
 export-scope-label = מה
-export-format-label = עיצוב
-export-style-label = סגנון סגנון
+export-format-label = פורמט
+export-style-label = סגנון
 export-path-label = קובץ
-export-browse = חרטה...
-export-show-non-exportable = תגית: non-exportable
-export-choose-empty = אין פרויקט לבחירה.
+export-browse = עיון…
+export-show-non-exportable = הצגת פריטים שאינם לייצוא
+export-choose-empty = אין פרויקט לבחור ממנו.
 export-cancel = ביטול
 export-export = ייצוא
 export-save-dialog-title = ייצוא לקובץ
 export-section-what = מה לייצא
-export-section-style = סגנון סגנון
-export-section-destination = יעד יעד
-export-custom-selection = בחירה אישית
-export-selected-count = { $count } נבחר
-export-chip-chapters-none = פרק: אף אחד
-export-chip-chapters-numbered = פרק: מספר
-export-chip-chapters-title = המונחים: title only
-export-chip-chapters-both = המונחים: number + title
-export-chip-scene-break-glyph = צילום: { $glyph }
-export-chip-scene-break-blank = שם הסרטון: Empty Line
-export-chip-scene-break-none = צילום: None
-export-chip-major-break-glyph = { $glyph }
-export-chip-major-break-blank = המונחים: white line
-export-chip-major-break-none = המונחים: no one
-export-chip-major-break-same = שניהם שוברים טיים זהים
-export-chip-spacing-single = תגית: Single
-export-chip-spacing-onehalf = צילום: 11⁄2
-export-chip-spacing-double = ספיגה: כפול
-export-chip-notes-included = הערות כוללות
-export-chip-notes-excluded = הערות מפורטות
-export-format-docx = Word Word
+export-section-style = סגנון
+export-section-destination = מיקום היעד
+export-custom-selection = בחירה מותאמת אישית
+export-selected-count = { $count } נבחרו
+export-chip-chapters-none = פרקים: ללא
+export-chip-chapters-numbered = פרקים: ממוספרים
+export-chip-chapters-title = פרקים: כותרת בלבד
+export-chip-chapters-both = פרקים: מספר + כותרת
+export-chip-scene-break-glyph = מעבר סצנה: { $glyph }
+export-chip-scene-break-blank = מעבר סצנה: שורה ריקה
+export-chip-scene-break-none = מעבר סצנה: ללא
+export-chip-major-break-glyph = מעבר ראשי: { $glyph }
+export-chip-major-break-blank = מעבר ראשי: שורה ריקה
+export-chip-major-break-none = מעבר ראשי: ללא
+export-chip-major-break-same = שתי רמות המעבר זהות
+export-chip-spacing-single = ריווח: יחיד
+export-chip-spacing-onehalf = ריווח: 1½
+export-chip-spacing-double = ריווח: כפול
+export-chip-notes-included = כולל פתקים
+export-chip-notes-excluded = ללא פתקים
+export-format-docx = Word
 export-format-odt = LibreOffice
 export-format-html = HTML
 export-format-markdown = Markdown
@@ -1028,340 +1035,343 @@ export-format-text = טקסט
 export-format-latex = LaTeX
 export-format-epub = EPUB
 export-format-pdf = PDF
-export-overwrite-title = להחליף קובץ קיים?
-export-overwrite-text = "{ $name }"כבר קיים, להחליף אותו?
-export-progress-title = ייצוא...
-export-cancelled = ייצוא בוטלה
-export-done = ייצוא { $count ->
-    [one] { $count }
-   *[other] { $count } פריטים
+export-overwrite-title = להחליף את הקובץ הקיים?
+export-overwrite-text = "{ $name }" כבר קיים. להחליף אותו?
+export-progress-title = מייצא…
+export-cancelled = הייצוא בוטל
+export-done = { $count ->
+    [one] יוצא פריט אחד
+   *[other] יוצאו { $count } פריטים
 }
 export-open-file = פתיחה
-export-show-in-folder = הצג בתיקיה
-export-error-title = לא יכול לייצא
+export-show-in-folder = הצגה בתיקייה
+export-error-title = לא ניתן לייצא
 export-error-details = פרטים
 
-backup-progress-start = החל...
-backup-progress-retention = ניקוי גיבויים ישנים...
-backup-progress-done = סיום
-backup-progress-destination = יעד { $i } של { $n }
+backup-progress-start = מתחיל…
+backup-progress-retention = מנקה גיבויים ישנים…
+backup-progress-done = הסתיים
+backup-progress-destination = יעד { $i } מתוך { $n }
 backup-details = פרטים
-backup-issues-title = בעיות גיבוי
+backup-issues-title = בעיות בגיבוי
 backup-failed-title = הגיבוי נכשל
-backup-complete-prune-warning = גיבוי מלא ({ $ok } נשמר, { $skipped } כבר לא ניתן להסיר כמה גיבויים ישנים).
+backup-complete-prune-warning = הגיבוי הושלם ({ $ok } נשמרו, { $skipped } כבר עדכניים). לא ניתן היה להסיר כמה גיבויים ישנים
 
 search = חיפוש
 search-query-placeholder = חיפוש…
-search-replace-placeholder = להחליף עם...
-search-replace-toggle = להחליף
-search-replace-all = להחליף את הכל
-search-opt-case = מקרה המשחק
+search-replace-placeholder = החלפה ב…
+search-replace-toggle = הצגה או הסתרה של ההחלפה
+search-replace-all = החלפת הכול
+search-opt-case = התאמת רישיות
 search-opt-whole-word = מילה שלמה
-search-opt-diacritics = מבטאים תואמים
-search-scope-body = גוף הגוף
+search-opt-diacritics = התאמת סימנים דיאקריטיים
+search-scope-body = גוף הטקסט
 search-scope-title = כותרת
 search-scope-synopsis = תקציר
-search-scope-label = תיאור קצר
-search-facet-book = ספרים ספרים
+search-scope-label = תווית
+search-facet-book = ספרים
 search-facet-part = חלקים
 search-facet-chapter = פרקים
 search-facet-scene = סצנות
-search-facet-note = הערות
+search-facet-note = פתקים
 search-facet-folder = תיקיות
-search-tip-case = מקרה התאמה: לטפל במזוודה העליונה ותחתית כמו שונה, כך "אלנה" ו"אלנה" הם משחקים נפרדים.
-search-tip-whole-word = כל מילה: להתאים רק מילים שלמות, כך ש"חתול" לא נמצא בתוך "מסעדות".
-search-tip-diacritics = מבטאי התאמה: לטפל באותיות מודגשות כנפרדות, כך ש"cafe" אינו תואם ל"café".
-search-tip-body = גוף: לחפש את הפרוזה של סצנות והערות.
-search-tip-title = שם הספר: חפש את הכותרות של פריטים קשורים.
-search-tip-synopsis = חיפוש אחר סיכום של כל פריט בכתב.
-search-tip-label = תוויות: חפש את הפתק הקצר המוצג תחת הכותרת של פריט מצורף.
-search-tip-comment = הערות: לחפש את הטקסט של חוטי תגובה ותשובותיהם.הערה היא על כתב היד ולא חלק ממנו, כך שיש לו מתג משלו, והחלפת עלים תגובה מתאימה ללא ticked עד שאתה מתקתק אותם.
-search-tip-book = ספרים: מיכל הספר ומתחילה / סימני קצה.
-search-tip-part = חלק: דיבידנדים ברמה חלקית.
-search-tip-chapter = פרקים: פרקים, בהם בכל דרך שהפרויקט מאחסן אותם.
-search-tip-scene = סצנות: הפריטים שמחזיקים את הפרוזה שלך.
-search-tip-note = הערות: הערות חופשיות.
-search-tip-folder = Folders: פשוט ארגון תיקיות וחילופים.
-search-tip-paratext = טקסט השייך לספר, אך לא לסיפורו: קדמה, מסירות, מילה שאחריה מעולם לא נמנה בכתב היד.
-search-tip-preserve-case = מקרה שימור: תחליף לוקח את המקרה שהוא מצא, כך "ELENA" הופך ל-"MarTA" ו-"Elena" הופך ל-"Marta".
-search-tip-replace = Replace: הצג את שדה ההחלפה והחלפת הכל.
-search-error = תוצאות חיפוש: { $message }
-search-no-matches = לא משחקים
+search-tip-case = התאמת רישיות: אותיות גדולות וקטנות נחשבות שונות, כך ש"Elena" ו־"elena" הן התאמות נפרדות.
+search-tip-whole-word = מילה שלמה: התאמה למילים שלמות בלבד, כך ש"חתול" לא יימצא בתוך "חתולים".
+search-tip-diacritics = התאמת סימנים דיאקריטיים: אותיות עם סימנים נחשבות שונות, כך ש"cafe" לא תואם ל־"café", ו"שִׁיר" לא תואם ל"שיר".
+search-tip-body = גוף הטקסט: חיפוש בטקסט של סצנות ופתקים.
+search-tip-title = כותרת: חיפוש בכותרות של פריטי הקלסר.
+search-tip-synopsis = תקציר: חיפוש בתקציר של כל פריט כתיבה.
+search-tip-label = תווית: חיפוש בהערה הקצרה שמוצגת מתחת לכותרת של פריט בקלסר.
+search-tip-comment = הערות: חיפוש בטקסט של שרשורי הערות ובתשובות להן. הערה עוסקת בכתב היד ואינה חלק ממנו, ולכן יש לה מתג משלה, והחלפה משאירה התאמות בהערות לא מסומנות עד שתסמנו אותן.
+search-tip-book = ספרים: מכל הספר וסמני ההתחלה והסוף שלו.
+search-tip-part = חלקים: מפרידים ברמת חלק.
+search-tip-chapter = פרקים: פרקים, בכל דרך שבה הפרויקט שומר אותם.
+search-tip-scene = סצנות: הפריטים שמכילים את הטקסט שלכם.
+search-tip-note = פתקים: פתקים חופשיים.
+search-tip-folder = תיקיות: תיקיות ארגון פשוטות ומפרידים.
+search-tip-paratext = טקסט ששייך לספר אבל לא לסיפור שלו: הקדמה, הקדשה, אחרית דבר. אף פעם לא נספר בכתב היד.
+search-tip-preserve-case = שמירת רישיות: ההחלפה מקבלת את הרישיות שנמצאו, כך ש"ELENA" הופך ל"MARTA" ו־"Elena" הופך ל"Marta".
+search-tip-replace = החלפה: הצגת שדה ההחלפה ו"החלפת הכול".
+search-error = החיפוש נכשל: { $message }
+search-no-matches = אין התאמות
 search-count =
     { $matches ->
-        [one] { $matches }
-       *[other] { $matches } משחקים
-    } in { $items ->
+        [one] { $matches } התאמה
+       *[other] { $matches } התאמות
+    } ב־{ $items ->
         [one] { $items } מסמך
        *[other] { $items } מסמכים
     }
 search-count-truncated =
     { $matches ->
-        [one] { $matches }
-       *[other] { $matches } משחקים
-    } in { $items ->
+        [one] { $matches } התאמה
+       *[other] { $matches } התאמות
+    } ב־{ $items ->
         [one] { $items } מסמך
        *[other] { $items } מסמכים
     } (התוצאות הראשונות בלבד)
 search-occurrences = { $count }
-search-field-body = גוף הגוף
+search-field-body = גוף הטקסט
 search-field-title = כותרת
 search-field-synopsis = תקציר
-search-field-label = תיאור קצר
+search-field-label = תווית
 search-field-epigraph = מוטו
-search-field-comment = תגובה
-search-field-comment-reply = תגובה תגובה
+search-field-comment = הערה
+search-field-comment-reply = תשובה
 search-field-footnote = הערת שוליים
-search-include-in-replace = עקבו אחרי Replace All
-search-collapse-all = שינוי כל התוצאות
-search-replace-here = להחליף את זה
-search-dismiss = אכזבה מהתוצאות
-search-undo-dismiss = להחזיר את התוצאה האחרונה
-search-replace-nothing = (לא כלום)
-search-replace-confirm-title = להחליף את כל המשחקים?
+search-include-in-replace = הכללה ב"החלפת הכול"
+search-collapse-all = כיווץ כל התוצאות
+search-replace-here = החלפת המופע הזה
+search-dismiss = הסרה מהתוצאות
+search-undo-dismiss = החזרת התוצאה האחרונה שהוסרה
+search-replace-nothing = (כלום)
+search-replace-confirm-title = להחליף את כל ההתאמות?
 search-replace-confirm-text =
-    החלפה { $occurrences ->
-        [one] { $occurrences }
-       *[other] { $occurrences } אירועים
-    } of "{ $query }" with "{ $replacement }" across { $items ->
+    להחליף { $occurrences ->
+        [one] { $occurrences } מופע
+       *[other] { $occurrences } מופעים
+    } של "{ $query }" ב־"{ $replacement }" ב־{ $items ->
         [one] { $items } מסמך
        *[other] { $items } מסמכים
-    } אתה יכול לבטל את זה מההודעה לאחר מכן.
-search-replace-done-title = מקום שלם
+    }? אפשר לבטל זאת מההתראה לאחר מכן.
+search-replace-done-title = ההחלפה הושלמה
 search-replace-done =
     { $occurrences ->
-        [one] { $occurrences }
-       *[other] { $occurrences } אירועים
-    } replaced in { $items ->
+        [one] { $occurrences } מופע הוחלף
+       *[other] { $occurrences } מופעים הוחלפו
+    } ב־{ $items ->
         [one] { $items } מסמך
        *[other] { $items } מסמכים
-    } .
+    }.
 search-replace-done-skipped =
     { $occurrences ->
-        [one] { $occurrences }
-       *[other] { $occurrences } אירועים
-    } replaced in { $items ->
+        [one] { $occurrences } מופע הוחלף
+       *[other] { $occurrences } מופעים הוחלפו
+    } ב־{ $items ->
         [one] { $items } מסמך
        *[other] { $items } מסמכים
     }. { $skipped ->
-        [one] { $skipped } שדה
-       *[other] { $skipped } שדות
-    } מדלגים (מאחר החיפוש).
+        [one] { $skipped } שדה דולג
+       *[other] { $skipped } שדות דולגו
+    } (השתנו מאז החיפוש).
 search-replace-undo = ביטול פעולה
 search-replace-failed-title = ההחלפה נכשלה
-search-replace-skipped-title = שום דבר לא החליף
-search-replace-skipped-body = מספר הטקסטים שהשתנו מאז החיפוש: { $fields }. טקסטים אלה נותרו ללא שינוי. יש לחפש שוב כדי לראות היכן המילים נמצאות כעת.
-search-replace-undo-failed-title = Undo נכשלה
+search-replace-skipped-title = שום דבר לא הוחלף
+search-replace-skipped-body =
+    { $fields ->
+        [one] הטקסט הזה השתנה מאז החיפוש, ולכן הוא נותר ללא שינוי.
+       *[other] { $fields } מהטקסטים האלה השתנו מאז החיפוש, ולכן הם נותרו ללא שינוי.
+    } יש לחפש שוב כדי לראות היכן המילים נמצאות עכשיו.
+search-replace-undo-failed-title = הביטול נכשל
 search-preview = תצוגה מקדימה
-search-preview-empty = בחרו תוצאות לתצוגה מקדימה כאן
-search-preview-no-prose = למשחק הזה אין טקסט ערוך
-search-preview-prompt = כדי לראות תצוגה מקדימה כאן, רוץ חיפוש.
+search-preview-empty = יש לבחור תוצאה כדי לראות כאן תצוגה מקדימה שלה
+search-preview-no-prose = בהתאמה הזו אין טקסט שניתן לערוך
+search-preview-prompt = כדי לראות כאן תצוגה מקדימה, יש להריץ חיפוש.
 search-preview-open-search = חיפוש בפרויקט
-search-preview-footnote-prompt = משחק זה הוא בטקסט משלו של הערת שוליים, פתח אותו ברציף טביעות אצבעות כדי לראות ולערוך אותו.
-search-preview-open-footnotes = Open Footnote
+search-preview-footnote-prompt = ההתאמה הזו נמצאת בטקסט של הערת שוליים. אפשר לפתוח אותה בחלונית הערות השוליים כדי לראות ולערוך אותה.
+search-preview-open-footnotes = פתיחת הערות השוליים
 
-find-placeholder = מצא במסמך זה...
-find-count = { $current } { $total }
-find-no-results = לא תוצאות
-find-close = מצא מקרוב
-find-previous = המשחק הקודם (Shift+Enter)
-find-next = המשחק הבא (Enter)
-find-opt-case = מקרה המשחק
+find-placeholder = חיפוש במסמך הזה…
+find-count = { $current } מתוך { $total }
+find-no-results = אין תוצאות
+find-close = סגירת החיפוש
+find-previous = ההתאמה הקודמת (Shift+Enter)
+find-next = ההתאמה הבאה (Enter)
+find-opt-case = התאמת רישיות
 find-opt-whole-word = מילה שלמה
-find-replace-toggle = החלפה (Ctrl+R)
-find-replace-placeholder = להחליף עם...
+find-replace-toggle = הצגה או הסתרה של ההחלפה (Ctrl+R)
+find-replace-placeholder = החלפה ב…
 find-replace = החלפה
-find-replace-all = להחליף את הכל
-find-preserve-case = מקרה שמירה
+find-replace-all = החלפת הכול
+find-preserve-case = שמירת רישיות
 
-dict-download-title = { $name }...
-dict-download-done = { $name }
-dict-download-failed = { $name }: { $error }
-dict-removed = { $name }
-dict-accept-first = קבל את הרישיון לפני הורדת { $name }
-settings-dict-tab-installed = התקנת
-settings-dict-tab-get-more = קבל יותר
+dict-download-title = מוריד את { $name }…
+dict-download-done = { $name } הותקן
+dict-download-failed = לא ניתן להוריד את { $name }: { $error }
+dict-removed = { $name } הוסר
+dict-accept-first = יש לאשר את הרישיון לפני הורדת { $name }
+settings-dict-tab-installed = מותקנים
+settings-dict-tab-get-more = השגת מילונים נוספים
 settings-dict-tab-personal = מילים אישיות
-dict-installed-empty = עדיין לא נמצאו על המחשב הזה.
-dict-get-more-search = שפות חיפוש
-dict-system-badge = על המערכת שלך
-dict-unusable-badge = בלתי אפשרי
-dict-download-button = הורד Download
-dict-downloading = מורידים...
-dict-installed-label = התקנת
+dict-installed-empty = עדיין לא נמצאו מילונים במחשב הזה.
+dict-get-more-search = חיפוש שפות
+dict-system-badge = במערכת שלכם
+dict-unusable-badge = לא שמיש
+dict-download-button = הורדה
+dict-downloading = מוריד…
+dict-installed-label = מותקן
 dict-remove = הסרה
-dict-view-license = ראה רישיון
+dict-view-license = הצגת הרישיון
 dict-approx-size = ~{ $size }
-dict-personal-empty = אין עוד מילים אישיות בפרויקט הזה.
+dict-personal-empty = אין עדיין מילים אישיות בפרויקט הזה.
 dict-personal-add = הוספה
-dict-personal-placeholder = הוסף מילה...
+dict-personal-placeholder = הוספת מילה…
 dict-missing-toast = { $count ->
-    [one] פרויקט זה משתמש במילון { $count } שלא התקנת
-   *[other] פרויקט זה משתמש בסעיפים { $count } שלא התקנתם
+    [one] הפרויקט הזה משתמש במילון אחד שאינו מותקן אצלכם
+   *[other] הפרויקט הזה משתמש ב־{ $count } מילונים שאינם מותקנים אצלכם
 }
-dict-missing-action = קבל dictionaries
-dict-license-title = { $name } רישיון
-dict-license-accept = להורדה
+dict-missing-action = השגת מילונים
+dict-license-title = הרישיון של { $name }
+dict-license-accept = אישור והורדה
 dict-license-cancel = ביטול
 dict-license-close = סגירה
-dict-add-button = הוסף מילון...
-dict-add-title = הוסף מילון
+dict-add-button = הוספת מילון…
+dict-add-title = הוספת מילון
 dict-add-close = סגירה
 dict-add-name = שם
-dict-add-name-placeholder = תגית: My Latin Dictionary
+dict-add-name-placeholder = למשל: המילון הלטיני שלי
 dict-add-code = קוד שפה
-dict-add-code-placeholder = תגית: la or fr-FR-x-user
-dict-add-code-hint = תג קצר לבחירתך, זה מה שאתה בוחר כשפת מסמך.
-dict-add-aff = קובץ Affix (.aff)
-dict-add-dic = רשימת מילים (dic)
+dict-add-code-placeholder = למשל la או fr-FR-x-custom
+dict-add-code-hint = תג קצר לבחירתכם. זה מה שבוחרים כשפה של מסמך.
+dict-add-aff = קובץ תחיליות וסופיות (.aff)
+dict-add-dic = רשימת מילים (.dic)
 dict-add-submit = הוספה
 dict-add-cancel = ביטול
-dict-add-name-required = תן למילון שם.
-dict-add-code-required = היכנסו לקוד שפה
-dict-add-code-invalid = השתמש רק אותיות, ספרות ו - -
-dict-add-code-reserved = זהו קוד מילון מובנה.בחר אחר.
-dict-add-file-required = בחרו קובץ.
-dict-add-file-missing = הקובץ הזה לא קיים.
-dict-add-code-taken = מילון לקוד הזה כבר מותקן.
-dict-add-done = { $name }
-dict-add-unusable = קבצים אלה אינם מילון אמין: { $error }
+dict-add-name-required = יש לתת למילון שם.
+dict-add-code-required = יש להזין קוד שפה.
+dict-add-code-invalid = מותר להשתמש רק באותיות, בספרות ובתווים - _ .
+dict-add-code-reserved = זהו קוד של מילון מובנה. יש לבחור קוד אחר.
+dict-add-file-required = יש לבחור קובץ.
+dict-add-file-missing = הקובץ הזה אינו קיים.
+dict-add-code-taken = כבר מותקן מילון עבור הקוד הזה.
+dict-add-done = { $name } נוסף
+dict-add-unusable = הקבצים האלה אינם מילון שמיש: { $error }
 dict-add-failed = לא ניתן להוסיף את המילון: { $error }
 inspector-export = ייצוא
-inspector-exportable = כולל יצוא
-ctx-number = מספר פרק זה (&N)
-ctx-unnumber = אל תספור את הפרק הזה (&N)
-inspector-numbering = מספר
-inspector-numbered = מספר
-inspector-numbered-tip = פרק זה לוקח את מקומו במספר הספר.לעבור אותו לפרולוג, אפיולוג או אינטגרל.
-inspector-numbered-tip-more = פרק לא ממוספר נשאר בספר בדיוק כפי שהיה: הכותרת שלו, הפרוזה שלו ומילה ספירת המילה שלה הם בלתי נסבלים.זה פשוט לא מדפיס שום מספר, ולא משתמש אחד למעלה: הפרק אחרי פרולוג הוא פרק אחד, לא פרק שני.עזיבתו מהיצוא במקום זה מתג אחר, למעלה, ואחד מסיר את הפרק מכל הספר.
-inspector-apply-to-children = החל לילדים
-inspector-milestone = תאריך מיילסטון
-inspector-milestone-none = לא תאריך
+inspector-exportable = הכללה בייצוא
+ctx-number = מספור הפרק הזה (&N)
+ctx-unnumber = ביטול המספור של הפרק הזה (&N)
+inspector-numbering = מספור
+inspector-numbered = ממוספר
+inspector-numbered-tip = הפרק הזה תופס את מקומו במספור של הספר. אפשר לכבות זאת עבור פרולוג, אפילוג או אינטרלוד.
+inspector-numbered-tip-more = פרק לא ממוספר נשאר בספר בדיוק כפי שהיה: הכותרת, הטקסט וספירת המילים שלו לא משתנים. הוא פשוט לא מדפיס מספר, ולא מנצל מספר: הפרק שאחרי פרולוג הוא פרק אחד, לא פרק שתיים. השמטתו מהייצוא היא מתג אחר, שלמעלה, והוא מסיר את הפרק מהספר לגמרי.
+inspector-apply-to-children = החלה על הצאצאים
+inspector-milestone = תאריך אבן הדרך
+inspector-milestone-none = ללא תאריך
 inspector-milestone-clear = ניקוי
-inspector-tags = תגיות
-inspector-aliases = ידוע גם בשם
+inspector-tags = תגים
+inspector-aliases = מוכר גם בשם
 inspector-dict-language = שפה
-inspector-apply-language-to-children = שימוש בשפה לילדים
+inspector-apply-language-to-children = החלת השפה על הצאצאים
 settings-page-language = שפה
 settings-field-dict-language = שפות
-dict-tradeoff-hint = כל שפה נוספת מקבלת יותר מילים, כך פחות טעויות נתפסות.
-lang-inherit-hint = Inherited: סצינה זו משתמשת בשפות הספר או הפרויקט.
+dict-tradeoff-hint = כל שפה נוספת מקבלת יותר מילים, ולכן נתפסות פחות טעויות.
+lang-inherit-hint = בירושה: הסצנה הזו משתמשת בשפות של הספר או של הפרויקט.
 lang-pill-list = שפות
-lang-pill-add = הוסף שפה
-lang-pill-remove = { $name }
-lang-pill-mute = עקבו אחרי { $name }
-lang-pill-unmute = עקבו אחרי { $name }
+lang-pill-add = הוספת שפה
+lang-pill-remove = הסרת { $name }
+lang-pill-mute = כיבוי בדיקת האיות עבור { $name }
+lang-pill-unmute = הפעלת בדיקת האיות עבור { $name }
 
 settings-page-personal-dictionary = מילון אישי
-settings-user-dict-desc = מילים שאתה מוסיף כאן מטופלים בצורה נכונה בכל מקום באפליקציית, ולעולם לא נמוגים שוב.
-settings-user-dict-add-placeholder = הוסף מילה...
-settings-user-dict-add = הוסף מילה
-settings-user-dict-search = מילים מסנן
+settings-user-dict-desc = מילים שתוסיפו כאן נחשבות מאויתות נכון בכל מקום ביישום, ולעולם לא יסומנו שוב.
+settings-user-dict-add-placeholder = הוספת מילה…
+settings-user-dict-add = הוספת המילה
+settings-user-dict-search = סינון מילים
 settings-user-dict-count = { $count ->
     [one] { $count } מילה
-    [two] { $count } מילים
    *[other] { $count } מילים
 }
 settings-user-dict-rename = שינוי שם
 settings-user-dict-remove = הסרה
-settings-user-dict-empty = עדיין אין מילים להוסיף מילים שהרואה צריך להתעלם מהן, או לייבא רשימה.
+settings-user-dict-empty = אין עדיין מילים. אפשר להוסיף מילים שבודק האיות צריך להתעלם מהן, או לייבא רשימה.
 settings-user-dict-import = ייבוא…
 settings-user-dict-export = ייצוא…
-settings-user-dict-import-tip = הוסף מילים מקובץ טקסט פשוט, מילה אחת לכל שורה.
-settings-user-dict-export-tip = שמור את כל הרשימה לקובץ טקסט פשוט, מילה אחת לכל שורה.
-settings-user-dict-txt-filter = קבצי טקסט
-settings-user-dict-duplicate = כבר במילון
-settings-user-dict-imported = ייבוא { $count ->
-    [one] { $count } מילים
-   *[other] { $count } מילים
-} ({ $duplicates } כבר כאן).
+settings-user-dict-import-tip = הוספת מילים מקובץ טקסט פשוט, מילה אחת בכל שורה. מילים קיימות נשמרות.
+settings-user-dict-export-tip = שמירת הרשימה כולה בקובץ טקסט פשוט, מילה אחת בכל שורה.
+settings-user-dict-txt-filter = קובצי טקסט
+settings-user-dict-duplicate = כבר נמצאת במילון
+settings-user-dict-imported = { $count ->
+    [one] יובאה מילה אחת
+   *[other] יובאו { $count } מילים
+} ({ $duplicates } כבר היו קיימות).
 settings-user-dict-import-failed = לא ניתן לקרוא את רשימת המילים: { $error }
-settings-user-dict-exported = להציל { $count ->
-    [one] { $count } מילים
-   *[other] { $count } מילים.
+settings-user-dict-exported = { $count ->
+    [one] נשמרה מילה אחת.
+   *[other] נשמרו { $count } מילים.
 }
-settings-user-dict-export-failed = לא יכול להציל את רשימת המילים: { $error }
+settings-user-dict-export-failed = לא ניתן לשמור את רשימת המילים: { $error }
 
-settings-page-text-replacements = החלפת טקסט
-settings-text-repl-desc = החלפה קצרה עם הטקסט המלא כפי שאתה מקליד: "btw" הופך ל"דרך" ברגע שאתה מקליד חלל או puncation.
-settings-text-repl-enable = השתמש החלפת טקסט בפרויקט זה
-settings-text-repl-disabled-hint = הפוך את זה כדי להגדיר יד קצרה מרחיבה כפי שאתה כותב.
-settings-text-repl-add = המונחים: rule
-settings-text-repl-trigger-placeholder = קצר יד
-settings-text-repl-replacement-placeholder = מה זה הופך
-settings-text-repl-added = { $trigger }
-settings-text-repl-duplicate = "{ $trigger }"יש כבר שלטון
-settings-text-repl-filter = כללי מסנן
+settings-page-text-replacements = החלפות טקסט
+settings-text-repl-desc = החלפת קיצור בטקסט המלא בזמן ההקלדה: "בהצ" הופך ל"בהצלחה" ברגע שמקלידים רווח או סימן פיסוק.
+settings-text-repl-enable = שימוש בהחלפות טקסט בפרויקט הזה
+settings-text-repl-disabled-hint = יש להפעיל את האפשרות כדי להגדיר קיצורים שמתרחבים בזמן הכתיבה.
+settings-text-repl-add = הוספת כלל
+settings-text-repl-trigger-placeholder = קיצור
+settings-text-repl-replacement-placeholder = למה הוא הופך
+settings-text-repl-added = "{ $trigger }" נוסף
+settings-text-repl-duplicate = כבר יש כלל עבור "{ $trigger }"
+settings-text-repl-filter = סינון כללים
 settings-text-repl-count = { $n ->
-    [one] 1 שלטון
+    [one] כלל אחד
    *[other] { $n } כללים
 }
-settings-text-repl-row-enabled = השתמש בחוק הזה
-settings-text-repl-delete = למחוק את הכלל עבור { $trigger }
-settings-text-repl-deleted = חוק זה נקרא "{ $trigger }"
-settings-text-repl-empty = עדיין אין חוקים.
-settings-text-repl-csv-filter = CSV קבצים
+settings-text-repl-row-enabled = שימוש בכלל הזה
+settings-text-repl-delete = מחיקת הכלל עבור { $trigger }
+settings-text-repl-deleted = הכלל עבור "{ $trigger }" נמחק
+settings-text-repl-empty = אין עדיין כללים.
+settings-text-repl-csv-filter = קובצי CSV
 settings-text-repl-import = ייבוא…
 settings-text-repl-export = ייצוא…
-settings-text-repl-imported = { $added }, דלג { $skipped }
-settings-text-repl-exported = ייצוא { $n ->
-    [one] 1 שלטון
-   *[other] { $n } כללים
+settings-text-repl-imported = יובאו { $added }, דולגו { $skipped }
+settings-text-repl-exported = { $n ->
+    [one] יוצא כלל אחד
+   *[other] יוצאו { $n } כללים
 }
 
 editor-menu-no-suggestions = אין הצעות
-editor-menu-add-to-dictionary = הוסף "{ $word }" למילון
-editor-menu-add-words-to-dictionary = הוסף מילים נבחרות למילון
-editor-dict-added = הוספת "{ $word }" למילון שלך.
+editor-menu-add-to-dictionary = הוספת "{ $word }" למילון
+editor-menu-add-words-to-dictionary = הוספת המילים שנבחרו למילון
+editor-dict-added = "{ $word }" נוספה למילון שלכם.
 editor-dict-added-multi = { $count ->
-    [one] { $count } מילים למילון שלך.
-   *[other] { $count } מילים למילון שלך.
+    [one] { $count } מילה נוספה למילון שלכם.
+   *[other] { $count } מילים נוספו למילון שלכם.
 }
 toast-undo = ביטול פעולה
 
-undo-superseded-title = הצעד הזה כבר לא האחרון
-undo-superseded-body = משהו אחר השתנה בפרויקט הזה מאז ש-Undo ייקח את זה במקום, אז זה לא קרה שום דבר שצעד זה נעשה הפוך. השתמש ב- Edit teundo כדי לעבור את ההיסטוריה בעצמך.
-undo-failed = Undo Fail: { $error }
+undo-superseded-title = הצעד הזה כבר אינו האחרון
+undo-superseded-body = משהו אחר השתנה בפרויקט הזה מאז. ביטול היה מבטל את השינוי ההוא במקום, ולכן הוא לא בוצע. שום דבר ממה שהצעד הזה עשה לא בוטל. אפשר להשתמש בעריכה ▸ ביטול פעולה כדי לחזור אחורה בהיסטוריה בעצמכם.
+undo-failed = הביטול נכשל: { $error }
 
 menu-edit = עריכה (&E)
 menu-edit-undo = ביטול פעולה (&U)
 menu-edit-redo = ביצוע חוזר (&R)
-menu-edit-undo-target = { $target } (&U)
-menu-edit-redo-target = Redo { $target } (&R)
+menu-edit-undo-target = ביטול { $target } (&U)
+menu-edit-redo-target = ביצוע חוזר של { $target } (&R)
 shortcut-name-edit-undo = ביטול פעולה
 shortcut-name-edit-redo = ביצוע חוזר
-undo-target-typing = הקלדה
+undo-target-typing = ההקלדה
 undo-target-project = השינוי האחרון בפרויקט הזה
-prose-history-reset-title = תזמון ההיסטוריה איפוס
+prose-history-reset-title = היסטוריית ההקלדה אופסה
 prose-history-reset-body = { $count ->
-    [one] סצינה פתוחה אחת הוחזרה ממדינה קודמת, כך שההיסטוריה שלה כבר לא חלת.
-   *[other] { $count } סצינות פתוחות שוחזרו ממדינה קודמת, כך שהיסטוריית הקלדה שלהם כבר לא חלה.
+    [one] סצנה פתוחה אחת שוחזרה ממצב קודם, ולכן היסטוריית ההקלדה שלה כבר אינה רלוונטית.
+   *[other] { $count } סצנות פתוחות שוחזרו ממצב קודם, ולכן היסטוריית ההקלדה שלהן כבר אינה רלוונטית.
 }
-undo-target-trash = נעים אל הזבל
-undo-target-restore = חזרה מהפח האשפה
-undo-target-delete-forever = מחיקת טוב
-undo-target-replace-all = להחליף את הפרויקט
-undo-target-import = יבוא המסמך
-undo-target-duplicate = ציות
-undo-target-move = לזוז
-undo-target-merge = מיזוג שתי סצינות
-undo-target-split = פיצול סצנה
+undo-target-trash = ההעברה לאשפה
+undo-target-restore = השחזור מהאשפה
+undo-target-delete-forever = המחיקה הסופית
+undo-target-replace-all = ההחלפה בכל הפרויקט
+undo-target-import = ייבוא המסמך
+undo-target-duplicate = השכפול
+undo-target-move = ההזזה
+undo-target-merge = מיזוג שתי הסצנות
+undo-target-split = פיצול הסצנה
 undo-target-promote = שינוי הסוג
-undo-target-tidy-titles = מסדרים את כותרות הפרק
-undo-target-import-tags = יבוא תוויות
-undo-target-import-templates = תגית: Note תבניות
-undo-target-create = יצירת
-undo-target-remove = מחיקה
-undo-target-rename = שינוי שם
-undo-target-edit = עריכה
+undo-target-tidy-titles = סידור כותרות הפרקים
+undo-target-import-tags = ייבוא התגים
+undo-target-import-templates = ייבוא תבניות הפתקים
+undo-target-create = היצירה
+undo-target-remove = המחיקה
+undo-target-rename = שינוי השם
+undo-target-edit = העריכה ההיא
 menu-edit-find = חיפוש… (&F)
-menu-edit-find-next = מצא את הבא (&N)
-menu-edit-find-prev = מצא קודם (&V)
-menu-edit-replace = מצא והחלפת... (&L)
-menu-edit-find-in-project = מצא בפרויקט... (&J)
-menu-edit-replace-in-project = להחליף בפרויקט... (&I)
-undo-frozen = Undo ("תמיד קדימה")
-redo-frozen = Redo ("תמיד קדימה")
+menu-edit-find-next = חיפוש הבא (&N)
+menu-edit-find-prev = חיפוש הקודם (&V)
+menu-edit-replace = חיפוש והחלפה… (&L)
+menu-edit-find-in-project = חיפוש בפרויקט… (&J)
+menu-edit-replace-in-project = החלפה בפרויקט… (&I)
+undo-frozen = ביטול פעולה ("תמיד קדימה" פעיל)
+redo-frozen = ביצוע חוזר ("תמיד קדימה" פעיל)
 menu-edit-cut = גזירה (&T)
 menu-edit-copy = העתקה (&C)
 menu-edit-paste = הדבקה (&P)
@@ -1373,376 +1383,374 @@ shortcut-name-edit-paste = הדבקה
 shortcut-name-edit-paste-plain = הדבקה ללא עיצוב
 shortcut-name-edit-select-all = בחירת הכול
 
-titlebar-spellcheck-on = בדיקת איות היא על.לחץ כדי להפסיק לבדוק (F7)
-titlebar-spellcheck-off = בדיקת איות היא כבויה.לחץ כדי לבדוק שוב (F7)
-menu-spellcheck = בדיקת לחשים (&C)
-menu-comments = תגובות (&M)
-settings-page-spellcheck = תגית: Checking
-settings-group-spellcheck = תגית: Checking
-settings-spellcheck-enabled = בדוק את האיות כפי שאני כותב
-settings-spellcheck-hint = במילים אחרות, מילון מותקן לא יודע.להכבה את זה מפסיק את כל הבדיקה, בכל פרויקט, עד שתפנה אותו בחזרה.כדי להפסיק לבדוק שפה אחת בלבד, לנקות את חותמת הסימון שלו על שדה השפה של הפרויקט או של פריט.
+titlebar-spellcheck-on = בדיקת האיות פועלת. לחיצה להפסקת הבדיקה (F7)
+titlebar-spellcheck-off = בדיקת האיות כבויה. לחיצה לחידוש הבדיקה (F7)
+menu-spellcheck = בדיקת איות (&C)
+menu-comments = הערות (&M)
+settings-page-spellcheck = בדיקת איות
+settings-group-spellcheck = בדיקת איות
+settings-spellcheck-enabled = בדיקת איות תוך כדי כתיבה
+settings-spellcheck-hint = מסמנת בקו תחתון מילים שאף מילון מותקן לא מכיר. כיבוי האפשרות עוצר את כל הבדיקות, בכל הפרויקטים, עד שתפעילו אותה שוב. כדי להפסיק לבדוק שפה אחת בלבד, יש לבטל את הסימון שלה בשדה "שפה" של הפרויקט או של פריט.
 
 menu-trash = אשפה (&T)
 trash-title = אשפה
-trash-empty-state = Trash הוא ריק.
-trash-empty-button = טרף ריק...
+trash-empty-state = האשפה ריקה.
+trash-empty-button = ריקון האשפה…
 trash-restore = שחזור (&R)
-trash-restore-to = חזרה ל... (&T)
-trash-delete-forever = תגית: Forever (&D)
-trash-restored-ok = { $count } חזר.
+trash-restore-to = שחזור אל… (&T)
+trash-delete-forever = מחיקה לצמיתות (&D)
+trash-restored-ok = { $count } שוחזרו.
 trash-restore-error = לא ניתן לשחזר: { $error }
-trash-restore-orphaned = המקום המקורי של פריט זה נעלם, בחרו היכן לשחזר אותו.
-trash-restore-no-project = שום פרויקט לא פתוח, אז אין מה לשחזר.
-trash-delete-no-project = שום פרויקט לא פתוח, אז אין מה למחוק.
-trash-empty-confirm-title = רוקן את הזבל?
+trash-restore-orphaned = המקום המקורי של הפריט הזה כבר לא קיים. יש לבחור לאן לשחזר אותו.
+trash-restore-no-project = אין פרויקט פתוח, ולכן אין מה לשחזר.
+trash-delete-no-project = אין פרויקט פתוח, ולכן אין מה למחוק.
+trash-empty-confirm-title = לרוקן את האשפה?
 trash-empty-confirm-text = { $count ->
-    [one] { $count } כניסה מזוקקת תימחק לצמיתות.
-   *[other] { $count } רשומות אשפות יימחקו לצמיתות.
-} הם משאירים את האשפה לטוב, יונידו עדיין יכול להחזיר אותם עד שאתה עושה משהו אחר.
-trash-emptied-title = Trash Emptied
-trash-emptied-body = הכל בפח האשפה נמחק לצמיתות.
-trash-empty-no-project = שום פרויקט לא פתוח, אז אין זבל לריק.
-trash-delete-forever-confirm-title = למחוק לנצח?
+    [one] { $count } רשומה שבאשפה תימחק לצמיתות.
+   *[other] { $count } רשומות שבאשפה יימחקו לצמיתות.
+} הן יוצאות מהאשפה לתמיד. "ביטול פעולה" עדיין יכול להחזיר אותן עד שתעשו משהו אחר.
+trash-emptied-title = האשפה רוקנה
+trash-emptied-body = כל מה שהיה באשפה נמחק לצמיתות.
+trash-empty-no-project = אין פרויקט פתוח, ולכן אין אשפה לרוקן.
+trash-delete-forever-confirm-title = למחוק לצמיתות?
 trash-delete-forever-confirm-text = { $count ->
     [one] { $count } פריט יימחק לצמיתות.
    *[other] { $count } פריטים יימחקו לצמיתות.
-} הם משאירים את האשפה לטוב, יונידו עדיין יכול להחזיר אותם עד שאתה עושה משהו אחר.
-trash-deleted-title = לנצח
-trash-deleted-body = { $count } נמחק לצמיתות.
+} הם יוצאים מהאשפה לתמיד. "ביטול פעולה" עדיין יכול להחזיר אותם עד שתעשו משהו אחר.
+trash-deleted-title = נמחק לצמיתות
+trash-deleted-body = { $count } נמחקו לצמיתות.
 trash-undo = ביטול פעולה
-trash-restore-picker-title = חזרה ל...
-trash-restore-to-confirm-title = שיקום כאן?
-trash-restore-to-confirm-text = החזרת "{ $item }" ל-"{ $destination }"?
-trash-restore-picker-restore-here = שחזור כאן
+trash-restore-picker-title = שחזור אל…
+trash-restore-to-confirm-title = לשחזר לכאן?
+trash-restore-to-confirm-text = לשחזר את "{ $item }" אל "{ $destination }"?
+trash-restore-picker-restore-here = שחזור לכאן
 trash-restore-picker-cancel = ביטול
-trash-restore-picker-empty = אף אחד לא יוצר קודם.
-trash-banner-title = פריט זה נמצא ב- Trash
-trash-banner-description = זה לא יופיע בקורא או ביצוא עד שתחזירו אותו.
+trash-restore-picker-empty = אין עדיין קלסרים. יש ליצור אחד קודם.
+trash-banner-title = הפריט הזה נמצא באשפה
+trash-banner-description = הוא לא יופיע במתווה או בייצוא עד שתשחזרו אותו.
 trash-banner-restore = שחזור…
 trash-tab-tooltip = באשפה
 
 settings-styles-sheet-yes = כן
 settings-styles-sheet-no = לא
 settings-styles-sheet-font = גופן
-settings-styles-sheet-indent = קו ראשון Indent
-settings-styles-sheet-para-spacing = Paragraph Spacing
-settings-styles-sheet-page = גודל עמוד
-settings-styles-sheet-margins = שוליים (עליון/ימין/תחתון/שמאל)
-settings-styles-sheet-title-page = דף הכותרת Book Page
-settings-styles-sheet-heading-language = שפה
-settings-styles-sheet-auto = עקבו אחרי הטקסט
+settings-styles-sheet-indent = הזחת שורה ראשונה
+settings-styles-sheet-para-spacing = ריווח פסקאות
+settings-styles-sheet-page = גודל העמוד
+settings-styles-sheet-margins = שוליים (ע/י/ת/ש)
+settings-styles-sheet-title-page = עמוד שער הספר
+settings-styles-sheet-heading-language = שפת הכותרות
+settings-styles-sheet-auto = לפי הטקסט
 settings-styles-sheet-digits = ספרות
-settings-styles-sheet-direction = כיוון טקסט
-settings-styles-sheet-formats = פורמט
-settings-styles-sheet-all-formats = הכל
+settings-styles-sheet-direction = כיוון הטקסט
+settings-styles-sheet-formats = פורמטים
+settings-styles-sheet-all-formats = הכול
 
-settings-styles-editor-group = עורך סגנון
-settings-styles-editor-missing = הסגנון הזה כבר לא זמין.
+settings-styles-editor-group = עורך הסגנונות
+settings-styles-editor-missing = הסגנון הזה כבר אינו זמין.
 
-settings-styles-page-letter = מכתב
-settings-styles-digits-western = מערב (0-9
-settings-styles-digits-eastern-arabic = ערבית מזרחית (אנתרופולוגיה-אנתרופולוגיה)
-settings-styles-direction-ltr = לשמאל to right
-settings-styles-direction-rtl = ימין לשמאל
+settings-styles-page-letter = Letter
+settings-styles-digits-western = מערביות (0–9)
+settings-styles-digits-eastern-arabic = ערביות מזרחיות (٠–٩)
+settings-styles-direction-ltr = משמאל לימין
+settings-styles-direction-rtl = מימין לשמאל
 
 format-dock-title = עיצוב
-format-panel-empty = להציב את הסימון שלך בסצינה, הערה, או סינאופוזיס כדי לראות אפשרויות עיצוב.
+format-panel-empty = יש להציב את הסמן בסצנה, בפתק או בתקציר כדי לראות את אפשרויות העיצוב.
 format-group-marks = טקסט
 format-group-block = פסקה
 format-group-lists = רשימות
-format-group-tables = שולחן שולחן
-format-group-breaks = סצנות שוברות
+format-group-tables = טבלה
+format-group-breaks = מעברי סצנה
 format-superscript = כתב עילי
-format-subscript = המונחים
-format-link = קישור...
-link-dialog-insert-title = קישור
-link-dialog-edit-title = Edit קישורים
+format-subscript = כתב תחתי
+format-link = קישור…
+link-dialog-insert-title = הוספת קישור
+link-dialog-edit-title = עריכת קישור
 link-dialog-text-label = טקסט
 link-dialog-text-placeholder = המילים שהקורא רואה
-link-dialog-url-label = קישורים
-link-dialog-url-placeholder = לדוגמה.com
-link-dialog-insert = הכנס
+link-dialog-url-label = מקשר אל
+link-dialog-url-placeholder = example.com
+link-dialog-insert = הוספה
 link-dialog-apply = החלה
 link-dialog-cancel = ביטול
-link-dialog-remove = להסיר קישור
-link-scheme-refused = רק קישורי אינטרנט ודואר אלקטרוני ניתן לפתוח.{ $url } נותרו לבד.
-menu-format-link = קישור... (&N)
-format-clear = פורמט Clear
-format-heading = רמת ניהול
+link-dialog-remove = הסרת הקישור
+link-scheme-refused = אפשר לפתוח רק קישורי אינטרנט ודואר אלקטרוני. { $url } לא נפתח.
+menu-format-link = קישור… (&N)
+format-clear = ניקוי העיצוב
+format-heading = רמת כותרת
 format-heading-normal = טקסט רגיל
-format-heading-1 = ראש 1
-format-heading-2 = ראשי 2
-format-heading-3 = ראש 3
-format-heading-4 = ניהול 4
-format-heading-5 = 5
-format-heading-6 = ראש 6
-format-align-left = שמאלה
-format-align-center = מרכז המרכז
-format-direction-rtl = סעיף ימין לשמאל
-format-blockquote = חסימה
-format-list-bullet = רשימת כדורים
-format-list-numbered = רשימה מספר
-format-indent = הגדלת כניסה
-format-outdent = הקטנת כניסה
-format-table-insert = הכנס שולחן
-format-table-row-above = שורות למעלה
-format-table-row-below = שורות למטה
-format-table-col-before = הכנס עמודה לפני
-format-table-col-after = עמודה לאחר
-format-table-row-delete = המונחים:
-format-table-col-delete = המונחים:
-format-table-remove = להסיר שולחן
+format-heading-1 = כותרת 1
+format-heading-2 = כותרת 2
+format-heading-3 = כותרת 3
+format-heading-4 = כותרת 4
+format-heading-5 = כותרת 5
+format-heading-6 = כותרת 6
+format-align-left = יישור לשמאל
+format-align-center = מרכוז
+format-direction-rtl = פסקה מימין לשמאל
+format-blockquote = ציטוט
+format-list-bullet = רשימת תבליטים
+format-list-numbered = רשימה ממוספרת
+format-indent = הגדלת הזחה
+format-outdent = הקטנת הזחה
+format-table-insert = הוספת טבלה
+format-table-row-above = הוספת שורה מעל
+format-table-row-below = הוספת שורה מתחת
+format-table-col-before = הוספת עמודה לפני
+format-table-col-after = הוספת עמודה אחרי
+format-table-row-delete = מחיקת שורה
+format-table-col-delete = מחיקת עמודה
+format-table-remove = הסרת הטבלה
 
 menu-format-marks-bold = מודגש (&D)
-menu-format-marks-italic = זהic (&I)
-menu-format-marks-underline = המונחים: (&U)
-menu-format-marks-strike = באמצעות Strike (&S)
+menu-format-marks-italic = נטוי (&I)
+menu-format-marks-underline = קו תחתון (&U)
+menu-format-marks-strike = קו חוצה (&S)
 menu-format-marks-superscript = כתב עילי (&P)
-menu-format-marks-subscript = המונחים (&B)
-menu-format-marks-clear = המונחים Clear Format (&C)
-menu-format-heading = Heading (&H)
+menu-format-marks-subscript = כתב תחתי (&B)
+menu-format-marks-clear = ניקוי העיצוב (&C)
+menu-format-heading = כותרת (&H)
 menu-format-heading-normal = טקסט רגיל (&N)
-menu-format-heading-1 = ראש 1 (&1)
-menu-format-heading-2 = ראשי 2 (&2)
-menu-format-heading-3 = ראש 3 (&3)
-menu-format-heading-4 = ניהול 4 (&4)
-menu-format-heading-5 = 5 (&5)
-menu-format-heading-6 = ראש 6 (&6)
-menu-format-alignment = Alignment (&A)
-menu-format-align-left = השמאל הקיצוני (&L)
-menu-format-align-center = מרכז המרכז (&C)
+menu-format-heading-1 = כותרת 1 (&1)
+menu-format-heading-2 = כותרת 2 (&2)
+menu-format-heading-3 = כותרת 3 (&3)
+menu-format-heading-4 = כותרת 4 (&4)
+menu-format-heading-5 = כותרת 5 (&5)
+menu-format-heading-6 = כותרת 6 (&6)
+menu-format-alignment = יישור (&A)
+menu-format-align-left = יישור לשמאל (&L)
+menu-format-align-center = מרכוז (&C)
 menu-format-direction = כיוון (&E)
-menu-format-direction-auto = אוטומטי אוטומטי (&A)
-menu-format-direction-ltr = לשמאל to right (&L)
-menu-format-direction-rtl = הזכות לשמאל (&R)
-menu-format-blockquote = חסימה (&Q)
+menu-format-direction-auto = אוטומטי (&A)
+menu-format-direction-ltr = משמאל לימין (&L)
+menu-format-direction-rtl = מימין לשמאל (&R)
+menu-format-blockquote = ציטוט (&Q)
 menu-format-lists = רשימות (&L)
-menu-format-list-bullet = רשימת כדורים (&B)
-menu-format-list-numbered = רשימה מספר (&N)
-menu-format-indent = הגדלת כניסה (&I)
-menu-format-outdent = הקטנת כניסה (&O)
-menu-format-table = שולחן שולחן (&T)
-menu-format-table-insert = הכנס שולחן (&I)
-menu-format-table-2x2 = 2 x 2 (&2)
-menu-format-table-3x3 = 3 x 3 (&3)
-menu-format-table-4x4 = 4 x 4 (&4)
-menu-format-table-row-above = המונחים: (&V)
-menu-format-table-row-below = שורה למטה (&W)
-menu-format-table-col-before = עמוד הבית לפני (&L)
-menu-format-table-col-after = עמוד הבית לאחר (&T)
-menu-format-table-row-delete = Delete Row (&D)
-menu-format-table-col-delete = מחיקת טור (&C)
-menu-format-table-remove = להסיר שולחן (&R)
+menu-format-list-bullet = רשימת תבליטים (&B)
+menu-format-list-numbered = רשימה ממוספרת (&N)
+menu-format-indent = הגדלת הזחה (&I)
+menu-format-outdent = הקטנת הזחה (&O)
+menu-format-table = טבלה (&T)
+menu-format-table-insert = הוספת טבלה (&I)
+menu-format-table-2x2 = 2 × 2 (&2)
+menu-format-table-3x3 = 3 × 3 (&3)
+menu-format-table-4x4 = 4 × 4 (&4)
+menu-format-table-row-above = הוספת שורה מעל (&V)
+menu-format-table-row-below = הוספת שורה מתחת (&W)
+menu-format-table-col-before = הוספת עמודה לפני (&L)
+menu-format-table-col-after = הוספת עמודה אחרי (&T)
+menu-format-table-row-delete = מחיקת שורה (&D)
+menu-format-table-col-delete = מחיקת עמודה (&C)
+menu-format-table-remove = הסרת הטבלה (&R)
 
-menu-format-typo-marks = עיצוב מארק (&F)
-menu-format-typo-nbsp = No-Break Space (&N)
-menu-format-typo-nbhyphen = No-Break Hyphen (&H)
-menu-format-typo-soft-hyphen = היפנוזה רכה (&S)
-menu-format-typo-nnbsp = No-Break Space (&R)
-menu-format-typo-zwsp = חלל Zero-width Space (&Z)
-menu-format-typo-word-joiner = Word Joiner (&W)
+menu-format-typo-marks = סימן עיצוב (&F)
+menu-format-typo-nbsp = רווח בלתי נשבר (&N)
+menu-format-typo-nbhyphen = מקף בלתי נשבר (&H)
+menu-format-typo-soft-hyphen = מקף רך (&S)
+menu-format-typo-nnbsp = רווח צר בלתי נשבר (&R)
+menu-format-typo-zwsp = רווח ברוחב אפס (&Z)
+menu-format-typo-word-joiner = מחבר מילים (&W)
 
-
-menu-about = Skribisto... (&A)
-about-title = Skribisto
+menu-about = אודות Skribisto… (&A)
+about-title = אודות Skribisto
 about-version = גרסה { $version }
 about-update-available = גרסה { $version } זמינה
-about-update-see-notes = ראה מה השתנה
-about-update-flathub = Flatub שומרת את העותק הזה עד היום.
-about-update-distro = ההפצה שלך שומרת את העותק עד היום.
-about-tagline = אפליקציית כתיבה חדשנית עבור בדיונית ארוכת טווח, שנכתבה ב-Ratten עם ערכת הכלים של Teksilo.
-about-license = שוחרר תחת הרישיון הציבורי הכללי של גנו, גרסה 3.
-about-copyright = 2026 Cyril Jacquet
+about-update-see-notes = מה השתנה
+about-update-flathub = ‏Flathub שומר את העותק הזה מעודכן.
+about-update-distro = ההפצה שלכם שומרת את העותק הזה מעודכן.
+about-tagline = יישום לכתיבת רומנים וסיפורת ארוכה, שנכתב ב־Rust עם ערכת הכלים Teksilo.
+about-license = מופץ תחת הרישיון הציבורי הכללי של GNU, גרסה 3.
+about-copyright = © 2026 Cyril Jacquet
 about-close = סגירה
 
-native-menu-about = { $app }
-native-menu-hide = { $app }
-native-menu-quit = { $app }
+native-menu-about = אודות { $app }
+native-menu-hide = הסתרת { $app }
+native-menu-quit = יציאה מ־{ $app }
 native-menu-settings = הגדרות…
-native-menu-window = חלון החלון
-native-menu-minimize = מינימום
-native-menu-zoom = זום
+native-menu-window = חלון
+native-menu-minimize = מזעור
+native-menu-zoom = הגדלה
 
 window-title = { $title } - { $app }
 window-title-numbered = { $title } - { $app } (חלון { $n })
 window-title-empty = { $app }
 
-first-run-window-title = ברוכים הבאים ברוכים הבאים
-first-run-title = { $app }
-first-run-body = { $app } שומרת על הגדרותיה בנפרד מ Skribisto, כך שהיא מתחילה ריקות.העדפותיך, פרויקטים אחרונים, דיסלקציות ופריסת חלונות ניתן להעתק כעת.
-first-run-from = מקור:
-first-run-to = העתקה
-first-run-copy-note = שום דבר לא מועבר או מוסר. Skribisto שומר על כל אחת מההגדרות שלו, וממשיך לעבוד בדיוק כמו קודם לכן.
-first-run-import = הגדרות ייבוא
-first-run-start-fresh = התחל טרי
-first-run-import-failed = לא ניתן לייבא הגדרות: { $error }
+first-run-window-title = ברוכים הבאים
+first-run-title = הגדרת { $app }
+first-run-body = ‏{ $app } שומר את ההגדרות שלו בנפרד מ־Skribisto, ולכן הוא מתחיל ריק. אפשר להעתיק עכשיו את ההעדפות, הפרויקטים האחרונים, המילונים ופריסת החלונות שלכם.
+first-run-from = העתקה מתוך
+first-run-to = העתקה אל
+first-run-copy-note = שום דבר לא מועבר או מוסר. Skribisto שומרת את כל ההגדרות שלה, וממשיכה לעבוד בדיוק כמו קודם.
+first-run-import = ייבוא ההגדרות
+first-run-start-fresh = התחלה מאפס
+first-run-import-failed = לא ניתן היה לייבא חלק מההגדרות: { $error }
 
-settings-page-punctuation = ביטול ברירת מחדל
-settings-group-punctuation = טיהור חכם
-settings-page-work-punctuation = טיהור
-settings-punctuation-override = תנו לפרויקט הזה את חוקי הטיהור שלו
-settings-punctuation-override-hint = הפרויקט עוקב אחר העדפה היישום.כללים אלה נעים בתוך .skrib, כך שמחבר משותף פותח את הקובץ כותב עם אותה טיפוגרפיה.
-settings-punctuation-dashes = הפוך - לתוך a en dash - לתוך a em dash
-settings-punctuation-ellipsis = להפוך את זה ל-Ellipsis
-settings-punctuation-quotes = סימני מכסת Curl ו-Apostrophes
-settings-quote-style = המונחים:
-settings-quote-style-locale = שפה ברירת מחדל
-settings-quote-style-curly = "Double"
-settings-quote-style-curly-single = "Single"
-settings-quote-style-guillemets = "Guillemets"
-settings-quote-style-low-high = "Low-High"
-settings-punctuation-spacing = מקום לפני כן:
-settings-punctuation-spacing-hint = הטיפוגרפיה הצרפתית מציבה מרחב צר ללא שבירה לפני כן; ואדם מלא לפני כן: זה חל רק על טקסט שנכתב בצרפתית.המרחב בתוך גילימטים " מגיע עם הציטוטים הגורילות עצמם.
-settings-punctuation-sample = השפה שלך נותנת
-settings-punctuation-app-hint = מה שכל פרויקט עושה, אלא אם כן הוא לוקח כללים משלו בפרויקט טיהור.
-settings-punctuation-dialogue = פתח פסקה המכונה "עם דיאלוג dash"
-settings-punctuation-dialogue-hint = עבור שפות המסמנים דיבור עם דאש ולא סימני מכס: צרפתית, ספרדית, רוסית ואחרים.זה רק יורה בתחילת פסקה.
+settings-page-punctuation = ברירות מחדל לפיסוק
+settings-group-punctuation = פיסוק חכם
+settings-page-work-punctuation = פיסוק
+settings-punctuation-override = כללי פיסוק משלו לפרויקט הזה
+settings-punctuation-override-hint = כבוי: הפרויקט פועל לפי העדפת היישום. הכללים האלה נשמרים בתוך קובץ ה־.skrib, כך שמחבר שותף שפותח את הקובץ כותב עם אותה טיפוגרפיה.
+settings-punctuation-dashes = הפיכת -- למקף בינוני (en dash) ו־--- למקף ארוך (em dash)
+settings-punctuation-ellipsis = הפיכת ... לשלוש נקודות (…)
+settings-punctuation-quotes = מירכאות וגרשים מסולסלים
+settings-quote-style = מירכאות
+settings-quote-style-locale = ברירת המחדל של השפה
+settings-quote-style-curly = “כפולות”
+settings-quote-style-curly-single = ‘בודדות’
+settings-quote-style-guillemets = «זוויתיות»
+settings-quote-style-low-high = „תחתונות־עליונות“
+settings-punctuation-spacing = רווח לפני ; : ! ?
+settings-punctuation-spacing-hint = הטיפוגרפיה הצרפתית מציבה רווח צר בלתי נשבר לפני ; ! ? ורווח מלא לפני :. זה חל רק על טקסט שנכתב בצרפתית. הרווח שבתוך מירכאות זוויתיות « » מגיע עם המירכאות עצמן.
+settings-punctuation-sample = בשפה שלכם יתקבל
+settings-punctuation-app-hint = מה שכל פרויקט עושה, אלא אם הגדיר כללים משלו בפרויקט ▸ פיסוק.
+settings-punctuation-dialogue = פתיחת פסקה שהוקלדה כ־"- " בקו דיאלוג
+settings-punctuation-dialogue-hint = לשפות שמסמנות דיבור בקו במקום במירכאות: צרפתית, ספרדית, רוסית ואחרות. פועל רק בתחילתה של פסקה.
 
-statusbar-go-to = לכו ל...
-go-to-placeholder = עקבו אחרי The Cableer
-go-to-no-matches = שום פריט לא מתאים לחיפוש הזה.
-menu-go-to = לכו ל... (&G)
+statusbar-go-to = מעבר אל…
+go-to-placeholder = חיפוש בקלסר
+go-to-no-matches = אין פריט שתואם לחיפוש הזה.
+menu-go-to = מעבר אל… (&G)
 
-settings-page-distraction-free-themes = נושאים ללא משמעת
-settings-themes-builtin = המונחים:
-settings-themes-builtin-badge = נבנה-in
-settings-themes-user = הנושאים שלי
-settings-themes-editor-group = Edit ערכת נושא
-settings-themes-editor-empty = בחר נושא תחת "הנושאים שלי" כדי לערוך אותו.
-settings-themes-use = שימוש בשימוש
+settings-page-distraction-free-themes = ערכות נושא ללא הסחות דעת
+settings-themes-builtin = ערכות נושא מובנות
+settings-themes-builtin-badge = מובנית
+settings-themes-user = ערכות הנושא שלי
+settings-themes-editor-group = עריכת ערכת נושא
+settings-themes-editor-empty = יש לבחור ערכת נושא תחת "ערכות הנושא שלי" כדי לערוך אותה.
+settings-themes-use = שימוש
 settings-themes-duplicate = שכפול
 settings-themes-edit = עריכה
 settings-themes-delete = מחיקה
 settings-themes-export = ייצוא…
 settings-themes-import = ייבוא…
-settings-themes-copy-suffix = העתקה
-settings-themes-json-filter = ערכת נושא ((JSON)
-settings-themes-imported = נושא מיובא
-settings-themes-import-failed = לא יכול לייבא את הנושא הזה
-settings-themes-exported = נושא היצוא
-settings-themes-export-failed = לא יכול לייצא את הנושא הזה
-settings-themes-low-contrast = ניגוד נמוך
-settings-themes-low-contrast-band = הדגשה מסתירה את הטקסט
+settings-themes-copy-suffix = עותק
+settings-themes-json-filter = ערכת נושא (JSON)
+settings-themes-imported = ערכת הנושא יובאה
+settings-themes-import-failed = לא ניתן לייבא את ערכת הנושא הזו
+settings-themes-exported = ערכת הנושא יוצאה
+settings-themes-export-failed = לא ניתן לייצא את ערכת הנושא הזו
+settings-themes-low-contrast = ניגודיות נמוכה
+settings-themes-low-contrast-band = ההדגשה מסתירה את הטקסט
 settings-themes-field-name = שם
-settings-themes-field-paper = עמוד Page
+settings-themes-field-paper = עמוד
 settings-themes-field-ink = טקסט
-settings-themes-field-general = רקע רקע רקע
-settings-themes-field-widget-text = צילום פס טקסט
-settings-themes-field-caret-band = אור גבוה סביב הטיפול
+settings-themes-field-general = רקע
+settings-themes-field-widget-text = טקסט רצועת הבקרה
+settings-themes-field-caret-band = הדגשה סביב הסמן
 
-statusbar-focus-settings = הגדרות ללא תפוצה
-statusbar-focus-manage-themes = לנהל נושאים...
+statusbar-focus-settings = הגדרות ללא הסחות דעת
+statusbar-focus-manage-themes = ניהול ערכות נושא…
 
-comments-title = תגובות
-comments-document-title = מסמך זה
-comments-empty-project = עדיין אין הערות בפרויקט הזה.
+comments-title = הערות
+comments-document-title = המסמך הזה
+comments-empty-project = אין עדיין הערות בפרויקט הזה.
 comments-empty-document = אין הערות על המסמך הזה.
-comments-filter-all = הכל
-comments-filter-open = פתיחה
-comments-filter-resolved = נפתר
-comments-filter-orphaned = יתומים
-comments-status-open = פתיחה
-comments-status-resolved = נפתר
-comments-status-orphaned = איבד את הטקסט
-comments-orphan-snippet = (הטקסט המדובר נעלם)
-comments-status-unplaced = אין מיקום טקסט
-comments-unplaced-snippet = (לא מעוגן לכל טקסט)
+comments-filter-all = הכול
+comments-filter-open = פתוחות
+comments-filter-resolved = נפתרו
+comments-filter-orphaned = יתומות
+comments-status-open = פתוחה
+comments-status-resolved = נפתרה
+comments-status-orphaned = הטקסט שלה אבד
+comments-orphan-snippet = (הטקסט שעליו נכתבה ההערה נעלם)
+comments-status-unplaced = ללא מיקום בטקסט
+comments-unplaced-snippet = (לא מעוגנת לשום טקסט)
 comments-reply-count = { $count ->
-    [one] { $count }
+    [one] { $count } תשובה
    *[other] { $count } תשובות
 }
-comments-menu-resolve = פתרון
-comments-menu-reopen = נפתח מחדש
+comments-menu-resolve = סימון כנפתרה
+comments-menu-reopen = פתיחה מחדש
 comments-menu-delete = מחיקה
-comments-sort-document = פקודת מסמך
-comments-sort-newest = הראשון
-comments-sort-reader = מוצג על ידי Reader
-comments-unsigned-author = לא חתום
+comments-sort-document = לפי הסדר במסמך
+comments-sort-newest = החדשות ביותר תחילה
+comments-sort-reader = מקובצות לפי קורא
+comments-unsigned-author = לא חתומה
 comments-agreement = { $count ->
     [one] { $count } קורא
-   *[other] { $count } קוראי
+   *[other] { $count } קוראים
 }
-comments-menu-add = הוסף תגובה
-comments-menu-add-paragraph = הערות על סעיף זה
-overview-col-comments = תגובות
-overview-col-total-comments = Total Comments
-comments-card-placeholder = לכתוב תגובה...
-comments-card-unknown-author = סופר לא ידוע
-comments-unsigned-toast = ההערות שלך לא חתומות: שום שם לא מוגדר לך במחשב הזה.
-comments-unsigned-action = הגדר את שמך
-comments-card-reply = תגובה תגובה
-comments-card-reply-placeholder = תגובה...
-comments-card-actions = הערות פעולות
-comments-reply-actions = פעולות תגובה
-comments-menu-delete-reply = תגובה חופשית
-comments-menu-delete-all = למחוק את כל ההערות כאן
-comments-deleted-toast = תגובה נמחקת
-comments-reply-deleted-toast = תגובה נמחקה
+comments-menu-add = הוספת הערה
+comments-menu-add-paragraph = הערה על הפסקה הזו
+overview-col-comments = הערות
+overview-col-total-comments = סה״כ הערות
+comments-card-placeholder = כתיבת הערה…
+comments-card-unknown-author = מחבר לא ידוע
+comments-unsigned-toast = ההערות שלכם אינן חתומות: לא הוגדר לכם שם במחשב הזה.
+comments-unsigned-action = הגדרת השם שלכם
+comments-card-reply = תשובה
+comments-card-reply-placeholder = תשובה…
+comments-card-actions = פעולות על ההערה
+comments-reply-actions = פעולות על התשובה
+comments-menu-delete-reply = מחיקת התשובה
+comments-menu-delete-all = מחיקת כל ההערות כאן
+comments-deleted-toast = ההערה נמחקה
+comments-reply-deleted-toast = התשובה נמחקה
 comments-deleted-all-toast = { $count ->
-    [one] { $count } תגובה נמחקה
-   *[other] { $count } הערות שנמחקו
+    [one] { $count } הערה נמחקה
+   *[other] { $count } הערות נמחקו
 }
 comments-undo = ביטול פעולה
 
-analysis-segment = ניתוח Analysis
-analysis-scope-book = ניתוח הספר
-analysis-run = ניתוח ריצה
-analysis-stale = השתנה מאז הריצה
-analysis-not-run = עדיין לא ניתח.
-analysis-running = לקרוא את כתב היד...
-analysis-failed = הניתוח לא יכול להסתיים.
-analysis-no-scenes = עדיין אין סצנות בספר הזה.
+analysis-segment = ניתוח
+analysis-scope-book = ניתוח הספר הזה
+analysis-run = הרצת הניתוח
+analysis-stale = השתנה מאז ההרצה
+analysis-not-run = עדיין לא נותח.
+analysis-running = קורא את כתב היד…
+analysis-failed = הניתוח לא הצליח להסתיים.
+analysis-no-scenes = אין עדיין סצנות בספר הזה.
 
 analysis-shape = צורה
 
-analysis-arrivals = כניסות
-analysis-arrivals-explainer = איך טקסט הגיע לפרויקט זה בזמן שהוא פותח.זה אומר שתוואי הדמויות ירד, ושום דבר בכלל לא על מי שכתב אותם: סופר שטס במקום אחר ועברים עבר, ואחד שהכתיבים הכתיבו.אין מספר שמטרתו כאן.
-analysis-arrivals-scope = כל הפרויקט הזה, לא רק הספר הזה.
-analysis-arrivals-session = מאז שפתחת אותו, סגירת הפרויקט מתחילה שוב את הספירה.
-analysis-arrivals-nothing = שום טקסט עדיין לא הגיע בפגישה זו.
-analysis-arrivals-typed = סוג
-analysis-arrivals-pasted = עבר
-analysis-arrivals-dictated = הכתבה קולית
-analysis-arrivals-imported = ייבוא
-analysis-arrivals-programmatic = הכנס בשבילך
+analysis-arrivals = הגעה
+analysis-arrivals-explainer = איך טקסט הגיע לפרויקט הזה בזמן שהיה פתוח. זה מראה באיזו דרך הגיעו התווים, ולא אומר דבר על מי כתב אותם: כותבת שמנסחת במקום אחר ומדביקה, הדביקה; וכותב שמכתיב, הכתיב. אין כאן מספר לשאוף אליו.
+analysis-arrivals-scope = הפרויקט הזה כולו, לא רק הספר הזה.
+analysis-arrivals-session = מאז שפתחתם אותו. סגירת הפרויקט מתחילה את הספירה מחדש.
+analysis-arrivals-nothing = עדיין לא הגיע טקסט בהפעלה הזו.
+analysis-arrivals-typed = הוקלד
+analysis-arrivals-pasted = הודבק
+analysis-arrivals-dictated = הוכתב
+analysis-arrivals-imported = יובא
+analysis-arrivals-programmatic = הוכנס עבורכם
 analysis-arrivals-count = { $count ->
     [one] { $count } תו
-    [two] { $count } תווים
    *[other] { $count } תווים
 }
-analysis-arrivals-none = ללא
+analysis-arrivals-none = אין
 
 analysis-words-per-scene = מילים לסצנה
-analysis-median-words = הסצינה החציונית של הספר רץ { $count ->
-    [one] { $count } מילים
-   *[other] { $count } מילים.
+analysis-median-words = { $count ->
+    [one] הסצנה החציונית בספר הזה באורך { $count } מילה.
+   *[other] הסצנה החציונית בספר הזה באורך { $count } מילים.
 }
-analysis-median-line = מדיה: { $count ->
-    [one] { $count } מילים
+analysis-median-line = חציון: { $count ->
+    [one] { $count } מילה
    *[other] { $count } מילים
 }
-analysis-dialogue = הדיאלוג הדיאלוג
-analysis-dialogue-unsupported = הדיאלוג עדיין לא נמדד בשפה זו.
+analysis-dialogue = דיאלוג
+analysis-dialogue-unsupported = הדיאלוג עדיין לא נמדד בשפה הזו.
 
-analysis-footnote-words = הערות מילים
+analysis-footnote-words = מילים בהערות שוליים
 analysis-footnote-words-count = { $count ->
-    [one] { $count } מילים בספר זה, נשאר בנפרד ממכלול כתבי היד.
-   *[other] { $count } מילים הן בהערות כף הרגל של הספר הזה, שנותרו בנפרד ממכלול כתבי היד.
+    [one] { $count } מילה נמצאת בהערות השוליים של הספר הזה, בנפרד מסך כתב היד.
+   *[other] { $count } מילים נמצאות בהערות השוליים של הספר הזה, בנפרד מסך כתב היד.
 }
-analysis-footnote-words-pending = לספור את סימני הרגל...
+analysis-footnote-words-pending = סופר את הערות השוליים…
 
-analysis-ignore-empty = התעלמות מהטקסטים עם שום דבר לא כתוב
-analysis-empty-hidden = { $count } ריק { $count ->
-        [one] טקסט
-       *[other] טקסטים
-    } חבוי.
-analysis-all-texts-empty = כל טקסט בספר הזה עדיין ריק.
+analysis-ignore-empty = התעלמות מטקסטים שעדיין לא נכתב בהם דבר
+analysis-empty-hidden = { $count ->
+        [one] { $count } טקסט ריק הוסתר.
+       *[other] { $count } טקסטים ריקים הוסתרו.
+    }
+analysis-all-texts-empty = כל הטקסטים בספר הזה עדיין ריקים.
 
-binder-filter-count = { $shown } של { $total }
+binder-filter-count = מוצגים { $shown } מתוך { $total }
 binder-filter-clear = ניקוי
-binder-filter-none = שום דבר לא מתאים ל-{ $query }.
+binder-filter-none = אין התאמה ל"{ $query }".
 
-settings-paratext-intro = הנושא הקדמי ובחזרה יכול להתחיל עם כל מבנה שייך למסורת פרסום, וכותרות העמוד שלו כתובות בשפה של מסורת זו.קרא אותם באופן חופשי לאחר יצירת פרויקט.
+settings-paratext-intro = הטקסט הנלווה בפתח הספר ובסופו שפרויקט חדש יכול להתחיל איתו. כל מבנה שייך למסורת הוצאה לאור, וכותרות העמודים שלו כתובות בשפה של אותה מסורת. אפשר לשנות את שמותיהם בחופשיות אחרי יצירת הפרויקט.
 settings-paratext-structures = מבנים
 settings-paratext-broken = לא ניתן לקרוא
 settings-paratext-edit = עריכה
@@ -1750,259 +1758,257 @@ settings-paratext-duplicate = שכפול
 settings-paratext-delete = מחיקה
 settings-paratext-new = מבנה חדש
 settings-paratext-save = שמירה
-settings-paratext-editor-hint = שם, הדפים כדי ליצור לפני כתב היד, ואת הדפים כדי ליצור אחרי זה, איפה הם בסופו של דבר הם שלך: הם פריטים רגילים ברגע שהפרויקט קיים.
+settings-paratext-editor-hint = שם, העמודים שייווצרו לפני כתב היד, והעמודים שייווצרו אחריו. היכן הם יגיעו בסוף, זה בידיכם: אחרי שהפרויקט קיים, הם פריטים רגילים.
 
-
-image-insert = צילום: (&M)
-image-no-project = פתח פרויקט לפני הוספת תמונה.
-image-choose-title = בחרו תמונה
+image-insert = הוספת תמונה… (&M)
+image-no-project = יש לפתוח פרויקט לפני הוספת תמונה.
+image-choose-title = בחירת תמונה
 image-filter-label = תמונות
 image-large-title = זו תמונה גדולה
 image-large-text =
-    { $name } הוא { $megapixels } מגה פיקסל (Gespixels){ $width }×{ $height }).
-    לשמור על זה כפי שהוא מאחסן את הקובץ המקורי שלך בפרויקט: הוא נוסע
-    עם כל גיבוי וכל יצוא. Optimising מאוחסנים עותק קטן יותר
-    במקום זאת, עד 2560 פיקסלים בצד הארוך ביותר.
-image-large-keep = שמור מקורי
-image-large-downscale = אופטימיזציה
-image-large-remember = עשה את זה מעכשיו והלאה, אל תשאל שוב
-image-not-recorded = התמונה נשמרה אך לא ניתן היה להקליט בפרויקט.
-image-describe-title = תאר את התמונה
-image-describe-explain = מה התמונה מראה, עבור קורא שאינו יכול לראות אותה, זה לא חלק מהכתב יד: היא לעולם לא נספרת, חיפשה או מייצאת כפרוזה.
-image-describe-placeholder = בית אור נגד שמים אפורים
-image-resize-title = להגדיל את התמונה
-image-resize-explain = אחוז מהגודל שהוא מוצג כעת. 100 משאיר אותו כפי שהוא.
-image-resize-invalid = הזן מספר בין 1 ל 1000.
-image-menu-describe = תארי את התמונה... (&D)
-image-menu-resize = להגדיל את התמונה... (&R)
+    ‏{ $name } בגודל { $megapixels } מגה־פיקסלים ({ $width }×{ $height }).
+    שמירתה כמו שהיא שומרת את הקובץ המקורי בפרויקט: הוא נלווה
+    לכל גיבוי ולכל ייצוא. מיטוב שומר במקומו עותק קטן יותר,
+    עד 2560 פיקסלים בצלע הארוכה.
+image-large-keep = שמירת המקור
+image-large-downscale = מיטוב
+image-large-remember = לעשות זאת מעכשיו, בלי לשאול שוב
+image-not-recorded = התמונה נשמרה, אבל לא ניתן היה לרשום אותה בפרויקט.
+image-describe-title = תיאור התמונה
+image-describe-explain = מה שהתמונה מראה, עבור קורא שאינו יכול לראות אותה. זה לא חלק מכתב היד: הוא לעולם לא נספר, נסרק בחיפוש או מיוצא כטקסט.
+image-describe-placeholder = מגדלור על רקע שמיים אפורים
+image-resize-title = שינוי גודל התמונה
+image-resize-explain = אחוז מהגודל שבו היא מוצגת עכשיו. 100 משאיר אותה כפי שהיא.
+image-resize-invalid = יש להזין מספר בין 1 ל־1000.
+image-menu-describe = תיאור התמונה… (&D)
+image-menu-resize = שינוי גודל התמונה… (&R)
 image-menu-reset-size = גודל מקורי (&Z)
 
-cover-choose = כריכה של הספר... (&V)
-cover-clear = להסיר את הכיסוי (&R)
-cover-choose-title = בחר כיסוי
-cover-set = הכיסוי נקבע.
-cover-cleared = הכריכה הוסרה, התמונה עדיין בפרויקט.
-card-label = תיאור קצר
-card-exportable = ייצוא
-card-numbered = מספר
+cover-choose = כריכת הספר… (&V)
+cover-clear = הסרת הכריכה (&R)
+cover-choose-title = בחירת כריכה
+cover-set = הכריכה הוגדרה.
+cover-cleared = הכריכה הוסרה. התמונה עדיין נמצאת בפרויקט.
+card-label = תווית
+card-exportable = לייצוא
+card-numbered = ממוספר
 card-created = נוצר
-card-modified = תאריך שינוי
+card-modified = עודכן
 card-yes = כן
 card-no = לא
 card-type = סוג
-card-position = מיקום
-card-children = ילדים
+card-position = מיקום ברשימה
+card-children = צאצאים
 card-goal = יעד
 card-words = מילים
 card-synopsis = תקציר
 card-point-of-view = נקודת מבט
-card-aliases = ידוע גם בשם
+card-aliases = מוכר גם בשם
 
-export-orphan-footnotes-title = הערות ללא התייחסות
+export-orphan-footnotes-title = הערות שוליים ללא הפניה
 export-comments-dropped =
     { $count ->
-        [one] תגובה אחת לא יכולה להיות ממוקמת בטקסט המייצא ונשארה בחוץ.
-       *[other] { $count } הערות לא ניתן להציב בטקסט המייצא ונמחקו.
+        [one] הערה אחת לא ניתן היה למקם בטקסט המיוצא, והיא הושמטה.
+       *[other] { $count } הערות לא ניתן היה למקם בטקסט המיוצא, והן הושמטו.
     }
 export-orphan-footnotes =
     { $count ->
-        [one] הערה אחת כבר לא מוזכרת בשום מקום בכתב היד.הטקסט שלו לא יופיע בספר המייצא.
-       *[other] { $count } כתבי יד כבר לא מוזכרים בשום מקום בכתב היד.הטקסט שלהם לא יופיע בספר המייצא.
+        [one] הערת שוליים אחת כבר אינה מופנית מאף מקום בכתב היד. הטקסט שלה לא יופיע בספר המיוצא.
+       *[other] { $count } הערות שוליים כבר אינן מופנות מאף מקום בכתב היד. הטקסט שלהן לא יופיע בספר המיוצא.
     }
 
-
-menu-footnotes = הערות (&N)
-footnotes-title = הערות
-footnotes-insert = המונחים Footnote (&F)
-footnotes-empty = עדיין אין הערות שוליים, שים את הסימון בסצינה, ולאחר מכן השתמש + מעל, או Ctrl+Alt+F.
-footnotes-filter-all = הכל
-footnotes-filter-document = מסמך זה
-footnotes-filter-orphaned = יתומים
-footnotes-orphaned = שום דבר לא מצביע על כך יותר
-footnotes-untitled-home = ללא שם
-footnotes-body-placeholder = הפתק עצמו
-footnotes-insert-tooltip = הכנס הודעת שוליים ב- קידוד (Ctrl+Alt+F)
-footnotes-actions = הערות פעולות
-footnotes-delete = מחיקת פתק והתייחסות שלו (&D)
-footnotes-no-project = פתח פרויקט לפני הוספת הודעת שוליים.
-footnotes-no-caret = לשים את קידוד בטקסט של סצנה כדי להוסיף שם הודעת שוליים.
-footnotes-not-created = לא ניתן להוסיף את הערת שוליים לפרויקט.
-footnotes-deleted-toast = תגית:מחק
+menu-footnotes = הערות שוליים (&N)
+footnotes-title = הערות שוליים
+footnotes-insert = הוספת הערת שוליים (&F)
+footnotes-empty = אין עדיין הערות שוליים. יש להציב את הסמן בסצנה, ואז להשתמש ב־+ שלמעלה, או ב־Ctrl+Alt+F.
+footnotes-filter-all = הכול
+footnotes-filter-document = המסמך הזה
+footnotes-filter-orphaned = יתומות
+footnotes-orphaned = שום דבר כבר לא מפנה להערה הזו
+footnotes-untitled-home = ללא כותרת
+footnotes-body-placeholder = ההערה עצמה
+footnotes-insert-tooltip = הוספת הערת שוליים במיקום הסמן (Ctrl+Alt+F)
+footnotes-actions = פעולות על הערת השוליים
+footnotes-delete = מחיקת ההערה וההפניה אליה (&D)
+footnotes-no-project = יש לפתוח פרויקט לפני הוספת הערת שוליים.
+footnotes-no-caret = יש להציב את הסמן בטקסט של סצנה כדי להוסיף שם הערת שוליים.
+footnotes-not-created = לא ניתן היה להוסיף את הערת השוליים לפרויקט.
+footnotes-deleted-toast = הערת השוליים נמחקה
 footnotes-undo-delete = ביטול פעולה
 
-import-document-title = מסמכי יבוא
+import-document-title = ייבוא מסמכים
 import-document-close = סגירה
 import-document-step-files = קבצים
-import-document-step-review = Review Review
-import-document-step-destination = יעד יעד
-import-document-step-reconcile = מארג'
-import-document-reconcile-hint = חלק מהפריטים האלה הם אלה שכבר יש לכם, תגידו מה צריך לקרות לכל אחד מהם.
-import-document-reconcile-all-new = שום דבר בקובץ זה אינו תואם את הפרויקט שלך: כל פריט יתווסף חדש.
-import-document-duplicate-returns = קבצים אלה הם יותר עותק אחד של אותו כתב יד חוזר.בוא אותם אחד בכל פעם: התאמת שורות רק עותק אחד חוזר נגד הפרויקט שלך, כך יבוא כמה יחד יוסיף עותק שני של הספר במקום מיזוגו.
-import-document-hunk-added = קח את הסעיף החדש הזה
-import-document-hunk-removed = הורידו את הסעיף הזה
-import-document-hunk-changed = קבלת השכתוב הזה
+import-document-step-review = סקירה
+import-document-step-destination = מיקום היעד
+import-document-step-reconcile = מיזוג
+import-document-reconcile-hint = חלק מהפריטים האלה כבר קיימים אצלכם. יש לציין מה יקרה לכל אחד מהם.
+import-document-reconcile-all-new = שום דבר בקובץ הזה לא תואם לפרויקט שלכם: כל פריט יתווסף כחדש.
+import-document-duplicate-returns = הקבצים האלה הם יותר מעותק אחד של אותו כתב יד שחוזר. יש לייבא אותם אחד בכל פעם: ההתאמה מיישרת רק עותק חוזר אחד מול הפרויקט שלכם, ולכן ייבוא של כמה יחד יוסיף עותק שני של הספר במקום למזג אותו.
+import-document-hunk-added = קבלת הפסקה החדשה הזו
+import-document-hunk-removed = השמטת הפסקה הזו
+import-document-hunk-changed = קבלת הניסוח החדש הזה
 import-document-col-stray-prose = הטקסט שלו
-import-document-stray-as-paratext = שמור כמו paratext
-import-document-stray-discard = זרוק את הטקסט
-import-document-col-current = בפרויקט שלך
-import-document-col-incoming = בקובץ זה
+import-document-stray-as-paratext = שמירה כטקסט נלווה
+import-document-stray-discard = השמטת הטקסט
+import-document-col-current = בפרויקט שלכם
+import-document-col-incoming = בקובץ הזה
 import-document-col-status = מצב
 import-document-col-action = מה לעשות
-import-document-status-identical = אותו אותו דבר
-import-document-status-editor-edited = הם ערכו את זה
-import-document-status-you-edited = ביצעת את זה
-import-document-status-conflict = שניהם ערכו אותו
+import-document-status-identical = זהה
+import-document-status-editor-edited = הם ערכו
+import-document-status-you-edited = אתם ערכתם
+import-document-status-conflict = שני הצדדים ערכו
 import-document-status-different = שונה
 import-document-status-new = חדש
 import-document-status-missing = לא בקובץ הזה
-import-document-status-moved = הזיז
-import-document-action-comments-only = הערות רק
-import-document-action-take-import = קח את הגירסה הזו
-import-document-action-keep-current = שמור על שלי
-import-document-action-create-new = הוסף חדש
-import-document-action-ignore = דלג
+import-document-status-moved = הועבר
+import-document-action-comments-only = הערות בלבד
+import-document-action-take-import = קבלת הגרסה הזו
+import-document-action-keep-current = שמירת הגרסה שלי
+import-document-action-create-new = הוספה כחדש
+import-document-action-ignore = דילוג
 import-document-compare = השוואה
-import-document-compare-legend = הגרסה שלך בהשוואה לקובץ זה. Read-Only.
+import-document-compare-legend = הגרסה שלכם בהשוואה לגרסה שבקובץ הזה. לקריאה בלבד.
 import-document-compare-close = סגירה
-import-document-drop-title = הורידו מסמכים כאן
-import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) וטקסט רגיל (.txt)
-import-document-browse = חרטה...
+import-document-drop-title = שחררו כאן מסמכים
+import-document-drop-hint = ‏Markdown ‏(.md), Word ‏(.docx), OpenDocument ‏(.odt) וטקסט פשוט (.txt)
+import-document-browse = עיון…
 import-document-move-up = הזזה למעלה
 import-document-move-down = הזזה למטה
 import-document-remove-file = הסרה
 import-document-file-count = { $count ->
-    [one] 1 קובץ
+    [one] קובץ אחד
    *[other] { $count } קבצים
 }
 import-document-no-files = עדיין לא נבחרו קבצים.
-import-document-col-included = ייבוא
+import-document-col-included = לייבוא
 import-document-col-title = כותרת
 import-document-col-type = סוג
 import-document-col-words = מילים
-import-document-col-breaks = הפסקות
-import-document-col-comments = תגובות
-import-document-col-footnotes = הערות
+import-document-col-breaks = מעברים
+import-document-col-comments = הערות
+import-document-col-footnotes = הערות שוליים
 import-document-col-epigraph = מוטו
-import-document-col-source = מקור Source
-import-document-level-rules = רמות ניהול
-import-document-level-n = { $level }
-import-document-add-top-level = הוסף רמה עליונה
-import-document-add-top-level-tooltip = הכנס ספר מעל כל פריט ניתח, עבור קבצי פרק שאין להם כותרת ספר
-import-document-destination = יעד יעד
-import-document-destination-hint = בחר מחבר או פריט: פריטים חדשים לנחות בתוך תיקיה, או לאחר סצנה.
-import-document-destination-empty = אף אחד לא יוצר קודם.
-import-document-plan-empty = עדיין אין מה לייבא.
+import-document-col-source = מקור
+import-document-level-rules = רמות כותרת
+import-document-level-n = כותרת { $level }
+import-document-add-top-level = הוספת רמה עליונה
+import-document-add-top-level-tooltip = הוספת ספר מעל כל פריט שנותח, עבור קובצי פרקים שאין בהם כותרת ספר
+import-document-destination = מיקום היעד
+import-document-destination-hint = יש לבחור קלסר או פריט: פריטים חדשים נכנסים לתוך תיקייה, או אחרי סצנה.
+import-document-destination-empty = אין עדיין קלסרים. יש ליצור אחד קודם.
+import-document-plan-empty = אין עדיין מה לייבא.
 import-document-summary = { $rows ->
-    [one] 1 פריט
+    [one] פריט אחד
    *[other] { $rows } פריטים
 } · { $breaks ->
-    [one] 1 סצינה לשבור
-   *[other] { $breaks } סצנות
+    [one] מעבר סצנה אחד
+   *[other] { $breaks } מעברי סצנה
 }
-import-document-back = בחזרה בחזרה
+import-document-back = הקודם
 import-document-cancel = ביטול
 import-document-analyse = הבא
-import-document-analysing = לקרוא מסמכים...
-import-document-step-analysing = קריאה לקריאה
-import-document-cancel-analysis = תפסיקו לקרוא
-import-document-analyse-failed = לא ניתן לקרוא את המסמכים.
+import-document-analysing = קורא את המסמכים…
+import-document-step-analysing = קריאה
+import-document-cancel-analysis = הפסקת הקריאה
+import-document-analyse-failed = לא ניתן היה לקרוא את המסמכים.
 import-document-details = פרטים
 import-document-import = ייבוא
 import-document-done = { $count ->
-    [one] 1 פריט מיובא
-   *[other] { $count } פריטים מיובאים
+    [one] יובא פריט אחד
+   *[other] יובאו { $count } פריטים
 }
 import-document-undo = ביטול פעולה
-import-diagnostic-file-unreadable = "{ $path }"לא ניתן לקרוא: { $detail }שאר הקבצים עדיין מיובאים.
-import-diagnostic-nested-too-deep = "{ $path }" לא נכתב: התוכן שלה טמון יותר מ -{ $limit } רמות עמוק.אין מסמך אמיתי מתקרב לזה, ולקרוא אותו יכול להתרסק Skribisto, אז הוא נשאר בחוץ.
-import-diagnostic-archive-too-large = "{ $path }" לא נכתב: זהו קובץ דחוס שנבנה כדי לא לארוז הרבה יותר גדול ממה שהוא, אשר יכול להציף זיכרון ולרסק Skribisto, אז זה נשאר בחוץ.
+import-diagnostic-file-unreadable = לא ניתן היה לקרוא את "{ $path }": { $detail }. שאר הקבצים עדיין ייובאו.
+import-diagnostic-nested-too-deep = "{ $path }" לא נקרא: התוכן שלו מקונן ליותר מ־{ $limit } רמות. אף מסמך אמיתי לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto, ולכן הוא הושמט. שאר הקבצים עדיין ייובאו.
+import-diagnostic-archive-too-large = "{ $path }" לא נקרא: זהו קובץ דחוס שנבנה כדי להתפרס לגודל גדול בהרבה משלו, דבר שעלול למצות את הזיכרון ולגרום לקריסה של Skribisto, ולכן הוא הושמט. שאר הקבצים עדיין ייובאו.
 import-diagnostic-lossy-decode = { $count ->
-    [one] דמות אחת ב"{ $path }" לא דהרה את הקובץ כ-UTF-8 כדי לשמור אותו.
-   *[other] { $count } תווים ב"{ $path }" לא קודמו. Re-save הקובץ כ-UTF-8 כדי לשמור אותם.
+    [one] תו אחד ב־"{ $path }" לא פוענח. כדי לשמור אותו, יש לשמור את הקובץ מחדש כ־UTF-8.
+   *[other] { $count } תווים ב־"{ $path }" לא פוענחו. כדי לשמור אותם, יש לשמור את הקובץ מחדש כ־UTF-8.
 }
-import-diagnostic-decoded-from-bom = "{ $path }"הוא היה מקודש כמו { $detail }לא, UTF-8.
-import-diagnostic-empty-file = "{ $path }"הוא ריק.
-import-diagnostic-no-headings = "{ $path }" אין כותרות, אז זה מגיע פריט אחד.
-import-diagnostic-unsupported-format = שום דבר לא קורא ".{ $detail }" קבצים, ולכן "{ $path }".
-import-diagnostic-front-matter-not-flat = הנושא המרכזי ב-{ $path }: "{ $detail }" אינו ערך פשוט ונפרש.
+import-diagnostic-decoded-from-bom = "{ $path }" פוענח כ־{ $detail }, לא כ־UTF-8.
+import-diagnostic-empty-file = "{ $path }" ריק.
+import-diagnostic-no-headings = ב־"{ $path }" אין כותרות, ולכן הוא מגיע כפריט אחד.
+import-diagnostic-unsupported-format = אין רכיב שקורא קובצי "‎.{ $detail }", ולכן "{ $path }" דולג.
+import-diagnostic-front-matter-not-flat = מטא־נתונים בראש "{ $path }": "{ $detail }" אינו ערך פשוט ודולג.
 import-diagnostic-footnotes-degraded = { $count ->
-    [one] הערה אחת ב"{ $path }" מגיעה כטקסט רגיל: לא ניתן לקרוא הערות שוליים מ-Markdown.
-   *[other] { $count } הערות שוליים ב "{ $path }" מגיעים לטקסט רגיל: לא ניתן לקרוא הערות שוליים מ-Markdown.
+    [one] הערת שוליים אחת ב־"{ $path }" מגיעה כטקסט פשוט: הערות שוליים אינן נקראות מ־Markdown.
+   *[other] { $count } הערות שוליים ב־"{ $path }" מגיעות כטקסט פשוט: הערות שוליים אינן נקראות מ־Markdown.
 }
 import-diagnostic-footnote-not-carried = { $count ->
-    [one] הערה אחת ב"{ $path }" לא ניתן היה להתגבר עליה.
-   *[other] { $count } כתבי יד ב"{ $path }" לא ניתן היה להתגבר עליהם.
+    [one] הערת שוליים אחת ב־"{ $path }" לא ניתן היה להעביר. האחרות הועברו.
+   *[other] { $count } הערות שוליים ב־"{ $path }" לא ניתן היה להעביר. האחרות הועברו.
 }
 import-diagnostic-raw-html-dropped = { $count ->
-    [one] בלוק אחד של גלם HTML ב "{ $path }" ירד.
-   *[other] { $count } בלוקים של Raw HTML ב-{ $path }.
+    [one] בלוק אחד של HTML גולמי ב־"{ $path }" הושמט.
+   *[other] { $count } בלוקים של HTML גולמי ב־"{ $path }" הושמטו.
 }
 import-diagnostic-nested-break-dropped = { $count ->
-    [one] סצינה אחת נשברה בתוך ציטוט או רשימה ב "{ $path }" הוטלה רק הפסקה על קו משלה נשמר.
-   *[other] { $count } סצנות בתוך ציטוטים או רשימות ב "{ $path }" בוטלו רק הפסקה על קו משלה.
+    [one] מעבר סצנה אחד בתוך ציטוט או רשימה ב־"{ $path }" הושמט. נשמר רק מעבר שעומד בשורה משלו.
+   *[other] { $count } מעברי סצנה בתוך ציטוטים או רשימות ב־"{ $path }" הושמטו. נשמר רק מעבר שעומד בשורה משלו.
 }
-import-diagnostic-image-not-ingested = "{ $path }" מתייחס לתמונה "{ $detail }".הפנייה מגיעה כטקסט; התמונה עצמה אינה מועתקת.
-import-diagnostic-duplicate-title = "{ $title }" מופיע { $count } פעמים, אם הבאת קבצים אלה לפני כן, זה יכפיל אותם.
-import-diagnostic-heading-level-jump = "{ $title }" קופץ מרמת הכותרת { $from } ל-{ $to }; היא ממוקמת רמה אחת מתחת להוריהם.
-import-diagnostic-illegal-combination = "{ $title }" יש פרוזה, אבל { $kind } לא יכול להחזיק אף יבוא עד שתשנה את סוגו או תשאירו אותו.
-import-diagnostic-tracked-changes-flattened = { $path } היה אמצע התעודה: { $count ->
-    [one] { $count } שינוי היה מקובל.
-   *[other] { $count } שינויים התקבלו
-} ומחקים נפלו, זהו הטקסט הסופי, כדי לשמור על כל מילה משלך במקום זאת, להשתמש בהשוואה בשלב האחרון.
-import-diagnostic-tracked-changes-flattened-by = { $path } היה אמצע התעודה: { $count ->
-    [one] { $count } חל שינוי על ידי { $names }.
-   *[other] { $count } שינויים על ידי { $names } התקבלו
-} ומחקים נפלו, זהו הטקסט הסופי, כדי לשמור על כל מילה משלך במקום זאת, להשתמש בהשוואה בשלב האחרון.
+import-diagnostic-image-not-ingested = "{ $path }" מפנה לתמונה "{ $detail }". ההפניה מגיעה כטקסט; התמונה עצמה לא מועתקת.
+import-diagnostic-duplicate-title = "{ $title }" מופיע { $count } פעמים. אם ייבאתם את הקבצים האלה בעבר, הם ישוכפלו.
+import-diagnostic-heading-level-jump = "{ $title }" קופץ מרמת כותרת { $from } לרמה { $to }; הוא ממוקם רמה אחת מתחת לפריט האב שלו.
+import-diagnostic-illegal-combination = "{ $title }" מכיל טקסט, אבל { $kind } אינו יכול להכיל טקסט. הייבוא מעוכב עד שתשנו את הסוג שלו או תשמיטו אותו. אחרת לא ייובא דבר.
+import-diagnostic-tracked-changes-flattened = ‏{ $path } היה באמצע עריכה: { $count ->
+    [one] שינוי מעקב אחד התקבל
+   *[other] { $count } שינויי מעקב התקבלו
+}, ומחיקות הושמטו. זהו הטקסט הסופי. כדי לשמור במקום זאת חלק מהניסוח שלכם, יש להשתמש ב"השוואה" בשלב האחרון.
+import-diagnostic-tracked-changes-flattened-by = ‏{ $path } היה באמצע עריכה: { $count ->
+    [one] { $count } שינוי מעקב של { $names } התקבל
+   *[other] { $count } שינויי מעקב של { $names } התקבלו
+}, ומחיקות הושמטו. זהו הטקסט הסופי. כדי לשמור במקום זאת חלק מהניסוח שלכם, יש להשתמש ב"השוואה" בשלב האחרון.
 import-diagnostic-text-box-dropped = { $count ->
-    [one] { $path } מחזיק { $count } תיבת טקסט שלו יושב מחוץ לזרימת המסמך, כך שלא ניתן לענות על כך שהוא שייך בכתב יד.
-   *[other] { $path } מחזיק { $count } קופסאות טקסט.הטקסט שלהם יושב מחוץ לזרם המסמך, כך שלא ניתן לענות עליו בכתב יד.
+    [one] ‏{ $path } מכיל { $count } תיבת טקסט. הטקסט שלה נמצא מחוץ לזרימת המסמך, ולכן אי אפשר לקבוע היכן מקומו בכתב יד. היא לא מיובאת.
+   *[other] ‏{ $path } מכיל { $count } תיבות טקסט. הטקסט שלהן נמצא מחוץ לזרימת המסמך, ולכן אי אפשר לקבוע היכן מקומו בכתב יד. הן לא מיובאות.
 }
 import-diagnostic-embedded-object-dropped = { $count ->
-    [one] { $path } מכיל { $count } אובייקט מוטבע: תרשים, משוואה או דומה.אין שום דבר בכתב יד שיכול להחזיק אותו.
-   *[other] { $path } מכיל { $count } פריטים מוטבעים: תרשים, משוואה או דומה.אין דבר בכתב יד שיכול להחזיק אותם.
+    [one] ‏{ $path } מכיל { $count } אובייקט מוטמע: תרשים, משוואה או משהו דומה. אין בכתב יד שום דבר שיכול להכיל אותו.
+   *[other] ‏{ $path } מכיל { $count } אובייקטים מוטמעים: תרשים, משוואה או משהו דומה. אין בכתב יד שום דבר שיכול להכיל אותם.
 }
 import-diagnostic-field-flattened = { $count ->
-    [one] { $path } מחזיק שדה { $count }: מספר עמודים, רצף צלב, תאריך זה שומר את הטקסט שהוא הופיע אחרון ולא יעדכן שוב.
-   *[other] { $path } מחזיק { $count } שדות: מספר עמודים, רצף צלבי, תאריך, כל אחד שומר את הטקסט שהוא מראה אחרון ולא יעדכן שוב.
+    [one] ‏{ $path } מכיל { $count } שדה: מספר עמוד, הפניה צולבת, תאריך. הוא שומר את הטקסט שהציג לאחרונה ולא יתעדכן עוד.
+   *[other] ‏{ $path } מכיל { $count } שדות: מספר עמוד, הפניה צולבת, תאריך. כל אחד מהם שומר את הטקסט שהציג לאחרונה ולא יתעדכן עוד.
 }
-import-diagnostic-unknown-style-level = { $path } משתמש בסגנון "{ $detail }", שנראה כמו כותרת, אך אין שמות.הפסקות הללו מיובאות כפרוזה ולא נחשו בעומק.
-import-diagnostic-comment-unanchored = ההערה "{ $detail }" ב-{ $path } לא יכולה להיות קשורה למילים שהיא עומדת עליהן.הוא נשמר על הפריט שלו, שם תוכל להעביר אותו.
-import-diagnostic-comment-not-carried = ההערה "{ $detail }" ב-{ $path } אינה מיובאת, כי שום דבר בקובץ לא מגיע כטקסט שניתן לשמור עליו.
+import-diagnostic-unknown-style-level = ‏{ $path } משתמש בסגנון "{ $detail }", שנראה ככותרת אבל לא מציין רמה. הפסקאות האלה מיובאות כטקסט רגיל במקום לנחש את העומק שלהן.
+import-diagnostic-comment-unanchored = לא ניתן היה לצרף את ההערה "{ $detail }" שב־{ $path } למילים שעליהן נכתבה. היא נשמרת על הפריט שלה, ושם אפשר להעביר אותה.
+import-diagnostic-comment-not-carried = ההערה "{ $detail }" שב־{ $path } לא מיובאת, כי שום דבר בקובץ לא מגיע כטקסט שאפשר לשמור אותה עליו. אפשר להעתיק אותה מהקובץ אם יש בה צורך.
 import-diagnostic-comment-replies-flattened = { $count ->
-    [one] { $count } הגיב ב { $path } בשם תגובה שאינה בקובץ, ולכן היא מגיעה כתגובה משל עצמה.
-   *[other] { $count } תגובות ב { $path } בשם תגובה שאינה בקובץ, ולכן הם מגיעים כהערות משלהם.
+    [one] { $count } תשובה ב־{ $path } הפנתה להערה שאינה בקובץ, ולכן היא מגיעה כהערה עצמאית.
+   *[other] { $count } תשובות ב־{ $path } הפנו להערה שאינה בקובץ, ולכן הן מגיעות כהערות עצמאיות.
 }
 import-diagnostic-prose-not-verbatim = { $count ->
-    [one] { $count } פסקה ב { $path } לא ניתן להביא את הפורמט שלה בדיוק כפי שנכתב, כך שהיא מגיעה כטקסט רגיל.
-   *[other] { $count } פסקאות ב { $path } לא ניתן להביא את הפורמט שלהם בדיוק כפי שנכתב, כך שהם מגיעים כטקסט פשוט.
+    [one] { $count } פסקה ב־{ $path } לא ניתן היה להעביר עם העיצוב שלה בדיוק כפי שנכתבה, ולכן היא מגיעה כטקסט פשוט. כדאי להשוות אותה למקור.
+   *[other] { $count } פסקאות ב־{ $path } לא ניתן היה להעביר עם העיצוב שלהן בדיוק כפי שנכתבו, ולכן הן מגיעות כטקסט פשוט. כדאי להשוות אותן למקור.
 }
 import-diagnostic-styled-spaces-not-carried = { $count ->
-    [one] בשנת { $path }, { $count } קטע של חלל ריק היה מקובע או פגום, קו נשאר למלא לדוגמה. Skribisto לא שומר קו על חללים לבד, אז זה מגיע כמו חללים פשוטים, או לא בכל מקום שבו הוא מתחיל או מסתיים פסקה.
-   *[other] בשנת { $path }, { $count } של חלל ריק הוטבעו או נפגעו, קווים שנותרו כדי למלא לדוגמה. Skribisto אינם קו על חללים בלבד, ולכן הם מגיעים לחללים פשוטים, או לא בכל מקום שבו הם מתחילים או מסיימים פסקה.
+    [one] ב־{ $path }, רצף אחד של רווחים ריקים היה עם קו תחתון או קו חוצה, למשל שורה שנועדה למילוי. Skribisto לא שומרת אף אחד מהקווים האלה על רווחים בלבד, ולכן הוא מגיע כרווחים רגילים, או לא מגיע כלל אם הוא בתחילת פסקה או בסופה.
+   *[other] ב־{ $path }, { $count } רצפים של רווחים ריקים היו עם קו תחתון או קו חוצה, למשל שורות שנועדו למילוי. Skribisto לא שומרת אף אחד מהקווים האלה על רווחים בלבד, ולכן הם מגיעים כרווחים רגילים, או לא מגיעים כלל אם הם בתחילת פסקה או בסופה.
 }
 import-diagnostic-list-nesting-flattened = { $count ->
-    [one] { $count } רשימה פריט ב { $path } קן יותר מ { $limit } רמות עמוק.זה מגיע לרמה { $limit }, העמוק ביותר Skribisto ממשיך, עם המילים והעיצוב שלו.
-   *[other] { $count } פריטים ברשימה ב { $path } נקנו יותר מ-{ $limit } רמות עמוק.הם מגיעים לרמה { $limit }, Skribisto העמוקים ביותר, עם המילים והעיצוב שלהם.
+    [one] { $count } פריט רשימה ב־{ $path } היה מקונן ליותר מ־{ $limit } רמות. הוא מגיע ברמה { $limit }, העמוקה ביותר ש־Skribisto שומרת, עם המילים והעיצוב שלו.
+   *[other] { $count } פריטי רשימה ב־{ $path } היו מקוננים ליותר מ־{ $limit } רמות. הם מגיעים ברמה { $limit }, העמוקה ביותר ש־Skribisto שומרת, עם המילים והעיצוב שלהם.
 }
 import-diagnostic-table-read-as-paragraphs = { $count ->
-    [one] בטבלה { $count } ב { $path } יש שורה הרבה יותר רחבה מהיתר, עטוף מדי כדי להניח כרשת.תאים שלה מגיעים כפסקאות, אחד אחרי השני, עם המילים והעיצוב שלהם.
-   *[other] { $count } שולחנות ב { $path } יש שורה הרבה יותר רחבה מהיתר, עטוף מדי כדי להניח כרשת.תאים שלהם מגיעים כפסקאות, אחד אחרי השני, עם המילים והעיצוב שלהם.
+    [one] בטבלה אחת ב־{ $path } יש שורה רחבה בהרבה מהשאר, לא מאוזנת מכדי לפרוס אותה כרשת. התאים שלה מגיעים כפסקאות, זו אחר זו, עם המילים והעיצוב שלהם.
+   *[other] ב־{ $count } טבלאות ב־{ $path } יש שורה רחבה בהרבה מהשאר, לא מאוזנות מכדי לפרוס אותן כרשת. התאים שלהן מגיעים כפסקאות, זו אחר זו, עם המילים והעיצוב שלהם.
 }
 import-diagnostic-spaces-shortened = { $count ->
-    [one] { $count } של חללים ב-{ $path } היה יותר מ-{ $limit } חללים, ומגיע לקיצור של { $limit }.
-   *[other] { $count } ריצות של חללים ב-{ $path } היו יותר מ-{ $limit } חללים, והגיעו לקיצור של { $limit }.
+    [one] { $count } רצף רווחים ב־{ $path } היה ארוך מ־{ $limit } רווחים, והוא מגיע מקוצר ל־{ $limit }. כל המילים שסביבו נמצאות במקומן.
+   *[other] { $count } רצפי רווחים ב־{ $path } היו ארוכים מ־{ $limit } רווחים, והם מגיעים מקוצרים ל־{ $limit }. כל המילים שסביבם נמצאות במקומן.
 }
-import-diagnostic-epigraph-not-carried = "{ $title }"הופנה מהדף תצלום, אבל { $kind } אי אפשר להחזיק אחד.הציטוט נשמר בחלק העליון של הטקסט שלו במקום.
-import-diagnostic-epigraph-placement-ambiguous = אפיגרף יושב בין "{ $title }" ו-"{ $below }" וניתן היה להגיע ל-"{ $title }", שם עובר אפיגרף בדרך כלל.
+import-diagnostic-epigraph-not-carried = בראש "{ $title }" יש מוטו, אבל { $kind } אינו יכול להכיל מוטו. הציטוט נשמר במקום זאת בראש הטקסט שלו.
+import-diagnostic-epigraph-placement-ambiguous = מוטו נמצא בין "{ $title }" ל"{ $below }" ויכול לעמוד בראש כל אחד מהם. הוא שויך ל"{ $title }", שם בדרך כלל מקומו של מוטו.
 import-document-diagnostics = { $errors ->
     [0] { $warnings ->
-            [one] 1 דברים לדעת
-           *[other] { $warnings } דברים לדעת
+            [one] דבר אחד שכדאי לדעת
+           *[other] { $warnings } דברים שכדאי לדעת
         }
    *[other] { $errors ->
-            [one] לא ניתן לקרוא קובץ אחד
-           *[other] { $errors } קבצים לא ניתן לקרוא
+            [one] קובץ אחד לא ניתן היה לקרוא
+           *[other] { $errors } קבצים לא ניתן היה לקרוא
         }
 }
 import-document-diagnostics-none = אין מה לדווח.
@@ -2010,473 +2016,672 @@ import-document-diagnostics-none = אין מה לדווח.
 versions-title = גרסאות
 versions-scope-synopsis = תקציר
 versions-scope-prose = טקסט
-versions-loading = מחפש את הגיבוי שלך...
-versions-empty = לא גירסה קודמת של זה עדיין
-versions-error = לא יכול היה לקרוא את הגיבוי שלך.שום דבר לא אבד, אבל רשימה זו עשויה להיות לא שלמה.
-versions-did-not-exist = עדיין לא קיים ב-{ $date }
-versions-deleted-after = זמן קצר לאחר { $date }
+versions-loading = מחפש בגיבויים שלכם…
+versions-empty = אין עדיין גרסה קודמת של זה
+versions-error = לא ניתן היה לקרוא את הגיבויים שלכם. שום דבר לא אבד, אבל ייתכן שהרשימה הזו חלקית
+versions-did-not-exist = עדיין לא היה קיים ב־{ $date }
+versions-deleted-after = נמחק זמן מה אחרי { $date }
 versions-unreadable = { $count ->
-    [one] { $count } גיבוי לא ניתן לקרוא
-   *[other] { $count } גיבויים לא ניתן לקרוא
+    [one] גיבוי אחד לא ניתן היה לקרוא
+   *[other] { $count } גיבויים לא ניתן היה לקרוא
 }
 versions-thinned = { $count ->
-    [one] גרסאות ישנות יותר מתרשמות ככל שהן מתבגרות.ההיסטוריה של הפרויקט כבר צנחה ב-{ $count } לפני הספירה.
-   *[other] גירסאות ישנות יותר מתמעטות ככל שהן מתבגרות, ההיסטוריה של הפרויקט כבר צנחה ב-{ $count } מדינות קודמות של טקסט זה.
+    [one] גרסאות ישנות מידלדלות עם הזמן. ההיסטוריה של הפרויקט עצמו כבר השמיטה מצב קודם אחד של הטקסט הזה.
+   *[other] גרסאות ישנות מידלדלות עם הזמן. ההיסטוריה של הפרויקט עצמו כבר השמיטה { $count } מצבים קודמים של הטקסט הזה.
 }
 versions-source-backup = מגיבוי
-versions-source-project = מההיסטוריה של הפרויקט
-versions-list-caption = כניסה אחת לשינוי, לא לגיבוי
-versions-pick-a-version = בחרו גרסה כדי לראות מה השתנה
-versions-earliest = הגרסה המוקדמת ביותר לתיעוד, אין שום דבר מבוגר יותר להשוות אותו.
-versions-no-change = שום דבר לא השתנה בחלק זה של הפריט
-versions-formatting-only = רק הפורמט השתנה כאן.המילים הן אותו הדבר.
-versions-show-unchanged = הצג ללא שינוי
-versions-hide-unchanged = הסתר ללא שינוי
-versions-next-change = שינוי הבא
+versions-source-project = מההיסטוריה של הפרויקט עצמו
+versions-list-caption = רשומה אחת לכל שינוי, לא לכל גיבוי
+versions-pick-a-version = יש לבחור גרסה כדי לראות מה השתנה
+versions-earliest = הגרסה המוקדמת ביותר שתועדה. אין גרסה ישנה יותר להשוות אליה.
+versions-no-change = שום דבר לא השתנה בחלק הזה של הפריט
+versions-formatting-only = רק העיצוב השתנה כאן. המילים זהות
+versions-show-unchanged = הצגת מה שלא השתנה
+versions-hide-unchanged = הסתרת מה שלא השתנה
+versions-next-change = השינוי הבא
 versions-near = ליד "{ $text }"
 versions-words-added = { $count ->
-    [one] { $count } מילים נוספות
-   *[other] { $count } מילים נוספות
+    [one] { $count } מילה נוספה
+   *[other] { $count } מילים נוספו
 }
 versions-words-removed = { $count ->
-    [one] { $count } מילים
-   *[other] { $count } מילים
+    [one] { $count } מילה הוסרה
+   *[other] { $count } מילים הוסרו
 }
 versions-blocks-moved = { $count ->
-    [one] { $count } פסקה עברה
-   *[other] { $count } פסקאות עברו
+    [one] { $count } פסקה הועברה
+   *[other] { $count } פסקאות הועברו
 }
-versions-pin = פין את הגיבוי שהגרסה הזו באה ממנו.ניקוי אוטומטי לעולם לא ימחק אותה.
-versions-unpin = לאזן את הגיבוי שהגרסה הזו באה ממנו.ניקוי אוטומטי עשוי למחוק אותה שוב.
-versions-pinned-only = הצג רק גרסאות מותאמות
-versions-pin-note = רק גירסאות מגיבוי ניתן למקם את ה- A pin שומר קובץ, וההיסטוריה של הפרויקט היא לא אחת.
-versions-pinned-empty = אין כאן שום דבר מלוטש עדיין
-versions-pinned-empty-log = שום דבר כאן לא מלוטש עדיין.רק גרסאות מגיבוי ניתנות להגדרה: A pin שומר קובץ, וההיסטוריה של הפרויקט אינה אחת.
-versions-range-filter = הצג רק גרסאות בין שני תאריכים
-versions-filtered-empty = שום גירסה לא תואמת את המסננים שהגדרתם
-versions-clear-filters = לנקות את המסננים
-versions-last-30-days = 30 ימים
-versions-restore-button = לשחזר את הגירסה
-versions-restore-confirm-title = להחליף את הטקסט עם הגירסה מ { $date }?
-versions-restore-confirm-text = מה שיש לך עכשיו יוחלף על ידי הטקסט פריט זה היה על { $date }.
-versions-restore-confirm-with-comments = מה שיש לך עכשיו יוחלף על ידי הטקסט פריט זה היה על { $date }. { $count ->
-    [one] { $count } תגובה מעוגן בטקסט הנוכחי, וניתן להשאירו יתומים.
-   *[other] { $count } הערות מעוגנות בטקסט הנוכחי ועשויות להישאר יתומים.
+versions-pin = הצמדת הגיבוי שממנו הגיעה הגרסה הזו. הניקוי האוטומטי לעולם לא ימחק אותו
+versions-unpin = ביטול הצמדת הגיבוי שממנו הגיעה הגרסה הזו. הניקוי האוטומטי עשוי למחוק אותו שוב
+versions-pinned-only = הצגת גרסאות מוצמדות בלבד
+versions-pin-note = אפשר להצמיד רק גרסאות שמגיעות מגיבוי. הצמדה שומרת קובץ, וההיסטוריה של הפרויקט עצמו אינה קובץ.
+versions-pinned-empty = שום דבר כאן עדיין לא מוצמד
+versions-pinned-empty-log = שום דבר כאן עדיין לא מוצמד. אפשר להצמיד רק גרסאות שמגיעות מגיבוי. הצמדה שומרת קובץ, וההיסטוריה של הפרויקט עצמו אינה קובץ.
+versions-range-filter = הצגת גרסאות בין שני תאריכים בלבד
+versions-filtered-empty = אין גרסה שתואמת למסננים שהגדרתם
+versions-clear-filters = ניקוי המסננים
+versions-last-30-days = 30 הימים האחרונים
+versions-restore-button = שחזור הגרסה הזו
+versions-restore-confirm-title = להחליף את הטקסט הזה בגרסה מ־{ $date }?
+versions-restore-confirm-text = מה שיש לכם עכשיו יוחלף בטקסט שהיה לפריט הזה ב־{ $date }.
+versions-restore-confirm-with-comments = מה שיש לכם עכשיו יוחלף בטקסט שהיה לפריט הזה ב־{ $date }. { $count ->
+    [one] הערה אחת מעוגנת בטקסט הנוכחי ועלולה להישאר יתומה.
+   *[other] { $count } הערות מעוגנות בטקסט הנוכחי ועלולות להישאר יתומות.
 }
-versions-restore-confirm-undo-note = גיבוי נעשה ראשון, ו- Ctrl+Z לא עושים זאת בשלב אחד.
-versions-restored-toast = לשחזר את הגירסה מ { $date }
+versions-restore-confirm-undo-note = קודם נוצר גיבוי, ו־Ctrl+Z מבטל זאת בצעד אחד.
+versions-restored-toast = הגרסה מ־{ $date } שוחזרה
 versions-undo = ביטול פעולה
-versions-restore-row-gone = פריט זה כבר לא בפרויקט הזה.
-versions-restore-no-home = פריט זה השתנה מאז, והטקסט הישן אין לאן להיכנס אליו.
-versions-restore-no-safety-copy = הגיבוי לא נגמר, אז שום דבר לא השתנה.
-versions-restore-failed = ההחזרה נכשלה: { $error }
-versions-restore-backup-busy = גיבוי כבר פועל. נסה שוב תוך רגע
-versions-restore-in-backup-file = אתה מסתכל על קובץ גיבוי; פתח את הפרויקט עצמו כדי לשחזר אותו.
-versions-restore-no-project = שום פרויקט לא פתוח
-versions-recreate-button = תביאי את זה בחזרה...
-versions-recreate-picker-title = לאן זה צריך ללכת?
-versions-recreate-picker-empty = לפרוייקט הזה אין שום קשר להכניס אותו.
-versions-recreate-picker-confirm = החזירו אותו לפה
+versions-restore-row-gone = הפריט הזה כבר לא נמצא בפרויקט הזה
+versions-restore-no-home = הסוג של הפריט הזה השתנה מאז, ולטקסט הישן אין לאן להיכנס בו
+versions-restore-no-safety-copy = גיבוי הבטיחות שלכם לא רץ, ולכן שום דבר לא שונה
+versions-restore-failed = השחזור נכשל: { $error }
+versions-restore-backup-busy = גיבוי כבר מתבצע. כדאי לנסות שוב בעוד רגע
+versions-restore-in-backup-file = אתם מסתכלים על קובץ גיבוי; כדי לשחזר לתוך הפרויקט, יש לפתוח את הפרויקט עצמו
+versions-restore-no-project = אין פרויקט פתוח
+versions-recreate-button = החזרה…
+versions-recreate-picker-title = לאן להחזיר?
+versions-recreate-picker-empty = בפרויקט הזה אין קלסר להכניס אליו את הפריט
+versions-recreate-picker-confirm = החזרה לכאן
 versions-recreate-picker-cancel = ביטול
-versions-recreate-untitled = פריט זה
-versions-recreate-confirm-title = החזירו את ה-{ $item }?
-versions-recreate-confirm-text = הוא יתווסף ל-{ $destination }, עם הטקסט שהיה לו על { $date }.
-versions-recreate-confirm-undo-note = אלאדו, על ההודעה הבאה, לוקח את זה ישר בחזרה החוצה.
-versions-recreated-toast = "{ $item }"הוא חוזר לפרויקט שלך.
+versions-recreate-untitled = הפריט הזה
+versions-recreate-confirm-title = להחזיר את "{ $item }"?
+versions-recreate-confirm-text = הוא יתווסף אל { $destination }, עם הטקסט שהיה לו ב־{ $date }.
+versions-recreate-confirm-undo-note = "ביטול פעולה", בהודעה שתופיע אחר כך, מוציא אותו מיד בחזרה.
+versions-recreated-toast = "{ $item }" חזר לפרויקט שלכם
 versions-recreated-partial-toast = { $count ->
-    [one] "{ $item }"הוא חזר, אבל לא ניתן לקרוא את אחד הטקסטים שלו.
-   *[other] "{ $item }"הוא חזר, אבל { $count } לא ניתן לקרוא את הטקסטים שלו
+    [one] "{ $item }" חזר, אבל אחד הטקסטים שלו לא ניתן היה לקרוא
+   *[other] "{ $item }" חזר, אבל { $count } מהטקסטים שלו לא ניתן היה לקרוא
 }
-versions-recreate-already-here = פריט זה כבר בפרויקט שלך
-versions-recreate-no-destination = בחרו במקום כלשהו בכבל כדי לשים אותו
-versions-recreate-unreadable = לא ניתן לקרוא את הגיבוי הזה, אז לא נוספו כלום.
-versions-recreate-failed = לא יכול להחזיר את זה: { $error }
+versions-recreate-already-here = הפריט הזה כבר נמצא בפרויקט שלכם
+versions-recreate-no-destination = יש לבחור מקום בקלסר להכניס אליו את הפריט
+versions-recreate-unreadable = לא ניתן היה לקרוא את הגיבוי הזה, ולכן שום דבר לא נוסף
+versions-recreate-failed = לא ניתן היה להחזיר את הפריט: { $error }
 versions-changed-percent = { $percent }% מזה השתנה
 versions-hidden-paragraphs = { $count ->
-    [one] { $count } ללא שינוי סעיף...
-   *[other] { $count } ללא שינוי בפסקאות...
+    [one] … { $count } פסקה שלא השתנתה …
+   *[other] … { $count } פסקאות שלא השתנו …
 }
 
-timeline-title = חזור אחורה בזמן
+timeline-title = חזרה בזמן
 timeline-coverage = { $count ->
-    [one] { $count } גרסה, חזרה ל-{ $oldest }
-   *[other] { $count } גרסאות שנרשמו, חזרו ל-{ $oldest }
+    [one] { $count } גרסה תועדה, עד { $oldest }
+   *[other] { $count } גרסאות תועדו, עד { $oldest }
 }
-timeline-loading = מחפש את העבר של הפרויקט שלך...
-timeline-empty = אף גרסה של הפרויקט טרם הוקלטה.
+timeline-loading = מחפש בעבר של הפרויקט שלכם…
+timeline-empty = עדיין לא תועדה אף גרסה של הפרויקט הזה
 timeline-no-changes = שום דבר לא השתנה מאז
 timeline-no-text-changes = שום טקסט לא השתנה מאז
-timeline-slider-label = גירסה רשומה
+timeline-slider-label = גרסה מתועדת
 timeline-series-name = גודל הפרויקט
-timeline-bars-caption = כל בר הוא גרסה מוקלטת, גבוהה ככל שהפרויקט היה אז.הדבר המודגש הוא מה שאתה מסתכל עליו.
-timeline-bars-caption-periods = יותר מדי גרסאות להראות אחת על ידי אחת, כך שכל בר הוא { $period }, גבוה ככל שהפרויקט היה עד הסוף.
+timeline-bars-caption = כל עמודה היא גרסה מתועדת, בגובה שהיה לפרויקט אז. העמודה המודגשת היא זו שאתם מסתכלים עליה.
+timeline-bars-caption-periods = יש יותר מדי גרסאות כדי להציג אותן אחת אחת, ולכן כל עמודה מייצגת { $period }, בגובה שהיה לפרויקט בסוף התקופה.
 timeline-unit-hour = שעה
-timeline-unit-day = יום יום יום
-timeline-unit-week = שבוע שבוע
-timeline-unit-month = חודש חודש
-timeline-range-filter = הצג רק גרסאות בין שני תאריכים
-timeline-range-empty = אף גרסה לא הוקלטה במועדים אלה
-timeline-open-period = פתחו את התקופה
-timeline-show-all = הצג את כל ההיסטוריה
+timeline-unit-day = יום
+timeline-unit-week = שבוע
+timeline-unit-month = חודש
+timeline-range-filter = הצגת גרסאות בין שני תאריכים בלבד
+timeline-range-empty = לא תועדה אף גרסה בתאריכים האלה
+timeline-open-period = פתיחת התקופה הזו
+timeline-show-all = הצגת ההיסטוריה כולה
 timeline-changed-since = { $count ->
-    [one] { $count } פריטים שונים בין { $date } לבין הפרויקט שלך עכשיו
-   *[other] { $count } פריטים שונים בין { $date } לבין הפרויקט שלך
+    [one] { $count } פריט שונה בין { $date } לבין הפרויקט שלכם עכשיו
+   *[other] { $count } פריטים שונים בין { $date } לבין הפרויקט שלכם עכשיו
 }
 timeline-kind-added = נכתב מאז
 timeline-kind-removed = כבר לא בפרויקט
-timeline-kind-changed = עריכה מאז
-timeline-kind-moved = עבר מאז
-timeline-not-yet-written = זה עדיין לא קיים בשלב הזה.
-timeline-no-text-of-its-own = אין לזה טקסט משל עצמו, זו כותרת למה שבתוך זה.
+timeline-kind-changed = נערך מאז
+timeline-kind-moved = הועבר מאז
+timeline-not-yet-written = זה עוד לא היה קיים בנקודה ההיא
+timeline-no-text-of-its-own = אין לזה טקסט משלו. זו כותרת עבור מה שבתוכו
 timeline-reader-close = סגירה
-timeline-reader-stamp = { $date }
-timeline-reader-loading = פתח את הגרסה המתועדת...
-timeline-reader-unreadable = הקלטה זו לא ניתן לקרוא.ייתכן שהגיבוי הועבר, נמחק, או להיות על כונן שאינו מחובר.
-timeline-reader-compared = כפי שהיה ב-{ $date }, נקבע נגד מה שהוא אומר עכשיו.
-timeline-reader-diff-legend = סטרוק עבר מאז; הוא הוסיף.
-timeline-reader-view-label = מה להראות
+timeline-reader-stamp = כפי שהיה ב־{ $date }
+timeline-reader-loading = פותח את הגרסה המתועדת…
+timeline-reader-unreadable = לא ניתן היה לקרוא את התיעוד הזה. ייתכן שהגיבוי הועבר, נמחק, או נמצא בכונן שאינו מחובר.
+timeline-reader-compared = כפי שהיה ב־{ $date }, לעומת מה שכתוב עכשיו
+timeline-reader-diff-legend = טקסט עם קו חוצה נעלם מאז; טקסט עם קו תחתון נוסף.
+timeline-reader-view-label = מה להציג
 timeline-reader-view-diff = שינויים
 timeline-reader-view-text = טקסט
-timeline-reader-deleted = זה כבר לא בפרויקט שלך, אתה יכול לקרוא אותו ולהעתיק אותו כאן.
-timeline-prose-only-record = נקודה זו מגיעה מההיסטוריה של הפרויקט, אשר שומרת טקסט ושום דבר אחר, אז מה שנמחק או עבר מאז שהוא לא ניתן להוכיח.
-
+timeline-reader-deleted = זה כבר לא בפרויקט שלכם. אפשר לקרוא אותו ולהעתיק אותו מכאן.
+timeline-prose-only-record = הנקודה הזו מגיעה מההיסטוריה של הפרויקט עצמו, ששומרת טקסט בלבד, ולכן אי אפשר להציג מה נמחק או הועבר מאז. לשם כך יש לבחור גיבוי.
 settings-sec-extensions = הרחבות
 
 settings-group-games-forward = תמיד קדימה
-settings-games-forward-toggle = לשחק "תמיד קדימה"
+settings-games-forward-toggle = משחק "תמיד קדימה"
 settings-games-forward-hint =
-    בזמן שאתה משחק, שום דבר שכתבת לא ניתן לקחת בחזרה: Backspace, Delete.
-    לחתוך, לגרור-and-drop ו-Undo הם כולם מוגבלים על פני השטח שאתה בוחר להלן.
-    אתה עדיין יכול להקליד, להדביק, פורמט לנוע בחופשיות.הדראפט רק גדל.
+    בזמן המשחק, שום דבר שכתבתם לא ניתן לביטול: Backspace, ‏Delete, גזירה,
+    גרירה ושחרור וביטול פעולה מושבתים כולם במשטחים שתבחרו למטה.
+    עדיין אפשר להקליד, להדביק, לעצב ולנוע בחופשיות. הטיוטה רק גדלה.
 settings-games-session-warning =
-    זוהי בחירה של בעלות על עצמה: היא לעולם לא נשמרת.סגור את הפרויקט, או להפסיק להתפטר
-    Skribisto, תמיד מסתיים המשחק, וכל מה שכתבת הופך להיות משחק.
-    שוב לא ניתן לעשות את הרגע שהוא עושה.
-settings-group-games-scope = היכן הוא חל
-settings-games-in-prose = המונחים Prose
-settings-games-in-synopsis = Synops
+    זו בחירה להפעלה הנוכחית בלבד: היא אף פעם לא נשמרת. סגירת הפרויקט, או יציאה
+    מ־Skribisto, תמיד מסיימת את המשחק, וכל מה שכתבתם בזמן המשחק הופך שוב
+    לניתן לביטול ברגע שהמשחק מסתיים.
+settings-group-games-scope = היכן זה חל
+settings-games-in-prose = הטקסט של כתב היד
+settings-games-in-synopsis = תקצירים
 settings-games-scope-hint =
-    הערות, הערות שוליים וכותרות לעולם אינן קפואות: הן המקום שבו אתה מציין את התיקון
-    פשוט אסרתם על עצמכם לעשות זאת.
+    הערות, הערות שוליים וכותרות לעולם אינן מוקפאות: שם רושמים את התיקון
+    שזה עתה אסרתם על עצמכם לבצע.
 settings-games-inert-warning =
-    "תמיד קדימה" הוא על אבל חל על שום דבר. tick לפחות משטח אחד מעל,
-    או שזה לא משנה כלום כפי שאתה כותב.
+    "תמיד קדימה" פעיל אבל לא חל על שום דבר. יש לסמן לפחות משטח אחד למעלה,
+    אחרת הוא לא משנה דבר בזמן הכתיבה.
 
-games-title = כתיבת משחקים
+games-title = משחקי כתיבה
 games-forward-name = תמיד קדימה
 games-forward-blurb =
-    דאף מבלי לקחת שום דבר בחזרה.מחק, חיתוך ו undoing הם מוגבלים
-    בזמן שאתה משחק, לכתוב את המשפט הבא במקום לתקן את האחרון.
-games-forward-playing = משחק: deleting is closed
-games-forward-idle = לא לשחק
-games-session-note = מסתיים כאשר אתה סוגר את הפרויקט.
-games-scope-prose-and-synopsis = עקבו אחרי Your Prose and synopses
-games-scope-prose = עקבו אחרי Your Prose.
-games-scope-synopsis = עקבו אחרי synops שלך.
-games-scope-nothing = עדיין לא כדאי לבחור משטח בהגדרות.
-games-settings-link = כתיבת הגדרות משחק...
+    כתיבת טיוטה בלי לבטל שום דבר. מחיקה, גזירה וביטול פעולה מושבתים
+    בזמן המשחק. כתבו את המשפט הבא במקום לתקן את הקודם.
+games-forward-playing = במשחק: המחיקה מושבתת
+games-forward-idle = לא במשחק
+games-session-note = מסתיים כשסוגרים את הפרויקט.
+games-scope-prose-and-synopsis = חל על הטקסט ועל התקצירים שלכם.
+games-scope-prose = חל על הטקסט שלכם.
+games-scope-synopsis = חל על התקצירים שלכם.
+games-scope-nothing = עדיין לא חל על שום דבר. יש לבחור משטח בהגדרות.
+games-settings-link = הגדרות משחקי הכתיבה…
 statusbar-games-forward = תמיד קדימה
 statusbar-games-forward-tooltip =
-    "תמיד קדימה" הוא על: מחיקה, חיתוך ו undoing הם מוגבלים בזמן שאתה
-    לחץ להפסיק לשחק.
+    "תמיד קדימה" פעיל: מחיקה, גזירה וביטול פעולה מושבתים בזמן כתיבת
+    הטיוטה. לחיצה להפסקת המשחק.
 goal-progress-words = { $g ->
-   *[other] מילים: { $count } / { $goal }
+    [one] { $count } מתוך { $goal } מילה
+   *[other] { $count } מתוך { $goal } מילים
 }
 goal-progress-characters = { $g ->
-   *[other] תווים: { $count } / { $goal }
+    [one] { $count } מתוך { $goal } תו
+   *[other] { $count } מתוך { $goal } תווים
 }
 goal-count-words = { $n ->
     [one] { $count } מילה
-    [two] { $count } מילים
    *[other] { $count } מילים
 }
 goal-count-characters = { $n ->
     [one] { $count } תו
-    [two] { $count } תווים
    *[other] { $count } תווים
 }
 goal-unit-words = מילים
 goal-unit-characters = תווים
 
 inspector-goal = יעד
-inspector-goal-none = אין מטרה
-
+inspector-goal-none = ללא יעד
 overview-col-goal = יעד
-overview-excluded-from-export = מחוץ לייצוא, אז זה לא כולל.
+overview-excluded-from-export = מושמט מהייצוא, ולכן אינו נספר בשום סכום
 
 goal-subtree-total-words = { $count ->
-    [one] { $items } היעד הפנימי מוסיף עד { $words } מילים
-   *[other] { $items } יעדים בפנים מוסיפים עד { $words } מילים
+    [one] { $items } יעד בפנים מסתכם ב־{ $words } מילים
+   *[other] { $items } יעדים בפנים מסתכמים ב־{ $words } מילים
 }
 goal-subtree-total-characters = { $count ->
-    [one] { $items } היעד הפנימי מוסיף עד { $words } תווים
-   *[other] { $items } מטרות בפנים להוסיף עד { $words } תווים
+    [one] { $items } יעד בפנים מסתכם ב־{ $words } תווים
+   *[other] { $items } יעדים בפנים מסתכמים ב־{ $words } תווים
 }
 
-new-work-goal-unit = יחידת ספירה
-new-work-goal-unit-hint = משמש לכל מטרה או מטרה של דמות בפרויקט זה, לאחר מכן ניתן לשנות אותה.
+new-work-goal-unit = ספירה לפי
+new-work-goal-unit-hint = משמש לכל יעד מילים או תווים בפרויקט הזה. אפשר לשנות מאוחר יותר.
 
-settings-group-goal-unit = מטרות
-settings-goal-unit-switch-title = יחידת ספירת Switch
-settings-goal-unit-switch-text = המטרות ואבני הדרך שנקבעו כבר לפרויקט זה נכנסו בשנת { $from }.עבור ל-{ $to } לא להמיר אותם, כך שכל מספר קיים יקרא כעת כ-{ $to }.
-settings-goal-unit-switch-informative = שום דבר לא אבוד.Switch חזרה בכל עת כדי לשחזר את הקריאה המקורית, ולאחר מכן לעדכן את המטרות שברצונך לשמור.
-settings-goal-unit-switch-confirm = Switch Switch Switch Switch
+settings-group-goal-unit = יעדים
+settings-goal-unit-switch-title = החלפת יחידת הספירה
+settings-goal-unit-switch-text = היעדים ואבני הדרך שכבר הוגדרו לפרויקט הזה הוזנו ביחידה "{ $from }". מעבר ליחידה "{ $to }" לא ממיר אותם, ולכן כל מספר קיים ייקרא מעכשיו ביחידה "{ $to }".
+settings-goal-unit-switch-informative = שום דבר לא אובד. אפשר לחזור בכל עת כדי לשחזר את הקריאה המקורית, ואז לעדכן את היעדים שרוצים לשמור.
+settings-goal-unit-switch-confirm = מעבר
 
-goal-distribute-action = אכזבה...
-distribute-title = אכזב את המטרה
-distribute-empty = אין דבר בתוך זה כדי לחלוק את המטרה.
-distribute-weight = שתף
-distribute-weight-length = אורך
-distribute-weight-rows = על ידי חתיכות
-distribute-weight-even = אפילו
-distribute-overwrite = החלפת מטרות שכבר מוגדרות
+goal-distribute-action = חלוקה…
+distribute-title = חלוקת היעד
+distribute-empty = אין בתוך זה שום דבר לחלק אליו את היעד.
+distribute-weight = אופן החלוקה
+distribute-weight-length = לפי אורך
+distribute-weight-rows = לפי מספר החלקים
+distribute-weight-even = באופן שווה
+distribute-overwrite = החלפת יעדים שכבר הוגדרו
 distribute-col-item = פריט
-distribute-col-current = עכשיו עכשיו עכשיו
+distribute-col-current = עכשיו
 distribute-col-proposed = אחרי
-distribute-total = אלה מוסיפים עד { $total }, נגד מטרה של { $goal }
-distribute-over-budget = המטרות שנקבעו כבר מגיעות ל-{ $over } יותר מאשר למכל זה עצמו, להרים את המטרה שלו, להוריד את שלהם, או להחליף אותם.
+distribute-total = אלה מסתכמים ב־{ $total }, מול יעד של { $goal }.
+distribute-over-budget = היעדים שכבר הוגדרו בפנים גבוהים ב־{ $over } מהיעד של המכל הזה עצמו. אפשר להעלות את היעד שלו, להוריד את שלהם, או להחליף אותם.
 distribute-apply = חלוקה
 distribute-cancel = ביטול
 
-milestone-target-gone = היעד שנמחק
-milestone-no-target = אין מטרה
+milestone-target-gone = היעד נמחק
+milestone-no-target = ללא יעד
 milestone-add = הוספה
-milestone-add-label = מה צריך להגיע
+milestone-add-label = מה צריך להשיג
 
 pace-summary-title = היכן הספר עומד
-pace-summary-remaining = { $words }
-pace-summary-open = פתח את התוכנית
+pace-summary-remaining = נותרו { $words }
+pace-summary-open = פתיחת התוכנית
 pace-summary-close = סגירה
-pace-summary-dont-show = אל תוכיחו את זה כשפותחים
-pace-summary-menu = לכתוב תוכנית...
+pace-summary-dont-show = לא להציג את זה בעת הפתיחה
+pace-summary-menu = תוכנית כתיבה…
 
-menu-help-topics = עזרה (&T)
-menu-help-shortcuts = מקשים קצרים... (&K)
-menu-help-website = Skribisto באינטרנט (&W)
-menu-help-report = דווח על בעיה... (&R)
-menu-help-check-updates = עקבו אחרי Updates (&U)
-menu-command-palette = קומנדו... (&C)
+menu-help-topics = נושאי עזרה (&T)
+menu-help-shortcuts = קיצורי מקלדת… (&K)
+menu-help-website = ‏Skribisto באינטרנט (&W)
+menu-help-report = דיווח על בעיה… (&R)
+menu-help-check-updates = בדיקת עדכונים (&U)
+menu-command-palette = לוח הפקודות… (&C)
 
-learn-help-topics = עזרה לנושאים
-learn-shortcuts = קיצור של Keyboard
-learn-website = Skribisto באינטרנט
+learn-help-topics = נושאי עזרה
+learn-shortcuts = קיצורי מקלדת
+learn-website = ‏Skribisto באינטרנט
 
 help-window-title = עזרה
-help-filter-topics = נושאי filter
-help-no-matching-topic = אין משחקים בנושא.
-help-topic-missing = נושא זה כבר לא זמין.
-help-back = בחזרה בחזרה
-help-not-translated = המאמר עדיין אינו זמין בעברית. הוא מוצג באנגלית.
+help-filter-topics = סינון נושאים
+help-no-matching-topic = אין נושא תואם.
+help-topic-missing = הנושא הזה כבר אינו זמין.
+help-back = חזרה
+help-not-translated = הדף הזה עדיין לא תורגם, ולכן הוא מוצג באנגלית.
 
-help-section-getting-started = להתחיל
+help-section-getting-started = צעדים ראשונים
 help-section-writing = כתיבה
-help-section-reviewing = סקירה
-help-section-exchanging = להוציא מילים פנימה והחוצה
-help-section-keeping = לשמור על הפרויקט שלך בטוח
+help-section-reviewing = סקירה ועריכה
+help-section-exchanging = הכנסה והוצאה של טקסט
+help-section-keeping = שמירה על העבודה שלכם
 help-section-extensions = הרחבות
 
-help-topic-getting-started = הפרויקט הראשון שלך
-help-topic-writing-model = איך ספר מתאחד
+help-topic-getting-started = הפרויקט הראשון שלכם
+help-topic-writing-model = איך ספר בנוי
 help-topic-drafts-and-old-versions = שמירה על טיוטה ישנה
-help-topic-goals-and-pace = מטרות וקצב
-help-topic-comments = תגובות
-help-topic-round-trip = שלח את הספר שלך לקורא
-help-topic-export = יצוא
+help-topic-goals-and-pace = יעדים וקצב
+help-topic-comments = הערות
+help-topic-round-trip = שליחת הספר לקורא
+help-topic-export = ייצוא
 help-topic-import-documents = ייבוא מסמכים
-help-topic-import-projects = להביא פרויקט שלם
+help-topic-import-projects = העברת פרויקט שלם
 help-topic-backups-and-versions = גיבויים וגרסאות
 
-help-shortcuts-title = קיצור של Keyboard
-help-shortcuts-filter = קיצורי דרך filter
-help-shortcuts-no-matches = אין משחקים קצרים.
-help-shortcuts-rebind = שינוי קיצורי דרך...
+help-shortcuts-title = קיצורי מקלדת
+help-shortcuts-filter = סינון קיצורים
+help-shortcuts-no-matches = אין קיצור תואם.
+help-shortcuts-rebind = שינוי קיצורים…
 help-shortcuts-close = סגירה
 
-command-palette-placeholder = סוג פקודה
+command-palette-placeholder = הקלידו פקודה
 
 shortcut-name-binder-duplicate = שכפול
-shortcut-name-comments-add = תגית:
-shortcut-name-comments-add-paragraph = תגית: Paragraph
-shortcut-name-spellcheck-toggle = תגית: Spelling
-shortcut-name-editor-tab-close = תגית: Close
-shortcut-name-editor-tab-pin = פין או Unpin
+shortcut-name-comments-add = הוספת הערה
+shortcut-name-comments-add-paragraph = הערה על הפסקה
+shortcut-name-spellcheck-toggle = בדיקת איות
+shortcut-name-editor-tab-close = סגירת הלשונית
+shortcut-name-editor-tab-pin = הצמדת הלשונית או ביטול ההצמדה
 shortcut-name-editor-save = שמירה
 shortcut-name-work-export = ייצוא…
 shortcut-name-work-new = פרויקט חדש
-shortcut-name-work-open = פרויקט פתוח
+shortcut-name-work-open = פתיחת פרויקט
 shortcut-name-window-new = חלון חדש
 shortcut-name-work-close = סגירת הפרויקט
 shortcut-name-app-settings = הגדרות
 shortcut-name-app-quit = יציאה
-shortcut-name-editor-insert-footnote = תגית: Footnote
-shortcut-name-format-scene-break = תגית: Break
-shortcut-name-format-major-scene-break = תגית: Major Scene Break
-shortcut-name-format-link = קישור
-shortcut-name-format-mark-nbsp = תגית: No-Break Space
-shortcut-name-format-mark-nbhyphen = המונחים: no-Break Hyphen
-shortcut-name-format-mark-nnbsp = בסביבה הקרובה של Narrow No-Break Space
-shortcut-name-format-mark-zwsp = תגית: Zero-width Space
+shortcut-name-editor-insert-footnote = הוספת הערת שוליים
+shortcut-name-format-scene-break = הוספת מעבר סצנה
+shortcut-name-format-major-scene-break = הוספת מעבר סצנה ראשי
+shortcut-name-format-link = הוספת קישור
+shortcut-name-format-mark-nbsp = הוספת רווח בלתי נשבר
+shortcut-name-format-mark-nbhyphen = הוספת מקף בלתי נשבר
+shortcut-name-format-mark-nnbsp = הוספת רווח צר בלתי נשבר
+shortcut-name-format-mark-zwsp = הוספת רווח ברוחב אפס
 shortcut-name-go-next = הבא
 shortcut-name-go-prev = הקודם
 shortcut-name-go-to = מעבר אל
-shortcut-name-outline-toggle = תגית: Outline
-shortcut-name-preview-toggle = תגיות Preview Band
-shortcut-name-view-fullscreen = עקבו אחרי Fullscreen
-shortcut-name-view-focus-mode = המונחים: distraction-free Mode
-shortcut-name-editor-size-increase = הגדלת גודל הטקסט
-shortcut-name-editor-size-decrease = ירידה בגודל הטקסט
-shortcut-name-editor-size-reset = גודל טקסט איפוס
-shortcut-name-editor-find = חיפוש
+shortcut-name-outline-toggle = הצגה או הסתרה של המתווה
+shortcut-name-preview-toggle = הצגה או הסתרה של רצועת התצוגה המקדימה
+shortcut-name-view-fullscreen = מעבר למסך מלא או יציאה ממנו
+shortcut-name-view-focus-mode = הפעלה או כיבוי של מצב ללא הסחות דעת
+shortcut-name-editor-size-increase = הגדלת הטקסט
+shortcut-name-editor-size-decrease = הקטנת הטקסט
+shortcut-name-editor-size-reset = איפוס גודל הטקסט
+shortcut-name-editor-find = חיפוש במסמך
 shortcut-name-editor-replace = החלפה
-shortcut-name-editor-find-next = המשחק הבא
-shortcut-name-editor-find-prev = הקודם Match
+shortcut-name-editor-find-next = ההתאמה הבאה
+shortcut-name-editor-find-prev = ההתאמה הקודמת
 shortcut-name-search-show = חיפוש בפרויקט
-shortcut-name-search-replace = מקום בפרויקט
-shortcut-name-outline-open-to-side = פתוח לצד
-shortcut-name-help-topics = עזרה
-shortcut-name-help-shortcuts = Keyboard Shortcut
-shortcut-name-help-website = Skribisto באינטרנט
+shortcut-name-search-replace = החלפה בפרויקט
+shortcut-name-outline-open-to-side = פתיחה בצד
+shortcut-name-help-topics = נושאי עזרה
+shortcut-name-help-shortcuts = קיצורי מקלדת
+shortcut-name-help-website = ‏Skribisto באינטרנט
 shortcut-name-help-report = דיווח על בעיה
-shortcut-name-help-check-updates = עקבו אחרי Updates
+shortcut-name-help-check-updates = בדיקת עדכונים
 update-check-behind = גרסה { $version } זמינה.
-update-check-current = אתה מפעיל את הגרסה החדשה ביותר.
-update-check-failed = לא ניתן לבדוק גרסה חדשה יותר: { $error }
-shortcut-name-command-palette = תגית: Palette
-help-section-reference = מה הם
+update-check-current = אתם משתמשים בגרסה החדשה ביותר.
+update-check-failed = לא ניתן היה לבדוק אם יש גרסה חדשה יותר. { $error }
+shortcut-name-command-palette = לוח הפקודות
+help-section-reference = מה הם הדברים
 
-help-concept-scene-break = סצנות פורצות
-help-concept-major-scene-break = הסצנה הגדולה שוברת
-help-concept-find-in-prose = Find in Prose
-help-concept-story-bible = מדריך הסיפור
-help-concept-goal-unit = מילים או דמויות
+help-concept-scene-break = מעבר סצנה
+help-concept-major-scene-break = מעבר סצנה ראשי
+help-concept-find-in-prose = איתור בטקסט
+help-concept-story-bible = תיק הסיפור
+help-concept-goal-unit = מילים או תווים
 help-concept-goal-progress = התקדמות
-help-concept-manuscript-words = מה נחשב ככתב יד
-help-concept-exportable = נשאר מחוץ לייצוא
-help-concept-distribute = שיתוף מטרה החוצה
-help-concept-subtree-total = מה המטרות מבפנים להוסיף
+help-concept-manuscript-words = מה נחשב לכתב היד
+help-concept-exportable = מושמט מהייצוא
+help-concept-distribute = חלוקת יעד
+help-concept-subtree-total = במה מסתכמים היעדים שבפנים
 help-concept-milestone = אבן דרך
-help-concept-pace-plan = תוכנית פייס
+help-concept-pace-plan = תוכנית קצב
 
-help-concept-tag = תגית
-help-concept-label = תיאור קצר
+help-concept-tag = תג
+help-concept-label = תווית
 help-concept-point-of-view = נקודת מבט
 help-concept-epigraph = מוטו
 help-concept-footnote = הערת שוליים
-help-concept-chapter-mode = צורה פרק
-help-concept-comment = תגובה
+help-concept-chapter-mode = צורת הפרקים
+help-concept-comment = הערה
 help-concept-backup = גיבוי
-help-concept-version = גירסה Version
+help-concept-version = גרסה
 help-concept-trash = אשפה
-help-concept-spellcheck = תגית: Check
-help-concept-search-replace = חיפוש והחלפת
-help-concept-note-template = Note תבנית
-help-concept-story-bible-entry = דף התנ"ך
+help-concept-spellcheck = בדיקת איות
+help-concept-search-replace = חיפוש והחלפה
+help-concept-note-template = תבנית פתק
+help-concept-story-bible-entry = רשומה בתיק הסיפור
 help-concept-text-replacement = החלפת טקסט
-help-concept-smart-punctuation = טיהור חכם
-help-concept-export-style = סגנון היצוא
-help-concept-round-trip-marks = האותיות הקטנות של Round-trip Markers
+help-concept-smart-punctuation = פיסוק חכם
+help-concept-export-style = סגנון ייצוא
+help-concept-round-trip-marks = סמני הלוך־חזור
 
-epigraph-mark-attribution = קוד מקור
-epigraph-mark-attribution-tip = מארק קו הטיפול הוא המקור של המכסה, כך שהוא מדפיס כנקמה.
-margin-lane-name = סימני Margin
-margin-lane-provider-comments = תגובות
-margin-lane-provider-story-bible = דף התנ"ך
-margin-lane-provider-story-bible-hint = על פתק בקריאת פרוזה, שם נקראה כניסה זו, והסצנות שנאמרו דרך עיניו, מסמן גם את השמות האלה בפרוזה עצמה.
-margin-lane-mark-point-of-view = ילד מכאן
-margin-lane-mark-named-here = שם מקורי
-margin-lane-provider-comments-hint = איפה פתק מחובר לטקסט
+epigraph-mark-attribution = שורת המקור
+epigraph-mark-attribution-tip = סימון השורה שבה נמצא הסמן כמקור הציטוט, כך שתודפס כייחוס
+margin-lane-name = סימני שוליים
+margin-lane-provider-comments = הערות
+margin-lane-provider-story-bible = רשומה בתיק הסיפור
+margin-lane-provider-story-bible-hint = בתצוגת "בטקסט" של פתק: היכן שם הרשומה מוזכר, והסצנות שמסופרות דרך עיניה. מסמן את השמות האלה גם בטקסט עצמו.
+margin-lane-mark-point-of-view = מסופר מכאן
+margin-lane-mark-named-here = מוזכר כאן
+margin-lane-provider-comments-hint = היכן הערה מצורפת לטקסט
 margin-lane-provider-search = תוצאות חיפוש
-margin-lane-provider-search-hint = כל פגיעה במה שחיפשת לאחרונה, בכל מקום שהוא נמצא במסמך
-margin-lane-provider-boundaries = היכן שכל מסמך מתחיל
-margin-lane-provider-boundaries-hint = כלל בחלק העליון של כל סצנה בזרם, כך שתוכלו לראות היכן אתם נמצאים
-margin-lane-provider-spelling = תגית: Spell
-margin-lane-provider-spelling-hint = כאשר בודק האיות פירט מילה, אלא אם תבקש זאת: הוא מסמן את דעתו של מכונה על הפרוזה שלך.
-margin-lane-spelling = { $word }, פספסה אפשרית
-margin-lane-search-hit = { $text }, תואם { $index } של { $total }
-margin-lane-search-current = { $text }, התאמה { $index } של { $total }, אחד שאתה על
+margin-lane-provider-search-hint = כל תוצאה של החיפוש האחרון, בכל מקום שבו היא נמצאת במסמך
+margin-lane-provider-boundaries = היכן כל מסמך מתחיל
+margin-lane-provider-boundaries-hint = קו בראש כל סצנה ברצף, כדי שתראו היכן אתם נמצאים
+margin-lane-provider-spelling = איות
+margin-lane-provider-spelling-hint = היכן בודק האיות סימן מילה. כבוי אלא אם תבקשו: הוא מסמן את דעתה של מכונה על הטקסט שלכם
+margin-lane-spelling = { $word }, ייתכן שגיאת כתיב
+margin-lane-search-hit = { $text }, התאמה { $index } מתוך { $total }
+margin-lane-search-current = { $text }, התאמה { $index } מתוך { $total }, זו שבה אתם נמצאים
 margin-lane-boundary = תחילת { $title }
-margin-lane-boundary-untitled = מסמך לא ראוי
-settings-page-margin-lane = סימני Margin
-settings-desc-margin-lane = הרצועה ליד הבר של הגלולות, ומה היא מראה
-settings-margin-lane-enabled = הצג את שביל השולי
-settings-margin-lane-enabled-hint = אותו מתג כמו View סמן Margin.
-settings-margin-lane-enabled-more = זה אף פעם לא אומר שמשהו לא בסדר: זה מראה לך איפה הדברים, ומשאיר מה לעשות לך.
-settings-group-margin-lane-marks = מה זה מסמן
-settings-margin-lane-no-providers = שום דבר עדיין לא מסמן את הנתיב.
+margin-lane-boundary-untitled = מסמך ללא כותרת
+settings-page-margin-lane = סימני שוליים
+settings-desc-margin-lane = הרצועה שליד פס הגלילה, ומה היא מציגה
+settings-margin-lane-enabled = הצגת פס השוליים
+settings-margin-lane-enabled-hint = אותו מתג כמו תצוגה ▸ סימני שוליים.
+settings-margin-lane-enabled-more = הוא אף פעם לא אומר שמשהו שגוי: הוא מראה לכם היכן דברים נמצאים, ומשאיר לכם להחליט מה לעשות עם זה.
+settings-group-margin-lane-marks = מה הוא מסמן
+settings-margin-lane-no-providers = עדיין שום דבר לא מסמן את הפס.
 settings-group-margin-lane-texture = מרקם הדיאלוג
-settings-margin-lane-texture = הצג את מרקם הדיאלוג
-settings-margin-lane-texture-hint = בר אחד לפסקה: כמה זמן זה, וכמה מזה מדובר.
-settings-margin-lane-texture-more = לא נמדד עבור שפות ללא מוסכמות מחוספסות, שם הבר מראה לבד.
-settings-group-margin-lane-surfaces = איפה זה נראה
-settings-margin-lane-surface-editor = עורך טקסט
-settings-margin-lane-surface-stream = זרמים
-settings-margin-lane-surface-search-preview = חיפוש תצוגה מקדימה
-menu-margin-lane = סימני Margin (&M)
+settings-margin-lane-texture = הצגת מרקם הדיאלוג
+settings-margin-lane-texture-hint = עמודה אחת לכל פסקה: כמה היא ארוכה, וכמה ממנה דיבור.
+settings-margin-lane-texture-more = לא נמדד בשפות ללא מוסכמה מוגדרת, ושם העמודה מציגה את האורך בלבד.
+settings-group-margin-lane-surfaces = היכן הוא מופיע
+settings-margin-lane-surface-editor = עורך הטקסט
+settings-margin-lane-surface-stream = רצפים
+settings-margin-lane-surface-search-preview = התצוגה המקדימה של החיפוש
+menu-margin-lane = סימני שוליים (&M)
 
 status-preset-drafting = כתיבת טיוטה
-status-preset-passes = Revision עובר
-status-preset-plume = Plume Creator
-status-todo = לעשות
+status-preset-passes = סבבי עריכה
+status-preset-plume = ‏Plume Creator
+status-todo = לביצוע
 status-draft = טיוטה
-status-revised = לאחר עריכה
+status-revised = נערך
 status-final = סופי
-status-outline = מתווה
-status-first-edit = 1stעריכה
+status-outline = שלד
+status-first-edit = עריכה ראשונה
 status-second-edit = עריכה שנייה
-status-done = סיום
-status-plume-draft-1 = 1 טיוטה
-status-plume-draft-2 = 2 טיוטה
-status-plume-draft-3 = 3 טיוטה
-status-plume-edit-1 = 1stעריכה
+status-done = הושלם
+status-plume-draft-1 = טיוטה ראשונה
+status-plume-draft-2 = טיוטה שנייה
+status-plume-draft-3 = טיוטה שלישית
+status-plume-edit-1 = עריכה ראשונה
 status-plume-edit-2 = עריכה שנייה
-status-plume-edit-3 = 3עריכה
-status-plume-proofread = הוכחה
-status-plume-finished = הושלם
-new-work-statuses = זרימת עבודה
-new-work-statuses-hint = השלבים שאתה מעביר סצינה דרך.אתה יכול לקרוא מחדש, להזמין או להוסיף אלה בכל עת.
-status-none = אין מעמד
+status-plume-edit-3 = עריכה שלישית
+status-plume-proofread = הגהה
+status-plume-finished = גמור
+new-work-statuses = תהליך עבודה
+new-work-statuses-hint = השלבים שסצנה עוברת. אפשר לשנות את שמם, לסדר מחדש או להוסיף עליהם בכל עת.
+status-none = ללא מצב
 inspector-status = מצב
 overview-col-status = מצב
-overview-status-mixed = החלקים שלמטה לא מסכימים
+overview-status-mixed = החלקים שמתחת אינם תואמים
 help-concept-status = מצב
 status-completion-title = היכן הספר עומד
-status-completion-headline = { $done } מתוך { $total } סצינות סיימו
-status-completion-empty = עדיין אין סצנות, זה קורא את כתב היד, כך שהוא ממלא כפי שאתה כותב.
-status-completion-open = איפה הספר עומד...
+status-completion-headline = { $done } מתוך { $total } סצנות הושלמו
+status-completion-empty = אין עדיין סצנות. זה קורא את כתב היד, ולכן מתמלא תוך כדי כתיבה.
+status-completion-open = היכן הספר עומד…
 
-settings-page-statuses = סטטוסים
-settings-desc-statuses = Rename, reorder, להוסיף ולהסיר את השלבים שאתה מעביר סצינה דרך
-settings-statuses-add = הוסף סטטוס
-settings-statuses-add-placeholder = שם סטטוס חדש
+settings-page-statuses = מצבים
+settings-desc-statuses = שינוי שם, סידור מחדש, הוספה והסרה של השלבים שסצנה עוברת
+settings-statuses-add = הוספת מצב
+settings-statuses-add-placeholder = שם המצב החדש
 settings-statuses-desc =
-    השלבים שבהם סצינה עוברת, על מנת, לפחות עד הסוף בחלק העליון ועד לרוב
-    הסדר זה הוא מה ש"לא נגמר" פירושו בכל מקום אחר.
-    באפליקציית, אז הניחו להם את הדרך שבה התהליך שלכם באמת פועל.
-settings-statuses-apply-preset = החל מראש...
+    השלבים שסצנה עוברת, לפי הסדר, מהפחות גמור למעלה ועד הגמור ביותר למטה.
+    הסדר הזה הוא מה ש"פחות גמור מ" אומר בכל מקום אחר ביישום, ולכן כדאי
+    לסדר אותם כפי שתהליך העבודה שלכם באמת מתנהל.
+settings-statuses-apply-preset = החלת ערכה מוכנה…
 settings-statuses-preset-applied = { $added ->
-    [one] 1 מצב נוסף
-   *[other] { $added } סטטוסים נוספים
+    [one] נוסף מצב אחד
+   *[other] נוספו { $added } מצבים
 }
-settings-statuses-preset-refused = לפרויקט הזה כבר יש סולם.Presets רק למלא אחד ריק.מחקו את המרוצים שאתם לא רוצים קודם.
-settings-statuses-duplicate = "{ $name }"כבר על הסולם הזה.
-settings-statuses-added = { $name }
-settings-statuses-move-up = קומו (אלא גמור)
-settings-statuses-move-down = לרדת (more גמור)
-settings-statuses-details-placeholder = מה שלב זה אומר (אופציונלי)
-settings-statuses-delete = לקט "{ $name }"
+settings-statuses-preset-refused = לפרויקט הזה כבר יש סולם מצבים. ערכות מוכנות רק ממלאות סולם ריק. יש למחוק קודם את השלבים שאינכם רוצים.
+settings-statuses-duplicate = "{ $name }" כבר נמצא בסולם הזה
+settings-statuses-added = "{ $name }" נוסף
+settings-statuses-move-up = הזזה למעלה (פחות גמור)
+settings-statuses-move-down = הזזה למטה (גמור יותר)
+settings-statuses-details-placeholder = מה השלב הזה אומר (רשות)
+settings-statuses-delete = מחיקת "{ $name }"
 settings-statuses-delete-in-use = { $count ->
-    [one] "{ $name }": פריט אחד הוא על זה ויאבד את מעמדו.
-   *[other] דלט "{ $name }": { $count } פריטים נמצאים על זה ויאבדו את מעמדם.
+    [one] מחיקת "{ $name }": פריט אחד נמצא בשלב הזה ויאבד את המצב שלו
+   *[other] מחיקת "{ $name }": { $count } פריטים נמצאים בשלב הזה ויאבדו את המצב שלהם
 }
-settings-statuses-deleted = { $name }
+settings-statuses-deleted = "{ $name }" נמחק
 settings-statuses-deleted-in-use = { $count ->
-    [one] "{ $name }" של פריט אחד כבר אין מעמד.
-   *[other] "{ $name }" { $count } פריטים כבר לא יש מעמד.
+    [one] "{ $name }" נמחק. לפריט אחד כבר אין מצב.
+   *[other] "{ $name }" נמחק. ל־{ $count } פריטים כבר אין מצב.
 }
-settings-statuses-empty-title = עדיין לא זרימת עבודה
-settings-statuses-empty-body = סטטוס אומר כמה רחוק לאורך סצינה הוא להוסיף אחד מעל, או להתחיל מראש.
+settings-statuses-empty-title = אין עדיין תהליך עבודה
+settings-statuses-empty-body = מצב אומר כמה סצנה מתקדמת. אפשר להוסיף מצב למעלה, או להתחיל מערכה מוכנה.
 status-category-planned = מתוכנן
-status-category-drafting = כתיבת טיוטה
-status-category-needs-work = דרושה עבודה
-status-category-revised = לאחר עריכה
+status-category-drafting = בכתיבה
+status-category-needs-work = דורש עבודה
+status-category-revised = נערך
 status-category-final = סופי
+
+## Long-operation progress (shared::progress_text). The backend reports phase
+## codes it cannot translate; these are their labels. `progress-percent` is the
+## toast body on its own, `progress-percent-with-label` with the phase after it.
+progress-percent = { $percent }%
+progress-percent-with-label = { $percent }% · { $label }
+progress-import-opening = פותח את הפרויקט…
+progress-import-outline = קורא את המתווה…
+progress-import-converting = ממיר פרקים וסצנות…
+progress-import-writing = כותב את קובץ ה־‎.skrib…
+progress-import-done = הסתיים
+progress-import-structure = מברר את המבנה…
+progress-export-start = מתחיל…
+progress-export-writing = כותב…
+progress-project-reading = קורא את הפרויקט…
+# Settings: the open project's section title, "Work: <its title>".
+settings-sec-work-titled = פרויקט: { $title }
+
+## Project-import notices (shared::import_warnings::notices): one line of the
+## Plume / Manuskript warnings list each. $file, $folder, $title, $name, $field
+## and $error are data (file names, titles, a parser's own message) and stay as
+## they are. $container is "single-file" or "folder"; $kind is "scene", "note",
+## "synopsis" or "title".
+import-notice-flattened-rich-texts = { $count ->
+    [one] טקסט אחד היה מקונן עמוק יותר ממה שפרויקט Skribisto יכול להכיל; המילים שלו נשמרו כטקסט פשוט, בלי העיצוב.
+    [two] שני טקסטים היו מקוננים עמוק יותר ממה שפרויקט Skribisto יכול להכיל; המילים שלהם נשמרו כטקסט פשוט, בלי העיצוב.
+   *[other] { $count } טקסטים היו מקוננים עמוק יותר ממה שפרויקט Skribisto יכול להכיל; המילים שלהם נשמרו כטקסט פשוט, בלי העיצוב.
+}
+import-notice-free-text-badges = { $count ->
+    [one] סימון סצנה אחד נראה כמו טקסט חופשי ולא כמו רשימת מצבים, ולכן הוא נשמר כתווית של הפריט במקום להפוך לתג.
+    [two] שני סימוני סצנה שונים נראים כמו טקסט חופשי ולא כמו רשימת מצבים, ולכן הם נשמרו כתוויות של פריטים במקום להפוך לתגים.
+   *[other] { $count } סימוני סצנה שונים נראים כמו טקסט חופשי ולא כמו רשימת מצבים, ולכן הם נשמרו כתוויות של פריטים במקום להפוך לתגים.
+}
+import-notice-separator-text-dropped = המפריד "{ $name }" הכיל טקסט, שאין לו מקום בפרויקט Skribisto; הטקסט לא יובא.
+import-notice-separator-without-scene = למפריד "{ $name }" לא הייתה סצנה לפניו בפרק שאפשר לצרף אותו אליה, ולכן הוא לא יובא.
+import-notice-chapter-without-scenes = בפרק "{ $name }" אין סצנות, ולכן המפרידים שלו לא יובאו.
+import-notice-rich-text-unconverted = לא ניתן היה להמיר חלק מהטקסט המעוצב ({ $error }); הוא לא יובא.
+import-notice-unresolved-cross-link = לא ניתן היה לעקוב אחר קישור לרשומה מס׳ { $number } בצוות הדמויות: הרשומה חסרה או הייתה באשפה.
+import-notice-read-copy = נקרא העותק { $container ->
+    [single-file] בקובץ יחיד
+   *[folder] בתיקייה
+} של הפרויקט הזה.
+import-notice-read-copy-dated = נקרא העותק { $container ->
+    [single-file] בקובץ יחיד
+   *[folder] בתיקייה
+} של הפרויקט הזה, ששונה לאחרונה ב־{ $day }.
+import-notice-original-format = הפרויקט הזה בתבנית המקורית של Manuskript משנת 2016. הוא נקרא במלואו; שום דבר בו לא שונה.
+import-notice-newer-single-file-beside = הקובץ "{ $file }" חדש יותר מהתיקייה הזו ({ $file_day } לעומת { $folder_day }). כש־Manuskript מעביר פרויקט למצב קובץ יחיד, הוא משאיר את התיקייה הישנה במקומה, ולכן ייתכן שהתיקייה הזו היא עותק נטוש; ייבוא קובץ ה־‎.msk במקומה יקרא את הגרסה החדשה יותר.
+import-notice-pickle-skipped = הקובץ "{ $file }" לא נקרא. זהו קובץ pickle של Python, וטעינת קובץ כזה מתוך קובץ פרויקט הייתה פרצת אבטחה ב־Manuskript עצמו (CVE-2021-35196); ההגדרות שהוא מכיל הן העדפות תצוגה, לא כתיבה.
+import-notice-file-unreadable = לא ניתן היה לקרוא את הקובץ "{ $file }" ({ $error }) והוא דולג; כל השאר יובא.
+import-notice-not-utf8 = הקובץ "{ $file }" אינו UTF-8 תקין; התווים שלא ניתן היה לקרוא הוחלפו, במקום לעצור את הייבוא.
+import-notice-table-unreadable = לא ניתן היה לקרוא את הקובץ "{ $file }" ({ $error }); מה שהיה בו לא יובא.
+import-notice-outline-missing = הקובץ "{ $file }" חסר, ולכן אין בפרויקט הזה כתב יד לייבא.
+import-notice-outline-unreadable = לא ניתן היה לקרוא את הקובץ "{ $file }" ({ $error }); לא יובא כתב יד.
+import-notice-named-none-row = הקובץ "{ $file }" מתחיל בשורה בעלת שם ("{ $name }") במקום שבו Manuskript שומר את רשומת ה־"none" הריקה שלו. השורה הושמטה, כדי שהשורות שאחריה ישמרו על המספרים שכתב היד משתמש בהם.
+import-notice-unknown-field = בקובץ "{ $file }" יש שדה שהמייבא הזה אינו מכיר, "{ $field }". הוא לא יובא.
+import-notice-colorless-labels = { $count ->
+    [one] בקובץ "{ $file }" יש שורה בלי צבע. היא יובאה בלי צבע; Manuskript מפסיק לטעון את הפרויקט בשורה כזו.
+    [two] בקובץ "{ $file }" יש שתי שורות בלי צבע. הן יובאו בלי צבע; Manuskript מפסיק לטעון את הפרויקט בשורה כזו.
+   *[other] בקובץ "{ $file }" יש { $count } שורות בלי צבע. הן יובאו בלי צבע; Manuskript מפסיק לטעון את הפרויקט בשורה כזו.
+}
+import-notice-settings-unreadable = לא ניתן היה לקרוא את הקובץ "{ $file }" ({ $error }); שפת הפרויקט לא יובאה.
+import-notice-revisions-unreadable = לא ניתן היה לקרוא את הקובץ "{ $file }" ({ $error }); ההיסטוריה של הפרויקט לא יובאה, אבל שום דבר אחר לא הושפע.
+import-notice-foreign-files = { $count ->
+    [one] בפרויקט הזה יש קובץ שאינו חלק מתבנית Manuskript ולא יובא: { $files }.
+    [two] בפרויקט הזה יש שני קבצים שאינם חלק מתבנית Manuskript ולא יובאו: { $files }.
+   *[other] בפרויקט הזה יש { $count } קבצים שאינם חלק מתבנית Manuskript ולא יובאו: { $files }.
+}
+import-notice-foreign-files-more = בפרויקט הזה יש { $count } קבצים שאינם חלק מתבנית Manuskript ולא יובאו: { $files }, ועוד { $more ->
+    [one] אחד
+    [two] שניים
+   *[other] { $more }
+}.
+import-notice-not-a-character-file = הקובץ "{ $file }" אינו קובץ דמות של Manuskript והושמט.
+import-notice-not-a-text-item = הקובץ "{ $file }" אינו פריט טקסט של Manuskript והושמט מהמתווה.
+import-notice-missing-blank-line = בקובץ "{ $file }" אין שורה ריקה אחרי הכותרת העליונה. השדה האחרון שלו נשמר, אף ש־Manuskript מאבד אותו.
+import-notice-folder-without-metadata = בתיקייה "{ $folder }" אין { $file }, ולכן היא יובאה כתיקייה רגילה הנקראת על שם הספרייה. Manuskript מדלג על ספרייה כזו ועל כל מה שבתוכה.
+import-notice-rows-given-ids = { $count ->
+    [one] לפריט אחד במתווה לא היה מזהה משלו, והוא קיבל מזהה. Manuskript משמיט פריט כזה, או מפסיק לטעון את הפרויקט כשמדובר בתיקייה.
+    [two] לשני פריטים במתווה לא היה מזהה משלהם, והם קיבלו מזהה. Manuskript משמיט פריט כזה, או מפסיק לטעון את הפרויקט כשמדובר בתיקייה.
+   *[other] ל־{ $count } פריטים במתווה לא היה מזהה משלהם, והם קיבלו מזהה. Manuskript משמיט פריט כזה, או מפסיק לטעון את הפרויקט כשמדובר בתיקייה.
+}
+import-notice-plots-unreadable = לא ניתן היה לקרוא את הקובץ "{ $file }" ({ $error }); העלילות לא יובאו.
+import-notice-world-unreadable = לא ניתן היה לקרוא את הקובץ "{ $file }" ({ $error }); רשומות העולם לא יובאו.
+import-notice-world-not-opml = הקובץ "{ $file }" אינו מסמך OPML; רשומות העולם לא יובאו.
+import-notice-text-flattened = הטקסט של "{ $title }" מקונן עמוק יותר ממה שפרויקט Skribisto יכול להכיל; המילים שלו נשמרו כטקסט פשוט, בלי העיצוב.
+import-notice-text-unconverted = לא ניתן היה להמיר את הטקסט של "{ $title }" ({ $error }); הוא נשמר בדיוק כפי שנכתב.
+import-notice-text-without-file-name = לא ניתן היה לתת שם קובץ { $kind ->
+    [scene] לטקסט הסצנה של "{ $title }", ולכן הוא לא יובא.
+    [note] לטקסט הפתק של "{ $title }", ולכן הוא לא יובא.
+    [synopsis] לתקציר של "{ $title }", ולכן הוא לא יובא.
+   *[title] לכותרת של "{ $title }", ולכן היא לא יובאה.
+}
+import-notice-unknown-label = לפריט "{ $title }" יש תווית { $index }, שאינה ברשימת התוויות של הפרויקט הזה. הוא יובא בלי תווית.
+import-notice-unknown-status = לפריט "{ $title }" יש מצב { $index }, שאינו ברשימת המצבים של הפרויקט הזה. הוא יובא בלי מצב.
+import-notice-unknown-point-of-view = הפריט "{ $title }" מסופר דרך דמות שאינה בצוות הדמויות של הפרויקט הזה. נקודת המבט שלו לא נקבעה.
+import-notice-unresolved-references = לא ניתן היה לפענח את ההפניות בטקסט של "{ $title }" ({ $error }); הטקסט נשמר כפי שהומר, כולל סימני ההפניה.
+import-notice-custom-icons = { $count ->
+    [one] לפריט אחד היה סמל מותאם אישית. Skribisto נותן לכל פריט את הסמל של הסוג שלו, ולכן הסמל לא יובא; שום דבר אחר בפריט לא השתנה.
+    [two] לשני פריטים היה סמל מותאם אישית. Skribisto נותן לכל פריט את הסמל של הסוג שלו, ולכן הסמלים לא יובאו; שום דבר אחר בפריטים האלה לא השתנה.
+   *[other] ל־{ $count } פריטים היה סמל מותאם אישית. Skribisto נותן לכל פריט את הסמל של הסוג שלו, ולכן הסמלים לא יובאו; שום דבר אחר בפריטים האלה לא השתנה.
+}
+import-notice-character-colors = { $count ->
+    [one] לדמות אחת היה צבע ליד השם. Skribisto צובע תגים ולא פריטים, ולכן הצבע לא יובא; הדמות עצמה יובאה.
+    [two] לשתי דמויות היה צבע ליד השם. Skribisto צובע תגים ולא פריטים, ולכן הצבעים לא יובאו; שתי הדמויות עצמן יובאו.
+   *[other] ל־{ $count } דמויות היה צבע ליד השם. Skribisto צובע תגים ולא פריטים, ולכן הצבעים לא יובאו; כל הדמויות עצמן יובאו.
+}
+import-notice-versions-kept = { $found ->
+    [one] הפרויקט הזה תיעד גרסה קודמת אחת
+    [two] הפרויקט הזה תיעד שתי גרסאות קודמות
+   *[other] הפרויקט הזה תיעד { $found } גרסאות קודמות
+}; { $kept ->
+    [one] אחת נשמרה
+    [two] שתיים נשמרו
+   *[other] { $kept } נשמרו
+}, לאחר דילול באותה דרך שבה Skribisto מדלל את ההיסטוריה שלו. הן נמצאות בחלונית הגרסאות.
+import-notice-versions-unplaced = { $count ->
+    [one] גרסה קודמת אחת שייכת לפריט שכבר אינו בפרויקט, ולא ניתן היה למקם אותה.
+    [two] שתי גרסאות קודמות שייכות לפריט שכבר אינו בפרויקט, ולא ניתן היה למקם אותן.
+   *[other] { $count } גרסאות קודמות שייכות לפריט שכבר אינו בפרויקט, ולא ניתן היה למקם אותן.
+}
+
+## Native file dialogs: the window title, and the label of the file-type filter.
+dialog-open-work-title = פתיחת פרויקט Skribisto
+dialog-save-as-file-title = שמירה כקובץ ‎.skrib יחיד
+dialog-save-as-folder-title = בחירת תיקיית אב לפרויקט
+dialog-manuskript-file-title = בחירת פרויקט Manuskript
+dialog-manuskript-folder-title = בחירת תיקיית פרויקט Manuskript
+dialog-filter-skrib = פרויקט Skribisto
+dialog-filter-manuskript = פרויקט Manuskript
+dialog-filter-plume = פרויקט Plume Creator
+dialog-filter-hunspell-aff = קובץ תוספיות של Hunspell ‏(‎.aff)
+dialog-filter-hunspell-dic = מילון Hunspell ‏(‎.dic)
+dialog-filter-export = קובץ מיוצא
+# Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
+shortcut-name-view-margin-lane = הצגה או הסתרה של סימני השוליים
+
+## The built-in distraction-free themes' names (distraction_free::theme).
+df-theme-paper = נייר
+df-theme-sepia = ספיה
+df-theme-night = לילה
+df-theme-high-contrast = ניגודיות גבוהה
+df-theme-midnight = חצות
+
+## Welcome ▸ Examples: the line under a bundled example's title.
+welcome-example-byline = מאת { $author }
+
+## Spoken by a screen reader only.
+# Welcome window: the name of the section tab bar.
+welcome-sections-a11y = מקטעי חלון הפתיחה
+# A comment's anchored span in the editor: author, plain-text preview, replies.
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } ({ $count ->
+    [one] תשובה אחת
+    [two] שתי תשובות
+   *[other] { $count } תשובות
+})
+comments-a11y-summary-author-replies = { $author }: { $text } ({ $count ->
+    [one] תשובה אחת
+    [two] שתי תשובות
+   *[other] { $count } תשובות
+})
+# Margin marks beside the text: one mark, several merged into one, and the
+# lane's own name when nothing more specific was given.
+margin-lane-a11y-mark = { $label }, ב־{ $percent } אחוז מהטקסט
+margin-lane-a11y-marks = { $label }, { $count } סימנים, ב־{ $percent } אחוז מהטקסט
+margin-lane-a11y-fallback = { $count ->
+    [one] סימני שוליים, סימן אחד
+    [two] סימני שוליים, שני סימנים
+   *[other] סימני שוליים, { $count } סימנים
+}
+# Export ▸ Choose: the row standing for a binder that has no name.
+export-choose-unnamed-binder = קלסר ללא שם
+# The built-in export styles named in words (the national manuscript presets
+# keep their own language's name).
+export-style-neutral = ניטרלי
+export-style-manuscript-shunn = כתב יד תקני (Shunn)
+export-style-ebook-clean = ספר אלקטרוני נקי
+
+## Dates. Put the parts in the order your language writes a short date; the
+## parts arrive already zero-padded where that matters.
+# Comment cards, the outline card's Created/Modified.
+date-time-short = { $day }.{ $month }.{ $year } { $hour }:{ $minute }
+# Pace chart: a day on the axis, a milestone's date, a holiday.
+pace-day-label = { $day }.{ $month }
+
+## File sizes (shared::byte_size). $whole and $tenth are the two sides of the
+## decimal mark: write your language's mark between them and its unit symbol.
+byte-size-bytes = { $value } בתים
+byte-size-kb = { $value } ק״ב
+byte-size-mb = { $whole }.{ $tenth } מ״ב
+byte-size-gb = { $whole }.{ $tenth } ג״ב
+# A whole percentage (sliders, the Pace card, the text-size toast).
+unit-percent = { $value }%
+# A whole number of pixels (slider readouts).
+unit-pixels = { $value } px
+# Settings ▸ Paratext: a preset saved without a `name` line. `name` is the TOML
+# key the writer types and stays as it is.
+settings-paratext-error-no-name = מבנה חייב לכלול `name`.
+# Export: started with no project open (a menu raced a close).
+export-error-no-project = אין פרויקט פתוח לייצוא.

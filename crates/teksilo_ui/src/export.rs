@@ -18,5 +18,6 @@ mod paratext_presets_vm;
 pub(crate) mod split_button;
 
 pub use export_styles_vm::ExportStylesViewModel;
+pub(crate) use export_styles_vm::preset_display_name;
 pub use export_vm::{ExportViewModel, format_label, scope_label};
 pub use paratext_presets_vm::{ParatextPresetsViewModel, PresetRow};

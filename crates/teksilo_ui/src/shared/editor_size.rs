@@ -145,7 +145,7 @@ fn readout(kind: TypographyKind, percent: String) -> LocalizedString {
 /// would still fight over one entry, while the thing that must not collide is
 /// two windows, full stop.
 pub fn announce(ctx: &mut EventContext, typo: &EditorTypography) {
-    let percent = format!("{:.0}%", typo.size.get() * 100.0);
+    let percent = crate::shared::units::percent(typo.size.get() as f64);
     let window = ctx.window().map(|w| w.id());
     let mut toast = Toast::info(readout(typo.size_range.kind, percent))
         .auto_dismiss_after(SIZE_TOAST_DISMISS)

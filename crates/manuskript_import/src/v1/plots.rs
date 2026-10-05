@@ -25,18 +25,20 @@
 
 use crate::model::{Plot, PlotStep};
 use crate::xml::{self, attr, attr_opt, importance};
+use skrib_format::import_notice::ImportNotice;
 
 /// The member holding the plots.
 pub const PLOTS_MEMBER: &str = "plots.xml";
 
 /// Read every plot. A malformed file costs the plots and nothing else.
-pub fn read(text: &str, notices: &mut Vec<String>) -> Vec<Plot> {
+pub fn read(text: &str, notices: &mut Vec<ImportNotice>) -> Vec<Plot> {
     let doc = match xml::parse(PLOTS_MEMBER, text) {
         Ok(doc) => doc,
         Err(e) => {
-            notices.push(format!(
-                "'{PLOTS_MEMBER}' could not be read ({e}); the plots were not imported."
-            ));
+            notices.push(ImportNotice::PlotsUnreadable {
+                member: PLOTS_MEMBER.to_string(),
+                error: e.to_string(),
+            });
             return Vec::new();
         }
     };
@@ -165,7 +167,7 @@ mod tests {
         let plots = read("<root><plot name=", &mut notices);
         assert!(plots.is_empty());
         assert!(
-            notices.iter().any(|n| n.contains(PLOTS_MEMBER)),
+            notices.iter().any(|n| n.to_string().contains(PLOTS_MEMBER)),
             "{notices:?}"
         );
     }

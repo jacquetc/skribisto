@@ -54,7 +54,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                         t.add(NewWorkPanel::new_beside_current(app_ctx, factory))
                     })
                     .presentation(ModalPresentation::InTree)
-                    .title("New Work")
+                    .title(tr!(new_work_title()).resolve_now())
                     .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
                     .size(640, 620),
                 );

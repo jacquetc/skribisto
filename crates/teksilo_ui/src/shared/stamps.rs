@@ -132,17 +132,21 @@ impl Zone {
         DateTime::from_timestamp(ts.as_second(), u32::try_from(ts.subsec_nanosecond()).ok()?)
     }
 
-    /// `DD/MM/YYYY HH:MM` in this zone.
+    /// A short date and time in this zone, in the order the interface
+    /// language writes them (`03/04/2026 08:30` in en-US, `04/03/2026 08:30` in
+    /// French). The parts go to the catalogue already padded, as text: a number
+    /// would be formatted, and `08` must stay `08`.
     pub fn stamp(&self, t: DateTime<Utc>) -> String {
+        use teksilo::prelude::*;
         let t = self.civil(t);
-        format!(
-            "{:02}/{:02}/{:04} {:02}:{:02}",
-            t.day(),
-            t.month(),
-            t.year(),
-            t.hour(),
-            t.minute()
-        )
+        tr!(date_time_short(
+            day = format!("{:02}", t.day()),
+            month = format!("{:02}", t.month()),
+            year = format!("{:04}", t.year()),
+            hour = format!("{:02}", t.hour()),
+            minute = format!("{:02}", t.minute())
+        ))
+        .resolve_now()
     }
 
     /// `YYYY-MM-DD HH:MM` in this zone: the shape every history surface uses.
@@ -349,7 +353,7 @@ mod tests {
         let tokyo = Zone::tokyo();
         assert_eq!(tokyo.iso_stamp(saved), "2026-03-04 08:30");
         assert_eq!(tokyo.iso_day(saved), "2026-03-04");
-        assert_eq!(tokyo.stamp(saved), "04/03/2026 08:30");
+        assert_eq!(tokyo.stamp(saved), "03/04/2026 08:30");
         assert_eq!(Zone::utc().iso_stamp(saved), "2026-03-03 23:30");
     }
 
@@ -391,7 +395,7 @@ mod tests {
             let _tokyo = override_writer_zone(Zone::tokyo());
             assert_eq!(iso_stamp(saved), "2026-03-04 08:30");
             assert_eq!(iso_day(saved), "2026-03-04");
-            assert_eq!(stamp(saved), "04/03/2026 08:30");
+            assert_eq!(stamp(saved), "03/04/2026 08:30");
         }
         assert_eq!(
             iso_stamp(saved),

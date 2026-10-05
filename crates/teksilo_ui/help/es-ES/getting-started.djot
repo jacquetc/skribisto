@@ -1,37 +1,54 @@
-Un proyecto reúne tu manuscrito y tus notas. Así puedes empezar a escribir.
+Un proyecto reúne su manuscrito y sus notas. Así puede empezar a escribir.
 
-## Crea tu primer proyecto
+## Cree su primer proyecto
 
-1. En la ventana inicial, haz clic en *Nuevo proyecto*.
-2. En *Detalles*, escribe un nombre y elige dónde guardarlo. Selecciona *Archivo único* para conservar el proyecto en un archivo `.skrib`. El nombre del autor es opcional.
-3. En *Idioma y estructura*, elige el idioma en el que escribes. Por ahora puedes dejar las demás opciones como están.
-4. En *Plantilla*, elige *Novela vacía* para construirla capítulo a capítulo. Otras plantillas incluyen más capítulos iniciales; *Cuaderno* sirve para notas.
-5. Haz clic en *Crear proyecto*.
+1. En la ventana inicial (el *Lanzador*), haga clic en *Nuevo proyecto*.
+2. En *Detalles*, escriba un nombre y elija dónde guardarlo. Elija *Archivo único* para
+   conservar el proyecto en un solo archivo `.skrib`. El nombre del autor es opcional.
+3. En *Idioma y estructura*, elija el idioma en el que escribe. Por ahora puede dejar las
+   demás opciones como están.
+4. En *Plantilla*, elija *Novela vacía* para una novela que quiera construir capítulo a
+   capítulo. Las otras plantillas traen más capítulos de partida; *Cuaderno* sirve para notas.
+5. Haga clic en *Crear proyecto*.
 
-## Escribe tu primera escena
+## Escriba su primera escena
 
-El *Archivador*, a la izquierda, enumera capítulos, escenas y notas. Haz clic en una escena para abrirla y empezar a escribir. Para añadir otra, selecciona un capítulo y usa el botón de creación de la parte superior del Archivador. Su menú permite elegir *Escena* u otro tipo de elemento.
+El panel *Archivador*, a la izquierda, muestra sus capítulos, escenas y notas. Haga clic en
+una escena para abrirla y empezar a escribir. Para añadir una, seleccione un capítulo y use
+el botón de creación de la parte superior del *Archivador*. Su menú le permite elegir
+*Escena* u otro tipo de elemento.
 
-Junto al texto principal aparece la *Sinopsis*: un resumen para planificar la escena. Puedes ocultarla en *Configuración ▸ Editor ▸ Comportamiento del editor*.
+Junto al texto principal está la *Sinopsis*: un resumen breve que puede usar para planificar
+la escena. Puede ocultarla en *Configuración ▸ Editor ▸ Comportamiento del editor*.
 
-Para cambiar el nombre de una escena o capítulo, haz clic con el botón derecho y elige *Cambiar nombre*.
+Para cambiar el nombre de una escena o de un capítulo, haga clic con el botón derecho sobre
+él y elija *Cambiar nombre*.
 
-## Guarda y vuelve a abrir el proyecto
+## Guarde y vuelva a abrir su proyecto
 
-Pulsa `Ctrl+S` para guardar los cambios. Si activas el guardado automático en Configuración, Skribisto guarda mientras escribes y oculta el comando manual. El indicador de la barra de estado muestra si los cambios están guardados.
+Pulse `Ctrl+S` para guardar los cambios. Si ha activado el guardado automático en la
+configuración, Skribisto guarda mientras escribe y oculta la orden Guardar manual. El
+indicador de guardado de la barra de estado muestra si sus cambios están guardados.
 
-La próxima vez, elige tu proyecto en *Proyectos recientes*. Usa *Abrir* para buscar un archivo `.skrib` existente.
+La próxima vez que abra Skribisto, elija su proyecto en *Proyectos recientes*. Use *Abrir*
+para buscar en su lugar un archivo `.skrib` existente.
 
-Skribisto también crea [copias de seguridad](:help-backups-and-versions) para recuperar trabajo anterior.
+Skribisto también hace [copias de seguridad](:help-backups-and-versions), que le permiten
+recuperar trabajo anterior.
 
-## Incorpora textos existentes
+## Incorpore textos que ya tiene
 
-En la ventana inicial, *Crear desde…* inicia un proyecto a partir de [documentos](:help-import-documents) o de un [proyecto de Manuskript o Plume Creator](:help-import-projects). Abre *Ejemplos* en la barra lateral para explorar un proyecto de muestra.
+En el Lanzador, *Crear desde…* inicia un proyecto a partir de
+[documentos](:help-import-documents) o de un [proyecto de Manuskript o de Plume Creator](:help-import-projects).
+Para explorar un proyecto de muestra, abra *Ejemplos* en la barra lateral.
 
-## Ajusta el espacio de trabajo
+## Ajuste su espacio de trabajo
 
-- Pulsa `F9` o elige *Ver ▸ Estructura* para mostrar u ocultar el Archivador.
-- Pulsa `Ctrl+Enter` sobre un elemento seleccionado para abrirlo en el otro panel del editor.
-- Al crear el proyecto, *Capítulos únicos* permite escribir directamente en cada capítulo, sin dividirlo en escenas. *Carpeta de proyecto* lo guarda como carpeta en lugar de archivo único.
+- Pulse `F9`, o elija *Ver ▸ Esquema*, para mostrar u ocultar el Archivador.
+- Pulse `Ctrl+Intro` sobre un elemento seleccionado para abrirlo en el otro panel del editor.
+- Al crear un proyecto, *Capítulos planos* le permite escribir directamente en cada capítulo
+  en lugar de dividirlo en escenas. *Carpeta* guarda el proyecto como una carpeta en lugar de
+  un único archivo.
 
-Consulta [libros, capítulos y escenas](:help-writing-model) para organizar tu manuscrito.
+Consulte [libros, capítulos y escenas](:help-writing-model) para saber más sobre cómo
+organizar su manuscrito.

@@ -2,137 +2,137 @@
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 settings-page-templates = Шаблоны
-settings-templates-description = Многоразовые куски письма вы можете опустить в все, что вы пишете: чистый лист символов, профиль местоположения, битовый лист. Они хранятся в этом проекте, поэтому любой, кто открывает его, получает тот же набор.
-settings-templates-filter = Шаблоны фильтров
+settings-templates-description = Многоразовые фрагменты текста, которые можно вставить во что угодно, над чем вы работаете: пустая анкета персонажа, описание места, поэпизодный план. Они хранятся в этом проекте, поэтому любой, кто его откроет, получит тот же набор.
+settings-templates-filter = Фильтр шаблонов
 settings-templates-count = { $n ->
-    [0] Никаких шаблонов
+    [0] Нет шаблонов
     [one] { $n } шаблон
     [few] { $n } шаблона
     [many] { $n } шаблонов
-   *[other] { $n } шаблоны
+   *[other] { $n } шаблона
 }
 settings-templates-empty = У этого проекта пока нет шаблонов.
-settings-templates-empty-hint = Добавьте один из предустановленного, импортируйте файл .md или .djot или напишите что-нибудь и выберите Документ ▸ Сохранить в качестве шаблона.
-settings-templates-presets = Добавить предустановленный
-settings-templates-import = Импорт …
-settings-templates-export = Экспорт …
-settings-templates-star = Показать первым в меню вставки
-settings-templates-unstar = Прекратите сначала показывать
-settings-templates-move-up = Вставай.
-settings-templates-move-down = Спускайся.
+settings-templates-empty-hint = Добавьте шаблон из готового набора, импортируйте файл .md или .djot или напишите что-нибудь и выберите Документ ▸ Сохранить как шаблон.
+settings-templates-presets = Добавить из набора
+settings-templates-import = Импорт…
+settings-templates-export = Экспорт…
+settings-templates-star = Показывать первым в меню вставки
+settings-templates-unstar = Не показывать первым
+settings-templates-move-up = Переместить вверх
+settings-templates-move-down = Переместить вниз
 settings-templates-delete = Удалить шаблон
 settings-templates-name = Название
 settings-templates-name-placeholder = Название шаблона
-settings-templates-body-placeholder = Текст этого шаблона вставляет
-settings-templates-duplicate-name = Другой шаблон уже называется «{ $name }».
+settings-templates-body-placeholder = Текст, который вставляет этот шаблон
+settings-templates-duplicate-name = Шаблон с названием «{ $name }» уже есть
 settings-templates-words = { $n ->
     [one] { $n } слово
     [few] { $n } слова
     [many] { $n } слов
-   *[other] { $n } слов
+   *[other] { $n } слова
 }
 
 templates-imported = { $added ->
-    [one] { $added } шаблон импортный
-    [few] { $added } ввозимые шаблоны
-    [many] { $added } импортных шаблонов
-   *[other] { $added } импортные шаблоны
+    [one] Импортирован { $added } шаблон
+    [few] Импортировано { $added } шаблона
+    [many] Импортировано { $added } шаблонов
+   *[other] Импортировано { $added } шаблона
 }
-templates-imported-renamed = Переименован во избежание столкновения: { $names }
-templates-imported-skipped = Невозможно прочитать: { $names }
+templates-imported-renamed = Переименованы во избежание совпадений: { $names }
+templates-imported-skipped = Не удалось прочитать: { $names }
 templates-import-filter = Шаблоны (.md, .djot)
 templates-exported = { $n ->
-    [one] { $n } шаблон экспортируется
-    [few] { $n } Экспортные шаблоны
-    [many] { $n } экспортируемых шаблонов
-   *[other] { $n } вывезенные шаблоны
+    [one] Экспортирован { $n } шаблон
+    [few] Экспортировано { $n } шаблона
+    [many] Экспортировано { $n } шаблонов
+   *[other] Экспортировано { $n } шаблона
 }
-templates-preset-applied = Добавлено "{ $name }"
+templates-preset-applied = Добавлено «{ $name }»
 
 templates-delete-title = Удалить этот шаблон?
-templates-delete-body = "{ $name }" будет удален из этого проекта. Заметки, которые вы уже создали из него, не затрагиваются.
+templates-delete-body = «{ $name }» будет удалён из этого проекта. Заметки, уже созданные по нему, не затрагиваются.
 templates-delete-confirm = Удалить
 
 menu-document = &Документ
-menu-insert-template = Вк&лючить шаблон
-menu-insert-template-none = Никаких шаблонов в этом проекте
-menu-save-as-template = &Сохранить в шаблоне …
+menu-insert-template = Вставить &шаблон
+menu-insert-template-none = В этом проекте нет шаблонов
+menu-save-as-template = Со&хранить как шаблон…
 
 save-as-template-title = Сохранить как шаблон
-save-as-template-explain = Текст, который вы редактируете, становится шаблоном, который вы можете найти в любом другом месте.
+save-as-template-explain = Редактируемый текст станет шаблоном, который можно вставить в любое другое место.
 save-as-template-name = Название
 save-as-template-placeholder = Анкета персонажа
 save-as-template-duplicate = Шаблон под названием «{ $name }» уже существует
-save-as-template-empty-editor = Этот редактор пуст. Нечего спасать.
+save-as-template-empty-editor = Этот редактор пуст. Сохранять нечего.
 save-as-template-confirm = Сохранить шаблон
-save-as-template-saved = Сохранил "{ $name }" в качестве шаблона
-template-inserted = Вставлено "{ $name }"
+save-as-template-saved = «{ $name }» сохранён как шаблон
+template-inserted = Вставлено «{ $name }»
 
 note-template-preset-character-sheet = Анкета персонажа
 note-template-preset-location = Место
 note-template-preset-artifact = Предмет
-note-template-preset-beat-sheet = План сюжетных событий
+note-template-preset-beat-sheet = Поэпизодный план
 note-template-preset-faction = Фракция
-note-template-preset-research-note = Исследовательская заметка
+note-template-preset-research-note = Заметка с материалами
 
 note-template-set-essentials = Основное
-note-template-set-everything = Каждый шаблон
+note-template-set-everything = Все шаблоны
 
-note-template-section-identity = Идентичность
-note-template-section-appearance = внешний вид
+note-template-section-identity = Личность
+note-template-section-appearance = Внешность
 note-template-section-voice = Голос
 note-template-section-psychology = Внутренняя жизнь
 note-template-section-history = История
-note-template-section-arc = Сюжетная арка
+note-template-section-arc = Арка персонажа
 note-template-section-first-impression = Первое впечатление
-note-template-section-in-the-story = В этой истории
-note-template-section-the-thing-itself = Сам объект
-note-template-section-the-scene = Место действия
-note-template-section-the-shape = Форма
+note-template-section-in-the-story = В истории
+note-template-section-the-thing-itself = Сам предмет
+note-template-section-the-scene = Сцена
+note-template-section-the-shape = Композиция
 note-template-section-what-it-is = Что это такое
 note-template-section-source = Источник
 note-template-section-what-it-says = Что там написано
 
 note-template-field-full-name = Полное имя
-note-template-field-known-as = Также известен как, отслеживается в поле инспектора Алиас
-note-template-field-age = возраст
+note-template-field-known-as = Другие имена (ведутся в поле инспектора «Другие имена»)
+note-template-field-age = Возраст
 note-template-field-role-in-story = Роль в истории
-note-template-field-build-and-features = Строить и различать особенности
-note-template-field-habitual-bearing = Обычный подшипник
-note-template-field-speech-patterns = Рисунки речи и словесные тики
-note-template-field-what-they-never-say = О чем никогда не говорят
-note-template-field-want = Чего они хотят
-note-template-field-need = Что им нужно, но они этого не знают
-note-template-field-fear = Чего они боятся
-note-template-field-flaw = Недостаток, который стоит им
+note-template-field-build-and-features = Телосложение и особые приметы
+note-template-field-habitual-bearing = Привычная манера держаться
+note-template-field-speech-patterns = Манера речи и словечки
+note-template-field-what-they-never-say = Чего персонаж никогда не скажет
+note-template-field-want = Чего персонаж хочет
+note-template-field-need = Что ему нужно, хотя он этого не знает
+note-template-field-fear = Чего персонаж боится
+note-template-field-flaw = Недостаток, который ему дорого обходится
 note-template-field-formative-event = Формирующее событие
 note-template-field-relationships = Отношения
 note-template-field-starts-as = Начинается как
-note-template-field-ends-as = Конец как
-note-template-field-what-you-notice-first = Что вы заметите в первую очередь
+note-template-field-ends-as = Заканчивает как
+note-template-field-what-you-notice-first = Что замечаешь в первую очередь
 note-template-field-sound-and-smell = Звук и запах
 note-template-field-light-and-weather = Свет и погода
-note-template-field-what-happened-here = Что здесь произошло?
+note-template-field-what-happened-here = Что здесь произошло
 note-template-field-who-lives-or-works-here = Кто живет или работает здесь
-note-template-field-scenes-set-here = Сцены, установленные здесь
+note-template-field-scenes-set-here = Сцены, происходящие здесь
 note-template-field-why-it-matters = Почему это важно
-note-template-field-appearance = внешний вид
+note-template-field-appearance = Внешний вид
 note-template-field-age-and-origin = Возраст и происхождение
 note-template-field-what-it-does = Что он делает
-note-template-field-who-holds-it = Кто держит его
-note-template-field-who-wants-it = Кто хочет этого?
+note-template-field-who-holds-it = У кого он сейчас
+note-template-field-who-wants-it = Кто хочет его заполучить
 note-template-field-pov = Точка зрения
 note-template-field-time-and-place = Время и место
 note-template-field-goal = Цель
-note-template-field-conflict = конфликт
+note-template-field-conflict = Конфликт
 note-template-field-turn = Поворот
 note-template-field-exit-emotion = Эмоции на выходе
-note-template-field-purpose = Цель
-note-template-field-who-leads-it = Кто руководит
+note-template-field-purpose = Назначение
+note-template-field-who-leads-it = Кто её возглавляет
 note-template-field-resources = Средства
 note-template-field-allies-and-enemies = Союзники и враги
-note-template-field-what-it-wants-now = Чего мы хотим сейчас
-note-template-field-where-from = Откуда он взялся
+note-template-field-what-it-wants-now = Чего она хочет сейчас
+note-template-field-where-from = Откуда это взято
 note-template-field-page-or-link = Страница или ссылка
 note-template-field-key-facts = Ключевые факты
 note-template-field-how-it-is-used = Как это используется в истории

@@ -1,150 +1,149 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-tags-preset-basic = Temel Temel Temel Temel Temel Temel Temel Temel
-tags-preset-scifi = Bilim kurgusu
-tags-preset-fantasy = Fantasy Fantasy
-tags-preset-mystery = Gizem Gizem
-tags-preset-historical = Tarihsel Tarihsel Tarihsel Tarihsel Tarihsel Tarihsel Tarihsel Tarihsel Tarihsel Tarihi
+tags-preset-basic = Temel
+tags-preset-scifi = Bilimkurgu
+tags-preset-fantasy = Fantastik
+tags-preset-mystery = Polisiye
+tags-preset-historical = Tarihî
 
+tags-preset-needs-research = araştırma gerekli
+tags-preset-continuity-check = süreklilik denetimi
+tags-preset-plot-point = dönüm noktası
 
-tags-preset-needs-research = Araştırmanın ihtiyaçlara ihtiyacı var
-tags-preset-continuity-check = Süreklilik kontrolü
-tags-preset-plot-point = arsa noktası
+tags-preset-character = kişi
+tags-preset-place = yer
+tags-preset-item = nesne
 
-tags-preset-character = karakter karakter karakteri
-tags-preset-place = yer yer yer yer yer yer
-tags-preset-item = item item
-
-tags-preset-vessel = Gemi teknesi
-tags-preset-planet = gezegen gezegeni gezegen gezegeni gezegen gezegeni
-tags-preset-organization = Organizasyon organizasyonu
-tags-preset-creature = Yararlı yaratık
-tags-preset-faction = hizip
-tags-preset-artifact = Sanat
-tags-preset-realm = alemi
-tags-preset-magic-system = sihirli sistem
-tags-preset-suspect = şüpheli şüpheli şüpheli şüpheli şüpheli şüpheli şüpheli şüpheli şüpheli şüpheli şüpheli şüpheli
-tags-preset-victim = kurbanı kurban kurbanı
+tags-preset-vessel = gemi
+tags-preset-planet = gezegen
+tags-preset-organization = kuruluş
+tags-preset-creature = yaratık
+tags-preset-faction = grup
+tags-preset-artifact = eser
+tags-preset-realm = diyar
+tags-preset-magic-system = büyü sistemi
+tags-preset-suspect = şüpheli
+tags-preset-victim = kurban
 tags-preset-clue = ipucu
-tags-preset-red-herring = Red herring
-tags-preset-historical-figure = Tarihsel figür
-tags-preset-source = Kaynak kaynağı kaynağı kaynağı kaynağı kaynağı
-tags-preset-period-detail = Dönem detayı
+tags-preset-red-herring = yanıltıcı ipucu
+tags-preset-historical-figure = tarihî kişilik
+tags-preset-source = kaynak
+tags-preset-period-detail = dönem ayrıntısı
 
 tags-pill-list = Etiketler
-tags-pill-add = Bir etiket ekleyin
-tags-none-yet = Hiçbir etiket yok
-tags-pick-list = Etiketler to pick from from from
-tags-pill-remove = { $name }
-tags-pill-filter-placeholder = Filtre veya yeni bir etiket
-tags-pill-no-match = No tag maçları
-tags-pill-create = "{ $name }" oluşturun
-tags-pill-create-failed = "{ $name }" yaratamaz
-tags-pill-new-discoverable = Find-in-prose etiketi
-tags-pill-new-discoverable-hint = Bu etiketle öğeler, roster'ı doldurmanız için prose karşı eşleştirilir.
+tags-pill-add = Etiket ekle
+tags-none-yet = Etiket yok
+tags-pick-list = Seçilebilecek etiketler
+tags-pill-remove = Kaldır: { $name }
+tags-pill-filter-placeholder = Süzün ya da yeni bir etiketi adlandırın
+tags-pill-no-match = Eşleşen etiket yok
+tags-pill-create = "{ $name }" oluştur
+tags-pill-create-failed = "{ $name }" oluşturulamadı
+tags-pill-new-discoverable = Metinde bul etiketi
+tags-pill-new-discoverable-hint = Bu etiketi taşıyan öğeler, kadroyu doldurmak için metninizde aranır.
 
-tags-alias-list = Ayrıca olarak da bilinir
-tags-alias-add = Başka bir isim ekleyin
-tags-alias-remove = { $name }
-tags-alias-placeholder = Başka bir isim, sonra girin
-tags-alias-hint = İsimler bu, kendi başlığının yanında Prose’nin altında görünür.
-tags-alias-collision = { $name } Bu adı zaten yanıtlar.
+tags-alias-list = Diğer adları
+tags-alias-add = Başka bir ad ekle
+tags-alias-remove = Kaldır: { $name }
+tags-alias-placeholder = Başka bir ad, ardından Enter
+tags-alias-hint = Bunun metninizde başlığının yanı sıra geçtiği adlar.
+tags-alias-collision = { $name } zaten bu adla anılıyor.
 
 settings-page-tags = Etiketler
-settings-tags-desc = Etiketler, binder'deki eşyaları etiketleyin. Bir find-in-prose etiketi aynı zamanda Skribisto'e bu öğenin isimlerini prose'lerinizde aramak için de söyler.
+settings-tags-desc = Etiketler dizininizdeki öğeleri işaretler. Bir metinde bul etiketi ayrıca Skribisto'ya o öğenin adlarını metninizde aramasını söyler.
 settings-tags-add = Etiket ekle
-settings-tags-add-placeholder = Yeni bir etiket
-settings-tags-added = "{ $name }" eklendi.
+settings-tags-add-placeholder = Yeni bir etiketi adlandırın
+settings-tags-added = "{ $name }" eklendi
 settings-tags-duplicate = "{ $name }" zaten var
-settings-tags-filter = Filtre etiketleri
+settings-tags-filter = Etiketleri süz
 settings-tags-count = { $n ->
     [one] 1 etiket
-   *[other] { $n } Etiketler
+   *[other] { $n } etiket
 }
-settings-tags-details-placeholder = Bu etiket ne anlama geliyor?
-settings-tags-discoverable = Prose'de bulun
-settings-tags-creates-in = Yeni notlar yeni notlar gider
-settings-tags-creates-in-unset = Bana ilk kez sorun
-settings-tags-creates-in-untitled = Untitled klasörü
-settings-tags-creates-in-trashed = { $name } (içinde)
-settings-tags-template = Starting şablon
-settings-tags-template-unset = Blank notu
-settings-tags-delete = { $name } etiketini sil
-settings-tags-deleted = Deleted "{ $name }" ve her öğeden kaldırıldı
+settings-tags-details-placeholder = Bu etiketin anlamı
+settings-tags-discoverable = Metinde bul
+settings-tags-creates-in = Yeni notların gideceği yer
+settings-tags-creates-in-unset = İlk seferde bana sor
+settings-tags-creates-in-untitled = Adsız klasör
+settings-tags-creates-in-trashed = { $name } (çöp kutusunda)
+settings-tags-template = Başlangıç şablonu
+settings-tags-template-unset = Boş not
+settings-tags-delete = Sil: { $name }
+settings-tags-deleted = "{ $name }" silindi ve tüm öğelerden kaldırıldı
 settings-tags-empty = Henüz etiket yok.
-settings-tags-apply-preset = Bir başlangıç uygulayın...
-settings-tags-preset-applied = { $added } eklendi, { $skipped } zaten mevcut
+settings-tags-apply-preset = Hazır bir dizi uygula…
+settings-tags-preset-applied = Eklenen: { $added }, zaten var olduğu için atlanan: { $skipped }
 settings-tags-csv-filter = CSV dosyaları
 settings-tags-import = İçe aktar…
 settings-tags-export = Dışa aktar…
-settings-tags-imported = { $added } ithal edildi, { $skipped } atladı
-settings-tags-exported = İhracata ihracat yapıldı { $n ->
-    [one] 1 etiket
-   *[other] { $n } Etiketler
+settings-tags-imported = İçe aktarılan: { $added }, atlanan: { $skipped }
+settings-tags-exported = { $n ->
+    [one] 1 etiket dışa aktarıldı
+   *[other] { $n } etiket dışa aktarıldı
 }
 
 tags-chip-more = { $n ->
-    [one] 1 daha etiket
-   *[other] { $n } daha fazla etiket
+    [one] 1 etiket daha
+   *[other] { $n } etiket daha
 }
 
-cast-section = Karakterler
-cast-add = Çalmak için ekleyin...
-cast-add-filter-placeholder = Filtre hikayesi bible...
+cast-section = Kadro
+cast-add = Kadroya ekle…
+cast-add-filter-placeholder = Hikâye rehberini süz…
 cast-add-empty = Eklenecek hikâye rehberi kaydı yok
-cast-pin = Oy vermek için { $name } ekleyin
-cast-unpin = { $name }'i işten çıkarın
-cast-empty = Hiç kimse henüz tamamlanmadı ya da bir öneriye devam et
-cast-unresolved = Artık hikayede İncil yok
+cast-pin = Kadroya ekle: { $name }
+cast-unpin = Kadrodan çıkar: { $name }
+cast-empty = Henüz kimse sabitlenmedi. Birini ekleyin ya da bir öneriyi tutun
+cast-unresolved = Artık hikâye rehberinde değil
 
-mentions-confirm = { $name }
+mentions-confirm = Şunun kadrosuna ekle: { $name }
 mentions-hit-count = { $n ->
-    [one] Bir kere bir kez bir kez bir kez bir kez bir kez bir kez bir kez bir kez bir kez bir kez
-   *[other] { $n } defa
+    [one] bir kez
+   *[other] { $n } kez
 }
 mentions-point-of-view-badge = Bakış açısı
-mentions-point-of-view-badge-tooltip = Buradaki görüş noktası olarak, el tarafından belirlenen, prose'de tespit edilmedi.
+mentions-point-of-view-badge-tooltip = Burada bakış açısı olarak belirtildi; metinde algılanmadı, elle ayarlandı.
 
-mentions-roster = Karakterler
-mentions-pin = Oy vermek için { $name } ekleyin
+mentions-roster = Kadro
+mentions-pin = Kadroya ekle: { $name }
 
 pov-section = Bakış açısı
-pov-empty = Hiçbir bakış noktası set
-pov-add = Set point of view...
-pov-multiple = Bu sahnenin iki bakış açısı vardır.
-pov-remove = { $name } görüntü noktası olarak
-pov-unresolved = Bir bakış noktası burada kilitlendi, ancak bu giriş artık var ya da hikayesini kaybetmiş bir etiket yoktu.
+pov-empty = Bakış açısı belirlenmedi
+pov-add = Bakış açısı belirle…
+pov-multiple = Bu sahnenin iki bakış açısı var.
+pov-remove = Bakış açısı olarak kaldır: { $name }
+pov-unresolved = Buraya bir bakış açısı sabitlenmişti, ama o kayıt artık yok ya da hikâye rehberi etiketini yitirdi.
 
-books-section = Filed under çeviri Tagged under:
-books-empty = Henüz bir kitap altında yayınlanmadı
-books-add = Bir kitap altında Dosya...
-books-remove = { $name }'den Çıkarın
-books-apply-to-children = Çocuklara dosya uygulayın
+books-section = Bağlı olduğu kitap
+books-empty = Henüz bir kitaba bağlanmadı
+books-add = Bir kitaba bağla…
+books-remove = Şuradan çıkar: { $name }
+books-apply-to-children = Kitap bağlantısını alt öğelere uygula
 
 note-details-name-placeholder = Ad…
 note-details-tags = Etiketler
-note-details-aliases = Diğer isimler
-note-details-books = Filed under çeviri Tagged under:
-note-details-books-empty = Henüz bir kitap altında yayınlanmadı
-note-details-links = Linkler Linkler Linkler
-note-details-links-empty = Henüz bağlantı yok. Hikayenizde başka bir girişte bir tane ekleyin.
-note-details-links-add = Bir nota bağlantı...
+note-details-aliases = Diğer adları
+note-details-books = Bağlı olduğu kitap
+note-details-books-empty = Henüz bir Kitaba bağlanmadı
+note-details-links = Bağlantılar
+note-details-links-empty = Henüz bağlantı yok. Hikâye rehberinizdeki başka bir kaydı göstermek için bir bağlantı ekleyin.
+note-details-links-add = Bir nota bağla…
 note-details-pov = Bakış açısı
-note-details-pov-empty = Hiçbir bakış noktası set
-note-details-pov-unresolved = Bir bakış noktası burada kilitlendi, ancak bu giriş artık var ya da hikayesini kaybetmiş bir etiket yoktu.
-note-details-pov-multiple = Bu notun iki görüşü vardır.
-note-details-backlinks = Yazının içinde görünürler
-note-details-backlinks-empty = Henüz bir şey yok. Bu isim senin prose'de göründüğünde, burada ortaya çıkacak.
-note-details-backlinks-outside = Kitaplar dışında
-note-details-backlinks-confirm-all = Her görünümünü onaylayın
-note-details-backlinks-confirm-all-tooltip = Burada gösterilen her belgenin dökümüne bu girişi ekleyin, henüz onaylamadı
+note-details-pov-empty = Bakış açısı belirlenmedi
+note-details-pov-unresolved = Buraya bir bakış açısı sabitlenmişti, ama o kayıt artık yok ya da hikâye rehberi etiketini yitirdi.
+note-details-pov-multiple = Bu notun iki bakış açısı var.
+note-details-backlinks = El yazmasında geçtiği yerler
+note-details-backlinks-empty = Henüz bir şey yok. Bu ad metninizde geçtiğinde burada görünecek.
+note-details-backlinks-outside = Kitapların dışında
+note-details-backlinks-confirm-all = Her geçişi onayla
+note-details-backlinks-confirm-all-tooltip = Bu kaydı, burada gösterilen ve onu henüz onaylamamış her belgenin kadrosuna ekler
 note-details-untitled-document = Adsız
 
 note-in-prose-mentions = { $n ->
-    [one] 1 1 Bahsed 1
-   *[other] { $n } Bahsediyor
+    [one] 1 anılma
+   *[other] { $n } anılma
 }
-note-in-prose-mention-at = { $current } Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of { $total }
-note-in-prose-mention-previous = Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki yazı
-note-in-prose-mention-next = Sonraki Bahsedin
+note-in-prose-mention-at = { $current } / { $total }
+note-in-prose-mention-previous = Önceki anılma
+note-in-prose-mention-next = Sonraki anılma

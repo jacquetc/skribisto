@@ -22,6 +22,7 @@
 use crate::mmd;
 use crate::model::Character;
 use crate::source::ManuskriptSource;
+use skrib_format::import_notice::ImportNotice;
 
 /// The directory every character file lives in.
 pub const CHARACTERS_DIR: &str = "characters/";
@@ -50,7 +51,7 @@ const BUILT_IN: &[&str] = &[
 /// `{ID}-{slug}.txt` with **no zero padding**, unlike an outline row, so a plain
 /// string sort puts the tenth character between the first and the second. The
 /// same comparator the outline uses, for the same reason.
-pub fn read(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<Character> {
+pub fn read(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Vec<Character> {
     let mut out = Vec::new();
     let mut members = src.members_under(CHARACTERS_DIR);
     members.sort_by(|a, b| {
@@ -59,9 +60,9 @@ pub fn read(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<Character>
     });
     for member in members {
         if !member.ends_with(".txt") {
-            notices.push(format!(
-                "'{member}' is not a Manuskript character file and was left out."
-            ));
+            notices.push(ImportNotice::NotACharacterFile {
+                member: member.to_string(),
+            });
             continue;
         }
         let Some(text) = src.text(member) else {
@@ -69,10 +70,9 @@ pub fn read(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<Character>
         };
         let file = mmd::parse(&text);
         if file.recovered_trailing_key {
-            notices.push(format!(
-                "'{member}' ended without a blank line after its metadata. Its last field was \
-                 kept; Manuskript loses it."
-            ));
+            notices.push(ImportNotice::MissingBlankLine {
+                member: member.to_string(),
+            });
         }
         out.push(from_file(&file));
     }

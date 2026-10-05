@@ -17,6 +17,7 @@
 //! also being built.
 
 /// A whole project, however it was stored.
+use skrib_format::import_notice::ImportNotice;
 #[derive(Debug, Clone, Default)]
 pub struct Project {
     pub info: Info,
@@ -43,7 +44,7 @@ pub struct Project {
     /// Every recorded revision, flat, each naming the item it belongs to.
     pub revisions: Vec<Revision>,
     /// What the readers could not account for, in the writer's language.
-    pub notices: Vec<String>,
+    pub notices: Vec<ImportNotice>,
 }
 
 impl Project {

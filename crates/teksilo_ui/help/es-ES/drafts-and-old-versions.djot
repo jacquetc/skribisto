@@ -1,30 +1,52 @@
-## Donde un viejo capítulo va
+## Dónde guardar un capítulo antiguo
 
-Has reescrito un capítulo y quieres el viejo donde aún puedes leerlo.
+Ha reescrito un capítulo y quiere conservar el antiguo en un lugar donde todavía pueda
+leerlo.
 
-Ponlo en otra carpeta.
+Póngalo en otro archivador.
 
-## Haciendo la copia
+## Hacer la copia
 
-- Seleccione el capítulo en el panel *Archivador*. Presione `Ctrl+D`, o elija *Documento ▸ Duplicar*. La copia guarda el mismo título y tierras después del original y todo debajo de él.
-- Seleccione la copia, la segunda de las dos. Duplicando deja tu selección en el original, así que renombra la copia sólo una vez que la hayas elegido, con *Documento ▸ Renombre*.
-- Un proyecto iniciado a partir de una plantilla novedosa ya tiene una carpeta *Notas*. Si el suyo no tiene ninguno, el botón en la parte superior del panel *Archivador* tiene *Nuevo binder…*.
-- Arrastre la copia en ese carpeta. Si el botón nombra un solo carpeta en lugar de *Todos los Binders*, elija *Mostrar todos los carpetas* primero, por lo que ambos extremos del programa de arrastre.
+- Seleccione el capítulo en el panel *Archivador*. Pulse `Ctrl+D`, o elija *Documento ▸
+  Duplicar*. La copia conserva el mismo título y se coloca después del original y de todo
+  lo que este contiene.
+- Seleccione la copia, la segunda de las dos. Al duplicar, la selección se queda en el
+  original, así que cambie el nombre de la copia solo cuando la haya seleccionado, con
+  *Documento ▸ Cambiar nombre*.
+- Un proyecto creado a partir de una plantilla de novela ya tiene un archivador *Notas*. Si
+  el suyo no tiene ninguno, el botón de la parte superior del panel *Archivador* contiene
+  *Nuevo archivador…*.
+- Arrastre la copia a ese archivador. Si el botón muestra un solo archivador en lugar de
+  *Todos los archivadores*, elija antes *Mostrar todos los archivadores*, para que se vean
+  los dos extremos del arrastre.
 
-Para usar el viejo capítulo de nuevo, mueva el capítulo reescrito fuera del libro y arrastre el viejo de nuevo en su lugar.
+Para volver a usar el capítulo antiguo, saque del libro el capítulo reescrito y arrastre el
+antiguo de vuelta a su lugar.
 
-## Mantener viejos borradores fuera del libro
+## Mantener los borradores antiguos fuera del libro
 
-Un viejo capítulo en otro carpeta está fuera del libro. La palabra cuenta, sus objetivos y el ritmo, y la exportación lo dejan fuera.
+Un capítulo antiguo en otro archivador está fuera del libro. El recuento de palabras, sus
+objetivos y su ritmo, y la exportación lo dejan fuera.
 
-## Lo que aún funciona en él
+## Lo que sigue funcionando
 
-Todo sobre lectura y edición. El viejo capítulo guarda su título y su lugar en el carpeta que elegiste. Todavía se encuentra por la búsqueda, todavía deletreado, todavía respaldado.
+Todo lo relacionado con leer y editar. El capítulo antiguo conserva su título y su lugar en
+el archivador que eligió. La búsqueda lo sigue encontrando, sigue teniendo revisión
+ortográfica y sigue incluido en las copias de seguridad.
 
-Tu Biblia de cuentos todavía funciona allí. Si un personaje es nombrado en el viejo borrador, su entrada aún cuenta esas escenas.
+Su biblia narrativa también funciona ahí. Si un personaje aparece nombrado en el borrador
+antiguo, su entrada sigue contando esas escenas.
 
-## Las otras formas, y cuando encajan
+## Las otras opciones, y cuándo conviene cada una
 
-- *Papelera* es por algo que has decidido en contra. Un artículo destrozado deja el panel *Archivador* y deja de contar, y permanece recuperable. Aún puedes abrir uno del panel *Papelera* para leerlo, pero se archiva como descartado, no guardado.
-- El panel *Versiones* mantiene lo que un pedazo de texto dijo antes, y puede volver a poner un estado mayor. Enséñale a responder "qué dijo este párrafo ayer". Funciona un artículo a la vez, y restaurar reemplaza lo que está ahí ahora. See [backups and versions](:help-backups-and-versions).
-- * Include in exports*, in the Inspector, decides whether an item reached the finished book. Apágalo y el artículo se deja fuera cuando exporta el libro, y fuera de su palabra cuenta.
+- La *Papelera* es para algo que ha descartado. Un elemento enviado a la papelera desaparece
+  del panel *Archivador* y deja de contar, pero se puede recuperar. Todavía puede abrirlo
+  desde el panel *Papelera* para leerlo, pero queda archivado como descartado, no como
+  conservado.
+- El panel *Versiones* guarda lo que decía antes un fragmento de texto, y puede restaurar un
+  estado anterior. Úselo para responder a «qué decía este párrafo ayer». Funciona elemento a
+  elemento, y restaurar sustituye lo que hay ahora. Consulte
+  [copias de seguridad y versiones](:help-backups-and-versions).
+- *Incluir en las exportaciones*, en el inspector, decide si un elemento llega al libro
+  terminado. Si lo desactiva, el elemento se deja fuera al exportar el libro y fuera de sus
+  recuentos de palabras.

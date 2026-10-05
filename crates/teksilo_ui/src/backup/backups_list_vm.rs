@@ -283,12 +283,7 @@ fn scan(uid: &str, project_path: &str, dirs: &[String]) -> Vec<BackupRow> {
 }
 
 fn human_size(path: &Path) -> String {
-    let bytes = byte_size(path);
-    if bytes >= 1_048_576 {
-        format!("{:.1} MB", bytes as f64 / 1_048_576.0)
-    } else {
-        format!("{} KB", (bytes / 1024).max(1))
-    }
+    crate::shared::units::byte_size(byte_size(path))
 }
 
 /// Total bytes at `path`. A backup is normally a single zip, but a folder-shaped bundle must

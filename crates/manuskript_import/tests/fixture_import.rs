@@ -280,7 +280,12 @@ fn the_rows_manuskript_would_have_lost_arrive_and_are_reported() {
         "the folder with no metadata: {titles:?}"
     );
 
-    let joined = summary.warnings.join("\n");
+    let joined = summary
+        .warnings
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(joined.contains("no folder.txt"), "{joined}");
     assert!(joined.contains("no ID of its own"), "{joined}");
 }
@@ -331,7 +336,7 @@ fn the_one_byte_msk_and_its_folder_are_two_doors_to_one_project() {
         via_stub
             .warnings
             .first()
-            .is_some_and(|w| w.contains("folder")),
+            .is_some_and(|w| w.to_string().contains("folder")),
         "{:?}",
         via_stub.warnings
     );
@@ -538,7 +543,12 @@ fn the_2016_format_imports_with_its_prose_intact() {
     );
 
     assert!(summary.imported_revisions > 0, "its revisions came too");
-    let joined = summary.warnings.join("\n");
+    let joined = summary
+        .warnings
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join("\n");
     assert!(joined.contains("original 2016 format"), "{joined}");
     assert!(
         joined.contains("CVE-2021-35196"),

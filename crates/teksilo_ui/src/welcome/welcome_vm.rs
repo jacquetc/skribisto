@@ -244,8 +244,8 @@ impl WelcomeViewModel {
             ctx,
             crate::models::FolderPurpose::OpenProject,
             FileDialogRequest::pick_file()
-                .title("Open Skribisto work")
-                .add_filter("Skribisto work", &["skrib"]),
+                .title(tr!(dialog_open_work_title()).resolve_now())
+                .add_filter(tr!(dialog_filter_skrib()).resolve_now(), &["skrib"]),
         );
         let _ = ctx.pick_file(req, move |res, ectx| {
             if let FileDialogResult::File(Some(path)) = res {
@@ -279,7 +279,7 @@ impl WelcomeViewModel {
                 ))
             })
             .presentation(ModalPresentation::InTree)
-            .title("New Work")
+            .title(tr!(new_work_title()).resolve_now())
             .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
             .size(640, 620),
         );
@@ -311,7 +311,7 @@ impl WelcomeViewModel {
                 ))
             })
             .presentation(ModalPresentation::InTree)
-            .title("New Work from documents")
+            .title(tr!(new_work_documents_title()).resolve_now())
             .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
             .size(640, 620),
         );

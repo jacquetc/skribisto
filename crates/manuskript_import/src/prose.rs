@@ -20,10 +20,11 @@
 //! so the emphasis and the paragraphs of a 2016 project survive.
 
 /// What a body converted to, and anything the writer should be told about it.
+use skrib_format::import_notice::ImportNotice;
 pub struct Converted {
     pub djot: String,
     /// `None` when the conversion was clean.
-    pub notice: Option<String>,
+    pub notice: Option<ImportNotice>,
 }
 
 /// Convert one body, given the item `type` the file declared.
@@ -47,10 +48,9 @@ pub fn to_djot(declared_type: &str, body: &str, what: &str) -> Converted {
     match converted {
         Ok(converted) if converted.flattened => Converted {
             djot: converted.djot,
-            notice: Some(format!(
-                "The text of '{what}' is nested deeper than a Skribisto project can hold; its \
-                 words were kept as plain text, without their formatting."
-            )),
+            notice: Some(ImportNotice::TextFlattened {
+                title: what.to_string(),
+            }),
         },
         Ok(converted) => Converted {
             djot: converted.djot,
@@ -64,10 +64,10 @@ pub fn to_djot(declared_type: &str, body: &str, what: &str) -> Converted {
             // character and always loads.
             djot: skrib_format::djot_depth::admit(body.to_string())
                 .unwrap_or_else(|_| skrib_format::plain_text_to_djot_verbatim(body)),
-            notice: Some(format!(
-                "The text of '{what}' could not be converted ({e}); it was kept exactly as it \
-                 was written."
-            )),
+            notice: Some(ImportNotice::TextUnconverted {
+                title: what.to_string(),
+                error: e.to_string(),
+            }),
         },
     }
 }
@@ -144,7 +144,7 @@ mod tests {
                 out.djot
             );
             assert!(out.djot.contains("Deep words"), "{declared}: {}", out.djot);
-            let notice = out.notice.unwrap_or_default();
+            let notice = out.notice.map(|n| n.to_string()).unwrap_or_default();
             assert!(notice.contains("a scene"), "{declared}: {notice}");
         }
     }

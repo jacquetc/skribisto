@@ -65,7 +65,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // decorative.
     ctx.register_shortcut_global(
         Shortcut::new("view.margin_lane")
-            .name("Toggle Margin Marks")
+            .name(tr!(shortcut_name_view_margin_lane()))
             .primary(KeyStroke::new(Key::M, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
     );

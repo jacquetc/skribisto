@@ -2,101 +2,101 @@
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 wm-book = Kniha ve vašem projektu.
-wm-book-more = Kniha je tak jednoduchá nebo vrstvená, jak se vám líbí. Krátký příběh může být jen pár [scény](:wm-scene). Delší projekt může hnízdit [Části a součásti](:wm-part) a [kapitoly](:wm-chapter) tak hluboko, jak chcete. Tvar je váš.
-wm-part = Částečné seskupování kapitol.
-wm-part-more = Část shromáždí[kapitoly](:wm-chapter) pod jedním záhlavím. Jako kapitola, to běží až do další části nebo na konci[Kniha](:wm-book).
+wm-book-more = Kniha může být tak jednoduchá, nebo tak vrstevnatá, jak chcete. Povídka může tvořit jen pár [scén](:wm-scene). Delší dílo může vnořovat [části](:wm-part) a [kapitoly](:wm-chapter) do libovolné hloubky. Podoba je na vás.
+wm-part = Část, která seskupuje kapitoly.
+wm-part-more = Část shromažďuje [kapitoly](:wm-chapter) pod jedním nadpisem. Stejně jako kapitola trvá až do další části nebo do konce [knihy](:wm-book).
 wm-chapter = Kapitola knihy.
-wm-chapter-more = Kapitola běží odtud až do další kapitoly, další [Část](:wm-part), nebo [konec knihy](:wm-end-of-book). Přichází ve dvou tvarech: složka kapitoly, která drží [scény](:wm-scene), nebo plochá kapitola, která nese svůj vlastní próza. Vyberte si, který z nových kapitol používá v Nastavení, pod strukturou.
-wm-scene = Scéna prózy.
-wm-scene-more = Scéna drží vaše psaní. Každá položka má dvě strany: hlavní text a [Shrnutí](:wm-synopsis) plánovat s. Oba otevřeny společně v editoru.
-wm-note = Dopis.
-wm-note-more = Poznámka vede text a[Shrnutí](:wm-synopsis), jako je[Scéna](:wm-scene), pro výzkum, asides, nebo upomínky. Jakákoli položka může být součástí sestavené knihy, včetně poznámky sedí uvnitř[Kapitola](:wm-chapter).
-wm-note-folder = Poznámka, která obsahuje jiné položky.
-wm-note-folder-more = A [Poznámka](:wm-note), který také obsahuje položky pod ním, takže můžete seskupit související poznámky dohromady. To si nechává své vlastní [Shrnutí](:wm-synopsis), a položky uvnitř ponechat svůj vlastní text.
+wm-chapter-more = Kapitola trvá odsud až do další kapitoly, další [části](:wm-part) nebo [konce knihy](:wm-end-of-book). Má dvě podoby: složka kapitoly, která obsahuje [scény](:wm-scene), nebo plochá kapitola, která nese vlastní prózu. Kterou podobu nové kapitoly použijí, zvolíte v Nastavení v části Struktura.
+wm-scene = Scéna s prózou.
+wm-scene-more = Scéna obsahuje vaše psaní. Každá psací položka má dvě strany: hlavní text a [synopsi](:wm-synopsis) pro plánování. Obě se v editoru otevírají společně.
+wm-note = Poznámka.
+wm-note-more = Poznámka nese text a [synopsi](:wm-synopsis) stejně jako [scéna](:wm-scene) a slouží pro rešerše, odbočky či připomínky. Součástí sestavené knihy může být kterákoli položka, včetně poznámky uvnitř [kapitoly](:wm-chapter).
+wm-note-folder = Poznámka, která obsahuje další položky.
+wm-note-folder-more = [Poznámka](:wm-note), pod kterou jsou navíc další položky, takže můžete seskupovat související poznámky. Má vlastní [synopsi](:wm-synopsis) a položky uvnitř si ponechávají vlastní text.
 wm-folder = Organizační složka.
-wm-folder-more = Kontejner pro aranžování položek v pořadači vám však vyhovuje. Nosí [Shrnutí](:wm-synopsis), ale žádnou prózu sama o sobě. Položky uvnitř drží psaní.
-wm-end-of-book = Značky, kde kniha končí.
-wm-end-of-book-more = Každá kniha sdílí jeden nepřetržitý seznam, takže o konci knihy není rozhodnuto hnízda. Tato značka říká, že [Kniha](:wm-book) zastaví zde. Cokoliv po ní patří do další knihy.
-wm-story-bible-entry = Tagged, aliated note o vašem příběhu.
-wm-story-bible-entry-more = A [Poznámka](:wm-note) o charakteru, umístění, nebo cokoliv jiného, co stojí za podání, vytvořené s názvem, tagy, aliasy a výchozí šablony vše v jednom kroku. Nic na stránce rozlišuje to poté, protože to zůstává obyčejný vzkaz můžete přejmenovat, přejmenovat nebo převést jako každý jiný.
-wm-synopsis = Shrnutí textu.
-wm-synopsis-more = Souhrn připojený k jakékoli psaní položky, obvykle krátký odstavec, ale tak dlouho, jak se vám líbí. Použijte ho k plánování a navigace před próza existuje. Sedí vedle hlavního textu v editoru.
+wm-folder-more = Kontejner, ve kterém si položky v pořadači uspořádáte, jak vám vyhovuje. Nese [synopsi](:wm-synopsis), ale žádnou vlastní prózu. Psaní obsahují položky uvnitř.
+wm-end-of-book = Označuje, kde kniha končí.
+wm-end-of-book-more = Všechny knihy sdílejí jeden souvislý seznam, takže konec knihy se neurčuje vnořením. Tato značka říká, že [kniha](:wm-book) končí zde. Vše za ní patří do další knihy.
+wm-story-bible-entry = Poznámka o vašem příběhu se štítky a alternativními jmény.
+wm-story-bible-entry-more = [Poznámka](:wm-note) o postavě, místě nebo čemkoli jiném, co stojí za zaznamenání, vytvořená v jediném kroku i se jménem, štítky, alternativními jmény a výchozí šablonou. Na stránce ji pak nic neodlišuje: zůstává obyčejnou poznámkou, kterou můžete přejmenovat, přeštítkovat nebo převést jako kteroukoli jinou.
+wm-synopsis = Shrnutí psací položky.
+wm-synopsis-more = Shrnutí připojené ke každé psací položce, obvykle krátký odstavec, ale může být libovolně dlouhé. Slouží k plánování a orientaci ještě předtím, než próza existuje. V editoru stojí vedle hlavního textu.
 
-scene-break-minor = Obyčejná scéna přestávka: posun času, místa nebo pohledu v rámci kapitoly.
+scene-break-minor = Běžný předěl scény: posun v čase, místě nebo úhlu pohledu v rámci kapitoly.
 scene-break-minor-more =
-    Označuje přestávku *, kam ji dáte *, včetně uprostřed [Scéna](:wm-scene). Rozdělení prózy do dvou položek je organizační volba, takže nikdy nevytvoří přestávku na vlastní pěst.
+    Označuje předěl *tam, kam jej umístíte*, i uprostřed [scény](:wm-scene). Rozdělení prózy do dvou položek je organizační volba, takže samo o sobě předěl nikdy nevytvoří.
 
-    Psaní do prózy jako tři hvězdičky oddělené mezerami. Jak to tiskne je rozhodnuto exportním stylem, ne podle toho, co zadáte: Shunn rukopis nastaví to jako singl #, obchodní paperback jako dinkus, a většina francouzské, německé, španělské, ruské a italské vydavatelství jako holý mezera bez značky vůbec.
-scene-break-major = Silnější rozdělení: velký časový skok, nebo rozhodující změna pohledu.
+    Do prózy se píše jako tři hvězdičky oddělené mezerami. Jak se vytiskne, určuje exportní styl, ne to, co napíšete: rukopis podle Shunna jej sází jako jediný znak #, komerční paperback jako dinkus a většina francouzských, německých, španělských, ruských a italských nakladatelů jako prostou mezeru bez jakékoli značky.
+scene-break-major = Silnější dělení: velký časový skok nebo rozhodná změna úhlu pohledu.
 scene-break-major-more =
-    Stejný nápad jako normální scéna break, jeden krok nahoru. Použijte ji, když obyčejný break by podhodnotil skok.
+    Stejná myšlenka jako běžný předěl scény, jen o stupeň výš. Použijte jej, když by obyčejný předěl skok zlehčoval.
 
-    Napsaná jako # # #, a tištěná jinak než běžná úroveň exportním stylem. Shunn standardní rukopis formát nastavuje singl # proti # # # pro přesně tento rozdíl. Kde tradice nemá silnější značku, obě úrovně tisknou stejně.
-wm-find-in-prose = Skribisto hledá tuto položku ve vaší próze.
-wm-find-in-prose-more = Zapněte to pro značky, které pojmenují věci, o kterých píšete: znaky, místa, objekty. Každá položka nesoucí takový štítek je porovnána s vaším prózou podle jeho názvu a podle ostatních jmen, které dáte, takže každý[Scéna](:wm-scene) seznam, který a co se v něm objeví, aniž byste cokoliv spojili ručně. Zanechte to na štítky, které popisují položku spíše než jméno jednoho, jako je návrh stavu nebo připomínka kontrolovat kontinuitu. Každá položka, která se shoduje, se připojí také k vašemu[Encyklopedie příběhu](:wm-story-bible).
-wm-story-bible = Každý znak, místo a další označený vstup, shromážděný v jedné síti.
-wm-story-bible-more = Otevřeno z libovolné složky poznámky vlastní kartu. Karty skupiny po tagu, a každé jméno, kolik aliasů záznam odpovědi a kolik scén se objevil v, čerpané z každého [najít v próza](:wm-find-in-prose) tag v projektu. Filtrování podle knihy pouze zužuje, které karty ukazují, nikdy se rozhodne, které položky existují.
+    Píše se jako # # # a exportní styl jej vytiskne jinak než běžnou úroveň. Standardní formát rukopisu podle Shunna sází právě kvůli tomuto rozlišení jediný # proti # # #. Kde tradice silnější značku nemá, tisknou se obě úrovně stejně.
+wm-find-in-prose = Skribisto tuto položku hledá ve vaší próze.
+wm-find-in-prose-more = Zapněte u štítků, které pojmenovávají to, o čem píšete: postavy, místa, předměty. Každá položka s takovým štítkem se hledá ve vaší próze podle svého názvu a podle dalších jmen, která jí dáte, takže každá [scéna](:wm-scene) uvádí, kdo a co se v ní objevuje, aniž byste cokoli propojovali ručně. U štítků, které položku popisují, místo aby ji pojmenovávaly, například stav konceptu nebo připomínka zkontrolovat návaznost, nechte volbu vypnutou. Každá nalezená položka se také stane součástí vaší [bible příběhu](:wm-story-bible).
+wm-story-bible = Všechny postavy, místa a další označené záznamy shromážděné v jedné mřížce.
+wm-story-bible-more = Otevírá se z vlastní karty kterékoli složky poznámek. Karty se seskupují podle štítků a každá uvádí, na kolik alternativních jmen záznam slyší a v kolika scénách se objevil, podle všech štítků [hledání v próze](:wm-find-in-prose) v projektu. Filtr podle knihy jen zužuje, které karty se zobrazí; nikdy nerozhoduje o tom, které záznamy existují.
 
-tooltip-go-to = Přeskočit na libovolnou položku v pořadači (Ctrl + G)
-synopsis-collapse-tooltip = Skrýt sloupek synopse
+tooltip-go-to = Přejít na libovolnou položku v pořadači (Ctrl+G)
+synopsis-collapse-tooltip = Skrýt sloupec synopse
 
 wm-paratext = Text, který není součástí příběhu.
-wm-paratext-more = Předmluva, věnování, afterword, colophon: psaní, které patří do knihy, ale ne do jejího těla. Exported kamkoli jste ji dal, a nikdy započítán v rukopisu slova počítat. Kde to jde je na vás: úmluvy se liší podle země a vydavatele.
+wm-paratext-more = Předmluva, věnování, doslov, tiráž: texty, které patří ke knize, ale ne k jejímu tělu. Exportují se tam, kam je umístíte, a nikdy se nezapočítávají do počtu slov rukopisu. Kam je dáte, je na vás: zvyklosti se liší podle země a nakladatele.
 wm-paratext-folder = Složka pro paratexty.
-wm-paratext-folder-more = Někde, kde se drží předmluvy a následná slova, takže se neruší pořadač. Organizuje pouze: nese [Shrnutí](:wm-synopsis), ale nepřidává nic do exportované knihy, ani své vlastní jméno.
+wm-paratext-folder-more = Místo pro předmluvy a doslovy, aby nezaplňovaly pořadač. Slouží jen k organizaci: nese [synopsi](:wm-synopsis), ale do exportované knihy nepřidá nic, ani svůj vlastní název.
 
-goal-target = Jak dlouho to má trvat?
-goal-target-more = Nastavit cíl na cokoliv: [Scéna](:wm-scene), a [Kapitola](:wm-chapter), a [Část](:wm-part), the whole [Kniha](:wm-book). Každý z nich je své vlastní číslo a stojí na vlastní pěst, takže stanovení cíle na kapitolu nikdy nemění své knihy, a kniha je cíl není nikdy součet kapitol uvnitř něj. Co to sečte je psaní: kontejneru [Průběh](:goal-progress) je vše napsané pod ním. Zanechat cíl na nule a to prostě není nastaveno. Číslo se počítá v [slova nebo znaky](:goal-unit), podle toho, co tento projekt použije.
-goal-unit = Ať už se tento projekt počítá slovy nebo znaky.
-goal-unit-more = Projekt- široký výběr, protože délka jednotka patří k rukopisu a jeho trh spíše než do jedné části: Německé a francouzské vydavatelské opatření ve znacích, Japonci ve 400- znak listy, Číňan o tisíc znaků, většina anglický jazyk publikování slovy. Obě čísla jsou uchovávány vedle sebe a ani je někdy převeden na druhý, takže přepínání jednotkových bodů každé [Cíl](:goal-target) na druhé postavě a přepínání zpět obnoví první. To, co nedělá, je konvertovat cokoliv, takže cíle již zadané budou muset aktualizovat ručně.
-goal-progress = Kolik je napsáno, proti cíli.
-goal-progress-explained = Kousek s prózou vlastní se měří proti své vlastní délce; kontejner proti [všechno napsané pod ním.](:goal-manuscript-words). Bar ohřívá od červené přes oranžové do zelené, jak se píše, a mění se znovu, jakmile kus běžel dobře za to, co bylo plánováno, což stojí za povšimnutí, když kapitola má délku držet.
-goal-manuscript-words = Co se počítá jako rukopis.
-goal-manuscript-words-more = Pouze próza, která by byla skutečně vyvážena:[scény](:wm-scene) a[kapitoly](:wm-chapter) nese svůj vlastní text.[Poznámka](:wm-note) nebo[Paratext](:wm-paratext) není součástí rukopisu a nikdy se nepočítá do jednoho. Cokoliv v koši vypadne, a tak dělá něco[vynecháno z vývozu](:goal-exportable).
-goal-exportable = Tato položka je vynechána z vývozu.
-goal-exportable-more = Jeho vlastní délka stále ukazuje, protože psaní je stále tam, ale to se počítá k žádné celkové, přesně tak, jak se objeví v žádné exportované knize. Vynechání kontejneru nenechává kusy uvnitř něj ven: každá položka odpovídá sám za sebe, což je to, co se vztahuje na děti tlačítko vedle vypínače je pro.
-goal-distribute = Sdílet tento cíl přes to, co je uvnitř.
-goal-distribute-more = Rozdělit [knihy](:wm-book) nebo [part (part)](:wm-part) cíl na své nejbližší děti, takže kusy přidat do něj přesně. Ve výchozím nastavení se vyplní pouze ty, které nemají žádný cíl ještě a zanechá vaše vlastní čísla sama. Co to píše jsou běžné [cíle](:goal-target), zdarma editovat poté a volně unášet od sebe: to je jedna akce, ne standing uspořádání.
-goal-subtree-total = K čemu jsou ty cíle uvnitř?
-goal-subtree-total-more = Faktem není cíl. Tento projekt se nikdy nezachází s terčem kontejneru jako se součtem těch uvnitř, protože tak se postava složky nakonec pohybuje sama, když scéna uvnitř je uveden číslo. Tento řádek vám jednoduše řekne, k čemu vaše vlastní čísla přicházejí, takže jej můžete porovnat s kontejnerem[Cíl](:goal-target) sám, nebo[Sdílet jeden ven](:goal-distribute).
-goal-milestone = Datum k dosažení něčeho.
-goal-milestone-more = Dva druhy. Jeden říká, že[Kniha](:wm-book) by měl stát v dané délce o datu, bod na jeho vlastní křivce. Druhý říká, že konkrétní[Kapitola](:wm-chapter) nebo[Část](:wm-part) by měl dosáhnout[svůj vlastní cíl](:goal-target) do té doby, a čte, že číslo žít spíše než udržet kopii, takže editace cíle aktualizace milník příliš. Oba se objeví v knize GLOS[plán tempa](:pace-plan).
-pace-plan = Knižní rozvrh psaní.
-pace-plan-more = A [Cíl](:goal-target) a termín, s dny, které napíšete na, se změnil v to, kolik den potřebuje. Čte knihu Côls vlastní cíl, takže nastavení ho zde a nastavení v inspektorovi jsou stejné číslo na dvou místech. Waypoints podél cesty jsou[milníky](:goal-milestone).
+goal-target = Jak dlouhý má tento text být.
+goal-target-more = Cíl můžete nastavit čemukoli: [scéně](:wm-scene), [kapitole](:wm-chapter), [části](:wm-part) i celé [knize](:wm-book). Každý cíl je samostatné číslo, takže cíl kapitoly nikdy nemění cíl její knihy a cíl knihy nikdy není součtem kapitol v ní. Sčítá se jen napsaný text: [průběh](:goal-progress) kontejneru zahrnuje vše, co je pod ním napsáno. Cíl ponechaný na nule prostě není nastaven. Počítá se ve [slovech, nebo znacích](:goal-unit), podle toho, co tento projekt používá.
+goal-unit = Zda tento projekt počítá ve slovech, nebo ve znacích.
+goal-unit-more = Volba pro celý projekt, protože jednotka délky patří k rukopisu a jeho trhu, ne k jedné jeho části: německá a francouzská nakladatelství měří ve znacích, japonská v listech po 400 znacích, čínská v tisících znaků a většina anglicky publikujících ve slovech. Obě čísla se vedou souběžně a nikdy se jedno na druhé nepřevádí, takže přepnutí jednotky nasměruje každý [cíl](:goal-target) na druhý údaj a přepnutí zpět obnoví ten první. Nic však nepřevádí, takže už zadané cíle bude potřeba upravit ručně.
+goal-progress = Kolik je napsáno vzhledem k cíli.
+goal-progress-explained = Text s vlastní prózou se měří podle své vlastní délky, kontejner podle [všeho, co je pod ním napsáno](:goal-manuscript-words). Ukazatel se s přibývajícím textem barví od červené přes jantarovou po zelenou a znovu se změní, jakmile text plánovaný rozsah výrazně překročí, což se hodí vědět, když má kapitola dodržet určitou délku.
+goal-manuscript-words = Co se počítá do rukopisu.
+goal-manuscript-words-more = Jen próza, která by se skutečně exportovala: [scény](:wm-scene) a [kapitoly](:wm-chapter) s vlastním textem. [Poznámka](:wm-note) ani [paratext](:wm-paratext) nejsou součástí rukopisu a nikdy se do něj nepočítají. Vše v koši vypadává, stejně jako vše [vynechané z exportu](:goal-exportable).
+goal-exportable = Tato položka je vynechána z exportu.
+goal-exportable-more = Její vlastní délka se dál zobrazuje, protože text tu stále je, ale nezapočítává se do žádného součtu, přesně tak, jak se neobjeví v žádné exportované knize. Vynecháním kontejneru se nevynechají položky v něm: každá položka rozhoduje sama za sebe, a k tomu slouží tlačítko „Použít na podřízené položky“ vedle přepínače.
+goal-distribute = Rozdělit tento cíl mezi to, co je uvnitř.
+goal-distribute-more = Rozdělí cíl [knihy](:wm-book) nebo [části](:wm-part) mezi její přímé potomky tak, aby jejich součet přesně odpovídal. Ve výchozím stavu vyplní jen ty, které cíl ještě nemají, a vaše vlastní čísla nechá být. Zapíše obyčejné [cíle](:goal-target), které můžete později libovolně upravit a které se mohou rozejít: jde o jednorázovou akci, ne o trvalé uspořádání.
+goal-subtree-total = Kolik dávají dohromady cíle uvnitř.
+goal-subtree-total-more = Údaj, ne cíl. Tento projekt nikdy nebere cíl kontejneru jako součet cílů v něm, protože právě tak se údaj složky začne sám měnit, jakmile scéna uvnitř dostane číslo. Tento řádek vám jen řekne, kolik dávají dohromady vaše vlastní čísla, abyste je mohli sami porovnat s [cílem](:goal-target) kontejneru, nebo jej [rozdělit](:goal-distribute).
+goal-milestone = Datum, do kterého se má něčeho dosáhnout.
+goal-milestone-more = Dva druhy. První říká, že [kniha](:wm-book) má do určitého data dosáhnout dané délky, což je bod na její vlastní křivce. Druhý říká, že určitá [kapitola](:wm-chapter) nebo [část](:wm-part) má do té doby dosáhnout [svého vlastního cíle](:goal-target), a čte toto číslo průběžně, místo aby si uchovávala jeho kopii, takže úprava cíle aktualizuje i milník. Oba se zobrazují v [plánu tempa](:pace-plan) knihy.
+pace-plan = Harmonogram psaní knihy.
+pace-plan-more = [Cíl](:goal-target) a termín spolu se dny, kdy píšete, převedené na to, kolik je třeba napsat za den. Čte vlastní cíl knihy, takže nastavení zde a nastavení v inspektoru je totéž číslo na dvou místech. Body na cestě jsou [milníky](:goal-milestone).
 
-concept-tag = Barvokódovaný štítek, který můžete dát na libovolnou položku, opakovaně použitelnou po celém projektu.
-concept-tag-more = Značka položky označit: stav, umístění, vlákno, které sledujete. Stejná značka může sedět na libovolném počtu položek, a jedna položka může nést několik. Zapněte [najít v próza](:wm-find-in-prose) pro značku, která pojmenuje něco ve vaší knize, charakter nebo místo, a Skribisto začíná hledat to ve vaší próze.
-concept-label = Krátká poznámka, kterou napíšete pod titulem položky, na vlastní oči.
-concept-label-more = Ne [Štítek](:concept-tag): štítek patří do jedné položky sám, prostý text bez barvy nebo katalog za ním, něco jako appropriate 1. místo pozemku nebo appropriate potřebuje název. Nastavte ho z kontextového menu položky approins, nebo jej upravit inline ve sloupci Přehled approach s Label; ukazuje jako malý titulek pod názvem, v obrysu a v proudu podobně.
-concept-point-of-view = Jejichž oči jsou proneseny scénou: jeden nebo více vašich příběhů.
-concept-point-of-view-more = Nastavit v inspektorovi, vedle obsazení. Volba někoho, kdo ještě není v obsazení přidává je tam také. Více než jeden pohled je právní volba, užitečné pro sdílenou scénu nebo změna očí midbook, není něco Skribisto bloky. Kandidáti pocházejí z položek [najít v próza](:wm-find-in-prose) tag dává do vašeho příběhu bible.
-concept-epigraph = Citace v čele části nebo kapitoly.
-concept-epigraph-more = Jeho vlastní pole, oddělené od [Kapitola](:wm-chapter) nebo [Část](:wm-part) Dublin vlastní próza; a [Scéna](:wm-scene) nebo [Poznámka](:wm-note) nosit žádné. Napište jeden jako obyčejný citát; napsat několik a každý se stane vlastní blockquote, vytištěné jako vlastní epigraf. Jeho slova se nikdy nezapočítávají jako rukopis slova.
-concept-footnote = Citace označená v próze, tištěná jako očíslovaná bankovka.
-concept-footnote-more = Odkaz je jedinou značkou uvnitř vašich slov, takže se pohybuje a maže přesně jako slova kolem něj. Jeho číslo není nikdy uloženo: Skribisto Projects it out fresh from where every reference seeds in the whole rukopis, takže vložení jeden renumbers každý note after it. Poznámka pod čarou se vlastní slova se počítají kromě rukopisu, nikdy složené do něj.
-concept-chapter-mode = Ať už nová kapitola je složka scén nebo jeden plochý předmět.
-concept-chapter-mode-more = Nastavte v Nastavení, pod strukturou. Zapíšete přímo do [Kapitola](:wm-chapter) tak jako tak; jediným rozdílem je, zda může obsahovat scény pod ním. Oba zápisy se skládají do stejné knihy, a můžete je volně míchat v jednom projektu. Podporovat konvertuje stávající kapitolu mezi oběma, aniž by ztratil slovo.
-concept-comment = Poznámka ukotvená na přesný úsek prózy, znázorněná na okraji.
-concept-comment-more = Pamatuje si slova, na která ukazuje a co je obklopuje, ne pevnou pozici, takže přežívá běžné úpravy a plné zatížení. Odpovědět pod, aby vlákno běží. Pokud přesný citát již nelze nalézt, komentář říká, že spíše než tiše unášet do špatné věty.
-concept-backup = Point- in-time kopie celého projektu, držel vedle něj.
-concept-backup-more = Pořízeno na rozvrhu si vyberete: na otevřené, na close, na interval, nebo jakýkoli mix, se starými kopie prostříhané podle věku nebo podle počtu. Otevření jeden načte to ve svém vlastním okně: můžete se podívat a dokonce upravit, ale pouze Uložit jako nebo Obnovit udržuje cokoliv. Liší se od [verze](:concept-version), který sleduje jednu položku IR vlastní minulost.
-concept-version = Jedna položka vlastní minulost: každá změna svého textu nebo synovce.
-concept-version-more = Postaven z projektu je vlastní historie uložení a jeho záloh společně, jeden záznam za změnu, spíše než jeden na soubor. Vyberte položku vidět, co se změnilo a obnovit pouze tento prvek je text k němu; zbytek projektu je nedotčen, a bezpečnostní kopie je přijata jako první. Liší se od [Záloha](:concept-backup), což je kopie všeho.
-concept-trash = Zdemolovaný předmět je skrytý, nepohnutý: zůstává přesně tam, kde byl.
-concept-trash-more = Trishing pouze jednu vlajku: položka udržuje své místo v pořadači, označené neaktivní spíše než odstranit. Obnovit a znovu se objeví v tomto přesném místě, bez re- podání dělat. Prázdný Trash odstraňuje rozházené položky pro dobro, a každý z nich je jeden nepřijatelný krok, jako každý jiný projekt editovat.
-concept-spellcheck = Podtrhuje slova, která nerozeznává žádný nainstalovaný slovník, podle jazyka projektu.
-concept-spellcheck-more = Každý projekt má svůj vlastní pracovní jazyk nebo jazyky; položka může přepsat je pro scénu napsanou v jiném jazyce. Přidat slovo Skribisto neví z kontextového menu editor Côls, do osobního slovníku, který přenáší do každého projektu. Zapínání spell- check off zastaví všude, dokud ho znovu nezapnete.
-concept-search-replace = Najde slovo nebo frázi všude v projektu, nejen otevřený dokument.
-concept-search-replace-more = Prohlíží každou scénu, notu, titul, synopse a štítek, a také komentáře a poznámky pod čarou. Případ, celoslovní odpovídající a přízvuk odpovídající jsou tři samostatné přepínače. Nahraďte všechny přepisuje každý revidovaný zápas v jednom pass a jeden krok zpět, takže Ctrl + Z bere zpět celou dávku, nikdy jen poslední změnu.
-concept-note-template = Znovu použitelnou část psaní, kterou vložíte do čehokoliv, na čem pracujete.
-concept-note-template-more = Prázdný znak list, profil umístění, beat list: napsat jednou a kapka to tam, kde to potřebujete, v jakékoli položce, nejen poznámka. Začněte od built- in preset, importovat .md nebo .djot soubor, nebo napsat něco a vyberte Dokument space jako šablona. Uloženo v projektu, takže spoluautor, který otevře to dostane stejný soubor.
-concept-text-replacement = Vaše vlastní zkratka, rozšířena automaticky, jak jste psát.
-concept-text-replacement-more = Nastavte spouštěč a jeho nahrazení, což je mimochodem, a to rozšiřuje okamžik, kdy zadáte prostor nebo interpunkci po ní. Případ následuje to, co jste napsali: kapitalizovat spouštěč a expanze kapitalizuje také. ABackspace hned po expanzi odčiní pouze to, že jedna substituce. Switched on per project, odlišné od[inteligentní interpunkce](:concept-smart-punctuation).
-concept-smart-punctuation = Lokale- vědomi typografie aplikované automaticky, jak jste typ: uvozovky, otlaky, elipsy.
-concept-smart-punctuation-more = Křivky rovné citace do typografické ty, změní - do en pomlčka a --- do em pomlčka, změní... do elipsy, a, kde ji zapnete, otevře odstavec zapsaný jako Dialog pomlčka. Nastavit na projekt, a cestuje uvnitř .skrib, takže co- autor píše se stejnými pravidly. Významný od [Tvoje vlastní pravidla.](:concept-text-replacement), které píšete sami.
-concept-export-style = Pojmenovaný svazek exportních možností: záhlaví, rozestup, co je zahrnuto.
-concept-export-style-more = Jeden styl, znovu použit přes každý export jakýkoliv formát si vyberete. Built- in styly jsou read- only; duplicate jeden získat výchozí bod můžete skutečně změnit. Mezi jeho volby je, zda zahrnout [markery kruhového letu](:concept-round-trip-marks), pro soubor vázaný na editor a zpět.
-concept-round-trip-marks = Neviditelné záložky, které dovolily editované DOCX nebo ODT vrátit se domů uznány.
-concept-round-trip-marks-more = Napsaný pouze do dvou formátů editor může poslat zpět, DOCX a ODT; každý jiný export nenese žádný. Záložka, není vlastní atribut: LibreOffice pruhy vlastní atributy na uložení, ale ponechává záložku neporušenou. Zapnuto pro [vývozní styl](:concept-export-style), pod posíláním editoru.
-concept-status = V případě, že předmět stojí ve vašem vlastním pracovním toku: jeden stupeň po druhém, pohybující se vpřed.
-concept-status-more = Ne [Štítek](:concept-tag): položka má přesně jeden stav, fáze jsou objednány, a projekt vlastní seznam, takže si můžete přejmenovat, přeobjednat nebo přidat k němu kdykoliv chcete. Asterisk vedle kapitoly nebo knihy znamená, že části pod to ne všichni souhlasí s ním. Nastavte to od inspektora, karty, stream položky, nebo zde.
+concept-tag = Barevný štítek, který můžete dát libovolné položce a používat v celém projektu.
+concept-tag-more = Štítkem položku označíte: stav, místo, dějovou linku, kterou sledujete. Stejný štítek může mít libovolný počet položek a jedna položka jich může mít několik. Zapněte [hledání v próze](:wm-find-in-prose) u štítku, který pojmenovává něco ve vaší knize, postavu nebo místo, a Skribisto to začne hledat ve vaší próze.
+concept-label = Krátká poznámka pod názvem položky, jen pro vaše oči.
+concept-label-more = Není to [štítek](:concept-tag): popisek patří jen jedné položce, je to prostý text bez barvy a bez katalogu, například „1. zápletka“ nebo „potřebuje jméno“. Nastavíte jej z místní nabídky položky nebo jej upravíte přímo ve sloupci Popisek v přehledu; zobrazuje se jako malý podtitul pod názvem, v osnově i v souvislém zobrazení.
+concept-point-of-view = Číma očima je scéna vyprávěna: jedna či více postav vašeho příběhu.
+concept-point-of-view-more = Nastavuje se v inspektoru vedle seznamu postav. Zvolíte-li někoho, kdo mezi postavami ještě není, přidá se tam také. Více úhlů pohledu je přípustná volba, užitečná pro sdílenou scénu nebo změnu vypravěče uprostřed knihy, a Skribisto ji neblokuje. Kandidáti pocházejí z položek, které štítek [hledání v próze](:wm-find-in-prose) zařadí do vaší bible příběhu.
+concept-epigraph = Citát v čele části nebo kapitoly.
+concept-epigraph-more = Samostatné pole, oddělené od vlastní prózy [kapitoly](:wm-chapter) nebo [části](:wm-part); [scéna](:wm-scene) ani [poznámka](:wm-note) žádné nemají. Napište jedno jako obyčejný citát; napíšete-li jich několik, každé se stane samostatnou blokovou citací a vytiskne se jako samostatné motto. Jeho slova se nikdy nezapočítávají do rukopisu.
+concept-footnote = Odkaz vyznačený v próze, tištěný jako číslovaná poznámka.
+concept-footnote-more = Odkaz je jediná značka mezi vašimi slovy, takže se přesouvá a maže přesně jako slova kolem ní. Jeho číslo se nikdy neukládá: Skribisto jej pokaždé znovu odvodí z místa, kde každý odkaz v celém rukopisu stojí, takže vložením jednoho se přečíslují všechny poznámky za ním. Vlastní slova poznámky pod čarou se počítají odděleně od rukopisu a nikdy se do něj nezahrnují.
+concept-chapter-mode = Zda je nová kapitola složkou scén, nebo jedinou plochou položkou.
+concept-chapter-mode-more = Nastavuje se v Nastavení v části Struktura. Do [kapitoly](:wm-chapter) píšete přímo v obou případech; jediný rozdíl je, zda pod sebou může mít i scény. Obě podoby se sestaví do stejné knihy a v jednom projektu je můžete libovolně kombinovat. Příkaz Převést na změní stávající kapitolu z jedné podoby na druhou bez ztráty jediného slova.
+concept-comment = Poznámka ukotvená k přesnému úseku prózy, zobrazená na okraji.
+concept-comment-more = Pamatuje si slova, na která ukazuje, a jejich okolí, ne pevnou pozici, takže přežije běžné úpravy i úplné znovunačtení. Odpovědí pod ním můžete vést vlákno. Pokud přesný citát už nelze najít, komentář to řekne, místo aby se potichu posunul k nesprávné větě.
+concept-backup = Kopie celého projektu k určitému okamžiku, uložená vedle něj.
+concept-backup-more = Pořizuje se podle plánu, který si zvolíte: při otevření, při zavření, v intervalu nebo libovolnou kombinací, přičemž staré kopie se probírají podle stáří nebo počtu. Otevřená záloha se načte ve vlastním okně: můžete si ji prohlížet a dokonce upravovat, ale cokoli zachová jen Uložit jako nebo Obnovit. Liší se od [verze](:concept-version), která sleduje minulost jedné položky.
+concept-version = Minulost jedné položky: každá změna jejího textu nebo synopse.
+concept-version-more = Sestavuje se z vlastní historie ukládání projektu a z jeho záloh dohromady, jeden záznam na změnu, ne na soubor. Vyberte záznam, uvidíte, co se změnilo, a můžete na něj obnovit jen text této položky; zbytek projektu zůstane nedotčen a nejprve se pořídí bezpečnostní kopie. Liší se od [zálohy](:concept-backup), která je kopií všeho.
+concept-trash = Položka v koši je skrytá, ne přesunutá: zůstává přesně tam, kde byla.
+concept-trash-more = Přesunutí do koše jen přepne jeden příznak: položka si ponechá své místo v pořadači a je označena jako neaktivní, ne odstraněna. Když ji obnovíte, objeví se znovu přesně na tom místě a nemusíte ji nikam zařazovat. Vyprázdnit koš odstraní položky v koši natrvalo a každý z těchto kroků lze vrátit zpět jako kteroukoli jinou úpravu projektu.
+concept-spellcheck = Podtrhává slova, která nezná žádný nainstalovaný slovník, podle jazyka projektu.
+concept-spellcheck-more = Každý projekt má svůj pracovní jazyk či jazyky; položka je může přepsat u scény psané v jiném jazyce. Slovo, které Skribisto nezná, přidáte z místní nabídky editoru do osobního slovníku, který platí pro všechny projekty. Vypnutím kontroly pravopisu ji zastavíte všude, dokud ji znovu nezapnete.
+concept-search-replace = Najde slovo nebo frázi kdekoli v projektu, nejen v otevřeném dokumentu.
+concept-search-replace-more = Prochází všechny scény, poznámky, názvy, synopse a popisky a také komentáře a poznámky pod čarou. Rozlišování velikosti písmen, hledání celých slov a rozlišování diakritiky jsou tři samostatné přepínače. Nahradit vše přepíše všechny zkontrolované shody najednou jako jeden krok vrácení, takže Ctrl+Z vrátí celou dávku, nikdy jen poslední změnu.
+concept-note-template = Opakovaně použitelný kus textu, který vložíte do čehokoli, na čem pracujete.
+concept-note-template-more = Prázdný list postavy, profil místa, osnova scén: napíšete jednou a vložíte, kdekoli je potřebujete, do jakékoli položky, nejen do poznámky. Začněte vestavěnou předvolbou, importujte soubor .md nebo .djot, nebo něco napište a zvolte Dokument ▸ Uložit jako šablonu. Ukládá se v projektu, takže spoluautor, který jej otevře, dostane stejnou sadu.
+concept-text-replacement = Vaše vlastní zkratky, rozvinuté automaticky při psaní.
+concept-text-replacement-more = Nastavte zkratku a její náhradu, například „mj“ za „mimo jiné“, a ta se rozvine ve chvíli, kdy za ní napíšete mezeru nebo interpunkci. Velikost písmen se řídí tím, co jste napsali: napíšete-li zkratku s velkým písmenem, i náhrada začne velkým písmenem. Backspace hned po rozvinutí vrátí jen tuto jednu náhradu. Zapíná se pro každý projekt zvlášť a liší se od [chytré interpunkce](:concept-smart-punctuation).
+concept-smart-punctuation = Typografie podle jazyka, uplatňovaná automaticky při psaní: uvozovky, pomlčky, výpustky.
+concept-smart-punctuation-more = Mění rovné uvozovky na typografické, -- na krátkou pomlčku a --- na dlouhou pomlčku, ... na výpustku a tam, kde to zapnete, otevře odstavec začínající „- “ dialogovou pomlčkou. Nastavuje se pro každý projekt a je uložena v souboru .skrib, takže spoluautor píše podle stejných pravidel. Liší se od [vašich vlastních pravidel](:concept-text-replacement), která si píšete sami.
+concept-export-style = Pojmenovaná sada voleb exportu: nadpisy, mezery, co se zahrne.
+concept-export-style-more = Jeden styl, použitelný pro každý export bez ohledu na zvolený formát. Vestavěné styly jsou jen pro čtení; duplikujte některý z nich a získáte výchozí bod, který můžete skutečně měnit. Mezi jeho volbami je i to, zda zahrnout [značky pro zpětný import](:concept-round-trip-marks), pro soubor, který putuje k redaktorovi a zpět.
+concept-round-trip-marks = Neviditelné záložky, díky kterým se upravený DOCX nebo ODT vrátí domů rozpoznaný.
+concept-round-trip-marks-more = Zapisují se jen do dvou formátů, které vám redaktor může poslat zpět, DOCX a ODT; žádný jiný export je nenese. Záložka, ne vlastní atribut: LibreOffice vlastní atributy při ukládání odstraňuje, ale záložku nechá netknutou. Zapínají se v každém [exportním stylu](:concept-export-style) v části „Odeslání redaktorovi“.
+concept-status = Kde položka stojí ve vašem vlastním pracovním postupu: vždy jedna fáze, směrem vpřed.
+concept-status-more = Není to [štítek](:concept-tag): položka má právě jeden stav, fáze jsou seřazené a seznam patří projektu, takže jej můžete kdykoli přejmenovat, přeuspořádat nebo doplnit. Hvězdička u kapitoly nebo knihy znamená, že části pod ní s ní všechny nesouhlasí. Nastavíte jej v inspektoru, na kartě, u položky v souvislém zobrazení nebo zde.

@@ -359,19 +359,17 @@ impl Widget for AddMilestoneRow {
 
 // ── StatCards: the statistics as a responsive masonry of cards ──────────────
 
-/// A thousands-separated integer (`12,345`).
+/// A grouped integer (`12 345`), grouped the way every other count in the app
+/// is (see [`crate::goals::format_count`]): a comma reads as a decimal mark in
+/// half the languages the app speaks.
 pub(super) fn commafy(n: i64) -> String {
-    let neg = n < 0;
-    let digits = n.unsigned_abs().to_string();
-    let bytes = digits.as_bytes();
-    let mut out = String::new();
-    for (i, b) in bytes.iter().enumerate() {
-        if i > 0 && (bytes.len() - i).is_multiple_of(3) {
-            out.push(',');
-        }
-        out.push(*b as char);
+    let grouped =
+        crate::goals::format_count(usize::try_from(n.unsigned_abs()).unwrap_or(usize::MAX));
+    if n < 0 {
+        format!("-{grouped}")
+    } else {
+        grouped
     }
-    if neg { format!("-{out}") } else { out }
 }
 
 #[cfg(test)]

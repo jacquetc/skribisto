@@ -363,13 +363,9 @@ impl ImportManuskriptViewModel {
     /// would put one redundant entry in each.
     fn progress_toast(&self, percent: f32, message: &str) -> Toast {
         let vm = self.clone();
-        let body = if message.is_empty() {
-            format!("{percent:.0}%")
-        } else {
-            format!("{percent:.0}% · {message}")
-        };
+        let body = crate::shared::progress_text::progress_body(percent, message);
         import_toast(Toast::loading(tr!(import_manuskript_progress_title())))
-            .body(lit!(body))
+            .body(body)
             .action(
                 ToastAction::destructive(tr!(import_manuskript_cancel_import()), move |c| {
                     vm.cancel(c)
@@ -1254,7 +1250,7 @@ mod tests {
             .expect("the warnings notice is archived with a replayable Details");
         let body = notice.body.clone().unwrap_or_default();
         assert!(body.contains("no folder.txt"), "{body}");
-        assert!(body.contains("no ID of its own"), "{body}");
+        assert!(body.contains("no ID of their own"), "{body}");
         assert!(
             dir.path().join("novel.skrib").exists(),
             "and the import landed"

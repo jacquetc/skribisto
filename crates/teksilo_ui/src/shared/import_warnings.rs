@@ -43,6 +43,8 @@
 //! were dropped, unseen and unlogged. The earlier notice goes from the screen
 //! only; its row, and so its list, stays in the log.
 
+mod notices;
+
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -103,7 +105,13 @@ impl WarningsNotice {
             return None;
         }
         let count = warnings.len() as i64;
-        let text = warnings.join("\n");
+        // Worded once, now: the archive keeps the body as text, and that is
+        // what reopening the notice from the log shows.
+        let text = warnings
+            .iter()
+            .map(|raw| notices::sentence(raw).resolve_now())
+            .collect::<Vec<_>>()
+            .join("\n");
         let details = text.clone();
         Some(
             Toast::warning((self.title)(count))

@@ -1,52 +1,73 @@
-## Definir um alvo
+## Definir uma meta
 
-Selecione um item no fichário e abra o Inspetor. Digite o número de palavras que você deseja escrever em * Alvo *. Se o seu projeto contar caracteres, insira um alvo de caracteres. Ajuste para zero para remover o alvo.
+Selecione um item no arquivador e abra o Inspetor. Introduza em *Meta* o número de palavras
+que quer escrever. Se o seu projeto contar caracteres, introduza antes uma meta em caracteres.
+Defina-a como zero para remover a meta.
 
-Defina um alvo para cada capítulo ou cena que você deseja rastrear. O objectivo de um capítulo não é calculado automaticamente a partir dos objectivos das suas cenas.
+Defina uma meta para cada capítulo ou cena que quer acompanhar. A meta de um capítulo não é
+calculada automaticamente a partir das metas das suas cenas.
 
-## Onde você está
+## Em que ponto está
 
-Você pode verificar o seu progresso em vários lugares. O Inspector mostra-o sob o campo *Objetivo*. A barra de estado mostra-a ao lado da contagem ao vivo, e a tabela *Visão geral* dá-lhe uma coluna *Objetivo*.
+Pode ver o seu progresso em vários lugares. O Inspetor mostra-o por baixo do campo *Meta*.
+A barra de estado mostra-o junto à contagem em tempo real, e a tabela da *Vista geral* tem
+uma coluna *Meta*.
 
-## O que conta para um alvo
+## O que conta para uma meta
 
-O progresso é medido no próprio manuscrito: a prosa de suas [cenas e capítulos](:help-writing-model). Uma sinopse, uma nota ou um paratexto fica fora da contagem, e assim faz qualquer coisa no lixo.
+O progresso é medido no próprio manuscrito: a prosa das suas
+[cenas e capítulos](:help-writing-model). Uma sinopse, uma nota ou um paratexto ficam fora
+da contagem, tal como tudo o que está no lixo.
 
-Desligar *Incluir nas exportações* no Inspetor também remove esse item da contagem. Desligar para um capítulo não exclui automaticamente as suas cenas. Use *Aplicar a crianças* para excluí-los também.
+Desativar *Incluir nas exportações* no Inspetor também retira esse item da contagem.
+Desativá-lo num capítulo não exclui automaticamente as suas cenas. Use *Aplicar aos filhos*
+para as excluir também.
 
 ## Palavras ou caracteres
 
-Uma escolha abrange todo o projecto. * Novo Projeto* pede por ele na frente, sob *Contar em*. Você pode alterá-lo mais tarde em *Definições ▸ Projeto: <projeto> ▸ Estrutura*, sob *Alvo*.
+Uma única escolha vale para todo o projeto. *Novo projeto* pergunta-a logo de início, em
+*Contar em*. Pode alterá-la mais tarde em *Definições ▸ Projeto: <projeto> ▸ Estrutura*,
+em *Metas*.
 
-Cada item mantém dois números separados: um alvo de palavras e um alvo de caracteres.
+Cada item guarda dois números separados: uma meta em palavras e uma meta em caracteres.
 
-## Partilhar um alvo
+## Repartir uma meta
 
-Para dividir o alvo de um livro entre suas partes ou capítulos, abra o livro e clique em *Distribuir…*. Defina um alvo primeiro se o botão estiver desabilitado. Você pode fazer o mesmo para uma pasta de parte ou capítulo. A pré-visualização mostra os alvos propostos. Em *Compartilhar*, escolha:
+Para dividir a meta de um livro pelas suas partes ou capítulos, abra o livro e clique em
+*Distribuir…*. Defina primeiro uma meta se o botão estiver desativado. Pode fazer o mesmo
+para uma parte ou uma pasta de capítulo. A pré-visualização mostra as metas propostas.
+Em *Repartir*, escolha:
 
-- * Por comprimento*, do que já está escrito sob cada um;
-- * Por peças *;
-- *Equilíbrio*.
+- *Por comprimento*, a partir do que já está escrito em cada um;
+- *Por peças*;
+- *Por igual*.
 
-Capítulos e cenas com alvos existentes os mantêm; os outros compartilham o que resta. Activar * Substituir os alvos que já estão definidos* para recalcular todos eles.
+Os capítulos e as cenas que já têm meta mantêm-na; os restantes repartem o que sobra. Ative
+*Substituir as metas já definidas* para as recalcular todas.
 
-## Planeamento de um ritmo
+## Planear um ritmo
 
-Abra a seção *Ritmo* de um livro e escolha *Iniciar o planejamento* para definir um objetivo diário de escrita.
+Abra a secção *Ritmo* de um livro e escolha *Iniciar o planeamento* para definir um objetivo
+diário de escrita.
 
-Preencha *Objetivo de palavras* e *Prazo*, em seguida, escolha os dias da semana em que você escreve. Skribisto descobre o que cada dia restante de escrita precisa, quantos são deixados, e se você está à frente ou atrás do ritmo.
+Preencha *Objetivo de palavras* e *Prazo*, e depois escolha os dias da semana em que escreve.
+O Skribisto calcula quanto precisa de escrever em cada dia de escrita restante, quantos dias
+faltam e se está adiantado ou atrasado em relação ao ritmo.
 
-Adicione um tempo de folga em *Feriados* para deixar esses dias fora do plano.
+Acrescente as suas pausas em *Feriados* para deixar esses dias fora do plano.
 
-O ritmo e os marcos contam em palavras, seja qual for a unidade que o projeto usa.
+O ritmo e os marcos contam em palavras, seja qual for a unidade usada pelo projeto.
 
 ## Marcos
 
-Um marco marca uma data ao longo do caminho.
+Um marco assinala uma data pelo caminho.
 
-- Em *Marcos* no planejador, adicione um para todo o livro: uma contagem de palavras que deve chegar até essa data.
-- Em uma parte ou capítulo dentro de um livro, definir uma data * Milestone* no Inspetor. Lê o alvo da própria palavra do item, e segue-o.
+- Em *Marcos*, no planeador, adicione um para o livro inteiro: uma contagem de palavras a
+  atingir até essa data.
+- Numa parte ou num capítulo de um livro, defina uma *Data do marco* no Inspetor. O marco lê
+  a meta de palavras desse item e acompanha-a.
 
-## Quando o projeto é aberto
+## Ao abrir o projeto
 
-Um livro aparece no cartão *Onde o livro está* uma vez que seu plano está ativo. *Não mostrar isso quando abrir* para-lo; *Projeto ▸ plano de escrita…* reabre-o.
+Um livro aparece no cartão *Ponto da situação do livro* assim que o seu plano estiver ativo.
+*Não mostrar isto ao abrir* desativa-o; *Projeto ▸ Plano de escrita…* volta a abri-lo.

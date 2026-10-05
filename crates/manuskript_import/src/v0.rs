@@ -38,6 +38,7 @@ use crate::model::{
 use crate::model_xml::{self, Row};
 use crate::outline_xml;
 use crate::source::ManuskriptSource;
+use skrib_format::import_notice::ImportNotice;
 
 const OUTLINE_MEMBER: &str = "outline.xml";
 const CHARACTERS_MEMBER: &str = "perso.xml";
@@ -50,11 +51,7 @@ const FLAT_MEMBER: &str = "flatModel.xml";
 /// Read a whole format-0 project.
 pub fn read(src: &ManuskriptSource) -> Project {
     let mut notices = src.notices.clone();
-    notices.push(
-        "This project is in Manuskript's original 2016 format. It was read in full; nothing in \
-         it was changed."
-            .to_string(),
-    );
+    notices.push(ImportNotice::OriginalFormat);
 
     let (outline, revisions) = read_outline(src, &mut notices);
     let (info, summary) = read_flat(src, &mut notices);
@@ -84,16 +81,17 @@ pub fn read(src: &ManuskriptSource) -> Project {
 }
 
 /// Read a member as a `<model>` table, reporting rather than failing.
-fn rows(src: &ManuskriptSource, member: &str, notices: &mut Vec<String>) -> Vec<Row> {
+fn rows(src: &ManuskriptSource, member: &str, notices: &mut Vec<ImportNotice>) -> Vec<Row> {
     let Some(text) = src.text(member) else {
         return Vec::new();
     };
     match model_xml::parse(member, &text) {
         Ok(rows) => rows,
         Err(e) => {
-            notices.push(format!(
-                "'{member}' could not be read ({e}); what it held was not imported."
-            ));
+            notices.push(ImportNotice::TableUnreadable {
+                member: member.to_string(),
+                error: e.to_string(),
+            });
             Vec::new()
         }
     }
@@ -101,12 +99,12 @@ fn rows(src: &ManuskriptSource, member: &str, notices: &mut Vec<String>) -> Vec<
 
 fn read_outline(
     src: &ManuskriptSource,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
 ) -> (Vec<crate::model::OutlineItem>, Vec<crate::model::Revision>) {
     let Some(text) = src.text(OUTLINE_MEMBER) else {
-        notices.push(format!(
-            "'{OUTLINE_MEMBER}' is missing, so this project has no manuscript to import."
-        ));
+        notices.push(ImportNotice::OutlineMissing {
+            member: OUTLINE_MEMBER.to_string(),
+        });
         return (Vec::new(), Vec::new());
     };
     match outline_xml::parse(OUTLINE_MEMBER, &text) {
@@ -115,9 +113,10 @@ fn read_outline(
             (parsed.items, parsed.revisions)
         }
         Err(e) => {
-            notices.push(format!(
-                "'{OUTLINE_MEMBER}' could not be read ({e}); no manuscript was imported."
-            ));
+            notices.push(ImportNotice::OutlineUnreadable {
+                member: OUTLINE_MEMBER.to_string(),
+                error: e.to_string(),
+            });
             (Vec::new(), Vec::new())
         }
     }
@@ -131,19 +130,17 @@ fn read_outline(
 fn read_vocabulary(
     src: &ManuskriptSource,
     member: &str,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
 ) -> Vec<(String, Option<String>)> {
     let table = rows(src, member, notices);
     let Some((first, rest)) = table.split_first() else {
         return Vec::new();
     };
     if !first.text(0).trim().is_empty() {
-        notices.push(format!(
-            "'{member}' opens with a named row where Manuskript keeps its empty \"none\" entry \
-             ('{}'). It was left out, so the rows below it keep the numbers the manuscript \
-             cites.",
-            first.text(0).trim()
-        ));
+        notices.push(ImportNotice::NamedNoneRow {
+            member: member.to_string(),
+            name: first.text(0).trim().to_string(),
+        });
     }
     rest.iter()
         .map(|r| {
@@ -156,7 +153,7 @@ fn read_vocabulary(
 }
 
 /// `flatModel.xml`: row 0 is the project's details, row 1 the summary ladder.
-fn read_flat(src: &ManuskriptSource, notices: &mut Vec<String>) -> (Info, Summary) {
+fn read_flat(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> (Info, Summary) {
     let table = rows(src, FLAT_MEMBER, notices);
     let info = table
         .first()
@@ -188,7 +185,7 @@ fn read_flat(src: &ManuskriptSource, notices: &mut Vec<String>) -> (Info, Summar
 /// modern `Character` enum — which is why Manuskript's own upgrade can copy them
 /// across by index. Columns 11 and 12 belong to the **sub-rows**, and hold the
 /// name and value of one field the writer added.
-fn read_characters(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<Character> {
+fn read_characters(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Vec<Character> {
     rows(src, CHARACTERS_MEMBER, notices)
         .iter()
         .map(|r| Character {
@@ -221,7 +218,7 @@ fn read_characters(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<Cha
 
 /// `world.xml`: name, ID, description, passion, conflict, with children nested in
 /// the first cell.
-fn read_world(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<WorldItem> {
+fn read_world(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Vec<WorldItem> {
     fn convert(rows: &[Row]) -> Vec<WorldItem> {
         rows.iter()
             .map(|r| WorldItem {
@@ -245,7 +242,7 @@ fn read_world(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<WorldIte
 /// each hold their contents as **sub-rows**, and each carries a literal
 /// placeholder string ("Persos", "Subplots") that the model seeds it with, so the
 /// cell's own text is never data.
-fn read_plots(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<Plot> {
+fn read_plots(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Vec<Plot> {
     const CHARACTERS_COL: usize = 3;
     const STEPS_COL: usize = 6;
     rows(src, PLOTS_MEMBER, notices)

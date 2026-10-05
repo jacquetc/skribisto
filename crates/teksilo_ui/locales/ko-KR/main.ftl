@@ -60,7 +60,7 @@ ctx-import-here = 여기로 가져오기… (&I)
 ctx-indent = 들여쓰기 늘리기 (&I)
 ctx-outdent = 들여쓰기 줄이기 (&O)
 ctx-trash = 휴지통으로 이동 (&T)
-ctx-open-to-side = 옆 창에서 열기 (&S)
+ctx-open-to-side = 측면에서 열기 (&S)
 ctx-open = 열기 (&O)
 ctx-reveal-in-outline = 구조 보기에서 표시 (&L)
 ctx-move-up = 위로 이동 (&U)
@@ -69,15 +69,15 @@ ctx-move-down = 아래로 이동 (&N)
 ctx-tab-close = 닫기 (&C)
 ctx-tab-close-others = 다른 탭 닫기 (&O)
 ctx-tab-close-all = 모든 탭 닫기 (&L)
-ctx-tab-open-to-side = 옆 창에서 열기 (&S)
+ctx-tab-open-to-side = 측면에서 열기 (&S)
 ctx-tab-open-in-main = 주 편집 창에서 열기 (&I)
-ctx-tab-move-to-side = 옆 창으로 이동 (&M)
+ctx-tab-move-to-side = 측면으로 이동 (&M)
 ctx-tab-move-to-main = 주 편집 창으로 이동 (&M)
 ctx-tab-move-to-new-window = 새 창으로 이동 (&N)
 ctx-tab-move-window-unsaved = 먼저 프로젝트를 저장하세요. 새 창은 디스크의 파일을 엽니다
 ctx-tab-pin = 이 탭 고정 (&P)
 ctx-tab-unpin = 이 탭 고정 해제 (&U)
-tab-pinned-tooltip = 고정됨: 다른 탭 닫기나 모든 탭 닫기를 해도 열려 있습니다
+tab-pinned-tooltip = 고정됨: ‘다른 탭 닫기’나 ‘모든 탭 닫기’를 해도 열려 있습니다
 
 create-book = 책
 create-part = 부
@@ -186,7 +186,7 @@ settings-sec-appearance-behaviour = 모양 및 동작
 settings-sec-editor = 편집기
 settings-sec-spelling = 맞춤법
 settings-sec-backup = 백업 및 동기화
-settings-sec-compile = 편집 및 내보내기
+settings-sec-compile = 컴파일 및 내보내기
 settings-page-appearance = 모양
 settings-field-image-size-policy = 큰 이미지
 settings-image-policy-ask = 매번 묻기
@@ -200,7 +200,7 @@ settings-page-notes = 노트
 settings-page-editor-behavior = 편집기 동작
 settings-page-goals = 목표 및 단어 수
 settings-page-games = 집필 게임
-settings-page-corkboard = 카드 보드
+settings-page-corkboard = 코르크보드
 settings-page-distraction-free = 집중 모드
 settings-page-dictionaries = 사전
 settings-page-autosave = 자동 저장
@@ -228,7 +228,7 @@ settings-desc-distraction-free-themes = 전체 화면 집필용 기본 테마와
 settings-desc-editor-behavior = 본문 너비, 줄거리 요약 위치, 타자기식 스크롤, 커서 강조를 설정합니다.
 settings-desc-punctuation = 새 프로젝트의 기본 문장 부호 규칙입니다. 프로젝트별로 바꾸지 않으면 이 규칙을 따릅니다.
 settings-desc-goals = 단어 및 글자 수 목표와 단어 계산 방식을 설정합니다.
-settings-desc-games = 초안을 쓰며 계속 앞으로 같은 집필 규칙에 도전합니다.
+settings-desc-games = ‘계속 앞으로’처럼 초안을 쓰는 동안 스스로 정하는 제약입니다.
 settings-desc-spellcheck = 모든 곳에서 맞춤법 검사를 켜거나 끕니다.
 settings-desc-dictionaries = 이 컴퓨터의 맞춤법 사전을 설치, 제거하고 찾습니다.
 settings-desc-autosave = 편집 내용을 디스크에 자동 저장할지 설정합니다.
@@ -244,7 +244,7 @@ settings-field-user-name-placeholder = 선택 사항
 settings-field-user-name-hint = 댓글과 답글에 표시할 이름입니다. 파일 안에 저장되는 책의 저자 이름과는 별개입니다.
 settings-field-user-initials = 이니셜
 settings-field-user-initials-placeholder = 이름에서 생성
-settings-field-user-initials-hint = 워드 프로세서가 여백 댓글 옆에 표시할 이니셜입니다. 비워 두면 이름에서 만든 표시된 이니셜을 사용합니다.
+settings-field-user-initials-hint = 워드 프로세서가 여백의 댓글 옆에 표시하는 이니셜입니다. 비워 두면 이름에서 가져온, 지금 표시된 이니셜을 사용합니다.
 settings-field-user-hint = 둘 다 선택 사항이며 이 컴퓨터의 모든 프로젝트에 적용됩니다. 변경 후 작성하는 댓글에만 반영하며 기존 댓글은 원래 이름을 유지합니다.
 settings-desc-author = 이 프로젝트에 표시할 이름입니다.
 settings-desc-structure = 이 프로젝트의 장을 폴더로 만들지 단일 항목으로 만들지 정합니다.
@@ -271,7 +271,7 @@ settings-field-size = 글자 크기
 editor-size-changed-manuscript = 원고 글자 크기: { $percent }
 editor-size-changed-synopsis = 줄거리 요약 글자 크기: { $percent }
 editor-size-changed-notes = 노트 글자 크기: { $percent }
-editor-size-changed-corkboard = 카드 글자 크기: { $percent }
+editor-size-changed-corkboard = 코르크보드 카드 글자 크기: { $percent }
 editor-size-changed-corkboard-expanded = 확장 편집기 글자 크기: { $percent }
 editor-size-changed-distraction-free = 집중 모드 글자 크기: { $percent }
 
@@ -389,9 +389,9 @@ menu-image = 이미지 (&I)
 settings-styles-images-beside = 문서 옆에
 settings-styles-images-embed = 문서 내부에
 settings-styles-images-omit = 제외
-settings-styles-group-round-trip = 검토자에게 보내기
+settings-styles-group-round-trip = 편집자에게 보내기
 settings-styles-field-comments = 댓글 포함
-settings-styles-field-round-trip-marks = 재가져오기 식별자 포함
+settings-styles-field-round-trip-marks = 왕복 편집 표식 포함
 settings-styles-round-trip-hint = DOCX와 ODT 전용입니다. 보이지 않는 식별 표식을 넣어 돌아온 파일이 별도 사본으로 추가되지 않고 이 프로젝트를 갱신하게 합니다.
 settings-styles-group-pages = 페이지
 settings-styles-field-cover = 표지부터 열기
@@ -434,7 +434,7 @@ nav-about = 정보
 synopsis = 줄거리 요약
 epigraph = 머리말 인용문
 pane-manuscript = 원고
-corkboard = 카드 보드
+corkboard = 코르크보드
 overview = 개요
 
 corkboard-card-count = 카드 { $count }개
@@ -445,11 +445,11 @@ corkboard-layout-hint = 계층형은 바로 아래 항목을 표시합니다. �
 corkboard-card-size = 카드 크기
 corkboard-search-placeholder = 카드 필터…
 corkboard-empty-title = 아직 항목이 없습니다
-corkboard-empty-hint = 위의 ＋ 새로 만들기로 첫 항목을 추가하세요.
+corkboard-empty-hint = 위의 ‘＋ 새 항목’으로 첫 항목을 추가하세요.
 corkboard-new = 새 항목
 corkboard-show-card-numbers = 카드에 번호 표시
 corkboard-modal-size = 확장 편집기 크기
-corkboard-scope-hint = 모든 프로젝트의 열린 카드 보드에 적용합니다.
+corkboard-scope-hint = 모든 프로젝트의 열린 코르크보드에 적용합니다.
 corkboard-sort-manuscript = 원고 순서
 corkboard-sort-title-asc = 제목 오름차순
 corkboard-sort-title-desc = 제목 내림차순
@@ -484,10 +484,10 @@ overview-expand-all = 모두 펼치기
 overview-collapse-all = 모두 접기
 overview-table-label = 목차
 overview-empty-title = 아직 항목이 없습니다
-overview-gone-title = 이 상위 항목이 삭제되었습니다
+overview-gone-title = 이 상위 항목이 없어졌습니다
 overview-gone-hint = 휴지통으로 옮겨졌습니다. 복원하거나 이 탭을 닫으세요.
-overview-empty-hint = 위의 ＋ 새로 만들기로 첫 항목을 추가하세요.
-corkboard-grid-label = 카드 보드의 카드
+overview-empty-hint = 위의 ‘＋ 새 항목’으로 첫 항목을 추가하세요.
+corkboard-grid-label = 코르크보드의 카드
 corkboard-rename-field = 항목 이름 바꾸기
 corkboard-expand-synopsis = 줄거리 요약 펼치기
 corkboard-synopsis-modal-title = 줄거리 요약
@@ -512,19 +512,19 @@ placeholder-chapter-title = 장 제목…
 split-editor = 편집기 나누기
 close-split-view = 분할 보기 닫기
 drop-open-here = 여기서 열기
-drop-open-to-side = 옆 창에서 열기
+drop-open-to-side = 측면에서 열기
 
 segment-chapter = 장
 segment-part = 부
 segment-book = 책
-segment-pace = 집필 속도
+segment-pace = 집필 계획
 segment-notes = 노트
 segment-story-bible = 설정집
 segment-note-own = 노트
 segment-note-details = 세부 정보
 segment-note-in-prose = 본문 내
-pace-placeholder = 여기에 집필 일정이 표시됩니다.
-pace-empty-title = 이 책의 집필 일정 만들기
+pace-placeholder = 여기에 집필 계획이 표시됩니다.
+pace-empty-title = 이 책의 집필 계획 세우기
 pace-empty-body = 단어 수 목표와 마감일을 정하면 하루에 필요한 집필량을 계산합니다.
 pace-start-planning = 계획 시작
 pace-section-schedule = 일정
@@ -532,7 +532,7 @@ pace-section-progress = 진행 상황
 pace-advancement = 진척도
 pace-goal = 단어 수 목표
 pace-deadline = 마감일
-pace-active = 집필 계획 활성화됨
+pace-active = 집필 계획 사용 중
 pace-day-mon = 월
 pace-day-tue = 화
 pace-day-wed = 수
@@ -739,11 +739,11 @@ new-work-name = 프로젝트 이름
 new-work-name-placeholder = 제목 없음
 new-work-author = 저자
 new-work-author-placeholder = 선택 사항
-new-work-format = 서식
+new-work-format = 형식
 new-work-single-file = 단일 파일
 new-work-bundle = 프로젝트 폴더
 new-work-convert-later = 나중에 형식을 바꿀 수 있습니다.
-new-work-location = 장소
+new-work-location = 위치
 new-work-will-create = 만들 위치
 new-work-language = 기본 언어
 new-work-language-hint = 새 글과 맞춤법 검사에 적용합니다. 글마다 다른 언어로 바꿀 수 있습니다.
@@ -807,8 +807,8 @@ new-work-scene = 장면
 new-work-note = 노트
 new-work-front-matter = 앞부분 부속 글
 new-work-back-matter = 뒷부분 부속 글
-new-work-paratext = 책 구조
-new-work-paratext-none = 구조 없음
+new-work-paratext = 책 구성
+new-work-paratext-none = 구성 없음
 new-work-paratext-hint = 출판 관례에 따른 앞부분과 뒷부분의 부속 글입니다. 나중에 자유롭게 이동, 이름 변경, 삭제할 수 있습니다.
 new-work-tags = 태그
 new-work-tags-none = 태그 없음
@@ -885,9 +885,9 @@ import-manuskript-world-group = 세계관
 import-manuskript-plots-group = 줄거리
 import-manuskript-project-info-note = 프로젝트 정보
 import-manuskript-summary-note = 요약
-import-manuskript-importance-minor = 주변 인물
+import-manuskript-importance-minor = 단역
 import-manuskript-importance-secondary = 조연
-import-manuskript-importance-main = 주요
+import-manuskript-importance-main = 주요 인물
 import-manuskript-progress-title = Manuskript 프로젝트 가져오는 중…
 import-manuskript-cancel-import = 취소
 import-manuskript-cancelled = 가져오기가 취소되었습니다
@@ -909,7 +909,7 @@ import-warnings-announcement = { $result } { $notice }.
 export-title = 내보내기
 export-close = 닫기
 export-scope-label = 대상
-export-format-label = 서식
+export-format-label = 형식
 export-style-label = 스타일
 export-path-label = 파일
 export-browse = 찾아보기…
@@ -1202,7 +1202,7 @@ undo-target-merge = 두 장면 합치기
 undo-target-split = 장면 나누기
 undo-target-promote = 유형 변경
 undo-target-tidy-titles = 장 제목 정리
-undo-target-import-tags = 보조 설명 가져오기
+undo-target-import-tags = 태그 가져오기
 undo-target-import-templates = 노트 템플릿 가져오기
 undo-target-create = 만들기
 undo-target-remove = 삭제
@@ -1214,8 +1214,8 @@ menu-edit-find-prev = 이전 찾기 (&V)
 menu-edit-replace = 찾기 및 바꾸기… (&L)
 menu-edit-find-in-project = 프로젝트에서 찾기… (&J)
 menu-edit-replace-in-project = 프로젝트에서 바꾸기… (&I)
-undo-frozen = 실행 취소 (계속 앞으로 켜짐)
-redo-frozen = 다시 실행 (계속 앞으로 켜짐)
+undo-frozen = 실행 취소 (‘계속 앞으로’ 켜짐)
+redo-frozen = 다시 실행 (‘계속 앞으로’ 켜짐)
 menu-edit-cut = 잘라내기 (&T)
 menu-edit-copy = 복사 (&C)
 menu-edit-paste = 붙여넣기 (&P)
@@ -1486,10 +1486,10 @@ comments-document-title = 이 문서
 comments-empty-project = 프로젝트에 아직 댓글이 없습니다.
 comments-empty-document = 이 문서에 댓글이 없습니다.
 comments-filter-all = 모두
-comments-filter-open = 열기
+comments-filter-open = 미해결
 comments-filter-resolved = 해결됨
 comments-filter-orphaned = 연결된 텍스트 없음
-comments-status-open = 열기
+comments-status-open = 미해결
 comments-status-resolved = 해결됨
 comments-status-orphaned = 연결된 텍스트를 찾을 수 없음
 comments-orphan-snippet = (댓글이 연결된 글이 삭제됨)
@@ -1532,7 +1532,7 @@ analysis-running = 원고 읽는 중…
 analysis-failed = 분석을 완료할 수 없습니다.
 analysis-no-scenes = 이 책에 아직 장면이 없습니다.
 
-analysis-shape = 구성
+analysis-shape = 형태
 
 analysis-arrivals = 입력 경로
 analysis-arrivals-explainer = 프로젝트를 연 동안 글이 들어온 경로입니다. 입력, 붙여넣기, 음성 입력 등의 방식을 보여주며 누가 작성했는지는 판단하지 않습니다. 목표로 삼을 수치가 아닙니다.
@@ -1540,7 +1540,7 @@ analysis-arrivals-scope = 이 책뿐 아니라 프로젝트 전체입니다.
 analysis-arrivals-session = 프로젝트를 연 이후의 수치입니다. 닫으면 다시 시작합니다.
 analysis-arrivals-nothing = 이 세션에서 아직 입력된 글이 없습니다.
 analysis-arrivals-typed = 직접 입력
-analysis-arrivals-pasted = 붙여넣은 텍스트
+analysis-arrivals-pasted = 붙여넣기
 analysis-arrivals-dictated = 음성 입력
 analysis-arrivals-imported = 가져옴
 analysis-arrivals-programmatic = 자동 삽입
@@ -1566,12 +1566,12 @@ binder-filter-clear = 지우기
 binder-filter-none = "{ $query }"에 맞는 항목이 없습니다.
 
 settings-paratext-intro = 새 프로젝트의 앞부분과 뒷부분 구성입니다. 각 구성은 출판 관례에 따르며 페이지 제목은 해당 언어로 되어 있습니다. 프로젝트를 만든 뒤 자유롭게 이름을 바꿀 수 있습니다.
-settings-paratext-structures = 구조
+settings-paratext-structures = 구성
 settings-paratext-broken = 읽을 수 없습니다
 settings-paratext-edit = 편집
 settings-paratext-duplicate = 복제
 settings-paratext-delete = 삭제
-settings-paratext-new = 새 구조
+settings-paratext-new = 새 구성
 settings-paratext-save = 저장
 settings-paratext-editor-hint = 구성 이름과 원고 앞뒤에 만들 페이지를 정합니다. 프로젝트를 만든 뒤에는 일반 항목이므로 자유롭게 배치할 수 있습니다.
 
@@ -1628,7 +1628,7 @@ footnotes-insert = 각주 삽입 (&F)
 footnotes-empty = 아직 각주가 없습니다. 장면에 커서를 놓고 위의 + 또는 Ctrl+Alt+F를 사용하세요.
 footnotes-filter-all = 모두
 footnotes-filter-document = 이 문서
-footnotes-filter-orphaned = 연결된 텍스트 없음
+footnotes-filter-orphaned = 참조 없음
 footnotes-orphaned = 이 각주를 참조하는 곳이 없습니다
 footnotes-untitled-home = 제목 없음
 footnotes-body-placeholder = 각주 본문
@@ -1661,7 +1661,7 @@ import-document-col-incoming = 이 파일 내
 import-document-col-status = 상태
 import-document-col-action = 처리 방법
 import-document-status-identical = 동일함
-import-document-status-editor-edited = 상대방이 수정함
+import-document-status-editor-edited = 편집자가 수정함
 import-document-status-you-edited = 내가 수정함
 import-document-status-conflict = 양쪽 모두 수정함
 import-document-status-different = 다름
@@ -1858,14 +1858,14 @@ timeline-prose-only-record = 프로젝트 자체 이력은 본문만 보관하�
 settings-sec-extensions = 확장 기능
 
 settings-group-games-forward = 계속 앞으로
-settings-games-forward-toggle = 계속 앞으로 시작
+settings-games-forward-toggle = ‘계속 앞으로’ 시작
 settings-games-forward-hint = 진행 중에는 아래에서 선택한 화면의 Backspace, Delete, 잘라내기, 끌어다 놓기, 실행 취소를 막습니다. 입력, 붙여넣기, 서식 변경, 이동은 가능하며 초안은 계속 늘어납니다.
 settings-games-session-warning = 세션에만 적용하며 저장하지 않습니다. 프로젝트를 닫거나 Skribisto를 종료하면 게임이 끝나고 작성한 내용을 다시 실행 취소할 수 있습니다.
 settings-group-games-scope = 적용 대상
 settings-games-in-prose = 원고 본문
 settings-games-in-synopsis = 줄거리 요약
 settings-games-scope-hint = 댓글, 각주, 제목은 제한하지 않습니다. 지금 고칠 수 없는 내용을 메모하는 데 쓰세요.
-settings-games-inert-warning = 계속 앞으로가 켜져 있지만 적용 대상이 없습니다. 위에서 하나 이상 선택하지 않으면 입력 동작은 바뀌지 않습니다.
+settings-games-inert-warning = ‘계속 앞으로’가 켜져 있지만 적용 대상이 없습니다. 위에서 하나 이상 선택하지 않으면 입력 동작은 바뀌지 않습니다.
 
 games-title = 집필 게임
 games-forward-name = 계속 앞으로
@@ -1879,7 +1879,7 @@ games-scope-synopsis = 줄거리 요약에 적용합니다.
 games-scope-nothing = 아직 적용 대상이 없습니다. 설정에서 선택하세요.
 games-settings-link = 집필 게임 설정…
 statusbar-games-forward = 계속 앞으로
-statusbar-games-forward-tooltip = 계속 앞으로 켜짐: 삭제, 잘라내기, 실행 취소가 제한됩니다. 클릭하면 끝납니다.
+statusbar-games-forward-tooltip = ‘계속 앞으로’ 켜짐: 초안을 쓰는 동안 삭제, 잘라내기, 실행 취소를 할 수 없습니다. 클릭하면 끝납니다.
 goal-progress-words = { $g ->
    *[other] { $count } / { $goal }단어
 }
@@ -1973,7 +1973,7 @@ help-section-extensions = 확장 기능
 help-topic-getting-started = 첫 프로젝트
 help-topic-writing-model = 책의 구성 방식
 help-topic-drafts-and-old-versions = 이전 초안 보관
-help-topic-goals-and-pace = 목표 및 집필 일정
+help-topic-goals-and-pace = 목표 및 집필 계획
 help-topic-comments = 댓글
 help-topic-round-trip = 독자에게 책 보내기
 help-topic-export = 내보내기
@@ -2027,7 +2027,7 @@ shortcut-name-editor-find-next = 다음 일치 항목
 shortcut-name-editor-find-prev = 이전 일치 항목
 shortcut-name-search-show = 프로젝트에서 검색
 shortcut-name-search-replace = 프로젝트에서 바꾸기
-shortcut-name-outline-open-to-side = 옆 창에서 열기
+shortcut-name-outline-open-to-side = 측면에서 열기
 shortcut-name-help-topics = 도움말 주제
 shortcut-name-help-shortcuts = 키보드 단축키
 shortcut-name-help-website = Skribisto 웹사이트
@@ -2071,7 +2071,7 @@ help-concept-smart-punctuation = 스마트 문장 부호
 help-concept-export-style = 내보내기 스타일
 help-concept-round-trip-marks = 왕복 편집 표식
 
-epigraph-mark-attribution = 원본 줄
+epigraph-mark-attribution = 출처 줄
 epigraph-mark-attribution-tip = 커서가 있는 줄을 인용 출처로 지정하여 출처 표기로 출력합니다
 margin-lane-name = 여백 표시
 margin-lane-provider-comments = 댓글
@@ -2079,7 +2079,7 @@ margin-lane-provider-story-bible = 설정집 항목
 margin-lane-provider-story-bible-hint = 노트의 본문 내 보기에서 해당 항목의 언급과 시점 장면을 표시합니다. 본문 안의 이름도 표시합니다.
 margin-lane-mark-point-of-view = 이 시점으로 서술
 margin-lane-mark-named-here = 여기서 언급됨
-margin-lane-provider-comments-hint = 본문에 노트가 연결된 위치
+margin-lane-provider-comments-hint = 본문에 댓글이 달린 위치
 margin-lane-provider-search = 검색 결과
 margin-lane-provider-search-hint = 마지막 검색의 모든 일치 위치를 문서 전체에 표시합니다
 margin-lane-provider-boundaries = 각 문서의 시작 위치
@@ -2115,7 +2115,7 @@ status-todo = 할 일
 status-draft = 초안
 status-revised = 수정됨
 status-final = 최종본
-status-outline = 구조
+status-outline = 개요 작성
 status-first-edit = 1차 수정
 status-second-edit = 2차 수정
 status-done = 완료
@@ -2163,3 +2163,148 @@ status-category-drafting = 초안 작성
 status-category-needs-work = 작업 필요
 status-category-revised = 수정됨
 status-category-final = 최종본
+
+## Long-operation progress (shared::progress_text). The backend reports phase
+## codes it cannot translate; these are their labels. `progress-percent` is the
+## toast body on its own, `progress-percent-with-label` with the phase after it.
+progress-percent = { $percent }%
+progress-percent-with-label = { $percent }% · { $label }
+progress-import-opening = 프로젝트를 여는 중…
+progress-import-outline = 구조를 읽는 중…
+progress-import-converting = 장과 장면을 변환하는 중…
+progress-import-writing = .skrib 파일을 쓰는 중…
+progress-import-done = 완료
+progress-import-structure = 구성을 파악하는 중…
+progress-export-start = 시작하는 중…
+progress-export-writing = 쓰는 중…
+progress-project-reading = 프로젝트를 읽는 중…
+# Settings: the open project's section title, "Work: <its title>".
+settings-sec-work-titled = 프로젝트: { $title }
+
+## Project-import notices (shared::import_warnings::notices): one line of the
+## Plume / Manuskript warnings list each. $file, $folder, $title, $name, $field
+## and $error are data (file names, titles, a parser's own message) and stay as
+## they are. $container is "single-file" or "folder"; $kind is "scene", "note",
+## "synopsis" or "title".
+import-notice-flattened-rich-texts = 텍스트 { $count }개가 Skribisto 프로젝트에서 다룰 수 있는 깊이보다 더 깊이 중첩되어 있어, 서식 없이 일반 텍스트로 내용을 보존했습니다.
+import-notice-free-text-badges = 장면 배지 { $count }종이 상태 목록이 아니라 자유롭게 쓴 글처럼 보여서, 태그로 만들지 않고 항목의 보조 설명으로 보존했습니다.
+import-notice-separator-text-dropped = 구분자 "{ $name }"에 텍스트가 들어 있었지만 Skribisto 프로젝트에는 그 텍스트를 둘 곳이 없어 가져오지 않았습니다.
+import-notice-separator-without-scene = 구분자 "{ $name }"은(는) 같은 장 안에서 앞에 붙을 장면이 없어 가져오지 않았습니다.
+import-notice-chapter-without-scenes = 장 "{ $name }"에 장면이 없어 그 구분자를 가져오지 않았습니다.
+import-notice-rich-text-unconverted = 서식이 있는 텍스트 일부를 변환할 수 없어({ $error }) 가져오지 않았습니다.
+import-notice-unresolved-cross-link = 등장인물 항목 #{ $number }(으)로 가는 링크를 따라갈 수 없었습니다. 항목이 없거나 휴지통에 있었습니다.
+import-notice-read-copy = 이 프로젝트의 { $container ->
+    [single-file] 단일 파일
+   *[folder] 폴더
+} 사본을 읽었습니다.
+import-notice-read-copy-dated = 이 프로젝트의 { $container ->
+    [single-file] 단일 파일
+   *[folder] 폴더
+} 사본(마지막 수정: { $day })을 읽었습니다.
+import-notice-original-format = 이 프로젝트는 Manuskript의 2016년 원래 형식입니다. 전부 읽었으며 아무것도 바꾸지 않았습니다.
+import-notice-newer-single-file-beside = "{ $file }" 파일이 이 폴더보다 최신입니다({ $file_day } 대 { $folder_day }). Manuskript는 프로젝트를 단일 파일 모드로 바꿔도 이전 폴더를 남겨 두므로, 이 폴더는 더 이상 쓰지 않는 사본일 수 있습니다. 대신 .msk 파일을 가져오면 최신 내용을 읽습니다.
+import-notice-pickle-skipped = "{ $file }" 파일은 읽지 않았습니다. Python pickle 파일이며, 프로젝트 파일에서 pickle을 불러오는 것은 Manuskript 자체의 보안 결함이었습니다(CVE-2021-35196). 이 파일에 담긴 설정은 화면 표시 기본 설정일 뿐 원고 내용이 아닙니다.
+import-notice-file-unreadable = "{ $file }" 파일을 읽을 수 없어({ $error }) 건너뛰었습니다. 나머지는 모두 가져왔습니다.
+import-notice-not-utf8 = "{ $file }" 파일은 올바른 UTF-8이 아닙니다. 가져오기를 멈추지 않고, 읽을 수 없는 문자를 대체 문자로 바꿨습니다.
+import-notice-table-unreadable = "{ $file }" 파일을 읽을 수 없습니다({ $error }). 그 내용은 가져오지 않았습니다.
+import-notice-outline-missing = "{ $file }" 파일이 없어 이 프로젝트에서 가져올 원고가 없습니다.
+import-notice-outline-unreadable = "{ $file }" 파일을 읽을 수 없습니다({ $error }). 원고를 가져오지 않았습니다.
+import-notice-named-none-row = "{ $file }" 파일의 첫 줄은 Manuskript가 빈 "none" 항목을 두는 자리인데, 이름이 있는 줄("{ $name }")이 있습니다. 이 줄은 제외했으므로 그 뒤의 줄은 원고에서 쓰는 번호를 그대로 유지합니다.
+import-notice-unknown-field = "{ $file }" 파일에 이 가져오기 기능이 알지 못하는 필드 "{ $field }"이(가) 있습니다. 이 필드는 가져오지 않았습니다.
+import-notice-colorless-labels = "{ $file }" 파일에 색이 없는 줄이 { $count }개 있습니다. 색 없이 가져왔습니다. Manuskript는 이런 줄이 있으면 프로젝트 불러오기를 멈춥니다.
+import-notice-settings-unreadable = "{ $file }" 파일을 읽을 수 없습니다({ $error }). 프로젝트의 언어를 가져오지 않았습니다.
+import-notice-revisions-unreadable = "{ $file }" 파일을 읽을 수 없습니다({ $error }). 프로젝트의 이력은 가져오지 않았지만 다른 내용에는 영향이 없습니다.
+import-notice-foreign-files = 이 프로젝트에는 Manuskript 형식에 속하지 않는 파일이 { $count }개 있어 가져오지 않았습니다: { $files }.
+import-notice-foreign-files-more = 이 프로젝트에는 Manuskript 형식에 속하지 않는 파일이 { $count }개 있어 가져오지 않았습니다: { $files } 외 { $more }개.
+import-notice-not-a-character-file = "{ $file }" 파일은 Manuskript 등장인물 파일이 아니어서 제외했습니다.
+import-notice-not-a-text-item = "{ $file }" 파일은 Manuskript 텍스트 항목이 아니어서 구조에서 제외했습니다.
+import-notice-missing-blank-line = "{ $file }" 파일에는 머리글 뒤에 빈 줄이 없습니다. Manuskript에서는 마지막 필드가 사라지지만, 여기서는 보존했습니다.
+import-notice-folder-without-metadata = "{ $folder }"에 { $file }이(가) 없어, 디렉터리 이름을 딴 일반 폴더로 가져왔습니다. Manuskript는 이런 디렉터리를 그 안의 내용과 함께 모두 건너뜁니다.
+import-notice-rows-given-ids = 구조의 행 { $count }개에 고유 ID가 없어 ID를 부여했습니다. Manuskript는 이런 행을 버리고, 폴더인 경우에는 프로젝트 불러오기를 멈춥니다.
+import-notice-plots-unreadable = "{ $file }" 파일을 읽을 수 없습니다({ $error }). 줄거리를 가져오지 않았습니다.
+import-notice-world-unreadable = "{ $file }" 파일을 읽을 수 없습니다({ $error }). 세계관 항목을 가져오지 않았습니다.
+import-notice-world-not-opml = "{ $file }" 파일은 OPML 문서가 아닙니다. 세계관 항목을 가져오지 않았습니다.
+import-notice-text-flattened = "{ $title }"의 텍스트가 Skribisto 프로젝트에서 다룰 수 있는 깊이보다 더 깊이 중첩되어 있어, 서식 없이 일반 텍스트로 내용을 보존했습니다.
+import-notice-text-unconverted = "{ $title }"의 텍스트를 변환할 수 없어({ $error }) 쓰인 그대로 보존했습니다.
+import-notice-text-without-file-name = "{ $title }"의 { $kind ->
+    [scene] 장면 본문
+    [note] 노트 본문
+    [synopsis] 줄거리 요약
+   *[title] 제목
+}에 파일 이름을 붙일 수 없어 가져오지 않았습니다.
+import-notice-unknown-label = "{ $title }"의 레이블 { $index }은(는) 이 프로젝트의 레이블 목록에 없습니다. 레이블 없이 가져왔습니다.
+import-notice-unknown-status = "{ $title }"의 상태 { $index }은(는) 이 프로젝트의 상태 목록에 없습니다. 상태 없이 가져왔습니다.
+import-notice-unknown-point-of-view = "{ $title }"의 시점 인물이 이 프로젝트의 등장인물에 없습니다. 시점을 지정하지 않았습니다.
+import-notice-unresolved-references = "{ $title }"의 텍스트 안 참조를 풀 수 없었습니다({ $error }). 텍스트는 참조 표시를 포함해 변환된 그대로 보존했습니다.
+import-notice-custom-icons = 행 { $count }개에 사용자 지정 아이콘이 있었습니다. Skribisto는 행마다 유형에 맞는 아이콘을 쓰므로 아이콘은 가져오지 않았습니다. 행의 다른 내용은 바뀌지 않았습니다.
+import-notice-character-colors = 등장인물 { $count }명의 이름 옆에 색이 있었습니다. Skribisto는 행이 아니라 태그에 색을 입히므로 색은 가져오지 않았습니다. 등장인물은 모두 가져왔습니다.
+import-notice-versions-kept = 이 프로젝트에는 이전 버전이 { $found }개 기록되어 있었습니다. Skribisto가 자체 이력을 줄이는 방식과 같은 방식으로 줄여 { $kept }개를 남겼습니다. 버전 패널에서 볼 수 있습니다.
+import-notice-versions-unplaced = 이전 버전 { $count }개는 더 이상 프로젝트에 없는 행에 속해 있어 배치할 수 없었습니다.
+
+## Native file dialogs: the window title, and the label of the file-type filter.
+dialog-open-work-title = Skribisto 프로젝트 열기
+dialog-save-as-file-title = 단일 .skrib 파일로 저장
+dialog-save-as-folder-title = 프로젝트를 둘 상위 폴더 선택
+dialog-manuskript-file-title = Manuskript 프로젝트 선택
+dialog-manuskript-folder-title = Manuskript 프로젝트 폴더 선택
+dialog-filter-skrib = Skribisto 프로젝트
+dialog-filter-manuskript = Manuskript 프로젝트
+dialog-filter-plume = Plume Creator 프로젝트
+dialog-filter-hunspell-aff = Hunspell 접사 파일 (.aff)
+dialog-filter-hunspell-dic = Hunspell 사전 (.dic)
+dialog-filter-export = 내보낸 파일
+# Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
+shortcut-name-view-margin-lane = 여백 표시 보이기/숨기기
+
+## The built-in distraction-free themes' names (distraction_free::theme).
+df-theme-paper = 종이
+df-theme-sepia = 세피아
+df-theme-night = 밤
+df-theme-high-contrast = 고대비
+df-theme-midnight = 한밤
+
+## Welcome ▸ Examples: the line under a bundled example's title.
+welcome-example-byline = 지은이: { $author }
+
+## Spoken by a screen reader only.
+# Welcome window: the name of the section tab bar.
+welcome-sections-a11y = 시작 화면 섹션
+# A comment's anchored span in the editor: author, plain-text preview, replies.
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } (답글 { $count }개)
+comments-a11y-summary-author-replies = { $author }: { $text } (답글 { $count }개)
+# Margin marks beside the text: one mark, several merged into one, and the
+# lane's own name when nothing more specific was given.
+margin-lane-a11y-mark = { $label }, { $percent }퍼센트 지점
+margin-lane-a11y-marks = { $label }, 표시 { $count }개, { $percent }퍼센트 지점
+margin-lane-a11y-fallback = 여백 표시, { $count }개
+# Export ▸ Choose: the row standing for a binder that has no name.
+export-choose-unnamed-binder = 이름 없는 문서 트리
+# The built-in export styles named in words (the national manuscript presets
+# keep their own language's name).
+export-style-neutral = 기본
+export-style-manuscript-shunn = 표준 원고 형식 (Shunn)
+export-style-ebook-clean = 깔끔한 전자책
+
+## Dates. Put the parts in the order your language writes a short date; the
+## parts arrive already zero-padded where that matters.
+# Comment cards, the outline card's Created/Modified.
+date-time-short = { $year }. { $month }. { $day }. { $hour }:{ $minute }
+# Pace chart: a day on the axis, a milestone's date, a holiday.
+pace-day-label = { $month }. { $day }.
+
+## File sizes (shared::byte_size). $whole and $tenth are the two sides of the
+## decimal mark: write your language's mark between them and its unit symbol.
+byte-size-bytes = { $value } 바이트
+byte-size-kb = { $value } KB
+byte-size-mb = { $whole }.{ $tenth } MB
+byte-size-gb = { $whole }.{ $tenth } GB
+# A whole percentage (sliders, the Pace card, the text-size toast).
+unit-percent = { $value }%
+# A whole number of pixels (slider readouts).
+unit-pixels = { $value } px
+# Settings ▸ Paratext: a preset saved without a `name` line. `name` is the TOML
+# key the writer types and stays as it is.
+settings-paratext-error-no-name = 구성에는 `name`이 필요합니다.
+# Export: started with no project open (a menu raced a close).
+export-error-no-project = 내보낼 프로젝트가 열려 있지 않습니다.

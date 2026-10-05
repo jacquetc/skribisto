@@ -57,6 +57,10 @@ mod history_tests;
 /// A bundle that did not come from the person opening it.
 #[cfg(test)]
 mod hostile_tests;
+/// What the project importers tell the writer about a conversion, as data the UI
+/// translates rather than English sentences. Here because both importers and the UI
+/// depend on this crate.
+pub mod import_notice;
 mod loaded;
 /// Finding a bundle path on disk whatever Unicode normalisation a sync client or
 /// another filesystem gave its name. Every reader and writer of bundle-supplied

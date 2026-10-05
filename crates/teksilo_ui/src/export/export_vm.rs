@@ -835,7 +835,7 @@ impl ExportViewModel {
         let Some(dto) = self.dto() else {
             self.show_error(
                 ctx,
-                "no project is open to export",
+                &tr!(export_error_no_project()).resolve_now(),
                 self.ids.work_id.get(),
                 None,
             );
@@ -874,11 +874,7 @@ impl ExportViewModel {
 
     fn progress_toast(&self, percent: f32, message: &str) -> Toast {
         let vm = self.clone();
-        let body = if message.is_empty() {
-            format!("{percent:.0}%")
-        } else {
-            format!("{percent:.0}% · {message}")
-        };
+        let body = crate::shared::progress_text::progress_body(percent, message);
         // Keyed on the running operation (see `scoped_op_id`): with two windows
         // on one Work, two exports can be in flight at once, and a Work-only key
         // would let the second silently take over the first's toast — Cancel
@@ -890,7 +886,7 @@ impl ExportViewModel {
             .unwrap_or_default();
         Toast::loading(tr!(export_progress_title()))
             .scoped_op_id(EXPORT_TOAST_ID, self.active_work_id(), &op_id)
-            .body(lit!(body))
+            .body(body)
             .action(
                 ToastAction::destructive(tr!(export_cancel()), move |c| vm.cancel(c))
                     .closes_toast(false),

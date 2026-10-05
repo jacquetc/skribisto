@@ -3,7 +3,7 @@
 
 tags-preset-basic = Baza
 tags-preset-scifi = Sciencfikcio
-tags-preset-fantasy = Fantasto
+tags-preset-fantasy = Fantazio
 tags-preset-mystery = Mistero
 tags-preset-historical = Historia
 tags-preset-needs-research = bezonas esploron
@@ -72,9 +72,9 @@ settings-tags-csv-filter = CSV-dosieroj
 settings-tags-import = Importi…
 settings-tags-export = Eksporti…
 settings-tags-imported = Importitaj: { $added }; preterlasitaj: { $skipped }
-settings-tags-exported = Eksportitaj: { $n ->
-    [one] 1 etikedo
-   *[other] { $n } etikedoj
+settings-tags-exported = { $n ->
+    [one] 1 etikedo eksportita
+   *[other] { $n } etikedoj eksportitaj
 }
 tags-chip-more = { $n ->
     [one] 1 plia etikedo

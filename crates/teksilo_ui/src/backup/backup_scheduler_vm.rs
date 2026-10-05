@@ -965,24 +965,24 @@ fn to_engine_retention_mode(mode: RetentionMode) -> EngineRetentionMode {
 /// no i18n layer) to a localized phrase. Unrecognized/empty keys map to an
 /// empty string rather than falling back to raw text — never show unlocalized
 /// engine internals.
-fn progress_label(message: &str) -> String {
+fn progress_label(message: &str) -> Option<LocalizedString> {
     if message == "backup.start" {
-        String::from(tr!(backup_progress_start()))
+        Some(tr!(backup_progress_start()))
     } else if message == "backup.retention" {
-        String::from(tr!(backup_progress_retention()))
+        Some(tr!(backup_progress_retention()))
     } else if message == "backup.done" {
-        String::from(tr!(backup_progress_done()))
+        Some(tr!(backup_progress_done()))
     } else if let Some(rest) = message.strip_prefix("backup.destination:") {
         let mut parts = rest.splitn(2, ':');
         match (
             parts.next().and_then(|s| s.parse::<u32>().ok()),
             parts.next().and_then(|s| s.parse::<u32>().ok()),
         ) {
-            (Some(i), Some(n)) => String::from(tr!(backup_progress_destination(i = i, n = n))),
-            _ => String::new(),
+            (Some(i), Some(n)) => Some(tr!(backup_progress_destination(i = i, n = n))),
+            _ => None,
         }
     } else {
-        String::new()
+        None
     }
 }
 
@@ -993,15 +993,10 @@ fn progress_label(message: &str) -> String {
 /// [`crate::toast_scope::ToastWorkExt::scoped_id`], so a second Work's own
 /// progress toast can never land in this one's slot.
 fn progress_toast(work_id: impl Into<Option<u64>>, percent: f32, message: &str) -> Toast {
-    let label = progress_label(message);
-    let body = if label.is_empty() {
-        format!("{percent:.0}%")
-    } else {
-        format!("{percent:.0}% · {label}")
-    };
+    let body = crate::shared::progress_text::percent_body(percent, progress_label(message));
     Toast::loading(tr!(backing_up()))
         .scoped_id(BACKUP_TOAST_ID, work_id)
-        .body(lit!(body))
+        .body(body)
 }
 
 /// Join the engine's per-destination failure reasons and retention delete

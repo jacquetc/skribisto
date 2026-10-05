@@ -2,19 +2,19 @@
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 tags-preset-basic = Basis
-tags-preset-scifi = Science fiction
-tags-preset-fantasy = Fantasie
+tags-preset-scifi = Sciencefiction
+tags-preset-fantasy = Fantasy
 tags-preset-mystery = Mysterie
 tags-preset-historical = Historisch
 
 
-tags-preset-needs-research = heeft onderzoek nodig
+tags-preset-needs-research = research nodig
 tags-preset-continuity-check = continuïteitscontrole
 tags-preset-plot-point = plotpunt
 
-tags-preset-character = teken
-tags-preset-place = Plaats
-tags-preset-item = item
+tags-preset-character = personage
+tags-preset-place = plaats
+tags-preset-item = voorwerp
 
 tags-preset-vessel = vaartuig
 tags-preset-planet = planeet
@@ -26,125 +26,125 @@ tags-preset-realm = rijk
 tags-preset-magic-system = magisch systeem
 tags-preset-suspect = verdachte
 tags-preset-victim = slachtoffer
-tags-preset-clue = hint
-tags-preset-red-herring = rode haring
+tags-preset-clue = aanwijzing
+tags-preset-red-herring = dwaalspoor
 tags-preset-historical-figure = historische figuur
 tags-preset-source = bron
-tags-preset-period-detail = periode detail
+tags-preset-period-detail = tijdsdetail
 
 tags-pill-list = Tags
 tags-pill-add = Een tag toevoegen
 tags-none-yet = Geen tags
 tags-pick-list = Tags om uit te kiezen
-tags-pill-remove = Verwijderen { $name }
-tags-pill-filter-placeholder = Een nieuwe tag filteren of een naam geven
-tags-pill-no-match = Geen tag overeenkomsten
-tags-pill-create = Maak "{ $name }" aan
-tags-pill-create-failed = Kon "{ $name }" niet aanmaken
-tags-pill-new-discoverable = Zoek-in-prose-tag
-tags-pill-new-discoverable-hint = Items met deze tag zijn afgestemd op uw proza om het rooster te vullen.
+tags-pill-remove = { $name } verwijderen
+tags-pill-filter-placeholder = Filteren of een nieuwe tag benoemen
+tags-pill-no-match = Geen enkele tag komt overeen
+tags-pill-create = “{ $name }” aanmaken
+tags-pill-create-failed = Kan “{ $name }” niet aanmaken
+tags-pill-new-discoverable = Tag met zoeken in proza
+tags-pill-new-discoverable-hint = Items met deze tag worden met uw proza vergeleken om de rolbezetting te vullen.
 
 tags-alias-list = Ook bekend als
 tags-alias-add = Een andere naam toevoegen
-tags-alias-remove = Verwijderen { $name }
-tags-alias-placeholder = Een andere naam, dan Enter
-tags-alias-hint = Namen waar dit onder staat in je proza, naast de titel.
-tags-alias-collision = { $name } antwoordt al op deze naam.
+tags-alias-remove = { $name } verwijderen
+tags-alias-placeholder = Een andere naam, daarna Enter
+tags-alias-hint = Namen waaronder dit in uw proza voorkomt, naast de titel.
+tags-alias-collision = { $name } luistert al naar deze naam.
 
 settings-page-tags = Tags
-settings-tags-desc = Tags label de items in uw map. Een find-in-prose tag vertelt ook Skribisto om te zoeken naar de namen van dat item in uw proza.
+settings-tags-desc = Tags markeren de items in uw ordner. Een tag met zoeken in proza laat Skribisto bovendien naar de namen van dat item in uw proza zoeken.
 settings-tags-add = Tag toevoegen
-settings-tags-add-placeholder = Naam van een nieuwe tag
-settings-tags-added = Toegevoegd "{ $name }"
-settings-tags-duplicate = "{ $name }" bestaat al
-settings-tags-filter = Filtertags
+settings-tags-add-placeholder = Een nieuwe tag benoemen
+settings-tags-added = “{ $name }” toegevoegd
+settings-tags-duplicate = “{ $name }” bestaat al
+settings-tags-filter = Tags filteren
 settings-tags-count = { $n ->
-    [one] 1 label
-   *[other] { $n } tags
-}
+        [one] 1 tag
+       *[other] { $n } tags
+    }
 settings-tags-details-placeholder = Wat deze tag betekent
-settings-tags-discoverable = Zoek in proza
+settings-tags-discoverable = Zoeken in proza
 settings-tags-creates-in = Nieuwe notities gaan naar
-settings-tags-creates-in-unset = Vraag het me de eerste keer
+settings-tags-creates-in-unset = De eerste keer vragen
 settings-tags-creates-in-untitled = Naamloze map
 settings-tags-creates-in-trashed = { $name } (in de prullenbak)
-settings-tags-template = Sjabloon starten
-settings-tags-template-unset = Lege noot
-settings-tags-delete = { $name } schrappen
-settings-tags-deleted = Verwijderd "{ $name }" en verwijderd van elk item
-settings-tags-empty = Nog geen labels.
-settings-tags-apply-preset = Een voorinstelling toepassen...
-settings-tags-preset-applied = Toegevoegd { $added }, overgeslagen { $skipped } reeds aanwezig
-settings-tags-csv-filter = CSV bestanden
+settings-tags-template = Beginsjabloon
+settings-tags-template-unset = Lege notitie
+settings-tags-delete = { $name } verwijderen
+settings-tags-deleted = “{ $name }” verwijderd en van elk item gehaald
+settings-tags-empty = Nog geen tags.
+settings-tags-apply-preset = Een voorinstelling toepassen…
+settings-tags-preset-applied = { $added } toegevoegd, { $skipped } overgeslagen die al aanwezig waren
+settings-tags-csv-filter = CSV-bestanden
 settings-tags-import = Importeren…
 settings-tags-export = Exporteren…
-settings-tags-imported = Geïmporteerd { $added }, overgeslagen { $skipped }
-settings-tags-exported = Exporteren { $n ->
-    [one] 1 label
-   *[other] { $n } tags
-}
+settings-tags-imported = { $added } geïmporteerd, { $skipped } overgeslagen
+settings-tags-exported = { $n ->
+        [one] 1 tag geëxporteerd
+       *[other] { $n } tags geëxporteerd
+    }
 
 tags-chip-more = { $n ->
-    [one] 1 extra tag
-   *[other] { $n } meer tags
-}
+        [one] nog 1 tag
+       *[other] nog { $n } tags
+    }
 
-cast-section = Personages
-cast-add = Voeg toe aan cast...
-cast-add-filter-placeholder = Filter verhaal bijbel...
-cast-add-empty = Geen verhalen-bijbel items toe te voegen
-cast-pin = Voeg { $name } toe aan cast
-cast-unpin = Verwijderen { $name } uit gegoten
-cast-empty = Nog niemand vastgebonden. Voeg een suggestie toe of houd deze bij
-cast-unresolved = Niet meer in de verhaal bijbel
+cast-section = Rolbezetting
+cast-add = Toevoegen aan rolbezetting…
+cast-add-filter-placeholder = Verhaalbijbel filteren…
+cast-add-empty = Geen items uit de verhaalbijbel om toe te voegen
+cast-pin = { $name } toevoegen aan rolbezetting
+cast-unpin = { $name } uit rolbezetting verwijderen
+cast-empty = Nog niemand vastgezet. Voeg iemand toe of houd een suggestie aan
+cast-unresolved = Niet meer in de verhaalbijbel
 
-mentions-confirm = Voeg toe aan de cast van { $name }
+mentions-confirm = Toevoegen aan de rolbezetting van { $name }
 mentions-hit-count = { $n ->
     [one] eenmaal
    *[other] { $n } keer
 }
-mentions-point-of-view-badge = Perspectief
-mentions-point-of-view-badge-tooltip = Uitgesproken als het standpunt hier, ingesteld met de hand, niet gedetecteerd in de proza.
+mentions-point-of-view-badge = Vertelperspectief
+mentions-point-of-view-badge-tooltip = Hier met de hand als vertelperspectief opgegeven, niet in het proza gevonden.
 
-mentions-roster = Personages
-mentions-pin = Voeg { $name } toe aan cast
+mentions-roster = Rolbezetting
+mentions-pin = { $name } toevoegen aan rolbezetting
 
-pov-section = Perspectief
-pov-empty = Geen standpunt vastgesteld
-pov-add = Standpunt instellen...
-pov-multiple = Deze scène heeft twee standpunten.
-pov-remove = { $name } schrappen als standpunt
-pov-unresolved = Een standpunt werd hier gepind, maar die ingang bestaat niet meer of verloren zijn verhaal-bijbel tag.
+pov-section = Vertelperspectief
+pov-empty = Geen vertelperspectief ingesteld
+pov-add = Vertelperspectief instellen…
+pov-multiple = Deze scène heeft twee vertelperspectieven.
+pov-remove = { $name } als vertelperspectief verwijderen
+pov-unresolved = Hier was een vertelperspectief vastgezet, maar dat item bestaat niet meer of heeft zijn tag voor de verhaalbijbel verloren.
 
-books-section = Geplaatst onder
-books-empty = Nog niet ingediend onder een boek
-books-add = Bestand onder een boek...
-books-remove = Verwijderen uit { $name }
-books-apply-to-children = Aanmelden voor kinderen
+books-section = Ingedeeld bij
+books-empty = Nog niet bij een boek ingedeeld
+books-add = Bij een boek indelen…
+books-remove = Uit { $name } verwijderen
+books-apply-to-children = Indeling toepassen op onderliggende items
 
 note-details-name-placeholder = Naam…
 note-details-tags = Tags
 note-details-aliases = Andere namen
-note-details-books = Geplaatst onder
-note-details-books-empty = Nog niet ingediend onder een boek
-note-details-links = Links
-note-details-links-empty = Nog geen links. Voeg er een toe aan een andere vermelding in je verhaal bijbel.
-note-details-links-add = Link naar een briefje...
-note-details-pov = Perspectief
-note-details-pov-empty = Geen standpunt vastgesteld
-note-details-pov-unresolved = Een standpunt werd hier gepind, maar die ingang bestaat niet meer of verloren zijn verhaal-bijbel tag.
-note-details-pov-multiple = Deze nota heeft twee standpunten.
-note-details-backlinks = Verschijnt in het manuscript
-note-details-backlinks-empty = Zodra deze naam in je proza verschijnt, zal hij hier verschijnen.
+note-details-books = Ingedeeld bij
+note-details-books-empty = Nog niet bij een boek ingedeeld
+note-details-links = Koppelingen
+note-details-links-empty = Nog geen koppelingen. Voeg er een toe om naar een ander item in uw verhaalbijbel te verwijzen.
+note-details-links-add = Koppelen aan een notitie…
+note-details-pov = Vertelperspectief
+note-details-pov-empty = Geen vertelperspectief ingesteld
+note-details-pov-unresolved = Hier was een vertelperspectief vastgezet, maar dat item bestaat niet meer of heeft zijn tag voor de verhaalbijbel verloren.
+note-details-pov-multiple = Deze notitie heeft twee vertelperspectieven.
+note-details-backlinks = Komt voor in het manuscript
+note-details-backlinks-empty = Nog niets. Zodra deze naam in uw proza voorkomt, verschijnt die hier.
 note-details-backlinks-outside = Buiten de boeken
-note-details-backlinks-confirm-all = Bevestig elke verschijning
-note-details-backlinks-confirm-all-tooltip = Voeg dit item toe aan de cast van elk hier getoond document dat het nog niet heeft bevestigd
+note-details-backlinks-confirm-all = Elk voorkomen bevestigen
+note-details-backlinks-confirm-all-tooltip = Dit item toevoegen aan de rolbezetting van elk hier getoond document dat het nog niet heeft bevestigd
 note-details-untitled-document = Naamloos
 
 note-in-prose-mentions = { $n ->
-    [one] 1 vermelding
-   *[other] { $n } vermeldt
-}
+        [one] 1 vermelding
+       *[other] { $n } vermeldingen
+    }
 note-in-prose-mention-at = { $current } van { $total }
 note-in-prose-mention-previous = Vorige vermelding
 note-in-prose-mention-next = Volgende vermelding

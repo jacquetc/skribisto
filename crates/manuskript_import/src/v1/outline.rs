@@ -34,6 +34,7 @@ use std::collections::BTreeMap;
 use crate::mmd;
 use crate::model::{OutlineItem, OutlineKind};
 use crate::source::ManuskriptSource;
+use skrib_format::import_notice::ImportNotice;
 
 /// The `outline/` prefix every member of the tree carries.
 pub const OUTLINE_DIR: &str = "outline/";
@@ -95,7 +96,7 @@ impl<'a> Dir<'a> {
 
 /// Read the whole outline. Never fails: an unreadable corner is reported and the
 /// rest of the manuscript still arrives.
-pub fn read(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<OutlineItem> {
+pub fn read(src: &ManuskriptSource, notices: &mut Vec<ImportNotice>) -> Vec<OutlineItem> {
     let mut root = Dir::default();
     for member in src.members_under(OUTLINE_DIR) {
         let Some(rest) = member.strip_prefix(OUTLINE_DIR) else {
@@ -107,11 +108,9 @@ pub fn read(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<OutlineIte
     let mut synthetic_ids = 0usize;
     let items = read_dir(src, &root, notices, &mut synthetic_ids);
     if synthetic_ids > 0 {
-        notices.push(format!(
-            "{synthetic_ids} outline {} no ID of its own and was given one. Manuskript drops \
-             such a row, or stops loading the project entirely when it is a folder.",
-            plural(synthetic_ids, "row had", "rows had")
-        ));
+        notices.push(ImportNotice::RowsGivenIds {
+            count: synthetic_ids as u64,
+        });
     }
     items
 }
@@ -120,7 +119,7 @@ pub fn read(src: &ManuskriptSource, notices: &mut Vec<String>) -> Vec<OutlineIte
 fn read_dir(
     src: &ManuskriptSource,
     dir: &Dir<'_>,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
     synthetic_ids: &mut usize,
 ) -> Vec<OutlineItem> {
     // One ordered list of both kinds, so a folder and a file interleave by their
@@ -146,11 +145,10 @@ fn read_dir(
                         read_item(src, member, OutlineKind::Folder, notices, synthetic_ids)
                     }
                     None => {
-                        notices.push(format!(
-                            "'{OUTLINE_DIR}{name}' has no {FOLDER_FILE}, so it was imported as a \
-                             plain folder named after the directory. Manuskript skips such a \
-                             directory and everything inside it."
-                        ));
+                        notices.push(ImportNotice::FolderWithoutMetadata {
+                            member: format!("{OUTLINE_DIR}{name}"),
+                            metadata: FOLDER_FILE.to_string(),
+                        });
                         *synthetic_ids += 1;
                         OutlineItem {
                             id: None,
@@ -165,9 +163,9 @@ fn read_dir(
             }
             Entry::File(member) => {
                 if !name.ends_with(".md") {
-                    notices.push(format!(
-                        "'{member}' is not a Manuskript text item and was left out of the outline."
-                    ));
+                    notices.push(ImportNotice::NotATextItem {
+                        member: member.to_string(),
+                    });
                     continue;
                 }
                 out.push(read_item(
@@ -193,7 +191,7 @@ fn read_item(
     src: &ManuskriptSource,
     member: &str,
     kind: OutlineKind,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
     synthetic_ids: &mut usize,
 ) -> OutlineItem {
     let Some(text) = src.text(member) else {
@@ -206,16 +204,15 @@ fn read_item(
     };
     let file = mmd::parse(&text);
     if file.recovered_trailing_key {
-        notices.push(format!(
-            "'{member}' ended without a blank line after its metadata. Its last field was kept; \
-             Manuskript loses it."
-        ));
+        notices.push(ImportNotice::MissingBlankLine {
+            member: member.to_string(),
+        });
     }
     for key in file.unknown_keys(KNOWN_KEYS) {
-        notices.push(format!(
-            "'{member}' carries a field this importer does not know, '{key}'. It was not \
-             imported."
-        ));
+        notices.push(ImportNotice::UnknownField {
+            member: member.to_string(),
+            field: key,
+        });
     }
 
     let id = file.get("ID").map(str::to_string).filter(|s| !s.is_empty());
@@ -316,10 +313,6 @@ fn title_from_slug(name: &str) -> String {
     without_index.replace('_', " ")
 }
 
-fn plural(n: usize, one: &'static str, many: &'static str) -> &'static str {
-    if n == 1 { one } else { many }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -337,7 +330,7 @@ mod tests {
         let src = ManuskriptSource::for_tests(members);
         let mut notices = Vec::new();
         let items = read(&src, &mut notices);
-        (items, notices)
+        (items, notices.iter().map(ToString::to_string).collect())
     }
 
     fn titles(items: &[OutlineItem]) -> Vec<&str> {

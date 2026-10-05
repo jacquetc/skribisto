@@ -4,17 +4,17 @@ Importa file Word, LibreOffice, Markdown o di testo semplice nel progetto. Per u
 
 1. Scegli *Progetto ▸ Importa da ▸ Documenti (Markdown, Word, ODT)…*. Puoi anche fare clic con il pulsante destro nel Raccoglitore e scegliere *Importa qui…*.
 2. In *File*, trascina i file o fai clic su *Sfoglia…*. Sono supportati `.docx`, `.odt`, `.md` e `.txt`. Disponili nell'ordine desiderato e fai clic su *Avanti*.
-3. In *Revisione*, controlla libri, capitoli e scene proposti. Cambia la colonna *Tipo* se necessario. Deseleziona *Importa* per escludere un elemento e tutto il suo contenuto.
+3. In *Verifica*, controlla libri, capitoli e scene proposti. Cambia la colonna *Tipo* se necessario. Deseleziona *Importa* per escludere un elemento e tutto il suo contenuto.
 4. In *Destinazione*, scegli dove inserire il testo. Verrà inserito dentro la cartella selezionata oppure subito dopo un altro elemento selezionato.
 5. Fai clic su *Importa*. Prima di questo passaggio non viene aggiunto nulla al progetto. Dopo, il messaggio offre *Annulla* per alcuni secondi.
 
-Se i file contengono testo già nel progetto, può comparire un passaggio *Unisci*. Consulta [reimportare modifiche e commenti](:help-round-trip) prima di proseguire.
+Se i file contengono testo già nel progetto, può comparire un passaggio *Unione*. Consulta [reimportare modifiche e commenti](:help-round-trip) prima di proseguire.
 
 ## Controlla come i titoli diventano capitoli
 
-La procedura usa i titoli del documento per dividerlo in libri, parti, capitoli e scene. In *Livelli dei titoli* puoi cambiare la corrispondenza di ogni livello. Se i titoli principali sono capitoli, assegna quel livello a *Capitolo*.
+La procedura usa i titoli del documento per dividerlo in libri, parti, capitoli e scene. In *Livelli delle intestazioni* puoi cambiare la corrispondenza di ogni livello. Se i titoli principali sono capitoli, assegna quel livello a *Capitolo*.
 
-Se i file hanno titoli di capitolo ma nessun titolo di libro, *Aggiungi livello superiore* inserisce un Libro sopra di essi. Un file senza titoli viene importato come un solo elemento.
+Se i file hanno titoli di capitolo ma nessun titolo di libro, *Aggiungi livello principale* inserisce un Libro sopra di essi. Un file senza titoli viene importato come un solo elemento.
 
 Libri e parti non possono contenere direttamente testo principale. Quando c'è testo da conservare, *Il suo testo* offre *Conserva come paratesto* (predefinito) o *Scarta il testo*. Conservalo, a meno che tu voglia eliminarlo. Il [paratesto](:help-writing-model) comprende prefazioni e dediche.
 
@@ -24,7 +24,7 @@ I file Word e LibreOffice importano formattazione comune, collegamenti, allineam
 
 Il testo importato può apparire diverso dall'originale. Rientri e giustificazione seguono lo stile di esportazione. Alcune formattazioni possono essere semplificate.
 
-*Caselle di testo, equazioni e oggetti incorporati vengono esclusi.* Controlla i messaggi in *Revisione* e copia dall'originale eventuali testi mancanti. I simboli di caratteri grafici come Wingdings possono apparire come quadratini vuoti.
+*Caselle di testo, equazioni e oggetti incorporati vengono esclusi.* Controlla i messaggi in *Verifica* e copia dall'originale eventuali testi mancanti. I simboli di caratteri grafici come Wingdings possono apparire come quadratini vuoti.
 
 ## Controlla i messaggi prima di terminare
 

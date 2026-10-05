@@ -16,6 +16,7 @@
 
 use crate::model::WorldItem;
 use crate::xml::{self, attr, attr_opt};
+use skrib_format::import_notice::ImportNotice;
 
 /// The member holding the tree.
 pub const WORLD_MEMBER: &str = "world.opml";
@@ -25,21 +26,22 @@ pub const WORLD_MEMBER: &str = "world.opml";
 /// One nested past the XML ceiling is refused here too, as a notice, but an import
 /// never gets that far with one: [`crate::refuse_deep_xml`] has already refused the
 /// whole project by then.
-pub fn read(text: &str, notices: &mut Vec<String>) -> Vec<WorldItem> {
+pub fn read(text: &str, notices: &mut Vec<ImportNotice>) -> Vec<WorldItem> {
     let doc = match xml::parse(WORLD_MEMBER, text) {
         Ok(doc) => doc,
         Err(e) => {
-            notices.push(format!(
-                "'{WORLD_MEMBER}' could not be read ({e}); the world tree was not imported."
-            ));
+            notices.push(ImportNotice::WorldUnreadable {
+                member: WORLD_MEMBER.to_string(),
+                error: e.to_string(),
+            });
             return Vec::new();
         }
     };
     let root = doc.root_element();
     if root.tag_name().name() != "opml" {
-        notices.push(format!(
-            "'{WORLD_MEMBER}' is not an OPML document; the world tree was not imported."
-        ));
+        notices.push(ImportNotice::WorldNotOpml {
+            member: WORLD_MEMBER.to_string(),
+        });
         return Vec::new();
     }
     // The nodes hang under <body>; anything else at the top is OPML's own <head>.
@@ -114,7 +116,10 @@ mod tests {
         let mut notices = Vec::new();
         let world = read("<root><outline name=\"X\"/></root>", &mut notices);
         assert!(world.is_empty());
-        assert!(notices.iter().any(|n| n.contains("OPML")), "{notices:?}");
+        assert!(
+            notices.iter().any(|n| n.to_string().contains("OPML")),
+            "{notices:?}"
+        );
     }
 
     #[test]
@@ -122,7 +127,7 @@ mod tests {
         let mut notices = Vec::new();
         assert!(read("<opml><body>", &mut notices).is_empty());
         assert!(
-            notices.iter().any(|n| n.contains(WORLD_MEMBER)),
+            notices.iter().any(|n| n.to_string().contains(WORLD_MEMBER)),
             "{notices:?}"
         );
     }

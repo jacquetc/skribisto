@@ -19,27 +19,27 @@ Niente di particolare. Commenta e modifica in Word o LibreOffice come al solito,
 
 ## Reimporta il file
 
-*Progetto ▸ Importa da ▸ Documenti (Markdown, Word, ODT)…* apre la procedura. Consulta [importare documenti](:help-import-documents) per i passaggi precedenti a *Unisci*. La reimportazione avviene in *Unisci*.
+*Progetto ▸ Importa da ▸ Documenti (Markdown, Word, ODT)…* apre la procedura. Consulta [importare documenti](:help-import-documents) per i passaggi precedenti a *Unione*. La reimportazione avviene in *Unione*.
 
 Importa una copia di un lettore alla volta. Importarne diverse insieme aggiunge un altro libro invece di unire le modifiche alle tue.
 
-## Leggi il passaggio Unisci
+## Leggi il passaggio Unione
 
 Scegli la destinazione che contiene il manoscritto originale. Skribisto associa capitoli e scene restituiti a quelli esistenti.
 
 La colonna *Stato* indica cosa è successo:
 
-- *Identico*, *Modificato da loro*, *Modificato da te* o *Modificato da entrambi*, se il file conserva il testo originale per confrontare le due versioni.
-- *Identico* o *Diverso*, in caso contrario.
-- *Nuovo* per un elemento presente solo nel file; *Non in questo file* per uno presente solo nel progetto.
+- *Uguale*, *Modificato dal revisore*, *Modificato da te* o *Modificato da entrambi*, se il file conserva il testo originale per confrontare le due versioni.
+- *Uguale* o *Diverso*, in caso contrario.
+- *Nuovo* per un elemento presente solo nel file; *Assente da questo file* per uno presente solo nel progetto.
 - *Spostato* sostituisce questi stati se il file colloca altrove un elemento associato. Usa *Confronta* per verificare anche eventuali modifiche al testo.
 
 Se il lettore ha spostato un capitolo, spostalo tu nella struttura.
 
-*Cosa fare* offre *Solo commenti* (le loro note, il tuo testo), *Usa questa versione*, *Mantieni la mia*, *Aggiungi come nuovo* e *Ignora*. Controlla l'azione per ogni elemento. Alcuni stati limitano le scelte:
+*Cosa fare* offre *Solo commenti* (le loro note, il tuo testo), *Usa questa versione*, *Mantieni la mia*, *Aggiungi come nuovo* e *Salta*. Controlla l'azione per ogni elemento. Alcuni stati limitano le scelte:
 
-- *Nuovo* offre *Aggiungi come nuovo* o *Ignora*.
-- *Non in questo file* offre solo *Mantieni la mia*: un capitolo assente dalla copia altrui non è un motivo per eliminare il tuo.
+- *Nuovo* offre *Aggiungi come nuovo* o *Salta*.
+- *Assente da questo file* offre solo *Mantieni la mia*: un capitolo assente dalla copia altrui non è un motivo per eliminare il tuo.
 
 ## Accetta parte di una riscrittura
 
@@ -49,7 +49,7 @@ Se il lettore ha spostato un capitolo, spostalo tu nella struttura.
 
 ## Revisioni registrate
 
-Un file restituito durante una revisione viene importato con le modifiche già accettate: aggiunte conservate e cancellazioni eliminate. Il passaggio *Revisione* lo segnala e indica gli autori se registrati nel file.
+Un file restituito durante una revisione viene importato con le modifiche già accettate: aggiunte conservate e cancellazioni eliminate. Il passaggio *Verifica* lo segnala e indica gli autori se registrati nel file.
 
 *Confronta* permette di accettarle o rifiutarle un paragrafo alla volta: non puoi accettare le modifiche di una persona e rifiutare quelle di un'altra nello stesso paragrafo.
 

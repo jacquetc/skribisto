@@ -1,83 +1,83 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-menu-work = Project (&W)
-menu-new-work = Nieuw project (&N)
-menu-open-work = Project openen… (&O)
-menu-new-window = Nieuw venster (&W)
-menu-import-from = Importeren uit (&I)
-menu-create-from = Aanmaken van (&C)
-menu-import-plume = Plume Creator (.plume)… (&P)
-menu-import-document = Documenten (Markdown, Word, ODT)... (&D)
-menu-import-manuskript = Manuskript (.msk)… (&M)
-menu-export = Exporteren (&X)
+menu-work = &Project
+menu-new-work = &Nieuw project
+menu-open-work = Project &openen…
+menu-new-window = Nieuw &venster
+menu-import-from = &Importeren uit
+menu-create-from = &Aanmaken uit
+menu-import-plume = &Plume Creator (.plume)…
+menu-import-document = &Documenten (Markdown, Word, ODT)…
+menu-import-manuskript = &Manuskript (.msk)…
+menu-export = E&xporteren
 menu-export-book = Boek exporteren
 menu-export-part = Deel exporteren
 menu-export-chapter = Hoofdstuk exporteren
 menu-export-scene = Scène exporteren
 menu-export-note = Notitie exporteren
-menu-export-paratext = Paratext exporteren
+menu-export-paratext = Paratekst exporteren
 menu-export-folder = Map exporteren
-menu-export-choose = Kies...
-menu-export-none = Een document openen om te exporteren
-menu-save = Opslaan (&S)
-menu-save-as-file = Opslaan als één bestand… (&F)
-menu-save-as-folder = Opslaan als map… (&D)
-menu-backup = Nu een reservekopie maken (&B)
-menu-close-work = Project sluiten (&C)
-menu-welcome = Welkom. (&L)
-menu-settings = Instellingen (&E)
-menu-quit = Afsluiten (&Q)
+menu-export-choose = Kiezen…
+menu-export-none = Open een document om te exporteren
+menu-save = Op&slaan
+menu-save-as-file = Opslaan als één &bestand…
+menu-save-as-folder = Opslaan als &map…
+menu-backup = Nu &reservekopie maken
+menu-close-work = Project s&luiten
+menu-welcome = &Welkom…
+menu-settings = Ins&tellingen
+menu-quit = A&fsluiten
 
-menu-view = Beeld (&V)
-menu-outline = Overzicht (&O)
-menu-search = Zoeken in project (&S)
-menu-timeline = Ga terug in de tijd (&G)
-menu-search-preview = Zoekvoorbeeld (&P)
-menu-fullscreen = Volledig scherm (&F)
-menu-focus-mode = Afleidingsvrije modus (&D)
-menu-format = Opmaak (&O)
-menu-scene-break = Scene break invoegen (&K)
-menu-major-scene-break = Grote scèneafbreking invoegen (&M)
+menu-view = &Beeld
+menu-outline = &Ordner
+menu-search = &Zoeken in project
+menu-timeline = &Terug in de tijd
+menu-search-preview = &Voorbeeld zoekresultaat
+menu-fullscreen = Volledig sc&herm
+menu-focus-mode = &Afleidingsvrije modus
+menu-format = &Opmaak
+menu-scene-break = Scèneovergang i&nvoegen
+menu-major-scene-break = &Grote scèneovergang invoegen
 
-menu-go = Ga naar (&G)
-menu-go-next-scene = Volgende scène (&S)
-menu-go-prev-scene = Vorige scène (&V)
-menu-go-next-chapter = Volgende hoofdstuk (&C)
-menu-go-prev-chapter = Vorige hoofdstuk (&H)
-menu-go-next-note = Volgende notitie (&N)
-menu-go-prev-note = Vorige notitie (&T)
+menu-go = &Ga
+menu-go-next-scene = Volgende &scène
+menu-go-prev-scene = &Vorige scène
+menu-go-next-chapter = Volgend &hoofdstuk
+menu-go-prev-chapter = V&orig hoofdstuk
+menu-go-next-note = Volgende &notitie
+menu-go-prev-note = Vorige no&titie
 
-menu-tools = Extra (&T)
-menu-help = Help (&H)
+menu-tools = E&xtra
+menu-help = &Help
 
-ctx-add = Toevoegen (&A)
-ctx-new-item = Nieuw item (&N)
-ctx-new-folder = Nieuwe map (&F)
-ctx-rename = Naam wijzigen (&R)
-ctx-duplicate = Dupliceren (&D)
-ctx-import-here = Hier importeren... (&I)
-ctx-indent = Inspringen (&I)
-ctx-outdent = Uitspringen (&O)
-ctx-trash = Naar prullenbak verplaatsen (&T)
-ctx-open-to-side = Open naar de zijkant (&S)
-ctx-open = Openen (&O)
-ctx-reveal-in-outline = Onthullen in overzicht (&L)
-ctx-move-up = Omhoog verplaatsen (&U)
-ctx-move-down = Omlaag verplaatsen (&N)
+ctx-add = &Toevoegen
+ctx-new-item = &Nieuw item
+ctx-new-folder = Nieuwe &map
+ctx-rename = &Naam wijzigen
+ctx-duplicate = &Dupliceren
+ctx-import-here = Hier &importeren…
+ctx-indent = &Inspringen
+ctx-outdent = &Uitspringen
+ctx-trash = Naar &prullenbak verplaatsen
+ctx-open-to-side = &Openen aan de zijkant
+ctx-open = &Openen
+ctx-reveal-in-outline = Tonen in &ordner
+ctx-move-up = Omhoog ver&plaatsen
+ctx-move-down = Omlaag ver&plaatsen
 
-ctx-tab-close = Sluiten (&C)
-ctx-tab-close-others = Andere tabbladen sluiten (&O)
-ctx-tab-close-all = Alle tabbladen sluiten (&L)
-ctx-tab-open-to-side = Open naar de zijkant (&S)
-ctx-tab-open-in-main = Openen in het hoofdpaneel (&I)
-ctx-tab-move-to-side = Ga naar de zijkant (&M)
-ctx-tab-move-to-main = Verplaats naar het hoofdpaneel (&M)
-ctx-tab-move-to-new-window = Verplaatsen naar een nieuw venster (&N)
-ctx-tab-move-window-unsaved = Dit project eerst opslaan: een tweede venster opent zich op een bestand op schijf
-ctx-tab-pin = Pin dit tabblad (&P)
-ctx-tab-unpin = Dit tabblad losmaken (&U)
-tab-pinned-tooltip = Gepind: "Sluit anderen" en "Sluit alles" laat het open
+ctx-tab-close = &Sluiten
+ctx-tab-close-others = &Andere sluiten
+ctx-tab-close-all = A&lle sluiten
+ctx-tab-open-to-side = &Openen aan de zijkant
+ctx-tab-open-in-main = &Openen in het hoofdpaneel
+ctx-tab-move-to-side = &Verplaatsen naar de zijkant
+ctx-tab-move-to-main = &Verplaatsen naar het hoofdpaneel
+ctx-tab-move-to-new-window = Verplaatsen naar een &nieuw venster
+ctx-tab-move-window-unsaved = Sla dit project eerst op: een tweede venster opent een bestand op schijf
+ctx-tab-pin = Dit tabblad vast&zetten
+ctx-tab-unpin = Dit tabblad los&maken
+tab-pinned-tooltip = Vastgezet: “Andere sluiten” en “Alle sluiten” laten dit tabblad open
 
 create-book = Boek
 create-part = Deel
@@ -89,8 +89,8 @@ create-folder = Map
 create-paratext = Paratekst
 create-paratext-folder = Paratekstmap
 create-book-end = Einde van het boek
-create-story-bible-entry = Story Bijbel ingang...
-type-book-start = Boekstart
+create-story-bible-entry = Item in verhaalbijbel…
+type-book-start = Begin van het boek
 type-text = Tekst
 
 new-item-book = Nieuw boek
@@ -101,47 +101,47 @@ new-item-note-folder = Nieuwe notitiemap
 new-item-folder = Nieuwe map
 new-item-paratext = Nieuwe paratekst
 new-item-paratext-folder = Nieuwe paratekstmap
-new-item-story-bible-entry = Nieuw verhaal Bijbelinvoer
+new-item-story-bible-entry = Nieuw item in verhaalbijbel
 
 placement-inside = binnen
 placement-after = na
-placement-after-parent = na ouder
+placement-after-parent = na bovenliggend item
 placement-top-level = topniveau
 
 
-ctx-promote = Omzetten naar (&C)
+ctx-promote = O&mzetten naar
 promote-chapter-folder = Hoofdstukmap
-promote-flat-chapter = Zelfstandig hoofdstuk
-promote-lossy-title = Nergens om de tekst te bewaren
-promote-lossy-text = Een { $target } kan deze nergens bewaren: { $kinds }. Beweeg of wis die tekst eerst, dan bekeer je.
+promote-flat-chapter = Plat hoofdstuk
+promote-lossy-title = Geen plek voor de tekst
+promote-lossy-text = Een { $target } heeft geen plek voor: { $kinds }. Verplaats of wis die tekst eerst en zet daarna om.
 content-scene-text = Scènetekst
 content-note-text = Notitietekst
 content-book-title = Boektitel
-content-book-subtitle = Ondertiteling boek
-content-part-title = Titel deel
-content-chapter-title = Titel hoofdstuk
+content-book-subtitle = Ondertitel van het boek
+content-part-title = Titel van het deel
+content-chapter-title = Titel van het hoofdstuk
 content-epigraph-text = Motto
 content-paratext-text = Paratekst
-promote-blocked-title = Hoofdstuk niet leeg
+promote-blocked-title = Hoofdstuk is niet leeg
 promote-blocked-text = { $count ->
-    [one] Dit hoofdstuk bevat nog steeds { $count } item. Verplaats of prullenbak voordat het wordt omgezet in een plat hoofdstuk.
-   *[other] Dit hoofdstuk bevat nog steeds { $count } artikelen. Verplaats ze of gooi ze weg voordat ze worden omgezet in een plat hoofdstuk.
+        [one] Dit hoofdstuk bevat nog { $count } item. Verplaats het of gooi het in de prullenbak voordat u het omzet naar een plat hoofdstuk.
+       *[other] Dit hoofdstuk bevat nog { $count } items. Verplaats ze of gooi ze in de prullenbak voordat u het omzet naar een plat hoofdstuk.
 }
 
-inspector = Eigenschappen
-inspector-empty = Open een item om het te inspecteren.
-inspector-promote = Omzetten naar...
-statusbar-toggle-outline = Bindmiddel aan/uit
-statusbar-toggle-inspector = Schakel de inspecteur in
-statusbar-save-unsaved = Niet opgeslagen wijzigingen. Klik om op te slaan
+inspector = Inspector
+inspector-empty = Open een item om het te bekijken.
+inspector-promote = Omzetten naar…
+statusbar-toggle-outline = Ordner tonen/verbergen
+statusbar-toggle-inspector = Inspector tonen/verbergen
+statusbar-save-unsaved = Niet-opgeslagen wijzigingen. Klik om op te slaan
 statusbar-save-saved = Alle wijzigingen opgeslagen
-statusbar-save-autosave = Automatisch opslaan is ingeschakeld. Wijzigingen worden opgeslagen als u schrijft
-statusbar-saving = Opslaan...
+statusbar-save-autosave = Automatisch opslaan is ingeschakeld. Wijzigingen worden opgeslagen terwijl u schrijft
+statusbar-saving = Bezig met opslaan…
 statusbar-word-count = { $count ->
     [one] { $count } woord
    *[other] { $count } woorden
 }
-statusbar-word-count-tooltip = Woorden in de scène die je bewerkt
+statusbar-word-count-tooltip = Woorden in de scène die u bewerkt
 statusbar-word-char-count = { $words ->
     [one] { $words } woord
    *[other] { $words } woorden
@@ -149,21 +149,27 @@ statusbar-word-char-count = { $words ->
     [one] { $chars } teken
    *[other] { $chars } tekens
 }
-session-toggle = Schrijven sessie: start of pauzeer een gerichte sprint
-session-configure = Het woord doel en de tijdslimiet van de sessie instellen
-session-configure-title = sessie schrijven
+session-toggle = Schrijfsessie: een geconcentreerde sprint starten of pauzeren
+session-configure = Het woordendoel en de tijdslimiet van de sessie instellen
+session-configure-title = Schrijfsessie
 session-word-goal = Woordendoel
-session-time-limit = Termijn
+session-time-limit = Tijdslimiet
 session-time-limit-unit = min
 session-no-goal = Geen doel
 session-no-limit = Geen limiet
-session-reset = Sessie resetten
-session-readout = { $words } woorden · { $time }
-session-readout-timed = { $words } woorden · { $time } links
+session-reset = Sessie opnieuw beginnen
+session-readout = { $words ->
+    [one] { $words } woord
+   *[other] { $words } woorden
+} · { $time }
+session-readout-timed = { $words ->
+    [one] { $words } woord
+   *[other] { $words } woorden
+} · nog { $time }
 statusbar-focus-exit = Afleidingsvrije modus verlaten
 statusbar-focus-synopsis = Synopsis
-statusbar-focus-go-prev = Vorige item (Alt+Up)
-statusbar-focus-go-next = Volgende item (Alt+Down)
+statusbar-focus-go-prev = Vorig item (Alt+Omhoog)
+statusbar-focus-go-next = Volgend item (Alt+Omlaag)
 
 rail-settings = Instellingen
 
@@ -174,198 +180,198 @@ french = Frans
 light = Licht
 dark = Donker
 settings-text-width = Tekstbreedte
-settings-preview-width = Zoekvoorbeeldbreedte
+settings-preview-width = Breedte van voorbeeld zoekresultaat
 settings-autosave = Automatisch opslaan naar schijf
-settings-show-welcome = Lancering tonen bij opstarten
-settings-show-welcome-tip = Het laatste project wordt heropend.
+settings-show-welcome = Startscherm tonen bij het opstarten
+settings-show-welcome-tip = Indien uitgeschakeld, wordt in plaats daarvan het laatste project heropend.
 settings-check-for-updates = Controleren op nieuwe versies
 settings-check-for-updates-tip = Eenmaal per dag vraagt Skribisto aan de website van het project welke versie actueel is. Het verzoek bevat geen identificatiecode en zelfs niet de versie die u uitvoert: de vergelijking gebeurt op deze computer.
 
 settings-title = Instellingen
 settings-close = Sluiten
-settings-search = Zoekinstellingen
-settings-reset = Terugzetten naar standaardinstellingen
+settings-search = Instellingen doorzoeken
+settings-reset = Standaardwaarden herstellen
 settings-done = Gereed
 settings-cancel = Annuleren
 settings-apply = Toepassen
 settings-ok = OK
-settings-reset-confirm-title = Alle instellingen terugzetten naar standaardinstellingen?
-settings-reset-confirm-body = Herstelt de uiterlijke, editor- en schrijfinstellingen van deze toepassing. De eigen instellingen van uw project, sneltoetsen en opgeslagen stijlen worden niet beïnvloed. Het kan niet ongedaan worden gemaakt.
-settings-empty-title = Nog geen instellingen hier
-settings-empty-hint = Deze sectie krijgt opties in een toekomstige update.
+settings-reset-confirm-title = Alle instellingen terugzetten naar de standaardwaarden?
+settings-reset-confirm-body = Herstelt de instellingen voor uiterlijk, editor en schrijven van deze toepassing. De eigen instellingen van uw project, sneltoetsen en opgeslagen stijlen blijven ongewijzigd. Dit kan niet ongedaan worden gemaakt.
+settings-empty-title = Hier zijn nog geen instellingen
+settings-empty-hint = Deze sectie krijgt opties in een toekomstige versie.
 
-settings-sec-appearance-behaviour = Uiterlijk gedrag
+settings-sec-appearance-behaviour = Uiterlijk en gedrag
 settings-sec-editor = Editor
 settings-sec-spelling = Spelling
-settings-sec-backup = Reservekopie synchroniseren
-settings-sec-compile = Uitvoer compileren
+settings-sec-backup = Reservekopie en synchronisatie
+settings-sec-compile = Samenstellen en exporteren
 settings-page-appearance = Uiterlijk
 settings-field-image-size-policy = Grote afbeeldingen
 settings-image-policy-ask = Elke keer vragen
 settings-image-policy-keep = Origineel bewaren
 settings-image-policy-downscale = Optimaliseren
-settings-hint-image-size-policy = Wat te doen als een ingevoegd beeld groter is dan het manuscript nodig heeft.
-settings-page-notifications = Kennisgevingen
+settings-hint-image-size-policy = Wat er moet gebeuren als een ingevoegde afbeelding groter is dan het manuscript nodig heeft.
+settings-page-notifications = Meldingen
 settings-page-scene = Scène
 settings-page-synopsis = Synopsis
 settings-page-notes = Notities
-settings-page-editor-behavior = Editorgedrag
-settings-page-goals = Doelen Word Count
-settings-page-games = Spelletjes schrijven
+settings-page-editor-behavior = Gedrag van de editor
+settings-page-goals = Doelen en aantal woorden
+settings-page-games = Schrijfspellen
 settings-page-corkboard = Prikbord
 settings-page-distraction-free = Afleidingsvrij
 settings-page-dictionaries = Woordenboeken
 settings-page-autosave = Automatisch opslaan
-settings-page-export = Formaten exporteren
+settings-page-export = Exportformaten
 settings-page-paratext = Paratekststructuren
-settings-page-keymap = Sleutelkaart
+settings-page-keymap = Sneltoetsen
 settings-keymap-filter = Sneltoetsen filteren
 
-settings-desc-sec-appearance-behaviour = Hoe de toepassing zelf eruit ziet, en wat het doet als het begint.
-settings-desc-sec-editor = Het schrijfvlak: hoe het eruit ziet, en wat het doet als je typt.
-settings-desc-sec-spelling = Spell-checking, en de woordenboeken erachter.
-settings-desc-sec-backup = Hoe uw Project de schijf bereikt en welke kopieën bewaard worden.
-settings-desc-sec-compile = Wat overblijft Skribisto, en in welke vorm.
-settings-desc-sec-work = Instellingen die behoren tot dit project en reizen in zijn bestand.
-settings-desc-sec-extensions = Pagina's bijgedragen door de extensies hier geïnstalleerd.
-settings-desc-group-typography = Een pagina per soort tekst: lettertype, grootte, lijnhoogte en afstand.
-settings-desc-appearance = Interface taal, thema, tekstgrootte, en de launcher bij het opstarten.
-settings-desc-notifications = Elke boodschap die deze sessie heeft getoond, en de acties die je kunt herhalen.
-settings-desc-scene = Hoe scène proza is ingesteld: lettertype, grootte, lijnhoogte, streepjes en afstand.
+settings-desc-sec-appearance-behaviour = Hoe de toepassing er zelf uitziet en wat ze doet bij het opstarten.
+settings-desc-sec-editor = Het schrijfvlak: hoe het eruitziet en wat het doet terwijl u typt.
+settings-desc-sec-spelling = Spellingscontrole en de woordenboeken erachter.
+settings-desc-sec-backup = Hoe uw werk op schijf terechtkomt en welke kopieën worden bewaard.
+settings-desc-sec-compile = Wat Skribisto verlaat, en in welke vorm.
+settings-desc-sec-work = Instellingen die bij dit project horen en in het projectbestand worden meegenomen.
+settings-desc-sec-extensions = Pagina’s die worden aangeboden door de hier geïnstalleerde extensies.
+settings-desc-group-typography = Eén pagina per soort tekst: lettertype, grootte, regelhoogte en witruimte.
+settings-desc-appearance = Interfacetaal, thema, tekstgrootte en het startscherm bij het opstarten.
+settings-desc-notifications = Alle meldingen die in deze sessie zijn getoond, en de acties die u opnieuw kunt uitvoeren.
+settings-desc-scene = Hoe scèneproza wordt gezet: lettertype, grootte, regelhoogte, inspringingen en witruimte.
 settings-desc-synopsis = Hoe het synopsispaneel wordt ingesteld, onafhankelijk van het manuscript.
-settings-desc-notes = Hoe noten worden gezet, onafhankelijk van het manuscript.
-settings-desc-corkboard = Kaartgrootte, wat een kaart laat zien, en hoe het bord ze regelt.
-settings-desc-distraction-free = Typografie, kolombreedte en regelstrip voor volledig schermschrift.
-settings-desc-distraction-free-themes = De themabibliotheek voor full-screen schrijven: de verzonden en je eigen.
-settings-desc-editor-behavior = Tekstbreedte, synopsispositie, schrijfmachine scrollen en het caret highlight.
-settings-desc-punctuation = De typografische huisstijl nieuwe projecten beginnen van. Elk project volgt dit tenzij het zijn eigen.
-settings-desc-goals = Woord en karakter doelen, en hoe woorden worden geteld.
-settings-desc-games = Restricties die je jezelf stelt tijdens het opstellen, zoals Altijd vooruit.
-settings-desc-spellcheck = De enkele schakelaar die overal spellingscontrole aan en uit zet.
-settings-desc-dictionaries = Installeer, verwijder en blader door de spelling woordenboeken op deze machine.
-settings-desc-autosave = Of uw bewerkingen alleen naar de schijf zijn geschreven.
-settings-desc-backup = Wanneer kopieën worden genomen, waar ze worden bewaard, en hoeveel. Elk project volgt dit tenzij het zijn eigen.
-settings-desc-export = De stijlen die elke export compileert door: de verzonden en je eigen.
-settings-desc-paratext = De voor- en achterkant van een nieuw project kan beginnen.
-settings-desc-keymap = Elke kortere weg, en waaraan het gebonden is.
+settings-desc-notes = Hoe notities worden gezet, onafhankelijk van het manuscript.
+settings-desc-corkboard = Kaartgrootte, wat een kaart toont en hoe het prikbord ze schikt.
+settings-desc-distraction-free = Typografie, kolombreedte en bedieningsbalk voor schrijven op volledig scherm.
+settings-desc-distraction-free-themes = De themabibliotheek voor schrijven op volledig scherm: de meegeleverde thema’s en uw eigen thema’s.
+settings-desc-editor-behavior = Tekstbreedte, positie van de synopsis, typemachinescrollen en de cursormarkering.
+settings-desc-punctuation = De typografische huisstijl waarmee nieuwe projecten beginnen. Elk project volgt deze, tenzij het een eigen stijl instelt.
+settings-desc-goals = Doelen voor woorden en tekens, en hoe woorden worden geteld.
+settings-desc-games = Beperkingen die u uzelf oplegt tijdens het schrijven van een eerste versie, zoals Altijd vooruit.
+settings-desc-spellcheck = De ene schakelaar die de spellingscontrole overal in- en uitschakelt.
+settings-desc-dictionaries = Spellingswoordenboeken op deze computer installeren, verwijderen en bekijken.
+settings-desc-autosave = Of uw bewerkingen vanzelf naar schijf worden geschreven.
+settings-desc-backup = Wanneer kopieën worden gemaakt, waar ze worden bewaard en hoeveel. Elk project volgt dit, tenzij het een eigen beleid instelt.
+settings-desc-export = De stijlen waarmee elke export wordt samengesteld: de meegeleverde en uw eigen stijlen.
+settings-desc-paratext = De voor- en nawerken waarmee een nieuw project kan beginnen.
+settings-desc-keymap = Elke sneltoets en de opdracht waaraan die gekoppeld is.
 settings-page-user = Gebruiker
-settings-desc-user = Wie je bent, voor de commentaren die je schrijft.
+settings-desc-user = Wie u bent, voor de opmerkingen die u schrijft.
 settings-group-identity = Identiteit
 settings-field-user-name = Uw naam
-settings-field-user-name-placeholder = Facultatief
-settings-field-user-name-hint = Teken de commentaren en antwoorden die u schrijft. Onderscheiden van de auteur naam van een project, dat is de boek byline en reist in het bestand.
+settings-field-user-name-placeholder = Optioneel
+settings-field-user-name-hint = Ondertekent de opmerkingen en antwoorden die u schrijft. Staat los van de auteursnaam van een project: die is de naamsvermelding van het boek en wordt in het projectbestand meegenomen.
 settings-field-user-initials = Uw initialen
-settings-field-user-initials-placeholder = Uit uw naam
-settings-field-user-initials-hint = Wat een tekstverwerker toont naast uw commentaar in de marge. Laat het leeg om de getoonde te gebruiken, genomen van uw naam.
-settings-field-user-hint = Beide zijn optioneel en gelden voor elk project op deze computer. Veranderen van ze tekent de commentaren die u schrijft volgende. Reacties al geschreven houden de naam waarop ze werden geschreven onder.
-settings-desc-author = De naam die op dit project gaat.
+settings-field-user-initials-placeholder = Afgeleid van uw naam
+settings-field-user-initials-hint = Wat een tekstverwerker naast uw opmerking in de marge toont. Laat dit leeg om de getoonde initialen te gebruiken, afgeleid van uw naam.
+settings-field-user-hint = Beide zijn optioneel en gelden voor elk project op deze computer. Een wijziging geldt voor de opmerkingen die u hierna schrijft. Opmerkingen die al geschreven zijn, behouden de naam waaronder ze geschreven werden.
+settings-desc-author = De naam die op dit project staat.
 settings-desc-structure = Of de hoofdstukken van dit project mappen of afzonderlijke items zijn.
-settings-desc-language = De taal waarmee dit project proza wordt gecheckt.
-settings-desc-work-backup = Het eigen back-upbeleid van dit project, of het algemene beleid.
+settings-desc-language = De taal waartegen het proza van dit project wordt gecontroleerd.
+settings-desc-work-backup = Het eigen reservekopiebeleid van dit project, of het algemene beleid.
 settings-desc-personal-dictionary = De woorden die dit project als correct gespeld behandelt.
-settings-desc-tags = De kleurgecodeerde labels waarmee dit project zijn items markeert.
-settings-desc-templates = De notitiesjablonen die je kunt invoegen tijdens het schrijven in dit project.
-settings-desc-text-replacements = Sneltoetsen die uitbreiden als je in dit project typt.
-settings-desc-work-punctuation = De citaten, streepjes en afstand van dit project proza volgt.
+settings-desc-tags = De tags met kleurcode waarmee dit project zijn items markeert.
+settings-desc-templates = De notitiesjablonen die u tijdens het schrijven in dit project kunt invoegen.
+settings-desc-text-replacements = Afkortingen die worden uitgeschreven terwijl u in dit project typt.
+settings-desc-work-punctuation = De aanhalingstekens, streepjes en spaties die het proza van dit project volgt.
 
 settings-group-typography = Typografie
-settings-group-writing-column = Kolom schrijven
-settings-group-writing-view = Weergave schrijven
-settings-group-distraction-free-strip = Controlestrook
+settings-group-writing-column = Schrijfkolom
+settings-group-writing-view = Schrijfweergave
+settings-group-distraction-free-strip = Bedieningsbalk
 settings-group-theme = Thema
 settings-group-language = Taal
-settings-group-startup = Starten
-settings-group-updates = Bijwerken
+settings-group-startup = Opstarten
+settings-group-updates = Updates
 settings-group-autosave = Automatisch opslaan
-settings-field-typeface = Typenaam
+settings-field-typeface = Lettertype
 settings-field-size = Tekstgrootte
 
-editor-size-changed-manuscript = Manuscriptgrootte: { $percent }
-editor-size-changed-synopsis = Synopsis formaat tekst: { $percent }
-editor-size-changed-notes = Opmerkingen grootte tekst: { $percent }
-editor-size-changed-corkboard = Corkboard kaart tekstgrootte: { $percent }
-editor-size-changed-corkboard-expanded = Uitgebreide editor tekstgrootte: { $percent }
-editor-size-changed-distraction-free = Afleidingsvrije tekstgrootte: { $percent }
+editor-size-changed-manuscript = Tekstgrootte manuscript: { $percent }
+editor-size-changed-synopsis = Tekstgrootte synopsis: { $percent }
+editor-size-changed-notes = Tekstgrootte notities: { $percent }
+editor-size-changed-corkboard = Tekstgrootte prikbordkaarten: { $percent }
+editor-size-changed-corkboard-expanded = Tekstgrootte uitgevouwen editor: { $percent }
+editor-size-changed-distraction-free = Tekstgrootte afleidingsvrije modus: { $percent }
 
-menu-text-size-increase = Tekstgrootte vergroten (&I)
-menu-text-size-decrease = Tekst verkleinen (&C)
-menu-text-size-reset = Tekstgrootte resetten (&R)
-settings-field-line-height = Lijnhoogte
-settings-field-first-line-indent = Eerste regel streepje
-settings-field-paragraph-spacing-before = Spatie voor paragraaf
-settings-field-paragraph-spacing-after = Spatie na paragraaf
+menu-text-size-increase = Tekst &groter
+menu-text-size-decrease = Tekst &kleiner
+menu-text-size-reset = Tekstgrootte he&rstellen
+settings-field-line-height = Regelhoogte
+settings-field-first-line-indent = Inspringing eerste regel
+settings-field-paragraph-spacing-before = Ruimte boven alinea
+settings-field-paragraph-spacing-after = Ruimte onder alinea
 settings-field-column-width = Kolombreedte
-settings-distraction-free-width-hint = Geldt alleen terwijl afleidingsvrije modus is ingeschakeld. Uw Scene, Synopsis en Notes kolombreedtes zijn onaangetast.
+settings-distraction-free-width-hint = Geldt alleen zolang de afleidingsvrije modus aan staat. De kolombreedtes van Scène, Synopsis en Notities blijven ongewijzigd.
 settings-distraction-free-title = De naam van het item behouden
-settings-distraction-free-word-count = Hou het woord tellen
+settings-distraction-free-word-count = Het aantal woorden behouden
 settings-distraction-free-session = De schrijfsessie behouden
-settings-distraction-free-go-to = Hou de Go naar... knop
-settings-distraction-free-go = Houd de vorige en volgende knoppen
-settings-distraction-free-chrome-hint = De Exit knop blijft altijd, wat u hier ook kiest. Het is uw uitweg als Escape is bezet.
+settings-distraction-free-go-to = De knop Ga naar… behouden
+settings-distraction-free-go = De knoppen Vorige en Volgende behouden
+settings-distraction-free-chrome-hint = De knop Verlaten blijft altijd staan, wat u hier ook kiest. Daarmee komt u er altijd uit als Escape bezet is.
 settings-field-app-theme = Thema
 settings-theme-light = Licht
 settings-theme-dark = Donker
-settings-field-text-scale = Interface tekstgrootte
-settings-field-language = Interface-taal
+settings-field-text-scale = Tekstgrootte van de interface
+settings-field-language = Interfacetaal
 settings-synopsis-placement = Synopsispositie
 settings-synopsis-placement-none = Geen
 settings-synopsis-placement-top = Boven
 settings-synopsis-placement-side = Naast
-settings-typewriter = Schrijfmachine scrollen
-settings-typewriter-tip = Houdt de lijn die u schrijft op een vaste hoogte terwijl het manuscript eronder rolt. Klikken plaatst nog steeds de curret waar u klikt.
-settings-typewriter-position = Lijnpositie
+settings-typewriter = Typemachinescrollen
+settings-typewriter-tip = Houdt de regel waaraan u schrijft op een vaste hoogte terwijl het manuscript eronder verschuift. Klikken plaatst de cursor nog steeds waar u klikt.
+settings-typewriter-position = Positie van de regel
 settings-typewriter-position-top-third = Bovenste derde
-settings-typewriter-position-middle = Midden
-settings-typewriter-position-bottom-quarter = Onderkwartier
-settings-highlight-scope = Oplichten rond de caret
+settings-typewriter-position-middle = Halverwege
+settings-typewriter-position-bottom-quarter = Onderste kwart
+settings-highlight-scope = Markering rond de cursor
 settings-highlight-scope-none = Geen
-settings-highlight-scope-sentence = Veroordeeldheid
-settings-highlight-scope-paragraph = Paragraaf
-settings-highlight-scope-tip-none = Niets is in de schaduw als je schrijft.
-settings-highlight-scope-tip-sentence = Schaduw de zin die je schrijft, dus het onderscheidt zich van die eromheen.
-settings-highlight-scope-tip-paragraph = Schilder de hele paragraaf die je schrijft, om de passage waar je aan werkt in het zicht te houden.
-settings-group-container-views = Containerweergaven
-settings-remember-view = Onthoud de laatste weergave voor elk itemtype
-settings-remember-view-tip = Open een container op het scherm dat u voor dat type gebruikt heeft
+settings-highlight-scope-sentence = Zin
+settings-highlight-scope-paragraph = Alinea
+settings-highlight-scope-tip-none = Laat de pagina zoals ze is. Er wordt niets gearceerd terwijl u schrijft.
+settings-highlight-scope-tip-sentence = Arceer de zin die u schrijft, zodat die zich onderscheidt van de zinnen eromheen.
+settings-highlight-scope-tip-paragraph = Arceer de hele alinea die u schrijft, zodat de passage waaraan u werkt in beeld blijft.
+settings-group-container-views = Weergaven van containers
+settings-remember-view = De laatste weergave per itemtype onthouden
+settings-remember-view-tip = Een container openen in de weergave die u het laatst voor dat type gebruikte
 settings-remember-view-tip-more =
-    Een boek, deel en hoofdstuk elk bieden verschillende views (zijn eigen pagina, de volledige
-    manuscript, de volledige synopsis). Zet dit aan en elk type heropent de
-    kijk je laatst gekozen voor het, bijvoorbeeld schakel een hoofdstuk naar volledig hoofdstuk en de
-    volgende hoofdstuk u opent toont ook Full Chapter. Elk type herinnert zich zijn eigen uitzicht.
-settings-group-counting = Aantal woorden
+    Een boek, deel en hoofdstuk bieden elk meerdere weergaven (een eigen pagina, het volledige
+    manuscript, de volledige synopsis). Schakel dit in en elk type opent opnieuw in de
+    weergave die u er het laatst voor koos: zet u één hoofdstuk op Volledig hoofdstuk, dan
+    toont het volgende hoofdstuk dat u opent ook Volledig hoofdstuk. Elk type onthoudt zijn eigen weergave.
+settings-group-counting = Woorden tellen
 settings-counting-auto = Automatisch (per taal)
 settings-counting-whitespace = Splitsen op spaties
-settings-counting-unicode-words = Unicode woorden
+settings-counting-unicode-words = Unicode-woorden
 settings-counting-cjk-hybrid = CJK-bewust (per teken)
-settings-counting-hint = Automatisch telt Chinees en Japans op karakter en elke andere taal per woord. Verander het alleen als de telling ziet er verkeerd uit voor uw taal.
-settings-group-goals-display = Scherm
+settings-counting-hint = Automatisch telt Chinees en Japans per teken en alle andere talen per woord. Wijzig dit alleen als de telling voor uw taal niet klopt.
+settings-group-goals-display = Weergave
 settings-show-characters = Het aantal tekens in de statusbalk tonen
 settings-autosave-hint = Wijzigingen worden automatisch naar schijf geschreven terwijl u schrijft.
 
 settings-sec-work = Project
-settings-page-structure = Structuur
+settings-page-structure = Opbouw
 settings-page-author = Auteur
 settings-field-author-name = Auteursnaam
-settings-field-author-placeholder = Facultatief
-settings-field-author-hint = Verschijnt op de gecompileerde titelpagina en in geëxporteerde bestandsmetadata. Laat het leeg om het weg te laten. Dit is de byline van het boek. De naam waarmee uw opmerkingen zijn ondertekend is in Instellingen Gebruiker.
+settings-field-author-placeholder = Optioneel
+settings-field-author-hint = Verschijnt op de samengestelde titelpagina en in de metagegevens van geëxporteerde bestanden. Laat dit leeg om het weg te laten. Dit is de naamsvermelding van het boek. De naam waarmee u uw opmerkingen ondertekent, staat in Instellingen ▸ Gebruiker.
 settings-group-chapters = Hoofdstukken
-tidy-titles-title = Titels van net hoofdstuk
-tidy-titles-none = Geen enkel hoofdstuk of deeltitel herhaalt slechts zijn eigen nummer.
+tidy-titles-title = Hoofdstuktitels opschonen
+tidy-titles-none = Geen enkele hoofdstuk- of deeltitel herhaalt alleen maar zijn eigen nummer.
 tidy-titles-lead = { $count ->
-        [one] Een hoofdstuk of deel is getiteld met niets anders dan zijn eigen nummer.
-       *[other] { $count } hoofdstukken en delen hebben slechts een eigen nummer.
+        [one] Eén hoofdstuk of deel heeft als titel niets anders dan zijn eigen nummer.
+       *[other] { $count } hoofdstukken en delen hebben als titel niets anders dan hun eigen nummer.
     }
-tidy-titles-explain = Het wissen van die titels laat elk genoemd door het nummer dat het boek al weet, hetzelfde nummer de export afdrukken. Niets anders verandert, en een ongedaan zet ze allemaal terug.
-menu-document-tidy-titles = Tidy hoofdstuk titels... (&Y)
+tidy-titles-explain = Als u die titels wist, wordt elk ervan aangeduid met het nummer dat het boek al kent, hetzelfde nummer dat de export afdrukt. Verder verandert er niets, en met één keer ongedaan maken staan ze er allemaal weer.
+menu-document-tidy-titles = Hoofdstuktitels &opschonen…
 settings-group-numbering = Nummering
-settings-number-chapters = Aantal hoofdstukken en delen
-settings-number-chapters-tip = Hoofdstukken en onderdelen dragen een aantal uitgewerkt uit waar ze zitten in het boek, naast hun titel hier, en gedrukt door de export.
-settings-number-chapters-tip-more = Het nummer wordt nooit opgeslagen in de titel, dus het blijft juist wanneer u herorden, invoegen of verwijderen. Zet dit uit en de export afdrukken titels alleen, ongeacht de export stijl vraagt. Om een hoofdstuk uit (een proloog, een interlude), gebruik in plaats daarvan de Inspector's Numbering schakelaar: dat houdt het in het boek, maar stopt het nemen van een nummer.
-settings-part-resets-chapter = Hoofdstuknummers voor elk deel herstarten
-settings-part-resets-chapter-tip = Standaard: hoofdstukken lopen rechtdoor over de delen van een boek, dus "Part Two" opent op Hoofdstuk Elf.
-settings-part-resets-chapter-tip-more = Dat is de gebruikelijke trade praktijk, en wat een lezer verwacht. Zet het aan voor een boek waarvan de onderdelen bedoeld zijn om te lezen als aparte volumes, waar elk opent op Hoofdstuk Een.
+settings-number-chapters = Hoofdstukken en delen nummeren
+settings-number-chapters-tip = Hoofdstukken en delen krijgen een nummer dat wordt afgeleid van hun plaats in het boek. Het staat hier naast hun titel en wordt door de export afgedrukt.
+settings-number-chapters-tip-more = Het nummer wordt nooit in de titel opgeslagen, dus het blijft kloppen als u herschikt, invoegt of verwijdert. Schakel dit uit en de export drukt alleen titels af, wat de exportstijl ook vraagt. Wilt u één hoofdstuk overslaan (een proloog, een intermezzo), gebruik dan de schakelaar Nummering in de Inspector: het blijft dan in het boek, maar krijgt geen nummer.
+settings-part-resets-chapter = Hoofdstuknummering bij elk deel opnieuw beginnen
+settings-part-resets-chapter-tip = Standaard uit: hoofdstukken worden over de delen van een boek heen doorgenummerd, zodat “Deel twee” begint met hoofdstuk elf.
+settings-part-resets-chapter-tip-more = Dat is gebruikelijk in de uitgeverswereld, en wat een lezer verwacht. Schakel dit in voor een boek waarvan de delen als afzonderlijke banden bedoeld zijn, die elk met hoofdstuk één beginnen.
 settings-chapter-flat = Platte hoofdstukken
-settings-chapter-flat-hint = Op: een hoofdstuk is een enkel item. Je schrijft erin en het bevat geen scènes. Uit: een hoofdstuk is een map. Je schrijft er nog steeds in, maar het kan ook scènes bevatten. Nieuwe hoofdstukken volgen deze instelling; bestaande hoofdstukken converteren via Promote.
+settings-chapter-flat-hint = Aan: een hoofdstuk is één enkel item. U schrijft erin en het bevat geen scènes. Uit: een hoofdstuk is een map. U schrijft er nog steeds in, maar het kan ook scènes bevatten. Nieuwe hoofdstukken volgen deze instelling; bestaande worden omgezet via Omzetten naar.
 
 settings-styles-builtin = Ingebouwde stijlen
 settings-styles-user = Mijn stijlen
@@ -378,71 +384,71 @@ settings-styles-export = Exporteren…
 settings-styles-copy-suffix = (kopie)
 settings-styles-json-filter = Exportstijl
 settings-styles-editor-title = Stijl bewerken
-settings-styles-editor-none = Selecteer een aangepaste stijl om het te bewerken, of dupliceer een ingebouwde stijl.
+settings-styles-editor-none = Selecteer een aangepaste stijl om die te bewerken, of dupliceer een ingebouwde stijl.
 settings-styles-imported = Stijl geïmporteerd
-settings-styles-import-failed = Kon stijl niet importeren
+settings-styles-import-failed = Stijl kan niet worden geïmporteerd
 settings-styles-exported = Stijl geëxporteerd
-settings-styles-export-failed = Kon stijl niet exporteren
+settings-styles-export-failed = Stijl kan niet worden geëxporteerd
 settings-styles-field-name = Naam
-settings-styles-field-chapters = Hoofdstuktitels
-settings-styles-field-parts = Rubrieken
-settings-styles-field-scene-break = Scènebreuk
-settings-styles-field-major-scene-break = Grote breuk in de scène
-settings-styles-field-spacing = Lijnafstand
-settings-styles-field-justify = Tekst rechtvaardigen
-settings-styles-field-notes = Noten toevoegen
-settings-styles-field-synopses = Synopsen toevoegen
-settings-styles-field-scene-titles = Voeg scenetitels toe
-settings-styles-field-epigraphs = Epigraphs opnemen
-settings-styles-field-paratexts = Parateksten toevoegen
-settings-styles-field-epigraph-placement = Epigraph positie
+settings-styles-field-chapters = Koppen van hoofdstukken
+settings-styles-field-parts = Koppen van delen
+settings-styles-field-scene-break = Scèneovergang
+settings-styles-field-major-scene-break = Grote scèneovergang
+settings-styles-field-spacing = Regelafstand
+settings-styles-field-justify = Tekst uitvullen
+settings-styles-field-notes = Notities opnemen
+settings-styles-field-synopses = Synopsissen opnemen
+settings-styles-field-scene-titles = Scènetitels opnemen
+settings-styles-field-epigraphs = Motto’s opnemen
+settings-styles-field-paratexts = Parateksten opnemen
+settings-styles-field-epigraph-placement = Positie van het motto
 settings-styles-epigraph-after = Na de titel
 settings-styles-epigraph-before = Vóór de titel
-settings-styles-field-footnotes = voetnoten invoegen
-settings-styles-field-footnote-numbering = Nummering van de voetnoot
-settings-styles-footnote-numbering-continuous = Continu
-settings-styles-footnote-numbering-per-chapter = Elk hoofdstuk herstarten
-settings-styles-footnote-numbering-per-book = Herstart elk boek
+settings-styles-field-footnotes = Voetnoten opnemen
+settings-styles-field-footnote-numbering = Nummering van voetnoten
+settings-styles-footnote-numbering-continuous = Doorlopend
+settings-styles-footnote-numbering-per-chapter = Opnieuw per hoofdstuk
+settings-styles-footnote-numbering-per-book = Opnieuw per boek
 settings-styles-field-images = Afbeeldingen
-menu-image = Afbeelding (&I)
+menu-image = A&fbeelding
 settings-styles-images-beside = Naast het document
 settings-styles-images-embed = In het document
-settings-styles-images-omit = Laat maar.
-settings-styles-group-round-trip = Verzenden naar een editor
+settings-styles-images-omit = Weglaten
+settings-styles-group-round-trip = Versturen naar een redacteur
 settings-styles-field-comments = Opmerkingen meenemen
-settings-styles-field-round-trip-marks = Inclusief round-trip markers
-settings-styles-round-trip-hint = Alleen DOCX en ODT. Markers zijn onzichtbare identificaties die een terugkerend bestand dit project laten bijwerken in plaats van ernaast te landen als een tweede kopie.
-settings-styles-group-pages = Bladzijden
-settings-styles-field-cover = Openen met de hoes
-settings-styles-field-word-count = Word count op titelpagina
+settings-styles-field-round-trip-marks = Retourmarkeringen opnemen
+settings-styles-round-trip-hint = Alleen DOCX en ODT. Markeringen zijn onzichtbare kenmerken waarmee een teruggestuurd bestand dit project kan bijwerken, in plaats van ernaast te belanden als tweede kopie.
+settings-styles-group-pages = Pagina’s
+settings-styles-field-cover = Openen met de omslag
+settings-styles-field-word-count = Aantal woorden op titelpagina
 settings-styles-field-page-books = Nieuwe pagina bij elk boek
-settings-styles-field-page-parts = Nieuwe pagina op elk deel
-settings-styles-field-page-chapters = Nieuwe bladzijde bij elk hoofdstuk
+settings-styles-field-page-parts = Nieuwe pagina bij elk deel
+settings-styles-field-page-chapters = Nieuwe pagina bij elk hoofdstuk
 settings-styles-field-page-paratexts = Nieuwe pagina bij elke paratekst
-settings-styles-heading-none = Nr. van het
+settings-styles-heading-none = Geen kop
 settings-styles-heading-numbered = Alleen nummer
-settings-styles-heading-title = Uitsluitend titel
+settings-styles-heading-title = Alleen titel
 settings-styles-heading-both = Nummer + titel
-settings-styles-break-blank = Lege lijn
+settings-styles-break-blank = Lege regel
 settings-styles-break-none = Geen
-settings-styles-spacing-single = Enkelvoudig
+settings-styles-spacing-single = Enkel
 settings-styles-spacing-onehalf = 1½
 settings-styles-spacing-double = Dubbel
 
 welcome-title = Welkom bij Skribisto
 welcome-version = Versie { $version }
 welcome-update-available = Versie { $version } is beschikbaar
-welcome-update-tip = Opent de download pagina in uw browser.
-welcome-search = Zoeken projecten
+welcome-update-tip = Opent de downloadpagina in uw browser.
+welcome-search = Projecten doorzoeken
 welcome-open = Openen
 welcome-new-work = Nieuw project
-welcome-create-from = Aanmaken van...
+welcome-create-from = Aanmaken uit…
 welcome-recent-works = Recente projecten
 welcome-empty-recents = Nog geen recente projecten.
 welcome-no-matches = Geen recent project komt overeen met uw zoekopdracht.
 welcome-learn-soon = Er komen binnenkort gidsen en tips.
-welcome-about-blurb = Skribisto, een Rust + Teksilo herschrijven van de schrijfapp.
-welcome-tagline = *Een rustige plek om lange dingen te schrijven. *
+welcome-about-blurb = Skribisto, een herschreven versie van de schrijfapp in Rust + Teksilo.
+welcome-tagline = *Een rustige plek om lange teksten te schrijven.*
 welcome-github = GitHub
 welcome-discord = Discord
 nav-works = Projecten
@@ -461,47 +467,47 @@ corkboard-card-count = { $count ->
    *[other] { $count } kaarten
 }
 corkboard-child-count = { $count ->
-    [one] { $count } post
-   *[other] { $count } posten
-}
-corkboard-view-nested = geneste
+        [one] { $count } item
+       *[other] { $count } items
+    }
+corkboard-view-nested = Genest
 corkboard-view-flat = Plat
-corkboard-layout-hint = Nested toont de directe kinderen van een container. Open een mapkaart om erin te gaan. Plat toont elke scène in de hele container tegelijk.
+corkboard-layout-hint = Genest toont de directe onderliggende items van een container. Open een mapkaart om erin te gaan. Plat toont alle scènes van de hele container tegelijk.
 corkboard-card-size = Kaartgrootte
-corkboard-search-placeholder = Filterkaarten...
-corkboard-empty-title = Nog niets hier.
-corkboard-empty-hint = Gebruik "+ New" hierboven om de eerste toe te voegen.
+corkboard-search-placeholder = Kaarten filteren…
+corkboard-empty-title = Hier is nog niets
+corkboard-empty-hint = Gebruik “＋ Nieuw” hierboven om het eerste toe te voegen.
 corkboard-new = Nieuw
-corkboard-show-card-numbers = Nummer de kaarten
-corkboard-modal-size = Uitgebreide editorgrootte
-corkboard-scope-hint = Geldt voor elk open kurkenbord, in elk project.
+corkboard-show-card-numbers = Kaarten nummeren
+corkboard-modal-size = Grootte van de uitgevouwen editor
+corkboard-scope-hint = Geldt voor elk geopend prikbord, in elk project.
 corkboard-sort-manuscript = Manuscriptvolgorde
-corkboard-sort-title-asc = Titel AZ
-corkboard-sort-title-desc = Titel Z.A.
+corkboard-sort-title-asc = Titel A–Z
+corkboard-sort-title-desc = Titel Z–A
 corkboard-card-number = Kaart { $number }
 
 duplicate = Dupliceren
 duplicate-n = { $count ->
-    [one] Dubbele { $count } kaart
-   *[other] Dubbele { $count } kaarten
-}
+        [one] { $count } kaart dupliceren
+       *[other] { $count } kaarten dupliceren
+    }
 set-label-n = { $count ->
-    [one] Stel het etiket in op { $count } kaart
-   *[other] Label instellen op { $count } kaarten
-}
+        [one] Label instellen voor { $count } kaart
+       *[other] Label instellen voor { $count } kaarten
+    }
 move-to-trash-n = { $count ->
-    [one] { $count } kaart naar prullenbak verplaatsen
-   *[other] { $count } kaarten naar prullenbak verplaatsen
-}
-reveal-in-outline = Onthullen in overzicht
+        [one] { $count } kaart naar de prullenbak verplaatsen
+       *[other] { $count } kaarten naar de prullenbak verplaatsen
+    }
+reveal-in-outline = Tonen in ordner
 
-corkboard-move-to = Ga naar...
+corkboard-move-to = Verplaatsen naar…
 corkboard-move-to-n = { $count ->
-    [one] { $count } kaart verplaatsen naar...
-   *[other] { $count } kaarten verplaatsen naar...
-}
-corkboard-move-picker-title = Ga naar...
-corkboard-move-picker-empty = Maak er eerst een.
+        [one] { $count } kaart verplaatsen naar…
+       *[other] { $count } kaarten verplaatsen naar…
+    }
+corkboard-move-picker-title = Verplaatsen naar…
+corkboard-move-picker-empty = Nog geen ordners. Maak er eerst een aan.
 corkboard-move-picker-cancel = Annuleren
 corkboard-move-here = Hierheen verplaatsen
 corkboard-moved-ok = { $count ->
@@ -513,26 +519,26 @@ corkboard-move-failed = Die kaarten konden daar niet worden verplaatst.
 
 overview-col-title = Titel
 overview-col-type = Type
-overview-col-label = Korte beschrijving
+overview-col-label = Label
 overview-col-tags = Tags
 overview-col-books = Boeken
 overview-col-own-words = Woorden
 overview-col-total-words = Totaal
 overview-row-count = { $count ->
-    [one] { $count } post
-   *[other] { $count } posten
-}
-overview-search-placeholder = Filter items...
+        [one] { $count } item
+       *[other] { $count } items
+    }
+overview-search-placeholder = Items filteren…
 overview-expand-all = Alles uitvouwen
 overview-collapse-all = Alles invouwen
 overview-table-label = Inhoud
-overview-empty-title = Nog niets hier.
-overview-gone-title = Deze container is weg.
-overview-gone-hint = Het werd verplaatst naar de prullenbak. Herstel het, of sluit deze tab.
-overview-empty-hint = Gebruik "+ New" hierboven om de eerste toe te voegen.
-corkboard-grid-label = Kurkenbordkaarten
-corkboard-rename-field = Item hernoemen
-corkboard-expand-synopsis = Synopsis uitbreiden
+overview-empty-title = Hier is nog niets
+overview-gone-title = Deze container bestaat niet meer
+overview-gone-hint = Hij is naar de prullenbak verplaatst. Zet hem terug, of sluit dit tabblad.
+overview-empty-hint = Gebruik “＋ Nieuw” hierboven om het eerste toe te voegen.
+corkboard-grid-label = Prikbordkaarten
+corkboard-rename-field = Naam van item wijzigen
+corkboard-expand-synopsis = Synopsis uitvouwen
 corkboard-synopsis-modal-title = Synopsis
 corkboard-badge-scene = Scène
 corkboard-badge-chapter = Hoofdstuk
@@ -543,88 +549,88 @@ corkboard-badge-folder = Map
 corkboard-badge-paratext = Paratekst
 corkboard-badge-text = Tekst
 corkboard-badge-end = Einde
-settings-group-corkboard-layout = Opmaak
+settings-group-corkboard-layout = Indeling
 settings-group-corkboard-cards = Kaarten
-corkboard-show-word-count = Het woord tellen op kaarten tonen
+corkboard-show-word-count = Aantal woorden op kaarten tonen
 text-heading = Tekst
 no-content = Dit item heeft geen bewerkbare inhoud.
 untitled = Naamloos
 placeholder-title = Titel…
-placeholder-subtitle = Ondertiteling:
-placeholder-chapter-title = Hoofdstuktitel...
+placeholder-subtitle = Ondertitel…
+placeholder-chapter-title = Titel van het hoofdstuk…
 split-editor = Editor splitsen
 close-split-view = Gesplitste weergave sluiten
-drop-open-here = Open hier
-drop-open-to-side = Aan de zijkant openen
+drop-open-here = Hier openen
+drop-open-to-side = Openen aan de zijkant
 
 segment-chapter = Hoofdstuk
 segment-part = Deel
 segment-book = Boek
-segment-pace = Schrijftempo
+segment-pace = Tempo
 segment-notes = Notities
 segment-story-bible = Verhaalbijbel
 segment-note-own = Notitie
 segment-note-details = Details
 segment-note-in-prose = In proza
-pace-placeholder = De Pace planner verschijnt hier.
+pace-placeholder = De tempoplanner verschijnt hier.
 pace-empty-title = Plan het tempo van dit boek
-pace-empty-body = Stel een woord doel en een deadline, en Skribisto Projecten uit het dagelijkse tempo om je er te krijgen.
+pace-empty-body = Stel een woordendoel en een deadline in, en Skribisto berekent het dagelijkse tempo dat u daar brengt.
 pace-start-planning = Beginnen met plannen
 pace-section-schedule = Schema
 pace-section-progress = Voortgang
-pace-advancement = Voorschot
+pace-advancement = Vordering
 pace-goal = Woordendoel
 pace-deadline = Deadline
-pace-active = Pace actief
-pace-day-mon = maabbreviated month name
-pace-day-tue = Di
+pace-active = Tempo actief
+pace-day-mon = ma
+pace-day-tue = di
 pace-day-wed = wo
 pace-day-thu = do
-pace-day-fri = Vr
-pace-day-sat = Zat
-pace-day-sun = Zon
+pace-day-fri = vr
+pace-day-sat = za
+pace-day-sun = zo
 pace-card-written = woorden geschreven
 pace-card-of-goal = van het doel
 pace-card-rate = woorden / schrijfdag
-pace-card-days-left = nog schrijvende dagen over
-pace-card-streak = dagstreak
-pace-card-ahead = woorden voor tempo
-pace-card-behind = woorden achter het tempo
-pace-charts-empty = Voortgangsgrafieken verschijnen hier zodra uw woord tellen is opgenomen op een opslaan.
-pace-chart-progression = Woorden geschreven vs. doel
+pace-card-days-left = schrijfdagen te gaan
+pace-card-streak = dagen op rij
+pace-card-ahead = woorden voor op schema
+pace-card-behind = woorden achter op schema
+pace-charts-empty = Voortgangsgrafieken verschijnen hier zodra uw aantal woorden bij het opslaan is vastgelegd.
+pace-chart-progression = Geschreven woorden t.o.v. doel
 pace-chart-words-per-day = Woorden per dag
 pace-series-actual = Werkelijk
 pace-series-target = Doel
 pace-series-words-per-day = Woorden/dag
-pace-daily-target-line = Even tempo: { $count ->
-    [one] { $count } woord/dag
-   *[other] { $count } woorden/dag
-}
-pace-section-holidays = Vakantie
+pace-daily-target-line = Gelijkmatig tempo: { $count ->
+        [one] { $count } woord/dag
+       *[other] { $count } woorden/dag
+    }
+pace-section-holidays = Vrije dagen
 pace-section-milestones = Mijlpalen
-pace-holidays-none = Elke geplande dag telt.
-pace-holiday-label = Vakantienaam
+pace-holidays-none = Geen vrije dagen. Elke geplande dag telt mee.
+pace-holiday-label = Naam van de vrije dag
 pace-add-holiday = Toevoegen
 pace-remove = Verwijderen
-pace-milestones-none = Nog geen mijlpalen. Zet er een op een deel of hoofdstuk in de inspecteur.
+pace-milestones-none = Nog geen mijlpalen. Stel er een in op een deel of hoofdstuk in de Inspector.
 full-chapter = Volledig hoofdstuk
 full-part = Volledig deel
 full-book = Volledig boek
-full-synopsis = Volledige samenvatting
+full-synopsis = Volledige synopsis
 rename = Naam wijzigen
 set-label = Label instellen
-insert-scene = Scene toevoegen
+insert-scene = Scène invoegen
 insert-chapter = Hoofdstuk invoegen
-split-scene = Scene splitsen
+split-scene = Scène splitsen
 move-up = Omhoog verplaatsen
 move-down = Omlaag verplaatsen
 merge-with-previous = Samenvoegen met vorige
-move-to-trash = Naar prullenbak verplaatsen
-rename-chapter = Hoofdstuk hernoemen
-add-scene = Nieuwe scene toevoegen
+move-to-trash = Naar de prullenbak verplaatsen
+rename-chapter = Naam van hoofdstuk wijzigen
+add-scene = Nieuwe scène toevoegen
 add-chapter = Nieuw hoofdstuk toevoegen
 new-scene-title = Nieuwe scène
-placeholder-scene-name = Scènenaam...
+placeholder-scene-name = Naam van de scène…
 menu-cut = Knippen
 menu-copy = Kopiëren
 menu-paste = Plakken
@@ -632,163 +638,163 @@ menu-paste-unformatted = Plakken zonder opmaak
 menu-select-all = Alles selecteren
 format-bold = Vet
 format-italic = Cursief
-format-underline = Onderstrepen
+format-underline = Onderstreept
 format-strikethrough = Doorgestreept
 
-binder = Documentboom
+binder = Ordner
 no-work = Geen project geladen
 no-recent-works = Geen recente projecten
 switcher-open-section = Momenteel geopend
 switcher-recent-section = Recent
 switcher-this-window = dit venster
 open-project-title = Project openen
-open-project-question = Hoe wil je "{ $title }" openen?
+open-project-question = Hoe wilt u “{ $title }” openen?
 open-in-new-window = In nieuw venster openen
-open-here = Open hier
+open-here = Hier openen
 
-binder-all = Alle Bindmiddelen
-binder-show-all = Alle bindmiddelen tonen
-binder-new = Nieuw bindmiddel...
-binder-default-name = Nieuw bindmiddel
+binder-all = Alle ordners
+binder-show-all = Alle ordners tonen
+binder-new = Nieuwe ordner…
+binder-default-name = Nieuwe ordner
 binder-item-count = { $count ->
-    [one] { $count } post
-   *[other] { $count } posten
-}
-binder-search-placeholder = Filter de omtrek...
-binder-search-scope = Alle bindmiddelen doorzoeken
-binder-trash-confirm-title = Binder naar de prullenbak verplaatsen?
-binder-trash-confirm-text = "{ $name }" en al zijn items zullen naar de prullenbak worden verplaatst.
+        [one] { $count } item
+       *[other] { $count } items
+    }
+binder-search-placeholder = Ordner filteren…
+binder-search-scope = Alle ordners doorzoeken
+binder-trash-confirm-title = Ordner naar de prullenbak verplaatsen?
+binder-trash-confirm-text = “{ $name }” en al zijn items worden naar de prullenbak verplaatst.
 
 dialog-rename = Naam wijzigen
-dialog-new-binder = Nieuw bindmiddel
+dialog-new-binder = Nieuwe ordner
 dialog-set-label = Label instellen
 dialog-new-scene = Nieuwe scène
 close-work-question = Wijzigingen opslaan vóór het sluiten van het project?
 quit-question = Wijzigingen opslaan vóór het afsluiten?
-quit-save-work-question = Wijzigingen opslaan in { $title } voordat u stopt?
+quit-save-work-question = Wijzigingen in { $title } opslaan voordat u afsluit?
 unsaved-changes = Dit project bevat niet-opgeslagen wijzigingen.
 new-work-unsaved-question = Wijzigingen opslaan voordat u een nieuw project aanmaakt?
 open-work-unsaved-question = Wijzigingen opslaan voordat u een ander project opent?
-switch-backup-discard-title = Wijzigingen in deze back-up verwerpen?
-switch-backup-discard-text = Wijzigingen in een back-up kunnen niet worden opgeslagen. Gebruik Opslaan als of herstellen om ze te bewaren, of gooi ze weg en open het andere project.
-switch-save-failed = Het project kon niet worden opgeslagen, dus het werd niet vervangen: { $error }
-switch-save-not-started = Het project kon niet worden opgeslagen, dus het werd niet vervangen.
-close-save-failed = Het project kon niet worden opgeslagen, dus het was niet gesloten: { $error }
-close-save-not-started = Het project kon niet worden gered, dus het was niet gesloten.
-save-not-started = Het project kon niet worden gered.
+switch-backup-discard-title = Wijzigingen in deze reservekopie verwerpen?
+switch-backup-discard-text = Wijzigingen in een reservekopie kunnen daarin niet worden opgeslagen. Gebruik Opslaan als of Herstellen om ze te bewaren, of verwerp ze en open het andere project.
+switch-save-failed = Het project kon niet worden opgeslagen en is dus niet vervangen: { $error }
+switch-save-not-started = Het project kon niet worden opgeslagen en is dus niet vervangen.
+close-save-failed = Het project kon niet worden opgeslagen en is dus niet gesloten: { $error }
+close-save-not-started = Het project kon niet worden opgeslagen en is dus niet gesloten.
+save-not-started = Het project kon niet worden opgeslagen.
 
-could-not-open-work = Kon "{ $file }" niet openen
-could-not-open-work-too-new = "{ $file }" heeft een nieuwer Skribisto nodig
-could-not-open-work-too-new-detail = Opgeslagen door Skribisto formaat { $written_by }; het openen van het moet formaat { $requires } of nieuwer, en deze bouw ondersteunt tot formaat { $supported }. Update Skribisto om het te openen.
-could-not-open-work-importing = "{ $file }" wordt geschreven door een import
-could-not-open-work-importing-detail = Een import is aan het schrijven over dit project en is nog niet klaar. Open het zodra de import is gedaan: geopend nu, het zou tonen het project de import wordt vervangen, en de volgende opslag zou dat project terug te schrijven over de import.
-could-not-open-example = Kon het voorbeeld niet openen: { $error }
-could-not-open-link = Kon { $url } niet openen: { $error }
-could-not-create-work = Kon project niet aanmaken: { $error }
-saving-as-file = Opslaan als { $target }...
-saving-as-folder = Opslaan als { $target }/...
-saved-as = Opgeslagen naar { $target }
-save-error = Kon niet opslaan: { $error }
-save-flush-failed = De redding ging door, maar deze documenten konden niet worden overhandigd en zijn nog steeds niet gered: { $titles } ({ $error })
-backup-error = Kon geen back-up maken: { $error }
-backing-up = Terugtrekken...
-backup-nothing-open = Geen enkel project is open voor back-up.
-backup-already-running = Er is al een backup aan de gang.
-backup-complete = Backup voltooid ({ $ok } opgeslagen, { $skipped } reeds actueel)
-backup-partial = Back-up voltooid: { $ok } opgeslagen, { $failed ->
-    [one] { $failed }-doel is mislukt
-   *[other] { $failed } bestemmingen mislukt
-}
+could-not-open-work = Kan “{ $file }” niet openen
+could-not-open-work-too-new = “{ $file }” vereist een nieuwere versie van Skribisto
+could-not-open-work-too-new-detail = Opgeslagen in Skribisto-formaat { $written_by }; openen vereist formaat { $requires } of nieuwer, en deze versie ondersteunt tot en met formaat { $supported }. Werk Skribisto bij om het te openen.
+could-not-open-work-importing = “{ $file }” wordt door een import geschreven
+could-not-open-work-importing-detail = Een import overschrijft dit project en is nog niet klaar. Open het zodra de import voltooid is: als u het nu opent, toont het het project dat de import vervangt, en de volgende opslag zou dat project weer over de import heen schrijven.
+could-not-open-example = Kan het voorbeeld niet openen: { $error }
+could-not-open-link = Kan { $url } niet openen: { $error }
+could-not-create-work = Kan het project niet aanmaken: { $error }
+saving-as-file = Opslaan als { $target }…
+saving-as-folder = Opslaan als { $target }/…
+saved-as = Opgeslagen in { $target }
+save-error = Kan niet opslaan: { $error }
+save-flush-failed = Het opslaan is gelukt, maar deze documenten konden er niet aan worden doorgegeven en zijn nog niet opgeslagen: { $titles } ({ $error })
+backup-error = Kan geen reservekopie maken: { $error }
+backing-up = Reservekopie maken…
+backup-nothing-open = Er is geen project geopend om een reservekopie van te maken.
+backup-already-running = Er wordt al een reservekopie gemaakt.
+backup-complete = Reservekopie voltooid ({ $ok } opgeslagen, { $skipped } al actueel)
+backup-partial = Reservekopie klaar: { $ok } opgeslagen, { $failed ->
+        [one] { $failed } bestemming mislukt
+       *[other] { $failed } bestemmingen mislukt
+    }
 backup-no-destination-title = Geen reservekopielocatie beschikbaar
-backup-no-destination-text = Geen van de geconfigureerde back-upbestemmingen kan worden bereikt (bijvoorbeeld, een externe schijf kan worden uitgeschakeld). Plug het in en probeer het opnieuw, of sluit af zonder een back-up te maken.
+backup-no-destination-text = Geen van de ingestelde bestemmingen voor reservekopieën is bereikbaar (een externe schijf is bijvoorbeeld misschien niet aangesloten). Sluit die aan en probeer het opnieuw, of sluit af zonder reservekopie.
 backup-failed-close-title = De reservekopie kon niet worden opgeslagen
-backup-failed-close-text = Er kon geen back-upkopie worden geschreven voor het sluiten. Elke bestemming is mislukt (de schijf kan zijn verwijderd, of het kan volledig of schrijf-beschermd zijn). Fix it and retry, or exit without back-up.
+backup-failed-close-text = Er kon vóór het sluiten geen reservekopie worden geschreven. Elke bestemming is mislukt (de schijf is misschien verwijderd, vol of tegen schrijven beveiligd). Los het probleem op en probeer het opnieuw, of sluit af zonder reservekopie.
 
 backup-choice-title = Reservekopiebestand
-backup-choice-heading = Je hebt een reservekopie geopend.
-backup-choice-subtitle = Dit is een point-in-time back-up van een project.
-backup-choice-subtitle-dated = Back-up genomen { $date }.
-backup-choice-body = U kunt het openen en vrij bewerken, maar wijzigingen kunnen alleen bewaard worden met Opslaan als. Het oorspronkelijke projectbestand wordt niet aangeraakt. Of dit project herstellen naar precies deze back-up.
-backup-choice-open = Open de back-up
-backup-choice-restore = Herstel dit project tot op dit punt...
-backup-choice-not-a-backup = Nee, doe het normaal open.
+backup-choice-heading = U hebt een reservekopie geopend
+backup-choice-subtitle = Dit is een reservekopie van een project op een bepaald moment.
+backup-choice-subtitle-dated = Reservekopie gemaakt op { $date }.
+backup-choice-body = U kunt hem openen en vrij bewerken, maar wijzigingen kunnen alleen met Opslaan als worden bewaard. Het oorspronkelijke projectbestand blijft onaangeroerd. U kunt dit project ook precies naar deze reservekopie herstellen.
+backup-choice-open = De reservekopie openen
+backup-choice-restore = Dit project naar dit moment herstellen…
+backup-choice-not-a-backup = Nee, gewoon openen
 backup-banner-title = Reservekopie: wijzigingen kunnen hier niet worden opgeslagen
-backup-banner-description = Gebruik Opslaan als om uw bewerkingen in een nieuw bestand te houden, of Herstel om het oorspronkelijke project te vervangen door deze back-up.
+backup-banner-description = Gebruik Opslaan als om uw bewerkingen in een nieuw bestand te bewaren, of Herstellen om het oorspronkelijke project te vervangen door deze reservekopie.
 backup-banner-restore = Herstellen…
-backup-banner-save-as = Opslaan als...
-backup-restore-original-missing = Kan het oorspronkelijke project niet vinden om overheen te herstellen. Gebruik Opslaan als om deze back-up als nieuw project te bewaren.
+backup-banner-save-as = Opslaan als…
+backup-restore-original-missing = Het oorspronkelijke project om overheen te herstellen is niet gevonden. Gebruik Opslaan als om deze reservekopie in plaats daarvan als nieuw project te bewaren.
 backup-restore-close-elsewhere-title = Project geopend in een ander venster
-backup-restore-close-elsewhere-text = Het project dat u aan het herstellen bent, is geopend in een ander venster. Sluit het daar eerst af en probeer het dan opnieuw.
-backup-restore-focus-window = Concentreer dat venster
-backup-restore-confirm-title = Deze back-up herstellen?
-backup-restore-confirm-text = De huidige versie van het project zal worden gekopieerd als veiligheidsback-up voordat deze wordt vervangen door deze.
+backup-restore-close-elsewhere-text = Het project dat u wilt herstellen, is geopend in een ander venster. Sluit het daar eerst en probeer het dan opnieuw.
+backup-restore-focus-window = Naar dat venster gaan
+backup-restore-confirm-title = Deze reservekopie herstellen?
+backup-restore-confirm-text = De huidige versie van het project wordt als veiligheidskopie apart gezet voordat ze door deze wordt vervangen.
 backup-restore-confirm-ok = Herstellen
-backup-restore-error = Kon niet herstellen: { $error }
+backup-restore-error = Kan niet herstellen: { $error }
 backup-restored-ok = Project hersteld.
-backup-restored-with-safety = Project hersteld. Uw vorige versie is opgeslagen op { $path }.
-close-backup-discard-title = Wijzigingen in deze back-up verwerpen?
-close-backup-discard-text = Wijzigingen in een back-up kunnen niet worden opgeslagen. Gebruik Opslaan als om ze te bewaren, of weggooien en sluiten.
-quit-backup-discard-title = Veranderingen weggooien en afsluiten?
-quit-backup-discard-work-question = Wijzigingen verwerpen naar { $title } en stoppen?
-quit-backup-discard-text = Wijzigingen in een reservekopie kunnen er niet in opgeslagen worden. Gebruik Opslaan om ze te bewaren, of gooi ze weg en stop ermee.
-backup-nudge-text = Er zijn geen back-ups voor dit project ingesteld.
-backup-nudge-action = Reservekopieën instellen...
+backup-restored-with-safety = Project hersteld. Uw vorige versie is opgeslagen in { $path }.
+close-backup-discard-title = Wijzigingen in deze reservekopie verwerpen?
+close-backup-discard-text = Wijzigingen in een reservekopie kunnen daarin niet worden opgeslagen. Gebruik Opslaan als om ze te bewaren, of verwerp ze en sluit.
+quit-backup-discard-title = Wijzigingen verwerpen en afsluiten?
+quit-backup-discard-work-question = Wijzigingen in { $title } verwerpen en afsluiten?
+quit-backup-discard-text = Wijzigingen in een reservekopie kunnen daarin niet worden opgeslagen. Gebruik Opslaan als om ze te bewaren, of verwerp ze en sluit af.
+backup-nudge-text = Voor dit project zijn geen reservekopieën ingesteld.
+backup-nudge-action = Reservekopieën instellen…
 
-menu-backups-list = Reservekopieën… (&K)
+menu-backups-list = Reserve&kopieën…
 backups-title = Reservekopieën
-backups-loading = Scannen naar back-ups...
-backups-empty = Nog geen back-ups gevonden voor dit project.
+backups-loading = Zoeken naar reservekopieën…
+backups-empty = Nog geen reservekopieën gevonden voor dit project.
 backups-open = Openen
-backups-reveal = Openen
+backups-reveal = Tonen in map
 backups-delete = Deze reservekopie verwijderen
-backups-delete-confirm-title = Deze back-up verwijderen?
-backups-delete-confirm-text = ‘{ $name }’ wordt definitief verwijderd. Dit kan niet ongedaan worden gemaakt.
-backups-delete-error = Kon de reservekopie niet verwijderen: { $error }
+backups-delete-confirm-title = Deze reservekopie verwijderen?
+backups-delete-confirm-text = “{ $name }” wordt definitief verwijderd. Dit kan niet ongedaan worden gemaakt.
+backups-delete-error = Kan de reservekopie niet verwijderen: { $error }
 backups-refresh = Verversen
 backups-close = Sluiten
 
-settings-page-backup = Standaardinstellingen voor backups
+settings-page-backup = Standaardinstellingen voor reservekopieën
 settings-page-work-backup = Reservekopieën
-settings-backup-general-title = Standaard reservekopieinstellingen
+settings-backup-general-title = Standaardinstellingen voor reservekopieën
 settings-backup-work-title = Reservekopieën voor dit project
-settings-backup-inherit = Algemene reservekopie-instellingen gebruiken
-settings-backup-inheriting = Dit project gebruikt de algemene back-upinstellingen.
-settings-backup-none-hint = Er worden geen automatische back-ups ingesteld (elke trigger is uitgeschakeld).
-settings-backup-last = Laatste back-up: { $date }
-settings-backup-last-never = Nog geen back-ups.
-settings-backup-open-list = Reservekopielijst openen...
-settings-backup-triggers = Wanneer moet ik me terugtrekken?
-settings-backup-on-close = Een back-up maken bij het afsluiten van het project
-settings-backup-on-open = Back-up maken bij het openen van het project
-settings-backup-interval = Af en toe een back-up, elke
-settings-backup-destinations = Reservekopie van bestemmingen
+settings-backup-inherit = Algemene instellingen voor reservekopieën gebruiken
+settings-backup-inheriting = Dit project gebruikt de algemene instellingen voor reservekopieën.
+settings-backup-none-hint = Er zijn geen automatische reservekopieën ingesteld (elke aanleiding staat uit).
+settings-backup-last = Laatste reservekopie: { $date }
+settings-backup-last-never = Nog geen reservekopieën.
+settings-backup-open-list = Lijst met reservekopieën openen…
+settings-backup-triggers = Wanneer een reservekopie maken
+settings-backup-on-close = Reservekopie maken bij het sluiten van het project
+settings-backup-on-open = Reservekopie maken bij het openen van het project
+settings-backup-interval = Regelmatig een reservekopie maken, elke
+settings-backup-destinations = Bestemmingen voor reservekopieën
 settings-backup-default-location = Standaardlocatie
 settings-backup-usage-since = { $count ->
-    [one] { $count } back-up · { $size } · oudste { $oldest }
-   *[other] { $count } back-ups · { $size } · oudste { $oldest }
-}
+        [one] { $count } reservekopie · { $size } · oudste { $oldest }
+       *[other] { $count } reservekopieën · { $size } · oudste { $oldest }
+    }
 settings-backup-usage = { $count ->
-    [one] { $count } back-up · { $size }
-   *[other] { $count } back-ups · { $size }
-}
-settings-backup-usage-empty = Er is hier nog niets bewaard.
-settings-backup-usage-measuring = Meten...
+        [one] { $count } reservekopie · { $size }
+       *[other] { $count } reservekopieën · { $size }
+    }
+settings-backup-usage-empty = Hier is nog niets bewaard
+settings-backup-usage-measuring = Meten…
 settings-backup-reveal-root = Map tonen
-settings-backup-dest-none = Geen bestemmingen. Back-ups worden opgeslagen naast het project.
+settings-backup-dest-none = Geen bestemmingen. Reservekopieën worden naast het project opgeslagen.
 settings-backup-dest-remove = Verwijderen
-settings-backup-dest-add = Map toevoegen...
+settings-backup-dest-add = Map toevoegen…
 settings-backup-dest-refresh = Verversen
-settings-backup-retention = Hoeveel te houden.
-settings-backup-retention-tiered = Geplaatst
-settings-backup-retention-keep-n = Laatste N houden
-settings-backup-retention-tip = Hoe oude back-ups zijn gesnoeid.
-settings-backup-retention-tip-more = Tiered houdt een back-up per uur voor een dag, per dag voor een week, per week voor een maand, en per maand daarna, zodat de recente geschiedenis blijft dicht en oude geschiedenis uitdunt. "Keep last N" gewoon houdt de N meest recente kopieën. In beide modi de nieuwste kopieën (het minimum hieronder) worden altijd gehouden.
-settings-backup-gfs-hourly = Uur (laatste 24 uur)
+settings-backup-retention = Hoeveel bewaren
+settings-backup-retention-tiered = Getrapt
+settings-backup-retention-keep-n = Laatste N bewaren
+settings-backup-retention-tip = Hoe oude reservekopieën worden opgeruimd.
+settings-backup-retention-tip-more = Getrapt bewaart één reservekopie per uur gedurende een dag, per dag gedurende een week, per week gedurende een maand en daarna per maand, zodat de recente geschiedenis dicht blijft en de oude geschiedenis uitdunt. “Laatste N bewaren” bewaart gewoon de N meest recente kopieën. In beide modi worden de nieuwste kopieën (het minimum hieronder) altijd bewaard.
+settings-backup-gfs-hourly = Per uur (laatste 24 u)
 settings-backup-gfs-daily = Dagelijks (laatste week)
 settings-backup-gfs-weekly = Wekelijks (laatste maand)
 settings-backup-gfs-monthly = Maandelijks
 settings-backup-keep-n = Aantal te bewaren
-settings-backup-min-keep = Altijd op zijn minst houden
+settings-backup-min-keep = Altijd minstens bewaren
 settings-backup-dedup = Een reservekopie overslaan als er niets is veranderd
 
 new-work-title = Nieuw project
@@ -796,66 +802,66 @@ new-work-close = Sluiten
 new-work-name = Projectnaam
 new-work-name-placeholder = Naamloos
 new-work-author = Auteur
-new-work-author-placeholder = Facultatief
-new-work-format = Opmaak
+new-work-author-placeholder = Optioneel
+new-work-format = Opslagvorm
 new-work-single-file = Eén bestand
 new-work-bundle = Bundel
-new-work-convert-later = U kunt converteren tussen formaten later.
+new-work-convert-later = U kunt later naar een andere opslagvorm overschakelen.
 new-work-location = Locatie
-new-work-will-create = Zal aanmaken
+new-work-will-create = Wordt aangemaakt
 new-work-language = Standaardtaal
-new-work-language-hint = Toegepast op nieuwe teksten spellingscontrole. Elke tekst kan worden omgezet naar een andere taal.
+new-work-language-hint = Gebruikt voor nieuwe teksten en de spellingscontrole. Elke tekst kan op een andere taal worden gezet.
 new-work-template = Sjabloon
 new-work-template-none = Geen
-new-work-template-empty-novel = Lege novel
-new-work-template-light-novel = Lichtnevel
+new-work-template-empty-novel = Lege roman
+new-work-template-light-novel = Light novel
 new-work-template-novel = Roman
-new-work-template-novel-in-parts = Nieuwe delen
+new-work-template-novel-in-parts = Roman in delen
 new-work-template-notebook = Notitieboek
 new-work-cancel = Annuleren
 new-work-create = Project aanmaken
 new-work-step-details = Details
-new-work-step-language = Taalstructuur
+new-work-step-language = Taal en opbouw
 new-work-step-template = Sjabloon
 new-work-back = Terug
 new-work-next = Volgende
 new-work-documents-title = Nieuw project uit documenten
 new-work-step-import = Importeren
-new-work-create-and-import = Importeren...
-new-work-documents-next-title = Uw documenten komen nu.
-new-work-documents-next-body = Het maken van het project opent de import wizard over het, waar u de documenten kiest, de structuur bekijken Skribisto leest van hen, en kies waar het landt. Niets is geschreven in het project totdat u het daar bevestigt.
-new-work-documents-no-template = Dit project start met opzet leeg: geen sjabloon, dus de geïmporteerde documenten zijn het enige wat erin staat.
-new-work-documents-chapter-scene-hint = Geldt voor de hoofdstukken die de import aanmaakt. U kunt het later wijzigen in de instellingen van het project.
-new-work-single-file-desc = Een .skrib archief (zip). Draagbaar, makkelijk te back-uppen.
-new-work-bundle-desc = Een map met elke tekst.
-new-work-template-none-count = leeg bindmiddel
+new-work-create-and-import = Aanmaken en importeren…
+new-work-documents-next-title = Daarna volgen uw documenten
+new-work-documents-next-body = Bij het aanmaken van het project opent de importassistent erboven: daar kiest u de documenten, controleert u de structuur die Skribisto erin leest en bepaalt u waar alles terechtkomt. Er wordt niets in het project geschreven totdat u het daar bevestigt.
+new-work-documents-no-template = Dit project begint met opzet leeg: geen sjabloon, zodat de geïmporteerde documenten het enige zijn wat erin staat.
+new-work-documents-chapter-scene-hint = Geldt voor de hoofdstukken die de import aanmaakt. U kunt dit later wijzigen in de instellingen van het project.
+new-work-single-file-desc = Eén .skrib-archief (zip). Draagbaar, eenvoudig om reservekopieën van te maken.
+new-work-bundle-desc = Een map met elke tekst en elk bestand. Geschikter voor versiebeheer.
+new-work-template-none-count = lege ordner
 new-work-template-empty-novel-count = 1 hoofdstuk
 new-work-template-light-novel-count = 15 hoofdstukken
 new-work-template-novel-count = 20 hoofdstukken
 new-work-template-novel-in-parts-count = 3 delen, 24 hoofdstukken
-new-work-template-notebook-count = Noten in vrije vorm
+new-work-template-notebook-count = vrije notities
 new-work-chapter-scene = Platte hoofdstukken
-new-work-chapter-scene-tip = Elk hoofdstuk is een enkel item waar je direct in schrijft, zonder scènes eronder. Laat dit achterwege voor de klassieke lay-out, waar een hoofdstuk een map is: je schrijft daar ook direct in, maar het kan ook scènes bevatten.
-new-work-chapter-scene-tip-more = Je schrijft hoe dan ook in een hoofdstuk. Het enige verschil is of het *contain* scènes. Skribisto's mapboom is alleen organisatorisch, dus beide lay-outs compileren naar hetzelfde boek, je kunt ze vrij mengen, en Promoot converteert een hoofdstuk tussen de twee zonder een woord te verliezen.
-new-work-name-required = Geef een naam voor het project
+new-work-chapter-scene-tip = Elk hoofdstuk is één enkel item waarin u direct schrijft, zonder scènes eronder. Laat dit uit voor de klassieke indeling, waarin een hoofdstuk een map is: ook daarin schrijft u direct, maar het kan daarnaast scènes bevatten.
+new-work-chapter-scene-tip-more = U schrijft hoe dan ook in een hoofdstuk. Het enige verschil is of het scènes kan *bevatten*. De ordnerboom van Skribisto dient alleen om te ordenen, dus beide indelingen leveren hetzelfde boek op, u kunt ze vrij combineren, en Omzetten naar zet een hoofdstuk van de ene naar de andere vorm zonder een woord te verliezen.
+new-work-name-required = Voer een naam in voor het project
 new-work-name-invalid = Deze naam heeft geen bruikbare tekens
 new-work-location-required = Kies een locatie
 new-work-location-missing = Deze map bestaat niet
 new-work-location-not-folder = Dit pad is geen map
-new-work-location-readonly = Deze map is niet beschrijfbaar
-new-work-target-exists = Een project met deze naam staat al in deze map. Het project aanmaken zal vragen voordat het wordt vervangen
-new-work-target-is-folder = Een map met deze naam bevindt zich al in deze locatie. Kies een andere naam
+new-work-location-readonly = In deze map kan niet worden geschreven
+new-work-target-exists = Er staat al een project met deze naam in deze map. Bij het aanmaken wordt gevraagd of het mag worden vervangen
+new-work-target-is-folder = Op deze locatie staat al een map met deze naam. Kies een andere naam
 new-work-overwrite-title = Het bestaande project vervangen?
-new-work-overwrite-text = "{ $name }" bestaat al in deze map. Vervangen door het nieuwe project?
+new-work-overwrite-text = “{ $name }” bestaat al in deze map. Vervangen door het nieuwe project?
 new-work-target-open-title = Dit project is geopend
-new-work-target-open-text = "{ $name }" is geopend in Skribisto. Het creëren van een nieuw project op zijn plaats zou het project waar u aan werkt vervangen, en uw volgende opslaan zou dat project terug te schrijven over de nieuwe. Kies een andere naam of map, of sluit het project eerst.
-target-importing-title = Een import is dit project aan het schrijven
-target-importing-text = Een import is nog steeds bezig met het schrijven van "{ $name }." Wacht tot het klaar is, of kies een andere naam.
-import-plume-busy-title = Een ander Plume Creator project wordt geïmporteerd
-import-plume-busy-text = Plume Creator projecten worden een voor een geïmporteerd. Wacht tot de huidige import is voltooid, of annuleer het, dan start deze opnieuw.
-import-manuskript-busy-title = Een ander Manuskript project wordt geïmporteerd
-import-manuskript-busy-text = Manuskript projecten worden een voor een geïmporteerd. Wacht tot de huidige import is voltooid, of annuleer het, dan start deze opnieuw.
-backup-restore-importing-text = Een import is nog bezig met het schrijven van "{ $name }," het project dat deze back-up zou worden hersteld. Herstel de back-up zodra de import is voltooid.
+new-work-target-open-text = “{ $name }” is geopend in Skribisto. Een nieuw project op die plaats aanmaken zou het project waaraan u werkt vervangen, en bij de volgende opslag zou dat project weer over het nieuwe heen worden geschreven. Kies een andere naam of map, of sluit eerst het project.
+target-importing-title = Een import schrijft dit project
+target-importing-text = Een import is nog bezig “{ $name }” te schrijven. Wacht tot die klaar is, of kies een andere naam.
+import-plume-busy-title = Er wordt al een ander Plume Creator-project geïmporteerd
+import-plume-busy-text = Plume Creator-projecten worden een voor een geïmporteerd. Wacht tot de lopende import klaar is, of annuleer die, en start deze daarna opnieuw.
+import-manuskript-busy-title = Er wordt al een ander Manuskript-project geïmporteerd
+import-manuskript-busy-text = Manuskript-projecten worden een voor een geïmporteerd. Wacht tot de lopende import klaar is, of annuleer die, en start deze daarna opnieuw.
+backup-restore-importing-text = Een import is nog bezig “{ $name }” te schrijven, het project waarover deze reservekopie zou worden hersteld. Herstel de reservekopie zodra de import klaar is.
 
 new-work-manuscript = Manuscript
 new-work-notes = Notities
@@ -863,88 +869,88 @@ new-work-research = Onderzoek
 new-work-notebook = Notitieboek
 new-work-scene = Scène
 new-work-note = Notitie
-new-work-front-matter = Voorgrond
-new-work-back-matter = Achterzijde
+new-work-front-matter = Voorwerk
+new-work-back-matter = Nawerk
 new-work-paratext = Boekstructuur
 new-work-paratext-none = Geen structuur
-new-work-paratext-hint = De voor- en achterkant een traditie opent en sluit een boek met. U kunt bewegen, hernoemen of verwijderen van een van de achteraf.
+new-work-paratext-hint = Het voor- en nawerk waarmee een traditie een boek opent en afsluit. U kunt alles daarna verplaatsen, hernoemen of verwijderen.
 new-work-tags = Tags
 new-work-tags-none = Geen tags
-new-work-tags-hint = Een startpalet voor het taggen van tekens, plaatsen en de rest. Optioneel, en elke tag kan worden hernoemd, herkleurd of verwijderd achteraf.
-new-work-note-templates = Nootsjablonen
+new-work-tags-hint = Een startpalet om personages, plaatsen en de rest te taggen. Optioneel; elke tag kan daarna worden hernoemd, van kleur veranderd of verwijderd.
+new-work-note-templates = Notitiesjablonen
 new-work-note-templates-none = Geen sjablonen
-new-work-note-templates-hint = De vorm van een verhaal-bijbel noot begint in. Optioneel, en elke sjabloon kan achteraf worden bewerkt of verwijderd.
+new-work-note-templates-hint = De vorm waarin een notitie in de verhaalbijbel begint. Optioneel; elk sjabloon kan daarna worden bewerkt of verwijderd.
 new-work-characters = Personages
 new-work-places = Plaatsen
 
-import-plume-title = Project importeren Plume Creator
+import-plume-title = Plume Creator-project importeren
 import-plume-close = Sluiten
 import-plume-source = Plume-project
-import-plume-source-hint = Kies een .plume of .plume_backup bestand (elk Plume Creator versie).
+import-plume-source-hint = Kies een .plume- of .plume_backup-bestand (elke versie van Plume Creator).
 import-plume-location = Doelmap
-import-plume-name = Bestandnaam
+import-plume-name = Bestandsnaam
 import-plume-name-placeholder = Projectnaam
-import-plume-will-create = Zal aanmaken
-import-plume-trash-warning = Getrapte / verwijderde items worden niet gemigreerd.
+import-plume-will-create = Wordt aangemaakt
+import-plume-trash-warning = ⚠ Items in de prullenbak of verwijderde items worden niet overgenomen.
 import-plume-cancel = Annuleren
 import-plume-import = Importeren
-import-plume-source-required = Een Plume-projectbestand kiezen
+import-plume-source-required = Kies een Plume-projectbestand
 import-plume-source-missing = Dit bestand bestaat niet
 import-plume-source-not-file = Dit pad is geen bestand
 import-plume-location-required = Kies een doelmap
 import-plume-location-missing = Deze map bestaat niet
 import-plume-location-not-folder = Dit pad is geen map
-import-plume-location-readonly = Deze map is niet beschrijfbaar
-import-plume-name-required = Een bestandsnaam invoeren
-import-plume-name-exists = Een bestand met deze naam bestaat hier al. Importeren zal overschrijven bevestigen
-import-plume-overwrite-title = Bestaande bestand vervangen?
-import-plume-overwrite-text = "{ $name }" bestaat al. Vervangen door het geïmporteerde project?
+import-plume-location-readonly = In deze map kan niet worden geschreven
+import-plume-name-required = Voer een bestandsnaam in
+import-plume-name-exists = Hier bestaat al een bestand met deze naam. Bij het importeren wordt gevraagd of het mag worden overschreven
+import-plume-overwrite-title = Bestaand bestand vervangen?
+import-plume-overwrite-text = “{ $name }” bestaat al. Vervangen door het geïmporteerde project?
 import-plume-manuscript-binder = Manuscript
 import-plume-story-bible-binder = Verhaalbijbel
-import-plume-progress-title = Plume-project wordt geïmporteerd...
+import-plume-progress-title = Plume-project wordt geïmporteerd…
 import-plume-cancel-import = Annuleren
 import-plume-cancelled = Importeren geannuleerd
-import-plume-done = Geïmporteerd { $imported ->
-    [one] { $imported } punt.
-   *[other] { $imported } items.
- } { $skipped ->
-    [one] { $skipped } vernielde item werd niet gemigreerd.
-   *[other] { $skipped } voorwerpen werden niet gemigreerd.
-}
+import-plume-done = { $imported ->
+        [one] { $imported } item geïmporteerd.
+       *[other] { $imported } items geïmporteerd.
+    } { $skipped ->
+        [one] { $skipped } item uit de prullenbak is niet overgenomen.
+       *[other] { $skipped } items uit de prullenbak zijn niet overgenomen.
+    }
 import-plume-open-now = Nu openen
 import-plume-warnings = { $count ->
-    [one] 1 ding kon niet precies geïmporteerd worden
-   *[other] { $count } dingen konden niet precies worden geïmporteerd
-}
+        [one] 1 onderdeel kon niet exact worden geïmporteerd
+       *[other] { $count } onderdelen konden niet exact worden geïmporteerd
+    }
 import-plume-details = Details
-import-plume-warnings-title = Waarschuwingen importeren
-import-plume-error-title = Kon het project niet importeren
-import-plume-nested-too-deep = Het project werd niet geïmporteerd: het "{ $part }" deel is meer dan { $limit } niveaus diep genesteld. No Plume Creator project komt in de buurt van dat, en het lezen kon crashen Skribisto. Niets werd geschreven.
-import-plume-declares-entities = Het project werd niet geïmporteerd: het "{ $part }" deel verklaart XML entiteiten, wat geen Plume Creator project doet. Uitbreiden kan meer geheugen dan de computer heeft nodig en crash Skribisto. Er is niets geschreven.
+import-plume-warnings-title = Importwaarschuwingen
+import-plume-error-title = Kan het project niet importeren
+import-plume-nested-too-deep = Het project is niet geïmporteerd: het onderdeel “{ $part }” is meer dan { $limit } niveaus diep genest. Geen enkel Plume Creator-project komt daar in de buurt, en het inlezen zou Skribisto kunnen laten vastlopen. Er is niets geschreven.
+import-plume-declares-entities = Het project is niet geïmporteerd: het onderdeel “{ $part }” declareert XML-entiteiten, wat geen enkel Plume Creator-project doet. Het uitvouwen ervan zou meer geheugen kunnen vragen dan de computer heeft en Skribisto laten vastlopen. Er is niets geschreven.
 import-plume-error-details = Details
 
-import-manuskript-title = Project importeren Manuskript
+import-manuskript-title = Manuskript-project importeren
 import-manuskript-close = Sluiten
 import-manuskript-source = Manuskript-project
-import-manuskript-source-hint = Kies het .msk bestand of de projectmap (een Manuskript versie).
-import-manuskript-source-file = Bestand kiezen...
-import-manuskript-source-folder = Map kiezen...
+import-manuskript-source-hint = Kies het .msk-bestand of de projectmap (elke versie van Manuskript).
+import-manuskript-source-file = Bestand kiezen…
+import-manuskript-source-folder = Map kiezen…
 import-manuskript-location = Doelmap
-import-manuskript-name = Bestandnaam
+import-manuskript-name = Bestandsnaam
 import-manuskript-name-placeholder = Projectnaam
-import-manuskript-will-create = Zal aanmaken
+import-manuskript-will-create = Wordt aangemaakt
 import-manuskript-cancel = Annuleren
 import-manuskript-import = Importeren
-import-manuskript-source-required = Kies een Manuskript project
+import-manuskript-source-required = Kies een Manuskript-project
 import-manuskript-source-missing = Dit bestand of map bestaat niet
 import-manuskript-location-required = Kies een doelmap
 import-manuskript-location-missing = Deze map bestaat niet
 import-manuskript-location-not-folder = Dit pad is geen map
-import-manuskript-location-readonly = Deze map is niet beschrijfbaar
-import-manuskript-name-required = Een bestandsnaam invoeren
-import-manuskript-name-exists = Een bestand met deze naam bestaat hier al. Importeren zal overschrijven bevestigen
-import-manuskript-overwrite-title = Bestaande bestand vervangen?
-import-manuskript-overwrite-text = "{ $name }" bestaat al. Vervangen door het geïmporteerde project?
+import-manuskript-location-readonly = In deze map kan niet worden geschreven
+import-manuskript-name-required = Voer een bestandsnaam in
+import-manuskript-name-exists = Hier bestaat al een bestand met deze naam. Bij het importeren wordt gevraagd of het mag worden overschreven
+import-manuskript-overwrite-title = Bestaand bestand vervangen?
+import-manuskript-overwrite-text = “{ $name }” bestaat al. Vervangen door het geïmporteerde project?
 import-manuskript-manuscript-binder = Manuscript
 import-manuskript-story-bible-binder = Verhaalbijbel
 import-manuskript-characters-group = Personages
@@ -952,71 +958,71 @@ import-manuskript-world-group = Wereld
 import-manuskript-plots-group = Verhaallijnen
 import-manuskript-project-info-note = Projectinformatie
 import-manuskript-summary-note = Samenvatting
-import-manuskript-importance-minor = Klein
+import-manuskript-importance-minor = Bijfiguur
 import-manuskript-importance-secondary = Secundair
-import-manuskript-importance-main = Hoofd
-import-manuskript-progress-title = Het importeren van Manuskript project...
+import-manuskript-importance-main = Hoofdpersonage
+import-manuskript-progress-title = Manuskript-project wordt geïmporteerd…
 import-manuskript-cancel-import = Annuleren
 import-manuskript-cancelled = Importeren geannuleerd
 import-manuskript-done = { $imported ->
-    [one] { $imported } invoer.
-   *[other] { $imported } ingevoerde producten.
- } { $revisions ->
-    [0] { "" }
-    [one] { $revisions } eerdere versie kwam met het.
-   *[other] { $revisions } eerdere versies kwam met hen.
-}
+        [one] { $imported } item geïmporteerd.
+       *[other] { $imported } items geïmporteerd.
+    } { $revisions ->
+        [0] { "" }
+        [one] { $revisions } eerdere versie is meegekomen.
+       *[other] { $revisions } eerdere versies zijn meegekomen.
+    }
 import-manuskript-open-now = Nu openen
 import-manuskript-warnings = { $count ->
-    [one] 1 ding te weten over deze import
-   *[other] { $count } dingen te weten over deze import
-}
+        [one] 1 punt om te weten over deze import
+       *[other] { $count } punten om te weten over deze import
+    }
 import-manuskript-details = Details
-import-manuskript-warnings-title = Info over deze import
-import-manuskript-error-title = Kon het project niet importeren
-import-manuskript-nested-too-deep = Het project werd niet geïmporteerd: het bestand "{ $part }" is meer dan { $limit } niveaus diep genesteld. No Manuskript project komt in de buurt van dat, en het lezen van het kon crash Skribisto. Niets werd geschreven.
-import-manuskript-folders-too-deep = Het project werd niet geïmporteerd: een van de bestanden zit meer dan { $limit } mappen diep. No Manuskript project komt in de buurt van dat, en het lezen kan crashen Skribisto. Niets werd geschreven.
-import-manuskript-declares-entities = Het project werd niet geïmporteerd: het bestand "{ $part }" verklaart XML entiteiten, wat geen Manuskript project doet. Uitbreiden kan meer geheugen dan de computer heeft nodig en crash Skribisto. Er werd niets geschreven.
+import-manuskript-warnings-title = Over deze import
+import-manuskript-error-title = Kan het project niet importeren
+import-manuskript-nested-too-deep = Het project is niet geïmporteerd: het bestand “{ $part }” is meer dan { $limit } niveaus diep genest. Geen enkel Manuskript-project komt daar in de buurt, en het inlezen zou Skribisto kunnen laten vastlopen. Er is niets geschreven.
+import-manuskript-folders-too-deep = Het project is niet geïmporteerd: een van de bestanden staat meer dan { $limit } mappen diep. Geen enkel Manuskript-project komt daar in de buurt, en het inlezen zou Skribisto kunnen laten vastlopen. Er is niets geschreven.
+import-manuskript-declares-entities = Het project is niet geïmporteerd: het bestand “{ $part }” declareert XML-entiteiten, wat geen enkel Manuskript-project doet. Het uitvouwen ervan zou meer geheugen kunnen vragen dan de computer heeft en Skribisto laten vastlopen. Er is niets geschreven.
 import-manuskript-error-details = Details
 
 import-target-open-title = Dit project is geopend
-import-target-open-text = "{ $name }" is geopend in Skribisto. Importeren over het zou het project waar u aan werkt vervangen, en uw volgende opslaan zou dat project terug te schrijven over de import. Kies een andere bestandsnaam, of sluit het project eerst.
+import-target-open-text = “{ $name }” is geopend in Skribisto. Eroverheen importeren zou het project waaraan u werkt vervangen, en bij de volgende opslag zou dat project weer over de import heen worden geschreven. Kies een andere bestandsnaam, of sluit eerst het project.
 import-warnings-announcement = { $result } { $notice }.
 
 export-title = Exporteren
 export-close = Sluiten
-export-scope-label = Wat?
-export-format-label = Opmaak
+export-scope-label = Wat
+export-format-label = Formaat
 export-style-label = Stijl
 export-path-label = Bestand
-export-browse = Bladeren...
-export-show-non-exportable = Niet-exporteerbaar tonen
-export-choose-empty = Geen project om uit te kiezen.
+export-browse = Bladeren…
+export-show-non-exportable = Niet-exporteerbare items tonen
+export-choose-empty = Er is geen project om uit te kiezen.
 export-cancel = Annuleren
 export-export = Exporteren
 export-save-dialog-title = Exporteren naar bestand
 export-section-what = Wat te exporteren
 export-section-style = Stijl
 export-section-destination = Bestemming
-export-custom-selection = Zelfgemaakte selectie
+export-custom-selection = Aangepaste selectie
 export-selected-count = { $count } geselecteerd
 export-chip-chapters-none = Hoofdstukken: geen
 export-chip-chapters-numbered = Hoofdstukken: genummerd
-export-chip-chapters-title = Hoofdstukken: uitsluitend titel
+export-chip-chapters-title = Hoofdstukken: alleen titel
 export-chip-chapters-both = Hoofdstukken: nummer + titel
-export-chip-scene-break-glyph = Scènebreuk: { $glyph }
-export-chip-scene-break-blank = Scènebreuk: lege regel
-export-chip-scene-break-none = Scènebreuk: geen
-export-chip-major-break-glyph = Grote breuk { $glyph }
-export-chip-major-break-blank = Grote breuk: lege regel
-export-chip-major-break-none = Grote breuk: geen
-export-chip-major-break-same = Beide breukniveaus gelijk
-export-chip-spacing-single = Spatiëring: enkele
-export-chip-spacing-onehalf = Ruimte: 11⁄2
-export-chip-spacing-double = Spatiëring: dubbel
-export-chip-notes-included = Inclusief aantekeningen
-export-chip-notes-excluded = Uitgesloten opmerkingen
-export-format-docx = Woord
+export-chip-scene-break-glyph = Scèneovergang: { $glyph }
+export-chip-scene-break-blank = Scèneovergang: lege regel
+export-chip-scene-break-none = Scèneovergang: geen
+export-chip-major-break-glyph = Grote overgang: { $glyph }
+export-chip-major-break-blank = Grote overgang: lege regel
+export-chip-major-break-none = Grote overgang: geen
+export-chip-major-break-same = Beide soorten overgangen gelijk
+export-chip-spacing-single = Regelafstand: enkel
+export-chip-spacing-onehalf = Regelafstand: 1½
+export-chip-spacing-double = Regelafstand: dubbel
+export-chip-notes-included = Met notities
+export-chip-notes-excluded = Zonder notities
+export-format-docx = Word
 export-format-odt = LibreOffice
 export-format-html = HTML
 export-format-markdown = Markdown
@@ -1025,190 +1031,194 @@ export-format-text = Tekst
 export-format-latex = LaTeX
 export-format-epub = EPUB
 export-format-pdf = PDF
-export-overwrite-title = Bestaande bestand vervangen?
-export-overwrite-text = '{ $name }' bestaat al.
-export-progress-title = Exporteren...
+export-overwrite-title = Bestaand bestand vervangen?
+export-overwrite-text = “{ $name }” bestaat al. Vervangen?
+export-progress-title = Exporteren…
 export-cancelled = Exporteren geannuleerd
-export-done = Exporteren { $count ->
-    [one] { $count } post
-   *[other] { $count } posten
-}
+export-done = { $count ->
+        [one] { $count } item geëxporteerd
+       *[other] { $count } items geëxporteerd
+    }
 export-open-file = Openen
-export-show-in-folder = Toon in map
-export-error-title = Kon niet exporteren
+export-show-in-folder = Tonen in map
+export-error-title = Kan niet exporteren
 export-error-details = Details
 
-backup-progress-start = Beginnen...
-backup-progress-retention = Oude backups opruimen...
+backup-progress-start = Starten…
+backup-progress-retention = Oude reservekopieën opruimen…
 backup-progress-done = Gereed
 backup-progress-destination = Bestemming { $i } van { $n }
 backup-details = Details
-backup-issues-title = Back-upproblemen
+backup-issues-title = Problemen met reservekopie
 backup-failed-title = Reservekopie is mislukt
-backup-complete-prune-warning = Back-up voltooid ({ $ok } opgeslagen, { $skipped } reeds huidige). Sommige oude back-ups konden niet verwijderd worden
+backup-complete-prune-warning = Reservekopie voltooid ({ $ok } opgeslagen, { $skipped } al actueel). Sommige oude reservekopieën konden niet worden verwijderd
 
 search = Zoeken
 search-query-placeholder = Zoeken…
-search-replace-placeholder = Vervangen door ...
+search-replace-placeholder = Vervangen door…
 search-replace-toggle = Vervangen aan/uit
 search-replace-all = Alles vervangen
 search-opt-case = Hoofdlettergevoelig
-search-opt-whole-word = Het hele woord
-search-opt-diacritics = Bijpassende accenten
-search-scope-body = Lichaam
+search-opt-whole-word = Heel woord
+search-opt-diacritics = Accentgevoelig
+search-scope-body = Hoofdtekst
 search-scope-title = Titel
 search-scope-synopsis = Synopsis
-search-scope-label = Korte beschrijving
+search-scope-label = Label
 search-facet-book = Boeken
 search-facet-part = Delen
 search-facet-chapter = Hoofdstukken
 search-facet-scene = Scènes
 search-facet-note = Notities
 search-facet-folder = Mappen
-search-tip-case = Match case: behandel hoofdletter en kleine letters als verschillend, dus "Elena" en "elena" zijn aparte overeenkomsten.
-search-tip-whole-word = Het hele woord: match alleen volledige woorden, dus "kat" is niet gevonden in "categorie."
-search-tip-diacritics = Match accenten: behandel geaccentueerde letters als onderscheidend, dus "cafe" komt niet overeen met "café."
-search-tip-body = Lichaam: doorzoek de proza van scènes en notities.
-search-tip-title = Titel: doorzoek de titels van de map items.
-search-tip-synopsis = Synopsis: zoek de samenvatting van elk schrijvend item.
-search-tip-label = Label: doorzoek de korte noot die getoond wordt onder de titel van een bindmiddel.
-search-tip-comment = Commentaar: doorzoek de tekst van commentaar threads en hun antwoorden. Een commentaar is over het manuscript in plaats van een deel ervan, dus het heeft zijn eigen switch, en een vervanger laat commentaar komt overeen met unticked totdat u ze aanvinkt.
-search-tip-book = Boeken: de boekencontainer en de begin-/eindmarkeringen.
-search-tip-part = Delen: delen van verdelers op partlevel.
+search-tip-case = Hoofdlettergevoelig: hoofdletters en kleine letters worden als verschillend behandeld, dus “Elena” en “elena” zijn aparte treffers.
+search-tip-whole-word = Heel woord: alleen volledige woorden zoeken, dus “kat” wordt niet gevonden in “kathedraal”.
+search-tip-diacritics = Accentgevoelig: letters met accent worden als verschillend behandeld, dus “cafe” komt niet overeen met “café”.
+search-tip-body = Hoofdtekst: het proza van scènes en notities doorzoeken.
+search-tip-title = Titel: de titels van items in de ordner doorzoeken.
+search-tip-synopsis = Synopsis: de samenvatting van elk schrijfitem doorzoeken.
+search-tip-label = Label: de korte notitie onder de titel van een item in de ordner doorzoeken.
+search-tip-comment = Opmerkingen: de tekst van opmerkingen en hun antwoorden doorzoeken. Een opmerking gaat over het manuscript en maakt er geen deel van uit; daarom heeft ze een eigen schakelaar, en bij vervangen blijven treffers in opmerkingen uitgevinkt totdat u ze aanvinkt.
+search-tip-book = Boeken: de boekcontainer en de markeringen voor begin en einde.
+search-tip-part = Delen: scheidingen op het niveau van delen.
 search-tip-chapter = Hoofdstukken: hoofdstukken, op welke manier het project ze ook opslaat.
-search-tip-scene = Scènes: de items die je proza vasthouden.
-search-tip-note = Opmerkingen: nota's in vrije vorm.
-search-tip-folder = Mappen: eenvoudig mappen en scheidingstekens organiseren.
-search-tip-paratext = Een tekst die tot het boek behoort maar niet tot het verhaal: een voorwoord, een toewijding, een nawoord. Nooit in het manuscript geteld.
-search-tip-preserve-case = Bewaar geval: een vervanger neemt de gevonden zaak, dus "LENA" wordt "MARTA" en "Elena" wordt "Marta."
-search-tip-replace = Vervangen: toon het vervangende veld en Vervang alles.
+search-tip-scene = Scènes: de items die uw proza bevatten.
+search-tip-note = Notities: vrije notities.
+search-tip-folder = Mappen: gewone mappen om te ordenen, en scheidingslijnen.
+search-tip-paratext = Een tekst die bij het boek hoort maar niet bij het verhaal: een voorwoord, een opdracht, een nawoord. Telt nooit mee in het manuscript.
+search-tip-preserve-case = Hoofdletters behouden: een vervanging neemt de hoofdletters van de gevonden tekst over, dus “ELENA” wordt “MARTA” en “Elena” wordt “Marta”.
+search-tip-replace = Vervangen: het vervangingsveld en Alles vervangen tonen.
 search-error = Zoeken mislukt: { $message }
-search-no-matches = Geen overeenkomsten
+search-no-matches = Geen treffers
 search-count =
     { $matches ->
-        [one] { $matches } overeenkomst
-       *[other] { $matches } wedstrijden
+        [one] { $matches } treffer
+       *[other] { $matches } treffers
     } in { $items ->
         [one] { $items } document
        *[other] { $items } documenten
     }
 search-count-truncated =
     { $matches ->
-        [one] { $matches } overeenkomst
-       *[other] { $matches } wedstrijden
+        [one] { $matches } treffer
+       *[other] { $matches } treffers
     } in { $items ->
         [one] { $items } document
        *[other] { $items } documenten
-    } (alleen eerste resultaten)
+    } (alleen de eerste resultaten)
 search-occurrences = { $count }
-search-field-body = Lichaam
+search-field-body = Hoofdtekst
 search-field-title = Titel
 search-field-synopsis = Synopsis
-search-field-label = Korte beschrijving
+search-field-label = Label
 search-field-epigraph = Motto
 search-field-comment = Opmerking
 search-field-comment-reply = Antwoord
 search-field-footnote = Voetnoot
-search-include-in-replace = Alles vervangen invoegen
+search-include-in-replace = Opnemen in Alles vervangen
 search-collapse-all = Alle resultaten invouwen
-search-replace-here = Vervang dit
-search-dismiss = Ontslag uit de resultaten
-search-undo-dismiss = Breng het laatste afgewezen resultaat terug
+search-replace-here = Dit vervangen
+search-dismiss = Uit de resultaten verwijderen
+search-undo-dismiss = Het laatst verwijderde resultaat terughalen
 search-replace-nothing = (niets)
-search-replace-confirm-title = Alle lucifers vervangen?
+search-replace-confirm-title = Alle treffers vervangen?
 search-replace-confirm-text =
-    Vervangen { $occurrences ->
-        [one] { $occurrences } voorval
-       *[other] { $occurrences } voorvallen
-    } of "{ $query }" with "{ $replacement }" across { $items ->
+    { $occurrences ->
+        [one] { $occurrences } keer
+       *[other] { $occurrences } keer
+    } “{ $query }” vervangen door “{ $replacement }” in { $items ->
         [one] { $items } document
        *[other] { $items } documenten
-    } ? U kunt dit ongedaan maken uit de kennisgeving achteraf.
-search-replace-done-title = Volledig vervangen
+    }? U kunt dit achteraf ongedaan maken vanuit de melding.
+search-replace-done-title = Vervangen voltooid
 search-replace-done =
     { $occurrences ->
-        [one] { $occurrences } voorval
-       *[other] { $occurrences } voorvallen
-    } replaced in { $items ->
+        [one] { $occurrences } keer
+       *[other] { $occurrences } keer
+    } vervangen in { $items ->
         [one] { $items } document
        *[other] { $items } documenten
-    } .
+    }.
 search-replace-done-skipped =
     { $occurrences ->
-        [one] { $occurrences } voorval
-       *[other] { $occurrences } voorvallen
-    } replaced in { $items ->
+        [one] { $occurrences } keer
+       *[other] { $occurrences } keer
+    } vervangen in { $items ->
         [one] { $items } document
        *[other] { $items } documenten
     }. { $skipped ->
         [one] { $skipped } veld
        *[other] { $skipped } velden
-    } overgeslagen (veranderd sinds de zoektocht).
+    } overgeslagen (gewijzigd sinds het zoeken).
 search-replace-undo = Ongedaan maken
 search-replace-failed-title = Vervangen mislukt
 search-replace-skipped-title = Niets vervangen
-search-replace-skipped-body = Aantal teksten dat sinds de zoekopdracht is gewijzigd: { $fields }. Deze teksten zijn ongemoeid gelaten. Zoek opnieuw om te zien waar de woorden nu staan.
+search-replace-skipped-body =
+    { $fields ->
+        [one] Deze tekst is
+       *[other] { $fields } van deze teksten zijn
+    } sinds het zoeken gewijzigd en daarom ongemoeid gelaten. Zoek opnieuw om te zien waar de woorden nu staan.
 search-replace-undo-failed-title = Ongedaan maken mislukt
 search-preview = Voorbeeld
 search-preview-empty = Selecteer een resultaat om het hier te bekijken
-search-preview-no-prose = Deze overeenkomst heeft geen bewerkbare tekst
-search-preview-prompt = Om hier een voorbeeld te zien, zoek dan.
+search-preview-no-prose = Deze treffer heeft geen bewerkbare tekst
+search-preview-prompt = Zoek eerst om hier een voorbeeld te zien.
 search-preview-open-search = Zoeken in project
-search-preview-footnote-prompt = Deze match staat in de eigen tekst van een voetnoot. Open het in het dok Voetnoten om het te zien en te bewerken.
+search-preview-footnote-prompt = Deze treffer staat in de eigen tekst van een voetnoot. Open die in het paneel Voetnoten om hem te bekijken en te bewerken.
 search-preview-open-footnotes = Voetnoten openen
 
-find-placeholder = Zoek in dit document...
+find-placeholder = Zoeken in dit document…
 find-count = { $current } van { $total }
 find-no-results = Geen resultaten
-find-close = Dichtbij zoeken
-find-previous = Vorige wedstrijd (Shift+Enter)
-find-next = Volgende wedstrijd (Enter)
+find-close = Zoeken sluiten
+find-previous = Vorige treffer (Shift+Enter)
+find-next = Volgende treffer (Enter)
 find-opt-case = Hoofdlettergevoelig
-find-opt-whole-word = Het hele woord
+find-opt-whole-word = Heel woord
 find-replace-toggle = Vervangen aan/uit (Ctrl+R)
-find-replace-placeholder = Vervangen door ...
+find-replace-placeholder = Vervangen door…
 find-replace = Vervangen
 find-replace-all = Alles vervangen
-find-preserve-case = Geval behouden
+find-preserve-case = Hoofdletters behouden
 
-dict-download-title = Downloaden { $name }...
-dict-download-done = In totaal { $name }
-dict-download-failed = Kon niet downloaden { $name }: { $error }
-dict-removed = Verwijderd { $name }
-dict-accept-first = Accepteer de licentie voordat u downloadt { $name }
+dict-download-title = { $name } downloaden…
+dict-download-done = { $name } geïnstalleerd
+dict-download-failed = Kan { $name } niet downloaden: { $error }
+dict-removed = { $name } verwijderd
+dict-accept-first = Accepteer de licentie voordat u { $name } downloadt
 settings-dict-tab-installed = Geïnstalleerd
-settings-dict-tab-get-more = Haal meer
+settings-dict-tab-get-more = Meer ophalen
 settings-dict-tab-personal = Persoonlijke woorden
 dict-installed-empty = Nog geen woordenboeken gevonden op deze computer.
 dict-get-more-search = Talen zoeken
 dict-system-badge = op uw systeem
 dict-unusable-badge = onbruikbaar
 dict-download-button = Downloaden
-dict-downloading = Downloaden
+dict-downloading = Bezig met downloaden…
 dict-installed-label = Geïnstalleerd
 dict-remove = Verwijderen
 dict-view-license = Licentie weergeven
 dict-approx-size = ~{ $size }
 dict-personal-empty = Nog geen persoonlijke woorden in dit project.
 dict-personal-add = Toevoegen
-dict-personal-placeholder = Een woord toevoegen...
+dict-personal-placeholder = Een woord toevoegen…
 dict-missing-toast = { $count ->
     [one] Dit project gebruikt { $count } woordenboek dat u niet hebt geïnstalleerd
    *[other] Dit project gebruikt { $count } woordenboeken die u niet hebt geïnstalleerd
 }
 dict-missing-action = Woordenboeken ophalen
-dict-license-title = { $name } licentie
-dict-license-accept = Download accepteren
+dict-license-title = Licentie van { $name }
+dict-license-accept = Accepteren en downloaden
 dict-license-cancel = Annuleren
 dict-license-close = Sluiten
-dict-add-button = Woordenboek toevoegen...
+dict-add-button = Woordenboek toevoegen…
 dict-add-title = Een woordenboek toevoegen
 dict-add-close = Sluiten
 dict-add-name = Naam
-dict-add-name-placeholder = Bijvoorbeeld mijn Latijns woordenboek
+dict-add-name-placeholder = bijv. Mijn Latijnse woordenboek
 dict-add-code = Taalcode
-dict-add-code-placeholder = b.v. la of fr-FR-x-custom
-dict-add-code-hint = Een korte tag van uw keuze. Dit is wat je kiest als de taal van een document.
+dict-add-code-placeholder = bijv. la of fr-FR-x-custom
+dict-add-code-hint = Een korte code naar keuze. Dit kiest u als taal van een document.
 dict-add-aff = Affix-bestand (.aff)
 dict-add-dic = Woordenlijst (.dic)
 dict-add-submit = Toevoegen
@@ -1216,153 +1226,153 @@ dict-add-cancel = Annuleren
 dict-add-name-required = Geef het woordenboek een naam.
 dict-add-code-required = Vul een taalcode in.
 dict-add-code-invalid = Gebruik alleen letters, cijfers en - _ .
-dict-add-code-reserved = Dat is een ingebouwde woordenboek code. Kies een andere.
+dict-add-code-reserved = Dat is de code van een ingebouwd woordenboek. Kies een andere.
 dict-add-file-required = Kies een bestand.
 dict-add-file-missing = Dat bestand bestaat niet.
 dict-add-code-taken = Een woordenboek voor die code is al geïnstalleerd.
-dict-add-done = Toegevoegd { $name }
+dict-add-done = { $name } toegevoegd
 dict-add-unusable = Deze bestanden zijn geen bruikbaar woordenboek: { $error }
-dict-add-failed = Kon het woordenboek niet toevoegen: { $error }
+dict-add-failed = Kan het woordenboek niet toevoegen: { $error }
 inspector-export = Exporteren
-inspector-exportable = Include in export
-ctx-number = Dit hoofdstuk nummer (&N)
-ctx-unnumber = Dit hoofdstuk nietnummeren (&N)
+inspector-exportable = Opnemen in exports
+ctx-number = Dit hoofdstuk n&ummeren
+ctx-unnumber = Dit hoofdstuk niet n&ummeren
 inspector-numbering = Nummering
 inspector-numbered = Genummerd
-inspector-numbered-tip = Dit hoofdstuk neemt zijn plaats in in de nummering van het boek. Schakel het uit voor een proloog, een epiloog of een interlude.
-inspector-numbered-tip-more = Een niet-genummerd hoofdstuk blijft in het boek zoals het was: de titel, het proza en het woord tellen zijn onaangetast. Het drukt gewoon geen nummer af, en gebruikt er geen één op: het hoofdstuk na een proloog is hoofdstuk één, niet hoofdstuk twee. Het verlaten van het uit de export in plaats daarvan is een andere schakelaar, boven, en dat men verwijdert het hoofdstuk uit het boek helemaal.
-inspector-apply-to-children = Toepassen op kinderen
+inspector-numbered-tip = Dit hoofdstuk krijgt een plaats in de nummering van het boek. Schakel dit uit voor een proloog, een epiloog of een intermezzo.
+inspector-numbered-tip-more = Een ongenummerd hoofdstuk blijft precies zoals het was in het boek: de kop, het proza en het aantal woorden blijven ongewijzigd. Er wordt alleen geen nummer afgedrukt en er wordt er ook geen verbruikt: het hoofdstuk na een proloog is hoofdstuk één, niet hoofdstuk twee. Het uit de export weglaten is een andere schakelaar, hierboven, en die haalt het hoofdstuk helemaal uit het boek.
+inspector-apply-to-children = Toepassen op onderliggende items
 inspector-milestone = Mijlpaaldatum
 inspector-milestone-none = Geen datum
 inspector-milestone-clear = Wissen
 inspector-tags = Tags
 inspector-aliases = Ook bekend als
 inspector-dict-language = Taal
-inspector-apply-language-to-children = Taal toepassen op kinderen
+inspector-apply-language-to-children = Taal toepassen op onderliggende items
 settings-page-language = Taal
 settings-field-dict-language = Talen
-dict-tradeoff-hint = Elke extra taal accepteert meer woorden, zodat er minder fouten worden gemaakt.
-lang-inherit-hint = Erfelijk: deze scène gebruikt de talen van het boek of project.
+dict-tradeoff-hint = Elke extra taal accepteert meer woorden, waardoor er minder fouten worden opgemerkt.
+lang-inherit-hint = Overgenomen: deze scène gebruikt de talen van het boek of het project.
 lang-pill-list = Talen
-lang-pill-add = Voeg een taal toe
-lang-pill-remove = Verwijderen { $name }
-lang-pill-mute = Zet spellingscontrole uit voor { $name }
-lang-pill-unmute = Zet spellingscontrole aan voor { $name }
+lang-pill-add = Een taal toevoegen
+lang-pill-remove = { $name } verwijderen
+lang-pill-mute = Spellingscontrole uitschakelen voor { $name }
+lang-pill-unmute = Spellingscontrole inschakelen voor { $name }
 
 settings-page-personal-dictionary = Persoonlijk woordenboek
-settings-user-dict-desc = Woorden die u hier toevoegt worden behandeld als correct gespeld overal in de app, en nooit meer gemarkeerd.
-settings-user-dict-add-placeholder = Een woord toevoegen...
+settings-user-dict-desc = Woorden die u hier toevoegt, gelden overal in de app als correct gespeld en worden nooit meer gemarkeerd.
+settings-user-dict-add-placeholder = Een woord toevoegen…
 settings-user-dict-add = Woord toevoegen
-settings-user-dict-search = Filter woorden
+settings-user-dict-search = Woorden filteren
 settings-user-dict-count = { $count ->
     [one] { $count } woord
    *[other] { $count } woorden
 }
 settings-user-dict-rename = Naam wijzigen
 settings-user-dict-remove = Verwijderen
-settings-user-dict-empty = Nog geen woorden. Voeg woorden toe die de spellingcontrole moet negeren, of importeer een lijst.
+settings-user-dict-empty = Nog geen woorden. Voeg woorden toe die de spellingscontrole moet negeren, of importeer een lijst.
 settings-user-dict-import = Importeren…
 settings-user-dict-export = Exporteren…
-settings-user-dict-import-tip = Voeg woorden toe uit een platte tekstbestand, één woord per regel. Bestaande woorden worden bewaard.
-settings-user-dict-export-tip = Sla de hele lijst op in een platte tekstbestand, één woord per regel.
+settings-user-dict-import-tip = Woorden toevoegen uit een tekstbestand, één woord per regel. Bestaande woorden blijven behouden.
+settings-user-dict-export-tip = De hele lijst opslaan in een tekstbestand, één woord per regel.
 settings-user-dict-txt-filter = Tekstbestanden
-settings-user-dict-duplicate = Al in het woordenboek
-settings-user-dict-imported = Geïmporteerd { $count ->
-    [one] { $count } woord
-   *[other] { $count } woorden
-} ({ $duplicates } reeds aanwezig).
-settings-user-dict-import-failed = Kon de woordenlijst niet lezen: { $error }
-settings-user-dict-exported = Opgeslagen { $count ->
-    [one] { $count } woord.
-   *[other] { $count } woorden.
-}
-settings-user-dict-export-failed = Kon de woordenlijst niet opslaan: { $error }
+settings-user-dict-duplicate = Staat al in het woordenboek
+settings-user-dict-imported = { $count ->
+        [one] { $count } woord
+       *[other] { $count } woorden
+    } geïmporteerd ({ $duplicates } al aanwezig).
+settings-user-dict-import-failed = Kan de woordenlijst niet lezen: { $error }
+settings-user-dict-exported = { $count ->
+        [one] { $count } woord opgeslagen.
+       *[other] { $count } woorden opgeslagen.
+    }
+settings-user-dict-export-failed = Kan de woordenlijst niet opslaan: { $error }
 
-settings-page-text-replacements = Tekstvervangers
-settings-text-repl-desc = Vervang steno door de volledige tekst als je typt: "btw" wordt "door de manier" op het moment dat je een spatie of interpunctie typt.
+settings-page-text-replacements = Tekstvervanging
+settings-text-repl-desc = Vervang afkortingen terwijl u typt door de volledige tekst: “bvd” wordt “bij voorbaat dank” zodra u een spatie of leesteken typt.
 settings-text-repl-enable = Tekstvervangingen gebruiken in dit project
-settings-text-repl-disabled-hint = Zet dit aan om steno te definiëren die uitbreidt terwijl je schrijft.
+settings-text-repl-disabled-hint = Schakel dit in om afkortingen te definiëren die worden uitgeschreven terwijl u schrijft.
 settings-text-repl-add = Regel toevoegen
 settings-text-repl-trigger-placeholder = Afkorting
 settings-text-repl-replacement-placeholder = Wat het wordt
-settings-text-repl-added = Toegevoegd "{ $trigger }"
-settings-text-repl-duplicate = "{ $trigger }" heeft al een regel
-settings-text-repl-filter = Filterregels
+settings-text-repl-added = “{ $trigger }” toegevoegd
+settings-text-repl-duplicate = Er bestaat al een regel voor “{ $trigger }”
+settings-text-repl-filter = Regels filteren
 settings-text-repl-count = { $n ->
     [one] 1 regel
    *[other] { $n } regels
 }
 settings-text-repl-row-enabled = Deze regel gebruiken
-settings-text-repl-delete = De regel voor { $trigger } schrappen
-settings-text-repl-deleted = De regel voor "{ $trigger }" is geschrapt
+settings-text-repl-delete = De regel voor { $trigger } verwijderen
+settings-text-repl-deleted = De regel voor “{ $trigger }” is verwijderd
 settings-text-repl-empty = Nog geen regels.
-settings-text-repl-csv-filter = CSV bestanden
+settings-text-repl-csv-filter = CSV-bestanden
 settings-text-repl-import = Importeren…
 settings-text-repl-export = Exporteren…
-settings-text-repl-imported = Geïmporteerd { $added }, overgeslagen { $skipped }
-settings-text-repl-exported = Exporteren { $n ->
-    [one] 1 regel
-   *[other] { $n } regels
-}
+settings-text-repl-imported = { $added } geïmporteerd, { $skipped } overgeslagen
+settings-text-repl-exported = { $n ->
+        [one] 1 regel geëxporteerd
+       *[other] { $n } regels geëxporteerd
+    }
 
 editor-menu-no-suggestions = Geen suggesties
-editor-menu-add-to-dictionary = "{ $word }" toevoegen aan woordenboek
+editor-menu-add-to-dictionary = “{ $word }” toevoegen aan woordenboek
 editor-menu-add-words-to-dictionary = Geselecteerde woorden toevoegen aan woordenboek
-editor-dict-added = Toegevoegd "{ $word }" aan uw woordenboek.
+editor-dict-added = “{ $word }” toegevoegd aan uw woordenboek.
 editor-dict-added-multi = { $count ->
-    [one] Toegevoegd { $count } woord aan uw woordenboek.
-   *[other] Toegevoegd { $count } woorden aan uw woordenboek.
-}
+        [one] { $count } woord toegevoegd aan uw woordenboek.
+       *[other] { $count } woorden toegevoegd aan uw woordenboek.
+    }
 toast-undo = Ongedaan maken
 
-undo-superseded-title = Die stap is niet langer de laatste.
-undo-superseded-body = Iets anders is veranderd in dit project sinds. Ongedaan maken zou in plaats daarvan terug te nemen, dus het is niet. Niets van deze stap is teruggedraaid. Gebruik Bewerken Ongedaan maken om terug te stappen door de geschiedenis zelf.
+undo-superseded-title = Die stap is niet meer de laatste
+undo-superseded-body = Sindsdien is er iets anders in dit project veranderd. Ongedaan maken zou dat terugdraaien, dus dat is niet gebeurd. Niets van wat deze stap deed, is teruggedraaid. Gebruik Bewerken ▸ Ongedaan maken om zelf stap voor stap terug te gaan door de geschiedenis.
 undo-failed = Ongedaan maken mislukt: { $error }
 
-menu-edit = Bewerken (&E)
-menu-edit-undo = Ongedaan maken (&U)
-menu-edit-redo = Opnieuw uitvoeren (&R)
-menu-edit-undo-target = Ongedaan maken { $target } (&U)
-menu-edit-redo-target = Opnieuw { $target } (&R)
+menu-edit = Be&werken
+menu-edit-undo = &Ongedaan maken
+menu-edit-redo = Opnie&uw
+menu-edit-undo-target = &Ongedaan maken: { $target }
+menu-edit-redo-target = Opnie&uw: { $target }
 shortcut-name-edit-undo = Ongedaan maken
-shortcut-name-edit-redo = Opnieuw uitvoeren
+shortcut-name-edit-redo = Opnieuw
 undo-target-typing = typen
-undo-target-project = de laatste wijziging van dit project
-prose-history-reset-title = Geschiedenis opnieuw instellen
+undo-target-project = de laatste wijziging aan dit project
+prose-history-reset-title = Typgeschiedenis gewist
 prose-history-reset-body = { $count ->
-    [one] Een open scène werd hersteld uit een eerdere staat, dus de typegeschiedenis is niet langer van toepassing.
-   *[other] { $count } open scènes werden hersteld uit een eerdere staat, zodat hun typegeschiedenis niet langer van toepassing is.
-}
+        [one] Eén geopende scène is hersteld naar een eerdere toestand, dus de typgeschiedenis ervan geldt niet meer.
+       *[other] { $count } geopende scènes zijn hersteld naar een eerdere toestand, dus hun typgeschiedenis geldt niet meer.
+    }
 undo-target-trash = verplaatsen naar de prullenbak
-undo-target-restore = herstellen uit de prullenbak
-undo-target-delete-forever = verwijderen voorgoed
-undo-target-replace-all = Vervangen door het hele project
-undo-target-import = het document importeren
+undo-target-restore = terugzetten uit de prullenbak
+undo-target-delete-forever = definitief verwijderen
+undo-target-replace-all = vervangen in het hele project
+undo-target-import = de documentimport
 undo-target-duplicate = dupliceren
-undo-target-move = bewegend
+undo-target-move = verplaatsen
 undo-target-merge = twee scènes samenvoegen
 undo-target-split = een scène splitsen
 undo-target-promote = het type wijzigen
-undo-target-tidy-titles = het opruimen van de hoofdstuktitels
-undo-target-import-tags = labels importeren
-undo-target-import-templates = note templates importeren
+undo-target-tidy-titles = hoofdstuktitels opschonen
+undo-target-import-tags = tags importeren
+undo-target-import-templates = notitiesjablonen importeren
 undo-target-create = aanmaken
 undo-target-remove = verwijderen
-undo-target-rename = hernoemen
-undo-target-edit = die bewerken
-menu-edit-find = Zoeken… (&F)
-menu-edit-find-next = Volgende zoeken (&N)
-menu-edit-find-prev = Vorige zoeken (&V)
-menu-edit-replace = Zoeken en vervangen... (&L)
-menu-edit-find-in-project = Zoeken in project... (&J)
-menu-edit-replace-in-project = In project vervangen... (&I)
-undo-frozen = Ongedaan maken ("Always forward" is on)
-redo-frozen = Opnieuw ("Always forward" is aan)
-menu-edit-cut = Knippen (&T)
-menu-edit-copy = Kopiëren (&C)
-menu-edit-paste = Plakken (&P)
-menu-edit-paste-plain = Plakken zonder opmaak (&W)
-menu-edit-select-all = Alles selecteren (&A)
+undo-target-rename = naam wijzigen
+undo-target-edit = die bewerking
+menu-edit-find = &Zoeken…
+menu-edit-find-next = &Volgende zoeken
+menu-edit-find-prev = Vorig&e zoeken
+menu-edit-replace = Zoeken en ve&rvangen…
+menu-edit-find-in-project = Zoeken in pro&ject…
+menu-edit-replace-in-project = Vervangen &in project…
+undo-frozen = Ongedaan maken (“Altijd vooruit” is aan)
+redo-frozen = Opnieuw (“Altijd vooruit” is aan)
+menu-edit-cut = K&nippen
+menu-edit-copy = &Kopiëren
+menu-edit-paste = &Plakken
+menu-edit-paste-plain = Plakken zonder op&maak
+menu-edit-select-all = &Alles selecteren
 shortcut-name-edit-cut = Knippen
 shortcut-name-edit-copy = Kopiëren
 shortcut-name-edit-paste = Plakken
@@ -1371,61 +1381,61 @@ shortcut-name-edit-select-all = Alles selecteren
 
 titlebar-spellcheck-on = Spellingscontrole is ingeschakeld. Klik om te stoppen met controleren (F7)
 titlebar-spellcheck-off = Spellingscontrole is uit. Klik om opnieuw te controleren (F7)
-menu-spellcheck = Spelling controleren (&C)
-menu-comments = Opmerkingen (&M)
+menu-spellcheck = &Spelling controleren
+menu-comments = Op&merkingen
 settings-page-spellcheck = Spellingscontrole
 settings-group-spellcheck = Spellingscontrole
 settings-spellcheck-enabled = Spelling controleren terwijl ik schrijf
-settings-spellcheck-hint = Onderlijnen woorden geen geïnstalleerd woordenboek weet. Het uitschakelen van deze uit stopt alle controle, in elk project, totdat u het weer aan. Om te stoppen met het controleren van een taal, wissen van de check-mark op het taalveld van het project of van een item.
+settings-spellcheck-hint = Onderstreept woorden die geen enkel geïnstalleerd woordenboek kent. Als u dit uitschakelt, stopt alle controle, in elk project, totdat u het weer inschakelt. Wilt u slechts één taal niet meer laten controleren, haal dan het vinkje bij die taal weg in het veld Taal van het project of van een item.
 
-menu-trash = Prullenbak (&T)
+menu-trash = &Prullenbak
 trash-title = Prullenbak
-trash-empty-state = De vuilnisbak is leeg.
-trash-empty-button = Lege prullenbak...
-trash-restore = Herstellen (&R)
-trash-restore-to = Terugzetten naar... (&T)
-trash-delete-forever = Voor altijd verwijderen (&D)
-trash-restored-ok = { $count } gerestaureerd.
-trash-restore-error = Kon niet herstellen: { $error }
-trash-restore-orphaned = De originele plek van dit item is weg. Kies waar het moet worden hersteld.
-trash-restore-no-project = Er is geen project geopend, dus er valt niets te herstellen.
+trash-empty-state = De prullenbak is leeg.
+trash-empty-button = Prullenbak legen…
+trash-restore = &Terugzetten
+trash-restore-to = Terugzetten &naar…
+trash-delete-forever = &Definitief verwijderen
+trash-restored-ok = { $count } teruggezet.
+trash-restore-error = Kan niet terugzetten: { $error }
+trash-restore-orphaned = De oorspronkelijke plek van dit item bestaat niet meer. Kies waar het moet worden teruggezet.
+trash-restore-no-project = Er is geen project geopend, dus er valt niets terug te zetten.
 trash-delete-no-project = Er is geen project geopend, dus er valt niets te verwijderen.
-trash-empty-confirm-title = Het vuilnis legen?
+trash-empty-confirm-title = De prullenbak legen?
 trash-empty-confirm-text = { $count ->
-    [one] { $count } gesloopte ingang wordt definitief verwijderd.
-   *[other] { $count } puinhopen worden definitief verwijderd.
-} Ze laten het afval voorgoed achter. Ongedaan maken kan ze nog terugbrengen tot je iets anders doet.
+        [one] { $count } item in de prullenbak wordt definitief verwijderd.
+       *[other] { $count } items in de prullenbak worden definitief verwijderd.
+    } Ze verdwijnen voorgoed uit de prullenbak. Met Ongedaan maken kunt u ze nog terughalen, zolang u niets anders doet.
 trash-emptied-title = Prullenbak geleegd
 trash-emptied-body = Alles in de prullenbak is definitief verwijderd.
-trash-empty-no-project = Er is geen project geopend, dus er is geen prullenbak te leeg.
-trash-delete-forever-confirm-title = Voor altijd verwijderen?
+trash-empty-no-project = Er is geen project geopend, dus er is geen prullenbak om te legen.
+trash-delete-forever-confirm-title = Definitief verwijderen?
 trash-delete-forever-confirm-text = { $count ->
-    [one] { $count } wordt definitief verwijderd.
-   *[other] { $count } items worden definitief verwijderd.
-} Ze laten het afval voorgoed achter. Ongedaan maken kan ze nog terugbrengen tot je iets anders doet.
-trash-deleted-title = Voor altijd verwijderd
-trash-deleted-body = { $count } definitief geschrapt.
+        [one] { $count } item wordt definitief verwijderd.
+       *[other] { $count } items worden definitief verwijderd.
+    } Ze verdwijnen voorgoed uit de prullenbak. Met Ongedaan maken kunt u ze nog terughalen, zolang u niets anders doet.
+trash-deleted-title = Definitief verwijderd
+trash-deleted-body = { $count } definitief verwijderd.
 trash-undo = Ongedaan maken
-trash-restore-picker-title = Terugzetten naar...
-trash-restore-to-confirm-title = Hier herstellen?
-trash-restore-to-confirm-text = "{ $item }" terugzetten in "{ $destination }"?
-trash-restore-picker-restore-here = Hier herstellen
+trash-restore-picker-title = Terugzetten naar…
+trash-restore-to-confirm-title = Hier terugzetten?
+trash-restore-to-confirm-text = “{ $item }” terugzetten in “{ $destination }”?
+trash-restore-picker-restore-here = Hier terugzetten
 trash-restore-picker-cancel = Annuleren
-trash-restore-picker-empty = Maak er eerst een.
+trash-restore-picker-empty = Nog geen ordners. Maak er eerst een aan.
 trash-banner-title = Dit item staat in de prullenbak
-trash-banner-description = Het zal niet verschijnen in de omtrek of export totdat u het herstelt.
-trash-banner-restore = Herstellen…
-trash-tab-tooltip = In prullenbak
+trash-banner-description = Het verschijnt niet in de ordner of in exports totdat u het terugzet.
+trash-banner-restore = Terugzetten…
+trash-tab-tooltip = In de prullenbak
 
 settings-styles-sheet-yes = Ja
 settings-styles-sheet-no = Nee
 settings-styles-sheet-font = Lettertype
-settings-styles-sheet-indent = Eerste regel streepje
-settings-styles-sheet-para-spacing = Paragraafafstand
+settings-styles-sheet-indent = Inspringing eerste regel
+settings-styles-sheet-para-spacing = Alinea-afstand
 settings-styles-sheet-page = Paginagrootte
-settings-styles-sheet-margins = Marges (T/R/B/L)
+settings-styles-sheet-margins = Marges (B/R/O/L)
 settings-styles-sheet-title-page = Titelpagina van het boek
-settings-styles-sheet-heading-language = Rubriektaal
+settings-styles-sheet-heading-language = Taal van de koppen
 settings-styles-sheet-auto = Volgt de tekst
 settings-styles-sheet-digits = Cijfers
 settings-styles-sheet-direction = Tekstrichting
@@ -1435,125 +1445,125 @@ settings-styles-sheet-all-formats = Alles
 settings-styles-editor-group = Stijlbewerker
 settings-styles-editor-missing = Die stijl is niet meer beschikbaar.
 
-settings-styles-page-letter = Brief
-settings-styles-digits-western = Westers (0
-settings-styles-digits-eastern-arabic = Oost-Arabisch
+settings-styles-page-letter = Letter (VS)
+settings-styles-digits-western = Westers (0–9)
+settings-styles-digits-eastern-arabic = Oost-Arabisch (٠–٩)
 settings-styles-direction-ltr = Links naar rechts
 settings-styles-direction-rtl = Rechts naar links
 
 format-dock-title = Opmaak
 format-panel-empty = Plaats uw cursor in een scène, notitie of synopsis om opmaakopties te zien.
 format-group-marks = Tekst
-format-group-block = Paragraaf
+format-group-block = Alinea
 format-group-lists = Lijsten
 format-group-tables = Tabel
-format-group-breaks = Scènebreuken
+format-group-breaks = Scèneovergangen
 format-superscript = Superscript
 format-subscript = Subscript
-format-link = Link...
-link-dialog-insert-title = Verwijzing invoegen
-link-dialog-edit-title = Verwijzing bewerken
+format-link = Koppeling…
+link-dialog-insert-title = Koppeling invoegen
+link-dialog-edit-title = Koppeling bewerken
 link-dialog-text-label = Tekst
 link-dialog-text-placeholder = de woorden die de lezer ziet
-link-dialog-url-label = Links naar
+link-dialog-url-label = Verwijst naar
 link-dialog-url-placeholder = example.com
 link-dialog-insert = Invoegen
 link-dialog-apply = Toepassen
 link-dialog-cancel = Annuleren
-link-dialog-remove = Verwijzing verwijderen
-link-scheme-refused = Alleen web- en e-maillinks kunnen worden geopend. { $url } werd met rust gelaten.
-menu-format-link = Link... (&N)
+link-dialog-remove = Koppeling verwijderen
+link-scheme-refused = Alleen web- en e-mailkoppelingen kunnen worden geopend. { $url } is niet geopend.
+menu-format-link = Ko&ppeling…
 format-clear = Opmaak wissen
-format-heading = Omschrijving
+format-heading = Kopniveau
 format-heading-normal = Normale tekst
-format-heading-1 = Rubriek 1
+format-heading-1 = Kop 1
 format-heading-2 = Kop 2
-format-heading-3 = Rubriek 3
-format-heading-4 = Rubriek 4
-format-heading-5 = Rubriek 5
-format-heading-6 = Rubriek 6
+format-heading-3 = Kop 3
+format-heading-4 = Kop 4
+format-heading-5 = Kop 5
+format-heading-6 = Kop 6
 format-align-left = Links uitlijnen
-format-align-center = Midden
-format-direction-rtl = Paragraaf rechts naar links
+format-align-center = Centreren
+format-direction-rtl = Alinea van rechts naar links
 format-blockquote = Blokcitaat
-format-list-bullet = Gestichte lijst
+format-list-bullet = Lijst met opsommingstekens
 format-list-numbered = Genummerde lijst
 format-indent = Inspringen
 format-outdent = Uitspringen
 format-table-insert = Tabel invoegen
-format-table-row-above = Rij invoegen boven
-format-table-row-below = rij hieronder invoegen
-format-table-col-before = Kolom invoegen voor
-format-table-col-after = Kolom invoegen na
+format-table-row-above = Rij boven invoegen
+format-table-row-below = Rij onder invoegen
+format-table-col-before = Kolom ervoor invoegen
+format-table-col-after = Kolom erna invoegen
 format-table-row-delete = Rij verwijderen
 format-table-col-delete = Kolom verwijderen
 format-table-remove = Tabel verwijderen
 
-menu-format-marks-bold = Vet (&D)
-menu-format-marks-italic = Cursief (&I)
-menu-format-marks-underline = Onderstrepen (&U)
-menu-format-marks-strike = Doorgestreept (&S)
-menu-format-marks-superscript = Superscript (&P)
-menu-format-marks-subscript = Subscript (&B)
-menu-format-marks-clear = Opmaak wissen (&C)
-menu-format-heading = Omschrijving (&H)
-menu-format-heading-normal = Normale tekst (&N)
-menu-format-heading-1 = Rubriek 1 (&1)
-menu-format-heading-2 = Kop 2 (&2)
-menu-format-heading-3 = Rubriek 3 (&3)
-menu-format-heading-4 = Rubriek 4 (&4)
-menu-format-heading-5 = Rubriek 5 (&5)
-menu-format-heading-6 = Rubriek 6 (&6)
-menu-format-alignment = Uitlijning (&A)
-menu-format-align-left = Links uitlijnen (&L)
-menu-format-align-center = Midden (&C)
-menu-format-direction = Richting (&E)
-menu-format-direction-auto = Automatisch (&A)
-menu-format-direction-ltr = Links naar rechts (&L)
-menu-format-direction-rtl = Rechts naar links (&R)
-menu-format-blockquote = Blokcitaat (&Q)
-menu-format-lists = Lijsten (&L)
-menu-format-list-bullet = Gebullette lijst (&B)
-menu-format-list-numbered = Lijst met nummers (&N)
-menu-format-indent = Inspringen (&I)
-menu-format-outdent = Uitspringen (&O)
-menu-format-table = Tabel (&T)
-menu-format-table-insert = Tabel invoegen (&I)
-menu-format-table-2x2 = 2 x 2 (&2)
-menu-format-table-3x3 = 3 x 3 (&3)
-menu-format-table-4x4 = 4 x 4 (&4)
-menu-format-table-row-above = Rij hierboven invoegen (&V)
-menu-format-table-row-below = Rij hieronder invoegen (&W)
-menu-format-table-col-before = Kolom invoegen voor (&L)
-menu-format-table-col-after = Kolom invoegen na (&T)
-menu-format-table-row-delete = Rij verwijderen (&D)
-menu-format-table-col-delete = Kolom verwijderen (&C)
-menu-format-table-remove = Tabel verwijderen (&R)
+menu-format-marks-bold = &Vet
+menu-format-marks-italic = &Cursief
+menu-format-marks-underline = &Onderstreept
+menu-format-marks-strike = &Doorgehaald
+menu-format-marks-superscript = &Superscript
+menu-format-marks-subscript = Su&bscript
+menu-format-marks-clear = Opmaak &wissen
+menu-format-heading = &Kop
+menu-format-heading-normal = &Normale tekst
+menu-format-heading-1 = Kop &1
+menu-format-heading-2 = Kop &2
+menu-format-heading-3 = Kop &3
+menu-format-heading-4 = Kop &4
+menu-format-heading-5 = Kop &5
+menu-format-heading-6 = Kop &6
+menu-format-alignment = &Uitlijning
+menu-format-align-left = &Links uitlijnen
+menu-format-align-center = &Centreren
+menu-format-direction = &Richting
+menu-format-direction-auto = &Automatisch
+menu-format-direction-ltr = &Links naar rechts
+menu-format-direction-rtl = &Rechts naar links
+menu-format-blockquote = B&lokcitaat
+menu-format-lists = L&ijsten
+menu-format-list-bullet = Lijst met &opsommingstekens
+menu-format-list-numbered = &Genummerde lijst
+menu-format-indent = &Inspringen
+menu-format-outdent = &Uitspringen
+menu-format-table = &Tabel
+menu-format-table-insert = Tabel &invoegen
+menu-format-table-2x2 = &2 x 2
+menu-format-table-3x3 = &3 x 3
+menu-format-table-4x4 = &4 x 4
+menu-format-table-row-above = Rij &boven invoegen
+menu-format-table-row-below = Rij &onder invoegen
+menu-format-table-col-before = Kolom &ervoor invoegen
+menu-format-table-col-after = Kolom ern&a invoegen
+menu-format-table-row-delete = Rij &verwijderen
+menu-format-table-col-delete = &Kolom verwijderen
+menu-format-table-remove = Tabel ve&rwijderen
 
-menu-format-typo-marks = Opmaakmarkering (&F)
-menu-format-typo-nbsp = No-break space (&N)
-menu-format-typo-nbhyphen = Geen-breuk Hyphen (&H)
-menu-format-typo-soft-hyphen = Soft Hyphen (&S)
-menu-format-typo-nnbsp = Narrow no-break space (&R)
-menu-format-typo-zwsp = Nulbreedteruimte (&Z)
-menu-format-typo-word-joiner = Woordaanhanger (&W)
+menu-format-typo-marks = Op&maakteken
+menu-format-typo-nbsp = &Vaste spatie
+menu-format-typo-nbhyphen = Vast &koppelteken
+menu-format-typo-soft-hyphen = &Zacht afbreekstreepje
+menu-format-typo-nnbsp = Smalle vaste &spatie
+menu-format-typo-zwsp = Spatie zonder &breedte
+menu-format-typo-word-joiner = &Woordverbinder
 
 
-menu-about = Ongeveer Skribisto... (&A)
-about-title = Ongeveer Skribisto
+menu-about = &Over Skribisto…
+about-title = Over Skribisto
 about-version = Versie { $version }
 about-update-available = Versie { $version } is beschikbaar
-about-update-see-notes = Zien wat er veranderd is
-about-update-flathub = Flathub houdt dit exemplaar up-to-date.
-about-update-distro = Uw distributie houdt dit exemplaar up-to-date.
-about-tagline = Een roman-writing app voor lange-vorm fictie, geschreven in Rust met de Teksilo toolkit.
+about-update-see-notes = Bekijken wat er veranderd is
+about-update-flathub = Flathub houdt deze installatie up-to-date.
+about-update-distro = Uw distributie houdt deze installatie up-to-date.
+about-tagline = Een schrijfprogramma voor romans en ander lang fictiewerk, geschreven in Rust met de Teksilo-toolkit.
 about-license = Vrijgegeven onder de GNU General Public License, versie 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Sluiten
 
-native-menu-about = Ongeveer { $app }
-native-menu-hide = Verbergen { $app }
-native-menu-quit = Afsluiten { $app }
+native-menu-about = Over { $app }
+native-menu-hide = { $app } verbergen
+native-menu-quit = { $app } afsluiten
 native-menu-settings = Instellingen…
 native-menu-window = Venster
 native-menu-minimize = Minimaliseren
@@ -1563,86 +1573,86 @@ window-title = { $title } - { $app }
 window-title-numbered = { $title } - { $app } (Venster { $n })
 window-title-empty = { $app }
 
-first-run-window-title = Welkomstwoord
-first-run-title = Instellen { $app }
-first-run-body = { $app } houdt de instellingen apart van Skribisto, dus het begint leeg. Uw voorkeuren, recente projecten, woordenboeken en vensterindeling kunnen nu worden gekopieerd.
+first-run-window-title = Welkom
+first-run-title = { $app } instellen
+first-run-body = { $app } bewaart zijn instellingen los van Skribisto en begint dus leeg. Uw voorkeuren, recente projecten, woordenboeken en vensterindeling kunnen nu worden overgenomen.
 first-run-from = Kopiëren van
 first-run-to = Kopiëren naar
-first-run-copy-note = Niets wordt verplaatst of verwijderd. Skribisto behoudt elk van zijn eigen instellingen, en gaat verder werken precies zoals voorheen.
+first-run-copy-note = Er wordt niets verplaatst of verwijderd. Skribisto behoudt al zijn eigen instellingen en werkt precies zoals voorheen.
 first-run-import = Instellingen importeren
-first-run-start-fresh = Hernieuwd starten
+first-run-start-fresh = Opnieuw beginnen
 first-run-import-failed = Sommige instellingen konden niet geïmporteerd worden: { $error }
 
-settings-page-punctuation = Punctuatie-standaarden
+settings-page-punctuation = Standaardinterpunctie
 settings-group-punctuation = Slimme interpunctie
-settings-page-work-punctuation = Punctuatie
-settings-punctuation-override = Geef dit project zijn eigen leesregels
-settings-punctuation-override-hint = Uit: het project volgt de voorkeur voor de toepassing. Deze regels gaan binnen de .skrib, dus een co-auteur die het bestand opent schrijft met dezelfde typografie.
-settings-punctuation-dashes = Draai -- in een en dashboard, --- in een em dash
-settings-punctuation-ellipsis = Verander... in een ellipse.
-settings-punctuation-quotes = Krulaanhalingstekens en apostrofen
-settings-quote-style = Noterings
+settings-page-work-punctuation = Interpunctie
+settings-punctuation-override = Dit project eigen interpunctieregels geven
+settings-punctuation-override-hint = Uit: het project volgt de voorkeur van de toepassing. Deze regels worden in het .skrib-bestand meegenomen, zodat een medeauteur die het bestand opent met dezelfde typografie schrijft.
+settings-punctuation-dashes = -- omzetten in een en-dash, --- in een em-dash
+settings-punctuation-ellipsis = ... omzetten in een beletselteken
+settings-punctuation-quotes = Gekrulde aanhalingstekens en apostroffen
+settings-quote-style = Aanhalingstekens
 settings-quote-style-locale = Taalstandaard
-settings-quote-style-curly = "Dubbel"
-settings-quote-style-curly-single = Single"
-settings-quote-style-guillemets = Guillemets.
-settings-quote-style-low-high = Laag-hoog"
-settings-punctuation-spacing = Ruimte voor;: ! ?
-settings-punctuation-spacing-hint = Franse typografie stelt een smalle no-break ruimte voor; ! ? en een volledige voor:. Het is alleen van toepassing op tekst geschreven in het Frans. De ruimte binnen guillemets wordt geleverd met de guillemet citaten zelf.
+settings-quote-style-curly = “Dubbel”
+settings-quote-style-curly-single = ‘Enkel’
+settings-quote-style-guillemets = «Guillemets»
+settings-quote-style-low-high = „Laag-hoog“
+settings-punctuation-spacing = Spatie vóór ; : ! ?
+settings-punctuation-spacing-hint = De Franse typografie plaatst een smalle vaste spatie vóór ; ! ? en een volle vóór :. Dit geldt alleen voor tekst in het Frans. De spatie binnen guillemets « » hoort bij de guillemets zelf.
 settings-punctuation-sample = Uw taal geeft
-settings-punctuation-app-hint = Wat elk project doet tenzij het neemt regels van zijn eigen in Project Punctuation.
-settings-punctuation-dialogue = Open een alinea getypt als "- " met een dialoogdash
-settings-punctuation-dialogue-hint = Voor talen die spreken met een streepje in plaats van aanhalingstekens: Frans, Spaans, Russisch en anderen. Het vuurt alleen bij het begin van een paragraaf.
+settings-punctuation-app-hint = Wat elk project doet, tenzij het eigen regels krijgt in Project ▸ Interpunctie.
+settings-punctuation-dialogue = Een alinea die begint met "- " openen met een dialoogstreepje
+settings-punctuation-dialogue-hint = Voor talen die gesproken tekst met een streepje aangeven in plaats van met aanhalingstekens: Frans, Spaans, Russisch en andere. Werkt alleen helemaal aan het begin van een alinea.
 
-statusbar-go-to = Ga...
-go-to-placeholder = Doorzoek de map
-go-to-no-matches = Geen item komt overeen met die zoekopdracht.
-menu-go-to = Ga... (&G)
+statusbar-go-to = Ga naar…
+go-to-placeholder = De ordner doorzoeken
+go-to-no-matches = Geen enkel item komt overeen met die zoekopdracht.
+menu-go-to = &Ga naar…
 
-settings-page-distraction-free-themes = Afleidingsvrije thema's
-settings-themes-builtin = Ingebouwde thema's
+settings-page-distraction-free-themes = Afleidingsvrije thema’s
+settings-themes-builtin = Ingebouwde thema’s
 settings-themes-builtin-badge = Ingebouwd
-settings-themes-user = Mijn thema's
+settings-themes-user = Mijn thema’s
 settings-themes-editor-group = Thema bewerken
-settings-themes-editor-empty = Kies een thema onder "Mijn thema's" om het te bewerken.
-settings-themes-use = Gebruik
+settings-themes-editor-empty = Kies een thema onder “Mijn thema’s” om het te bewerken.
+settings-themes-use = Gebruiken
 settings-themes-duplicate = Dupliceren
 settings-themes-edit = Bewerken
 settings-themes-delete = Verwijderen
 settings-themes-export = Exporteren…
 settings-themes-import = Importeren…
-settings-themes-copy-suffix = Kopiëren
+settings-themes-copy-suffix = kopie
 settings-themes-json-filter = Thema (JSON)
 settings-themes-imported = Thema geïmporteerd
-settings-themes-import-failed = Kon dat thema niet importeren
+settings-themes-import-failed = Kan dat thema niet importeren
 settings-themes-exported = Thema geëxporteerd
-settings-themes-export-failed = Kon dat thema niet exporteren
+settings-themes-export-failed = Kan dat thema niet exporteren
 settings-themes-low-contrast = laag contrast
-settings-themes-low-contrast-band = verbergt de tekst
+settings-themes-low-contrast-band = markering verbergt de tekst
 settings-themes-field-name = Naam
 settings-themes-field-paper = Pagina
 settings-themes-field-ink = Tekst
 settings-themes-field-general = Achtergrond
-settings-themes-field-widget-text = Tekst regelstrook
-settings-themes-field-caret-band = Oplichten rond de caret
+settings-themes-field-widget-text = Tekst van bedieningsbalk
+settings-themes-field-caret-band = Markering rond de cursor
 
-statusbar-focus-settings = Afleidingsvrije instellingen
-statusbar-focus-manage-themes = Themes beheren...
+statusbar-focus-settings = Instellingen voor afleidingsvrij schrijven
+statusbar-focus-manage-themes = Thema’s beheren…
 
 comments-title = Opmerkingen
 comments-document-title = Dit document
-comments-empty-project = Nog geen commentaar in dit project.
-comments-empty-document = Geen opmerkingen over dit document.
+comments-empty-project = Nog geen opmerkingen in dit project.
+comments-empty-document = Geen opmerkingen bij dit document.
 comments-filter-all = Alles
-comments-filter-open = Openen
+comments-filter-open = Open
 comments-filter-resolved = Opgelost
-comments-filter-orphaned = Wees
-comments-status-open = Openen
+comments-filter-orphaned = Verweesd
+comments-status-open = Open
 comments-status-resolved = Opgelost
-comments-status-orphaned = Verloren tekst
-comments-orphan-snippet = (de commentaartekst is weg)
+comments-status-orphaned = Tekst kwijt
+comments-orphan-snippet = (de becommentarieerde tekst bestaat niet meer)
 comments-status-unplaced = Geen tekstpositie
-comments-unplaced-snippet = (niet verankerd aan een tekst)
+comments-unplaced-snippet = (niet verankerd aan tekst)
 comments-reply-count = { $count ->
     [one] { $count } antwoord
    *[other] { $count } antwoorden
@@ -1650,147 +1660,147 @@ comments-reply-count = { $count ->
 comments-menu-resolve = Oplossen
 comments-menu-reopen = Heropenen
 comments-menu-delete = Verwijderen
-comments-sort-document = In volgorde van documenten
-comments-sort-newest = Eerste nieuwste
-comments-sort-reader = Groeperen per lezer
+comments-sort-document = In documentvolgorde
+comments-sort-newest = Nieuwste eerst
+comments-sort-reader = Gegroepeerd per lezer
 comments-unsigned-author = Niet ondertekend
 comments-agreement = { $count ->
     [one] { $count } lezer
    *[other] { $count } lezers
 }
-comments-menu-add = Commentaar toevoegen
-comments-menu-add-paragraph = Toelichting bij deze paragraaf
+comments-menu-add = Opmerking toevoegen
+comments-menu-add-paragraph = Opmerking bij deze alinea
 overview-col-comments = Opmerkingen
-overview-col-total-comments = Totaal commentaar
-comments-card-placeholder = Schrijf een commentaar...
+overview-col-total-comments = Opmerkingen totaal
+comments-card-placeholder = Schrijf een opmerking…
 comments-card-unknown-author = Onbekende auteur
 comments-unsigned-toast = Uw opmerkingen zijn niet ondertekend: er is geen naam voor u ingesteld op deze computer.
 comments-unsigned-action = Uw naam instellen
 comments-card-reply = Antwoord
-comments-card-reply-placeholder = Antwoord...
-comments-card-actions = Opmerkingen
-comments-reply-actions = Maatregelen beantwoorden
-comments-menu-delete-reply = Antwoord schrappen
-comments-menu-delete-all = Verwijder alle opmerkingen hier
-comments-deleted-toast = Commentaar verwijderd
-comments-reply-deleted-toast = Verwijderd beantwoorden
+comments-card-reply-placeholder = Antwoorden…
+comments-card-actions = Acties voor opmerking
+comments-reply-actions = Acties voor antwoord
+comments-menu-delete-reply = Antwoord verwijderen
+comments-menu-delete-all = Alle opmerkingen hier verwijderen
+comments-deleted-toast = Opmerking verwijderd
+comments-reply-deleted-toast = Antwoord verwijderd
 comments-deleted-all-toast = { $count ->
-    [one] { $count } opmerking geschrapt
-   *[other] { $count } opmerkingen geschrapt
-}
+        [one] { $count } opmerking verwijderd
+       *[other] { $count } opmerkingen verwijderd
+    }
 comments-undo = Ongedaan maken
 
 analysis-segment = Analyse
-analysis-scope-book = Analyseren van dit boek
+analysis-scope-book = Dit boek wordt geanalyseerd
 analysis-run = Analyse uitvoeren
-analysis-stale = Veranderd sinds dit liep
+analysis-stale = Gewijzigd sinds deze analyse
 analysis-not-run = Nog niet geanalyseerd.
-analysis-running = Het manuscript lezen...
+analysis-running = Het manuscript wordt gelezen…
 analysis-failed = De analyse kon niet worden afgerond.
 analysis-no-scenes = Nog geen scènes in dit boek.
 
 analysis-shape = Vorm
 
-analysis-arrivals = Aankomsten
-analysis-arrivals-explainer = Hoe tekst bereikte dit project terwijl het open was. Er staat welke route de karakters naar beneden kwamen, en helemaal niets over wie ze schreef: een schrijver die elders ontwerpt en pasta's plakt, en iemand die dicteert heeft gedicteerd. Er is geen aantal om naar te streven hier.
+analysis-arrivals = Herkomst
+analysis-arrivals-explainer = Hoe tekst in dit project terechtkwam terwijl het geopend was. Het zegt langs welke weg de tekens binnenkwamen, en helemaal niets over wie ze schreef: een schrijver die elders een opzet maakt en die plakt, heeft geplakt, en wie dicteert, heeft gedicteerd. Er is hier geen getal om naar te streven.
 analysis-arrivals-scope = Dit hele project, niet alleen dit boek.
-analysis-arrivals-session = Het project sluiten begint weer met tellen.
-analysis-arrivals-nothing = Er is nog geen tekst in deze sessie aangekomen.
+analysis-arrivals-session = Sinds u het opende. Als u het project sluit, begint de telling opnieuw.
+analysis-arrivals-nothing = In deze sessie is nog geen tekst binnengekomen.
 analysis-arrivals-typed = Getypt
-analysis-arrivals-pasted = geplakt
-analysis-arrivals-dictated = Gedifferentieerd
+analysis-arrivals-pasted = Geplakt
+analysis-arrivals-dictated = Gedicteerd
 analysis-arrivals-imported = Geïmporteerd
-analysis-arrivals-programmatic = Voor u invoegen
+analysis-arrivals-programmatic = Voor u ingevoegd
 analysis-arrivals-count = { $count ->
     [one] { $count } teken
    *[other] { $count } tekens
 }
-analysis-arrivals-none = Geen
+analysis-arrivals-none = geen
 
 analysis-words-per-scene = Woorden per scène
-analysis-median-words = De mediane scene van dit boek loopt { $count ->
-    [one] { $count } woord.
-   *[other] { $count } woorden.
-}
+analysis-median-words = De mediane scène van dit boek telt { $count ->
+        [one] { $count } woord.
+       *[other] { $count } woorden.
+    }
 analysis-median-line = Mediaan: { $count ->
     [one] { $count } woord
    *[other] { $count } woorden
 }
 analysis-dialogue = Dialoog
-analysis-dialogue-unsupported = De dialoog wordt nog niet gemeten voor deze taal.
+analysis-dialogue-unsupported = Dialoog wordt voor deze taal nog niet gemeten.
 
-analysis-footnote-words = Voetnootwoorden
+analysis-footnote-words = Woorden in voetnoten
 analysis-footnote-words-count = { $count ->
-    [one] { $count } woord staat in de voetnoten van dit boek, gescheiden gehouden van het manuscript totaal.
-   *[other] { $count } woorden staan in de voetnoten van dit boek, gescheiden gehouden van het manuscript totaal.
-}
-analysis-footnote-words-pending = De voetnoten tellen...
+        [one] { $count } woord staat in de voetnoten van dit boek, apart gehouden van het totaal van het manuscript.
+       *[other] { $count } woorden staan in de voetnoten van dit boek, apart gehouden van het totaal van het manuscript.
+    }
+analysis-footnote-words-pending = Voetnoten tellen…
 
-analysis-ignore-empty = Teksten met nog niets geschreven negeren
-analysis-empty-hidden = { $count } leeg { $count ->
-        [one] Tekst
+analysis-ignore-empty = Teksten waarin nog niets geschreven is negeren
+analysis-empty-hidden = { $count } lege { $count ->
+        [one] tekst
        *[other] teksten
-    } Verborgen.
-analysis-all-texts-empty = Elke tekst in dit boek is nog steeds leeg.
+    } verborgen.
+analysis-all-texts-empty = Alle teksten in dit boek zijn nog leeg.
 
 binder-filter-count = { $shown } van { $total } getoond
 binder-filter-clear = Wissen
-binder-filter-none = Niets komt overeen met "{ $query }."
+binder-filter-none = Niets komt overeen met “{ $query }”.
 
-settings-paratext-intro = De voor- en achterkant van een nieuw project kan beginnen met. Elke structuur behoort tot een uitgeverstraditie, en de paginatitels zijn geschreven in de eigen taal van die traditie. Hernoem ze vrij zodra een project is gemaakt.
-settings-paratext-structures = Structuur
-settings-paratext-broken = Kan niet gelezen worden
+settings-paratext-intro = Het voor- en nawerk waarmee een nieuw project kan beginnen. Elke structuur hoort bij een uitgeefstraditie, en de paginatitels zijn in de taal van die traditie geschreven. Hernoem ze gerust zodra een project is aangemaakt.
+settings-paratext-structures = Structuren
+settings-paratext-broken = Kan niet worden gelezen
 settings-paratext-edit = Bewerken
 settings-paratext-duplicate = Dupliceren
 settings-paratext-delete = Verwijderen
 settings-paratext-new = Nieuwe structuur
 settings-paratext-save = Opslaan
-settings-paratext-editor-hint = Een naam, de pagina's die gemaakt moeten worden voor het manuscript, en de pagina's die erna gemaakt moeten worden. Waar ze eindigen is de jouwe: ze zijn gewone items zodra het project bestaat.
+settings-paratext-editor-hint = Een naam, de pagina’s die vóór het manuscript worden aangemaakt en de pagina’s die erna worden aangemaakt. Waar ze uiteindelijk staan, bepaalt u zelf: zodra het project bestaat, zijn het gewone items.
 
 
-image-insert = Afbeelding toevoegen... (&M)
-image-no-project = Een project openen voordat u een afbeelding invoegt.
-image-choose-title = Een afbeelding kiezen
+image-insert = Af&beelding invoegen…
+image-no-project = Open een project voordat u een afbeelding invoegt.
+image-choose-title = Kies een afbeelding
 image-filter-label = Afbeeldingen
 image-large-title = Dit is een grote afbeelding
 image-large-text =
-    { $name } is { $megapixels } megapixels ({ $width }×{ $height }).
-    Houden het zoals het is slaat uw oorspronkelijke bestand in het project: het reist
-    bij elke back-up en elke export. Optimising slaat een kleinere kopie op
-    In plaats daarvan, tot 2560 pixels op zijn langste kant.
+    { $name } is { $megapixels } megapixel ({ $width }×{ $height }).
+    Als u de afbeelding houdt zoals ze is, wordt uw oorspronkelijke bestand in het
+    project opgeslagen: het gaat mee in elke reservekopie en elke export. Optimaliseren
+    slaat in plaats daarvan een kleinere kopie op, met hoogstens 2560 pixels aan de langste zijde.
 image-large-keep = Origineel bewaren
 image-large-downscale = Optimaliseren
-image-large-remember = Doe dit vanaf nu, vraag het niet meer.
-image-not-recorded = De afbeelding is opgeslagen maar kon niet worden opgenomen in het project.
-image-describe-title = Beschrijf de afbeelding
-image-describe-explain = Wat de afbeelding laat zien, voor een lezer die het niet kan zien. Het maakt geen deel uit van het manuscript: het wordt nooit geteld, doorzocht of geëxporteerd als proza.
+image-large-remember = Dit voortaan doen, niet meer vragen
+image-not-recorded = De afbeelding is opgeslagen, maar kon niet in het project worden vastgelegd.
+image-describe-title = Afbeelding beschrijven
+image-describe-explain = Wat de afbeelding toont, voor een lezer die haar niet kan zien. Dit maakt geen deel uit van het manuscript: het wordt nooit als proza geteld, doorzocht of geëxporteerd.
 image-describe-placeholder = een vuurtoren tegen een grijze lucht
-image-resize-title = De afbeelding wijzigen
-image-resize-explain = Een percentage van de grootte wordt nu weergegeven. 100 laat het zoals het is.
+image-resize-title = Afbeeldingsgrootte wijzigen
+image-resize-explain = Een percentage van de grootte waarop ze nu wordt weergegeven. Bij 100 blijft ze zoals ze is.
 image-resize-invalid = Voer een getal in tussen 1 en 1000.
-image-menu-describe = Beschrijf het beeld... (&D)
-image-menu-resize = Grootte van afbeelding wijzigen... (&R)
-image-menu-reset-size = Oorspronkelijke grootte (&Z)
+image-menu-describe = Afbeelding &beschrijven…
+image-menu-resize = &Grootte van afbeelding wijzigen…
+image-menu-reset-size = &Oorspronkelijke grootte
 
-cover-choose = Boekenhoes... (&V)
-cover-clear = Verwijder de hoes (&R)
-cover-choose-title = Kies een cover
-cover-set = De dekking is ingesteld.
-cover-cleared = De hoes is verwijderd, de foto is nog in het project.
-card-label = Korte beschrijving
-card-exportable = Exporteren
+cover-choose = Omsla&g van het boek…
+cover-clear = Omslag verwij&deren
+cover-choose-title = Kies een omslag
+cover-set = De omslag is ingesteld.
+cover-cleared = De omslag is verwijderd. De afbeelding staat nog in het project.
+card-label = Label
+card-exportable = Geëxporteerd
 card-numbered = Genummerd
 card-created = Aangemaakt
 card-modified = Gewijzigd
-card-yes = Ja
-card-no = Nee
+card-yes = ja
+card-no = nee
 card-type = Type
 card-position = Positie
-card-children = Kinderen
+card-children = Onderliggende items
 card-goal = Doel
 card-words = Woorden
 card-synopsis = Synopsis
-card-point-of-view = Perspectief
+card-point-of-view = Vertelperspectief
 card-aliases = Ook bekend als
 
 export-orphan-footnotes-title = Voetnoten zonder referentie
@@ -1801,68 +1811,68 @@ export-comments-dropped =
     }
 export-orphan-footnotes =
     { $count ->
-        [one] Een voetnoot wordt nergens meer in het manuscript genoemd. De tekst ervan zal niet in het geëxporteerde boek verschijnen.
-       *[other] { $count } voetnoten worden nergens meer in het manuscript vermeld. Hun tekst zal niet in het geëxporteerde boek verschijnen.
+        [one] Eén voetnoot wordt nergens meer in het manuscript aangehaald. De tekst ervan verschijnt niet in het geëxporteerde boek.
+       *[other] { $count } voetnoten worden nergens meer in het manuscript aangehaald. Hun tekst verschijnt niet in het geëxporteerde boek.
     }
 
 
-menu-footnotes = Voetnoten (&N)
+menu-footnotes = Voet&noten
 footnotes-title = Voetnoten
-footnotes-insert = voetnoot invoegen (&F)
-footnotes-empty = Nog geen voetnoten. Zet de cursor in een scène, gebruik dan + hierboven, of Ctrl+Alt+F.
+footnotes-insert = &Voetnoot invoegen
+footnotes-empty = Nog geen voetnoten. Plaats de cursor in een scène en gebruik dan + hierboven, of Ctrl+Alt+F.
 footnotes-filter-all = Alles
 footnotes-filter-document = Dit document
-footnotes-filter-orphaned = Wees
-footnotes-orphaned = Niets wijst meer op deze noot.
+footnotes-filter-orphaned = Verweesd
+footnotes-orphaned = Niets verwijst nog naar deze voetnoot
 footnotes-untitled-home = Naamloos
-footnotes-body-placeholder = de noot zelf
-footnotes-insert-tooltip = Voeg een voetnoot toe aan de cursor (Ctrl+Alt+F)
+footnotes-body-placeholder = de voetnoot zelf
+footnotes-insert-tooltip = Een voetnoot invoegen bij de cursor (Ctrl+Alt+F)
 footnotes-actions = Voetnootacties
-footnotes-delete = Notitie en verwijzing schrappen (&D)
-footnotes-no-project = Een project openen alvorens een voetnoot in te voegen.
-footnotes-no-caret = Zet de cursor in de tekst van een scène om daar een voetnoot in te voegen.
+footnotes-delete = Voetnoot en verwijzing &verwijderen
+footnotes-no-project = Open een project voordat u een voetnoot invoegt.
+footnotes-no-caret = Plaats de cursor in de tekst van een scène om daar een voetnoot in te voegen.
 footnotes-not-created = De voetnoot kon niet aan het project worden toegevoegd.
-footnotes-deleted-toast = Notities verwijderd
+footnotes-deleted-toast = Voetnoot verwijderd
 footnotes-undo-delete = Ongedaan maken
 
-import-document-title = Invoerdocumenten
+import-document-title = Documenten importeren
 import-document-close = Sluiten
 import-document-step-files = Bestanden
-import-document-step-review = Evaluatie
+import-document-step-review = Controleren
 import-document-step-destination = Bestemming
 import-document-step-reconcile = Samenvoegen
-import-document-reconcile-hint = Sommige van deze items zijn degenen die je al hebt. Zeg wat er met elk moet gebeuren.
+import-document-reconcile-hint = Sommige van deze items hebt u al. Geef aan wat er met elk moet gebeuren.
 import-document-reconcile-all-new = Niets in dit bestand komt overeen met uw project: elk item wordt als nieuw toegevoegd.
-import-document-duplicate-returns = Deze bestanden zijn meer dan één kopie van hetzelfde manuscript dat terugkomt. Importeer ze één voor één: het vergelijken van één kopie met het project, zodat het importeren van meerdere exemplaren samen een tweede kopie van het boek zou toevoegen in plaats van het samen te voegen.
-import-document-hunk-added = Neem deze nieuwe paragraaf
-import-document-hunk-removed = Deze paragraaf laten vallen
-import-document-hunk-changed = Neem deze herschrijven
-import-document-col-stray-prose = De tekst
+import-document-duplicate-returns = Deze bestanden zijn meerdere teruggekomen kopieën van hetzelfde manuscript. Importeer ze een voor een: het vergelijken legt telkens maar één teruggekomen kopie naast uw project, dus als u er meerdere tegelijk importeert, wordt een tweede kopie van het boek toegevoegd in plaats van samengevoegd.
+import-document-hunk-added = Deze nieuwe alinea overnemen
+import-document-hunk-removed = Deze alinea laten vallen
+import-document-hunk-changed = Deze herschreven versie overnemen
+import-document-col-stray-prose = De tekst ervan
 import-document-stray-as-paratext = Als paratekst bewaren
-import-document-stray-discard = Tekst laten vallen
+import-document-stray-discard = De tekst laten vallen
 import-document-col-current = In uw project
 import-document-col-incoming = In dit bestand
 import-document-col-status = Status
-import-document-col-action = Wat te doen?
+import-document-col-action = Wat te doen
 import-document-status-identical = Hetzelfde
-import-document-status-editor-edited = Ze hebben het bewerkt.
-import-document-status-you-edited = Je hebt het bewerkt.
-import-document-status-conflict = Beiden bewerkt het
-import-document-status-different = Verschillen
+import-document-status-editor-edited = Zij hebben het bewerkt
+import-document-status-you-edited = U hebt het bewerkt
+import-document-status-conflict = Beiden hebben het bewerkt
+import-document-status-different = Verschilt
 import-document-status-new = Nieuw
 import-document-status-missing = Niet in dit bestand
 import-document-status-moved = Verplaatst
-import-document-action-comments-only = Uitsluitend opmerkingen
-import-document-action-take-import = Neem deze versie
-import-document-action-keep-current = Hou de mijne maar.
+import-document-action-comments-only = Alleen opmerkingen
+import-document-action-take-import = Deze versie overnemen
+import-document-action-keep-current = De mijne behouden
 import-document-action-create-new = Als nieuw toevoegen
 import-document-action-ignore = Overslaan
 import-document-compare = Vergelijken
-import-document-compare-legend = Uw versie vergeleken met dit bestand. Alleen-lezen.
+import-document-compare-legend = Uw versie vergeleken met die van dit bestand. Alleen-lezen.
 import-document-compare-close = Sluiten
 import-document-drop-title = Documenten hier neerzetten
-import-document-drop-hint = Markdown (.md), Woord (.docx), OpenDocument (.odt) en platte tekst (.txt)
-import-document-browse = Bladeren...
+import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) en platte tekst (.txt)
+import-document-browse = Bladeren…
 import-document-move-up = Omhoog verplaatsen
 import-document-move-down = Omlaag verplaatsen
 import-document-remove-file = Verwijderen
@@ -1870,165 +1880,165 @@ import-document-file-count = { $count ->
     [one] 1 bestand
    *[other] { $count } bestanden
 }
-import-document-no-files = Nog geen bestanden geselecteerd.
+import-document-no-files = Nog geen bestanden gekozen.
 import-document-col-included = Importeren
 import-document-col-title = Titel
 import-document-col-type = Type
 import-document-col-words = Woorden
-import-document-col-breaks = Pauzes
+import-document-col-breaks = Overgangen
 import-document-col-comments = Opmerkingen
 import-document-col-footnotes = Voetnoten
 import-document-col-epigraph = Motto
 import-document-col-source = Bron
-import-document-level-rules = Rubrieken
-import-document-level-n = Rubriek { $level }
-import-document-add-top-level = Bovenste niveau toevoegen
-import-document-add-top-level-tooltip = Een boek boven elk geanalyseerd item invoegen, voor hoofdstukbestanden zonder boektitel
+import-document-level-rules = Kopniveaus
+import-document-level-n = Kop { $level }
+import-document-add-top-level = Hoogste niveau toevoegen
+import-document-add-top-level-tooltip = Een boek invoegen boven elk geanalyseerd item, voor hoofdstukbestanden zonder boekkop
 import-document-destination = Bestemming
-import-document-destination-hint = Kies een map of item: nieuwe items landen in een map, of na een scène.
-import-document-destination-empty = Maak er eerst een.
+import-document-destination-hint = Kies een ordner of item: nieuwe items komen in een map terecht, of na een scène.
+import-document-destination-empty = Nog geen ordners. Maak er eerst een aan.
 import-document-plan-empty = Nog niets te importeren.
 import-document-summary = { $rows ->
-    [one] 1 item
-   *[other] { $rows } posten
-} · { $breaks ->
-    [one] 1 scène pauze
-   *[other] { $breaks } scène pauzes
-}
+        [one] 1 item
+       *[other] { $rows } items
+    } · { $breaks ->
+        [one] 1 scèneovergang
+       *[other] { $breaks } scèneovergangen
+    }
 import-document-back = Terug
 import-document-cancel = Annuleren
 import-document-analyse = Volgende
-import-document-analysing = Documenten lezen...
+import-document-analysing = Documenten lezen…
 import-document-step-analysing = Lezen
 import-document-cancel-analysis = Stop met lezen
 import-document-analyse-failed = De documenten konden niet worden gelezen.
 import-document-details = Details
 import-document-import = Importeren
 import-document-done = { $count ->
-    [one] 1 ingevoerd product
-   *[other] { $count } ingevoerde producten
-}
+        [one] 1 item geïmporteerd
+       *[other] { $count } items geïmporteerd
+    }
 import-document-undo = Ongedaan maken
-import-diagnostic-file-unreadable = "{ $path }" kon niet gelezen worden: { $detail }. De andere bestanden importeren nog steeds.
-import-diagnostic-nested-too-deep = "{ $path }" werd niet gelezen: de inhoud ervan is meer dan { $limit } niveaus diep genesteld. Geen echt document komt in de buurt dat, en het lezen kan crashen Skribisto, dus het wordt weggelaten. De andere bestanden nog steeds importeren.
-import-diagnostic-archive-too-large = "{ $path }" werd niet gelezen: het is een gecomprimeerd bestand gebouwd om veel groter uit te pakken dan het is, die zou kunnen uitputten geheugen en crash Skribisto, dus het wordt weggelaten. De andere bestanden nog steeds importeren.
+import-diagnostic-file-unreadable = “{ $path }” kon niet worden gelezen: { $detail }. De andere bestanden worden wel geïmporteerd.
+import-diagnostic-nested-too-deep = “{ $path }” is niet gelezen: de inhoud is meer dan { $limit } niveaus diep genest. Geen echt document komt daar in de buurt, en het inlezen zou Skribisto kunnen laten vastlopen, dus het wordt weggelaten. De andere bestanden worden wel geïmporteerd.
+import-diagnostic-archive-too-large = “{ $path }” is niet gelezen: het is een gecomprimeerd bestand dat zo is gemaakt dat het uitgepakt veel groter wordt, wat het geheugen kan uitputten en Skribisto laten vastlopen, dus het wordt weggelaten. De andere bestanden worden wel geïmporteerd.
 import-diagnostic-lossy-decode = { $count ->
-    [one] Eén teken in "{ $path }" decodeerde niet. Het bestand opnieuw opslaan als UTF-8 om het te bewaren.
-   *[other] { $count } tekens in "{ $path }" niet gedecodeerd. Het bestand opnieuw opslaan als UTF-8 om ze te behouden.
-}
-import-diagnostic-decoded-from-bom = "{ $path }" werd gedecodeerd als { $detail }, niet UTF-8.
-import-diagnostic-empty-file = "{ $path }" is leeg.
-import-diagnostic-no-headings = "{ $path }" heeft geen rubrieken, dus het komt als één item.
-import-diagnostic-unsupported-format = Niets leest ".{ $detail }" bestanden, dus "{ $path }" werd overgeslagen.
-import-diagnostic-front-matter-not-flat = Voorgrond in "{ $path }": "{ $detail }" is geen eenvoudige waarde en werd overgeslagen.
+        [one] Eén teken in “{ $path }” kon niet worden gedecodeerd. Sla het bestand opnieuw op als UTF-8 om het te behouden.
+       *[other] { $count } tekens in “{ $path }” konden niet worden gedecodeerd. Sla het bestand opnieuw op als UTF-8 om ze te behouden.
+    }
+import-diagnostic-decoded-from-bom = “{ $path }” is gedecodeerd als { $detail }, niet als UTF-8.
+import-diagnostic-empty-file = “{ $path }” is leeg.
+import-diagnostic-no-headings = “{ $path }” heeft geen koppen en komt dus binnen als één item.
+import-diagnostic-unsupported-format = “.{ $detail }”-bestanden kunnen niet worden gelezen, dus “{ $path }” is overgeslagen.
+import-diagnostic-front-matter-not-flat = Metagegevenskop (front matter) in “{ $path }”: “{ $detail }” is geen eenvoudige waarde en is overgeslagen.
 import-diagnostic-footnotes-degraded = { $count ->
-    [one] Een voetnoot in "{ $path }" komt als gewone tekst: voetnoten worden niet gelezen uit Markdown.
-   *[other] { $count } voetnoten in "{ $path }" komen als gewone tekst: voetnoten worden niet gelezen uit Markdown.
-}
+        [one] Eén voetnoot in “{ $path }” komt binnen als platte tekst: voetnoten worden niet uit Markdown gelezen.
+       *[other] { $count } voetnoten in “{ $path }” komen binnen als platte tekst: voetnoten worden niet uit Markdown gelezen.
+    }
 import-diagnostic-footnote-not-carried = { $count ->
-    [one] Een voetnoot in "{ $path }" kon niet worden overgenomen, de andere wel.
-   *[other] { $count } voetnoten in "{ $path }" konden niet worden aangebracht.
-}
+        [one] Eén voetnoot in “{ $path }” kon niet worden overgenomen. De andere wel.
+       *[other] { $count } voetnoten in “{ $path }” konden niet worden overgenomen. De andere wel.
+    }
 import-diagnostic-raw-html-dropped = { $count ->
-    [one] Een blok ruwe HTML in "{ $path }" werd gedropt.
-   *[other] { $count } blokken ruwe HTML in "{ $path }" werden gedropt.
-}
+        [one] Eén blok onbewerkte HTML in “{ $path }” is weggelaten.
+       *[other] { $count } blokken onbewerkte HTML in “{ $path }” zijn weggelaten.
+    }
 import-diagnostic-nested-break-dropped = { $count ->
-    [one] Een scènebreuk in een citaat of lijst in "{ $path }" werd gedropt. Alleen een breuk op zijn eigen lijn wordt gehouden.
-   *[other] { $count } scène breekt binnen citaten of lijsten in "{ $path }" werden geschrapt. Alleen een breuk op zijn eigen lijn wordt gehouden.
-}
-import-diagnostic-image-not-ingested = "{ $path }" verwijst naar de afbeelding "{ $detail }." De referentie komt als tekst; de afbeelding zelf wordt niet gekopieerd.
-import-diagnostic-duplicate-title = "{ $title }" verschijnt { $count } keer. Als u deze bestanden eerder hebt geïmporteerd, zal dit ze dupliceren.
-import-diagnostic-heading-level-jump = "{ $title }" springt van koersniveau { $from } naar { $to }; het wordt één niveau onder de ouder geplaatst.
-import-diagnostic-illegal-combination = "{ $title }" draagt proza, maar een { $kind } kan er geen houden. Importeren wordt gehouden totdat u van type verandert of het buiten laat. Niets wordt anders geïmporteerd.
-import-diagnostic-tracked-changes-flattened = { $path } was halverwege de herziening: { $count ->
-    [one] { $count } traced change is geaccepteerd
-   *[other] { $count } traced changes werden geaccepteerd
-} , en verwijderingen vallen. Dat is de laatste tekst. Om een van uw eigen formulering in plaats daarvan te houden, gebruik Vergelijk in de laatste stap.
-import-diagnostic-tracked-changes-flattened-by = { $path } was halverwege de herziening: { $count ->
-    [one] { $count } traced change met { $names } werd geaccepteerd
-   *[other] { $count } gevolgde wijzigingen door { $names } werden geaccepteerd
-} , en verwijderingen vallen. Dat is de laatste tekst. Om een van uw eigen formulering in plaats daarvan te houden, gebruik Vergelijk in de laatste stap.
+        [one] Eén scèneovergang binnen een citaat of lijst in “{ $path }” is weggelaten. Alleen een overgang op een eigen regel blijft behouden.
+       *[other] { $count } scèneovergangen binnen citaten of lijsten in “{ $path }” zijn weggelaten. Alleen een overgang op een eigen regel blijft behouden.
+    }
+import-diagnostic-image-not-ingested = “{ $path }” verwijst naar de afbeelding “{ $detail }”. De verwijzing komt binnen als tekst; de afbeelding zelf wordt niet gekopieerd.
+import-diagnostic-duplicate-title = “{ $title }” komt { $count } keer voor. Als u deze bestanden al eerder hebt geïmporteerd, worden ze nu gedupliceerd.
+import-diagnostic-heading-level-jump = “{ $title }” springt van kopniveau { $from } naar { $to }; het wordt één niveau onder het bovenliggende item geplaatst.
+import-diagnostic-illegal-combination = “{ $title }” bevat proza, maar een { $kind } kan geen proza bevatten. De import wordt aangehouden totdat u het type wijzigt of het item weglaat. Anders wordt er helemaal niets geïmporteerd.
+import-diagnostic-tracked-changes-flattened = { $path } zat midden in een revisie: { $count ->
+        [one] { $count } bijgehouden wijziging is geaccepteerd
+       *[other] { $count } bijgehouden wijzigingen zijn geaccepteerd
+    } en verwijderingen zijn doorgevoerd. Dat is de definitieve tekst. Wilt u in plaats daarvan iets van uw eigen formulering behouden, gebruik dan Vergelijken in de laatste stap.
+import-diagnostic-tracked-changes-flattened-by = { $path } zat midden in een revisie: { $count ->
+        [one] { $count } bijgehouden wijziging van { $names } is geaccepteerd
+       *[other] { $count } bijgehouden wijzigingen van { $names } zijn geaccepteerd
+    } en verwijderingen zijn doorgevoerd. Dat is de definitieve tekst. Wilt u in plaats daarvan iets van uw eigen formulering behouden, gebruik dan Vergelijken in de laatste stap.
 import-diagnostic-text-box-dropped = { $count ->
-    [one] { $path } bevat { $count } tekstvak. De tekst ervan zit buiten de flow van het document, zodat waar het behoort in een manuscript niet kan worden beantwoord. Het wordt niet geïmporteerd.
-   *[other] { $path } bevat { $count } tekstvakken. Hun tekst bevindt zich buiten de stroming van het document, zodat waar het in een manuscript thuishoort, niet beantwoord kan worden. Ze worden niet geïmporteerd.
-}
+        [one] { $path } bevat { $count } tekstvak. De tekst ervan staat buiten de doorlopende tekst van het document, dus waar die in een manuscript thuishoort, valt niet te zeggen. Het wordt niet geïmporteerd.
+       *[other] { $path } bevat { $count } tekstvakken. Hun tekst staat buiten de doorlopende tekst van het document, dus waar die in een manuscript thuishoort, valt niet te zeggen. Ze worden niet geïmporteerd.
+    }
 import-diagnostic-embedded-object-dropped = { $count ->
-    [one] { $path } bevat { $count } ingebed object: een grafiek, een vergelijking of soortgelijke. Er is niets in een manuscript dat het kon houden.
-   *[other] { $path } bevat { $count } embedded objecten: een grafiek, een vergelijking of soortgelijke. Er is niets in een manuscript dat ze zou kunnen houden.
-}
+        [one] { $path } bevat { $count } ingesloten object: een grafiek, een formule of iets dergelijks. Een manuscript heeft niets waarin het past.
+       *[other] { $path } bevat { $count } ingesloten objecten: een grafiek, een formule of iets dergelijks. Een manuscript heeft niets waarin ze passen.
+    }
 import-diagnostic-field-flattened = { $count ->
-    [one] { $path } bevat { $count } veld: een paginanummer, een kruisverwijzing, een datum. Het houdt de tekst die het laatst werd weergegeven en zal niet opnieuw worden bijgewerkt.
-   *[other] { $path } bevat { $count } velden: een paginanummer, een kruisverwijzing, een datum. Elk houdt de tekst die het laatst werd weergegeven en zal niet opnieuw worden bijgewerkt.
-}
-import-diagnostic-unknown-style-level = { $path } gebruikt de stijl "{ $detail }," die eruit ziet als een kop maar geen niveau noemt. Deze paragrafen worden geïmporteerd als proza in plaats van geraden op een diepte.
-import-diagnostic-comment-unanchored = Het commentaar "{ $detail }" in { $path } kon niet worden gekoppeld aan de woorden waar het over ging. Het wordt gehouden op zijn item, waar u het kunt verplaatsen.
-import-diagnostic-comment-not-carried = Het commentaar "{ $detail }" in { $path } wordt niet geïmporteerd, omdat niets in het bestand komt als tekst die het kan worden bewaard. Kopieer het uit het bestand als je het nodig hebt.
+        [one] { $path } bevat { $count } veld: een paginanummer, een kruisverwijzing, een datum. Het behoudt de tekst die het het laatst toonde en wordt niet meer bijgewerkt.
+       *[other] { $path } bevat { $count } velden: een paginanummer, een kruisverwijzing, een datum. Elk veld behoudt de tekst die het het laatst toonde en wordt niet meer bijgewerkt.
+    }
+import-diagnostic-unknown-style-level = { $path } gebruikt de stijl “{ $detail }”, die op een kop lijkt maar geen niveau noemt. Die alinea’s worden als proza geïmporteerd in plaats van op een geraden niveau.
+import-diagnostic-comment-unanchored = De opmerking “{ $detail }” in { $path } kon niet worden gekoppeld aan de woorden waarover ze ging. Ze blijft bij haar item, waar u haar kunt verplaatsen.
+import-diagnostic-comment-not-carried = De opmerking “{ $detail }” in { $path } wordt niet geïmporteerd, omdat niets in het bestand binnenkomt als tekst waaraan ze kan worden gekoppeld. Kopieer haar uit het bestand als u haar nodig hebt.
 import-diagnostic-comment-replies-flattened = { $count ->
-    [one] { $count } antwoord in { $path } noemde een opmerking die niet in het dossier, dus het komt als een commentaar van zijn eigen.
-   *[other] { $count } antwoorden in { $path } noemde een opmerking die niet in het dossier, dus ze komen als opmerkingen van hun eigen.
-}
+        [one] { $count } antwoord in { $path } verwees naar een opmerking die niet in het bestand staat, dus het komt binnen als zelfstandige opmerking.
+       *[other] { $count } antwoorden in { $path } verwezen naar een opmerking die niet in het bestand staat, dus ze komen binnen als zelfstandige opmerkingen.
+    }
 import-diagnostic-prose-not-verbatim = { $count ->
-    [one] { $count } paragraaf in { $path } kon niet worden gebracht met de opmaak precies zoals geschreven, dus het komt als platte tekst. Vergelijk het met het origineel.
-   *[other] { $count } paragrafen in { $path } konden niet worden gebracht met hun opmaak precies zoals geschreven, dus ze komen als platte tekst. Vergelijk ze met het origineel.
-}
+        [one] { $count } alinea in { $path } kon niet met de opmaak precies zoals geschreven worden overgenomen, dus ze komt binnen als platte tekst. Vergelijk ze met het origineel.
+       *[other] { $count } alinea’s in { $path } konden niet met de opmaak precies zoals geschreven worden overgenomen, dus ze komen binnen als platte tekst. Vergelijk ze met het origineel.
+    }
 import-diagnostic-styled-spaces-not-carried = { $count ->
-    [one] In { $path }, { $count } stretch of blank space werd onderstreept of doorgeslagen, een lijn links om in te vullen bijvoorbeeld. Skribisto houdt geen lijn op ruimten alleen, dus het komt als gewone ruimtes, of helemaal niet waar het begint of eindigt een paragraaf.
-   *[other] In { $path }, { $count } stretchs van lege ruimte werden onderstreept of doorgeslagen, lijnen links om in te vullen bijvoorbeeld. Skribisto houdt geen lijn op ruimten alleen, zodat ze komen als gewone ruimtes, of helemaal niet waar ze beginnen of eindigen een paragraaf.
-}
+        [one] In { $path } was { $count } reeks lege ruimte onderstreept of doorgehaald, bijvoorbeeld een lijn om in te vullen. Skribisto bewaart zulke lijnen niet op alleen spaties, dus ze komt binnen als gewone spaties, of helemaal niet waar ze een alinea begint of eindigt.
+       *[other] In { $path } waren { $count } reeksen lege ruimte onderstreept of doorgehaald, bijvoorbeeld lijnen om in te vullen. Skribisto bewaart zulke lijnen niet op alleen spaties, dus ze komen binnen als gewone spaties, of helemaal niet waar ze een alinea beginnen of eindigen.
+    }
 import-diagnostic-list-nesting-flattened = { $count ->
-    [one] { $count } lijst item in { $path } werd genest meer dan { $limit } niveaus diep. Het komt op niveau { $limit }, de diepste Skribisto houdt, met zijn woorden en opmaak.
-   *[other] { $count } lijst items in { $path } werden genest meer dan { $limit } niveaus diep. Ze komen op niveau { $limit }, de diepste Skribisto houdt, met hun woorden en opmaak.
-}
+        [one] { $count } lijstitem in { $path } was meer dan { $limit } niveaus diep genest. Het komt binnen op niveau { $limit }, het diepste dat Skribisto bewaart, met zijn woorden en opmaak.
+       *[other] { $count } lijstitems in { $path } waren meer dan { $limit } niveaus diep genest. Ze komen binnen op niveau { $limit }, het diepste dat Skribisto bewaart, met hun woorden en opmaak.
+    }
 import-diagnostic-table-read-as-paragraphs = { $count ->
-    [one] { $count } tabel in { $path } heeft een rij veel breder dan de rest, te scheef om uit te leggen als een raster. Zijn cellen komen als paragrafen, de een na de ander, met hun woorden en opmaak.
-   *[other] { $count } tafels in { $path } hebben een rij veel breder dan de rest, te scheef om als raster uit te leggen. Hun cellen komen als paragrafen, de een na de ander, met hun woorden en opmaak.
-}
+        [one] { $count } tabel in { $path } heeft een rij die veel breder is dan de rest, te scheef om als raster te worden opgemaakt. De cellen komen binnen als alinea’s, de een na de ander, met hun woorden en opmaak.
+       *[other] { $count } tabellen in { $path } hebben een rij die veel breder is dan de rest, te scheef om als raster te worden opgemaakt. Hun cellen komen binnen als alinea’s, de een na de ander, met hun woorden en opmaak.
+    }
 import-diagnostic-spaces-shortened = { $count ->
-    [one] { $count } run van ruimtes in { $path } was langer dan { $limit } ruimtes, en komt verkort tot { $limit }. De woorden eromheen zijn er allemaal.
-   *[other] { $count } runs van ruimtes in { $path } waren langer dan { $limit } ruimtes, en komen verkort tot { $limit }. De woorden om hen heen zijn er allemaal.
-}
-import-diagnostic-epigraph-not-carried = "{ $title }" wordt geleid door een epigraaf, maar een { $kind } kan er geen houden. Het citaat wordt bovenaan de tekst gehouden.
-import-diagnostic-epigraph-placement-ambiguous = Een epigraph zit tussen "{ $title }" en "{ $below }" en kan ook hoofd zijn. Het werd gegeven aan "{ $title }," waar een epigraph meestal gaat.
+        [one] { $count } reeks spaties in { $path } was langer dan { $limit } spaties en komt ingekort tot { $limit } binnen. De woorden eromheen zijn er allemaal.
+       *[other] { $count } reeksen spaties in { $path } waren langer dan { $limit } spaties en komen ingekort tot { $limit } binnen. De woorden eromheen zijn er allemaal.
+    }
+import-diagnostic-epigraph-not-carried = “{ $title }” begint met een motto, maar een { $kind } kan er geen bevatten. Het citaat blijft in plaats daarvan bovenaan de tekst staan.
+import-diagnostic-epigraph-placement-ambiguous = Een motto staat tussen “{ $title }” en “{ $below }” en kan bij beide horen. Het is aan “{ $title }” toegekend, waar een motto meestal staat.
 import-document-diagnostics = { $errors ->
-    [0] { $warnings ->
-            [one] 1 ding om te weten
-           *[other] { $warnings } dingen te weten
-        }
-   *[other] { $errors ->
-            [one] 1 bestand kon niet gelezen worden
-           *[other] { $errors } bestanden konden niet worden gelezen
-        }
-}
+        [0] { $warnings ->
+                [one] 1 punt om te weten
+               *[other] { $warnings } punten om te weten
+            }
+       *[other] { $errors ->
+                [one] 1 bestand kon niet worden gelezen
+               *[other] { $errors } bestanden konden niet worden gelezen
+            }
+    }
 import-document-diagnostics-none = Niets te melden.
 
 versions-title = Versies
 versions-scope-synopsis = Synopsis
 versions-scope-prose = Tekst
-versions-loading = Kijken door je back-ups...
+versions-loading = Uw reservekopieën worden doorzocht…
 versions-empty = Nog geen eerdere versie hiervan
-versions-error = Kon uw back-ups niet lezen. Er is niets verloren gegaan, maar deze lijst kan onvolledig zijn
-versions-did-not-exist = bestond nog niet op { $date }
+versions-error = Kan uw reservekopieën niet lezen. Er is niets verloren gegaan, maar deze lijst is mogelijk onvolledig
+versions-did-not-exist = Bestond nog niet op { $date }
 versions-deleted-after = Verwijderd enige tijd na { $date }
 versions-unreadable = { $count ->
-    [one] { $count } back-up kon niet gelezen worden
-   *[other] { $count } back-ups konden niet gelezen worden
-}
+        [one] { $count } reservekopie kon niet worden gelezen
+       *[other] { $count } reservekopieën konden niet worden gelezen
+    }
 versions-thinned = { $count ->
-    [one] Oudere versies dunner naarmate ze ouder worden. De eigen geschiedenis van het project is al gedaald { $count } eerdere staat van deze tekst.
-   *[other] Oudere versies dun uit naarmate ze ouder worden. De eigen geschiedenis van het project is al gedaald { $count } eerdere staten van deze tekst.
-}
-versions-source-backup = Van een back-up
+        [one] Oudere versies worden met de tijd uitgedund. De eigen geschiedenis van het project heeft al { $count } eerdere toestand van deze tekst laten vallen.
+       *[other] Oudere versies worden met de tijd uitgedund. De eigen geschiedenis van het project heeft al { $count } eerdere toestanden van deze tekst laten vallen.
+    }
+versions-source-backup = Uit een reservekopie
 versions-source-project = Uit de eigen geschiedenis van het project
-versions-list-caption = Eén ingang per verandering, niet per backup
+versions-list-caption = Eén regel per wijziging, niet per reservekopie
 versions-pick-a-version = Kies een versie om te zien wat er veranderd is
-versions-earliest = Er is niets ouders om mee te vergelijken.
+versions-earliest = De vroegste vastgelegde versie. Er is niets ouders om ze mee te vergelijken.
 versions-no-change = Er is niets veranderd in dit deel van het item
 versions-formatting-only = Alleen de opmaak is hier veranderd. De woorden zijn hetzelfde
 versions-show-unchanged = Ongewijzigd tonen
-versions-hide-unchanged = Niet gewijzigd verbergen
+versions-hide-unchanged = Ongewijzigd verbergen
 versions-next-change = Volgende wijziging
-versions-near = in de buurt van "{ $text }"
+versions-near = bij “{ $text }”
 versions-words-added = { $count ->
     [one] { $count } woord toegevoegd
    *[other] { $count } woorden toegevoegd
@@ -2038,79 +2048,79 @@ versions-words-removed = { $count ->
    *[other] { $count } woorden verwijderd
 }
 versions-blocks-moved = { $count ->
-    [one] { $count } paragraaf verplaatst
-   *[other] { $count } alinea's verplaatst
-}
-versions-pin = Pin de back-up van deze versie kwam van. Automatische opruiming zal nooit verwijderen
-versions-unpin = Verwijder de back-up van deze versie kwam van. Automatische opruiming kan het opnieuw verwijderen
-versions-pinned-only = Alleen gepinde versies tonen
-versions-pin-note = Alleen versies van een back-up kunnen worden gepind. Een pin houdt een bestand bij, en de eigen geschiedenis van het project is er geen.
-versions-pinned-empty = Er zit hier nog niets vast.
-versions-pinned-empty-log = Alleen versies van een back-up kunnen worden gepind. Een pin houdt een bestand bij, en de eigen geschiedenis van het project is er niet één.
+        [one] { $count } alinea verplaatst
+       *[other] { $count } alinea’s verplaatst
+    }
+versions-pin = De reservekopie waaruit deze versie komt vastzetten. Automatisch opruimen verwijdert haar dan nooit
+versions-unpin = De reservekopie waaruit deze versie komt losmaken. Automatisch opruimen kan haar dan weer verwijderen
+versions-pinned-only = Alleen vastgezette versies tonen
+versions-pin-note = Alleen versies uit een reservekopie kunnen worden vastgezet. Vastzetten bewaart een bestand, en de eigen geschiedenis van het project is geen bestand.
+versions-pinned-empty = Hier is nog niets vastgezet
+versions-pinned-empty-log = Hier is nog niets vastgezet. Alleen versies uit een reservekopie kunnen worden vastgezet. Vastzetten bewaart een bestand, en de eigen geschiedenis van het project is geen bestand.
 versions-range-filter = Alleen versies tussen twee datums tonen
-versions-filtered-empty = Geen versie die overeenkomt met de filters die u hebt ingesteld
+versions-filtered-empty = Geen enkele versie komt overeen met de filters die u hebt ingesteld
 versions-clear-filters = De filters wissen
 versions-last-30-days = Afgelopen 30 dagen
 versions-restore-button = Deze versie herstellen
 versions-restore-confirm-title = Deze tekst vervangen door de versie van { $date }?
-versions-restore-confirm-text = Wat u nu hebt zal worden vervangen door de tekst van dit artikel op { $date }.
-versions-restore-confirm-with-comments = Wat u nu hebt zal worden vervangen door de tekst van dit artikel op { $date }. { $count ->
-    [one] { $count } commentaar is verankerd in de huidige tekst en mag worden achtergelaten wees.
-   *[other] { $count } opmerkingen zijn verankerd in de huidige tekst en mogen worden achtergelaten wees.
-}
-versions-restore-confirm-undo-note = Een back-up wordt eerst gemaakt, en Ctrl+Z maakt dit in één stap ongedaan.
-versions-restored-toast = Herstelde de versie van { $date }
+versions-restore-confirm-text = Wat u nu hebt, wordt vervangen door de tekst die dit item op { $date } had.
+versions-restore-confirm-with-comments = Wat u nu hebt, wordt vervangen door de tekst die dit item op { $date } had. { $count ->
+        [one] { $count } opmerking is in de huidige tekst verankerd en kan verweesd raken.
+       *[other] { $count } opmerkingen zijn in de huidige tekst verankerd en kunnen verweesd raken.
+    }
+versions-restore-confirm-undo-note = Eerst wordt een reservekopie gemaakt, en Ctrl+Z maakt dit in één stap ongedaan.
+versions-restored-toast = De versie van { $date } is hersteld
 versions-undo = Ongedaan maken
-versions-restore-row-gone = Dat punt zit niet meer in dit project
-versions-restore-no-home = Dit item is veranderd type sindsdien, en de oude tekst kan nergens meer in
-versions-restore-no-safety-copy = Je veiligheids back-up liep niet, dus er was niets veranderd.
+versions-restore-row-gone = Dat item staat niet meer in dit project
+versions-restore-no-home = Het type van dit item is sindsdien veranderd, en de oude tekst kan er nergens in terecht
+versions-restore-no-safety-copy = Uw veiligheidskopie is niet gemaakt, dus er is niets gewijzigd
 versions-restore-failed = Het herstel is mislukt: { $error }
-versions-restore-backup-busy = Er is al een backup aan de gang. Probeer het zo opnieuw
-versions-restore-in-backup-file = U kijkt naar een back-upbestand; open het project zelf om het te herstellen
-versions-restore-no-project = Geen project is geopend
-versions-recreate-button = Breng dit terug...
+versions-restore-backup-busy = Er wordt al een reservekopie gemaakt. Probeer het zo meteen opnieuw
+versions-restore-in-backup-file = U bekijkt een reservekopiebestand; open het project zelf om erin te herstellen
+versions-restore-no-project = Er is geen project geopend
+versions-recreate-button = Dit terughalen…
 versions-recreate-picker-title = Waar moet het heen?
-versions-recreate-picker-empty = Dit project heeft geen map om het in te zetten
-versions-recreate-picker-confirm = Breng het terug.
+versions-recreate-picker-empty = Dit project heeft geen ordner om het in te zetten
+versions-recreate-picker-confirm = Hier terughalen
 versions-recreate-picker-cancel = Annuleren
-versions-recreate-untitled = Dit item
-versions-recreate-confirm-title = Breng je '{ $item }' terug?
-versions-recreate-confirm-text = Het zal worden toegevoegd aan { $destination }, met de tekst die het had op { $date }.
-versions-recreate-confirm-undo-note = Ongedaan maken, over de boodschap die volgt, neemt het direct terug.
-versions-recreated-toast = "{ $item }" is terug in uw project
+versions-recreate-untitled = dit item
+versions-recreate-confirm-title = “{ $item }” terughalen?
+versions-recreate-confirm-text = Het wordt toegevoegd aan { $destination }, met de tekst die het op { $date } had.
+versions-recreate-confirm-undo-note = Ongedaan maken, in de melding die volgt, haalt het meteen weer weg.
+versions-recreated-toast = “{ $item }” staat weer in uw project
 versions-recreated-partial-toast = { $count ->
-    [one] "{ $item }" is terug, maar een van zijn teksten kon niet gelezen worden.
-   *[other] "{ $item }" is terug, maar { $count } van zijn teksten kon niet worden gelezen
-}
-versions-recreate-already-here = Dat item zit al in uw project
-versions-recreate-no-destination = Kies ergens in het bindmiddel om het te plaatsen
-versions-recreate-unreadable = Die back-up kon niet worden gelezen, dus er werd niets toegevoegd
-versions-recreate-failed = Kan het niet terugbrengen: { $error }
+        [one] “{ $item }” is terug, maar een van de teksten kon niet worden gelezen
+       *[other] “{ $item }” is terug, maar { $count } van de teksten konden niet worden gelezen
+    }
+versions-recreate-already-here = Dat item staat al in uw project
+versions-recreate-no-destination = Kies een plek in de ordner om het neer te zetten
+versions-recreate-unreadable = Die reservekopie kon niet worden gelezen, dus er is niets toegevoegd
+versions-recreate-failed = Kan het niet terughalen: { $error }
 versions-changed-percent = { $percent }% hiervan is veranderd
 versions-hidden-paragraphs = { $count ->
-    [one] ... { $count } ongewijzigd punt ...
-   *[other] ... { $count } ongewijzigde punten ...
-}
+        [one] … { $count } ongewijzigde alinea …
+       *[other] … { $count } ongewijzigde alinea’s …
+    }
 
-timeline-title = Ga terug in de tijd
+timeline-title = Terug in de tijd
 timeline-coverage = { $count ->
-    [one] { $count } versie opgenomen, terug te gaan naar { $oldest }
-   *[other] { $count } versies opgenomen, terug te gaan naar { $oldest }
-}
-timeline-loading = Kijken door het verleden van je project...
-timeline-empty = Er is nog geen versie van dit project opgenomen
-timeline-no-changes = Sindsdien is er niets veranderd.
+        [one] { $count } versie vastgelegd, teruggaand tot { $oldest }
+       *[other] { $count } versies vastgelegd, teruggaand tot { $oldest }
+    }
+timeline-loading = Het verleden van uw project wordt doorzocht…
+timeline-empty = Er is nog geen versie van dit project vastgelegd
+timeline-no-changes = Sindsdien is er niets veranderd
 timeline-no-text-changes = Sindsdien is er geen tekst veranderd
-timeline-slider-label = Opgenomen versie
+timeline-slider-label = Vastgelegde versie
 timeline-series-name = Projectgrootte
-timeline-bars-caption = Elke bar is een opgenomen versie, zo groot als het project toen was. De gemarkeerde is wat je kijkt.
-timeline-bars-caption-periods = Te veel versies om een voor een te laten zien, dus elke staaf is een { $period }, zo groot als het project was aan het einde van het.
+timeline-bars-caption = Elke staaf is een vastgelegde versie, zo hoog als het project toen groot was. De gemarkeerde is de versie die u bekijkt.
+timeline-bars-caption-periods = Te veel versies om ze een voor een te tonen, dus elke staaf is een { $period }, zo hoog als het project aan het eind ervan groot was.
 timeline-unit-hour = uur
 timeline-unit-day = dag
 timeline-unit-week = week
 timeline-unit-month = maand
 timeline-range-filter = Alleen versies tussen twee datums tonen
-timeline-range-empty = Er is geen versie opgenomen in die data
+timeline-range-empty = In die periode is geen versie vastgelegd
 timeline-open-period = Deze periode openen
 timeline-show-all = De hele geschiedenis tonen
 timeline-changed-since = { $count ->
@@ -2119,67 +2129,69 @@ timeline-changed-since = { $count ->
 }
 timeline-kind-added = Geschreven sinds
 timeline-kind-removed = Niet meer in het project
-timeline-kind-changed = Uitgegeven sinds
+timeline-kind-changed = Bewerkt sinds
 timeline-kind-moved = Verplaatst sinds
-timeline-not-yet-written = Dit bestond toen nog niet.
-timeline-no-text-of-its-own = Dit heeft geen eigen tekst, het is een koers naar wat erin zit.
+timeline-not-yet-written = Dit bestond op dat moment nog niet
+timeline-no-text-of-its-own = Dit heeft geen eigen tekst. Het is een kop voor wat erin zit
 timeline-reader-close = Sluiten
 timeline-reader-stamp = Zoals op { $date }
-timeline-reader-loading = Het openen van de opgenomen versie...
-timeline-reader-unreadable = Deze opname kon niet gelezen worden. De back-up kan verplaatst, verwijderd of op een schijf gezet zijn die niet verbonden is.
-timeline-reader-compared = Zoals het was op { $date }, ingesteld tegen wat het nu zegt
-timeline-reader-diff-legend = Sindsdien is het doorgebroken; onderstreept is toegevoegd.
-timeline-reader-view-label = Wat te laten zien
+timeline-reader-loading = De vastgelegde versie wordt geopend…
+timeline-reader-unreadable = Deze vastlegging kon niet worden gelezen. De reservekopie is misschien verplaatst of verwijderd, of staat op een schijf die niet is aangesloten.
+timeline-reader-compared = Zoals het was op { $date }, naast wat er nu staat
+timeline-reader-diff-legend = Doorgehaald is sindsdien verdwenen; onderstreept is toegevoegd.
+timeline-reader-view-label = Wat tonen
 timeline-reader-view-diff = Wijzigingen
 timeline-reader-view-text = Tekst
-timeline-reader-deleted = Dit zit niet meer in je project. Je kunt het hier lezen en kopiëren.
-timeline-prose-only-record = Dit punt komt uit de eigen geschiedenis van het project, die tekst en niets anders houdt, dus wat werd verwijderd of verplaatst omdat het niet kan worden getoond. Kies daarvoor een back-up.
+timeline-reader-deleted = Dit staat niet meer in uw project. U kunt het hier lezen en eruit kopiëren.
+timeline-prose-only-record = Dit punt komt uit de eigen geschiedenis van het project, die alleen tekst bewaart, dus wat er sindsdien is verwijderd of verplaatst, kan niet worden getoond. Kies daarvoor een reservekopie.
 
-settings-sec-extensions = Uitbreidingen
+settings-sec-extensions = Extensies
 
 settings-group-games-forward = Altijd vooruit
-settings-games-forward-toggle = Speel "Altijd vooruit"
+settings-games-forward-toggle = “Altijd vooruit” spelen
 settings-games-forward-hint =
-    Terwijl je speelt, kan niets wat je hebt geschreven worden teruggenomen: Backspace, Delete,
-    Cut, drag-and-drop and Undo zijn allemaal uitgeschakeld in de oppervlakken die u hieronder kiest.
-    U kunt nog steeds typen, plakken, formatteren en vrij bewegen. Het concept groeit alleen maar.
+    Zolang u speelt, kan niets van wat u hebt geschreven worden teruggenomen: Backspace, Delete,
+    Knippen, slepen en neerzetten en Ongedaan maken zijn allemaal uitgeschakeld in de onderdelen die u hieronder kiest.
+    U kunt nog steeds vrij typen, plakken, opmaken en navigeren. Het concept groeit alleen maar.
 settings-games-session-warning =
-    Dit is een keuze per sessie: het wordt nooit opgeslagen. Het project sluiten of stoppen
-    Skribisto, eindigt altijd het spel, en alles wat je schreef tijdens het spelen wordt
-    Weer ondoenbaar op het moment dat het gebeurt.
-settings-group-games-scope = Indien van toepassing
-settings-games-in-prose = Manuscript proza
-settings-games-in-synopsis = Synopsen
+    Dit is een keuze per sessie: ze wordt nooit opgeslagen. Het project sluiten of Skribisto
+    afsluiten beëindigt het spel altijd, en alles wat u tijdens het spel schreef, kan op dat
+    moment weer ongedaan worden gemaakt.
+settings-group-games-scope = Waar het geldt
+settings-games-in-prose = Proza van het manuscript
+settings-games-in-synopsis = Synopsissen
 settings-games-scope-hint =
-    Opmerkingen, voetnoten en titels worden nooit bevroren: ze zijn waar je de fix noteert
-    Je hebt jezelf net verboden het te maken.
+    Opmerkingen, voetnoten en titels worden nooit bevroren: daar noteert u de verbetering
+    die u zichzelf net hebt verboden.
 settings-games-inert-warning =
-    "Altijd vooruit" staat aan, maar is van toepassing op niets. Tik minstens één oppervlak boven,
-    of het verandert niets als je schrijft.
+    “Altijd vooruit” staat aan, maar geldt nergens voor. Vink hierboven minstens één onderdeel aan,
+    anders verandert het niets aan uw schrijven.
 
-games-title = Spelletjes schrijven
+games-title = Schrijfspellen
 games-forward-name = Altijd vooruit
 games-forward-blurb =
-    Draft zonder iets terug te nemen. Verwijderen, snijden en ongedaan maken zijn uitgeschakeld
-    Schrijf de volgende zin in plaats van de laatste.
-games-forward-playing = Afspelen: verwijderen is uitgeschakeld
-games-forward-idle = Niet spelen
-games-session-note = Beëindigt wanneer je het project sluit.
-games-scope-prose-and-synopsis = Geldt voor je proza en synopsen.
-games-scope-prose = Geldt voor je proza.
-games-scope-synopsis = Geldt voor je synopsen.
-games-scope-nothing = Is nog niet van toepassing. Kies een oppervlakte in Instellingen.
-games-settings-link = Spelinstellingen worden geschreven...
+    Schrijf zonder iets terug te nemen. Verwijderen, knippen en ongedaan maken zijn
+    uitgeschakeld zolang u speelt. Schrijf de volgende zin in plaats van de vorige te verbeteren.
+games-forward-playing = Bezig: verwijderen is uitgeschakeld
+games-forward-idle = Niet bezig
+games-session-note = Eindigt wanneer u het project sluit.
+games-scope-prose-and-synopsis = Geldt voor uw proza en synopsissen.
+games-scope-prose = Geldt voor uw proza.
+games-scope-synopsis = Geldt voor uw synopsissen.
+games-scope-nothing = Geldt nog nergens voor. Kies een onderdeel in Instellingen.
+games-settings-link = Instellingen voor schrijfspellen…
 statusbar-games-forward = Altijd vooruit
 statusbar-games-forward-tooltip =
-    "Altijd vooruit" is op: verwijderen, snijden en ongedaan maken zijn uitgeschakeld terwijl u
-    Klik om te stoppen met spelen.
+    “Altijd vooruit” staat aan: verwijderen, knippen en ongedaan maken zijn uitgeschakeld
+    zolang u schrijft. Klik om te stoppen met spelen.
 goal-progress-words = { $g ->
-   *[other] Woorden: { $count } / { $goal }
-}
+        [one] { $count } van { $goal } woord
+       *[other] { $count } van { $goal } woorden
+    }
 goal-progress-characters = { $g ->
-   *[other] Tekens: { $count } / { $goal }
-}
+        [one] { $count } van { $goal } teken
+       *[other] { $count } van { $goal } tekens
+    }
 goal-count-words = { $n ->
     [one] { $count } woord
    *[other] { $count } woorden
@@ -2195,62 +2207,62 @@ inspector-goal = Doel
 inspector-goal-none = Geen doel
 
 overview-col-goal = Doel
-overview-excluded-from-export = Buiten de export gelaten, dus telt het voor geen totaal
+overview-excluded-from-export = Weggelaten uit de export, dus telt het voor geen enkel totaal mee
 
 goal-subtree-total-words = { $count ->
-    [one] { $items } doel binnen telt tot { $words } woorden
-   *[other] { $items } doelen binnen toe te voegen tot { $words } woorden
-}
+        [one] { $items } doel hierin komt samen op { $words } woorden
+       *[other] { $items } doelen hierin komen samen op { $words } woorden
+    }
 goal-subtree-total-characters = { $count ->
-    [one] { $items } doel binnen telt tot { $words } tekens
-   *[other] { $items } doelen binnen tellen tot { $words } tekens
-}
+        [one] { $items } doel hierin komt samen op { $words } tekens
+       *[other] { $items } doelen hierin komen samen op { $words } tekens
+    }
 
-new-work-goal-unit = Tel in
-new-work-goal-unit-hint = Gebruikt voor elk woord of teken doel in dit project. Veranderbaar later.
+new-work-goal-unit = Tellen in
+new-work-goal-unit-hint = Gebruikt voor elk doel in woorden of tekens in dit project. Kan later worden gewijzigd.
 
-settings-group-goal-unit = Doelstellingen
-settings-goal-unit-switch-title = Teleenheid wisselen
-settings-goal-unit-switch-text = De reeds voor dit project vastgestelde doelstellingen en mijlpalen werden ingevoerd in { $from }. Overschakelen naar { $to } zet ze niet om, dus elk bestaand getal wordt nu gelezen als { $to }.
-settings-goal-unit-switch-informative = Niets is verloren. Schakel terug op elk moment om de oorspronkelijke lezing te herstellen, dan bijwerken van de doelen die u wilt houden.
-settings-goal-unit-switch-confirm = Omschakelen
+settings-group-goal-unit = Doelen
+settings-goal-unit-switch-title = Telleenheid wijzigen
+settings-goal-unit-switch-text = De doelen en mijlpalen die al voor dit project zijn ingesteld, zijn ingevoerd in { $from }. Overschakelen naar { $to } zet ze niet om, dus elk bestaand getal wordt voortaan gelezen als { $to }.
+settings-goal-unit-switch-informative = Er gaat niets verloren. Schakel op elk moment terug om de oorspronkelijke lezing te herstellen, en werk daarna de doelen bij die u wilt behouden.
+settings-goal-unit-switch-confirm = Wijzigen
 
-goal-distribute-action = Verdeel...
+goal-distribute-action = Verdelen…
 distribute-title = Het doel verdelen
-distribute-empty = Er zit niets in om het doel te delen.
-distribute-weight = Uitdelen
+distribute-empty = Er zit niets in om het doel over te verdelen.
+distribute-weight = Verdeling
 distribute-weight-length = Op lengte
-distribute-weight-rows = Per stuk
-distribute-weight-even = Even
-distribute-overwrite = Reeds vastgestelde doelstellingen vervangen
-distribute-col-item = Post
+distribute-weight-rows = Per onderdeel
+distribute-weight-even = Gelijk
+distribute-overwrite = Doelen vervangen die al zijn ingesteld
+distribute-col-item = Item
 distribute-col-current = Nu
 distribute-col-proposed = Na
-distribute-total = Deze bedragen { $total }, tegen een streefcijfer van { $goal }.
-distribute-over-budget = De doelen die al zijn vastgesteld binnen komen tot { $over } meer dan die van deze container. Verhoog het doel, lager hun, of vervang ze.
+distribute-total = Samen { $total }, tegenover een doel van { $goal }.
+distribute-over-budget = De doelen die hierin al zijn ingesteld, komen { $over } hoger uit dan het doel van deze container zelf. Verhoog het doel ervan, verlaag de hunne of vervang ze.
 distribute-apply = Verdelen
 distribute-cancel = Annuleren
 
 milestone-target-gone = Doel verwijderd
 milestone-no-target = Geen doel
 milestone-add = Toevoegen
-milestone-add-label = Wat moet worden bereikt?
+milestone-add-label = Wat moet er worden bereikt
 
-pace-summary-title = Waar het boek staat
+pace-summary-title = Hoe het boek ervoor staat
 pace-summary-remaining = { $words } te gaan
-pace-summary-open = Open het plan
+pace-summary-open = Het plan openen
 pace-summary-close = Sluiten
 pace-summary-dont-show = Dit niet tonen bij openen
-pace-summary-menu = Plan schrijven...
+pace-summary-menu = Schrijfplan…
 
-menu-help-topics = Hulpthema's (&T)
-menu-help-shortcuts = Sneltoetsen... (&K)
-menu-help-website = Skribisto op het web (&W)
-menu-help-report = Een probleem melden... (&R)
-menu-help-check-updates = Controleren op updates (&U)
-menu-command-palette = Commandopalet... (&C)
+menu-help-topics = &Helponderwerpen
+menu-help-shortcuts = &Sneltoetsen…
+menu-help-website = Skribisto op het &web
+menu-help-report = Een probleem &melden…
+menu-help-check-updates = Controleren op &updates
+menu-command-palette = Opdrachten&palet…
 
-learn-help-topics = Onderwerpen helpen
+learn-help-topics = Helponderwerpen
 learn-shortcuts = Sneltoetsen
 learn-website = Skribisto op het web
 
@@ -2259,40 +2271,40 @@ help-filter-topics = Onderwerpen filteren
 help-no-matching-topic = Geen onderwerp komt overeen.
 help-topic-missing = Dit onderwerp is niet meer beschikbaar.
 help-back = Terug
-help-not-translated = Dit artikel is nog niet beschikbaar in het Nederlands. Het wordt in het Engels weergegeven.
+help-not-translated = Deze pagina is nog niet vertaald en wordt daarom in het Engels getoond.
 
 help-section-getting-started = Aan de slag
 help-section-writing = Schrijven
-help-section-reviewing = Beoordelen
-help-section-exchanging = Woorden in en uit krijgen
-help-section-keeping = Uw project veilig houden
-help-section-extensions = Uitbreidingen
+help-section-reviewing = Revisie
+help-section-exchanging = Tekst importeren en exporteren
+help-section-keeping = Uw werk veilig bewaren
+help-section-extensions = Extensies
 
 help-topic-getting-started = Uw eerste project
 help-topic-writing-model = Hoe een boek wordt samengesteld
-help-topic-drafts-and-old-versions = Een oudere versie behouden
-help-topic-goals-and-pace = Doelstellingen en tempo
+help-topic-drafts-and-old-versions = Een oudere versie bewaren
+help-topic-goals-and-pace = Doelen en tempo
 help-topic-comments = Opmerkingen
 help-topic-round-trip = Uw boek naar een lezer sturen
 help-topic-export = Exporteren
 help-topic-import-documents = Documenten importeren
-help-topic-import-projects = Een heel project oversteken
-help-topic-backups-and-versions = Backups en versies
+help-topic-import-projects = Een volledig project overzetten
+help-topic-backups-and-versions = Reservekopieën en versies
 
 help-shortcuts-title = Sneltoetsen
 help-shortcuts-filter = Sneltoetsen filteren
-help-shortcuts-no-matches = Geen kortere weg overeenkomsten.
-help-shortcuts-rebind = Sneltoetsen wijzigen...
+help-shortcuts-no-matches = Geen enkele sneltoets komt overeen.
+help-shortcuts-rebind = Sneltoetsen wijzigen…
 help-shortcuts-close = Sluiten
 
 command-palette-placeholder = Typ een opdracht
 
 shortcut-name-binder-duplicate = Dupliceren
 shortcut-name-comments-add = Opmerking toevoegen
-shortcut-name-comments-add-paragraph = Commentaar op paragraaf
+shortcut-name-comments-add-paragraph = Opmerking bij alinea
 shortcut-name-spellcheck-toggle = Spelling controleren
 shortcut-name-editor-tab-close = Tabblad sluiten
-shortcut-name-editor-tab-pin = Tabblad pinnen of losmaken
+shortcut-name-editor-tab-pin = Tabblad vastzetten of losmaken
 shortcut-name-editor-save = Opslaan
 shortcut-name-work-export = Exporteren…
 shortcut-name-work-new = Nieuw project
@@ -2302,57 +2314,57 @@ shortcut-name-work-close = Project sluiten
 shortcut-name-app-settings = Instellingen
 shortcut-name-app-quit = Afsluiten
 shortcut-name-editor-insert-footnote = Voetnoot invoegen
-shortcut-name-format-scene-break = Scènepauze invoegen
-shortcut-name-format-major-scene-break = Grote scènebreuk invoegen
-shortcut-name-format-link = Verwijzing invoegen
-shortcut-name-format-mark-nbsp = No-break space invoegen
-shortcut-name-format-mark-nbhyphen = No-break Hyphen invoegen
-shortcut-name-format-mark-nnbsp = Narrow no-break space invoegen
-shortcut-name-format-mark-zwsp = Nulbreedteruimte invoegen
+shortcut-name-format-scene-break = Scèneovergang invoegen
+shortcut-name-format-major-scene-break = Grote scèneovergang invoegen
+shortcut-name-format-link = Koppeling invoegen
+shortcut-name-format-mark-nbsp = Vaste spatie invoegen
+shortcut-name-format-mark-nbhyphen = Vast koppelteken invoegen
+shortcut-name-format-mark-nnbsp = Smalle vaste spatie invoegen
+shortcut-name-format-mark-zwsp = Spatie zonder breedte invoegen
 shortcut-name-go-next = Volgende
 shortcut-name-go-prev = Vorige
 shortcut-name-go-to = Ga naar
-shortcut-name-outline-toggle = Omtrek aan/uit
-shortcut-name-preview-toggle = Schakel voorbeeldband aan/uit
+shortcut-name-outline-toggle = Ordner tonen/verbergen
+shortcut-name-preview-toggle = Voorbeeldstrook tonen/verbergen
 shortcut-name-view-fullscreen = Volledig scherm aan/uit
 shortcut-name-view-focus-mode = Afleidingsvrije modus aan/uit
-shortcut-name-editor-size-increase = Tekstgrootte vergroten
-shortcut-name-editor-size-decrease = Tekstgrootte verkleinen
-shortcut-name-editor-size-reset = Tekstgrootte resetten
+shortcut-name-editor-size-increase = Tekst groter
+shortcut-name-editor-size-decrease = Tekst kleiner
+shortcut-name-editor-size-reset = Tekstgrootte herstellen
 shortcut-name-editor-find = Zoeken
 shortcut-name-editor-replace = Vervangen
-shortcut-name-editor-find-next = Volgende overeenkomst
-shortcut-name-editor-find-prev = Vorige overeenkomst
+shortcut-name-editor-find-next = Volgende treffer
+shortcut-name-editor-find-prev = Vorige treffer
 shortcut-name-search-show = Zoeken in project
 shortcut-name-search-replace = Vervangen in project
-shortcut-name-outline-open-to-side = Open naar de zijkant
-shortcut-name-help-topics = Hulpthema's
+shortcut-name-outline-open-to-side = Openen aan de zijkant
+shortcut-name-help-topics = Helponderwerpen
 shortcut-name-help-shortcuts = Sneltoetsen
 shortcut-name-help-website = Skribisto op het web
 shortcut-name-help-report = Een probleem melden
 shortcut-name-help-check-updates = Controleren op updates
 update-check-behind = Versie { $version } is beschikbaar.
-update-check-current = Je draait de nieuwste versie.
-update-check-failed = Kon niet controleren op een nieuwere versie. { $error }
-shortcut-name-command-palette = Commandopalet
-help-section-reference = Wat zijn dingen?
+update-check-current = U gebruikt de nieuwste versie.
+update-check-failed = Kan niet controleren op een nieuwere versie. { $error }
+shortcut-name-command-palette = Opdrachtenpalet
+help-section-reference = Wat is wat
 
-help-concept-scene-break = Scènebreuk
-help-concept-major-scene-break = Grote breuk in de scène
-help-concept-find-in-prose = Zoek in proza
+help-concept-scene-break = Scèneovergang
+help-concept-major-scene-break = Grote scèneovergang
+help-concept-find-in-prose = Zoeken in proza
 help-concept-story-bible = Verhaalbijbel
 help-concept-goal-unit = Woorden of tekens
 help-concept-goal-progress = Voortgang
 help-concept-manuscript-words = Wat telt als het manuscript
-help-concept-exportable = Buiten de export gelaten
-help-concept-distribute = Een doel delen
-help-concept-subtree-total = Wat de doelen binnenin optellen tot
+help-concept-exportable = Weggelaten uit de export
+help-concept-distribute = Een doel verdelen
+help-concept-subtree-total = Waarop de doelen hierin samen uitkomen
 help-concept-milestone = Mijlpaal
-help-concept-pace-plan = Schrijftempoplan
+help-concept-pace-plan = Tempoplan
 
 help-concept-tag = Tag
-help-concept-label = Korte beschrijving
-help-concept-point-of-view = Perspectief
+help-concept-label = Label
+help-concept-point-of-view = Vertelperspectief
 help-concept-epigraph = Motto
 help-concept-footnote = Voetnoot
 help-concept-chapter-mode = Hoofdstukvorm
@@ -2363,113 +2375,261 @@ help-concept-trash = Prullenbak
 help-concept-spellcheck = Spellingscontrole
 help-concept-search-replace = Zoeken en vervangen
 help-concept-note-template = Notitiesjabloon
-help-concept-story-bible-entry = Verhaal bijbeltekst
+help-concept-story-bible-entry = Item in verhaalbijbel
 help-concept-text-replacement = Tekstvervanging
 help-concept-smart-punctuation = Slimme interpunctie
 help-concept-export-style = Exportstijl
-help-concept-round-trip-marks = Markers voor de round-trip
+help-concept-round-trip-marks = Retourmarkeringen
 
 epigraph-mark-attribution = Bronregel
-epigraph-mark-attribution-tip = Markeer de lijn waarin de curret zich bevindt als bron van de citaat, zodat het afdrukt als een attributie
+epigraph-mark-attribution-tip = De regel waarin de cursor staat markeren als bron van het citaat, zodat die als bronvermelding wordt afgedrukt
 margin-lane-name = Margemarkeringen
 margin-lane-provider-comments = Opmerkingen
-margin-lane-provider-story-bible = Verhaal bijbeltekst
-margin-lane-provider-story-bible-hint = Op een noot In proza lezing, waar die ingang wordt genoemd, en de scènes verteld door zijn ogen. Ook markeert die namen in de proza zelf.
-margin-lane-mark-point-of-view = Vertelde vanaf hier
+margin-lane-provider-story-bible = Item in verhaalbijbel
+margin-lane-provider-story-bible-hint = In de weergave In proza van een notitie: waar dat item wordt genoemd, en de scènes die door zijn ogen worden verteld. Markeert die namen ook in het proza zelf.
+margin-lane-mark-point-of-view = Vanaf hier verteld
 margin-lane-mark-named-here = Hier genoemd
-margin-lane-provider-comments-hint = Wanneer een noot aan de tekst is gehecht
+margin-lane-provider-comments-hint = Waar een opmerking aan de tekst hangt
 margin-lane-provider-search = Zoekresultaten
-margin-lane-provider-search-hint = Elke hit naar wat je voor het laatst zocht, waar het ook in het document staat
-margin-lane-provider-boundaries = Wanneer elk document begint
-margin-lane-provider-boundaries-hint = Een regel aan de top van elke scène in een stroom, zodat je kunt zien waar je bent
+margin-lane-provider-search-hint = Elke treffer voor wat u het laatst zocht, waar die ook in het document staat
+margin-lane-provider-boundaries = Waar elk document begint
+margin-lane-provider-boundaries-hint = Een lijn bovenaan elke scène in een doorlopende weergave, zodat u ziet waar u bent
 margin-lane-provider-spelling = Spelling
-margin-lane-provider-spelling-hint = Waar de spellingcontrole een woord heeft gemarkeerd. Uit tenzij u erom vraagt: het markeert de mening van een machine over uw proza
-margin-lane-spelling = { $word }, mogelijk spelfouten
-margin-lane-search-hit = { $text }, match { $index } van { $total }
-margin-lane-search-current = { $text }, match { $index } van { $total }, degene op wie u bent
+margin-lane-provider-spelling-hint = Waar de spellingscontrole een woord heeft gemarkeerd. Uit, tenzij u erom vraagt: het markeert de mening van een machine over uw proza
+margin-lane-spelling = { $word }, mogelijke spelfout
+margin-lane-search-hit = { $text }, treffer { $index } van { $total }
+margin-lane-search-current = { $text }, treffer { $index } van { $total }, de huidige
 margin-lane-boundary = Begin van { $title }
-margin-lane-boundary-untitled = een titelloos document
+margin-lane-boundary-untitled = een naamloos document
 settings-page-margin-lane = Margemarkeringen
-settings-desc-margin-lane = De strip naast de scroll bar, en wat het laat zien
-settings-margin-lane-enabled = De margestrook tonen
-settings-margin-lane-enabled-hint = Dezelfde schakelaar als Weergave Marge markeringen.
-settings-margin-lane-enabled-more = Het zegt nooit dat er iets mis is: het laat je zien waar de dingen zijn, en laat wat je daarvan moet maken aan je over.
-settings-group-margin-lane-marks = Wat het markeert.
-settings-margin-lane-no-providers = Nog niets markeert de baan.
-settings-group-margin-lane-texture = Structuur van de dialoog
+settings-desc-margin-lane = De balk naast de schuifbalk, en wat die toont
+settings-margin-lane-enabled = De margebalk tonen
+settings-margin-lane-enabled-hint = Dezelfde schakelaar als Beeld ▸ Margemarkeringen.
+settings-margin-lane-enabled-more = Hij zegt nooit dat er iets fout is: hij laat zien waar dingen staan, en wat u daarvan vindt, laat hij aan u over.
+settings-group-margin-lane-marks = Wat hij markeert
+settings-margin-lane-no-providers = Er markeert nog niets de margebalk.
+settings-group-margin-lane-texture = Dialoogtextuur
 settings-margin-lane-texture = De dialoogtextuur tonen
-settings-margin-lane-texture-hint = Een streepje per paragraaf: hoe lang is het en hoeveel ervan wordt er gesproken.
-settings-margin-lane-texture-more = Niet gemeten voor talen zonder curated conventie, waar de balk alleen de lengte toont.
-settings-group-margin-lane-surfaces = Waar het lijkt
-settings-margin-lane-surface-editor = Tekstbewerker
-settings-margin-lane-surface-stream = Stroomt
-settings-margin-lane-surface-search-preview = Zoekvoorbeeld
-menu-margin-lane = Margemarkeringen (&M)
+settings-margin-lane-texture-hint = Eén streepje per alinea: hoe lang ze is, en hoeveel ervan gesproken wordt.
+settings-margin-lane-texture-more = Wordt niet gemeten voor talen zonder vastgelegde conventie; daar toont het streepje alleen de lengte.
+settings-group-margin-lane-surfaces = Waar hij verschijnt
+settings-margin-lane-surface-editor = Teksteditor
+settings-margin-lane-surface-stream = Doorlopende weergaven
+settings-margin-lane-surface-search-preview = Voorbeeld zoekresultaat
+menu-margin-lane = &Margemarkeringen
 
-status-preset-drafting = Concept schrijven
-status-preset-passes = Herzieningspassen
+status-preset-drafting = Eerste versie
+status-preset-passes = Revisierondes
 status-preset-plume = Plume Creator
 status-todo = Te doen
 status-draft = Concept
 status-revised = Herzien
 status-final = Definitief
-status-outline = Overzicht
+status-outline = Opzet
 status-first-edit = 1e bewerking
 status-second-edit = 2e bewerking
 status-done = Gereed
-status-plume-draft-1 = 1e ontwerp
-status-plume-draft-2 = 2e ontwerp
-status-plume-draft-3 = 3e ontwerp
+status-plume-draft-1 = 1e versie
+status-plume-draft-2 = 2e versie
+status-plume-draft-3 = 3e versie
 status-plume-edit-1 = 1e bewerking
 status-plume-edit-2 = 2e bewerking
 status-plume-edit-3 = 3e bewerking
 status-plume-proofread = Proefgelezen
 status-plume-finished = Voltooid
 new-work-statuses = Werkstroom
-new-work-statuses-hint = De stadia waar je een scène doorheen verplaatst. Je kunt deze op elk moment hernoemen, herschikken of toevoegen.
+new-work-statuses-hint = De fasen die een scène doorloopt. U kunt ze op elk moment hernoemen, herschikken of aanvullen.
 status-none = Geen status
 inspector-status = Status
 overview-col-status = Status
-overview-status-mixed = de onderstaande delen zijn het niet eens
+overview-status-mixed = de onderliggende delen verschillen
 help-concept-status = Status
-status-completion-title = Waar het boek staat
-status-completion-headline = { $done } van { $total } scènes afgewerkt
-status-completion-empty = Dit leest het manuscript, dus het vult in terwijl je schrijft.
-status-completion-open = Waar het boek staat...
+status-completion-title = Hoe het boek ervoor staat
+status-completion-headline = { $done } van { $total } scènes klaar
+status-completion-empty = Nog geen scènes. Dit leest het manuscript en vult zich dus terwijl u schrijft.
+status-completion-open = Hoe het boek ervoor staat…
 
 settings-page-statuses = Statussen
-settings-desc-statuses = Hernoemen, herschikken, toevoegen en verwijderen van de stadia waar je een scène doorheen verplaatst
+settings-desc-statuses = De fasen die een scène doorloopt hernoemen, herschikken, toevoegen en verwijderen
 settings-statuses-add = Status toevoegen
 settings-statuses-add-placeholder = Nieuwe statusnaam
 settings-statuses-desc =
-    De etappes een scène beweegt door, in volgorde, van het minst afgewerkt aan de top naar de meeste
-    die volgorde is wat "minder afgewerkt dan" betekent overal anders
-    in de app, dus zet ze op de manier waarop uw proces daadwerkelijk draait.
-settings-statuses-apply-preset = Een voorinstelling toepassen...
+    De fasen die een scène doorloopt, op volgorde, van minst af bovenaan tot meest af
+    onderaan. Die volgorde bepaalt overal in de app wat “minder af dan” betekent, dus zet ze
+    zoals uw werkwijze werkelijk verloopt.
+settings-statuses-apply-preset = Een voorinstelling toepassen…
 settings-statuses-preset-applied = { $added ->
     [one] 1 status toegevoegd
    *[other] { $added } statussen toegevoegd
 }
-settings-statuses-preset-refused = Dit project heeft al een ladder. Voorinstellingen vullen alleen een lege. Verwijder de sporten die je niet eerst wilt.
-settings-statuses-duplicate = "{ $name }" staat al op deze ladder
-settings-statuses-added = Toegevoegd "{ $name }"
-settings-statuses-move-up = Naar boven (minder afgewerkt)
-settings-statuses-move-down = Naar beneden (afgewerkt)
-settings-statuses-details-placeholder = Wat betekent deze fase (facultatief)
-settings-statuses-delete = "{ $name }" schrappen
+settings-statuses-preset-refused = Dit project heeft al een statusladder. Voorinstellingen vullen alleen een lege ladder. Verwijder eerst de treden die u niet wilt.
+settings-statuses-duplicate = “{ $name }” staat al op deze ladder
+settings-statuses-added = “{ $name }” toegevoegd
+settings-statuses-move-up = Omhoog (minder af)
+settings-statuses-move-down = Omlaag (verder af)
+settings-statuses-details-placeholder = Wat deze fase betekent (optioneel)
+settings-statuses-delete = “{ $name }” verwijderen
 settings-statuses-delete-in-use = { $count ->
-    [one] Verwijderen "{ $name }": 1 item staat erop en verliest zijn status
-   *[other] Verwijderen "{ $name }": { $count } items staan erop en zullen hun status verliezen
-}
-settings-statuses-deleted = geschrapt "{ $name }"
+        [one] “{ $name }” verwijderen: 1 item heeft deze status en verliest hem
+       *[other] “{ $name }” verwijderen: { $count } items hebben deze status en verliezen hem
+    }
+settings-statuses-deleted = “{ $name }” verwijderd
 settings-statuses-deleted-in-use = { $count ->
-    [one] Deleted "{ $name }." 1 item heeft geen status meer.
-   *[other] Geschrapt "{ $name }." { $count } items hebben geen status meer.
-}
-settings-statuses-empty-title = Nog geen workflow
-settings-statuses-empty-body = Een status zegt hoe ver een scène is. Voeg er een toe of begin met een preset.
+        [one] “{ $name }” verwijderd. 1 item heeft geen status meer.
+       *[other] “{ $name }” verwijderd. { $count } items hebben geen status meer.
+    }
+settings-statuses-empty-title = Nog geen werkstroom
+settings-statuses-empty-body = Een status geeft aan hoe ver een scène is. Voeg er hierboven een toe, of begin met een voorinstelling.
 status-category-planned = Gepland
-status-category-drafting = Concept schrijven
-status-category-needs-work = Werk nodig
+status-category-drafting = Eerste versie
+status-category-needs-work = Te bewerken
 status-category-revised = Herzien
 status-category-final = Definitief
+
+progress-percent = { $percent }%
+progress-percent-with-label = { $percent }% · { $label }
+progress-import-opening = Project wordt geopend…
+progress-import-outline = Indeling wordt gelezen…
+progress-import-converting = Hoofdstukken en scènes worden omgezet…
+progress-import-writing = Het .skrib-bestand wordt geschreven…
+progress-import-done = Klaar
+progress-import-structure = Structuur wordt bepaald…
+progress-export-start = Bezig met starten…
+progress-export-writing = Bezig met schrijven…
+progress-project-reading = Project wordt gelezen…
+settings-sec-work-titled = Project: { $title }
+import-notice-flattened-rich-texts = { $count ->
+    [one] Eén tekst was dieper genest dan een Skribisto-project aankan; de woorden zijn als platte tekst bewaard, zonder opmaak.
+   *[other] { $count } teksten waren dieper genest dan een Skribisto-project aankan; de woorden zijn als platte tekst bewaard, zonder opmaak.
+}
+import-notice-free-text-badges = { $count ->
+    [one] Eén scènebadge lijkt op vrije tekst in plaats van op een lijst met statussen, dus is die als label van het item bewaard in plaats van een tag te worden.
+   *[other] { $count } verschillende scènebadges lijken op vrije tekst in plaats van op een lijst met statussen, dus zijn ze als labels van de items bewaard in plaats van tags te worden.
+}
+import-notice-separator-text-dropped = De scheidingslijn “{ $name }” bevatte tekst, waarvoor in een Skribisto-project geen plaats is; de tekst is niet geïmporteerd.
+import-notice-separator-without-scene = De scheidingslijn “{ $name }” had in zijn hoofdstuk geen voorafgaande scène om aan te koppelen, dus is die niet geïmporteerd.
+import-notice-chapter-without-scenes = Het hoofdstuk “{ $name }” heeft geen scènes, dus de scheidingslijnen ervan zijn niet geïmporteerd.
+import-notice-rich-text-unconverted = Een deel van de opgemaakte tekst kon niet worden omgezet ({ $error }); het is niet geïmporteerd.
+import-notice-unresolved-cross-link = Een koppeling naar item #{ $number } van de rolbezetting kon niet worden gevolgd: het item ontbreekt of lag in de prullenbak.
+import-notice-read-copy = De { $container ->
+    [single-file] kopie in één bestand
+   *[folder] mapkopie
+} van dit project is gelezen.
+import-notice-read-copy-dated = De { $container ->
+    [single-file] kopie in één bestand
+   *[folder] mapkopie
+} van dit project is gelezen, laatst gewijzigd op { $day }.
+import-notice-original-format = Dit project heeft de oorspronkelijke indeling van Manuskript uit 2016. Het is volledig gelezen; er is niets in gewijzigd.
+import-notice-newer-single-file-beside = “{ $file }” is nieuwer dan deze map ({ $file_day } tegenover { $folder_day }). Manuskript laat de oude map staan wanneer een project overgaat naar de modus met één bestand, dus deze map kan een achtergelaten kopie zijn; als u in plaats daarvan het .msk-bestand importeert, wordt de nieuwere versie gelezen.
+import-notice-pickle-skipped = “{ $file }” is niet gelezen. Het is een Python-pickle, en het laden daarvan uit een projectbestand was een beveiligingslek in Manuskript zelf (CVE-2021-35196); de instellingen erin zijn weergavevoorkeuren, geen geschreven tekst.
+import-notice-file-unreadable = “{ $file }” kon niet worden gelezen ({ $error }) en is overgeslagen; al het andere is geïmporteerd.
+import-notice-not-utf8 = “{ $file }” is geen geldige UTF-8; de tekens die niet konden worden gelezen, zijn vervangen in plaats van de import af te breken.
+import-notice-table-unreadable = “{ $file }” kon niet worden gelezen ({ $error }); wat erin stond, is niet geïmporteerd.
+import-notice-outline-missing = “{ $file }” ontbreekt, dus dit project heeft geen manuscript om te importeren.
+import-notice-outline-unreadable = “{ $file }” kon niet worden gelezen ({ $error }); er is geen manuscript geïmporteerd.
+import-notice-named-none-row = “{ $file }” begint met een rij met een naam (“{ $name }”) op de plek waar Manuskript zijn lege item “none” bewaart. Die rij is weggelaten, zodat de rijen erna de nummers houden die het manuscript gebruikt.
+import-notice-unknown-field = “{ $file }” heeft een veld dat deze importfunctie niet kent: “{ $field }”. Het is niet geïmporteerd.
+import-notice-colorless-labels = { $count ->
+    [one] “{ $file }” heeft een regel zonder kleur. Die is zonder kleur geïmporteerd; Manuskript stopt bij zo’n regel met het laden van het project.
+   *[other] “{ $file }” heeft { $count } regels zonder kleur. Ze zijn zonder kleur geïmporteerd; Manuskript stopt bij zo’n regel met het laden van het project.
+}
+import-notice-settings-unreadable = “{ $file }” kon niet worden gelezen ({ $error }); de taal van het project is niet geïmporteerd.
+import-notice-revisions-unreadable = “{ $file }” kon niet worden gelezen ({ $error }); de geschiedenis van het project is niet geïmporteerd, maar verder is er niets aangetast.
+import-notice-foreign-files = { $count ->
+    [one] Dit project bevat een bestand dat geen deel uitmaakt van de Manuskript-indeling en niet is geïmporteerd: { $files }.
+   *[other] Dit project bevat { $count } bestanden die geen deel uitmaken van de Manuskript-indeling en niet zijn geïmporteerd: { $files }.
+}
+import-notice-foreign-files-more = Dit project bevat { $count } bestanden die geen deel uitmaken van de Manuskript-indeling en niet zijn geïmporteerd: { $files } en { $more ->
+    [one] nog één
+   *[other] nog { $more }
+}.
+import-notice-not-a-character-file = “{ $file }” is geen personagebestand van Manuskript en is weggelaten.
+import-notice-not-a-text-item = “{ $file }” is geen tekstitem van Manuskript en is uit de structuur weggelaten.
+import-notice-missing-blank-line = “{ $file }” heeft geen lege regel na de kop. Het laatste veld is bewaard, hoewel Manuskript het kwijtraakt.
+import-notice-folder-without-metadata = “{ $folder }” heeft geen { $file }, dus die is geïmporteerd als gewone map met de naam van de directory. Manuskript slaat zo’n directory met alles erin over.
+import-notice-rows-given-ids = { $count ->
+    [one] Eén rij in de structuur had geen eigen ID en heeft er een gekregen. Manuskript laat zo’n rij weg, of stopt met het laden van het project als het een map is.
+   *[other] { $count } rijen in de structuur hadden geen eigen ID en hebben er een gekregen. Manuskript laat zo’n rij weg, of stopt met het laden van het project als het een map is.
+}
+import-notice-plots-unreadable = “{ $file }” kon niet worden gelezen ({ $error }); de verhaallijnen zijn niet geïmporteerd.
+import-notice-world-unreadable = “{ $file }” kon niet worden gelezen ({ $error }); de wereldelementen zijn niet geïmporteerd.
+import-notice-world-not-opml = “{ $file }” is geen OPML-document; de wereldelementen zijn niet geïmporteerd.
+import-notice-text-flattened = De tekst van “{ $title }” is dieper genest dan een Skribisto-project aankan; de woorden zijn als platte tekst bewaard, zonder opmaak.
+import-notice-text-unconverted = De tekst van “{ $title }” kon niet worden omgezet ({ $error }); die is precies zo bewaard als hij geschreven was.
+import-notice-text-without-file-name = { $kind ->
+    [scene] De scènetekst
+    [note] De notitietekst
+    [synopsis] De synopsis
+   *[title] De titel
+} van “{ $title }” kon geen bestandsnaam krijgen en is daarom niet geïmporteerd.
+import-notice-unknown-label = “{ $title }” heeft label { $index }, dat niet in de labellijst van dit project staat. Het is zonder label geïmporteerd.
+import-notice-unknown-status = “{ $title }” heeft status { $index }, die niet in de statuslijst van dit project staat. Het is zonder status geïmporteerd.
+import-notice-unknown-point-of-view = “{ $title }” wordt verteld vanuit een personage dat niet in de rolbezetting van dit project staat. Het vertelperspectief is niet ingesteld.
+import-notice-unresolved-references = De verwijzingen in de tekst van “{ $title }” konden niet worden opgelost ({ $error }); de tekst is bewaard zoals hij is omgezet, verwijzingsmarkeringen inbegrepen.
+import-notice-custom-icons = { $count ->
+    [one] Eén item had een eigen pictogram. Skribisto geeft elk item het pictogram van zijn type, dus het pictogram is niet geïmporteerd; verder is er niets aan het item veranderd.
+   *[other] { $count } items hadden een eigen pictogram. Skribisto geeft elk item het pictogram van zijn type, dus de pictogrammen zijn niet geïmporteerd; verder is er niets aan die items veranderd.
+}
+import-notice-character-colors = { $count ->
+    [one] Eén personage had een kleur naast de naam. Skribisto kleurt tags, geen items, dus de kleur is niet geïmporteerd; het personage zelf wel.
+   *[other] { $count } personages hadden een kleur naast hun naam. Skribisto kleurt tags, geen items, dus de kleuren zijn niet geïmporteerd; de personages zelf allemaal wel.
+}
+import-notice-versions-kept = { $found ->
+    [one] Dit project had één eerdere versie vastgelegd
+   *[other] Dit project had { $found } eerdere versies vastgelegd
+}; { $kept ->
+    [one] daarvan is er één bewaard
+   *[other] daarvan zijn er { $kept } bewaard
+}, uitgedund zoals Skribisto zijn eigen geschiedenis uitdunt. Ze staan in het paneel Versies.
+import-notice-versions-unplaced = { $count ->
+    [one] Eén eerdere versie hoort bij een item dat niet meer in het project staat en kon niet worden geplaatst.
+   *[other] { $count } eerdere versies horen bij een item dat niet meer in het project staat en konden niet worden geplaatst.
+}
+dialog-open-work-title = Skribisto-project openen
+dialog-save-as-file-title = Opslaan als één .skrib-bestand
+dialog-save-as-folder-title = Kies een bovenliggende map voor het project
+dialog-manuskript-file-title = Kies een Manuskript-project
+dialog-manuskript-folder-title = Kies een Manuskript-projectmap
+dialog-filter-skrib = Skribisto-project
+dialog-filter-manuskript = Manuskript-project
+dialog-filter-plume = Plume Creator-project
+dialog-filter-hunspell-aff = Hunspell-affixbestand (.aff)
+dialog-filter-hunspell-dic = Hunspell-woordenboek (.dic)
+dialog-filter-export = Geëxporteerd bestand
+shortcut-name-view-margin-lane = Margemarkeringen aan/uit
+df-theme-paper = Papier
+df-theme-sepia = Sepia
+df-theme-night = Nacht
+df-theme-high-contrast = Hoog contrast
+df-theme-midnight = Middernacht
+welcome-example-byline = door { $author }
+welcome-sections-a11y = Onderdelen van het welkomstvenster
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } ({ $count ->
+    [one] 1 antwoord
+   *[other] { $count } antwoorden
+})
+comments-a11y-summary-author-replies = { $author }: { $text } ({ $count ->
+    [one] 1 antwoord
+   *[other] { $count } antwoorden
+})
+margin-lane-a11y-mark = { $label }, op { $percent } procent van de tekst
+margin-lane-a11y-marks = { $label }, { $count } markeringen, op { $percent } procent van de tekst
+margin-lane-a11y-fallback = { $count ->
+    [one] Margemarkeringen, 1 markering
+   *[other] Margemarkeringen, { $count } markeringen
+}
+export-choose-unnamed-binder = Naamloze ordner
+export-style-neutral = Neutraal
+export-style-manuscript-shunn = Standaardmanuscript (Shunn)
+export-style-ebook-clean = Strak e-book
+date-time-short = { $day }-{ $month }-{ $year } { $hour }:{ $minute }
+pace-day-label = { $day }-{ $month }
+byte-size-bytes = { $value } B
+byte-size-kb = { $value } KB
+byte-size-mb = { $whole },{ $tenth } MB
+byte-size-gb = { $whole },{ $tenth } GB
+unit-percent = { $value }%
+unit-pixels = { $value } px
+settings-paratext-error-no-name = Een structuur heeft een `name` nodig.
+export-error-no-project = Er is geen project geopend om te exporteren.

@@ -1,9 +1,9 @@
-Un commentaire est une note dans la marge, attachée à une expression, une phrase ou tout un
+Un commentaire est une remarque dans la marge, attachée à une expression, une phrase ou tout un
 paragraphe. Il suit les mots pendant que vous continuez à écrire.
 
 ## Ajouter un commentaire
 
-Depuis le texte que vous écrivez :
+Depuis le texte que vous écrivez :
 
 - Sélectionnez les mots à commenter et appuyez sur `Ctrl+Alt+M`.
 - Placez le curseur dans un paragraphe et appuyez sur `Ctrl+Alt+Maj+M` pour commenter tout le
@@ -22,7 +22,7 @@ ne sont pas signés. Son bouton *Définir votre nom* ouvre *Paramètres ▸ Util
 
 ## Répondre, résoudre, supprimer
 
-Ouvrez le menu avec la petite flèche sur la fiche du commentaire :
+Ouvrez le menu avec la petite flèche sur la fiche du commentaire :
 
 - *Répondre* ajoute une réponse à la discussion.
 - *Résoudre* marque le point comme réglé. La fiche quitte la marge et le commentaire reste dans
@@ -32,14 +32,14 @@ Ouvrez le menu avec la petite flèche sur la fiche du commentaire :
   *Annuler*.
 
 Un clic droit sur une entrée de l’un des panneaux permet d’agir dessus sur place. C’est ainsi
-que vous rouvrez un commentaire résolu : sa fiche a quitté la marge.
+que vous rouvrez un commentaire résolu : sa fiche a quitté la marge.
 
 Chaque commentaire et chaque réponse se modifie sur place. Le gras et l’italique sont dans le
 menu contextuel de la zone où vous tapez.
 
 ## Où apparaissent les commentaires
 
-Les mêmes fils apparaissent à plusieurs endroits :
+Les mêmes fils apparaissent à plusieurs endroits :
 
 - Dans la marge, à côté du texte que vous écrivez. Une expression commentée est teintée, un
   commentaire de paragraphe reçoit un crochet, et un trait pointillé relie chaque marque à sa
@@ -54,20 +54,20 @@ les marques et la marge.
 
 ## Filtrer et trier
 
-Les deux panneaux partagent un seul jeu de filtres : *Tous*, *Ouverts*, *Résolus* et
+Les deux panneaux partagent un seul jeu de filtres : *Tous*, *Ouverts*, *Résolus* et
 *Orphelins*. Changez le filtre dans l’un, l’autre suit.
 
-À côté, un bouton fait défiler l’ordre, partagé de la même façon : *Dans l’ordre du document*,
+À côté, un bouton fait défiler l’ordre, partagé de la même façon : *Dans l’ordre du document*,
 *Les plus récents d’abord*, *Groupés par lecteur*.
 
-## Les notes de plusieurs lecteurs
+## Les remarques de plusieurs lecteurs
 
 *Groupés par lecteur* sert à un manuscrit revenu de plusieurs personnes. Le groupement réunit
-les notes de chaque lecteur, celles de chacun restant dans l’ordre du document, avec le nom sur
+les remarques de chaque lecteur, celles de chacun restant dans l’ordre du document, avec le nom sur
 la gauche.
 
 Dans l’un ou l’autre panneau, un commentaire indique aussi combien de lecteurs ont commenté le
-même passage (« 3 lecteurs ») quand il y en a plus d’un.
+même passage (« 3 lecteurs ») quand il y en a plus d’un.
 
 ## Quand un commentaire perd son texte
 

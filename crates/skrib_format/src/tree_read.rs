@@ -356,7 +356,8 @@ pub fn gather<R: TreeReader + ?Sized>(
         binders.push(BinderWithItems { binder, items });
         progress(OperationProgress::new(
             10.0 + 80.0 * (idx as f32 + 1.0) / count as f32,
-            Some("Reading project…".to_string()),
+            // A phase code: this crate has no catalogue; the UI words it.
+            Some("project.reading".to_string()),
         ));
     }
 

@@ -23,6 +23,21 @@ use teksilo::prelude::*;
 
 use crate::models::ExportStylesService;
 
+/// A style's name on screen. Three built-ins are named in words, so in the
+/// interface language; the national manuscript presets carry their own
+/// language's name on purpose, and a user's style is named as they typed it.
+pub(crate) fn preset_display_name(p: &Preset) -> LocalizedString {
+    if !p.builtin {
+        return lit!(p.name.clone());
+    }
+    match p.id.as_str() {
+        "neutral" => tr!(export_style_neutral()),
+        "manuscript-shunn" => tr!(export_style_manuscript_shunn()),
+        "ebook-clean" => tr!(export_style_ebook_clean()),
+        _ => lit!(p.name.clone()),
+    }
+}
+
 #[derive(Clone)]
 pub struct ExportStylesViewModel {
     inner: Rc<Inner>,
@@ -99,7 +114,9 @@ impl ExportStylesViewModel {
         let mut copy = base.clone();
         copy.builtin = false;
         copy.source = Some(base.id.clone());
-        copy.name = format!("{} {copy_suffix}", base.name);
+        // The name the writer saw, so a copy of a built-in starts out in their
+        // language.
+        copy.name = format!("{} {copy_suffix}", preset_display_name(base).resolve_now());
         let stored = self
             .inner
             .service

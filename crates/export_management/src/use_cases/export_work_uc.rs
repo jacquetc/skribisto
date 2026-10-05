@@ -173,7 +173,10 @@ impl LongOperation for ExportWorkUseCase {
         progress_callback: Box<dyn Fn(OperationProgress) + Send>,
         cancel_flag: Arc<AtomicBool>,
     ) -> Result<Self::Output> {
-        progress_callback(OperationProgress::new(0.0, Some("Starting…".to_string())));
+        progress_callback(OperationProgress::new(
+            0.0,
+            Some("export.start".to_string()),
+        ));
 
         let uow = self.uow_factory.create();
         uow.begin_transaction()?;
@@ -252,7 +255,7 @@ fn run_export(
     let render_progress = |p: f32| {
         progress(OperationProgress::new(
             90.0 + 10.0 * p,
-            Some("Writing…".to_string()),
+            Some("export.writing".to_string()),
         ))
     };
     let path = std::path::Path::new(&dto.output_path);

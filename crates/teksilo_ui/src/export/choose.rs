@@ -102,7 +102,9 @@ impl ChooseModel {
             let broot = tree.insert_root(
                 tree.root_count(),
                 ChooseNode::binder(if bwi.binder.name.is_empty() {
-                    "Binder".to_string()
+                    // Rare (a binder cannot be renamed to nothing), but an old
+                    // project can still hold one.
+                    tr!(export_choose_unnamed_binder()).resolve_now()
                 } else {
                     bwi.binder.name.clone()
                 }),

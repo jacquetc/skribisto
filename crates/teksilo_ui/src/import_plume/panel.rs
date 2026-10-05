@@ -48,7 +48,7 @@ pub(crate) fn present_import_plume(ctx: &mut EventContext) {
     ctx.present_modal(
         teksilo::core::modal::ModalRequest::deferred(move |t| t.add(ImportPlumePanel::new(vm)))
             .presentation(teksilo::core::modal::ModalPresentation::InTree)
-            .title("Import Plume Creator project")
+            .title(tr!(import_plume_title()).resolve_now())
             .close_behavior(teksilo::core::modal::ModalCloseBehavior::EscapeOrClickOutside)
             .size(600, 500),
     );
@@ -126,9 +126,10 @@ impl ImportPlumePanel {
                         crate::models::FolderPurpose::ImportPlume,
                         FilePickerField::new(vm.source())
                             .kind(FilePickerKind::OpenFile)
-                            // A file-dialog filter label — a plain string like the
-                            // other dialogs (not a localized key).
-                            .add_filter("Plume Creator project", &["plume", "plume_backup"])
+                            .add_filter(
+                                tr!(dialog_filter_plume()).resolve_now(),
+                                &["plume", "plume_backup"],
+                            )
                             .validation(vm.source_validation())
                             .on_pick(move |res, ctx| {
                                 crate::models::remember_pick(

@@ -900,12 +900,15 @@ impl ImportDocumentViewModel {
             .and_then(|p| p.as_f64())
             .unwrap_or(0.0) as f32;
         self.progress.set((percent / 100.0).clamp(0.0, 1.0));
+        // A phase code translated, a source path as it is (see `progress_text`).
+        let message = payload
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("");
         self.progress_message.set(
-            payload
-                .get("message")
-                .and_then(|m| m.as_str())
-                .unwrap_or("")
-                .to_string(),
+            crate::shared::progress_text::progress_label(message)
+                .map(|label| label.resolve_now())
+                .unwrap_or_default(),
         );
     }
 

@@ -205,8 +205,14 @@ session-time-limit-unit = min
 session-no-goal = No goal
 session-no-limit = No limit
 session-reset = Reset session
-session-readout = { $words } words · { $time }
-session-readout-timed = { $words } words · { $time } left
+session-readout = { $words ->
+    [one] { $words } word
+   *[other] { $words } words
+} · { $time }
+session-readout-timed = { $words ->
+    [one] { $words } word
+   *[other] { $words } words
+} · { $time } left
 # Distraction-free mode's always-visible control strip (Increment 2).
 statusbar-focus-exit = Exit distraction-free mode
 # The strip's Next/Previous buttons (Increment 4) fire the same go.next/go.prev
@@ -322,7 +328,7 @@ settings-desc-structure = Whether this project's chapters are folders or single 
 settings-desc-language = The language this project's prose is checked against.
 settings-desc-work-backup = This project's own backup policy, or the general one.
 settings-desc-personal-dictionary = The words this project treats as correctly spelled.
-settings-desc-tags = The color-coded labels this project marks its items with.
+settings-desc-tags = The color-coded tags this project marks its items with.
 settings-desc-templates = The note templates you can insert while writing in this project.
 settings-desc-text-replacements = Shortcuts that expand as you type in this project.
 settings-desc-work-punctuation = The quotes, dashes and spacing this project's prose follows.
@@ -1183,7 +1189,7 @@ export-chip-chapters-both = Chapters: number + title
 export-chip-scene-break-glyph = Scene break: { $glyph }
 export-chip-scene-break-blank = Scene break: blank line
 export-chip-scene-break-none = Scene break: none
-export-chip-major-break-glyph = Major break { $glyph }
+export-chip-major-break-glyph = Major break: { $glyph }
 export-chip-major-break-blank = Major break: blank line
 export-chip-major-break-none = Major break: none
 export-chip-major-break-same = Both break tiers alike
@@ -1558,7 +1564,7 @@ undo-target-merge = merging two scenes
 undo-target-split = splitting a scene
 undo-target-promote = changing the type
 undo-target-tidy-titles = tidying the chapter titles
-undo-target-import-tags = importing labels
+undo-target-import-tags = importing tags
 undo-target-import-templates = importing note templates
 undo-target-create = creating
 undo-target-remove = deleting
@@ -2850,3 +2856,190 @@ status-category-drafting = Drafting
 status-category-needs-work = Needs work
 status-category-revised = Revised
 status-category-final = Final
+
+## Long-operation progress (shared::progress_text). The backend reports phase
+## codes it cannot translate; these are their labels. `progress-percent` is the
+## toast body on its own, `progress-percent-with-label` with the phase after it.
+progress-percent = { $percent }%
+progress-percent-with-label = { $percent }% · { $label }
+progress-import-opening = Opening the project…
+progress-import-outline = Reading the outline…
+progress-import-converting = Converting chapters and scenes…
+progress-import-writing = Writing the .skrib file…
+progress-import-done = Done
+progress-import-structure = Working out the structure…
+progress-export-start = Starting…
+progress-export-writing = Writing…
+progress-project-reading = Reading the project…
+# Settings: the open project's section title, "Work: <its title>".
+settings-sec-work-titled = Work: { $title }
+
+## Project-import notices (shared::import_warnings::notices): one line of the
+## Plume / Manuskript warnings list each. $file, $folder, $title, $name, $field
+## and $error are data (file names, titles, a parser's own message) and stay as
+## they are. $container is "single-file" or "folder"; $kind is "scene", "note",
+## "synopsis" or "title".
+import-notice-flattened-rich-texts = { $count ->
+    [one] One text was nested deeper than a Skribisto project can hold; its words were kept as plain text, without their formatting.
+   *[other] { $count } texts were nested deeper than a Skribisto project can hold; their words were kept as plain text, without their formatting.
+}
+import-notice-free-text-badges = { $count ->
+    [one] One scene badge looks like free text rather than a list of statuses, so it was kept as the item’s label instead of becoming a tag.
+   *[other] { $count } different scene badges look like free text rather than a list of statuses, so they were kept as item labels instead of becoming tags.
+}
+import-notice-separator-text-dropped = The separator “{ $name }” held text, which has no place in a Skribisto project; the text was not imported.
+import-notice-separator-without-scene = The separator “{ $name }” had no scene before it in its chapter to attach to, so it was not imported.
+import-notice-chapter-without-scenes = The chapter “{ $name }” has no scenes, so its separators were not imported.
+import-notice-rich-text-unconverted = Some formatted text could not be converted ({ $error }); it was not imported.
+import-notice-unresolved-cross-link = A link to cast entry #{ $number } could not be followed: the entry is missing or was in the trash.
+import-notice-read-copy = Read the { $container ->
+    [single-file] single-file
+   *[folder] folder
+} copy of this project.
+import-notice-read-copy-dated = Read the { $container ->
+    [single-file] single-file
+   *[folder] folder
+} copy of this project, last changed { $day }.
+import-notice-original-format = This project is in Manuskript’s original 2016 format. It was read in full; nothing in it was changed.
+import-notice-newer-single-file-beside = “{ $file }” is newer than this folder ({ $file_day } against { $folder_day }). Manuskript leaves the old folder in place when a project moves to single-file mode, so this folder may be an abandoned copy; importing the .msk file instead would read the newer one.
+import-notice-pickle-skipped = “{ $file }” was left unread. It is a Python pickle, and loading one from a project file was a security flaw in Manuskript itself (CVE-2021-35196); the settings it holds are display preferences, not writing.
+import-notice-file-unreadable = “{ $file }” could not be read ({ $error }) and was skipped; everything else was imported.
+import-notice-not-utf8 = “{ $file }” is not valid UTF-8; the characters that could not be read were replaced rather than stopping the import.
+import-notice-table-unreadable = “{ $file }” could not be read ({ $error }); what it held was not imported.
+import-notice-outline-missing = “{ $file }” is missing, so this project has no manuscript to import.
+import-notice-outline-unreadable = “{ $file }” could not be read ({ $error }); no manuscript was imported.
+import-notice-named-none-row = “{ $file }” starts with a named row (“{ $name }”) where Manuskript keeps its empty “none” entry. It was left out, so the rows after it keep the numbers the manuscript uses.
+import-notice-unknown-field = “{ $file }” has a field this importer does not know, “{ $field }”. It was not imported.
+import-notice-colorless-labels = { $count ->
+    [one] “{ $file }” has a line with no color. It was imported without one; Manuskript stops loading the project on such a line.
+   *[other] “{ $file }” has { $count } lines with no color. They were imported without one; Manuskript stops loading the project on such a line.
+}
+import-notice-settings-unreadable = “{ $file }” could not be read ({ $error }); the project’s language was not imported.
+import-notice-revisions-unreadable = “{ $file }” could not be read ({ $error }); the project’s history was not imported, but nothing else was affected.
+import-notice-foreign-files = { $count ->
+    [one] This project holds a file that is not part of the Manuskript format and was not imported: { $files }.
+   *[other] This project holds { $count } files that are not part of the Manuskript format and were not imported: { $files }.
+}
+import-notice-foreign-files-more = This project holds { $count } files that are not part of the Manuskript format and were not imported: { $files }, and { $more ->
+    [one] one more
+   *[other] { $more } more
+}.
+import-notice-not-a-character-file = “{ $file }” is not a Manuskript character file and was left out.
+import-notice-not-a-text-item = “{ $file }” is not a Manuskript text item and was left out of the outline.
+import-notice-missing-blank-line = “{ $file }” has no blank line after its header. Its last field was kept, although Manuskript loses it.
+import-notice-folder-without-metadata = “{ $folder }” has no { $file }, so it was imported as a plain folder named after the directory. Manuskript skips such a directory and everything in it.
+import-notice-rows-given-ids = { $count ->
+    [one] One outline row had no ID of its own and was given one. Manuskript drops such a row, or stops loading the project when it is a folder.
+   *[other] { $count } outline rows had no ID of their own and were given one. Manuskript drops such a row, or stops loading the project when it is a folder.
+}
+import-notice-plots-unreadable = “{ $file }” could not be read ({ $error }); the plots were not imported.
+import-notice-world-unreadable = “{ $file }” could not be read ({ $error }); the world entries were not imported.
+import-notice-world-not-opml = “{ $file }” is not an OPML document; the world entries were not imported.
+import-notice-text-flattened = The text of “{ $title }” is nested deeper than a Skribisto project can hold; its words were kept as plain text, without their formatting.
+import-notice-text-unconverted = The text of “{ $title }” could not be converted ({ $error }); it was kept exactly as it was written.
+import-notice-text-without-file-name = The { $kind ->
+    [scene] scene text
+    [note] note text
+    [synopsis] synopsis
+   *[title] title
+} of “{ $title }” could not be given a file name, so it was not imported.
+import-notice-unknown-label = “{ $title }” has label { $index }, which is not in this project’s label list. It was imported without a label.
+import-notice-unknown-status = “{ $title }” has status { $index }, which is not in this project’s status list. It was imported without a status.
+import-notice-unknown-point-of-view = “{ $title }” is told through a character who is not in this project’s cast. Its point of view was not set.
+import-notice-unresolved-references = The references in the text of “{ $title }” could not be resolved ({ $error }); the text was kept as it was converted, reference markers included.
+import-notice-custom-icons = { $count ->
+    [one] One row had a custom icon. Skribisto gives each row the icon of its type, so the icon was not imported; nothing else about the row changed.
+   *[other] { $count } rows had a custom icon. Skribisto gives each row the icon of its type, so the icons were not imported; nothing else about those rows changed.
+}
+import-notice-character-colors = { $count ->
+    [one] One character had a color beside their name. Skribisto colors tags rather than rows, so the color was not imported; the character itself was.
+   *[other] { $count } characters had a color beside their name. Skribisto colors tags rather than rows, so the colors were not imported; the characters themselves all were.
+}
+import-notice-versions-kept = { $found ->
+    [one] This project recorded one earlier version
+   *[other] This project recorded { $found } earlier versions
+}; { $kept ->
+    [one] one was kept
+   *[other] { $kept } were kept
+}, thinned out the way Skribisto thins its own history. They are in the Versions panel.
+import-notice-versions-unplaced = { $count ->
+    [one] One earlier version belongs to a row that is no longer in the project and could not be placed.
+   *[other] { $count } earlier versions belong to a row that is no longer in the project and could not be placed.
+}
+
+## Native file dialogs: the window title, and the label of the file-type filter.
+dialog-open-work-title = Open Skribisto work
+dialog-save-as-file-title = Save as a single .skrib file
+dialog-save-as-folder-title = Choose a parent folder for the work
+dialog-manuskript-file-title = Choose a Manuskript project
+dialog-manuskript-folder-title = Choose a Manuskript project folder
+dialog-filter-skrib = Skribisto work
+dialog-filter-manuskript = Manuskript project
+dialog-filter-plume = Plume Creator project
+dialog-filter-hunspell-aff = Hunspell affix file (.aff)
+dialog-filter-hunspell-dic = Hunspell dictionary (.dic)
+dialog-filter-export = Exported file
+# Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
+shortcut-name-view-margin-lane = Toggle Margin Marks
+
+## The built-in distraction-free themes' names (distraction_free::theme).
+df-theme-paper = Paper
+df-theme-sepia = Sepia
+df-theme-night = Night
+df-theme-high-contrast = High contrast
+df-theme-midnight = Midnight
+
+## Welcome ▸ Examples: the line under a bundled example's title.
+welcome-example-byline = by { $author }
+
+## Spoken by a screen reader only.
+# Welcome window: the name of the section tab bar.
+welcome-sections-a11y = Welcome sections
+# A comment's anchored span in the editor: author, plain-text preview, replies.
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } ({ $count ->
+    [one] 1 reply
+   *[other] { $count } replies
+})
+comments-a11y-summary-author-replies = { $author }: { $text } ({ $count ->
+    [one] 1 reply
+   *[other] { $count } replies
+})
+# Margin marks beside the text: one mark, several merged into one, and the
+# lane's own name when nothing more specific was given.
+margin-lane-a11y-mark = { $label }, { $percent } percent through
+margin-lane-a11y-marks = { $label }, { $count } marks, { $percent } percent through
+margin-lane-a11y-fallback = { $count ->
+    [one] Margin marks, 1 mark
+   *[other] Margin marks, { $count } marks
+}
+# Export ▸ Choose: the row standing for a binder that has no name.
+export-choose-unnamed-binder = Unnamed binder
+# The built-in export styles named in words (the national manuscript presets
+# keep their own language's name).
+export-style-neutral = Neutral
+export-style-manuscript-shunn = Standard Manuscript (Shunn)
+export-style-ebook-clean = Clean e-book
+
+## Dates. Put the parts in the order your language writes a short date; the
+## parts arrive already zero-padded where that matters.
+# Comment cards, the outline card's Created/Modified.
+date-time-short = { $month }/{ $day }/{ $year } { $hour }:{ $minute }
+# Pace chart: a day on the axis, a milestone's date, a holiday.
+pace-day-label = { $month }/{ $day }
+
+## File sizes (shared::byte_size). $whole and $tenth are the two sides of the
+## decimal mark: write your language's mark between them and its unit symbol.
+byte-size-bytes = { $value } B
+byte-size-kb = { $value } KB
+byte-size-mb = { $whole }.{ $tenth } MB
+byte-size-gb = { $whole }.{ $tenth } GB
+# A whole percentage (sliders, the Pace card, the text-size toast).
+unit-percent = { $value }%
+# A whole number of pixels (slider readouts).
+unit-pixels = { $value } px
+# Settings ▸ Paratext: a preset saved without a `name` line. `name` is the TOML
+# key the writer types and stays as it is.
+settings-paratext-error-no-name = A preset needs a `name`.
+# Export: started with no project open (a menu raced a close).
+export-error-no-project = No project is open to export.

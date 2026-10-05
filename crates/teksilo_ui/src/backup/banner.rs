@@ -116,7 +116,7 @@ fn save_as_from_banner(
         FileDialogRequest::save_file()
             .title(tr!(backup_banner_save_as()))
             .default_file_name(format!("{base}.skrib"))
-            .add_filter("Skribisto work", &["skrib"]),
+            .add_filter(tr!(dialog_filter_skrib()).resolve_now(), &["skrib"]),
     );
     let save_as = save_as.clone();
     let _ = ctx.save_file(req, move |res, ectx| {

@@ -23,12 +23,19 @@
 extend-exclude = [
     # Vector artwork / icon path data — not prose.
     "*.svg",
-    # Non-English UI translations (the en-US/ locale stays spell-checked).
-    "crates/teksilo_ui/locales/fr-FR/*.ftl",
+    # Non-English UI translations: every locale directory, then en-US/ taken
+    # back out, so it stays spell-checked. Listing locales one by one is how 22
+    # of them went unexcluded and turned this check red on words like "som"
+    # and "alle".
+    "crates/teksilo_ui/locales/*/*.ftl",
+    "!crates/teksilo_ui/locales/en-US/*.ftl",
+    # teksilo's shared-widget strings in Esperanto, which teksilo does not ship.
+    "crates/teksilo_ui/widget_locales/*.ftl",
     # Non-English help topics, for the same reason and more of it: these are
-    # pages of French prose, not labels. The en-US/ topics stay spell-checked,
-    # which is where a real slip in the help set would be.
-    "crates/teksilo_ui/help/fr-FR/*.djot",
+    # pages of prose, not labels. The en-US/ topics stay spell-checked, which
+    # is where a real slip in the help set would be.
+    "crates/teksilo_ui/help/*/*.djot",
+    "!crates/teksilo_ui/help/en-US/*.djot",
     # Third-party licence texts, shipped verbatim with the bundled
     # dictionaries. Their wording is not ours to correct.
     "crates/teksilo_ui/assets/dictionaries/licenses/*",
@@ -154,6 +161,9 @@ statuts = "statuts"
 # The French dictionary's own variant names, quoted verbatim in the registry's
 # prose because they are what the writer picks between ("Toutes variantes").
 variantes = "variantes"
+# German for January: the startup test asserts teksilo's shared calendar
+# resolves its month names in German, not English.
+Januar = "Januar"
 
 # "Big Sur" — macOS release name in the README.
 Sur = "Sur"

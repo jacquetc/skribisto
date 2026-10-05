@@ -1,52 +1,69 @@
-## Ustawienie celu
+## Ustawianie celu
 
-Wybierz przedmiot w segregatorze i otwórz inspektora. Wprowadź liczbę słów, które chcesz zapisać w * Target *. Jeśli Twój projekt liczy znaki, zamiast tego wprowadź znak docelowy. Ustaw na zero, żeby usunąć cel.
+Zaznacz element w segregatorze i otwórz inspektora. W polu *Cel* wpisz, ile słów chcesz
+napisać. Jeśli projekt liczy znaki, wpisz cel w znakach. Ustaw zero, aby usunąć cel.
 
-Ustaw cel dla każdego rozdziału lub sceny chcesz śledzić. Cel rozdziału nie jest automatycznie obliczany na podstawie celów jego sceny.
+Ustaw cel dla każdego rozdziału lub sceny, które chcesz śledzić. Cel rozdziału nie jest
+automatycznie wyliczany z celów jego scen.
 
-## Gdzie stoisz?
+## Gdzie jesteś
 
-Możesz sprawdzić swoje postępy w kilku miejscach. Inspektor pokazuje to pod polem "Cel". Pasek stanu pokazuje go obok liczenia na żywo, a tabela * Overview * daje mu kolumnę * Target *.
+Postęp można sprawdzić w kilku miejscach. Inspektor pokazuje go pod polem *Cel*. Pasek stanu
+pokazuje go obok bieżącej liczby słów, a tabela *Przegląd* ma kolumnę *Cel*.
 
-## Co się liczy do celu?
+## Co wlicza się do celu
 
-Postęp jest mierzony na samym manuskrypcie: proza [sceny i kaplice ](:help-writing-model). Synopsis, notatka lub paratext nie wchodzi w rachubę, i tak robi wszystko w śmieciach.
+Postęp jest mierzony na samym rękopisie: na prozie [scen i rozdziałów](:help-writing-model).
+Streszczenie, notatka czy paratekst nie są wliczane, podobnie jak wszystko, co jest w koszu.
 
-Wyłączanie * Zawarte w eksporcie * w Inspektorze również usuwa ten element z liczenia. Wyłączenie go dla rozdziału nie wyklucza automatycznie jego scen. Użyj * Zastosuj do dzieci *, aby je również wykluczyć.
+Wyłączenie opcji *Uwzględnij w eksporcie* w inspektorze również usuwa element z liczenia.
+Wyłączenie jej dla rozdziału nie wyklucza automatycznie jego scen. Aby wykluczyć również je,
+użyj przycisku *Zastosuj do elementów podrzędnych*.
 
-## Słowa lub znaki
+## Słowa czy znaki
 
-Jeden wybór obejmuje cały projekt. * New Project * prosi o to z przodu, pod * Count in *. Możesz go zmienić później w * Ustawienia ▸ Projekt: < projekt > ▸ Struktura *, pod * Cele *.
+Jeden wybór obowiązuje w całym projekcie. Okno *Nowy projekt* pyta o niego od razu, w polu
+*Licz w*. Można go później zmienić w *Ustawienia ▸ Projekt: <projekt> ▸ Struktura*, w grupie
+*Cele*.
 
-Każdy element przechowuje dwie oddzielne liczby: cel słowa i cel postaci.
+Każdy element przechowuje dwie oddzielne liczby: cel w słowach i cel w znakach.
 
-## Udostępnianie celu
+## Rozdzielanie celu
 
-Aby podzielić cel książki na części lub rozdziały, otwórz książkę i kliknij * Distribute… *. Ustaw cel najpierw, jeśli przycisk jest wyłączony. Możesz zrobić to samo dla folderu części lub rozdziału. Podgląd przedstawia proponowane cele. Pod * Podziel się *, wybierz:
+Aby podzielić cel książki między jej części lub rozdziały, otwórz książkę i kliknij
+*Rozdziel…*. Jeśli przycisk jest nieaktywny, najpierw ustaw cel. To samo można zrobić dla
+części lub rozdziału-folderu. Podgląd pokazuje proponowane cele. W polu *Rozdziel* wybierz:
 
-- * Według długości *, z tego, co jest już napisane pod każdym;
-- * By parts *;
-- * Evenly *.
+- *Według długości*, na podstawie tego, co już napisano w każdym elemencie;
+- *Według elementów*;
+- *Równomiernie*.
 
-Utrzymują je rozdziały i sceny z istniejącymi celami; pozostałe dzielą się tym, co pozostało. Włącz * Zamień cele, które są już ustawione *, aby ponownie obliczyć wszystkie z nich.
+Rozdziały i sceny, które mają już cele, zachowują je; pozostałe dzielą resztę. Włącz *Zastąp
+już ustawione cele*, aby przeliczyć wszystkie.
 
 ## Planowanie tempa
 
-Otwórz sekcję * Pace * książki i wybierz * Start planning *, aby ustawić codzienny cel pisania.
+Otwórz widok *Tempo* książki i wybierz *Rozpocznij planowanie*, aby ustawić dzienny cel pisania.
 
-Wypełnij * Word gol * i * Deadline *, a następnie wybierz dni tygodnia piszesz na. Skribisto pracuje nad tym, czego potrzebuje każdy pozostały dzień pisania, ile pozostaje i czy jesteś przed czy za tempem.
+Wypełnij pola *Docelowa liczba słów* i *Termin*, a następnie wybierz dni tygodnia, w które
+piszesz. Skribisto wylicza, ile trzeba napisać w każdym pozostałym dniu pisania, ile takich
+dni zostało i czy wyprzedzasz plan, czy jesteś za nim.
 
-Dodaj czas wolny pod * Wakacje *, aby pozostawić te dni poza planem.
+Dodaj wolne w sekcji *Dni wolne*, aby wyłączyć te dni z planu.
 
-Pace i kamienie milowe liczą się w słowach, niezależnie od tego, jakiej jednostki używa projekt.
+Tempo i kamienie milowe są liczone w słowach, niezależnie od jednostki projektu.
 
 ## Kamienie milowe
 
 Kamień milowy oznacza datę po drodze.
 
-- Pod * Milestones * w planie, dodaj jeden dla całej książki: słowo liczyć powinno dotrzeć do tej daty.
-- Na części lub rozdziale wewnątrz książki, ustawić * data milowa * w inspektorze. Odczytuje własny cel i podąża za nim.
+- W sekcji *Kamienie milowe* planera dodaj kamień dla całej książki: liczbę słów, którą
+  książka ma osiągnąć do tej daty.
+- Dla części lub rozdziału wewnątrz książki ustaw w inspektorze pole *Data kamienia milowego*.
+  Odczytuje ona własny cel słów tego elementu i podąża za nim.
 
-## Po otwarciu projektu
+## Przy otwieraniu projektu
 
-Książka pojawia się w * Gdzie książka stoi * karta po jego plan jest aktywny. * Nie pokazuj tego przy otwieraniu; * Projekt ▸ Pisanie planu … * ponownie go otwiera.
+Gdy plan książki jest aktywny, pojawia się ona na karcie *Na jakim etapie jest książka*.
+*Nie pokazuj tego przy otwieraniu* wyłącza tę kartę, a *Projekt ▸ Plan pisania…* otwiera ją
+ponownie.

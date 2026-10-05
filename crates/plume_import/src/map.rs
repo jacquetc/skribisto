@@ -17,6 +17,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use common::entities::BinderItemRole as Role;
 use common::entities::BinderItemSubRole as SubRole;
 use common::entities::ContentRole;
+use skrib_format::import_notice::ImportNotice;
 use skrib_format::{
     BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BundledBinder, BundledItem,
     DictWordFile, FORMAT_VERSION, InlineContent, ProjectManifest, ProseRef, ShapeTag, WorkBundle,
@@ -35,7 +36,7 @@ pub struct Mapped {
     pub bundle: WorkBundle,
     pub imported_items: u64,
     pub skipped_trashed: u64,
-    pub warnings: Vec<String>,
+    pub warnings: Vec<ImportNotice>,
 }
 
 /// Binder ordinals (also drive the on-disk `binders/NN-slug` directory names, so
@@ -102,11 +103,9 @@ pub fn build_bundle(
     // Said once for the whole project: a text is converted more than once on the way
     // (a separator's is only looked at), and a line per conversion would repeat itself.
     if !b.flattened.is_empty() {
-        b.warnings.push(format!(
-            "{} rich text(s) were nested deeper than a Skribisto project can hold; their \
-             words were kept as plain text, without their formatting",
-            b.flattened.len()
-        ));
+        b.warnings.push(ImportNotice::FlattenedRichTexts {
+            count: b.flattened.len() as u64,
+        });
     }
 
     // Dictionary.
@@ -296,7 +295,7 @@ struct Builder<'a> {
     /// Plume ladder index → the `file_id` of the rung minted for it. Indexed directly, so
     /// a node whose index falls past the end simply has no status.
     status_ids: Vec<u64>,
-    warnings: Vec<String>,
+    warnings: Vec<ImportNotice>,
     /// The rich texts whose markup nested past what a project may hold, stored as plain
     /// text instead (`skrib_format::html_to_djot_and_text`), each by a hash of its HTML so
     /// a text converted twice is counted once.
@@ -423,11 +422,9 @@ impl<'a> Builder<'a> {
         let counts = count_badges(&tree.roots);
         if !badges_look_like_a_vocabulary(&counts) {
             if !counts.is_empty() {
-                self.warnings.push(format!(
-                    "{} distinct scene badges look like free text rather than a status \
-                     vocabulary — left as item labels instead of tags",
-                    counts.len()
-                ));
+                self.warnings.push(ImportNotice::FreeTextBadges {
+                    count: counts.len() as u64,
+                });
             }
             return;
         }
@@ -811,10 +808,9 @@ impl<'a> Builder<'a> {
             || !self.synopsis_djot(node.number).is_empty()
             || !self.note_djot(node.number).is_empty()
         {
-            self.warnings.push(format!(
-                "separator '{}' carried text that has no place in the writing model and was dropped",
-                node.name
-            ));
+            self.warnings.push(ImportNotice::SeparatorTextDropped {
+                name: node.name.clone(),
+            });
         }
         // Plume's separator is exactly Skribisto's scene break, so it becomes a
         // marker paragraph in the preceding scene's prose rather than a
@@ -822,10 +818,9 @@ impl<'a> Builder<'a> {
         // chose (typically "* * *"), which decides the tier.
         let tier = scene_break::tier_of_plain_line(&node.name).unwrap_or(SceneBreakTier::Minor);
         if !append_marker_to_previous_scene(out, tier) {
-            self.warnings.push(format!(
-                "separator '{}' had no preceding scene in its chapter to attach to and was dropped",
-                node.name
-            ));
+            self.warnings.push(ImportNotice::SeparatorWithoutScene {
+                name: node.name.clone(),
+            });
         }
     }
 
@@ -864,10 +859,9 @@ impl<'a> Builder<'a> {
 
     fn warn_dropped_separators(&mut self, node: &PlumeNode) {
         if node.children.iter().any(|c| c.kind == PlumeKind::Separator) {
-            self.warnings.push(format!(
-                "chapter '{}' has no scenes, so its separators were dropped",
-                node.name
-            ));
+            self.warnings.push(ImportNotice::ChapterWithoutScenes {
+                name: node.name.clone(),
+            });
         }
     }
 
@@ -1024,8 +1018,9 @@ impl<'a> Builder<'a> {
                     converted.djot
                 }
                 Err(e) => {
-                    self.warnings
-                        .push(format!("could not convert some rich text: {e}"));
+                    self.warnings.push(ImportNotice::RichTextUnconverted {
+                        error: e.to_string(),
+                    });
                     String::new()
                 }
             },
@@ -1037,9 +1032,9 @@ impl<'a> Builder<'a> {
         for num in attend {
             match self.attend_id_map.get(num) {
                 Some(id) => refs.push(*id),
-                None => self.warnings.push(format!(
-                    "cross-link to attendance #{num} could not be resolved (missing or trashed)"
-                )),
+                None => self.warnings.push(ImportNotice::UnresolvedCrossLink {
+                    number: i64::from(*num),
+                }),
             }
         }
         refs
@@ -1515,9 +1510,10 @@ mod tests {
             "the next load must accept {prose:?}"
         );
         assert!(prose.contains("Deep words"), "{prose:?}");
-        let said: Vec<&String> = m
+        let said: Vec<String> = m
             .warnings
             .iter()
+            .map(ToString::to_string)
             .filter(|w| w.contains("nested deeper"))
             .collect();
         assert_eq!(said.len(), 1, "{:?}", m.warnings);
@@ -1714,7 +1710,9 @@ mod tests {
         );
         assert!(item(&m, "A").tag_ids.is_empty());
         assert!(
-            m.warnings.iter().any(|w| w.contains("free text")),
+            m.warnings
+                .iter()
+                .any(|w| w.to_string().contains("free text")),
             "the writer should be told why: {:?}",
             m.warnings
         );

@@ -32,8 +32,8 @@ use frontend::AppContext;
 pub struct ExampleEntry {
     /// Display title.
     pub title: &'static str,
-    /// One-line description shown under the title.
-    pub blurb: &'static str,
+    /// The book's author, shown under the title as a translated "by …" line.
+    pub author: &'static str,
     /// File name for the extracted temp copy (e.g. `"Starforgers.skrib"`).
     pub file_name: &'static str,
     /// Embedded `.skrib` bytes (legacy SQLite; opened via the load-work upgrader).
@@ -50,7 +50,7 @@ pub struct ExampleEntry {
 const EXAMPLES: &[ExampleEntry] = &[
     ExampleEntry {
         title: "Starforgers",
-        blurb: "by Ken McConnell",
+        author: "Ken McConnell",
         file_name: "Starforgers.skrib",
         bytes: include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -59,7 +59,7 @@ const EXAMPLES: &[ExampleEntry] = &[
     },
     ExampleEntry {
         title: "Le Tour du monde en quatre-vingts jours",
-        blurb: "by Jules Verne",
+        author: "Jules Verne",
         file_name: "le-tour-du-monde-en-quatre-vingts-jours.skrib",
         bytes: include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),

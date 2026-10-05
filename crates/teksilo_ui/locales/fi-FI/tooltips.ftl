@@ -2,101 +2,96 @@
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 wm-book = Kirja projektissasi.
-wm-book-more = Kirja on niin yksinkertainen tai kerrostettu kuin haluat. Novelli voi olla vain muutama [kohtaukset](:wm-scene). Pidempi työ voi pestä [osat](:wm-part) ja [luvut](:wm-chapter) niin syvä kuin haluat. Muoto on sinun.
-wm-part = Luvut ryhmittelevät osansa.
-wm-part-more = Osa kokoaa [luvut](:wm-chapter) yhden otsikon alle. Kuten luku, se kulkee [kirja](:wm-book):n seuraavaan osaan tai loppuun.
+wm-book-more = Kirja voi olla niin yksinkertainen tai monikerroksinen kuin haluat. Novelli voi olla vain muutama [kohtaus](:wm-scene). Pidempään teokseen voit sijoittaa sisäkkäin [osia](:wm-part) ja [lukuja](:wm-chapter) niin monta tasoa kuin haluat. Muoto on sinun.
+wm-part = Lukuja ryhmittelevä osa.
+wm-part-more = Osa kokoaa [lukuja](:wm-chapter) yhden otsikon alle. Luvun tavoin se jatkuu seuraavaan osaan tai [kirjan](:wm-book) loppuun asti.
 wm-chapter = Kirjan luku.
-wm-chapter-more = Luku kulkee täältä seuraavaan lukuun, seuraavaan [osa](:wm-part), tai [kirjan loppu](:wm-end-of-book)12. Se on kaksimuotoinen: lukukansio, jossa on [kohtaukset](:wm-scene), tai litteä luku, joka kantaa omaa proosaansa. Valitse mitkä uudet luvut käyttävät Asetukset, Structure.
-wm-scene = Proosakohtaus.
-wm-scene-more = Jokainen kirjoituskohta on kaksi puolta: pääteksti ja [synopsis](:wm-synopsis) suunnitella. Molemmat avataan yhdessä editorissa.
-wm-note = Viesti.
-wm-note-more = Muistiinpano pitää tekstiä ja [synopsis](:wm-synopsis), kuten [kohtaus](:wm-scene), tutkimusta, sivuja tai muistutuksia varten. Mikä tahansa esine voi olla osa koottua kirjaa, mukaan lukien muistio, joka istuu sisällä [luku](:wm-chapter).
-wm-note-folder = Muistilappu, jossa on muita esineitä.
-wm-note-folder-more = [Huomautus](:wm-note), joka sisältää myös sen alla olevia esineitä, joten voit ryhmitellä siihen liittyviä muistiinpanoja yhdessä. Se säilyttää oman [synopsis](:wm-synopsis):n, ja sen sisällä olevat kohdat pitävät oman tekstinsä.
-wm-folder = Järjestävä kansio.
-wm-folder-more = Kontti, joka järjestää esineitä kansiossa, sopii kuitenkin sinulle. Se kuljettaa [synopsis](:wm-synopsis) mutta ei omaa proosaansa. Sisällä olevat kohdat pitävät kirjoitusta.
-wm-end-of-book = Merkit, joihin kirja päättyy.
-wm-end-of-book-more = Jokainen kirja jakaa yhden jatkuvan listan, joten kirjan loppua ei päätetä pesimällä. Merkin mukaan [kirja](:wm-book) pysähtyy tähän. Mitä tahansa sen jälkeen, kun se kuuluu seuraavaan kirjaan.
-wm-story-bible-entry = Merkitty, salattu viesti tarinastasi.
-wm-story-bible-entry-more = A [Huomautus](:wm-note) noin merkki, sijainti, tai mitään muuta kirjaamisen arvoista, luotu nimi, tagit, peitenimet ja aloitusmalli kaikki yhdessä vaiheessa. Mikään sivulla erottaa sen jälkeen, koska se pysyy tavallinen note voit nimetä, uudelleen tai muuntaa kuten mikä tahansa muu.
-wm-synopsis = Tiivistelmä kirjoituksesta.
-wm-synopsis-more = Tiivistelmä liitetty tahansa kirjallisesti kohta, yleensä lyhyt kohta, mutta niin kauan kuin haluat. Käytä sitä suunnitella ja navigoida ennen proosa olemassa. Se istuu vieressä päätekstiä editori.
-
-scene-break-minor = Tavallinen kohtaus tauko: ajan, paikan tai näkökulman muutos luvussa.
+wm-chapter-more = Luku jatkuu tästä seuraavaan lukuun, seuraavaan [osaan](:wm-part) tai [kirjan loppuun](:wm-end-of-book). Sillä on kaksi muotoa: lukukansio, joka sisältää [kohtauksia](:wm-scene), tai kansioton luku, jolla on oma tekstinsä. Valitse uusien lukujen muoto asetuksista kohdasta Rakenne.
+wm-scene = Tekstiä sisältävä kohtaus.
+wm-scene-more = Kohtaus sisältää kirjoituksesi. Jokaisella kirjoituskohteella on kaksi puolta: varsinainen teksti ja suunnittelua varten [tiivistelmä](:wm-synopsis). Molemmat avautuvat muokkaimessa yhdessä.
+wm-note = Muistiinpano.
+wm-note-more = Muistiinpanossa on [kohtauksen](:wm-scene) tavoin teksti ja [tiivistelmä](:wm-synopsis) taustatietoja, sivuhuomioita tai muistutuksia varten. Mikä tahansa kohde voi olla osa koottua kirjaa, myös [luvun](:wm-chapter) sisällä oleva muistiinpano.
+wm-note-folder = Muistiinpano, joka sisältää muita kohteita.
+wm-note-folder-more = [Muistiinpano](:wm-note), jonka alla on myös kohteita, joten voit ryhmitellä toisiinsa liittyvät muistiinpanot yhteen. Sillä on oma [tiivistelmänsä](:wm-synopsis), ja sen sisällä olevilla kohteilla on omat tekstinsä.
+wm-folder = Järjestelykansio.
+wm-folder-more = Säiliö, jolla voit järjestellä mapin kohteita haluamallasi tavalla. Sillä on [tiivistelmä](:wm-synopsis) mutta ei omaa tekstiä. Kirjoitus on sen sisällä olevissa kohteissa.
+wm-end-of-book = Merkitsee kohdan, johon kirja päättyy.
+wm-end-of-book-more = Kaikki kirjat jakavat yhden yhtenäisen luettelon, joten kirjan loppua ei määrää sisäkkäisyys. Tämä merkki kertoo, että [kirja](:wm-book) päättyy tähän. Kaikki sen jälkeen kuuluu seuraavaan kirjaan.
+wm-story-bible-entry = Tunnisteilla ja muilla nimillä varustettu muistiinpano tarinastasi.
+wm-story-bible-entry-more = [Muistiinpano](:wm-note) henkilöstä, paikasta tai mistä tahansa muusta kirjaamisen arvoisesta, joka luodaan kerralla nimen, tunnisteiden, muiden nimien ja aloitusmallin kanssa. Sen jälkeen sitä ei erota sivulla mistään, sillä se on tavallinen muistiinpano, jonka voit nimetä uudelleen, merkitä uusin tunnistein tai muuntaa kuten minkä tahansa muun.
+wm-synopsis = Kirjoituskohteen tiivistelmä.
+wm-synopsis-more = Mihin tahansa kirjoituskohteeseen liitetty tiivistelmä, yleensä lyhyt kappale mutta niin pitkä kuin haluat. Käytä sitä suunnitteluun ja liikkumiseen jo ennen kuin tekstiä on. Se näkyy muokkaimessa varsinaisen tekstin vieressä.
+scene-break-minor = Tavallinen kohtauskatko: ajan, paikan tai näkökulman vaihdos luvun sisällä.
 scene-break-minor-more =
-    Merkitsee katkon *siihen kohtaan, johon lisäät sen*, myös [kohtauksen](:wm-scene) keskelle. Tekstin jakaminen kahteen kohteeseen on järjestelyvalinta eikä itsessään luo katkoa.
+    Merkitsee katkon *siihen kohtaan, johon sen lisäät*, myös keskelle [kohtausta](:wm-scene). Tekstin jakaminen kahdeksi kohteeksi on järjestelyvalinta, joten se ei koskaan luo katkoa itsestään.
 
-    Kirjoitetaan proosaan kolmena tähdellä eroteltuna välilyönneillä. Miten se tulostaa päätetään vientityylillä, ei sillä, mitä kirjoitat: Shunn käsikirjoitus asettaa sen yhdeksi #, trade paperback kuin dinkus, ja useimmat ranska, saksa, espanja, venäjä ja italia julkaisemalla kuin paljas rako ilman merkkiä ollenkaan.
-scene-break-major = Vahvempi jako: suuri aika hypätä, tai ratkaiseva näkökulman muutos.
+    Kirjoitetaan tekstiin kolmena välilyönnein erotettuna tähtenä. Tulostusasun määrää vientityyli, ei se, mitä kirjoitat: Shunnin käsikirjoitusmuodossa se on yksi #, kaupallisessa pokkarissa koristemerkki, ja useimmissa ranskalaisissa, saksalaisissa, espanjalaisissa, venäläisissä ja italialaisissa julkaisuissa pelkkä tyhjä väli ilman merkkiä.
+scene-break-major = Voimakkaampi jako: suuri aikahyppy tai ratkaiseva näkökulman vaihdos.
 scene-break-major-more =
-    Sama idea kuin tavallinen kohtaus, yksi askel ylöspäin. Käytä sitä, kun tavallinen tauko alittaa hypyn.
+    Sama ajatus kuin tavallisessa kohtauskatkossa, astetta vahvempana. Käytä sitä, kun tavallinen katko vähättelisi hyppyä.
 
-    Kirjoitettu # # #, ja tulostettu eri tavalla kuin tavallinen taso vienti tyyliin. Shunn n standardi käsikirjoitusmuoto asettaa yhden # vastaan # # # # # juuri tätä eroa. Jos perinne ei ole vahvempi merkki, molemmat tasot tulostaa sama.
-wm-find-in-prose = Skribisto etsii tätä esinettä proosastasi.
-wm-find-in-prose-more = Käännä tämä tags että nimeät asioita, joista kirjoitat: merkit, paikat, objektit. Mikä tahansa kohde, joka kantaa tällaista tag on sovitettu vastaan proosa sen otsikko ja muut nimet annat sen, niin jokainen [kohtaus](:wm-scene) luettelot kuka ja mitä näkyy siinä ilman, että kytket mitään käsin. Jätä se pois tageja, jotka kuvaavat kohteen sijasta nimi yksi, kuten luonnos tila tai muistutus tarkistaa jatkuvuus. Jokainen se vastaa myös liittyy [Tarinan raamattu](:wm-story-bible).
-wm-story-bible = Jokainen hahmo, paikka ja muu merkitty merkintä, koottu yhteen verkkoon.
-wm-story-bible-more = Avaa mistä tahansa muistiinpanot kansion oma välilehti. Kortit ryhmä tagin mukaan, ja jokainen nimi kuinka monta salanimiä sisääntulo vastauksia ja kuinka monta kohtausta se on löytänyt, piirretään jokaisesta [löydä proosasta](:wm-find-in-prose) tag projektissa. Suodata kirjalla vain kapeat mitä kortit osoittavat; se ei koskaan päätä mitä merkintöjä on olemassa.
-
-tooltip-go-to = Siirry mihin tahansa kansioon (Ctrl+G)
-synopsis-collapse-tooltip = Piilota yhteenvetosarake
-
+    Kirjoitetaan muodossa # # #, ja vientityyli tulostaa sen eri tavalla kuin tavallisen katkon. Shunnin vakiomuotoinen käsikirjoitus käyttää juuri tähän eroon yhtä #-merkkiä vastaan # # #. Jos perinteessä ei ole vahvempaa merkkiä, molemmat tulostuvat samoin.
+wm-find-in-prose = Skribisto etsii tätä kohdetta tekstistäsi.
+wm-find-in-prose-more = Ota tämä käyttöön tunnisteille, jotka nimeävät asioita, joista kirjoitat: henkilöitä, paikkoja, esineitä. Jokaista tällaisella tunnisteella varustettua kohdetta haetaan tekstistäsi sen otsikon ja sille antamiesi muiden nimien perusteella, joten jokainen [kohtaus](:wm-scene) luettelee, kuka ja mikä siinä esiintyy, ilman että linkität mitään käsin. Jätä tämä pois päältä tunnisteilta, jotka kuvaavat kohdetta eivätkä nimeä sitä, kuten luonnoksen vaihe tai muistutus jatkuvuuden tarkistamisesta. Jokainen löydetty kohde liitetään myös [tarinan tietopankkiisi](:wm-story-bible).
+wm-story-bible = Kaikki henkilöt, paikat ja muut tunnisteella merkityt merkinnät koottuna yhteen ruudukkoon.
+wm-story-bible-more = Avataan minkä tahansa muistiinpanokansion omalta välilehdeltä. Kortit ryhmitellään tunnisteittain, ja kussakin kerrotaan, montako muuta nimeä merkinnällä on ja monessako kohtauksessa se on esiintynyt, projektin kaikkien [Etsi tekstistä](:wm-find-in-prose) -tunnisteiden perusteella. Kirjan mukaan suodattaminen vain rajaa näkyviä kortteja; se ei koskaan määrää, mitä merkintöjä on olemassa.
+tooltip-go-to = Siirry mihin tahansa mapin kohteeseen (Ctrl+G)
+synopsis-collapse-tooltip = Piilota tiivistelmäpalsta
 wm-paratext = Teksti, joka ei kuulu tarinaan.
-wm-paratext-more = Esipuhe, omistautuminen, jälkisana, colofoni: kirjoittaminen, joka kuuluu kirjaan, mutta ei sen kehoon. Vietiin minne sen laitatkin, eikä sitä koskaan lasketa käsikirjoituksen sanalaskuun. Mihin se menee, on sinusta kiinni: yleissopimukset eroavat maittain ja julkaisijalta.
+wm-paratext-more = Esipuhe, omistuskirjoitus, jälkisanat, kolofoni: tekstiä, joka kuuluu kirjaan mutta ei sen varsinaiseen sisältöön. Viedään siihen kohtaan, johon sen sijoitat, eikä sitä koskaan lasketa käsikirjoituksen sanamäärään. Sijainti on sinun päätettävissäsi: käytännöt vaihtelevat maittain ja kustantajittain.
 wm-paratext-folder = Kansio parateksteille.
-wm-paratext-folder-more = Jonnekin, missä pitää esi-ja jälkisanoja, jotta ne eivät sotke sideainetta. Järjestää vain: se kuljettaa [synopsis](:wm-synopsis) mutta ei lisää mitään vietyyn kirjaan, ei edes sen omaa nimeä.
-
-goal-target = Kauanko tämä on tarkoitettu.
-goal-target-more = Aseta tavoite mihinkään: [kohtaus](:wm-scene), [luku](:wm-chapter), [osa](:wm-part), koko [kirja](:wm-book). Jokainen on oma numeronsa ja seisoo yksin, joten asettamalla tavoite luvun koskaan muuta sen kirjan, ja kirjan tavoite ei ole koskaan summa lukuja sen sisällä. Mitä lasketaan on kirjoitus: säiliön [Edistyminen](:goal-progress) on kaikki kirjoitettu sen alla. Jätä tavoite nollaan ja se yksinkertaisesti ei ole asetettu. Luku lasketaan [sana tai merkki](:goal-unit), riippumatta siitä, mikä tämä projekti käyttää.
-goal-unit = Merkitseekö tämä projekti sanoja vai kirjaimia.
-goal-unit-more = Projektin kokoinen valinta, koska pituusyksikkö kuuluu käsikirjoitukseen ja sen markkinoihin eikä yhteen osaan: saksan ja ranskan kustantaminen merkeissä, japaninkielinen 400-merkkinen arkki, kiinankielinen tuhat merkkiä, suurin osa englanninkielistä julkaisua sanoissa. Molemmat numerot pidetään rinnakkain eikä kumpikaan ole koskaan muunneltu toiseen, joten yksikön pisteiden vaihtaminen joka [kohde](:goal-target) toisella luvulla ja takaisin vaihtaminen palauttaa ensimmäisen. Se mitä se ei tee, on muuntaa mitään, joten tavoitteet jo kirjoitettu on päivitettävä käsin.
-goal-progress = Paljonko on kirjoitettu kohdetta vastaan?
-goal-progress-explained = Kappaleella on oma proosa mitataan sen omaa pituutta; säiliö vastaan [Kaikki sen alta kirjoitettu](:goal-manuscript-words). Baari lämpenee punaisesta kautta meripihkan vihreään, kun kirjoitus tulee sisään, ja muuttuu uudelleen, kun pala on juossut hyvin ohi mitä oli suunniteltu, mikä on syytä huomata, kun luku on pituus pitää.
-goal-manuscript-words = Se, mikä lasketaan käsikirjoitukseksi.
-goal-manuscript-words-more = Vain proosa, joka todella viedään: [kohtaukset](:wm-scene) ja [luvut](:wm-chapter), jossa on oma teksti. A [Huomautus](:wm-note) tai [parateksti](:wm-paratext) ei ole osa käsikirjoitusta eikä sitä koskaan lasketa kohti. Kaikki roskissa putoaa, ja niin tekee kaikki [jätetty pois viennistä](:goal-exportable).
-goal-exportable = Tämä kohta ei kuulu vientiin.
-goal-exportable-more = Sen oma pituus näyttää edelleen, koska kirjoitus on edelleen siellä, mutta se laskee kohti ei yhteensä, juuri kuten se tulee näkymään ei viety kirja. Säiliön jättäminen ulos ei jätä osia sen sisällä: jokainen kohde vastaa itse, mikä on mitä "Apply lapsille" painike vieressä kytkin on tarkoitettu.
-goal-distribute = Jaa tämä kohde läpi sen, mitä sisällä on.
-goal-distribute-more = Jakelee [kirjan](:wm-book) tai [osa](:wm-part) kohde sen välittömät alikohteet niin palaset täsmäävät siihen. Oletuksena se täyttää vain ne, joilla ei ole kohdetta vielä ja jättää oman numeronsa yksin. Mitä se kirjoittaa ovat tavallinen [tavoitteet](:goal-target), vapaasti muokata jälkeenpäin ja vapaasti ajelehtia erilleen: tämä on yksi toimi, ei pysyvä järjestely.
-goal-subtree-total = Mitä sisällä olevat kohteet tarkoittavat?
-goal-subtree-total-more = Tämä projekti ei koskaan pidä säiliön kohdetta sen sisällä olevien summana, koska siten kansion kuva päätyy liikkumaan itsestään, kun sen sisällä on annettu numero. Tämä rivi kertoo vain, mihin omat numerot tulevat, joten voit verrata sitä säiliön [kohde](:goal-target):een itse tai [Jaa yksi ulos](:goal-distribute)12:een.
-goal-milestone = Treffit, joilla pääsemme johonkin.
-goal-milestone-more = Toinen sanoo, että [kirja](:wm-book) pitäisi seistä tietyllä pituudella päivämäärä, reittipiste sen oma käyrä. Toinen sanoo tietyn [luku](:wm-chapter) tai [osa](:wm-part) olisi pitänyt saavuttaa [oma tavoite](:goal-target) tuolloin, ja lukee, että numero elää sen sijaan, että pitää kopio siitä, joten muokkaamalla tavoite päivittää virstanpylväs liian. Molemmat näkyvät kirjan [vauhtisuunnitelma](:pace-plan).
+wm-paratext-folder-more = Paikka esipuheille ja jälkisanoille, jotta ne eivät sotke mappia. Pelkästään järjestelyä varten: sillä on [tiivistelmä](:wm-synopsis), mutta se ei lisää vietyyn kirjaan mitään, ei edes omaa nimeään.
+goal-target = Kuinka pitkäksi tämä osa on tarkoitettu.
+goal-target-more = Aseta tavoite mille tahansa: [kohtaukselle](:wm-scene), [luvulle](:wm-chapter), [osalle](:wm-part) tai koko [kirjalle](:wm-book). Kukin on oma lukunsa ja itsenäinen, joten luvun tavoitteen asettaminen ei koskaan muuta kirjan tavoitetta, eikä kirjan tavoite ole koskaan sen lukujen summa. Yhteen lasketaan kirjoitus: säiliön [edistyminen](:goal-progress) on kaikki sen alle kirjoitettu. Jos jätät tavoitteeksi nollan, tavoitetta ei yksinkertaisesti ole asetettu. Luku lasketaan [sanoina tai merkkeinä](:goal-unit) sen mukaan, kumpaa tämä projekti käyttää.
+goal-unit = Lasketaanko tässä projektissa sanoja vai merkkejä.
+goal-unit-more = Koko projektia koskeva valinta, koska pituusyksikkö kuuluu käsikirjoitukselle ja sen markkinoille eikä yksittäiselle osalle: saksalainen ja ranskalainen kustannusala mittaa merkkeinä, japanilainen 400 merkin arkkeina, kiinalainen tuhansina merkkeinä ja useimmat englanninkieliset kustantajat sanoina. Molemmat luvut pidetään rinnakkain eikä kumpaakaan koskaan muunneta toiseksi, joten yksikön vaihto kohdistaa jokaisen [tavoitteen](:goal-target) toiseen lukuun ja takaisin vaihto palauttaa ensimmäisen. Se ei kuitenkaan muunna mitään, joten jo syötetyt tavoitteet on päivitettävä käsin.
+goal-progress = Kuinka paljon on kirjoitettu suhteessa tavoitteeseen.
+goal-progress-explained = Omaa tekstiä sisältävää osaa verrataan sen omaan pituuteen, säiliötä [kaikkeen sen alle kirjoitettuun](:goal-manuscript-words). Palkki lämpenee punaisesta keltaisen kautta vihreäksi kirjoituksen karttuessa ja muuttuu taas, kun osa on mennyt selvästi suunniteltua pidemmäksi, mikä on hyvä huomata, kun luvun pitää pysyä tietyssä pituudessa.
+goal-manuscript-words = Mikä lasketaan käsikirjoitukseksi.
+goal-manuscript-words-more = Vain teksti, joka todella viedään: [kohtaukset](:wm-scene) ja omaa tekstiä sisältävät [luvut](:wm-chapter). [Muistiinpano](:wm-note) tai [parateksti](:wm-paratext) ei ole osa käsikirjoitusta, eikä sitä koskaan lasketa siihen. Roskakorissa oleva jää pois, samoin kaikki [viennistä pois jätetty](:goal-exportable).
+goal-exportable = Tämä kohde on jätetty pois viennistä.
+goal-exportable-more = Sen oma pituus näkyy yhä, koska kirjoitus on yhä tallella, mutta sitä ei lasketa mihinkään kokonaismäärään, aivan kuten se ei näy missään viedyssä kirjassa. Säiliön jättäminen pois ei jätä pois sen sisällä olevia osia: jokainen kohde vastaa itsestään, ja sitä varten kytkimen vieressä on ”Käytä alakohteisiin” -painike.
+goal-distribute = Jaa tämä tavoite sisällä oleville osille.
+goal-distribute-more = Jakaa [kirjan](:wm-book) tai [osan](:wm-part) tavoitteen sen välittömille alakohteille niin, että osien summa vastaa sitä täsmälleen. Oletuksena se täyttää vain ne, joilla ei vielä ole tavoitetta, eikä koske omiin lukuihisi. Se kirjoittaa tavallisia [tavoitteita](:goal-target), joita voit muokata jälkeenpäin ja jotka voivat erkaantua toisistaan: tämä on kertaluonteinen toiminto, ei pysyvä järjestely.
+goal-subtree-total = Sisällä olevien tavoitteiden summa.
+goal-subtree-total-more = Tieto, ei tavoite. Tämä projekti ei koskaan käsittele säiliön tavoitetta sen sisällä olevien summana, koska silloin kansion luku alkaisi muuttua itsestään, kun jollekin sen kohtaukselle annetaan luku. Tämä rivi kertoo vain, mihin omat lukusi summautuvat, jotta voit itse verrata sitä säiliön [tavoitteeseen](:goal-target) tai [jakaa tavoitteen](:goal-distribute).
+goal-milestone = Päivämäärä, johon mennessä jokin saavutetaan.
+goal-milestone-more = Kahta lajia. Toinen sanoo, että [kirjan](:wm-book) pitäisi olla tietyn pituinen tiettyyn päivään mennessä, välietappi sen omalla käyrällä. Toinen sanoo, että tietyn [luvun](:wm-chapter) tai [osan](:wm-part) pitäisi silloin olla saavuttanut [oman tavoitteensa](:goal-target), ja lukee tuon luvun suoraan eikä säilytä siitä kopiota, joten tavoitteen muokkaus päivittää myös virstanpylvään. Molemmat näkyvät kirjan [tahtisuunnitelmassa](:pace-plan).
 pace-plan = Kirjan kirjoitusaikataulu.
-pace-plan-more = A [kohde](:goal-target) ja määräaika, jossa kirjoitat, muuttui kuinka paljon päivä tarvitsee. Se lukee kirjan oman kohteen, joten asettaminen ja sen asettaminen tarkastaja on sama numero kahdessa paikassa. Tiepisteet matkan varrella ovat [välitavoitteet](:goal-milestone).
-
-concept-tag = Värikoodattu etiketti, jonka voi laittaa mihin tahansa kohteeseen, jota voidaan käyttää koko projektin ajan.
-concept-tag-more = Tag kohde merkitä sen: tila, sijainti, lanka olet jäljittämässä. Sama tag voi istua minkä tahansa määrän kohteita, ja yksi kohde voi kuljettaa useita. Turn on [löydä proosasta](:wm-find-in-prose) merkki, joka nimeää jotain kirjasi, merkki tai paikka, ja Skribisto alkaa etsiä sitä proosa.
-concept-label = Lyhyt viesti, jonka kirjoitat esineen otsikon alle, omia silmiäsi varten.
-concept-label-more = Ei [tunniste](:concept-tag): etiketti kuuluu vain yhdelle tuotteelle, yksinkertaiselle tekstille, jossa ei ole väriä tai luettelointia sen takana, kuten "1. tonttipiste" tai " tarvitsee nimen" . Aseta se kohteen kontekstivalikosta tai muokkaa sitä yhteenvedon Label-sarakkeessa; se näkyy pienenä tekstityksenä otsikon alla, ääriviivassa ja purossa.
-concept-point-of-view = Jonka silmistä kerrotaan kohtaus: yksi tai useampi tarinasi näyttelijä.
-concept-point-of-view-more = Set in the komisario, vieressä kipsi. Valitsemalla joku, joka ei ole vielä kipsissä lisää niitä myös siellä. Useampi kuin yksi näkökulma on laillinen valinta, hyödyllinen yhteisen kohtaus tai muutos silmät keskikirja, ei jotain Skribisto korttelia. Ehdokkaat tulevat kohteista [löydä proosasta](:wm-find-in-prose) tag laittaa tarinasi Raamattu.
-concept-epigraph = Osan tai luvun alkuun asetettu lainaus.
-concept-epigraph-more = Sen oma kenttä, joka on erillinen [luku](:wm-chapter):n tai [osa](:wm-part):n omasta proosasta; [kohtaus](:wm-scene) tai [Huomautus](:wm-note) ei ole mitään. Kirjoita yksi tavallisena lainauksena; kirjoita useita ja jokaisesta tulee oma kortteli, joka on painettu omaksi epigrafikseen. Sen sanoja ei koskaan lasketa käsikirjoituksen sanoiksi.
-concept-footnote = Proosaan merkitty viittaus, joka painaa numeroiduksi huomautukseksi.
-concept-footnote-more = Viitaus on yksi merkki sanojesi sisällä, joten se liikkuu ja poistaa täsmälleen niin kuin sen ympärillä olevat sanat. Sen numeroa ei koskaan tallenneta: Skribisto toimii tuoreena siitä, missä jokainen viittaus istuu koko käsikirjoituksessa, joten siihen lisätään yksi numero jokaisen nuotin numero sen jälkeen. Alaviitteen omat sanat lasketaan erilleen käsikirjoituksesta, eikä niitä koskaan taiteta siihen.
-concept-chapter-mode = Onko uusi luku kansio kohtauksia tai yksi litteä kohde.
-concept-chapter-mode-more = Aseta Asetukset, Structure. Kirjoitat suoraan [luku](:wm-chapter) kumpaankin suuntaan; ainoa ero on se, voiko se sisältää myös kohtauksia sen alla. Molemmat koodaukset koota samaan kirjaan, ja voit sekoittaa ne vapaasti yhdessä projektissa. Edistää muuntaa olemassa olevan luvun kahden menettämättä sanaakaan.
-concept-comment = Huomautus ankkuroitu tarkka venytys proosa, näkyy marginaali.
-concept-comment-more = Se muistaa sanat se osoittaa ja mitä ympäröi niitä, ei kiinteä asema, joten se selviytyy tavallinen editointi ja täysi lataus. Vastaa alla pitää lanka menossa. Jos tarkka lainaus ei enää löydy, kommentti sanoo niin sen sijaan hiljaa ajautuu väärään lauseeseen.
-concept-backup = Se on ajankohtainen kopio koko projektista.
-concept-backup-more = Valitsemallasi aikataululla: avoimella, lähellä, väliajalla tai millä tahansa sekoituksella, jonka vanhat kopiot on leikattu iän tai määrän mukaan. Avaaminen lataa sen omassa ikkunassaan: voit katsoa ja jopa muokata, mutta vain Tallenna nimellä tai Restorella on jotain. Eroa [versio](:concept-version):stä, joka seuraa yhden tuotteen omaa menneisyyttä.
-concept-version = Yhden esineen oma menneisyys: jokainen muutos sen tekstiin tai synopsis.
-concept-version-more = Rakennettu projektin omasta tallennehistoriasta ja sen varmuuskopioista yhdessä, yksi merkintä muutosta kohti eikä yhtä tiedostoa kohti. Valitse merkintä nähdäksesi, mikä on muuttunut ja palauttaa vain kyseisen kohteen tekstin siihen; loput projektista on koskematon, ja turvallisuuskopio otetaan ensin. Eri kuin [varmuuskopio](:concept-backup), joka on kopio kaikesta.
-concept-trash = Rikkoutunut esine on piilotettu, ei siirretty: se pysyy täsmälleen missä se oli.
-concept-trash-more = Trashing vain kääntää yhden lipun: kohde pitää paikkansa kansiossa, merkitty inaktiivinen eikä poistettu. Palauta se ja se ilmestyy uudelleen juuri tuohon kohtaan, ilman uudelleenkirjoitusta tehdä. Tyhjä roskakorissa poistaa sotketut kohteet hyvään tarkoitukseen, ja jokainen näistä on yksi tekemättä oleva askel, kuten mikä tahansa muu projektin muokkaus.
-concept-spellcheck = Alleviivaa sanoja ei asennettu sanakirja tunnistaa, per projektin kieli.
-concept-spellcheck-more = Jokaisella projektilla on oma työkielensä tai kielensä; esine voi ohittaa ne toisella kielellä kirjoitettua kohtausta varten. Lisää sana Skribisto ei tiedä editorin kontekstivalikosta henkilökohtaiseksi sanakirjaksi, joka siirtyy jokaiseen projektiin. Oikoluku pysäyttää sen kaikkialla, kunnes se on taas päällä.
-concept-search-replace = Löydä sanan tai lauseen projektista, ei vain avoimen asiakirjan.
-concept-search-replace-more = Katsoo läpi jokaisen kohtauksen, muistiinpanon, otsikon, synopsis ja etiketti, ja kautta kommentteja ja alaviitteitä myös. Asia, koko sanan ja aksentin matching ovat kolme erillistä kytkimet. Korvaa Kaikki uudelleenkirjoittaa jokainen arvosteltu ottelu yhdellä pass ja yksi perua askel, joten Ctrl+Z ottaa takaisin koko erän, koskaan vain viimeinen muutos.
-concept-note-template = Uudelleenkäytettävä kirjoitus, jonka työnnät kaikkeen, mitä teet.
-concept-note-template-more = Tyhjä merkkiarkki, sijaintiprofiili, beat-arkki: kirjoita se kerran ja pudota se missä tarvitset sitä, missä tahansa kohteessa, ei vain muistilappu. Aloita sisäänrakennettu esiasetettu, tuoda .md tai .djot12 tiedosto, tai kirjoita jotain ja valitse asiakirja . Tallenna mallina. Tallenna projektissa, joten toinen tekijä, joka avaa sen saa saman sarjan.
-concept-text-replacement = Sinun oma pikakirjoitus, laajennettu automaattisesti kuin kirjoitat.
-concept-text-replacement-more = Aseta laukaisin ja sen korvaaminen, "botw" "mennessä," ja se laajentaa hetkeä kun kirjoitat tilaa tai välimerkkiä sen jälkeen. Tapaus seuraa mitä kirjoitit: aktivoi laukaisin ja laajennus aktivoi myös. A Backspace heti laajennuksen jälkeen vain yksi korvaaja. Vaihdetaan projektiin, joka on erillinen [älykäs välimerkki](:concept-smart-punctuation).
-concept-smart-punctuation = Locale-aware typografia sovellettu automaattisesti kuin kirjoitat: lainaukset, viivat, ellipsit.
-concept-smart-punctuation-more = Curls suora lainausmerkit typografian niistä, muuttuu -- en dash ja --- osaksi em dash, muuttuu ... ellipsis, ja kun käynnistät sen, avaa kappaleen kirjoitettu "- "" dialogi viivalla. Aseta per projekti, ja matkustaa sisällä .skrib joten toinen kirjoittaa samoilla säännöillä. Ero on [Omat sääntösi](:concept-text-replacement), jonka kirjoitat itse.
-concept-export-style = Nimetty joukko vientivalintoja: otsikot, väli, mitä saa mukaan.
-concept-export-style-more = Yksi tyyli, uudelleenkäytetty jokaisessa vientimuodossa mitä tahansa haluat. Sisäänrakennetut tyylit ovat luku-vain; kopio yksi saada lähtökohta voit todella muuttaa. Yksi sen valinnoista on sisällyttää [Pyöreän matkan merkkiaineet](:concept-round-trip-marks), tiedoston sidottu editori ja takaisin.
-concept-round-trip-marks = Näkymättömiä kirjanmerkkejä, jotka antavat muokatun DOCX tai ODT tulla kotiin tunnustettu.
-concept-round-trip-marks-more = Kirjoitettu vain kahteen muotoon editori voi lähettää takaisin, DOCX ja ODT; jokainen muu vienti ei ole. Kirjanmerkki, ei custom attribuutti: LibreOffice nauhat mukautettuja ominaisuuksia säästää, mutta jättää kirjanmerkki ehjä. Kytketty per [vientityyli](:concept-export-style), alle "Lähetetään editori."
-concept-status = Jos esine on omassa työnkulussa: yksi vaihe kerrallaan, eteenpäin.
-concept-status-more = Ei [tunniste](:concept-tag): esineellä on täsmälleen yksi asema, vaiheet tilataan, ja projekti omistaa luettelon, joten voit nimetä, tilata uudelleen tai lisätä siihen milloin haluat. Tähdellä luvun tai kirjan vieressä tarkoittaa sitä, että kaikki sen osat eivät ole samaa mieltä sen kanssa. Aseta se tarkastajalta, kortilta, stream-kohteelta tai täältä.
+pace-plan-more = [Tavoite](:goal-target) ja määräaika sekä kirjoituspäiväsi muunnettuna siksi, paljonko päivässä tarvitaan. Se lukee kirjan oman tavoitteen, joten sen asettaminen tässä ja Ominaisuudet-paneelissa on sama luku kahdessa paikassa. Välietapit matkan varrella ovat [virstanpylväitä](:goal-milestone).
+concept-tag = Värikoodattu tunniste, jonka voit liittää mihin tahansa kohteeseen ja käyttää uudelleen koko projektissa.
+concept-tag-more = Merkitse kohde tunnisteella: tila, paikka, juonilanka, jota seuraat. Samaa tunnistetta voi käyttää kuinka monessa kohteessa tahansa, ja yhdellä kohteella voi olla useita. Ota [Etsi tekstistä](:wm-find-in-prose) käyttöön tunnisteelle, joka nimeää jotakin kirjassasi, henkilön tai paikan, niin Skribisto alkaa etsiä sitä tekstistäsi.
+concept-label = Lyhyt merkintä, jonka kirjoitat kohteen otsikon alle omaksi avuksesi.
+concept-label-more = Ei [tunniste](:concept-tag): nimiö kuuluu vain yhdelle kohteelle, ja se on pelkkää tekstiä ilman väriä tai luetteloa, esimerkiksi ”1. käännekohta” tai ”tarvitsee nimen”. Aseta se kohteen pikavalikosta tai muokkaa sitä suoraan yleiskatsauksen Nimiö-sarakkeessa; se näkyy pienenä alaotsikkona otsikon alla niin jäsennyksessä kuin virrassakin.
+concept-point-of-view = Kenen silmin kohtaus kerrotaan: yksi tai useampi tarinasi henkilöistä.
+concept-point-of-view-more = Asetetaan Ominaisuudet-paneelissa esiintyjien vieressä. Jos valitset jonkun, joka ei vielä ole esiintyjissä, hänet lisätään myös sinne. Useampi näkökulma on sallittu valinta, hyödyllinen yhteisessä kohtauksessa tai kun näkökulma vaihtuu kesken kirjan, eikä Skribisto estä sitä. Ehdokkaat tulevat kohteista, jotka [Etsi tekstistä](:wm-find-in-prose) -tunniste vie tarinan tietopankkiisi.
+concept-epigraph = Osan tai luvun alkuun sijoitettu lainaus.
+concept-epigraph-more = Oma kenttänsä, erillään [luvun](:wm-chapter) tai [osan](:wm-part) omasta tekstistä; [kohtauksella](:wm-scene) tai [muistiinpanolla](:wm-note) sitä ei ole. Kirjoita se tavallisena lainauksena; jos kirjoitat useita, kustakin tulee oma lainauslohkonsa, joka tulostetaan omana mottonaan. Sen sanoja ei koskaan lasketa käsikirjoituksen sanoiksi.
+concept-footnote = Tekstiin merkitty viite, joka tulostuu numeroituna alaviitteenä.
+concept-footnote-more = Viittaus on yksi merkki sanojesi seassa, joten se siirtyy ja poistuu täsmälleen kuten ympäröivät sanat. Sen numeroa ei koskaan tallenneta: Skribisto laskee sen aina uudelleen kaikkien viittausten paikoista koko käsikirjoituksessa, joten uuden lisääminen numeroi kaikki sen jälkeiset alaviitteet uudelleen. Alaviitteen omat sanat lasketaan erillään käsikirjoituksesta eikä niitä koskaan sisällytetä siihen.
+concept-chapter-mode = Onko uusi luku kohtauksia sisältävä kansio vai yksittäinen kansioton kohde.
+concept-chapter-mode-more = Asetetaan asetuksissa kohdassa Rakenne. Kirjoitat [lukuun](:wm-chapter) suoraan kummassakin tapauksessa; ainoa ero on, voiko se sisältää myös kohtauksia. Molemmat rakenteet kootaan samaksi kirjaksi, ja voit sekoittaa niitä vapaasti samassa projektissa. Muunna tyypiksi vaihtaa olemassa olevan luvun rakenteesta toiseen menettämättä sanaakaan.
+concept-comment = Tiettyyn tekstijaksoon ankkuroitu kommentti, joka näkyy marginaalissa.
+concept-comment-more = Se muistaa sanat, joihin se osoittaa, ja niiden ympäristön, ei kiinteää sijaintia, joten se säilyy tavallisessa muokkauksessa ja täydessä uudelleenlatauksessa. Vastaa sen alle jatkaaksesi keskustelua. Jos tarkkaa lainausta ei enää löydy, kommentti kertoo sen eikä huomaamatta siirry väärään virkkeeseen.
+concept-backup = Koko projektin tietyn hetken kopio, joka säilytetään sen rinnalla.
+concept-backup-more = Otetaan valitsemasi aikataulun mukaan: avattaessa, suljettaessa, tietyin välein tai näiden yhdistelmänä, ja vanhat kopiot karsitaan iän tai määrän mukaan. Varmuuskopion avaaminen lataa sen omaan ikkunaansa: voit katsella ja jopa muokata, mutta vain Tallenna nimellä tai Palauta säilyttää mitään. Eri asia kuin [versio](:concept-version), joka seuraa yhden kohteen omaa historiaa.
+concept-version = Yhden kohteen oma historia: jokainen muutos sen tekstiin tai tiivistelmään.
+concept-version-more = Kootaan projektin omasta tallennushistoriasta ja sen varmuuskopioista yhdessä, yksi merkintä muutosta kohden eikä tiedostoa kohden. Valitse merkintä nähdäksesi, mikä muuttui, ja palauta siihen vain kyseisen kohteen teksti; muu projekti pysyy ennallaan, ja ensin otetaan turvakopio. Eri asia kuin [varmuuskopio](:concept-backup), joka on kopio kaikesta.
+concept-trash = Roskakoriin siirretty kohde piilotetaan, sitä ei siirretä: se pysyy täsmälleen paikallaan.
+concept-trash-more = Roskakoriin siirto vain kääntää yhden merkinnän: kohde säilyttää paikkansa mapissa ja merkitään passiiviseksi poistamisen sijaan. Palauta se, niin se ilmestyy takaisin täsmälleen samaan kohtaan ilman uudelleenjärjestelyä. Tyhjennä roskakori poistaa roskakorin kohteet lopullisesti, ja jokainen näistä on yksi kumottava vaihe kuten mikä tahansa muu projektin muokkaus.
+concept-spellcheck = Alleviivaa sanat, joita mikään asennettu sanakirja ei tunnista, projektin kielen mukaan.
+concept-spellcheck-more = Jokaisella projektilla on oma työkielensä tai -kielensä; kohde voi ohittaa ne, jos kohtaus on kirjoitettu toisella kielellä. Lisää Skribistolle tuntematon sana muokkaimen pikavalikosta omaan sanakirjaasi, joka on käytössä kaikissa projekteissa. Oikoluvun poistaminen käytöstä lopettaa sen kaikkialla, kunnes otat sen taas käyttöön.
+concept-search-replace = Etsii sanaa tai ilmausta kaikkialta projektista, ei vain avoimesta asiakirjasta.
+concept-search-replace-more = Käy läpi jokaisen kohtauksen, muistiinpanon, otsikon, tiivistelmän ja nimiön sekä myös kommentit ja alaviitteet. Kirjainkoko, kokonaiset sanat ja tarkkeet ovat kolme erillistä kytkintä. Korvaa kaikki kirjoittaa jokaisen tarkistetun osuman uudelleen yhdellä kertaa ja yhtenä kumottavana vaiheena, joten Ctrl+Z peruu koko joukon eikä koskaan vain viimeistä muutosta.
+concept-note-template = Uudelleenkäytettävä tekstipohja, jonka lisäät mihin tahansa työn alla olevaan.
+concept-note-template-more = Tyhjä henkilökortti, paikan kuvaus, juonirunko: kirjoita se kerran ja lisää se aina tarvittaessa mihin tahansa kohteeseen, ei vain muistiinpanoon. Aloita valmiista mallista, tuo .md- tai .djot-tiedosto tai kirjoita jotain ja valitse Asiakirja ▸ Tallenna mallina. Tallennetaan projektiin, joten sen avaava kanssakirjoittaja saa saman valikoiman.
+concept-text-replacement = Omat lyhenteesi, jotka laajenevat automaattisesti kirjoittaessasi.
+concept-text-replacement-more = Määritä lyhenne ja sen korvaus, esimerkiksi ”mm.” sanoille ”muun muassa”, niin se laajenee heti, kun kirjoitat sen perään välilyönnin tai välimerkin. Kirjainkoko seuraa kirjoittamaasi: jos kirjoitat lyhenteen isolla alkukirjaimella, laajennuskin alkaa isolla. Askelpalautin heti laajennuksen jälkeen kumoaa vain sen yhden korvauksen. Otetaan käyttöön projektikohtaisesti, erillään [älykkäästä välimerkityksestä](:concept-smart-punctuation).
+concept-smart-punctuation = Kielen mukainen typografia, jota sovelletaan automaattisesti kirjoittaessasi: lainausmerkit, viivat, ellipsit.
+concept-smart-punctuation-more = Muuttaa suorat lainausmerkit typografisiksi, -- ajatusviivaksi ja --- pitkäksi ajatusviivaksi, ... ellipsimerkiksi, ja käyttöön otettuna aloittaa repliikkiviivalla kappaleen, joka kirjoitetaan muodossa ”- ”. Asetetaan projektikohtaisesti ja kulkee .skrib-tiedoston mukana, joten kanssakirjoittaja kirjoittaa samoilla säännöillä. Eri asia kuin [omat sääntösi](:concept-text-replacement), jotka kirjoitat itse.
+concept-export-style = Nimetty joukko viennin valintoja: otsikot, välit, mitä sisällytetään.
+concept-export-style-more = Yksi tyyli, jota käytetään kaikissa vienneissä valitsemastasi muodosta riippumatta. Valmiita tyylejä ei voi muokata; monista jokin saadaksesi lähtökohdan, jota voit todella muuttaa. Yksi sen valinnoista on, sisällytetäänkö [paluumerkit](:concept-round-trip-marks) tiedostoon, joka lähtee kustannustoimittajalle ja palaa takaisin.
+concept-round-trip-marks = Näkymättömät kirjanmerkit, joiden ansiosta muokattu DOCX- tai ODT-tiedosto tunnistetaan palatessaan.
+concept-round-trip-marks-more = Kirjoitetaan vain niihin kahteen muotoon, jotka kustannustoimittaja voi lähettää takaisin, DOCX ja ODT; mikään muu vienti ei sisällä niitä. Kirjanmerkki eikä mukautettu attribuutti: LibreOffice poistaa mukautetut attribuutit tallennettaessa mutta jättää kirjanmerkit ehjiksi. Otetaan käyttöön [vientityylin](:concept-export-style) kohdassa ”Lähetys kustannustoimittajalle”.
+concept-status = Missä kohde on omassa työnkulussasi: yksi vaihe kerrallaan, eteenpäin.
+concept-status-more = Ei [tunniste](:concept-tag): kohteella on täsmälleen yksi tila, vaiheet ovat järjestyksessä, ja luettelo kuuluu projektille, joten voit nimetä niitä uudelleen, järjestää niitä tai lisätä niitä milloin haluat. Tähti luvun tai kirjan vieressä tarkoittaa, että kaikki sen alla olevat osat eivät ole samassa tilassa. Aseta tila Ominaisuudet-paneelista, kortista, virran kohteesta tai täältä.

@@ -331,6 +331,25 @@ pub fn apply_to(theme: &mut teksilo::prelude::Theme, t: &DistractionFreeTheme) {
 }
 
 /// Whether `id` names a shipped theme (cheap — the list is five long).
+impl DistractionFreeTheme {
+    /// The theme's name on screen. A built-in is named by the app, so in the
+    /// interface language; any other theme by whoever made it, as typed.
+    pub fn display_name(&self) -> teksilo::i18n::LocalizedString {
+        use teksilo::prelude::*;
+        if !self.builtin {
+            return lit!(self.name.clone());
+        }
+        match self.id.as_str() {
+            "paper" => tr!(df_theme_paper()),
+            "sepia" => tr!(df_theme_sepia()),
+            "night" => tr!(df_theme_night()),
+            "high-contrast" => tr!(df_theme_high_contrast()),
+            "midnight" => tr!(df_theme_midnight()),
+            _ => lit!(self.name.clone()),
+        }
+    }
+}
+
 pub fn is_builtin(id: &str) -> bool {
     builtin_themes().iter().any(|t| t.id == id)
 }

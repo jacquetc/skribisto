@@ -855,10 +855,10 @@ mod tests {
     /// on one, so the watcher would feed a bundle nothing can ever display.
     #[test]
     fn an_unsupported_translation_locale_is_an_error_naming_the_shipped_set() {
-        let args = parse_args(["--translation-dev=de-DE=/tmp/de"]);
+        let args = parse_args(["--translation-dev=bg-BG=/tmp/bg"]);
         assert!(args.translation_dev.is_empty());
         let error = args.error.expect("an unsupported locale must be refused");
-        assert!(error.contains("de-DE"), "{error}");
+        assert!(error.contains("bg-BG"), "{error}");
         for locale in crate::startup::SUPPORTED_LOCALES {
             assert!(error.contains(locale), "{error} should name {locale}");
         }

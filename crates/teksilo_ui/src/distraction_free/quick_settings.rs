@@ -72,7 +72,7 @@ fn body(
             400.0,
             1200.0,
             20.0,
-            |v| format!("{} px", v.round() as i32),
+            |v| crate::shared::units::pixels(v as f64),
         ),
     );
 
@@ -112,7 +112,7 @@ fn themes_tab(
     let list = ListView::new(model, move |_i, t: &DistractionFreeTheme, _sel| {
         let id_state = t.id.clone();
         Box::new(
-            StandardListItem::new(lit!(t.name.clone()))
+            StandardListItem::new(t.display_name())
                 // A theme is named by whoever made it. See `binder::dock`.
                 .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
                 .selected(cur.map(move |c| c.as_str() == id_state.as_str())),

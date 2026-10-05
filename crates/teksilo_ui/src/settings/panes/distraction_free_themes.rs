@@ -134,7 +134,7 @@ fn builtin_row(
                 vm.duplicate(&base, &tr!(settings_themes_copy_suffix()).resolve_now());
             }
         });
-    StandardListItem::new(lit!(theme.name.clone()))
+    StandardListItem::new(theme.display_name())
         // User-named, so unbounded — and a settings pane is measured under
         // `width: None`, where one over-wide child inflates the whole page.
         // See `binder::dock`.
@@ -180,7 +180,7 @@ fn user_row(
             .on_activate_fn(move |_c| vm.remove(&id))
     };
     let id_hl = id.clone();
-    StandardListItem::new(lit!(theme.name.clone()))
+    StandardListItem::new(theme.display_name())
         // See the note in `builtin_row` above.
         .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
         .subtitle_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))

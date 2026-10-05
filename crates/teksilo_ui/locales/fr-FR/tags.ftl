@@ -62,7 +62,7 @@ tags-pill-no-match = Aucune étiquette ne correspond
 tags-pill-create = Créer « { $name } »
 tags-pill-create-failed = Impossible de créer « { $name } »
 tags-pill-new-discoverable = Étiquette repérable dans le texte
-tags-pill-new-discoverable-hint = Les éléments portant cette étiquette sont recherchés dans votre texte pour remplir la distribution.
+tags-pill-new-discoverable-hint = Les éléments portant cette étiquette sont recherchés dans votre texte pour remplir la liste de présence.
 
 ## Le champ des autres noms
 tags-alias-list = Autres noms

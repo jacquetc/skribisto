@@ -38,7 +38,7 @@ pub(in crate::settings) fn distraction_free_form(
                 400.0,
                 1200.0,
                 20.0,
-                |v| format!("{} px", v.round() as i32),
+                |v| crate::shared::units::pixels(v as f64),
                 tr!(settings_distraction_free_width_hint()),
             ),
         )

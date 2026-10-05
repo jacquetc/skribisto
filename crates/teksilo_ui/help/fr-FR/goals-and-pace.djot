@@ -15,7 +15,7 @@ lui donne une colonne *Objectif*.
 
 ## Ce qui compte dans un objectif
 
-La progression se mesure sur le manuscrit lui-même : la prose de vos
+La progression se mesure sur le manuscrit lui-même : la prose de vos
 [scènes et chapitres](:help-writing-model). Un synopsis, une note ou un paratexte reste hors du
 compte, tout comme ce qui est à la corbeille.
 
@@ -26,23 +26,23 @@ enfants* pour les exclure aussi.
 ## Mots ou caractères
 
 Un seul choix vaut pour tout le projet. *Nouvelle œuvre* le demande d’emblée, sous *Compter en*.
-Vous pouvez le changer ensuite dans *Paramètres ▸ Œuvre : <projet> ▸ Structure*, sous
+Vous pouvez le changer ensuite dans *Paramètres ▸ Œuvre : <projet> ▸ Structure*, sous
 *Objectifs*.
 
-Chaque élément garde deux nombres distincts : un objectif en mots et un objectif en caractères.
+Chaque élément garde deux nombres distincts : un objectif en mots et un objectif en caractères.
 
 ## Répartir un objectif
 
 Pour partager l’objectif d’un livre entre ses parties ou chapitres, ouvrez le livre et cliquez
 sur *Répartir…*. Définissez d’abord un objectif si le bouton est désactivé. Vous pouvez faire
 de même pour une partie ou un dossier de chapitre. L’aperçu montre les objectifs proposés.
-Sous *Répartir*, choisissez :
+Sous *Répartir*, choisissez :
 
-- *Selon la longueur*, d’après ce qui est déjà écrit sous chacun ;
-- *Selon le nombre d’éléments* ;
+- *Selon la longueur*, d’après ce qui est déjà écrit sous chacun ;
+- *Selon le nombre d’éléments* ;
 - *À parts égales*.
 
-Les chapitres et scènes qui ont déjà un objectif le gardent ; les autres se partagent le reste. Activez
+Les chapitres et scènes qui ont déjà un objectif le gardent ; les autres se partagent le reste. Activez
 *Remplacer les objectifs déjà définis* pour recalculer chaque part.
 
 ## Planifier un rythme
@@ -62,7 +62,7 @@ Le rythme et les jalons comptent en mots, quelle que soit l’unité du projet.
 
 Un jalon marque une date en chemin.
 
-- Sous *Jalons* dans le planificateur, ajoutez-en un pour tout le livre : un nombre de mots
+- Sous *Jalons* dans le planificateur, ajoutez-en un pour tout le livre : un nombre de mots
   qu’il devrait atteindre à cette date.
 - Sur une partie ou un chapitre situé dans un livre, posez une *Date de jalon* dans
   l’Inspecteur. Elle lit en direct l’objectif en mots de cet élément, et le suit.
@@ -70,4 +70,4 @@ Un jalon marque une date en chemin.
 ## À l’ouverture du projet
 
 Un livre apparaît dans la carte *Où en est le livre* dès que son plan est actif. *Ne plus
-afficher à l’ouverture* l’empêche de s’ouvrir seule ; *Œuvre ▸ Plan d’écriture…* la rouvre.
+afficher à l’ouverture* l’empêche de s’ouvrir seule ; *Œuvre ▸ Plan d’écriture…* la rouvre.

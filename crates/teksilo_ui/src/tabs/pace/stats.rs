@@ -87,7 +87,7 @@ impl Widget for StatCards {
         if let Some(p) = vm.percent_done() {
             cf = cf.child(stat_card(
                 &big,
-                format!("{}%", (p * 100.0).round() as i64),
+                crate::shared::units::percent(p as f64),
                 tr!(pace_card_of_goal()),
                 TextRole::Accent,
             ));

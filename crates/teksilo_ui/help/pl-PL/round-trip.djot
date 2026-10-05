@@ -1,55 +1,84 @@
-Wyślij rękopis do recenzji w Wordzie lub LibreOffice, a następnie wprowadź komentarze i poprawki do projektu, zamiast tworzyć osobną, niepowiązaną kopię.
+Wyślij rękopis komuś, kto naniesie uwagi w programie Word lub LibreOffice, a potem wprowadź
+jego komentarze i poprawki z powrotem do projektu, zamiast tworzyć drugą, niepowiązaną kopię.
 
 ## Wyślij plik Word lub LibreOffice
 
-Otwórz eksport skrótem `Ctrl+Shift+E` i wybierz format *Word* (`.docx`) albo *LibreOffice* (`.odt`). Oba formaty mogą zawierać komentarze.
+Wyeksportuj tekst skrótem `Ctrl+Shift+E` i w polu *Format* wybierz *Word* (`.docx`) albo
+*LibreOffice* (`.odt`). Tylko te dwa formaty zabierają ze sobą komentarze.
 
-## Przygotuj plik do ponownego importu
+## Przygotuj plik do powrotu
 
-Każdy styl eksportu ma stronę *Wysyłanie do redaktora*:
+Każdy styl eksportu ma własną stronę *Wysyłanie do redaktora*:
 
-- *Dołącz komentarze* zapisuje dyskusje w pliku.
-- *Dołącz znaczniki ponownego importu* pozwala rozpoznać rozdziały po zwrocie pliku. Pozostaw tę opcję włączoną, aby aktualizować istniejący rękopis zamiast importować kolejną kopię.
+- *Dołącz komentarze* zapisuje wątki komentarzy w pliku.
+- *Dołącz znaczniki ponownego importu* pozwala Skribisto rozpoznać rozdziały, gdy plik wróci.
+  Pozostaw tę opcję włączoną, aby zaktualizować istniejący rękopis zamiast importować kolejną
+  kopię.
 
-Otwórz *Ustawienia ▸ Kompilacja i eksport ▸ Formaty eksportu*. Wbudowanych stylów nie można edytować: wybierz *Duplikuj*, następnie *Edytuj* na kopii i otwórz *Wysyłanie do redaktora*.
+Aby do nich dotrzeć, otwórz *Ustawienia ▸ Kompilacja i eksport ▸ Formaty eksportu*. Stylu
+wbudowanego nie można edytować, więc kliknij *Duplikuj*, potem *Edytuj* na swojej kopii,
+a następnie *Wysyłanie do redaktora*.
 
 ## Co robi czytelnik
 
-Nie musi robić nic szczególnego. Dodaje komentarze i poprawki w Wordzie lub LibreOffice jak zwykle, a następnie odsyła plik.
+Nic szczególnego. Komentuje i poprawia tekst w programie Word lub LibreOffice jak zwykle,
+a potem odsyła plik.
 
-## Zaimportuj zwrócony plik
+## Wczytanie zwróconego pliku
 
-Otwórz *Projekt ▸ Importuj z ▸ Dokumenty (Markdown, Word, ODT)…*. Temat [importowanie dokumentów](:help-import-documents) opisuje kroki poprzedzające *Scal*, gdzie następuje łączenie zmian.
+*Projekt ▸ Importuj z ▸ Dokumenty (Markdown, Word, ODT)…* otwiera kreator importu. Kroki
+przed *Scal* opisuje temat [importowanie dokumentów](:help-import-documents). Właściwe
+scalanie odbywa się w kroku *Scal*.
 
-Importuj kopię jednego czytelnika naraz. Import kilku kopii jednocześnie dodaje kolejną książkę zamiast połączyć poprawki z Twoim tekstem.
+Importuj kopię od jednego czytelnika naraz. Import kilku kopii jednocześnie dodaje kolejną
+książkę, zamiast połączyć ich zmiany z Twoimi.
 
-## Sprawdź krok Scal
+## Krok Scal
 
-Wybierz miejsce zawierające oryginalny rękopis. Skribisto dopasuje zwrócone rozdziały i sceny do istniejących.
+Wybierz miejsce docelowe zawierające oryginalny rękopis. Skribisto dopasowuje powracające
+rozdziały i sceny do tych, które już tam są.
 
-Kolumna *Stan* pokazuje:
+Kolumna *Stan* mówi, co się stało:
 
-- *Bez zmian*, *Zmieniono u czytelnika*, *Zmieniono u Ciebie* lub *Zmieniono po obu stronach*, jeśli plik zawiera tekst oryginalny do porównania obu wersji.
-- *Bez zmian* lub *Różni się*, jeśli nie zawiera oryginału.
-- *Nowy* dla elementu obecnego tylko w pliku; *Brak w tym pliku* dla elementu obecnego tylko w projekcie.
-- *Przeniesiono* zastępuje te stany, gdy dopasowany element znajduje się w innym miejscu. Użyj *Porównaj*, aby sprawdzić również zmiany tekstu.
+- *Bez różnic*, *Zmieniono w pliku*, *Zmieniono u Ciebie* lub *Zmieniono po obu stronach*,
+  gdy plik zawiera oryginalne brzmienie, z którym można porównać obie strony.
+- *Bez różnic* lub *Różni się*, gdy go nie zawiera.
+- *Nowy* dla elementu, który ma tylko plik, *Brak w tym pliku* dla elementu, który masz tylko Ty.
+- *Przeniesiono* zastępuje powyższe, gdy plik umieszcza dopasowany element gdzie indziej;
+  użyj wtedy *Porównaj*, aby sprawdzić, czy zmienił się też tekst.
 
-Jeśli czytelnik przeniósł rozdział, przenieś go samodzielnie w strukturze.
+Jeśli czytelnik przeniósł rozdział, przenieś go samodzielnie w konspekcie.
 
-Lista działań zawiera *Tylko komentarze* (uwagi czytelnika, Twój tekst), *Użyj tej wersji*, *Zachowaj moją*, *Dodaj jako nowy* i *Pomiń*. Sprawdź wybór dla każdego elementu. Element *Nowy* można tylko dodać lub pominąć. *Brak w tym pliku* pozwala wyłącznie zachować Twoją wersję: brak rozdziału w cudzej kopii nie usuwa go z projektu.
+Kolumna *Co zrobić* oferuje *Tylko komentarze* (jego uwagi, Twoje brzmienie), *Użyj tej
+wersji*, *Zachowaj moją*, *Dodaj jako nowy* i *Pomiń*. Sprawdź wybrane działanie dla każdego
+elementu. Niektóre stany ograniczają wybór:
 
-## Przyjmij część poprawek
+- *Nowy* oferuje *Dodaj jako nowy* lub *Pomiń*.
+- *Brak w tym pliku* oferuje tylko *Zachowaj moją*: brak rozdziału w cudzej kopii nie jest
+  powodem, by usuwać Twój.
 
-*Porównaj* przedstawia obie wersje jako jeden tekst z oznaczeniami: usunięcia są przekreślone, a dodatki podkreślone. Każdy zmieniony akapit ma pole wyboru opisujące działanie: przyjęcie nowego akapitu, przyjęcie poprawionej wersji albo usunięcie akapitu. Zaznacz zmiany, które akceptujesz. Pozostałe akapity zachowają Twoje brzmienie.
+## Przyjmowanie części poprawek
 
-*Tylko komentarze* stosuje także zmiany akapitów zaznaczone w *Porównaj*. Aby importować wyłącznie komentarze, pozostaw te pola niezaznaczone. *Użyj tej wersji* również uwzględnia wybory akapitów. *Zachowaj moją* zachowuje Twój tekst.
+*Porównaj* pokazuje dwie wersje elementu jako jeden tekst z oznaczeniami: przekreślone jest to,
+co czytelnik usunął, a podkreślone to, co dodał. Pod spodem każdy zmieniony akapit ma pole
+wyboru opisujące jego działanie: *Przyjmij ten nowy akapit*, *Przyjmij tę zmienioną wersję*
+lub *Usuń ten akapit*. Zaznacz te, które akceptujesz; każdy pozostały akapit zachowa Twoje
+brzmienie.
 
-## Śledzenie zmian
+*Tylko komentarze* stosuje też zmiany akapitów zaznaczone w *Porównaj*. Aby zaimportować
+wyłącznie komentarze, pozostaw te pola niezaznaczone. *Użyj tej wersji* również uwzględnia
+wybory akapitów; wybierz *Zachowaj moją*, aby zachować własny tekst.
 
-Plik z niezakończoną korektą jest importowany tak, jakby zmiany zostały zaakceptowane: dodatki pozostają, a usunięty tekst znika. Krok *Przegląd* informuje o tym i podaje autorów, jeśli plik ich zapisuje.
+## Śledzone zmiany
 
-W *Porównaj* można przyjmować lub odrzucać zmiany całymi akapitami. Nie można przyjąć zmian jednej osoby i odrzucić zmian innej w tym samym akapicie.
+Plik, który wraca w trakcie redakcji, przychodzi ze zmianami już przyjętymi: wstawienia są
+zachowane, usunięcia wykonane. Krok *Sprawdzenie* o tym informuje i podaje autorów zmian,
+jeśli plik ich zapisuje.
+
+Do przyjmowania i odrzucania zmian służy *Porównaj*, akapit po akapicie: w obrębie jednego
+akapitu nie można przyjąć poprawki jednej osoby i odrzucić poprawki innej.
 
 ## Ograniczenia
 
-- Plik z innego narzędzia lub wyeksportowany bez znaczników jest dopasowywany według tytułów. Nie można wtedy rozpoznać rozdziału, którego nazwę zmieniono.
+- Plik z innego narzędzia lub wyeksportowany bez znaczników jest dopasowywany po tytułach,
+  co nie pozwala rozpoznać rozdziału o zmienionej nazwie.

@@ -288,7 +288,10 @@ fn import_text(html: String) -> (String, Vec<String>) {
         .cloned()
         .collect::<Vec<_>>()
         .join("\n");
-    (prose, summary.warnings)
+    (
+        prose,
+        summary.warnings.iter().map(ToString::to_string).collect(),
+    )
 }
 
 fn told_about_flattening(warnings: &[String]) -> bool {

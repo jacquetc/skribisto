@@ -1,46 +1,67 @@
-## Organiza tu manuscrito
+## Organice su manuscrito
 
-Utilice el *Archivador* a la izquierda para organizar su escritura. Una novela típica tiene un libro, capítulos dentro de él, y escenas dentro de cada capítulo. También puede escribir directamente en capítulos.
+Use el *Archivador*, a la izquierda, para ordenar lo que escribe. Una novela típica tiene un
+libro, capítulos dentro de él y escenas dentro de cada capítulo. También puede escribir
+directamente en los capítulos.
 
-Cada artículo tiene un *tipo*, como Capítulo o Nota. Esto dice Skribisto cómo utilizarlo al exportar su libro; una carpeta plana no se convierte en un capítulo sólo porque tiene escenas.
+Cada elemento tiene un *tipo*, como Capítulo o Nota. Eso le indica a Skribisto cómo usarlo
+al exportar su libro; una carpeta simple no se convierte en capítulo solo porque contenga
+escenas.
 
-Cada artículo que lleva prosa tiene un texto principal y una sinopsis lado a lado: plan en un panel, borrado en el otro. Libros, partes, carpetas de notas y carpetas simples llevan una sinopsis pero no texto principal.
+Cada elemento que lleva prosa tiene un texto principal y una sinopsis uno junto a otro:
+planifique en un panel y redacte en el otro. Los libros, las partes, las carpetas de notas
+y las carpetas simples llevan una sinopsis, pero no texto principal.
 
-## Los tipos que puedes crear
+## Los tipos que puede crear
 
-Haga clic con el botón derecho en un artículo en el carpeta y seleccione *Añadir*.
+Haga clic con el botón derecho en un elemento del archivador y elija *Añadir*.
 
 - *Libro*: un manuscrito, con sus capítulos y escenas.
-- *Parte*: reúne capítulos bajo un título.
-- *Capítulo*: corre hasta el siguiente capítulo, la siguiente parte, o el final del libro.
-- *Escena*: tu escritura, con su propia sinopsis.
-- *Nota*: texto y sinopsis, para investigación, a un lado o recordatorios.
-- *Entrada de la biblia narrativa…*: una nota para un personaje, un lugar o un objeto, creada con sus etiquetas y nombres alternativos ya rellenados.
-- *Carpeta de notas*: notas de grupos junto, con una sinopsis pero sin texto principal.
-- *Carpeta*: un contenedor plano con una sinopsis y sin prosa propia.
+- *Parte*: reúne capítulos bajo un mismo encabezado.
+- *Capítulo*: se extiende hasta el capítulo siguiente, la parte siguiente o el final del
+  libro.
+- *Escena*: lo que escribe, con su propia sinopsis.
+- *Nota*: texto y sinopsis, para documentación, apartes o recordatorios.
+- *Entrada de la biblia narrativa…*: una nota para un personaje, un lugar o un objeto,
+  creada con sus etiquetas y sus otros nombres ya rellenados.
+- *Carpeta de notas*: agrupa notas, con una sinopsis pero sin texto principal.
+- *Carpeta*: un contenedor simple con una sinopsis y sin prosa propia.
 
-## Dos formas del capítulo
+## Dos formas de capítulo
 
-- Una *Carpeta de capítulo* contiene escenas debajo de ella en el carpeta.
-- Un *Capítulo Flat* es un solo artículo en el que escribes directamente, sin escenas a continuación.
+- Una *Carpeta de capítulo* contiene escenas debajo de ella en el archivador.
+- Un *Capítulo plano* es un único elemento en el que escribe directamente, sin escenas
+  debajo.
 
-Para elegir la forma *nuevos* capítulos toman, abierto *Configuración ▸ Proyecto: &gt; Proyecto ▸ Estructura* y conjunto *Capítulos falsos*. Por medio de elementos individuales, fuera significa carpetas.
+Para elegir la forma que toman los capítulos *nuevos*, abra
+*Configuración ▸ Proyecto: <proyecto> ▸ Estructura* y ajuste *Capítulos planos*. Activado
+significa elementos únicos; desactivado, carpetas.
 
-## Cambiar una escena, capítulo o carpeta
+## Cambiar una escena, un capítulo o una carpeta
 
-Haga clic con el botón derecho y seleccione *Convertir a* para ver los tipos disponibles. Por ejemplo, puede convertir una escena en una nota, o una carpeta de capítulo en un capítulo plano. El título y el texto se guardan cuando el nuevo tipo puede retenerlos.
+Haga clic con el botón derecho en el elemento y elija *Convertir en* para ver los tipos
+disponibles. Por ejemplo, puede convertir una escena en una nota, o una carpeta de capítulo
+en un capítulo plano. El título y el texto se conservan cuando el nuevo tipo puede
+contenerlos.
 
-- Una carpeta debe estar vacía antes de que pueda convertirse en un solo elemento. Mueve o traspasa sus contenidos primero.
-- Se rechaza una conversión con ninguna parte para poner el texto existente, y dice lo que se perdería.
+- Una carpeta debe estar vacía antes de poder convertirse en un elemento único. Mueva su
+  contenido o envíelo a la papelera primero.
+- Una conversión que no tiene dónde poner el texto existente se rechaza, e indica qué se
+  perdería.
 
-## Donde un libro termina
+## Dónde termina un libro
 
-Un proyecto puede contener varios libros, uno tras otro en el mismo carpeta. Un libro va desde donde comienza hasta la primera de tres cosas: un elemento *Fin del libro*, el comienzo del próximo libro, o el final de su carpeta.
+Un proyecto puede contener varios libros, uno tras otro en el mismo archivador. Un libro va
+desde donde empieza hasta la primera de estas tres cosas: un elemento *Fin del libro*, el
+comienzo del libro siguiente o el final de su archivador.
 
 ## Paratexto: en el libro, no en la historia
 
-Un *Paratexto* pertenece al libro pero no a su historia: un prefacio, una dedicación, una palabra posterior, una colofona. Exporta donde lo pones, y nunca cuenta hacia la cuenta de palabras.
+Un *Paratexto* pertenece al libro pero no a su historia: un prefacio, una dedicatoria, un
+epílogo, un colofón. Se exporta allí donde lo ponga y nunca cuenta en el recuento de
+palabras.
 
-Una *Carpeta paratexto* mantiene los paratextos despejados del resto del carpeta.
+Una *Carpeta de paratextos* mantiene los paratextos apartados del resto del archivador.
 
-¿Eres nuevo a Skribisto? [Getting started](:help-getting-started) cubre la apertura y el ahorro de un proyecto primero.
+¿Es nuevo en Skribisto? [Primeros pasos](:help-getting-started) explica primero cómo abrir y
+guardar un proyecto.

@@ -1,50 +1,76 @@
-Usa las copias de seguridad para recuperar un proyecto y el historial de versiones para recuperar un texto anterior.
+Use las copias de seguridad para recuperar un proyecto, o el historial de versiones para
+recuperar un texto anterior.
 
-Una *copia de seguridad* contiene todo el proyecto en un archivo separado. Sirve si el archivo original desaparece o se daña.
+Una *copia de seguridad* es una copia de todo el proyecto, guardada como un archivo aparte.
+Úsela cuando el propio archivo del proyecto desaparece o se daña.
 
-El *historial de versiones* conserva los cambios de una sola [escena, nota o sinopsis](:help-writing-model). Úsalo para recuperar una redacción anterior o algo que eliminaste.
+El *historial de versiones* es el registro de una sola
+[escena, nota o sinopsis](:help-writing-model) a medida que la ha ido cambiando. Úselo para
+recuperar una redacción anterior, o algo que haya eliminado.
 
 ## Copias de seguridad
 
-Skribisto crea copias automáticamente al cerrar el proyecto y cada dos horas mientras trabajas.
+Skribisto hace copias de seguridad por su cuenta: al cerrar el proyecto, y cada dos horas
+mientras trabaja.
 
-Para crear una ahora, elige *Proyecto ▸ Crear copia de seguridad ahora*. Para consultar las existentes, abre *Proyecto ▸ Copias de seguridad…*. Puedes abrirlas, mostrar su ubicación o eliminarlas.
+Para hacer una ahora, elija *Proyecto ▸ Crear copia de seguridad ahora*.
 
-### Ubicación y conservación
+Para ver las que ya tiene, elija *Proyecto ▸ Copias de seguridad…*. La lista muestra todas
+las copias de seguridad de este proyecto, y puede abrir, mostrar o eliminar cualquiera de
+ellas.
 
-Las copias se guardan en una carpeta gestionada por Skribisto. Puedes añadir carpetas propias. Las más antiguas se eliminan automáticamente para ahorrar espacio:
+### Dónde se guardan, y cuántas se conservan
 
-- La conservación *Por niveles* mantiene aproximadamente una por hora durante un día, una por día durante una semana, una por semana durante un mes y luego una por mes.
-- *Conservar las últimas N* mantiene ese número de copias, empezando por las más recientes.
+Las copias de seguridad van a una carpeta que gestiona Skribisto. Puede añadir carpetas
+propias.
 
-Estas opciones están en *Configuración ▸ Copia de seguridad y sincronización ▸ Valores predeterminados de copias de seguridad* y se aplican a todos los proyectos.
+Las copias antiguas se eliminan automáticamente para ahorrar espacio en el disco. Elija
+cuáles conservar:
 
-### Abre una copia de seguridad
+- *Por niveles* conserva aproximadamente una por hora durante un día, una por día durante una
+  semana, una por semana durante un mes y una por mes a partir de ahí.
+- *Conservar las N últimas* conserva ese número, empezando por las más recientes.
 
-Abrir una copia no modifica el proyecto actual. Se abre en una ventana independiente que no permite sobrescribir la copia con un guardado normal. Un aviso permanece visible.
+Todo esto está en *Configuración ▸ Copias de seguridad y sincronización ▸ Copias de
+seguridad predeterminadas*, y se aplica a todos los proyectos.
 
-- *Guardar como…* conserva su contenido como otro proyecto.
-- *Restaurar…* sustituye el proyecto original por la copia.
+### Abrir una copia de seguridad
 
-Solo *Restaurar* modifica tu proyecto real. Antes, Skribisto crea una copia del estado actual para que puedas recuperarlo.
+Abrir una copia de seguridad nunca toca el proyecto en el que está trabajando. Se abre en
+una ventana propia sobre la que no se puede guardar, y un aviso permanece visible para
+recordárselo.
+
+Desde esa ventana puede:
+
+- *Guardar como…* conserva el contenido de la copia de seguridad como un proyecto aparte.
+- *Restaurar…* pone la copia de seguridad en lugar del original.
+
+*Restaurar* es lo único de aquí que cambia su proyecto real. Antes de hacerlo, aparta su
+proyecto actual como una copia de seguridad propia, para que pueda recuperarlo si hace falta.
 
 ## Historial de versiones
 
-El historial sigue una escena, nota o sinopsis a la vez. Cada entrada indica su origen:
+El historial de versiones sigue una escena, una nota o una sinopsis cada vez. Procede de dos
+lugares, y cada entrada le indica cuál:
 
-- El *historial del proyecto* registra el texto cada vez que guardas.
-- Las *copias de seguridad* permiten retroceder más, según su antigüedad.
+- *Del historial propio del proyecto*: el proyecto guarda el texto cada vez que usted guarda.
+- *De una copia de seguridad*: las copias de seguridad llegan más atrás, por antiguas que
+  sean.
 
-### Consulta y recupera texto anterior
+### Mirar atrás y restaurar texto
 
-El panel *Versiones* está a la derecha, junto a Comentarios y Formato.
+El panel *Versiones* está a la derecha de la ventana, junto a Comentarios y Formato.
 
-*Restaurar esta versión* recupera el texto anterior. Primero se crea una copia de seguridad y puedes deshacerlo con `Ctrl+Z`.
+*Restaurar esta versión* vuelve a poner el texto anterior. Skribisto hace antes una copia de
+seguridad de precaución, y `Ctrl+Z` lo deshace.
 
-Fija una versión procedente de una copia de seguridad para que la limpieza de archivos antiguos no la elimine.
+Fije una versión procedente de una copia de seguridad y la limpieza de archivos antiguos
+nunca la eliminará.
 
-### Recupera un elemento eliminado
+### Algo que ha eliminado
 
-*Restaurar esta versión* solo funciona con elementos que aún existen. Para una escena o nota eliminada, elige *Ver ▸ Volver al pasado*.
+*Restaurar esta versión* solo funciona con algo que todavía existe. Para una escena o una
+nota que ha eliminado, elija *Ver ▸ Volver al pasado*.
 
-*Recuperar este elemento…* lo recrea con su texto anterior donde elijas en el Archivador. Puedes deshacerlo desde el botón del mensaje que aparece.
+*Recuperar esto…* vuelve a crear el elemento con el texto que tenía, en el lugar del
+archivador que usted quiera. Para deshacerlo, use el botón del mensaje que aparece.

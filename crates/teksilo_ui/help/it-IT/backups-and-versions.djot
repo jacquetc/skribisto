@@ -8,7 +8,7 @@ La *cronologia delle versioni* registra le modifiche di una singola [scena, nota
 
 Skribisto crea automaticamente backup alla chiusura del progetto e ogni due ore durante il lavoro.
 
-Per crearne uno subito, scegli *Progetto ▸ Crea backup ora*.
+Per crearne uno subito, scegli *Progetto ▸ Esegui backup ora*.
 
 Per vedere quelli esistenti, scegli *Progetto ▸ Backup…*. L'elenco mostra tutti i backup del progetto e permette di aprirli, mostrarli nella cartella o eliminarli.
 

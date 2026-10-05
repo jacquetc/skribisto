@@ -2,149 +2,134 @@
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 tags-preset-basic = Alap
-tags-preset-scifi = Tudományos-fantasztikus
-tags-preset-fantasy = Fantázia
-tags-preset-mystery = Rejtély
+tags-preset-scifi = Sci-fi
+tags-preset-fantasy = Fantasy
+tags-preset-mystery = Krimi
 tags-preset-historical = Történelmi
-
-
-tags-preset-needs-research = kutatásokra van szükség
-tags-preset-continuity-check = A folyamatosság ellenőrzése
-tags-preset-plot-point = telken
-
-tags-preset-character = karakter
-tags-preset-place = hely
-tags-preset-item = tétel
-
-tags-preset-vessel = hajó
+tags-preset-needs-research = utánajárást igényel
+tags-preset-continuity-check = folytonosság ellenőrzése
+tags-preset-plot-point = fordulópont
+tags-preset-character = szereplő
+tags-preset-place = helyszín
+tags-preset-item = tárgy
+tags-preset-vessel = űrhajó
 tags-preset-planet = bolygó
-tags-preset-organization = szervezés
-tags-preset-creature = teremtmény
+tags-preset-organization = szervezet
+tags-preset-creature = lény
 tags-preset-faction = frakció
-tags-preset-artifact = ereklye
+tags-preset-artifact = varázstárgy
 tags-preset-realm = birodalom
-tags-preset-magic-system = mágikus rendszer
+tags-preset-magic-system = mágiarendszer
 tags-preset-suspect = gyanúsított
 tags-preset-victim = áldozat
 tags-preset-clue = nyom
-tags-preset-red-herring = vörös hering
-tags-preset-historical-figure = történeti adat
+tags-preset-red-herring = hamis nyom
+tags-preset-historical-figure = történelmi személy
 tags-preset-source = forrás
-tags-preset-period-detail = időszak részletezése
-
+tags-preset-period-detail = korabeli részlet
 tags-pill-list = Címkék
-tags-pill-add = Címke hozzáadása
+tags-pill-add = Címke felvétele
 tags-none-yet = Nincs címke
-tags-pick-list = Címkék közül választhat
-tags-pill-remove = A { $name } eltávolítása
-tags-pill-filter-placeholder = Új címke szűrése vagy elnevezése
-tags-pill-no-match = Nincs címke egyezés.
-tags-pill-create = Létrehozása { $name }
-tags-pill-create-failed = Létrehozhatnánk a { $name }
-tags-pill-new-discoverable = Find- in- prózacímke
-tags-pill-new-discoverable-hint = Az ezzel a címkével ellátott elemek illeszkednek a prózájához, hogy kitöltsék a névsort.
-
-tags-alias-list = Más néven:
-tags-alias-add = Új név hozzáadása
-tags-alias-remove = A { $name } eltávolítása
+tags-pick-list = Választható címkék
+tags-pill-remove = { $name } eltávolítása
+tags-pill-filter-placeholder = Szűrés vagy új címke neve
+tags-pill-no-match = Nincs egyező címke
+tags-pill-create = „{ $name }” létrehozása
+tags-pill-create-failed = Nem sikerült létrehozni: „{ $name }”
+tags-pill-new-discoverable = Prózában keresett címke
+tags-pill-new-discoverable-hint = Az ilyen címkét viselő elemeket a program megkeresi a prózában, hogy feltöltse a szereplőlistát.
+tags-alias-list = Más néven
+tags-alias-add = Másik név hozzáadása
+tags-alias-remove = { $name } eltávolítása
 tags-alias-placeholder = Másik név, majd Enter
-tags-alias-hint = Nevek jelennek meg a prózádban, a címe mellett.
-tags-alias-collision = A { $name } már válaszol erre a névre.
-
+tags-alias-hint = Nevek, amelyeken a címén kívül szerepel a prózában.
+tags-alias-collision = Ezt a nevet már viseli: { $name }.
 settings-page-tags = Címkék
-settings-tags-desc = Címkék címkék a tételek a mappában. A find- in-próza címke is azt mondja Skribisto, hogy keresse meg ezt a tételt a prózában.
+settings-tags-desc = A címkék az iratrendező elemeit jelölik. A prózában keresett címke arra is utasítja a Skribistót, hogy keresse az adott elem neveit a prózájában.
 settings-tags-add = Címke hozzáadása
-settings-tags-add-placeholder = Új címke
-settings-tags-added = Hozzáadva { $name }
-settings-tags-duplicate = A { $name } már létezik.
-settings-tags-filter = Szűrőcímkék
+settings-tags-add-placeholder = Az új címke neve
+settings-tags-added = Hozzáadva: „{ $name }”
+settings-tags-duplicate = A(z) „{ $name }” már létezik
+settings-tags-filter = Címkék szűrése
 settings-tags-count = { $n ->
     [one] 1 címke
-   *[other] { $n } címkék
+   *[other] { $n } címke
 }
-settings-tags-details-placeholder = Mit jelent ez a címke?
+settings-tags-details-placeholder = Mit jelent ez a címke
 settings-tags-discoverable = Keresés a prózában
-settings-tags-creates-in = Új jegyzetek:
-settings-tags-creates-in-unset = Először kérdezd meg.
+settings-tags-creates-in = Az új jegyzetek helye
+settings-tags-creates-in-unset = Első alkalommal kérdezzen rá
 settings-tags-creates-in-untitled = Névtelen mappa
-settings-tags-creates-in-trashed = { $name } (a szemétben)
-settings-tags-template = Kiindulási sablon
-settings-tags-template-unset = Üres megjegyzés
-settings-tags-delete = Törlés { $name }
-settings-tags-deleted = Törölve: { $name }, és minden darabból eltávolítva
-settings-tags-empty = Még nincs rajta címke.
-settings-tags-apply-preset = Előzetes beállítás alkalmazása
-settings-tags-preset-applied = Hozzáadott { $added }, kimaradt { $skipped } már jelen
-settings-tags-csv-filter = CSV fájl
+settings-tags-creates-in-trashed = { $name } (a kukában)
+settings-tags-template = Kezdősablon
+settings-tags-template-unset = Üres jegyzet
+settings-tags-delete = { $name } törlése
+settings-tags-deleted = „{ $name }” törölve, és minden elemről eltávolítva
+settings-tags-empty = Még nincsenek címkék.
+settings-tags-apply-preset = Előre beállított készlet alkalmazása…
+settings-tags-preset-applied = Hozzáadva: { $added }, kihagyva { $skipped } már meglévő
+settings-tags-csv-filter = CSV-fájlok
 settings-tags-import = Importálás…
 settings-tags-export = Exportálás…
-settings-tags-imported = Importált { $added }, kimaradt { $skipped }
-settings-tags-exported = Kivitel { $n ->
+settings-tags-imported = Importálva: { $added }, kihagyva: { $skipped }
+settings-tags-exported = Exportálva: { $n ->
     [one] 1 címke
-   *[other] { $n } címkék
+   *[other] { $n } címke
 }
-
 tags-chip-more = { $n ->
-    [one] 1 további címke
-   *[other] { $n } további címke
+    [one] még 1 címke
+   *[other] még { $n } címke
 }
-
 cast-section = Szereplők
-cast-add = Hozzáadás a gipszhez
-cast-add-filter-placeholder = Szűrő történet bibliaName
-cast-add-empty = Nincs történet-bibliai bejegyzések hozzá
-cast-pin = Hozzáadás { $name } a gipsz
-cast-unpin = Távolítsa el a { $name }-et a gipszet
-cast-empty = Még senki sem volt beszorulva.
-cast-unresolved = Már nem a történet bibliában.
-
-mentions-confirm = Hozzáadás a { $name }-hez
+cast-add = Hozzáadás a szereplőkhöz…
+cast-add-filter-placeholder = Szűrés a történetbibliában…
+cast-add-empty = Nincs hozzáadható történetbiblia-bejegyzés
+cast-pin = { $name } hozzáadása a szereplőkhöz
+cast-unpin = { $name } eltávolítása a szereplők közül
+cast-empty = Még senki sincs rögzítve. Adjon hozzá valakit, vagy tartson meg egy javaslatot
+cast-unresolved = Már nincs a történetbibliában
+mentions-confirm = Hozzáadás a(z) { $name } szereplőihez
 mentions-hit-count = { $n ->
     [one] egyszer
-   *[other] { $n }-szer
+   *[other] { $n } alkalommal
 }
 mentions-point-of-view-badge = Nézőpont
-mentions-point-of-view-badge-tooltip = Itt a nézőpontnak minősítve, kézzel beállítva, a prózában nem észlelve.
-
+mentions-point-of-view-badge-tooltip = Itt nézőpontként megadva, kézzel beállítva, nem a prózából felismerve.
 mentions-roster = Szereplők
-mentions-pin = Hozzáadás { $name } a gipsz
-
+mentions-pin = { $name } hozzáadása a szereplőkhöz
 pov-section = Nézőpont
-pov-empty = Nincs nézőpont
-pov-add = Meghatározott nézőpont
+pov-empty = Nincs megadva nézőpont
+pov-add = Nézőpont megadása…
 pov-multiple = Ennek a jelenetnek két nézőpontja van.
-pov-remove = Távolítsa el a { $name } nézőpontból
-pov-unresolved = Egy nézőpont volt itt, de ez a bejegyzés már nem létezik, vagy elvesztette a történet-bibliai címkét.
-
-books-section = Kategória:
-books-empty = Még nem jelent meg egy könyv alatt.
-books-add = Fájl könyv alatt
-books-remove = Eltávolítás a { $name }-ből
-books-apply-to-children = Kérelmezés gyermekek számára
-
+pov-remove = { $name } eltávolítása a nézőpontból
+pov-unresolved = Ide egy nézőpont volt rögzítve, de az a bejegyzés már nem létezik, vagy elvesztette a történetbiblia-címkéjét.
+books-section = Könyvekhez rendelve
+books-empty = Még nincs könyvhöz rendelve
+books-add = Könyvhöz rendelés…
+books-remove = Eltávolítás innen: { $name }
+books-apply-to-children = A könyvhöz rendelés alkalmazása a gyermekelemekre
 note-details-name-placeholder = Név…
 note-details-tags = Címkék
-note-details-aliases = Egyéb nevek
-note-details-books = Kategória:
-note-details-books-empty = Még nem került be könyvbe
-note-details-links = Linkek
-note-details-links-empty = Még nincs kapcsolat, adjon hozzá egyet, hogy rámutasson egy másik bejegyzésre a bibliájában.
-note-details-links-add = Link egy cetlihez
+note-details-aliases = Más nevek
+note-details-books = Könyvekhez rendelve
+note-details-books-empty = Még nincs könyvhöz rendelve
+note-details-links = Kapcsolódó bejegyzések
+note-details-links-empty = Még nincsenek kapcsolódó bejegyzések. Adjon hozzá egyet, hogy a történetbiblia egy másik bejegyzésére mutasson.
+note-details-links-add = Kapcsolás egy jegyzethez…
 note-details-pov = Nézőpont
-note-details-pov-empty = Nincs nézőpont
-note-details-pov-unresolved = Egy nézőpont volt itt, de ez a bejegyzés már nem létezik, vagy elvesztette a történet-bibliai címkét.
-note-details-pov-multiple = Ennek a megjegyzésnek két szempontja van.
-note-details-backlinks = Megjelenések a kéziratban
-note-details-backlinks-empty = Ha ez a név megjelenik a prózádban, itt fog megjelenni.
+note-details-pov-empty = Nincs megadva nézőpont
+note-details-pov-unresolved = Ide egy nézőpont volt rögzítve, de az a bejegyzés már nem létezik, vagy elvesztette a történetbiblia-címkéjét.
+note-details-pov-multiple = Ennek a jegyzetnek két nézőpontja van.
+note-details-backlinks = Előfordulások a kéziratban
+note-details-backlinks-empty = Még semmi. Amint ez a név megjelenik a prózájában, itt is feltűnik.
 note-details-backlinks-outside = A könyveken kívül
-note-details-backlinks-confirm-all = Minden megjelenés megerősítése
-note-details-backlinks-confirm-all-tooltip = Ezt a bejegyzést adja hozzá az itt bemutatott minden olyan dokumentumhoz, amely még nem erősítette meg.
-note-details-untitled-document = Név nélkül
-
+note-details-backlinks-confirm-all = Minden előfordulás megerősítése
+note-details-backlinks-confirm-all-tooltip = A bejegyzés hozzáadása minden itt látható dokumentum szereplőihez, ahol még nincs megerősítve
+note-details-untitled-document = Névtelen
 note-in-prose-mentions = { $n ->
     [one] 1 említés
-   *[other] { $n }
+   *[other] { $n } említés
 }
-note-in-prose-mention-at = { $current }, { $total }
+note-in-prose-mention-at = { $current } / { $total }
 note-in-prose-mention-previous = Előző említés
 note-in-prose-mention-next = Következő említés

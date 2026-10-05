@@ -5918,6 +5918,7 @@ dependencies = [
  "ron",
  "roxmltree 0.21.1",
  "serde",
+ "serde_json",
  "skribisto-common",
  "skribisto-model",
  "tempfile",

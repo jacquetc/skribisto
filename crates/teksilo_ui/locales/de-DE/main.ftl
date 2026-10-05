@@ -9,7 +9,7 @@ menu-new-window = Neues &Fenster
 menu-import-from = &Importieren aus
 menu-create-from = &Erstellen aus
 menu-import-plume = &Plume Creator (.plume)…
-menu-import-document = &Dokumenten (Markdown, Word, ODT)…
+menu-import-document = &Dokumente (Markdown, Word, ODT)…
 menu-import-manuskript = &Manuskript (.msk)…
 menu-export = E&xportieren
 menu-export-book = Buch exportieren
@@ -39,7 +39,7 @@ menu-focus-mode = Ablenkungs&freier Modus
 menu-format = F&ormat
 menu-scene-break = &Szenentrenner einfügen
 menu-major-scene-break = &Großen Szenentrenner einfügen
-menu-go = &Gehe zu
+menu-go = &Navigation
 menu-go-next-scene = Nächste &Szene
 menu-go-prev-scene = &Vorherige Szene
 menu-go-next-chapter = Nächstes &Kapitel
@@ -67,8 +67,8 @@ ctx-tab-close-others = &Andere schließen
 ctx-tab-close-all = A&lle schließen
 ctx-tab-open-to-side = S&eitlich öffnen
 ctx-tab-open-in-main = &Im Hauptbereich öffnen
-ctx-tab-move-to-side = &Verschieben in den Seitenbereich
-ctx-tab-move-to-main = &Verschieben in den Hauptbereich
+ctx-tab-move-to-side = In den Seitenbereich &verschieben
+ctx-tab-move-to-main = In den Hauptbereich &verschieben
 ctx-tab-move-to-new-window = In ein &neues Fenster verschieben
 ctx-tab-move-window-unsaved = Speichern Sie zuerst dieses Projekt: Ein zweites Fenster öffnet eine Datei auf dem Datenträger
 ctx-tab-pin = An&heften
@@ -148,15 +148,21 @@ session-time-limit-unit = Min.
 session-no-goal = Kein Ziel
 session-no-limit = Kein Limit
 session-reset = Sitzung zurücksetzen
-session-readout = { $words } Wörter · { $time }
-session-readout-timed = { $words } Wörter · noch { $time }
+session-readout = { $words ->
+        [one] { $words } Wort
+       *[other] { $words } Wörter
+    } · { $time }
+session-readout-timed = { $words ->
+        [one] { $words } Wort
+       *[other] { $words } Wörter
+    } · noch { $time }
 statusbar-focus-exit = Ablenkungsfreien Modus verlassen
 statusbar-focus-synopsis = Zusammenfassung
-statusbar-focus-go-prev = Vorheriger Eintrag (Alt+Auf)
-statusbar-focus-go-next = Nächster Eintrag (Alt+Ab)
+statusbar-focus-go-prev = Vorheriger Eintrag (Alt+Pfeil nach oben)
+statusbar-focus-go-next = Nächster Eintrag (Alt+Pfeil nach unten)
 rail-settings = Einstellungen
 language = Sprache
-theme = Erscheinungsbild
+theme = Design
 english = Englisch
 french = Französisch
 light = Hell
@@ -204,7 +210,7 @@ settings-page-dictionaries = Wörterbücher
 settings-page-autosave = Automatisches Speichern
 settings-page-export = Exportformate
 settings-page-paratext = Paratextstrukturen
-settings-page-keymap = Tastenkürzel
+settings-page-keymap = Tastenbelegung
 settings-keymap-filter = Tastenkürzel filtern
 settings-desc-sec-appearance-behaviour = Aussehen der Anwendung und Verhalten beim Start.
 settings-desc-sec-editor = Die Schreibfläche: Aussehen und Verhalten beim Tippen.
@@ -214,7 +220,7 @@ settings-desc-sec-compile = Was Skribisto ausgibt und in welcher Form.
 settings-desc-sec-work = Einstellungen, die zu diesem Projekt gehören und in seiner Datei mitgeführt werden.
 settings-desc-sec-extensions = Seiten der hier installierten Erweiterungen.
 settings-desc-group-typography = Eine Seite je Textart: Schriftart, Größe, Zeilenhöhe und Abstände.
-settings-desc-appearance = Oberflächensprache, Erscheinungsbild, Textgröße und Startseite.
+settings-desc-appearance = Oberflächensprache, Design, Textgröße und Startseite.
 settings-desc-notifications = Alle Meldungen dieser Sitzung und erneut ausführbare Aktionen.
 settings-desc-scene = Satz des Szenentexts: Schriftart, Größe, Zeilenhöhe, Einzüge und Abstände.
 settings-desc-synopsis = Gestaltung der Zusammenfassung, unabhängig vom Manuskript.
@@ -248,7 +254,7 @@ settings-desc-structure = Ob Kapitel dieses Projekts Ordner oder einzelne Eintr�
 settings-desc-language = Die Sprache für die Rechtschreibprüfung dieses Projekts.
 settings-desc-work-backup = Eigene Sicherungsregeln dieses Projekts oder die allgemeinen Regeln.
 settings-desc-personal-dictionary = Wörter, die in diesem Projekt als richtig geschrieben gelten.
-settings-desc-tags = Farbige Schlagwörter zur Kennzeichnung der Einträge dieses Projekts.
+settings-desc-tags = Farbige Schlagwörter, mit denen dieses Projekt seine Einträge markiert.
 settings-desc-templates = Notizvorlagen, die Sie beim Schreiben in diesem Projekt einfügen können.
 settings-desc-text-replacements = Kürzel, die beim Tippen in diesem Projekt erweitert werden.
 settings-desc-work-punctuation = Anführungszeichen, Gedankenstriche und Abstände im Text dieses Projekts.
@@ -256,7 +262,7 @@ settings-group-typography = Typografie
 settings-group-writing-column = Schreibspalte
 settings-group-writing-view = Schreibansicht
 settings-group-distraction-free-strip = Bedienleiste
-settings-group-theme = Erscheinungsbild
+settings-group-theme = Design
 settings-group-language = Sprache
 settings-group-startup = Start
 settings-group-updates = Aktualisierungen
@@ -284,7 +290,7 @@ settings-distraction-free-session = Schreibsitzung sichtbar lassen
 settings-distraction-free-go-to = Schaltfläche „Gehe zu…“ sichtbar lassen
 settings-distraction-free-go = Schaltflächen „Zurück“ und „Weiter“ sichtbar lassen
 settings-distraction-free-chrome-hint = Die Schaltfläche zum Verlassen bleibt immer sichtbar. Sie können damit den Modus verlassen, wenn Escape anderweitig belegt ist.
-settings-field-app-theme = Erscheinungsbild
+settings-field-app-theme = Design
 settings-theme-light = Hell
 settings-theme-dark = Dunkel
 settings-field-text-scale = Textgröße der Oberfläche
@@ -336,7 +342,7 @@ tidy-titles-lead = { $count ->
         [one] Ein Kapitel oder Teil trägt nur seine eigene Nummer als Titel.
        *[other] { $count } Kapitel und Teile tragen nur ihre eigene Nummer als Titel.
     }
-tidy-titles-explain = Wenn Sie diese Titel leeren, werden die Einträge durch die bereits bekannte Buchnummer bezeichnet, die auch beim Export erscheint. Sonst ändert sich nichts. Einmal Rückgängig stellt alle Titel wieder her.
+tidy-titles-explain = Wenn Sie diese Titel leeren, wird jeder Eintrag nur noch durch die Nummer bezeichnet, die sich aus seiner Stellung im Buch ergibt und die auch der Export ausgibt. Sonst ändert sich nichts, und ein einziges Rückgängig stellt alle Titel wieder her.
 menu-document-tidy-titles = Kapiteltitel &bereinigen…
 settings-group-numbering = Nummerierung
 settings-number-chapters = Kapitel und Teile nummerieren
@@ -539,16 +545,16 @@ segment-story-bible = Geschichtenbibel
 segment-note-own = Notiz
 segment-note-details = Details
 segment-note-in-prose = Im Text
-pace-placeholder = Hier erscheint die Schreibplanung.
+pace-placeholder = Hier erscheint der Schreibplan.
 pace-empty-title = Schreibtempo für dieses Buch planen
 pace-empty-body = Legen Sie Wortziel und Abgabetermin fest. Skribisto berechnet das dafür nötige tägliche Schreibpensum.
 pace-start-planning = Planung beginnen
 pace-section-schedule = Zeitplan
 pace-section-progress = Fortschritt
-pace-advancement = Fortschritt
+pace-advancement = Verlauf
 pace-goal = Wortziel
 pace-deadline = Abgabetermin
-pace-active = Schreibplanung aktiv
+pace-active = Schreibplan aktiv
 pace-day-mon = Mo
 pace-day-tue = Di
 pace-day-wed = Mi
@@ -576,7 +582,7 @@ pace-daily-target-line = Gleichmäßiges Pensum: { $count ->
 pace-section-holidays = Freie Tage
 pace-section-milestones = Meilensteine
 pace-holidays-none = Keine freien Tage. Jeder geplante Tag zählt.
-pace-holiday-label = Bezeichnung der Auszeit
+pace-holiday-label = Name des freien Tags
 pace-add-holiday = Hinzufügen
 pace-remove = Entfernen
 pace-milestones-none = Noch keine Meilensteine. Legen Sie im Inspektor einen für einen Teil oder ein Kapitel fest.
@@ -665,9 +671,9 @@ backup-nothing-open = Kein Projekt zum Sichern geöffnet.
 backup-already-running = Eine Sicherung läuft bereits.
 backup-complete = Sicherung abgeschlossen ({ $ok } gespeichert, { $skipped } bereits aktuell)
 backup-partial = Sicherung beendet: { $ok } gespeichert, { $failed ->
-    [one] { $failed } Ziel fehlgeschlagen
-   *[other] { $failed } Ziele fehlgeschlagen
-}
+        [one] { $failed } Sicherungsziel fehlgeschlagen
+       *[other] { $failed } Sicherungsziele fehlgeschlagen
+    }
 backup-no-destination-title = Kein Sicherungsort verfügbar
 backup-no-destination-text = Keines der eingerichteten Sicherungsziele ist erreichbar (möglicherweise ist ein externes Laufwerk nicht angeschlossen). Schließen Sie es an und versuchen Sie es erneut, oder beenden Sie ohne Sicherung.
 backup-failed-close-title = Die Sicherung konnte nicht gespeichert werden
@@ -740,7 +746,7 @@ settings-backup-usage = { $count ->
 settings-backup-usage-empty = Hier ist noch nichts gespeichert
 settings-backup-usage-measuring = Wird ermittelt…
 settings-backup-reveal-root = Ordner anzeigen
-settings-backup-dest-none = Keine Ziele. Sicherungen werden neben dem Projekt gespeichert.
+settings-backup-dest-none = Keine Sicherungsziele. Sicherungen werden neben dem Projekt gespeichert.
 settings-backup-dest-remove = Entfernen
 settings-backup-dest-add = Ordner hinzufügen…
 settings-backup-dest-refresh = Aktualisieren
@@ -876,9 +882,9 @@ import-plume-done = { $imported ->
 }
 import-plume-open-now = Jetzt öffnen
 import-plume-warnings = { $count ->
-    [one] 1 Sache konnte nicht originalgetreu importiert werden
-   *[other] { $count } Sachen konnten nicht originalgetreu importiert werden
-}
+        [one] 1 Element konnte nicht originalgetreu importiert werden
+       *[other] { $count } Elemente konnten nicht originalgetreu importiert werden
+    }
 import-plume-details = Details
 import-plume-warnings-title = Importwarnungen
 import-plume-error-title = Projekt konnte nicht importiert werden
@@ -913,10 +919,10 @@ import-manuskript-characters-group = Figuren
 import-manuskript-world-group = Welt
 import-manuskript-plots-group = Handlungsstränge
 import-manuskript-project-info-note = Projektinformationen
-import-manuskript-summary-note = Zusammenfassung
-import-manuskript-importance-minor = Unwichtig
-import-manuskript-importance-secondary = Nebenrolle
-import-manuskript-importance-main = Hauptrolle
+import-manuskript-summary-note = Inhaltsangabe
+import-manuskript-importance-minor = Nebensächlich
+import-manuskript-importance-secondary = Zweitrangig
+import-manuskript-importance-main = Zentral
 import-manuskript-progress-title = Manuskript-Projekt wird importiert…
 import-manuskript-cancel-import = Abbrechen
 import-manuskript-cancelled = Import abgebrochen
@@ -957,7 +963,7 @@ export-export = Exportieren
 export-save-dialog-title = In Datei exportieren
 export-section-what = Zu exportierender Inhalt
 export-section-style = Stil
-export-section-destination = Ziel
+export-section-destination = Speicherort
 export-custom-selection = Eigene Auswahl
 export-selected-count = { $count } ausgewählt
 export-chip-chapters-none = Kapitel: keine Überschrift
@@ -1000,7 +1006,7 @@ export-error-details = Details
 backup-progress-start = Wird gestartet…
 backup-progress-retention = Alte Sicherungen werden bereinigt…
 backup-progress-done = Fertig
-backup-progress-destination = Ziel { $i } von { $n }
+backup-progress-destination = Sicherungsziel { $i } von { $n }
 backup-details = Details
 backup-issues-title = Sicherungsprobleme
 backup-failed-title = Sicherung fehlgeschlagen
@@ -1013,7 +1019,7 @@ search-replace-all = Alle ersetzen
 search-opt-case = Groß-/Kleinschreibung beachten
 search-opt-whole-word = Ganzes Wort
 search-opt-diacritics = Akzente beachten
-search-scope-body = Text
+search-scope-body = Haupttext
 search-scope-title = Titel
 search-scope-synopsis = Zusammenfassung
 search-scope-label = Kennzeichnung
@@ -1026,7 +1032,7 @@ search-facet-folder = Ordner
 search-tip-case = Groß-/Kleinschreibung beachten: Groß- und Kleinbuchstaben unterscheiden, sodass „Elena“ und „elena“ getrennte Treffer sind.
 search-tip-whole-word = Ganzes Wort: Nur vollständige Wörter finden, sodass „Tor“ nicht in „Torte“ gefunden wird.
 search-tip-diacritics = Akzente beachten: Buchstaben mit Akzenten unterscheiden, sodass „cafe“ nicht „café“ findet.
-search-tip-body = Text: Den Text von Szenen und Notizen durchsuchen.
+search-tip-body = Haupttext: Den Text von Szenen und Notizen durchsuchen.
 search-tip-title = Titel: Die Titel der Projektmappeneinträge durchsuchen.
 search-tip-synopsis = Zusammenfassung: Die Zusammenfassung jedes Schreibeintrags durchsuchen.
 search-tip-label = Kennzeichnung: Die kurze Anmerkung unter dem Titel eines Projektmappeneintrags durchsuchen.
@@ -1059,7 +1065,7 @@ search-count-truncated =
        *[other] { $items } Dokumenten
     } (nur erste Ergebnisse)
 search-occurrences = { $count }
-search-field-body = Text
+search-field-body = Haupttext
 search-field-title = Titel
 search-field-synopsis = Zusammenfassung
 search-field-label = Kennzeichnung
@@ -1302,7 +1308,7 @@ undo-target-merge = Zusammenführen zweier Szenen
 undo-target-split = Teilen einer Szene
 undo-target-promote = Typänderung
 undo-target-tidy-titles = Bereinigen der Kapiteltitel
-undo-target-import-tags = Importieren von Kennzeichnungen
+undo-target-import-tags = Importieren von Schlagwörtern
 undo-target-import-templates = Importieren von Notizvorlagen
 undo-target-create = Erstellen
 undo-target-remove = Löschen
@@ -1388,7 +1394,7 @@ settings-styles-sheet-formats = Formate
 settings-styles-sheet-all-formats = Alle
 settings-styles-editor-group = Stileditor
 settings-styles-editor-missing = Dieser Stil ist nicht mehr verfügbar.
-settings-styles-page-letter = Letter
+settings-styles-page-letter = US Letter
 settings-styles-digits-western = Westlich (0–9)
 settings-styles-digits-eastern-arabic = Ostarabisch (٠–٩)
 settings-styles-direction-ltr = Links nach rechts
@@ -1754,7 +1760,7 @@ import-document-title = Dokumente importieren
 import-document-close = Schließen
 import-document-step-files = Dateien
 import-document-step-review = Prüfen
-import-document-step-destination = Ziel
+import-document-step-destination = Einfügeort
 import-document-step-reconcile = Zusammenführen
 import-document-reconcile-hint = Einige dieser Einträge sind bereits vorhanden. Legen Sie für jeden fest, was geschehen soll.
 import-document-reconcile-all-new = Nichts in dieser Datei entspricht Ihrem Projekt: Alle Einträge werden neu hinzugefügt.
@@ -1809,7 +1815,7 @@ import-document-level-rules = Überschriftenebenen
 import-document-level-n = Überschrift { $level }
 import-document-add-top-level = Oberste Ebene hinzufügen
 import-document-add-top-level-tooltip = Ein Buch oberhalb aller analysierten Einträge einfügen, für Kapiteldateien ohne Buchüberschrift
-import-document-destination = Ziel
+import-document-destination = Einfügeort
 import-document-destination-hint = Wählen Sie eine Projektmappe oder einen Eintrag: Neue Einträge landen innerhalb eines Ordners oder nach einer Szene.
 import-document-destination-empty = Noch keine Projektmappen. Erstellen Sie zuerst eine.
 import-document-plan-empty = Noch nichts zu importieren.
@@ -2215,8 +2221,8 @@ shortcut-name-format-mark-nbsp = Geschütztes Leerzeichen einfügen
 shortcut-name-format-mark-nbhyphen = Geschützten Bindestrich einfügen
 shortcut-name-format-mark-nnbsp = Schmales geschütztes Leerzeichen einfügen
 shortcut-name-format-mark-zwsp = Leerzeichen ohne Breite einfügen
-shortcut-name-go-next = Weiter
-shortcut-name-go-prev = Zurück
+shortcut-name-go-next = Nächster Eintrag
+shortcut-name-go-prev = Vorheriger Eintrag
 shortcut-name-go-to = Gehe zu
 shortcut-name-outline-toggle = Gliederung ein-/ausblenden
 shortcut-name-preview-toggle = Vorschauleiste ein-/ausblenden
@@ -2374,3 +2380,190 @@ status-category-drafting = Im Entwurf
 status-category-needs-work = Überarbeitung nötig
 status-category-revised = Überarbeitet
 status-category-final = Endfassung
+
+## Long-operation progress (shared::progress_text). The backend reports phase
+## codes it cannot translate; these are their labels. `progress-percent` is the
+## toast body on its own, `progress-percent-with-label` with the phase after it.
+progress-percent = { $percent } %
+progress-percent-with-label = { $percent } % · { $label }
+progress-import-opening = Projekt wird geöffnet…
+progress-import-outline = Gliederung wird gelesen…
+progress-import-converting = Kapitel und Szenen werden umgewandelt…
+progress-import-writing = .skrib-Datei wird geschrieben…
+progress-import-done = Fertig
+progress-import-structure = Struktur wird ermittelt…
+progress-export-start = Wird gestartet…
+progress-export-writing = Wird geschrieben…
+progress-project-reading = Projekt wird gelesen…
+# Settings: the open project's section title, "Work: <its title>".
+settings-sec-work-titled = Projekt: { $title }
+
+## Project-import notices (shared::import_warnings::notices): one line of the
+## Plume / Manuskript warnings list each. $file, $folder, $title, $name, $field
+## and $error are data (file names, titles, a parser's own message) and stay as
+## they are. $container is "single-file" or "folder"; $kind is "scene", "note",
+## "synopsis" or "title".
+import-notice-flattened-rich-texts = { $count ->
+    [one] Ein Text war tiefer verschachtelt, als ein Skribisto-Projekt aufnehmen kann; seine Wörter wurden als reiner Text übernommen, ohne ihre Formatierung.
+   *[other] { $count } Texte waren tiefer verschachtelt, als ein Skribisto-Projekt aufnehmen kann; ihre Wörter wurden als reiner Text übernommen, ohne ihre Formatierung.
+}
+import-notice-free-text-badges = { $count ->
+    [one] Ein Szenen-Badge sieht eher nach freiem Text als nach einer Liste von Status aus und wurde deshalb als Kennzeichnung des Eintrags übernommen statt als Schlagwort.
+   *[other] { $count } verschiedene Szenen-Badges sehen eher nach freiem Text als nach einer Liste von Status aus. Sie wurden deshalb als Kennzeichnungen der Einträge übernommen statt als Schlagwörter.
+}
+import-notice-separator-text-dropped = Das Trennelement „{ $name }“ enthielt Text, der in einem Skribisto-Projekt keinen Platz hat; der Text wurde nicht importiert.
+import-notice-separator-without-scene = Vor dem Trennelement „{ $name }“ stand in seinem Kapitel keine Szene, an die es sich hätte anschließen können; es wurde daher nicht importiert.
+import-notice-chapter-without-scenes = Das Kapitel „{ $name }“ hat keine Szenen; seine Trennelemente wurden daher nicht importiert.
+import-notice-rich-text-unconverted = Ein Teil des formatierten Texts konnte nicht umgewandelt werden ({ $error }); er wurde nicht importiert.
+import-notice-unresolved-cross-link = Ein Verweis auf den Figureneintrag Nr. { $number } konnte nicht aufgelöst werden: Der Eintrag fehlt oder lag im Papierkorb.
+import-notice-read-copy = Gelesen wurde die { $container ->
+    [single-file] Einzeldatei-Fassung
+   *[folder] Ordner-Fassung
+} dieses Projekts.
+import-notice-read-copy-dated = Gelesen wurde die { $container ->
+    [single-file] Einzeldatei-Fassung
+   *[folder] Ordner-Fassung
+} dieses Projekts, zuletzt geändert am { $day }.
+import-notice-original-format = Dieses Projekt liegt im ursprünglichen Manuskript-Format von 2016 vor. Es wurde vollständig gelesen; nichts darin wurde verändert.
+import-notice-newer-single-file-beside = „{ $file }“ ist neuer als dieser Ordner ({ $file_day } gegenüber { $folder_day }). Manuskript lässt den alten Ordner stehen, wenn ein Projekt in den Einzeldatei-Modus wechselt; dieser Ordner ist also möglicherweise eine verwaiste Kopie. Wenn Sie stattdessen die .msk-Datei importieren, wird die neuere Fassung gelesen.
+import-notice-pickle-skipped = „{ $file }“ wurde nicht gelesen. Es handelt sich um eine Python-Pickle-Datei, und das Laden einer solchen Datei aus einer Projektdatei war eine Sicherheitslücke in Manuskript selbst (CVE-2021-35196). Die darin gespeicherten Einstellungen betreffen nur die Anzeige, nicht den Text.
+import-notice-file-unreadable = „{ $file }“ konnte nicht gelesen werden ({ $error }) und wurde übersprungen; alles andere wurde importiert.
+import-notice-not-utf8 = „{ $file }“ ist kein gültiges UTF-8; nicht lesbare Zeichen wurden ersetzt, statt den Import abzubrechen.
+import-notice-table-unreadable = „{ $file }“ konnte nicht gelesen werden ({ $error }); sein Inhalt wurde nicht importiert.
+import-notice-outline-missing = „{ $file }“ fehlt; dieses Projekt hat daher kein Manuskript, das importiert werden könnte.
+import-notice-outline-unreadable = „{ $file }“ konnte nicht gelesen werden ({ $error }); es wurde kein Manuskript importiert.
+import-notice-named-none-row = „{ $file }“ beginnt mit einer benannten Zeile („{ $name }“), wo Manuskript seinen leeren Eintrag „none“ führt. Sie wurde ausgelassen, damit die folgenden Zeilen die Nummern behalten, die das Manuskript verwendet.
+import-notice-unknown-field = „{ $file }“ enthält ein Feld, das dieser Import nicht kennt: „{ $field }“. Es wurde nicht importiert.
+import-notice-colorless-labels = { $count ->
+    [one] „{ $file }“ enthält eine Zeile ohne Farbe. Sie wurde ohne Farbe importiert; Manuskript bricht bei einer solchen Zeile das Laden des Projekts ab.
+   *[other] „{ $file }“ enthält { $count } Zeilen ohne Farbe. Sie wurden ohne Farbe importiert; Manuskript bricht bei einer solchen Zeile das Laden des Projekts ab.
+}
+import-notice-settings-unreadable = „{ $file }“ konnte nicht gelesen werden ({ $error }); die Sprache des Projekts wurde nicht importiert.
+import-notice-revisions-unreadable = „{ $file }“ konnte nicht gelesen werden ({ $error }); der Verlauf des Projekts wurde nicht importiert, alles andere ist davon nicht betroffen.
+import-notice-foreign-files = { $count ->
+    [one] Dieses Projekt enthält eine Datei, die nicht zum Manuskript-Format gehört und nicht importiert wurde: { $files }.
+   *[other] Dieses Projekt enthält { $count } Dateien, die nicht zum Manuskript-Format gehören und nicht importiert wurden: { $files }.
+}
+import-notice-foreign-files-more = Dieses Projekt enthält { $count } Dateien, die nicht zum Manuskript-Format gehören und nicht importiert wurden: { $files } und { $more ->
+    [one] eine weitere
+   *[other] { $more } weitere
+}.
+import-notice-not-a-character-file = „{ $file }“ ist keine Manuskript-Figurendatei und wurde ausgelassen.
+import-notice-not-a-text-item = „{ $file }“ ist kein Manuskript-Texteintrag und wurde nicht in die Gliederung übernommen.
+import-notice-missing-blank-line = „{ $file }“ hat nach seinem Kopfteil keine Leerzeile. Sein letztes Feld wurde trotzdem übernommen, obwohl Manuskript es verliert.
+import-notice-folder-without-metadata = „{ $folder }“ enthält keine Datei { $file } und wurde daher als einfacher Ordner mit dem Namen des Verzeichnisses importiert. Manuskript überspringt ein solches Verzeichnis samt seinem gesamten Inhalt.
+import-notice-rows-given-ids = { $count ->
+    [one] Ein Eintrag der Gliederung hatte keine eigene ID und hat eine erhalten. Manuskript verwirft einen solchen Eintrag oder bricht das Laden des Projekts ab, wenn es sich um einen Ordner handelt.
+   *[other] { $count } Einträge der Gliederung hatten keine eigene ID und haben eine erhalten. Manuskript verwirft einen solchen Eintrag oder bricht das Laden des Projekts ab, wenn es sich um einen Ordner handelt.
+}
+import-notice-plots-unreadable = „{ $file }“ konnte nicht gelesen werden ({ $error }); die Handlungsstränge wurden nicht importiert.
+import-notice-world-unreadable = „{ $file }“ konnte nicht gelesen werden ({ $error }); die Welteinträge wurden nicht importiert.
+import-notice-world-not-opml = „{ $file }“ ist kein OPML-Dokument; die Welteinträge wurden nicht importiert.
+import-notice-text-flattened = Der Text von „{ $title }“ ist tiefer verschachtelt, als ein Skribisto-Projekt aufnehmen kann; seine Wörter wurden als reiner Text übernommen, ohne ihre Formatierung.
+import-notice-text-unconverted = Der Text von „{ $title }“ konnte nicht umgewandelt werden ({ $error }); er wurde genau so übernommen, wie er geschrieben war.
+import-notice-text-without-file-name = { $kind ->
+    [scene] Für den Szenentext
+    [note] Für den Notiztext
+    [synopsis] Für die Zusammenfassung
+   *[title] Für den Titel
+} von „{ $title }“ konnte kein Dateiname vergeben werden; dieser Inhalt wurde daher nicht importiert.
+import-notice-unknown-label = „{ $title }“ hat die Kennzeichnung { $index }, die in der Kennzeichnungsliste dieses Projekts nicht vorkommt. Es wurde ohne Kennzeichnung importiert.
+import-notice-unknown-status = „{ $title }“ hat den Status { $index }, der in der Statusliste dieses Projekts nicht vorkommt. Es wurde ohne Status importiert.
+import-notice-unknown-point-of-view = „{ $title }“ wird aus der Sicht einer Figur erzählt, die nicht zu den Figuren dieses Projekts gehört. Die Erzählperspektive wurde nicht gesetzt.
+import-notice-unresolved-references = Die Verweise im Text von „{ $title }“ konnten nicht aufgelöst werden ({ $error }); der Text wurde so übernommen, wie er umgewandelt wurde, einschließlich der Verweismarken.
+import-notice-custom-icons = { $count ->
+    [one] Ein Eintrag hatte ein eigenes Symbol. Skribisto gibt jedem Eintrag das Symbol seines Typs, daher wurde das Symbol nicht importiert; sonst hat sich an dem Eintrag nichts geändert.
+   *[other] { $count } Einträge hatten ein eigenes Symbol. Skribisto gibt jedem Eintrag das Symbol seines Typs, daher wurden die Symbole nicht importiert; sonst hat sich an diesen Einträgen nichts geändert.
+}
+import-notice-character-colors = { $count ->
+    [one] Eine Figur hatte eine Farbe neben ihrem Namen. Skribisto färbt Schlagwörter, nicht Einträge, daher wurde die Farbe nicht importiert; die Figur selbst schon.
+   *[other] { $count } Figuren hatten eine Farbe neben ihrem Namen. Skribisto färbt Schlagwörter, nicht Einträge, daher wurden die Farben nicht importiert; die Figuren selbst wurden alle übernommen.
+}
+import-notice-versions-kept = { $found ->
+    [one] Dieses Projekt hatte eine frühere Version gespeichert
+   *[other] Dieses Projekt hatte { $found } frühere Versionen gespeichert
+}; { $kept ->
+    [one] eine wurde behalten
+   *[other] { $kept } wurden behalten
+}, ausgedünnt wie Skribistos eigener Verlauf. Sie finden sie im Bereich „Versionen“.
+import-notice-versions-unplaced = { $count ->
+    [one] Eine frühere Version gehört zu einem Eintrag, der nicht mehr im Projekt ist, und konnte nicht zugeordnet werden.
+   *[other] { $count } frühere Versionen gehören zu einem Eintrag, der nicht mehr im Projekt ist, und konnten nicht zugeordnet werden.
+}
+
+## Native file dialogs: the window title, and the label of the file-type filter.
+dialog-open-work-title = Skribisto-Projekt öffnen
+dialog-save-as-file-title = Als einzelne .skrib-Datei speichern
+dialog-save-as-folder-title = Übergeordneten Ordner für das Projekt auswählen
+dialog-manuskript-file-title = Manuskript-Projekt auswählen
+dialog-manuskript-folder-title = Manuskript-Projektordner auswählen
+dialog-filter-skrib = Skribisto-Projekt
+dialog-filter-manuskript = Manuskript-Projekt
+dialog-filter-plume = Plume-Creator-Projekt
+dialog-filter-hunspell-aff = Hunspell-Affixdatei (.aff)
+dialog-filter-hunspell-dic = Hunspell-Wörterbuch (.dic)
+dialog-filter-export = Exportierte Datei
+# Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
+shortcut-name-view-margin-lane = Randmarkierungen ein-/ausblenden
+
+## The built-in distraction-free themes' names (distraction_free::theme).
+df-theme-paper = Papier
+df-theme-sepia = Sepia
+df-theme-night = Nacht
+df-theme-high-contrast = Hoher Kontrast
+df-theme-midnight = Mitternacht
+
+## Welcome ▸ Examples: the line under a bundled example's title.
+welcome-example-byline = von { $author }
+
+## Spoken by a screen reader only.
+# Welcome window: the name of the section tab bar.
+welcome-sections-a11y = Bereiche des Startfensters
+# A comment's anchored span in the editor: author, plain-text preview, replies.
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } ({ $count ->
+    [one] 1 Antwort
+   *[other] { $count } Antworten
+})
+comments-a11y-summary-author-replies = { $author }: { $text } ({ $count ->
+    [one] 1 Antwort
+   *[other] { $count } Antworten
+})
+# Margin marks beside the text: one mark, several merged into one, and the
+# lane's own name when nothing more specific was given.
+margin-lane-a11y-mark = { $label }, bei { $percent } Prozent des Texts
+margin-lane-a11y-marks = { $label }, { $count } Markierungen, bei { $percent } Prozent des Texts
+margin-lane-a11y-fallback = { $count ->
+    [one] Randmarkierungen, 1 Markierung
+   *[other] Randmarkierungen, { $count } Markierungen
+}
+# Export ▸ Choose: the row standing for a binder that has no name.
+export-choose-unnamed-binder = Unbenannte Projektmappe
+# The built-in export styles named in words (the national manuscript presets
+# keep their own language's name).
+export-style-neutral = Neutral
+export-style-manuscript-shunn = Standardmanuskript (Shunn)
+export-style-ebook-clean = Schlichtes E-Book
+
+## Dates. Put the parts in the order your language writes a short date; the
+## parts arrive already zero-padded where that matters.
+# Comment cards, the outline card's Created/Modified.
+date-time-short = { $day }.{ $month }.{ $year } { $hour }:{ $minute }
+# Pace chart: a day on the axis, a milestone's date, a holiday.
+pace-day-label = { $day }.{ $month }.
+
+## File sizes (shared::byte_size). $whole and $tenth are the two sides of the
+## decimal mark: write your language's mark between them and its unit symbol.
+byte-size-bytes = { $value } B
+byte-size-kb = { $value } KB
+byte-size-mb = { $whole },{ $tenth } MB
+byte-size-gb = { $whole },{ $tenth } GB
+# A whole percentage (sliders, the Pace card, the text-size toast).
+unit-percent = { $value } %
+# A whole number of pixels (slider readouts).
+unit-pixels = { $value } px
+# Settings ▸ Paratext: a preset saved without a `name` line. `name` is the TOML
+# key the writer types and stays as it is.
+settings-paratext-error-no-name = Eine Struktur braucht eine Zeile `name`.
+# Export: started with no project open (a menu raced a close).
+export-error-no-project = Es ist kein Projekt zum Exportieren geöffnet.

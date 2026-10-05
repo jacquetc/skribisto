@@ -46,13 +46,14 @@ use skribisto_model::content_allowed;
 
 use crate::model::{Character, OutlineItem, Plot, Project, WorldItem};
 use crate::refs::{self, Reference};
+use skrib_format::import_notice::{ImportNotice, TextKind};
 
 /// The result of mapping: the bundle plus what the UI reports.
 pub struct Mapped {
     pub bundle: WorkBundle,
     pub imported_items: u64,
     pub imported_revisions: u64,
-    pub warnings: Vec<String>,
+    pub warnings: Vec<ImportNotice>,
 }
 
 /// Binder ordinals. They also drive the on-disk `binders/NN-slug` directory names,
@@ -290,7 +291,7 @@ struct Builder<'a> {
     /// would walk the whole outline for every scene in the outline, which is fine
     /// on a fixture and quadratic on a novel.
     reference_targets: HashMap<(char, String), RefName>,
-    warnings: Vec<String>,
+    warnings: Vec<ImportNotice>,
     imported_items: u64,
     dropped_icons: usize,
     dropped_colors: usize,
@@ -492,10 +493,15 @@ impl<'a> Builder<'a> {
                     // and not the other. Skip the content and say so, rather than
                     // taking the whole import down over it.
                     let Some(name) = prose_file_name(item_uid, title, &content_role) else {
-                        self.warnings.push(format!(
-                            "'{title}' has {content_role:?} content that could not be given a \
-                             file name; it was not imported."
-                        ));
+                        self.warnings.push(ImportNotice::TextWithoutFileName {
+                            title: title.to_string(),
+                            text: match content_role {
+                                ContentRole::SceneText => TextKind::Scene,
+                                ContentRole::NoteText => TextKind::Note,
+                                ContentRole::SynopsisText => TextKind::Synopsis,
+                                _ => TextKind::Title,
+                            },
+                        });
                         continue;
                     };
                     prose_refs.push(ProseRef {
@@ -1144,21 +1150,19 @@ impl Builder<'_> {
         if let Some(index) = row.label {
             match self.label_tag.get(&index) {
                 Some(tag) => item.item.tag_ids = vec![*tag],
-                None => self.warnings.push(format!(
-                    "'{}' wears label {index}, which is not in this project's label list. It \
-                     arrived without one.",
-                    row.title
-                )),
+                None => self.warnings.push(ImportNotice::UnknownLabel {
+                    title: row.title.clone(),
+                    index: index as i64,
+                }),
             }
         }
         if let Some(index) = row.status {
             match self.status_id.get(&index) {
                 Some(rung) => item.item.status_id = Some(*rung),
-                None => self.warnings.push(format!(
-                    "'{}' is at status {index}, which is not in this project's status list. It \
-                     arrived without one.",
-                    row.title
-                )),
+                None => self.warnings.push(ImportNotice::UnknownStatus {
+                    title: row.title.clone(),
+                    index: index as i64,
+                }),
             }
         }
         if let Some(goal) = row.set_goal {
@@ -1167,11 +1171,9 @@ impl Builder<'_> {
         if let Some(pov) = row.pov.as_deref() {
             match self.character_item.get(pov) {
                 Some(character) => item.item.point_of_view_ids = vec![*character],
-                None => self.warnings.push(format!(
-                    "'{}' is told through a character who is not in this project's cast. Its \
-                     point of view was not set.",
-                    row.title
-                )),
+                None => self.warnings.push(ImportNotice::UnknownPointOfView {
+                    title: row.title.clone(),
+                }),
             }
         }
         let mut ids: Vec<u64> = Vec::new();
@@ -1222,10 +1224,10 @@ impl Builder<'_> {
         match scanned {
             Ok(scanned) => scanned,
             Err(e) => {
-                self.warnings.push(format!(
-                    "The references in the text of '{what}' could not be resolved ({e:#}); \
-                     the text was kept as it was converted, markers included."
-                ));
+                self.warnings.push(ImportNotice::UnresolvedReferences {
+                    title: what.to_string(),
+                    error: format!("{e:#}"),
+                });
                 refs::Scanned {
                     text: djot.to_string(),
                     references: Vec::new(),
@@ -1322,18 +1324,13 @@ impl Builder<'_> {
     fn report_what_had_no_home(&mut self) {
         if self.dropped_icons > 0 {
             let n = self.dropped_icons;
-            self.warnings.push(format!(
-                "{n} row(s) carried a custom icon. Skribisto gives a row its icon from what the \
-                 row is, so the choice was not imported; nothing else about those rows changed."
-            ));
+            self.warnings
+                .push(ImportNotice::CustomIcons { count: n as u64 });
         }
         if self.dropped_colors > 0 {
             let n = self.dropped_colors;
-            self.warnings.push(format!(
-                "{n} character(s) had a colour beside their name. Skribisto colours tags rather \
-                 than rows, so the colours were not imported; the characters themselves all \
-                 arrived."
-            ));
+            self.warnings
+                .push(ImportNotice::CharacterColours { count: n as u64 });
         }
     }
 
@@ -1389,16 +1386,15 @@ impl Builder<'_> {
         );
         let kept = log.entries.len();
         if kept < found {
-            self.warnings.push(format!(
-                "This project recorded {found} earlier versions; {kept} were kept, thinned the \
-                 same way Skribisto thins its own history. They are in the Versions panel."
-            ));
+            self.warnings.push(ImportNotice::VersionsKept {
+                found: found as u64,
+                kept: kept as u64,
+            });
         }
         if unplaceable > 0 {
-            self.warnings.push(format!(
-                "{unplaceable} earlier version(s) named a row that is no longer in the project \
-                 and could not be placed."
-            ));
+            self.warnings.push(ImportNotice::VersionsUnplaced {
+                count: unplaceable as u64,
+            });
         }
         log
     }

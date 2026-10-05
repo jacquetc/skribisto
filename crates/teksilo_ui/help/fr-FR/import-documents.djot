@@ -37,7 +37,7 @@ comprend notamment les préfaces et les dédicaces.
 
 Les fichiers Word et LibreOffice conservent les mises en forme courantes, les liens,
 l’alignement, les sauts de page et les tableaux. Les commentaires gardent leurs auteurs et
-leurs réponses. Les notes de bas de page sont importées ; les notes de fin deviennent des
+leurs réponses. Les notes de bas de page sont importées ; les notes de fin deviennent des
 notes de bas de page. Les notes sont renumérotées.
 
 Le texte importé peut avoir un aspect différent du document d’origine. Les retraits de
@@ -50,12 +50,12 @@ Les symboles de polices comme Wingdings peuvent apparaître sous forme de cases 
 
 ## Lire les messages avant de terminer
 
-Les messages sous l’aperçu indiquent ce qui a été modifié ou laissé de côté. En particulier :
+Les messages sous l’aperçu indiquent ce qui a été modifié ou laissé de côté. En particulier :
 
 - Si un commentaire ne peut pas être rattaché aux mots d’origine, il peut être placé sur un
   paragraphe voisin. Vérifiez sa position après l’import. Les commentaires sans texte auquel
   les rattacher ne sont pas importés.
-- Un fichier illisible est ignoré ; les autres fichiers peuvent être importés.
+- Un fichier illisible est ignoré ; les autres fichiers peuvent être importés.
 - Les mises en forme complexes, les tableaux ou les listes à de nombreux niveaux peuvent
   être simplifiés.
 

@@ -513,7 +513,10 @@ fn import_body(declared: &str, body: &str) -> (String, Vec<String>) {
         .cloned()
         .collect::<Vec<_>>()
         .join("\n");
-    (prose, summary.warnings)
+    (
+        prose,
+        summary.warnings.iter().map(ToString::to_string).collect(),
+    )
 }
 
 /// Whether the import told the writer the scene's text was kept as its words,

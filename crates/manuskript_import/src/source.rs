@@ -49,6 +49,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use chrono::{DateTime, Utc};
 
 use crate::version::{self, FormatVersion};
+use skrib_format::import_notice::{ImportNotice, ProjectContainer};
 
 /// The format-0 member holding a Python pickle. Read past, never parsed.
 pub const PICKLE_MEMBER: &str = "settings.pickle";
@@ -86,12 +87,12 @@ pub enum Container {
 }
 
 impl Container {
-    /// A short name for the import summary, so the writer can tell which of two
-    /// copies was read.
-    pub fn label(self) -> &'static str {
+    /// Which copy was read, for the import summary, so the writer can tell which
+    /// of two copies it was.
+    pub fn notice_kind(self) -> ProjectContainer {
         match self {
-            Container::Zip => "single file",
-            Container::Folder => "folder",
+            Container::Zip => ProjectContainer::SingleFile,
+            Container::Folder => ProjectContainer::Folder,
         }
     }
 }
@@ -107,7 +108,7 @@ pub struct ManuskriptSource {
     /// how recent the data is.
     pub newest_modified: Option<DateTime<Utc>>,
     /// Everything worth telling the writer about the read itself.
-    pub notices: Vec<String>,
+    pub notices: Vec<ImportNotice>,
     /// Members keyed by their normalised, `/`-separated relative path.
     files: BTreeMap<String, Vec<u8>>,
 }
@@ -249,7 +250,7 @@ impl ManuskriptSource {
         container: Container,
         project_name: String,
         files: BTreeMap<String, Vec<u8>>,
-        mut notices: Vec<String>,
+        mut notices: Vec<ImportNotice>,
         newest_modified: Option<DateTime<Utc>>,
     ) -> Result<Self> {
         let marker = files
@@ -271,11 +272,9 @@ impl ManuskriptSource {
         }
 
         if files.contains_key(PICKLE_MEMBER) {
-            notices.push(format!(
-                "'{PICKLE_MEMBER}' was left unread. It is a Python pickle, and loading one from \
-                 a project file was a remote-code-execution flaw in Manuskript itself \
-                 (CVE-2021-35196); the settings it holds are display preferences, not writing."
-            ));
+            notices.push(ImportNotice::PickleSkipped {
+                member: PICKLE_MEMBER.to_string(),
+            });
         }
 
         Ok(Self {
@@ -312,14 +311,11 @@ impl ManuskriptSource {
             return;
         };
         if zip_at > folder_at {
-            self.notices.push(format!(
-                "'{}' is newer than this folder ({} against {}). Manuskript leaves the old \
-                 folder in place when a project moves to single-file mode, so this may be an \
-                 abandoned copy; importing the .msk instead would read the newer one.",
-                sibling.display(),
-                crate::writer_day(zip_at),
-                crate::writer_day(folder_at),
-            ));
+            self.notices.push(ImportNotice::NewerSingleFileBeside {
+                sibling: sibling.display().to_string(),
+                sibling_day: crate::writer_day(zip_at),
+                folder_day: crate::writer_day(folder_at),
+            });
         }
     }
 
@@ -435,7 +431,7 @@ fn normalise_member(raw: &str) -> Option<String> {
 fn read_dir_into(
     root: &Path,
     files: &mut BTreeMap<String, Vec<u8>>,
-    notices: &mut Vec<String>,
+    notices: &mut Vec<ImportNotice>,
     newest: &mut Option<DateTime<Utc>>,
     total: &mut u64,
 ) -> Result<()> {
@@ -482,10 +478,10 @@ fn read_dir_into(
             let bytes = match fs::read(&path) {
                 Ok(bytes) => bytes,
                 Err(e) => {
-                    notices.push(format!(
-                        "'{key}' could not be read ({e}) and was skipped; everything else \
-                         was imported."
-                    ));
+                    notices.push(ImportNotice::FileUnreadable {
+                        member: key.clone(),
+                        error: e.to_string(),
+                    });
                     continue;
                 }
             };
@@ -512,14 +508,13 @@ fn read_dir_into(
 ///
 /// The pickle is exempt: it is binary by definition and is reported separately,
 /// as something deliberately not read rather than something read imperfectly.
-fn note_if_not_utf8(member: &str, bytes: &[u8], notices: &mut Vec<String>) {
+fn note_if_not_utf8(member: &str, bytes: &[u8], notices: &mut Vec<ImportNotice>) {
     if member == PICKLE_MEMBER || std::str::from_utf8(bytes).is_ok() {
         return;
     }
-    notices.push(format!(
-        "'{member}' is not valid UTF-8; unreadable bytes were replaced rather than failing \
-         the import."
-    ));
+    notices.push(ImportNotice::NotUtf8 {
+        member: member.to_string(),
+    });
 }
 
 fn modified_at(path: &Path) -> Option<DateTime<Utc>> {
@@ -546,7 +541,9 @@ mod tests {
 
         let src = ManuskriptSource::open(&root.to_string_lossy()).expect("open");
         assert!(
-            src.notices.iter().any(|n| n.contains("dangling.txt")),
+            src.notices
+                .iter()
+                .any(|n| n.to_string().contains("dangling.txt")),
             "{:?}",
             src.notices
         );
@@ -756,7 +753,12 @@ mod tests {
         );
         let src = ManuskriptSource::open(&archive.to_string_lossy()).expect("open");
         assert_eq!(src.format, FormatVersion::V0);
-        let joined = src.notices.join(" ");
+        let joined = src
+            .notices
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" ");
         assert!(joined.contains("CVE-2021-35196"), "{joined}");
         // Present and readable as bytes, but nothing ever decodes or executes it.
         assert!(src.bytes(PICKLE_MEMBER).is_some());
@@ -777,7 +779,9 @@ mod tests {
         );
         let src = ManuskriptSource::open(&archive.to_string_lossy()).expect("open");
         assert!(
-            src.notices.iter().any(|n| n.contains("infos.txt")),
+            src.notices
+                .iter()
+                .any(|n| n.to_string().contains("infos.txt")),
             "{:?}",
             src.notices
         );
@@ -799,7 +803,12 @@ mod tests {
         set_modified(&archive, old + Duration::from_secs(60 * 60 * 24 * 365));
 
         let src = ManuskriptSource::open(&root.to_string_lossy()).expect("open");
-        let joined = src.notices.join(" ");
+        let joined = src
+            .notices
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" ");
         assert!(joined.contains("abandoned copy"), "{joined}");
         assert!(joined.contains("A Novel.msk"), "{joined}");
     }
@@ -826,6 +835,9 @@ mod tests {
             ManuskriptSource::open(&root.to_string_lossy())
                 .expect("open")
                 .notices
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
                 .join(" ")
         };
         let on_utc = notices(&root);

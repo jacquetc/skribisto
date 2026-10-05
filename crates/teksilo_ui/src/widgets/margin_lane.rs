@@ -78,6 +78,7 @@ use teksilo::core::widget::{EventContext, LayoutContext, LayoutResponse, PaintCo
 use teksilo::core::widget_builder::HandlerSet;
 use teksilo::core::widget_id::WidgetId;
 use teksilo::i18n::LocalizedString;
+use teksilo::prelude::tr;
 use teksilo::tokens::Color;
 
 /// Where the caret rule is drawn, as an offset down the strip.
@@ -1307,7 +1308,9 @@ impl Widget for MarginLane {
             self.access_label
                 .as_ref()
                 .map(|l| l.resolve_now())
-                .unwrap_or_else(|| format!("Margin marks, {} marks", resolved.len())),
+                .unwrap_or_else(|| {
+                    tr!(margin_lane_a11y_fallback(count = resolved.len() as i64)).resolve_now()
+                }),
         );
 
         let selected = self.selected.get();
@@ -1328,9 +1331,14 @@ impl Widget for MarginLane {
                 0
             };
             let spoken = if m.merged > 1 {
-                format!("{label}, {} marks, {pct} percent through", m.merged)
+                tr!(margin_lane_a11y_marks(
+                    label = label,
+                    count = m.merged as i64,
+                    percent = pct
+                ))
+                .resolve_now()
             } else {
-                format!("{label}, {pct} percent through")
+                tr!(margin_lane_a11y_mark(label = label, percent = pct)).resolve_now()
             };
             let (x, w) = self.column_rect(bounds, m.column);
             let (top, height) = (m.top, m.height);

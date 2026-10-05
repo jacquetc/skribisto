@@ -141,12 +141,12 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                     ectx,
                     crate::models::FolderPurpose::SaveAs,
                     FileDialogRequest::save_file()
-                        .title("Save as single .skrib file")
+                        .title(tr!(dialog_save_as_file_title()).resolve_now())
                         .default_file_name(format!(
                             "{}.skrib",
                             crate::project_stem(&ctx, &file_ids)
                         ))
-                        .add_filter("Skribisto work", &["skrib"]),
+                        .add_filter(tr!(dialog_filter_skrib()).resolve_now(), &["skrib"]),
                 );
                 let _ = ectx.save_file(req, move |res, ectx2| {
                     if let FileDialogResult::Saved(Some(path)) = res {
@@ -184,7 +184,8 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                 let req = crate::models::dialog_start_in(
                     ectx,
                     crate::models::FolderPurpose::SaveAs,
-                    FileDialogRequest::pick_folder().title("Choose a parent folder for the work"),
+                    FileDialogRequest::pick_folder()
+                        .title(tr!(dialog_save_as_folder_title()).resolve_now()),
                 );
                 let vm = save_as_folder_vm.clone();
                 let _ = ectx.pick_folder(req, move |res, ectx2| {

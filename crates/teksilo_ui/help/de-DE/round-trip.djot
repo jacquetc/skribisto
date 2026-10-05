@@ -26,7 +26,7 @@ senden die Datei anschließend zurück.
 
 ## Die Datei zurückbringen
 
-*Projekt ▸ Importieren aus ▸ Dokumenten (Markdown, Word, ODT)…* öffnet den Importassistenten.
+*Projekt ▸ Importieren aus ▸ Dokumente (Markdown, Word, ODT)…* öffnet den Importassistenten.
 Die Schritte vor *Zusammenführen* beschreibt [Dokumente importieren](:help-import-documents).
 Der Rückimport findet unter *Zusammenführen* statt.
 
@@ -35,7 +35,7 @@ ein weiteres Buch erzeugen, statt die Änderungen mit Ihren zusammenzuführen.
 
 ## Den Schritt „Zusammenführen“ verstehen
 
-Wählen Sie das Ziel mit dem ursprünglichen Manuskript. Skribisto ordnet zurückkommende Kapitel
+Wählen Sie als *Einfügeort* die Stelle mit dem ursprünglichen Manuskript. Skribisto ordnet zurückkommende Kapitel
 und Szenen den vorhandenen zu.
 
 Die Spalte *Status* zeigt, was geschehen ist:

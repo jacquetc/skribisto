@@ -107,7 +107,9 @@ impl DistractionFreeThemesViewModel {
         let mut copy = base.clone();
         copy.builtin = false;
         copy.source = Some(base.id.clone());
-        copy.name = format!("{} {copy_suffix}", base.name);
+        // The name the writer saw, so a copy of a built-in starts out in their
+        // language rather than in the English the built-in is stored under.
+        copy.name = format!("{} {copy_suffix}", base.display_name().resolve_now());
         let stored = self
             .inner
             .service

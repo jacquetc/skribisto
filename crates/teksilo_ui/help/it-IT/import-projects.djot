@@ -31,7 +31,7 @@ Usa *Scegli file…* per un `.msk` e *Scegli cartella…* per la cartella; in mo
 - L'opzione di compilazione diventa *Includi nelle esportazioni*. Un elemento escluso rimane escluso, insieme al suo contenuto.
 - I riassunti di un elemento vengono uniti nella sinossi: prima quello in una frase, poi quello esteso.
 - Personaggi, voci del mondo e trame diventano note in un raccoglitore *Bibbia narrativa* accanto al manoscritto, in gruppi separati. Il punto di vista di una scena rimanda al personaggio indicato; le trame conservano passaggi e collegamenti.
-- Le diciture diventano etichette colorate.
+- Le etichette (label) di Manuskript diventano etichette colorate.
 - L'elenco degli stati diventa quello del progetto, con i tuoi nomi.
 - La cronologia delle revisioni: apri una scena e trovi le versioni precedenti nel pannello *Versioni*.
 

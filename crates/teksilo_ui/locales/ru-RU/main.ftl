@@ -8,7 +8,7 @@ menu-new-window = &Новое окно
 menu-import-from = &Импортировать из
 menu-create-from = &Создать из
 menu-import-plume = &Plume Creator (.plume)…
-menu-import-document = &Документы (Markdown, Word, ODT) …
+menu-import-document = &Документы (Markdown, Word, ODT)…
 menu-import-manuskript = &Manuskript (.msk)…
 menu-export = &Экспорт
 menu-export-book = Экспортировать книгу
@@ -37,16 +37,16 @@ menu-search-preview = П&редпросмотр поиска
 menu-fullscreen = П&олный экран
 menu-focus-mode = Р&ежим без отвлечений
 menu-format = &Формат
-menu-scene-break = Вкл&ючить прерывание сцены
-menu-major-scene-break = Включ&ить основную сцену перерыва
+menu-scene-break = Вставить &разрыв сцены
+menu-major-scene-break = Вставить &большой разрыв сцены
 
 menu-go = П&ереход
 menu-go-next-scene = &Следующая сцена
 menu-go-prev-scene = &Предыдущая сцена
 menu-go-next-chapter = С&ледующая глава
 menu-go-prev-chapter = П&редыдущая глава
-menu-go-next-note = Сл&едующая запись
-menu-go-prev-note = Пре&дыдущий Note
+menu-go-next-note = Сл&едующая заметка
+menu-go-prev-note = Пре&дыдущая заметка
 
 menu-tools = &Инструменты
 menu-help = &Справка
@@ -60,24 +60,24 @@ ctx-import-here = &Импортировать сюда…
 ctx-indent = У&величить отступ
 ctx-outdent = У&меньшить отступ
 ctx-trash = Пе&реместить в корзину
-ctx-open-to-side = &Откройте на стороне
+ctx-open-to-side = Открыть &сбоку
 ctx-open = &Открыть
-ctx-reveal-in-outline = &Показать в Outline
-ctx-move-up = &Двигаться вверх
-ctx-move-down = &Двигаться вниз
+ctx-reveal-in-outline = &Показать в структуре
+ctx-move-up = Переместить &вверх
+ctx-move-down = Переместить в&низ
 
 ctx-tab-close = &Закрыть
 ctx-tab-close-others = За&крыть остальные
 ctx-tab-close-all = З&акрыть все
-ctx-tab-open-to-side = &Откройте на стороне
-ctx-tab-open-in-main = &Открыто в главном щите
-ctx-tab-move-to-side = &Двигайтесь в сторону
-ctx-tab-move-to-main = П&ерейти на главную панель
-ctx-tab-move-to-new-window = &Перейдите в новое окно
-ctx-tab-move-window-unsaved = Сохраните этот проект первым: второе окно открывается на файл на диске.
-ctx-tab-pin = П&ин на этой вкладке
-ctx-tab-unpin = &Развяжи эту вкладку
-tab-pinned-tooltip = Слоган: «Close others» и «Close all»
+ctx-tab-open-to-side = Открыть &сбоку
+ctx-tab-open-in-main = Открыть в &основной панели
+ctx-tab-move-to-side = &Переместить в боковую панель
+ctx-tab-move-to-main = &Переместить в основную панель
+ctx-tab-move-to-new-window = Переместить в &новое окно
+ctx-tab-move-window-unsaved = Сначала сохраните проект: второе окно открывает файл на диске
+ctx-tab-pin = Закр&епить эту вкладку
+ctx-tab-unpin = Откр&епить эту вкладку
+tab-pinned-tooltip = Закреплена: команды «Закрыть остальные» и «Закрыть все» её не закрывают
 
 create-book = Книга
 create-part = Часть
@@ -89,7 +89,7 @@ create-folder = Папка
 create-paratext = Паратекст
 create-paratext-folder = Папка паратекстов
 create-book-end = Конец книги
-create-story-bible-entry = Запись энциклопедии истории…
+create-story-bible-entry = Запись библии истории…
 type-book-start = Начало книги
 type-text = Текст
 
@@ -97,25 +97,25 @@ new-item-book = Новая книга
 new-item-part = Новая часть
 new-item-chapter = Новая глава
 new-item-note = Новая заметка
-new-item-note-folder = Новый Note Folder
+new-item-note-folder = Новая папка заметок
 new-item-folder = Новая папка
-new-item-paratext = Новый Паратекст
-new-item-paratext-folder = Новая паратекстовая папка
-new-item-story-bible-entry = Новая история Библейский вход
+new-item-paratext = Новый паратекст
+new-item-paratext-folder = Новая папка паратекстов
+new-item-story-bible-entry = Новая запись библии истории
 
 placement-inside = внутри
 placement-after = после
-placement-after-parent = после родителя
+placement-after-parent = после родительского элемента
 placement-top-level = верхний уровень
 
 
 ctx-promote = &Преобразовать в
 promote-chapter-folder = Глава-папка
-promote-flat-chapter = Глава без сцен
+promote-flat-chapter = Плоская глава
 promote-lossy-title = Негде хранить текст
-promote-lossy-text = { $target } не имеет ничего, чтобы сохранить это: { $kinds }. Сначала переместите или очистите этот текст, а затем преобразуйте.
-content-scene-text = Сценический текст
-content-note-text = Текст примечания
+promote-lossy-text = У типа «{ $target }» негде хранить следующее: { $kinds }. Сначала переместите или очистите этот текст, затем выполните преобразование.
+content-scene-text = Текст сцены
+content-note-text = Текст заметки
 content-book-title = Название книги
 content-book-subtitle = Подзаголовок книги
 content-part-title = Название части
@@ -124,20 +124,20 @@ content-epigraph-text = Эпиграф
 content-paratext-text = Паратекст
 promote-blocked-title = Глава не пустая
 promote-blocked-text = { $count ->
-    [one] Эта глава по-прежнему содержит { $count } пункт. Переместите или помойте его, прежде чем преобразовать в плоскую главу.
-    [few] Эта глава по-прежнему содержит { $count } предмета. Переместите или выбросьте их, прежде чем преобразовать в плоскую главу.
-    [many] Эта глава по-прежнему содержит { $count } предметов. Переместите или выбросьте их, прежде чем преобразовать в плоскую главу.
-   *[other] Эта глава по-прежнему содержит { $count } предметов. Переместите или помойте их, прежде чем преобразовать в плоскую главу.
+    [one] В этой главе ещё есть { $count } элемент. Переместите его или отправьте в корзину, прежде чем преобразовать главу в плоскую.
+    [few] В этой главе ещё есть { $count } элемента. Переместите их или отправьте в корзину, прежде чем преобразовать главу в плоскую.
+    [many] В этой главе ещё есть { $count } элементов. Переместите их или отправьте в корзину, прежде чем преобразовать главу в плоскую.
+   *[other] В этой главе ещё есть { $count } элемента. Переместите их или отправьте в корзину, прежде чем преобразовать главу в плоскую.
 }
 
-inspector = Свойства
-inspector-empty = Откройте предмет, чтобы проверить его.
-inspector-promote = Преобразовать на…
-statusbar-toggle-outline = Показать или скрыть навигатор
-statusbar-toggle-inspector = Показать или скрыть свойства
-statusbar-save-unsaved = Несохраненные изменения. Нажмите, чтобы сохранить
+inspector = Инспектор
+inspector-empty = Откройте элемент, чтобы увидеть его свойства.
+inspector-promote = Преобразовать в…
+statusbar-toggle-outline = Показать или скрыть структуру
+statusbar-toggle-inspector = Показать или скрыть инспектор
+statusbar-save-unsaved = Есть несохранённые изменения. Щёлкните, чтобы сохранить
 statusbar-save-saved = Все изменения сохранены
-statusbar-save-autosave = Автосохранение включено. Изменения сохраняются, когда вы пишете
+statusbar-save-autosave = Автосохранение включено. Изменения сохраняются по ходу работы
 statusbar-saving = Сохранение…
 statusbar-word-count = { $count ->
     [one] { $count } слово
@@ -146,421 +146,432 @@ statusbar-word-count = { $count ->
    *[other] { $count } слова
 }
 
-statusbar-word-count-tooltip = Слова в сцене, которые вы редактируете
+statusbar-word-count-tooltip = Количество слов в редактируемой сцене
 statusbar-word-char-count = { $words ->
     [one] { $words } слово
     [few] { $words } слова
     [many] { $words } слов
    *[other] { $words } слова
 } · { $chars ->
-    [one] { $chars } символ
-    [few] { $chars } символа
-    [many] { $chars } символов
-   *[other] { $chars } символа
+    [one] { $chars } знак
+    [few] { $chars } знака
+    [many] { $chars } знаков
+   *[other] { $chars } знака
 }
 
-session-toggle = Письменная сессия: начать или приостановить сфокусированный спринт
-session-configure = Установите цель сеанса и ограничение по времени
-session-configure-title = Письменная сессия
-session-word-goal = Цель в словах
-session-time-limit = предельный срок
+session-toggle = Сеанс письма: начать или приостановить спринт
+session-configure = Задать цель сеанса по словам и ограничение времени
+session-configure-title = Сеанс письма
+session-word-goal = Цель по словам
+session-time-limit = Ограничение времени
 session-time-limit-unit = мин.
-session-no-goal = Нет цели
-session-no-limit = Нет предела
-session-reset = Сессия сброса
-session-readout = Слов: { $words } · { $time }
-session-readout-timed = { $words } слова · { $time } слева
-statusbar-focus-exit = Режим Exit Distraction-Free
+session-no-goal = Без цели
+session-no-limit = Без ограничения
+session-reset = Сбросить сеанс
+session-readout = { $words ->
+    [one] { $words } слово
+    [few] { $words } слова
+    [many] { $words } слов
+   *[other] { $words } слова
+} · { $time }
+session-readout-timed = { $words ->
+    [one] { $words } слово
+    [few] { $words } слова
+    [many] { $words } слов
+   *[other] { $words } слова
+} · осталось { $time }
+statusbar-focus-exit = Выйти из режима без отвлечений
 statusbar-focus-synopsis = Синопсис
-statusbar-focus-go-prev = Предыдущая статья (Alt+Up)
-statusbar-focus-go-next = Следующая статья (Alt+Down)
+statusbar-focus-go-prev = Предыдущий элемент (Alt+Вверх)
+statusbar-focus-go-next = Следующий элемент (Alt+Вниз)
 
 rail-settings = Настройки
 
 language = Язык
 theme = Тема
-english = английский
-french = французский
+english = Английский
+french = Французский
 light = Светлая
 dark = Тёмная
 settings-text-width = Ширина текста
-settings-preview-width = Ширина предварительного просмотра
+settings-preview-width = Ширина предпросмотра поиска
 settings-autosave = Автосохранение на диск
-settings-show-welcome = Показать пусковую установку при запуске
-settings-show-welcome-tip = После завершения работы, последний проект возобновляется.
-settings-check-for-updates = Проверьте новые версии
-settings-check-for-updates-tip = Не более одного раза в день Skribisto задает веб-сайту проекта вопрос о том, какая версия является текущей. Запрос не содержит идентификатора и даже версии, которую вы используете: сравнение происходит на этом компьютере.
+settings-show-welcome = Показывать окно запуска при старте
+settings-show-welcome-tip = Если выключено, вместо него открывается последний проект.
+settings-check-for-updates = Проверять наличие новых версий
+settings-check-for-updates-tip = Не чаще раза в день Skribisto спрашивает у сайта проекта, какая версия актуальна. Запрос не содержит ни идентификатора, ни даже номера используемой вами версии: сравнение выполняется на этом компьютере.
 
 settings-title = Настройки
 settings-close = Закрыть
-settings-search = Параметры поиска
+settings-search = Поиск в настройках
 settings-reset = Восстановить настройки по умолчанию
 settings-done = Готово
 settings-cancel = Отмена
 settings-apply = Применить
 settings-ok = ОК
-settings-reset-confirm-title = Сброс всех настроек по умолчанию?
-settings-reset-confirm-body = Восстанавливает внешний вид этого приложения, настройки редактора и записи. Собственные настройки вашего проекта, ярлыки клавиатуры и сохраненные стили не затронуты. Его нельзя отменить.
+settings-reset-confirm-title = Сбросить все настройки к значениям по умолчанию?
+settings-reset-confirm-body = Восстанавливает настройки внешнего вида, редактора и письма этого приложения. Собственные настройки проекта, сочетания клавиш и сохранённые стили не затрагиваются. Это действие нельзя отменить.
 settings-empty-title = Здесь пока нет настроек
-settings-empty-hint = Этот раздел получит опции в будущем обновлении.
+settings-empty-hint = Параметры этого раздела появятся в одном из будущих обновлений.
 
-settings-sec-appearance-behaviour = Поведение внешности
-settings-sec-editor = редактор
-settings-sec-spelling = Правописание
-settings-sec-backup = Резервный синхронизатор
-settings-sec-compile = Компиляция и экспорт
-settings-page-appearance = внешний вид
+settings-sec-appearance-behaviour = Внешний вид и поведение
+settings-sec-editor = Редактор
+settings-sec-spelling = Орфография
+settings-sec-backup = Резервное копирование и синхронизация
+settings-sec-compile = Сборка и экспорт
+settings-page-appearance = Внешний вид
 settings-field-image-size-policy = Большие изображения
-settings-image-policy-ask = Спрашивайте каждый раз
-settings-image-policy-keep = Держите оригинал
+settings-image-policy-ask = Спрашивать каждый раз
+settings-image-policy-keep = Сохранять оригинал
 settings-image-policy-downscale = Оптимизировать
-settings-hint-image-size-policy = Что делать, если вставленное изображение больше, чем нужно рукописи?
+settings-hint-image-size-policy = Что делать, если вставленное изображение больше, чем нужно рукописи.
 settings-page-notifications = Уведомления
 settings-page-scene = Сцена
 settings-page-synopsis = Синопсис
 settings-page-notes = Заметки
 settings-page-editor-behavior = Поведение редактора
-settings-page-goals = Голосование Word Count
-settings-page-games = Написание игр
+settings-page-goals = Цели и подсчёт слов
+settings-page-games = Писательские игры
 settings-page-corkboard = Пробковая доска
-settings-page-distraction-free = без отвлекающих факторов
+settings-page-distraction-free = Без отвлечений
 settings-page-dictionaries = Словари
 settings-page-autosave = Автосохранение
 settings-page-export = Форматы экспорта
-settings-page-paratext = Паратекстовые структуры
+settings-page-paratext = Структуры паратекста
 settings-page-keymap = Сочетания клавиш
-settings-keymap-filter = Фильтровать ярлыки
+settings-keymap-filter = Фильтр сочетаний клавиш
 
-settings-desc-sec-appearance-behaviour = Как выглядит приложение и что оно делает, когда оно начинается.
-settings-desc-sec-editor = Поверхность письма: как она выглядит и что она делает, когда вы вводите.
-settings-desc-sec-spelling = Проверка орфографии и словари, стоящие за ней.
-settings-desc-sec-backup = Как ваша работа достигает диска и какие копии хранятся.
-settings-desc-sec-compile = Что оставляет Skribisto, и в какой форме.
-settings-desc-sec-work = Настройки, которые относятся к этому проекту и перемещаются внутри его файла.
+settings-desc-sec-appearance-behaviour = Как выглядит само приложение и что оно делает при запуске.
+settings-desc-sec-editor = Область письма: как она выглядит и как ведёт себя при вводе.
+settings-desc-sec-spelling = Проверка орфографии и словари, которые она использует.
+settings-desc-sec-backup = Как ваша работа попадает на диск и какие копии сохраняются.
+settings-desc-sec-compile = Что выходит из Skribisto и в каком виде.
+settings-desc-sec-work = Настройки, которые принадлежат этому проекту и хранятся в его файле.
 settings-desc-sec-extensions = Страницы, добавленные расширениями, установленными здесь.
-settings-desc-group-typography = Одна страница на вид текста: шрифт, размер, высота строки и расстояние.
-settings-desc-appearance = Язык интерфейса, тема, размер текста и начальное окно.
-settings-desc-notifications = Каждое сообщение, которое показал этот сеанс, и действия, которые вы можете воспроизвести.
-settings-desc-scene = Как устанавливается проза сцены: шрифт, размер, высота линии, отступы и расстояние.
-settings-desc-synopsis = Как устанавливается панель синопсиса, независимо от рукописи.
-settings-desc-notes = Как записываются заметки, независимо от рукописи.
-settings-desc-corkboard = Размер карты, что показывает карта, и как доска их устраивает.
-settings-desc-distraction-free = Типография, ширина колонки и полоса управления для полноэкранного письма.
-settings-desc-distraction-free-themes = Тематическая библиотека для полноэкранного письма: отгруженные и собственные.
-settings-desc-editor-behavior = Ширина текста, положение синопсиса, прокрутка пишущей машинки и подсветка заботы.
-settings-desc-punctuation = Начинаются новые проекты в стиле типографского дома. Каждый проект следует этому, если он не устанавливает свой собственный.
-settings-desc-goals = Слова и характер цели, и как слова подсчитаны.
-settings-desc-games = Ограничения, которые вы накладываете на себя во время составления, такие как Всегда вперед.
-settings-desc-spellcheck = Единственный переключатель, который включает и выключает проверку орфографии везде.
-settings-desc-dictionaries = Установите, удалите и просмотрите словари орфографии на этой машине.
-settings-desc-autosave = Если ваши правки написаны на диск самостоятельно.
-settings-desc-backup = Когда берутся копии, где они хранятся, и сколько. Каждый проект следует этому, если он не устанавливает свой собственный.
-settings-desc-export = Стили, через которые проходит каждый экспорт: отгруженные и ваши собственные.
-settings-desc-paratext = Спереди и сзади может начаться новый проект.
-settings-desc-keymap = Каждое короткое замыкание и то, к чему оно привязано.
+settings-desc-group-typography = По странице на каждый вид текста: шрифт, размер, высота строки и интервалы.
+settings-desc-appearance = Язык интерфейса, тема, размер текста и окно запуска при старте.
+settings-desc-notifications = Все сообщения, показанные за этот сеанс, и действия, которые можно повторить.
+settings-desc-scene = Оформление прозы сцен: шрифт, размер, высота строки, отступы и интервалы.
+settings-desc-synopsis = Оформление панели синопсиса, независимо от рукописи.
+settings-desc-notes = Оформление заметок, независимо от рукописи.
+settings-desc-corkboard = Размер карточек, что на них показано и как доска их располагает.
+settings-desc-distraction-free = Типографика, ширина колонки и панель управления для письма во весь экран.
+settings-desc-distraction-free-themes = Библиотека тем для письма во весь экран: встроенные и ваши собственные.
+settings-desc-editor-behavior = Ширина текста, положение синопсиса, прокрутка как в пишущей машинке и подсветка у курсора.
+settings-desc-punctuation = Типографские правила, с которых начинаются новые проекты. Каждый проект следует им, если не задаёт собственные.
+settings-desc-goals = Цели по словам и знакам и способ подсчёта слов.
+settings-desc-games = Ограничения, которые вы ставите себе при написании черновика, например «Только вперёд».
+settings-desc-spellcheck = Единый переключатель, который включает и выключает проверку орфографии повсюду.
+settings-desc-dictionaries = Установка, удаление и просмотр орфографических словарей на этом компьютере.
+settings-desc-autosave = Записываются ли ваши правки на диск автоматически.
+settings-desc-backup = Когда создаются копии, где они хранятся и сколько их. Каждый проект следует этим правилам, если не задаёт собственные.
+settings-desc-export = Стили, через которые проходит любой экспорт: встроенные и ваши собственные.
+settings-desc-paratext = Вступительные и заключительные материалы, с которыми может начинаться новый проект.
+settings-desc-keymap = Все сочетания клавиш и команды, к которым они привязаны.
 settings-page-user = Пользователь
-settings-desc-user = Кто вы, для комментариев, которые вы пишете.
-settings-group-identity = Идентичность
-settings-field-user-name = Твое имя
-settings-field-user-name-placeholder = необязательный
-settings-field-user-name-hint = Подписывает комментарии и ответы, которые вы пишете. Отличается от имени автора проекта, которое является строкой книги и перемещается внутри файла.
+settings-desc-user = Кто вы — для подписи ваших комментариев.
+settings-group-identity = Личные данные
+settings-field-user-name = Ваше имя
+settings-field-user-name-placeholder = Необязательно
+settings-field-user-name-hint = Этим именем подписываются ваши комментарии и ответы. Оно не совпадает с именем автора проекта: то печатается на книге и хранится в файле проекта.
 settings-field-user-initials = Ваши инициалы
-settings-field-user-initials-placeholder = От твоего имени
-settings-field-user-initials-hint = Что текстовый процессор показывает рядом с вашим комментарием на полях. Оставьте его пустым, чтобы использовать показанные, взятые из вашего имени.
-settings-field-user-hint = Оба являются необязательными и применяются к каждому проекту на этом компьютере. Изменение их подписывает комментарии, которые вы пишете дальше. Комментарии, уже написанные, сохраняют имя, под которым они были написаны.
-settings-desc-author = Название, которое идет в этом проекте.
+settings-field-user-initials-placeholder = Из вашего имени
+settings-field-user-initials-hint = То, что текстовый процессор показывает рядом с вашим комментарием на полях. Оставьте пустым, чтобы использовать показанные инициалы, взятые из вашего имени.
+settings-field-user-hint = Оба поля необязательны и действуют для всех проектов на этом компьютере. Изменение касается только комментариев, которые вы напишете после него. Уже написанные комментарии сохраняют прежнюю подпись.
+settings-desc-author = Имя, которое стоит на этом проекте.
 settings-desc-structure = Являются ли главы этого проекта папками или отдельными элементами.
-settings-desc-language = Язык прозы этого проекта проверяется.
-settings-desc-work-backup = Собственная резервная политика проекта, или общая.
-settings-desc-personal-dictionary = Слова, которые этот проект рассматривает как правильно написанные.
-settings-desc-tags = Цветные ярлыки, которыми этот проект обозначает свои предметы.
-settings-desc-templates = Шаблоны заметок вы можете вставить во время написания в этом проекте.
-settings-desc-text-replacements = Ярлыки, которые расширяются по мере того, как вы вводите в этот проект.
-settings-desc-work-punctuation = Цитаты, тире и интервалы прозы этого проекта следуют.
+settings-desc-language = Язык, по которому проверяется проза этого проекта.
+settings-desc-work-backup = Собственные правила резервного копирования этого проекта или общие.
+settings-desc-personal-dictionary = Слова, которые этот проект считает написанными правильно.
+settings-desc-tags = Цветные теги, которыми этот проект помечает свои элементы.
+settings-desc-templates = Шаблоны заметок, которые можно вставлять при работе над этим проектом.
+settings-desc-text-replacements = Сокращения, которые раскрываются по мере ввода в этом проекте.
+settings-desc-work-punctuation = Кавычки, тире и пробелы, которым следует проза этого проекта.
 
-settings-group-typography = Типография
-settings-group-writing-column = Написание колонки
-settings-group-writing-view = Письменный взгляд
-settings-group-distraction-free-strip = Контрольная полоса
+settings-group-typography = Типографика
+settings-group-writing-column = Колонка текста
+settings-group-writing-view = Область письма
+settings-group-distraction-free-strip = Панель управления
 settings-group-theme = Тема
 settings-group-language = Язык
 settings-group-startup = Запуск
 settings-group-updates = Обновления
 settings-group-autosave = Автосохранение
-settings-field-typeface = Гарнитура
+settings-field-typeface = Шрифт
 settings-field-size = Размер текста
 
 editor-size-changed-manuscript = Размер текста рукописи: { $percent }
-editor-size-changed-synopsis = Размер текста: { $percent }
-editor-size-changed-notes = Размер текста: { $percent }
-editor-size-changed-corkboard = Размер текста карточки: { $percent }
-editor-size-changed-corkboard-expanded = Размер текста редактора: { $percent }
-editor-size-changed-distraction-free = Размер текста без отвлечения: { $percent }
+editor-size-changed-synopsis = Размер текста синопсиса: { $percent }
+editor-size-changed-notes = Размер текста заметок: { $percent }
+editor-size-changed-corkboard = Размер текста карточек доски: { $percent }
+editor-size-changed-corkboard-expanded = Размер текста развёрнутого редактора: { $percent }
+editor-size-changed-distraction-free = Размер текста в режиме без отвлечений: { $percent }
 
 menu-text-size-increase = &Увеличить размер текста
 menu-text-size-decrease = Уме&ньшить размер текста
-menu-text-size-reset = С&брос размера текста
-settings-field-line-height = Высота линии
-settings-field-first-line-indent = отступ первой линии
-settings-field-paragraph-spacing-before = Пространство перед пунктом
-settings-field-paragraph-spacing-after = Пространство после абзаца
+menu-text-size-reset = С&бросить размер текста
+settings-field-line-height = Высота строки
+settings-field-first-line-indent = Отступ первой строки
+settings-field-paragraph-spacing-before = Интервал перед абзацем
+settings-field-paragraph-spacing-after = Интервал после абзаца
 settings-field-column-width = Ширина колонки
-settings-distraction-free-width-hint = Применяется только в режиме без отвлечения. Ширина колонок Scene, Synopsis и Notes не тронута.
-settings-distraction-free-title = Сохранить название предмета
-settings-distraction-free-word-count = Держите слово счет
-settings-distraction-free-session = Сохраните письменную сессию
-settings-distraction-free-go-to = Держите кнопку Go to…
-settings-distraction-free-go = Держите кнопки «Предыдущее и следующее»
-settings-distraction-free-chrome-hint = Кнопка выхода всегда остается, что бы вы ни выбрали, это ваш выход, если Escape занят.
+settings-distraction-free-width-hint = Действует только в режиме без отвлечений. Ширина колонок сцен, синопсиса и заметок не меняется.
+settings-distraction-free-title = Оставить название элемента
+settings-distraction-free-word-count = Оставить счётчик слов
+settings-distraction-free-session = Оставить сеанс письма
+settings-distraction-free-go-to = Оставить кнопку «Перейти к…»
+settings-distraction-free-go = Оставить кнопки «Предыдущий» и «Следующий»
+settings-distraction-free-chrome-hint = Кнопка выхода остаётся всегда, что бы вы здесь ни выбрали. Это ваш путь наружу, если клавиша Escape занята.
 settings-field-app-theme = Тема
 settings-theme-light = Светлая
 settings-theme-dark = Тёмная
 settings-field-text-scale = Размер текста интерфейса
 settings-field-language = Язык интерфейса
-settings-synopsis-placement = Позиция синопсиса
-settings-synopsis-placement-none = Никто.
-settings-synopsis-placement-top = Выше
-settings-synopsis-placement-side = Рядом
-settings-typewriter = Прокрутка пишущей машинки
-settings-typewriter-tip = Удерживает строку, которую вы пишете, на фиксированной высоте, в то время как рукопись прокручивается под ней. Нажатие по-прежнему ставит заботу, куда вы нажимаете.
-settings-typewriter-position = Расположение линии
-settings-typewriter-position-top-third = Топ третье место
-settings-typewriter-position-middle = Средний
-settings-typewriter-position-bottom-quarter = Нижний квартал
-settings-highlight-scope = Подсветка вокруг заботы
-settings-highlight-scope-none = Никто.
-settings-highlight-scope-sentence = Приговор
-settings-highlight-scope-paragraph = Пункт
-settings-highlight-scope-tip-none = Ничего не затеняется, пока ты пишешь.
-settings-highlight-scope-tip-sentence = Отбросьте предложение, которое вы пишете, чтобы оно выделялось из окружающих.
-settings-highlight-scope-tip-paragraph = Отметьте весь абзац, который вы пишете, чтобы сохранить в поле зрения отрывок, над которым вы работаете.
-settings-group-container-views = Виды контейнеров
-settings-remember-view = Запомните последний вид для каждого типа элемента
-settings-remember-view-tip = Откройте контейнер с видом, который вы в последний раз использовали для этого типа.
+settings-synopsis-placement = Положение синопсиса
+settings-synopsis-placement-none = Нет
+settings-synopsis-placement-top = Сверху
+settings-synopsis-placement-side = Сбоку
+settings-typewriter = Прокрутка как в пишущей машинке
+settings-typewriter-tip = Удерживает строку, которую вы пишете, на постоянной высоте, а рукопись прокручивается под ней. Щелчок по-прежнему ставит курсор туда, куда вы щёлкнули.
+settings-typewriter-position = Положение строки
+settings-typewriter-position-top-third = Верхняя треть
+settings-typewriter-position-middle = Середина
+settings-typewriter-position-bottom-quarter = Нижняя четверть
+settings-highlight-scope = Подсветка вокруг курсора
+settings-highlight-scope-none = Нет
+settings-highlight-scope-sentence = Предложение
+settings-highlight-scope-paragraph = Абзац
+settings-highlight-scope-tip-none = Страница остаётся чистой. Во время письма ничего не подсвечивается.
+settings-highlight-scope-tip-sentence = Подсвечивать предложение, которое вы пишете, чтобы оно выделялось среди соседних.
+settings-highlight-scope-tip-paragraph = Подсвечивать весь абзац, который вы пишете, чтобы фрагмент, над которым вы работаете, оставался на виду.
+settings-group-container-views = Представления контейнеров
+settings-remember-view = Запоминать последнее представление для каждого типа элемента
+settings-remember-view-tip = Открывать контейнер в представлении, которое вы последним использовали для этого типа
 settings-remember-view-tip-more =
-    Книга, часть и глава предлагают несколько просмотров (собственная страница, полная версия).
-    Рукопись, полный синопсис. Включите это и каждый тип снова откроется на
-    вид, который вы в последний раз выбрали для него, например, переключите одну главу на полную главу и
-    Следующая глава, которую вы откроете, также показывает Полную главу. Каждый тип запоминает свой собственный взгляд.
-settings-group-counting = Подсчет слов
-settings-counting-auto = Автоматический (по языку)
-settings-counting-whitespace = Расщепление на пространства
-settings-counting-unicode-words = Однокодовые слова
-settings-counting-cjk-hybrid = CJK-aware (персонаж)
-settings-counting-hint = Автоматически подсчитывает китайский и японский по характеру и любой другой язык по слову. Измените его, только если счет выглядит неправильно для вашего языка.
-settings-group-goals-display = отображение
-settings-show-characters = Показать количество персонажей в статус-баре
-settings-autosave-hint = Изменения записываются на диск автоматически, когда вы пишете.
+    Книга, часть и глава предлагают несколько представлений (собственная страница,
+    вся рукопись, весь синопсис). Если включить этот параметр, каждый тип будет
+    открываться в представлении, выбранном для него последним: например, переключите
+    одну главу на «Вся глава», и следующая открытая глава тоже покажет «Вся глава».
+    Каждый тип запоминает своё представление.
+settings-group-counting = Подсчёт слов
+settings-counting-auto = Автоматически (по языку)
+settings-counting-whitespace = Разделять по пробелам
+settings-counting-unicode-words = Слова по Unicode
+settings-counting-cjk-hybrid = С учётом CJK (по знакам)
+settings-counting-hint = В автоматическом режиме китайский и японский текст считается по знакам, а все остальные языки — по словам. Меняйте этот параметр, только если подсчёт для вашего языка выглядит неверным.
+settings-group-goals-display = Отображение
+settings-show-characters = Показывать количество знаков в строке состояния
+settings-autosave-hint = Изменения автоматически записываются на диск по ходу работы.
 
 settings-sec-work = Проект
-settings-page-structure = Структура
+settings-page-structure = Устройство проекта
 settings-page-author = Автор
 settings-field-author-name = Имя автора
-settings-field-author-placeholder = необязательный
-settings-field-author-hint = Появляется на скомпилированной титульной странице и в экспортированных метаданных файла. Оставьте его пустым, чтобы опустить. Это строка книги. Имя, с которым подписаны ваши комментарии, находится в Настройках ▸ Пользователь.
+settings-field-author-placeholder = Необязательно
+settings-field-author-hint = Выводится на титульном листе при сборке и в метаданных экспортированных файлов. Оставьте пустым, чтобы не выводить. Это имя автора книги. Имя, которым подписываются ваши комментарии, задаётся в разделе Настройки ▸ Пользователь.
 settings-group-chapters = Главы
-tidy-titles-title = Типичные заголовки глав
-tidy-titles-none = Ни одна глава или часть заголовка не повторяет свой собственный номер.
+tidy-titles-title = Упорядочить названия глав
+tidy-titles-none = Ни у одной главы или части название не повторяет её собственный номер.
 tidy-titles-lead = { $count ->
-    [one] { $count } глава или часть озаглавлены только собственным номером.
-    [few] { $count } главы и части названы только их собственным номером.
-    [many] { $count } глав и частей озаглавлены не чем иным, как собственным номером.
-   *[other] { $count } главы и части названы только их собственным номером.
+        [one] { $count } глава или часть названа только собственным номером.
+        [few] { $count } главы и части названы только собственными номерами.
+        [many] { $count } глав и частей названы только собственными номерами.
+       *[other] { $count } главы и части названы только собственными номерами.
     }
-tidy-titles-explain = Очистка этих титулов оставляет каждого по имени по номеру, который уже знает книга, по тому же номеру, который печатается на экспорте. Ничто больше не меняется, и одно аннулирование возвращает их все.
-menu-document-tidy-titles = &Типичные заголовки глав …
-settings-group-numbering = нумерация
-settings-number-chapters = Численные главы и части
-settings-number-chapters-tip = Главы и части несут число, отработанное там, где они находятся в книге, показанное рядом с их названием здесь и напечатанное экспортом.
-settings-number-chapters-tip-more = Номер никогда не хранится в заголовке, поэтому он остается правильным, когда вы перезаказываете, вставляете или удаляете. Выключите это, и экспорт печатает только заголовки, независимо от стиля экспорта. Чтобы оставить одну главу (пролог, интерлюдия), используйте выключатель нумерации инспектора вместо этого: это сохраняет его в книге, но останавливает его, принимая номер.
-settings-part-resets-chapter = Перезапуск номеров глав в каждой части
-settings-part-resets-chapter-tip = Выключено по умолчанию: главы проходят прямо по частям книги, поэтому «Часть вторая» открывается на одиннадцатой главе.
-settings-part-resets-chapter-tip-more = Это обычная торговая практика и то, что ожидает читатель. Включите ее для книги, части которой предназначены для чтения в виде отдельных томов, где каждый открывается на первой главе.
-settings-chapter-flat = Главы без сцен
-settings-chapter-flat-hint = На: глава - это один элемент. Вы пишете в нее, и в ней нет сцен. Выключено: глава - это папка. Вы все еще пишете в нее, но она также может содержать сцены. Новые главы следуют за этой настройкой; существующие конвертируются через Promote.
+tidy-titles-explain = После очистки этих названий каждая глава будет обозначаться номером, который книга уже знает, — тем же, что печатается при экспорте. Больше ничего не меняется, а одна отмена вернёт всё обратно.
+menu-document-tidy-titles = Упорядочить &названия глав…
+settings-group-numbering = Нумерация
+settings-number-chapters = Нумеровать главы и части
+settings-number-chapters-tip = Главы и части получают номер, вычисленный по их месту в книге; он показывается здесь рядом с названием и печатается при экспорте.
+settings-number-chapters-tip-more = Номер никогда не хранится в названии, поэтому он остаётся верным, когда вы переставляете, вставляете или удаляете главы. Если выключить этот параметр, экспорт печатает только названия, что бы ни требовал стиль экспорта. Чтобы исключить одну главу (пролог, интерлюдию), используйте переключатель «Нумерация» в инспекторе: глава останется в книге, но не получит номера.
+settings-part-resets-chapter = Начинать нумерацию глав заново в каждой части
+settings-part-resets-chapter-tip = По умолчанию выключено: главы нумеруются сквозь все части книги, так что «Часть вторая» открывается главой одиннадцатой.
+settings-part-resets-chapter-tip-more = Это обычная издательская практика, и читатель ожидает именно её. Включите параметр для книги, части которой задуманы как отдельные тома, каждый из которых начинается с первой главы.
+settings-chapter-flat = Плоские главы
+settings-chapter-flat-hint = Включено: глава — это один элемент. Вы пишете в неё, и она не содержит сцен. Выключено: глава — это папка. Вы по-прежнему пишете в неё, но она может также содержать сцены. Новые главы следуют этому параметру; существующие преобразуются командой «Преобразовать в».
 
 settings-styles-builtin = Встроенные стили
 settings-styles-user = Мои стили
-settings-styles-builtin-badge = встроенный
+settings-styles-builtin-badge = Встроенный
 settings-styles-duplicate = Дублировать
-settings-styles-edit = Правка
+settings-styles-edit = Изменить
 settings-styles-delete = Удалить
-settings-styles-import = Импорт …
-settings-styles-export = Экспорт …
+settings-styles-import = Импорт…
+settings-styles-export = Экспорт…
 settings-styles-copy-suffix = (копия)
-settings-styles-json-filter = Экспортный стиль
-settings-styles-editor-title = Редактировать стиль
+settings-styles-json-filter = Стиль экспорта
+settings-styles-editor-title = Изменить стиль
 settings-styles-editor-none = Выберите пользовательский стиль для редактирования или создайте копию встроенного.
-settings-styles-imported = Стиль импортный
-settings-styles-import-failed = Невозможно импортировать стиль
-settings-styles-exported = Стиль экспортируется
-settings-styles-export-failed = Невозможно экспортировать стиль
+settings-styles-imported = Стиль импортирован
+settings-styles-import-failed = Не удалось импортировать стиль
+settings-styles-exported = Стиль экспортирован
+settings-styles-export-failed = Не удалось экспортировать стиль
 settings-styles-field-name = Название
 settings-styles-field-chapters = Заголовки глав
 settings-styles-field-parts = Заголовки частей
-settings-styles-field-scene-break = Сценический прорыв
-settings-styles-field-major-scene-break = Основная сцена прорыва
-settings-styles-field-spacing = Расстояние между линиями
-settings-styles-field-justify = Обосновывать текст
-settings-styles-field-notes = Включить примечания
-settings-styles-field-synopses = Включая синопсисы
-settings-styles-field-scene-titles = Включает названия сцен
-settings-styles-field-epigraphs = Включая эпиграфы
-settings-styles-field-paratexts = Включить паратексты
+settings-styles-field-scene-break = Разрыв сцены
+settings-styles-field-major-scene-break = Большой разрыв сцены
+settings-styles-field-spacing = Межстрочный интервал
+settings-styles-field-justify = Выравнивать по ширине
+settings-styles-field-notes = Включать заметки
+settings-styles-field-synopses = Включать синопсисы
+settings-styles-field-scene-titles = Включать названия сцен
+settings-styles-field-epigraphs = Включать эпиграфы
+settings-styles-field-paratexts = Включать паратексты
 settings-styles-field-epigraph-placement = Положение эпиграфа
-settings-styles-epigraph-after = После титула
-settings-styles-epigraph-before = Перед титулом
-settings-styles-field-footnotes = Включить сноски
-settings-styles-field-footnote-numbering = нумерация сноски
-settings-styles-footnote-numbering-continuous = непрерывный
-settings-styles-footnote-numbering-per-chapter = Перезагрузите каждую главу
-settings-styles-footnote-numbering-per-book = Перезагрузить каждую книгу
+settings-styles-epigraph-after = После заголовка
+settings-styles-epigraph-before = Перед заголовком
+settings-styles-field-footnotes = Включать сноски
+settings-styles-field-footnote-numbering = Нумерация сносок
+settings-styles-footnote-numbering-continuous = Сквозная
+settings-styles-footnote-numbering-per-chapter = Заново в каждой главе
+settings-styles-footnote-numbering-per-book = Заново в каждой книге
 settings-styles-field-images = Изображения
 menu-image = И&зображение
-settings-styles-images-beside = Помимо документа
+settings-styles-images-beside = Рядом с документом
 settings-styles-images-embed = Внутри документа
-settings-styles-images-omit = Уходите.
+settings-styles-images-omit = Не включать
 settings-styles-group-round-trip = Отправка редактору
-settings-styles-field-comments = Включить замечания
-settings-styles-field-round-trip-marks = Добавить метки обратного импорта
-settings-styles-round-trip-hint = Только DOCX и ODT. Невидимые метки позволяют обновить этот проект при импорте отредактированного файла, а не создать вторую копию.
+settings-styles-field-comments = Включать комментарии
+settings-styles-field-round-trip-marks = Включать метки обратного импорта
+settings-styles-round-trip-hint = Только DOCX и ODT. Метки — это невидимые идентификаторы, благодаря которым вернувшийся файл обновляет этот проект, а не ложится рядом второй копией.
 settings-styles-group-pages = Страницы
-settings-styles-field-cover = Открыть с помощью обложки
+settings-styles-field-cover = Начинать с обложки
 settings-styles-field-word-count = Количество слов на титульном листе
-settings-styles-field-page-books = Новая страница в каждой книге
-settings-styles-field-page-parts = Новая страница в каждой части
-settings-styles-field-page-chapters = Новая страница в каждой главе
-settings-styles-field-page-paratexts = Новая страница в каждом паратексте
-settings-styles-heading-none = Без заголовков.
-settings-styles-heading-numbered = Только число
+settings-styles-field-page-books = Новая страница перед каждой книгой
+settings-styles-field-page-parts = Новая страница перед каждой частью
+settings-styles-field-page-chapters = Новая страница перед каждой главой
+settings-styles-field-page-paratexts = Новая страница перед каждым паратекстом
+settings-styles-heading-none = Без заголовка
+settings-styles-heading-numbered = Только номер
 settings-styles-heading-title = Только название
 settings-styles-heading-both = Номер + название
-settings-styles-break-blank = Глазная линия
-settings-styles-break-none = Никто.
-settings-styles-spacing-single = одиночный
+settings-styles-break-blank = Пустая строка
+settings-styles-break-none = Нет
+settings-styles-spacing-single = Одинарный
 settings-styles-spacing-onehalf = 1½
-settings-styles-spacing-double = двойной
+settings-styles-spacing-double = Двойной
 
 welcome-title = Добро пожаловать в Skribisto
 welcome-version = Версия { $version }
-welcome-update-available = Версия { $version } доступна
+welcome-update-available = Доступна версия { $version }
 welcome-update-tip = Открывает страницу загрузки в вашем браузере.
-welcome-search = Поисковые работы
+welcome-search = Поиск проектов
 welcome-open = Открыть
 welcome-new-work = Новый проект
 welcome-create-from = Создать из…
 welcome-recent-works = Недавние проекты
-welcome-empty-recents = Недавних работ пока нет.
-welcome-no-matches = Ни одна недавняя работа не соответствует вашему поиску.
-welcome-learn-soon = Скоро появятся путеводители и советы.
-welcome-about-blurb = Skribisto, Rust + Teksilo переписывает приложение для письма.
-welcome-tagline = *Тихое место для написания длинных вещей.*
+welcome-empty-recents = Недавних проектов пока нет.
+welcome-no-matches = Ни один недавний проект не соответствует поиску.
+welcome-learn-soon = Руководства и советы скоро появятся.
+welcome-about-blurb = Skribisto — приложение для письма, переписанное на Rust + Teksilo.
+welcome-tagline = *Тихое место, чтобы писать длинные тексты.*
 welcome-github = GitHub
-welcome-discord = разлад
+welcome-discord = Discord
 nav-works = Проекты
 nav-examples = Примеры
-nav-learn = Учиться
-nav-about = О нас
+nav-learn = Обучение
+nav-about = О программе
 
 synopsis = Синопсис
 epigraph = Эпиграф
-pane-manuscript = рукопись
+pane-manuscript = Рукопись
 corkboard = Пробковая доска
 overview = Обзор
 
 corkboard-card-count = { $count ->
     [one] { $count } карточка
-    [few] { $count } карты
+    [few] { $count } карточки
     [many] { $count } карточек
-   *[other] { $count } карты
+   *[other] { $count } карточки
 }
 corkboard-child-count = { $count ->
-    [one] { $count } пункт
-    [few] { $count } пункта
+    [one] { $count } элемент
+    [few] { $count } элемента
     [many] { $count } элементов
-   *[other] { $count } единицы
+   *[other] { $count } элемента
 }
-corkboard-view-nested = вложенный
-corkboard-view-flat = плоский
-corkboard-layout-hint = На ней изображены прямые дочерние элементы контейнера. Откройте папку, чтобы войти в нее. Плоская показывает каждую сцену во всем контейнере сразу.
-corkboard-card-size = Размер карты
-corkboard-search-placeholder = Фильтровые карты …
-corkboard-empty-title = Пока ничего нет.
-corkboard-empty-hint = Используйте «＋ New» выше, чтобы добавить первый.
+corkboard-view-nested = Вложенный
+corkboard-view-flat = Плоский
+corkboard-layout-hint = «Вложенный» показывает прямых потомков контейнера. Откройте карточку папки, чтобы войти в неё. «Плоский» показывает сразу все сцены контейнера.
+corkboard-card-size = Размер карточек
+corkboard-search-placeholder = Фильтр карточек…
+corkboard-empty-title = Здесь пока ничего нет
+corkboard-empty-hint = Нажмите «＋ Новый» выше, чтобы добавить первую.
 corkboard-new = Новый
-corkboard-show-card-numbers = Номер карточки
-corkboard-modal-size = Расширенный размер редактора
-corkboard-scope-hint = Применяется к каждой открытой пробке, в каждом проекте.
-corkboard-sort-manuscript = Рукописный приказ
-corkboard-sort-title-asc = Название: A-Z
-corkboard-sort-title-desc = Название: Z-A
-corkboard-card-number = Карта { $number }
+corkboard-show-card-numbers = Нумеровать карточки
+corkboard-modal-size = Размер развёрнутого редактора
+corkboard-scope-hint = Действует для всех открытых пробковых досок во всех проектах.
+corkboard-sort-manuscript = Порядок рукописи
+corkboard-sort-title-asc = Название: А–Я
+corkboard-sort-title-desc = Название: Я–А
+corkboard-card-number = Карточка { $number }
 
 duplicate = Дублировать
 duplicate-n = { $count ->
     [one] Дублировать { $count } карточку
-    [few] Дублировать { $count } карты
-    [many] Дублировать { $count } карт
-   *[other] Дублировать карты { $count }
+    [few] Дублировать { $count } карточки
+    [many] Дублировать { $count } карточек
+   *[other] Дублировать { $count } карточки
 }
 set-label-n = { $count ->
-    [one] Установите этикетку на { $count } карточке
-    [few] Установите этикетку на { $count } карточках
-    [many] Установите этикетку на { $count } карточках
-   *[other] Установите этикетку на карточках { $count }
+    [one] Задать метку для { $count } карточки
+    [few] Задать метку для { $count } карточек
+    [many] Задать метку для { $count } карточек
+   *[other] Задать метку для { $count } карточки
 }
 move-to-trash-n = { $count ->
-    [one] Переместить { $count } карту в мусор
-    [few] Переместить { $count } карты в мусор
-    [many] Переместить { $count } карт в мусор
-   *[other] Переместите { $count } карт в корзину
+    [one] Отправить { $count } карточку в корзину
+    [few] Отправить { $count } карточки в корзину
+    [many] Отправить { $count } карточек в корзину
+   *[other] Отправить { $count } карточки в корзину
 }
-reveal-in-outline = Показать в общих чертах
+reveal-in-outline = Показать в структуре
 
-corkboard-move-to = Перейти на …
+corkboard-move-to = Переместить в…
 corkboard-move-to-n = { $count ->
-    [one] Переместить { $count } карту в …
-    [few] Переместите { $count } карты на …
-    [many] Переместите { $count } карт на …
-   *[other] Переместить карты { $count } в …
+    [one] Переместить { $count } карточку в…
+    [few] Переместить { $count } карточки в…
+    [many] Переместить { $count } карточек в…
+   *[other] Переместить { $count } карточки в…
 }
-corkboard-move-picker-title = Перейти на …
-corkboard-move-picker-empty = Пока никаких связующих.Создай сначала.
+corkboard-move-picker-title = Переместить в…
+corkboard-move-picker-empty = Подшивок пока нет. Сначала создайте подшивку.
 corkboard-move-picker-cancel = Отмена
-corkboard-move-here = Двигайся сюда
+corkboard-move-here = Переместить сюда
 corkboard-moved-ok = { $count ->
     [one] { $count } карточка перемещена
-    [few] { $count } карты перемещены
+    [few] { $count } карточки перемещены
     [many] { $count } карточек перемещено
-   *[other] { $count } карты
+   *[other] { $count } карточки перемещено
 }
-corkboard-move-into-self = Контейнер не может быть перемещен внутрь себя. Выберите пункт назначения за его пределами.
-corkboard-move-failed = Эти карты не могли быть перенесены туда.
+corkboard-move-into-self = Контейнер нельзя переместить внутрь самого себя. Выберите место назначения вне его.
+corkboard-move-failed = Не удалось переместить туда эти карточки.
 
-overview-col-title = Заголовок
+overview-col-title = Название
 overview-col-type = Тип
-overview-col-label = Подпись
-overview-col-tags = Метки
+overview-col-label = Метка
+overview-col-tags = Теги
 overview-col-books = Книги
 overview-col-own-words = Слова
 overview-col-total-words = Итого
 overview-row-count = { $count ->
-    [one] { $count } пункт
-    [few] { $count } пункта
+    [one] { $count } элемент
+    [few] { $count } элемента
     [many] { $count } элементов
-   *[other] { $count } единицы
+   *[other] { $count } элемента
 }
-overview-search-placeholder = Фильтровые элементы …
-overview-expand-all = Расширять все
+overview-search-placeholder = Фильтр элементов…
+overview-expand-all = Развернуть всё
 overview-collapse-all = Свернуть всё
 overview-table-label = Содержание
-overview-empty-title = Пока ничего нет.
-overview-gone-title = Этот контейнер пропал.
-overview-gone-hint = Его перенесли в мусорное ведро, либо восстановили, либо закрыли эту вкладку.
-overview-empty-hint = Используйте «＋ New» выше, чтобы добавить первый.
-corkboard-grid-label = Картонные карточки
+overview-empty-title = Здесь пока ничего нет
+overview-gone-title = Этот контейнер больше не существует
+overview-gone-hint = Он перемещён в корзину. Восстановите его или закройте эту вкладку.
+overview-empty-hint = Нажмите «＋ Новый» выше, чтобы добавить первый элемент.
+corkboard-grid-label = Карточки пробковой доски
 corkboard-rename-field = Переименовать элемент
-corkboard-expand-synopsis = Расширить синопсис
+corkboard-expand-synopsis = Развернуть синопсис
 corkboard-synopsis-modal-title = Синопсис
 corkboard-badge-scene = Сцена
 corkboard-badge-chapter = Глава
@@ -571,359 +582,359 @@ corkboard-badge-folder = Папка
 corkboard-badge-paratext = Паратекст
 corkboard-badge-text = Текст
 corkboard-badge-end = Конец
-settings-group-corkboard-layout = укладка
-settings-group-corkboard-cards = Карты
-corkboard-show-word-count = Показать количество слов на карточках
+settings-group-corkboard-layout = Компоновка
+settings-group-corkboard-cards = Карточки
+corkboard-show-word-count = Показывать количество слов на карточках
 text-heading = Текст
-no-content = Этот элемент не имеет редактируемого контента.
+no-content = У этого элемента нет редактируемого содержимого.
 untitled = Без названия
-placeholder-title = Заголовок…
+placeholder-title = Название…
 placeholder-subtitle = Подзаголовок…
-placeholder-chapter-title = Глава …
-split-editor = Редактор Split
-close-split-view = Близкое разделение
+placeholder-chapter-title = Название главы…
+split-editor = Разделить редактор
+close-split-view = Закрыть разделённый вид
 drop-open-here = Открыть здесь
-drop-open-to-side = Открывай в сторону
+drop-open-to-side = Открыть сбоку
 
 segment-chapter = Глава
 segment-part = Часть
 segment-book = Книга
 segment-pace = Темп
 segment-notes = Заметки
-segment-story-bible = Энциклопедия истории
+segment-story-bible = Библия истории
 segment-note-own = Заметка
 segment-note-details = Подробности
 segment-note-in-prose = В прозе
-pace-placeholder = Планировщик Пейса появляется здесь.
-pace-empty-title = Планируйте темп этой книги
-pace-empty-body = Установите цель слова и крайний срок, и Skribisto выработает ежедневный темп, чтобы доставить вас туда.
+pace-placeholder = Здесь появится планировщик темпа.
+pace-empty-title = Спланируйте темп этой книги
+pace-empty-body = Задайте цель по словам и срок, и Skribisto рассчитает дневной темп, который приведёт вас к цели.
 pace-start-planning = Начать планирование
 pace-section-schedule = Расписание
 pace-section-progress = Прогресс
-pace-advancement = Улучшение положения
-pace-goal = Цель в словах
+pace-advancement = Продвижение
+pace-goal = Цель по словам
 pace-deadline = Срок
-pace-active = План работы активен
-pace-day-mon = пн
-pace-day-tue = вт
-pace-day-wed = ср
-pace-day-thu = чт
-pace-day-fri = пт
-pace-day-sat = сб
-pace-day-sun = вс
-pace-card-written = Слова, написанные
-pace-card-of-goal = Для цели
-pace-card-rate = День письма / Writing Day
-pace-card-days-left = Письменные дни остались
-pace-card-streak = дневная полоса
-pace-card-ahead = Слова опережают темп
-pace-card-behind = Слова в темпе
-pace-charts-empty = Графики прогресса появляются здесь, как только ваше количество слов записывается на сейв.
-pace-chart-progression = Написанные слова vs. целевой
-pace-chart-words-per-day = Слова в день
-pace-series-actual = Фактический
+pace-active = Темп включён
+pace-day-mon = Пн
+pace-day-tue = Вт
+pace-day-wed = Ср
+pace-day-thu = Чт
+pace-day-fri = Пт
+pace-day-sat = Сб
+pace-day-sun = Вс
+pace-card-written = слов написано
+pace-card-of-goal = от цели
+pace-card-rate = слов в рабочий день
+pace-card-days-left = рабочих дней осталось
+pace-card-streak = дней подряд
+pace-card-ahead = слов с опережением темпа
+pace-card-behind = слов с отставанием от темпа
+pace-charts-empty = Графики прогресса появятся здесь, как только при сохранении будет записано количество слов.
+pace-chart-progression = Написано слов и цель
+pace-chart-words-per-day = Слов в день
+pace-series-actual = Факт
 pace-series-target = Цель
-pace-series-words-per-day = Слова/день
-pace-daily-target-line = Даже темп: { $count ->
+pace-series-words-per-day = Слов/день
+pace-daily-target-line = Равномерный темп: { $count ->
     [one] { $count } слово/день
     [few] { $count } слова/день
     [many] { $count } слов/день
    *[other] { $count } слова/день
 }
-pace-section-holidays = Каникулы
+pace-section-holidays = Выходные
 pace-section-milestones = Вехи
-pace-holidays-none = Никаких праздников, каждый запланированный день считается.
-pace-holiday-label = Название праздника
+pace-holidays-none = Выходных нет. Учитывается каждый запланированный день.
+pace-holiday-label = Название выходного
 pace-add-holiday = Добавить
 pace-remove = Убрать
-pace-milestones-none = Пока никаких вех. Установите один на часть или главу в Инспекторе.
-full-chapter = Полная глава
-full-part = Полная часть
-full-book = Полная книга
-full-synopsis = Полный синопсис
+pace-milestones-none = Вех пока нет. Задайте веху для части или главы в инспекторе.
+full-chapter = Вся глава
+full-part = Вся часть
+full-book = Вся книга
+full-synopsis = Весь синопсис
 rename = Переименовать
-set-label = Установить этикетку
-insert-scene = Включить сцену
-insert-chapter = Включить главу
-split-scene = Разделённая сцена
-move-up = Вставай.
-move-down = Спускайся.
-merge-with-previous = Слияние с предыдущим
-move-to-trash = Двигаться до мусора
+set-label = Задать метку
+insert-scene = Вставить сцену
+insert-chapter = Вставить главу
+split-scene = Разделить сцену
+move-up = Переместить вверх
+move-down = Переместить вниз
+merge-with-previous = Объединить с предыдущим
+move-to-trash = Отправить в корзину
 rename-chapter = Переименовать главу
 add-scene = Добавить новую сцену
 add-chapter = Добавить новую главу
 new-scene-title = Новая сцена
-placeholder-scene-name = Оригинальное название: …
-menu-cut = Сокращение
-menu-copy = Копия
-menu-paste = паста
-menu-paste-unformatted = Паста неформатированная
-menu-select-all = Выберите все
+placeholder-scene-name = Название сцены…
+menu-cut = Вырезать
+menu-copy = Копировать
+menu-paste = Вставить
+menu-paste-unformatted = Вставить без форматирования
+menu-select-all = Выделить всё
 format-bold = Полужирный
 format-italic = Курсив
 format-underline = Подчёркнутый
 format-strikethrough = Зачёркнутый
 
-binder = Навигатор
-no-work = Нет работы заряженной
-no-recent-works = Недавние работы
-switcher-open-section = В настоящее время открыт
-switcher-recent-section = недавнее
-switcher-this-window = Это окно
-open-project-title = Открытый проект
+binder = Подшивка
+no-work = Проект не загружен
+no-recent-works = Нет недавних проектов
+switcher-open-section = Сейчас открыты
+switcher-recent-section = Недавние
+switcher-this-window = это окно
+open-project-title = Открытие проекта
 open-project-question = Как открыть «{ $title }»?
 open-in-new-window = Открыть в новом окне
 open-here = Открыть здесь
 
-binder-all = Все навигаторы
-binder-show-all = Показать все связующие
-binder-new = Новое связующее …
-binder-default-name = Новое связующее вещество
+binder-all = Все подшивки
+binder-show-all = Показать все подшивки
+binder-new = Новая подшивка…
+binder-default-name = Новая подшивка
 binder-item-count = { $count ->
-    [one] { $count } пункт
-    [few] { $count } пункта
+    [one] { $count } элемент
+    [few] { $count } элемента
     [many] { $count } элементов
-   *[other] { $count } единицы
+   *[other] { $count } элемента
 }
-binder-search-placeholder = Фильтр схемы …
-binder-search-scope = Поиск всех связующих
-binder-trash-confirm-title = Переместить связующее в мусор?
-binder-trash-confirm-text = «{ $name }» и все его предметы будут перемещены в мусорный бак.
+binder-search-placeholder = Фильтр структуры…
+binder-search-scope = Искать во всех подшивках
+binder-trash-confirm-title = Отправить подшивку в корзину?
+binder-trash-confirm-text = «{ $name }» и все её элементы будут перемещены в корзину.
 
 dialog-rename = Переименовать
-dialog-new-binder = Новое связующее вещество
-dialog-set-label = Установить этикетку
+dialog-new-binder = Новая подшивка
+dialog-set-label = Задать метку
 dialog-new-scene = Новая сцена
-close-work-question = Сохранить изменения перед закрытием работы.
-quit-question = Сохранить изменения перед уходом?
-quit-save-work-question = Сохранить изменения до { $title } перед уходом?
-unsaved-changes = Эта работа имеет несохранившиеся изменения.
-new-work-unsaved-question = Сохранить изменения перед созданием новой работы.
-open-work-unsaved-question = Сохранить изменения перед открытием новой работы.
-switch-backup-discard-title = Откажитесь от изменений в этой резервной копии?
-switch-backup-discard-text = Изменения в резервной копии не могут быть сохранены. Используйте Save As или Restore, чтобы сохранить их, или откажитесь от них и откройте другую работу.
-switch-save-failed = Работу не удалось спасти, поэтому она не была заменена: { $error }
-switch-save-not-started = Работу не удалось спасти, поэтому она не была заменена.
-close-save-failed = Работу не удалось спасти, поэтому она не была закрыта: { $error }
-close-save-not-started = Работу не удалось спасти, поэтому она не была закрыта.
-save-not-started = Работу не удалось спасти.
+close-work-question = Сохранить изменения перед закрытием проекта?
+quit-question = Сохранить изменения перед выходом?
+quit-save-work-question = Сохранить изменения в «{ $title }» перед выходом?
+unsaved-changes = В этом проекте есть несохранённые изменения.
+new-work-unsaved-question = Сохранить изменения перед созданием нового проекта?
+open-work-unsaved-question = Сохранить изменения перед открытием другого проекта?
+switch-backup-discard-title = Отменить изменения в этой резервной копии?
+switch-backup-discard-text = Изменения в резервной копии нельзя сохранить в неё саму. Чтобы сохранить их, используйте «Сохранить как» или «Восстановить», либо отмените их и откройте другой проект.
+switch-save-failed = Не удалось сохранить проект, поэтому он не был заменён: { $error }
+switch-save-not-started = Не удалось сохранить проект, поэтому он не был заменён.
+close-save-failed = Не удалось сохранить проект, поэтому он не был закрыт: { $error }
+close-save-not-started = Не удалось сохранить проект, поэтому он не был закрыт.
+save-not-started = Не удалось сохранить проект.
 
-could-not-open-work = Не удалось открыть "{ $file }"
-could-not-open-work-too-new = "{ $file }" нуждается в новом Skribisto
-could-not-open-work-too-new-detail = Сохраняется форматом Skribisto { $written_by }; для его открытия требуется формат { $requires } или более новый, и эта сборка поддерживает формат { $supported }. Обновление Skribisto для его открытия.
-could-not-open-work-importing = "{ $file }" пишется импортным
-could-not-open-work-importing-detail = Откройте его, как только импорт будет завершен: откройте сейчас, это покажет проект, импорт заменяется, и его следующая экономия напишет этот проект обратно над импортом.
+could-not-open-work = Не удалось открыть «{ $file }»
+could-not-open-work-too-new = Для «{ $file }» нужна более новая версия Skribisto
+could-not-open-work-too-new-detail = Сохранено в формате Skribisto { $written_by }; для открытия нужен формат { $requires } или новее, а эта сборка поддерживает форматы до { $supported }. Обновите Skribisto, чтобы открыть этот проект.
+could-not-open-work-importing = В «{ $file }» сейчас идёт запись импорта
+could-not-open-work-importing-detail = Импорт записывает данные поверх этого проекта и ещё не завершён. Откройте проект, когда импорт закончится: если открыть его сейчас, вы увидите проект, который импорт заменяет, а следующее сохранение запишет его обратно поверх результата импорта.
 could-not-open-example = Не удалось открыть пример: { $error }
 could-not-open-link = Не удалось открыть { $url }: { $error }
-could-not-create-work = Не удалось создать работы: { $error }
-saving-as-file = Экономия как { $target }…
-saving-as-folder = Экономия как { $target }/…
-saved-as = Спасено до { $target }
-save-error = Не удалось спасти: { $error }
-save-flush-failed = Спасение прошло, но эти документы не могли быть переданы ему и до сих пор не спасены: { $titles } ({ $error })
-backup-error = Не удалось: { $error }
-backing-up = Резервное копирование …
-backup-nothing-open = Ни один проект не открыт для поддержки.
-backup-already-running = Резервная копия уже в процессе.
-backup-complete = Полное резервное копирование ({ $ok } сохранено, { $skipped } уже включено)
-backup-partial = Резервное копирование завершено: { $ok } сохранено. { $failed ->
-    [one] { $failed } место назначения провалилось
-    [few] { $failed } Путешествия потерпели неудачу
-    [many] { $failed } направлений провалились
-   *[other] { $failed } Неудачные направления
+could-not-create-work = Не удалось создать проект: { $error }
+saving-as-file = Сохранение как { $target }…
+saving-as-folder = Сохранение как { $target }/…
+saved-as = Сохранено в { $target }
+save-error = Не удалось сохранить: { $error }
+save-flush-failed = Сохранение выполнено, но эти документы не удалось в него передать, и они всё ещё не сохранены: { $titles } ({ $error })
+backup-error = Не удалось создать резервную копию: { $error }
+backing-up = Резервное копирование…
+backup-nothing-open = Нет открытого проекта для резервного копирования.
+backup-already-running = Резервное копирование уже выполняется.
+backup-complete = Резервное копирование завершено (сохранено: { $ok }, уже актуальны: { $skipped })
+backup-partial = Резервное копирование завершено, сохранено: { $ok }. { $failed ->
+    [one] { $failed } место назначения недоступно
+    [few] { $failed } места назначения недоступны
+    [many] { $failed } мест назначения недоступны
+   *[other] { $failed } места назначения недоступны
 }
-backup-no-destination-title = Нет места резервного копирования
-backup-no-destination-text = Ни один из сконфигурированных пунктов резервного копирования не может быть достигнут (например, внешний диск может быть отключен). Включите его и повторите или выйдите без резервного копирования.
-backup-failed-close-title = Резервное копирование не удалось спасти
-backup-failed-close-text = Ни одна резервная копия не может быть написана до закрытия. Каждый пункт назначения вышел из строя (привод, возможно, был удален, или он может быть полным или защищенным от записи). Исправьте его и повторите или выйдите без резервного копирования.
+backup-no-destination-title = Нет доступного места для резервной копии
+backup-no-destination-text = Ни одно из настроенных мест резервного копирования недоступно (например, внешний диск может быть отключён). Подключите его и повторите попытку или выйдите без резервного копирования.
+backup-failed-close-title = Не удалось сохранить резервную копию
+backup-failed-close-text = Перед закрытием не удалось записать ни одной резервной копии. Все места назначения дали сбой (диск мог быть извлечён, переполнен или защищён от записи). Устраните проблему и повторите попытку или выйдите без резервного копирования.
 
-backup-choice-title = Файл резервного копирования
+backup-choice-title = Файл резервной копии
 backup-choice-heading = Вы открыли резервную копию
-backup-choice-subtitle = Это резервная копия проекта в момент времени.
-backup-choice-subtitle-dated = Резервное копирование { $date }.
-backup-choice-body = Вы можете открыть его и свободно редактировать, но изменения могут быть сохранены только с помощью Save As. Оригинальный файл проекта не затрагивается. Или восстановить этот проект именно в эту резервную копию.
-backup-choice-open = Откройте резервную копию
-backup-choice-restore = Восстановить этот проект до этой точки …
-backup-choice-not-a-backup = Нет, открой нормально.
-backup-banner-title = Резервная копия: изменения здесь не сохранить
-backup-banner-description = Используйте Save As, чтобы сохранить ваши правки в новом файле, или Restore, чтобы заменить оригинальный проект этой резервной копией.
+backup-choice-subtitle = Это резервная копия проекта на определённый момент времени.
+backup-choice-subtitle-dated = Резервная копия создана { $date }.
+backup-choice-body = Вы можете открыть её и свободно редактировать, но сохранить изменения можно только командой «Сохранить как». Исходный файл проекта не затрагивается. Либо восстановите проект точно в состояние этой резервной копии.
+backup-choice-open = Открыть резервную копию
+backup-choice-restore = Восстановить проект до этого момента…
+backup-choice-not-a-backup = Нет, открыть как обычно
+backup-banner-title = Резервная копия: изменения здесь сохранить нельзя
+backup-banner-description = Используйте «Сохранить как», чтобы сохранить правки в новом файле, или «Восстановить», чтобы заменить исходный проект этой резервной копией.
 backup-banner-restore = Восстановить…
-backup-banner-save-as = Сохранить: …
-backup-restore-original-missing = Не могу найти оригинальный проект для восстановления. Используйте Save As, чтобы сохранить эту резервную копию в качестве нового проекта.
-backup-restore-close-elsewhere-title = Проект открывается в другом окне
-backup-restore-close-elsewhere-text = Проект, который вы восстанавливаете, открыт в другом окне. Пожалуйста, сначала закройте его, а затем повторите.
-backup-restore-focus-window = Сосредоточьте это окно
-backup-restore-confirm-title = Восстановить резервную копию?
-backup-restore-confirm-text = Текущая версия проекта будет скопирована в качестве резервной копии, прежде чем будет заменена на эту.
+backup-banner-save-as = Сохранить как…
+backup-restore-original-missing = Не удаётся найти исходный проект, который нужно восстановить. Используйте «Сохранить как», чтобы сохранить эту резервную копию как новый проект.
+backup-restore-close-elsewhere-title = Проект открыт в другом окне
+backup-restore-close-elsewhere-text = Проект, который вы восстанавливаете, открыт в другом окне. Сначала закройте его там, затем повторите попытку.
+backup-restore-focus-window = Перейти к этому окну
+backup-restore-confirm-title = Восстановить эту резервную копию?
+backup-restore-confirm-text = Перед заменой текущая версия проекта будет скопирована в сторону как страховочная резервная копия.
 backup-restore-confirm-ok = Восстановить
 backup-restore-error = Не удалось восстановить: { $error }
 backup-restored-ok = Проект восстановлен.
-backup-restored-with-safety = Ваша предыдущая версия была сохранена до { $path }.
-close-backup-discard-title = Откажитесь от изменений в этой резервной копии?
-close-backup-discard-text = Изменения в резервной копии не могут быть сохранены. Используйте Save As, чтобы сохранить их, или отбросить и закрыть.
-quit-backup-discard-title = Откажитесь от изменений и бросьте?
-quit-backup-discard-work-question = Откажитесь от изменений до { $title } и прекратите?
-quit-backup-discard-text = Изменения в резервной копии не могут быть сохранены. Используйте Save As, чтобы сохранить их, или отбросьте и бросьте.
-backup-nudge-text = Никаких резервных копий для этого проекта не создано.
-backup-nudge-action = Настройка резервных копий …
+backup-restored-with-safety = Проект восстановлен. Предыдущая версия сохранена в { $path }.
+close-backup-discard-title = Отменить изменения в этой резервной копии?
+close-backup-discard-text = Изменения в резервной копии нельзя сохранить в неё саму. Используйте «Сохранить как», чтобы сохранить их, или отмените их и закройте.
+quit-backup-discard-title = Отменить изменения и выйти?
+quit-backup-discard-work-question = Отменить изменения в «{ $title }» и выйти?
+quit-backup-discard-text = Изменения в резервной копии нельзя сохранить в неё саму. Используйте «Сохранить как», чтобы сохранить их, или отмените их и выйдите.
+backup-nudge-text = Для этого проекта не настроено резервное копирование.
+backup-nudge-action = Настроить резервное копирование…
 
-menu-backups-list = &Резервное копирование …
-backups-title = Резервное копирование
+menu-backups-list = &Резервные копии…
+backups-title = Резервные копии
 backups-loading = Поиск резервных копий…
 backups-empty = Резервных копий для этого проекта пока не найдено.
 backups-open = Открыть
-backups-reveal = Показать расположение
-backups-delete = Удалите эту резервную копию
-backups-delete-confirm-title = Удалить резервную копию?
-backups-delete-confirm-text = "{ $name }" будет навсегда удалена.
+backups-reveal = Показать в папке
+backups-delete = Удалить эту резервную копию
+backups-delete-confirm-title = Удалить эту резервную копию?
+backups-delete-confirm-text = «{ $name }» будет удалена безвозвратно. Это действие нельзя отменить.
 backups-delete-error = Не удалось удалить резервную копию: { $error }
 backups-refresh = Обновить
 backups-close = Закрыть
 
-settings-page-backup = Дефолты резервного копирования
-settings-page-work-backup = Резервное копирование
+settings-page-backup = Резервное копирование по умолчанию
+settings-page-work-backup = Резервные копии
 settings-backup-general-title = Параметры резервного копирования по умолчанию
-settings-backup-work-title = Резервное копирование для этого проекта
-settings-backup-inherit = Используйте общие настройки резервного копирования
+settings-backup-work-title = Резервные копии этого проекта
+settings-backup-inherit = Использовать общие настройки резервного копирования
 settings-backup-inheriting = Этот проект использует общие настройки резервного копирования.
-settings-backup-none-hint = Автоматическое резервное копирование не настраивается (выключается каждый триггер).
-settings-backup-last = Последнее резервное копирование: { $date }
-settings-backup-last-never = Никаких резервных копий.
-settings-backup-open-list = Открытый список резервных копий …
-settings-backup-triggers = Когда отступать
-settings-backup-on-close = Резервное копирование при закрытии проекта
-settings-backup-on-open = Назад при открытии проекта
-settings-backup-interval = Регулярно, каждый
-settings-backup-destinations = Резервные пункты назначения
-settings-backup-default-location = Местоположение по умолчанию
+settings-backup-none-hint = Автоматическое резервное копирование не настроено (все условия запуска выключены).
+settings-backup-last = Последняя резервная копия: { $date }
+settings-backup-last-never = Резервных копий пока нет.
+settings-backup-open-list = Открыть список резервных копий…
+settings-backup-triggers = Когда создавать резервные копии
+settings-backup-on-close = Создавать резервную копию при закрытии проекта
+settings-backup-on-open = Создавать резервную копию при открытии проекта
+settings-backup-interval = Создавать резервную копию регулярно, каждые
+settings-backup-destinations = Места хранения резервных копий
+settings-backup-default-location = Расположение по умолчанию
 settings-backup-usage-since = { $count ->
-    [one] { $count } резервный · { $size } · старейший { $oldest }
-    [few] { $count } резервных копии · { $size } · старейший { $oldest }
-    [many] { $count } резервных копий · { $size } · старейший { $oldest }
-   *[other] { $count } резервные копии · { $size } · старейший { $oldest }
+    [one] { $count } резервная копия · { $size } · самая старая: { $oldest }
+    [few] { $count } резервные копии · { $size } · самая старая: { $oldest }
+    [many] { $count } резервных копий · { $size } · самая старая: { $oldest }
+   *[other] { $count } резервной копии · { $size } · самая старая: { $oldest }
 }
 settings-backup-usage = { $count ->
     [one] { $count } резервная копия · { $size }
-    [few] { $count } резервных копии · { $size }
+    [few] { $count } резервные копии · { $size }
     [many] { $count } резервных копий · { $size }
-   *[other] { $count } резервные копии · { $size }
+   *[other] { $count } резервной копии · { $size }
 }
-settings-backup-usage-empty = Ничего не сохранилось здесь до сих пор
-settings-backup-usage-measuring = Измерение …
+settings-backup-usage-empty = Здесь пока ничего не хранится
+settings-backup-usage-measuring = Подсчёт…
 settings-backup-reveal-root = Показать папку
-settings-backup-dest-none = Резервные копии сохраняются рядом с проектом.
+settings-backup-dest-none = Мест хранения нет. Резервные копии сохраняются рядом с проектом.
 settings-backup-dest-remove = Убрать
-settings-backup-dest-add = Добавить папку …
+settings-backup-dest-add = Добавить папку…
 settings-backup-dest-refresh = Обновить
-settings-backup-retention = Сколько оставить
+settings-backup-retention = Сколько хранить
 settings-backup-retention-tiered = По уровням
-settings-backup-retention-keep-n = Сохраните последний N
-settings-backup-retention-tip = Как обрезаны старые резервные копии.
-settings-backup-retention-tip-more = Tiered хранит одну резервную копию в час в течение дня, в день в течение недели, в неделю в течение месяца и в месяц за его пределами, поэтому недавняя история остается плотной, а старая история истончается. «Keep last N» просто сохраняет последние копии N. В обоих режимах всегда хранятся новейшие копии (минимум ниже).
-settings-backup-gfs-hourly = Часовой (последние 24 часа)
-settings-backup-gfs-daily = Daily (последняя неделя)
+settings-backup-retention-keep-n = Последние N
+settings-backup-retention-tip = Как удаляются старые резервные копии.
+settings-backup-retention-tip-more = Режим «По уровням» хранит по одной резервной копии на каждый час в течение суток, на каждый день в течение недели, на каждую неделю в течение месяца и на каждый месяц далее: недавняя история остаётся подробной, а старая постепенно прореживается. Режим «Последние N» просто хранит N самых свежих копий. В обоих режимах самые новые копии (минимум, указанный ниже) хранятся всегда.
+settings-backup-gfs-hourly = Ежечасно (последние 24 ч)
+settings-backup-gfs-daily = Ежедневно (последняя неделя)
 settings-backup-gfs-weekly = Еженедельно (последний месяц)
-settings-backup-gfs-monthly = ежемесячно
-settings-backup-keep-n = Номер, чтобы сохранить
-settings-backup-min-keep = Всегда держите хотя бы
-settings-backup-dedup = Пропустить резервную копию, когда ничего не изменилось
+settings-backup-gfs-monthly = Ежемесячно
+settings-backup-keep-n = Сколько хранить
+settings-backup-min-keep = Всегда хранить не менее
+settings-backup-dedup = Пропускать резервное копирование, если ничего не изменилось
 
 new-work-title = Новый проект
 new-work-close = Закрыть
 new-work-name = Название проекта
 new-work-name-placeholder = Без названия
 new-work-author = Автор
-new-work-author-placeholder = необязательный
+new-work-author-placeholder = Необязательно
 new-work-format = Формат
 new-work-single-file = Один файл
 new-work-bundle = Папка проекта
-new-work-convert-later = Вы можете конвертировать между форматами позже.
-new-work-location = Место
-new-work-will-create = будет создавать
+new-work-convert-later = Формат можно будет изменить позже.
+new-work-location = Расположение
+new-work-will-create = Будет создано
 new-work-language = Язык по умолчанию
-new-work-language-hint = Применительно к новым текстам проверка орфографии. Каждый текст можно переключить на другой язык.
+new-work-language-hint = Применяется к новым текстам и проверке орфографии. Для каждого текста можно выбрать другой язык.
 new-work-template = Шаблон
-new-work-template-none = Никто.
+new-work-template-none = Нет
 new-work-template-empty-novel = Пустой роман
-new-work-template-light-novel = Световой роман
-new-work-template-novel = роман
-new-work-template-novel-in-parts = Роман по частям
+new-work-template-light-novel = Лайт-новел
+new-work-template-novel = Роман
+new-work-template-novel-in-parts = Роман в частях
 new-work-template-notebook = Блокнот
 new-work-cancel = Отмена
 new-work-create = Создать проект
 new-work-step-details = Подробности
-new-work-step-language = Языковая структура
+new-work-step-language = Язык и структура
 new-work-step-template = Шаблон
 new-work-back = Назад
 new-work-next = Далее
 new-work-documents-title = Новый проект из документов
 new-work-step-import = Импорт
-new-work-create-and-import = Разработчик: Import…
-new-work-documents-next-title = Ваши документы будут следующими
-new-work-documents-next-body = Создание проекта открывает маг импорта над ним, где вы выбираете документы, просматриваете структуру Skribisto, читаете из них, и выбираете, где он приземляется.Ничего не записывается в проект, пока вы не подтвердите его там.
-new-work-documents-no-template = Этот проект начинается пустым по назначению: никакого шаблона, поэтому ввозимые документы - единственное, что в нем есть.
-new-work-documents-chapter-scene-hint = Применяется к главам, которые создает импорт. Вы можете изменить его позже в настройках проекта.
-new-work-single-file-desc = Один архив .skrib (zip). Портативный, простой в резервном копировании.
-new-work-bundle-desc = Папка с каждым текстовым активом, более дружественная к управлению версиями.
-new-work-template-none-count = пустой связующий
+new-work-create-and-import = Создать и импортировать…
+new-work-documents-next-title = Затем — ваши документы
+new-work-documents-next-body = После создания проекта поверх него откроется мастер импорта: там вы выберете документы, проверите структуру, которую Skribisto в них распознал, и укажете, куда её поместить. В проект ничего не записывается, пока вы не подтвердите это там.
+new-work-documents-no-template = Этот проект намеренно начинается пустым, без шаблона: в нём будут только импортированные документы.
+new-work-documents-chapter-scene-hint = Применяется к главам, которые создаст импорт. Изменить это можно позже в настройках проекта.
+new-work-single-file-desc = Один архив .skrib (zip). Легко переносить и резервировать.
+new-work-bundle-desc = Папка со всеми текстами и ресурсами. Удобнее для систем контроля версий.
+new-work-template-none-count = пустая подшивка
 new-work-template-empty-novel-count = 1 глава
 new-work-template-light-novel-count = 15 глав
 new-work-template-novel-count = 20 глав
 new-work-template-novel-in-parts-count = 3 части, 24 главы
-new-work-template-notebook-count = ноты свободной формы
-new-work-chapter-scene = Главы без сцен
-new-work-chapter-scene-tip = Каждая глава - это отдельный элемент, в который вы пишете прямо, без сцен под ним. Оставьте это для классического макета, где глава - папка: вы пишете прямо в нее тоже, но она может содержать сцены.
-new-work-chapter-scene-tip-more = Разница только в том, может ли он содержать сцены. Дерево связующего Skribisto является только организационным, поэтому оба макета компилируются в одну и ту же книгу, вы можете свободно смешивать их и продвигать преобразование главы между ними без потери слова.
-new-work-name-required = Введите имя для работы
-new-work-name-invalid = Это имя не имеет полезных символов.
-new-work-location-required = Выберите местоположение
+new-work-template-notebook-count = заметки в свободной форме
+new-work-chapter-scene = Плоские главы
+new-work-chapter-scene-tip = Каждая глава — это один элемент, в который вы пишете напрямую, без сцен внутри. Оставьте выключенным для классической структуры, где глава — это папка: в неё тоже можно писать напрямую, но она может содержать и сцены.
+new-work-chapter-scene-tip-more = В главу вы пишете в любом случае. Разница лишь в том, может ли она *содержать* сцены. Дерево подшивки в Skribisto служит только для организации, поэтому обе структуры собираются в одну и ту же книгу, их можно свободно смешивать, а команда «Преобразовать в» переводит главу из одной формы в другую без потери единого слова.
+new-work-name-required = Введите название проекта
+new-work-name-invalid = В этом названии нет пригодных символов
+new-work-location-required = Выберите расположение
 new-work-location-missing = Такой папки не существует
-new-work-location-not-folder = Этот путь не является папкой.
-new-work-location-readonly = Эта папка не пишется
-new-work-target-exists = Проект с таким названием уже есть в этой папке.Создание работы спросит перед ее заменой
-new-work-target-is-folder = Папка с таким именем уже в этом месте. Выберите другое имя.
+new-work-location-not-folder = Этот путь не является папкой
+new-work-location-readonly = В эту папку нельзя записывать
+new-work-target-exists = В этой папке уже есть проект с таким названием. Перед заменой будет запрошено подтверждение
+new-work-target-is-folder = Здесь уже есть папка с таким названием. Выберите другое название
 new-work-overwrite-title = Заменить существующий проект?
-new-work-overwrite-text = "{ $name }" уже существует в этой папке. Заменить ее новым проектом?
+new-work-overwrite-text = «{ $name }» уже существует в этой папке. Заменить его новым проектом?
 new-work-target-open-title = Этот проект открыт
-new-work-target-open-text = «{ $name }» открыт в Skribisto. Создание нового проекта на его месте заменило бы проект, над которым вы работаете, и ваш следующий сохранения напишет этот проект обратно над новым. Выберите другое имя или папку, или закройте проект первым.
-target-importing-title = Импорт пишет этот проект.
-target-importing-text = Импорт все еще пишет "{ $name }". Подождите, пока он не закончит, или выберите другое имя.
-import-plume-busy-title = Еще один проект Plume Creator импортируется
-import-plume-busy-text = Проекты Plume Creator импортируются по одному за раз. Подождите, пока импорт не закончится, или отмените его, затем начните этот снова.
-import-manuskript-busy-title = Еще один проект Manuskript импортируется
-import-manuskript-busy-text = Проекты Manuskript импортируются по одному за раз. Подождите, пока импорт не закончится, или отмените его, затем начните этот снова.
-backup-restore-importing-text = Импорт все еще пишет "{ $name }", проект эта резервная копия будет восстановлена. Восстановите резервную копию после того, как импорт закончился.
+new-work-target-open-text = Проект «{ $name }» открыт в Skribisto. Создание нового проекта на его месте заменит проект, над которым вы работаете, а следующее сохранение запишет тот проект обратно поверх нового. Выберите другое название или папку либо сначала закройте проект.
+target-importing-title = В этот проект идёт запись импорта
+target-importing-text = Импорт всё ещё записывает «{ $name }». Дождитесь его завершения или выберите другое название.
+import-plume-busy-title = Уже импортируется другой проект Plume Creator
+import-plume-busy-text = Проекты Plume Creator импортируются по одному. Дождитесь завершения текущего импорта или отмените его, затем запустите этот снова.
+import-manuskript-busy-title = Уже импортируется другой проект Manuskript
+import-manuskript-busy-text = Проекты Manuskript импортируются по одному. Дождитесь завершения текущего импорта или отмените его, затем запустите этот снова.
+backup-restore-importing-text = Импорт всё ещё записывает «{ $name }» — проект, поверх которого будет восстановлена эта резервная копия. Восстановите копию после завершения импорта.
 
-new-work-manuscript = рукопись
+new-work-manuscript = Рукопись
 new-work-notes = Заметки
 new-work-research = Исследования
 new-work-notebook = Блокнот
 new-work-scene = Сцена
 new-work-note = Заметка
-new-work-front-matter = Передний вопрос
-new-work-back-matter = Обратная сторона вопроса
+new-work-front-matter = Вступительные материалы
+new-work-back-matter = Заключительные материалы
 new-work-paratext = Структура книги
-new-work-paratext-none = Никакой структуры
-new-work-paratext-hint = Спереди и сзади традиция открывает и закрывает книгу. Вы можете переместить, переименовать или удалить любую из них позже.
-new-work-tags = Метки
-new-work-tags-none = Никаких тегов
-new-work-tags-hint = Стартовая палитра для маркировки символов, мест и прочего.Необязательно, и каждый тег может быть переименован, перекрашен или удален впоследствии.
-new-work-note-templates = Заметить шаблоны
-new-work-note-templates-none = Никаких шаблонов
-new-work-note-templates-hint = Форма примечания начинается с заметки "история-библия". Необязательно, и каждый шаблон может быть отредактирован или удален позже.
+new-work-paratext-none = Без структуры
+new-work-paratext-hint = Вступительные и заключительные материалы, которыми традиция открывает и закрывает книгу. Любой из них можно потом переместить, переименовать или удалить.
+new-work-tags = Теги
+new-work-tags-none = Без тегов
+new-work-tags-hint = Начальный набор тегов для персонажей, мест и прочего. Необязательно; любой тег потом можно переименовать, перекрасить или удалить.
+new-work-note-templates = Шаблоны заметок
+new-work-note-templates-none = Без шаблонов
+new-work-note-templates-hint = Форма, с которой начинается заметка библии истории. Необязательно; любой шаблон потом можно изменить или удалить.
 new-work-characters = Персонажи
 new-work-places = Места
 
-import-plume-title = Импорт Plume Creator проект
+import-plume-title = Импорт проекта Plume Creator
 import-plume-close = Закрыть
 import-plume-source = Проект Plume
 import-plume-source-hint = Выберите файл .plume или .plume_backup (любая версия Plume Creator).
 import-plume-location = Папка назначения
-import-plume-name = Файловое имя
+import-plume-name = Имя файла
 import-plume-name-placeholder = Название проекта
-import-plume-will-create = будет создавать
-import-plume-trash-warning = Трэшированные / удаленные элементы не мигрируют.
+import-plume-will-create = Будет создано
+import-plume-trash-warning = ⚠ Элементы из корзины и удалённые элементы не переносятся.
 import-plume-cancel = Отмена
 import-plume-import = Импорт
 import-plume-source-required = Выберите файл проекта Plume
@@ -931,142 +942,142 @@ import-plume-source-missing = Этот файл не существует
 import-plume-source-not-file = Этот путь не является файлом
 import-plume-location-required = Выберите папку назначения
 import-plume-location-missing = Такой папки не существует
-import-plume-location-not-folder = Этот путь не является папкой.
-import-plume-location-readonly = Эта папка не пишется
+import-plume-location-not-folder = Этот путь не является папкой
+import-plume-location-readonly = В эту папку нельзя записывать
 import-plume-name-required = Введите имя файла
-import-plume-name-exists = Файл с этим именем уже существует. Импорт подтвердит перезапись
+import-plume-name-exists = Файл с таким именем здесь уже существует. Перед перезаписью импорт запросит подтверждение
 import-plume-overwrite-title = Заменить существующий файл?
-import-plume-overwrite-text = "{ $name }" уже существует. Заменить его на импортный проект?
-import-plume-manuscript-binder = рукопись
-import-plume-story-bible-binder = История Библии
-import-plume-progress-title = Импорт Plume project…
+import-plume-overwrite-text = «{ $name }» уже существует. Заменить его импортированным проектом?
+import-plume-manuscript-binder = Рукопись
+import-plume-story-bible-binder = Библия истории
+import-plume-progress-title = Импорт проекта Plume…
 import-plume-cancel-import = Отмена
-import-plume-cancelled = Импорт отменили
-import-plume-done = импортный { $imported ->
-    [one] { $imported } пункт.
-    [few] { $imported } предмета.
-    [many] { $imported } предметов.
-   *[other] { $imported } единиц.
+import-plume-cancelled = Импорт отменён
+import-plume-done = Импортировано: { $imported ->
+    [one] { $imported } элемент.
+    [few] { $imported } элемента.
+    [many] { $imported } элементов.
+   *[other] { $imported } элемента.
 } { $skipped ->
-    [one] { $skipped } пункт обвалов не был вывезен.
-    [few] { $skipped } разбитых предмета не были вывезены.
-    [many] { $skipped } разбитых предметов не были вывезены.
-   *[other] { $skipped } товарные позиции не были вывезены.
+    [one] { $skipped } элемент из корзины не перенесён.
+    [few] { $skipped } элемента из корзины не перенесены.
+    [many] { $skipped } элементов из корзины не перенесены.
+   *[other] { $skipped } элемента из корзины не перенесено.
 }
-import-plume-open-now = Открыто сейчас
+import-plume-open-now = Открыть сейчас
 import-plume-warnings = { $count ->
-    [one] { $count } вещь нельзя было импортировать точно
-    [few] { $count } Вещи нельзя было импортировать точно
-    [many] { $count } вещей, которые нельзя импортировать точно
-   *[other] { $count } Вещи нельзя было импортировать точно
+    [one] { $count } объект не удалось импортировать в точности
+    [few] { $count } объекта не удалось импортировать в точности
+    [many] { $count } объектов не удалось импортировать в точности
+   *[other] { $count } объекта не удалось импортировать в точности
 }
 import-plume-details = Подробности
-import-plume-warnings-title = Предупреждения об импорте
+import-plume-warnings-title = Предупреждения импорта
 import-plume-error-title = Не удалось импортировать проект
-import-plume-nested-too-deep = Проект не был импортирован: его часть «{ $part }» вложена более чем в { $limit } уровней глубины. No Plume Creator проект приближается к этому, и чтение его может привести к краху Skribisto. Ничего не было написано.
-import-plume-declares-entities = Проект не был импортирован: его часть «{ $part }» декларирует объекты XML, чего не делает проект Plume Creator. Расширение их может занять больше памяти, чем у компьютера, и сбой Skribisto. Ничего не было написано.
+import-plume-nested-too-deep = Проект не импортирован: его часть «{ $part }» имеет вложенность глубже { $limit } уровней. Ни один проект Plume Creator и близко к этому не подходит, а чтение такой части может привести к аварийному завершению Skribisto. Ничего не записано.
+import-plume-declares-entities = Проект не импортирован: его часть «{ $part }» объявляет XML-сущности, чего не делает ни один проект Plume Creator. Их раскрытие может потребовать больше памяти, чем есть у компьютера, и привести к аварийному завершению Skribisto. Ничего не записано.
 import-plume-error-details = Подробности
 
-import-manuskript-title = Импорт Manuskript проект
+import-manuskript-title = Импорт проекта Manuskript
 import-manuskript-close = Закрыть
 import-manuskript-source = Проект Manuskript
 import-manuskript-source-hint = Выберите файл .msk или папку проекта (любая версия Manuskript).
-import-manuskript-source-file = Выберите файл …
-import-manuskript-source-folder = Выберите папку …
+import-manuskript-source-file = Выбрать файл…
+import-manuskript-source-folder = Выбрать папку…
 import-manuskript-location = Папка назначения
-import-manuskript-name = Файловое имя
+import-manuskript-name = Имя файла
 import-manuskript-name-placeholder = Название проекта
-import-manuskript-will-create = будет создавать
+import-manuskript-will-create = Будет создано
 import-manuskript-cancel = Отмена
 import-manuskript-import = Импорт
 import-manuskript-source-required = Выберите проект Manuskript
-import-manuskript-source-missing = Этот файл или папка не существует.
+import-manuskript-source-missing = Этот файл или папка не существует
 import-manuskript-location-required = Выберите папку назначения
 import-manuskript-location-missing = Такой папки не существует
-import-manuskript-location-not-folder = Этот путь не является папкой.
-import-manuskript-location-readonly = Эта папка не пишется
+import-manuskript-location-not-folder = Этот путь не является папкой
+import-manuskript-location-readonly = В эту папку нельзя записывать
 import-manuskript-name-required = Введите имя файла
-import-manuskript-name-exists = Файл с этим именем уже существует. Импорт подтвердит перезапись
+import-manuskript-name-exists = Файл с таким именем здесь уже существует. Перед перезаписью импорт запросит подтверждение
 import-manuskript-overwrite-title = Заменить существующий файл?
-import-manuskript-overwrite-text = "{ $name }" уже существует. Заменить его на импортный проект?
-import-manuskript-manuscript-binder = рукопись
-import-manuskript-story-bible-binder = Энциклопедия истории
+import-manuskript-overwrite-text = «{ $name }» уже существует. Заменить его импортированным проектом?
+import-manuskript-manuscript-binder = Рукопись
+import-manuskript-story-bible-binder = Библия истории
 import-manuskript-characters-group = Персонажи
 import-manuskript-world-group = Мир
-import-manuskript-plots-group = Заговоры
+import-manuskript-plots-group = Сюжетные линии
 import-manuskript-project-info-note = Информация о проекте
-import-manuskript-summary-note = Резюме
-import-manuskript-importance-minor = несовершеннолетний
-import-manuskript-importance-secondary = вторичный
-import-manuskript-importance-main = Основной
-import-manuskript-progress-title = Импорт Manuskript проект …
+import-manuskript-summary-note = Краткое содержание
+import-manuskript-importance-minor = Эпизодический
+import-manuskript-importance-secondary = Второстепенный
+import-manuskript-importance-main = Главный
+import-manuskript-progress-title = Импорт проекта Manuskript…
 import-manuskript-cancel-import = Отмена
-import-manuskript-cancelled = Импорт отменили
+import-manuskript-cancelled = Импорт отменён
 import-manuskript-done = { $imported ->
-    [one] { $imported } Товар импортный.
-    [few] { $imported } Ввозимые товары.
-    [many] { $imported } Товары импортные.
-   *[other] { $imported } Товары импортные.
+    [one] Импортирован { $imported } элемент.
+    [few] Импортировано { $imported } элемента.
+    [many] Импортировано { $imported } элементов.
+   *[other] Импортировано { $imported } элемента.
 } { $revisions ->
     [0] { "" }
-    [one] С ним поступила { $revisions } ранняя версия.
-    [few] С ними пришли { $revisions } более ранние версии.
-    [many] С ними вышло { $revisions } более ранних версий.
-   *[other] С ними поступило { $revisions } более ранних версий.
+    [one] Вместе с ними перенесена { $revisions } более ранняя версия.
+    [few] Вместе с ними перенесены { $revisions } более ранние версии.
+    [many] Вместе с ними перенесено { $revisions } более ранних версий.
+   *[other] Вместе с ними перенесено { $revisions } более ранней версии.
 }
-import-manuskript-open-now = Открыто сейчас
+import-manuskript-open-now = Открыть сейчас
 import-manuskript-warnings = { $count ->
-    [one] { $count } Что нужно знать об этом импорте
-    [few] { $count } вещи, которые нужно знать об этом импорте
-    [many] { $count } вещей, которые нужно знать об этом импорте
-   *[other] { $count } Что нужно знать об этом импорте
+    [one] { $count } замечание об этом импорте
+    [few] { $count } замечания об этом импорте
+    [many] { $count } замечаний об этом импорте
+   *[other] { $count } замечания об этом импорте
 }
 import-manuskript-details = Подробности
 import-manuskript-warnings-title = Об этом импорте
 import-manuskript-error-title = Не удалось импортировать проект
-import-manuskript-nested-too-deep = Проект не был импортирован: его файл «{ $part }» вложен более чем в { $limit } уровней глубины. No Manuskript проект приближается к этому, и чтение его может привести к краху Skribisto. Ничего не было написано.
-import-manuskript-folders-too-deep = Проект не был импортирован: один из его файлов содержит более { $limit } папок в глубину. No Manuskript проект приближается к этому, и чтение его может привести к сбою Skribisto. Ничего не было написано.
-import-manuskript-declares-entities = Проект не был импортирован: его файл «{ $part }» заявляет о XML-сущностях, чего не делает проект Manuskript. Расширение их могло занять больше памяти, чем у компьютера, и сбой Skribisto. Ничего не было написано.
+import-manuskript-nested-too-deep = Проект не импортирован: его файл «{ $part }» имеет вложенность глубже { $limit } уровней. Ни один проект Manuskript и близко к этому не подходит, а чтение такого файла может привести к аварийному завершению Skribisto. Ничего не записано.
+import-manuskript-folders-too-deep = Проект не импортирован: один из его файлов лежит глубже { $limit } уровней папок. Ни один проект Manuskript и близко к этому не подходит, а чтение такого файла может привести к аварийному завершению Skribisto. Ничего не записано.
+import-manuskript-declares-entities = Проект не импортирован: его файл «{ $part }» объявляет XML-сущности, чего не делает ни один проект Manuskript. Их раскрытие может потребовать больше памяти, чем есть у компьютера, и привести к аварийному завершению Skribisto. Ничего не записано.
 import-manuskript-error-details = Подробности
 
 import-target-open-title = Этот проект открыт
-import-target-open-text = "{ $name }" открыт в Skribisto. Импорт над ним заменит проект, над которым вы работаете, и ваше следующее сохранение напишет этот проект обратно над импортом. Выберите другое имя файла или закройте проект сначала.
+import-target-open-text = Проект «{ $name }» открыт в Skribisto. Импорт поверх него заменит проект, над которым вы работаете, а следующее сохранение запишет тот проект обратно поверх импорта. Выберите другое имя файла или сначала закройте проект.
 import-warnings-announcement = { $result } { $notice }.
 
 export-title = Экспорт
 export-close = Закрыть
-export-scope-label = Что?
+export-scope-label = Что
 export-format-label = Формат
 export-style-label = Стиль
-export-path-label = Файлы
-export-browse = Обзор…
-export-show-non-exportable = Показать не экспортируемый
-export-choose-empty = Нет проекта на выбор.
+export-path-label = Файл
+export-browse = Выбрать…
+export-show-non-exportable = Показывать неэкспортируемые
+export-choose-empty = Нет проекта для выбора.
 export-cancel = Отмена
 export-export = Экспорт
 export-save-dialog-title = Экспорт в файл
 export-section-what = Что экспортировать
 export-section-style = Стиль
-export-section-destination = Направление
-export-custom-selection = Пользовательский подбор
-export-selected-count = { $count } выбранный
+export-section-destination = Куда сохранить
+export-custom-selection = Произвольный выбор
+export-selected-count = Выбрано: { $count }
 export-chip-chapters-none = Главы: нет
 export-chip-chapters-numbered = Главы: нумерованные
 export-chip-chapters-title = Главы: только название
 export-chip-chapters-both = Главы: номер + название
-export-chip-scene-break-glyph = Сценический перерыв: { $glyph }
-export-chip-scene-break-blank = Сцена разрыва: пустая линия
-export-chip-scene-break-none = Сценический прорыв: нет
-export-chip-major-break-glyph = Основной прорыв { $glyph }
-export-chip-major-break-blank = Основной прорыв: пустая линия
-export-chip-major-break-none = Главный прорыв: нет
-export-chip-major-break-same = Оба разбивают ярусы одинаково
+export-chip-scene-break-glyph = Разрыв сцены: { $glyph }
+export-chip-scene-break-blank = Разрыв сцены: пустая строка
+export-chip-scene-break-none = Разрыв сцены: нет
+export-chip-major-break-glyph = Большой разрыв: { $glyph }
+export-chip-major-break-blank = Большой разрыв: пустая строка
+export-chip-major-break-none = Большой разрыв: нет
+export-chip-major-break-same = Оба уровня разрыва одинаковы
 export-chip-spacing-single = Интервал: одинарный
-export-chip-spacing-onehalf = Пространство: 11⁄2
-export-chip-spacing-double = Пространство: двойное
-export-chip-notes-included = Включенные примечания
-export-chip-notes-excluded = Примечания исключены
-export-format-docx = Слово
+export-chip-spacing-onehalf = Интервал: 1½
+export-chip-spacing-double = Интервал: двойной
+export-chip-notes-included = Заметки включены
+export-chip-notes-excluded = Заметки исключены
+export-format-docx = Word
 export-format-odt = LibreOffice
 export-format-html = HTML
 export-format-markdown = Markdown
@@ -1076,269 +1087,269 @@ export-format-latex = LaTeX
 export-format-epub = EPUB
 export-format-pdf = PDF
 export-overwrite-title = Заменить существующий файл?
-export-overwrite-text = "{ $name }" уже существует.
-export-progress-title = Экспорт …
-export-cancelled = Экспорт отменили
-export-done = экспортируемый { $count ->
-    [one] { $count } пункт
-    [few] { $count } пункта
+export-overwrite-text = «{ $name }» уже существует. Заменить его?
+export-progress-title = Экспорт…
+export-cancelled = Экспорт отменён
+export-done = Экспортировано: { $count ->
+    [one] { $count } элемент
+    [few] { $count } элемента
     [many] { $count } элементов
-   *[other] { $count } единицы
+   *[other] { $count } элемента
 }
 export-open-file = Открыть
 export-show-in-folder = Показать в папке
-export-error-title = Нельзя экспортировать
+export-error-title = Не удалось выполнить экспорт
 export-error-details = Подробности
 
-backup-progress-start = Запуск…
-backup-progress-retention = Очистка старых резервных копий …
+backup-progress-start = Подготовка…
+backup-progress-retention = Удаление старых резервных копий…
 backup-progress-done = Готово
-backup-progress-destination = Направление { $i } из { $n }
+backup-progress-destination = Место назначения { $i } из { $n }
 backup-details = Подробности
-backup-issues-title = Вопросы резервного копирования
-backup-failed-title = Резервное копирование провалилось
-backup-complete-prune-warning = Полное резервное копирование ({ $ok } сохранено, { $skipped } уже включено). Некоторые старые резервные копии не могут быть удалены.
+backup-issues-title = Проблемы резервного копирования
+backup-failed-title = Резервное копирование не удалось
+backup-complete-prune-warning = Резервное копирование завершено (сохранено: { $ok }, уже актуальны: { $skipped }). Некоторые старые резервные копии не удалось удалить
 
 search = Поиск
 search-query-placeholder = Поиск…
-search-replace-placeholder = Заменить на …
-search-replace-toggle = Замена Toggle
+search-replace-placeholder = Заменить на…
+search-replace-toggle = Показать или скрыть замену
 search-replace-all = Заменить всё
-search-opt-case = Случай матча
+search-opt-case = С учётом регистра
 search-opt-whole-word = Целое слово
-search-opt-diacritics = Совместные акценты
+search-opt-diacritics = С учётом диакритики
 search-scope-body = Текст
-search-scope-title = Заголовок
+search-scope-title = Название
 search-scope-synopsis = Синопсис
-search-scope-label = Подпись
+search-scope-label = Метка
 search-facet-book = Книги
 search-facet-part = Части
 search-facet-chapter = Главы
 search-facet-scene = Сцены
 search-facet-note = Заметки
-search-facet-folder = Складки
-search-tip-case = Матч-кейс: относитесь к верхнему и нижнему регистрам как к разным, поэтому «Елена» и «Елена» :  это отдельные матчи.
-search-tip-whole-word = Целое слово: сопоставляйте только полные слова, так что «кошка» не находится внутри «категории».
-search-tip-diacritics = Совместные акценты: относитесь к акцентированным буквам как к отдельным, поэтому «кафе» не соответствует «кафе».
-search-tip-body = Тело: поиск прозы сцен и заметок.
-search-tip-title = Оригинальное название: Search the titles of binder items
-search-tip-synopsis = Синопсис: ищите резюме каждого пишущего пункта.
-search-tip-label = Ярлык: ищите короткую заметку, показанную под заголовком связующего элемента.
-search-tip-comment = Комментарии: ищите текст строк комментариев и их ответы. Комментарий - это о рукописи, а не ее части, поэтому у нее есть свой собственный переключатель, и замена оставляет комментарии не тикающими, пока вы их не пометите.
-search-tip-book = Книги: книжный контейнер и его маркеры начала/конца.
-search-tip-part = Части: разделители на уровне частей.
-search-tip-chapter = Главы: главы, в зависимости от того, каким образом проект их хранит.
-search-tip-scene = Сцены: предметы, которые держат прозу.
-search-tip-note = Примечания: примечания свободной формы.
+search-facet-folder = Папки
+search-tip-case = С учётом регистра: прописные и строчные буквы различаются, поэтому «Елена» и «елена» — разные совпадения.
+search-tip-whole-word = Слово целиком: находить только целые слова, поэтому «кот» не будет найден внутри «котлета».
+search-tip-diacritics = С учётом диакритики: буквы с диакритическими знаками считаются отдельными, поэтому «все» не совпадает с «всё».
+search-tip-body = Текст: поиск в прозе сцен и заметок.
+search-tip-title = Название: поиск в названиях элементов подшивки.
+search-tip-synopsis = Синопсис: поиск в кратком содержании каждого текстового элемента.
+search-tip-label = Метка: поиск в короткой пометке под названием элемента подшивки.
+search-tip-comment = Комментарии: поиск в тексте обсуждений и ответов на них. Комментарий касается рукописи, но не является её частью, поэтому у него свой переключатель, а при замене совпадения в комментариях остаются неотмеченными, пока вы их не отметите.
+search-tip-book = Книги: контейнер книги и его метки начала и конца.
+search-tip-part = Части: разделители уровня частей.
+search-tip-chapter = Главы: главы, каким бы способом проект их ни хранил.
+search-tip-scene = Сцены: элементы, содержащие вашу прозу.
+search-tip-note = Заметки: заметки в свободной форме.
 search-tip-folder = Папки: простые организующие папки и разделители.
-search-tip-paratext = Текст, который принадлежит к книге, но не к ее истории: предисловие, посвящение, послесловие. Никогда не считался в рукописи.
-search-tip-preserve-case = Запасной случай: замена берет найденный случай, поэтому «Элена» становится «Мартой», а «Елена» :  «Мартой».
-search-tip-replace = Замените: покажите поле замены и замените все.
+search-tip-paratext = Текст, который принадлежит книге, но не её истории: предисловие, посвящение, послесловие. Никогда не учитывается в рукописи.
+search-tip-preserve-case = Сохранять регистр: замена перенимает регистр найденного, поэтому «ЕЛЕНА» становится «МАРТА», а «Елена» — «Марта».
+search-tip-replace = Замена: показать поле замены и кнопку «Заменить всё».
 search-error = Поиск не удался: { $message }
-search-no-matches = Никаких матчей
+search-no-matches = Совпадений нет
 search-count =
     { $matches ->
-    [one] { $matches } матч
-    [few] { $matches } матча
-    [many] { $matches } матчей
-   *[other] { $matches } матчи
+        [one] { $matches } совпадение
+        [few] { $matches } совпадения
+        [many] { $matches } совпадений
+       *[other] { $matches } совпадения
     } в { $items ->
-    [one] { $items } документ
-    [few] { $items } Документы
-    [many] { $items } Документы
-   *[other] { $items } Документы
+        [one] { $items } документе
+        [few] { $items } документах
+        [many] { $items } документах
+       *[other] { $items } документах
     }
 search-count-truncated =
     { $matches ->
-    [one] { $matches } матч
-    [few] { $matches } матча
-    [many] { $matches } матчей
-   *[other] { $matches } матчи
+        [one] { $matches } совпадение
+        [few] { $matches } совпадения
+        [many] { $matches } совпадений
+       *[other] { $matches } совпадения
     } в { $items ->
-    [one] { $items } документ
-    [few] { $items } Документы
-    [many] { $items } Документы
-   *[other] { $items } Документы
+        [one] { $items } документе
+        [few] { $items } документах
+        [many] { $items } документах
+       *[other] { $items } документах
     } (только первые результаты)
 search-occurrences = { $count }
 search-field-body = Текст
-search-field-title = Заголовок
+search-field-title = Название
 search-field-synopsis = Синопсис
-search-field-label = Подпись
+search-field-label = Метка
 search-field-epigraph = Эпиграф
 search-field-comment = Комментарий
-search-field-comment-reply = Ответить
+search-field-comment-reply = Ответ
 search-field-footnote = Сноска
-search-include-in-replace = Включите в замену все
-search-collapse-all = Крах всех результатов
+search-include-in-replace = Включить в «Заменить всё»
+search-collapse-all = Свернуть все результаты
 search-replace-here = Заменить это
-search-dismiss = Увольнение из результатов
-search-undo-dismiss = Верните последний отклоненный результат
+search-dismiss = Убрать из результатов
+search-undo-dismiss = Вернуть последний убранный результат
 search-replace-nothing = (ничего)
 search-replace-confirm-title = Заменить все совпадения?
 search-replace-confirm-text =
     Заменить { $occurrences ->
-    [one] { $occurrences } случайность
-    [few] { $occurrences } события
-    [many] { $occurrences } случаев
-   *[other] { $occurrences } случаев
-    } из "{ $query }" с "{ $replacement }" в поперечнике { $items ->
-    [one] { $items } документ
-    [few] { $items } Документы
-    [many] { $items } Документы
-   *[other] { $items } Документы
-    }, вы можете отменить это после уведомления.
-search-replace-done-title = Заменить полностью
+        [one] { $occurrences } вхождение
+        [few] { $occurrences } вхождения
+        [many] { $occurrences } вхождений
+       *[other] { $occurrences } вхождения
+    } «{ $query }» на «{ $replacement }» в { $items ->
+        [one] { $items } документе
+        [few] { $items } документах
+        [many] { $items } документах
+       *[other] { $items } документах
+    }? Потом это можно отменить из уведомления.
+search-replace-done-title = Замена завершена
 search-replace-done =
-    { $occurrences ->
-    [one] { $occurrences } случайность
-    [few] { $occurrences } события
-    [many] { $occurrences } случаев
-   *[other] { $occurrences } случаев
-    } заменен на { $items ->
-    [one] { $items } документ
-    [few] { $items } Документы
-    [many] { $items } Документы
-   *[other] { $items } Документы
+    Заменено { $occurrences ->
+        [one] { $occurrences } вхождение
+        [few] { $occurrences } вхождения
+        [many] { $occurrences } вхождений
+       *[other] { $occurrences } вхождения
+    } в { $items ->
+        [one] { $items } документе
+        [few] { $items } документах
+        [many] { $items } документах
+       *[other] { $items } документах
     }.
 search-replace-done-skipped =
-    { $occurrences ->
-    [one] { $occurrences } случайность
-    [few] { $occurrences } события
-    [many] { $occurrences } случаев
-   *[other] { $occurrences } случаев
-    } заменен на { $items ->
-    [one] { $items } документ
-    [few] { $items } Документы
-    [many] { $items } Документы
-   *[other] { $items } Документы
+    Заменено { $occurrences ->
+        [one] { $occurrences } вхождение
+        [few] { $occurrences } вхождения
+        [many] { $occurrences } вхождений
+       *[other] { $occurrences } вхождения
+    } в { $items ->
+        [one] { $items } документе
+        [few] { $items } документах
+        [many] { $items } документах
+       *[other] { $items } документах
     }. { $skipped ->
-    [one] { $skipped } поле
-    [few] { $skipped } поля
-    [many] { $skipped } Полей
-   *[other] { $skipped } поля
-    } пропущен (изменен с момента поиска).
+        [one] { $skipped } поле пропущено
+        [few] { $skipped } поля пропущено
+        [many] { $skipped } полей пропущено
+       *[other] { $skipped } поля пропущено
+    } (изменились после поиска).
 search-replace-undo = Отменить
-search-replace-failed-title = Замена неудавшегося
-search-replace-skipped-title = Ничто не заменяет
+search-replace-failed-title = Не удалось выполнить замену
+search-replace-skipped-title = Ничего не заменено
 search-replace-skipped-body =
     { $fields ->
-    [one] Этот текст
-    [few] { $fields } из этих текстов
-    [many] { $fields } из этих текстов
-   *[other] { $fields } этих текстов
-    } изменился с момента поисков, так что { $fields ->
-    [one] Это было
-    [few] Они были
-    [many] Они были
-   *[other] Они были
-    } оставили в покое. Поищите снова, чтобы увидеть, где слова сейчас.
-search-replace-undo-failed-title = Неудачный Undo
-search-preview = Предварительный просмотр
-search-preview-empty = Выберите результат, чтобы просмотреть его здесь
-search-preview-no-prose = Этот матч не имеет редактируемого текста.
-search-preview-prompt = Чтобы увидеть предварительный просмотр здесь, запустите поиск.
+        [one] Этот текст изменился
+        [few] { $fields } из этих текстов изменились
+        [many] { $fields } из этих текстов изменились
+       *[other] { $fields } из этих текстов изменились
+    } после поиска, поэтому { $fields ->
+        [one] он оставлен
+        [few] они оставлены
+        [many] они оставлены
+       *[other] они оставлены
+    } без изменений. Выполните поиск снова, чтобы увидеть, где теперь находятся слова.
+search-replace-undo-failed-title = Не удалось отменить
+search-preview = Предпросмотр
+search-preview-empty = Выберите результат, чтобы увидеть его здесь
+search-preview-no-prose = В этом совпадении нет редактируемого текста
+search-preview-prompt = Чтобы увидеть здесь предпросмотр, выполните поиск.
 search-preview-open-search = Поиск в проекте
-search-preview-footnote-prompt = Это совпадение в тексте сноски. Откройте его в доке сносок, чтобы увидеть и отредактировать.
-search-preview-open-footnotes = Открытые сноски
+search-preview-footnote-prompt = Это совпадение находится в тексте сноски. Откройте его на панели сносок, чтобы просмотреть и изменить.
+search-preview-open-footnotes = Открыть сноски
 
-find-placeholder = Найти в этом документе …
+find-placeholder = Найти в этом документе…
 find-count = { $current } из { $total }
 find-no-results = Нет результатов
-find-close = Близкий поиск
-find-previous = Предыдущий матч (Shift+Enter)
-find-next = Следующий матч (вход)
-find-opt-case = Случай матча
+find-close = Закрыть поиск
+find-previous = Предыдущее совпадение (Shift+Enter)
+find-next = Следующее совпадение (Enter)
+find-opt-case = С учётом регистра
 find-opt-whole-word = Целое слово
 find-replace-toggle = Показать или скрыть замену (Ctrl+R)
-find-replace-placeholder = Заменить на …
+find-replace-placeholder = Заменить на…
 find-replace = Заменить
 find-replace-all = Заменить всё
-find-preserve-case = Сохранить дело
+find-preserve-case = Сохранять регистр
 
-dict-download-title = Скачать { $name }…
-dict-download-done = Установка { $name }
-dict-download-failed = Не удалось скачать { $name }: { $error }
-dict-removed = Снято { $name }
-dict-accept-first = Принять лицензию перед загрузкой { $name }
-settings-dict-tab-installed = установленный
+dict-download-title = Загрузка { $name }…
+dict-download-done = Установлено: { $name }
+dict-download-failed = Не удалось загрузить { $name }: { $error }
+dict-removed = Удалено: { $name }
+dict-accept-first = Примите лицензию перед загрузкой { $name }
+settings-dict-tab-installed = Установленные
 settings-dict-tab-get-more = Загрузить ещё
 settings-dict-tab-personal = Личные слова
 dict-installed-empty = Словарей на этом компьютере пока не найдено.
-dict-get-more-search = Языки поиска
-dict-system-badge = В вашей системе
-dict-unusable-badge = непригодный для использования
-dict-download-button = скачать
-dict-downloading = Скачать …
-dict-installed-label = установленный
-dict-remove = Убрать
+dict-get-more-search = Поиск языков
+dict-system-badge = в вашей системе
+dict-unusable-badge = непригоден
+dict-download-button = Загрузить
+dict-downloading = Загрузка…
+dict-installed-label = Установлен
+dict-remove = Удалить
 dict-view-license = Просмотр лицензии
 dict-approx-size = ~{ $size }
-dict-personal-empty = Никаких личных слов в этом проекте пока нет.
+dict-personal-empty = В этом проекте пока нет личных слов.
 dict-personal-add = Добавить
-dict-personal-placeholder = Добавить слово …
+dict-personal-placeholder = Добавить слово…
 dict-missing-toast = { $count ->
-    [one] В этом проекте используется { $count } словарь, который вы не установили
-    [few] Этот проект использует { $count } словаря, которые вы не установили.
-    [many] Этот проект использует { $count } словарей, которые вы не установили.
-   *[other] В этом проекте используется { $count } словарей, которые вы не установили.
+    [one] В этом проекте используется { $count } словарь, который у вас не установлен
+    [few] В этом проекте используются { $count } словаря, которые у вас не установлены
+    [many] В этом проекте используются { $count } словарей, которые у вас не установлены
+   *[other] В этом проекте используются { $count } словаря, которые у вас не установлены
 }
 dict-missing-action = Получить словари
-dict-license-title = { $name } Лицензия
-dict-license-accept = Принять Download
+dict-license-title = Лицензия { $name }
+dict-license-accept = Принять и загрузить
 dict-license-cancel = Отмена
 dict-license-close = Закрыть
-dict-add-button = Добавить словарь …
+dict-add-button = Добавить словарь…
 dict-add-title = Добавить словарь
 dict-add-close = Закрыть
 dict-add-name = Название
-dict-add-name-placeholder = Например, мой латинский словарь
-dict-add-code = Языковой код
+dict-add-name-placeholder = например, Мой латинский словарь
+dict-add-code = Код языка
 dict-add-code-placeholder = например, la или fr-FR-x-custom
-dict-add-code-hint = Короткий тег по вашему выбору. Это то, что вы выбираете в качестве языка документа.
+dict-add-code-hint = Короткий тег на ваш выбор. Именно его вы выбираете в качестве языка документа.
 dict-add-aff = Файл аффиксов (.aff)
 dict-add-dic = Список слов (.dic)
 dict-add-submit = Добавить
 dict-add-cancel = Отмена
 dict-add-name-required = Дайте словарю имя.
-dict-add-code-required = Введите языковой код.
-dict-add-code-invalid = Используйте только буквы, цифры и - .
-dict-add-code-reserved = Это встроенный словарный код. Выберите другой.
+dict-add-code-required = Введите код языка.
+dict-add-code-invalid = Используйте только буквы, цифры и символы - _ .
+dict-add-code-reserved = Это код встроенного словаря. Выберите другой.
 dict-add-file-required = Выберите файл.
 dict-add-file-missing = Этот файл не существует.
 dict-add-code-taken = Словарь для этого кода уже установлен.
-dict-add-done = Добавлено { $name }
-dict-add-unusable = Эти файлы не являются используемым словарем: { $error }
-dict-add-failed = Не могу добавить словарь: { $error }
+dict-add-done = Добавлен: { $name }
+dict-add-unusable = Эти файлы не образуют пригодный словарь: { $error }
+dict-add-failed = Не удалось добавить словарь: { $error }
 inspector-export = Экспорт
 inspector-exportable = Включать в экспорт
-ctx-number = &Номер этой главы
-ctx-unnumber = &Не пронумеруйте эту главу.
-inspector-numbering = нумерация
-inspector-numbered = нумерованный
-inspector-numbered-tip = Эта глава занимает свое место в нумерации книги. Выключите ее для пролога, эпилога или интерлюдии.
-inspector-numbered-tip-more = Ненумерованная глава остается в книге точно такой, какой она была: ее заголовок, проза и количество слов не тронуты. Она просто не печатает номер и не использует его вверх: глава после пролога - это глава первая, а не глава вторая. Выход из экспорта вместо этого - другой переключатель, выше, и что один удаляет главу из книги вообще.
-inspector-apply-to-children = Применять к детям
-inspector-milestone = Дата Милестоун
+ctx-number = &Нумеровать эту главу
+ctx-unnumber = &Не нумеровать эту главу
+inspector-numbering = Нумерация
+inspector-numbered = Нумеруется
+inspector-numbered-tip = Эта глава участвует в нумерации книги. Выключите для пролога, эпилога или интерлюдии.
+inspector-numbered-tip-more = Ненумерованная глава остаётся в книге в точности такой, какой была: её заголовок, проза и количество слов не меняются. Она просто не печатает номера и не расходует его: глава после пролога — первая, а не вторая. Исключение главы из экспорта — это другой переключатель, выше, и он убирает главу из книги целиком.
+inspector-apply-to-children = Применить к вложенным
+inspector-milestone = Дата вехи
 inspector-milestone-none = Нет даты
-inspector-milestone-clear = Чисто.
-inspector-tags = Метки
+inspector-milestone-clear = Очистить
+inspector-tags = Теги
 inspector-aliases = Другие имена
 inspector-dict-language = Язык
-inspector-apply-language-to-children = Применять язык к детям
+inspector-apply-language-to-children = Применить язык к вложенным
 settings-page-language = Язык
 settings-field-dict-language = Языки
-dict-tradeoff-hint = Каждый дополнительный язык принимает больше слов, поэтому ошибок становится меньше.
-lang-inherit-hint = Наследственное: в этой сцене используются языки книги или проекта.
+dict-tradeoff-hint = Каждый дополнительный язык принимает больше слов, поэтому выявляется меньше ошибок.
+lang-inherit-hint = Наследуется: в этой сцене используются языки книги или проекта.
 lang-pill-list = Языки
 lang-pill-add = Добавить язык
 lang-pill-remove = Удалить { $name }
 lang-pill-mute = Отключить проверку орфографии для { $name }
-lang-pill-unmute = Включите проверку орфографии для { $name }
+lang-pill-unmute = Включить проверку орфографии для { $name }
 
 settings-page-personal-dictionary = Личный словарь
-settings-user-dict-desc = Слова, которые вы добавляете здесь, рассматриваются как правильно написанные везде в приложении и никогда не помеченные снова.
-settings-user-dict-add-placeholder = Добавить слово …
+settings-user-dict-desc = Слова, добавленные здесь, считаются написанными правильно во всём приложении и больше никогда не помечаются.
+settings-user-dict-add-placeholder = Добавить слово…
 settings-user-dict-add = Добавить слово
 settings-user-dict-search = Фильтр слов
 settings-user-dict-count = { $count ->
@@ -1349,251 +1360,251 @@ settings-user-dict-count = { $count ->
 }
 
 settings-user-dict-rename = Переименовать
-settings-user-dict-remove = Убрать
-settings-user-dict-empty = Добавьте слова, которые проверка орфографии должна игнорировать, или импортируйте список.
-settings-user-dict-import = Импорт …
-settings-user-dict-export = Экспорт …
-settings-user-dict-import-tip = Добавьте слова из простого текстового файла, по одному слову на строку. Существующие слова сохраняются.
-settings-user-dict-export-tip = Сохраните весь список в простой текстовый файл, по одному слову в строке.
+settings-user-dict-remove = Удалить
+settings-user-dict-empty = Слов пока нет. Добавьте слова, которые проверка орфографии должна пропускать, или импортируйте список.
+settings-user-dict-import = Импорт…
+settings-user-dict-export = Экспорт…
+settings-user-dict-import-tip = Добавить слова из обычного текстового файла, по одному слову в строке. Имеющиеся слова сохраняются.
+settings-user-dict-export-tip = Сохранить весь список в обычный текстовый файл, по одному слову в строке.
 settings-user-dict-txt-filter = Текстовые файлы
 settings-user-dict-duplicate = Уже в словаре
-settings-user-dict-imported = импортный { $count ->
+settings-user-dict-imported = Импортировано: { $count ->
     [one] { $count } слово
     [few] { $count } слова
     [many] { $count } слов
-   *[other] { $count } слов
-} ({ $duplicates } уже присутствует).
-settings-user-dict-import-failed = Не смог прочитать список слов: { $error }
-settings-user-dict-exported = Спасенный { $count ->
+   *[other] { $count } слова
+} (уже было в словаре: { $duplicates }).
+settings-user-dict-import-failed = Не удалось прочитать список слов: { $error }
+settings-user-dict-exported = Сохранено: { $count ->
     [one] { $count } слово.
     [few] { $count } слова.
     [many] { $count } слов.
-   *[other] { $count } слов.
+   *[other] { $count } слова.
 }
 settings-user-dict-export-failed = Не удалось сохранить список слов: { $error }
 
-settings-page-text-replacements = Замена текста
-settings-text-repl-desc = Замените стенограмму полным текстом по мере ввода: «btw» становится «кстати» в тот момент, когда вы вводите пробел или пунктуацию.
-settings-text-repl-enable = Используйте замену текста в этом проекте
-settings-text-repl-disabled-hint = Включите это, чтобы определить сокращение, которое расширяется по мере написания.
+settings-page-text-replacements = Автозамена
+settings-text-repl-desc = Заменяет сокращение полным текстом по мере ввода: «кст» превращается в «кстати», как только вы вводите пробел или знак препинания.
+settings-text-repl-enable = Использовать автозамену в этом проекте
+settings-text-repl-disabled-hint = Включите, чтобы задавать сокращения, которые раскрываются по мере письма.
 settings-text-repl-add = Добавить правило
 settings-text-repl-trigger-placeholder = Сокращение
-settings-text-repl-replacement-placeholder = Что становится
-settings-text-repl-added = Добавлено "{ $trigger }"
-settings-text-repl-duplicate = "{ $trigger }" уже имеет правило
-settings-text-repl-filter = Правила фильтрации
+settings-text-repl-replacement-placeholder = Во что превращается
+settings-text-repl-added = Добавлено «{ $trigger }»
+settings-text-repl-duplicate = Для «{ $trigger }» уже есть правило
+settings-text-repl-filter = Фильтр правил
 settings-text-repl-count = { $n ->
     [one] { $n } правило
-    [few] { $n } Правила
-    [many] { $n } Правила
-   *[other] { $n } Правила
+    [few] { $n } правила
+    [many] { $n } правил
+   *[other] { $n } правила
 }
-settings-text-repl-row-enabled = Используйте это правило
-settings-text-repl-delete = Исключить правило для { $trigger }
-settings-text-repl-deleted = Исключено правило "{ $trigger }"
-settings-text-repl-empty = Никаких правил.
-settings-text-repl-csv-filter = CSV файлов
-settings-text-repl-import = Импорт …
-settings-text-repl-export = Экспорт …
-settings-text-repl-imported = Импортировано { $added }, пропущено { $skipped }
-settings-text-repl-exported = экспортируемый { $n ->
+settings-text-repl-row-enabled = Использовать это правило
+settings-text-repl-delete = Удалить правило для { $trigger }
+settings-text-repl-deleted = Удалено правило для «{ $trigger }»
+settings-text-repl-empty = Правил пока нет.
+settings-text-repl-csv-filter = Файлы CSV
+settings-text-repl-import = Импорт…
+settings-text-repl-export = Экспорт…
+settings-text-repl-imported = Импортировано: { $added }, пропущено: { $skipped }
+settings-text-repl-exported = Экспортировано: { $n ->
     [one] { $n } правило
-    [few] { $n } Правила
-    [many] { $n } Правила
-   *[other] { $n } Правила
+    [few] { $n } правила
+    [many] { $n } правил
+   *[other] { $n } правила
 }
 
-editor-menu-no-suggestions = Никаких предложений
+editor-menu-no-suggestions = Нет вариантов
 editor-menu-add-to-dictionary = Добавить «{ $word }» в словарь
 editor-menu-add-words-to-dictionary = Добавить выбранные слова в словарь
-editor-dict-added = Добавить «{ $word }» в словарь.
+editor-dict-added = «{ $word }» добавлено в ваш словарь.
 editor-dict-added-multi = { $count ->
-    [one] Добавлено { $count } слово в словарь.
-    [few] Добавьте { $count } слова в свой словарь.
-    [many] Добавьте { $count } слов в свой словарь.
-   *[other] В ваш словарь добавлено { $count } слов.
+    [one] В ваш словарь добавлено { $count } слово.
+    [few] В ваш словарь добавлено { $count } слова.
+    [many] В ваш словарь добавлено { $count } слов.
+   *[other] В ваш словарь добавлено { $count } слова.
 }
 toast-undo = Отменить
 
-undo-superseded-title = Этот шаг уже не последний.
-undo-superseded-body = Что-то еще изменилось в этом проекте с тех пор. Ундо взял бы это обратно, поэтому этого не произошло. Ничего этого шага не было отменено. Используйте Edit ▸ Ундо, чтобы самостоятельно шагнуть назад через историю.
-undo-failed = Не удалось: { $error }
+undo-superseded-title = Этот шаг уже не последний
+undo-superseded-body = С тех пор в проекте изменилось что-то ещё. Отмена затронула бы именно это изменение, поэтому она не выполнена. Ничего из сделанного на этом шаге не отменено. Чтобы пройти назад по истории самостоятельно, используйте Правка ▸ Отменить.
+undo-failed = Не удалось отменить: { $error }
 
 menu-edit = &Правка
 menu-edit-undo = &Отменить
 menu-edit-redo = По&вторить
 menu-edit-undo-target = &Отменить: { $target }
-menu-edit-redo-target = &Повторить: { $target }
+menu-edit-redo-target = По&вторить: { $target }
 shortcut-name-edit-undo = Отменить
 shortcut-name-edit-redo = Повторить
-undo-target-typing = печатать
-undo-target-project = Последние изменения в этом проекте
-prose-history-reset-title = Скачать History Reset
+undo-target-typing = ввод текста
+undo-target-project = последнее изменение в этом проекте
+prose-history-reset-title = История ввода сброшена
 prose-history-reset-body = { $count ->
-    [one] { $count } открытая сцена была восстановлена из более раннего состояния, поэтому ее история типизации больше не применяется.
-    [few] { $count } открытые сцены были восстановлены из более раннего состояния, поэтому их история набора текста больше не применяется.
-    [many] { $count } открытых сцен были восстановлены из более раннего состояния, поэтому их история набора текста больше не применяется.
-   *[other] { $count } открытые сцены были восстановлены из более раннего состояния, поэтому их история типизации больше не применяется.
+    [one] { $count } открытая сцена восстановлена из более раннего состояния, поэтому её история ввода больше не действует.
+    [few] { $count } открытые сцены восстановлены из более раннего состояния, поэтому их история ввода больше не действует.
+    [many] { $count } открытых сцен восстановлены из более раннего состояния, поэтому их история ввода больше не действует.
+   *[other] { $count } открытой сцены восстановлены из более раннего состояния, поэтому их история ввода больше не действует.
 }
-undo-target-trash = Переезд в мусорный бак
-undo-target-restore = Восстановление из мусора
-undo-target-delete-forever = Удаление навсегда
-undo-target-replace-all = Замена по всему проекту
-undo-target-import = Документ импортирует
+undo-target-trash = перемещение в корзину
+undo-target-restore = восстановление из корзины
+undo-target-delete-forever = окончательное удаление
+undo-target-replace-all = замена во всём проекте
+undo-target-import = импорт документа
 undo-target-duplicate = дублирование
-undo-target-move = двигаться
-undo-target-merge = Слияние двух сцен
-undo-target-split = Раздвоение сцены
-undo-target-promote = Изменение типа
-undo-target-tidy-titles = Уборка заголовков глав
-undo-target-import-tags = Импорт этикеток
-undo-target-import-templates = Шаблоны импортных заметок
-undo-target-create = создавать
-undo-target-remove = удалять
+undo-target-move = перемещение
+undo-target-merge = объединение двух сцен
+undo-target-split = разделение сцены
+undo-target-promote = изменение типа
+undo-target-tidy-titles = упорядочивание названий глав
+undo-target-import-tags = импорт тегов
+undo-target-import-templates = импорт шаблонов заметок
+undo-target-create = создание
+undo-target-remove = удаление
 undo-target-rename = переименование
-undo-target-edit = редактировать
+undo-target-edit = эту правку
 menu-edit-find = &Найти…
-menu-edit-find-next = На&йди следующий
-menu-edit-find-prev = Найти п&редыдущее
-menu-edit-replace = Н&айти и заменить …
-menu-edit-find-in-project = Найти в &Project…
-menu-edit-replace-in-project = &Заменить в проекте …
-undo-frozen = Undo («Всегда вперед»)
-redo-frozen = (перенаправлено с «Always forward»)
-menu-edit-cut = &Сокращение
-menu-edit-copy = &Копия
-menu-edit-paste = &паста
-menu-edit-paste-plain = Пас&та без форматирования
-menu-edit-select-all = В&ыберите все
-shortcut-name-edit-cut = Сокращение
-shortcut-name-edit-copy = Копия
-shortcut-name-edit-paste = паста
-shortcut-name-edit-paste-plain = Паста без форматирования
-shortcut-name-edit-select-all = Выберите все
+menu-edit-find-next = Найти &далее
+menu-edit-find-prev = Найти &предыдущее
+menu-edit-replace = Найти и за&менить…
+menu-edit-find-in-project = Найти в проек&те…
+menu-edit-replace-in-project = &Заменить в проекте…
+undo-frozen = Отменить (включён режим «Только вперёд»)
+redo-frozen = Повторить (включён режим «Только вперёд»)
+menu-edit-cut = Вы&резать
+menu-edit-copy = &Копировать
+menu-edit-paste = Вст&авить
+menu-edit-paste-plain = Вставить &без форматирования
+menu-edit-select-all = Выделить в&сё
+shortcut-name-edit-cut = Вырезать
+shortcut-name-edit-copy = Копировать
+shortcut-name-edit-paste = Вставить
+shortcut-name-edit-paste-plain = Вставить без форматирования
+shortcut-name-edit-select-all = Выделить всё
 
-titlebar-spellcheck-on = Проверка орфографии включена. Нажмите, чтобы остановить проверку (F7)
-titlebar-spellcheck-off = Проверка заклинаний отключена. Нажмите, чтобы проверить еще раз (F7)
-menu-spellcheck = &Проверь правописание
+titlebar-spellcheck-on = Проверка орфографии включена. Щёлкните, чтобы выключить (F7)
+titlebar-spellcheck-off = Проверка орфографии выключена. Щёлкните, чтобы включить (F7)
+menu-spellcheck = Проверять &орфографию
 menu-comments = &Комментарии
 settings-page-spellcheck = Проверка орфографии
 settings-group-spellcheck = Проверка орфографии
-settings-spellcheck-enabled = Проверьте орфографию, как я пишу
-settings-spellcheck-hint = Подчеркивает слова, которые не знает ни один установленный словарь. Отключение этого останавливает все проверки в каждом проекте, пока вы не включите его. Чтобы перестать проверять только один язык, очистите его контрольный знак на языковом поле работы или предмета.
+settings-spellcheck-enabled = Проверять орфографию при вводе
+settings-spellcheck-hint = Подчёркивает слова, которых не знает ни один установленный словарь. Выключение останавливает всю проверку во всех проектах, пока вы не включите её снова. Чтобы перестать проверять только один язык, снимите его флажок в поле «Язык» проекта или элемента.
 
 menu-trash = &Корзина
 trash-title = Корзина
-trash-empty-state = Мусор пуст.
+trash-empty-state = Корзина пуста.
 trash-empty-button = Очистить корзину…
 trash-restore = &Восстановить
-trash-restore-to = &Восстановление до …
+trash-restore-to = Восстановить &в…
 trash-delete-forever = &Удалить навсегда
-trash-restored-ok = { $count } восстановлено.
+trash-restored-ok = Восстановлено: { $count }.
 trash-restore-error = Не удалось восстановить: { $error }
-trash-restore-orphaned = Исходное место этого предмета исчезло. Выберите, где его восстановить.
-trash-restore-no-project = Ни один проект не открыт, поэтому восстанавливать нечего.
-trash-delete-no-project = Ни один проект не открыт, поэтому удалять нечего.
-trash-empty-confirm-title = Выбросьте мусор?
+trash-restore-orphaned = Исходного места этого элемента больше нет. Выберите, куда его восстановить.
+trash-restore-no-project = Нет открытого проекта, поэтому восстанавливать нечего.
+trash-delete-no-project = Нет открытого проекта, поэтому удалять нечего.
+trash-empty-confirm-title = Очистить корзину?
 trash-empty-confirm-text = { $count ->
-    [one] { $count } стрейч-вход будет навсегда удален.
-    [few] { $count } разбитые записи будут навсегда удалены.
-    [many] { $count } разбитых записей будут навсегда удалены.
-   *[other] { $count } трэшированные записи будут навсегда удалены.
-} Они оставляют мусор навсегда. Ундо все еще может вернуть их, пока вы не сделаете что-то еще.
-trash-emptied-title = Выброшенный мусор
-trash-emptied-body = Все, что находилось в мусорном баке, было удалено навсегда.
-trash-empty-no-project = Ни один проект не открыт, поэтому нет мусора, чтобы опустеть.
+    [one] { $count } запись из корзины будет удалена безвозвратно.
+    [few] { $count } записи из корзины будут удалены безвозвратно.
+    [many] { $count } записей из корзины будут удалены безвозвратно.
+   *[other] { $count } записи из корзины будут удалены безвозвратно.
+} Они навсегда покинут корзину. Отмена ещё может вернуть их, пока вы не сделаете что-нибудь другое.
+trash-emptied-title = Корзина очищена
+trash-emptied-body = Всё содержимое корзины удалено безвозвратно.
+trash-empty-no-project = Нет открытого проекта, поэтому нечего очищать.
 trash-delete-forever-confirm-title = Удалить навсегда?
 trash-delete-forever-confirm-text = { $count ->
-    [one] { $count } пункт будет навсегда удален.
-    [few] { $count } пункта будут удалены навсегда.
-    [many] { $count } предметов будут удалены навсегда.
-   *[other] { $count } элементов будут удалены навсегда.
-} Они оставляют мусор навсегда. Ундо все еще может вернуть их, пока вы не сделаете что-то еще.
-trash-deleted-title = Удален навсегда
-trash-deleted-body = { $count } навсегда удален.
+    [one] { $count } элемент будет удалён безвозвратно.
+    [few] { $count } элемента будут удалены безвозвратно.
+    [many] { $count } элементов будут удалены безвозвратно.
+   *[other] { $count } элемента будут удалены безвозвратно.
+} Они навсегда покинут корзину. Отмена ещё может вернуть их, пока вы не сделаете что-нибудь другое.
+trash-deleted-title = Удалено навсегда
+trash-deleted-body = Удалено безвозвратно: { $count }.
 trash-undo = Отменить
-trash-restore-picker-title = Восстановление до …
+trash-restore-picker-title = Восстановить в…
 trash-restore-to-confirm-title = Восстановить здесь?
-trash-restore-to-confirm-text = Восстановить "{ $item }" в "{ $destination }"?
+trash-restore-to-confirm-text = Восстановить «{ $item }» в «{ $destination }»?
 trash-restore-picker-restore-here = Восстановить здесь
 trash-restore-picker-cancel = Отмена
-trash-restore-picker-empty = Пока никаких связующих.Создай сначала.
-trash-banner-title = Этот предмет находится в мусоре
-trash-banner-description = Он не будет отображаться в схеме или экспорте, пока вы не восстановите его.
+trash-restore-picker-empty = Подшивок пока нет. Сначала создайте подшивку.
+trash-banner-title = Этот элемент находится в корзине
+trash-banner-description = Он не появится в структуре и при экспорте, пока вы его не восстановите.
 trash-banner-restore = Восстановить…
-trash-tab-tooltip = В мусорке
+trash-tab-tooltip = В корзине
 
-settings-styles-sheet-yes = Да.
-settings-styles-sheet-no = Нет.
-settings-styles-sheet-font = шрифт
-settings-styles-sheet-indent = отступ первой линии
-settings-styles-sheet-para-spacing = Параграф интервала
+settings-styles-sheet-yes = Да
+settings-styles-sheet-no = Нет
+settings-styles-sheet-font = Шрифт
+settings-styles-sheet-indent = Отступ первой строки
+settings-styles-sheet-para-spacing = Интервалы между абзацами
 settings-styles-sheet-page = Размер страницы
-settings-styles-sheet-margins = Поля (верх/право/низ/лево)
-settings-styles-sheet-title-page = Заголовок книги
-settings-styles-sheet-heading-language = Головной язык
+settings-styles-sheet-margins = Поля (В/П/Н/Л)
+settings-styles-sheet-title-page = Титульный лист книги
+settings-styles-sheet-heading-language = Язык заголовков
 settings-styles-sheet-auto = По тексту
-settings-styles-sheet-digits = Числа
+settings-styles-sheet-digits = Цифры
 settings-styles-sheet-direction = Направление текста
-settings-styles-sheet-formats = Формы
+settings-styles-sheet-formats = Форматы
 settings-styles-sheet-all-formats = Все
 
-settings-styles-editor-group = Стиль редактора
+settings-styles-editor-group = Редактор стиля
 settings-styles-editor-missing = Этот стиль больше не доступен.
 
-settings-styles-page-letter = письмо
-settings-styles-digits-western = Западный (0-9)
-settings-styles-digits-eastern-arabic = Восточный арабский ( ⁇ - ⁇ )
+settings-styles-page-letter = Letter
+settings-styles-digits-western = Западные (0–9)
+settings-styles-digits-eastern-arabic = Восточноарабские (٠–٩)
 settings-styles-direction-ltr = Слева направо
 settings-styles-direction-rtl = Справа налево
 
 format-dock-title = Формат
 format-panel-empty = Поместите курсор в сцену, заметку или синопсис, чтобы увидеть варианты форматирования.
 format-group-marks = Текст
-format-group-block = Пункт
+format-group-block = Абзац
 format-group-lists = Списки
-format-group-tables = Столик
-format-group-breaks = Сцена ломается
+format-group-tables = Таблица
+format-group-breaks = Разрывы сцен
 format-superscript = Надстрочный
 format-subscript = Подстрочный
 format-link = Ссылка…
-link-dialog-insert-title = Включить ссылку
-link-dialog-edit-title = Редактировать ссылку
+link-dialog-insert-title = Вставить ссылку
+link-dialog-edit-title = Изменить ссылку
 link-dialog-text-label = Текст
-link-dialog-text-placeholder = Слова, которые видит читатель
-link-dialog-url-label = Ссылки на
+link-dialog-text-placeholder = слова, которые видит читатель
+link-dialog-url-label = Адрес ссылки
 link-dialog-url-placeholder = example.com
-link-dialog-insert = Включить
+link-dialog-insert = Вставить
 link-dialog-apply = Применить
 link-dialog-cancel = Отмена
 link-dialog-remove = Удалить ссылку
-link-scheme-refused = Можно открыть только веб-ссылки и ссылки по электронной почте. { $url } остался один.
+link-scheme-refused = Открывать можно только веб-ссылки и ссылки на электронную почту. Ссылка { $url } оставлена без изменений.
 menu-format-link = Сс&ылка…
-format-clear = Четкий формат
-format-heading = Заголовок
-format-heading-normal = Нормальный текст
+format-clear = Очистить форматирование
+format-heading = Уровень заголовка
+format-heading-normal = Обычный текст
 format-heading-1 = Заголовок 1
 format-heading-2 = Заголовок 2
 format-heading-3 = Заголовок 3
 format-heading-4 = Заголовок 4
 format-heading-5 = Заголовок 5
 format-heading-6 = Заголовок 6
-format-align-left = Элемент слева
+format-align-left = По левому краю
 format-align-center = По центру
-format-direction-rtl = Пункт справа налево
+format-direction-rtl = Абзац справа налево
 format-blockquote = Цитата
 format-list-bullet = Маркированный список
-format-list-numbered = Номерной список
+format-list-numbered = Нумерованный список
 format-indent = Увеличить отступ
 format-outdent = Уменьшить отступ
-format-table-insert = Включить таблицу
-format-table-row-above = Включить строку выше
-format-table-row-below = Включить строку ниже
-format-table-col-before = Включить колонку перед
-format-table-col-after = Включить колонку после
-format-table-row-delete = Исключить строку
-format-table-col-delete = Исключить колонку
-format-table-remove = Удалить стол
+format-table-insert = Вставить таблицу
+format-table-row-above = Вставить строку выше
+format-table-row-below = Вставить строку ниже
+format-table-col-before = Вставить столбец слева
+format-table-col-after = Вставить столбец справа
+format-table-row-delete = Удалить строку
+format-table-col-delete = Удалить столбец
+format-table-remove = Удалить таблицу
 
 menu-format-marks-bold = По&лужирный
 menu-format-marks-italic = &Курсив
@@ -1601,316 +1612,316 @@ menu-format-marks-underline = По&дчёркнутый
 menu-format-marks-strike = З&ачёркнутый
 menu-format-marks-superscript = &Надстрочный
 menu-format-marks-subscript = П&одстрочный
-menu-format-marks-clear = &Четкое форматирование
+menu-format-marks-clear = О&чистить форматирование
 menu-format-heading = &Заголовок
-menu-format-heading-normal = &Нормальный текст
-menu-format-heading-1 = &Заголовок 1
-menu-format-heading-2 = З&аголовок 2
-menu-format-heading-3 = За&головок 3
-menu-format-heading-4 = Заг&оловок 4
-menu-format-heading-5 = Заго&ловок 5
-menu-format-heading-6 = Заголо&вок 6
+menu-format-heading-normal = &Обычный текст
+menu-format-heading-1 = Заголовок &1
+menu-format-heading-2 = Заголовок &2
+menu-format-heading-3 = Заголовок &3
+menu-format-heading-4 = Заголовок &4
+menu-format-heading-5 = Заголовок &5
+menu-format-heading-6 = Заголовок &6
 menu-format-alignment = &Выравнивание
-menu-format-align-left = &Выравнивание левой
+menu-format-align-left = По &левому краю
 menu-format-align-center = &По центру
-menu-format-direction = на&правление
-menu-format-direction-auto = &автоматический
-menu-format-direction-ltr = &Слева направо
-menu-format-direction-rtl = &Право налево
+menu-format-direction = Направл&ение
+menu-format-direction-auto = &Автоматически
+menu-format-direction-ltr = С&лева направо
+menu-format-direction-rtl = &Справа налево
 menu-format-blockquote = &Цитата
 menu-format-lists = &Списки
 menu-format-list-bullet = &Маркированный список
-menu-format-list-numbered = &Номерной список
+menu-format-list-numbered = &Нумерованный список
 menu-format-indent = У&величить отступ
 menu-format-outdent = &Уменьшить отступ
-menu-format-table = С&толик
-menu-format-table-insert = &Включить таблицу
+menu-format-table = &Таблица
+menu-format-table-insert = &Вставить таблицу
 menu-format-table-2x2 = &2 x 2
-menu-format-table-3x3 = &3 x 3 x 3
-menu-format-table-4x4 = &4 x 4 x 4
-menu-format-table-row-above = Вст&авить Row Above
-menu-format-table-row-below = В&ставить строку ниже
-menu-format-table-col-before = Вставит&ь колонку перед
-menu-format-table-col-after = Вс&тавить колонну после
-menu-format-table-row-delete = У&далить Row
-menu-format-table-col-delete = &Исключить колонку
-menu-format-table-remove = &Удалить стол
+menu-format-table-3x3 = &3 x 3
+menu-format-table-4x4 = &4 x 4
+menu-format-table-row-above = Вставить строку в&ыше
+menu-format-table-row-below = Вставить строку &ниже
+menu-format-table-col-before = Вставить столбец с&лева
+menu-format-table-col-after = Вставить столбец с&права
+menu-format-table-row-delete = &Удалить строку
+menu-format-table-col-delete = Удалить &столбец
+menu-format-table-remove = Удалить &таблицу
 
-menu-format-typo-marks = &Форматирование Марка
-menu-format-typo-nbsp = &No-break Космос
-menu-format-typo-nbhyphen = &Безопасный петух
+menu-format-typo-marks = Знак &форматирования
+menu-format-typo-nbsp = &Неразрывный пробел
+menu-format-typo-nbhyphen = Неразрывный &дефис
 menu-format-typo-soft-hyphen = &Мягкий перенос
-menu-format-typo-nnbsp = &Узкое No-break пространство
-menu-format-typo-zwsp = &Пространство нулевой ширины
+menu-format-typo-nnbsp = &Узкий неразрывный пробел
+menu-format-typo-zwsp = &Пробел нулевой ширины
 menu-format-typo-word-joiner = &Соединитель слов
 
 
-menu-about = &Около Skribisto…
-about-title = Около Skribisto
+menu-about = &О программе Skribisto…
+about-title = О программе Skribisto
 about-version = Версия { $version }
-about-update-available = Версия { $version } доступна
-about-update-see-notes = Посмотрите, что изменилось
-about-update-flathub = Flathub обновляет эту копию.
-about-update-distro = Ваш дистрибутив сохраняет эту копию в актуальном состоянии.
-about-tagline = Приложение для написания романов для художественной литературы в длинных формах, написанное на Rust с помощью инструментария Teksilo.
-about-license = Выпущено под лицензией GNU General Public License, версия 3.
-about-copyright = © 2026 Сирил Жак
+about-update-available = Доступна версия { $version }
+about-update-see-notes = Что изменилось
+about-update-flathub = Эту копию обновляет Flathub.
+about-update-distro = Эту копию обновляет ваш дистрибутив.
+about-tagline = Приложение для писателей, работающих над крупной прозой, написанное на Rust с инструментарием Teksilo.
+about-license = Распространяется на условиях GNU General Public License версии 3.
+about-copyright = © 2026 Cyril Jacquet
 about-close = Закрыть
 
-native-menu-about = Около { $app }
+native-menu-about = О программе { $app }
 native-menu-hide = Скрыть { $app }
-native-menu-quit = Выйти из { $app }
-native-menu-settings = Настройки …
-native-menu-window = окно
+native-menu-quit = Завершить { $app }
+native-menu-settings = Настройки…
+native-menu-window = Окно
 native-menu-minimize = Свернуть
-native-menu-zoom = Зум
+native-menu-zoom = Масштаб
 
 window-title = { $title } - { $app }
 window-title-numbered = { $title } - { $app } (Окно { $n })
 window-title-empty = { $app }
 
-first-run-window-title = Добро пожаловать.
+first-run-window-title = Добро пожаловать
 first-run-title = Настройка { $app }
-first-run-body = { $app } сохраняет свои настройки отдельно от Skribisto, поэтому он начинается пустым. Ваши предпочтения, последние проекты, словари и макет окна могут быть скопированы сейчас.
-first-run-from = Копия из
-first-run-to = Копировать
-first-run-copy-note = Skribisto сохраняет все свои собственные настройки и продолжает работать точно так же, как и раньше.
-first-run-import = Параметры импорта
-first-run-start-fresh = Начинайте свежо
-first-run-import-failed = Некоторые настройки не могли быть импортированы: { $error }
+first-run-body = { $app } хранит свои настройки отдельно от Skribisto, поэтому изначально они пусты. Ваши предпочтения, недавние проекты, словари и расположение окон можно скопировать прямо сейчас.
+first-run-from = Откуда копировать
+first-run-to = Куда копировать
+first-run-copy-note = Ничего не перемещается и не удаляется. Skribisto сохраняет все свои настройки и продолжает работать точно так же, как раньше.
+first-run-import = Импортировать настройки
+first-run-start-fresh = Начать с чистого листа
+first-run-import-failed = Некоторые настройки не удалось импортировать: { $error }
 
-settings-page-punctuation = Дефолты пунктуации
+settings-page-punctuation = Пунктуация по умолчанию
 settings-group-punctuation = Умная пунктуация
 settings-page-work-punctuation = Пунктуация
-settings-punctuation-override = Дайте этому проекту свои правила пунктуации.
-settings-punctuation-override-hint = Выключено: проект следует предпочтениям приложения. Эти правила путешествуют внутри .skrib, поэтому соавтор, открывающий файл, пишет с той же типографикой.
-settings-punctuation-dashes = Превратить - в тире, - в тире эм
-settings-punctuation-ellipsis = Превратить... в эллипс
-settings-punctuation-quotes = Кривая кавычек и апострофов
-settings-quote-style = Квотные знаки
-settings-quote-style-locale = Язык по умолчанию
-settings-quote-style-curly = «Двойной»
-settings-quote-style-curly-single = «Одинокий»
-settings-quote-style-guillemets = «Guillemets»
-settings-quote-style-low-high = «Низко-высокий»
-settings-punctuation-spacing = Пространство перед ; : !
-settings-punctuation-spacing-hint = Французская типография задает перед ; ! ? и перед полной :. Это относится только к тексту, написанному по-французски. Пространство внутри гильметов «» поставляется с самими цитатами гильмета.
-settings-punctuation-sample = Ваш язык дает
-settings-punctuation-app-hint = Что делает каждый проект, если он не принимает свои собственные правила в Проекте ▸ Пунктуация.
-settings-punctuation-dialogue = Откройте абзац, набранный как "-" с диалоговой тире
-settings-punctuation-dialogue-hint = Для языков, которые обозначают речь тире, а не кавычками: французский, испанский, русский и другие. Она горит только в самом начале абзаца.
+settings-punctuation-override = Задать для этого проекта собственные правила пунктуации
+settings-punctuation-override-hint = Выключено: проект следует настройкам приложения. Эти правила хранятся внутри файла .skrib, поэтому соавтор, открывший файл, пишет с той же типографикой.
+settings-punctuation-dashes = Заменять -- на короткое тире, --- на длинное тире
+settings-punctuation-ellipsis = Заменять ... на многоточие
+settings-punctuation-quotes = Типографские кавычки и апострофы
+settings-quote-style = Кавычки
+settings-quote-style-locale = По языку
+settings-quote-style-curly = “Двойные”
+settings-quote-style-curly-single = ‘Одинарные’
+settings-quote-style-guillemets = «Ёлочки»
+settings-quote-style-low-high = „Лапки“
+settings-punctuation-spacing = Пробел перед ; : ! ?
+settings-punctuation-spacing-hint = Французская типографика ставит узкий неразрывный пробел перед ; ! ? и обычный — перед :. Это действует только для текста на французском языке. Пробелы внутри кавычек-ёлочек « » добавляются вместе с самими кавычками.
+settings-punctuation-sample = Для вашего языка получится
+settings-punctuation-app-hint = Что делают все проекты, если не задают собственных правил в разделе Проект ▸ Пунктуация.
+settings-punctuation-dialogue = Начинать абзац, набранный как «- », с тире прямой речи
+settings-punctuation-dialogue-hint = Для языков, где прямая речь обозначается тире, а не кавычками: французского, испанского, русского и других. Срабатывает только в самом начале абзаца.
 
-statusbar-go-to = Перейти на …
-go-to-placeholder = Поиск связующего
-go-to-no-matches = Ни один предмет не соответствует этому поиску.
-menu-go-to = &Перейти на …
+statusbar-go-to = Перейти к…
+go-to-placeholder = Поиск в подшивке
+go-to-no-matches = Ни один элемент не соответствует запросу.
+menu-go-to = &Перейти к…
 
-settings-page-distraction-free-themes = Темы, свободные от отвлекающих факторов
+settings-page-distraction-free-themes = Темы режима без отвлечений
 settings-themes-builtin = Встроенные темы
-settings-themes-builtin-badge = встроенный
+settings-themes-builtin-badge = Встроенная
 settings-themes-user = Мои темы
-settings-themes-editor-group = Редактировать тему
-settings-themes-editor-empty = Выберите тему под «Мои темы», чтобы отредактировать ее.
+settings-themes-editor-group = Изменить тему
+settings-themes-editor-empty = Выберите тему в разделе «Мои темы», чтобы изменить её.
 settings-themes-use = Использовать
 settings-themes-duplicate = Дублировать
-settings-themes-edit = Правка
+settings-themes-edit = Изменить
 settings-themes-delete = Удалить
-settings-themes-export = Экспорт …
-settings-themes-import = Импорт …
+settings-themes-export = Экспорт…
+settings-themes-import = Импорт…
 settings-themes-copy-suffix = копия
 settings-themes-json-filter = Тема (JSON)
-settings-themes-imported = Тема импортная
-settings-themes-import-failed = Я не мог перенять эту тему.
-settings-themes-exported = Тема экспортируется
-settings-themes-export-failed = Мы не можем экспортировать эту тему.
-settings-themes-low-contrast = Низкий контраст
-settings-themes-low-contrast-band = Блеск скрывает текст
+settings-themes-imported = Тема импортирована
+settings-themes-import-failed = Не удалось импортировать эту тему
+settings-themes-exported = Тема экспортирована
+settings-themes-export-failed = Не удалось экспортировать эту тему
+settings-themes-low-contrast = низкий контраст
+settings-themes-low-contrast-band = подсветка скрывает текст
 settings-themes-field-name = Название
 settings-themes-field-paper = Страница
 settings-themes-field-ink = Текст
-settings-themes-field-general = Предыстория
-settings-themes-field-widget-text = Контрольная полоска текста
-settings-themes-field-caret-band = Подсветка вокруг заботы
+settings-themes-field-general = Фон
+settings-themes-field-widget-text = Текст панели управления
+settings-themes-field-caret-band = Подсветка вокруг курсора
 
-statusbar-focus-settings = Безотвлекательные настройки
-statusbar-focus-manage-themes = Управление темами …
+statusbar-focus-settings = Настройки режима без отвлечений
+statusbar-focus-manage-themes = Управление темами…
 
 comments-title = Комментарии
 comments-document-title = Этот документ
 comments-empty-project = Комментариев в этом проекте пока нет.
 comments-empty-document = Комментариев к этому документу нет.
 comments-filter-all = Все
-comments-filter-open = Открыть
-comments-filter-resolved = Решено
-comments-filter-orphaned = Без привязки к тексту
-comments-status-open = Открыть
-comments-status-resolved = Решено
-comments-status-orphaned = Исходный текст утрачен
-comments-orphan-snippet = (комментированный текст исчез)
-comments-status-unplaced = Нет текстовой позиции
+comments-filter-open = Открытые
+comments-filter-resolved = Решённые
+comments-filter-orphaned = Потерянные
+comments-status-open = Открыт
+comments-status-resolved = Решён
+comments-status-orphaned = Текст утрачен
+comments-orphan-snippet = (прокомментированный текст исчез)
+comments-status-unplaced = Нет позиции в тексте
 comments-unplaced-snippet = (не привязан к какому-либо тексту)
 comments-reply-count = { $count ->
     [one] { $count } ответ
     [few] { $count } ответа
     [many] { $count } ответов
-   *[other] { $count } Ответы
+   *[other] { $count } ответа
 }
 comments-menu-resolve = Отметить решённым
-comments-menu-reopen = Открыть
+comments-menu-reopen = Открыть снова
 comments-menu-delete = Удалить
-comments-sort-document = В документальном порядке
+comments-sort-document = В порядке документа
 comments-sort-newest = Сначала новые
-comments-sort-reader = Сгруппированный читатель
-comments-unsigned-author = Неподписанный
+comments-sort-reader = По читателям
+comments-unsigned-author = Без подписи
 comments-agreement = { $count ->
     [one] { $count } читатель
     [few] { $count } читателя
     [many] { $count } читателей
-   *[other] { $count } Читатели
+   *[other] { $count } читателя
 }
 comments-menu-add = Добавить комментарий
-comments-menu-add-paragraph = Комментарий к этому пункту
+comments-menu-add-paragraph = Комментировать этот абзац
 overview-col-comments = Комментарии
-overview-col-total-comments = Общие замечания
-comments-card-placeholder = Напишите комментарий …
+overview-col-total-comments = Всего комментариев
+comments-card-placeholder = Напишите комментарий…
 comments-card-unknown-author = Неизвестный автор
 comments-unsigned-toast = Ваши комментарии не подписаны: на этом компьютере для вас не установлено имя.
-comments-unsigned-action = Установите свое имя
+comments-unsigned-action = Указать своё имя
 comments-card-reply = Ответить
-comments-card-reply-placeholder = Ответ …
-comments-card-actions = Комментарии
-comments-reply-actions = Ответные действия
-comments-menu-delete-reply = Исключить ответ
+comments-card-reply-placeholder = Ответ…
+comments-card-actions = Действия с комментарием
+comments-reply-actions = Действия с ответом
+comments-menu-delete-reply = Удалить ответ
 comments-menu-delete-all = Удалить все комментарии здесь
-comments-deleted-toast = Комментарий удален
-comments-reply-deleted-toast = Ответ удален
+comments-deleted-toast = Комментарий удалён
+comments-reply-deleted-toast = Ответ удалён
 comments-deleted-all-toast = { $count ->
-    [one] { $count } комментарий удален
-    [few] { $count } комментария удалены
+    [one] { $count } комментарий удалён
+    [few] { $count } комментария удалено
     [many] { $count } комментариев удалено
-   *[other] { $count } Комментарии удалены
+   *[other] { $count } комментария удалено
 }
 comments-undo = Отменить
 
 analysis-segment = Анализ
 analysis-scope-book = Анализ этой книги
-analysis-run = Провести анализ
-analysis-stale = Изменился с тех пор, как это произошло
+analysis-run = Выполнить анализ
+analysis-stale = Изменилось после анализа
 analysis-not-run = Пока не проанализировано.
-analysis-running = Читать рукопись …
-analysis-failed = Анализ не мог закончиться.
+analysis-running = Чтение рукописи…
+analysis-failed = Не удалось завершить анализ.
 analysis-no-scenes = Сцен в этой книге пока нет.
 
-analysis-shape = форма
+analysis-shape = Форма
 
-analysis-arrivals = Прибытие
-analysis-arrivals-explainer = Как текст попал в этот проект, пока он был открыт. В нем говорится, по какому маршруту спустились персонажи, и вообще ничего о том, кто их написал: писатель, который рисует в другом месте и вставляет, и тот, кто диктует, продиктовал. Здесь нет числа, к которому можно стремиться.
+analysis-arrivals = Поступление текста
+analysis-arrivals-explainer = Каким путём текст попадал в этот проект, пока он был открыт. Здесь видно, каким путём пришли знаки, и ничего не сказано о том, кто их написал: писатель, который пишет черновик в другом месте и вставляет его, вставил текст, а тот, кто диктует, продиктовал. Здесь нет числа, к которому нужно стремиться.
 analysis-arrivals-scope = Весь этот проект, а не только эта книга.
-analysis-arrivals-session = С тех пор, как вы открыли его, закрытие проекта снова начинает отсчет.
-analysis-arrivals-nothing = Текста на эту сессию пока не поступало.
-analysis-arrivals-typed = типизированный
+analysis-arrivals-session = С момента открытия проекта. При закрытии проекта подсчёт начинается заново.
+analysis-arrivals-nothing = За этот сеанс текст ещё не поступал.
+analysis-arrivals-typed = Набрано
 analysis-arrivals-pasted = Вставлено
-analysis-arrivals-dictated = продиктованный
-analysis-arrivals-imported = импортный
-analysis-arrivals-programmatic = Вставлено для вас
+analysis-arrivals-dictated = Продиктовано
+analysis-arrivals-imported = Импортировано
+analysis-arrivals-programmatic = Вставлено программой
 analysis-arrivals-count = { $count ->
-    [one] { $count } персонаж
-    [few] { $count } персонажа
-    [many] { $count } персонажей
-   *[other] { $count } символы
+    [one] { $count } знак
+    [few] { $count } знака
+    [many] { $count } знаков
+   *[other] { $count } знака
 }
-analysis-arrivals-none = ни одного
+analysis-arrivals-none = нет
 
-analysis-words-per-scene = Слова на сцену
-analysis-median-words = Медианная сцена этой книги проходит { $count ->
+analysis-words-per-scene = Слов на сцену
+analysis-median-words = Медианная сцена этой книги содержит { $count ->
     [one] { $count } слово.
     [few] { $count } слова.
     [many] { $count } слов.
-   *[other] { $count } слов.
+   *[other] { $count } слова.
 }
 analysis-median-line = Медиана: { $count ->
     [one] { $count } слово
     [few] { $count } слова
     [many] { $count } слов
-   *[other] { $count } слов
+   *[other] { $count } слова
 }
 analysis-dialogue = Диалог
 analysis-dialogue-unsupported = Диалог для этого языка пока не измеряется.
 
-analysis-footnote-words = Сноска слов
+analysis-footnote-words = Слова в сносках
 analysis-footnote-words-count = { $count ->
-    [one] { $count } слово в сносках этой книги, отдельно от общей рукописи.
-    [few] { $count } слова находятся в сносках этой книги, отдельно от общей рукописи.
-    [many] { $count } слов в сносках этой книги, которые хранятся отдельно от общей рукописи.
-   *[other] В сносках этой книги содержится { $count } слов, отдельно от общей суммы рукописей.
+    [one] В сносках этой книги { $count } слово; оно учитывается отдельно от объёма рукописи.
+    [few] В сносках этой книги { $count } слова; они учитываются отдельно от объёма рукописи.
+    [many] В сносках этой книги { $count } слов; они учитываются отдельно от объёма рукописи.
+   *[other] В сносках этой книги { $count } слова; они учитываются отдельно от объёма рукописи.
 }
-analysis-footnote-words-pending = Подсчет сносок …
+analysis-footnote-words-pending = Подсчёт сносок…
 
-analysis-ignore-empty = Игнорировать тексты, которые еще не написаны
-analysis-empty-hidden = { $count } пустой { $count ->
-    [one] текст
-    [few] тексты
-    [many] тексты
-   *[other] тексты
-    } спрятаны.
-analysis-all-texts-empty = Каждый текст в этой книге пуст.
+analysis-ignore-empty = Не учитывать тексты, в которых ещё ничего не написано
+analysis-empty-hidden = { $count ->
+        [one] Скрыт { $count } пустой текст.
+        [few] Скрыто { $count } пустых текста.
+        [many] Скрыто { $count } пустых текстов.
+       *[other] Скрыто { $count } пустого текста.
+    }
+analysis-all-texts-empty = Все тексты этой книги пока пусты.
 
-binder-filter-count = { $shown } из { $total } показан
-binder-filter-clear = Чисто.
+binder-filter-count = Показано { $shown } из { $total }
+binder-filter-clear = Очистить
 binder-filter-none = Ничего не совпадает с «{ $query }».
 
-settings-paratext-intro = Спереди и сзади может начаться новый проект. Каждая структура принадлежит издательской традиции, а названия страниц написаны на родном языке этой традиции. Переименуйте их свободно, как только проект будет создан.
+settings-paratext-intro = Вступительные и заключительные материалы, с которыми может начинаться новый проект. Каждая структура принадлежит определённой издательской традиции, и названия её страниц написаны на языке этой традиции. После создания проекта их можно свободно переименовать.
 settings-paratext-structures = Структуры
-settings-paratext-broken = Нельзя было читать
-settings-paratext-edit = Правка
+settings-paratext-broken = Не удалось прочитать
+settings-paratext-edit = Изменить
 settings-paratext-duplicate = Дублировать
 settings-paratext-delete = Удалить
 settings-paratext-new = Новая структура
 settings-paratext-save = Сохранить
-settings-paratext-editor-hint = Имя, страницы, которые нужно создать до рукописи, и страницы, которые нужно создать после нее. Где они в конечном итоге ваши: они являются обычными предметами, как только проект существует.
+settings-paratext-editor-hint = Название, страницы, создаваемые перед рукописью, и страницы, создаваемые после неё. Куда они попадут — решать вам: после создания проекта это обычные элементы.
 
 
-image-insert = Вкл&ючить изображение …
+image-insert = Вставить &изображение…
 image-no-project = Откройте проект, прежде чем вставлять изображение.
 image-choose-title = Выберите изображение
 image-filter-label = Изображения
 image-large-title = Это большое изображение
 image-large-text =
-    { $name } :  { $megapixels } мегапикселей ({ $width }×{ $height }).
-    Сохраняя его таким, какой он есть, храните свой оригинальный файл в проекте: он путешествует.
-    с каждой резервной копией и каждым экспортом. Оптимизация хранит меньшую копию
-    Вместо этого, до 2560 пикселей на самой длинной стороне.
-image-large-keep = Держите оригинал
+    { $name } — это { $megapixels } Мп ({ $width }×{ $height }).
+    Если оставить как есть, в проекте сохранится исходный файл: он попадёт
+    в каждую резервную копию и каждый экспорт. При оптимизации вместо него
+    сохраняется уменьшенная копия, до 2560 пикселей по длинной стороне.
+image-large-keep = Сохранить оригинал
 image-large-downscale = Оптимизировать
-image-large-remember = Делай это с этого момента, не спрашивай снова
-image-not-recorded = Изображение было сохранено, но не могло быть записано в проекте.
+image-large-remember = Делать так всегда и больше не спрашивать
+image-not-recorded = Изображение сохранено, но его не удалось записать в проект.
 image-describe-title = Опишите изображение
-image-describe-explain = То, что изображено на картине, для читателя, который ее не видит, не является частью рукописи: она никогда не считается, не обыскивается и не вывозится в виде прозы.
-image-describe-placeholder = Маяк на фоне серого неба
+image-describe-explain = Что изображено на картинке — для читателя, который её не видит. Это не часть рукописи: описание никогда не учитывается в подсчёте, не участвует в поиске и не экспортируется как проза.
+image-describe-placeholder = маяк на фоне серого неба
 image-resize-title = Изменить размер изображения
-image-resize-explain = Процент от размера, который он показывает сейчас. 100 оставляет его таким, какой он есть.
+image-resize-explain = Процент от текущего отображаемого размера. 100 — оставить как есть.
 image-resize-invalid = Введите число от 1 до 1000.
-image-menu-describe = &Опишите изображение …
-image-menu-resize = &Размер изображения …
-image-menu-reset-size = &Оригинальный размер
+image-menu-describe = &Описать изображение…
+image-menu-resize = &Изменить размер изображения…
+image-menu-reset-size = Исходный &размер
 
-cover-choose = &Книжная обложка …
-cover-clear = Сни&мите крышку
-cover-choose-title = Выберите покрытие
-cover-set = Обложка установлена.
-cover-cleared = Обложка снята. Картина все еще в проекте.
-card-label = Подпись
-card-exportable = экспортируемый
-card-numbered = нумерованный
-card-created = созданный
-card-modified = модифицированный
-card-yes = да.
+cover-choose = Обложка &книги…
+cover-clear = &Убрать обложку
+cover-choose-title = Выберите обложку
+cover-set = Обложка задана.
+cover-cleared = Обложка удалена. Изображение по-прежнему хранится в проекте.
+card-label = Метка
+card-exportable = Экспортируется
+card-numbered = Нумеруется
+card-created = Создан
+card-modified = Изменён
+card-yes = да
 card-no = нет
 card-type = Тип
-card-position = Позиция
-card-children = Дети
+card-position = Положение
+card-children = Вложенные
 card-goal = Цель
-card-words = Слова
+card-words = Слов
 card-synopsis = Синопсис
 card-point-of-view = Точка зрения
 card-aliases = Другие имена
@@ -1918,60 +1929,60 @@ card-aliases = Другие имена
 export-orphan-footnotes-title = Сноски без ссылки
 export-comments-dropped =
     { $count ->
-    [one] { $count } комментарий не мог быть помещен в экспортируемый текст и был исключен.
-    [few] { $count } замечания не могли быть помещены в экспортируемый текст и были исключены.
-    [many] { $count } комментариев не могли быть помещены в экспортируемый текст и были исключены.
-   *[other] { $count } комментарии не могли быть помещены в экспортируемый текст и были исключены.
+        [one] { $count } комментарий не удалось разместить в экспортированном тексте, и он был опущен.
+        [few] { $count } комментария не удалось разместить в экспортированном тексте, и они были опущены.
+        [many] { $count } комментариев не удалось разместить в экспортированном тексте, и они были опущены.
+       *[other] { $count } комментария не удалось разместить в экспортированном тексте, и они были опущены.
     }
 export-orphan-footnotes =
     { $count ->
-    [one] { $count } сноска больше нигде в рукописи не упоминается, её текст не появится в экспортируемой книге.
-    [few] { $count } сноски больше нигде в рукописи не упоминаются, их текст не появится в экспортируемой книге.
-    [many] { $count } сносок больше нигде в рукописи не упоминаются, их текст не появится в экспортируемой книге.
-   *[other] Сноски { $count } больше нигде в рукописи не упоминаются, их текст не появится в экспортируемой книге.
+        [one] На { $count } сноску больше нет ссылок в рукописи. Её текст не появится в экспортированной книге.
+        [few] На { $count } сноски больше нет ссылок в рукописи. Их текст не появится в экспортированной книге.
+        [many] На { $count } сносок больше нет ссылок в рукописи. Их текст не появится в экспортированной книге.
+       *[other] На { $count } сноски больше нет ссылок в рукописи. Их текст не появится в экспортированной книге.
     }
 
 
 menu-footnotes = &Сноски
 footnotes-title = Сноски
-footnotes-insert = В&ключить сноску
-footnotes-empty = Поместите курсор в сцену, затем используйте + выше или Ctrl + Alt + F.
+footnotes-insert = Вставить &сноску
+footnotes-empty = Сносок пока нет. Поставьте курсор в сцену и нажмите + выше или Ctrl+Alt+F.
 footnotes-filter-all = Все
 footnotes-filter-document = Этот документ
-footnotes-filter-orphaned = Без привязки к тексту
-footnotes-orphaned = Ничто больше не указывает на эту записку.
+footnotes-filter-orphaned = Потерянные
+footnotes-orphaned = На эту сноску больше ничто не ссылается
 footnotes-untitled-home = Без названия
-footnotes-body-placeholder = Сама записка
-footnotes-insert-tooltip = Включить сноску на курсоре (Ctrl+Alt+F)
-footnotes-actions = Сноски сносок
-footnotes-delete = &Исключить примечание и ссылку на него
-footnotes-no-project = Откройте проект, прежде чем вставить сноску.
+footnotes-body-placeholder = текст сноски
+footnotes-insert-tooltip = Вставить сноску в позиции курсора (Ctrl+Alt+F)
+footnotes-actions = Действия со сноской
+footnotes-delete = &Удалить сноску и ссылку на неё
+footnotes-no-project = Откройте проект, прежде чем вставлять сноску.
 footnotes-no-caret = Поместите курсор в текст сцены, чтобы вставить там сноску.
-footnotes-not-created = Сноску к проекту добавить не удалось.
-footnotes-deleted-toast = Записка удалена
+footnotes-not-created = Не удалось добавить сноску в проект.
+footnotes-deleted-toast = Сноска удалена
 footnotes-undo-delete = Отменить
 
-import-document-title = Импортные документы
+import-document-title = Импорт документов
 import-document-close = Закрыть
 import-document-step-files = Файлы
-import-document-step-review = Обзор
-import-document-step-destination = Направление
+import-document-step-review = Проверка
+import-document-step-destination = Место назначения
 import-document-step-reconcile = Объединить
-import-document-reconcile-hint = Некоторые из этих вещей у вас уже есть. Скажи, что должно случиться с каждым из них.
+import-document-reconcile-hint = Некоторые из этих элементов у вас уже есть. Укажите, что сделать с каждым.
 import-document-reconcile-all-new = Ничто в этом файле не соответствует вашему проекту: каждый элемент будет добавлен как новый.
-import-document-duplicate-returns = Эти файлы являются более чем одной копией одной и той же рукописи, возвращающейся. Импортируйте их по одному за раз: сопоставляя только одну возвращающуюся копию с вашим проектом, поэтому импорт нескольких вместе добавит вторую копию книги вместо ее объединения.
-import-document-hunk-added = Возьмем новый пункт
-import-document-hunk-removed = Опустить этот пункт
-import-document-hunk-changed = Возьми это переписать
+import-document-duplicate-returns = Эти файлы — несколько вернувшихся копий одной и той же рукописи. Импортируйте их по одной: сопоставление сверяет с проектом только одну вернувшуюся копию, поэтому при совместном импорте нескольких копий книга будет добавлена второй копией, а не объединена.
+import-document-hunk-added = Принять этот новый абзац
+import-document-hunk-removed = Убрать этот абзац
+import-document-hunk-changed = Принять эту правку
 import-document-col-stray-prose = Его текст
-import-document-stray-as-paratext = Сохраняйте как паратекст
-import-document-stray-discard = Бросьте текст
+import-document-stray-as-paratext = Сохранить как паратекст
+import-document-stray-discard = Отбросить текст
 import-document-col-current = В вашем проекте
 import-document-col-incoming = В этом файле
-import-document-col-status = статус
+import-document-col-status = Статус
 import-document-col-action = Что делать
-import-document-status-identical = Без изменений
-import-document-status-editor-edited = Изменено читателем
+import-document-status-identical = Совпадает
+import-document-status-editor-edited = Изменено редактором
 import-document-status-you-edited = Изменено вами
 import-document-status-conflict = Изменено обеими сторонами
 import-document-status-different = Отличается
@@ -1980,29 +1991,29 @@ import-document-status-missing = Нет в этом файле
 import-document-status-moved = Перемещено
 import-document-action-comments-only = Только комментарии
 import-document-action-take-import = Принять эту версию
-import-document-action-keep-current = Оставить мою
+import-document-action-keep-current = Оставить мою версию
 import-document-action-create-new = Добавить как новый
 import-document-action-ignore = Пропустить
 import-document-compare = Сравнить
-import-document-compare-legend = Ваша версия по сравнению с этим файлом.
+import-document-compare-legend = Ваша версия в сравнении с версией из этого файла. Только чтение.
 import-document-compare-close = Закрыть
-import-document-drop-title = Бросьте документы здесь
-import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) и простой текст (.txt)
-import-document-browse = Обзор…
-import-document-move-up = Вставай.
-import-document-move-down = Спускайся.
+import-document-drop-title = Перетащите документы сюда
+import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) и обычный текст (.txt)
+import-document-browse = Выбрать…
+import-document-move-up = Переместить вверх
+import-document-move-down = Переместить вниз
 import-document-remove-file = Убрать
 import-document-file-count = { $count ->
     [one] { $count } файл
-    [few] { $count } Файлы
+    [few] { $count } файла
     [many] { $count } файлов
-   *[other] { $count } файлов
+   *[other] { $count } файла
 }
-import-document-no-files = Файлы еще не выбраны.
+import-document-no-files = Файлы ещё не выбраны.
 import-document-col-included = Импорт
-import-document-col-title = Заголовок
+import-document-col-title = Название
 import-document-col-type = Тип
-import-document-col-words = Слова
+import-document-col-words = Слов
 import-document-col-breaks = Разрывы
 import-document-col-comments = Комментарии
 import-document-col-footnotes = Сноски
@@ -2011,370 +2022,375 @@ import-document-col-source = Источник
 import-document-level-rules = Уровни заголовков
 import-document-level-n = Заголовок { $level }
 import-document-add-top-level = Добавить верхний уровень
-import-document-add-top-level-tooltip = Вставьте книгу выше каждого проанализированного элемента для файлов глав, в которых нет заголовка книги.
-import-document-destination = Направление
-import-document-destination-hint = Выберите связующее или элемент: новые предметы попадают в папку или после сцены.
-import-document-destination-empty = Пока никаких связующих.Создай сначала.
+import-document-add-top-level-tooltip = Добавить книгу над всеми проанализированными элементами — для файлов глав без заголовка книги
+import-document-destination = Место назначения
+import-document-destination-hint = Выберите подшивку или элемент: новые элементы попадут внутрь папки или после сцены.
+import-document-destination-empty = Подшивок пока нет. Сначала создайте подшивку.
 import-document-plan-empty = Импортировать пока нечего.
 import-document-summary = { $rows ->
-    [one] { $rows } пункт
-    [few] { $rows } пункта
+    [one] { $rows } элемент
+    [few] { $rows } элемента
     [many] { $rows } элементов
-   *[other] { $rows } единицы
+   *[other] { $rows } элемента
 } · { $breaks ->
-    [one] { $breaks } эпизод
-    [few] { $breaks } Сцена разрывается
-    [many] { $breaks } Сцена разрывается
-   *[other] { $breaks } Сцена разрывается
+    [one] { $breaks } разрыв сцены
+    [few] { $breaks } разрыва сцены
+    [many] { $breaks } разрывов сцены
+   *[other] { $breaks } разрыва сцены
 }
 import-document-back = Назад
 import-document-cancel = Отмена
 import-document-analyse = Далее
 import-document-analysing = Чтение документов…
-import-document-step-analysing = читать
-import-document-cancel-analysis = Хватит читать.
-import-document-analyse-failed = Документы читать не удалось.
+import-document-step-analysing = Чтение
+import-document-cancel-analysis = Остановить чтение
+import-document-analyse-failed = Не удалось прочитать документы.
 import-document-details = Подробности
 import-document-import = Импорт
 import-document-done = { $count ->
-    [one] { $count } Ввозимые товары
-    [few] { $count } Ввозимые товары
-    [many] { $count } Ввозимые товары
-   *[other] { $count } Ввезенные товары
+    [one] Импортирован { $count } элемент
+    [few] Импортировано { $count } элемента
+    [many] Импортировано { $count } элементов
+   *[other] Импортировано { $count } элемента
 }
 import-document-undo = Отменить
-import-diagnostic-file-unreadable = "{ $path }" читать нельзя: { $detail }. Остальные файлы все еще импортируются.
-import-diagnostic-nested-too-deep = "{ $path }" не было прочитано: его содержимое вложено более чем в { $limit } уровней глубины. Ни один реальный документ не приближается к этому, и чтение его может привести к сбою Skribisto, поэтому он исключен. Другие файлы все еще импортируются.
-import-diagnostic-archive-too-large = "{ $path }" не был прочитан: это сжатый файл, построенный для распаковки гораздо большего, чем он есть, который может исчерпать память и сломать Skribisto, поэтому он остается в стороне.
+import-diagnostic-file-unreadable = Не удалось прочитать «{ $path }»: { $detail }. Остальные файлы будут импортированы.
+import-diagnostic-nested-too-deep = «{ $path }» не прочитан: вложенность его содержимого глубже { $limit } уровней. Ни один настоящий документ и близко к этому не подходит, а чтение такого файла может привести к аварийному завершению Skribisto, поэтому он пропущен. Остальные файлы будут импортированы.
+import-diagnostic-archive-too-large = «{ $path }» не прочитан: это сжатый файл, рассчитанный на распаковку в объём, намного превышающий его размер, что может исчерпать память и привести к аварийному завершению Skribisto, поэтому он пропущен. Остальные файлы будут импортированы.
 import-diagnostic-lossy-decode = { $count ->
-    [one] { $count } символ в «{ $path }» не декодировал. Для сохранения файла в качестве UTF-8.
-    [few] { $count } символа в «{ $path }» не декодировали. Для сохранения файла в качестве UTF-8.
-    [many] { $count } символов в «{ $path }» не расшифровывались. Для их хранения повторно сохраняют файл как UTF-8.
-   *[other] { $count } символов в «{ $path }» не расшифровывали. Для их сохранения повторно сохраняют файл как UTF-8.
+    [one] { $count } символ в «{ $path }» не удалось декодировать. Чтобы сохранить его, пересохраните файл в кодировке UTF-8.
+    [few] { $count } символа в «{ $path }» не удалось декодировать. Чтобы сохранить их, пересохраните файл в кодировке UTF-8.
+    [many] { $count } символов в «{ $path }» не удалось декодировать. Чтобы сохранить их, пересохраните файл в кодировке UTF-8.
+   *[other] { $count } символа в «{ $path }» не удалось декодировать. Чтобы сохранить их, пересохраните файл в кодировке UTF-8.
 }
-import-diagnostic-decoded-from-bom = «{ $path }» был расшифрован как { $detail }, а не UTF-8.
-import-diagnostic-empty-file = "{ $path }" пуст.
-import-diagnostic-no-headings = «{ $path }» не имеет заголовков, поэтому он поставляется в виде одного элемента.
-import-diagnostic-unsupported-format = Файлы «.{ $detail }» не читаются, поэтому файл «{ $path }» был пропущен.
-import-diagnostic-front-matter-not-flat = Передняя материя в «{ $path }»: «{ $detail }» не является простым значением и была пропущена.
+import-diagnostic-decoded-from-bom = «{ $path }» декодирован как { $detail }, а не как UTF-8.
+import-diagnostic-empty-file = «{ $path }» пуст.
+import-diagnostic-no-headings = В «{ $path }» нет заголовков, поэтому он импортируется как один элемент.
+import-diagnostic-unsupported-format = Файлы «.{ $detail }» не поддерживаются, поэтому «{ $path }» пропущен.
+import-diagnostic-front-matter-not-flat = Метаданные в начале «{ $path }»: «{ $detail }» не является простым значением и пропущено.
 import-diagnostic-footnotes-degraded = { $count ->
-    [one] { $count } сноска в «{ $path }» поставляется в виде простого текста: сноски не читаются с Markdown.
-    [few] { $count } сноски в «{ $path }» поставляются в виде простого текста: сноски не читаются с Markdown.
-    [many] { $count } сносок в «{ $path }» поставляются в виде простого текста: сноски не читаются с Markdown.
-   *[other] { $count } сноски в «{ $path }» поступают в виде простого текста: сноски не читаются с Markdown.
+    [one] { $count } сноска в «{ $path }» импортируется как обычный текст: сноски из Markdown не читаются.
+    [few] { $count } сноски в «{ $path }» импортируются как обычный текст: сноски из Markdown не читаются.
+    [many] { $count } сносок в «{ $path }» импортируются как обычный текст: сноски из Markdown не читаются.
+   *[other] { $count } сноски в «{ $path }» импортируются как обычный текст: сноски из Markdown не читаются.
 }
 import-diagnostic-footnote-not-carried = { $count ->
-    [one] { $count } сноска в "{ $path }" не могла быть приведена.
-    [few] { $count } сноски в "{ $path }" не могли быть приведены.
-    [many] { $count } сносок в "{ $path }" не могли быть приведены.
-   *[other] { $count } сноски в "{ $path }" не могли быть доставлены.
+    [one] { $count } сноску в «{ $path }» не удалось перенести. Остальные перенесены.
+    [few] { $count } сноски в «{ $path }» не удалось перенести. Остальные перенесены.
+    [many] { $count } сносок в «{ $path }» не удалось перенести. Остальные перенесены.
+   *[other] { $count } сноски в «{ $path }» не удалось перенести. Остальные перенесены.
 }
 import-diagnostic-raw-html-dropped = { $count ->
-    [one] { $count } блок сырого HTML в «{ $path }» был сброшен.
-    [few] { $count } блока сырого HTML в «{ $path }» были сброшены.
-    [many] Было сброшено { $count } блоков сырого HTML в «{ $path }».
-   *[other] { $count } блоки сырого HTML в «{ $path }» были сброшены.
+    [one] { $count } блок необработанного HTML в «{ $path }» отброшен.
+    [few] { $count } блока необработанного HTML в «{ $path }» отброшены.
+    [many] { $count } блоков необработанного HTML в «{ $path }» отброшены.
+   *[other] { $count } блока необработанного HTML в «{ $path }» отброшены.
 }
 import-diagnostic-nested-break-dropped = { $count ->
-    [one] { $count } сценический перерыв внутри цитаты или списка в «{ $path }» был отброшен. Сохраняется только перерыв на собственной линии.
-    [few] { $count } сценические перерывы внутри котировок или списков в «{ $path }» были отброшены. Сохраняется только перерыв на собственной линии.
-    [many] { $count } сценических перерывов внутри котировок или списков в "{ $path }" были отброшены. Сохраняется только перерыв на собственной линии.
-   *[other] { $count } сцены разрывов внутри котировок или списков в "{ $path }" были сброшены. Сохраняется только перерыв на собственной линии.
+    [one] { $count } разрыв сцены внутри цитаты или списка в «{ $path }» отброшен. Сохраняются только разрывы на отдельной строке.
+    [few] { $count } разрыва сцены внутри цитат или списков в «{ $path }» отброшены. Сохраняются только разрывы на отдельной строке.
+    [many] { $count } разрывов сцены внутри цитат или списков в «{ $path }» отброшены. Сохраняются только разрывы на отдельной строке.
+   *[other] { $count } разрыва сцены внутри цитат или списков в «{ $path }» отброшены. Сохраняются только разрывы на отдельной строке.
 }
-import-diagnostic-image-not-ingested = "{ $path }" относится к изображению "{ $detail }". Ссылка поступает в виде текста; само изображение не копируется.
-import-diagnostic-duplicate-title = "{ $title }" появляется { $count } раз. Если вы импортировали эти файлы раньше, это будет дублировать их.
-import-diagnostic-heading-level-jump = «{ $title }» перепрыгивает с уровня товарной позиции { $from } на { $to }; он помещается на один уровень под своим материнским.
-import-diagnostic-illegal-combination = "{ $title }" несет прозу, но { $kind } не может содержать ничего. Импорт удерживается до тех пор, пока вы не измените его тип или не оставите его. Ничего не импортируется вообще.
-import-diagnostic-tracked-changes-flattened = { $path } был в середине пересмотра: { $count ->
-    [one] { $count } Отслеженное изменение принято
-    [few] Принято { $count } отслеживаемых изменения
-    [many] Принято { $count } отслеживаемых изменений
-   *[other] { $count } гусеничные изменения были приняты
-}, и удаление отброшено. Это окончательный текст. Чтобы сохранить любую из ваших собственных формулировок, используйте Compare на последнем шаге.
-import-diagnostic-tracked-changes-flattened-by = { $path } был в середине пересмотра: { $count ->
-    [one] { $count } отслеживаемое изменение к { $names }
-    [few] { $count } отслеживаемых изменения к { $names } были приняты
-    [many] Принято { $count } отслеживаемых изменений к { $names }
-   *[other] { $count } гусеничные изменения к { $names } были приняты
-}, и удаление отброшено. Это окончательный текст. Чтобы сохранить любую из ваших собственных формулировок, используйте Compare на последнем шаге.
+import-diagnostic-image-not-ingested = «{ $path }» ссылается на изображение «{ $detail }». Ссылка импортируется как текст; само изображение не копируется.
+import-diagnostic-duplicate-title = «{ $title }» встречается { $count ->
+    [one] { $count } раз
+    [few] { $count } раза
+    [many] { $count } раз
+   *[other] { $count } раза
+}. Если вы уже импортировали эти файлы раньше, они будут продублированы.
+import-diagnostic-heading-level-jump = «{ $title }» перескакивает с уровня заголовка { $from } на { $to }; элемент размещается на один уровень ниже родительского.
+import-diagnostic-illegal-combination = «{ $title }» содержит прозу, но тип «{ $kind }» не может её хранить. Импорт приостановлен, пока вы не измените тип или не исключите элемент. Иначе не будет импортировано ничего.
+import-diagnostic-tracked-changes-flattened = { $path } находился в процессе рецензирования: { $count ->
+    [one] { $count } отслеживаемое изменение принято
+    [few] { $count } отслеживаемых изменения приняты
+    [many] { $count } отслеживаемых изменений приняты
+   *[other] { $count } отслеживаемого изменения приняты
+}, а удаления применены. Это окончательный текст. Чтобы сохранить какие-то свои формулировки, используйте «Сравнить» на последнем шаге.
+import-diagnostic-tracked-changes-flattened-by = { $path } находился в процессе рецензирования: { $count ->
+    [one] { $count } отслеживаемое изменение ({ $names }) принято
+    [few] { $count } отслеживаемых изменения ({ $names }) приняты
+    [many] { $count } отслеживаемых изменений ({ $names }) приняты
+   *[other] { $count } отслеживаемого изменения ({ $names }) приняты
+}, а удаления применены. Это окончательный текст. Чтобы сохранить какие-то свои формулировки, используйте «Сравнить» на последнем шаге.
 import-diagnostic-text-box-dropped = { $count ->
-    [one] { $path } содержит { $count } текстовый ящик. Его текст находится вне потока документа, поэтому на то, где он находится в рукописи, нельзя ответить. Он не импортируется.
-    [few] { $path } содержит { $count } текстовых ящика. Их текст находится вне потока документа, поэтому на то, где он находится в рукописи, нельзя ответить. Они не импортируются.
-    [many] { $path } содержит { $count } текстовых ящиков. Их текст находится вне потока документа, поэтому на то, где он находится в рукописи, нельзя ответить. Они не импортируются.
-   *[other] { $path } содержит { $count } текстовых ящиков. Их текст находится вне потока документа, поэтому на то, где он находится в рукописи, нельзя ответить. Они не импортируются.
+    [one] В { $path } есть { $count } надпись (текстовое поле). Её текст находится вне основного потока документа, поэтому невозможно определить, где ему место в рукописи. Она не импортируется.
+    [few] В { $path } есть { $count } надписи (текстовые поля). Их текст находится вне основного потока документа, поэтому невозможно определить, где ему место в рукописи. Они не импортируются.
+    [many] В { $path } есть { $count } надписей (текстовых полей). Их текст находится вне основного потока документа, поэтому невозможно определить, где ему место в рукописи. Они не импортируются.
+   *[other] В { $path } есть { $count } надписи (текстовые поля). Их текст находится вне основного потока документа, поэтому невозможно определить, где ему место в рукописи. Они не импортируются.
 }
 import-diagnostic-embedded-object-dropped = { $count ->
-    [one] { $path } содержит { $count } встроенный объект: диаграмму, уравнение или подобное. В рукописи нет ничего, что могло бы содержать его.
-    [few] { $path } содержит { $count } встроенных объекта: диаграмму, уравнение или подобное. В рукописи нет ничего, что могло бы их содержать.
-    [many] { $path } содержит { $count } встроенных объектов: диаграмму, уравнение или подобное. В рукописи нет ничего, что могло бы их содержать.
-   *[other] { $path } содержит { $count } встроенных объектов: диаграмму, уравнение или подобное. В рукописи нет ничего, что могло бы содержать их.
+    [one] В { $path } есть { $count } внедрённый объект: диаграмма, формула или что-то подобное. В рукописи нет ничего, что могло бы его вместить.
+    [few] В { $path } есть { $count } внедрённых объекта: диаграммы, формулы или что-то подобное. В рукописи нет ничего, что могло бы их вместить.
+    [many] В { $path } есть { $count } внедрённых объектов: диаграммы, формулы или что-то подобное. В рукописи нет ничего, что могло бы их вместить.
+   *[other] В { $path } есть { $count } внедрённого объекта: диаграммы, формулы или что-то подобное. В рукописи нет ничего, что могло бы их вместить.
 }
 import-diagnostic-field-flattened = { $count ->
-    [one] { $path } содержит { $count } поле: номер страницы, перекрестную ссылку, дату. Он сохраняет текст, который он показывал в последний раз, и не будет обновляться снова.
-    [few] { $path } содержит { $count } поля: номер страницы, перекрестную ссылку, дату. Каждый сохраняет текст, который он показывал в последний раз, и не будет обновляться снова.
-    [many] { $path } содержит { $count } полей: номер страницы, перекрестную ссылку, дату. Каждый сохраняет текст, который он показывал в последний раз, и не будет обновляться снова.
-   *[other] { $path } содержит { $count } полей: номер страницы, перекрестную ссылку, дату. Каждый сохраняет текст, который он показывал в последний раз, и не будет обновляться снова.
+    [one] В { $path } есть { $count } поле: номер страницы, перекрёстная ссылка, дата. Оно сохраняет последний показанный текст и больше не будет обновляться.
+    [few] В { $path } есть { $count } поля: номера страниц, перекрёстные ссылки, даты. Каждое сохраняет последний показанный текст и больше не будет обновляться.
+    [many] В { $path } есть { $count } полей: номера страниц, перекрёстные ссылки, даты. Каждое сохраняет последний показанный текст и больше не будет обновляться.
+   *[other] В { $path } есть { $count } поля: номера страниц, перекрёстные ссылки, даты. Каждое сохраняет последний показанный текст и больше не будет обновляться.
 }
-import-diagnostic-unknown-style-level = { $path } использует стиль "{ $detail }", который выглядит как заголовок, но не называет уровня. Эти абзацы импортируются как проза, а не угадываются на глубине.
-import-diagnostic-comment-unanchored = Комментарий "{ $detail }" в { $path } не мог быть прикреплен к словам, о которых он был. Он хранится на своем предмете, где его можно перемещать.
-import-diagnostic-comment-not-carried = Комментарий «{ $detail }» в { $path } не импортирован, потому что в файл ничего не поступает в виде текста, который можно было бы сохранить.
+import-diagnostic-unknown-style-level = { $path } использует стиль «{ $detail }», который похож на заголовок, но не указывает уровень. Такие абзацы импортируются как проза, а не размещаются на угаданной глубине.
+import-diagnostic-comment-unanchored = Комментарий «{ $detail }» в { $path } не удалось привязать к словам, к которым он относился. Он сохранён на своём элементе, где его можно переместить.
+import-diagnostic-comment-not-carried = Комментарий «{ $detail }» в { $path } не импортирован: в файле нет текста, к которому его можно было бы прикрепить. Если он вам нужен, скопируйте его из файла.
 import-diagnostic-comment-replies-flattened = { $count ->
-    [one] { $count } ответ в { $path } называется комментарием, которого нет в файле, поэтому он поступает как собственный комментарий.
-    [few] { $count } ответа в { $path } назвали комментарий, которого нет в файле, поэтому они поступают как собственные комментарии.
-    [many] { $count } ответов в { $path } назвали комментарий, которого нет в файле, поэтому они поступают как собственные комментарии.
-   *[other] В { $count } ответов в { $path } назван комментарий, которого нет в файле, поэтому они приходят в качестве собственных комментариев.
+    [one] { $count } ответ в { $path } относится к комментарию, которого нет в файле, поэтому он импортируется как отдельный комментарий.
+    [few] { $count } ответа в { $path } относятся к комментарию, которого нет в файле, поэтому они импортируются как отдельные комментарии.
+    [many] { $count } ответов в { $path } относятся к комментарию, которого нет в файле, поэтому они импортируются как отдельные комментарии.
+   *[other] { $count } ответа в { $path } относятся к комментарию, которого нет в файле, поэтому они импортируются как отдельные комментарии.
 }
 import-diagnostic-prose-not-verbatim = { $count ->
-    [one] { $count } параграф в { $path } не может быть приведен с его форматированием точно так же, как написано, поэтому он приходит как простой текст.
-    [few] { $count } абзаца в { $path } не могли быть приведены с их форматированием точно так же, как написано, поэтому они прибывают в виде простого текста.
-    [many] { $count } параграфов в { $path } не могли быть приведены с их форматированием точно так же, как написано, поэтому они прибывают в виде простого текста.
-   *[other] { $count } абзацы в { $path } не могли быть приведены с их форматированием точно так же, как написано, поэтому они прибывают в виде простого текста.
+    [one] { $count } абзац в { $path } не удалось перенести с форматированием в точности как в оригинале, поэтому он импортируется как обычный текст. Сравните его с оригиналом.
+    [few] { $count } абзаца в { $path } не удалось перенести с форматированием в точности как в оригинале, поэтому они импортируются как обычный текст. Сравните их с оригиналом.
+    [many] { $count } абзацев в { $path } не удалось перенести с форматированием в точности как в оригинале, поэтому они импортируются как обычный текст. Сравните их с оригиналом.
+   *[other] { $count } абзаца в { $path } не удалось перенести с форматированием в точности как в оригинале, поэтому они импортируются как обычный текст. Сравните их с оригиналом.
 }
 import-diagnostic-styled-spaces-not-carried = { $count ->
-    [one] В { $path } { $count } участок пустого пространства был подчеркнут или пробит, например, линия, оставленная для заполнения. Skribisto не держит ни одной линии на одних только пространствах, поэтому он прибывает в виде простых пространств или вообще не там, где он начинается или заканчивается абзацем.
-    [few] В { $path } { $count } участка пустого пространства были подчеркнуты или пробиты, например, линии, оставленные для заполнения. Skribisto не сохраняет ни одной линии только на пространствах, поэтому они прибывают как простые пространства или вообще не там, где они начинают или заканчивают абзац.
-    [many] В { $path } { $count } участков пустого пространства были подчеркнуты или пробиты, например, линии, оставленные для заполнения. Skribisto не сохраняет ни одной линии на одних только пространствах, поэтому они прибывают в виде простых пространств или вообще не там, где они начинают или заканчивают абзац.
-   *[other] В { $path } { $count } участки пустого пространства были подчеркнуты или пробиты, например, линии, оставленные для заполнения. Skribisto не сохраняет ни одной линии на одних только пространствах, поэтому они прибывают в виде простых пространств или вообще не там, где они начинают или заканчивают абзац.
+    [one] В { $path } { $count } фрагмент из одних пробелов был подчёркнут или зачёркнут — например, строка для заполнения. Skribisto не хранит такие линии на одних пробелах, поэтому фрагмент импортируется как обычные пробелы, а в начале или конце абзаца не импортируется вовсе.
+    [few] В { $path } { $count } фрагмента из одних пробелов были подчёркнуты или зачёркнуты — например, строки для заполнения. Skribisto не хранит такие линии на одних пробелах, поэтому фрагменты импортируются как обычные пробелы, а в начале или конце абзаца не импортируются вовсе.
+    [many] В { $path } { $count } фрагментов из одних пробелов были подчёркнуты или зачёркнуты — например, строки для заполнения. Skribisto не хранит такие линии на одних пробелах, поэтому фрагменты импортируются как обычные пробелы, а в начале или конце абзаца не импортируются вовсе.
+   *[other] В { $path } { $count } фрагмента из одних пробелов были подчёркнуты или зачёркнуты — например, строки для заполнения. Skribisto не хранит такие линии на одних пробелах, поэтому фрагменты импортируются как обычные пробелы, а в начале или конце абзаца не импортируются вовсе.
 }
 import-diagnostic-list-nesting-flattened = { $count ->
-    [one] { $count } пункт списка в { $path } был вложен более чем в { $limit } уровней глубины.Он прибывает на уровень { $limit }, самый глубокий Skribisto сохраняет, с его словами и форматированием.
-    [few] { $count } пункта списка в { $path } были вложены более чем в { $limit } уровней глубиной.Они достигают уровня { $limit }, самого глубокого Skribisto сохраняет, с их словами и форматированием.
-    [many] { $count } пунктов списка в { $path } были вложены более чем в { $limit } уровней глубиной.Они достигают уровня { $limit }, самого глубокого Skribisto сохраняет, с их словами и форматированием.
-   *[other] { $count } списки предметов в { $path } были вложены более чем в { $limit } уровней глубиной.Они достигают уровня { $limit }, самого глубокого Skribisto сохраняет, с их словами и форматированием.
+    [one] { $count } пункт списка в { $path } вложен глубже { $limit } уровней. Он помещается на уровень { $limit } — самый глубокий, который поддерживает Skribisto, — со всеми словами и форматированием.
+    [few] { $count } пункта списка в { $path } вложены глубже { $limit } уровней. Они помещаются на уровень { $limit } — самый глубокий, который поддерживает Skribisto, — со всеми словами и форматированием.
+    [many] { $count } пунктов списка в { $path } вложены глубже { $limit } уровней. Они помещаются на уровень { $limit } — самый глубокий, который поддерживает Skribisto, — со всеми словами и форматированием.
+   *[other] { $count } пункта списка в { $path } вложены глубже { $limit } уровней. Они помещаются на уровень { $limit } — самый глубокий, который поддерживает Skribisto, — со всеми словами и форматированием.
 }
 import-diagnostic-table-read-as-paragraphs = { $count ->
-    [one] { $count } таблица в { $path } имеет ряд гораздо шире остальных, слишком однобокий, чтобы выкладываться в виде сетки.Его ячейки прибывают в виде абзацев, один за другим, со своими словами и форматированием.
-    [few] { $count } таблицы в { $path } имеют ряд гораздо шире остальных, слишком однобокий, чтобы выкладываться в виде сетки. Их ячейки прибывают в виде абзацев, один за другим, со своими словами и форматированием.
-    [many] { $count } таблиц в { $path } имеют ряд гораздо шире остальных, слишком однобокий, чтобы выкладываться в виде сетки. Их ячейки прибывают в виде абзацев, один за другим, со своими словами и форматированием.
-   *[other] { $count } таблицы в { $path } имеют ряд гораздо шире остальных, слишком однобокий, чтобы выкладываться в виде сетки. Их ячейки прибывают в виде абзацев, один за другим, со своими словами и форматированием.
+    [one] В { $count } таблице в { $path } одна строка намного шире остальных, и её нельзя разложить в сетку. Её ячейки импортируются как абзацы, один за другим, со словами и форматированием.
+    [few] В { $count } таблицах в { $path } одна строка намного шире остальных, и их нельзя разложить в сетку. Их ячейки импортируются как абзацы, один за другим, со словами и форматированием.
+    [many] В { $count } таблицах в { $path } одна строка намного шире остальных, и их нельзя разложить в сетку. Их ячейки импортируются как абзацы, один за другим, со словами и форматированием.
+   *[other] В { $count } таблицах в { $path } одна строка намного шире остальных, и их нельзя разложить в сетку. Их ячейки импортируются как абзацы, один за другим, со словами и форматированием.
 }
 import-diagnostic-spaces-shortened = { $count ->
-    [one] { $count } пробег пространств в { $path } был длиннее { $limit } пространств, а прибывает сокращенный до { $limit }.
-    [few] { $count } пробега пространств в { $path } были длиннее { $limit } пространств, а прибывшие сократились до { $limit }.Слова вокруг них все там.
-    [many] { $count } пробегов пространств в { $path } были длиннее { $limit } пространств, а прибывшие сократились до { $limit }.Слова вокруг них все там.
-   *[other] { $count } пробегов пространств в { $path } были длиннее { $limit } пробелов, а прибывшие сократились до { $limit }.Слова вокруг них все там.
+    [one] { $count } серия пробелов в { $path } длиннее { $limit } пробелов и сокращена до { $limit }. Все слова вокруг неё на месте.
+    [few] { $count } серии пробелов в { $path } длиннее { $limit } пробелов и сокращены до { $limit }. Все слова вокруг них на месте.
+    [many] { $count } серий пробелов в { $path } длиннее { $limit } пробелов и сокращены до { $limit }. Все слова вокруг них на месте.
+   *[other] { $count } серии пробелов в { $path } длиннее { $limit } пробелов и сокращены до { $limit }. Все слова вокруг них на месте.
 }
-import-diagnostic-epigraph-not-carried = «{ $title }» возглавляется эпиграфом, но { $kind } не может удержать его. Цитата держится в верхней части ее текста.
-import-diagnostic-epigraph-placement-ambiguous = Эпиграф находится между «{ $title }» и «{ $below }» и может возглавлять любой из них. Он был дан «{ $title }», куда обычно идет эпиграф.
+import-diagnostic-epigraph-not-carried = Перед «{ $title }» стоит эпиграф, но тип «{ $kind }» не может его хранить. Цитата сохранена в начале текста элемента.
+import-diagnostic-epigraph-placement-ambiguous = Эпиграф находится между «{ $title }» и «{ $below }» и может относиться к любому из них. Он отнесён к «{ $title }», так как обычно эпиграф ставится именно там.
 import-document-diagnostics = { $errors ->
     [0] { $warnings ->
-    [one] { $errors } вещь, которую нужно знать
-    [few] { $warnings } Что нужно знать
-    [many] { $warnings } Что нужно знать
-   *[other] { $warnings } Что нужно знать
+            [one] { $warnings } замечание
+            [few] { $warnings } замечания
+            [many] { $warnings } замечаний
+           *[other] { $warnings } замечания
         }
    *[other] { $errors ->
-    [one] { $errors } файл не может быть прочитан
-    [few] { $errors } Файлы не читаются
-    [many] { $errors } файлов, которые невозможно прочитать
-   *[other] { $errors } файлы не могут быть прочитаны
+            [one] { $errors } файл не удалось прочитать
+            [few] { $errors } файла не удалось прочитать
+            [many] { $errors } файлов не удалось прочитать
+           *[other] { $errors } файла не удалось прочитать
         }
 }
-import-document-diagnostics-none = Нечего докладывать.
+import-document-diagnostics-none = Замечаний нет.
 
 versions-title = Версии
 versions-scope-synopsis = Синопсис
 versions-scope-prose = Текст
-versions-loading = Просмотр ваших резервных копий …
-versions-empty = Более ранней версии этого пока нет.
-versions-error = Ничего не потеряно, но этот список может быть неполным
-versions-did-not-exist = Не было еще { $date }
-versions-deleted-after = Удален через некоторое время после { $date }
+versions-loading = Просмотр ваших резервных копий…
+versions-empty = Более ранних версий пока нет
+versions-error = Не удалось прочитать резервные копии. Ничего не потеряно, но список может быть неполным
+versions-did-not-exist = { $date } ещё не существовало
+versions-deleted-after = Удалено через некоторое время после { $date }
 versions-unreadable = { $count ->
-    [one] { $count } Резервное копирование невозможно прочитать
-    [few] { $count } резервных копии не могут быть прочитаны
-    [many] { $count } резервных копий не могут быть прочитаны
-   *[other] { $count } Резервные копии не могут быть прочитаны
+    [one] { $count } резервную копию не удалось прочитать
+    [few] { $count } резервные копии не удалось прочитать
+    [many] { $count } резервных копий не удалось прочитать
+   *[other] { $count } резервной копии не удалось прочитать
 }
 versions-thinned = { $count ->
-    [one] Старые версии с возрастом истончаются.Собственная история проекта уже отбросила { $count } более раннее состояние этого текста.
-    [few] Старые версии с возрастом истончаются.Собственная история проекта уже отбросила { $count } более ранних состояния этого текста.
-    [many] Старые версии с возрастом истончаются.Собственная история проекта уже отбросила { $count } более ранних состояний этого текста.
-   *[other] Старые версии с возрастом истончаются.Собственная история проекта уже выпала на { $count } более ранних состояний этого текста.
+    [one] Со временем старые версии прореживаются. Собственная история проекта уже не содержит { $count } более раннего состояния этого текста.
+    [few] Со временем старые версии прореживаются. Собственная история проекта уже не содержит { $count } более ранних состояний этого текста.
+    [many] Со временем старые версии прореживаются. Собственная история проекта уже не содержит { $count } более ранних состояний этого текста.
+   *[other] Со временем старые версии прореживаются. Собственная история проекта уже не содержит { $count } более раннего состояния этого текста.
 }
 versions-source-backup = Из резервной копии
 versions-source-project = Из собственной истории проекта
-versions-list-caption = Одна запись за изменение, а не за резервную копию
+versions-list-caption = Одна запись на изменение, а не на резервную копию
 versions-pick-a-version = Выберите версию, чтобы увидеть, что изменилось
-versions-earliest = Самая ранняя версия на записи. Нет ничего старше, чтобы сравнить это с.
-versions-no-change = Ничего не изменилось в этой части статьи
-versions-formatting-only = Изменилось только форматирование. Слова одинаковые.
-versions-show-unchanged = Показать неизмененный
-versions-hide-unchanged = Прятаться без изменений
+versions-earliest = Самая ранняя сохранившаяся версия. Сравнивать её не с чем.
+versions-no-change = В этой части элемента ничего не изменилось
+versions-formatting-only = Здесь изменилось только форматирование. Слова те же
+versions-show-unchanged = Показать неизменённое
+versions-hide-unchanged = Скрыть неизменённое
 versions-next-change = Следующее изменение
-versions-near = рядом с "{ $text }"
+versions-near = рядом с «{ $text }»
 versions-words-added = { $count ->
     [one] Добавлено { $count } слово
     [few] Добавлено { $count } слова
     [many] Добавлено { $count } слов
-   *[other] { $count } слов добавлено
+   *[other] Добавлено { $count } слова
 }
 versions-words-removed = { $count ->
-    [one] { $count } слово удалено
-    [few] { $count } слова удалены
-    [many] { $count } Удаленные слова
-   *[other] { $count } Удаленные слова
+    [one] Удалено { $count } слово
+    [few] Удалено { $count } слова
+    [many] Удалено { $count } слов
+   *[other] Удалено { $count } слова
 }
 versions-blocks-moved = { $count ->
-    [one] { $count } абзац сдвинуто
-    [few] { $count } абзаца сдвинуты
-    [many] { $count } Перенесенные пункты
-   *[other] { $count } Пункты перенесены
+    [one] Перемещён { $count } абзац
+    [few] Перемещено { $count } абзаца
+    [many] Перемещено { $count } абзацев
+   *[other] Перемещено { $count } абзаца
 }
-versions-pin = Заполните резервную копию этой версии. Автоматическая очистка никогда не удалит ее.
-versions-unpin = Отключите резервную копию этой версии. Автоматическая очистка может удалить ее снова
-versions-pinned-only = Показать только пин-версии
-versions-pin-note = Только версии из резервной копии могут быть прикреплены. Пин хранит файл, а собственная история проекта не является таковой.
-versions-pinned-empty = Здесь пока ничего не приколото.
-versions-pinned-empty-log = Здесь ничего не прикреплено. Только версии из резервной копии могут быть прикреплены. Пин хранит файл, а собственная история проекта не является таковой.
+versions-pin = Закрепить резервную копию, из которой взята эта версия. Автоматическая очистка никогда её не удалит
+versions-unpin = Открепить резервную копию, из которой взята эта версия. Автоматическая очистка снова сможет её удалить
+versions-pinned-only = Показывать только закреплённые версии
+versions-pin-note = Закрепить можно только версии из резервных копий. Закрепление сохраняет файл, а собственная история проекта файлом не является.
+versions-pinned-empty = Здесь пока ничего не закреплено
+versions-pinned-empty-log = Здесь пока ничего не закреплено. Закрепить можно только версии из резервных копий. Закрепление сохраняет файл, а собственная история проекта файлом не является.
 versions-range-filter = Показывать только версии между двумя датами
 versions-filtered-empty = Ни одна версия не соответствует фильтрам, которые вы установили
-versions-clear-filters = Очистите фильтры
+versions-clear-filters = Сбросить фильтры
 versions-last-30-days = Последние 30 дней
-versions-restore-button = Восстановите эту версию
+versions-restore-button = Восстановить эту версию
 versions-restore-confirm-title = Заменить этот текст версией от { $date }?
-versions-restore-confirm-text = То, что у вас есть сейчас, будет заменено текстом этого пункта на { $date }.
-versions-restore-confirm-with-comments = То, что у вас есть сейчас, будет заменено текстом этого пункта на { $date }. { $count ->
-    [one] { $count } комментарий закреплен в текущем тексте и может быть оставлен сиротой.
-    [few] { $count } замечания закреплены в текущем тексте и могут быть оставлены сиротами.
-    [many] { $count } комментариев закреплены в текущем тексте и могут быть оставлены сиротами.
-   *[other] Комментарии { $count } приведены в настоящем тексте и могут быть оставлены сиротами.
+versions-restore-confirm-text = Текущий текст будет заменён текстом, который был у этого элемента { $date }.
+versions-restore-confirm-with-comments = Текущий текст будет заменён текстом, который был у этого элемента { $date }. { $count ->
+    [one] { $count } комментарий привязан к текущему тексту и может потерять привязку.
+    [few] { $count } комментария привязаны к текущему тексту и могут потерять привязку.
+    [many] { $count } комментариев привязаны к текущему тексту и могут потерять привязку.
+   *[other] { $count } комментария привязаны к текущему тексту и могут потерять привязку.
 }
-versions-restore-confirm-undo-note = Сначала делается резервная копия, и Ctrl + Z снимает это за один шаг.
+versions-restore-confirm-undo-note = Сначала создаётся резервная копия, а Ctrl+Z отменяет это действие за один шаг.
 versions-restored-toast = Восстановлена версия от { $date }
 versions-undo = Отменить
-versions-restore-row-gone = Этого пункта больше нет в этом проекте.
-versions-restore-no-home = Этот пункт с тех пор изменил тип, и старому тексту некуда идти в нем.
-versions-restore-no-safety-copy = Ваша резервная копия не работала, так что ничего не изменилось.
+versions-restore-row-gone = Этого элемента больше нет в проекте
+versions-restore-no-home = С тех пор тип элемента изменился, и старому тексту в нём некуда деться
+versions-restore-no-safety-copy = Страховочная резервная копия не создана, поэтому ничего не изменено
 versions-restore-failed = Восстановление не удалось: { $error }
-versions-restore-backup-busy = Уже работает резервная копия. Попробуй еще раз через минуту.
-versions-restore-in-backup-file = Вы просматриваете файл резервного копирования; откройте сам проект, чтобы восстановить его.
-versions-restore-no-project = Ни один проект не открыт
-versions-recreate-button = Принесите это обратно …
-versions-recreate-picker-title = Куда она должна пойти?
-versions-recreate-picker-empty = Этот проект не имеет связующего звена, чтобы поместить его в
-versions-recreate-picker-confirm = Возвращайся сюда.
+versions-restore-backup-busy = Резервное копирование уже выполняется. Повторите попытку чуть позже
+versions-restore-in-backup-file = Вы просматриваете файл резервной копии; чтобы восстановить в проект, откройте сам проект
+versions-restore-no-project = Нет открытого проекта
+versions-recreate-button = Вернуть…
+versions-recreate-picker-title = Куда его поместить?
+versions-recreate-picker-empty = В этом проекте нет подшивки, куда его можно поместить
+versions-recreate-picker-confirm = Вернуть сюда
 versions-recreate-picker-cancel = Отмена
-versions-recreate-untitled = этот пункт
+versions-recreate-untitled = этот элемент
 versions-recreate-confirm-title = Вернуть «{ $item }»?
-versions-recreate-confirm-text = Он будет добавлен к { $destination }, с текстом, который он имел на { $date }.
-versions-recreate-confirm-undo-note = Ундо, в следующем послании, вытаскивает его обратно.
-versions-recreated-toast = «{ $item }» возвращается в проект
+versions-recreate-confirm-text = Он будет добавлен в { $destination } с текстом, который был у него { $date }.
+versions-recreate-confirm-undo-note = Кнопка «Отменить» в следующем сообщении сразу уберёт его обратно.
+versions-recreated-toast = «{ $item }» снова в вашем проекте
 versions-recreated-partial-toast = { $count ->
-    [one] «{ $item }» вернулся, но { $count } из его текстов не удалось прочитать
-    [few] «{ $item }» вернулся, но { $count } из его текстов не удалось прочитать
-    [many] «{ $item }» вернулся, но { $count } его текстов не удалось прочитать
-   *[other] «{ $item }» вернулся, но { $count } его текстов не удалось прочитать.
+    [one] «{ $item }» возвращён, но { $count } из его текстов не удалось прочитать
+    [few] «{ $item }» возвращён, но { $count } из его текстов не удалось прочитать
+    [many] «{ $item }» возвращён, но { $count } из его текстов не удалось прочитать
+   *[other] «{ $item }» возвращён, но { $count } из его текстов не удалось прочитать
 }
-versions-recreate-already-here = Этот пункт уже есть в вашем проекте.
-versions-recreate-no-destination = Выберите место в связующем, чтобы поместить его
-versions-recreate-unreadable = Эта резервная копия не могла быть прочитана, поэтому ничего не было добавлено.
+versions-recreate-already-here = Этот элемент уже есть в вашем проекте
+versions-recreate-no-destination = Выберите в подшивке место, куда его поместить
+versions-recreate-unreadable = Эту резервную копию не удалось прочитать, поэтому ничего не добавлено
 versions-recreate-failed = Не удалось вернуть: { $error }
-versions-changed-percent = { $percent }% изменятся
+versions-changed-percent = Изменено: { $percent }%
 versions-hidden-paragraphs = { $count ->
-    [one] … { $count } неизмененный пункт …
-    [few] … { $count } неизмененные пункты …
-    [many] … { $count } неизмененных пунктов …
-   *[other] … { $count } Неизменные пункты …
+    [one] … { $count } неизменённый абзац …
+    [few] … { $count } неизменённых абзаца …
+    [many] … { $count } неизменённых абзацев …
+   *[other] … { $count } неизменённого абзаца …
 }
 
 timeline-title = Вернуться в прошлое
 timeline-coverage = { $count ->
-    [one] { $count } версия записана, возвращаясь к { $oldest }
+    [one] Записана { $count } версия, начиная с { $oldest }
     [few] Записано { $count } версии, начиная с { $oldest }
     [many] Записано { $count } версий, начиная с { $oldest }
-   *[other] { $count } версии записаны, возвращаясь к { $oldest }
+   *[other] Записано { $count } версии, начиная с { $oldest }
 }
-timeline-loading = Просматривайте прошлое вашего проекта …
-timeline-empty = Версия этого проекта пока не зафиксирована.
-timeline-no-changes = С тех пор ничего не изменилось.
-timeline-no-text-changes = С тех пор текст не изменился.
+timeline-loading = Просмотр истории вашего проекта…
+timeline-empty = Ни одной версии этого проекта пока не записано
+timeline-no-changes = С тех пор ничего не изменилось
+timeline-no-text-changes = С тех пор текст не изменился
 timeline-slider-label = Записанная версия
 timeline-series-name = Размер проекта
-timeline-bars-caption = Каждый бар - это записанная версия, такая же высокая, как и проект. Выделенный - это то, что вы смотрите.
-timeline-bars-caption-periods = Слишком много версий, чтобы показать одну за другой, так что каждый бар { $period }, такой же высокий, как проект был к концу его.
+timeline-bars-caption = Каждый столбец — записанная версия, высотой с тогдашний объём проекта. Выделен тот, который вы просматриваете.
+timeline-bars-caption-periods = Версий слишком много, чтобы показать их по одной, поэтому каждый столбец — { $period }, высотой с объём проекта на конец этого периода.
 timeline-unit-hour = час
 timeline-unit-day = день
 timeline-unit-week = неделя
 timeline-unit-month = месяц
 timeline-range-filter = Показывать только версии между двумя датами
-timeline-range-empty = Ни одна версия не была записана в эти даты.
-timeline-open-period = Откройте этот период
+timeline-range-empty = За эти даты не записано ни одной версии
+timeline-open-period = Открыть этот период
 timeline-show-all = Показать всю историю
 timeline-changed-since = { $count ->
-    [one] { $count } пункт отличается от { $date } и вашего проекта сейчас
-    [few] { $count } пункта отличаются между { $date } и вашим проектом сейчас
-    [many] { $count } элементов отличаются между { $date } и вашим проектом сейчас
-   *[other] Элементы { $count } различаются между { $date } и вашим проектом.
+    [one] { $count } элемент отличается между { $date } и текущим проектом
+    [few] { $count } элемента отличаются между { $date } и текущим проектом
+    [many] { $count } элементов отличаются между { $date } и текущим проектом
+   *[other] { $count } элемента отличаются между { $date } и текущим проектом
 }
-timeline-kind-added = Написано с тех пор
-timeline-kind-removed = Больше не в проекте
-timeline-kind-changed = Отредактировано с тех пор
-timeline-kind-moved = С тех пор переехал
-timeline-not-yet-written = Этого еще не существовало в тот момент.
-timeline-no-text-of-its-own = У этого нет собственного текста. Это заголовок того, что внутри него.
+timeline-kind-added = Написано позже
+timeline-kind-removed = Больше нет в проекте
+timeline-kind-changed = Изменено позже
+timeline-kind-moved = Перемещено позже
+timeline-not-yet-written = На тот момент этого ещё не существовало
+timeline-no-text-of-its-own = У этого элемента нет собственного текста. Это заголовок для того, что внутри него
 timeline-reader-close = Закрыть
-timeline-reader-stamp = Как это было на { $date }
+timeline-reader-stamp = В состоянии на { $date }
 timeline-reader-loading = Открытие записанной версии…
-timeline-reader-unreadable = Эта запись не могла быть прочитана. Резервная копия могла быть перемещена, удалена или находиться на диске, который не подключен.
-timeline-reader-compared = Как это было на { $date } против того, что он говорит сейчас.
-timeline-reader-diff-legend = С тех пор прошло много времени, было добавлено подчеркивание.
+timeline-reader-unreadable = Не удалось прочитать эту запись. Резервная копия могла быть перемещена, удалена или находиться на неподключённом диске.
+timeline-reader-compared = В состоянии на { $date } в сравнении с текущим текстом
+timeline-reader-diff-legend = Зачёркнутое с тех пор удалено; подчёркнутое добавлено.
 timeline-reader-view-label = Что показать
 timeline-reader-view-diff = Изменения
 timeline-reader-view-text = Текст
-timeline-reader-deleted = Этого больше нет в вашем проекте. Вы можете прочитать и скопировать его здесь.
-timeline-prose-only-record = Эта точка исходит из собственной истории проекта, которая хранит текст и ничего больше, так что то, что было удалено или перемещено, так как это не может быть показано.
+timeline-reader-deleted = Этого больше нет в вашем проекте. Здесь можно прочитать текст и скопировать его.
+timeline-prose-only-record = Эта точка взята из собственной истории проекта, которая хранит только текст, поэтому показать, что с тех пор было удалено или перемещено, нельзя. Для этого выберите резервную копию.
 
 settings-sec-extensions = Расширения
 
-settings-group-games-forward = Всегда вперед
-settings-games-forward-toggle = Спектакль «Всегда вперед»
+settings-group-games-forward = Только вперёд
+settings-games-forward-toggle = Играть в «Только вперёд»
 settings-games-forward-hint =
-    Пока вы играете, ничто из написанного вами не может быть возвращено: Backspace, Удалить,
-    Резка, перетаскивание и ундо - все они отключены на поверхностях, которые вы выбираете ниже.
-    Вы все еще можете печатать, вставлять, форматировать и свободно перемещаться.
+    Пока вы играете, ничего написанного нельзя забрать обратно: Backspace, Delete,
+    вырезание, перетаскивание и отмена отключены в областях, выбранных ниже.
+    Можно по-прежнему печатать, вставлять, форматировать и свободно перемещаться. Черновик только растёт.
 settings-games-session-warning =
-    Это выбор на каждую сессию: он никогда не сохраняется. Закрытие проекта или уход из него.
-    Skribisto, всегда заканчивает игру, и все, что вы написали во время игры, становится
-    Снова отменяется в тот момент, когда это происходит.
-settings-group-games-scope = Где это применяется
-settings-games-in-prose = Рукописная проза
-settings-games-in-synopsis = синопсис
+    Этот выбор действует только в текущем сеансе и никогда не сохраняется. Закрытие проекта
+    или выход из Skribisto всегда завершает игру, и всё, что вы написали во время игры,
+    в тот же момент снова можно отменить.
+settings-group-games-scope = Где действует
+settings-games-in-prose = Проза рукописи
+settings-games-in-synopsis = Синопсисы
 settings-games-scope-hint =
-    Комментарии, сноски и заголовки никогда не замораживаются: они там, где вы отмечаете исправление.
-    Вы только что запретили себе это делать.
+    Комментарии, сноски и названия никогда не блокируются: именно в них вы записываете
+    исправление, которое только что запретили себе вносить.
 settings-games-inert-warning =
-    "Всегда вперед" включено, но не применяется ни к чему.
-    Ничего не меняет, как вы пишете.
+    Режим «Только вперёд» включён, но ни к чему не применяется. Отметьте выше хотя бы одну область,
+    иначе при письме ничего не изменится.
 
-games-title = Написание игр
-games-forward-name = Всегда вперед
+games-title = Писательские игры
+games-forward-name = Только вперёд
 games-forward-blurb =
-    Удаление, резка и отмена отключены, ничего не беря назад.
-    Пока вы играете, напишите следующее предложение вместо того, чтобы фиксировать последнее.
-games-forward-playing = Играть: удаление отключено
-games-forward-idle = Не играть
-games-session-note = Заканчивается, когда проект закрывается.
+    Пишите черновик, ничего не забирая обратно. Пока вы играете, удаление, вырезание и отмена
+    отключены. Пишите следующее предложение вместо того, чтобы исправлять предыдущее.
+games-forward-playing = Игра идёт: удаление отключено
+games-forward-idle = Игра не идёт
+games-session-note = Завершается при закрытии проекта.
 games-scope-prose-and-synopsis = Применяется к вашей прозе и синопсисам.
 games-scope-prose = Применяется к вашей прозе.
 games-scope-synopsis = Применяется к вашим синопсисам.
-games-scope-nothing = Пока ничего не подходит. Выберите поверхность в настройках.
-games-settings-link = Настройка игры …
-statusbar-games-forward = Всегда вперед
+games-scope-nothing = Пока ни к чему не применяется. Выберите область в настройках.
+games-settings-link = Настройки писательских игр…
+statusbar-games-forward = Только вперёд
 statusbar-games-forward-tooltip =
-    «Всегда вперед» включен: удаление, резка и отмена отключены, пока вы
-    Нажмите, чтобы перестать играть.
+    Режим «Только вперёд» включён: пока вы пишете черновик, удаление, вырезание и отмена
+    отключены. Щёлкните, чтобы закончить игру.
 goal-progress-words = { $g ->
-    [one] { $count } из { $goal } слово
+    [one] { $count } из { $goal } слова
     [few] { $count } из { $goal } слов
     [many] { $count } из { $goal } слов
-   *[other] { $count } из { $goal } слов
+   *[other] { $count } из { $goal } слова
 }
 goal-progress-characters = { $g ->
-    [one] { $count } { $goal } символ
-    [few] { $count } из { $goal } символов
-    [many] { $count } из { $goal } символов
-   *[other] { $count } из { $goal } символов
+    [one] { $count } из { $goal } знака
+    [few] { $count } из { $goal } знаков
+    [many] { $count } из { $goal } знаков
+   *[other] { $count } из { $goal } знака
 }
 goal-count-words = { $n ->
     [one] { $count } слово
@@ -2384,304 +2400,514 @@ goal-count-words = { $n ->
 }
 
 goal-count-characters = { $n ->
-    [one] { $count } символ
-    [few] { $count } символа
-    [many] { $count } символов
-   *[other] { $count } символа
+    [one] { $count } знак
+    [few] { $count } знака
+    [many] { $count } знаков
+   *[other] { $count } знака
 }
 
 goal-unit-words = Слова
-goal-unit-characters = Персонажи
+goal-unit-characters = Знаки
 
 inspector-goal = Цель
-inspector-goal-none = Нет цели
+inspector-goal-none = Без цели
 
 overview-col-goal = Цель
-overview-excluded-from-export = Выброшенный из экспорта, поэтому он не учитывается в общей сумме
+overview-excluded-from-export = Исключено из экспорта, поэтому не учитывается ни в каких итогах
 
 goal-subtree-total-words = { $count ->
-    [one] { $items } цель внутри добавляет до { $words } слов
-    [few] { $items } цели внутри складываются в { $words } слов
-    [many] { $items } цели внутри складываются в { $words } слов
-   *[other] { $items } цели внутри складываются в { $words } слов
+    [one] { $items } цель внутри в сумме, слов: { $words }
+    [few] { $items } цели внутри в сумме, слов: { $words }
+    [many] { $items } целей внутри в сумме, слов: { $words }
+   *[other] { $items } цели внутри в сумме, слов: { $words }
 }
 goal-subtree-total-characters = { $count ->
-    [one] { $items } цель внутри добавляет до { $words } символов
-    [few] { $items } цели внутри складываются в { $words } символов
-    [many] { $items } цели внутри складываются в { $words } символов
-   *[other] { $items } цели внутри складываются в { $words } символов
+    [one] { $items } цель внутри в сумме, знаков: { $words }
+    [few] { $items } цели внутри в сумме, знаков: { $words }
+    [many] { $items } целей внутри в сумме, знаков: { $words }
+   *[other] { $items } цели внутри в сумме, знаков: { $words }
 }
 
-new-work-goal-unit = Подсчитывать
-new-work-goal-unit-hint = Используется для каждого слова или символа в этом проекте.
+new-work-goal-unit = Единица подсчёта
+new-work-goal-unit-hint = Используется для всех целей по словам или знакам в этом проекте. Можно изменить позже.
 
 settings-group-goal-unit = Цели
-settings-goal-unit-switch-title = Переключатель счетной единицы
-settings-goal-unit-switch-text = Цели и вехи, уже поставленные для этого проекта, были введены в { $from }. Переключение на { $to } их не преобразует, поэтому каждое существующее число теперь будет читаться как { $to }.
-settings-goal-unit-switch-informative = Ничего не потеряно. Переключитесь в любое время, чтобы восстановить первоначальное чтение, а затем обновите цели, которые вы хотите сохранить.
-settings-goal-unit-switch-confirm = переключатель
+settings-goal-unit-switch-title = Сменить единицу подсчёта
+settings-goal-unit-switch-text = Цели и вехи этого проекта были заданы в единицах «{ $from }». Переключение на «{ $to }» их не пересчитывает, поэтому каждое существующее число теперь будет считаться в единицах «{ $to }».
+settings-goal-unit-switch-informative = Ничего не теряется. Переключитесь обратно в любой момент, чтобы вернуть прежнее значение, а затем обновите цели, которые хотите сохранить.
+settings-goal-unit-switch-confirm = Переключить
 
-goal-distribute-action = Дистрибутив …
-distribute-title = Распределите цель
-distribute-empty = Внутри этого нет ничего, чтобы разделить цель.
-distribute-weight = Поделиться
-distribute-weight-length = по длине
-distribute-weight-rows = По кусочкам
+goal-distribute-action = Распределить…
+distribute-title = Распределить цель
+distribute-empty = Внутри нет ничего, между чем можно распределить цель.
+distribute-weight = Способ распределения
+distribute-weight-length = По объёму
+distribute-weight-rows = По элементам
 distribute-weight-even = Поровну
 distribute-overwrite = Заменить цели, которые уже установлены
-distribute-col-item = Пункт
-distribute-col-current = Теперь
+distribute-col-item = Элемент
+distribute-col-current = Сейчас
 distribute-col-proposed = После
-distribute-total = Они составляют до { $total }, против цели { $goal }.
-distribute-over-budget = Цели, уже установленные внутри, достигают { $over } больше, чем у этого контейнера. Поднимите его цель, опустите их или замените их.
-distribute-apply = распределять
+distribute-total = В сумме { $total } при цели { $goal }.
+distribute-over-budget = Цели, уже заданные внутри, превышают собственную цель этого контейнера на { $over }. Увеличьте его цель, уменьшите их цели или замените их.
+distribute-apply = Распределить
 distribute-cancel = Отмена
 
 milestone-target-gone = Цель удалена
-milestone-no-target = Нет цели
+milestone-no-target = Без цели
 milestone-add = Добавить
-milestone-add-label = Что должно быть достигнуто
+milestone-add-label = Чего нужно достичь
 
-pace-summary-title = Где находится книга
-pace-summary-remaining = { $words }, чтобы пойти
-pace-summary-open = Откройте план
+pace-summary-title = Положение дел с книгой
+pace-summary-remaining = Осталось: { $words }
+pace-summary-open = Открыть план
 pace-summary-close = Закрыть
-pace-summary-dont-show = Не показывайте это при открытии.
-pace-summary-menu = Написание плана …
+pace-summary-dont-show = Не показывать при открытии
+pace-summary-menu = План работы…
 
-menu-help-topics = &Помогите темам
-menu-help-shortcuts = К&лавиатура Shortcuts…
-menu-help-website = &Skribisto в Интернете
-menu-help-report = &Сообщение о проблеме …
-menu-help-check-updates = П&роверить обновления
-menu-command-palette = &Командная палетка …
+menu-help-topics = &Темы справки
+menu-help-shortcuts = Сочетания &клавиш…
+menu-help-website = Skribisto в &Интернете
+menu-help-report = &Сообщить о проблеме…
+menu-help-check-updates = Проверить о&бновления
+menu-command-palette = &Палитра команд…
 
-learn-help-topics = Темы помощи
+learn-help-topics = Темы справки
 learn-shortcuts = Сочетания клавиш
 learn-website = Skribisto в Интернете
 
 help-window-title = Справка
-help-filter-topics = Темы фильтров
-help-no-matching-topic = Никаких совпадений по теме.
+help-filter-topics = Фильтр тем
+help-no-matching-topic = Подходящих тем нет.
 help-topic-missing = Эта тема больше не доступна.
 help-back = Назад
 help-not-translated = Эта страница пока не переведена и отображается на английском языке.
 
 help-section-getting-started = Начало работы
-help-section-writing = Писать
-help-section-reviewing = Обзор
-help-section-exchanging = Вводить и выводить слова
-help-section-keeping = Сохранение вашей работы в безопасности
+help-section-writing = Письмо
+help-section-reviewing = Редактура
+help-section-exchanging = Ввоз и вывоз текста
+help-section-keeping = Сохранность вашей работы
 help-section-extensions = Расширения
 
 help-topic-getting-started = Ваш первый проект
 help-topic-writing-model = Как складывается книга
-help-topic-drafts-and-old-versions = Сохранить старый проект
-help-topic-goals-and-pace = Цели и темпы
+help-topic-drafts-and-old-versions = Как сохранить старый черновик
+help-topic-goals-and-pace = Цели и темп
 help-topic-comments = Комментарии
-help-topic-round-trip = Отправить свою книгу читателю
-help-topic-export = экспортировать
+help-topic-round-trip = Отправка книги читателю
+help-topic-export = Экспорт
 help-topic-import-documents = Импорт документов
-help-topic-import-projects = Внедрение целого проекта в
+help-topic-import-projects = Перенос целого проекта
 help-topic-backups-and-versions = Резервные копии и версии
 
 help-shortcuts-title = Сочетания клавиш
-help-shortcuts-filter = Фильтровать ярлыки
-help-shortcuts-no-matches = Никаких ярлыков.
-help-shortcuts-rebind = Изменение ярлыков …
+help-shortcuts-filter = Фильтр сочетаний клавиш
+help-shortcuts-no-matches = Подходящих сочетаний нет.
+help-shortcuts-rebind = Изменить сочетания клавиш…
 help-shortcuts-close = Закрыть
 
 command-palette-placeholder = Введите команду
 
 shortcut-name-binder-duplicate = Дублировать
 shortcut-name-comments-add = Добавить комментарий
-shortcut-name-comments-add-paragraph = Комментарий к пункту
-shortcut-name-spellcheck-toggle = Проверить правописание
+shortcut-name-comments-add-paragraph = Комментировать абзац
+shortcut-name-spellcheck-toggle = Проверять орфографию
 shortcut-name-editor-tab-close = Закрыть вкладку
 shortcut-name-editor-tab-pin = Закрепить или открепить вкладку
 shortcut-name-editor-save = Сохранить
-shortcut-name-work-export = Экспорт …
+shortcut-name-work-export = Экспорт…
 shortcut-name-work-new = Новый проект
-shortcut-name-work-open = Открытый проект
+shortcut-name-work-open = Открыть проект
 shortcut-name-window-new = Новое окно
 shortcut-name-work-close = Закрыть проект
 shortcut-name-app-settings = Настройки
 shortcut-name-app-quit = Выход
-shortcut-name-editor-insert-footnote = Включить сноску
-shortcut-name-format-scene-break = Вставить Scene Break
-shortcut-name-format-major-scene-break = Вставить Major Scene Break
-shortcut-name-format-link = Включить ссылку
-shortcut-name-format-mark-nbsp = Включить No-break Space
-shortcut-name-format-mark-nbhyphen = Включить No-break Hyphen
-shortcut-name-format-mark-nnbsp = Узкое пространство No Break Space
-shortcut-name-format-mark-zwsp = Включить пространство нулевой ширины
+shortcut-name-editor-insert-footnote = Вставить сноску
+shortcut-name-format-scene-break = Вставить разрыв сцены
+shortcut-name-format-major-scene-break = Вставить большой разрыв сцены
+shortcut-name-format-link = Вставить ссылку
+shortcut-name-format-mark-nbsp = Вставить неразрывный пробел
+shortcut-name-format-mark-nbhyphen = Вставить неразрывный дефис
+shortcut-name-format-mark-nnbsp = Вставить узкий неразрывный пробел
+shortcut-name-format-mark-zwsp = Вставить пробел нулевой ширины
 shortcut-name-go-next = Далее
-shortcut-name-go-prev = Предыдущее
-shortcut-name-go-to = Сходи
+shortcut-name-go-prev = Назад
+shortcut-name-go-to = Перейти к
 shortcut-name-outline-toggle = Показать или скрыть структуру
 shortcut-name-preview-toggle = Показать или скрыть предпросмотр
-shortcut-name-view-fullscreen = Переключить полноэкранный режим
-shortcut-name-view-focus-mode = Toggle Distraction-Free режим
+shortcut-name-view-fullscreen = Полноэкранный режим
+shortcut-name-view-focus-mode = Режим без отвлечений
 shortcut-name-editor-size-increase = Увеличить размер текста
 shortcut-name-editor-size-decrease = Уменьшить размер текста
-shortcut-name-editor-size-reset = Перезагрузить размер текста
+shortcut-name-editor-size-reset = Сбросить размер текста
 shortcut-name-editor-find = Найти
 shortcut-name-editor-replace = Заменить
-shortcut-name-editor-find-next = Следующий матч
-shortcut-name-editor-find-prev = Предыдущий Матч
+shortcut-name-editor-find-next = Следующее совпадение
+shortcut-name-editor-find-prev = Предыдущее совпадение
 shortcut-name-search-show = Поиск в проекте
 shortcut-name-search-replace = Заменить в проекте
-shortcut-name-outline-open-to-side = Откройте на стороне
-shortcut-name-help-topics = Помогите темам
-shortcut-name-help-shortcuts = Клавишные ярлыки
+shortcut-name-outline-open-to-side = Открыть сбоку
+shortcut-name-help-topics = Темы справки
+shortcut-name-help-shortcuts = Сочетания клавиш
 shortcut-name-help-website = Skribisto в Интернете
 shortcut-name-help-report = Сообщить о проблеме
 shortcut-name-help-check-updates = Проверить обновления
 update-check-behind = Доступна версия { $version }.
-update-check-current = Вы используете новейшую версию.
-update-check-failed = Не удалось проверить на более новую версию. { $error }
-shortcut-name-command-palette = Командная палитра
-help-section-reference = Что такое вещи
+update-check-current = У вас самая новая версия.
+update-check-failed = Не удалось проверить наличие новой версии. { $error }
+shortcut-name-command-palette = Палитра команд
+help-section-reference = Что есть что
 
-help-concept-scene-break = Сценический прорыв
-help-concept-major-scene-break = Основная сцена прорыва
-help-concept-find-in-prose = Искать в тексте
-help-concept-story-bible = Энциклопедия истории
-help-concept-goal-unit = Слова или персонажи
+help-concept-scene-break = Разрыв сцены
+help-concept-major-scene-break = Большой разрыв сцены
+help-concept-find-in-prose = Поиск в тексте
+help-concept-story-bible = Библия истории
+help-concept-goal-unit = Слова или знаки
 help-concept-goal-progress = Прогресс
 help-concept-manuscript-words = Что считается рукописью
-help-concept-exportable = Выброшены из экспорта
-help-concept-distribute = Делиться целью
-help-concept-subtree-total = К чему приведут цели внутри
+help-concept-exportable = Исключение из экспорта
+help-concept-distribute = Распределение цели
+help-concept-subtree-total = Сумма целей внутри
 help-concept-milestone = Веха
-help-concept-pace-plan = План работы
+help-concept-pace-plan = План темпа
 
-help-concept-tag = Метка
-help-concept-label = Подпись
+help-concept-tag = Тег
+help-concept-label = Метка
 help-concept-point-of-view = Точка зрения
 help-concept-epigraph = Эпиграф
 help-concept-footnote = Сноска
-help-concept-chapter-mode = Форма головы
+help-concept-chapter-mode = Форма главы
 help-concept-comment = Комментарий
-help-concept-backup = Резервное копирование
+help-concept-backup = Резервная копия
 help-concept-version = Версия
 help-concept-trash = Корзина
-help-concept-spellcheck = Проверка заклинаний
+help-concept-spellcheck = Проверка орфографии
 help-concept-search-replace = Поиск и замена
-help-concept-note-template = Запись шаблона
-help-concept-story-bible-entry = Библейская история Вступление
-help-concept-text-replacement = Замена текста
+help-concept-note-template = Шаблон заметки
+help-concept-story-bible-entry = Запись библии истории
+help-concept-text-replacement = Автозамена
 help-concept-smart-punctuation = Умная пунктуация
-help-concept-export-style = Экспортный стиль
-help-concept-round-trip-marks = Круглые дорожные маркеры
+help-concept-export-style = Стиль экспорта
+help-concept-round-trip-marks = Метки обратного импорта
 
-epigraph-mark-attribution = Источник:
-epigraph-mark-attribution-tip = Отметьте строку, в которой находится попечитель, как источник цитаты, поэтому она печатается как атрибуция.
-margin-lane-name = Маржинальные отметки
+epigraph-mark-attribution = Строка источника
+epigraph-mark-attribution-tip = Пометить строку, где стоит курсор, как источник цитаты, чтобы она печаталась как подпись автора
+margin-lane-name = Пометки на полях
 margin-lane-provider-comments = Комментарии
-margin-lane-provider-story-bible = Библейская история Вступление
-margin-lane-provider-story-bible-hint = На заметке В прозаическом чтении, где эта запись названа, и сцены, рассказанные ее глазами. Также отмечает эти имена в самой прозе.
-margin-lane-mark-point-of-view = Сказано отсюда
-margin-lane-mark-named-here = Названо здесь
-margin-lane-provider-comments-hint = Когда примечание прилагается к тексту
-margin-lane-provider-search = Поисковые хиты
-margin-lane-provider-search-hint = Каждый удар за то, что вы в последний раз искали, где бы он ни находился в документе.
+margin-lane-provider-story-bible = Запись библии истории
+margin-lane-provider-story-bible-hint = На странице «В прозе» заметки — места, где упоминается эта запись, и сцены, рассказанные её глазами. Также выделяет эти имена в самой прозе.
+margin-lane-mark-point-of-view = Рассказано отсюда
+margin-lane-mark-named-here = Упоминается здесь
+margin-lane-provider-comments-hint = Где к тексту прикреплён комментарий
+margin-lane-provider-search = Результаты поиска
+margin-lane-provider-search-hint = Все совпадения по последнему поиску, где бы они ни находились в документе
 margin-lane-provider-boundaries = Где начинается каждый документ
-margin-lane-provider-boundaries-hint = Правило в верхней части каждой сцены в потоке, чтобы вы могли видеть, где вы находитесь.
-margin-lane-provider-spelling = Правописание
-margin-lane-provider-spelling-hint = Если только вы не попросите об этом: это отметит мнение машины о вашей прозе.
+margin-lane-provider-boundaries-hint = Черта в начале каждой сцены потока, чтобы было видно, где вы находитесь
+margin-lane-provider-spelling = Орфография
+margin-lane-provider-spelling-hint = Где проверка орфографии пометила слово. Выключено, пока вы не попросите: это пометки мнения машины о вашей прозе
 margin-lane-spelling = { $word }, возможная опечатка
-margin-lane-search-hit = { $text }, матч { $index } из { $total }
-margin-lane-search-current = { $text }, матч { $index } из { $total }, тот, на котором вы находитесь
-margin-lane-boundary = Начало работы { $title }
-margin-lane-boundary-untitled = Безымянный документ
-settings-page-margin-lane = Маржинальные отметки
-settings-desc-margin-lane = Полоса рядом с полосой прокрутки, и что она показывает
-settings-margin-lane-enabled = Показать маржинальную полосу
-settings-margin-lane-enabled-hint = Такой же переключатель, как и маржинальные отметки View ▸.
-settings-margin-lane-enabled-more = Он никогда не говорит, что что-то не так: он показывает вам, где вещи, и оставляет вам то, что с ними делать.
-settings-group-margin-lane-marks = Что это значит
-settings-margin-lane-no-providers = Пока ничего не указывает на полосу.
+margin-lane-search-hit = { $text }, совпадение { $index } из { $total }
+margin-lane-search-current = { $text }, совпадение { $index } из { $total }, текущее
+margin-lane-boundary = Начало: { $title }
+margin-lane-boundary-untitled = документ без названия
+settings-page-margin-lane = Пометки на полях
+settings-desc-margin-lane = Полоса рядом с полосой прокрутки и то, что на ней показано
+settings-margin-lane-enabled = Показывать полосу пометок на полях
+settings-margin-lane-enabled-hint = Тот же переключатель, что и Вид ▸ Пометки на полях.
+settings-margin-lane-enabled-more = Она никогда не говорит, что что-то не так: она показывает, где что находится, и оставляет выводы вам.
+settings-group-margin-lane-marks = Что она отмечает
+settings-margin-lane-no-providers = Пока нечего отмечать на полосе.
 settings-group-margin-lane-texture = Текстура диалога
 settings-margin-lane-texture = Показать текстуру диалога
-settings-margin-lane-texture-hint = Один бар за абзац: как долго он длится и сколько на нем говорят.
-settings-margin-lane-texture-more = Не измеряется для языков без кураторской конвенции, где строка показывает длину в одиночку.
-settings-group-margin-lane-surfaces = Где появляется
+settings-margin-lane-texture-hint = По одному столбику на абзац: его длина и доля прямой речи в нём.
+settings-margin-lane-texture-more = Для языков без проверенных правил оформления диалогов не измеряется; там столбик показывает только длину.
+settings-group-margin-lane-surfaces = Где показывается
 settings-margin-lane-surface-editor = Текстовый редактор
-settings-margin-lane-surface-stream = потоки
-settings-margin-lane-surface-search-preview = Предварительный поиск
-menu-margin-lane = &Маржинальные отметки
+settings-margin-lane-surface-stream = Потоки
+settings-margin-lane-surface-search-preview = Предпросмотр поиска
+menu-margin-lane = По&метки на полях
 
-status-preset-drafting = Подготовка проекта
-status-preset-passes = Пересмотр пропусков
+status-preset-drafting = Черновая работа
+status-preset-passes = Этапы редактуры
 status-preset-plume = Plume Creator
-status-todo = Делать
-status-draft = Проект проекта
-status-revised = пересмотренный
-status-final = Финал
-status-outline = Структура
-status-first-edit = 1-е редактирование
-status-second-edit = 2-е редактирование
+status-todo = Предстоит
+status-draft = Черновик
+status-revised = Исправлено
+status-final = Финальная версия
+status-outline = План
+status-first-edit = 1-я редактура
+status-second-edit = 2-я редактура
 status-done = Готово
-status-plume-draft-1 = 1-й проект
-status-plume-draft-2 = 2-й проект
-status-plume-draft-3 = 3-й проект
-status-plume-edit-1 = 1-е редактирование
-status-plume-edit-2 = 2-е редактирование
-status-plume-edit-3 = Третья редактура
-status-plume-proofread = Корректура
-status-plume-finished = Закончено
+status-plume-draft-1 = 1-й черновик
+status-plume-draft-2 = 2-й черновик
+status-plume-draft-3 = 3-й черновик
+status-plume-edit-1 = 1-я редактура
+status-plume-edit-2 = 2-я редактура
+status-plume-edit-3 = 3-я редактура
+status-plume-proofread = Вычитано
+status-plume-finished = Завершено
 new-work-statuses = Рабочий процесс
-new-work-statuses-hint = Сцены, через которые вы перемещаете сцену, вы можете переименовать, переупорядочить или добавить к ним в любое время.
+new-work-statuses-hint = Этапы, через которые проходит сцена. Их можно в любой момент переименовать, переупорядочить или дополнить.
 status-none = Нет статуса
-inspector-status = статус
-overview-col-status = статус
-overview-status-mixed = Приведенные ниже разделы не согласны
-help-concept-status = статус
-status-completion-title = Где находится книга
-status-completion-headline = { $done } из { $total } сцен завершены
-status-completion-empty = Это читает рукопись, так что она заполняется, когда вы пишете.
-status-completion-open = Где находится книга …
+inspector-status = Статус
+overview-col-status = Статус
+overview-status-mixed = вложенные элементы расходятся
+help-concept-status = Статус
+status-completion-title = Положение дел с книгой
+status-completion-headline = Завершено сцен: { $done } из { $total }
+status-completion-empty = Сцен пока нет. Здесь читается рукопись, поэтому данные появятся по мере письма.
+status-completion-open = Положение дел с книгой…
 
-settings-page-statuses = Статус
-settings-desc-statuses = Переименовать, переупорядочить, добавить и удалить этапы, через которые вы перемещаете сцену.
+settings-page-statuses = Статусы
+settings-desc-statuses = Переименование, порядок, добавление и удаление этапов, через которые проходит сцена
 settings-statuses-add = Добавить статус
-settings-statuses-add-placeholder = Новое статусное имя
+settings-statuses-add-placeholder = Название нового статуса
 settings-statuses-desc =
-    Этапы, через которые проходит сцена, по порядку, от наименее завершенных наверху до большинства.
-    Этот порядок - то, что "менее закончено, чем" означает везде.
-    В приложении, так что поместите их так, как ваш процесс на самом деле работает.
-settings-statuses-apply-preset = Применять пресет …
+    Этапы, через которые проходит сцена, по порядку: от наименее готового вверху до самого
+    готового внизу. Именно этот порядок означает «менее готово, чем» во всём приложении,
+    поэтому расположите их так, как на самом деле идёт ваша работа.
+settings-statuses-apply-preset = Применить набор…
 settings-statuses-preset-applied = { $added ->
-    [one] { $added } Статус добавлен
+    [one] Добавлен { $added } статус
     [few] Добавлено { $added } статуса
     [many] Добавлено { $added } статусов
-   *[other] Добавлены { $added } статусов
+   *[other] Добавлено { $added } статуса
 }
-settings-statuses-preset-refused = В этом проекте уже есть лестница. Предустановки заполняют только пустую. Сначала удалите ступени, которые вам не нужны.
-settings-statuses-duplicate = "{ $name }" уже на этой лестнице
-settings-statuses-added = Добавлено "{ $name }"
-settings-statuses-move-up = Встать (менее закончено)
-settings-statuses-move-down = Спускайся (больше готово)
-settings-statuses-details-placeholder = Что означает этот этап (факультативно)
-settings-statuses-delete = Исключить "{ $name }"
+settings-statuses-preset-refused = В этом проекте уже есть шкала статусов. Наборы заполняют только пустую шкалу. Сначала удалите ненужные ступени.
+settings-statuses-duplicate = «{ $name }» уже есть в этой шкале
+settings-statuses-added = Добавлено «{ $name }»
+settings-statuses-move-up = Переместить вверх (менее готово)
+settings-statuses-move-down = Переместить вниз (более готово)
+settings-statuses-details-placeholder = Что означает этот этап (необязательно)
+settings-statuses-delete = Удалить «{ $name }»
 settings-statuses-delete-in-use = { $count ->
-    [one] Удалить "{ $name }": { $count } пункт на нем и потеряет свой статус
-    [few] Удалить "{ $name }": на нем { $count } предмета и потеряют статус
-    [many] Удалить "{ $name }": на нем { $count } предметов и потеряют статус
-   *[other] Удалить "{ $name }": на нем находятся { $count } предметов и потеряют статус
+    [one] Удалить «{ $name }»: { $count } элемент с этим статусом потеряет его
+    [few] Удалить «{ $name }»: { $count } элемента с этим статусом потеряют его
+    [many] Удалить «{ $name }»: { $count } элементов с этим статусом потеряют его
+   *[other] Удалить «{ $name }»: { $count } элемента с этим статусом потеряют его
 }
-settings-statuses-deleted = Исключено "{ $name }"
+settings-statuses-deleted = Удалено «{ $name }»
 settings-statuses-deleted-in-use = { $count ->
-    [one] Исключено "{ $name }". { $count } пункт больше не имеет статуса.
-    [few] Исключено "{ $name }". { $count } пункта больше не имеют статуса.
-    [many] Исключено "{ $name }". { $count } позиций больше не имеют статуса.
-   *[other] Исключено "{ $name }". { $count } Пункты больше не имеют статуса.
+    [one] Удалено «{ $name }». У { $count } элемента больше нет статуса.
+    [few] Удалено «{ $name }». У { $count } элементов больше нет статуса.
+    [many] Удалено «{ $name }». У { $count } элементов больше нет статуса.
+   *[other] Удалено «{ $name }». У { $count } элемента больше нет статуса.
 }
 settings-statuses-empty-title = Пока нет рабочего процесса
-settings-statuses-empty-body = Статус говорит, как далеко находится сцена. Добавьте одну выше или начните с предустановленного.
-status-category-planned = запланированный
-status-category-drafting = Подготовка проекта
-status-category-needs-work = Нужна работа
-status-category-revised = пересмотренный
+settings-statuses-empty-body = Статус показывает, насколько готова сцена. Добавьте статус выше или начните с готового набора.
+status-category-planned = Запланировано
+status-category-drafting = Пишется
+status-category-needs-work = Требует доработки
+status-category-revised = Исправлено
 status-category-final = Финал
+
+## Long-operation progress (shared::progress_text). The backend reports phase
+## codes it cannot translate; these are their labels. `progress-percent` is the
+## toast body on its own, `progress-percent-with-label` with the phase after it.
+progress-percent = { $percent }%
+progress-percent-with-label = { $percent }% · { $label }
+progress-import-opening = Открытие проекта…
+progress-import-outline = Чтение структуры…
+progress-import-converting = Преобразование глав и сцен…
+progress-import-writing = Запись файла .skrib…
+progress-import-done = Готово
+progress-import-structure = Определение структуры…
+progress-export-start = Запуск…
+progress-export-writing = Запись…
+progress-project-reading = Чтение проекта…
+# Settings: the open project's section title, "Work: <its title>".
+settings-sec-work-titled = Проект: { $title }
+
+## Project-import notices (shared::import_warnings::notices): one line of the
+## Plume / Manuskript warnings list each. $file, $folder, $title, $name, $field
+## and $error are data (file names, titles, a parser's own message) and stay as
+## they are. $container is "single-file" or "folder"; $kind is "scene", "note",
+## "synopsis" or "title".
+import-notice-flattened-rich-texts = { $count ->
+    [one] { $count } текст был вложен глубже, чем допускает проект Skribisto; слова сохранены как простой текст, без форматирования.
+    [few] { $count } текста были вложены глубже, чем допускает проект Skribisto; слова сохранены как простой текст, без форматирования.
+    [many] { $count } текстов были вложены глубже, чем допускает проект Skribisto; слова сохранены как простой текст, без форматирования.
+   *[other] { $count } текста были вложены глубже, чем допускает проект Skribisto; слова сохранены как простой текст, без форматирования.
+}
+import-notice-free-text-badges = { $count ->
+    [one] { $count } значок сцены похож на произвольный текст, а не на список статусов, и потому сохранён как метка элемента, а не как тег.
+    [few] { $count } разных значка сцен похожи на произвольный текст, а не на список статусов, и потому сохранены как метки элементов, а не как теги.
+    [many] { $count } разных значков сцен похожи на произвольный текст, а не на список статусов, и потому сохранены как метки элементов, а не как теги.
+   *[other] { $count } разных значка сцен похожи на произвольный текст, а не на список статусов, и потому сохранены как метки элементов, а не как теги.
+}
+import-notice-separator-text-dropped = Разделитель «{ $name }» содержал текст, которому нет места в проекте Skribisto; этот текст не импортирован.
+import-notice-separator-without-scene = Перед разделителем «{ $name }» в его главе не было сцены, к которой его можно было бы присоединить, поэтому он не импортирован.
+import-notice-chapter-without-scenes = В главе «{ $name }» нет сцен, поэтому её разделители не импортированы.
+import-notice-rich-text-unconverted = Часть форматированного текста не удалось преобразовать ({ $error }); она не импортирована.
+import-notice-unresolved-cross-link = Не удалось перейти по ссылке на действующее лицо №{ $number }: такой записи нет или она была в корзине.
+import-notice-read-copy = Прочитана копия этого проекта { $container ->
+    [single-file] в виде одного файла
+   *[folder] в виде папки
+}.
+import-notice-read-copy-dated = Прочитана копия этого проекта { $container ->
+    [single-file] в виде одного файла
+   *[folder] в виде папки
+}, последнее изменение: { $day }.
+import-notice-original-format = Этот проект сохранён в исходном формате Manuskript 2016 года. Он прочитан полностью; в нём ничего не изменено.
+import-notice-newer-single-file-beside = Файл «{ $file }» новее этой папки ({ $file_day } против { $folder_day }). Когда проект переводят в однофайловый режим, Manuskript оставляет старую папку на месте, так что эта папка может быть заброшенной копией; если импортировать вместо неё файл .msk, будет прочитана более новая версия.
+import-notice-pickle-skipped = Файл «{ $file }» не прочитан. Это файл pickle языка Python, а загрузка такого файла из проекта была уязвимостью в самом Manuskript (CVE-2021-35196); хранящиеся в нём настройки касаются только отображения, а не текста.
+import-notice-file-unreadable = Не удалось прочитать «{ $file }» ({ $error }), файл пропущен; всё остальное импортировано.
+import-notice-not-utf8 = «{ $file }» не является корректным текстом UTF-8; нечитаемые символы заменены, импорт не прерван.
+import-notice-table-unreadable = Не удалось прочитать «{ $file }» ({ $error }); его содержимое не импортировано.
+import-notice-outline-missing = Файл «{ $file }» отсутствует, поэтому в этом проекте нет рукописи для импорта.
+import-notice-outline-unreadable = Не удалось прочитать «{ $file }» ({ $error }); рукопись не импортирована.
+import-notice-named-none-row = «{ $file }» начинается с именованной строки («{ $name }») там, где Manuskript хранит свою пустую запись «none». Эта строка пропущена, чтобы следующие за ней строки сохранили номера, которые использует рукопись.
+import-notice-unknown-field = В «{ $file }» есть поле, неизвестное этому импортёру: «{ $field }». Оно не импортировано.
+import-notice-colorless-labels = { $count ->
+    [one] В «{ $file }» { $count } строка не имеет цвета и импортирована без него; встретив такую строку, Manuskript прекращает загрузку проекта.
+    [few] В «{ $file }» { $count } строки не имеют цвета и импортированы без него; встретив такую строку, Manuskript прекращает загрузку проекта.
+    [many] В «{ $file }» { $count } строк не имеют цвета и импортированы без него; встретив такую строку, Manuskript прекращает загрузку проекта.
+   *[other] В «{ $file }» { $count } строки не имеют цвета и импортированы без него; встретив такую строку, Manuskript прекращает загрузку проекта.
+}
+import-notice-settings-unreadable = Не удалось прочитать «{ $file }» ({ $error }); язык проекта не импортирован.
+import-notice-revisions-unreadable = Не удалось прочитать «{ $file }» ({ $error }); история проекта не импортирована, но больше ничего не затронуто.
+import-notice-foreign-files = { $count ->
+    [one] В этом проекте есть { $count } файл, который не относится к формату Manuskript и не импортирован: { $files }.
+    [few] В этом проекте есть { $count } файла, которые не относятся к формату Manuskript и не импортированы: { $files }.
+    [many] В этом проекте есть { $count } файлов, которые не относятся к формату Manuskript и не импортированы: { $files }.
+   *[other] В этом проекте есть { $count } файла, которые не относятся к формату Manuskript и не импортированы: { $files }.
+}
+import-notice-foreign-files-more = Файлы этого проекта, которые не относятся к формату Manuskript и не импортированы ({ $count }): { $files } и ещё { $more }.
+import-notice-not-a-character-file = «{ $file }» не является файлом персонажа Manuskript и пропущен.
+import-notice-not-a-text-item = «{ $file }» не является текстовым элементом Manuskript и не включён в структуру.
+import-notice-missing-blank-line = В «{ $file }» после заголовка нет пустой строки. Последнее поле сохранено, хотя Manuskript его теряет.
+import-notice-folder-without-metadata = В папке «{ $folder }» нет файла { $file }, поэтому она импортирована как обычная папка с именем каталога. Manuskript пропускает такой каталог вместе со всем содержимым.
+import-notice-rows-given-ids = { $count ->
+    [one] { $count } строка структуры не имела собственного ID и получила его. Manuskript отбрасывает такую строку, а если это папка, прекращает загрузку проекта.
+    [few] { $count } строки структуры не имели собственного ID и получили его. Manuskript отбрасывает такую строку, а если это папка, прекращает загрузку проекта.
+    [many] { $count } строк структуры не имели собственного ID и получили его. Manuskript отбрасывает такую строку, а если это папка, прекращает загрузку проекта.
+   *[other] { $count } строки структуры не имели собственного ID и получили его. Manuskript отбрасывает такую строку, а если это папка, прекращает загрузку проекта.
+}
+import-notice-plots-unreadable = Не удалось прочитать «{ $file }» ({ $error }); сюжетные линии не импортированы.
+import-notice-world-unreadable = Не удалось прочитать «{ $file }» ({ $error }); записи о мире не импортированы.
+import-notice-world-not-opml = «{ $file }» не является документом OPML; записи о мире не импортированы.
+import-notice-text-flattened = Текст «{ $title }» вложен глубже, чем допускает проект Skribisto; его слова сохранены как простой текст, без форматирования.
+import-notice-text-unconverted = Текст «{ $title }» не удалось преобразовать ({ $error }); он сохранён точно в том виде, в каком был написан.
+import-notice-text-without-file-name = Для { $kind ->
+    [scene] текста сцены
+    [note] текста заметки
+    [synopsis] синопсиса
+   *[title] названия
+} «{ $title }» не удалось подобрать имя файла, поэтому эта часть не импортирована.
+import-notice-unknown-label = У «{ $title }» метка { $index }, которой нет в списке меток этого проекта. Элемент импортирован без метки.
+import-notice-unknown-status = У «{ $title }» статус { $index }, которого нет в списке статусов этого проекта. Элемент импортирован без статуса.
+import-notice-unknown-point-of-view = Повествование в «{ $title }» ведётся от лица персонажа, которого нет среди действующих лиц этого проекта. Точка зрения не задана.
+import-notice-unresolved-references = Не удалось разрешить ссылки в тексте «{ $title }» ({ $error }); текст сохранён в преобразованном виде, вместе с маркерами ссылок.
+import-notice-custom-icons = { $count ->
+    [one] У { $count } строки был собственный значок. Skribisto даёт каждой строке значок её типа, поэтому значок не импортирован; больше ничего не изменилось.
+    [few] У { $count } строк были собственные значки. Skribisto даёт каждой строке значок её типа, поэтому значки не импортированы; больше ничего не изменилось.
+    [many] У { $count } строк были собственные значки. Skribisto даёт каждой строке значок её типа, поэтому значки не импортированы; больше ничего не изменилось.
+   *[other] У { $count } строки были собственные значки. Skribisto даёт каждой строке значок её типа, поэтому значки не импортированы; больше ничего не изменилось.
+}
+import-notice-character-colors = { $count ->
+    [one] У { $count } персонажа был цвет рядом с именем. Skribisto окрашивает теги, а не строки, поэтому цвет не импортирован; сам персонаж импортирован.
+    [few] У { $count } персонажей был цвет рядом с именем. Skribisto окрашивает теги, а не строки, поэтому цвета не импортированы; сами персонажи импортированы все.
+    [many] У { $count } персонажей был цвет рядом с именем. Skribisto окрашивает теги, а не строки, поэтому цвета не импортированы; сами персонажи импортированы все.
+   *[other] У { $count } персонажа был цвет рядом с именем. Skribisto окрашивает теги, а не строки, поэтому цвета не импортированы; сами персонажи импортированы все.
+}
+import-notice-versions-kept = { $found ->
+    [one] В этом проекте записана { $found } более ранняя версия
+    [few] В этом проекте записаны { $found } более ранние версии
+    [many] В этом проекте записано { $found } более ранних версий
+   *[other] В этом проекте записано { $found } более ранней версии
+}; { $kept ->
+    [one] сохранена { $kept }
+    [few] сохранены { $kept }
+    [many] сохранено { $kept }
+   *[other] сохранено { $kept }
+}, с прореживанием по тому же принципу, что и собственная история Skribisto. Они находятся на панели «Версии».
+import-notice-versions-unplaced = { $count ->
+    [one] { $count } более ранняя версия относится к строке, которой больше нет в проекте, и не может быть размещена.
+    [few] { $count } более ранние версии относятся к строке, которой больше нет в проекте, и их не удалось разместить.
+    [many] { $count } более ранних версий относятся к строке, которой больше нет в проекте, и их не удалось разместить.
+   *[other] { $count } более ранней версии относятся к строке, которой больше нет в проекте, и их не удалось разместить.
+}
+
+## Native file dialogs: the window title, and the label of the file-type filter.
+dialog-open-work-title = Открыть проект Skribisto
+dialog-save-as-file-title = Сохранить как один файл .skrib
+dialog-save-as-folder-title = Выберите родительскую папку для проекта
+dialog-manuskript-file-title = Выберите проект Manuskript
+dialog-manuskript-folder-title = Выберите папку проекта Manuskript
+dialog-filter-skrib = Проект Skribisto
+dialog-filter-manuskript = Проект Manuskript
+dialog-filter-plume = Проект Plume Creator
+dialog-filter-hunspell-aff = Файл аффиксов Hunspell (.aff)
+dialog-filter-hunspell-dic = Словарь Hunspell (.dic)
+dialog-filter-export = Экспортированный файл
+# Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
+shortcut-name-view-margin-lane = Показать или скрыть пометки на полях
+
+## The built-in distraction-free themes' names (distraction_free::theme).
+df-theme-paper = Бумага
+df-theme-sepia = Сепия
+df-theme-night = Ночь
+df-theme-high-contrast = Высокая контрастность
+df-theme-midnight = Полночь
+
+## Welcome ▸ Examples: the line under a bundled example's title.
+welcome-example-byline = Автор: { $author }
+
+## Spoken by a screen reader only.
+# Welcome window: the name of the section tab bar.
+welcome-sections-a11y = Разделы окна приветствия
+# A comment's anchored span in the editor: author, plain-text preview, replies.
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } ({ $count ->
+    [one] { $count } ответ
+    [few] { $count } ответа
+    [many] { $count } ответов
+   *[other] { $count } ответа
+})
+comments-a11y-summary-author-replies = { $author }: { $text } ({ $count ->
+    [one] { $count } ответ
+    [few] { $count } ответа
+    [many] { $count } ответов
+   *[other] { $count } ответа
+})
+# Margin marks beside the text: one mark, several merged into one, and the
+# lane's own name when nothing more specific was given.
+margin-lane-a11y-mark = { $label }, { $percent }% от начала
+margin-lane-a11y-marks = { $label }, пометок: { $count }, { $percent }% от начала
+margin-lane-a11y-fallback = { $count ->
+    [one] Пометки на полях, { $count } пометка
+    [few] Пометки на полях, { $count } пометки
+    [many] Пометки на полях, { $count } пометок
+   *[other] Пометки на полях, { $count } пометки
+}
+# Export ▸ Choose: the row standing for a binder that has no name.
+export-choose-unnamed-binder = Подшивка без названия
+# The built-in export styles named in words (the national manuscript presets
+# keep their own language's name).
+export-style-neutral = Нейтральный
+export-style-manuscript-shunn = Стандартная рукопись (Shunn)
+export-style-ebook-clean = Чистая электронная книга
+
+## Dates. Put the parts in the order your language writes a short date; the
+## parts arrive already zero-padded where that matters.
+# Comment cards, the outline card's Created/Modified.
+date-time-short = { $day }.{ $month }.{ $year } { $hour }:{ $minute }
+# Pace chart: a day on the axis, a milestone's date, a holiday.
+pace-day-label = { $day }.{ $month }
+
+## File sizes (shared::byte_size). $whole and $tenth are the two sides of the
+## decimal mark: write your language's mark between them and its unit symbol.
+byte-size-bytes = { $value } Б
+byte-size-kb = { $value } КБ
+byte-size-mb = { $whole },{ $tenth } МБ
+byte-size-gb = { $whole },{ $tenth } ГБ
+# A whole percentage (sliders, the Pace card, the text-size toast).
+unit-percent = { $value }%
+# A whole number of pixels (slider readouts).
+unit-pixels = { $value } px
+# Settings ▸ Paratext: a preset saved without a `name` line. `name` is the TOML
+# key the writer types and stays as it is.
+settings-paratext-error-no-name = У структуры должна быть строка `name`.
+# Export: started with no project open (a menu raced a close).
+export-error-no-project = Нет открытого проекта для экспорта.

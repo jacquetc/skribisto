@@ -48,11 +48,11 @@ Un pulsante accanto ai filtri alterna l'ordine, anch'esso condiviso: *Ordine del
 
 *Raggruppati per lettore* è utile per un manoscritto restituito da più persone. Le note di ciascun lettore sono riunite e ordinate secondo il documento, con il nome a sinistra.
 
-Quando più lettori commentano lo stesso passaggio, il commento ne indica il numero nei pannelli, per esempio "3 lettori".
+Quando più lettori commentano lo stesso passaggio, il commento ne indica il numero nei pannelli, per esempio «3 lettori».
 
 ## Quando un commento perde il testo
 
-Se le parole vengono eliminate o riscritte tanto da non essere più riconoscibili, il commento viene segnato come *Ha perso il testo* invece di essere collegato alla frase sbagliata. Il filtro *Orfani* li trova.
+Se le parole vengono eliminate o riscritte tanto da non essere più riconoscibili, il commento viene segnato come *Testo perso* invece di essere collegato alla frase sbagliata. Il filtro *Orfani* li trova.
 
 ## Invia e ricevi commenti
 

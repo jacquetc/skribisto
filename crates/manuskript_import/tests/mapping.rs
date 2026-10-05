@@ -484,7 +484,7 @@ fn an_index_past_the_end_of_its_vocabulary_is_reported_and_left_unset() {
         mapped
             .warnings
             .iter()
-            .filter(|w| w.contains("Opening"))
+            .filter(|w| w.to_string().contains("Opening"))
             .count(),
         2
     );
@@ -833,7 +833,7 @@ fn a_revision_naming_a_row_that_is_gone_is_reported_rather_than_dropped_quietly(
         mapped
             .warnings
             .iter()
-            .any(|w| w.contains("could not be placed")),
+            .any(|w| w.to_string().contains("could not be placed")),
         "{:?}",
         mapped.warnings
     );

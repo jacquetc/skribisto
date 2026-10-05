@@ -1,46 +1,60 @@
-## Organize seu manuscrito
+## Organize o seu manuscrito
 
-Use o *Organizador* à esquerda para organizar a sua escrita. Um romance típico tem um livro, capítulos dentro dele, e cenas dentro de cada capítulo. Você também pode escrever diretamente em capítulos.
+Use o *Arquivador* à esquerda para organizar a sua escrita. Um romance típico tem um livro,
+capítulos dentro dele e cenas dentro de cada capítulo. Também pode escrever diretamente nos
+capítulos.
 
-Cada item tem um *tipo*, como Capítulo ou Nota. Isto diz Skribisto como usá-lo ao exportar seu livro; uma pasta simples não se torna um capítulo apenas porque ele contém cenas.
+Cada item tem um *tipo*, como Capítulo ou Nota. Isso indica ao Skribisto como o usar ao
+exportar o livro; uma pasta simples não se torna um capítulo só por conter cenas.
 
-Cada item que carrega prosa tem um texto principal e uma sinopse lado a lado: plano em um painel, rascunho no outro. Livros, peças, pastas de notas e pastas simples carregam uma sinopse, mas nenhum texto principal.
+Todos os itens com prosa têm um texto principal e uma sinopse lado a lado: planeie num
+painel, redija no outro. Os livros, as partes, as pastas de notas e as pastas simples têm
+uma sinopse, mas não têm texto principal.
 
-## Os tipos que você pode criar
+## Os tipos que pode criar
 
-Clique com o botão direito do mouse em um item no fichário e escolha *Adicionar *.
+Clique com o botão direito num item do arquivador e escolha *Adicionar*.
 
-- * Livro*: um manuscrito, com seus capítulos e cenas.
-- * Parte*: reúne capítulos sob um título.
-- *Capítulo*: é executado até o próximo capítulo, a parte seguinte, ou o fim do livro.
-- * Cena*: sua escrita, com sua própria sinopse.
+- *Livro*: um manuscrito, com os seus capítulos e cenas.
+- *Parte*: reúne capítulos sob um mesmo título.
+- *Capítulo*: estende-se até ao capítulo seguinte, à parte seguinte ou ao fim do livro.
+- *Cena*: a sua escrita, com a sua própria sinopse.
 - *Nota*: texto e uma sinopse, para pesquisa, apartes ou lembretes.
-- *História da bíblia…*: uma nota para um personagem, um lugar ou um objeto, criada com suas tags e nomes alternativos já preenchidos.
-- * Pasta de notas*: agrupa notas juntas, com uma sinopse, mas sem texto principal.
-- *Pasta*: um recipiente simples com uma sinopse e nenhuma prosa própria.
+- *Entrada da bíblia da história…*: uma nota sobre uma personagem, um lugar ou um objeto,
+  criada já com as suas etiquetas e outros nomes preenchidos.
+- *Pasta de notas*: agrupa notas, com uma sinopse mas sem texto principal.
+- *Pasta*: um contentor simples, com uma sinopse e sem prosa própria.
 
 ## Duas formas de capítulo
 
-- Uma pasta *Capítulo contém cenas por baixo dela no fichário.
-- A *Capítulo Flat* é um único item em que você escreve diretamente, sem cenas abaixo.
+- Uma *Pasta de capítulo* contém cenas por baixo dela no arquivador.
+- Um *Capítulo simples* é um item único em que escreve diretamente, sem cenas por baixo.
 
-Para escolher a forma *novo* capítulos tomar, aberto *Definições ▸ Projeto: <projeto> ▸ Estrutura* e conjunto * Capítulos Flat*. Em significa itens individuais, off significa pastas.
+Para escolher a forma dos *novos* capítulos, abra *Definições ▸ Projeto: <projeto> ▸ Estrutura*
+e defina *Capítulos simples*. Ativado significa itens únicos; desativado significa pastas.
 
-## Alterar uma cena, capítulo ou pasta
+## Alterar uma cena, um capítulo ou uma pasta
 
-Clique com o botão direito do mouse no item e selecione *Converter para * para ver os tipos disponíveis. Por exemplo, você pode transformar uma cena em uma nota, ou uma pasta de capítulo em um capítulo plano. O título e o texto são mantidos quando o novo tipo pode segurá-los.
+Clique com o botão direito no item e escolha *Converter em* para ver os tipos disponíveis.
+Por exemplo, pode transformar uma cena numa nota, ou uma pasta de capítulo num capítulo simples.
+O título e o texto são mantidos quando o novo tipo os pode conter.
 
-- Uma pasta deve estar vazia antes de se tornar um único item. Mover ou destruir o seu conteúdo primeiro.
-- Uma conversão sem lugar para colocar o texto existente é recusada, e diz o que seria perdido.
+- Uma pasta tem de estar vazia antes de se tornar um item único. Mova primeiro o seu conteúdo
+  ou envie-o para o lixo.
+- Uma conversão que não tem onde pôr o texto existente é recusada, e indica o que se perderia.
 
 ## Onde termina um livro
 
-Um projeto pode conter vários livros, um após o outro no mesmo fichário. Um livro vai de onde começa até a primeira de três coisas: um item *Fim do Livro*, o início do próximo livro, ou o fim de seu fichário.
+Um projeto pode conter vários livros, uns a seguir aos outros no mesmo arquivador. Um livro
+estende-se desde o seu início até à primeira de três coisas: um item *Fim do livro*, o início
+do livro seguinte ou o fim do seu arquivador.
 
 ## Paratexto: no livro, não na história
 
-Um *Paratexto* pertence ao livro, mas não à sua história: um prefácio, uma dedicação, uma palavra após a palavra, um colofão. Exporta onde você coloca, e nunca conta para a contagem de palavras.
+Um *Paratexto* pertence ao livro, mas não à sua história: um prefácio, uma dedicatória, um
+posfácio, um cólofon. É exportado onde o colocar, e nunca conta para a contagem de palavras.
 
-Uma pasta *Paratexto* mantém os paratextos livres do resto do aglutinante.
+Uma *Pasta de paratextos* mantém os paratextos separados do resto do arquivador.
 
-Novo para Skribisto? [Começar](:help-getting-started) cobre abertura e guardar um projeto primeiro.
+É novo no Skribisto? [Primeiros passos](:help-getting-started) explica primeiro como abrir e
+guardar um projeto.

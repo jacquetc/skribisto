@@ -1,83 +1,83 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-menu-work = Proje (&W)
-menu-new-work = Yeni proje (&N)
-menu-open-work = Proje aç… (&O)
-menu-new-window = Yeni pencere (&W)
-menu-import-from = İthalattan (&I)
-menu-create-from = Create from From Create from Create from Create from Create from Create from Create from Create from (&C)
-menu-import-plume = Plume Creator (.plume)… (&P)
-menu-import-document = Belgeler (Markdown, Word, ODT) ... (&D)
-menu-import-manuskript = Manuskript (.msk)… (&M)
-menu-export = Dışa aktar (&X)
-menu-export-book = İhracat Kitabı
-menu-export-part = İhracat bölümü
-menu-export-chapter = İhracat Bölümü
-menu-export-scene = İhracat Sahnesi
-menu-export-note = İhracat Notları
-menu-export-paratext = İhracat Paratext
+menu-work = &Proje
+menu-new-work = Ye&ni proje
+menu-open-work = Proje &aç…
+menu-new-window = Yeni &pencere
+menu-import-from = İçe ak&tar
+menu-create-from = &Kaynaktan oluştur
+menu-import-plume = &Plume Creator (.plume)…
+menu-import-document = &Belgeler (Markdown, Word, ODT)…
+menu-import-manuskript = &Manuskript (.msk)…
+menu-export = &Dışa aktar
+menu-export-book = Kitabı dışa aktar
+menu-export-part = Kısmı dışa aktar
+menu-export-chapter = Bölümü dışa aktar
+menu-export-scene = Sahneyi dışa aktar
+menu-export-note = Notu dışa aktar
+menu-export-paratext = Yan metni dışa aktar
 menu-export-folder = Klasörü dışa aktar
-menu-export-choose = seçin...
-menu-export-none = ihracat için bir belge açın
-menu-save = Kaydet (&S)
-menu-save-as-file = Tek dosya olarak kaydet… (&F)
-menu-save-as-folder = Klasör olarak kaydet… (&D)
-menu-backup = Şimdi yedekle (&B)
-menu-close-work = Projeyi kapat (&C)
-menu-welcome = Hoşgeldiniz... (&L)
-menu-settings = Ayarlar (&E)
-menu-quit = Çık (&Q)
+menu-export-choose = Seç…
+menu-export-none = Dışa aktarmak için bir belge açın
+menu-save = &Kaydet
+menu-save-as-file = Tek do&sya olarak kaydet…
+menu-save-as-folder = Klasör &olarak kaydet…
+menu-backup = Şimdi &yedekle
+menu-close-work = Pro&jeyi kapat
+menu-welcome = &Hoş geldiniz…
+menu-settings = Aya&rlar
+menu-quit = &Çık
 
-menu-view = Görünüm (&V)
-menu-outline = Taslak (&O)
-menu-search = Project Search in Project (&S)
-menu-timeline = Zaman içinde geri dönün (&G)
-menu-search-preview = Arama Preview Preview (&P)
-menu-fullscreen = Fullscreen Full (&F)
-menu-focus-mode = Ayrılmasız Modu (&D)
-menu-format = Biçim (&O)
-menu-scene-break = Sahne molası (&K)
-menu-major-scene-break = Büyük sahne molası (&M)
+menu-view = &Görünüm
+menu-outline = &Ana hat
+menu-search = Projede a&ra
+menu-timeline = &Zamanda geri git
+menu-search-preview = Arama &önizlemesi
+menu-fullscreen = &Tam ekran
+menu-focus-mode = &Dikkat dağıtmayan mod
+menu-format = &Biçim
+menu-scene-break = Sahne a&rası ekle
+menu-major-scene-break = Bü&yük sahne arası ekle
 
-menu-go = Git (&G)
-menu-go-next-scene = Sonraki sahne (&S)
-menu-go-prev-scene = Önceki sahne (&V)
-menu-go-next-chapter = Sonraki bölüm (&C)
-menu-go-prev-chapter = Önceki bölüm (&H)
-menu-go-next-note = Sonraki not (&N)
-menu-go-prev-note = Önceki not (&T)
+menu-go = Gi&t
+menu-go-next-scene = Sonraki &sahne
+menu-go-prev-scene = Önceki s&ahne
+menu-go-next-chapter = Sonraki &bölüm
+menu-go-prev-chapter = Önceki b&ölüm
+menu-go-next-note = Sonraki &not
+menu-go-prev-note = Önceki n&ot
 
-menu-tools = Araçlar (&T)
-menu-help = Yardım (&H)
+menu-tools = &Araçlar
+menu-help = &Yardım
 
-ctx-add = Ekle (&A)
-ctx-new-item = Yeni Ürün (&N)
-ctx-new-folder = Yeni klasör (&F)
-ctx-rename = Yeniden adlandır (&R)
-ctx-duplicate = Çoğalt (&D)
-ctx-import-here = Burada ithal edin... (&I)
-ctx-indent = Girintiyi artır (&I)
-ctx-outdent = Girintiyi azalt (&O)
-ctx-trash = Çöp kutusuna taşı (&T)
-ctx-open-to-side = Side'ya açık (&S)
-ctx-open = Aç (&O)
-ctx-reveal-in-outline = Outline (&L)
-ctx-move-up = Yukarı taşı (&U)
-ctx-move-down = Aşağı taşı (&N)
+ctx-add = &Ekle
+ctx-new-item = &Yeni öğe
+ctx-new-folder = Yeni &klasör
+ctx-rename = &Yeniden adlandır
+ctx-duplicate = Ç&oğalt
+ctx-import-here = Buraya &içe aktar…
+ctx-indent = &Girintiyi artır
+ctx-outdent = Girintiyi a&zalt
+ctx-trash = Çöp kutusuna &taşı
+ctx-open-to-side = Ya&nda aç
+ctx-open = &Aç
+ctx-reveal-in-outline = Ana &hatta göster
+ctx-move-up = Yukarı t&aşı
+ctx-move-down = Aşağı ta&şı
 
-ctx-tab-close = Kapat (&C)
-ctx-tab-close-others = Diğer sekmeleri kapat (&O)
-ctx-tab-close-all = Tüm sekmeleri kapat (&L)
-ctx-tab-open-to-side = Side'ya açık (&S)
-ctx-tab-open-in-main = Ana panede açık (&I)
-ctx-tab-move-to-side = Sağ tarafa hareket edin (&M)
-ctx-tab-move-to-main = Ana paneye taşınır (&M)
-ctx-tab-move-to-new-window = Yeni bir pencereye hareket edin (&N)
-ctx-tab-move-window-unsaved = Bu projeyi ilk önce Kurtarın: ikinci bir pencere disk üzerinde bir dosyaya açılır
-ctx-tab-pin = Pin this sekme (&P)
-ctx-tab-unpin = Unpin this sekme (&U)
-tab-pinned-tooltip = Pinned: "Diğerlerini kapat" ve "Herkesi kapat" açık bırak
+ctx-tab-close = &Kapat
+ctx-tab-close-others = &Diğerlerini kapat
+ctx-tab-close-all = &Tümünü kapat
+ctx-tab-open-to-side = &Yanda aç
+ctx-tab-open-in-main = &Ana bölmede aç
+ctx-tab-move-to-side = Ya&na taşı
+ctx-tab-move-to-main = A&na bölmeye taşı
+ctx-tab-move-to-new-window = Yeni &pencereye taşı
+ctx-tab-move-window-unsaved = Önce bu projeyi kaydedin: ikinci pencere diskteki bir dosyayı açar
+ctx-tab-pin = Bu sekmeyi &sabitle
+ctx-tab-unpin = Bu sekmenin &sabitlemesini kaldır
+tab-pinned-tooltip = Sabitlendi: "Diğerlerini kapat" ve "Tümünü kapat" bu sekmeyi açık bırakır
 
 create-book = Kitap
 create-part = Kısım
@@ -87,61 +87,60 @@ create-note = Not
 create-note-folder = Not klasörü
 create-folder = Klasör
 create-paratext = Yan metin
-create-paratext-folder = Paratext klasörü
-create-book-end = Kitabın Sonu
-create-story-bible-entry = Story bible entry...
-type-book-start = Book start start
+create-paratext-folder = Yan metin klasörü
+create-book-end = Kitap sonu
+create-story-bible-entry = Hikâye rehberi kaydı…
+type-book-start = Kitap başı
 type-text = Metin
 
 new-item-book = Yeni kitap
 new-item-part = Yeni kısım
 new-item-chapter = Yeni bölüm
 new-item-note = Yeni not
-new-item-note-folder = Yeni Not Folder
+new-item-note-folder = Yeni not klasörü
 new-item-folder = Yeni klasör
-new-item-paratext = Yeni Paratext
-new-item-paratext-folder = Yeni Paratext
-new-item-story-bible-entry = Yeni Hikaye İncil Girişi
+new-item-paratext = Yeni yan metin
+new-item-paratext-folder = Yeni yan metin klasörü
+new-item-story-bible-entry = Yeni hikâye rehberi kaydı
 
-placement-inside = içeride içeride içeride içeride
-placement-after = After after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after after
-placement-after-parent = Daha sonra ebeveyn
-placement-top-level = Üst seviye seviye
+placement-inside = içine
+placement-after = sonrasına
+placement-after-parent = üst öğenin sonrasına
+placement-top-level = en üst düzey
 
-
-ctx-promote = Dönüştürmek için (&C)
+ctx-promote = &Dönüştür
 promote-chapter-folder = Bölüm klasörü
-promote-flat-chapter = Bağımsız bölüm
-promote-lossy-title = metni tutmak için hiçbir yerde yok
-promote-lossy-text = { $target } bunları tutmak için hiçbir yere sahip değildir: { $kinds }. İlk önce bu metni hareket ettirin veya açıklayın, sonra dönüştürül.
-content-scene-text = Sahne metin çevirisi
-content-note-text = Not text
-content-book-title = Kitap Adı
-content-book-subtitle = Kitabın alt başlığı
-content-part-title = Bölüm Adı
-content-chapter-title = Bölüm Adı
+promote-flat-chapter = Düz bölüm
+promote-lossy-title = Metnin saklanacağı yer yok
+promote-lossy-text = Bir { $target } öğesinde şunları saklayacak yer yok: { $kinds }. Önce bu metni taşıyın ya da silin, sonra dönüştürün.
+content-scene-text = Sahne metni
+content-note-text = Not metni
+content-book-title = Kitap başlığı
+content-book-subtitle = Kitap alt başlığı
+content-part-title = Kısım başlığı
+content-chapter-title = Bölüm başlığı
 content-epigraph-text = Epigraf
 content-paratext-text = Yan metin
 promote-blocked-title = Bölüm boş değil
 promote-blocked-text = { $count ->
-    [one] Bu bölüm hala { $count } eşyasını tutuyor veya onu düz bir bölüme dönüştürmeden önce çöp atıyor.
-   *[other] Bu bölüm hala { $count } eşyalarını tutuyor veya onları düz bir bölüme dönüştürmeden önce çöpe sokuyor.
+    [one] Bu bölümde hâlâ { $count } öğe var. Düz bölüme dönüştürmeden önce onu taşıyın ya da çöp kutusuna atın.
+   *[other] Bu bölümde hâlâ { $count } öğe var. Düz bölüme dönüştürmeden önce onları taşıyın ya da çöp kutusuna atın.
 }
 
-inspector = Özellikler
-inspector-empty = Onu denetlemek için bir öğe açın.
-inspector-promote = Dönüştürün...
-statusbar-toggle-outline = Binder'i ısırmak
-statusbar-toggle-inspector = Müfettişten Kaçmak
-statusbar-save-unsaved = Yanlış olmayan değişiklikler. kurtarmak için tıklayın.
-statusbar-save-saved = Tüm değişiklikler kurtarıldı
-statusbar-save-autosave = Autosave devam ediyor. Değişiklikler yazdığınız gibi kurtarılıyor
-statusbar-saving = Tasarruf...
+inspector = Denetçi
+inspector-empty = İncelemek için bir öğe açın.
+inspector-promote = Dönüştür…
+statusbar-toggle-outline = Dizini göster/gizle
+statusbar-toggle-inspector = Denetçiyi göster/gizle
+statusbar-save-unsaved = Kaydedilmemiş değişiklikler var. Kaydetmek için tıklayın
+statusbar-save-saved = Tüm değişiklikler kaydedildi
+statusbar-save-autosave = Otomatik kaydetme açık. Değişiklikler siz yazarken kaydedilir
+statusbar-saving = Kaydediliyor…
 statusbar-word-count = { $count ->
     [one] { $count } sözcük
    *[other] { $count } sözcük
 }
-statusbar-word-count-tooltip = Sahnedeki kelimeler düzenlemezsiniz
+statusbar-word-count-tooltip = Düzenlediğiniz sahnedeki sözcükler
 statusbar-word-char-count = { $words ->
     [one] { $words } sözcük
    *[other] { $words } sözcük
@@ -149,306 +148,312 @@ statusbar-word-char-count = { $words ->
     [one] { $chars } karakter
    *[other] { $chars } karakter
 }
-session-toggle = Yazma seansı: odaklanmış bir sprinte başlayın
-session-configure = Oturumun kelimeyi ve zaman limitini ayarlayın
-session-configure-title = Yazma seansı
+session-toggle = Yazma oturumu: odaklı bir yazma turunu başlatın ya da duraklatın
+session-configure = Oturumun sözcük hedefini ve süre sınırını ayarlayın
+session-configure-title = Yazma oturumu
 session-word-goal = Sözcük hedefi
-session-time-limit = Zaman sınırı
-session-time-limit-unit = min min min
-session-no-goal = Hiçbir hedef yok
-session-no-limit = Limit yok
-session-reset = Oturumu Tamamlayın
-session-readout = { $words } kelime · { $time }
-session-readout-timed = { $words } kelime · { $time } sol
-statusbar-focus-exit = Çıkış dikkatsiz mod
+session-time-limit = Süre sınırı
+session-time-limit-unit = dk
+session-no-goal = Hedef yok
+session-no-limit = Sınır yok
+session-reset = Oturumu sıfırla
+session-readout = { $words ->
+    [one] { $words } sözcük
+   *[other] { $words } sözcük
+} · { $time }
+session-readout-timed = { $words ->
+    [one] { $words } sözcük
+   *[other] { $words } sözcük
+} · { $time } kaldı
+statusbar-focus-exit = Dikkat dağıtmayan moddan çık
 statusbar-focus-synopsis = Özet
-statusbar-focus-go-prev = Önceki öğe (Alt+Up)
-statusbar-focus-go-next = Sonraki öğe (Alt+Down)
+statusbar-focus-go-prev = Önceki öğe (Alt+Yukarı)
+statusbar-focus-go-next = Sonraki öğe (Alt+Aşağı)
 
 rail-settings = Ayarlar
 
 language = Dil
 theme = Tema
-english = İngilizce İngilizce İngilizce İngilizce İngilizce English
-french = Fransızca Fransızca Fransızca Fransızca Fransızca Fransızca Fransızca
-light = Işık Işık Işığı
-dark = Dark Dark
+english = İngilizce
+french = Fransızca
+light = Açık
+dark = Koyu
 settings-text-width = Metin genişliği
-settings-preview-width = Arama önizleme genişliği
+settings-preview-width = Arama önizlemesi genişliği
 settings-autosave = Diske otomatik kaydet
-settings-show-welcome = Startuper'ı başlangıçta göster
-settings-show-welcome-tip = Ne zaman dışarıda, son proje bunun yerine yeniden açılır.
-settings-check-for-updates = Yeni sürümler için kontrol edin
-settings-check-for-updates-tip = Çoğu zaman Skribisto, projenin web sitesine hangi versiyon mevcut olduğunu sorar. İstek hiçbir tanımlayıcı taşır ve hatta çalıştırdığınız sürüm bile değildir: karşılaştırma bu bilgisayarda gerçekleşir.
+settings-show-welcome = Başlangıçta başlatıcıyı göster
+settings-show-welcome-tip = Kapalıyken son proje yeniden açılır.
+settings-check-for-updates = Yeni sürümleri denetle
+settings-check-for-updates-tip = Skribisto günde en fazla bir kez, projenin web sitesine güncel sürümün hangisi olduğunu sorar. İstek hiçbir tanımlayıcı, hatta kullandığınız sürümü bile taşımaz: karşılaştırma bu bilgisayarda yapılır.
 
 settings-title = Ayarlar
 settings-close = Kapat
-settings-search = Arama ayarları
-settings-reset = Varsayılan olarak resetleyin
+settings-search = Ayarlarda ara
+settings-reset = Varsayılanlara sıfırla
 settings-done = Bitti
 settings-cancel = İptal
 settings-apply = Uygula
-settings-ok = Tamam Tamam tamam
-settings-reset-confirm-title = Tüm ayarları varsayılan olarak resetleyin?
-settings-reset-confirm-body = Bu uygulamanın görünümünü geri yükleyin, editör ve yazı ayarlarını yapın. Projenizin kendi ayarları, klavye kısayolları ve kurtarılmış stilleri etkilenmez.It can't be undone.
-settings-empty-title = Burada henüz hiçbir ayar yok
-settings-empty-hint = Bu bölüm gelecekteki bir güncellemede seçenekler kazanacak.
+settings-ok = Tamam
+settings-reset-confirm-title = Tüm ayarlar varsayılanlara sıfırlansın mı?
+settings-reset-confirm-body = Bu uygulamanın görünüm, düzenleyici ve yazma ayarlarını geri yükler. Projenizin kendi ayarları, klavye kısayolları ve kaydedilmiş biçemler etkilenmez. Bu işlem geri alınamaz.
+settings-empty-title = Burada henüz ayar yok
+settings-empty-hint = Bu bölüme gelecek bir güncellemede seçenekler eklenecek.
 
-settings-sec-appearance-behaviour = Görünüm Davranışı
+settings-sec-appearance-behaviour = Görünüm ve davranış
 settings-sec-editor = Düzenleyici
-settings-sec-spelling = Yazıyın
-settings-sec-backup = Backup SyncYou
-settings-sec-compile = Compile Export
+settings-sec-spelling = Yazım
+settings-sec-backup = Yedekleme ve eşitleme
+settings-sec-compile = Derleme ve dışa aktarma
 settings-page-appearance = Görünüm
-settings-field-image-size-policy = Büyük görüntüler
-settings-image-policy-ask = Her seferinde sorun
-settings-image-policy-keep = Orijinali Keep original
-settings-image-policy-downscale = Eniyile
-settings-hint-image-size-policy = Ekletilmiş bir görüntü, el yazma ihtiyaçlarından daha büyük olduğunda ne yapmalı.
+settings-field-image-size-policy = Büyük resimler
+settings-image-policy-ask = Her seferinde sor
+settings-image-policy-keep = Özgün hâlini koru
+settings-image-policy-downscale = İyileştir
+settings-hint-image-size-policy = Eklenen bir resim el yazmasının gerektirdiğinden büyük olduğunda ne yapılacağı.
 settings-page-notifications = Bildirimler
 settings-page-scene = Sahne
 settings-page-synopsis = Özet
 settings-page-notes = Notlar
-settings-page-editor-behavior = Editör Davranışı
-settings-page-goals = Hedefler Word Count
+settings-page-editor-behavior = Düzenleyici davranışı
+settings-page-goals = Hedefler ve sözcük sayısı
 settings-page-games = Yazma oyunları
 settings-page-corkboard = Mantar pano
-settings-page-distraction-free = Odaklanma
+settings-page-distraction-free = Dikkat dağıtmayan mod
 settings-page-dictionaries = Sözlükler
-settings-page-autosave = Otomatik kayıt
-settings-page-export = İhracat Biçimleri
-settings-page-paratext = Kitap yapıları
-settings-page-keymap = Tuş eşlemeleri
-settings-keymap-filter = Filtre kısayolları
+settings-page-autosave = Otomatik kaydetme
+settings-page-export = Dışa aktarma biçimleri
+settings-page-paratext = Yan metin yapıları
+settings-page-keymap = Tuş eşlemesi
+settings-keymap-filter = Kısayolları süz
 
-settings-desc-sec-appearance-behaviour = Uygulamanın kendisi nasıl görünüyor ve başladığında ne yapıyor.
-settings-desc-sec-editor = Yazı yüzeyi: nasıl görünüyor ve sizin türüniz olarak ne yapıyor.
-settings-desc-sec-spelling = Yazıyı kontrol edin ve arkasındaki sözlükler.
-settings-desc-sec-backup = Projeniz diske nasıl ulaşır ve hangi kopyalar tutulur.
-settings-desc-sec-compile = Skribisto'i ve hangi formda bırakır.
-settings-desc-sec-work = Bu projeye ait olan ayarlar ve dosyasının içinde seyahat edin.
-settings-desc-sec-extensions = Sayfalar buraya yüklenen uzantılar tarafından katkıda bulundu.
-settings-desc-group-typography = Bir metin başına bir sayfa: tipface, boyut, çizgi yükseklik ve spacing.
-settings-desc-appearance = Interface dili, tema, metin büyüklüğü ve başlangıçta başlatıcı.
-settings-desc-notifications = Bu seansın her mesajı göstermiştir ve yeniden oynayabileceğiniz eylemler.
-settings-desc-scene = Sahne prose nasıl yapılır: tipface, boyut, çizgi yükseklik, indents ve spacing.
-settings-desc-synopsis = sinopsis pane nasıl yapılır, yazmadan bağımsız olarak.
-settings-desc-notes = Notlar nasıl belirlenir, yazının bağımsız olarak.
-settings-desc-corkboard = Kart büyüklüğü, bir kart şovları nedir ve yönetim onları nasıl düzenler.
-settings-desc-distraction-free = Typography, tam ekran yazma için sütun genişliği ve kontrol şerit.
-settings-desc-distraction-free-themes = Tam ekranlı yazı için tema kütüphanesi: sevk edilenler ve kendi.
-settings-desc-editor-behavior = Metin genişliği, sinopsis pozisyonu, tipwriter kaydırma ve dikkat vurgusu.
-settings-desc-punctuation = Tipografik ev tarzı yeni projeler başlıyor. Her proje bunu kendi ayarlarken takip ediyor.
-settings-desc-goals = Word ve karakter hedefleri ve kelimelerin nasıl sayıldığı.
-settings-desc-games = Hazırlarken kendinizi ayarlarsınız, her zaman ileriye dönük gibi.
-settings-desc-spellcheck = Her yerde büyüyü kontrol eden tek geçiş.
-settings-desc-dictionaries = Yükleme, kaldır ve bu makinedeki büyüleri göz önünde bulundurun.
-settings-desc-autosave = Düzenlemeleriniz kendi başlarına disk için yazılırsa.
-settings-desc-backup = kopyalar alınırsa, nerede tutulurlar ve her proje bunu kendi setleri olmadıkça nasıl takip eder.
-settings-desc-export = Her ihracatın stili: sevk edilenler ve kendiniz.
-settings-desc-paratext = Ön ve yeni bir proje ile başlayabilir.
-settings-desc-keymap = Her kısayol ve buna bağlı olan şey.
-settings-page-user = Kullanıcı Kullanıcı Kullanıcı
-settings-desc-user = Kimsiniz, yazdığınız yorumlar için.
-settings-group-identity = Kimlik Kimlik Kimliği
-settings-field-user-name = Senin adın
-settings-field-user-name-placeholder = Seçmeli Seçmeli Seçmeli Seçmeli
-settings-field-user-name-hint = Yazdığınız yorumları ve cevapları gösterir. Bir projenin yazarından nefret et, ki bu kitap dosya içinde yayınlandı ve seyahat ediyor.
-settings-field-user-initials = İlkleriniz
+settings-desc-sec-appearance-behaviour = Uygulamanın kendisinin nasıl göründüğü ve açılışta ne yaptığı.
+settings-desc-sec-editor = Yazma yüzeyi: nasıl göründüğü ve siz yazarken ne yaptığı.
+settings-desc-sec-spelling = Yazım denetimi ve arkasındaki sözlükler.
+settings-desc-sec-backup = Çalışmanızın diske nasıl ulaştığı ve hangi kopyaların tutulduğu.
+settings-desc-sec-compile = Skribisto'dan neyin, hangi biçimde çıktığı.
+settings-desc-sec-work = Bu projeye ait olan ve dosyasının içinde taşınan ayarlar.
+settings-desc-sec-extensions = Burada kurulu eklentilerin eklediği sayfalar.
+settings-desc-group-typography = Her metin türü için bir sayfa: yazı tipi, boyut, satır yüksekliği ve aralık.
+settings-desc-appearance = Arayüz dili, tema, metin boyutu ve açılıştaki başlatıcı.
+settings-desc-notifications = Bu oturumda gösterilen her ileti ve yeniden çalıştırabileceğiniz eylemler.
+settings-desc-scene = Sahne metninin dizgisi: yazı tipi, boyut, satır yüksekliği, girintiler ve aralık.
+settings-desc-synopsis = Özet bölmesinin el yazmasından bağımsız dizgisi.
+settings-desc-notes = Notların el yazmasından bağımsız dizgisi.
+settings-desc-corkboard = Kart boyutu, bir kartın gösterdikleri ve panonun kartları nasıl dizdiği.
+settings-desc-distraction-free = Tam ekran yazma için tipografi, sütun genişliği ve denetim şeridi.
+settings-desc-distraction-free-themes = Tam ekran yazma için tema kitaplığı: hazır gelenler ve sizinkiler.
+settings-desc-editor-behavior = Metin genişliği, özetin konumu, daktilo kaydırması ve imleç vurgusu.
+settings-desc-punctuation = Yeni projelerin başlangıçta izlediği tipografi kuralları. Kendi kurallarını belirlemeyen her proje bunları izler.
+settings-desc-goals = Sözcük ve karakter hedefleri, sözcüklerin nasıl sayıldığı.
+settings-desc-games = Taslak yazarken kendinize koyduğunuz kısıtlar, örneğin Hep ileri.
+settings-desc-spellcheck = Yazım denetimini her yerde açıp kapatan tek anahtar.
+settings-desc-dictionaries = Bu bilgisayardaki yazım sözlüklerini kurun, kaldırın ve göz atın.
+settings-desc-autosave = Düzenlemelerinizin kendiliğinden diske yazılıp yazılmayacağı.
+settings-desc-backup = Kopyaların ne zaman alındığı, nerede ve kaç tane tutulduğu. Kendi kuralını belirlemeyen her proje bunu izler.
+settings-desc-export = Her dışa aktarmanın derlendiği biçemler: hazır gelenler ve sizinkiler.
+settings-desc-paratext = Yeni bir projenin başlayabileceği ön ve arka kısımlar.
+settings-desc-keymap = Her kısayol ve neye atandığı.
+settings-page-user = Kullanıcı
+settings-desc-user = Yazdığınız yorumlar için kim olduğunuz.
+settings-group-identity = Kimlik
+settings-field-user-name = Adınız
+settings-field-user-name-placeholder = İsteğe bağlı
+settings-field-user-name-hint = Yazdığınız yorumları ve yanıtları imzalar. Bir projenin yazar adından farklıdır: yazar adı kitabın künyesidir ve dosyanın içinde taşınır.
+settings-field-user-initials = Baş harfleriniz
 settings-field-user-initials-placeholder = Adınızdan
-settings-field-user-initials-hint = Bir kelime işlemcisi marjdaki yorumunuzun yanında gösterir. Gösterilenleri kullanmak için boş bırakın, adınızdan alındı.
-settings-field-user-hint = Her ikisi de isteğe bağlı ve bu bilgisayarda her projeye uygulanır. Bir sonraki yaz yazdığınız yorumları belirtir. Yorumlar zaten yazının altında yazdığı adı tutar.
-settings-desc-author = Bu projeye giden isim.
-settings-desc-structure = Bu projenin bölümleri klasör veya tek öğeler olsun.
-settings-desc-language = Bu projenin prose diline karşı kontrol edilir.
-settings-desc-work-backup = Bu projenin kendi yedekleme politikası veya genel biri.
-settings-desc-personal-dictionary = Bu projenin doğru şekilde büyülediği sözler.
-settings-desc-tags = Bu projenin rengi kodlanmış etiketler, eşyaları ile işaret eder.
+settings-field-user-initials-hint = Bir kelime işlemcinin kenar boşluğunda yorumunuzun yanında gösterdiği harfler. Adınızdan alınıp gösterilenleri kullanmak için boş bırakın.
+settings-field-user-hint = İkisi de isteğe bağlıdır ve bu bilgisayardaki her projeye uygulanır. Değiştirdiğinizde bundan sonra yazacağınız yorumlar yeni adla imzalanır. Önceden yazılmış yorumlar yazıldıkları adı korur.
+settings-desc-author = Bu projede yer alacak ad.
+settings-desc-structure = Bu projedeki bölümlerin klasör mü yoksa tek öğe mi olduğu.
+settings-desc-language = Bu projenin metninin denetlendiği dil.
+settings-desc-work-backup = Bu projenin kendi yedekleme kuralı ya da genel kural.
+settings-desc-personal-dictionary = Bu projenin doğru yazılmış saydığı sözcükler.
+settings-desc-tags = Bu projenin öğelerini işaretlediği renkli etiketler.
 settings-desc-templates = Bu projede yazarken ekleyebileceğiniz not şablonları.
-settings-desc-text-replacements = Bu projede türüniz olarak genişleten kısa kesimler.
-settings-desc-work-punctuation = Alıntılar, dashes ve bu projenin prose takiplerini spacing.
+settings-desc-text-replacements = Bu projede siz yazarken açılan kısaltmalar.
+settings-desc-work-punctuation = Bu projenin metninin izlediği tırnaklar, tireler ve boşluklar.
 
 settings-group-typography = Tipografi
 settings-group-writing-column = Yazı sütunu
-settings-group-writing-view = Writing view view
-settings-group-distraction-free-strip = Kontrol şerit
+settings-group-writing-view = Yazma görünümü
+settings-group-distraction-free-strip = Denetim şeridi
 settings-group-theme = Tema
 settings-group-language = Dil
-settings-group-startup = Startup Startup Startup
-settings-group-updates = Updates Updates
-settings-group-autosave = Otomatik kayıt
+settings-group-startup = Açılış
+settings-group-updates = Güncellemeler
+settings-group-autosave = Otomatik kaydetme
 settings-field-typeface = Yazı tipi
-settings-field-size = Metin büyüklüğü
+settings-field-size = Metin boyutu
 
-editor-size-changed-manuscript = Manuscript text büyüklüğü: { $percent }
-editor-size-changed-synopsis = Synopsis metin büyüklüğü: { $percent }
-editor-size-changed-notes = Notlar metin büyüklüğü: { $percent }
-editor-size-changed-corkboard = Corkboard kart metin büyüklüğü: { $percent }
-editor-size-changed-corkboard-expanded = Genişletilmiş editör metin büyüklüğü: { $percent }
-editor-size-changed-distraction-free = Distraction-free text büyüklüğü: { $percent }
+editor-size-changed-manuscript = El yazması metin boyutu: { $percent }
+editor-size-changed-synopsis = Özet metin boyutu: { $percent }
+editor-size-changed-notes = Not metin boyutu: { $percent }
+editor-size-changed-corkboard = Mantar pano kart metni boyutu: { $percent }
+editor-size-changed-corkboard-expanded = Genişletilmiş düzenleyici metin boyutu: { $percent }
+editor-size-changed-distraction-free = Dikkat dağıtmayan mod metin boyutu: { $percent }
 
-menu-text-size-increase = Genişleme metin büyüklüğü (&I)
-menu-text-size-decrease = Decrease text büyüklüğü (&C)
-menu-text-size-reset = metin büyüklüğü (&R)
-settings-field-line-height = Line yükseklik
+menu-text-size-increase = Metin boyutunu &büyüt
+menu-text-size-decrease = Metin boyutunu küçü&lt
+menu-text-size-reset = Metin boyutunu &sıfırla
+settings-field-line-height = Satır yüksekliği
 settings-field-first-line-indent = İlk satır girintisi
-settings-field-paragraph-spacing-before = Space before paragraftan önce
-settings-field-paragraph-spacing-after = paragraftan sonra uzay
-settings-field-column-width = sütun genişliği
-settings-distraction-free-width-hint = Sadece rahatsız edici olmayan mod devam ederken. Sahneniz, Synopsis ve Notlar sütun genişliği iptal edilir.
-settings-distraction-free-title = öğenin adını tutun
-settings-distraction-free-word-count = Kelime sayını tutun
-settings-distraction-free-session = Yazma seansı devam et
-settings-distraction-free-go-to = Go'yu tutun... düğme
-settings-distraction-free-go = Önceki ve Sonraki düğmeleri tut
-settings-distraction-free-chrome-hint = Çıkış düğmesi her zaman kalır, burada ne seçerseniz seçin. Escape meşgul olup olmadığınız yoldur.
+settings-field-paragraph-spacing-before = Paragraf öncesi boşluk
+settings-field-paragraph-spacing-after = Paragraf sonrası boşluk
+settings-field-column-width = Sütun genişliği
+settings-distraction-free-width-hint = Yalnızca dikkat dağıtmayan mod açıkken geçerlidir. Sahne, Özet ve Notlar sütun genişlikleriniz değişmez.
+settings-distraction-free-title = Öğenin adını göster
+settings-distraction-free-word-count = Sözcük sayısını göster
+settings-distraction-free-session = Yazma oturumunu göster
+settings-distraction-free-go-to = Git… düğmesini göster
+settings-distraction-free-go = Önceki ve Sonraki düğmelerini göster
+settings-distraction-free-chrome-hint = Burada ne seçerseniz seçin Çık düğmesi her zaman kalır. Esc tuşu meşgulse çıkış yolunuz odur.
 settings-field-app-theme = Tema
-settings-theme-light = Işık Işık Işığı
-settings-theme-dark = Dark Dark
-settings-field-text-scale = Interface text büyüklüğü
-settings-field-language = Interface dil dili
-settings-synopsis-placement = Synopsis pozisyonu
+settings-theme-light = Açık
+settings-theme-dark = Koyu
+settings-field-text-scale = Arayüz metin boyutu
+settings-field-language = Arayüz dili
+settings-synopsis-placement = Özetin konumu
 settings-synopsis-placement-none = Yok
-settings-synopsis-placement-top = Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above Above
-settings-synopsis-placement-side = Yanında
-settings-typewriter = Typewriter kaydırmaing
-settings-typewriter-tip = Altta yazdığınız çizgiyi tutarken sabit bir üstte yazıyorsunuz.Yazarlar hala tıkladığınızda dikkati çeker.
-settings-typewriter-position = Line pozisyonu
-settings-typewriter-position-top-third = Top üçüncü
-settings-typewriter-position-middle = Orta Orta Orta Orta Orta
-settings-typewriter-position-bottom-quarter = Alt çeyrek çeyrek
-settings-highlight-scope = Bakımtın etrafındaki yüksek ışık
+settings-synopsis-placement-top = Üstte
+settings-synopsis-placement-side = Yanda
+settings-typewriter = Daktilo kaydırması
+settings-typewriter-tip = El yazması altından kayarken yazdığınız satırı sabit bir yükseklikte tutar. Tıklamak yine de imleci tıkladığınız yere koyar.
+settings-typewriter-position = Satırın konumu
+settings-typewriter-position-top-third = Üst üçte bir
+settings-typewriter-position-middle = Orta
+settings-typewriter-position-bottom-quarter = Alt çeyrek
+settings-highlight-scope = İmlecin çevresini vurgula
 settings-highlight-scope-none = Yok
-settings-highlight-scope-sentence = Cümle
+settings-highlight-scope-sentence = Tümce
 settings-highlight-scope-paragraph = Paragraf
-settings-highlight-scope-tip-none = Sayfayı düz bırakın. Yazdığınız gibi gölgelenmez.
-settings-highlight-scope-tip-sentence = Yazdığınız cümleyi Shade, bu yüzden etrafındakilerden dışarı çıkıyor.
-settings-highlight-scope-tip-paragraph = Yazdığınız tüm paragrafı, görüşte çalıştığınız pasajı tutmak.
-settings-group-container-views = konteyner görüşleri
-settings-remember-view = Her bir öğe türü için son görüşü hatırlayın
-settings-remember-view-tip = Bu tip için son kullandığınız görüşe bir konteyner açın
+settings-highlight-scope-tip-none = Sayfayı sade bırakır. Siz yazarken hiçbir şey gölgelenmez.
+settings-highlight-scope-tip-sentence = Yazdığınız tümceyi gölgeler, böylece çevresindekilerden ayrılır.
+settings-highlight-scope-tip-paragraph = Yazdığınız paragrafın tamamını gölgeler, böylece üzerinde çalıştığınız bölüm gözünüzün önünde kalır.
+settings-group-container-views = Kapsayıcı görünümleri
+settings-remember-view = Her öğe türü için son görünümü hatırla
+settings-remember-view-tip = Bir kapsayıcıyı, o tür için en son kullandığınız görünümde açar
 settings-remember-view-tip-more =
-    Bir Kitap, Bölüm ve Bölüm her biri birkaç görüş sunar (kendi sayfası, tam olarak tam olarak).
-    Yazı, tam sinopsis) Bunu açın ve her tür yeniden açılır
-    Son olarak bunu seçtiğinize göre, e.g. bir Bölümü Full Bölüme ve Bölüme Geçiş
-    Bir sonraki bölüm Full Bölüm'i de gösterir. Her tür kendi görüşünü hatırlar.
-settings-group-counting = Word count
-settings-counting-auto = Otomatik (by language)
-settings-counting-whitespace = Uzayda Bölüntü
-settings-counting-unicode-words = Unicode kelimeler
-settings-counting-cjk-hybrid = CJK uyumlu (karakter başına)
-settings-counting-hint = Otomatik olarak Çince ve Japonca karakter ve diğer her dili kelime ile sayın. sadece sayı sizin diliniz için yanlış görünüyorsa değiştirin.
-settings-group-goals-display = Ekran görüntüsü
-settings-show-characters = Durum çubuğundaki karakter sayısını göster
-settings-autosave-hint = Değişiklikler, yazdığınız gibi otomatik olarak diske yazılır.
+    Kitap, Kısım ve Bölüm birkaç görünüm sunar (kendi sayfası, tüm el yazması,
+    tüm özet). Bunu açtığınızda her tür, onun için en son seçtiğiniz görünümde
+    yeniden açılır: örneğin bir Bölüm'ü Tüm bölüm görünümüne geçirirseniz açtığınız
+    sonraki Bölüm de Tüm bölüm olarak açılır. Her tür kendi görünümünü hatırlar.
+settings-group-counting = Sözcük sayımı
+settings-counting-auto = Otomatik (dile göre)
+settings-counting-whitespace = Boşluklardan böl
+settings-counting-unicode-words = Unicode sözcükleri
+settings-counting-cjk-hybrid = ÇJK duyarlı (karakter başına)
+settings-counting-hint = Otomatik seçenek Çince ve Japoncayı karakter karakter, diğer tüm dilleri sözcük sözcük sayar. Yalnızca sayım dilinize göre yanlış görünüyorsa değiştirin.
+settings-group-goals-display = Görüntüleme
+settings-show-characters = Durum çubuğunda karakter sayısını göster
+settings-autosave-hint = Değişiklikler siz yazarken otomatik olarak diske yazılır.
 
 settings-sec-work = Proje
 settings-page-structure = Yapı
 settings-page-author = Yazar
 settings-field-author-name = Yazar adı
-settings-field-author-placeholder = Seçmeli Seçmeli Seçmeli Seçmeli
-settings-field-author-hint = Derlenen başlık sayfasında görünür ve ihraç edilen dosya metadata'ya devre dışı bırakılır. Bu kitapın başlığıdır. Yorumlarınız ile imzalanır.The name your comments are signed with is in Settings . User.
+settings-field-author-placeholder = İsteğe bağlı
+settings-field-author-hint = Derlenen başlık sayfasında ve dışa aktarılan dosyaların üst verisinde görünür. Kullanmamak için boş bırakın. Bu, kitabın künyesindeki addır. Yorumlarınızın imzalandığı ad Ayarlar ▸ Kullanıcı bölümündedir.
 settings-group-chapters = Bölümler
-tidy-titles-title = Tidy Bölümleri
-tidy-titles-none = Hiçbir bölüm veya bölüm adı sadece kendi sayılarını tekrarlıyor.
+tidy-titles-title = Bölüm başlıklarını düzenle
+tidy-titles-none = Hiçbir bölüm ya da kısım başlığı yalnızca kendi numarasını tekrarlamıyor.
 tidy-titles-lead = { $count ->
-        [one] Bir bölüm ya da bölüm hiçbir şeyle değil kendi numarasıyla yazılır.
-       *[other] { $count } Bölümler ve parçalar hiçbir şeyle değil kendi sayılarıyla yazılır.
+        [one] Bir bölüm ya da kısmın başlığı kendi numarasından başka bir şey içermiyor.
+       *[other] { $count } bölüm ve kısmın başlığı kendi numarasından başka bir şey içermiyor.
     }
-tidy-titles-explain = Bu başlıkları temizlemek, kitabı zaten bildiği numara tarafından verilen her birini terk eder, aynı sayıda ihracat baskısı yoktur. başka bir değişiklik yoktur ve bir tanesi hepsini geri döndürür.
-menu-document-tidy-titles = Tidy bölüm başlıkları... (&Y)
-settings-group-numbering = Sayılama Sayısı
-settings-number-chapters = Sayı bölümleri ve parçalar
-settings-number-chapters-tip = Bölümler ve parçalar, burada unvanının yanında gösterilen ve ihracat tarafından basılan kitaptan bir dizi çalıştılar.
-settings-number-chapters-tip-more = Sayı hiçbir zaman başlıkta depolanmaz, bu yüzden Inspector'un Numarasını yeniden sipariş ettiğinizde veya silebilirsiniz. Bunu tek başına kapatın ve ihracat baskıları için her ne olursa olsun, ihracat tarzı bir bölüm bırakmak için (bir prolog, bir Interlude), Inspector'un Numarasını kullanın: bu onu kitapta tutar ama bir numara alır.
-settings-part-resets-chapter = Bölüm numaraları her bölümde
-settings-part-resets-chapter-tip = Varsayılan olarak: bölümler doğrudan bir kitabın parçaları üzerinde çalışır, bu yüzden "Part Two" Bölüm 11'de açılır.
-settings-part-resets-chapter-tip-more = Bu her zamanki ticaret uygulaması ve bir okuyucunun beklediği bir kitap için onu, her birinin Bölüm One'da açtığı ayrı hacimler olarak okumak anlamına geliyor.
+tidy-titles-explain = Bu başlıkları temizlemek, her birini kitabın zaten bildiği numarayla, dışa aktarmanın yazdırdığı numarayla adlandırılmış bırakır. Başka hiçbir şey değişmez ve tek bir geri alma hepsini eski hâline getirir.
+menu-document-tidy-titles = Bölüm başlıklarını &düzenle…
+settings-group-numbering = Numaralandırma
+settings-number-chapters = Bölümleri ve kısımları numaralandır
+settings-number-chapters-tip = Bölümler ve kısımlar, kitaptaki yerlerinden hesaplanan bir numara taşır. Bu numara burada başlıklarının yanında gösterilir ve dışa aktarmada yazdırılır.
+settings-number-chapters-tip-more = Numara hiçbir zaman başlığın içinde saklanmaz, bu yüzden yeniden sıraladığınızda, eklediğinizde ya da sildiğinizde doğru kalır. Bunu kapatırsanız dışa aktarma biçemi ne isterse istesin yalnızca başlıklar yazdırılır. Tek bir bölümü (bir önsöz, bir ara bölüm) dışarıda bırakmak için bunun yerine Denetçi'deki Numaralandırma anahtarını kullanın: bu, bölümü kitapta tutar ama numara almasını engeller.
+settings-part-resets-chapter = Her kısımda bölüm numaralarını yeniden başlat
+settings-part-resets-chapter-tip = Varsayılan olarak kapalı: bölümler bir kitabın kısımları boyunca kesintisiz sürer, böylece "İkinci kısım" On birinci bölümle açılır.
+settings-part-resets-chapter-tip-more = Yayıncılıkta olağan uygulama budur ve okurun beklediği de budur. Kısımları ayrı ciltler gibi okunacak, her biri Birinci bölümle açılacak bir kitap için açın.
 settings-chapter-flat = Düz bölümler
-settings-chapter-flat-hint = On: Bir bölüm tek bir öğedir. içine yazıyorsunuz ve sahneler yok. Off: bir bölüm hala bir klasördür, ancak bu ayarı takip edebilir; mevcut olanlar teşvik yoluyla dönüştürür.
+settings-chapter-flat-hint = Açık: bölüm tek bir öğedir. İçine yazarsınız ve sahne barındırmaz. Kapalı: bölüm bir klasördür. Yine içine yazarsınız ama sahneler de barındırabilir. Yeni bölümler bu ayarı izler; var olanlar Dönüştür ile değiştirilir.
 
-settings-styles-builtin = Yapılı stilleri
-settings-styles-user = Benim stillerim
-settings-styles-builtin-badge = İnşa Edilmiş -in
+settings-styles-builtin = Hazır biçemler
+settings-styles-user = Biçemlerim
+settings-styles-builtin-badge = Hazır
 settings-styles-duplicate = Çoğalt
 settings-styles-edit = Düzenle
 settings-styles-delete = Sil
 settings-styles-import = İçe aktar…
 settings-styles-export = Dışa aktar…
 settings-styles-copy-suffix = (kopya)
-settings-styles-json-filter = İhracat stili
-settings-styles-editor-title = Edit stili
-settings-styles-editor-none = Bunu düzenlemek için özel bir stil seçin veya yerleşik bir şeyi tekrarlayın.
-settings-styles-imported = Style ithal edildi
-settings-styles-import-failed = import tarzı yapamaz
-settings-styles-exported = Style ihraç edildi
-settings-styles-export-failed = İhracat stilini ihraç edemez
+settings-styles-json-filter = Dışa aktarma biçemi
+settings-styles-editor-title = Biçemi düzenle
+settings-styles-editor-none = Düzenlemek için özel bir biçem seçin ya da hazır bir biçemi çoğaltın.
+settings-styles-imported = Biçem içe aktarıldı
+settings-styles-import-failed = Biçem içe aktarılamadı
+settings-styles-exported = Biçem dışa aktarıldı
+settings-styles-export-failed = Biçem dışa aktarılamadı
 settings-styles-field-name = Ad
 settings-styles-field-chapters = Bölüm başlıkları
-settings-styles-field-parts = Bölüm başlıkları
-settings-styles-field-scene-break = Sahne molası
-settings-styles-field-major-scene-break = Binbaşı sahne molası
+settings-styles-field-parts = Kısım başlıkları
+settings-styles-field-scene-break = Sahne arası
+settings-styles-field-major-scene-break = Büyük sahne arası
 settings-styles-field-spacing = Satır aralığı
 settings-styles-field-justify = Metni iki yana yasla
-settings-styles-field-notes = Eklem notları ekleyin
-settings-styles-field-synopses = sinopsiyonları ekleyin
-settings-styles-field-scene-titles = Sahne başlıklarını ekleyin
-settings-styles-field-epigraphs = Epigraphs ekleyin
-settings-styles-field-paratexts = Paratexts ekleyin
-settings-styles-field-epigraph-placement = Epigraf pozisyonu
-settings-styles-epigraph-after = başlıktan sonra
-settings-styles-epigraph-before = Başlıktan Önce
-settings-styles-field-footnotes = Ayaknotları ekleyin
-settings-styles-field-footnote-numbering = Dipnot numaralandırma
-settings-styles-footnote-numbering-continuous = Sürekli Sürekli Sürekli Sürekli
-settings-styles-footnote-numbering-per-chapter = Her bölümü yeniden başlatın
-settings-styles-footnote-numbering-per-book = Her kitabı yeniden başlatın
-settings-styles-field-images = Görüntüler
-menu-image = Image Image Image (&I)
-settings-styles-images-beside = Belgenin dışında olun
+settings-styles-field-notes = Notları dahil et
+settings-styles-field-synopses = Özetleri dahil et
+settings-styles-field-scene-titles = Sahne başlıklarını dahil et
+settings-styles-field-epigraphs = Epigrafları dahil et
+settings-styles-field-paratexts = Yan metinleri dahil et
+settings-styles-field-epigraph-placement = Epigrafın konumu
+settings-styles-epigraph-after = Başlıktan sonra
+settings-styles-epigraph-before = Başlıktan önce
+settings-styles-field-footnotes = Dipnotları dahil et
+settings-styles-field-footnote-numbering = Dipnot numaralandırması
+settings-styles-footnote-numbering-continuous = Kesintisiz
+settings-styles-footnote-numbering-per-chapter = Her bölümde yeniden başlat
+settings-styles-footnote-numbering-per-book = Her kitapta yeniden başlat
+settings-styles-field-images = Resimler
+menu-image = &Resim
+settings-styles-images-beside = Belgenin yanında
 settings-styles-images-embed = Belgenin içinde
-settings-styles-images-omit = Dahil etme
-settings-styles-group-round-trip = Bir editöre gönder
-settings-styles-field-comments = Yorum ekle
-settings-styles-field-round-trip-marks = round-trip işaretleyicileri ekleyin
-settings-styles-round-trip-hint = DOCX ve ODT sadece. Markers, bu projeyi ikinci bir kopya olarak geri getirmesine izin veren görünmez tanımlayıcılardır.
+settings-styles-images-omit = Dışarıda bırak
+settings-styles-group-round-trip = Editöre gönderme
+settings-styles-field-comments = Yorumları dahil et
+settings-styles-field-round-trip-marks = Gidiş-dönüş işaretçilerini dahil et
+settings-styles-round-trip-hint = Yalnızca DOCX ve ODT. İşaretçiler, geri dönen bir dosyanın ikinci bir kopya olarak yanına düşmek yerine bu projeyi güncellemesini sağlayan görünmez tanımlayıcılardır.
 settings-styles-group-pages = Sayfalar
-settings-styles-field-cover = Kapak ile açık
-settings-styles-field-word-count = Word count sayfasında
+settings-styles-field-cover = Kapakla aç
+settings-styles-field-word-count = Başlık sayfasında sözcük sayısı
 settings-styles-field-page-books = Her kitapta yeni sayfa
-settings-styles-field-page-parts = Her bölümde yeni sayfa
+settings-styles-field-page-parts = Her kısımda yeni sayfa
 settings-styles-field-page-chapters = Her bölümde yeni sayfa
-settings-styles-field-page-paratexts = Yeni sayfa her paratext
-settings-styles-heading-none = Hiçbir başlık başlığı yok
-settings-styles-heading-numbered = Sadece Sayı Numarası Sadece Sayı Numarası
-settings-styles-heading-title = Başlık sadece
-settings-styles-heading-both = Sayı + başlık
+settings-styles-field-page-paratexts = Her yan metinde yeni sayfa
+settings-styles-heading-none = Başlık yok
+settings-styles-heading-numbered = Yalnızca numara
+settings-styles-heading-title = Yalnızca başlık
+settings-styles-heading-both = Numara + başlık
 settings-styles-break-blank = Boş satır
 settings-styles-break-none = Yok
-settings-styles-spacing-single = Single Single Single
+settings-styles-spacing-single = Tek
 settings-styles-spacing-onehalf = 1½
-settings-styles-spacing-double = Çift Çift Çift Çift Çift
+settings-styles-spacing-double = Çift
 
-welcome-title = Skribisto'e hoş geldiniz
+welcome-title = Skribisto'ya hoş geldiniz
 welcome-version = Sürüm { $version }
-welcome-update-available = Version { $version } mevcuttur
-welcome-update-tip = Tarayıcınızda indirme sayfasını açın.
-welcome-search = Arama Projeler
+welcome-update-available = Sürüm { $version } kullanıma sunuldu
+welcome-update-tip = İndirme sayfasını tarayıcınızda açar.
+welcome-search = Projelerde ara
 welcome-open = Aç
 welcome-new-work = Yeni proje
-welcome-create-from = Create from...
-welcome-recent-works = Son Projeler
-welcome-empty-recents = Henüz yeni projeler yok.
-welcome-no-matches = Son zamanlarda Project aramanızı maçlamıyor.
-welcome-learn-soon = Rehberler ve ipuçları yakında geliyor.
-welcome-about-blurb = Skribisto, bir Rust + Teksilo yazı uygulamasının yeniden yazılması.
-welcome-tagline = *Uzun şeyler yazmak için sessiz bir yer.*
+welcome-create-from = Kaynaktan oluştur…
+welcome-recent-works = Son projeler
+welcome-empty-recents = Henüz son proje yok.
+welcome-no-matches = Aramanızla eşleşen son proje yok.
+welcome-learn-soon = Kılavuzlar ve ipuçları yakında geliyor.
+welcome-about-blurb = Skribisto, yazma uygulamasının Rust + Teksilo ile yeniden yazılmış hâli.
+welcome-tagline = *Uzun metinler yazmak için sessiz bir yer.*
 welcome-github = GitHub
 welcome-discord = Discord
 nav-works = Projeler
-nav-examples = Örnekler Örnekler Örnekler
-nav-learn = Learn Learn Learn Learn
-nav-about = About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About About
+nav-examples = Örnekler
+nav-learn = Öğren
+nav-about = Hakkında
 
 synopsis = Özet
 epigraph = Epigraf
@@ -457,82 +462,82 @@ corkboard = Mantar pano
 overview = Genel bakış
 
 corkboard-card-count = { $count ->
-    [one] { $count } kart kartı
-   *[other] { $count } Kartları
+    [one] { $count } kart
+   *[other] { $count } kart
 }
 corkboard-child-count = { $count ->
-    [one] { $count } item
-   *[other] { $count } Madde
+    [one] { $count } öğe
+   *[other] { $count } öğe
 }
-corkboard-view-nested = Nested Nested
-corkboard-view-flat = Flat Flat Flat Flat Flat Flat
-corkboard-layout-hint = Nested, bir konteynerin doğrudan çocuğunu gösterir. İçeri girebilmek için bir klasör kartı açın. Flat her sahneyi bir kez tüm konteynerde gösterir.
-corkboard-card-size = Kart büyüklüğü
-corkboard-search-placeholder = Filtre kartları...
-corkboard-empty-title = Burada henüz hiçbir şey yok
-corkboard-empty-hint = İlki eklemek için yukarıdaki "+ New" kullanın.
+corkboard-view-nested = İç içe
+corkboard-view-flat = Düz
+corkboard-layout-hint = İç içe görünüm bir kapsayıcının doğrudan alt öğelerini gösterir. İçine girmek için bir klasör kartını açın. Düz görünüm tüm kapsayıcıdaki bütün sahneleri bir arada gösterir.
+corkboard-card-size = Kart boyutu
+corkboard-search-placeholder = Kartları süz…
+corkboard-empty-title = Burada henüz bir şey yok
+corkboard-empty-hint = İlkini eklemek için yukarıdaki “＋ Yeni” düğmesini kullanın.
 corkboard-new = Yeni
-corkboard-show-card-numbers = Kartlar Sayı
-corkboard-modal-size = Genişletilmiş editör boyutunu genişletmiş
-corkboard-scope-hint = Her açık korkboard'a, her projede.
-corkboard-sort-manuscript = Taslak sırası
-corkboard-sort-title-asc = Adı A-Z
-corkboard-sort-title-desc = Başlık: Z-A
+corkboard-show-card-numbers = Kartları numaralandır
+corkboard-modal-size = Genişletilmiş düzenleyici boyutu
+corkboard-scope-hint = Her projedeki tüm açık mantar panolara uygulanır.
+corkboard-sort-manuscript = El yazması sırası
+corkboard-sort-title-asc = Başlık A–Z
+corkboard-sort-title-desc = Başlık Z–A
 corkboard-card-number = Kart { $number }
 
 duplicate = Çoğalt
 duplicate-n = { $count ->
-    [one] { $count } kartvizit
-   *[other] { $count } kartlarını karıştırın
+    [one] { $count } kartı çoğalt
+   *[other] { $count } kartı çoğalt
 }
 set-label-n = { $count ->
-    [one] { $count } kart üzerinde etiket
-   *[other] { $count } kartları üzerinde etiket
+    [one] { $count } karta açıklama koy
+   *[other] { $count } karta açıklama koy
 }
 move-to-trash-n = { $count ->
-    [one] { $count } kartı çöpe taşımak için
-   *[other] { $count } çöpe çöp atmak için kartları
+    [one] { $count } kartı çöp kutusuna taşı
+   *[other] { $count } kartı çöp kutusuna taşı
 }
-reveal-in-outline = Açıklayın
+reveal-in-outline = Ana hatta göster
 
-corkboard-move-to = Move to...
+corkboard-move-to = Taşı…
 corkboard-move-to-n = { $count ->
-    [one] { $count } kartı ...
-   *[other] { $count } kartlarını ...
+    [one] { $count } kartı taşı…
+   *[other] { $count } kartı taşı…
 }
-corkboard-move-picker-title = Move to...
-corkboard-move-picker-empty = Henüz bağlayıcı değil. İlk önce bir tane oluşturun.
+corkboard-move-picker-title = Taşınacak yer…
+corkboard-move-picker-empty = Henüz dizin yok. Önce bir tane oluşturun.
 corkboard-move-picker-cancel = İptal
-corkboard-move-here = Move Here Move Here
+corkboard-move-here = Buraya taşı
 corkboard-moved-ok = { $count ->
     [one] { $count } kart taşındı
-   *[other] { $count } Kartları taşındı
+   *[other] { $count } kart taşındı
 }
-corkboard-move-into-self = Bir konteyner kendi içinde hareket edemez. Dışarıda bir hedef alın.
+corkboard-move-into-self = Bir kapsayıcı kendi içine taşınamaz. Onun dışında bir yer seçin.
 corkboard-move-failed = Bu kartlar oraya taşınamadı.
 
 overview-col-title = Başlık
-overview-col-type = Tipi Tipi Tipi Tipi Tipi
-overview-col-label = Kısa açıklama
+overview-col-type = Tür
+overview-col-label = Açıklama
 overview-col-tags = Etiketler
-overview-col-books = Kitaplar Kitaplar Kitaplar Kitaplar
-overview-col-own-words = Sözcükler
-overview-col-total-words = Toplam Toplam Toplam Toplam Toplam Toplam Toplam Toplam
+overview-col-books = Kitaplar
+overview-col-own-words = Sözcük
+overview-col-total-words = Toplam
 overview-row-count = { $count ->
-    [one] { $count } item
-   *[other] { $count } Madde
+    [one] { $count } öğe
+   *[other] { $count } öğe
 }
-overview-search-placeholder = Filtre eşyaları...
-overview-expand-all = Her şeyi genişletin
-overview-collapse-all = Bütün Filmler
-overview-table-label = İçerikler
-overview-empty-title = Burada henüz hiçbir şey yok
-overview-gone-title = Bu konteyner gitti
-overview-gone-hint = Trash'a taşındı. Onu geri yükleyin veya bu sekmeyi kapat.
-overview-empty-hint = İlki eklemek için yukarıdaki "+ New" kullanın.
-corkboard-grid-label = Corkboard kartları
+overview-search-placeholder = Öğeleri süz…
+overview-expand-all = Tümünü genişlet
+overview-collapse-all = Tümünü daralt
+overview-table-label = İçindekiler
+overview-empty-title = Burada henüz bir şey yok
+overview-gone-title = Bu kapsayıcı artık yok
+overview-gone-hint = Çöp kutusuna taşındı. Geri yükleyin ya da bu sekmeyi kapatın.
+overview-empty-hint = İlkini eklemek için yukarıdaki “＋ Yeni” düğmesini kullanın.
+corkboard-grid-label = Mantar pano kartları
 corkboard-rename-field = Öğeyi yeniden adlandır
-corkboard-expand-synopsis = Geniş sinopsis
+corkboard-expand-synopsis = Özeti genişlet
 corkboard-synopsis-modal-title = Özet
 corkboard-badge-scene = Sahne
 corkboard-badge-chapter = Bölüm
@@ -542,481 +547,481 @@ corkboard-badge-note = Not
 corkboard-badge-folder = Klasör
 corkboard-badge-paratext = Yan metin
 corkboard-badge-text = Metin
-corkboard-badge-end = End End End End End End
-settings-group-corkboard-layout = Layoutout
-settings-group-corkboard-cards = Kartlar Kartlar Kartlar
-corkboard-show-word-count = Kartlar üzerinde kelime sayımı
+corkboard-badge-end = Son
+settings-group-corkboard-layout = Yerleşim
+settings-group-corkboard-cards = Kartlar
+corkboard-show-word-count = Kartlarda sözcük sayısını göster
 text-heading = Metin
-no-content = Bu öğenin düzenlenebilir bir içeriğe sahip değildir.
+no-content = Bu öğenin düzenlenebilir içeriği yok.
 untitled = Adsız
 placeholder-title = Başlık…
-placeholder-subtitle = Subtitle...
-placeholder-chapter-title = Bölüm Adı...
-split-editor = Split editörü
-close-split-view = Close bölünmüş görüş
-drop-open-here = Burada açık açık burada
-drop-open-to-side = Yan tarafa açın
+placeholder-subtitle = Alt başlık…
+placeholder-chapter-title = Bölüm başlığı…
+split-editor = Düzenleyiciyi böl
+close-split-view = Bölünmüş görünümü kapat
+drop-open-here = Burada aç
+drop-open-to-side = Yanda aç
 
 segment-chapter = Bölüm
 segment-part = Kısım
 segment-book = Kitap
-segment-pace = Yazma hızı
+segment-pace = Tempo
 segment-notes = Notlar
 segment-story-bible = Hikâye rehberi
 segment-note-own = Not
 segment-note-details = Ayrıntılar
-segment-note-in-prose = Prose
-pace-placeholder = Pace planlayıcı burada görünüyor.
-pace-empty-title = Bu kitabın hızını Planlayın
-pace-empty-body = Bir kelime hedefi ve son bir tarih ayarlayın ve Skribisto Sizi oraya götürmek için günlük hızınızı projeler.
-pace-start-planning = Planlamaya Başlayın
-pace-section-schedule = Schedule Schedule Schedule
+segment-note-in-prose = Metinde
+pace-placeholder = Tempo planlayıcısı burada görünür.
+pace-empty-title = Bu kitabın temposunu planlayın
+pace-empty-body = Bir sözcük hedefi ve bir son tarih belirleyin, Skribisto oraya varmanız için gereken günlük tempoyu hesaplasın.
+pace-start-planning = Planlamaya başla
+pace-section-schedule = Takvim
 pace-section-progress = İlerleme
-pace-advancement = Hedefler
+pace-advancement = İlerleme durumu
 pace-goal = Sözcük hedefi
 pace-deadline = Son tarih
-pace-active = Pace aktif olarak
-pace-day-mon = Mon Mon Mon
+pace-active = Tempo etkin
+pace-day-mon = Pzt
 pace-day-tue = Sal
-pace-day-wed = Wed Wed Wed
+pace-day-wed = Çar
 pace-day-thu = Per
-pace-day-fri = Fri Fri Fri
-pace-day-sat = Sat Sat Sat
-pace-day-sun = Güneş Güneş Güneş
-pace-card-written = Kelimeler yazılı
-pace-card-of-goal = Hedefin amacı
-pace-card-rate = kelimeler / günlük yaz
-pace-card-days-left = Yaz günleri soldan ayrıldı
-pace-card-streak = Gün çizgisi
-pace-card-ahead = Hıztan Önce Kelimeler
-pace-card-behind = Hız arkasındaki kelimeler
-pace-charts-empty = İlerleme grafikler burada bir kez kelime sayımınız bir tasarruf üzerine kaydedilir.
-pace-chart-progression = Kelimeler vs. Target
-pace-chart-words-per-day = Gündelik Kelimeler
+pace-day-fri = Cum
+pace-day-sat = Cmt
+pace-day-sun = Paz
+pace-card-written = yazılan sözcük
+pace-card-of-goal = hedefin
+pace-card-rate = sözcük / yazma günü
+pace-card-days-left = kalan yazma günü
+pace-card-streak = günlük seri
+pace-card-ahead = sözcük tempo önünde
+pace-card-behind = sözcük tempo gerisinde
+pace-charts-empty = Sözcük sayınız bir kaydetmede kaydedildiğinde ilerleme grafikleri burada görünür.
+pace-chart-progression = Yazılan sözcükler ve öngörülen
+pace-chart-words-per-day = Günlük sözcük
 pace-series-actual = Gerçekleşen
-pace-series-target = Hedef
-pace-series-words-per-day = Kelimeler / gün
-pace-daily-target-line = Hız bile: { $count ->
-    [one] { $count } kelime / gün
-   *[other] { $count } kelime / gün
+pace-series-target = Öngörülen
+pace-series-words-per-day = Sözcük/gün
+pace-daily-target-line = Düzenli tempo: { $count ->
+    [one] { $count } sözcük/gün
+   *[other] { $count } sözcük/gün
 }
 pace-section-holidays = Tatiller
-pace-section-milestones = Kilometre taşları
-pace-holidays-none = Tatil yok. Her planlanan gün sayılıyor.
-pace-holiday-label = Tatil adı
+pace-section-milestones = Ara hedefler
+pace-holidays-none = Tatil yok. Planlanan her gün sayılır.
+pace-holiday-label = Tatilin adı
 pace-add-holiday = Ekle
 pace-remove = Kaldır
-pace-milestones-none = Henüz bir dönüm noktası yok. Inspector'da bir bölüm veya bölüm üzerinde bir tane ayarlayın.
-full-chapter = Full Bölüm Full Bölüm Full Full
-full-part = Full Part Full Part Full
-full-book = Full Book Full Book Full
-full-synopsis = Full Synopsissis
+pace-milestones-none = Henüz ara hedef yok. Denetçi'de bir Kısım ya da Bölüm için belirleyin.
+full-chapter = Tüm bölüm
+full-part = Tüm kısım
+full-book = Tüm kitap
+full-synopsis = Tüm özet
 rename = Yeniden adlandır
-set-label = Set etiketi
-insert-scene = Sahneye Ekle
-insert-chapter = Bölünmüş bölüm
-split-scene = Split sahne sahne
+set-label = Açıklama koy
+insert-scene = Sahne ekle
+insert-chapter = Bölüm ekle
+split-scene = Sahneyi böl
 move-up = Yukarı taşı
 move-down = Aşağı taşı
-merge-with-previous = Bir öncekiyle Merge
+merge-with-previous = Öncekiyle birleştir
 move-to-trash = Çöp kutusuna taşı
-rename-chapter = Rename Bölüm
-add-scene = Yeni sahne ekleyin
-add-chapter = Yeni bölüm ekleyin
+rename-chapter = Bölümü yeniden adlandır
+add-scene = Yeni sahne ekle
+add-chapter = Yeni bölüm ekle
 new-scene-title = Yeni sahne
-placeholder-scene-name = Sahne adı...
+placeholder-scene-name = Sahne adı…
 menu-cut = Kes
 menu-copy = Kopyala
 menu-paste = Yapıştır
-menu-paste-unformatted = Biçimlendirmeden yapıştır
+menu-paste-unformatted = Biçimsiz yapıştır
 menu-select-all = Tümünü seç
-format-bold = Bold Bold
-format-italic = Italicic
+format-bold = Kalın
+format-italic = İtalik
 format-underline = Altı çizili
-format-strikethrough = Grev
+format-strikethrough = Üstü çizili
 
-binder = Belge ağacı
-no-work = No Project installed
-no-recent-works = Son zamanlarda Projeler Yok
-switcher-open-section = Şu anda açık açık açık
-switcher-recent-section = Son Güncelleme Tarihi
-switcher-this-window = Bu pencere
-open-project-title = Açık proje
-open-project-question = "{ $title }" açmak nasıl istiyorsunuz?
-open-in-new-window = Yeni pencerede açın
-open-here = Burada açık açık burada
+binder = Dizin
+no-work = Yüklü proje yok
+no-recent-works = Son proje yok
+switcher-open-section = Şu anda açık
+switcher-recent-section = Son kullanılanlar
+switcher-this-window = bu pencere
+open-project-title = Projeyi aç
+open-project-question = “{ $title }” nasıl açılsın?
+open-in-new-window = Yeni pencerede aç
+open-here = Burada aç
 
-binder-all = Tüm Binders
-binder-show-all = Hepsini göster
-binder-new = Yeni binder...
-binder-default-name = Yeni binder
+binder-all = Tüm dizinler
+binder-show-all = Tüm dizinleri göster
+binder-new = Yeni dizin…
+binder-default-name = Yeni dizin
 binder-item-count = { $count ->
-    [one] { $count } item
-   *[other] { $count } Madde
+    [one] { $count } öğe
+   *[other] { $count } öğe
 }
-binder-search-placeholder = Tabloyu filtreleyin...
-binder-search-scope = Tüm bağlayıcıları arayın
-binder-trash-confirm-title = çöpe bindirin?
-binder-trash-confirm-text = "{ $name }" ve tüm eşyaları çöpe taşınacaktır.
+binder-search-placeholder = Ana hattı süz…
+binder-search-scope = Tüm dizinlerde ara
+binder-trash-confirm-title = Dizin çöp kutusuna taşınsın mı?
+binder-trash-confirm-text = “{ $name }” ve tüm öğeleri çöp kutusuna taşınacak.
 
 dialog-rename = Yeniden adlandır
-dialog-new-binder = Yeni binder
-dialog-set-label = Set etiketi
+dialog-new-binder = Yeni dizin
+dialog-set-label = Açıklama koy
 dialog-new-scene = Yeni sahne
-close-work-question = Projeyi kapatmadan önce değişiklikler kaydedilsin mi?
+close-work-question = Proje kapatılmadan önce değişiklikler kaydedilsin mi?
 quit-question = Çıkmadan önce değişiklikler kaydedilsin mi?
-quit-save-work-question = Ayrılmadan önce { $title }'e değişikliklerden tasarruf edin?
+quit-save-work-question = Çıkmadan önce “{ $title }” projesindeki değişiklikler kaydedilsin mi?
 unsaved-changes = Bu projede kaydedilmemiş değişiklikler var.
-new-work-unsaved-question = Yeni bir Proje oluşturmadan önce değişiklikler tasarruf edin?
-open-work-unsaved-question = Başka bir Proje açmadan önce değişiklikler tasarruf edin?
-switch-backup-discard-title = Kart kartı bu yedeklemeye değiştirir mi?
-switch-backup-discard-text = Bir yedekleme için değişiklikler kaydedilemez. Onları tutmak için tasarruf edin veya geri yükleme yapın veya başka bir projeyi açın.
-switch-save-failed = Proje kurtarılamadı, bu yüzden değiştirildi: { $error }
-switch-save-not-started = Proje kurtarılamadı, bu yüzden değiştirildi.
-close-save-failed = Proje kurtarılamadı, bu yüzden kapalı değildi: { $error }
-close-save-not-started = Proje kurtarılamaz, bu yüzden kapalı değildi.
-save-not-started = Proje kurtarılamazdı.
+new-work-unsaved-question = Yeni proje oluşturmadan önce değişiklikler kaydedilsin mi?
+open-work-unsaved-question = Başka bir proje açmadan önce değişiklikler kaydedilsin mi?
+switch-backup-discard-title = Bu yedekteki değişiklikler atılsın mı?
+switch-backup-discard-text = Bir yedekte yapılan değişiklikler o yedeğe kaydedilemez. Saklamak için Farklı kaydet ya da Geri yükle'yi kullanın veya değişiklikleri atıp diğer projeyi açın.
+switch-save-failed = Proje kaydedilemediği için değiştirilmedi: { $error }
+switch-save-not-started = Proje kaydedilemediği için değiştirilmedi.
+close-save-failed = Proje kaydedilemediği için kapatılmadı: { $error }
+close-save-not-started = Proje kaydedilemediği için kapatılmadı.
+save-not-started = Proje kaydedilemedi.
 
-could-not-open-work = "{ $file }" açılamaz
-could-not-open-work-too-new = "{ $file }" yeni bir Skribisto'e ihtiyaç duyuyor
-could-not-open-work-too-new-detail = Tarafından Saved Skribisto format format format format format { $written_by }● Formata ihtiyacı var { $requires } veya yenier ve bu inşa formata kadar destekleniyor { $supported }. Update Skribisto Bunu açmak için.
-could-not-open-work-importing = "{ $file }" bir ithalat tarafından yazılır
-could-not-open-work-importing-detail = Bir ithalat bu proje üzerinde yazıyor ve bitmiyor. Bir kez ithalat yapılıyor: şimdi açıldı, bu projeyi ihracatın değiştirilmesini gösterecek ve bir sonraki tasarruf, bu projeyi ithalattan geri yazacaktır.
-could-not-open-example = Açık bir örnek olamaz: { $error }
-could-not-open-link = Açıklanamadı { $url }: { $error }
-could-not-create-work = Project oluşturamadı: { $error }
-saving-as-file = { $target } olarak tasarruf edin...
-saving-as-folder = { $target } / ...
-saved-as = { $target }'e Kurtarıldı
-save-error = Kurtarılamaz: { $error }
-save-flush-failed = Kurtarma devam etti, ancak bu belgeler buna teslim edilemezdi ve hala ihtiyatsız: { $titles } ({ $error })
-backup-error = Geri dönemez: { $error }
-backing-up = Backing up...
-backup-nothing-open = Hiçbir proje geri dönmeye açık değildir.
-backup-already-running = Bir yedekleme zaten ilerlemede.
-backup-complete = Backup complete ({ $ok } kurtarıldı, { $skipped } zaten mevcut)
-backup-partial = Backup tamamlandı: { $ok } kurtarıldı, { $failed ->
-    [one] { $failed } Hedef başarısız oldu
-   *[other] { $failed } destinasyonları başarısız oldu
+could-not-open-work = "{ $file }" açılamadı
+could-not-open-work-too-new = "{ $file }" için daha yeni bir Skribisto gerekiyor
+could-not-open-work-too-new-detail = Skribisto biçim sürümü { $written_by } ile kaydedilmiş; açmak için biçim { $requires } ya da daha yenisi gerekiyor, bu sürüm ise en fazla biçim { $supported } destekliyor. Açmak için Skribisto'yu güncelleyin.
+could-not-open-work-importing = "{ $file }" şu anda bir içe aktarma tarafından yazılıyor
+could-not-open-work-importing-detail = Bu projenin üzerine bir içe aktarma yazıyor ve henüz bitmedi. İçe aktarma tamamlanınca açın: şimdi açılırsa içe aktarmanın yerini aldığı projeyi gösterir ve sonraki kaydetme o projeyi içe aktarılanın üzerine geri yazar.
+could-not-open-example = Örnek açılamadı: { $error }
+could-not-open-link = { $url } açılamadı: { $error }
+could-not-create-work = Proje oluşturulamadı: { $error }
+saving-as-file = { $target } olarak kaydediliyor…
+saving-as-folder = { $target }/ olarak kaydediliyor…
+saved-as = Şuraya kaydedildi: { $target }
+save-error = Kaydedilemedi: { $error }
+save-flush-failed = Kaydetme tamamlandı ama şu belgeler kaydetmeye aktarılamadı ve hâlâ kaydedilmemiş durumda: { $titles } ({ $error })
+backup-error = Yedeklenemedi: { $error }
+backing-up = Yedekleniyor…
+backup-nothing-open = Yedeklenecek açık proje yok.
+backup-already-running = Zaten bir yedekleme sürüyor.
+backup-complete = Yedekleme tamamlandı ({ $ok } kaydedildi, { $skipped } zaten güncel)
+backup-partial = Yedekleme bitti: { $ok } kaydedildi, { $failed ->
+    [one] { $failed } konum başarısız oldu
+   *[other] { $failed } konum başarısız oldu
 }
-backup-no-destination-title = Mevcut herhangi bir yedekleme yeri mevcut
-backup-no-destination-text = Yapılı yedekleme destinasyonlarının hiçbiri ulaşılamaz (örneğin, dış bir sürücü açılmamış olabilir). Plug it in and retry, or exit without backing.
-backup-failed-close-title = Yedek kurtarılamaz
-backup-failed-close-text = Hiçbir yedekleme kopyası kapanmadan önce yazılamaz. Her hedef başarısız olabilir (kullanıcı kaldırılabilir veya tam veya yazılı olabilir). Bunu düzeltin ve yeniden deneme, ya da geri dönmeden çıkış.
+backup-no-destination-title = Kullanılabilir yedekleme konumu yok
+backup-no-destination-text = Yapılandırılmış yedekleme konumlarının hiçbirine ulaşılamıyor (örneğin harici bir sürücü takılı olmayabilir). Sürücüyü takıp yeniden deneyin ya da yedeklemeden çıkın.
+backup-failed-close-title = Yedek kaydedilemedi
+backup-failed-close-text = Kapatmadan önce hiçbir yedek kopya yazılamadı. Tüm konumlar başarısız oldu (sürücü çıkarılmış, dolu ya da yazmaya karşı korumalı olabilir). Sorunu giderip yeniden deneyin ya da yedeklemeden çıkın.
 
 backup-choice-title = Yedek dosyası
-backup-choice-heading = Bir yedek kopya açtın
-backup-choice-subtitle = Bu, bir projenin bir noktası zamanlı yedeklemedir.
-backup-choice-subtitle-dated = Backup { $date } aldı.
-backup-choice-body = Bunu açabilir ve özgürce düzenleyebilirsiniz, ancak değişiklikler yalnızca Save As ile tutulabilir. Orijinal proje dosyasına dokunmaz. Ya da bu projeyi tam olarak bu yedeklemeye geri yükleyebilirsiniz.
-backup-choice-open = yedeklemeyi açın
-backup-choice-restore = Bu projeye bu noktaya geri dönün...
-backup-choice-not-a-backup = Hayır, normalde açın
-backup-banner-title = Backup copy: değişiklikler burada kurtarılamaz
-backup-banner-description = Yeni bir dosyadaki düzenlemelerinizi tutmak veya orijinal projeyi bu yedekleme ile değiştirmek için geri yükleme.
+backup-choice-heading = Bir yedek kopya açtınız
+backup-choice-subtitle = Bu, bir projenin belirli bir andaki yedeğidir.
+backup-choice-subtitle-dated = Yedeğin alındığı tarih: { $date }.
+backup-choice-body = Açıp dilediğiniz gibi düzenleyebilirsiniz, ancak değişiklikler yalnızca Farklı kaydet ile saklanabilir. Özgün proje dosyasına dokunulmaz. Ya da bu projeyi tam olarak bu yedeğe geri yükleyin.
+backup-choice-open = Yedeği aç
+backup-choice-restore = Bu projeyi bu noktaya geri yükle…
+backup-choice-not-a-backup = Hayır, normal şekilde aç
+backup-banner-title = Yedek kopya: değişiklikler buraya kaydedilemez
+backup-banner-description = Düzenlemelerinizi yeni bir dosyada saklamak için Farklı kaydet'i, özgün projeyi bu yedekle değiştirmek için Geri yükle'yi kullanın.
 backup-banner-restore = Geri yükle…
-backup-banner-save-as = Kurtarın...
-backup-restore-original-missing = Bu yedeklemeyi yerine yeni bir proje olarak tutmak için orijinal projesi bulamaz.Use Save as to keep this backup as a new project instead.
-backup-restore-close-elsewhere-title = Proje başka bir pencerede açılır
-backup-restore-close-elsewhere-text = Yeniden restore ettiğiniz proje başka bir pencerede açıktır. Lütfen önce oraya yakınlayın, sonra yeniden deneme.
-backup-restore-focus-window = O pencereye o pencereye odaklanın
-backup-restore-confirm-title = Bu yedeklemeyi geri yükleyin mi?
-backup-restore-confirm-text = Projenin mevcut versiyonu, bu ile değiştirilmesinden önce bir güvenlik yedeklemesi olarak kopyalanacaktır.
+backup-banner-save-as = Farklı kaydet…
+backup-restore-original-missing = Üzerine geri yüklenecek özgün proje bulunamıyor. Bunun yerine bu yedeği yeni bir proje olarak saklamak için Farklı kaydet'i kullanın.
+backup-restore-close-elsewhere-title = Proje başka bir pencerede açık
+backup-restore-close-elsewhere-text = Üzerine geri yüklediğiniz proje başka bir pencerede açık. Lütfen önce orada kapatıp yeniden deneyin.
+backup-restore-focus-window = O pencereye geç
+backup-restore-confirm-title = Bu yedek geri yüklensin mi?
+backup-restore-confirm-text = Projenin şu anki sürümü, bununla değiştirilmeden önce güvenlik yedeği olarak bir kenara kopyalanacak.
 backup-restore-confirm-ok = Geri yükle
-backup-restore-error = restore edemez: { $error }
-backup-restored-ok = Proje restore edildi.
-backup-restored-with-safety = Proje restore edildi. Önceki sürümü { $path }'e kurtarıldı.
-close-backup-discard-title = Kart kartı bu yedeklemeye değiştirir mi?
-close-backup-discard-text = Bir yedekleme için değişiklikler kaydedilemez. Onları tutmak veya discard ve yakın tutmak için Kaydetin.
-quit-backup-discard-title = Kartvizit değişiklikleri ve bırakın?
-quit-backup-discard-work-question = Kart kartı { $title }'e değişir ve bırakır?
-quit-backup-discard-text = Bir yedekleme için değişiklikler kaydedilemez. Onları tutmak veya kartpostal bırakmak için tasarruf edin.
-backup-nudge-text = Bu proje için yedekler kurulmıyor.
-backup-nudge-action = Yedekler oluşturun...
+backup-restore-error = Geri yüklenemedi: { $error }
+backup-restored-ok = Proje geri yüklendi.
+backup-restored-with-safety = Proje geri yüklendi. Önceki sürümünüz şuraya kaydedildi: { $path }.
+close-backup-discard-title = Bu yedekteki değişiklikler atılsın mı?
+close-backup-discard-text = Bir yedekte yapılan değişiklikler o yedeğe kaydedilemez. Saklamak için Farklı kaydet'i kullanın ya da değişiklikleri atıp kapatın.
+quit-backup-discard-title = Değişiklikler atılıp çıkılsın mı?
+quit-backup-discard-work-question = “{ $title }” projesindeki değişiklikler atılıp çıkılsın mı?
+quit-backup-discard-text = Bir yedekte yapılan değişiklikler o yedeğe kaydedilemez. Saklamak için Farklı kaydet'i kullanın ya da değişiklikleri atıp çıkın.
+backup-nudge-text = Bu proje için ayarlanmış yedekleme yok.
+backup-nudge-action = Yedeklemeyi ayarla…
 
-menu-backups-list = Yedekler… (&K)
+menu-backups-list = Yed&ekler…
 backups-title = Yedekler
-backups-loading = Yedekler için tarama...
-backups-empty = Bu proje için henüz bulunan yedekler yok.
+backups-loading = Yedekler aranıyor…
+backups-empty = Bu proje için henüz yedek bulunamadı.
 backups-open = Aç
-backups-reveal = Açıklayın
+backups-reveal = Klasörde göster
 backups-delete = Bu yedeği sil
-backups-delete-confirm-title = Bu yedeklemeyi Delete mi?
+backups-delete-confirm-title = Bu yedek silinsin mi?
 backups-delete-confirm-text = “{ $name }” kalıcı olarak silinecek. Bu işlem geri alınamaz.
-backups-delete-error = Yedekleri silemez: { $error }
-backups-refresh = Yeniden Yenileme
+backups-delete-error = Yedek silinemedi: { $error }
+backups-refresh = Yenile
 backups-close = Kapat
 
-settings-page-backup = Varsayılan yedekleme ayarları
+settings-page-backup = Yedekleme varsayılanları
 settings-page-work-backup = Yedekler
 settings-backup-general-title = Varsayılan yedekleme ayarları
-settings-backup-work-title = Bu proje için yedeklemeler
-settings-backup-inherit = Genel yedekleme ayarlarını kullanın
-settings-backup-inheriting = Bu proje genel yedekleme ayarlarını kullanır.
-settings-backup-none-hint = Otomatik yedeklemeler ayarlanmamış değildir (her tetikleyici kapalıdır).
-settings-backup-last = Son yedekleme: { $date }
+settings-backup-work-title = Bu projenin yedekleri
+settings-backup-inherit = Genel yedekleme ayarlarını kullan
+settings-backup-inheriting = Bu proje genel yedekleme ayarlarını kullanıyor.
+settings-backup-none-hint = Otomatik yedekleme ayarlanmamış (tüm tetikleyiciler kapalı).
+settings-backup-last = Son yedek: { $date }
 settings-backup-last-never = Henüz yedek yok.
-settings-backup-open-list = Açık yedeklemeler listesi...
-settings-backup-triggers = Ne zaman geri dönsün
-settings-backup-on-close = Projeyi kapatdığınızda geri dönün
-settings-backup-on-open = Projeyi açtığında geri dön
-settings-backup-interval = Sürekli olarak, her şey
-settings-backup-destinations = Backup destinasyonları
+settings-backup-open-list = Yedek listesini aç…
+settings-backup-triggers = Ne zaman yedeklensin
+settings-backup-on-close = Proje kapatılırken yedekle
+settings-backup-on-open = Proje açılırken yedekle
+settings-backup-interval = Düzenli aralıklarla yedekle, her
+settings-backup-destinations = Yedekleme konumları
 settings-backup-default-location = Varsayılan konum
 settings-backup-usage-since = { $count ->
-    [one] { $count } yedekleme · { $size } · en eski { $oldest }
-   *[other] { $count } yedeklemeleri · { $size } · en eski { $oldest }
+    [one] { $count } yedek · { $size } · en eskisi { $oldest }
+   *[other] { $count } yedek · { $size } · en eskisi { $oldest }
 }
 settings-backup-usage = { $count ->
-    [one] { $count } yedekleme · { $size }
-   *[other] { $count } yedeklemeleri · { $size }
+    [one] { $count } yedek · { $size }
+   *[other] { $count } yedek · { $size }
 }
-settings-backup-usage-empty = Henüz burada hiçbir şey kalmadı
-settings-backup-usage-measuring = Ölçme...
-settings-backup-reveal-root = Show klasörünü göster
-settings-backup-dest-none = Hiçbir destinasyon yok. Backups projeye bir sonraki kurtarılıyor.
+settings-backup-usage-empty = Burada henüz bir şey tutulmuyor
+settings-backup-usage-measuring = Ölçülüyor…
+settings-backup-reveal-root = Klasörü göster
+settings-backup-dest-none = Konum yok. Yedekler projenin yanına kaydedilir.
 settings-backup-dest-remove = Kaldır
-settings-backup-dest-add = klasörü ekleyin...
-settings-backup-dest-refresh = Yeniden Yenileme
-settings-backup-retention = Kaç tane tutmak için
+settings-backup-dest-add = Klasör ekle…
+settings-backup-dest-refresh = Yenile
+settings-backup-retention = Kaç tane tutulsun
 settings-backup-retention-tiered = Kademeli
-settings-backup-retention-keep-n = Son Nişe Devam Et
-settings-backup-retention-tip = Eski yedekler nasıl idare edilir.
-settings-backup-retention-tip-more = Katmanlı bir gün için saatte bir yedek tutar, bir hafta boyunca, bir ay boyunca haftada ve ay ötesinde, bu yüzden son tarih yoğun ve eski tarih ince kalır. "Son N" sadece N en yeni kopyaları tutar.
-settings-backup-gfs-hourly = Saat (son 24 h)
+settings-backup-retention-keep-n = Son N taneyi tut
+settings-backup-retention-tip = Eski yedeklerin nasıl ayıklandığı.
+settings-backup-retention-tip-more = Kademeli seçenek bir gün boyunca saatte bir, bir hafta boyunca günde bir, bir ay boyunca haftada bir ve sonrasında ayda bir yedek tutar; böylece yakın geçmiş sık, uzak geçmiş seyrek kalır. “Son N taneyi tut” yalnızca en yeni N kopyayı tutar. İki modda da en yeni kopyalar (aşağıdaki en az sayı) her zaman tutulur.
+settings-backup-gfs-hourly = Saatlik (son 24 saat)
 settings-backup-gfs-daily = Günlük (son hafta)
 settings-backup-gfs-weekly = Haftalık (son ay)
-settings-backup-gfs-monthly = Aylık Aylık Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly Monthly
-settings-backup-keep-n = tutmak için numara
-settings-backup-min-keep = Her zaman en azından devam edin
-settings-backup-dedup = Hiçbir şey değiştiğinde bir yedek Skip a backup when nothing has changed
+settings-backup-gfs-monthly = Aylık
+settings-backup-keep-n = Tutulacak sayı
+settings-backup-min-keep = Her zaman en az şu kadar tut
+settings-backup-dedup = Hiçbir şey değişmediyse yedeği atla
 
 new-work-title = Yeni proje
 new-work-close = Kapat
 new-work-name = Proje adı
 new-work-name-placeholder = Adsız
 new-work-author = Yazar
-new-work-author-placeholder = Seçmeli Seçmeli Seçmeli Seçmeli
+new-work-author-placeholder = İsteğe bağlı
 new-work-format = Biçim
 new-work-single-file = Tek dosya
-new-work-bundle = Grafikler
-new-work-convert-later = Daha sonra formatlar arasında dönüştürebilirsiniz.
-new-work-location = Konum Konum Location
-new-work-will-create = Oluşturacak Will create Will create
-new-work-language = Varsayılan dil dili
-new-work-language-hint = Yeni metinler yazım kontrolüne uygulanabilir. Her metin başka bir dile geçebilir.
+new-work-bundle = Klasör paketi
+new-work-convert-later = Biçimler arasında daha sonra dönüştürme yapabilirsiniz.
+new-work-location = Konum
+new-work-will-create = Oluşturulacak
+new-work-language = Varsayılan dil
+new-work-language-hint = Yeni metinlere ve yazım denetimine uygulanır. Her metin başka bir dile geçirilebilir.
 new-work-template = Şablon
 new-work-template-none = Yok
 new-work-template-empty-novel = Boş roman
-new-work-template-light-novel = Işık Roman
-new-work-template-novel = Roman Roman Roman
-new-work-template-novel-in-parts = bölümlerde roman
-new-work-template-notebook = Defter Defteri
+new-work-template-light-novel = Hafif roman
+new-work-template-novel = Roman
+new-work-template-novel-in-parts = Kısımlara ayrılmış roman
+new-work-template-notebook = Defter
 new-work-cancel = İptal
-new-work-create = Create Project Create Project
+new-work-create = Projeyi oluştur
 new-work-step-details = Ayrıntılar
-new-work-step-language = Dil yapısı
+new-work-step-language = Dil ve yapı
 new-work-step-template = Şablon
-new-work-back = Back Back Back Back
-new-work-next = Sonraki
-new-work-documents-title = Yeni Project from documents
+new-work-back = Geri
+new-work-next = İleri
+new-work-documents-title = Belgelerden yeni proje
 new-work-step-import = İçe aktar
-new-work-create-and-import = Create import...
-new-work-documents-next-title = Belgeleriniz bir sonraki sefere geliyor
-new-work-documents-next-body = Proje oluşturmak, belgeleri seçtiğiniz yerde, Skribisto'in onlardan okuduğunu ve arazilerin nerede yazıldığını inceler. orada onayladığınıza kadar projeye hiçbir şey yazılmamıştır.
-new-work-documents-no-template = Bu proje amaçta boş başlıyor: şablon yok, bu yüzden ithal belgeler bunun içinde tek şey.
-new-work-documents-chapter-scene-hint = İhracatın yarattığı bölümlere uygundur. Daha sonra projenin ayarlarında değiştirebilirsiniz.
-new-work-single-file-desc = .skrib arşiv (zip) Portre, geri dönmek kolay.
-new-work-bundle-desc = Her metin varlığını tutan bir klasör. Friendlier to version control.
-new-work-template-none-count = boş biner
+new-work-create-and-import = Oluştur ve içe aktar…
+new-work-documents-next-title = Sırada belgeleriniz var
+new-work-documents-next-body = Proje oluşturulunca üzerinde içe aktarma sihirbazı açılır: orada belgeleri seçer, Skribisto'nun onlardan okuduğu yapıyı gözden geçirir ve nereye yerleşeceğini belirlersiniz. Orada onaylayana kadar projeye hiçbir şey yazılmaz.
+new-work-documents-no-template = Bu proje bilerek boş başlar: şablon yok, böylece içinde yalnızca içe aktarılan belgeler olur.
+new-work-documents-chapter-scene-hint = İçe aktarmanın oluşturduğu bölümlere uygulanır. Daha sonra projenin ayarlarından değiştirebilirsiniz.
+new-work-single-file-desc = Tek bir .skrib arşivi (zip). Taşınabilir, yedeklemesi kolay.
+new-work-bundle-desc = Her metni ve varlığı içeren bir klasör. Sürüm denetimiyle daha uyumlu.
+new-work-template-none-count = boş dizin
 new-work-template-empty-novel-count = 1 bölüm
 new-work-template-light-novel-count = 15 bölüm
 new-work-template-novel-count = 20 bölüm
-new-work-template-novel-in-parts-count = 3 bölüm, 24 bölüm
-new-work-template-notebook-count = ücretsiz-form notları
+new-work-template-novel-in-parts-count = 3 kısım, 24 bölüm
+new-work-template-notebook-count = serbest notlar
 new-work-chapter-scene = Düz bölümler
-new-work-chapter-scene-tip = Her bölüm, tam olarak yazdığınız tek bir eşyadır, içinde sahneler yok. Klasik düzen için bunu bırakın, bir bölüm de bir klasör nerede: doğrudan bunu da yazabilirsiniz, ancak sahneleri de tutabilir.
-new-work-chapter-scene-tip-more = Bir bölüm ya da şekilde yazabilirsiniz. Tek fark, * sahneler. Skribisto'in binder ağacı sadece örgütseldir, bu yüzden her iki düzen de onları özgürce karıştırabilir ve iki kelimeyi kaybetmeden bir bölüm oluşturabilirsiniz.
-new-work-name-required = Project için bir isim girin
-new-work-name-invalid = Bu adın kullanışlı karakterler yok
-new-work-location-required = Bir yer seçin
-new-work-location-missing = Bu klasör mevcut değil
+new-work-chapter-scene-tip = Her bölüm, doğrudan içine yazdığınız ve altında sahne olmayan tek bir öğedir. Bölümün bir klasör olduğu klasik düzen için bunu kapalı bırakın: ona da doğrudan yazarsınız ama sahneler de barındırabilir.
+new-work-chapter-scene-tip-more = Her iki durumda da bölümün içine yazarsınız. Tek fark, bölümün sahne *barındırıp* barındıramayacağıdır. Skribisto'nun dizin ağacı yalnızca düzenleme amaçlıdır; bu yüzden iki düzen de aynı kitaba derlenir, ikisini dilediğiniz gibi karıştırabilirsiniz ve Dönüştür bir bölümü tek sözcük kaybetmeden ikisi arasında değiştirir.
+new-work-name-required = Proje için bir ad girin
+new-work-name-invalid = Bu adda kullanılabilir karakter yok
+new-work-location-required = Bir konum seçin
+new-work-location-missing = Bu klasör yok
 new-work-location-not-folder = Bu yol bir klasör değil
-new-work-location-readonly = Bu klasör takdir edilemez
-new-work-target-exists = Bu isimle bir proje zaten bu klasörde. Proje oluşturmak, onu değiştirmeden önce soracaktır.
-new-work-target-is-folder = Bu isim ile bir klasör zaten bu yerdedir. Başka bir isim seçin
-new-work-overwrite-title = Mevcut projeyi değiştirin mi?
-new-work-overwrite-text = "{ $name }" zaten bu klasörün içinde var. yeni proje ile değiştirin mi?
+new-work-location-readonly = Bu klasöre yazılamıyor
+new-work-target-exists = Bu klasörde bu adda bir proje zaten var. Proje oluşturulurken değiştirilmeden önce size sorulacak
+new-work-target-is-folder = Bu konumda bu adda bir klasör zaten var. Başka bir ad seçin
+new-work-overwrite-title = Var olan proje değiştirilsin mi?
+new-work-overwrite-text = “{ $name }” bu klasörde zaten var. Yeni projeyle değiştirilsin mi?
 new-work-target-open-title = Bu proje açık
-new-work-target-open-text = "{ $name }" Skribisto'de açıktır. Onun yerinde yeni bir proje yaratmak, üzerinde çalıştığınız projeyi değiştirir ve bir sonraki tasarruf, bu projeyi yeni bir isim veya klasör seçin veya projeyi ilk önce kapatın.
-target-importing-title = Bir ithalat bu projeyi yazıyor
-target-importing-text = Bir ithalat hala "{ $name }" yazılıdır, bitinceye kadar bekleyin veya başka bir isim seçin.
-import-plume-busy-title = Başka Plume Creator projesi ithal ediliyor
-import-plume-busy-text = Plume Creator projeleri bir seferde ithal edilir.Geçmiş şekilde ithal edilene kadar bekleyin veya iptal edin, sonra bu sefer bir kez daha başlayın.
-import-manuskript-busy-title = Başka Manuskript projesi ithal ediliyor
-import-manuskript-busy-text = Manuskript projeleri bir seferde ithal edilir.Geçmiş şekilde ithal edilene kadar bekleyin veya iptal edin, sonra bu sefer bir kez daha başlayın.
-backup-restore-importing-text = Bir ithalat hala "{ $name }" yazıyor, proje bu yedek restore edilecek.Bir kez ithalat tamamlandıktan sonra yedek geri yükleme.
+new-work-target-open-text = “{ $name }” Skribisto'da açık. Onun yerine yeni bir proje oluşturmak üzerinde çalıştığınız projeyi değiştirir ve sonraki kaydetme o projeyi yenisinin üzerine geri yazar. Başka bir ad ya da klasör seçin veya önce projeyi kapatın.
+target-importing-title = Bu projeye bir içe aktarma yazıyor
+target-importing-text = Bir içe aktarma hâlâ “{ $name }” projesini yazıyor. Bitene kadar bekleyin ya da başka bir ad seçin.
+import-plume-busy-title = Başka bir Plume Creator projesi içe aktarılıyor
+import-plume-busy-text = Plume Creator projeleri birer birer içe aktarılır. Süren içe aktarmanın bitmesini bekleyin ya da onu iptal edin, sonra bunu yeniden başlatın.
+import-manuskript-busy-title = Başka bir Manuskript projesi içe aktarılıyor
+import-manuskript-busy-text = Manuskript projeleri birer birer içe aktarılır. Süren içe aktarmanın bitmesini bekleyin ya da onu iptal edin, sonra bunu yeniden başlatın.
+backup-restore-importing-text = Bir içe aktarma hâlâ, bu yedeğin üzerine geri yükleneceği “{ $name }” projesini yazıyor. Yedeği içe aktarma bittikten sonra geri yükleyin.
 
 new-work-manuscript = El yazması
 new-work-notes = Notlar
-new-work-research = Araştırma Araştırma Araştırma Araştırma Araştırma Araştırma Araştırma Araştırma
-new-work-notebook = Defter Defteri
+new-work-research = Araştırma
+new-work-notebook = Defter
 new-work-scene = Sahne
 new-work-note = Not
-new-work-front-matter = Ön sayfalar
-new-work-back-matter = Son sayfalar
+new-work-front-matter = Ön kısım
+new-work-back-matter = Arka kısım
 new-work-paratext = Kitap yapısı
-new-work-paratext-none = Hiçbir yapı yok
-new-work-paratext-hint = Ön ve geri bir gelenek açılır ve birlikte bir kitap kapatabilirsiniz. Daha sonra herhangi bir şekilde yeniden adlandırılabilir veya silebilirsiniz.
+new-work-paratext-none = Yapı yok
+new-work-paratext-hint = Bir geleneğin kitabı açtığı ve kapattığı ön ve arka kısımlar. Daha sonra herhangi birini taşıyabilir, yeniden adlandırabilir ya da silebilirsiniz.
 new-work-tags = Etiketler
-new-work-tags-none = Hiçbir etiket yok
-new-work-tags-hint = Karakterleri, yerleri ve geri kalanı için bir başlangıç paleti. Seçmeli olarak, ve her etiket daha sonra yeniden adlandırılabilir veya silinebilir.
+new-work-tags-none = Etiket yok
+new-work-tags-hint = Kişileri, yerleri ve diğerlerini etiketlemek için bir başlangıç paleti. İsteğe bağlıdır; her etiket daha sonra yeniden adlandırılabilir, yeniden renklendirilebilir ya da silinebilir.
 new-work-note-templates = Not şablonları
-new-work-note-templates-none = Hiçbir şablon yok
-new-work-note-templates-hint = Bir hikaye-bible notu başlar. Seçmeli, ve her şablon daha sonra düzenlenebilir veya silinebilir.
-new-work-characters = Karakterler
+new-work-note-templates-none = Şablon yok
+new-work-note-templates-hint = Bir hikâye rehberi notunun başlangıçtaki biçimi. İsteğe bağlıdır; her şablon daha sonra düzenlenebilir ya da silinebilir.
+new-work-characters = Kişiler
 new-work-places = Yerler
 
-import-plume-title = İthalat Plume Creator Proje
+import-plume-title = Plume Creator projesini içe aktar
 import-plume-close = Kapat
 import-plume-source = Plume projesi
-import-plume-source-hint = .plume veya .plume_backup dosyasını seçin (her Plume Creator sürüm).
-import-plume-location = Hedef klasörü
+import-plume-source-hint = Bir .plume ya da .plume_backup dosyası seçin (herhangi bir Plume Creator sürümü).
+import-plume-location = Hedef klasör
 import-plume-name = Dosya adı
 import-plume-name-placeholder = Proje adı
-import-plume-will-create = Oluşturacak Will create Will create
-import-plume-trash-warning = Trashed / silinmiş maddeler göçebe edilmez.
+import-plume-will-create = Oluşturulacak
+import-plume-trash-warning = ⚠ Çöp kutusundaki / silinmiş öğeler aktarılmaz.
 import-plume-cancel = İptal
 import-plume-import = İçe aktar
-import-plume-source-required = Bir Plume projesi dosyasını seçin
-import-plume-source-missing = Bu dosya mevcut değildir
+import-plume-source-required = Bir Plume proje dosyası seçin
+import-plume-source-missing = Bu dosya yok
 import-plume-source-not-file = Bu yol bir dosya değil
-import-plume-location-required = Bir hedef klasörü seçin
-import-plume-location-missing = Bu klasör mevcut değil
+import-plume-location-required = Bir hedef klasör seçin
+import-plume-location-missing = Bu klasör yok
 import-plume-location-not-folder = Bu yol bir klasör değil
-import-plume-location-readonly = Bu klasör takdir edilemez
+import-plume-location-readonly = Bu klasöre yazılamıyor
 import-plume-name-required = Bir dosya adı girin
-import-plume-name-exists = Bu adı olan bir dosya zaten burada var. İthalat, yazılacak
-import-plume-overwrite-title = Mevcut dosyayı değiştirin mi?
-import-plume-overwrite-text = "{ $name }" zaten var. ithal proje ile onu değiştir mi?
+import-plume-name-exists = Burada bu adda bir dosya zaten var. İçe aktarma, üzerine yazmadan önce onay isteyecek
+import-plume-overwrite-title = Var olan dosya değiştirilsin mi?
+import-plume-overwrite-text = “{ $name }” zaten var. İçe aktarılan projeyle değiştirilsin mi?
 import-plume-manuscript-binder = El yazması
 import-plume-story-bible-binder = Hikâye rehberi
-import-plume-progress-title = Plante projesini ithal etmek...
+import-plume-progress-title = Plume projesi içe aktarılıyor…
 import-plume-cancel-import = İptal
-import-plume-cancelled = İthalat iptali iptal edildi
-import-plume-done = ithal edildi { $imported ->
-    [one] { $imported } öğe.
-   *[other] { $imported } eşya.
- } { $skipped ->
-    [one] { $skipped } çöp eşyası göç edilmedi.
-   *[other] { $skipped } çöp eşyaları göç edilmedi.
+import-plume-cancelled = İçe aktarma iptal edildi
+import-plume-done = { $imported ->
+    [one] { $imported } öğe içe aktarıldı.
+   *[other] { $imported } öğe içe aktarıldı.
+} { $skipped ->
+    [one] Çöp kutusundaki { $skipped } öğe aktarılmadı.
+   *[other] Çöp kutusundaki { $skipped } öğe aktarılmadı.
 }
-import-plume-open-now = Open Now Open Now
+import-plume-open-now = Şimdi aç
 import-plume-warnings = { $count ->
-    [one] 1 şey tam olarak ithal edilemez
-   *[other] { $count } Şey tam olarak ithal edilemez
+    [one] 1 şey birebir içe aktarılamadı
+   *[other] { $count } şey birebir içe aktarılamadı
 }
 import-plume-details = Ayrıntılar
-import-plume-warnings-title = İthalat uyarıları
-import-plume-error-title = Projeyi ithal edemez
-import-plume-nested-too-deep = Proje ithal edilmedi: "{ $part }" kısmı { $limit } seviyesinden daha derin bir şekilde kurtarıldı. Plume Creator projesi buna yakın geliyor ve Skribisto numaralı hiçbir şey yazamadı.
-import-plume-declares-entities = Proje ithal edilmedi: "{ $part }" kısmı, Plume Creator projesi olmayan XML varlıkları ilan etti. Onları genişletmek, bilgisayardan daha fazla hafıza alabilir ve Skribisto'te hiçbir şey yazılmamıştı.
+import-plume-warnings-title = İçe aktarma uyarıları
+import-plume-error-title = Proje içe aktarılamadı
+import-plume-nested-too-deep = Proje içe aktarılmadı: “{ $part }” bölümü { $limit } düzeyden daha derin iç içe geçmiş. Hiçbir Plume Creator projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
+import-plume-declares-entities = Proje içe aktarılmadı: “{ $part }” bölümü XML varlıkları tanımlıyor, oysa hiçbir Plume Creator projesi bunu yapmaz. Bunları açmak bilgisayarın belleğinden fazlasını gerektirip Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
 import-plume-error-details = Ayrıntılar
 
-import-manuskript-title = İthalat Manuskript Proje
+import-manuskript-title = Manuskript projesini içe aktar
 import-manuskript-close = Kapat
-import-manuskript-source = Manuskript Proje projesi
-import-manuskript-source-hint = .msk dosyasını veya proje klasörünü seçin (her Manuskript sürüm).
-import-manuskript-source-file = Dosyayı seçin...
-import-manuskript-source-folder = Dosyayı seçin...
-import-manuskript-location = Hedef klasörü
+import-manuskript-source = Manuskript projesi
+import-manuskript-source-hint = .msk dosyasını ya da proje klasörünü seçin (herhangi bir Manuskript sürümü).
+import-manuskript-source-file = Dosya seç…
+import-manuskript-source-folder = Klasör seç…
+import-manuskript-location = Hedef klasör
 import-manuskript-name = Dosya adı
 import-manuskript-name-placeholder = Proje adı
-import-manuskript-will-create = Oluşturacak Will create Will create
+import-manuskript-will-create = Oluşturulacak
 import-manuskript-cancel = İptal
 import-manuskript-import = İçe aktar
-import-manuskript-source-required = Manuskript projesi seçin
-import-manuskript-source-missing = Bu dosya veya klasör mevcut değildir
-import-manuskript-location-required = Bir hedef klasörü seçin
-import-manuskript-location-missing = Bu klasör mevcut değil
+import-manuskript-source-required = Bir Manuskript projesi seçin
+import-manuskript-source-missing = Bu dosya ya da klasör yok
+import-manuskript-location-required = Bir hedef klasör seçin
+import-manuskript-location-missing = Bu klasör yok
 import-manuskript-location-not-folder = Bu yol bir klasör değil
-import-manuskript-location-readonly = Bu klasör takdir edilemez
+import-manuskript-location-readonly = Bu klasöre yazılamıyor
 import-manuskript-name-required = Bir dosya adı girin
-import-manuskript-name-exists = Bu adı olan bir dosya zaten burada var. İthalat, yazılacak
-import-manuskript-overwrite-title = Mevcut dosyayı değiştirin mi?
-import-manuskript-overwrite-text = "{ $name }" zaten var. ithal proje ile onu değiştir mi?
+import-manuskript-name-exists = Burada bu adda bir dosya zaten var. İçe aktarma, üzerine yazmadan önce onay isteyecek
+import-manuskript-overwrite-title = Var olan dosya değiştirilsin mi?
+import-manuskript-overwrite-text = “{ $name }” zaten var. İçe aktarılan projeyle değiştirilsin mi?
 import-manuskript-manuscript-binder = El yazması
 import-manuskript-story-bible-binder = Hikâye rehberi
-import-manuskript-characters-group = Karakterler
-import-manuskript-world-group = Dünya Dünya Dünya
+import-manuskript-characters-group = Kişiler
+import-manuskript-world-group = Dünya
 import-manuskript-plots-group = Olay örgüleri
 import-manuskript-project-info-note = Proje bilgileri
-import-manuskript-summary-note = Özet Özet Özet Özet
-import-manuskript-importance-minor = Minor Minor
-import-manuskript-importance-secondary = Secondary Secondary Secondary Secondary Secondary Secondary
-import-manuskript-importance-main = Main Main Main Main Main
-import-manuskript-progress-title = Manuskript projesini ithal etmek...
+import-manuskript-summary-note = Özet
+import-manuskript-importance-minor = Küçük
+import-manuskript-importance-secondary = İkincil
+import-manuskript-importance-main = Ana
+import-manuskript-progress-title = Manuskript projesi içe aktarılıyor…
 import-manuskript-cancel-import = İptal
-import-manuskript-cancelled = İthalat iptali iptal edildi
+import-manuskript-cancelled = İçe aktarma iptal edildi
 import-manuskript-done = { $imported ->
-    [one] { $imported } Eşya ithal edildi.
-   *[other] { $imported } ithal edilen maddeler.
- } { $revisions ->
+    [one] { $imported } öğe içe aktarıldı.
+   *[other] { $imported } öğe içe aktarıldı.
+} { $revisions ->
     [0] { "" }
-    [one] { $revisions } önceki sürüm onunla geldi.
-   *[other] { $revisions } önceki versiyonlar onlarla geldi.
+    [one] Onunla birlikte { $revisions } eski sürüm de geldi.
+   *[other] Onlarla birlikte { $revisions } eski sürüm de geldi.
 }
-import-manuskript-open-now = Open Now Open Now
+import-manuskript-open-now = Şimdi aç
 import-manuskript-warnings = { $count ->
-    [one] Bu ithalat hakkında bilmek için 1 şey
-   *[other] { $count } Bu ithalat hakkında bilmeniz gereken şeyler
+    [one] Bu içe aktarma hakkında bilinmesi gereken 1 şey
+   *[other] Bu içe aktarma hakkında bilinmesi gereken { $count } şey
 }
 import-manuskript-details = Ayrıntılar
-import-manuskript-warnings-title = Bu ithalat hakkında
-import-manuskript-error-title = Projeyi ithal edemez
-import-manuskript-nested-too-deep = Proje ithal edilmedi: Dosyası "{ $part }" { $limit }'den fazla derin bir şekilde işgal edildi. Manuskript projesi buna yakın geliyor ve Skribisto numaralı hiçbir şey yazamadı.
-import-manuskript-folders-too-deep = Proje ithal edilmedi: dosyalarından biri { $limit } klasöründen daha derin bir şekilde oturuyor. Manuskript projesi buna yakın geliyor ve Skribisto'i hiç okumadı.
-import-manuskript-declares-entities = Proje ithal edilmedi: Dosyası "{ $part }", Manuskript projesi olmayan XML varlıkları ilan etti. Onları genişletmek, bilgisayardan daha fazla hafıza alabilir ve Skribisto'e kadar hiçbir şey yazılmamıştı.
+import-manuskript-warnings-title = Bu içe aktarma hakkında
+import-manuskript-error-title = Proje içe aktarılamadı
+import-manuskript-nested-too-deep = Proje içe aktarılmadı: “{ $part }” dosyası { $limit } düzeyden daha derin iç içe geçmiş. Hiçbir Manuskript projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
+import-manuskript-folders-too-deep = Proje içe aktarılmadı: dosyalarından biri { $limit } klasörden daha derinde duruyor. Hiçbir Manuskript projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
+import-manuskript-declares-entities = Proje içe aktarılmadı: “{ $part }” dosyası XML varlıkları tanımlıyor, oysa hiçbir Manuskript projesi bunu yapmaz. Bunları açmak bilgisayarın belleğinden fazlasını gerektirip Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
 import-manuskript-error-details = Ayrıntılar
 
 import-target-open-title = Bu proje açık
-import-target-open-text = "{ $name }" Skribisto'de açıktır. Üzerinden ithal etmek, üzerinde çalıştığınız projeyi değiştirir ve bir sonraki tasarruf, bu projeyi ilk önce başka bir dosya adı veya projeyi seçin.
+import-target-open-text = “{ $name }” Skribisto'da açık. Üzerine içe aktarmak üzerinde çalıştığınız projeyi değiştirir ve sonraki kaydetme o projeyi içe aktarılanın üzerine geri yazar. Başka bir dosya adı seçin ya da önce projeyi kapatın.
 import-warnings-announcement = { $result } { $notice }.
 
 export-title = Dışa aktar
 export-close = Kapat
-export-scope-label = What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What What
+export-scope-label = Ne
 export-format-label = Biçim
-export-style-label = Style Style Style
+export-style-label = Biçem
 export-path-label = Dosya
-export-browse = Göze...
-export-show-non-exportable = Açık olmayanlara göster
-export-choose-empty = Hiçbir projeden seçim yapmak için.
+export-browse = Gözat…
+export-show-non-exportable = Dışa aktarılmayanları göster
+export-choose-empty = Seçilecek proje yok.
 export-cancel = İptal
 export-export = Dışa aktar
-export-save-dialog-title = Dosyaya ihracat
-export-section-what = Ne ihraç edecek
-export-section-style = Style Style Style
-export-section-destination = Hedef Hedef Hedef
+export-save-dialog-title = Dosyaya dışa aktar
+export-section-what = Dışa aktarılacaklar
+export-section-style = Biçem
+export-section-destination = Kayıt yeri
 export-custom-selection = Özel seçim
-export-selected-count = { $count } Seçildi
-export-chip-chapters-none = Bölümler: Hiçbir şey
-export-chip-chapters-numbered = Bölümler: Sayılar
-export-chip-chapters-title = Bölümler: sadece başlık
-export-chip-chapters-both = Bölümler: sayılar + başlık
-export-chip-scene-break-glyph = Sahne molası: { $glyph }
-export-chip-scene-break-blank = Sahne molası: boş çizgi
-export-chip-scene-break-none = Sahne molası: Hiçbir şey
-export-chip-major-break-glyph = Major mola { $glyph }
-export-chip-major-break-blank = Büyük mola: boş çizgi
-export-chip-major-break-none = Binbaşı mola: Hiçbir şey
-export-chip-major-break-same = Her ikisi de aynı şekilde kırılırlar
+export-selected-count = { $count } seçili
+export-chip-chapters-none = Bölümler: yok
+export-chip-chapters-numbered = Bölümler: numaralı
+export-chip-chapters-title = Bölümler: yalnızca başlık
+export-chip-chapters-both = Bölümler: numara + başlık
+export-chip-scene-break-glyph = Sahne arası: { $glyph }
+export-chip-scene-break-blank = Sahne arası: boş satır
+export-chip-scene-break-none = Sahne arası: yok
+export-chip-major-break-glyph = Büyük ara: { $glyph }
+export-chip-major-break-blank = Büyük ara: boş satır
+export-chip-major-break-none = Büyük ara: yok
+export-chip-major-break-same = İki ara düzeyi aynı
 export-chip-spacing-single = Aralık: tek
-export-chip-spacing-onehalf = Spacing: 11⁄2
+export-chip-spacing-onehalf = Aralık: 1½
 export-chip-spacing-double = Aralık: çift
-export-chip-notes-included = Notlar dahil edilen Notlar
-export-chip-notes-excluded = Notlar dışlanmış Notlar
-export-format-docx = Word Word Word
+export-chip-notes-included = Notlar dahil
+export-chip-notes-excluded = Notlar hariç
+export-format-docx = Word
 export-format-odt = LibreOffice
 export-format-html = HTML
 export-format-markdown = Markdown
@@ -1025,395 +1030,399 @@ export-format-text = Metin
 export-format-latex = LaTeX
 export-format-epub = EPUB
 export-format-pdf = PDF
-export-overwrite-title = Mevcut dosyayı değiştirin mi?
-export-overwrite-text = "{ $name }" zaten var.
-export-progress-title = İhracat ...
-export-cancelled = İhracat iptali iptal edildi
-export-done = İhracata ihracat yapıldı { $count ->
-    [one] { $count } item
-   *[other] { $count } Madde
+export-overwrite-title = Var olan dosya değiştirilsin mi?
+export-overwrite-text = “{ $name }” zaten var. Değiştirilsin mi?
+export-progress-title = Dışa aktarılıyor…
+export-cancelled = Dışa aktarma iptal edildi
+export-done = { $count ->
+    [one] { $count } öğe dışa aktarıldı
+   *[other] { $count } öğe dışa aktarıldı
 }
 export-open-file = Aç
-export-show-in-folder = klasörün içinde göster
-export-error-title = İhracata ihracat yapamaz
+export-show-in-folder = Klasörde göster
+export-error-title = Dışa aktarılamadı
 export-error-details = Ayrıntılar
 
-backup-progress-start = Starting...
-backup-progress-retention = Eski yedekleri temizlemek...
+backup-progress-start = Başlatılıyor…
+backup-progress-retention = Eski yedekler temizleniyor…
 backup-progress-done = Bitti
-backup-progress-destination = Hedef Hedef Hedef { $i } Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of { $n }
+backup-progress-destination = Konum { $i } / { $n }
 backup-details = Ayrıntılar
-backup-issues-title = Backup sorunları
-backup-failed-title = Backup başarısız oldu
-backup-complete-prune-warning = Backup complete ({ $ok } kurtarıldı, { $skipped } zaten mevcut). Bazı eski yedekler kaldırılamaz.
+backup-issues-title = Yedekleme sorunları
+backup-failed-title = Yedekleme başarısız oldu
+backup-complete-prune-warning = Yedekleme tamamlandı ({ $ok } kaydedildi, { $skipped } zaten güncel). Bazı eski yedekler kaldırılamadı
 
 search = Ara
 search-query-placeholder = Ara…
-search-replace-placeholder = Değiştirin...
+search-replace-placeholder = Şununla değiştir…
 search-replace-toggle = Değiştirmeyi göster/gizle
-search-replace-all = Tüm Değişimleri Değiştirin
-search-opt-case = Maç davası
-search-opt-whole-word = Bütün kelime
-search-opt-diacritics = Maç aksanları
-search-scope-body = Vücut Vücut Bedeni
+search-replace-all = Tümünü değiştir
+search-opt-case = Büyük/küçük harf duyarlı
+search-opt-whole-word = Tam sözcük
+search-opt-diacritics = Aksan duyarlı
+search-scope-body = Gövde
 search-scope-title = Başlık
 search-scope-synopsis = Özet
-search-scope-label = Kısa açıklama
-search-facet-book = Kitaplar Kitaplar Kitaplar Kitaplar
-search-facet-part = Bölüm parçaları
+search-scope-label = Açıklama
+search-facet-book = Kitaplar
+search-facet-part = Kısımlar
 search-facet-chapter = Bölümler
 search-facet-scene = Sahneler
 search-facet-note = Notlar
-search-facet-folder = Katers
-search-tip-case = Maç davası: üst davayı ve daha düşüklüğü farklı olarak tedavi edin, bu yüzden "Elena" ve "elena" ayrı maçlar.
-search-tip-whole-word = Bütün kelime: Sadece tam kelimelerle eşleştirin, bu yüzden "category" içinde bulunamadı.
-search-tip-diacritics = Maç aksanları: aksanmış mektupları farklı olarak tedavi edin, bu yüzden "cafe" "café" ile eşleşmez.
-search-tip-body = Vücut: Sahnelerin ve notların proselerini arayın.
-search-tip-title = Başlık: binder eşyaların başlıklarını arayın.
-search-tip-synopsis = Synopsis: Her yazı öğenin özetini arayın.
-search-tip-label = Etiket: Binder bir öğenin başlığı altında gösterilen kısa notu arayın.
-search-tip-comment = Yorumlar: Yorum ipliklerinin ve cevaplarının metnini arayın. Bir yorum, bunun yerine yazı yazmakla ilgilidir, bu yüzden kendi geçişine sahiptir ve bir değişim onları işaret edene kadar maçsız bırakır.
-search-tip-book = Kitaplar: kitap konteyneri ve başlangıç / son işaretleyicileri.
-search-tip-part = Bölümler: part seviyesi bölmeler.
-search-tip-chapter = Bölümler: Proje onları hangi şekilde depolar.
-search-tip-scene = Sahneler: Prose tutunan öğeler.
-search-tip-note = Notlar: ücretsiz-form notlar.
-search-tip-folder = Katers: düz organize klasörler ve ayırıcılar.
-search-tip-paratext = Kitapa ait bir metin ama hikayesine ait değil: bir önyüz, bir adanmış, bir sonraki kelime. asla yazıya saymayın.
-search-tip-preserve-case = Durum: Bir yedek bulduğu davayı alır, bu yüzden "ELENA" "MARTA" olur ve "Elena" "Marta" olur.
-search-tip-replace = Değişim: Tüm değiştirme alanını göster ve Değiştirin.
+search-facet-folder = Klasörler
+search-tip-case = Büyük/küçük harf duyarlı: büyük ve küçük harfleri farklı sayar, böylece “Elena” ile “elena” ayrı eşleşmelerdir.
+search-tip-whole-word = Tam sözcük: yalnızca tam sözcükleri eşleştirir, böylece “kar” sözcüğü “karpuz” içinde bulunmaz.
+search-tip-diacritics = Aksan duyarlı: aksanlı ve şapkalı harfleri ayrı sayar, böylece “kar” ile “kâr” eşleşmez.
+search-tip-body = Gövde: sahnelerin ve notların metninde arar.
+search-tip-title = Başlık: dizin öğelerinin başlıklarında arar.
+search-tip-synopsis = Özet: her yazı öğesinin özetinde arar.
+search-tip-label = Açıklama: bir dizin öğesinin başlığının altında gösterilen kısa notta arar.
+search-tip-comment = Yorumlar: yorum dizilerinin ve yanıtlarının metninde arar. Yorum el yazmasının bir parçası değil, onun hakkındadır; bu yüzden kendi anahtarı vardır ve değiştirme işlemi siz işaretleyene kadar yorum eşleşmelerini işaretsiz bırakır.
+search-tip-book = Kitaplar: kitap kapsayıcısı ve başlangıç / bitiş işaretleri.
+search-tip-part = Kısımlar: kısım düzeyindeki ayırıcılar.
+search-tip-chapter = Bölümler: proje bölümleri hangi biçimde saklıyorsa.
+search-tip-scene = Sahneler: metninizi barındıran öğeler.
+search-tip-note = Notlar: serbest notlar.
+search-tip-folder = Klasörler: sıradan düzenleme klasörleri ve ayırıcılar.
+search-tip-paratext = Kitaba ait olan ama öyküsüne ait olmayan bir metin: önsöz, ithaf, sonsöz. El yazmasında asla sayılmaz.
+search-tip-preserve-case = Büyük/küçük harfi koru: değiştirilen metin bulduğu harf biçimini alır, böylece “ELENA” “MARTA”, “Elena” da “Marta” olur.
+search-tip-replace = Değiştir: değiştirme alanını ve Tümünü değiştir düğmesini gösterir.
 search-error = Arama başarısız oldu: { $message }
-search-no-matches = Hiç maç yok
+search-no-matches = Eşleşme yok
 search-count =
-    { $matches ->
-        [one] { $matches } maç maçı
-       *[other] { $matches } maçları
-    } in { $items ->
-        [one] { $items } Belge belgesi
-       *[other] { $items } Belgeler
+    { $items ->
+        [one] { $items } belgede
+       *[other] { $items } belgede
+    } { $matches ->
+        [one] { $matches } eşleşme
+       *[other] { $matches } eşleşme
     }
 search-count-truncated =
-    { $matches ->
-        [one] { $matches } maç maçı
-       *[other] { $matches } maçları
-    } in { $items ->
-        [one] { $items } Belge belgesi
-       *[other] { $items } Belgeler
-    } (İlk sonuçlar sadece)
+    { $items ->
+        [one] { $items } belgede
+       *[other] { $items } belgede
+    } { $matches ->
+        [one] { $matches } eşleşme
+       *[other] { $matches } eşleşme
+    } (yalnızca ilk sonuçlar)
 search-occurrences = { $count }
-search-field-body = Vücut Vücut Bedeni
+search-field-body = Gövde
 search-field-title = Başlık
 search-field-synopsis = Özet
-search-field-label = Kısa açıklama
+search-field-label = Açıklama
 search-field-epigraph = Epigraf
 search-field-comment = Yorum
-search-field-comment-reply = BeğenBeğen Cevap
+search-field-comment-reply = Yanıt
 search-field-footnote = Dipnot
-search-include-in-replace = Değişime Ekle All
-search-collapse-all = Tüm sonuçları Sonuç
-search-replace-here = Bu değişikliği değiştir
-search-dismiss = Sonuçlardan Ayrılma
-search-undo-dismiss = Son reddedilen sonucu geri getir
-search-replace-nothing = (Hayır)
-search-replace-confirm-title = Tüm maçları değiştirin mi?
+search-include-in-replace = Tümünü değiştir'e dahil et
+search-collapse-all = Tüm sonuçları daralt
+search-replace-here = Bunu değiştir
+search-dismiss = Sonuçlardan çıkar
+search-undo-dismiss = Son çıkarılan sonucu geri getir
+search-replace-nothing = (hiçbir şey)
+search-replace-confirm-title = Tüm eşleşmeler değiştirilsin mi?
 search-replace-confirm-text =
-    Değiştir { $occurrences ->
-        [one] { $occurrences }
-       *[other] { $occurrences } olayları
-    } of "{ $query }" with "{ $replacement }" across { $items ->
-        [one] { $items } Belge belgesi
-       *[other] { $items } Belgeler
-    } Bunu daha sonra bildirimden geri alabilirsiniz.
-search-replace-done-title = Değişim Tamamını Tamamla Tamamlayın
+    { $items ->
+        [one] { $items } belgede
+       *[other] { $items } belgede
+    } "{ $query }" ifadesinin { $occurrences ->
+        [one] { $occurrences } geçişi
+       *[other] { $occurrences } geçişi
+    } "{ $replacement }" ile değiştirilsin mi? Bunu daha sonra bildirimden geri alabilirsiniz.
+search-replace-done-title = Değiştirme tamamlandı
 search-replace-done =
-    { $occurrences ->
-        [one] { $occurrences }
-       *[other] { $occurrences } olayları
-    } replaced in { $items ->
-        [one] { $items } Belge belgesi
-       *[other] { $items } Belgeler
-    } .
+    { $items ->
+        [one] { $items } belgede
+       *[other] { $items } belgede
+    } { $occurrences ->
+        [one] { $occurrences } geçiş
+       *[other] { $occurrences } geçiş
+    } değiştirildi.
 search-replace-done-skipped =
-    { $occurrences ->
-        [one] { $occurrences }
-       *[other] { $occurrences } olayları
-    } replaced in { $items ->
-        [one] { $items } Belge belgesi
-       *[other] { $items } Belgeler
-    }. { $skipped ->
-        [one] { $skipped } Alan
-       *[other] { $skipped } alanları
-    } Atladı ( aramadan bu yana değiştirildi).
+    { $items ->
+        [one] { $items } belgede
+       *[other] { $items } belgede
+    } { $occurrences ->
+        [one] { $occurrences } geçiş
+       *[other] { $occurrences } geçiş
+    } değiştirildi. { $skipped ->
+        [one] { $skipped } alan
+       *[other] { $skipped } alan
+    } atlandı (aramadan sonra değişmiş).
 search-replace-undo = Geri al
-search-replace-failed-title = Değişim başarısız oldu
+search-replace-failed-title = Değiştirme başarısız oldu
 search-replace-skipped-title = Hiçbir şey değiştirilmedi
-search-replace-skipped-body = Aramadan sonra değişen metin sayısı: { $fields }. Bu metinlere dokunulmadı. Sözcüklerin güncel konumlarını görmek için yeniden arayın.
-search-replace-undo-failed-title = Undo başarısız oldu
+search-replace-skipped-body =
+    { $fields ->
+        [one] Bu metin aramadan sonra değiştiği için olduğu gibi bırakıldı.
+       *[other] Bu metinlerden { $fields } tanesi aramadan sonra değiştiği için olduğu gibi bırakıldı.
+    } Sözcüklerin şimdi nerede olduğunu görmek için yeniden arayın.
+search-replace-undo-failed-title = Geri alma başarısız oldu
 search-preview = Önizleme
-search-preview-empty = Burada onu önizlemek için bir sonuç seçin
-search-preview-no-prose = Bu maç düzenlenebilir bir metine sahip değil
-search-preview-prompt = Burada bir önizleme görmek için, bir arama çalıştırın.
-search-preview-open-search = Project Search in Project
-search-preview-footnote-prompt = Bu maç bir ayaknote'nin kendi metnindedir. Bunu görmek ve düzenlemek için Footnotes iskelesinde açın.
+search-preview-empty = Burada önizlemek için bir sonuç seçin
+search-preview-no-prose = Bu eşleşmenin düzenlenebilir metni yok
+search-preview-prompt = Burada önizleme görmek için bir arama yapın.
+search-preview-open-search = Projede ara
+search-preview-footnote-prompt = Bu eşleşme bir dipnotun kendi metninde. Görmek ve düzenlemek için Dipnotlar panelinde açın.
 search-preview-open-footnotes = Dipnotları aç
 
-find-placeholder = Bu belgede bulun...
-find-count = { $current } Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of { $total }
-find-no-results = Sonuçlar yok
-find-close = Close find Close find Close
-find-previous = Önceki maç (Shift+Enter)
-find-next = Sonraki maç (Enter)
-find-opt-case = Maç davası
-find-opt-whole-word = Bütün kelime
+find-placeholder = Bu belgede bul…
+find-count = { $current } / { $total }
+find-no-results = Sonuç yok
+find-close = Bulmayı kapat
+find-previous = Önceki eşleşme (Shift+Enter)
+find-next = Sonraki eşleşme (Enter)
+find-opt-case = Büyük/küçük harf duyarlı
+find-opt-whole-word = Tam sözcük
 find-replace-toggle = Değiştirmeyi göster/gizle (Ctrl+R)
-find-replace-placeholder = Değiştirin...
+find-replace-placeholder = Şununla değiştir…
 find-replace = Değiştir
-find-replace-all = Tüm Değiştirin
-find-preserve-case = Koruma davası
+find-replace-all = Tümünü değiştir
+find-preserve-case = Büyük/küçük harfi koru
 
-dict-download-title = { $name }'i indirin...
-dict-download-done = { $name }
-dict-download-failed = Cann't download { $name }: { $error }
-dict-removed = { $name }
-dict-accept-first = { $name } indirmeden önce lisansı kabul edin
-settings-dict-tab-installed = Yüklemeye alındı
-settings-dict-tab-get-more = Daha fazla bilgi edinin
-settings-dict-tab-personal = Kişisel kelimeler
+dict-download-title = { $name } indiriliyor…
+dict-download-done = { $name } kuruldu
+dict-download-failed = { $name } indirilemedi: { $error }
+dict-removed = { $name } kaldırıldı
+dict-accept-first = { $name } indirilmeden önce lisansı kabul edin
+settings-dict-tab-installed = Kurulu
+settings-dict-tab-get-more = Daha fazlasını edin
+settings-dict-tab-personal = Kişisel sözcükler
 dict-installed-empty = Bu bilgisayarda henüz sözlük bulunamadı.
-dict-get-more-search = Arama dilleri
+dict-get-more-search = Dillerde ara
 dict-system-badge = sisteminizde
-dict-unusable-badge = Unusable
-dict-download-button = Download Download Download Download Download Download
-dict-downloading = Downloading...
-dict-installed-label = Yüklemeye alındı
+dict-unusable-badge = kullanılamaz
+dict-download-button = İndir
+dict-downloading = İndiriliyor…
+dict-installed-label = Kurulu
 dict-remove = Kaldır
 dict-view-license = Lisansı görüntüle
 dict-approx-size = ~{ $size }
-dict-personal-empty = Bu projede henüz kişisel kelimeler yok.
+dict-personal-empty = Bu projede henüz kişisel sözcük yok.
 dict-personal-add = Ekle
-dict-personal-placeholder = Bir kelime ekleyin...
+dict-personal-placeholder = Bir sözcük ekleyin…
 dict-missing-toast = { $count ->
-    [one] Bu proje { $count } Sözünü kullanıyor
-   *[other] Bu proje, yüklemediğiniz { $count } sözlük kullanır
+    [one] Bu proje, kurulu olmayan { $count } sözlük kullanıyor
+   *[other] Bu proje, kurulu olmayan { $count } sözlük kullanıyor
 }
-dict-missing-action = sözlükler alın
-dict-license-title = { $name } Lisans
-dict-license-accept = Kabul Download Download
+dict-missing-action = Sözlükleri edin
+dict-license-title = { $name } lisansı
+dict-license-accept = Kabul et ve indir
 dict-license-cancel = İptal
 dict-license-close = Kapat
-dict-add-button = Sözlük ekleyin...
-dict-add-title = Bir sözlük ekleyin
+dict-add-button = Sözlük ekle…
+dict-add-title = Sözlük ekle
 dict-add-close = Kapat
 dict-add-name = Ad
-dict-add-name-placeholder = E.g. My Latin sözlüğü
-dict-add-code = Dil Kodu
-dict-add-code-placeholder = Örn. la veya fr-FR-x-custom
-dict-add-code-hint = Seçiminizin kısa bir etiketi. Bu, bir belgenin dili olarak seçtiğiniz şeydir.
-dict-add-aff = Affix dosyası (.aff)
-dict-add-dic = Word listesi (.dic)
+dict-add-name-placeholder = ör. Latince sözlüğüm
+dict-add-code = Dil kodu
+dict-add-code-placeholder = ör. la ya da fr-FR-x-custom
+dict-add-code-hint = Sizin seçtiğiniz kısa bir etiket. Bir belgenin dili olarak seçeceğiniz şey budur.
+dict-add-aff = Ek dosyası (.aff)
+dict-add-dic = Sözcük listesi (.dic)
 dict-add-submit = Ekle
 dict-add-cancel = İptal
-dict-add-name-required = Sözlüke bir isim verin.
+dict-add-name-required = Sözlüğe bir ad verin.
 dict-add-code-required = Bir dil kodu girin.
-dict-add-code-invalid = Sadece mektuplar, basamaklar ve - _ .
-dict-add-code-reserved = Bu, yerleşik bir sözlük kodudur. Başkasını seçin.
-dict-add-file-required = Bir dosyayı seçin.
-dict-add-file-missing = Bu dosya mevcut değildir.
-dict-add-code-taken = Bu kod için bir sözlük zaten kuruldu.
+dict-add-code-invalid = Yalnızca harf, rakam ve - _ . kullanın.
+dict-add-code-reserved = Bu, hazır bir sözlüğün kodu. Başka bir kod seçin.
+dict-add-file-required = Bir dosya seçin.
+dict-add-file-missing = Bu dosya yok.
+dict-add-code-taken = Bu kod için zaten bir sözlük kurulu.
 dict-add-done = { $name } eklendi
-dict-add-unusable = Bu dosyalar kullanılabilir bir sözlük değildir: { $error }
-dict-add-failed = Sözlüğü ekleyemeyebilir: { $error }
-inspector-export = Dışa aktar
-inspector-exportable = İhracata dahil olmak üzere
-ctx-number = Bu bölüm sayısı (&N)
-ctx-unnumber = Bu bölümü numaralama (&N)
-inspector-numbering = Sayılama Sayısı
-inspector-numbered = Sayı numaralanmış numara
-inspector-numbered-tip = Bu bölüm, kitabın numarasında yerini alır. Bir prolog, bir epilog veya bir interlude için kapat.
-inspector-numbered-tip-more = Sayılanmamış bir bölüm tam olarak kitapta kalır: onun başlığı, onun prose ve onun kelime sayması tamamen silinir. Sadece bir numara yazdırır ve bir prologue bölümün bir bölümü değil, iki bölümden ayrılır.Bunun yerine ihracattan ayrılır.
-inspector-apply-to-children = Çocuklara Başvuru
-inspector-milestone = Milestone tarihi
-inspector-milestone-none = Hiçbir tarih yok
+dict-add-unusable = Bu dosyalar kullanılabilir bir sözlük değil: { $error }
+dict-add-failed = Sözlük eklenemedi: { $error }
+inspector-export = Dışa aktarma
+inspector-exportable = Dışa aktarmalara dahil et
+ctx-number = Bu bölümü nu&marala
+ctx-unnumber = Bu bölümü nu&maralama
+inspector-numbering = Numaralandırma
+inspector-numbered = Numaralı
+inspector-numbered-tip = Bu bölüm kitabın numaralandırmasında yer alır. Önsöz, sonsöz ya da ara bölüm için kapatın.
+inspector-numbered-tip-more = Numarasız bir bölüm kitapta olduğu gibi kalır: başlığına, metnine ve sözcük sayısına dokunulmaz. Yalnızca numara yazdırmaz ve bir numara harcamaz: önsözden sonraki bölüm ikinci değil birinci bölümdür. Onu dışa aktarmanın dışında bırakmak ise yukarıdaki ayrı bir anahtardır ve o, bölümü kitaptan tamamen çıkarır.
+inspector-apply-to-children = Alt öğelere uygula
+inspector-milestone = Ara hedef tarihi
+inspector-milestone-none = Tarih yok
 inspector-milestone-clear = Temizle
 inspector-tags = Etiketler
-inspector-aliases = Ayrıca olarak da bilinir
+inspector-aliases = Diğer adları
 inspector-dict-language = Dil
-inspector-apply-language-to-children = Çocuklar için dil uygulayın
+inspector-apply-language-to-children = Dili alt öğelere uygula
 settings-page-language = Dil
 settings-field-dict-language = Diller
-dict-tradeoff-hint = Her ekstra dil daha fazla kelime kabul eder, bu yüzden daha az hata yakalanır.
-lang-inherit-hint = Inherited: Bu sahne kitabın veya projenin dillerini kullanır.
+dict-tradeoff-hint = Her ek dil daha fazla sözcüğü kabul eder, böylece daha az hata yakalanır.
+lang-inherit-hint = Devralındı: bu sahne kitabın ya da projenin dillerini kullanıyor.
 lang-pill-list = Diller
-lang-pill-add = Bir dil ekleyin
-lang-pill-remove = { $name }
-lang-pill-mute = { $name } için büyüyü kontrol edin
-lang-pill-unmute = { $name } için yazım
+lang-pill-add = Dil ekle
+lang-pill-remove = Kaldır: { $name }
+lang-pill-mute = Yazım denetimini kapat: { $name }
+lang-pill-unmute = Yazım denetimini aç: { $name }
 
-settings-page-personal-dictionary = Kişisel Sözlük
-settings-user-dict-desc = Burada eklediğiniz kelimeler, uygulamadaki her yerde doğru şekilde yazılır ve asla tekrar bayraklanmaz.
-settings-user-dict-add-placeholder = Bir kelime ekleyin...
-settings-user-dict-add = Ekle kelime ekle
-settings-user-dict-search = Filtre kelimeler
+settings-page-personal-dictionary = Kişisel sözlük
+settings-user-dict-desc = Buraya eklediğiniz sözcükler uygulamanın her yerinde doğru yazılmış sayılır ve bir daha işaretlenmez.
+settings-user-dict-add-placeholder = Bir sözcük ekleyin…
+settings-user-dict-add = Sözcük ekle
+settings-user-dict-search = Sözcükleri süz
 settings-user-dict-count = { $count ->
     [one] { $count } sözcük
    *[other] { $count } sözcük
 }
 settings-user-dict-rename = Yeniden adlandır
 settings-user-dict-remove = Kaldır
-settings-user-dict-empty = Henüz bir kelime yok.Köpücüyü görmezden gelmeli veya bir liste ithal etmelidir.
+settings-user-dict-empty = Henüz sözcük yok. Yazım denetiminin yok sayması gereken sözcükleri ekleyin ya da bir liste içe aktarın.
 settings-user-dict-import = İçe aktar…
 settings-user-dict-export = Dışa aktar…
-settings-user-dict-import-tip = Düz bir metin dosyasından kelimeler ekleyin, bir satır başına bir kelime.Mevcut kelimeler tutulur.
-settings-user-dict-export-tip = Tüm listeyi düz bir metin dosyasına kurtar, bir satır başına bir kelime.
-settings-user-dict-txt-filter = Text dosyaları
+settings-user-dict-import-tip = Her satıra bir sözcük olacak şekilde düz metin dosyasından sözcük ekler. Var olan sözcükler korunur.
+settings-user-dict-export-tip = Listenin tamamını, her satıra bir sözcük olacak şekilde düz metin dosyasına kaydeder.
+settings-user-dict-txt-filter = Metin dosyaları
 settings-user-dict-duplicate = Zaten sözlükte
-settings-user-dict-imported = ithal edildi { $count ->
-    [one] { $count } kelime
-   *[other] { $count } kelime
-} ({ $duplicates } zaten mevcut).
-settings-user-dict-import-failed = Kelime listesini okuyamazdı: { $error }
-settings-user-dict-exported = Saved Saved { $count ->
-    [one] { $count } kelime.
-   *[other] { $count } kelime.
+settings-user-dict-imported = { $count ->
+    [one] { $count } sözcük içe aktarıldı
+   *[other] { $count } sözcük içe aktarıldı
+} ({ $duplicates } tanesi zaten vardı).
+settings-user-dict-import-failed = Sözcük listesi okunamadı: { $error }
+settings-user-dict-exported = { $count ->
+    [one] { $count } sözcük kaydedildi.
+   *[other] { $count } sözcük kaydedildi.
 }
-settings-user-dict-export-failed = Kelime listesini kurtaramaz: { $error }
+settings-user-dict-export-failed = Sözcük listesi kaydedilemedi: { $error }
 
-settings-page-text-replacements = Metin yedekleri
-settings-text-repl-desc = Kısa metinle tam metin türü olarak değiştirin: "btw", bir uzay veya boksasyon türünde olduğunuz an "zamana" dönüşür.
-settings-text-repl-enable = Bu projedeki metin yedeklerini kullanın
-settings-text-repl-disabled-hint = Bunu yazdığınız kadar genişleyen kısa el tanımlamak için yazın.
-settings-text-repl-add = Ekle kuralı ekle
-settings-text-repl-trigger-placeholder = Kısa el
-settings-text-repl-replacement-placeholder = Ne olursa olsun
-settings-text-repl-added = "{ $trigger }" eklendi.
-settings-text-repl-duplicate = "{ $trigger }" zaten bir kurala sahiptir
-settings-text-repl-filter = Filtre kuralları
+settings-page-text-replacements = Metin değiştirme
+settings-text-repl-desc = Kısaltmayı siz yazarken tam metinle değiştirin: bir boşluk ya da noktalama işareti yazdığınız anda "bkz" "bakınız" olur.
+settings-text-repl-enable = Bu projede metin değiştirmeyi kullan
+settings-text-repl-disabled-hint = Siz yazarken açılan kısaltmalar tanımlamak için bunu açın.
+settings-text-repl-add = Kural ekle
+settings-text-repl-trigger-placeholder = Kısaltma
+settings-text-repl-replacement-placeholder = Neye dönüşeceği
+settings-text-repl-added = "{ $trigger }" eklendi
+settings-text-repl-duplicate = "{ $trigger }" için zaten bir kural var
+settings-text-repl-filter = Kuralları süz
 settings-text-repl-count = { $n ->
     [one] 1 kural
-   *[other] { $n } Kuralları
+   *[other] { $n } kural
 }
-settings-text-repl-row-enabled = Bu kuralı kullanın
-settings-text-repl-delete = { $trigger } için kurala uyma
-settings-text-repl-deleted = "{ $trigger }" için kuralı çiğnedi.
-settings-text-repl-empty = Henüz kurallar yok.
+settings-text-repl-row-enabled = Bu kuralı kullan
+settings-text-repl-delete = Kuralı sil: { $trigger }
+settings-text-repl-deleted = "{ $trigger }" kuralı silindi
+settings-text-repl-empty = Henüz kural yok.
 settings-text-repl-csv-filter = CSV dosyaları
 settings-text-repl-import = İçe aktar…
 settings-text-repl-export = Dışa aktar…
-settings-text-repl-imported = { $added } ithal edildi, { $skipped } atladı
-settings-text-repl-exported = İhracata ihracat yapıldı { $n ->
-    [one] 1 kural
-   *[other] { $n } Kuralları
+settings-text-repl-imported = İçe aktarılan: { $added }, atlanan: { $skipped }
+settings-text-repl-exported = { $n ->
+    [one] 1 kural dışa aktarıldı
+   *[other] { $n } kural dışa aktarıldı
 }
 
-editor-menu-no-suggestions = Hiçbir öneri
-editor-menu-add-to-dictionary = Sözlüğe "{ $word }" ekleyin
-editor-menu-add-words-to-dictionary = Sözcük kelimeler ekleyin
-editor-dict-added = Sözlüğe "{ $word }" eklendi.
+editor-menu-no-suggestions = Öneri yok
+editor-menu-add-to-dictionary = “{ $word }” sözcüğünü sözlüğe ekle
+editor-menu-add-words-to-dictionary = Seçili sözcükleri sözlüğe ekle
+editor-dict-added = “{ $word }” sözlüğünüze eklendi.
 editor-dict-added-multi = { $count ->
-    [one] Kelimenize { $count } kelime ekledi.
-   *[other] Kelimenize { $count } kelime ekledi.
+    [one] Sözlüğünüze { $count } sözcük eklendi.
+   *[other] Sözlüğünüze { $count } sözcük eklendi.
 }
 toast-undo = Geri al
 
 undo-superseded-title = Bu adım artık sonuncu değil
-undo-superseded-body = Bundan beri başka bir şey değişti. Undo bunun yerine geri dönecekti, bu yüzden bu adım tersine çevrildi. Edit · Undo'yu tarih boyunca geri adım atmak için kullanın.
-undo-failed = Undo başarısız oldu: { $error }
+undo-superseded-body = O zamandan beri bu projede başka bir şey değişti. Geri alma bunun yerine onu geri alacağı için işlem yapılmadı. Bu adımın yaptığı hiçbir şey geri çevrilmedi. Geçmişte kendiniz geri gitmek için Düzen ▸ Geri al'ı kullanın.
+undo-failed = Geri alma başarısız oldu: { $error }
 
-menu-edit = Düzenle (&E)
-menu-edit-undo = Geri al (&U)
-menu-edit-redo = Yinele (&R)
-menu-edit-undo-target = Undo { $target } (&U)
-menu-edit-redo-target = Redo { $target } (&R)
+menu-edit = &Düzen
+menu-edit-undo = &Geri al
+menu-edit-redo = Yin&ele
+menu-edit-undo-target = &Geri al: { $target }
+menu-edit-redo-target = Yin&ele: { $target }
 shortcut-name-edit-undo = Geri al
 shortcut-name-edit-redo = Yinele
-undo-target-typing = Tipleme
-undo-target-project = Bu projeye son değişim
-prose-history-reset-title = Typing tarihi reset
+undo-target-typing = yazılan metin
+undo-target-project = bu projedeki son değişiklik
+prose-history-reset-title = Yazma geçmişi sıfırlandı
 prose-history-reset-body = { $count ->
-    [one] Bir açık sahne daha önceki bir devletten restore edildi, bu yüzden yazım tarihi artık geçerli değil.
-   *[other] { $count } açık sahneler daha önceki bir devletten restore edildi, bu yüzden onların tip tarihi artık geçerli değil.
+    [one] Açık bir sahne daha önceki bir durumdan geri yüklendi, bu yüzden yazma geçmişi artık geçerli değil.
+   *[other] Açık { $count } sahne daha önceki bir durumdan geri yüklendi, bu yüzden yazma geçmişleri artık geçerli değil.
 }
-undo-target-trash = Çöpe doğru hareket etmek
-undo-target-restore = Çöpten geri yükleme
-undo-target-delete-forever = İyi bir iyilik için
-undo-target-replace-all = Proje genelindeki değişim
-undo-target-import = Belge ithalatı
-undo-target-duplicate = ► ►
-undo-target-move = hareketli hareket hareketli hareket hareketli hareket
-undo-target-merge = İki sahneyi birleştirin
-undo-target-split = Bir sahne bölmek
-undo-target-promote = Tür değiştirme
-undo-target-tidy-titles = Bölüm başlıklarına dikkat edin
-undo-target-import-tags = İthalat etiketleri
-undo-target-import-templates = importing not şablonları
-undo-target-create = oluşturma oluşturmak
-undo-target-remove = Deleting
-undo-target-rename = Renaming
-undo-target-edit = Bu düzenleme
-menu-edit-find = Bul… (&F)
-menu-edit-find-next = Bir sonraki Find Find next Find Find Find next Find Find Find next Find Find Find next Find Find Find next Find Find Find next Find Find Find Find next Find Find Find next Find Find Find Find Find next Find Find Find Find next Find Find Find Find Find next Find Find Find next Find Find Find Find next Find Find Find next Find Find Find next Find Find Find next Find next Find Find Find next Find next Find next Find Find next Find Find Find next Find Find next Find Find next Find Find next Find Find Find next Find Find Find Find Find next Find Find Find Find Find Find Find Find next Find next Find Find next Find Find next Find next Find next Find Find Find next Find Find next Find Find Find Find next Find Find Find Find Find Find Find next Find Find Find Find Find Find Find next Find Find Find Find Find next Find next Find next Find Find Find next Find next Find Find Find Find next Find Find Find Find Find Find next Find next Find Find Find Find next Find Find Find Find Find next Find Find Find Find Find Find Find Find Find next Find Find Find next Find next Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find Find next Find next Find next Find Find Find next Find Find Find Find Find next Find Find Find Find Find next Find next Find next Find next Find Find Find Find Find next Find next Find next Find next Find next Find next Find next Find next Find Find Find Find next Find next Find Find Find Find Find next Find Find Find Find Find Find Find Find next Find next Find next Find Find Find Find Find Find Find next Find next Find Find Find Find Find next Find next Find next Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find next Find Find next Find next Find Find Find Find Find Find Find Find Find Find next Find next Find next Find next Find next Find next Find Find Find Find next Find next Find next Find next Find next Find Find Find Find next Find next Find next Find next Find next Find next Find next Find Find next Find next Find next Find next Find next Find next Find next Find next Find next Find next Find Find next Find next Find next Find next Find Find next Find Find Find Find Find next Find next Find next Find next Find Find Find Find Find Find next Find next Find next Find Find Find Find next Find next Find next Find Find Find Find next Find next Find Find Find Find Find Find Find Find Find next Find next Find Find Find Find next Find next Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find Find Find Find Find Find Find Find Find next Find Find Find Find Find Find Find Find Find Find next Find next Find next Find Find next Find next Find next Find next Find next Find next Find next Find next Find next Find next Find Find next Find next Find next Find next Find next Find next Find Find next Find next Find next Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find next Find next Find next Find next Find next Find next Find next Find next Find next Find Find Find Find Find Find Find next Find next Find next Find next Find next Find Find Find Find Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find next Find Find Find Find Find Find next Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find Find Find Find Find next Find next Find next Find Find Find Find Find next Find next Find Find Find Find Find Find next Find next Find next Find next Find next Find Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find Find Find Find Find Find Find Find Find Find Find Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find Find Find Find Find Find next Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find next Find next Find next Find Find Find Find Find Find Find Find Find Find Find (&N)
-menu-edit-find-prev = Önceki Önceki Önceki Find Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find previous Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Önceki Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find Find (&V)
-menu-edit-replace = Bul ve değiştirin... (&L)
-menu-edit-find-in-project = Projede bulun... (&J)
-menu-edit-replace-in-project = Projede Değişim... (&I)
-undo-frozen = Undo ("Always forward" is on)
-redo-frozen = Redo ("Always forward" is on)
-menu-edit-cut = Kes (&T)
-menu-edit-copy = Kopyala (&C)
-menu-edit-paste = Yapıştır (&P)
-menu-edit-paste-plain = Biçimlendirmeden yapıştır (&W)
-menu-edit-select-all = Tümünü seç (&A)
+undo-target-trash = çöp kutusuna taşıma
+undo-target-restore = çöp kutusundan geri yükleme
+undo-target-delete-forever = kalıcı silme
+undo-target-replace-all = proje genelinde değiştirme
+undo-target-import = belge içe aktarma
+undo-target-duplicate = çoğaltma
+undo-target-move = taşıma
+undo-target-merge = iki sahneyi birleştirme
+undo-target-split = sahne bölme
+undo-target-promote = tür değiştirme
+undo-target-tidy-titles = bölüm başlıklarını düzenleme
+undo-target-import-tags = etiketleri içe aktarma
+undo-target-import-templates = not şablonlarını içe aktarma
+undo-target-create = oluşturma
+undo-target-remove = silme
+undo-target-rename = yeniden adlandırma
+undo-target-edit = o düzenleme
+menu-edit-find = &Bul…
+menu-edit-find-next = So&nrakini bul
+menu-edit-find-prev = Öncek&ini bul
+menu-edit-replace = Bul ve &değiştir…
+menu-edit-find-in-project = &Projede bul…
+menu-edit-replace-in-project = Projede değişti&r…
+undo-frozen = Geri al (“Hep ileri” açık)
+redo-frozen = Yinele (“Hep ileri” açık)
+menu-edit-cut = &Kes
+menu-edit-copy = K&opyala
+menu-edit-paste = &Yapıştır
+menu-edit-paste-plain = Biçim&siz yapıştır
+menu-edit-select-all = &Tümünü seç
 shortcut-name-edit-cut = Kes
 shortcut-name-edit-copy = Kopyala
 shortcut-name-edit-paste = Yapıştır
-shortcut-name-edit-paste-plain = Biçimlendirmeden yapıştır
+shortcut-name-edit-paste-plain = Biçimsiz yapıştır
 shortcut-name-edit-select-all = Tümünü seç
 
-titlebar-spellcheck-on = Spell-checking, kontrol etmeyi bırakmak için tıklayın (F7)
-titlebar-spellcheck-off = Spell-checking tekrar kontrol etmek için tıklayın (F7)
-menu-spellcheck = Yazımı denetle (&C)
-menu-comments = Yorumlar (&M)
-settings-page-spellcheck = Spell-checkinging
-settings-group-spellcheck = Spell-checkinging
-settings-spellcheck-enabled = Yazdığım gibi yazım
-settings-spellcheck-hint = Underlines kelimeler kurulu bir sözlük bilmiyor. Tüm kontrolü durdur, her projede, geri döndüğünüze kadar bir dili kontrol etmek için, Project veya bir öğenin Dili alanında çek işaretini açıklayın.
+titlebar-spellcheck-on = Yazım denetimi açık. Denetimi durdurmak için tıklayın (F7)
+titlebar-spellcheck-off = Yazım denetimi kapalı. Yeniden denetlemek için tıklayın (F7)
+menu-spellcheck = &Yazımı denetle
+menu-comments = Yoru&mlar
+settings-page-spellcheck = Yazım denetimi
+settings-group-spellcheck = Yazım denetimi
+settings-spellcheck-enabled = Yazarken yazımı denetle
+settings-spellcheck-hint = Kurulu hiçbir sözlüğün tanımadığı sözcüklerin altını çizer. Bunu kapatmak, siz yeniden açana kadar her projedeki tüm denetimi durdurur. Yalnızca bir dilin denetimini durdurmak için projenin ya da bir öğenin Dil alanında o dilin onay işaretini kaldırın.
 
-menu-trash = Çöp kutusu (&T)
+menu-trash = &Çöp kutusu
 trash-title = Çöp kutusu
-trash-empty-state = Trash boş.
-trash-empty-button = Boş Trash...
-trash-restore = Geri yükle (&R)
-trash-restore-to = Geri yükleme... (&T)
-trash-delete-forever = Sonsuza dek (&D)
-trash-restored-ok = { $count } restore edildi.
-trash-restore-error = restore edemez: { $error }
-trash-restore-orphaned = Bu öğenin orijinal noktası gitti. Onu restore etmek için nerede seçin.
-trash-restore-no-project = Hiçbir proje açık değil, bu yüzden restore etmek için hiçbir şey yok.
-trash-delete-no-project = Hiçbir proje açık değil, bu yüzden silmek için hiçbir şey yok.
-trash-empty-confirm-title = Çöpleri boşaltın mı?
+trash-empty-state = Çöp kutusu boş.
+trash-empty-button = Çöp kutusunu boşalt…
+trash-restore = &Geri yükle
+trash-restore-to = &Şuraya geri yükle…
+trash-delete-forever = &Kalıcı olarak sil
+trash-restored-ok = { $count } öğe geri yüklendi.
+trash-restore-error = Geri yüklenemedi: { $error }
+trash-restore-orphaned = Bu öğenin özgün yeri artık yok. Nereye geri yükleneceğini seçin.
+trash-restore-no-project = Açık proje olmadığından geri yüklenecek bir şey yok.
+trash-delete-no-project = Açık proje olmadığından silinecek bir şey yok.
+trash-empty-confirm-title = Çöp kutusu boşaltılsın mı?
 trash-empty-confirm-text = { $count ->
-    [one] { $count } çöplü giriş kalıcı olarak silinecektir.
-   *[other] { $count } çöp girişleri kalıcı olarak silinecektir.
-} Çöpü iyi bırakırlar. Undo hala başka bir şey yapmadan geri getirebilir.
+    [one] Çöp kutusundaki { $count } kayıt kalıcı olarak silinecek.
+   *[other] Çöp kutusundaki { $count } kayıt kalıcı olarak silinecek.
+} Bunlar çöp kutusundan kesin olarak çıkar. Siz başka bir şey yapana kadar Geri al yine de onları geri getirebilir.
 trash-emptied-title = Çöp kutusu boşaltıldı
-trash-emptied-body = Çöpteki her şey kalıcı olarak silindi.
-trash-empty-no-project = Hiçbir proje açık değil, bu yüzden boş bir çöp yok.
-trash-delete-forever-confirm-title = Sonsuza dek yok mu?
+trash-emptied-body = Çöp kutusundaki her şey kalıcı olarak silindi.
+trash-empty-no-project = Açık proje olmadığından boşaltılacak çöp kutusu yok.
+trash-delete-forever-confirm-title = Kalıcı olarak silinsin mi?
 trash-delete-forever-confirm-text = { $count ->
-    [one] { $count } öğe kalıcı olarak silinecektir.
-   *[other] { $count } eşya kalıcı olarak silinecektir.
-} Çöpü iyi bırakırlar. Undo hala başka bir şey yapmadan geri getirebilir.
-trash-deleted-title = Sonsuza dek Deleted
-trash-deleted-body = { $count } kalıcı olarak silindi.
+    [one] { $count } öğe kalıcı olarak silinecek.
+   *[other] { $count } öğe kalıcı olarak silinecek.
+} Bunlar çöp kutusundan kesin olarak çıkar. Siz başka bir şey yapana kadar Geri al yine de onları geri getirebilir.
+trash-deleted-title = Kalıcı olarak silindi
+trash-deleted-body = { $count } öğe kalıcı olarak silindi.
 trash-undo = Geri al
-trash-restore-picker-title = Geri yükleme...
-trash-restore-to-confirm-title = Buraya geri dönün?
-trash-restore-to-confirm-text = "{ $item }"i "{ $destination }" olarak geri yükleyin mi?
-trash-restore-picker-restore-here = Burada geri yükleme
+trash-restore-picker-title = Şuraya geri yükle…
+trash-restore-to-confirm-title = Buraya geri yüklensin mi?
+trash-restore-to-confirm-text = "{ $item }", "{ $destination }" içine geri yüklensin mi?
+trash-restore-picker-restore-here = Buraya geri yükle
 trash-restore-picker-cancel = İptal
-trash-restore-picker-empty = Henüz bağlayıcı değil. İlk önce bir tane oluşturun.
-trash-banner-title = Bu öğe Trash'te.
-trash-banner-description = Yeniden yüklemene kadar taslak veya ihracatta görünmeyecektir.
+trash-restore-picker-empty = Henüz dizin yok. Önce bir tane oluşturun.
+trash-banner-title = Bu öğe çöp kutusunda
+trash-banner-description = Siz geri yükleyene kadar ana hatta ve dışa aktarmalarda görünmez.
 trash-banner-restore = Geri yükle…
 trash-tab-tooltip = Çöp kutusunda
 
@@ -1421,48 +1430,48 @@ settings-styles-sheet-yes = Evet
 settings-styles-sheet-no = Hayır
 settings-styles-sheet-font = Yazı tipi
 settings-styles-sheet-indent = İlk satır girintisi
-settings-styles-sheet-para-spacing = Paragraf Spacing
-settings-styles-sheet-page = Sayfa büyüklüğü
-settings-styles-sheet-margins = Kenar boşlukları (üst/sağ/alt/sol)
-settings-styles-sheet-title-page = Book name page
-settings-styles-sheet-heading-language = Dilim Başlıyor
-settings-styles-sheet-auto = Metinleri Takip Et
+settings-styles-sheet-para-spacing = Paragraf aralığı
+settings-styles-sheet-page = Sayfa boyutu
+settings-styles-sheet-margins = Kenar boşlukları (Ü/S/A/S)
+settings-styles-sheet-title-page = Kitap başlık sayfası
+settings-styles-sheet-heading-language = Başlık dili
+settings-styles-sheet-auto = Metni izler
 settings-styles-sheet-digits = Rakamlar
-settings-styles-sheet-direction = Metin Yönleri
-settings-styles-sheet-formats = Biçimler Biçimler
-settings-styles-sheet-all-formats = All All All All All All All All
+settings-styles-sheet-direction = Yazı yönü
+settings-styles-sheet-formats = Biçimler
+settings-styles-sheet-all-formats = Tümü
 
-settings-styles-editor-group = Style editörü
-settings-styles-editor-missing = Bu tarz artık mevcut değildir.
+settings-styles-editor-group = Biçem düzenleyici
+settings-styles-editor-missing = Bu biçem artık kullanılamıyor.
 
-settings-styles-page-letter = Letter Letter Letter
+settings-styles-page-letter = Letter
 settings-styles-digits-western = Batı (0–9)
-settings-styles-digits-eastern-arabic = Doğu Arapça (Selam)
-settings-styles-direction-ltr = Sağdan sağa sola
-settings-styles-direction-rtl = Sağdan sağa sola
+settings-styles-digits-eastern-arabic = Doğu Arap (٠–٩)
+settings-styles-direction-ltr = Soldan sağa
+settings-styles-direction-rtl = Sağdan sola
 
 format-dock-title = Biçim
-format-panel-empty = Bir sahnede, not veya sinopsislerinizi formatlama seçenekleri görmek için yerleştirin.
+format-panel-empty = Biçimlendirme seçeneklerini görmek için imleci bir sahneye, nota ya da özete yerleştirin.
 format-group-marks = Metin
 format-group-block = Paragraf
-format-group-lists = Listeler Listeler
-format-group-tables = Masa Masa Masa
-format-group-breaks = Sahne molaları
+format-group-lists = Listeler
+format-group-tables = Tablo
+format-group-breaks = Sahne araları
 format-superscript = Üst simge
 format-subscript = Alt simge
-format-link = Link...
-link-dialog-insert-title = Link link
+format-link = Bağlantı…
+link-dialog-insert-title = Bağlantı ekle
 link-dialog-edit-title = Bağlantıyı düzenle
 link-dialog-text-label = Metin
-link-dialog-text-placeholder = Okuyucunun gördüğü kelimeler
-link-dialog-url-label = Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to Links to
-link-dialog-url-placeholder = Örneğin.com
-link-dialog-insert = Eklen
+link-dialog-text-placeholder = okurun gördüğü sözcükler
+link-dialog-url-label = Bağlantı adresi
+link-dialog-url-placeholder = ornek.com
+link-dialog-insert = Ekle
 link-dialog-apply = Uygula
 link-dialog-cancel = İptal
-link-dialog-remove = Bağlantıyı Kaldırın
-link-scheme-refused = Sadece web ve e-posta bağlantıları açılabilir. { $url } yalnız kaldı.
-menu-format-link = Link... (&N)
+link-dialog-remove = Bağlantıyı kaldır
+link-scheme-refused = Yalnızca web ve e-posta bağlantıları açılabilir. { $url } olduğu gibi bırakıldı.
+menu-format-link = Bağla&ntı…
 format-clear = Biçimlendirmeyi temizle
 format-heading = Başlık düzeyi
 format-heading-normal = Normal metin
@@ -1470,715 +1479,714 @@ format-heading-1 = Başlık 1
 format-heading-2 = Başlık 2
 format-heading-3 = Başlık 3
 format-heading-4 = Başlık 4
-format-heading-5 = Başlamak 5
+format-heading-5 = Başlık 5
 format-heading-6 = Başlık 6
-format-align-left = Align ayrıldı
-format-align-center = Merkez Merkezi Merkez Merkezi
-format-direction-rtl = Doğru sol paragraf
+format-align-left = Sola hizala
+format-align-center = Ortala
+format-direction-rtl = Sağdan sola paragraf
 format-blockquote = Blok alıntı
-format-list-bullet = Kurşunlu liste
-format-list-numbered = Sayılan liste
+format-list-bullet = Madde işaretli liste
+format-list-numbered = Numaralı liste
 format-indent = Girintiyi artır
 format-outdent = Girintiyi azalt
-format-table-insert = Ekle table
-format-table-row-above = Yukarıdaki satırları yukarıdan aşağıya çevirin
-format-table-row-below = Aşağıdaki satır aşağıda
-format-table-col-before = Daha önce sütunu çizin
-format-table-col-after = Daha sonra sütunu çizin
+format-table-insert = Tablo ekle
+format-table-row-above = Üste satır ekle
+format-table-row-below = Alta satır ekle
+format-table-col-before = Sola sütun ekle
+format-table-col-after = Sağa sütun ekle
 format-table-row-delete = Satırı sil
 format-table-col-delete = Sütunu sil
-format-table-remove = Masayı Kaldır
+format-table-remove = Tabloyu kaldır
 
-menu-format-marks-bold = Bold Bold (&D)
-menu-format-marks-italic = Italicic (&I)
-menu-format-marks-underline = Altı çizili (&U)
-menu-format-marks-strike = Grev (&S)
-menu-format-marks-superscript = Üst simge (&P)
-menu-format-marks-subscript = Alt simge (&B)
-menu-format-marks-clear = Biçimlendirmeyi temizle (&C)
-menu-format-heading = Heading Heading (&H)
-menu-format-heading-normal = Normal Text Normal Text (&N)
-menu-format-heading-1 = Başlık 1 (&1)
-menu-format-heading-2 = Başlık 2 (&2)
-menu-format-heading-3 = Başlık 3 (&3)
-menu-format-heading-4 = Başlık 4 (&4)
-menu-format-heading-5 = Başlamak 5 (&5)
-menu-format-heading-6 = Başlık 6 (&6)
-menu-format-alignment = Adaptasyon (&A)
-menu-format-align-left = Align Sol Sol (&L)
-menu-format-align-center = Merkez Merkezi Merkez Merkezi (&C)
-menu-format-direction = Yönellem (&E)
-menu-format-direction-auto = Otomatik Otomatik Otomatik Otomatik Otomatik Otomatik (&A)
-menu-format-direction-ltr = Sağdan sağa (&L)
-menu-format-direction-rtl = Sağ sağ soluna (&R)
-menu-format-blockquote = Blok alıntı (&Q)
-menu-format-lists = Listeler Listeler (&L)
-menu-format-list-bullet = Kurşunlu Liste (&B)
-menu-format-list-numbered = Sayılan Liste (&N)
-menu-format-indent = Girintiyi artır (&I)
-menu-format-outdent = Girintiyi azalt (&O)
-menu-format-table = Masa Masa Masa (&T)
-menu-format-table-insert = Masaya Ekle (&I)
-menu-format-table-2x2 = 2 x 2 (&2)
-menu-format-table-3x3 = 3 x 3 (&3)
-menu-format-table-4x4 = 4 x 4 (&4)
-menu-format-table-row-above = Kath Row Above (&V)
-menu-format-table-row-below = Bölüm Adı (&W)
-menu-format-table-col-before = Daha önce Köşe Oluşturun (&L)
-menu-format-table-col-after = Daha sonra Köşeye Girin (&T)
-menu-format-table-row-delete = Satırı sil (&D)
-menu-format-table-col-delete = Sütunu sil (&C)
-menu-format-table-remove = Masayı Kaldırın (&R)
+menu-format-marks-bold = Ka&lın
+menu-format-marks-italic = İtali&k
+menu-format-marks-underline = &Altı çizili
+menu-format-marks-strike = &Üstü çizili
+menu-format-marks-superscript = Üst si&mge
+menu-format-marks-subscript = Alt sim&ge
+menu-format-marks-clear = Biçimlendirmeyi t&emizle
+menu-format-heading = &Başlık
+menu-format-heading-normal = &Normal metin
+menu-format-heading-1 = Başlık &1
+menu-format-heading-2 = Başlık &2
+menu-format-heading-3 = Başlık &3
+menu-format-heading-4 = Başlık &4
+menu-format-heading-5 = Başlık &5
+menu-format-heading-6 = Başlık &6
+menu-format-alignment = &Hizalama
+menu-format-align-left = &Sola hizala
+menu-format-align-center = &Ortala
+menu-format-direction = Yazı y&önü
+menu-format-direction-auto = &Otomatik
+menu-format-direction-ltr = &Soldan sağa
+menu-format-direction-rtl = Sağ&dan sola
+menu-format-blockquote = Bl&ok alıntı
+menu-format-lists = Li&steler
+menu-format-list-bullet = &Madde işaretli liste
+menu-format-list-numbered = &Numaralı liste
+menu-format-indent = &Girintiyi artır
+menu-format-outdent = Girintiyi a&zalt
+menu-format-table = &Tablo
+menu-format-table-insert = Tablo &ekle
+menu-format-table-2x2 = &2 x 2
+menu-format-table-3x3 = &3 x 3
+menu-format-table-4x4 = &4 x 4
+menu-format-table-row-above = Üste &satır ekle
+menu-format-table-row-below = &Alta satır ekle
+menu-format-table-col-before = Sola sü&tun ekle
+menu-format-table-col-after = Sağa s&ütun ekle
+menu-format-table-row-delete = Satırı si&l
+menu-format-table-col-delete = Sütun&u sil
+menu-format-table-remove = Tabloyu &kaldır
 
-menu-format-typo-marks = Biçimlendirme Marking Mark (&F)
-menu-format-typo-nbsp = No-break Space (&N)
-menu-format-typo-nbhyphen = No-break Hyphen (&H)
-menu-format-typo-soft-hyphen = Yumuşak Hyphen (&S)
-menu-format-typo-nnbsp = Narrow No-break Space (&R)
-menu-format-typo-zwsp = Zero- Wide Space (&Z)
-menu-format-typo-word-joiner = Word Joiner (&W)
+menu-format-typo-marks = Biçimlendirme &işareti
+menu-format-typo-nbsp = &Bölünmez boşluk
+menu-format-typo-nbhyphen = Bölünmez &tire
+menu-format-typo-soft-hyphen = &Yumuşak tire
+menu-format-typo-nnbsp = &Dar bölünmez boşluk
+menu-format-typo-zwsp = &Sıfır genişlikli boşluk
+menu-format-typo-word-joiner = Sö&zcük birleştirici
 
-
-menu-about = Skribisto Hakkında... (&A)
-about-title = Hakkında Skribisto
+menu-about = Skribisto &hakkında…
+about-title = Skribisto hakkında
 about-version = Sürüm { $version }
-about-update-available = Version { $version } mevcuttur
-about-update-see-notes = Nasıl değiştiğini görün
-about-update-flathub = Flathub bu kopyayı tarihe kadar tutar.
-about-update-distro = Dağıtımınız bu kopyayı tarihe kadar tutar.
-about-tagline = Uzun süreli bir kurgu için bir roman yazma uygulaması, Teksilo aletkit ile Rust'ta yazılmıştır.
-about-license = GNU General Public Lisansı altında yayınlandı, 3.
+about-update-available = Sürüm { $version } kullanıma sunuldu
+about-update-see-notes = Nelerin değiştiğine bakın
+about-update-flathub = Bu kopyayı Flathub güncel tutar.
+about-update-distro = Bu kopyayı dağıtımınız güncel tutar.
+about-tagline = Uzun soluklu kurmaca için, Rust ile Teksilo araç takımı kullanılarak yazılmış bir roman yazma uygulaması.
+about-license = GNU Genel Kamu Lisansı, sürüm 3 altında yayımlanmıştır.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Kapat
 
-native-menu-about = Hakkında { $app }
-native-menu-hide = Gizle { $app }
-native-menu-quit = Oldukça { $app }
+native-menu-about = { $app } hakkında
+native-menu-hide = { $app } uygulamasını gizle
+native-menu-quit = { $app } uygulamasından çık
 native-menu-settings = Ayarlar…
-native-menu-window = Pencere Pencere Pencere Pencere
-native-menu-minimize = Miniksiyon
+native-menu-window = Pencere
+native-menu-minimize = Simge durumuna küçült
 native-menu-zoom = Yakınlaştır
 
 window-title = { $title } - { $app }
 window-title-numbered = { $title } - { $app } (Pencere { $n })
 window-title-empty = { $app }
 
-first-run-window-title = Hoşgeldiniz hoş geldiniz Welcome Welcome Welcome Hoşgeldiniz
+first-run-window-title = Hoş geldiniz
 first-run-title = { $app } kurulumu
-first-run-body = { $app }, ayarlarını Skribisto'den ayrı tutar, bu yüzden boş başlar. tercihleriniz, son projeler, sözlükler ve pencere düzeni şu anda kopyalanabilir.
-first-run-from = Kopyalamadan kopyalayın
-first-run-to = Kopyalamak için
-first-run-copy-note = Hiçbir şey taşındı ya da kaldırıldı. Skribisto kendi ayarlarından her birini tutar ve daha önce tam olarak çalışmaya devam eder.
-first-run-import = İthalat ayarları
-first-run-start-fresh = Yeni başlayana başlayın
-first-run-import-failed = Bazı ayarlar ithal edilemez: { $error }
+first-run-body = { $app } ayarlarını Skribisto'dan ayrı tutar, bu yüzden boş başlar. Tercihleriniz, son projeleriniz, sözlükleriniz ve pencere yerleşiminiz şimdi kopyalanabilir.
+first-run-from = Şuradan kopyala
+first-run-to = Şuraya kopyala
+first-run-copy-note = Hiçbir şey taşınmaz ya da kaldırılmaz. Skribisto kendi ayarlarının hepsini korur ve tam olarak eskisi gibi çalışmayı sürdürür.
+first-run-import = Ayarları içe aktar
+first-run-start-fresh = Sıfırdan başla
+first-run-import-failed = Bazı ayarlar içe aktarılamadı: { $error }
 
-settings-page-punctuation = Varsayılan noktalama ayarları
-settings-group-punctuation = Akıllı Noktalama
+settings-page-punctuation = Noktalama varsayılanları
+settings-group-punctuation = Akıllı noktalama
 settings-page-work-punctuation = Noktalama
-settings-punctuation-override = Bu projeye kendi cümle kuralları kurallarını verin
-settings-punctuation-override-hint = Off: Proje uygulama tercihini takip ediyor. Bu kurallar .skrib içinde seyahat ediyor, bu yüzden dosyanın aynı tipografi ile yazdığı ortak bir açılış.
-settings-punctuation-dashes = Turn – into an en dash, --- into an em dash
-settings-punctuation-ellipsis = Turn... into an elpsis
-settings-punctuation-quotes = Curl quotation işaretleri ve apostrophes
-settings-quote-style = Kontasyon işaretleri
-settings-quote-style-locale = Dil varsayılan
-settings-quote-style-curly = "Çift"
-settings-quote-style-curly-single = "Single"
-settings-quote-style-guillemets = «Guillemets»
-settings-quote-style-low-high = "Düşük yüksek"
-settings-punctuation-spacing = Daha önce Uzay:!?
-settings-punctuation-spacing-hint = Fransız tipografi daha önce dar bir no-break alanı ayarlar;!? ve daha önce tam bir tane: Sadece Fransızca yazılmış metin için geçerlidir.The space inside guillemets « » comes with the guillemet tırnakları kendileri.
-settings-punctuation-sample = Diliniz size verir
-settings-punctuation-app-hint = Her proje, kendi projedeki kuralları almazsa ne yapar.
-settings-punctuation-dialogue = Bir paragraf "-" bir diyalogla dash
-settings-punctuation-dialogue-hint = Sözcü notlardan ziyade bir barajla konuşma dili için: Fransızca, İspanyolca, Rusça ve diğerleri. sadece bir paragrafın başlangıcında yangınlar.
+settings-punctuation-override = Bu projeye kendi noktalama kurallarını ver
+settings-punctuation-override-hint = Kapalı: proje uygulama tercihini izler. Bu kurallar .skrib dosyasının içinde taşınır, böylece dosyayı açan bir ortak yazar aynı tipografiyle yazar.
+settings-punctuation-dashes = -- dizisini kısa çizgiye, --- dizisini uzun çizgiye dönüştür
+settings-punctuation-ellipsis = ... dizisini üç nokta karakterine dönüştür
+settings-punctuation-quotes = Tırnak işaretlerini ve kesme işaretlerini kıvrık yap
+settings-quote-style = Tırnak işaretleri
+settings-quote-style-locale = Dilin varsayılanı
+settings-quote-style-curly = “Çift”
+settings-quote-style-curly-single = ‘Tek’
+settings-quote-style-guillemets = «Açılı tırnak»
+settings-quote-style-low-high = „Alt-üst“
+settings-punctuation-spacing = ; : ! ? öncesinde boşluk
+settings-punctuation-spacing-hint = Fransız tipografisi ; ! ? öncesine dar bir bölünmez boşluk, : öncesine tam bir bölünmez boşluk koyar. Yalnızca Fransızca yazılmış metne uygulanır. Açılı tırnakların « » içindeki boşluk açılı tırnak biçiminin kendisiyle gelir.
+settings-punctuation-sample = Dilinizdeki sonuç
+settings-punctuation-app-hint = Proje ▸ Noktalama bölümünde kendi kurallarını belirlemedikçe her projenin yaptığı.
+settings-punctuation-dialogue = "- " ile başlayan paragrafı konuşma çizgisiyle aç
+settings-punctuation-dialogue-hint = Konuşmayı tırnak yerine çizgiyle gösteren diller için: Fransızca, İspanyolca, Rusça ve diğerleri. Yalnızca paragrafın en başında devreye girer.
 
-statusbar-go-to = Go to...
-go-to-placeholder = Binder'i arayın
-go-to-no-matches = Bu aramayı izleyen hiçbir öğe maçı yok.
-menu-go-to = Go to... (&G)
+statusbar-go-to = Git…
+go-to-placeholder = Dizinde ara
+go-to-no-matches = Bu aramayla eşleşen öğe yok.
+menu-go-to = &Git…
 
-settings-page-distraction-free-themes = Ayrılmasız temalar
-settings-themes-builtin = İnşa Edilmiş temalar
-settings-themes-builtin-badge = İnşa Edilmiş -in
-settings-themes-user = Benim temalarım
-settings-themes-editor-group = Edit tema
-settings-themes-editor-empty = Bunu düzenlemek için "My temalarım" altında bir tema seçin.
-settings-themes-use = Use Use Use Use Use Use
+settings-page-distraction-free-themes = Dikkat dağıtmayan mod temaları
+settings-themes-builtin = Hazır temalar
+settings-themes-builtin-badge = Hazır
+settings-themes-user = Temalarım
+settings-themes-editor-group = Temayı düzenle
+settings-themes-editor-empty = Düzenlemek için "Temalarım" altından bir tema seçin.
+settings-themes-use = Kullan
 settings-themes-duplicate = Çoğalt
 settings-themes-edit = Düzenle
 settings-themes-delete = Sil
 settings-themes-export = Dışa aktar…
 settings-themes-import = İçe aktar…
-settings-themes-copy-suffix = Kopyala
+settings-themes-copy-suffix = kopya
 settings-themes-json-filter = Tema (JSON)
-settings-themes-imported = Tema ithal edildi
-settings-themes-import-failed = Bu temayı ithal edemez
-settings-themes-exported = Tema ihraç edildi
-settings-themes-export-failed = Bu temayı ihraç edemez
-settings-themes-low-contrast = düşük kontrast
-settings-themes-low-contrast-band = vurgu metinleri gizler
+settings-themes-imported = Tema içe aktarıldı
+settings-themes-import-failed = Bu tema içe aktarılamadı
+settings-themes-exported = Tema dışa aktarıldı
+settings-themes-export-failed = Bu tema dışa aktarılamadı
+settings-themes-low-contrast = düşük karşıtlık
+settings-themes-low-contrast-band = vurgu metni gizliyor
 settings-themes-field-name = Ad
-settings-themes-field-paper = Page Page Page
+settings-themes-field-paper = Sayfa
 settings-themes-field-ink = Metin
-settings-themes-field-general = Arka plan arka plan arka plan arka plan
-settings-themes-field-widget-text = Kontrol şerit metin çevirisi
-settings-themes-field-caret-band = Bakımtın etrafındaki yüksek ışık
+settings-themes-field-general = Arka plan
+settings-themes-field-widget-text = Denetim şeridi metni
+settings-themes-field-caret-band = İmlecin çevresindeki vurgu
 
-statusbar-focus-settings = Ayrılmasız ayarlar
-statusbar-focus-manage-themes = Planlama temaları...
+statusbar-focus-settings = Dikkat dağıtmayan mod ayarları
+statusbar-focus-manage-themes = Temaları yönet…
 
 comments-title = Yorumlar
 comments-document-title = Bu belge
 comments-empty-project = Bu projede henüz yorum yok.
-comments-empty-document = Bu belgede hiçbir yorum yok.
-comments-filter-all = All All All All All All All All
-comments-filter-open = Aç
-comments-filter-resolved = Çözüldü yeniden çözüldü
-comments-filter-orphaned = Yetmiş Yetmiş
-comments-status-open = Aç
-comments-status-resolved = Çözüldü yeniden çözüldü
-comments-status-orphaned = Onun metnini Lost
-comments-orphan-snippet = ( Yorum metni gitti)
-comments-status-unplaced = Hiçbir metin pozisyonu yok
-comments-unplaced-snippet = (Herhangi bir metin için demirlenmedi)
+comments-empty-document = Bu belgede yorum yok.
+comments-filter-all = Tümü
+comments-filter-open = Açık
+comments-filter-resolved = Çözüldü
+comments-filter-orphaned = Sahipsiz
+comments-status-open = Açık
+comments-status-resolved = Çözüldü
+comments-status-orphaned = Metnini yitirdi
+comments-orphan-snippet = (yorum yapılan metin artık yok)
+comments-status-unplaced = Metin konumu yok
+comments-unplaced-snippet = (hiçbir metne bağlı değil)
 comments-reply-count = { $count ->
-    [one] { $count } Cevap
-   *[other] { $count } Cevap
+    [one] { $count } yanıt
+   *[other] { $count } yanıt
 }
 comments-menu-resolve = Çözüldü olarak işaretle
-comments-menu-reopen = Reopen Reopen
+comments-menu-reopen = Yeniden aç
 comments-menu-delete = Sil
-comments-sort-document = Belge emrinde
-comments-sort-newest = Yeni En İlk Yeni
-comments-sort-reader = Okuyucu Tarafından Gruped
+comments-sort-document = Belgedeki sıraya göre
+comments-sort-newest = Önce en yeniler
+comments-sort-reader = Okura göre gruplanmış
 comments-unsigned-author = İmzasız
 comments-agreement = { $count ->
-    [one] { $count } okuyucu
-   *[other] { $count } okuyucu
+    [one] { $count } okur
+   *[other] { $count } okur
 }
 comments-menu-add = Yorum ekle
-comments-menu-add-paragraph = Yorum bırakın bu paragrafta
+comments-menu-add-paragraph = Bu paragrafa yorum yap
 overview-col-comments = Yorumlar
-overview-col-total-comments = Toplam yorumlar
-comments-card-placeholder = Yorum yaz...
-comments-card-unknown-author = Bilinmeyen Yazar
-comments-unsigned-toast = Yorumlarınız imzalanmamış: Bu bilgisayarda sizin için bir isim belirlenmiyor.
-comments-unsigned-action = Adınızı Ayarlayın
-comments-card-reply = BeğenBeğen Cevap
-comments-card-reply-placeholder = Reply →
-comments-card-actions = Yorum bırakın eylemleri
-comments-reply-actions = Bahsedin eylemleri
-comments-menu-delete-reply = Delete Cevap
+overview-col-total-comments = Toplam yorum
+comments-card-placeholder = Bir yorum yazın…
+comments-card-unknown-author = Bilinmeyen yazar
+comments-unsigned-toast = Yorumlarınız imzasız: bu bilgisayarda sizin için bir ad belirlenmemiş.
+comments-unsigned-action = Adınızı belirleyin
+comments-card-reply = Yanıtla
+comments-card-reply-placeholder = Yanıt…
+comments-card-actions = Yorum eylemleri
+comments-reply-actions = Yanıt eylemleri
+comments-menu-delete-reply = Yanıtı sil
 comments-menu-delete-all = Buradaki tüm yorumları sil
 comments-deleted-toast = Yorum silindi
-comments-reply-deleted-toast = Cevabı silinmiş gibi
+comments-reply-deleted-toast = Yanıt silindi
 comments-deleted-all-toast = { $count ->
-    [one] { $count } yorumu silindi
+    [one] { $count } yorum silindi
    *[other] { $count } yorum silindi
 }
 comments-undo = Geri al
 
-analysis-segment = Analiz Analizi Analiz Analizi
-analysis-scope-book = Bu kitabı analiz edin
-analysis-run = Analizi çalıştır
-analysis-stale = Bu koştuktan bu yana değişti
-analysis-not-run = Henüz analiz edilmedi.
-analysis-running = Yazıyı okumak...
-analysis-failed = Analiz bitemezdi.
+analysis-segment = Çözümleme
+analysis-scope-book = Bu kitap çözümleniyor
+analysis-run = Çözümlemeyi çalıştır
+analysis-stale = Çalıştırıldıktan sonra değişti
+analysis-not-run = Henüz çözümlenmedi.
+analysis-running = El yazması okunuyor…
+analysis-failed = Çözümleme tamamlanamadı.
 analysis-no-scenes = Bu kitapta henüz sahne yok.
 
-analysis-shape = Şekil Şekil Şekil Şekil Şekil Şekil
+analysis-shape = Şekil
 
-analysis-arrivals = Varışlar
-analysis-arrivals-explainer = Bu projeye ne kadar metin açık olsa da, karakterlerin aşağı geldiğini ve bunları kimin yazdığı hakkında hiçbir şey olmadığını söylüyor: Başka bir yerde draft eden ve sallanan bir yazar ve burada amaçlanan biri.
-analysis-arrivals-scope = Bu bütün proje, sadece bu kitap değil.
-analysis-arrivals-session = Bunu açtığınız için proje tekrar sayıya başlar.
-analysis-arrivals-nothing = Bu oturumda henüz bir metin gelmedi.
-analysis-arrivals-typed = Tipd
+analysis-arrivals = Gelişler
+analysis-arrivals-explainer = Proje açıkken metnin bu projeye nasıl ulaştığı. Karakterlerin hangi yoldan geldiğini söyler, onları kimin yazdığı hakkında ise hiçbir şey söylemez: başka yerde taslak yazıp yapıştıran bir yazar yapıştırmıştır, dikte eden de dikte etmiştir. Burada ulaşılacak bir sayı yok.
+analysis-arrivals-scope = Yalnızca bu kitap değil, tüm proje.
+analysis-arrivals-session = Projeyi açtığınızdan beri. Projeyi kapatmak sayımı yeniden başlatır.
+analysis-arrivals-nothing = Bu oturumda henüz metin gelmedi.
+analysis-arrivals-typed = Yazılan
 analysis-arrivals-pasted = Yapıştırılan
 analysis-arrivals-dictated = Dikte edilen
-analysis-arrivals-imported = ithal edildi
-analysis-arrivals-programmatic = Ben senin için
+analysis-arrivals-imported = İçe aktarılan
+analysis-arrivals-programmatic = Sizin için eklenen
 analysis-arrivals-count = { $count ->
     [one] { $count } karakter
    *[other] { $count } karakter
 }
-analysis-arrivals-none = Yok
+analysis-arrivals-none = yok
 
-analysis-words-per-scene = Sahne başına gelen kelimeler
-analysis-median-words = Bu kitap medyan sahne çalışır { $count ->
-    [one] { $count } kelime.
-   *[other] { $count } kelime.
+analysis-words-per-scene = Sahne başına sözcük
+analysis-median-words = Bu kitabın ortanca sahnesi { $count ->
+    [one] { $count } sözcük.
+   *[other] { $count } sözcük.
 }
-analysis-median-line = Median: { $count ->
-    [one] { $count } kelime
-   *[other] { $count } kelime
+analysis-median-line = Ortanca: { $count ->
+    [one] { $count } sözcük
+   *[other] { $count } sözcük
 }
-analysis-dialogue = Diyalog Diyalog
-analysis-dialogue-unsupported = Diyalog henüz bu dil için ölçülmüyor.
+analysis-dialogue = Diyalog
+analysis-dialogue-unsupported = Bu dil için diyalog henüz ölçülmüyor.
 
-analysis-footnote-words = Footnote kelimeler
+analysis-footnote-words = Dipnot sözcükleri
 analysis-footnote-words-count = { $count ->
-    [one] { $count } kelime bu kitaptaki ayağında, toplam el yazmasından ayrı tutulur.
-   *[other] { $count } kelime bu kitaptaki ayağında, toplam el yazmasından ayrı tutulur.
+    [one] Bu kitabın dipnotlarında { $count } sözcük var; el yazması toplamından ayrı tutulur.
+   *[other] Bu kitabın dipnotlarında { $count } sözcük var; el yazması toplamından ayrı tutulur.
 }
-analysis-footnote-words-pending = Ayak notları saymak...
+analysis-footnote-words-pending = Dipnotlar sayılıyor…
 
-analysis-ignore-empty = Henüz yazılmış hiçbir şey ile metinleri görmezden gelin
-analysis-empty-hidden = { $count } boş boş { $count ->
-        [one] Metin
-       *[other] metin metin metinleri metin metin metin metinleri
-    } Gizli.
-analysis-all-texts-empty = Bu kitaptaki her metin hala boş.
+analysis-ignore-empty = Henüz hiçbir şey yazılmamış metinleri yok say
+analysis-empty-hidden = { $count } boş { $count ->
+        [one] metin
+       *[other] metin
+    } gizlendi.
+analysis-all-texts-empty = Bu kitaptaki tüm metinler hâlâ boş.
 
-binder-filter-count = { $shown } göstermiştir { $total }
+binder-filter-count = { $total } öğeden { $shown } tanesi gösteriliyor
 binder-filter-clear = Temizle
-binder-filter-none = Hiçbir şey "{ $query }".
+binder-filter-none = “{ $query }” ile eşleşen bir şey yok.
 
-settings-paratext-intro = Yeni bir projenin başlatabileceği ön ve geri konu. Her yapı bir yayın geleneğine ait ve sayfa başlıkları bu geleneğin kendi dilinde yazılır.Rename them free once a project is created.
-settings-paratext-structures = Yapılar Yapılar
-settings-paratext-broken = Okunamaz
+settings-paratext-intro = Yeni bir projenin başlayabileceği ön ve arka kısımlar. Her yapı bir yayıncılık geleneğine aittir ve sayfa başlıkları o geleneğin kendi dilinde yazılmıştır. Proje oluşturulduktan sonra dilediğiniz gibi yeniden adlandırın.
+settings-paratext-structures = Yapılar
+settings-paratext-broken = Okunamadı
 settings-paratext-edit = Düzenle
 settings-paratext-duplicate = Çoğalt
 settings-paratext-delete = Sil
-settings-paratext-new = Yeni Yapı Yeni Yapı
+settings-paratext-new = Yeni yapı
 settings-paratext-save = Kaydet
-settings-paratext-editor-hint = Bir isim, yazıdan önce oluşturmak için sayfalar ve bunun ardından oluşturmak için sayfalar. Nerede sona erecekler: Proje var bir kez sıradan öğelerdir.
+settings-paratext-editor-hint = Bir ad, el yazmasından önce oluşturulacak sayfalar ve ondan sonra oluşturulacak sayfalar. Nereye yerleşecekleri size kalmış: proje oluşturulduktan sonra bunlar sıradan öğelerdir.
 
-
-image-insert = Resim çizin... (&M)
-image-no-project = Bir görüntü eklemekten önce bir proje açın.
-image-choose-title = Bir görüntü seçin
-image-filter-label = Görüntüler
-image-large-title = Bu büyük bir görüntü
+image-insert = &Resim ekle…
+image-no-project = Resim eklemeden önce bir proje açın.
+image-choose-title = Bir resim seçin
+image-filter-label = Resimler
+image-large-title = Bu büyük bir resim
 image-large-text =
-    { $name } { $megapixels } mega scripts ({ $width }×{ $height }).
-    Projedeki orijinal dosyanızı mağazalarda olduğu gibi tutun: seyahat ediyor
-    Her yedekleme ve her ihracatla birlikte, mağazaları daha küçük bir kopyala optimize edin.
-    Bunun yerine, en uzun tarafında 2560 piksele kadar.
-image-large-keep = Orijinali Keep original
-image-large-downscale = Eniyile
-image-large-remember = Bunu şimdiden yapın, tekrar sormayın
-image-not-recorded = Görüntü kurtarıldı, ancak projede kaydedilemedi.
-image-describe-title = Görüntüyü açıklayın
-image-describe-explain = Resmin gösterdiği şey, onu göremeyen bir okuyucu için: Hiçbir zaman sayılmamış veya prose olarak ihraç edilmektedir.
-image-describe-placeholder = gri bir gökyüzüne karşı bir ışık
-image-resize-title = Görüntüyü yeniden şekillendirin
-image-resize-explain = Şu anda gösterilen büyüklüğün bir yüzdesi. 100 bunu olduğu gibi bırakıyor.
-image-resize-invalid = 1 ve 1000 arasında bir sayı girin.
-image-menu-describe = Görüntüyü açıklayın... (&D)
-image-menu-resize = Görüntüyü yeniden şekillendirin... (&R)
-image-menu-reset-size = Orijinal boyut (&Z)
+    { $name } { $megapixels } megapiksel ({ $width }×{ $height }).
+    Olduğu gibi tutmak özgün dosyanızı projede saklar: her yedekle ve her
+    dışa aktarmayla birlikte taşınır. İyileştirmek ise bunun yerine en uzun
+    kenarı en fazla 2560 piksel olan daha küçük bir kopya saklar.
+image-large-keep = Özgün hâlini koru
+image-large-downscale = İyileştir
+image-large-remember = Bundan sonra hep böyle yap, bir daha sorma
+image-not-recorded = Resim kaydedildi ama projeye işlenemedi.
+image-describe-title = Resmi tanımla
+image-describe-explain = Göremeyen bir okur için resmin ne gösterdiği. El yazmasının bir parçası değildir: asla sayılmaz, aranmaz ya da metin olarak dışa aktarılmaz.
+image-describe-placeholder = gri bir gökyüzü önünde bir deniz feneri
+image-resize-title = Resmi yeniden boyutlandır
+image-resize-explain = Şu anda gösterildiği boyutun yüzdesi. 100 olduğu gibi bırakır.
+image-resize-invalid = 1 ile 1000 arasında bir sayı girin.
+image-menu-describe = Resmi &tanımla…
+image-menu-resize = Resmi yeniden &boyutlandır…
+image-menu-reset-size = Özgün b&oyut
 
-cover-choose = Book cover... (&V)
-cover-clear = Kapakı Kaldırın (&R)
+cover-choose = Kapak res&mi…
+cover-clear = Kapağı ka&ldır
 cover-choose-title = Bir kapak seçin
-cover-set = Kapak kuruldu.
-cover-cleared = Kapak kaldırıldı. Resim hala projede.
-card-label = Kısa açıklama
-card-exportable = İhracata ihracat yapıldı
-card-numbered = Sayı numaralanmış numara
-card-created = Oluşturulmuş Yaratılmış Yaratılmış Yaratılmıştır
-card-modified = Değiştirilmiş Modified Modified
-card-yes = Evet
-card-no = Hayır
-card-type = Tipi Tipi Tipi Tipi Tipi
-card-position = Pozisyon pozisyonu
-card-children = Çocuklar Çocuklar Çocuklar Çocuklar
+cover-set = Kapak ayarlandı.
+cover-cleared = Kapak kaldırıldı. Resim hâlâ projede.
+card-label = Açıklama
+card-exportable = Dışa aktarılır
+card-numbered = Numaralı
+card-created = Oluşturulma
+card-modified = Değiştirilme
+card-yes = evet
+card-no = hayır
+card-type = Tür
+card-position = Konum
+card-children = Alt öğeler
 card-goal = Hedef
-card-words = Sözcükler
+card-words = Sözcük
 card-synopsis = Özet
 card-point-of-view = Bakış açısı
-card-aliases = Ayrıca olarak da bilinir
+card-aliases = Diğer adları
 
-export-orphan-footnotes-title = Hiçbir referans olmadan ayaknotlar
+export-orphan-footnotes-title = Göndermesi olmayan dipnotlar
 export-comments-dropped =
     { $count ->
-        [one] Bir yorum, ihraç edilen metinde yer alınamadı ve ayrıldı.
-       *[other] { $count } yorum, ihraç edilen metine yerleştirilemedi ve ayrıldı.
+        [one] Bir yorum dışa aktarılan metne yerleştirilemediği için dışarıda bırakıldı.
+       *[other] { $count } yorum dışa aktarılan metne yerleştirilemediği için dışarıda bırakıldı.
     }
 export-orphan-footnotes =
     { $count ->
-        [one] Bir ayaknot artık yazıda herhangi bir yere atıfta bulunmuyor. Onun metni ihraç edilen kitapta görünmeyecek.
-       *[other] { $count } Ayaklamalar artık yazının herhangi bir yerinde referanslanmamıştır. Onların metinleri ihraç edilen kitapta görünmeyecektir.
+        [one] Bir dipnota artık el yazmasının hiçbir yerinden gönderme yapılmıyor. Metni dışa aktarılan kitapta görünmeyecek.
+       *[other] { $count } dipnota artık el yazmasının hiçbir yerinden gönderme yapılmıyor. Metinleri dışa aktarılan kitapta görünmeyecek.
     }
 
-
-menu-footnotes = Ayaknotlar (&N)
-footnotes-title = Ayaknotlar
-footnotes-insert = Bölünmez (&F)
-footnotes-empty = Henüz ayaknotları yok. Bir sahnede cursor koyun, sonra + yukarıda veya veya veya daha sonra kullanın. Ctrl+Alt+F.
-footnotes-filter-all = All All All All All All All All
+menu-footnotes = Di&pnotlar
+footnotes-title = Dipnotlar
+footnotes-insert = Di&pnot ekle
+footnotes-empty = Henüz dipnot yok. İmleci bir sahneye koyun, sonra yukarıdaki + düğmesini ya da Ctrl+Alt+F kısayolunu kullanın.
+footnotes-filter-all = Tümü
 footnotes-filter-document = Bu belge
-footnotes-filter-orphaned = Yetmiş Yetmiş
-footnotes-orphaned = Bu notta hiçbir şey puan daha fazla
+footnotes-filter-orphaned = Sahipsiz
+footnotes-orphaned = Artık hiçbir şey bu nota gönderme yapmıyor
 footnotes-untitled-home = Adsız
-footnotes-body-placeholder = Notun kendisi
-footnotes-insert-tooltip = cursor (Ctrl+Alt+F) bir ayaknote girin
-footnotes-actions = Ayaklanma eylemleri
-footnotes-delete = Delete notu ve referansı (&D)
-footnotes-no-project = Bir ayağı eklemeden önce bir proje açın.
-footnotes-no-caret = Bir sahnenin metninde, orada bir ayaknotu eklemek için eğrileri koyun.
-footnotes-not-created = Ayak notu projeye eklenemezdi.
+footnotes-body-placeholder = notun kendisi
+footnotes-insert-tooltip = İmlecin bulunduğu yere dipnot ekle (Ctrl+Alt+F)
+footnotes-actions = Dipnot eylemleri
+footnotes-delete = Notu ve göndermesini &sil
+footnotes-no-project = Dipnot eklemeden önce bir proje açın.
+footnotes-no-caret = Oraya dipnot eklemek için imleci bir sahnenin metnine koyun.
+footnotes-not-created = Dipnot projeye eklenemedi.
 footnotes-deleted-toast = Not silindi
 footnotes-undo-delete = Geri al
 
-import-document-title = İthalat belgeleri
+import-document-title = Belgeleri içe aktar
 import-document-close = Kapat
-import-document-step-files = Files Files
+import-document-step-files = Dosyalar
 import-document-step-review = Gözden geçir
-import-document-step-destination = Hedef Hedef Hedef
+import-document-step-destination = Varış yeri
 import-document-step-reconcile = Birleştir
-import-document-reconcile-hint = Bu eşyaların bazıları zaten sahip olduğunuzlardır. Her birine ne olması gerektiğini söyle.
-import-document-reconcile-all-new = Bu dosyada hiçbir şey projenizi karşılaştırır: her öğe yeni olarak eklenecektir.
-import-document-duplicate-returns = Bu dosyalar aynı el yazmasının bir kopyasından daha fazlasıdır.Bir seferde onları ithal edin: Projenize karşı bir geri dönüş kopyasını tek bir araya getirin, bu yüzden birlikte birkaç tane ithal etmek, kitabın yerine ikinci bir kopyasını ekleyecekti.
-import-document-hunk-added = Bu yeni paragrafı alın
-import-document-hunk-removed = Bu paragrafı bırakın
-import-document-hunk-changed = Bu yeniden yaz
-import-document-col-stray-prose = Onun metin çevirisi
-import-document-stray-as-paratext = Paratext olarak tutun
-import-document-stray-discard = metinden vazgeçin
+import-document-reconcile-hint = Bu öğelerin bazıları zaten sizde olanlar. Her biri için ne olacağını belirtin.
+import-document-reconcile-all-new = Bu dosyadaki hiçbir şey projenizle eşleşmiyor: her öğe yeni olarak eklenecek.
+import-document-duplicate-returns = Bu dosyalar, aynı el yazmasının geri dönen birden fazla kopyası. Bunları birer birer içe aktarın: eşleştirme projenizle yalnızca bir geri dönen kopyayı hizalar, bu yüzden birkaçını birlikte içe aktarmak kitabı birleştirmek yerine ikinci bir kopyasını ekler.
+import-document-hunk-added = Bu yeni paragrafı al
+import-document-hunk-removed = Bu paragrafı çıkar
+import-document-hunk-changed = Bu yeniden yazımı al
+import-document-col-stray-prose = Metni
+import-document-stray-as-paratext = Yan metin olarak tut
+import-document-stray-discard = Metni at
 import-document-col-current = Projenizde
 import-document-col-incoming = Bu dosyada
 import-document-col-status = Durum
-import-document-col-action = Ne yapmalı
-import-document-status-identical = Aynı Aynı Aynı Aynı Aynı Aynı Aynı
-import-document-status-editor-edited = Onlar onu editörler.
-import-document-status-you-edited = Siz onu editörsünüz
-import-document-status-conflict = Her ikisi de onu düzenlemedi
+import-document-col-action = Ne yapılsın
+import-document-status-identical = Aynı
+import-document-status-editor-edited = Onlar düzenledi
+import-document-status-you-edited = Siz düzenlediniz
+import-document-status-conflict = İkiniz de düzenlediniz
 import-document-status-different = Farklı
 import-document-status-new = Yeni
-import-document-status-missing = Bu dosyada Değil
+import-document-status-missing = Bu dosyada yok
 import-document-status-moved = Taşınmış
-import-document-action-comments-only = Yorumlar Sadece Yorumlar
-import-document-action-take-import = Bu versiyonu alın
-import-document-action-keep-current = Keep mine my mine
-import-document-action-create-new = Yeni Add as new
-import-document-action-ignore = Skip Skip Skip Skip Skip Skip
-import-document-compare = Karşılaştırma Karşılaştırma Karşılaştırma Karşılaştırma Karşılaştırma Karşılaştırma Karşılaştırma Karşılaştırma
-import-document-compare-legend = Versiyonunuz bu dosyayla karşılaştırıldı. Sadece.
+import-document-action-comments-only = Yalnızca yorumlar
+import-document-action-take-import = Bu sürümü al
+import-document-action-keep-current = Benimkini koru
+import-document-action-create-new = Yeni olarak ekle
+import-document-action-ignore = Atla
+import-document-compare = Karşılaştır
+import-document-compare-legend = Sizin sürümünüz bu dosyadakiyle karşılaştırılıyor. Salt okunur.
 import-document-compare-close = Kapat
-import-document-drop-title = Drop documents here here
+import-document-drop-title = Belgeleri buraya bırakın
 import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) ve düz metin (.txt)
-import-document-browse = Göze...
+import-document-browse = Gözat…
 import-document-move-up = Yukarı taşı
 import-document-move-down = Aşağı taşı
 import-document-remove-file = Kaldır
 import-document-file-count = { $count ->
     [one] 1 dosya
-   *[other] { $count } dosyaları
+   *[other] { $count } dosya
 }
-import-document-no-files = Henüz seçilen dosyaların yok.
+import-document-no-files = Henüz dosya seçilmedi.
 import-document-col-included = İçe aktar
 import-document-col-title = Başlık
-import-document-col-type = Tipi Tipi Tipi Tipi Tipi
-import-document-col-words = Sözcükler
-import-document-col-breaks = Breaks Breaks
+import-document-col-type = Tür
+import-document-col-words = Sözcük
+import-document-col-breaks = Aralar
 import-document-col-comments = Yorumlar
-import-document-col-footnotes = Ayaknotlar
+import-document-col-footnotes = Dipnotlar
 import-document-col-epigraph = Epigraf
-import-document-col-source = Source Source Source Source
-import-document-level-rules = Seviyeleri Başlamak
+import-document-col-source = Kaynak
+import-document-level-rules = Başlık düzeyleri
 import-document-level-n = Başlık { $level }
-import-document-add-top-level = Üst düzey ekle
-import-document-add-top-level-tooltip = Her analiz edilen öğenin üzerinde bir kitap koyar, bölüm dosyaları için hiçbir kitap başlığı yok
-import-document-destination = Hedef Hedef Hedef
-import-document-destination-hint = Bir binder veya öğe seçin: bir klasör içinde yeni öğeler arazi, ya da bir sahneden sonra.
-import-document-destination-empty = Henüz bağlayıcı değil. İlk önce bir tane oluşturun.
-import-document-plan-empty = Henüz ithal etmek için hiçbir şey yok.
+import-document-add-top-level = En üst düzey ekle
+import-document-add-top-level-tooltip = Kitap başlığı olmayan bölüm dosyaları için, çözümlenen her öğenin üstüne bir Kitap ekler
+import-document-destination = Varış yeri
+import-document-destination-hint = Bir dizin ya da öğe seçin: yeni öğeler bir klasörün içine ya da bir sahnenin sonrasına yerleşir.
+import-document-destination-empty = Henüz dizin yok. Önce bir tane oluşturun.
+import-document-plan-empty = Henüz içe aktarılacak bir şey yok.
 import-document-summary = { $rows ->
-    [one] 1 item
-   *[other] { $rows } Madde
+    [one] 1 öğe
+   *[other] { $rows } öğe
 } · { $breaks ->
-    [one] 1 sahne molası
-   *[other] { $breaks } Sahne molaları
+    [one] 1 sahne arası
+   *[other] { $breaks } sahne arası
 }
-import-document-back = Back Back Back Back
+import-document-back = Geri
 import-document-cancel = İptal
-import-document-analyse = Sonraki
-import-document-analysing = Okuma belgeleri...
-import-document-step-analysing = Okumaya Okumaya Okuma
-import-document-cancel-analysis = Okumayı Durdur
+import-document-analyse = İleri
+import-document-analysing = Belgeler okunuyor…
+import-document-step-analysing = Okunuyor
+import-document-cancel-analysis = Okumayı durdur
 import-document-analyse-failed = Belgeler okunamadı.
 import-document-details = Ayrıntılar
 import-document-import = İçe aktar
 import-document-done = { $count ->
-    [one] 1 öğe ithal edildi
-   *[other] { $count } ithal edilen eşyalar
+    [one] 1 öğe içe aktarıldı
+   *[other] { $count } öğe içe aktarıldı
 }
 import-document-undo = Geri al
-import-diagnostic-file-unreadable = "{ $path }" okunamadı: { $detail }. Diğer dosyalar hala ithal ediyor.
-import-diagnostic-nested-too-deep = "{ $path }" okunmuyordu: İçeriği { $limit }'den fazla derin bir şekilde işgal edildi ve Skribisto'i vurabildi, bu yüzden diğer dosyaların hala ithal edilmesi.
-import-diagnostic-archive-too-large = "{ $path }" okumuyordu: It is a distributed file built to unpack far larger than it is, which could egzoz memory and crash Skribisto, so it is left out. Diğer dosyalar hala ithalat.
+import-diagnostic-file-unreadable = “{ $path }” okunamadı: { $detail }. Diğer dosyalar yine de içe aktarılır.
+import-diagnostic-nested-too-deep = “{ $path }” okunmadı: içeriği { $limit } düzeyden daha derin iç içe geçmiş. Hiçbir gerçek belge buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir, bu yüzden dışarıda bırakıldı. Diğer dosyalar yine de içe aktarılır.
+import-diagnostic-archive-too-large = “{ $path }” okunmadı: kendisinden çok daha büyük açılacak biçimde hazırlanmış sıkıştırılmış bir dosya; belleği tüketip Skribisto'yu çökertebileceği için dışarıda bırakıldı. Diğer dosyalar yine de içe aktarılır.
 import-diagnostic-lossy-decode = { $count ->
-    [one] "{ $path }"deki bir karakter, dosyayı UTF-8 olarak geri almak için geri almamıştı.
-   *[other] { $count } karakter "{ $path }" kodlamadı. Dosyayı UTF-8 olarak sakladı.
+    [one] “{ $path }” içindeki bir karakter çözülemedi. Korumak için dosyayı UTF-8 olarak yeniden kaydedin.
+   *[other] “{ $path }” içindeki { $count } karakter çözülemedi. Korumak için dosyayı UTF-8 olarak yeniden kaydedin.
 }
-import-diagnostic-decoded-from-bom = "{ $path }" { $detail } olarak kodlandı, UTF-8 değil.
-import-diagnostic-empty-file = "{ $path }" boş.
-import-diagnostic-no-headings = "{ $path }" başlığı yok, bu yüzden bir öğe olarak geliyor.
-import-diagnostic-unsupported-format = Hiçbir şey ".{ $detail }" dosyaları okumuyor, bu yüzden "{ $path }" atıldı.
-import-diagnostic-front-matter-not-flat = "{ $path }" ön mesele: "{ $detail }" basit bir değer değildir ve atıldı.
+import-diagnostic-decoded-from-bom = “{ $path }” UTF-8 olarak değil, { $detail } olarak çözüldü.
+import-diagnostic-empty-file = “{ $path }” boş.
+import-diagnostic-no-headings = “{ $path }” içinde başlık yok, bu yüzden tek bir öğe olarak gelir.
+import-diagnostic-unsupported-format = “.{ $detail }” dosyalarını okuyabilen bir şey yok, bu yüzden “{ $path }” atlandı.
+import-diagnostic-front-matter-not-flat = “{ $path }” içindeki ön bilgi: “{ $detail }” basit bir değer değil ve atlandı.
 import-diagnostic-footnotes-degraded = { $count ->
-    [one] Bir ayağı "{ $path }" düz metin olarak geliyor: ayaknotlar Markdown'den okumuyor.
-   *[other] { $count } "{ $path }" ayaknotları düz metin olarak geliyor: ayaknotlar Markdown'ten okumuyor.
+    [one] “{ $path }” içindeki bir dipnot düz metin olarak gelir: Markdown'dan dipnot okunmaz.
+   *[other] “{ $path }” içindeki { $count } dipnot düz metin olarak gelir: Markdown'dan dipnot okunmaz.
 }
 import-diagnostic-footnote-not-carried = { $count ->
-    [one] Bir ayağı "{ $path }" üzerine getirilemezdi. Diğerleri getirildi.
-   *[other] { $count } "{ $path }" içinde ayaknotlar getirilemezdi.Diğerleri de vardı.
+    [one] “{ $path }” içindeki bir dipnot aktarılamadı. Diğerleri aktarıldı.
+   *[other] “{ $path }” içindeki { $count } dipnot aktarılamadı. Diğerleri aktarıldı.
 }
 import-diagnostic-raw-html-dropped = { $count ->
-    [one] "{ $path }" deki ham HTML bir blok düştü.
-   *[other] { $count } ham HTML blokları "{ $path }" düştü.
+    [one] “{ $path }” içindeki bir ham HTML bloğu çıkarıldı.
+   *[other] “{ $path }” içindeki { $count } ham HTML bloğu çıkarıldı.
 }
 import-diagnostic-nested-break-dropped = { $count ->
-    [one] Bir sahne "{ $path }" içinde bir alıntı veya liste içinde kırıldı. Sadece kendi çizgisinde bir mola kaldı.
-   *[other] { $count } sahne "{ $path }" içindeki alıntılar veya listeler içinde kırıldı. Sadece kendi çizgisinde bir mola kaldı.
+    [one] “{ $path }” içinde bir alıntının ya da listenin içindeki bir sahne arası çıkarıldı. Yalnızca kendi satırındaki bir ara korunur.
+   *[other] “{ $path }” içinde alıntıların ya da listelerin içindeki { $count } sahne arası çıkarıldı. Yalnızca kendi satırındaki bir ara korunur.
 }
-import-diagnostic-image-not-ingested = "{ $path }" görüntüye "{ $detail }" atıfta bulunur; referans metin olarak gelir; resmin kendisi kopyalanmaz.
-import-diagnostic-duplicate-title = "{ $title }" { $count } kez görünüyor. Bu dosyaları daha önce ithal ederseniz, bu onları tekrarlayacaktır.
-import-diagnostic-heading-level-jump = "{ $title }" başlık seviyesinden { $from }'e { $to }'e atlar; ebeveyninin altında bir seviye yerleştirilir.
-import-diagnostic-illegal-combination = "{ $title }" prose taşır, ancak { $kind } herhangi bir şeyi tutamaz. İthalat, tipini değiştirinceye kadar yapılır veya dışarıda bırakılamaz. Aksi takdirde hiçbir şey ithal edilmez.
-import-diagnostic-tracked-changes-flattened = { $path } orta tahmindi: { $count ->
-    [one] { $count } İzlenen Değişim kabul edildi
-   *[other] { $count } İzlenen değişiklikler kabul edildi
-} Ve deletions düştü. Bu son metindir. Bunun yerine kendi kelimenizin herhangi birini tutmak, son adımda Karşılaştırmak.
-import-diagnostic-tracked-changes-flattened-by = { $path } orta tahmindi: { $count ->
-    [one] { $count } { $names } tarafından takip edilen değişiklik kabul edildi
-   *[other] { $count } { $names } tarafından takip edilen değişiklikler kabul edildi
-} Ve deletions düştü. Bu son metindir. Bunun yerine kendi kelimenizin herhangi birini tutmak, son adımda Karşılaştırmak.
+import-diagnostic-image-not-ingested = “{ $path }”, “{ $detail }” resmine gönderme yapıyor. Gönderme metin olarak gelir; resmin kendisi kopyalanmaz.
+import-diagnostic-duplicate-title = “{ $title }” { $count } kez geçiyor. Bu dosyaları daha önce içe aktardıysanız bu işlem onları çoğaltacak.
+import-diagnostic-heading-level-jump = “{ $title }” { $from }. başlık düzeyinden { $to }. düzeye atlıyor; üst öğesinin bir düzey altına yerleştirildi.
+import-diagnostic-illegal-combination = “{ $title }” metin içeriyor, ama { $kind } türündeki bir öğe metin barındıramaz. Türünü değiştirene ya da onu dışarıda bırakana kadar içe aktarma bekletilir. Aksi hâlde hiçbir şey içe aktarılmaz.
+import-diagnostic-tracked-changes-flattened = { $path } düzeltme sürecinin ortasındaydı: { $count ->
+    [one] { $count } izlenen değişiklik kabul edildi
+   *[other] { $count } izlenen değişiklik kabul edildi
+} ve silmeler çıkarıldı. Son metin budur. Bunun yerine kendi ifadelerinizden herhangi birini korumak için son adımdaki Karşılaştır'ı kullanın.
+import-diagnostic-tracked-changes-flattened-by = { $path } düzeltme sürecinin ortasındaydı: { $count ->
+    [one] { $names } tarafından yapılan { $count } izlenen değişiklik kabul edildi
+   *[other] { $names } tarafından yapılan { $count } izlenen değişiklik kabul edildi
+} ve silmeler çıkarıldı. Son metin budur. Bunun yerine kendi ifadelerinizden herhangi birini korumak için son adımdaki Karşılaştır'ı kullanın.
 import-diagnostic-text-box-dropped = { $count ->
-    [one] { $path } { $count } metni belgenin akışının dışında oturuyor, bu yüzden bir yazıya ait nerede cevaplanamaz. ithal edilmez.
-   *[other] { $path } { $count } metin kutularına sahiptir. Onların metinleri belgenin akışının dışında oturur, bu yüzden bir yazıya ait nerede cevaplanamaz. ithal edilmezler.
+    [one] { $path } içinde { $count } metin kutusu var. Metni belgenin akışının dışında durduğu için el yazmasında nereye ait olduğu belirlenemiyor. İçe aktarılmadı.
+   *[other] { $path } içinde { $count } metin kutusu var. Metinleri belgenin akışının dışında durduğu için el yazmasında nereye ait oldukları belirlenemiyor. İçe aktarılmadılar.
 }
 import-diagnostic-embedded-object-dropped = { $count ->
-    [one] { $path } { $count } gömülü nesneye sahiptir: bir grafik, bir denklem veya benzer. Onu tutabilecek bir yazıda hiçbir şey yoktur.
-   *[other] { $path } { $count } gömülü nesnelere sahiptir: bir grafik, bir denklem veya benzer. Onları tutabilecek bir yazıda hiçbir şey yoktur.
+    [one] { $path } içinde { $count } gömülü nesne var: bir grafik, bir denklem ya da benzeri. El yazmasında onu barındırabilecek bir şey yok.
+   *[other] { $path } içinde { $count } gömülü nesne var: bir grafik, bir denklem ya da benzeri. El yazmasında onları barındırabilecek bir şey yok.
 }
 import-diagnostic-field-flattened = { $count ->
-    [one] { $path } { $count } alanı tutuyor: bir sayfa numarası, bir haç-reference, bir tarih. Son gösteren metni tutar ve tekrar güncellemeyecek.
-   *[other] { $path } { $count } alan tutar: bir sayfa numarası, bir haç-reference, bir tarih. Her biri son gösteren metni tutar ve tekrar güncellemeyecek.
+    [one] { $path } içinde { $count } alan var: bir sayfa numarası, bir çapraz başvuru, bir tarih. En son gösterdiği metni korur ve bir daha güncellenmez.
+   *[other] { $path } içinde { $count } alan var: bir sayfa numarası, bir çapraz başvuru, bir tarih. Her biri en son gösterdiği metni korur ve bir daha güncellenmez.
 }
-import-diagnostic-unknown-style-level = { $path }, “{ $detail }” stilini kullanıyor, bu bir başlık gibi görünüyor, ancak bir seviye değil. Bu paragraflar derinlikte tahmin edilenden ziyade prose olarak ithal ediliyor.
-import-diagnostic-comment-unanchored = Yorum "The comment"{ $detail }"İçinde" { $path } Bu konuda olduğu kelimelere eklenemezdi. Bu, onu hareket edebileceğiniz eşya üzerinde tutulur.
-import-diagnostic-comment-not-carried = { $path }'deki "{ $detail }" yorumu ithal edilmez, çünkü dosyada hiçbir şey devam edebilir.Eğer ihtiyacınız varsa dosyayı kopyalayın.
+import-diagnostic-unknown-style-level = { $path }, başlığa benzeyen ama düzey belirtmeyen “{ $detail }” biçemini kullanıyor. Bu paragraflar bir derinlik tahmin edilmek yerine metin olarak içe aktarılır.
+import-diagnostic-comment-unanchored = { $path } içindeki “{ $detail }” yorumu, ilgili olduğu sözcüklere bağlanamadı. Taşıyabileceğiniz şekilde kendi öğesinde tutuluyor.
+import-diagnostic-comment-not-carried = { $path } içindeki “{ $detail }” yorumu içe aktarılmadı, çünkü dosyadan onun tutulabileceği metin olarak hiçbir şey gelmiyor. Gerekirse dosyadan kopyalayın.
 import-diagnostic-comment-replies-flattened = { $count ->
-    [one] { $count }, dosyada olmayan bir yorum olarak adlandırılan { $path }'de cevap verir, bu yüzden kendi yorum olarak gelir.
-   *[other] { $count }, dosyada olmayan bir yorum olarak { $path }'de cevap verir, böylece kendi yorumlarına ulaşırlar.
+    [one] { $path } içindeki { $count } yanıt dosyada olmayan bir yoruma bağlıydı, bu yüzden kendi başına bir yorum olarak gelir.
+   *[other] { $path } içindeki { $count } yanıt dosyada olmayan bir yoruma bağlıydı, bu yüzden her biri kendi başına bir yorum olarak gelir.
 }
 import-diagnostic-prose-not-verbatim = { $count ->
-    [one] { $count } paragrafı { $path }'de tam olarak yazılı olarak formatla getirilemezdi, bu yüzden orijinalle karşılaştırın.
-   *[other] { $count } { $path }'deki paragraflar, tam olarak yazılı olarak formatları ile getirilemedi, böylece orijinalle kıyaslandılar.
+    [one] { $path } içindeki { $count } paragraf, biçimlendirmesi yazıldığı gibi aktarılamadığı için düz metin olarak gelir. Özgün hâliyle karşılaştırın.
+   *[other] { $path } içindeki { $count } paragraf, biçimlendirmeleri yazıldığı gibi aktarılamadığı için düz metin olarak gelir. Özgün hâlleriyle karşılaştırın.
 }
 import-diagnostic-styled-spaces-not-carried = { $count ->
-    [one] { $path }'te, boş alanın { $count }'i vurgulandı ya da vurmuştu, örneğin doldurulması gereken bir çizgi kaldı. Skribisto, uzayları tek başına taşımaz, bu yüzden düz alanlar olarak gelir ya da bir paragrafın bittiği yerde değil.
-   *[other] { $path }'te, { $count } boş alanın vurgulandığı veya vurulduğunda, satırlar örnek olarak doldurmaya bırakılırlar. Skribisto, uzayları tek başına taşımaz, bu yüzden düz alanlar olarak gelirler, ya da bir paragrafın bittiği yerde değil.
+    [one] { $path } içinde { $count } boşluk dizisi, örneğin doldurulmak üzere bırakılmış bir satır gibi, altı ya da üstü çizili. Skribisto yalnızca boşluklardan oluşan bir dizide bu çizgileri korumaz; bu yüzden düz boşluk olarak gelir, paragrafın başında ya da sonundaysa hiç gelmez.
+   *[other] { $path } içinde { $count } boşluk dizisi, örneğin doldurulmak üzere bırakılmış satırlar gibi, altı ya da üstü çizili. Skribisto yalnızca boşluklardan oluşan dizilerde bu çizgileri korumaz; bu yüzden düz boşluk olarak gelirler, paragrafın başında ya da sonundaysalar hiç gelmezler.
 }
 import-diagnostic-list-nesting-flattened = { $count ->
-    [one] { $count } liste öğesi { $path }, { $limit }'ten daha derindi. { $limit }'e geliyor, en derin Skribisto, sözleri ve formatı ile devam ediyor.
-   *[other] { $count } liste öğeleri { $path }'de { $limit }'ten fazlaydı. { $limit }'e ulaştılar, en derin Skribisto, sözleri ve formatı ile devam ediyor.
+    [one] { $path } içindeki { $count } liste öğesi { $limit } düzeyden daha derin iç içe geçmişti. Sözcükleri ve biçimlendirmesiyle birlikte, Skribisto'nun koruduğu en derin düzey olan { $limit }. düzeyde gelir.
+   *[other] { $path } içindeki { $count } liste öğesi { $limit } düzeyden daha derin iç içe geçmişti. Sözcükleri ve biçimlendirmeleriyle birlikte, Skribisto'nun koruduğu en derin düzey olan { $limit }. düzeyde gelirler.
 }
 import-diagnostic-table-read-as-paragraphs = { $count ->
-    [one] { $count } masası { $path }, geri kalanından çok daha geniş bir sıraya sahiptir, aynı zamanda bir ızgara olarak da ortaya koymak için çok daha geniştir. Hücreleri bir paragraf olarak gelir, bir tane daha sonra, sözleri ve formatı ile.
-   *[other] { $count } masaları { $path } geri kalanından çok daha geniş bir sıraya sahiptir, aynı zamanda bir ızgara olarak da ortaya koymak için çok daha geniştir. Hücreleri bir paragraf olarak gelir, bir başkasıyla, sözleri ve formatı ile.
+    [one] { $path } içindeki { $count } tablonun bir satırı diğerlerinden çok daha geniş; ızgara olarak dizilemeyecek kadar dengesiz. Hücreleri, sözcükleri ve biçimlendirmeleriyle birlikte art arda paragraflar olarak gelir.
+   *[other] { $path } içindeki { $count } tablonun her birinde diğerlerinden çok daha geniş bir satır var; ızgara olarak dizilemeyecek kadar dengesizler. Hücreleri, sözcükleri ve biçimlendirmeleriyle birlikte art arda paragraflar olarak gelir.
 }
 import-diagnostic-spaces-shortened = { $count ->
-    [one] { $count } { $path }'de yerlerin işletilmesi { $limit } uzaylardan daha uzundu ve { $limit }'e kadar kısaltıldı. Etrafındaki kelimeler orada.
-   *[other] { $count } { $path }'de yer alan alanlar { $limit } uzaydan daha uzun sürdü ve { $limit }'e kadar kısaltıldı. Etrafınızdaki kelimeler orada.
+    [one] { $path } içindeki { $count } boşluk dizisi { $limit } boşluktan uzundu ve { $limit } boşluğa kısaltılarak gelir. Çevresindeki sözcüklerin hepsi yerinde.
+   *[other] { $path } içindeki { $count } boşluk dizisi { $limit } boşluktan uzundu ve { $limit } boşluğa kısaltılarak gelir. Çevrelerindeki sözcüklerin hepsi yerinde.
 }
-import-diagnostic-epigraph-not-carried = "{ $title }" bir epigraf tarafından yönetilir, ancak { $kind } bir tane tutamaz.
-import-diagnostic-epigraph-placement-ambiguous = Bir epigraf "{ $title }" ve "{ $below }" arasında oturuyor ve ya da "{ $title }" verildi, ki bu, bir epigraf genellikle gider.
+import-diagnostic-epigraph-not-carried = “{ $title }” bir epigrafla başlıyor, ama { $kind } türündeki bir öğe epigraf barındıramaz. Alıntı bunun yerine metninin en üstünde tutulur.
+import-diagnostic-epigraph-placement-ambiguous = Bir epigraf “{ $title }” ile “{ $below }” arasında duruyor ve ikisinin de başında olabilir. Epigrafın genellikle bulunduğu yer olan “{ $title }” öğesine verildi.
 import-document-diagnostics = { $errors ->
     [0] { $warnings ->
-            [one] 1 bilmek için bir şey
-           *[other] { $warnings } Bilmek İçin Şeyler
+            [one] Bilinmesi gereken 1 şey
+           *[other] Bilinmesi gereken { $warnings } şey
         }
    *[other] { $errors ->
             [one] 1 dosya okunamadı
-           *[other] { $errors } dosyaları okunamadı
+           *[other] { $errors } dosya okunamadı
         }
 }
-import-document-diagnostics-none = Rapor için hiçbir şey yok.
+import-document-diagnostics-none = Bildirilecek bir şey yok.
 
 versions-title = Sürümler
 versions-scope-synopsis = Özet
 versions-scope-prose = Metin
-versions-loading = Yedeklerinizi keşfedin...
-versions-empty = Bunun daha önceki versiyonu henüz
-versions-error = Yedeklerinizi okuyamıyor olabilir. Hiçbir şey kaybedilmedi, ancak bu liste eksik olabilir
-versions-did-not-exist = Henüz { $date }'de yoktu
-versions-deleted-after = { $date }'den sonra biraz zaman ayırın
+versions-loading = Yedekleriniz inceleniyor…
+versions-empty = Bunun henüz daha eski bir sürümü yok
+versions-error = Yedekleriniz okunamadı. Hiçbir şey kaybolmadı ama bu liste eksik olabilir
+versions-did-not-exist = { $date } tarihinde henüz yoktu
+versions-deleted-after = { $date } tarihinden bir süre sonra silindi
 versions-unreadable = { $count ->
-    [one] { $count } yedekleme okunamadı
-   *[other] { $count } yedeklemeleri okunamadı
+    [one] { $count } yedek okunamadı
+   *[other] { $count } yedek okunamadı
 }
 versions-thinned = { $count ->
-    [one] Yaşlı versiyonlar yaşlandığı gibi incelendi. Projenin kendi tarihi zaten { $count } önceki bu metnin durumunu bıraktı.
-   *[other] Yaşlı versiyonlar yaşlandığı gibi incelenir. Projenin kendi tarihi zaten { $count } önceki bu metnin eyaletlerini terk etti.
+    [one] Eski sürümler zamanla seyrekleşir. Projenin kendi geçmişi bu metnin daha önceki { $count } durumunu zaten bıraktı.
+   *[other] Eski sürümler zamanla seyrekleşir. Projenin kendi geçmişi bu metnin daha önceki { $count } durumunu zaten bıraktı.
 }
-versions-source-backup = Bir yedeklemeden
-versions-source-project = Projenin kendi tarihinden itibaren
-versions-list-caption = Değişim başına bir giriş, yedekleme başına değil
-versions-pick-a-version = Nasıl değiştiğini görmek için bir sürüm seçin
-versions-earliest = Kayıtta en erken sürüm.Bunu karşılaştırmak için daha yaşlı bir şey yok.
-versions-no-change = Hiçbir şey eşyanın bu bölümünde değişmedi
-versions-formatting-only = Sadece burada formatı değişti. kelimeler aynı.
-versions-show-unchanged = Gösteri değişmeden
-versions-hide-unchanged = Hide değişmedi
-versions-next-change = Sonraki değişim
-versions-near = "{ $text }" yakınlarında
+versions-source-backup = Bir yedekten
+versions-source-project = Projenin kendi geçmişinden
+versions-list-caption = Yedek başına değil, değişiklik başına bir kayıt
+versions-pick-a-version = Neyin değiştiğini görmek için bir sürüm seçin
+versions-earliest = Kayıtlı en eski sürüm. Karşılaştırılacak daha eski bir şey yok.
+versions-no-change = Öğenin bu kısmında hiçbir şey değişmedi
+versions-formatting-only = Burada yalnızca biçimlendirme değişti. Sözcükler aynı
+versions-show-unchanged = Değişmeyenleri göster
+versions-hide-unchanged = Değişmeyenleri gizle
+versions-next-change = Sonraki değişiklik
+versions-near = "{ $text }" yakınında
 versions-words-added = { $count ->
-    [one] { $count } kelime eklendi
-   *[other] { $count } kelime ekledi
+    [one] { $count } sözcük eklendi
+   *[other] { $count } sözcük eklendi
 }
 versions-words-removed = { $count ->
-    [one] { $count } kelime kaldırıldı
-   *[other] { $count } kelime kaldırıldı
+    [one] { $count } sözcük kaldırıldı
+   *[other] { $count } sözcük kaldırıldı
 }
 versions-blocks-moved = { $count ->
-    [one] { $count } paragrafı taşındı
-   *[other] { $count } paragraflar taşındı
+    [one] { $count } paragraf taşındı
+   *[other] { $count } paragraf taşındı
 }
-versions-pin = Pin the backup this version came from. Otomatik temizlik asla onu silmeyecek
-versions-unpin = Bu sürümden gelen yedeklemeyi Unpin the backup this version came from. Otomatik temizleme tekrar silebilir
+versions-pin = Bu sürümün geldiği yedeği sabitleyin. Otomatik temizlik onu asla silmez
+versions-unpin = Bu sürümün geldiği yedeğin sabitlemesini kaldırın. Otomatik temizlik onu yeniden silebilir
 versions-pinned-only = Yalnızca sabitlenmiş sürümleri göster
-versions-pin-note = Bir yedeklemeden sadece versiyonlar kilitlenebilir. Bir pin bir dosyayı tutar ve projenin kendi tarihi bir tane değildir.
-versions-pinned-empty = Burada hiçbir şey henüz tamamlanmadı
-versions-pinned-empty-log = Burada hiçbir şey henüz bitmiyor. Bir yedeklemeden sadece versiyonlar kilitlenebilir. Bir pin bir dosyayı tutar ve projenin kendi tarihi bir tane değildir.
-versions-range-filter = Sadece iki tarih arasındaki versiyonları göster
-versions-filtered-empty = Hiçbir versiyon ayarladığınız filtrelerle eşleşmez
-versions-clear-filters = Filtreleri temizleyin
+versions-pin-note = Yalnızca bir yedekten gelen sürümler sabitlenebilir. Sabitleme bir dosyayı korur; projenin kendi geçmişi ise bir dosya değildir.
+versions-pinned-empty = Burada henüz sabitlenmiş bir şey yok
+versions-pinned-empty-log = Burada henüz sabitlenmiş bir şey yok. Yalnızca bir yedekten gelen sürümler sabitlenebilir. Sabitleme bir dosyayı korur; projenin kendi geçmişi ise bir dosya değildir.
+versions-range-filter = Yalnızca iki tarih arasındaki sürümleri göster
+versions-filtered-empty = Belirlediğiniz süzgeçlerle eşleşen sürüm yok
+versions-clear-filters = Süzgeçleri temizle
 versions-last-30-days = Son 30 gün
-versions-restore-button = Bu sürümü geri yükleme
-versions-restore-confirm-title = Bu metni { $date }'den sürümle değiştirin mi?
-versions-restore-confirm-text = Şimdi sahip olduğunuz şey, bu öğenin { $date } üzerinde bulunduğu metin tarafından değiştirilecektir.
-versions-restore-confirm-with-comments = Şimdi sahip olduğunuz şey, bu öğenin { $date } üzerinde bulunduğu metin tarafından değiştirilecektir. { $count ->
-    [one] { $count } Yorum şu anki metinde demirlenir ve yetim bırakılabilir.
-   *[other] { $count } yorum şu anki metinde demirlenir ve yetim bırakılabilir.
+versions-restore-button = Bu sürümü geri yükle
+versions-restore-confirm-title = Bu metin { $date } tarihli sürümle değiştirilsin mi?
+versions-restore-confirm-text = Şu anki metin, bu öğenin { $date } tarihindeki metniyle değiştirilecek.
+versions-restore-confirm-with-comments = Şu anki metin, bu öğenin { $date } tarihindeki metniyle değiştirilecek. { $count ->
+    [one] { $count } yorum şu anki metne bağlı ve sahipsiz kalabilir.
+   *[other] { $count } yorum şu anki metne bağlı ve sahipsiz kalabilir.
 }
-versions-restore-confirm-undo-note = İlk olarak bir yedek yapılır ve Ctrl+Z bunu bir adımda geri alır.
-versions-restored-toast = Versiyonu { $date }'den geri yükleyin
+versions-restore-confirm-undo-note = Önce bir yedek alınır ve Ctrl+Z bunu tek adımda geri alır.
+versions-restored-toast = { $date } tarihli sürüm geri yüklendi
 versions-undo = Geri al
 versions-restore-row-gone = Bu öğe artık bu projede değil
-versions-restore-no-home = Bu öğe o zamandan beri türü değiştirdi ve eski metin hiçbir yere gitmemiştir.
-versions-restore-no-safety-copy = Güvenlik yedeklemeniz işe yaramadı, bu yüzden hiçbir şey değişmedi
+versions-restore-no-home = Bu öğenin türü o zamandan beri değişti ve eski metnin onda konabileceği bir yer yok
+versions-restore-no-safety-copy = Güvenlik yedeğiniz alınamadı, bu yüzden hiçbir şey değiştirilmedi
 versions-restore-failed = Geri yükleme başarısız oldu: { $error }
-versions-restore-backup-busy = Bir yedekleme zaten çalışıyor. Bir anda tekrar deneyin
-versions-restore-in-backup-file = Bir yedekleme dosyasına bakıyorsunuz; projeyi kendi içine geri yüklemek için açın
-versions-restore-no-project = Hiçbir proje açık
-versions-recreate-button = Bu geri getir...
-versions-recreate-picker-title = Nereye gitmeli?
-versions-recreate-picker-empty = Bu proje onu koymak için binder yok
-versions-recreate-picker-confirm = Onu buraya geri getir
+versions-restore-backup-busy = Zaten bir yedekleme sürüyor. Biraz sonra yeniden deneyin
+versions-restore-in-backup-file = Bir yedek dosyasına bakıyorsunuz; içine geri yüklemek için projenin kendisini açın
+versions-restore-no-project = Açık proje yok
+versions-recreate-button = Bunu geri getir…
+versions-recreate-picker-title = Nereye konsun?
+versions-recreate-picker-empty = Bu projede onu koyacak bir dizin yok
+versions-recreate-picker-confirm = Buraya geri getir
 versions-recreate-picker-cancel = İptal
-versions-recreate-untitled = Bu öğe
-versions-recreate-confirm-title = "{ $item }" geri getir mi?
-versions-recreate-confirm-text = { $destination }'e eklenecek, { $date }'de olduğu metinle.
-versions-recreate-confirm-undo-note = Undo, takip eden mesajda, onu doğrudan geri alır.
-versions-recreated-toast = "{ $item }" projesinize geri döndü
+versions-recreate-untitled = bu öğe
+versions-recreate-confirm-title = “{ $item }” geri getirilsin mi?
+versions-recreate-confirm-text = { $date } tarihindeki metniyle birlikte şuraya eklenecek: { $destination }.
+versions-recreate-confirm-undo-note = Ardından gelen iletideki Geri al onu hemen yeniden çıkarır.
+versions-recreated-toast = “{ $item }” projenize geri döndü
 versions-recreated-partial-toast = { $count ->
-    [one] "{ $item }" geri döndü, ancak metinlerinden biri okunamadı
-   *[other] "{ $item }" geri döndü, ancak metinlerin { $count }'i okumadı
+    [one] “{ $item }” geri döndü, ama metinlerinden biri okunamadı
+   *[other] “{ $item }” geri döndü, ama metinlerinden { $count } tanesi okunamadı
 }
 versions-recreate-already-here = Bu öğe zaten projenizde
-versions-recreate-no-destination = Onu koymak için binder'de bir yerde seçin
-versions-recreate-unreadable = Bu yedekleme okuyamazdı, bu yüzden hiçbir şey eklendi
-versions-recreate-failed = Onu geri getiremez: { $error }
-versions-changed-percent = Bu değişikliklerin% { $percent }'i değişti
+versions-recreate-no-destination = Onu koymak için dizinde bir yer seçin
+versions-recreate-unreadable = Bu yedek okunamadı, bu yüzden hiçbir şey eklenmedi
+versions-recreate-failed = Geri getirilemedi: { $error }
+versions-changed-percent = Bunun %{ $percent } kadarı değişti
 versions-hidden-paragraphs = { $count ->
-    [one] ... { $count } değişmemiş paragraf ...
-   *[other] ... { $count } değişmemiş paragraflar ...
+    [one] … değişmeyen { $count } paragraf …
+   *[other] … değişmeyen { $count } paragraf …
 }
 
-timeline-title = Zaman içinde geri dönün
+timeline-title = Zamanda geri git
 timeline-coverage = { $count ->
-    [one] { $count } sürüm kaydedildi, { $oldest }'e geri döndü
-   *[other] { $count } sürümler kaydedildi, { $oldest }'e geri döndü
+    [one] { $oldest } tarihine kadar uzanan { $count } kayıtlı sürüm
+   *[other] { $oldest } tarihine kadar uzanan { $count } kayıtlı sürüm
 }
-timeline-loading = Projenizin geçmişine bakın...
-timeline-empty = Bu projenin hiçbir versiyonu henüz kaydedilmiş değil
+timeline-loading = Projenizin geçmişi inceleniyor…
+timeline-empty = Bu projenin henüz hiçbir sürümü kaydedilmedi
 timeline-no-changes = O zamandan beri hiçbir şey değişmedi
 timeline-no-text-changes = O zamandan beri hiçbir metin değişmedi
-timeline-slider-label = Recorded Version
-timeline-series-name = Proje büyüklüğü
-timeline-bars-caption = Her bar, proje olduğu sürece kaydedilen bir sürümdür. vurgulanan kişi aradığınız şeydir.
-timeline-bars-caption-periods = Bir tane göstermek için çok fazla versiyon, bu yüzden her bar { $period }, projenin sonunda olduğu sürece.
-timeline-unit-hour = Saat Saat Saat Saat Saat Saat
-timeline-unit-day = gün gün gün gün gün
-timeline-unit-week = hafta hafta hafta hafta hafta
-timeline-unit-month = ay ay ay
-timeline-range-filter = Sadece iki tarih arasındaki versiyonları göster
-timeline-range-empty = Bu tarihlerde hiçbir versiyon kaydedilmedi
-timeline-open-period = Bu dönemi açıklayın
-timeline-show-all = Tüm tarihi göster
+timeline-slider-label = Kayıtlı sürüm
+timeline-series-name = Proje boyutu
+timeline-bars-caption = Her çubuk kayıtlı bir sürümdür ve yüksekliği projenin o zamanki boyutu kadardır. Vurgulanan, şu anda baktığınız sürümdür.
+timeline-bars-caption-periods = Tek tek gösterilemeyecek kadar çok sürüm var, bu yüzden her çubuk bir { $period } ve yüksekliği projenin o sürenin sonundaki boyutu kadar.
+timeline-unit-hour = saat
+timeline-unit-day = gün
+timeline-unit-week = hafta
+timeline-unit-month = ay
+timeline-range-filter = Yalnızca iki tarih arasındaki sürümleri göster
+timeline-range-empty = Bu tarihler arasında kaydedilmiş sürüm yok
+timeline-open-period = Bu dönemi aç
+timeline-show-all = Tüm geçmişi göster
 timeline-changed-since = { $count ->
-    [one] { $count } öğe { $date } ve projeniz şimdiye kadar farklılık gösterir
-   *[other] { $count } öğeleri { $date } ve projeniz arasında artık farklı.
+    [one] { $date } ile projenizin şu anki hâli arasında { $count } öğe farklı
+   *[other] { $date } ile projenizin şu anki hâli arasında { $count } öğe farklı
 }
-timeline-kind-added = O zamandan beri yazılı.
-timeline-kind-removed = Projede artık yok
-timeline-kind-changed = Edited since since since Since Edited since
-timeline-kind-moved = O zamandan beri hareket etti.
-timeline-not-yet-written = Bu henüz bu noktada yoktu
-timeline-no-text-of-its-own = Bu kendi başına bir metin yok. içeride ne olduğu için bir başlık
+timeline-kind-added = O zamandan beri yazılan
+timeline-kind-removed = Artık projede olmayan
+timeline-kind-changed = O zamandan beri düzenlenen
+timeline-kind-moved = O zamandan beri taşınan
+timeline-not-yet-written = Bu, o noktada henüz yoktu
+timeline-no-text-of-its-own = Bunun kendine ait metni yok. İçindekilerin başlığıdır
 timeline-reader-close = Kapat
-timeline-reader-stamp = { $date }'de olduğu gibi
-timeline-reader-loading = Kayıt edilen sürümü açın...
-timeline-reader-unreadable = Bu kayıt okunamadı. yedekleme taşındı, silindi ya da bağlantılı olmayan bir sürücüde olabilir.
-timeline-reader-compared = { $date }'de olduğu gibi, şimdi söylediklerine karşı kuruldu.
-timeline-reader-diff-legend = Struck, o zamandan beri gitti; vurgu eklendi.
-timeline-reader-view-label = Ne göstersin
-timeline-reader-view-diff = Değişiklikler Değişiklikler Değişiklikler Değişiklikler Değişiklikler Değişiklikler Değişiklikler Değişiklikler Değişiklikler
+timeline-reader-stamp = { $date } tarihindeki hâliyle
+timeline-reader-loading = Kayıtlı sürüm açılıyor…
+timeline-reader-unreadable = Bu kayıt okunamadı. Yedek taşınmış, silinmiş ya da bağlı olmayan bir sürücüde olabilir.
+timeline-reader-compared = { $date } tarihindeki hâli, şu anki hâliyle karşılaştırmalı
+timeline-reader-diff-legend = Üstü çizili olanlar o zamandan beri gitti; altı çizili olanlar eklendi.
+timeline-reader-view-label = Gösterilecek
+timeline-reader-view-diff = Değişiklikler
 timeline-reader-view-text = Metin
-timeline-reader-deleted = Bu artık projenizde değil. Bunu okuyabilirsiniz ve burada kopyalayabilirsiniz.
-timeline-prose-only-record = Bu nokta, projenin kendi tarihinden geliyor, bu metin ve başka bir şey değil, bu yüzden silinmiş ya da değiştirilemezdi, çünkü bunun için bir yedek alın.
+timeline-reader-deleted = Bu artık projenizde değil. Burada okuyup kopyalayabilirsiniz.
+timeline-prose-only-record = Bu nokta, metinden başka bir şey tutmayan projenin kendi geçmişinden geliyor; bu yüzden o zamandan beri neyin silindiği ya da taşındığı gösterilemez. Bunun için bir yedek seçin.
 
-settings-sec-extensions = Hazırlananlar
+settings-sec-extensions = Eklentiler
 
-settings-group-games-forward = Her zaman ileriye dönük her zaman
-settings-games-forward-toggle = “Daima ileri” oyununu oyna
+settings-group-games-forward = Hep ileri
+settings-games-forward-toggle = "Hep ileri" oyununu oyna
 settings-games-forward-hint =
-    Oynarken, yazabileceğiniz hiçbir şey geri alınabilir: Backspace, Delete,
-    Cut, drag-and-drop ve Undo, aşağıda seçtiğiniz yüzeylerde tüm engellidir.
-    Hala tip, yapıştırma, format ve özgürce hareket edebilirsiniz. draft sadece büyür.
+    Oynarken yazdığınız hiçbir şey geri alınamaz: aşağıda seçtiğiniz yüzeylerde
+    Geri silme, Delete, Kes, sürükle-bırak ve Geri al devre dışıdır. Yine de
+    özgürce yazabilir, yapıştırabilir, biçimlendirebilir ve gezinebilirsiniz. Taslak yalnızca büyür.
 settings-games-session-warning =
-    Bu bir per-session seçimdir: asla kurtarılmıyor veya projeyi kapatıyor ya da terk ediyor.
-    Skribisto, her zaman oyun biter ve oyun oynarken yazdığınız her şey
-    Tekrarlanabilir, şimdi yapar.
-settings-group-games-scope = Nerede uygulanır
-settings-games-in-prose = Taslak metni
-settings-games-in-synopsis = Synops
+    Bu oturumluk bir seçimdir: asla kaydedilmez. Projeyi kapatmak ya da Skribisto'dan
+    çıkmak oyunu her zaman bitirir ve oynarken yazdığınız her şey o anda yeniden
+    geri alınabilir hâle gelir.
+settings-group-games-scope = Nerede geçerli
+settings-games-in-prose = El yazması metni
+settings-games-in-synopsis = Özetler
 settings-games-scope-hint =
-    Yorumlar, ayaknotlar ve başlıklar asla donmuyor: Onlar düzeltmeyi nereye not ediyorsun?
-    Sadece kendinizi yapmaktan yasakladınız.
+    Yorumlar, dipnotlar ve başlıklar asla dondurulmaz: kendinize yasakladığınız
+    düzeltmeyi not ettiğiniz yerler onlardır.
 settings-games-inert-warning =
-    "Always forward", ancak yukarıdaki en az bir yüzey için geçerli değildir.
-    Ya da yazdığınız gibi bir şey değiştirir.
+    "Hep ileri" açık ama hiçbir şeye uygulanmıyor. Yukarıda en az bir yüzeyi
+    işaretleyin, yoksa siz yazarken hiçbir şeyi değiştirmez.
 
 games-title = Yazma oyunları
-games-forward-name = Her zaman ileriye dönük her zaman
+games-forward-name = Hep ileri
 games-forward-blurb =
-    Geri bir şey almadan hazırlanın. Deleting, kesim ve geri çekilme engellidir.
-    Oynarken, son olanı düzeltmenin yerine bir sonraki cümleyi yazın.
-games-forward-playing = Oyun: Deleting devre dışı bırakılır
-games-forward-idle = oynamayın
-games-session-note = Projeyi kapatırken sona erer.
-games-scope-prose-and-synopsis = Prose ve sinopslerinize uygun.
-games-scope-prose = Prosenize uygun.
-games-scope-synopsis = sinopslerinize uygun.
-games-scope-nothing = Henüz hiçbir şeye uygun değil. Ayarlarda bir yüzey seçin.
-games-settings-link = Oyun ayarları yazmak...
-statusbar-games-forward = Her zaman ileriye dönük her zaman
+    Hiçbir şeyi geri almadan taslak yazın. Oynarken silme, kesme ve geri alma
+    devre dışıdır. Sonuncuyu düzeltmek yerine bir sonraki tümceyi yazın.
+games-forward-playing = Oynanıyor: silme devre dışı
+games-forward-idle = Oynanmıyor
+games-session-note = Projeyi kapattığınızda biter.
+games-scope-prose-and-synopsis = Metninize ve özetlerinize uygulanır.
+games-scope-prose = Metninize uygulanır.
+games-scope-synopsis = Özetlerinize uygulanır.
+games-scope-nothing = Henüz hiçbir şeye uygulanmıyor. Ayarlar'dan bir yüzey seçin.
+games-settings-link = Yazma oyunu ayarları…
+statusbar-games-forward = Hep ileri
 statusbar-games-forward-tooltip =
-    "Always forward" devam ediyor: Deleting, kesme ve geri çekilme sizin yanınızdayken devre dışı kalıyor.
-    draft. Oynamayı durdurmak için tıklayın.
+    "Hep ileri" açık: taslak yazarken silme, kesme ve geri alma devre dışı.
+    Oyunu bırakmak için tıklayın.
 goal-progress-words = { $g ->
-   *[other] Sözcükler: { $count } / { $goal }
+    [one] { $count } / { $goal } sözcük
+   *[other] { $count } / { $goal } sözcük
 }
 goal-progress-characters = { $g ->
-   *[other] Karakterler: { $count } / { $goal }
+    [one] { $count } / { $goal } karakter
+   *[other] { $count } / { $goal } karakter
 }
 goal-count-words = { $n ->
     [one] { $count } sözcük
@@ -2188,288 +2196,443 @@ goal-count-characters = { $n ->
     [one] { $count } karakter
    *[other] { $count } karakter
 }
-goal-unit-words = Sözcükler
-goal-unit-characters = Karakterler
+goal-unit-words = Sözcük
+goal-unit-characters = Karakter
 
 inspector-goal = Hedef
 inspector-goal-none = Hedef yok
 
 overview-col-goal = Hedef
-overview-excluded-from-export = İhracattan vazgeçin, bu yüzden toplamına doğru sayılıyor
+overview-excluded-from-export = Dışa aktarmanın dışında bırakıldı, bu yüzden hiçbir toplama katılmaz
 
 goal-subtree-total-words = { $count ->
-    [one] { $items } içeride hedef { $words } kelimeye ekleniyor
-   *[other] { $items } içerideki hedefler { $words } kelimeye ekleniyor
+    [one] İçerideki { $items } hedefin toplamı { $words } sözcük
+   *[other] İçerideki { $items } hedefin toplamı { $words } sözcük
 }
 goal-subtree-total-characters = { $count ->
-    [one] { $items } içeride hedef { $words } karaktere dayanıyor
-   *[other] { $items } içerideki hedefler { $words } karaktere kadar
+    [one] İçerideki { $items } hedefin toplamı { $words } karakter
+   *[other] İçerideki { $items } hedefin toplamı { $words } karakter
 }
 
-new-work-goal-unit = Kont in Count in Count in Count
-new-work-goal-unit-hint = Bu projedeki her kelime veya karakter hedefi için kullanılır. Daha sonra değiştirilebilir.
+new-work-goal-unit = Sayım birimi
+new-work-goal-unit-hint = Bu projedeki her sözcük ya da karakter hedefi için kullanılır. Daha sonra değiştirilebilir.
 
-settings-group-goal-unit = Hedefler Hedefler
-settings-goal-unit-switch-title = Anahtar sayma ünitesi
-settings-goal-unit-switch-text = Bu proje için önceden belirlenmiş hedefler ve dönüm noktaları { $from }'de girilmiştir. { $to }'e geçiş onları dönüştürmez, bu yüzden mevcut her sayı { $to } olarak okunacaktır.
-settings-goal-unit-switch-informative = Hiçbir şey kaybolmaz. Orijinal okumayı geri getirmek için herhangi bir zamanda geri dönün, sonra tutmak istediğiniz hedefleri güncelleyin.
-settings-goal-unit-switch-confirm = Anahtar Anahtar Anahtar Anahtar
+settings-group-goal-unit = Hedefler
+settings-goal-unit-switch-title = Sayım birimini değiştir
+settings-goal-unit-switch-text = Bu proje için önceden belirlenmiş hedefler ve ara hedefler şu birimle girildi: { $from }. Şu birime geçmek onları dönüştürmez: { $to }; bu yüzden var olan her sayı artık bu birimle okunacak.
+settings-goal-unit-switch-informative = Hiçbir şey kaybolmaz. Özgün okumaya dönmek için istediğiniz zaman geri geçebilir, sonra korumak istediğiniz hedefleri güncelleyebilirsiniz.
+settings-goal-unit-switch-confirm = Geçiş yap
 
-goal-distribute-action = Dağ...
-distribute-title = Hedefi Dağın
-distribute-empty = Hedefi paylaşmak için bunun içinde hiçbir şey yoktur.
-distribute-weight = Share out Share
-distribute-weight-length = Uzunluğa andolsun
-distribute-weight-rows = Bölümler Tarafından
-distribute-weight-even = Akşam bile
-distribute-overwrite = Zaten ayarlanmış olan hedefleri değiştir
-distribute-col-item = 1.
-distribute-col-current = Şimdi Şimdi Şimdi Şimdi Şimdi
-distribute-col-proposed = Sonra After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After After
-distribute-total = Bunlar { $total }'e kadar, { $goal }'in hedefine dayanıyor.
-distribute-over-budget = Hedefler zaten bu konteynerin kendi başına { $over }'e varıyor. Hedefini yükseltin veya onları değiştir.
-distribute-apply = Dağ Dağı
+goal-distribute-action = Dağıt…
+distribute-title = Hedefi dağıt
+distribute-empty = Bunun içinde hedefin dağıtılabileceği bir şey yok.
+distribute-weight = Dağıtım
+distribute-weight-length = Uzunluğa göre
+distribute-weight-rows = Parça sayısına göre
+distribute-weight-even = Eşit olarak
+distribute-overwrite = Önceden belirlenmiş hedefleri değiştir
+distribute-col-item = Öğe
+distribute-col-current = Şimdi
+distribute-col-proposed = Sonra
+distribute-total = Bunların toplamı { $total }; hedef ise { $goal }.
+distribute-over-budget = İçeride önceden belirlenmiş hedefler bu kapsayıcının kendi hedefinden { $over } fazla. Onun hedefini yükseltin, onlarınkini düşürün ya da onları değiştirin.
+distribute-apply = Dağıt
 distribute-cancel = İptal
 
 milestone-target-gone = Hedef silindi
 milestone-no-target = Hedef yok
 milestone-add = Ekle
-milestone-add-label = Nelere ulaşılmalıdır
+milestone-add-label = Neye ulaşılmalı
 
-pace-summary-title = Kitap nerede duruyor
-pace-summary-remaining = { $words } gitmek için
-pace-summary-open = Planı açın
+pace-summary-title = Kitap ne durumda
+pace-summary-remaining = { $words } kaldı
+pace-summary-open = Planı aç
 pace-summary-close = Kapat
-pace-summary-dont-show = Bunu açtığında göstermeyin
-pace-summary-menu = Yazı planı...
+pace-summary-dont-show = Açılışta bunu gösterme
+pace-summary-menu = Yazma planı…
 
-menu-help-topics = Topics yardımcı olun (&T)
-menu-help-shortcuts = Klavye Kısayollar... (&K)
-menu-help-website = Web Sitesinde Skribisto (&W)
-menu-help-report = Bir Problem Raporu... (&R)
-menu-help-check-updates = Updates için kontrol (&U)
-menu-command-palette = Komutan (&C)
+menu-help-topics = &Yardım konuları
+menu-help-shortcuts = Klavye kı&sayolları…
+menu-help-website = &Web'de Skribisto
+menu-help-report = Sorun &bildir…
+menu-help-check-updates = &Güncellemeleri denetle
+menu-command-palette = &Komut paleti…
 
-learn-help-topics = Konulara yardım et
+learn-help-topics = Yardım konuları
 learn-shortcuts = Klavye kısayolları
-learn-website = web sitesinde Skribisto
+learn-website = Web'de Skribisto
 
 help-window-title = Yardım
-help-filter-topics = Filtre konuları
-help-no-matching-topic = Hiçbir konu maçları yok.
-help-topic-missing = Bu konu artık mevcut değildir.
-help-back = Back Back Back Back
-help-not-translated = Bu makale henüz Türkçe değil. İngilizce gösteriliyor.
+help-filter-topics = Konuları süz
+help-no-matching-topic = Eşleşen konu yok.
+help-topic-missing = Bu konu artık kullanılamıyor.
+help-back = Geri
+help-not-translated = Bu sayfa henüz çevrilmediği için İngilizce gösteriliyor.
 
-help-section-getting-started = Başlanmaya başladı
+help-section-getting-started = Başlarken
 help-section-writing = Yazma
-help-section-reviewing = İnceleme
-help-section-exchanging = kelimeler almak ve dışarı çıkmak
-help-section-keeping = Projenizi güvenli tutmak
-help-section-extensions = Hazırlananlar
+help-section-reviewing = Gözden geçirme
+help-section-exchanging = Sözcükleri içeri ve dışarı aktarma
+help-section-keeping = Çalışmanızı güvende tutma
+help-section-extensions = Eklentiler
 
 help-topic-getting-started = İlk projeniz
-help-topic-writing-model = Bir kitap nasıl bir araya getirilir
-help-topic-drafts-and-old-versions = Daha eski bir taslak tutmak
-help-topic-goals-and-pace = Hedefler ve hız
+help-topic-writing-model = Bir kitap nasıl bir araya gelir
+help-topic-drafts-and-old-versions = Eski bir taslağı saklamak
+help-topic-goals-and-pace = Hedefler ve tempo
 help-topic-comments = Yorumlar
-help-topic-round-trip = Kitabınızı bir okuyucuya gönderin
-help-topic-export = İhracata ihracat
-help-topic-import-documents = İthalat belgeleri
-help-topic-import-projects = Tüm bir projeyi bir araya getirmek
+help-topic-round-trip = Kitabınızı bir okura göndermek
+help-topic-export = Dışa aktarma
+help-topic-import-documents = Belgeleri içe aktarma
+help-topic-import-projects = Bütün bir projeyi aktarmak
 help-topic-backups-and-versions = Yedekler ve sürümler
 
 help-shortcuts-title = Klavye kısayolları
-help-shortcuts-filter = Filtre kısayolları
-help-shortcuts-no-matches = Kısa bir maç yok.
-help-shortcuts-rebind = Değişim kısayolları...
+help-shortcuts-filter = Kısayolları süz
+help-shortcuts-no-matches = Eşleşen kısayol yok.
+help-shortcuts-rebind = Kısayolları değiştir…
 help-shortcuts-close = Kapat
 
-command-palette-placeholder = Bir komut türü
+command-palette-placeholder = Bir komut yazın
 
 shortcut-name-binder-duplicate = Çoğalt
 shortcut-name-comments-add = Yorum ekle
-shortcut-name-comments-add-paragraph = Yorum bırakın Paragraf
+shortcut-name-comments-add-paragraph = Paragrafa yorum yap
 shortcut-name-spellcheck-toggle = Yazımı denetle
 shortcut-name-editor-tab-close = Sekmeyi kapat
-shortcut-name-editor-tab-pin = Pin veya Unpin Tab
+shortcut-name-editor-tab-pin = Sekmeyi sabitle ya da sabitlemeyi kaldır
 shortcut-name-editor-save = Kaydet
 shortcut-name-work-export = Dışa aktar…
 shortcut-name-work-new = Yeni proje
-shortcut-name-work-open = Open Project
+shortcut-name-work-open = Proje aç
 shortcut-name-window-new = Yeni pencere
 shortcut-name-work-close = Projeyi kapat
 shortcut-name-app-settings = Ayarlar
 shortcut-name-app-quit = Çık
-shortcut-name-editor-insert-footnote = Ekle Footnote
-shortcut-name-format-scene-break = Sahne Break Break Break
-shortcut-name-format-major-scene-break = Büyük Sahne Break Break
-shortcut-name-format-link = Ekle Link Link
-shortcut-name-format-mark-nbsp = No-break Space
-shortcut-name-format-mark-nbhyphen = No-break Hyphen
-shortcut-name-format-mark-nnbsp = Narrow No-break Space
-shortcut-name-format-mark-zwsp = Sıfır geniş alan
+shortcut-name-editor-insert-footnote = Dipnot ekle
+shortcut-name-format-scene-break = Sahne arası ekle
+shortcut-name-format-major-scene-break = Büyük sahne arası ekle
+shortcut-name-format-link = Bağlantı ekle
+shortcut-name-format-mark-nbsp = Bölünmez boşluk ekle
+shortcut-name-format-mark-nbhyphen = Bölünmez tire ekle
+shortcut-name-format-mark-nnbsp = Dar bölünmez boşluk ekle
+shortcut-name-format-mark-zwsp = Sıfır genişlikli boşluk ekle
 shortcut-name-go-next = Sonraki
 shortcut-name-go-prev = Önceki
-shortcut-name-go-to = Go to Go to Go to Go to Go to Go
-shortcut-name-outline-toggle = Ana hatları göster/gizle
+shortcut-name-go-to = Git
+shortcut-name-outline-toggle = Ana hattı göster/gizle
 shortcut-name-preview-toggle = Önizleme şeridini göster/gizle
 shortcut-name-view-fullscreen = Tam ekranı aç/kapat
-shortcut-name-view-focus-mode = Odaklanma modunu aç/kapat
-shortcut-name-editor-size-increase = Genişleme Text Dimension
-shortcut-name-editor-size-decrease = Decrease Text Boyut
-shortcut-name-editor-size-reset = Text Dimension
+shortcut-name-view-focus-mode = Dikkat dağıtmayan modu aç/kapat
+shortcut-name-editor-size-increase = Metin boyutunu büyüt
+shortcut-name-editor-size-decrease = Metin boyutunu küçült
+shortcut-name-editor-size-reset = Metin boyutunu sıfırla
 shortcut-name-editor-find = Bul
 shortcut-name-editor-replace = Değiştir
-shortcut-name-editor-find-next = Sonraki Maç
-shortcut-name-editor-find-prev = Önceki Önceki Önceki Önceki Önceki Sonraki Maç
-shortcut-name-search-show = Project Search in Project
-shortcut-name-search-replace = Project'te Değişim
-shortcut-name-outline-open-to-side = Side'ya açık
-shortcut-name-help-topics = Topics yardımcı olun
-shortcut-name-help-shortcuts = Finger Shortcuts
-shortcut-name-help-website = Web Sitesinde Skribisto
-shortcut-name-help-report = Bir Problem Raporu
-shortcut-name-help-check-updates = Updates için kontrol
-update-check-behind = Version { $version } mevcuttur.
-update-check-current = En yeni sürümü çalıştırıyorsunuz.
-update-check-failed = Yeni bir sürüm için kontrol edemiyor olabilir. { $error }
-shortcut-name-command-palette = Komutan
-help-section-reference = Hangi şeylerdir?
+shortcut-name-editor-find-next = Sonraki eşleşme
+shortcut-name-editor-find-prev = Önceki eşleşme
+shortcut-name-search-show = Projede ara
+shortcut-name-search-replace = Projede değiştir
+shortcut-name-outline-open-to-side = Yanda aç
+shortcut-name-help-topics = Yardım konuları
+shortcut-name-help-shortcuts = Klavye kısayolları
+shortcut-name-help-website = Web'de Skribisto
+shortcut-name-help-report = Sorun bildir
+shortcut-name-help-check-updates = Güncellemeleri denetle
+update-check-behind = Sürüm { $version } kullanıma sunuldu.
+update-check-current = En yeni sürümü kullanıyorsunuz.
+update-check-failed = Daha yeni bir sürüm olup olmadığı denetlenemedi. { $error }
+shortcut-name-command-palette = Komut paleti
+help-section-reference = Neyin ne olduğu
 
-help-concept-scene-break = Sahne molası
-help-concept-major-scene-break = Binbaşı sahne molası
-help-concept-find-in-prose = Prose'de bulun
+help-concept-scene-break = Sahne arası
+help-concept-major-scene-break = Büyük sahne arası
+help-concept-find-in-prose = Metinde bul
 help-concept-story-bible = Hikâye rehberi
-help-concept-goal-unit = Kelimeler veya karakterler
+help-concept-goal-unit = Sözcük ya da karakter
 help-concept-goal-progress = İlerleme
-help-concept-manuscript-words = Yazının ne kadar önemli olduğunu
-help-concept-exportable = ihracattan vazgeçin
-help-concept-distribute = Bir hedef paylaşmak
-help-concept-subtree-total = İçerideki hedeflerin ne kadar ekleneceği
-help-concept-milestone = Kilometre taşı
-help-concept-pace-plan = Pace planı
+help-concept-manuscript-words = El yazmasına neler sayılır
+help-concept-exportable = Dışa aktarmanın dışında bırakılan
+help-concept-distribute = Bir hedefi dağıtmak
+help-concept-subtree-total = İçerideki hedeflerin toplamı
+help-concept-milestone = Ara hedef
+help-concept-pace-plan = Tempo planı
 
 help-concept-tag = Etiket
-help-concept-label = Kısa açıklama
+help-concept-label = Açıklama
 help-concept-point-of-view = Bakış açısı
 help-concept-epigraph = Epigraf
 help-concept-footnote = Dipnot
-help-concept-chapter-mode = Bölüm şekli
+help-concept-chapter-mode = Bölüm biçimi
 help-concept-comment = Yorum
 help-concept-backup = Yedek
-help-concept-version = Version Version Version Version
+help-concept-version = Sürüm
 help-concept-trash = Çöp kutusu
-help-concept-spellcheck = Spell check
-help-concept-search-replace = Arama ve değiştirme
-help-concept-note-template = Not şablon
+help-concept-spellcheck = Yazım denetimi
+help-concept-search-replace = Ara ve değiştir
+help-concept-note-template = Not şablonu
 help-concept-story-bible-entry = Hikâye rehberi kaydı
-help-concept-text-replacement = TextChange
-help-concept-smart-punctuation = Akıllı Noktalama
-help-concept-export-style = İhracat stili
-help-concept-round-trip-marks = Round-trip işaretleyicileri
+help-concept-text-replacement = Metin değiştirme
+help-concept-smart-punctuation = Akıllı noktalama
+help-concept-export-style = Dışa aktarma biçemi
+help-concept-round-trip-marks = Gidiş-dönüş işaretçileri
 
 epigraph-mark-attribution = Kaynak satırı
-epigraph-mark-attribution-tip = Mark the line the caret is in as the quotation's source, so it prints as anatiion
-margin-lane-name = Margin işaretleri
+epigraph-mark-attribution-tip = İmlecin bulunduğu satırı alıntının kaynağı olarak işaretler, böylece bir atıf olarak yazdırılır
+margin-lane-name = Kenar işaretleri
 margin-lane-provider-comments = Yorumlar
 margin-lane-provider-story-bible = Hikâye rehberi kaydı
-margin-lane-provider-story-bible-hint = Bir notun prose okumasında, bu girişin adı ve sahnelerin gözlerinden bahsettiği yerde. Ayrıca prosenin kendisinde bu isimleri işaret eder.
-margin-lane-mark-point-of-view = Bu bakış açısından anlatılıyor
+margin-lane-provider-story-bible-hint = Bir notun Metinde görünümünde, o kaydın adının geçtiği yerler ve onun gözünden anlatılan sahneler. Bu adları metnin kendisinde de işaretler.
+margin-lane-mark-point-of-view = Buradan anlatılıyor
 margin-lane-mark-named-here = Burada adı geçiyor
-margin-lane-provider-comments-hint = Bir not metine eklendiğinde
-margin-lane-provider-search = Arama vuruşları
-margin-lane-provider-search-hint = En son aradığınız şey için her hit, belgede nerede olursa olsun
-margin-lane-provider-boundaries = Her belge nerede başlar?
-margin-lane-provider-boundaries-hint = Bir akıştaki her sahnenin tepesinde bir kural, bu yüzden nerede olduğunuzu görebilirsiniz
-margin-lane-provider-spelling = Yazıyın
-margin-lane-provider-spelling-hint = Büyü checker'in bir kelimeyi bayrağı altında tuttuğun yerde: Bir makinenizin prosenin görüşünü işaret ediyor
-margin-lane-spelling = { $word }, mümkün misspellingling
-margin-lane-search-hit = { $text }Maç, { $index } Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of { $total }
-margin-lane-search-current = { $text }, { $index } { $total }, üzerinde olduğunuz kişi
-margin-lane-boundary = { $title } Başlangıç
-margin-lane-boundary-untitled = Untitled belgesi
-settings-page-margin-lane = Margin işaretleri
-settings-desc-margin-lane = Dağ barının yanındaki şerit ve ne gösteriyor
-settings-margin-lane-enabled = marj şeritini göster
-settings-margin-lane-enabled-hint = Aynı geçiş . Margin işaretleri olarak aynı.
-settings-margin-lane-enabled-more = Hiçbir şey yanlış söylemez: şeylerin nerede olduğunu gösterir ve bunu size ne yapacağını bırakır.
-settings-group-margin-lane-marks = Hangileri işaret ediyor
-settings-margin-lane-no-providers = Hiçbir şey henüz şerite işaret etmiyor.
-settings-group-margin-lane-texture = Diyatro doku
+margin-lane-provider-comments-hint = Metne bir notun bağlandığı yerler
+margin-lane-provider-search = Arama sonuçları
+margin-lane-provider-search-hint = Son aradığınız şeyin belgedeki tüm sonuçları
+margin-lane-provider-boundaries = Her belgenin başladığı yer
+margin-lane-provider-boundaries-hint = Bir akıştaki her sahnenin başında bir çizgi, böylece nerede olduğunuzu görürsünüz
+margin-lane-provider-spelling = Yazım
+margin-lane-provider-spelling-hint = Yazım denetiminin bir sözcüğü işaretlediği yerler. Siz istemedikçe kapalıdır: metniniz hakkında bir makinenin görüşünü işaretler
+margin-lane-spelling = { $word }, olası yazım hatası
+margin-lane-search-hit = { $text }, eşleşme { $index } / { $total }
+margin-lane-search-current = { $text }, eşleşme { $index } / { $total }, bulunduğunuz eşleşme
+margin-lane-boundary = Başlangıç: { $title }
+margin-lane-boundary-untitled = adsız bir belge
+settings-page-margin-lane = Kenar işaretleri
+settings-desc-margin-lane = Kaydırma çubuğunun yanındaki şerit ve gösterdikleri
+settings-margin-lane-enabled = Kenar şeridini göster
+settings-margin-lane-enabled-hint = Görünüm ▸ Kenar işaretleri ile aynı anahtar.
+settings-margin-lane-enabled-more = Hiçbir şeyin yanlış olduğunu söylemez: size şeylerin nerede olduğunu gösterir ve bundan ne çıkaracağınızı size bırakır.
+settings-group-margin-lane-marks = Neleri işaretler
+settings-margin-lane-no-providers = Şeridi henüz hiçbir şey işaretlemiyor.
+settings-group-margin-lane-texture = Diyalog dokusu
 settings-margin-lane-texture = Diyalog dokusunu göster
-settings-margin-lane-texture-hint = paragraf başına bir bar: ne kadar uzun ve ne kadar konuşuluyor.
-settings-margin-lane-texture-more = Kısıtlanmamış bir kongre ile diller için ölçülme, barın yalnız uzunluğu nerede gösterir.
-settings-group-margin-lane-surfaces = Nerede görünür gibi görünüyor
-settings-margin-lane-surface-editor = Text editörü
+settings-margin-lane-texture-hint = Paragraf başına bir çubuk: ne kadar uzun olduğu ve ne kadarının konuşma olduğu.
+settings-margin-lane-texture-more = Belirlenmiş bir kuralı olmayan dillerde ölçülmez; orada çubuk yalnızca uzunluğu gösterir.
+settings-group-margin-lane-surfaces = Nerede görünür
+settings-margin-lane-surface-editor = Metin düzenleyici
 settings-margin-lane-surface-stream = Akışlar
-settings-margin-lane-surface-search-preview = Arama önizleme
-menu-margin-lane = Margin işaretleri (&M)
+settings-margin-lane-surface-search-preview = Arama önizlemesi
+menu-margin-lane = &Kenar işaretleri
 
 status-preset-drafting = Taslak yazımı
-status-preset-passes = Revizyon geçişleri
+status-preset-passes = Düzeltme turları
 status-preset-plume = Plume Creator
-status-todo = Bunu yapmak için
+status-todo = Yapılacak
 status-draft = Taslak
-status-revised = Gözden geçirilmiş
-status-final = Son
-status-outline = Taslak
-status-first-edit = 1. Düzenleme
-status-second-edit = 2. Düzenleme
+status-revised = Düzeltildi
+status-final = Son hâli
+status-outline = Ana hat
+status-first-edit = 1. düzeltme
+status-second-edit = 2. düzeltme
 status-done = Bitti
-status-plume-draft-1 = 1. draft
-status-plume-draft-2 = 2. draft
-status-plume-draft-3 = 3. draft
-status-plume-edit-1 = 1. Düzenleme
-status-plume-edit-2 = 2. Düzenleme
-status-plume-edit-3 = 3. Düzenleme
-status-plume-proofread = Propreread
+status-plume-draft-1 = 1. taslak
+status-plume-draft-2 = 2. taslak
+status-plume-draft-3 = 3. taslak
+status-plume-edit-1 = 1. düzeltme
+status-plume-edit-2 = 2. düzeltme
+status-plume-edit-3 = 3. düzeltme
+status-plume-proofread = Son okuma yapıldı
 status-plume-finished = Tamamlandı
-new-work-statuses = İş Akışı
-new-work-statuses-hint = Bir sahneyi bir sahne aracılığıyla hareket ettirebileceğiniz aşamalar, yeniden sipariş veya bunları herhangi bir zamanda ekleyebilirsiniz.
-status-none = Hiçbir statü yok
+new-work-statuses = İş akışı
+new-work-statuses-hint = Bir sahnenin geçtiği aşamalar. Bunları istediğiniz zaman yeniden adlandırabilir, yeniden sıralayabilir ya da yenilerini ekleyebilirsiniz.
+status-none = Durum yok
 inspector-status = Durum
 overview-col-status = Durum
-overview-status-mixed = Aşağıdaki parçalar aynı fikirde değil
+overview-status-mixed = alttaki parçalar farklı
 help-concept-status = Durum
-status-completion-title = Kitap nerede duruyor
-status-completion-headline = { $done } { $total } sahneler tamamlandı
-status-completion-empty = Henüz sahne yok. Bu yazıyı okur, bu yüzden yazdığınız gibi doldurur.
-status-completion-open = Kitap nerede duruyor...
+status-completion-title = Kitap ne durumda
+status-completion-headline = { $total } sahneden { $done } tanesi tamamlandı
+status-completion-empty = Henüz sahne yok. Bu, el yazmasını okur; bu yüzden siz yazdıkça dolar.
+status-completion-open = Kitap ne durumda…
 
-settings-page-statuses = Durumlar Durumlar
-settings-desc-statuses = Rename, reorder, ekle ve bir sahneyi bir sahne ile hareket ettiğiniz aşamaları ortadan kaldır
-settings-statuses-add = Ekle durumu ekle
-settings-statuses-add-placeholder = Yeni durum adı
+settings-page-statuses = Durumlar
+settings-desc-statuses = Bir sahnenin geçtiği aşamaları yeniden adlandırın, sıralayın, ekleyin ve kaldırın
+settings-statuses-add = Durum ekle
+settings-statuses-add-placeholder = Yeni durumun adı
 settings-statuses-desc =
-    Bir sahne hareket eder, sırayla, en azından en üstte en iyi şekilde bitirilir
-    Altta bitirin. Bu düzen, "daha az bitmemiş" anlamına geliyor, her yerde başka her yerde.
-    Uygulamada, bu yüzden işleminizin gerçekte nasıl çalıştığını koyun.
-settings-statuses-apply-preset = Bir başlangıç uygulayın...
+    Bir sahnenin sırayla geçtiği aşamalar: en üstte en az bitmiş, en altta en çok
+    bitmiş olan. Bu sıra, uygulamanın başka her yerinde "daha az bitmiş" ifadesinin
+    anlamıdır; bu yüzden onları çalışma sürecinizin gerçekten işlediği sıraya koyun.
+settings-statuses-apply-preset = Hazır bir dizi uygula…
 settings-statuses-preset-applied = { $added ->
-    [one] 1 statüsünü ekledi
-   *[other] { $added } Durumlar eklendi
+    [one] 1 durum eklendi
+   *[other] { $added } durum eklendi
 }
-settings-statuses-preset-refused = Bu proje zaten bir merdivene sahiptir. Presets sadece boş bir tane doldurmaktadır. İlk önce istemediğin rungs.
-settings-statuses-duplicate = "{ $name }" zaten bu merdivende
-settings-statuses-added = "{ $name }" eklendi.
-settings-statuses-move-up = Move up (siz bitmemiş)
-settings-statuses-move-down = Move down (daha bitmiş)
-settings-statuses-details-placeholder = Bu aşama ne anlama geliyor (isteğen)
-settings-statuses-delete = “{ $name }” durumunu sil
+settings-statuses-preset-refused = Bu projenin zaten bir durum basamakları dizisi var. Hazır diziler yalnızca boş bir diziyi doldurur. Önce istemediğiniz basamakları silin.
+settings-statuses-duplicate = "{ $name }" bu dizide zaten var
+settings-statuses-added = "{ $name }" eklendi
+settings-statuses-move-up = Yukarı taşı (daha az bitmiş)
+settings-statuses-move-down = Aşağı taşı (daha çok bitmiş)
+settings-statuses-details-placeholder = Bu aşamanın anlamı (isteğe bağlı)
+settings-statuses-delete = Sil: "{ $name }"
 settings-statuses-delete-in-use = { $count ->
-    [one] Delete "{ $name }": 1 madde üzerindedir ve statüsünü kaybedecektir
-   *[other] Delete "{ $name }": { $count } madde üzerindedir ve statülerini kaybedecektir
+    [one] Sil: "{ $name }". Bu durumda 1 öğe var ve durumunu yitirecek
+   *[other] Sil: "{ $name }". Bu durumda { $count } öğe var ve durumlarını yitirecekler
 }
-settings-statuses-deleted = “{ $name }” silindi
+settings-statuses-deleted = "{ $name }" silindi
 settings-statuses-deleted-in-use = { $count ->
-    [one] Deleted "{ $name }". 1 öğe artık bir statüye sahip değil.
-   *[other] Deleted "{ $name }". { $count } artık bir statüye sahip değil.
+    [one] "{ $name }" silindi. 1 öğenin artık durumu yok.
+   *[other] "{ $name }" silindi. { $count } öğenin artık durumu yok.
 }
 settings-statuses-empty-title = Henüz iş akışı yok
-settings-statuses-empty-body = Bir durum, bir sahne boyunca ne kadar uzakta olduğunu söylüyor. Yukarıda bir tane ekleyin veya bir başlangıçtan başlayın.
-status-category-planned = Planlanan Planlanan Planlanan Planed Planed Planed Planed Planed Planed Planed Planed Planed Planed Planed Planed Planed Planed Planed Planed Planed Plan
-status-category-drafting = Taslak yazımı
-status-category-needs-work = Çalışma gerekiyor
-status-category-revised = Gözden geçirilmiş
-status-category-final = Son
+settings-statuses-empty-body = Durum, bir sahnenin ne kadar ilerlediğini söyler. Yukarıdan bir tane ekleyin ya da hazır bir diziyle başlayın.
+status-category-planned = Planlandı
+status-category-drafting = Taslak yazılıyor
+status-category-needs-work = Çalışılması gerekiyor
+status-category-revised = Düzeltildi
+status-category-final = Son hâli
+
+progress-percent = %{ $percent }
+progress-percent-with-label = %{ $percent } · { $label }
+progress-import-opening = Proje açılıyor…
+progress-import-outline = Ana hat okunuyor…
+progress-import-converting = Bölümler ve sahneler dönüştürülüyor…
+progress-import-writing = .skrib dosyası yazılıyor…
+progress-import-done = Bitti
+progress-import-structure = Yapı çıkarılıyor…
+progress-export-start = Başlatılıyor…
+progress-export-writing = Yazılıyor…
+progress-project-reading = Proje okunuyor…
+settings-sec-work-titled = Proje: { $title }
+
+import-notice-flattened-rich-texts = { $count ->
+    [one] Bir metin, bir Skribisto projesinin barındırabileceğinden daha derin iç içe geçmişti; sözcükleri biçimlendirmesiz düz metin olarak korundu.
+   *[other] { $count } metin, bir Skribisto projesinin barındırabileceğinden daha derin iç içe geçmişti; sözcükleri biçimlendirmesiz düz metin olarak korundu.
+}
+import-notice-free-text-badges = { $count ->
+    [one] Bir sahne rozeti bir durum listesinden çok serbest metne benziyor, bu yüzden etikete dönüştürülmek yerine öğenin açıklaması olarak korundu.
+   *[other] { $count } farklı sahne rozeti bir durum listesinden çok serbest metne benziyor, bu yüzden etikete dönüştürülmek yerine öğe açıklamaları olarak korundu.
+}
+import-notice-separator-text-dropped = “{ $name }” ayırıcısı metin içeriyordu; bunun bir Skribisto projesinde yeri yok, bu yüzden metin içe aktarılmadı.
+import-notice-separator-without-scene = “{ $name }” ayırıcısının bölümünde bağlanabileceği önceki bir sahne yoktu, bu yüzden içe aktarılmadı.
+import-notice-chapter-without-scenes = “{ $name }” bölümünde sahne yok, bu yüzden ayırıcıları içe aktarılmadı.
+import-notice-rich-text-unconverted = Biçimlendirilmiş bazı metinler dönüştürülemedi ({ $error }); içe aktarılmadı.
+import-notice-unresolved-cross-link = #{ $number } numaralı kadro kaydına giden bir bağlantı izlenemedi: kayıt eksik ya da çöp kutusundaydı.
+import-notice-read-copy = Bu projenin { $container ->
+    [single-file] tek dosya
+   *[folder] klasör
+} kopyası okundu.
+import-notice-read-copy-dated = Bu projenin, en son { $day } tarihinde değiştirilmiş { $container ->
+    [single-file] tek dosya
+   *[folder] klasör
+} kopyası okundu.
+import-notice-original-format = Bu proje Manuskript'in 2016'daki özgün biçiminde. Tamamı okundu; içindeki hiçbir şey değiştirilmedi.
+import-notice-newer-single-file-beside = “{ $file }” bu klasörden daha yeni ({ $file_day }, klasörünki { $folder_day }). Manuskript bir proje tek dosya kipine geçtiğinde eski klasörü yerinde bırakır, bu yüzden bu klasör terk edilmiş bir kopya olabilir; bunun yerine .msk dosyasını içe aktarmak daha yeni olanı okur.
+import-notice-pickle-skipped = “{ $file }” okunmadan bırakıldı. Bu bir Python pickle dosyası ve bir proje dosyasından böyle bir dosya yüklemek Manuskript'in kendisinde bir güvenlik açığıydı (CVE-2021-35196); içerdiği ayarlar yazı değil, görüntüleme tercihleridir.
+import-notice-file-unreadable = “{ $file }” okunamadı ({ $error }) ve atlandı; geri kalan her şey içe aktarıldı.
+import-notice-not-utf8 = “{ $file }” geçerli bir UTF-8 değil; okunamayan karakterler içe aktarmayı durdurmak yerine değiştirildi.
+import-notice-table-unreadable = “{ $file }” okunamadı ({ $error }); içerdikleri içe aktarılmadı.
+import-notice-outline-missing = “{ $file }” eksik, bu yüzden bu projede içe aktarılacak el yazması yok.
+import-notice-outline-unreadable = “{ $file }” okunamadı ({ $error }); hiçbir el yazması içe aktarılmadı.
+import-notice-named-none-row = “{ $file }”, Manuskript'in boş “none” kaydını tuttuğu yerde adlandırılmış bir satırla (“{ $name }”) başlıyor. Bu satır dışarıda bırakıldı, böylece ondan sonraki satırlar el yazmasının kullandığı numaraları korur.
+import-notice-unknown-field = “{ $file }” bu içe aktarıcının tanımadığı bir alan içeriyor: “{ $field }”. İçe aktarılmadı.
+import-notice-colorless-labels = { $count ->
+    [one] “{ $file }” içinde rengi olmayan bir satır var. Renksiz olarak içe aktarıldı; Manuskript böyle bir satırda projeyi yüklemeyi durdurur.
+   *[other] “{ $file }” içinde rengi olmayan { $count } satır var. Renksiz olarak içe aktarıldılar; Manuskript böyle bir satırda projeyi yüklemeyi durdurur.
+}
+import-notice-settings-unreadable = “{ $file }” okunamadı ({ $error }); projenin dili içe aktarılmadı.
+import-notice-revisions-unreadable = “{ $file }” okunamadı ({ $error }); projenin geçmişi içe aktarılmadı, ama başka hiçbir şey etkilenmedi.
+import-notice-foreign-files = { $count ->
+    [one] Bu proje, Manuskript biçiminin parçası olmayan ve içe aktarılmayan bir dosya içeriyor: { $files }.
+   *[other] Bu proje, Manuskript biçiminin parçası olmayan ve içe aktarılmayan { $count } dosya içeriyor: { $files }.
+}
+import-notice-foreign-files-more = Bu proje, Manuskript biçiminin parçası olmayan ve içe aktarılmayan { $count } dosya içeriyor: { $files } ve { $more ->
+    [one] bir tane daha
+   *[other] { $more } tane daha
+}.
+import-notice-not-a-character-file = “{ $file }” bir Manuskript kişi dosyası değil ve dışarıda bırakıldı.
+import-notice-not-a-text-item = “{ $file }” bir Manuskript metin öğesi değil ve ana hattın dışında bırakıldı.
+import-notice-missing-blank-line = “{ $file }” üst bilgisinden sonra boş satır içermiyor. Manuskript son alanını kaybeder, ama burada korundu.
+import-notice-folder-without-metadata = “{ $folder }” içinde { $file } yok, bu yüzden dizinin adını taşıyan sıradan bir klasör olarak içe aktarıldı. Manuskript böyle bir dizini ve içindeki her şeyi atlar.
+import-notice-rows-given-ids = { $count ->
+    [one] Ana hattaki bir satırın kendine ait kimliği yoktu ve ona bir kimlik verildi. Manuskript böyle bir satırı atar ya da satır bir klasörse projeyi yüklemeyi durdurur.
+   *[other] Ana hattaki { $count } satırın kendine ait kimliği yoktu ve onlara birer kimlik verildi. Manuskript böyle bir satırı atar ya da satır bir klasörse projeyi yüklemeyi durdurur.
+}
+import-notice-plots-unreadable = “{ $file }” okunamadı ({ $error }); olay örgüleri içe aktarılmadı.
+import-notice-world-unreadable = “{ $file }” okunamadı ({ $error }); dünya kayıtları içe aktarılmadı.
+import-notice-world-not-opml = “{ $file }” bir OPML belgesi değil; dünya kayıtları içe aktarılmadı.
+import-notice-text-flattened = “{ $title }” metni bir Skribisto projesinin barındırabileceğinden daha derin iç içe geçmiş; sözcükleri biçimlendirmesiz düz metin olarak korundu.
+import-notice-text-unconverted = “{ $title }” metni dönüştürülemedi ({ $error }); tam olarak yazıldığı gibi korundu.
+import-notice-text-without-file-name = “{ $title }” öğesinin { $kind ->
+    [scene] sahne metnine
+    [note] not metnine
+    [synopsis] özetine
+   *[title] başlığına
+} bir dosya adı verilemedi, bu yüzden içe aktarılmadı.
+import-notice-unknown-label = “{ $title }” öğesinin etiketi { $index }, ama bu numara projenin etiket listesinde yok. Etiketsiz olarak içe aktarıldı.
+import-notice-unknown-status = “{ $title }” öğesinin durumu { $index }, ama bu numara projenin durum listesinde yok. Durumsuz olarak içe aktarıldı.
+import-notice-unknown-point-of-view = “{ $title }”, bu projenin kadrosunda olmayan bir kişinin gözünden anlatılıyor. Bakış açısı belirlenmedi.
+import-notice-unresolved-references = “{ $title }” metnindeki göndermeler çözümlenemedi ({ $error }); metin, gönderme işaretleri dahil dönüştürüldüğü gibi korundu.
+import-notice-custom-icons = { $count ->
+    [one] Bir satırın özel bir simgesi vardı. Skribisto her satıra kendi türünün simgesini verir, bu yüzden simge içe aktarılmadı; satırla ilgili başka hiçbir şey değişmedi.
+   *[other] { $count } satırın özel bir simgesi vardı. Skribisto her satıra kendi türünün simgesini verir, bu yüzden simgeler içe aktarılmadı; bu satırlarla ilgili başka hiçbir şey değişmedi.
+}
+import-notice-character-colors = { $count ->
+    [one] Bir kişinin adının yanında bir renk vardı. Skribisto satırları değil etiketleri renklendirir, bu yüzden renk içe aktarılmadı; kişinin kendisi aktarıldı.
+   *[other] { $count } kişinin adının yanında bir renk vardı. Skribisto satırları değil etiketleri renklendirir, bu yüzden renkler içe aktarılmadı; kişilerin hepsi aktarıldı.
+}
+import-notice-versions-kept = { $found ->
+    [one] Bu proje daha önceki bir sürüm kaydetmişti
+   *[other] Bu proje daha önceki { $found } sürüm kaydetmişti
+}; { $kept ->
+    [one] bir tanesi
+   *[other] { $kept } tanesi
+}, Skribisto'nun kendi geçmişini seyreltme biçimiyle seyreltilerek korundu. Sürümler panelinde bulunuyorlar.
+import-notice-versions-unplaced = { $count ->
+    [one] Daha önceki bir sürüm artık projede olmayan bir satıra ait ve yerleştirilemedi.
+   *[other] Daha önceki { $count } sürüm artık projede olmayan bir satıra ait ve yerleştirilemedi.
+}
+
+dialog-open-work-title = Skribisto projesi aç
+dialog-save-as-file-title = Tek bir .skrib dosyası olarak kaydet
+dialog-save-as-folder-title = Proje için bir üst klasör seçin
+dialog-manuskript-file-title = Bir Manuskript projesi seçin
+dialog-manuskript-folder-title = Bir Manuskript proje klasörü seçin
+dialog-filter-skrib = Skribisto projesi
+dialog-filter-manuskript = Manuskript projesi
+dialog-filter-plume = Plume Creator projesi
+dialog-filter-hunspell-aff = Hunspell ek dosyası (.aff)
+dialog-filter-hunspell-dic = Hunspell sözlüğü (.dic)
+dialog-filter-export = Dışa aktarılan dosya
+shortcut-name-view-margin-lane = Kenar işaretlerini göster/gizle
+
+df-theme-paper = Kâğıt
+df-theme-sepia = Sepya
+df-theme-night = Gece
+df-theme-high-contrast = Yüksek karşıtlık
+df-theme-midnight = Gece yarısı
+
+welcome-example-byline = Yazan: { $author }
+
+welcome-sections-a11y = Karşılama bölümleri
+comments-a11y-summary-author = { $author }: { $text }
+comments-a11y-summary-replies = { $text } ({ $count ->
+    [one] 1 yanıt
+   *[other] { $count } yanıt
+})
+comments-a11y-summary-author-replies = { $author }: { $text } ({ $count ->
+    [one] 1 yanıt
+   *[other] { $count } yanıt
+})
+margin-lane-a11y-mark = { $label }, belgenin yüzde { $percent } kadarında
+margin-lane-a11y-marks = { $label }, { $count } işaret, belgenin yüzde { $percent } kadarında
+margin-lane-a11y-fallback = { $count ->
+    [one] Kenar işaretleri, 1 işaret
+   *[other] Kenar işaretleri, { $count } işaret
+}
+export-choose-unnamed-binder = Adsız dizin
+export-style-neutral = Yalın
+export-style-manuscript-shunn = Standart el yazması (Shunn)
+export-style-ebook-clean = Sade e-kitap
+
+date-time-short = { $day }.{ $month }.{ $year } { $hour }:{ $minute }
+pace-day-label = { $day }.{ $month }
+
+byte-size-bytes = { $value } B
+byte-size-kb = { $value } KB
+byte-size-mb = { $whole },{ $tenth } MB
+byte-size-gb = { $whole },{ $tenth } GB
+unit-percent = %{ $value }
+unit-pixels = { $value } px
+settings-paratext-error-no-name = Bir hazır yapının `name` satırı olmalı.
+export-error-no-project = Dışa aktarılacak açık proje yok.

@@ -1,150 +1,155 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-tags-preset-basic = أساسي
-tags-preset-scifi = الخيال العلمي
+tags-preset-basic = أساسية
+tags-preset-scifi = خيال علمي
 tags-preset-fantasy = فانتازيا
-tags-preset-mystery = الغامض
-tags-preset-historical = تاريخي
-
-
-tags-preset-needs-research = الاحتياجات من البحوث
-tags-preset-continuity-check = التحقق من الاستمرارية
-tags-preset-plot-point = نقطة النهاية
-
-tags-preset-character = الشخصية
-tags-preset-place = المكان
-tags-preset-item = البند
-
-tags-preset-vessel = وعاء
-tags-preset-planet = كوكب الأرض
-tags-preset-organization = المنظمة
-tags-preset-creature = المخلوقات
+tags-preset-mystery = غموض
+tags-preset-historical = تاريخية
+tags-preset-needs-research = يحتاج إلى بحث
+tags-preset-continuity-check = مراجعة الاتساق
+tags-preset-plot-point = نقطة حبكة
+tags-preset-character = شخصية
+tags-preset-place = مكان
+tags-preset-item = غرض
+tags-preset-vessel = مركبة
+tags-preset-planet = كوكب
+tags-preset-organization = منظمة
+tags-preset-creature = مخلوق
 tags-preset-faction = فصيل
-tags-preset-artifact = القطع الأثرية
-tags-preset-realm = العالم
+tags-preset-artifact = قطعة أثرية
+tags-preset-realm = مملكة
 tags-preset-magic-system = نظام سحري
 tags-preset-suspect = مشتبه به
-tags-preset-victim = الضحية
+tags-preset-victim = ضحية
 tags-preset-clue = دليل
-tags-preset-red-herring = الرنجة الحمراء
-tags-preset-historical-figure = الشكل التاريخي
-tags-preset-source = المصدر
-tags-preset-period-detail = الفترة
-
+tags-preset-red-herring = دليل مضلِّل
+tags-preset-historical-figure = شخصية تاريخية
+tags-preset-source = مصدر
+tags-preset-period-detail = تفصيل من الحقبة
 tags-pill-list = الوسوم
-tags-pill-add = أضف علامة
-tags-none-yet = لا علامات
-tags-pick-list = تاغز للاختيار من
+tags-pill-add = إضافة وسم
+tags-none-yet = بلا وسوم
+tags-pick-list = الوسوم المتاحة للاختيار
 tags-pill-remove = إزالة { $name }
-tags-pill-filter-placeholder = فيلم أو اسم بطاقة جديدة
-tags-pill-no-match = لا تطابق للعلامات
-tags-pill-create = إنشاء "{ $name }"
-tags-pill-create-failed = لا يمكن خلق "{ $name }"
-tags-pill-new-discoverable = معدّل جدّي
-tags-pill-new-discoverable-hint = الأشياء مع هذه العلامة متطابقة مع موكّلك لملء القائمة.
-
-tags-alias-list = المعروف أيضا
+tags-pill-filter-placeholder = صفِّ الوسوم أو سمِّ وسمًا جديدًا
+tags-pill-no-match = لا يوجد وسم مطابق
+tags-pill-create = إنشاء «{ $name }»
+tags-pill-create-failed = تعذّر إنشاء «{ $name }»
+tags-pill-new-discoverable = وسم بحث في النص
+tags-pill-new-discoverable-hint = العناصر التي تحمل هذا الوسم تُطابَق مع نصك لملء قائمة الحاضرين.
+tags-alias-list = يُعرف أيضًا باسم
 tags-alias-add = إضافة اسم آخر
 tags-alias-remove = إزالة { $name }
 tags-alias-placeholder = اسم آخر، ثم Enter
-tags-alias-hint = الاسماء التي تظهر تحت مظهرك، بجانب عنوانه.
-tags-alias-collision = { $name } بالفعل إجابات على هذا الاسم.
-
+tags-alias-hint = الأسماء التي يظهر بها هذا في نصك، إلى جانب عنوانه.
+tags-alias-collision = { $name } يُعرف بهذا الاسم بالفعل.
 settings-page-tags = الوسوم
-settings-tags-desc = تاجز) يصف الأشياء في مقبضك) وعلامة البحث في العمليّة تقول أيضاً Skribisto للبحث عن أسماء هذا البند في ملفك
-settings-tags-add = مضافا إليه
-settings-tags-add-placeholder = اسم بطاقة جديدة
-settings-tags-added = مضاف "{ $name }"
-settings-tags-duplicate = "{ $name }" موجود بالفعل
-settings-tags-filter = بطاقات المصورين
+settings-tags-desc = تميّز الوسوم العناصر في حافظتك. ووسم البحث في النص يطلب أيضًا من Skribisto البحث عن أسماء ذلك العنصر في نصك.
+settings-tags-add = إضافة وسم
+settings-tags-add-placeholder = اسم الوسم الجديد
+settings-tags-added = أُضيف «{ $name }»
+settings-tags-duplicate = «{ $name }» موجود بالفعل
+settings-tags-filter = تصفية الوسوم
 settings-tags-count = { $n ->
-    [one] بطاقة واحدة
-   *[other] { $n } العلامة
+    [zero] لا وسوم
+    [one] وسم واحد
+    [two] وسمان
+    [few] { $n } وسوم
+    [many] { $n } وسمًا
+   *[other] { $n } وسم
 }
-settings-tags-details-placeholder = ماذا تعني هذه العلامة؟
-settings-tags-discoverable = اعثروا على اثارة
-settings-tags-creates-in = ملاحظات جديدة تذهب
-settings-tags-creates-in-unset = إسألني المرة الأولى
-settings-tags-creates-in-untitled = ملف غير مسموع
-settings-tags-creates-in-trashed = { $name } (في القمامة)
-settings-tags-template = نموذج البداية
+settings-tags-details-placeholder = ما يعنيه هذا الوسم
+settings-tags-discoverable = البحث في النص
+settings-tags-creates-in = توضع الملاحظات الجديدة في
+settings-tags-creates-in-unset = السؤال في المرة الأولى
+settings-tags-creates-in-untitled = مجلد بلا عنوان
+settings-tags-creates-in-trashed = { $name } (في سلة المهملات)
+settings-tags-template = القالب الأولي
 settings-tags-template-unset = ملاحظة فارغة
-settings-tags-delete = تحذف { $name }
-settings-tags-deleted = حُذف "{ $name }" وأُزيل من جميع العناصر
-settings-tags-empty = لا علامات حتى الآن.
-settings-tags-apply-preset = تطبيق ما قبل...
-settings-tags-preset-applied = مضافا إليه: { $added }، متجاوزا رقم { $skipped } الموجود بالفعل
+settings-tags-delete = حذف { $name }
+settings-tags-deleted = حُذف «{ $name }» وأُزيل من كل العناصر
+settings-tags-empty = لا وسوم بعد.
+settings-tags-apply-preset = تطبيق إعداد مسبق…
+settings-tags-preset-applied = المضافة: { $added }، المتخطاة لوجودها مسبقًا: { $skipped }
 settings-tags-csv-filter = ملفات CSV
 settings-tags-import = استيراد…
 settings-tags-export = تصدير…
-settings-tags-imported = Imported { $added }, jumped { $skipped }
-settings-tags-exported = المصدرة { $n ->
-    [one] بطاقة واحدة
-   *[other] { $n } العلامة
+settings-tags-imported = المستوردة: { $added }، المتخطاة: { $skipped }
+settings-tags-exported = { $n ->
+    [zero] لم يُصدَّر أي وسم
+    [one] صُدّر وسم واحد
+    [two] صُدّر وسمان
+    [few] صُدّرت { $n } وسوم
+    [many] صُدّر { $n } وسمًا
+   *[other] صُدّر { $n } وسم
 }
-
 tags-chip-more = { $n ->
-    [one] بطاقة واحدة أخرى
-   *[other] { $n } علامة أخرى
+    [zero] لا وسوم أخرى
+    [one] وسم آخر
+    [two] وسمان آخران
+    [few] { $n } وسوم أخرى
+    [many] { $n } وسمًا آخر
+   *[other] { $n } وسم آخر
 }
-
-cast-section = الشخصيات
-cast-add = أضف إلى الطرح...
-cast-add-filter-placeholder = قصّةِ مُقَرَّرةِ الإنجيلِ
-cast-add-empty = لا توجد قيود قابلة للقراءة
-cast-pin = إضافة { $name } إلى الشخصيات
-cast-unpin = إزالة { $name } من الشخصيات
-cast-empty = لم يعلق أحد بعد أضف أو أحتفظ بإقتراح
-cast-unresolved = لم يعد في الكتاب المقدس
-
-mentions-confirm = مضافا إليها { $name }
+cast-section = الحاضرون
+cast-add = إضافة إلى الحاضرين…
+cast-add-filter-placeholder = تصفية مرجع القصة…
+cast-add-empty = لا مدخلات في مرجع القصة لإضافتها
+cast-pin = إضافة { $name } إلى الحاضرين
+cast-unpin = إزالة { $name } من الحاضرين
+cast-empty = لم يُثبَّت أحد بعد. أضف أحدًا أو احتفظ باقتراح
+cast-unresolved = لم يعد في مرجع القصة
+mentions-confirm = إضافة إلى الحاضرين في { $name }
 mentions-hit-count = { $n ->
+    [zero] ولا مرة
     [one] مرة واحدة
+    [two] مرتان
+    [few] { $n } مرات
+    [many] { $n } مرة
    *[other] { $n } مرة
 }
 mentions-point-of-view-badge = وجهة النظر
-mentions-point-of-view-badge-tooltip = ذُكِرَ كنقطة نظر هنا، مُحدّد باليد، لَمْ يُكتشفَ في المحترفِ.
-
-mentions-roster = الشخصيات
-mentions-pin = إضافة { $name } إلى الشخصيات
-
+mentions-point-of-view-badge-tooltip = مُعلَن كوجهة النظر هنا، حُدّد يدويًا ولم يُكتشف في النص.
+mentions-roster = الحاضرون
+mentions-pin = إضافة { $name } إلى الحاضرين
 pov-section = وجهة النظر
-pov-empty = لم تُحدد وجهة نظر
-pov-add = وضع وجهة نظر...
-pov-multiple = هذا المشهد له وجهة نظر
-pov-remove = إزالة { $name } من وجهات النظر
-pov-unresolved = وجهة نظر مثبتة هنا، ولكن هذا الدخول لم يعد موجوداً أو خسر بطاقة قصته.
-
-books-section = مأخوذة تحت
-books-empty = لم تُقدّم تحت كتاب بعد
-books-add = اطير تحت كتاب...
-books-remove = نقل من: { $name }
-books-apply-to-children = تقديم الطلبات إلى الأطفال
-
+pov-empty = لم تُحدَّد وجهة نظر
+pov-add = تحديد وجهة النظر…
+pov-multiple = لهذا المشهد وجهتا نظر.
+pov-remove = إزالة { $name } كوجهة نظر
+pov-unresolved = ثُبّتت هنا وجهة نظر، لكن ذلك المدخل لم يعد موجودًا أو فقد وسم مرجع القصة.
+books-section = مدرج ضمن
+books-empty = لم يُدرج ضمن أي كتاب بعد
+books-add = الإدراج ضمن كتاب…
+books-remove = الإزالة من { $name }
+books-apply-to-children = تطبيق الإدراج على العناصر الفرعية
 note-details-name-placeholder = الاسم…
 note-details-tags = الوسوم
 note-details-aliases = أسماء أخرى
-note-details-books = مأخوذة تحت
-note-details-books-empty = لم تُقدّم بموجب كتاب بعد
+note-details-books = مدرج ضمن
+note-details-books-empty = لم يُدرج ضمن أي كتاب بعد
 note-details-links = الروابط
-note-details-links-empty = لا وصلات بعد أضف واحداً إلى نقطة أخرى في كتابك المقدس
-note-details-links-add = وصلة إلى ملاحظة...
+note-details-links-empty = لا روابط بعد. أضف رابطًا يشير إلى مدخل آخر في مرجع قصتك.
+note-details-links-add = ربط بملاحظة…
 note-details-pov = وجهة النظر
-note-details-pov-empty = لم تُحدد وجهة نظر
-note-details-pov-unresolved = وجهة نظر مثبتة هنا، ولكن هذا الدخول لم يعد موجوداً أو خسر بطاقة قصته.
-note-details-pov-multiple = ولهذه المذكرة وجهة نظر.
-note-details-backlinks = تظهر في المخطوطة
-note-details-backlinks-empty = لا شيء بعد، بمجرد أن يظهر هذا الاسم في ملفك، سيظهر هنا.
+note-details-pov-empty = لم تُحدَّد وجهة نظر
+note-details-pov-unresolved = ثُبّتت هنا وجهة نظر، لكن ذلك المدخل لم يعد موجودًا أو فقد وسم مرجع القصة.
+note-details-pov-multiple = لهذه الملاحظة وجهتا نظر.
+note-details-backlinks = يظهر في المخطوطة
+note-details-backlinks-empty = لا شيء بعد. حين يظهر هذا الاسم في نصك، سيظهر هنا.
 note-details-backlinks-outside = خارج الكتب
-note-details-backlinks-confirm-all = تأكد من كل مظهر
-note-details-backlinks-confirm-all-tooltip = يضاف هذا القيد إلى مجموعة كل وثيقة موضحة هنا لم تؤكده بعد
-note-details-untitled-document = غير مترجم
-
+note-details-backlinks-confirm-all = تأكيد كل الظهورات
+note-details-backlinks-confirm-all-tooltip = إضافة هذا المدخل إلى الحاضرين في كل مستند معروض هنا لم يؤكده بعد
+note-details-untitled-document = بلا عنوان
 note-in-prose-mentions = { $n ->
-    [one] ذكر واحد
-   *[other] { $n } mentions
+    [zero] لا إشارات
+    [one] إشارة واحدة
+    [two] إشارتان
+    [few] { $n } إشارات
+    [many] { $n } إشارة
+   *[other] { $n } إشارة
 }
 note-in-prose-mention-at = { $current } من { $total }
-note-in-prose-mention-previous = ذكر سابق
-note-in-prose-mention-next = التذكير التالي
+note-in-prose-mention-previous = الإشارة السابقة
+note-in-prose-mention-next = الإشارة التالية

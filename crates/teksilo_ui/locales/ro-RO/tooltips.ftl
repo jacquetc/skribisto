@@ -1,102 +1,118 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-wm-book = O carte din proiectul tău.
-wm-book-more = O carte este la fel de simplu sau la fel de stratificat cum doriți. O poveste scurtă poate fi doar câteva [scene](:wm-scene). Un proiect mai lung poate cuib [părți](:wm-part) și [capitole](:wm-chapter) la fel de adânc cum doriți. Forma este a ta.
-wm-part = O parte de grup capitole.
-wm-part-more = O parte adună [capitole](:wm-chapter) într-un singur titlu. Ca un capitol, se execută până la următoarea parte sau la sfârșitul [Carte](:wm-book).
-wm-chapter = Un capitol din carte.
-wm-chapter-more = Un capitol merge de aici până la următorul capitol, următorul [Parte](:wm-part), sau [Sfârşitul cărţii](:wm-end-of-book). Acesta vine în două forme: un dosar capitol care deține [scene](:wm-scene), sau un capitol plat, care poartă propria proza. Alege care un nou capitol se utilizează în Setări, în cadrul Structurii.
+# Skribisto: writing-model rich tooltips (source locale).
+# Registered in tooltip_registry.rs and attached by key from the "＋ Create" /
+# "Convert to" menus. The wm-*-more bodies cascade to one another via
+# [label](:key) links, so this file doubles as an in-place Help doc.
+
+wm-book = O carte din proiectul dumneavoastră.
+wm-book-more = O carte poate fi oricât de simplă sau de stratificată doriți. O povestire scurtă poate avea doar câteva [scene](:wm-scene). O lucrare mai lungă poate imbrica [părți](:wm-part) și [capitole](:wm-chapter) pe oricâte niveluri. Forma vă aparține.
+wm-part = O parte care grupează capitole.
+wm-part-more = O parte reunește [capitole](:wm-chapter) sub un singur titlu. Ca un capitol, ține până la partea următoare sau până la sfârșitul [cărții](:wm-book).
+wm-chapter = Un capitol al cărții.
+wm-chapter-more = Un capitol ține de aici până la capitolul următor, până la [partea](:wm-part) următoare sau până la [sfârșitul cărții](:wm-end-of-book). Are două forme: un capitol-dosar care conține [scene](:wm-scene) sau un capitol simplu care are propria proză. Alegeți forma folosită de capitolele noi în Setări, la Alcătuire.
 wm-scene = O scenă de proză.
-wm-scene-more = Fiecare articol de scris are două laturi: textul principal și un [Rezumat](:wm-synopsis) pentru a planifica cu. Ambele deschise împreună în editor.
-wm-note = Un bilet.
-wm-note-more = O notă păstrează text și un [Rezumat](:wm-synopsis), cum ar fi un [Scenă](:wm-scene), pentru cercetare, deoparte, sau memento-uri. Orice element poate face parte din cartea compilată, inclusiv o notă așezată într-un [Capitol](:wm-chapter).
+wm-scene-more = O scenă conține textul dumneavoastră. Fiecare element de scris are două fețe: textul principal și un [sinopsis](:wm-synopsis) pentru planificare. Amândouă se deschid împreună în editor.
+wm-note = O notă.
+wm-note-more = O notă păstrează text și un [sinopsis](:wm-synopsis), ca o [scenă](:wm-scene), pentru documentare, digresiuni sau mementouri. Orice element poate face parte din cartea compilată, inclusiv o notă aflată într-un [capitol](:wm-chapter).
 wm-note-folder = O notă care conține alte elemente.
-wm-note-folder-more = Un [Notă](:wm-note) care conține, de asemenea, elemente sub ea, astfel încât să puteți grupa note legate împreună. Acesta păstrează propriile sale [Rezumat](:wm-synopsis), iar elementele din interiorul păstrează propriul text.
+wm-note-folder-more = O [notă](:wm-note) care conține și elemente sub ea, ca să puteți grupa notele înrudite. Își păstrează propriul [sinopsis](:wm-synopsis), iar elementele din interior își păstrează propriul text.
 wm-folder = Un dosar de organizare.
-wm-folder-more = Un container pentru aranjarea obiectelor în liant, cu toate acestea, vă convine. Acesta poartă un [Rezumat](:wm-synopsis), dar nu proza proprie. Obiectele din interior dețin scrisul.
-wm-end-of-book = Urme unde se termină o carte.
-wm-end-of-book-more = Fiecare carte împărtășește o listă continuă, astfel încât sfârșitul unei cărți nu este decis prin cuibărire. Acest marker spune [Carte](:wm-book) se oprește aici. Orice după ce aparține cărții următoare.
-wm-story-bible-entry = O notiţă falsă despre povestea ta.
-wm-story-bible-entry-more = Un [Notă](:wm-note) despre un personaj, o locație, sau orice altceva în valoare de depunere, creat cu un nume, etichete, pseudonime și un șablon de pornire toate într-un singur pas. Nimic pe pagina o distinge după aceea, deoarece rămâne o notă obișnuită puteți redenumi, retag sau converti ca orice alt.
-wm-synopsis = Un rezumat al unui articol scris.
-wm-synopsis-more = Un rezumat atașat la orice element scris, de obicei, un scurt paragraf, dar atâta timp cât doriți. Utilizați-l pentru a planifica și naviga înainte de proza există. Se află lângă textul principal în editor.
+wm-folder-more = Un container pentru a aranja elementele în clasor cum vă convine. Are un [sinopsis](:wm-synopsis), dar nu are proză proprie. Elementele din interior conțin textul.
+wm-end-of-book = Marchează unde se termină o carte.
+wm-end-of-book-more = Toate cărțile împart o singură listă continuă, așa că sfârșitul unei cărți nu este stabilit prin imbricare. Acest marcaj spune că [cartea](:wm-book) se oprește aici. Tot ce urmează după el aparține cărții următoare.
+wm-story-bible-entry = O notă cu etichete și nume alternative despre povestea dumneavoastră.
+wm-story-bible-entry-more = O [notă](:wm-note) despre un personaj, un loc sau orice altceva merită consemnat, creată într-un singur pas cu nume, etichete, nume alternative și un șablon de pornire. Ulterior, nimic de pe pagină nu o mai deosebește: rămâne o notă obișnuită, pe care o puteți redenumi, reeticheta sau converti ca pe oricare alta.
+wm-synopsis = Un rezumat al unui element de scris.
+wm-synopsis-more = Un rezumat atașat oricărui element de scris, de obicei un paragraf scurt, dar oricât de lung doriți. Folosiți-l pentru a planifica și a vă orienta înainte să existe proza. Stă lângă textul principal în editor.
 
-scene-break-minor = O scenă obişnuită: o schimbare de timp, loc sau punct de vedere într-un capitol.
+scene-break-minor = Un separator de scenă obișnuit: o schimbare de timp, de loc sau de punct de vedere în cadrul unui capitol.
 scene-break-minor-more =
-    Marchează o pauză *în cazul în care l-ai pus*, inclusiv în mijlocul unui [Scenă](:wm-scene). Împarte proza în două elemente este o alegere organizațională, așa că nu creează o pauză pe cont propriu.
+    Marchează o separare *acolo unde o puneți*, inclusiv în mijlocul unei [scene](:wm-scene). Împărțirea prozei în două elemente este o alegere de organizare, așa că nu creează niciodată singură o separare.
 
-    Tipărit în proza ca trei asteriscuri separate de spaţii. Cum se printează este decis de stilul de export, nu de ceea ce tip: un manuscris Shunn-l stabileşte ca un singur #, un suport de hârtie comercială ca un dinkus, şi cele mai multe franceză, germană, spaniolă, rusă şi italiană publicarea ca un gol gol gol gol, fără nici un semn la toate.
-scene-break-major = O diviziune mai puternică: o săritură în timp mare sau o schimbare decisivă a punctului de vedere.
+    Se tastează în proză ca trei asteriscuri despărțite de spații. Felul în care este tipărit îl decide stilul de export, nu ce tastați: un manuscris Shunn îl redă ca un singur #, o ediție comercială ca un dinkus (trei steluțe), iar majoritatea editurilor franceze, germane, spaniole, rusești și italiene ca un simplu spațiu liber, fără niciun semn.
+scene-break-major = O diviziune mai puternică: un salt mare în timp sau o schimbare decisivă de punct de vedere.
 scene-break-major-more =
-    Aceeași idee ca o pauză de scenă obișnuită, un pas în sus. Utilizați-l atunci când o pauză simplă ar substate saltul.
+    Aceeași idee ca separatorul de scenă obișnuit, cu o treaptă mai sus. Folosiți-l când o separare simplă ar minimaliza saltul.
 
-    Tastat ca # # #, și imprimate diferit de nivelul obișnuit prin stilul de export. Shunn standard format manuscris stabilește un singur # împotriva # # # pentru exact această distincție. În cazul în care o tradiție nu are o marcă mai puternică, ambele niveluri print la fel.
-wm-find-in-prose = Skribisto caută acest articol în proza ta.
-wm-find-in-prose-more = Porniți acest lucru pe tag-uri care nume lucruri pe care le scrieți despre: caractere, locuri, obiecte. Orice element care transportă o astfel de etichetă este potrivit cu proza dvs. de titlul său și de alte nume pe care le dați, astfel încât fiecare [Scenă](:wm-scene)  liste care și ce apare în ea fără a vă conecta nimic de mână. Lăsați-l off pentru etichetele care descriu un element mai degrabă decât numele unul, cum ar fi un proiect de stare sau un memento pentru a verifica continuitatea. Fiecare element se potrivește, de asemenea, se alătură dvs. [Ghidul poveștii](:wm-story-bible).
-wm-story-bible = Fiecare personaj, loc și alte tagged intrare, adunat într-o singură grilă.
-wm-story-bible-more = Deschideți din tab-ul propriu al oricărui dosar de note. Carduri grup de tag-uri, și fiecare nume cât de multe pseudonime o intrare răspunde la și câte scene a apărut în, extrase din fiecare [găsi în proză](:wm-find-in-prose) tag-ul din proiect. Filtrarea de carte doar îngustează ce cărți arată; nu decide niciodată ce intrări există.
+    Se tastează ca # # # și este tipărit de stilul de export altfel decât nivelul obișnuit. Formatul standard de manuscris Shunn pune un singur # față de # # # exact pentru această distincție. Acolo unde o tradiție nu are un semn mai puternic, ambele niveluri se tipăresc la fel.
+wm-find-in-prose = Skribisto caută acest element în proza dumneavoastră.
+wm-find-in-prose-more = Activați opțiunea pentru etichetele care numesc lucruri despre care scrieți: personaje, locuri, obiecte. Orice element care poartă o asemenea etichetă este căutat în proză după titlul lui și după celelalte nume pe care i le dați, astfel încât fiecare [scenă](:wm-scene) arată cine și ce apare în ea fără să legați nimic de mână. Lăsați opțiunea dezactivată pentru etichetele care descriu un element în loc să-l numească, cum ar fi o etapă de lucru sau un memento de verificat continuitatea. Fiecare element găsit intră și în [biblia poveștii](:wm-story-bible).
+wm-story-bible = Toate personajele, locurile și celelalte intrări etichetate, adunate într-o singură grilă.
+wm-story-bible-more = Se deschide din fila proprie a oricărui dosar de note. Fișele sunt grupate după etichetă și fiecare arată la câte nume alternative răspunde intrarea și în câte scene a apărut, pe baza tuturor etichetelor cu [căutare în proză](:wm-find-in-prose) din proiect. Filtrarea după carte doar restrânge fișele afișate; nu decide niciodată ce intrări există.
 
-tooltip-go-to = Salt la orice element din liant (Ctrl+G)
-synopsis-collapse-tooltip = Ascunde coloana sinopsis
+tooltip-go-to = Salt la orice element din clasor (Ctrl+G)
+synopsis-collapse-tooltip = Ascunde coloana sinopsisului
 
 wm-paratext = Un text care nu face parte din poveste.
-wm-paratext-more = O prefaţă, o dedicaţie, un afterword, un colofon: scrisul care aparţine cărţii, dar nu corpului ei. Exportat oriunde ai pus-o, şi niciodată nu conta în numărul de cuvinte al manuscrisului. Unde merge depinde de tine: convenţiile diferă în funcţie de ţară şi editor.
-wm-paratext-folder = Un dosar pentru paratexturi.
-wm-paratext-folder-more = Undeva pentru a păstra prefeţe şi după cuvinte astfel încât acestea să nu dezordine liant. Organizarea numai: aceasta poartă un [Rezumat](:wm-synopsis), dar adaugă nimic la cartea exportată, nici măcar propriul nume.
+wm-paratext-more = O prefață, o dedicație, o postfață, un colofon: texte care aparțin cărții, dar nu corpului ei. Exportat oriunde îl puneți și niciodată numărat în numărul de cuvinte al manuscrisului. Unde îl puneți depinde de dumneavoastră: convențiile diferă de la o țară și de la o editură la alta.
+wm-paratext-folder = Un dosar pentru paratexte.
+wm-paratext-folder-more = Un loc unde să păstrați prefețele și postfețele, ca să nu aglomereze clasorul. Doar de organizare: are un [sinopsis](:wm-synopsis), dar nu adaugă nimic cărții exportate, nici măcar propriul nume.
 
-goal-target = Cât timp această piesă este menit să fie.
-goal-target-more = Stabilește o țintă pe orice: un [Scenă](:wm-scene), un [Capitol](:wm-chapter), un [Parte](:wm-part), întregul [Carte](:wm-book). Fiecare este propriul său număr și stă pe cont propriu, astfel încât stabilirea unei ținte pe un capitol nu schimbă niciodată cartea sa, și ținta unei cărți nu este niciodată o sumă a capitolelor din interiorul ei. Ceea ce adaugă este scris: un container de [Progres](:goal-progress) este totul scris sub ea. Lăsați o țintă la zero și pur și simplu nu este stabilit. Numărul este numărat în [cuvinte sau caractere](:goal-unit), oricare ar fi acest proiect folosește.
-goal-unit = Fie că acest proiect contează în cuvinte sau în caractere.
-goal-unit-more = O alegere la nivel de proiect, deoarece o unitate de lungime aparţine manuscrisului şi pieţei sale mai degrabă decât unei secţiuni: Editura germană şi franceză în semne, japoneză în foi de 400 de caractere, chineză cu mii de caractere, cea mai mare editură în limba engleză în cuvinte. Ambele numere sunt păstrate una lângă alta şi nici nu este convertită vreodată în cealaltă, aşa că schimbarea punctelor unitate la fiecare [Obiectiv](:goal-target) la cealaltă cifră şi schimbarea înapoi restaurează primul. Ceea ce nu face este convertirea nimic, astfel încât obiectivele deja introduse vor avea nevoie de actualizare de mână.
-goal-progress = Cât de mult este scris, împotriva ţintei.
-goal-progress-explained = O piesa cu proza proprie este masurata in functie de lungimea proprie; un container impotriva [totul scris sub ea](:goal-manuscript-words). Barul se incalzeste de la rosu la chihlimbar la verde pe masura ce scrierea apare, si se schimba din nou dupa ce piesa a trecut cu bine peste ceea ce a fost planificat, ceea ce merita observat atunci cand un capitol are o lungime de pastrat.
-goal-manuscript-words = Ceea ce contează ca manuscris.
-goal-manuscript-words-more = Doar proza care ar fi exportată de fapt: [scene](:wm-scene) și [capitole](:wm-chapter) care își poartă propriul text. A [Notă](:wm-note) sau un [Paratext](:wm-paratext) nu face parte din manuscris și nu este niciodată luată în considerare față de unul. Orice se află în coșul de gunoi cade, și la fel face și nimic [lăsat în afara exportului](:goal-exportable).
-goal-exportable = Acest articol este exclus din export.
-goal-exportable-more = Lungimea proprie încă arată, pentru că scrisul este încă acolo, dar contează spre nici un total, exact așa cum va apărea în nici o carte exportată. Lăsând un container afară nu lasă piesele în interiorul acestuia: fiecare element răspunde pentru sine, care este ceea ce "Aplică pentru copii" butonul de lângă comutator este pentru.
-goal-distribute = Împărţiţi această ţintă peste ceea ce este înăuntru.
-goal-distribute-more = Împarte o țintă [Cartea lui](:wm-book) sau [Part's](:wm-part) pe copiii săi imediat, astfel încât piesele adăuga până la ea exact. În mod implicit umple numai cele cu nici o țintă încă și lasă propriile numere singur. Ceea ce scrie sunt obișnuite [obiective](:goal-target), gratuit pentru a edita după și liber pentru a pluti în afară: aceasta este o acțiune, nu un aranjament în picioare.
-goal-subtree-total = La ce se adaugă ţintele din interior.
-goal-subtree-total-more = Un fapt, nu o țintă. Acest proiect nu tratează niciodată ținta unui container ca suma celor din interiorul acestuia, pentru că acesta este modul în care cifra unui folder ajunge să se miște pe cont propriu atunci când o scenă din interiorul ei este dat un număr. Această linie pur și simplu vă spune ce numerele proprii vin la, astfel încât să puteți compara cu containerul lui [Obiectiv](:goal-target) pe dumneavoastră sau [Împărţiţi unul.](:goal-distribute).
-goal-milestone = O dată pentru a ajunge la ceva de.
-goal-milestone-more = Unul spune că [Carte](:wm-book) ar fi trebuit să stea la o anumită lungime de o dată, un punct de trecere pe propria curbă. Celălalt spune că un anumit [Capitol](:wm-chapter) sau [Parte](:wm-part) ar fi trebuit să ajungă la [propria sa țintă](:goal-target) până atunci, și citește că numărul trăiesc mai degrabă decât păstrarea o copie a acesteia, astfel încât editarea țintei actualizează de asemenea etapa de referință. Ambele apar pe cartea lui [planul de ritm](:pace-plan).
-pace-plan = Programul de scris al cărţii.
-pace-plan-more = Un [Obiectiv](:goal-target) și un termen limită, cu zilele pe care le scrieți, s-au transformat în cât de mult are nevoie o zi. Ea citește propria țintă a cărții, astfel încât stabilirea ei aici și stabilirea în inspector sunt același număr în două locuri. Punctele de cale de-a lungul drum sunt [etape de referință](:goal-milestone).
+# ── Word / character targets ──────────────────────────────────────────────────
+# A second cascade web beside the writing-model one. It doubles as the app's only
+# explanation of how counting works, since there is no Help surface anywhere else.
+goal-target = Cât de lung ar trebui să fie acest fragment.
+goal-target-more = Stabiliți o țintă pentru orice: o [scenă](:wm-scene), un [capitol](:wm-chapter), o [parte](:wm-part), întreaga [carte](:wm-book). Fiecare este un număr de sine stătător, așa că ținta unui capitol nu o schimbă niciodată pe cea a cărții, iar ținta unei cărți nu este niciodată suma capitolelor din ea. Ce se adună este textul scris: [progresul](:goal-progress) unui container este tot ce s-a scris în el. O țintă lăsată la zero înseamnă pur și simplu că nu este stabilită. Numărul se socotește în [cuvinte sau caractere](:goal-unit), după cum folosește acest proiect.
+goal-unit = Dacă acest proiect numără în cuvinte sau în caractere.
+goal-unit-more = O alegere la nivelul întregului proiect, pentru că unitatea de lungime ține de manuscris și de piața lui, nu de o secțiune: editurile germane și franceze măsoară în semne, cele japoneze în coli de 400 de caractere, cele chineze în mii de caractere, iar majoritatea editurilor de limbă engleză în cuvinte. Ambele numere sunt păstrate unul lângă altul și niciunul nu este convertit vreodată în celălalt, așa că schimbarea unității îndreaptă fiecare [țintă](:goal-target) spre cealaltă cifră, iar revenirea o restabilește pe prima. Ce nu face este să convertească ceva, așa că țintele deja introduse vor trebui actualizate de mână.
+goal-progress = Cât s-a scris, față de țintă.
+goal-progress-explained = Un fragment cu proză proprie este măsurat după propria lungime; un container, după [tot ce s-a scris în el](:goal-manuscript-words). Bara trece de la roșu la chihlimbariu și apoi la verde pe măsură ce textul se adună și se schimbă din nou când fragmentul a depășit cu mult ce s-a planificat, lucru bun de observat când un capitol are o lungime de respectat.
+goal-manuscript-words = Ce intră în manuscris.
+goal-manuscript-words-more = Doar proza care ar fi efectiv exportată: [scenele](:wm-scene) și [capitolele](:wm-chapter) care au text propriu. O [notă](:wm-note) sau un [paratext](:wm-paratext) nu fac parte din manuscris și nu sunt numărate niciodată în el. Tot ce este în coșul de gunoi iese din calcul, la fel ca tot ce este [exclus din export](:goal-exportable).
+goal-exportable = Acest element este exclus din export.
+goal-exportable-more = Lungimea lui proprie este în continuare afișată, pentru că textul există, dar nu contează la niciun total, exact cum nu va apărea în nicio carte exportată. Excluderea unui container nu le exclude și pe elementele din el: fiecare element răspunde pentru sine, iar pentru asta există butonul „Aplică și elementelor conținute” de lângă comutator.
+goal-distribute = Împarte această țintă între elementele din interior.
+goal-distribute-more = Împarte ținta unei [cărți](:wm-book) sau a unei [părți](:wm-part) între copiii ei direcți, astfel încât fragmentele să însumeze exact ținta. Implicit, completează doar elementele care nu au încă țintă și nu vă atinge propriile numere. Ce scrie sunt [ținte](:goal-target) obișnuite, pe care le puteți edita ulterior și care se pot îndepărta unele de altele: este o acțiune punctuală, nu o regulă permanentă.
+goal-subtree-total = Cât însumează țintele din interior.
+goal-subtree-total-more = Un fapt, nu o țintă. Acest proiect nu tratează niciodată ținta unui container ca sumă a celor din interior, pentru că așa ajunge cifra unui dosar să se schimbe singură când o scenă din el primește un număr. Rândul acesta vă spune doar cât însumează propriile numere, ca să-l puteți compara singur(ă) cu [ținta](:goal-target) containerului sau să [împărțiți una](:goal-distribute).
+goal-milestone = O dată până la care trebuie atins ceva.
+goal-milestone-more = Există două feluri. Primul spune că [cartea](:wm-book) ar trebui să ajungă la o anumită lungime până la o dată, un reper pe propria curbă. Al doilea spune că un anumit [capitol](:wm-chapter) sau o anumită [parte](:wm-part) ar trebui să-și fi atins [propria țintă](:goal-target) până atunci și citește acel număr direct, fără să păstreze o copie, așa că modificarea țintei actualizează și jalonul. Ambele apar în [planul de ritm](:pace-plan) al cărții.
+pace-plan = Programul de scriere al cărții.
+pace-plan-more = O [țintă](:goal-target) și un termen-limită, împreună cu zilele în care scrieți, transformate în cât trebuie scris pe zi. Citește ținta proprie a cărții, așa că stabilirea ei aici și în inspector înseamnă același număr în două locuri. Reperele de pe parcurs sunt [jaloanele](:goal-milestone).
 
-concept-tag = O etichetă cu coduri de culoare puteți pune pe orice element, reutilizabil pe tot parcursul proiectului.
-concept-tag-more = Tag-ul un element să-l marcheze: un statut, o locație, un fir pe care îl urmăriți. Aceeași etichetă poate sta pe orice număr de elemente, și un element poate transporta mai multe. Porniți [găsi în proză](:wm-find-in-prose) pentru o etichetă care numește ceva în cartea ta, un personaj sau un loc, și Skribisto începe căutarea pentru ea în proza ta.
-concept-label = O scurtă notă pe care o scrii sub titlul unui articol, pentru ochii tăi.
-concept-label-more = Nu este un [Etichetă](:concept-tag): o etichetă aparține unui singur element, text simplu, fără culoare sau catalog în spatele acestuia, ceva de genul "primul punct de complot" sau "necesită un nume." Setați-l din meniul contextual al elementului, sau editați-l în linie în coloana "Observation's Label"; acesta arată ca un subtitlu mic sub titlul, în contur și în flux deopotrivă.
-concept-point-of-view = A căror ochi o scenă este narat prin intermediul: una sau mai multe dintre exprimate povestea ta.
-concept-point-of-view-more = Alegeți pe cineva care nu este încă în distribuție le adaugă acolo. Mai mult de un punct de vedere este o alegere legală, utilă pentru o scenă comună sau o schimbare de ochi la mijlocul cărții, nu ceva Skribisto blocuri. Candidații provin de la elementele un tag [găsi în proză](:wm-find-in-prose) pune în biblia poveste.
-concept-epigraph = Un citat setat în capul unei părți sau al unui capitol.
-concept-epigraph-more = Câmpul său propriu, separat de proza [Capitol](:wm-chapter) sau de proza proprie a [Parte](:wm-part); un [Scenă](:wm-scene) sau un [Notă](:wm-note) nu poartă nimic. Scrieți unul ca un citat obișnuit; scrieți mai multe și fiecare devine propriul său citat de bloc, tipărit ca epigraf propriu. Cuvintele sale nu sunt niciodată considerate ca cuvinte de manuscris.
-concept-footnote = O citaţie marcată în proză, care se tipăreşte ca o notă numerotată.
-concept-footnote-more = Referinta este un singur semn in cuvintele tale, asa ca se misca si se sterge exact ca si cuvintele din jurul ei. Numarul ei nu este niciodata stocat: Skribisto Proiecteaza-l proaspat de unde fiecare referinta sta in tot manuscrisul, astfel incat inserarea unei renumere fiecare nota dupa el. Cuvintele proprii ale unei note de subsol sunt luate in afara manuscrisului, niciodata pliate in el.
-concept-chapter-mode = Fie că un nou capitol este un dosar de scene sau un singur element plat.
-concept-chapter-mode-more = Setați în Setări, sub Structură. Scrieți direct într-un [Capitol](:wm-chapter) în orice mod; singura diferență este dacă poate conține și scene sub ea. Ambele codări se compilează în aceeași carte, și le puteți amesteca liber într-un singur proiect. Promovează convertirea unui capitol existent între cele două fără a pierde un cuvânt.
-concept-comment = O notă ancorată pe o porţiune exactă de proză, arătată în margine.
-concept-comment-more = Îşi aminteşte cuvintele pe care le indică şi ce le înconjoară, nu o poziţie fixă, aşa că supravieţuieşte editării obişnuite şi unei reîncărcări complete. Răspunde dedesubt pentru a păstra un fir merge. Dacă citatul exact nu mai poate fi găsit, comentariul spune mai degrabă decât în derivă tăcut la propoziţia greşită.
-concept-backup = O copie punctuală a întregului proiect, ţinută lângă el.
-concept-backup-more = Luate pe un program pe care îl alegeți: pe deschide, pe aproape, pe un interval, sau orice mix, cu copii vechi prunc după vârstă sau după număr. Deschiderea unei sarcini în propria fereastră: puteți uita și chiar edita, dar numai Salvați As sau Restore păstrează nimic. Diferit de un [versiune](:concept-version), care urmărește propriul trecut al unui element.
-concept-version = Trecutul unui element: fiecare schimbare a textului sau sintezei sale.
-concept-version-more = Construit din propria istorie de salvare a proiectului și backup-urile sale împreună, o intrare pe schimbare, mai degrabă decât una pe fișier. Alegeți o intrare pentru a vedea ce sa schimbat și restaura doar textul acelui articol la el; restul proiectului este neatins, și o copie de siguranță este luată în primul rând. Diferit de un [Copie de siguranță](:concept-backup), care este o copie a tot ce.
-concept-trash = Un obiect distrus este ascuns, nu mutat: rămâne exact unde a fost.
-concept-trash-more = Distrugerea doar răstoarnă un singur steag: elementul păstrează locul său în liant, marcat inactiv, mai degrabă decât eliminat. Restabilește-l și reapare în acel loc exact, fără re-filare de a face. Gunoi gol elimină obiecte distruse pentru totdeauna, și fiecare dintre acestea este un pas de neatins, ca orice alt proiect de editare.
-concept-spellcheck = Subliniază cuvinte pe care nici un dicţionar instalat nu le recunoaşte, per limbaj de proiect.
-concept-spellcheck-more = Fiecare proiect are propriul său limbaj de lucru sau limbi; un element le poate suprascrie pentru o scenă scrisă într-o altă limbă. Adăugați un cuvânt Skribisto nu știe din meniul de context al editorului, într-un dicționar personal care trece peste fiecare proiect. Verificând vraja se oprește peste tot, până când îl porniți din nou.
-concept-search-replace = Găsește un cuvânt sau o frază peste tot în proiect, nu numai documentul deschis.
-concept-search-replace-more = Se uită prin fiecare scenă, notă, titlu, sinopsis și etichetă, și prin comentarii și note de subsol de asemenea. Caz, potrivire întreg cuvânt și potrivire accent sunt trei comutatoare separate. Înlocuiți Toate rescrie fiecare meci revizuit într-o singură trecere și un pas de anulare, astfel încât Ctrl+Z ia înapoi întregul lot, nu numai ultima schimbare.
-concept-note-template = O bucată reutilizabilă de scris pe care o introduci în orice lucru la care lucrezi.
-concept-note-template-more = O foaie de caractere oarbe, un profil de locație, o foaie de beat: scrieți-l o dată și fixați-l în oriunde aveți nevoie, în orice element, nu numai o notă. Începeți de la un built-in preset, importați un .md  sau .djot fişier, sau scrie ceva şi alege documentul Save ca şablon. Stocat în proiect, astfel încât un co-autor care deschide devine acelaşi set.
-concept-text-replacement = Propria ta prescurtare, extinsă automat pe măsură ce tastezi.
-concept-text-replacement-more = Setaţi un declanşator şi înlocuirea acestuia, "btw" pentru "apropo," şi se extinde momentul în care tastaţi un spaţiu sau punctuaţie după el. Cazul urmează ceea ce aţi tastat: capitalizaţi declanşatorul şi expansiunea se capitalizează de asemenea. A Backspace imediat după o expansiune anulează doar acea substituţie. Comutat pe fiecare proiect, distinct de [punctuaţie inteligentă](:concept-smart-punctuation).
-concept-smart-punctuation = Tipografia locală se aplică automat pe măsură ce tastați: citate, dale, elipse.
-concept-smart-punctuation-more = Curls drepte citate în cele tipografice, se transformă -- într-un en dash și -- într-o bordură em, se transformă ... într-o ellipsă, și, în cazul în care îl porniți, deschide un paragraf tastat ca "-" cu o bordură dialog. Setat pe proiect, și călătorește în interiorul .skrib astfel încât un co-autor scrie cu aceleași reguli. Distinct de la [propriile tale reguli](:concept-text-replacement), pe care le scrie.
-concept-export-style = Un pachet numit de opţiuni de export: poziţii, distanţă, ceea ce se include.
-concept-export-style-more = Un stil, reutilizat pe fiecare model de export pe care îl alegeți. Stilurile built-in sunt doar citite; duplicat unul pentru a obține un punct de pornire puteți schimba de fapt. Printre opțiunile sale este dacă să includă [Markeri rotunzi](:concept-round-trip-marks), pentru un fișier legat de un editor și înapoi.
-concept-round-trip-marks = Semne de carte invizibile, care permit o editat DOCX sau ODT vin acasă recunoscut.
-concept-round-trip-marks-more = Scris doar în cele două formate un editor poate trimite înapoi, DOCX și ODT; fiecare alt export nu poartă nici unul. Un semn de carte, nu un atribut personalizat: LibreOffice benzi atribute personalizate pe salvare, dar lasă un semn de carte intact. Turnat pe [stil de export](:concept-export-style), sub "Trimiterea la un editor."
-concept-status = În cazul în care un element se află în propriul flux de lucru: o etapă la un moment dat, în mișcare înainte.
-concept-status-more = Nu este un [Etichetă](:concept-tag): un articol are exact un statut, etapele sunt comandate, iar proiectul deține lista, astfel încât să puteți redenumi, reordona sau adăuga la ea ori de câte ori doriți. Un asterisc lângă un capitol sau carte înseamnă părțile de mai jos nu sunt toate de acord cu ea. Setați-l de la inspector, o carte, un element de flux, sau aici.
+# ── Feature concepts ───────────────────────────────────────────────────────────
+# A third cascade web, beside the writing-model one and the word/character-target
+# one above it. Each entry here teaches one project feature that otherwise has no
+# page of its own: tags, the per-row label, point of view, epigraphs, footnotes,
+# chapter mode, comments, backups, versions, trash, spell-check, search and
+# replace, note templates, text replacement, smart punctuation, export styles and
+# the round-trip markers an export can carry. Registered the same way as the two
+# webs above, and cross-linking into them wherever a concept genuinely cites one.
+concept-tag = O etichetă colorată pe care o puteți pune pe orice element, refolosibilă în tot proiectul.
+concept-tag-more = Etichetați un element ca să-l marcați: o etapă, un loc, un fir narativ pe care îl urmăriți. Aceeași etichetă poate sta pe oricâte elemente, iar un element poate purta mai multe. Activați [căutarea în proză](:wm-find-in-prose) pentru o etichetă care numește ceva din carte, un personaj sau un loc, și Skribisto începe să-l caute în proza dumneavoastră.
+concept-label = O notă scurtă pe care o scrieți sub titlul unui element, pentru uzul dumneavoastră.
+concept-label-more = Nu este o [etichetă](:concept-tag): o legendă aparține unui singur element, text simplu fără culoare sau catalog în spate, ceva de felul „primul punct de cotitură” sau „îi trebuie un nume”. O setați din meniul contextual al elementului sau o editați direct în coloana Legendă din Vedere de ansamblu; apare ca un mic subtitlu sub titlu, atât în structură, cât și în flux.
+concept-point-of-view = Prin ochii cui este povestită o scenă: unul sau mai mulți membri ai distribuției poveștii.
+concept-point-of-view-more = Se setează în inspector, lângă distribuție. Dacă alegeți pe cineva care nu este încă în distribuție, este adăugat și acolo. Mai multe puncte de vedere sunt o alegere permisă, utilă pentru o scenă comună sau o schimbare de perspectivă la mijlocul cărții, nu ceva ce Skribisto blochează. Candidații provin din elementele pe care o etichetă cu [căutare în proză](:wm-find-in-prose) le pune în biblia poveștii.
+concept-epigraph = Un citat pus în fruntea unei părți sau a unui capitol.
+concept-epigraph-more = Are un câmp propriu, separat de proza [capitolului](:wm-chapter) sau a [părții](:wm-part); o [scenă](:wm-scene) sau o [notă](:wm-note) nu au motto. Scrieți unul ca pe un citat obișnuit; scrieți mai multe și fiecare devine un bloc de citat separat, tipărit ca motto separat. Cuvintele lui nu sunt niciodată numărate drept cuvinte ale manuscrisului.
+concept-footnote = O trimitere marcată în proză, tipărită ca notă numerotată.
+concept-footnote-more = Trimiterea este un singur semn în textul dumneavoastră, așa că se mută și se șterge exact ca și cuvintele din jur. Numărul ei nu este stocat niciodată: Skribisto îl calculează din nou după locul fiecărei trimiteri în tot manuscrisul, așa că inserarea uneia renumerotează toate notele de după ea. Cuvintele unei note de subsol sunt numărate separat de manuscris, niciodată incluse în el.
+concept-chapter-mode = Dacă un capitol nou este un dosar de scene sau un singur element simplu.
+concept-chapter-mode-more = Se setează în Setări, la Alcătuire. Scrieți direct într-un [capitol](:wm-chapter) în ambele cazuri; singura diferență este dacă poate conține și scene sub el. Ambele forme se compilează în aceeași carte și le puteți combina liber într-un proiect. „Convertește în” trece un capitol existent dintr-o formă în alta fără să piardă niciun cuvânt.
+concept-comment = O notă ancorată într-un fragment exact de proză, afișată în margine.
+concept-comment-more = Ține minte cuvintele la care se referă și contextul lor, nu o poziție fixă, așa că rezistă editărilor obișnuite și unei reîncărcări complete. Răspundeți dedesubt pentru a continua discuția. Dacă citatul exact nu mai poate fi găsit, comentariul o spune, în loc să alunece pe tăcute spre o propoziție greșită.
+concept-backup = O copie a întregului proiect la un anumit moment, păstrată lângă el.
+concept-backup-more = Se face după un program ales de dumneavoastră: la deschidere, la închidere, la interval sau orice combinație, iar copiile vechi sunt eliminate după vechime sau după număr. Deschiderea uneia o încarcă într-o fereastră proprie: puteți să vă uitați și chiar să editați, dar doar „Salvează ca” sau „Restaurează” păstrează ceva. Este diferită de o [versiune](:concept-version), care urmărește trecutul unui singur element.
+concept-version = Trecutul unui element: fiecare modificare a textului sau a sinopsisului său.
+concept-version-more = Construită din istoricul de salvări al proiectului și din copiile de siguranță, cu o intrare pentru fiecare modificare, nu pentru fiecare fișier. Alegeți o intrare pentru a vedea ce s-a schimbat și readuceți doar textul acelui element la ea; restul proiectului nu este atins, iar înainte se face o copie de precauție. Este diferită de o [copie de siguranță](:concept-backup), care copiază totul.
+concept-trash = Un element aruncat la coșul de gunoi este ascuns, nu mutat: rămâne exact unde era.
+concept-trash-more = Aruncarea la coșul de gunoi doar schimbă un indicator: elementul își păstrează locul în clasor, marcat ca inactiv, nu eliminat. Restaurați-l și reapare exact în acel loc, fără să trebuiască reorganizat ceva. „Golește coșul de gunoi” elimină definitiv elementele aruncate, iar fiecare dintre aceste operații este un pas care poate fi anulat, ca orice altă modificare a proiectului.
+concept-spellcheck = Subliniază cuvintele pe care niciun dicționar instalat nu le recunoaște, după limba proiectului.
+concept-spellcheck-more = Fiecare proiect are propria limbă sau propriile limbi de lucru; un element le poate înlocui pentru o scenă scrisă în altă limbă. Adăugați un cuvânt pe care Skribisto nu îl cunoaște din meniul contextual al editorului, într-un dicționar personal care se aplică tuturor proiectelor. Dezactivarea verificării ortografice o oprește peste tot, până o reactivați.
+concept-search-replace = Găsește un cuvânt sau o expresie oriunde în proiect, nu doar în documentul deschis.
+concept-search-replace-more = Caută în toate scenele, notele, titlurile, sinopsisurile și legendele, precum și în comentarii și note de subsol. Majusculele, cuvântul întreg și diacriticele sunt trei comutatoare separate. „Înlocuiește tot” rescrie fiecare potrivire verificată dintr-o singură trecere și un singur pas de anulare, așa că Ctrl+Z anulează tot lotul, nu doar ultima modificare.
+concept-note-template = Un text refolosibil pe care îl inserați în orice lucrați.
+concept-note-template-more = O fișă de personaj goală, un profil de loc, o schemă de ritm narativ: scrieți-o o dată și inserați-o oriunde aveți nevoie, în orice element, nu doar într-o notă. Porniți de la un model inclus, importați un fișier .md sau .djot ori scrieți ceva și alegeți Document ▸ Salvează ca șablon. Este stocat în proiect, așa că un coautor care îl deschide are același set.
+concept-text-replacement = Propriile prescurtări, extinse automat în timp ce tastați.
+concept-text-replacement-more = Stabiliți o prescurtare și înlocuirea ei, „aprx” pentru „aproximativ”, iar ea se extinde în clipa în care tastați după ea un spațiu sau un semn de punctuație. Majusculele urmează ce ați tastat: scrieți prescurtarea cu majusculă și extinderea începe și ea cu majusculă. Un Backspace imediat după extindere anulează doar acea înlocuire. Se activează pentru fiecare proiect și este diferită de [punctuația inteligentă](:concept-smart-punctuation).
+concept-smart-punctuation = Tipografie adaptată limbii, aplicată automat în timp ce tastați: ghilimele, linii, puncte de suspensie.
+concept-smart-punctuation-more = Transformă ghilimelele drepte în ghilimele tipografice, -- în linie scurtă și --- în linie de pauză, ... în puncte de suspensie și, dacă o activați, începe cu o linie de dialog un paragraf tastat ca „- ”. Se setează pentru fiecare proiect și este păstrată în fișierul .skrib, așa că un coautor scrie cu aceleași reguli. Este diferită de [propriile reguli](:concept-text-replacement), pe care le scrieți singur(ă).
+concept-export-style = Un set de opțiuni de export, cu nume: titluri, spațiere, ce se include.
+concept-export-style-more = Un singur stil, refolosit la orice export, indiferent de formatul ales. Stilurile incluse nu pot fi modificate; duplicați unul pentru a avea un punct de pornire pe care îl puteți schimba. Printre opțiunile lui se află includerea [marcajelor de dus-întors](:concept-round-trip-marks), pentru un fișier care pleacă la un redactor și se întoarce.
+concept-round-trip-marks = Semne de carte invizibile, datorită cărora un DOCX sau ODT editat este recunoscut la întoarcere.
+concept-round-trip-marks-more = Sunt scrise doar în cele două formate pe care un redactor le poate trimite înapoi, DOCX și ODT; niciun alt export nu le conține. Sunt semne de carte, nu atribute personalizate: LibreOffice elimină atributele personalizate la salvare, dar lasă semnele de carte intacte. Se activează pentru fiecare [stil de export](:concept-export-style), la „Trimitere către un redactor”.
+concept-status = Unde se află un element în propriul flux de lucru: câte o etapă, mereu înainte.
+concept-status-more = Nu este o [etichetă](:concept-tag): un element are exact o stare, etapele sunt ordonate, iar lista aparține proiectului, așa că o puteți redenumi, reordona sau completa oricând. Un asterisc lângă un capitol sau o carte înseamnă că părțile de dedesubt nu au toate aceeași stare. O setați din inspector, de pe o fișă, dintr-un element al fluxului sau de aici.

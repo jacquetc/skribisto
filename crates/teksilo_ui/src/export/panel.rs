@@ -153,7 +153,10 @@ fn destination_field(ctx: &BuildContext, vm: &ExportViewModel) -> FilePickerFiel
         FilePickerField::new(vm.output_path())
             .kind(FilePickerKind::SaveFile)
             .default_file_name(default_name)
-            .add_filter("Export", &[current_extension(vm)])
+            .add_filter(
+                tr!(dialog_filter_export()).resolve_now(),
+                &[current_extension(vm)],
+            )
             .on_pick(|res, ctx| {
                 crate::models::remember_pick(ctx, crate::models::FolderPurpose::Export, res)
             }),
@@ -397,7 +400,7 @@ impl OptionsColumn {
     /// styles) + a wrap of read-only summary chips.
     fn style_section(&self, catalogue: Vec<Preset>) -> VStack {
         let style = ComboBox::from_items(catalogue, self.vm.preset_signal(), |p: &Preset| {
-            lit!(p.name.clone())
+            crate::export::preset_display_name(p)
         });
         VStack::new()
             .spacing(9.0)
