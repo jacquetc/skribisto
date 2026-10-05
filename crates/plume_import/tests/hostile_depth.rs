@@ -87,6 +87,7 @@ fn import_on_a_long_operation_stack(source: String, out: String) -> anyhow::Resu
                 "Manuscript",
                 "Story Bible",
                 &[],
+                &plume_import::SeededNames::default(),
                 &|_, _| {},
                 &AtomicBool::new(false),
             )

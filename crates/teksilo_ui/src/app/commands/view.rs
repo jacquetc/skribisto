@@ -9,6 +9,7 @@ use teksilo::prelude::*;
 use teksilo::widgets::DockSide;
 
 use super::CommandDeps;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 /// Run a dock command, unless this window's distraction-free surface is up.
 ///
@@ -30,6 +31,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // shadow `RichTextEditor`'s bold.
     ctx.register_shortcut_global(
         Shortcut::new("outline.toggle")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_outline_toggle()))
             .primary(KeyStroke::new(Key::F9, Modifiers::NONE))
             .build(),
@@ -38,6 +40,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // only relayouts, F10 parks/unparks the bottom content via `visible_when`.
     ctx.register_shortcut_global(
         Shortcut::new("preview.toggle")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_preview_toggle()))
             .primary(KeyStroke::new(Key::F10, Modifiers::NONE))
             .build(),
@@ -65,6 +68,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // decorative.
     ctx.register_shortcut_global(
         Shortcut::new("view.margin_lane")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_view_margin_lane()))
             .primary(KeyStroke::new(Key::M, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
@@ -88,6 +92,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // regardless of which widget has focus, same rationale as F9/F10 above.
     ctx.register_shortcut_global(
         Shortcut::new("view.fullscreen")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_view_fullscreen()))
             .primary(KeyStroke::new(Key::F11, Modifiers::NONE))
             .build(),
@@ -112,6 +117,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // F11/F9/F10.
     ctx.register_shortcut_global(
         Shortcut::new("view.focus_mode")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_view_focus_mode()))
             .primary(KeyStroke::new(Key::F11, Modifiers::SHIFT))
             .build(),
@@ -148,6 +154,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // focused widget sees the key, so `RichTextEditor` cannot eat them.
     ctx.register_shortcut_global(
         Shortcut::new("editor.size.increase")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_editor_size_increase()))
             .primary(KeyStroke::ctrl(Key::Character('=')))
             // Ctrl+Plus as an alias, because '+' is Shift+'=' on a US/ISO
@@ -158,12 +165,14 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     ctx.register_shortcut_global(
         Shortcut::new("editor.size.decrease")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_editor_size_decrease()))
             .primary(KeyStroke::ctrl(Key::Character('-')))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("editor.size.reset")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_editor_size_reset()))
             .primary(KeyStroke::ctrl(Key::Character('0')))
             .build(),
@@ -194,6 +203,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // it targets the right editor even in a split view.
     ctx.register_shortcut_global(
         Shortcut::new("editor.find")
+            .group(ShortcutGroup::Edit)
             .name(tr!(shortcut_name_editor_find()))
             .primary(KeyStroke::ctrl(Key::F))
             .build(),
@@ -208,18 +218,21 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // common find-bar chords, all targeting the focused tab.
     ctx.register_shortcut_global(
         Shortcut::new("editor.replace")
+            .group(ShortcutGroup::Edit)
             .name(tr!(shortcut_name_editor_replace()))
             .primary(KeyStroke::ctrl(Key::R))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("editor.find_next")
+            .group(ShortcutGroup::Edit)
             .name(tr!(shortcut_name_editor_find_next()))
             .primary(KeyStroke::new(Key::F3, Modifiers::NONE))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("editor.find_prev")
+            .group(ShortcutGroup::Edit)
             .name(tr!(shortcut_name_editor_find_prev()))
             .primary(KeyStroke::new(Key::F3, Modifiers::SHIFT))
             .build(),
@@ -250,12 +263,14 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // variant.
     ctx.register_shortcut_global(
         Shortcut::new("search.show")
+            .group(ShortcutGroup::Edit)
             .name(tr!(shortcut_name_search_show()))
             .primary(KeyStroke::new(Key::F, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("search.replace")
+            .group(ShortcutGroup::Edit)
             .name(tr!(shortcut_name_search_replace()))
             .primary(KeyStroke::new(Key::H, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),

@@ -2636,3 +2636,42 @@ unit-percent = %{ $value }
 unit-pixels = { $value } px
 settings-paratext-error-no-name = Bir hazır yapının `name` satırı olmalı.
 export-error-no-project = Dışa aktarılacak açık proje yok.
+
+shortcut-group-work = Proje
+shortcut-group-edit = Düzen
+shortcut-group-view = Görünüm
+shortcut-group-document = Belge
+shortcut-group-format = Biçim
+shortcut-group-go = Git
+shortcut-group-tools = Araçlar
+shortcut-group-help = Yardım
+
+## Manuskript import: section headings written into the imported notes.
+import-manuskript-section-paragraph-summary = Paragraf özeti
+import-manuskript-section-full-summary = Tam özet
+import-manuskript-section-motivation = Motivasyon
+import-manuskript-section-epiphany = Aydınlanma
+import-manuskript-section-notes = Notlar
+import-manuskript-section-description = Açıklama
+import-manuskript-section-passion = Tutku
+import-manuskript-section-result = Sonuç
+import-manuskript-section-summary = Özet
+import-manuskript-section-meta = Üst veri
+import-manuskript-section-series = Seri
+import-manuskript-section-volume = Cilt
+import-manuskript-section-genre = Tür
+import-manuskript-section-license = Lisans
+import-manuskript-section-email = E-posta
+# The snowflake ladder's five tellings, shortest first.
+import-manuskript-section-situation = Durum
+import-manuskript-section-sentence = Tek cümle
+import-manuskript-section-paragraph = Tek paragraf
+import-manuskript-section-page = Tek sayfa
+import-manuskript-section-full = Tam özet
+import-manuskript-untitled-project = İçe aktarılan Manuskript projesi
+
+## Plume import: implied story-bible groups and the title of a nameless project.
+import-plume-group-characters = Kişiler
+import-plume-group-items = Nesneler
+import-plume-group-places = Mekânlar
+import-plume-untitled-project = İçe aktarılan Plume projesi

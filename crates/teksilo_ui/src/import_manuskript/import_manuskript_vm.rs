@@ -255,6 +255,12 @@ impl ImportManuskriptViewModel {
                 tr!(import_manuskript_importance_secondary()).into(),
                 tr!(import_manuskript_importance_main()).into(),
             ],
+            // The headings of the notes the import writes, in the order the importer
+            // reads them back. Seeded text, so the interface's language, once.
+            section_names: manuskript_import::map::SectionNames::ORDER
+                .iter()
+                .map(|key| section_name(key))
+                .collect(),
         }
     }
 
@@ -614,9 +620,52 @@ fn folders_too_deep(refused: &FoldersTooDeep) -> LocalizedString {
     ))
 }
 
+/// The heading of one section of an imported note, by its key in
+/// `SectionNames::ORDER`. Goal and Conflict are the note templates' own words, so an
+/// imported character sheet reads like one made from the Character template. A key
+/// this does not know is left blank, which the importer fills with its English.
+fn section_name(key: &str) -> String {
+    let name = match key {
+        "paragraph_summary" => tr!(import_manuskript_section_paragraph_summary()),
+        "full_summary" => tr!(import_manuskript_section_full_summary()),
+        "motivation" => tr!(import_manuskript_section_motivation()),
+        "goal" => tr!(note_template_field_goal()),
+        "conflict" => tr!(note_template_field_conflict()),
+        "epiphany" => tr!(import_manuskript_section_epiphany()),
+        "notes" => tr!(import_manuskript_section_notes()),
+        "description" => tr!(import_manuskript_section_description()),
+        "passion" => tr!(import_manuskript_section_passion()),
+        "result" => tr!(import_manuskript_section_result()),
+        "summary" => tr!(import_manuskript_section_summary()),
+        "meta" => tr!(import_manuskript_section_meta()),
+        "series" => tr!(import_manuskript_section_series()),
+        "volume" => tr!(import_manuskript_section_volume()),
+        "genre" => tr!(import_manuskript_section_genre()),
+        "license" => tr!(import_manuskript_section_license()),
+        "email" => tr!(import_manuskript_section_email()),
+        "situation" => tr!(import_manuskript_section_situation()),
+        "sentence" => tr!(import_manuskript_section_sentence()),
+        "paragraph" => tr!(import_manuskript_section_paragraph()),
+        "page" => tr!(import_manuskript_section_page()),
+        "full" => tr!(import_manuskript_section_full()),
+        "untitled_project" => tr!(import_manuskript_untitled_project()),
+        _ => return String::new(),
+    };
+    name.into()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every heading the importer can write has a translation here: a key with no
+    /// arm in `section_name` would quietly fall back to English in every language.
+    #[test]
+    fn every_section_heading_is_named() {
+        for key in manuskript_import::map::SectionNames::ORDER {
+            assert!(!section_name(key).trim().is_empty(), "{key} has no name");
+        }
+    }
     use std::any::{Any, TypeId};
     use std::collections::HashMap;
     use std::time::Instant;

@@ -15,11 +15,13 @@ use crate::intents::AppIntent;
 
 use super::super::present_export_panel;
 use super::CommandDeps;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Ctrl+Shift+E → the Export Choose… picker (Ctrl+E is the editor's centre-align).
     ctx.register_shortcut_global(
         Shortcut::new("work.export")
+            .group(ShortcutGroup::Work)
             .name(tr!(shortcut_name_work_export()))
             .primary(KeyStroke::new(Key::E, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),

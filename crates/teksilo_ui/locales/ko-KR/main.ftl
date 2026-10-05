@@ -2308,3 +2308,42 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = 구성에는 `name`이 필요합니다.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = 내보낼 프로젝트가 열려 있지 않습니다.
+
+shortcut-group-work = 프로젝트
+shortcut-group-edit = 편집
+shortcut-group-view = 보기
+shortcut-group-document = 문서
+shortcut-group-format = 서식
+shortcut-group-go = 이동
+shortcut-group-tools = 도구
+shortcut-group-help = 도움말
+
+## Manuskript import: section headings written into the imported notes.
+import-manuskript-section-paragraph-summary = 문단 요약
+import-manuskript-section-full-summary = 전체 요약
+import-manuskript-section-motivation = 동기
+import-manuskript-section-epiphany = 깨달음
+import-manuskript-section-notes = 노트
+import-manuskript-section-description = 설명
+import-manuskript-section-passion = 열정
+import-manuskript-section-result = 결과
+import-manuskript-section-summary = 요약
+import-manuskript-section-meta = 메타 정보
+import-manuskript-section-series = 시리즈
+import-manuskript-section-volume = 권
+import-manuskript-section-genre = 장르
+import-manuskript-section-license = 라이선스
+import-manuskript-section-email = 이메일
+# The snowflake ladder's five tellings, shortest first.
+import-manuskript-section-situation = 상황
+import-manuskript-section-sentence = 한 문장
+import-manuskript-section-paragraph = 한 문단
+import-manuskript-section-page = 한 페이지
+import-manuskript-section-full = 전체 요약
+import-manuskript-untitled-project = 가져온 Manuskript 프로젝트
+
+## Plume import: implied story-bible groups and the title of a nameless project.
+import-plume-group-characters = 등장인물
+import-plume-group-items = 사물
+import-plume-group-places = 장소
+import-plume-untitled-project = 가져온 Plume 프로젝트

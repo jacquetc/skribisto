@@ -65,11 +65,16 @@ mod progress_recorder;
 /// as `long_op`.
 pub(crate) mod progress_text;
 pub mod project_links;
+/// Which menu a keyboard shortcut is filed under, for Keymap, the shortcut sheet
+/// and the command palette.
+pub(crate) mod shortcut_group;
 pub mod slug;
 pub mod stamps;
 mod synopsis_placement;
 pub mod text;
 mod typewriter;
+/// The interface's language as a plain tag.
+pub(crate) mod ui_locale;
 /// The **Undo** button a toast offers for one specific operation — shared by
 /// the eight destructive-op toasts so they cannot drift apart again.
 pub(crate) mod undo_toast;

@@ -2915,3 +2915,44 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = Zestaw musi mieć pole `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Brak otwartego projektu do wyeksportowania.
+
+shortcut-group-work = Projekt
+shortcut-group-edit = Edycja
+shortcut-group-view = Widok
+shortcut-group-document = Dokument
+shortcut-group-format = Format
+shortcut-group-go = Przejdź
+shortcut-group-tools = Narzędzia
+shortcut-group-help = Pomoc
+
+## Manuskript import: the headings of the notes it writes and the title of a
+## project with no name. Written into the imported project once, in the
+## interface language.
+import-manuskript-section-paragraph-summary = Podsumowanie w jednym akapicie
+import-manuskript-section-full-summary = Pełne podsumowanie
+import-manuskript-section-motivation = Motywacja
+import-manuskript-section-epiphany = Olśnienie
+import-manuskript-section-notes = Notatki
+import-manuskript-section-description = Opis
+import-manuskript-section-passion = Pasja
+import-manuskript-section-result = Wynik
+import-manuskript-section-summary = Podsumowanie
+import-manuskript-section-meta = Uwagi
+import-manuskript-section-series = Seria
+import-manuskript-section-volume = Tom
+import-manuskript-section-genre = Gatunek
+import-manuskript-section-license = Licencja
+import-manuskript-section-email = E-mail
+import-manuskript-section-situation = Sytuacja
+import-manuskript-section-sentence = Jedno zdanie
+import-manuskript-section-paragraph = Jeden akapit
+import-manuskript-section-page = Jedna strona
+import-manuskript-section-full = Pełne podsumowanie
+import-manuskript-untitled-project = Zaimportowany projekt Manuskript
+
+## Plume import: the story-bible groups an old project implies, and the title
+## of a project with no name.
+import-plume-group-characters = Postacie
+import-plume-group-items = Przedmioty
+import-plume-group-places = Miejsca
+import-plume-untitled-project = Zaimportowany projekt Plume

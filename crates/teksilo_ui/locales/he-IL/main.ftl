@@ -2685,3 +2685,42 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = מבנה חייב לכלול `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = אין פרויקט פתוח לייצוא.
+
+shortcut-group-work = פרויקט
+shortcut-group-edit = עריכה
+shortcut-group-view = תצוגה
+shortcut-group-document = מסמך
+shortcut-group-format = עיצוב
+shortcut-group-go = מעבר
+shortcut-group-tools = כלים
+shortcut-group-help = עזרה
+
+## Manuskript import: section headings written into the imported notes.
+import-manuskript-section-paragraph-summary = תקציר בפסקה
+import-manuskript-section-full-summary = תקציר מלא
+import-manuskript-section-motivation = מניע
+import-manuskript-section-epiphany = הארה
+import-manuskript-section-notes = הערות
+import-manuskript-section-description = תיאור
+import-manuskript-section-passion = תשוקה
+import-manuskript-section-result = תוצאה
+import-manuskript-section-summary = תקציר
+import-manuskript-section-meta = מטא־נתונים
+import-manuskript-section-series = סדרה
+import-manuskript-section-volume = כרך
+import-manuskript-section-genre = ז׳אנר
+import-manuskript-section-license = רישיון
+import-manuskript-section-email = דוא״ל
+# The snowflake ladder's five tellings, shortest first.
+import-manuskript-section-situation = מצב
+import-manuskript-section-sentence = משפט אחד
+import-manuskript-section-paragraph = פסקה אחת
+import-manuskript-section-page = עמוד אחד
+import-manuskript-section-full = תקציר מלא
+import-manuskript-untitled-project = פרויקט Manuskript מיובא
+
+## Plume import: implied story-bible groups and the title of a nameless project.
+import-plume-group-characters = דמויות
+import-plume-group-items = חפצים
+import-plume-group-places = מקומות
+import-plume-untitled-project = פרויקט Plume מיובא

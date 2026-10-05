@@ -2911,3 +2911,44 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = У структуры должна быть строка `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Нет открытого проекта для экспорта.
+
+shortcut-group-work = Проект
+shortcut-group-edit = Правка
+shortcut-group-view = Вид
+shortcut-group-document = Документ
+shortcut-group-format = Формат
+shortcut-group-go = Переход
+shortcut-group-tools = Инструменты
+shortcut-group-help = Справка
+
+## Manuskript import: the headings of the notes it writes and the title of a
+## project with no name. Written into the imported project once, in the
+## interface language.
+import-manuskript-section-paragraph-summary = Содержание в одном абзаце
+import-manuskript-section-full-summary = Полное содержание
+import-manuskript-section-motivation = Мотивация
+import-manuskript-section-epiphany = Прозрение
+import-manuskript-section-notes = Заметки
+import-manuskript-section-description = Описание
+import-manuskript-section-passion = Страсть
+import-manuskript-section-result = Итог
+import-manuskript-section-summary = Краткое содержание
+import-manuskript-section-meta = Примечания
+import-manuskript-section-series = Серия
+import-manuskript-section-volume = Том
+import-manuskript-section-genre = Жанр
+import-manuskript-section-license = Лицензия
+import-manuskript-section-email = Электронная почта
+import-manuskript-section-situation = Ситуация
+import-manuskript-section-sentence = Одно предложение
+import-manuskript-section-paragraph = Один абзац
+import-manuskript-section-page = Одна страница
+import-manuskript-section-full = Полное содержание
+import-manuskript-untitled-project = Импортированный проект Manuskript
+
+## Plume import: the story-bible groups an old project implies, and the title
+## of a project with no name.
+import-plume-group-characters = Персонажи
+import-plume-group-items = Предметы
+import-plume-group-places = Места
+import-plume-untitled-project = Импортированный проект Plume

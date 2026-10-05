@@ -35,6 +35,7 @@ use crate::binder::switcher_button::{BinderSwitcherButton, binder_search_button}
 use crate::docks::create_split_button::CreateSplitButton;
 use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 /// Callback App supplies to the binder tree to open (or focus) an item's editor
 /// tab on activation — keeps the tree decoupled from `EditorsViewModel`.
@@ -596,6 +597,7 @@ impl Widget for OutlineKeys {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         ctx.register_shortcut(
             Shortcut::new(OPEN_TO_SIDE_SHORTCUT)
+                .group(ShortcutGroup::Document)
                 .name(tr!(shortcut_name_outline_open_to_side()))
                 .primary(KeyStroke::new(Key::Enter, Modifiers::CTRL))
                 .build(),

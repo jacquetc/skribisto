@@ -230,6 +230,13 @@ impl ImportPlumeViewModel {
             overwrite,
             manuscript_binder_name: tr!(import_plume_manuscript_binder()).into(),
             story_bible_binder_name: tr!(import_plume_story_bible_binder()).into(),
+            // What the import seeds that Plume never names: an old project's three
+            // story-bible groups and the title of a project with none. In the
+            // importer's order, in the interface's language.
+            seeded_names: plume_import::SeededNames::ORDER
+                .iter()
+                .map(|key| seeded_name(key))
+                .collect(),
         }
     }
 
@@ -582,9 +589,30 @@ fn declares_entities(refused: &XmlDeclaresEntities) -> LocalizedString {
     tr!(import_plume_declares_entities(part = refused.part.clone()))
 }
 
+/// One name the Plume import seeds, by its key in `SeededNames::ORDER`. A key this
+/// does not know is left blank, which the importer fills with its English.
+fn seeded_name(key: &str) -> String {
+    let name = match key {
+        "characters_group" => tr!(import_plume_group_characters()),
+        "items_group" => tr!(import_plume_group_items()),
+        "places_group" => tr!(import_plume_group_places()),
+        "untitled_project" => tr!(import_plume_untitled_project()),
+        _ => return String::new(),
+    };
+    name.into()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*; // brings `FileDialogResult` in via the parent's prelude glob
+
+    /// Every name the importer can seed has a translation here.
+    #[test]
+    fn every_seeded_name_is_named() {
+        for key in plume_import::SeededNames::ORDER {
+            assert!(!seeded_name(key).trim().is_empty(), "{key} has no name");
+        }
+    }
     use std::path::PathBuf;
     use teksilo::widgets::ValidationState;
 

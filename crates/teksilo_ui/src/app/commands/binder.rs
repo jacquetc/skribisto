@@ -16,6 +16,7 @@ use crate::intents::AppIntent;
 use crate::story_bible;
 
 use super::CommandDeps;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
@@ -135,6 +136,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     }
     ctx.register_shortcut_global(
         Shortcut::new("binder.duplicate")
+            .group(ShortcutGroup::Document)
             .name(tr!(shortcut_name_binder_duplicate()))
             .primary(KeyStroke::ctrl(Key::D))
             .build(),

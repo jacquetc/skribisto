@@ -518,13 +518,17 @@ def check_entry_pair(
                     entry.line)
         )
 
-    if base.file.name != entry.file.name:
+    # Only meaningful in the directory layout (`fr-FR/main.ftl` against
+    # `en-US/main.ftl`). In the flat one (`fr.ftl` beside `en.ftl`) every key of
+    # a locale lives in that locale's one file, so the names always differ.
+    flat = base.file.parent == entry.file.parent
+    if not flat and base.file.name != entry.file.name:
         problems.append(
             Problem(
                 locale,
                 "placement",
                 entry.name,
-                f"lives in {entry.file.name} but in {base.file.name} for en-US",
+                f"lives in {entry.file.name} but in {base.file.name} in the base locale",
                 entry.file,
                 entry.line,
             )

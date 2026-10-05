@@ -54,6 +54,7 @@ use frontend::AppContext;
 
 use crate::models::ExamplesListModel;
 use crate::settings::SettingsPanel;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 use crate::shell::launcher_menu::{
     ACTION_IMPORT_MANUSKRIPT, ACTION_IMPORT_PLUME, ACTION_NEW, ACTION_NEW_FROM_DOCUMENTS,
     ACTION_OPEN, ACTION_SETTINGS,
@@ -785,6 +786,7 @@ impl Widget for WelcomePanel {
         // immediately and behaves exactly as before.
         ctx.register_shortcut_global(
             Shortcut::new("app.quit")
+                .group(ShortcutGroup::Work)
                 .name(tr!(shortcut_name_app_quit()))
                 .primary(KeyStroke::ctrl(Key::Q))
                 .build(),
@@ -806,6 +808,7 @@ impl Widget for WelcomePanel {
         // itself, which is what every launch door here does.
         ctx.register_shortcut_global(
             Shortcut::new(ACTION_NEW)
+                .group(ShortcutGroup::Work)
                 .name(tr!(shortcut_name_work_new()))
                 .primary(KeyStroke::ctrl(Key::N))
                 .build(),
@@ -818,6 +821,7 @@ impl Widget for WelcomePanel {
         }
         ctx.register_shortcut_global(
             Shortcut::new(ACTION_OPEN)
+                .group(ShortcutGroup::Work)
                 .name(tr!(shortcut_name_work_open()))
                 .primary(KeyStroke::ctrl(Key::O))
                 .build(),
@@ -850,6 +854,7 @@ impl Widget for WelcomePanel {
         // never be reached by the menu row that fires it.
         ctx.register_shortcut_global(
             Shortcut::new(ACTION_SETTINGS)
+                .group(ShortcutGroup::Work)
                 .name(tr!(shortcut_name_app_settings()))
                 .primary(KeyStroke::ctrl(Key::Character(',')))
                 .build(),
@@ -930,8 +935,8 @@ impl Widget for WelcomePanel {
         // project yet.
         ctx.register_shortcut_global(
             Shortcut::new("help.topics")
+                .group(ShortcutGroup::Help)
                 .name(tr!(shortcut_name_help_topics()))
-                .category("Help")
                 .primary(KeyStroke::new(Key::F1, Modifiers::NONE))
                 .build(),
         );

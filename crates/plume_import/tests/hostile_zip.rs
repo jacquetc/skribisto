@@ -30,6 +30,7 @@ fn import_refusal(archive: &[u8]) -> anyhow::Error {
         "Manuscript",
         "Story bible",
         &[],
+        &plume_import::SeededNames::default(),
         &|_, _| {},
         &AtomicBool::new(false),
     ) {

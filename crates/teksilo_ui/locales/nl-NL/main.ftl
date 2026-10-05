@@ -2633,3 +2633,50 @@ unit-percent = { $value }%
 unit-pixels = { $value } px
 settings-paratext-error-no-name = Een structuur heeft een `name` nodig.
 export-error-no-project = Er is geen project geopend om te exporteren.
+
+shortcut-group-work = Project
+shortcut-group-edit = Bewerken
+shortcut-group-view = Beeld
+shortcut-group-document = Document
+shortcut-group-format = Opmaak
+shortcut-group-go = Ga
+shortcut-group-tools = Extra
+shortcut-group-help = Help
+
+## Manuskript import: the headings of the notes it writes (a character's
+## sheet, a world entry, a plot and its steps, the project details, the
+## snowflake summary ladder) and the title of a project with no name. Written
+## into the imported project once, in the interface language; the writer can
+## rename them like any other text. Goal and Conflict reuse the note templates'
+## own words.
+import-manuskript-section-paragraph-summary = Samenvatting in één alinea
+import-manuskript-section-full-summary = Volledige samenvatting
+import-manuskript-section-motivation = Motivatie
+import-manuskript-section-epiphany = Inzicht
+import-manuskript-section-notes = Notities
+import-manuskript-section-description = Beschrijving
+import-manuskript-section-passion = Passie
+import-manuskript-section-result = Resultaat
+import-manuskript-section-summary = Samenvatting
+import-manuskript-section-meta = Metadata
+import-manuskript-section-series = Reeks
+import-manuskript-section-volume = Deel
+import-manuskript-section-genre = Genre
+import-manuskript-section-license = Licentie
+import-manuskript-section-email = E-mail
+# The snowflake ladder's five tellings, shortest first: one situation, one
+# sentence, one paragraph, one page, the full summary.
+import-manuskript-section-situation = Situatie
+import-manuskript-section-sentence = Eén zin
+import-manuskript-section-paragraph = Eén alinea
+import-manuskript-section-page = Eén pagina
+import-manuskript-section-full = Volledige samenvatting
+import-manuskript-untitled-project = Geïmporteerd Manuskript-project
+
+## Plume import: the story-bible groups an old (0.3 and earlier) project
+## implies without naming them, and the title of a project with no name.
+## Written into the imported project once, in the interface language.
+import-plume-group-characters = Personages
+import-plume-group-items = Voorwerpen
+import-plume-group-places = Plaatsen
+import-plume-untitled-project = Geïmporteerd Plume-project

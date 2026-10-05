@@ -20,6 +20,7 @@ fn names() -> Names {
         project_info_note: "Project information".into(),
         summary_note: "Summary".into(),
         importance: ["Minor".into(), "Secondary".into(), "Main".into()],
+        sections: Default::default(),
     }
 }
 
@@ -604,6 +605,28 @@ fn a_character_becomes_a_note_with_its_sheet_under_headings() {
         "a field the writer added: {body}"
     );
     assert!(body.contains("Bethsaida"), "{body}");
+}
+
+/// The headings are the caller's, not this crate's: the app passes them resolved in
+/// the writer's interface language, and they land in the note as given.
+#[test]
+fn the_sheet_headings_are_the_ones_the_caller_named() {
+    let mut names = names();
+    let mut words = vec![String::new(); map::SectionNames::ORDER.len()];
+    let motivation = map::SectionNames::ORDER
+        .iter()
+        .position(|k| *k == "motivation")
+        .expect("motivation is in the order");
+    words[motivation] = "Motivación".into();
+    names.sections = map::SectionNames::from_list(&words);
+    let mapped = map::build_bundle(&peopled(), &names, &|_, _| {}, &AtomicBool::new(false));
+    let body = prose(find(&mapped, 1, "Peter"), ContentRole::NoteText);
+    assert!(body.contains("## Motivación"), "{body}");
+    assert!(!body.contains("## Motivation"), "{body}");
+    assert!(
+        body.contains("## Full Summary") || !body.contains("Summary"),
+        "a name left blank keeps its English: {body}"
+    );
 }
 
 #[test]

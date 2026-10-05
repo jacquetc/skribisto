@@ -2518,3 +2518,45 @@ unit-percent = { $value }%
 unit-pixels = { $value } px
 settings-paratext-error-no-name = Strukturo bezonas `name`.
 export-error-no-project = Neniu projekto estas malfermita por eksporti.
+
+shortcut-group-work = Verko
+shortcut-group-edit = Redakti
+shortcut-group-view = Vido
+shortcut-group-document = Dokumento
+shortcut-group-format = Formato
+shortcut-group-go = Iri
+shortcut-group-tools = Iloj
+shortcut-group-help = Helpo
+
+## Manuskript import: the headings of the notes it writes (a character's
+## sheet, a world entry, a plot and its steps, the project details, the
+## snowflake summary ladder) and the title of a project with no name.
+import-manuskript-section-paragraph-summary = Resumo en unu alineo
+import-manuskript-section-full-summary = Plena resumo
+import-manuskript-section-motivation = Motivo
+import-manuskript-section-epiphany = Epifanio
+import-manuskript-section-notes = Notoj
+import-manuskript-section-description = Priskribo
+import-manuskript-section-passion = Pasio
+import-manuskript-section-result = Rezulto
+import-manuskript-section-summary = Resumo
+import-manuskript-section-meta = Kromnotoj
+import-manuskript-section-series = Serio
+import-manuskript-section-volume = Volumo
+import-manuskript-section-genre = Ĝenro
+import-manuskript-section-license = Permesilo
+import-manuskript-section-email = Retpoŝto
+# The snowflake ladder's five tellings, shortest first.
+import-manuskript-section-situation = Situacio
+import-manuskript-section-sentence = Unu frazo
+import-manuskript-section-paragraph = Unu alineo
+import-manuskript-section-page = Unu paĝo
+import-manuskript-section-full = Plena resumo
+import-manuskript-untitled-project = Importita Manuskript-projekto
+
+## Plume import: the story-bible groups an old project implies, and the title
+## of a project with no name.
+import-plume-group-characters = Roluloj
+import-plume-group-items = Objektoj
+import-plume-group-places = Lokoj
+import-plume-untitled-project = Importita Plume-projekto

@@ -2636,3 +2636,50 @@ unit-percent = { $value } %
 unit-pixels = { $value } px
 settings-paratext-error-no-name = Rakenteelle on annettava `name`.
 export-error-no-project = Vietävää projektia ei ole auki.
+
+shortcut-group-work = Projekti
+shortcut-group-edit = Muokkaa
+shortcut-group-view = Näytä
+shortcut-group-document = Asiakirja
+shortcut-group-format = Muotoilu
+shortcut-group-go = Siirry
+shortcut-group-tools = Työkalut
+shortcut-group-help = Ohje
+
+## Manuskript import: the headings of the notes it writes (a character's
+## sheet, a world entry, a plot and its steps, the project details, the
+## snowflake summary ladder) and the title of a project with no name. Written
+## into the imported project once, in the interface language; the writer can
+## rename them like any other text. Goal and Conflict reuse the note templates'
+## own words.
+import-manuskript-section-paragraph-summary = Yhteenveto yhtenä kappaleena
+import-manuskript-section-full-summary = Koko yhteenveto
+import-manuskript-section-motivation = Motivaatio
+import-manuskript-section-epiphany = Oivallus
+import-manuskript-section-notes = Muistiinpanot
+import-manuskript-section-description = Kuvaus
+import-manuskript-section-passion = Intohimo
+import-manuskript-section-result = Tulos
+import-manuskript-section-summary = Yhteenveto
+import-manuskript-section-meta = Metatiedot
+import-manuskript-section-series = Sarja
+import-manuskript-section-volume = Osa
+import-manuskript-section-genre = Lajityyppi
+import-manuskript-section-license = Lisenssi
+import-manuskript-section-email = Sähköposti
+# The snowflake ladder's five tellings, shortest first: one situation, one
+# sentence, one paragraph, one page, the full summary.
+import-manuskript-section-situation = Tilanne
+import-manuskript-section-sentence = Yksi virke
+import-manuskript-section-paragraph = Yksi kappale
+import-manuskript-section-page = Yksi sivu
+import-manuskript-section-full = Koko yhteenveto
+import-manuskript-untitled-project = Tuotu Manuskript-projekti
+
+## Plume import: the story-bible groups an old (0.3 and earlier) project
+## implies without naming them, and the title of a project with no name.
+## Written into the imported project once, in the interface language.
+import-plume-group-characters = Henkilöt
+import-plume-group-items = Esineet
+import-plume-group-places = Paikat
+import-plume-untitled-project = Tuotu Plume-projekti

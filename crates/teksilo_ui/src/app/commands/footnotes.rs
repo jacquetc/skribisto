@@ -25,10 +25,12 @@ use teksilo::prelude::*;
 use teksilo::widgets::Toast;
 
 use super::CommandDeps;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_shortcut_global(
         Shortcut::new("editor.insert_footnote")
+            .group(ShortcutGroup::Document)
             .name(tr!(shortcut_name_editor_insert_footnote()))
             .primary(KeyStroke::new(Key::F, Modifiers::CTRL | Modifiers::ALT))
             .build(),

@@ -38,6 +38,7 @@
 use teksilo::prelude::*;
 
 use super::CommandDeps;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     let group = deps.undo_group.clone();
@@ -46,6 +47,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     ctx.register_shortcut_global(
         Shortcut::new("edit.undo")
+            .group(ShortcutGroup::Edit)
             .name(tr!(shortcut_name_edit_undo()))
             .primary(KeyStroke::ctrl(Key::Z))
             .enabled_when(can_undo.clone())
@@ -53,6 +55,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     ctx.register_shortcut_global(
         Shortcut::new("edit.redo")
+            .group(ShortcutGroup::Edit)
             .name(tr!(shortcut_name_edit_redo()))
             // Both of the editor's own redo chords reach the group, so a writer
             // who learned either one keeps it.
@@ -135,6 +138,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     for (id, name, chord, enabled) in clip {
         ctx.register_shortcut_global(
             Shortcut::new(id)
+                .group(ShortcutGroup::Edit)
                 .name(name)
                 .primary(chord)
                 .enabled_when(enabled.clone())

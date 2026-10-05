@@ -18,16 +18,19 @@ use teksilo::prelude::*;
 
 use super::CommandDeps;
 use crate::settings::SettingsViewModel;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_shortcut_global(
         Shortcut::new("comments.add")
+            .group(ShortcutGroup::Format)
             .name(tr!(shortcut_name_comments_add()))
             .primary(KeyStroke::new(Key::M, Modifiers::CTRL | Modifiers::ALT))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("comments.add_paragraph")
+            .group(ShortcutGroup::Format)
             .name(tr!(shortcut_name_comments_add_paragraph()))
             .primary(KeyStroke::new(
                 Key::M,

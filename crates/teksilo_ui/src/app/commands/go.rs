@@ -27,6 +27,7 @@ use teksilo::prelude::*;
 use crate::editors::EditorsViewModel;
 
 use super::CommandDeps;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     register_kind(ctx, deps, "go.next_scene", GoKind::Scene, GoDirection::Next);
@@ -66,12 +67,14 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Alt+Left/Alt+Right, matching the prior-art shape one axis over.
     ctx.register_shortcut_global(
         Shortcut::new("go.next")
+            .group(ShortcutGroup::Go)
             .name(tr!(shortcut_name_go_next()))
             .primary(KeyStroke::new(Key::ArrowDown, Modifiers::ALT))
             .build(),
     );
     ctx.register_shortcut_global(
         Shortcut::new("go.prev")
+            .group(ShortcutGroup::Go)
             .name(tr!(shortcut_name_go_prev()))
             .primary(KeyStroke::new(Key::ArrowUp, Modifiers::ALT))
             .build(),
@@ -101,6 +104,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // not actually present the overlay.
     ctx.register_shortcut_global(
         Shortcut::new("go.to")
+            .group(ShortcutGroup::Go)
             .name(tr!(shortcut_name_go_to()))
             .primary(KeyStroke::ctrl(Key::G))
             .build(),

@@ -33,9 +33,13 @@ skribisto_fonts = { workspace = true }
 # Bundled Noto RTL faces for PDF export (byte accessors only). Explicit features so the
 # accessors always exist regardless of feature unification.
 teksilo-text = { workspace = true, features = ["fonts-arabic", "fonts-hebrew"] }
+# The words an export writes into the book, in the book's language (`manuscript`).
+fluent-bundle = "0.16"
+unic-langid = "0.9"
 
 [dev-dependencies]
 tempfile = "3"
+fluent-syntax = "0.12"
 # The escaping contract in `render::emit` is a round trip, and a round trip is a property:
 # the families of Djot block marker are few, but the shapes inside each are not, and the
 # three rules that preceded the current one each passed a hand-picked list while losing

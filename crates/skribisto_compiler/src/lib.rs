@@ -25,6 +25,9 @@ mod fonts;
 /// must recognise a redundant title with the *same* predicate the exporter uses; two
 /// implementations of "does this title merely restate its number" would drift.
 pub mod headings;
+/// The words an export writes into the book, from a catalogue chosen by the book's
+/// language rather than the app's.
+mod manuscript;
 mod preset;
 /// What an export sent out, kept because the file itself cannot say.
 pub mod receipt;

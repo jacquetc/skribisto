@@ -83,7 +83,10 @@ impl std::fmt::Debug for ShortcutSheet {
 /// built.
 struct Row {
     name: String,
+    /// The group key: rows are grouped by it, in the registry's order.
     category: Option<&'static str>,
+    /// What the group's header says, in the interface language.
+    category_text: Option<String>,
     chord: Option<String>,
 }
 
@@ -128,6 +131,7 @@ impl Widget for ShortcutList {
             .map(|eff| Row {
                 name: eff.shortcut.name.get(),
                 category: eff.shortcut.category,
+                category_text: eff.shortcut.category_text(),
                 chord: eff.primary.map(format_keystroke),
             })
             // A command with no chord belongs in the command palette, not on a page
@@ -139,7 +143,8 @@ impl Widget for ShortcutList {
                 needle.is_empty()
                     || row.name.to_lowercase().contains(&needle)
                     || row
-                        .category
+                        .category_text
+                        .as_deref()
                         .is_some_and(|c| c.to_lowercase().contains(&needle))
                     || row
                         .chord
@@ -152,10 +157,10 @@ impl Widget for ShortcutList {
         let mut last_category: Option<Option<&'static str>> = None;
         for row in &rows {
             if last_category != Some(row.category) {
-                let label = row.category.unwrap_or("");
+                let label = row.category_text.clone().unwrap_or_default();
                 list = list.child(
                     Padding::new(14.0, 6.0, 4.0, 6.0).child(
-                        TextWidget::new(lit!(label.to_string()))
+                        TextWidget::new(lit!(label))
                             .style(TextStyleRole::SmallBold)
                             .color(TextRole::Secondary),
                     ),

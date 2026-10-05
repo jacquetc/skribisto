@@ -97,6 +97,18 @@ pub fn fallback_label_for(
     numbered: Option<&Numbered>,
     work_langs: &[String],
 ) -> Option<String> {
+    let interface = crate::shared::ui_locale::current_tag().unwrap_or_default();
+    fallback_label_in(it, numbered, work_langs, &interface)
+}
+
+/// [`fallback_label_for`] with the interface language given rather than read, so
+/// the case it decides can be tested without a running i18n manager.
+fn fallback_label_in(
+    it: &BinderItemDto,
+    numbered: Option<&Numbered>,
+    work_langs: &[String],
+    interface: &str,
+) -> Option<String> {
     if !it.title.trim().is_empty() {
         return None; // it has a name of its own
     }
@@ -117,7 +129,13 @@ pub fn fallback_label_for(
     } else {
         work_langs
     };
-    let lang = skribisto_model::language::primary(tags);
+    // A project with no language yet has no book language to name the row in. The
+    // writer is reading the app in one, so that is the language the row speaks:
+    // the export, which has the same gap, is a book and keeps its own rule.
+    let lang = match skribisto_model::language::primary(tags) {
+        "" => interface,
+        tag => tag,
+    };
     Some(match numbered {
         // Numbered: the full heading, "Chapter 3".
         Some(n) => skribisto_compiler::headings::numbered(
@@ -292,6 +310,29 @@ mod tests {
         assert_eq!(
             fallback_label_for(&it, Some(&n), &["fr".into()]).as_deref(),
             Some("Chapitre 3")
+        );
+    }
+
+    /// A project with no language yet names its rows in the interface's language, not
+    /// in English: a French writer who has not picked a manuscript language reads
+    /// "Chapitre 3", and one who has picked one reads that language's word.
+    #[test]
+    fn a_project_without_a_language_speaks_the_interface_s() {
+        let it = dto("", BinderItemSubRole::ChapterScene);
+        let n = numbered(StreamLevel::Chapter, 3);
+        assert_eq!(
+            fallback_label_in(&it, Some(&n), &[], "fr-FR").as_deref(),
+            Some("Chapitre 3")
+        );
+        assert_eq!(
+            fallback_label_in(&it, Some(&n), &["de".into()], "fr-FR").as_deref(),
+            Some("Kapitel 3"),
+            "the project's own language wins"
+        );
+        assert_eq!(
+            fallback_label_in(&it, Some(&n), &[], "").as_deref(),
+            Some("Chapter 3"),
+            "no interface language either: the catalogue's source"
         );
     }
 

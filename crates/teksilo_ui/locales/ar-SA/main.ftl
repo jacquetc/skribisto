@@ -3025,3 +3025,42 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = تحتاج البنية إلى `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = لا مشروع مفتوحًا لتصديره.
+
+shortcut-group-work = المشروع
+shortcut-group-edit = تحرير
+shortcut-group-view = عرض
+shortcut-group-document = المستند
+shortcut-group-format = تنسيق
+shortcut-group-go = انتقال
+shortcut-group-tools = أدوات
+shortcut-group-help = مساعدة
+
+## Manuskript import: section headings written into the imported notes.
+import-manuskript-section-paragraph-summary = خلاصة في فقرة
+import-manuskript-section-full-summary = الخلاصة الكاملة
+import-manuskript-section-motivation = الدافع
+import-manuskript-section-epiphany = لحظة الإدراك
+import-manuskript-section-notes = الملاحظات
+import-manuskript-section-description = الوصف
+import-manuskript-section-passion = الشغف
+import-manuskript-section-result = النتيجة
+import-manuskript-section-summary = الخلاصة
+import-manuskript-section-meta = بيانات وصفية
+import-manuskript-section-series = السلسلة
+import-manuskript-section-volume = المجلد
+import-manuskript-section-genre = النوع الأدبي
+import-manuskript-section-license = الترخيص
+import-manuskript-section-email = البريد الإلكتروني
+# The snowflake ladder's five tellings, shortest first.
+import-manuskript-section-situation = الموقف
+import-manuskript-section-sentence = جملة واحدة
+import-manuskript-section-paragraph = فقرة واحدة
+import-manuskript-section-page = صفحة واحدة
+import-manuskript-section-full = الخلاصة الكاملة
+import-manuskript-untitled-project = مشروع Manuskript مستورد
+
+## Plume import: implied story-bible groups and the title of a nameless project.
+import-plume-group-characters = الشخصيات
+import-plume-group-items = الأغراض
+import-plume-group-places = الأماكن
+import-plume-untitled-project = مشروع Plume مستورد

@@ -2796,3 +2796,44 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = Структура повинна мати рядок `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Немає відкритого проєкту для експорту.
+
+shortcut-group-work = Проєкт
+shortcut-group-edit = Зміни
+shortcut-group-view = Вигляд
+shortcut-group-document = Документ
+shortcut-group-format = Формат
+shortcut-group-go = Перехід
+shortcut-group-tools = Інструменти
+shortcut-group-help = Довідка
+
+## Manuskript import: the headings of the notes it writes and the title of a
+## project with no name. Written into the imported project once, in the
+## interface language.
+import-manuskript-section-paragraph-summary = Виклад в одному абзаці
+import-manuskript-section-full-summary = Повний виклад
+import-manuskript-section-motivation = Мотивація
+import-manuskript-section-epiphany = Прозріння
+import-manuskript-section-notes = Нотатки
+import-manuskript-section-description = Опис
+import-manuskript-section-passion = Пристрасть
+import-manuskript-section-result = Підсумок
+import-manuskript-section-summary = Стислий виклад
+import-manuskript-section-meta = Примітки
+import-manuskript-section-series = Серія
+import-manuskript-section-volume = Том
+import-manuskript-section-genre = Жанр
+import-manuskript-section-license = Ліцензія
+import-manuskript-section-email = Електронна пошта
+import-manuskript-section-situation = Ситуація
+import-manuskript-section-sentence = Одне речення
+import-manuskript-section-paragraph = Один абзац
+import-manuskript-section-page = Одна сторінка
+import-manuskript-section-full = Повний виклад
+import-manuskript-untitled-project = Імпортований проєкт Manuskript
+
+## Plume import: the story-bible groups an old project implies, and the title
+## of a project with no name.
+import-plume-group-characters = Персонажі
+import-plume-group-items = Предмети
+import-plume-group-places = Місця
+import-plume-untitled-project = Імпортований проєкт Plume

@@ -68,6 +68,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 use teksilo::prelude::{Action, BuildContext, KeyStroke, Shortcut, Signal};
 use teksilo::widgets::{MenuEntry, MenuItems};
 
@@ -335,6 +336,7 @@ pub fn register_all_extension_commands(ctx: &mut BuildContext, cx: &SeamContext)
         if let Some(s) = &command.shortcut {
             ctx.register_shortcut_global(
                 Shortcut::new(s.name)
+                    .group(ShortcutGroup::Tools)
                     .name(s.label.to_string())
                     .primary(s.primary)
                     .build(),

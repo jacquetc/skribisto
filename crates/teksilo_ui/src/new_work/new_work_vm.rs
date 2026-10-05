@@ -151,7 +151,7 @@ fn load_paratext_presets() -> (Rc<Vec<ParatextPreset>>, Option<String>) {
     // The locale match is the service's own rule, asked once — not restated here, or the
     // two copies drift the first time the precedence changes.
     let preselected = svc
-        .preselect_for_locale(&current_locale_tag().unwrap_or_default())
+        .preselect_for_locale(&crate::shared::ui_locale::current_tag().unwrap_or_default())
         .map(|p| p.id);
     (Rc::new(svc.all()), preselected)
 }
@@ -313,11 +313,6 @@ fn default_location() -> String {
         .unwrap_or_default()
 }
 
-/// The active UI locale tag (e.g. `"en-US"`), used to seed the default language.
-fn current_locale_tag() -> Option<String> {
-    teksilo::i18n::current_locale().map(|sig| sig.get().to_string())
-}
-
 #[derive(Clone)]
 pub struct NewWorkViewModel {
     /// The work's display name (drives the filename slug).
@@ -474,7 +469,7 @@ impl NewWorkViewModel {
             format_idx,
             location_check: location_check(&location),
             location,
-            language: Signal::new(current_locale_tag()),
+            language: Signal::new(crate::shared::ui_locale::current_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
             goal_unit: Signal::new(GoalUnit::default()),
@@ -556,7 +551,7 @@ impl NewWorkViewModel {
             format_idx,
             location_check: location_check(&location),
             location,
-            language: Signal::new(current_locale_tag()),
+            language: Signal::new(crate::shared::ui_locale::current_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
             goal_unit: Signal::new(GoalUnit::default()),

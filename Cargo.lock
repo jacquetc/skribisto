@@ -5661,6 +5661,8 @@ name = "skribisto-compiler"
 version = "3.0.5"
 dependencies = [
  "anyhow",
+ "fluent-bundle",
+ "fluent-syntax",
  "png",
  "proptest",
  "serde",
@@ -5672,6 +5674,7 @@ dependencies = [
  "teksilo-text",
  "tempfile",
  "text-document",
+ "unic-langid",
  "uuid",
  "zip 8.6.0",
 ]
@@ -6645,7 +6648,9 @@ dependencies = [
  "skribisto-export-management",
  "skribisto-fonts",
  "skribisto-frontend",
+ "skribisto-manuskript-import",
  "skribisto-model",
+ "skribisto-plume-import",
  "skribisto-skrib-format",
  "skribisto-spellcheck-engine",
  "slotmap",

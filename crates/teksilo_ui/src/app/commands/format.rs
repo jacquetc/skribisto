@@ -19,6 +19,7 @@ use skribisto_model::scene_break::SceneBreakTier;
 use teksilo::prelude::*;
 
 use super::CommandDeps;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Enter is the paragraph key, so the scene break sits one rung further up
@@ -34,6 +35,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // never swallows these.
     ctx.register_shortcut_global(
         Shortcut::new("format.scene_break")
+            .group(ShortcutGroup::Format)
             .name(tr!(shortcut_name_format_scene_break()))
             .primary(KeyStroke::new(
                 Key::Enter,
@@ -43,6 +45,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     ctx.register_shortcut_global(
         Shortcut::new("format.major_scene_break")
+            .group(ShortcutGroup::Format)
             .name(tr!(shortcut_name_format_major_scene_break()))
             .primary(KeyStroke::new(Key::Enter, Modifiers::CTRL | Modifiers::ALT))
             .build(),
@@ -68,6 +71,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // key handling (whose Ctrl+letter arms are A/C/X/V/B/I/U/Z/Y).
     ctx.register_shortcut_global(
         Shortcut::new("format.link")
+            .group(ShortcutGroup::Format)
             .name(tr!(shortcut_name_format_link()))
             .primary(KeyStroke::new(Key::K, Modifiers::CTRL))
             .build(),
@@ -88,7 +92,10 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // also the path a chord pressed while a *menu* is open takes.
     for mk in crate::format::marks::all() {
         let Some(sc) = mk.shortcut else { continue };
-        let mut shortcut = Shortcut::new(sc.id).name(sc.name).primary(sc.primary);
+        let mut shortcut = Shortcut::new(sc.id)
+            .group(ShortcutGroup::Format)
+            .name(sc.name)
+            .primary(sc.primary);
         if let Some(shifted) = sc.secondary {
             shortcut = shortcut.secondary(shifted);
         }

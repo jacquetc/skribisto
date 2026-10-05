@@ -39,6 +39,7 @@ pub struct ImportPlumeCreatorFileDto {
     pub manuscript_binder_name: String,
     pub story_bible_binder_name: String,
     pub status_names: Vec<String>,
+    pub seeded_names: Vec<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ImportPlumeCreatorFileResultDto {
@@ -60,6 +61,7 @@ pub struct ImportManuskriptProjectDto {
     pub project_info_note_name: String,
     pub summary_note_name: String,
     pub importance_names: Vec<String>,
+    pub section_names: Vec<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ImportManuskriptProjectResultDto {

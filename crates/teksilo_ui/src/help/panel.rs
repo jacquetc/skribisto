@@ -479,7 +479,5 @@ fn reading_typography() -> EditorTypographyDefaults {
 /// The active locale as a plain tag (`"fr-FR"`), or the source locale before the i18n
 /// manager exists (which is the case in a headless test).
 pub(crate) fn current_locale_tag() -> String {
-    teksilo::i18n::current_locale()
-        .map(|sig| sig.get().to_string())
-        .unwrap_or_else(|| super::SOURCE_LOCALE.to_string())
+    crate::shared::ui_locale::current_tag().unwrap_or_else(|| super::SOURCE_LOCALE.to_string())
 }

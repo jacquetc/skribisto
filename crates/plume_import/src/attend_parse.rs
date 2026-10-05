@@ -22,7 +22,7 @@ use super::version::{check_root, parse_xml, version_newer_than};
 /// The newest attendance schema this importer understands.
 const ATTEND_TERMINAL: f64 = 0.6;
 
-pub fn parse(xml: &str) -> Result<PlumeAttendance> {
+pub fn parse(xml: &str, names: &crate::SeededNames) -> Result<PlumeAttendance> {
     let doc = parse_xml("attendance", xml)?;
     let root = doc.root_element();
     check_root(&root, &["plume-attendance", "attendance"], "attendance")?;
@@ -70,7 +70,7 @@ pub fn parse(xml: &str) -> Result<PlumeAttendance> {
             .collect()
     } else {
         // Legacy (≤0.3): flat char/item/place elements → 3 synthesized groups.
-        legacy_groups(&root, &catalogs)
+        legacy_groups(&root, &catalogs, names)
     };
 
     Ok(PlumeAttendance {
@@ -79,7 +79,11 @@ pub fn parse(xml: &str) -> Result<PlumeAttendance> {
     })
 }
 
-fn legacy_groups(root: &roxmltree::Node, catalogs: &[Vec<String>; 3]) -> Vec<PlumeGroup> {
+fn legacy_groups(
+    root: &roxmltree::Node,
+    catalogs: &[Vec<String>; 3],
+    names: &crate::SeededNames,
+) -> Vec<PlumeGroup> {
     let collect = |tag: &str, group_name: &str| -> Option<PlumeGroup> {
         let objs: Vec<PlumeObj> = root
             .descendants()
@@ -97,9 +101,9 @@ fn legacy_groups(root: &roxmltree::Node, catalogs: &[Vec<String>; 3]) -> Vec<Plu
         }
     };
     [
-        collect("char", "Characters"),
-        collect("item", "Items"),
-        collect("place", "Places"),
+        collect("char", &names.characters_group),
+        collect("item", &names.items_group),
+        collect("place", &names.places_group),
     ]
     .into_iter()
     .flatten()
@@ -182,7 +186,7 @@ mod tests {
             </group>
             <group number="3" name="Places"/>
         </plume-attendance>"#;
-        let a = parse(xml).unwrap();
+        let a = parse(xml, &crate::SeededNames::default()).unwrap();
         assert_eq!(a.spinbox_label, "Age :");
         assert_eq!(a.groups.len(), 2);
         let obj = &a.groups[0].objs[0];
@@ -199,7 +203,7 @@ mod tests {
             <char number="1" firstName="Elise" lastName="Laroche" level="0" role="1"/>
             <place number="2" name="Paris"/>
         </attendance>"#;
-        let a = parse(xml).unwrap();
+        let a = parse(xml, &crate::SeededNames::default()).unwrap();
         // Characters (from <char>) + Places (from <place>); Items empty → omitted.
         assert_eq!(a.groups.len(), 2);
         assert_eq!(a.groups[0].name, "Characters");
@@ -208,5 +212,25 @@ mod tests {
         assert_eq!(a.groups[0].objs[0].box_labels[1], "Protagonist"); // role=1 → box_2
         assert_eq!(a.groups[1].name, "Places");
         assert_eq!(a.groups[1].objs[0].name, "Paris");
+    }
+
+    /// The three groups an old project implies are named by the caller, in the
+    /// writer's language, not by this crate.
+    #[test]
+    fn legacy_groups_take_the_names_they_are_given() {
+        let xml = r#"<!DOCTYPE plume><attendance version="0.3">
+            <char number="1" name="Elise"/>
+            <item number="2" name="La clé"/>
+            <place number="3" name="Paris"/>
+        </attendance>"#;
+        let names =
+            crate::SeededNames::from_list(&["Personnages".into(), "Objets".into(), "Lieux".into()]);
+        let a = parse(xml, &names).unwrap();
+        let groups: Vec<&str> = a.groups.iter().map(|g| g.name.as_str()).collect();
+        assert_eq!(groups, ["Personnages", "Objets", "Lieux"]);
+        assert_eq!(
+            names.untitled_project, "Imported Plume project",
+            "a short list keeps the English for the rest"
+        );
     }
 }

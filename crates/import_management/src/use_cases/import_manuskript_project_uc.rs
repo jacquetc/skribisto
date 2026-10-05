@@ -80,6 +80,7 @@ impl ImportManuskriptProjectUseCase {
             project_info_note: self.dto.project_info_note_name.clone(),
             summary_note: self.dto.summary_note_name.clone(),
             importance: [importance_at(0), importance_at(1), importance_at(2)],
+            sections: manuskript::map::SectionNames::from_list(&self.dto.section_names),
         }
     }
 }

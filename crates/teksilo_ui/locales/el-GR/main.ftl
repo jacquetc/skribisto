@@ -2754,3 +2754,44 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = Μια δομή χρειάζεται μια γραμμή `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Δεν υπάρχει ανοιχτό έργο για εξαγωγή.
+
+shortcut-group-work = Έργο
+shortcut-group-edit = Επεξεργασία
+shortcut-group-view = Προβολή
+shortcut-group-document = Έγγραφο
+shortcut-group-format = Μορφή
+shortcut-group-go = Μετάβαση
+shortcut-group-tools = Εργαλεία
+shortcut-group-help = Βοήθεια
+
+## Manuskript import: the headings of the notes it writes and the title of a
+## project with no name. Written into the imported project once, in the
+## interface language.
+import-manuskript-section-paragraph-summary = Περίληψη σε μία παράγραφο
+import-manuskript-section-full-summary = Πλήρης περίληψη
+import-manuskript-section-motivation = Κίνητρα
+import-manuskript-section-epiphany = Συνειδητοποίηση
+import-manuskript-section-notes = Σημειώσεις
+import-manuskript-section-description = Περιγραφή
+import-manuskript-section-passion = Πάθος
+import-manuskript-section-result = Έκβαση
+import-manuskript-section-summary = Περίληψη
+import-manuskript-section-meta = Παρατηρήσεις
+import-manuskript-section-series = Σειρά
+import-manuskript-section-volume = Τόμος
+import-manuskript-section-genre = Είδος
+import-manuskript-section-license = Άδεια χρήσης
+import-manuskript-section-email = Email
+import-manuskript-section-situation = Κατάσταση
+import-manuskript-section-sentence = Μία πρόταση
+import-manuskript-section-paragraph = Μία παράγραφος
+import-manuskript-section-page = Μία σελίδα
+import-manuskript-section-full = Πλήρης περίληψη
+import-manuskript-untitled-project = Εισηγμένο έργο Manuskript
+
+## Plume import: the story-bible groups an old project implies, and the title
+## of a project with no name.
+import-plume-group-characters = Πρόσωπα
+import-plume-group-items = Αντικείμενα
+import-plume-group-places = Τόποι
+import-plume-untitled-project = Εισηγμένο έργο Plume

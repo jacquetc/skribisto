@@ -2567,3 +2567,41 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = Eine Struktur braucht eine Zeile `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Es ist kein Projekt zum Exportieren geöffnet.
+
+shortcut-group-work = Projekt
+shortcut-group-edit = Bearbeiten
+shortcut-group-view = Ansicht
+shortcut-group-document = Dokument
+shortcut-group-format = Format
+shortcut-group-go = Navigation
+shortcut-group-tools = Werkzeuge
+shortcut-group-help = Hilfe
+
+## Manuskript import: the headings of the notes it writes and the title of a project with no name.
+import-manuskript-section-paragraph-summary = Inhaltsangabe in einem Absatz
+import-manuskript-section-full-summary = Vollständige Inhaltsangabe
+import-manuskript-section-motivation = Motivation
+import-manuskript-section-epiphany = Erkenntnis
+import-manuskript-section-notes = Notizen
+import-manuskript-section-description = Beschreibung
+import-manuskript-section-passion = Leidenschaft
+import-manuskript-section-result = Ergebnis
+import-manuskript-section-summary = Inhaltsangabe
+import-manuskript-section-meta = Metadaten
+import-manuskript-section-series = Reihe
+import-manuskript-section-volume = Band
+import-manuskript-section-genre = Genre
+import-manuskript-section-license = Lizenz
+import-manuskript-section-email = E-Mail
+import-manuskript-section-situation = Ausgangssituation
+import-manuskript-section-sentence = Ein Satz
+import-manuskript-section-paragraph = Ein Absatz
+import-manuskript-section-page = Eine Seite
+import-manuskript-section-full = Vollständige Inhaltsangabe
+import-manuskript-untitled-project = Importiertes Manuskript-Projekt
+
+## Plume import: the story-bible groups an old project implies, and the title of a project with no name.
+import-plume-group-characters = Figuren
+import-plume-group-items = Gegenstände
+import-plume-group-places = Orte
+import-plume-untitled-project = Importiertes Plume-Projekt

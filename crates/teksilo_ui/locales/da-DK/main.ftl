@@ -3044,3 +3044,50 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = En struktur skal have en `name`-linje.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Der er intet åbent projekt at eksportere.
+
+shortcut-group-work = Projekt
+shortcut-group-edit = Redigér
+shortcut-group-view = Vis
+shortcut-group-document = Dokument
+shortcut-group-format = Format
+shortcut-group-go = Gå
+shortcut-group-tools = Værktøjer
+shortcut-group-help = Hjælp
+
+## Manuskript import: the headings of the notes it writes (a character's
+## sheet, a world entry, a plot and its steps, the project details, the
+## snowflake summary ladder) and the title of a project with no name. Written
+## into the imported project once, in the interface language; the writer can
+## rename them like any other text. Goal and Conflict reuse the note templates'
+## own words.
+import-manuskript-section-paragraph-summary = Resumé i ét afsnit
+import-manuskript-section-full-summary = Fuldt resumé
+import-manuskript-section-motivation = Motivation
+import-manuskript-section-epiphany = Erkendelse
+import-manuskript-section-notes = Noter
+import-manuskript-section-description = Beskrivelse
+import-manuskript-section-passion = Passion
+import-manuskript-section-result = Resultat
+import-manuskript-section-summary = Resumé
+import-manuskript-section-meta = Metadata
+import-manuskript-section-series = Serie
+import-manuskript-section-volume = Bind
+import-manuskript-section-genre = Genre
+import-manuskript-section-license = Licens
+import-manuskript-section-email = E-mail
+# The snowflake ladder's five tellings, shortest first: one situation, one
+# sentence, one paragraph, one page, the full summary.
+import-manuskript-section-situation = Situation
+import-manuskript-section-sentence = Én sætning
+import-manuskript-section-paragraph = Ét afsnit
+import-manuskript-section-page = Én side
+import-manuskript-section-full = Fuldt resumé
+import-manuskript-untitled-project = Importeret Manuskript-projekt
+
+## Plume import: the story-bible groups an old (0.3 and earlier) project
+## implies without naming them, and the title of a project with no name.
+## Written into the imported project once, in the interface language.
+import-plume-group-characters = Personer
+import-plume-group-items = Genstande
+import-plume-group-places = Steder
+import-plume-untitled-project = Importeret Plume-projekt

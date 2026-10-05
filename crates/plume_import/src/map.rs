@@ -60,6 +60,7 @@ pub fn build_bundle(
     manuscript_name: &str,
     story_bible_name: &str,
     status_names: &[String],
+    seeded: &crate::SeededNames,
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Mapped {
@@ -122,7 +123,7 @@ pub fn build_bundle(
     let title = first_non_empty([
         info.title.as_str(),
         tree.project_name.as_str(),
-        "Imported Plume project",
+        seeded.untitled_project.as_str(),
     ]);
     let work = WorkFile {
         file_id: b.ids.take(),
@@ -1275,6 +1276,7 @@ mod tests {
             "Manuscript",
             "Story Bible",
             &PLUME_LADDER.map(str::to_string),
+            &crate::SeededNames::default(),
             &|_, _| {},
             &AtomicBool::new(false),
         )
@@ -1491,6 +1493,7 @@ mod tests {
             "Manuscript",
             "Story Bible",
             &[],
+            &crate::SeededNames::default(),
             &|_, _| {},
             &AtomicBool::new(false),
         );
@@ -1636,6 +1639,7 @@ mod tests {
             "Manuscript",
             "Story Bible",
             &[],
+            &crate::SeededNames::default(),
             &|_, _| {},
             &AtomicBool::new(false),
         );

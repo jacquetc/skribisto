@@ -2786,3 +2786,44 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = Struktura musí mít řádek `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Není otevřený žádný projekt, který by šlo exportovat.
+
+shortcut-group-work = Projekt
+shortcut-group-edit = Úpravy
+shortcut-group-view = Zobrazení
+shortcut-group-document = Dokument
+shortcut-group-format = Formát
+shortcut-group-go = Přejít
+shortcut-group-tools = Nástroje
+shortcut-group-help = Nápověda
+
+## Manuskript import: the headings of the notes it writes and the title of a
+## project with no name. Written into the imported project once, in the
+## interface language.
+import-manuskript-section-paragraph-summary = Shrnutí v jednom odstavci
+import-manuskript-section-full-summary = Úplné shrnutí
+import-manuskript-section-motivation = Motivace
+import-manuskript-section-epiphany = Prozření
+import-manuskript-section-notes = Poznámky
+import-manuskript-section-description = Popis
+import-manuskript-section-passion = Vášeň
+import-manuskript-section-result = Výsledek
+import-manuskript-section-summary = Shrnutí
+import-manuskript-section-meta = Metadata
+import-manuskript-section-series = Série
+import-manuskript-section-volume = Svazek
+import-manuskript-section-genre = Žánr
+import-manuskript-section-license = Licence
+import-manuskript-section-email = E-mail
+import-manuskript-section-situation = Situace
+import-manuskript-section-sentence = Jedna věta
+import-manuskript-section-paragraph = Jeden odstavec
+import-manuskript-section-page = Jedna strana
+import-manuskript-section-full = Úplné shrnutí
+import-manuskript-untitled-project = Importovaný projekt Manuskript
+
+## Plume import: the story-bible groups an old project implies, and the title
+## of a project with no name.
+import-plume-group-characters = Postavy
+import-plume-group-items = Předměty
+import-plume-group-places = Místa
+import-plume-untitled-project = Importovaný projekt Plume

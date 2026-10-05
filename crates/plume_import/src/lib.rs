@@ -40,6 +40,62 @@ pub struct ImportSummary {
     pub warnings: Vec<ImportNotice>,
 }
 
+/// Text the import writes into the project that Plume itself does not store: the
+/// three story-bible groups an old (0.3 and earlier) project implies without naming,
+/// and the title of a project that names itself nowhere.
+///
+/// Seeded text, so not this crate's to word: the app resolves it in the interface
+/// language, once, and it is stored as it is from then on. [`Default`] is the
+/// English, for tests and for a caller with no catalogue. It crosses
+/// `import_management`'s DTO as one list in [`SeededNames::ORDER`]; a short list
+/// keeps the English for the rest.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SeededNames {
+    pub characters_group: String,
+    pub items_group: String,
+    pub places_group: String,
+    pub untitled_project: String,
+}
+
+impl SeededNames {
+    /// The order the names travel in. Append, never reorder.
+    pub const ORDER: [&'static str; 4] = [
+        "characters_group",
+        "items_group",
+        "places_group",
+        "untitled_project",
+    ];
+
+    /// The names from a list in [`Self::ORDER`]; a missing or blank entry keeps its
+    /// English default.
+    pub fn from_list(list: &[String]) -> Self {
+        let mut names = Self::default();
+        let slots = [
+            &mut names.characters_group,
+            &mut names.items_group,
+            &mut names.places_group,
+            &mut names.untitled_project,
+        ];
+        for (slot, given) in slots.into_iter().zip(list) {
+            if !given.trim().is_empty() {
+                *slot = given.clone();
+            }
+        }
+        names
+    }
+}
+
+impl Default for SeededNames {
+    fn default() -> Self {
+        Self {
+            characters_group: "Characters".to_string(),
+            items_group: "Items".to_string(),
+            places_group: "Places".to_string(),
+            untitled_project: "Imported Plume project".to_string(),
+        }
+    }
+}
+
 /// Convert the Plume project at `source_path` into a `.skrib` zip at `output_path`.
 ///
 /// Progress-free convenience wrapper used by the fixture tests; production code
@@ -60,6 +116,7 @@ pub fn import(
         manuscript_binder_name,
         story_bible_binder_name,
         status_names,
+        &SeededNames::default(),
         &|_, _| {},
         &AtomicBool::new(false),
     )
@@ -84,6 +141,7 @@ pub fn import_with_progress(
     manuscript_binder_name: &str,
     story_bible_binder_name: &str,
     status_names: &[String],
+    seeded: &SeededNames,
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Result<ImportSummary> {
@@ -105,6 +163,7 @@ pub fn import_with_progress(
             manuscript_binder_name,
             story_bible_binder_name,
             status_names,
+            seeded,
             report,
             cancel,
         )
@@ -143,15 +202,15 @@ fn read_and_map(
     manuscript_binder_name: &str,
     story_bible_binder_name: &str,
     status_names: &[String],
+    seeded: &SeededNames,
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Result<map::Mapped> {
     report(12.0, "import.outline");
     let tree = tree_parse::parse(&src.tree_xml).context("reading the Plume outline (tree)")?;
     let attendance = match &src.attendance_xml {
-        Some(xml) => {
-            attend_parse::parse(xml).context("reading the Plume story bible (attendance)")?
-        }
+        Some(xml) => attend_parse::parse(xml, seeded)
+            .context("reading the Plume story bible (attendance)")?,
         None => PlumeAttendance {
             spinbox_label: String::new(),
             groups: Vec::new(),
@@ -193,6 +252,7 @@ fn read_and_map(
         manuscript_binder_name,
         story_bible_binder_name,
         status_names,
+        seeded,
         report,
         cancel,
     ))

@@ -2277,6 +2277,13 @@ features:
       - name: status_names
         type: string
         is_list: true
+      # The three story-bible groups an old (0.3 and earlier) project implies
+      # without naming, and the title of a project that names itself nowhere:
+      # seeded text, resolved by the UI in the writer's interface language. In
+      # `plume_import::SeededNames::ORDER`; a short list keeps the English.
+      - name: seeded_names
+        type: string
+        is_list: true
     dto_out:
       name: ImportPlumeCreatorFileResultDto
       fields:
@@ -2342,6 +2349,15 @@ features:
       # all -- the same shape as Plume's status ladder. Lowest rung first; a
       # short list simply leaves the rungs past its end unnamed.
       - name: importance_names
+        type: string
+        is_list: true
+      # The section headings the imported notes are written with (a character's
+      # Motivation, a plot's Result, the summary ladder's rungs) and the title
+      # of a project that names itself nowhere: text the import writes into the
+      # project, so resolved by the UI in the writer's interface language. In
+      # `manuskript_import::map::SectionNames::ORDER`; a short list keeps the
+      # English for the rest.
+      - name: section_names
         type: string
         is_list: true
     dto_out:

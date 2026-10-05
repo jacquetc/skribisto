@@ -37,6 +37,7 @@ fn names() -> Names {
         project_info_note: "Project information".into(),
         summary_note: "Summary".into(),
         importance: ["Minor".into(), "Secondary".into(), "Main".into()],
+        sections: Default::default(),
     }
 }
 

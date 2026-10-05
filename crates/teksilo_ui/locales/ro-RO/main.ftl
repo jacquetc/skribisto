@@ -3163,3 +3163,45 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = O schemă are nevoie de o linie `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Niciun proiect deschis pentru export.
+
+shortcut-group-work = Proiect
+shortcut-group-edit = Editare
+shortcut-group-view = Vizualizare
+shortcut-group-document = Document
+shortcut-group-format = Formatare
+shortcut-group-go = Navigare
+shortcut-group-tools = Instrumente
+shortcut-group-help = Ajutor
+
+## Manuskript import: the headings of the notes it writes (a character's
+## sheet, a world entry, a plot and its steps, the project details, the
+## snowflake summary ladder) and the title of a project with no name.
+import-manuskript-section-paragraph-summary = Rezumat într-un paragraf
+import-manuskript-section-full-summary = Rezumat complet
+import-manuskript-section-motivation = Motivație
+import-manuskript-section-epiphany = Revelație
+import-manuskript-section-notes = Note
+import-manuskript-section-description = Descriere
+import-manuskript-section-passion = Pasiune
+import-manuskript-section-result = Rezultat
+import-manuskript-section-summary = Rezumat
+import-manuskript-section-meta = Însemnări
+import-manuskript-section-series = Serie
+import-manuskript-section-volume = Volum
+import-manuskript-section-genre = Gen
+import-manuskript-section-license = Licență
+import-manuskript-section-email = E-mail
+# The snowflake ladder's five tellings, shortest first.
+import-manuskript-section-situation = Situație
+import-manuskript-section-sentence = O frază
+import-manuskript-section-paragraph = Un paragraf
+import-manuskript-section-page = O pagină
+import-manuskript-section-full = Rezumat complet
+import-manuskript-untitled-project = Proiect Manuskript importat
+
+## Plume import: the story-bible groups an old project implies, and the title
+## of a project with no name.
+import-plume-group-characters = Personaje
+import-plume-group-items = Obiecte
+import-plume-group-places = Locuri
+import-plume-untitled-project = Proiect Plume importat

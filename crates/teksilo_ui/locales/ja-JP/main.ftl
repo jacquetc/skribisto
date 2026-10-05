@@ -2311,3 +2311,42 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = 構成には `name` が必要です。
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = エクスポートするプロジェクトが開かれていません。
+
+shortcut-group-work = プロジェクト
+shortcut-group-edit = 編集
+shortcut-group-view = 表示
+shortcut-group-document = 文書
+shortcut-group-format = 書式
+shortcut-group-go = 移動
+shortcut-group-tools = ツール
+shortcut-group-help = ヘルプ
+
+## Manuskript import: section headings written into the imported notes.
+import-manuskript-section-paragraph-summary = 段落の要約
+import-manuskript-section-full-summary = 詳細な要約
+import-manuskript-section-motivation = 動機
+import-manuskript-section-epiphany = 気づき
+import-manuskript-section-notes = ノート
+import-manuskript-section-description = 説明
+import-manuskript-section-passion = 情熱
+import-manuskript-section-result = 結果
+import-manuskript-section-summary = 要約
+import-manuskript-section-meta = メタ情報
+import-manuskript-section-series = シリーズ
+import-manuskript-section-volume = 巻
+import-manuskript-section-genre = ジャンル
+import-manuskript-section-license = ライセンス
+import-manuskript-section-email = メールアドレス
+# The snowflake ladder's five tellings, shortest first.
+import-manuskript-section-situation = 状況
+import-manuskript-section-sentence = 一文
+import-manuskript-section-paragraph = 一段落
+import-manuskript-section-page = 1ページ
+import-manuskript-section-full = 詳細な要約
+import-manuskript-untitled-project = インポートした Manuskript プロジェクト
+
+## Plume import: implied story-bible groups and the title of a nameless project.
+import-plume-group-characters = 登場人物
+import-plume-group-items = 物品
+import-plume-group-places = 場所
+import-plume-untitled-project = インポートした Plume プロジェクト

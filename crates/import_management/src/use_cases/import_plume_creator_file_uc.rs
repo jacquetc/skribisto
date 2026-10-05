@@ -91,6 +91,9 @@ impl LongOperation for ImportPlumeCreatorFileUseCase {
             // as it does the two binder names above; an empty list means "seed no
             // statuses", and every node's status is then dropped rather than dangled.
             &self.dto.status_names,
+            // The groups an old project implies and the fallback title, worded by the
+            // caller in the writer's language like the names above.
+            &plume::SeededNames::from_list(&self.dto.seeded_names),
             &report,
             &cancel_flag,
         )

@@ -3043,3 +3043,52 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = A preset needs a `name`.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = No project is open to export.
+
+## Shortcut groups (Settings ▸ Keymap, Help ▸ Keyboard shortcuts, the command
+## palette): each menu's title, without its mnemonic.
+shortcut-group-work = Work
+shortcut-group-edit = Edit
+shortcut-group-view = View
+shortcut-group-document = Document
+shortcut-group-format = Format
+shortcut-group-go = Go
+shortcut-group-tools = Tools
+shortcut-group-help = Help
+
+## Manuskript import: the headings of the notes it writes (a character's
+## sheet, a world entry, a plot and its steps, the project details, the
+## snowflake summary ladder) and the title of a project with no name. Written
+## into the imported project once, in the interface language; the writer can
+## rename them like any other text. Goal and Conflict reuse the note templates'
+## own words.
+import-manuskript-section-paragraph-summary = Paragraph summary
+import-manuskript-section-full-summary = Full summary
+import-manuskript-section-motivation = Motivation
+import-manuskript-section-epiphany = Epiphany
+import-manuskript-section-notes = Notes
+import-manuskript-section-description = Description
+import-manuskript-section-passion = Passion
+import-manuskript-section-result = Result
+import-manuskript-section-summary = Summary
+import-manuskript-section-meta = Meta
+import-manuskript-section-series = Series
+import-manuskript-section-volume = Volume
+import-manuskript-section-genre = Genre
+import-manuskript-section-license = License
+import-manuskript-section-email = Email
+# The snowflake ladder's five tellings, shortest first: one situation, one
+# sentence, one paragraph, one page, the full summary.
+import-manuskript-section-situation = Situation
+import-manuskript-section-sentence = One sentence
+import-manuskript-section-paragraph = One paragraph
+import-manuskript-section-page = One page
+import-manuskript-section-full = Full summary
+import-manuskript-untitled-project = Imported Manuskript project
+
+## Plume import: the story-bible groups an old (0.3 and earlier) project
+## implies without naming them, and the title of a project with no name.
+## Written into the imported project once, in the interface language.
+import-plume-group-characters = Characters
+import-plume-group-items = Items
+import-plume-group-places = Places
+import-plume-untitled-project = Imported Plume project

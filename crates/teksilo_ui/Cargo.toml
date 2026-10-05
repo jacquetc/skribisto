@@ -84,6 +84,11 @@ binder_ordering = { workspace = true }
 # retention policy type + the retention/fingerprint/sniff helpers used by the
 # backup scheduler, backups list, and open-a-backup flow.
 skrib_format = { workspace = true }
+# Direct edge for `SectionNames::ORDER`: the Manuskript import's note headings are
+# resolved here, in the writer's language, and handed down in that order.
+manuskript_import = { workspace = true }
+# Same, for `SeededNames::ORDER` (the Plume import's seeded group names).
+plume_import = { workspace = true }
 common = { workspace = true }
 # The durable per-row identity (`BinderItem.uid` / `Binder.uid`) is a real
 # `uuid::Uuid`, and the Overview table keys its tree — and, later, its persisted

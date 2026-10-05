@@ -2566,3 +2566,45 @@ unit-pixels = { $value } px
 settings-paratext-error-no-name = A szerkezethez kell egy `name` sor.
 # Export: started with no project open (a menu raced a close).
 export-error-no-project = Nincs megnyitott projekt, amelyet exportálni lehetne.
+
+shortcut-group-work = Projekt
+shortcut-group-edit = Szerkesztés
+shortcut-group-view = Nézet
+shortcut-group-document = Dokumentum
+shortcut-group-format = Formátum
+shortcut-group-go = Ugrás
+shortcut-group-tools = Eszközök
+shortcut-group-help = Súgó
+
+## Manuskript import: the headings of the notes it writes (a character's
+## sheet, a world entry, a plot and its steps, the project details, the
+## snowflake summary ladder) and the title of a project with no name.
+import-manuskript-section-paragraph-summary = Egybekezdéses összefoglaló
+import-manuskript-section-full-summary = Teljes összefoglaló
+import-manuskript-section-motivation = Motiváció
+import-manuskript-section-epiphany = Ráébredés
+import-manuskript-section-notes = Jegyzetek
+import-manuskript-section-description = Leírás
+import-manuskript-section-passion = Szenvedély
+import-manuskript-section-result = Eredmény
+import-manuskript-section-summary = Összefoglaló
+import-manuskript-section-meta = Megjegyzések
+import-manuskript-section-series = Sorozat
+import-manuskript-section-volume = Kötet
+import-manuskript-section-genre = Műfaj
+import-manuskript-section-license = Licenc
+import-manuskript-section-email = E-mail
+# The snowflake ladder's five tellings, shortest first.
+import-manuskript-section-situation = Alaphelyzet
+import-manuskript-section-sentence = Egy mondatban
+import-manuskript-section-paragraph = Egy bekezdésben
+import-manuskript-section-page = Egy oldalon
+import-manuskript-section-full = Teljes összefoglaló
+import-manuskript-untitled-project = Importált Manuskript-projekt
+
+## Plume import: the story-bible groups an old project implies, and the title
+## of a project with no name.
+import-plume-group-characters = Szereplők
+import-plume-group-items = Tárgyak
+import-plume-group-places = Helyszínek
+import-plume-untitled-project = Importált Plume-projekt

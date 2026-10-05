@@ -402,7 +402,7 @@ pub(super) fn render_title_page(
     if !w.author_name.trim().is_empty() {
         let mut attrs = std::mem::take(&mut first);
         attrs.push("alignment=center".to_string());
-        let byline = format!("{} {}", headings::by(&lang), w.author_name.trim());
+        let byline = headings::byline(&lang, w.author_name.trim());
         push_para(
             &mut page,
             &text_document::guard_djot_block_start(&escape_title(&byline)),

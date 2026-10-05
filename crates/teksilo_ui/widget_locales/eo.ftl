@@ -323,3 +323,4 @@ grid-view-selection-count = { $count ->
    *[other] { $count } eroj elektitaj
 }
 code-editor-tab-escape-hint = Tab deŝovas. { $next } movas al la sekva regilo, { $previous } al la antaŭa.
+shortcut-settings-uncategorized = Ĝeneralaj

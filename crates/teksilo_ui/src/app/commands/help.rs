@@ -23,6 +23,7 @@ use teksilo::widgets::{CommandPalette, Toast};
 
 use super::CommandDeps;
 use crate::help::window::open_or_focus_help;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 /// One toast surface for the hand-driven check, replaced in place by id rather
 /// than stacked, so pressing the menu row twice leaves one toast and not two.
@@ -56,8 +57,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // the shortcut across platforms.
     ctx.register_shortcut_global(
         Shortcut::new("help.topics")
+            .group(ShortcutGroup::Help)
             .name(tr!(shortcut_name_help_topics()))
-            .category("Help")
             .primary(KeyStroke::new(Key::F1, Modifiers::NONE))
             .build(),
     );
@@ -72,8 +73,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // registry lists it either way.
     ctx.register_shortcut_global(
         Shortcut::new("help.shortcuts")
+            .group(ShortcutGroup::Help)
             .name(tr!(shortcut_name_help_shortcuts()))
-            .category("Help")
             .build(),
     );
     ctx.register_action_global(
@@ -83,8 +84,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     ctx.register_shortcut_global(
         Shortcut::new("help.website")
+            .group(ShortcutGroup::Help)
             .name(tr!(shortcut_name_help_website()))
-            .category("Help")
             .build(),
     );
     ctx.register_action_global(Action::new("help.website").on_invoke(|_i, c| {
@@ -96,8 +97,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     ctx.register_shortcut_global(
         Shortcut::new("help.report")
+            .group(ShortcutGroup::Help)
             .name(tr!(shortcut_name_help_report()))
-            .category("Help")
             .build(),
     );
     ctx.register_action_global(Action::new("help.report").on_invoke(|_i, c| {
@@ -119,8 +120,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     if crate::updates::shows_update_state() {
         ctx.register_shortcut_global(
             Shortcut::new("help.check_updates")
+                .group(ShortcutGroup::Help)
                 .name(tr!(shortcut_name_help_check_updates()))
-                .category("Help")
                 .build(),
         );
         ctx.register_action_global(Action::new("help.check_updates").on_invoke(|_i, c| {
@@ -148,8 +149,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Ctrl+Shift+P: the convention every editor with a palette uses, and unbound here.
     ctx.register_shortcut_global(
         Shortcut::new("app.command_palette")
+            .group(ShortcutGroup::Help)
             .name(tr!(shortcut_name_command_palette()))
-            .category("Help")
             .primary(KeyStroke::ctrl_shift(Key::P))
             .build(),
     );

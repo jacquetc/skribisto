@@ -166,6 +166,7 @@ fn progress_is_reported_monotonically_to_completion() {
         "M",
         "S",
         &ladder(),
+        &crate::SeededNames::default(),
         &|pct, _label| seen.borrow_mut().push(pct),
         &never,
     )
@@ -207,6 +208,7 @@ fn cancel_during_mapping_leaves_no_output_and_preserves_target() {
         "M",
         "S",
         &ladder(),
+        &crate::SeededNames::default(),
         &|pct, _| {
             if pct >= 20.0 {
                 cancel.store(true, Ordering::Relaxed);

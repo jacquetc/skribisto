@@ -11,6 +11,7 @@ use crate::settings::SettingsViewModel;
 
 use super::super::{can_save, offer_missing_dictionaries};
 use super::CommandDeps;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // F7 — the spell-check key every office suite has used for thirty years. A bare function
@@ -19,6 +20,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // commands.
     ctx.register_shortcut_global(
         Shortcut::new("spellcheck.toggle")
+            .group(ShortcutGroup::Tools)
             .name(tr!(shortcut_name_spellcheck_toggle()))
             .primary(KeyStroke::new(Key::F7, Modifiers::NONE))
             .build(),
@@ -100,6 +102,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     let can_save = can_save(&deps.unsaved, &deps.backup_mode);
     ctx.register_shortcut_global(
         Shortcut::new("editor.save")
+            .group(ShortcutGroup::Work)
             .name(tr!(shortcut_name_editor_save()))
             .primary(KeyStroke::ctrl(Key::S))
             .enabled_when(can_save.clone())
@@ -132,6 +135,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // shadow a `RichTextEditor` built-in.
     ctx.register_shortcut_global(
         Shortcut::new("editor.tab.close")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_editor_tab_close()))
             .primary(KeyStroke::ctrl(Key::F4))
             .build(),
@@ -147,6 +151,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     }
     ctx.register_shortcut_global(
         Shortcut::new("editor.tab.pin")
+            .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_editor_tab_pin()))
             .primary(KeyStroke::new(Key::P, Modifiers::CTRL | Modifiers::ALT))
             .build(),

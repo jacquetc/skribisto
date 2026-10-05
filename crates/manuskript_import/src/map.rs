@@ -92,6 +92,156 @@ pub struct Names {
     pub summary_note: String,
     /// The three rungs of Manuskript's importance scale, lowest first.
     pub importance: [String; 3],
+    /// The headings the imported notes are written with.
+    pub sections: SectionNames,
+}
+
+/// The section headings an import writes into its notes, and the title a project
+/// with no name of its own is given.
+///
+/// Manuskript keeps a character's motivation, a plot's result, a world entry's
+/// passion in separate fields; Skribisto writes each as a headed section of one
+/// note, and those headings are text the import puts into the writer's project.
+/// So they are not this crate's to word: the app resolves them in the interface
+/// language, once, and they are stored as they are from then on — the rule every
+/// seeded string follows (tags, statuses, note templates). [`Default`] is the
+/// English, for tests and for a caller with no catalogue.
+///
+/// They cross `import_management`'s DTO as one list, in [`SectionNames::ORDER`];
+/// a short list keeps the English for the rest rather than leaving a heading
+/// blank.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SectionNames {
+    // A character sheet.
+    pub paragraph_summary: String,
+    pub full_summary: String,
+    pub motivation: String,
+    pub goal: String,
+    pub conflict: String,
+    pub epiphany: String,
+    pub notes: String,
+    // A world entry (with `conflict`), a plot (with `summary`), a plot step.
+    pub description: String,
+    pub passion: String,
+    pub result: String,
+    pub summary: String,
+    pub meta: String,
+    // The project details Skribisto has no field for.
+    pub series: String,
+    pub volume: String,
+    pub genre: String,
+    pub license: String,
+    pub email: String,
+    // The snowflake summary ladder, shortest telling first.
+    pub situation: String,
+    pub sentence: String,
+    pub paragraph: String,
+    pub page: String,
+    pub full: String,
+    /// The title of a project that names itself nowhere.
+    pub untitled_project: String,
+}
+
+impl SectionNames {
+    /// The order the names travel in, as a list. Append, never reorder: a list
+    /// built against an older order would put every heading after the change
+    /// under the wrong section.
+    pub const ORDER: [&'static str; 23] = [
+        "paragraph_summary",
+        "full_summary",
+        "motivation",
+        "goal",
+        "conflict",
+        "epiphany",
+        "notes",
+        "description",
+        "passion",
+        "result",
+        "summary",
+        "meta",
+        "series",
+        "volume",
+        "genre",
+        "license",
+        "email",
+        "situation",
+        "sentence",
+        "paragraph",
+        "page",
+        "full",
+        "untitled_project",
+    ];
+
+    fn slots(&mut self) -> [&mut String; 23] {
+        [
+            &mut self.paragraph_summary,
+            &mut self.full_summary,
+            &mut self.motivation,
+            &mut self.goal,
+            &mut self.conflict,
+            &mut self.epiphany,
+            &mut self.notes,
+            &mut self.description,
+            &mut self.passion,
+            &mut self.result,
+            &mut self.summary,
+            &mut self.meta,
+            &mut self.series,
+            &mut self.volume,
+            &mut self.genre,
+            &mut self.license,
+            &mut self.email,
+            &mut self.situation,
+            &mut self.sentence,
+            &mut self.paragraph,
+            &mut self.page,
+            &mut self.full,
+            &mut self.untitled_project,
+        ]
+    }
+
+    /// The names from a list in [`Self::ORDER`]. A missing or blank entry keeps
+    /// its English default.
+    pub fn from_list(list: &[String]) -> Self {
+        let mut names = Self::default();
+        for (slot, given) in names.slots().into_iter().zip(list) {
+            if !given.trim().is_empty() {
+                *slot = given.clone();
+            }
+        }
+        names
+    }
+}
+
+impl Default for SectionNames {
+    fn default() -> Self {
+        let s = |t: &str| t.to_string();
+        Self {
+            paragraph_summary: s("Paragraph Summary"),
+            full_summary: s("Full Summary"),
+            motivation: s("Motivation"),
+            goal: s("Goal"),
+            conflict: s("Conflict"),
+            epiphany: s("Epiphany"),
+            notes: s("Notes"),
+            description: s("Description"),
+            passion: s("Passion"),
+            result: s("Result"),
+            summary: s("Summary"),
+            meta: s("Meta"),
+            series: s("Serie"),
+            volume: s("Volume"),
+            genre: s("Genre"),
+            license: s("License"),
+            email: s("Email"),
+            situation: s("Situation"),
+            sentence: s("Sentence"),
+            paragraph: s("Paragraph"),
+            page: s("Page"),
+            full: s("Full"),
+            untitled_project: s("Imported Manuskript project"),
+        }
+    }
 }
 
 impl Names {
@@ -135,7 +285,7 @@ pub fn build_bundle(
     let title = first_non_empty([
         project.info.title.as_str(),
         project.source_name.as_str(),
-        "Imported Manuskript project",
+        names.sections.untitled_project.as_str(),
     ]);
     let work = WorkFile {
         file_id: b.ids.take(),
@@ -719,14 +869,18 @@ impl Builder<'_> {
     /// an imported sheet and a sheet made from the Character preset read alike.
     /// Empty fields are left out rather than shipped as empty headings.
     fn character_body(&self, character: &Character) -> String {
+        let n = &self.names.sections;
         let mut sections: Vec<(&str, &str)> = vec![
-            ("Paragraph Summary", character.summary_paragraph.as_str()),
-            ("Full Summary", character.summary_full.as_str()),
-            ("Motivation", character.motivation.as_str()),
-            ("Goal", character.goal.as_str()),
-            ("Conflict", character.conflict.as_str()),
-            ("Epiphany", character.epiphany.as_str()),
-            ("Notes", character.notes.as_str()),
+            (
+                n.paragraph_summary.as_str(),
+                character.summary_paragraph.as_str(),
+            ),
+            (n.full_summary.as_str(), character.summary_full.as_str()),
+            (n.motivation.as_str(), character.motivation.as_str()),
+            (n.goal.as_str(), character.goal.as_str()),
+            (n.conflict.as_str(), character.conflict.as_str()),
+            (n.epiphany.as_str(), character.epiphany.as_str()),
+            (n.notes.as_str(), character.notes.as_str()),
         ];
         for (key, value) in &character.infos {
             sections.push((key.as_str(), value.as_str()));
@@ -747,10 +901,11 @@ impl Builder<'_> {
                 return;
             }
             self.tick(&entry.name);
+            let n = &self.names.sections;
             let note = sections_to_djot(&[
-                ("Description", entry.description.as_str()),
-                ("Passion", entry.passion.as_str()),
-                ("Conflict", entry.conflict.as_str()),
+                (n.description.as_str(), entry.description.as_str()),
+                (n.passion.as_str(), entry.passion.as_str()),
+                (n.conflict.as_str(), entry.conflict.as_str()),
             ]);
             let synopsis = plain_text_to_djot_verbatim(&entry.description);
 
@@ -792,10 +947,11 @@ impl Builder<'_> {
     }
 
     fn emit_plot(&mut self, binder: &str, plot: &Plot, tag: u64, out: &mut Vec<BundledItem>) {
+        let n = &self.names.sections;
         let note = sections_to_djot(&[
-            ("Description", plot.description.as_str()),
-            ("Result", plot.result.as_str()),
-            ("Summary", plot.summary.as_str()),
+            (n.description.as_str(), plot.description.as_str()),
+            (n.result.as_str(), plot.result.as_str()),
+            (n.summary.as_str(), plot.summary.as_str()),
         ]);
         let synopsis = plain_text_to_djot_verbatim(&plot.summary);
         let has_steps = !plot.steps.is_empty();
@@ -844,9 +1000,10 @@ impl Builder<'_> {
         }
 
         for step in &plot.steps {
+            let n = &self.names.sections;
             let step_note = sections_to_djot(&[
-                ("Meta", step.meta.as_str()),
-                ("Summary", step.summary.as_str()),
+                (n.meta.as_str(), step.meta.as_str()),
+                (n.summary.as_str(), step.summary.as_str()),
             ]);
             let step_synopsis = plain_text_to_djot_verbatim(&step.summary);
             let (_, mut child) = self.make_item(
@@ -874,12 +1031,13 @@ impl Builder<'_> {
     /// left over.
     fn emit_project_info(&mut self, binder: &str, out: &mut Vec<BundledItem>) {
         let info = &self.project.info;
+        let n = &self.names.sections;
         let note = sections_to_djot(&[
-            ("Serie", info.serie.as_str()),
-            ("Volume", info.volume.as_str()),
-            ("Genre", info.genre.as_str()),
-            ("License", info.license.as_str()),
-            ("Email", info.email.as_str()),
+            (n.series.as_str(), info.serie.as_str()),
+            (n.volume.as_str(), info.volume.as_str()),
+            (n.genre.as_str(), info.genre.as_str()),
+            (n.license.as_str(), info.license.as_str()),
+            (n.email.as_str(), info.email.as_str()),
         ]);
         if note.is_empty() {
             return;
@@ -907,7 +1065,13 @@ impl Builder<'_> {
         if self.project.summary.is_empty() {
             return;
         }
-        let rungs = self.project.summary.rungs();
+        let n = &self.names.sections;
+        let labels = [&n.situation, &n.sentence, &n.paragraph, &n.page, &n.full];
+        let rungs: Vec<(&str, &str)> = labels
+            .iter()
+            .zip(self.project.summary.rungs())
+            .map(|(label, (_, body))| (label.as_str(), body))
+            .collect();
         let note = sections_to_djot(&rungs);
         let title = self.names.summary_note.clone();
         let (_, item) = self.make_item(
@@ -1472,5 +1636,39 @@ fn collect_outline_targets(items: &[OutlineItem], out: &mut HashMap<(char, Strin
             out.insert(('T', id), item.title.clone());
         }
         collect_outline_targets(&item.children, out);
+    }
+}
+
+#[cfg(test)]
+mod section_names_tests {
+    use super::*;
+
+    #[test]
+    fn the_order_names_every_slot_once() {
+        let mut names = SectionNames::default();
+        assert_eq!(names.slots().len(), SectionNames::ORDER.len());
+        let mut sorted = SectionNames::ORDER.to_vec();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(sorted.len(), SectionNames::ORDER.len());
+    }
+
+    #[test]
+    fn a_list_fills_in_order_and_a_gap_keeps_the_english() {
+        let list: Vec<String> = vec![
+            "Résumé (paragraphe)".into(),
+            "  ".into(),
+            "Motivation".into(),
+        ];
+        let names = SectionNames::from_list(&list);
+        assert_eq!(names.paragraph_summary, "Résumé (paragraphe)");
+        assert_eq!(
+            names.full_summary, "Full Summary",
+            "blank keeps the default"
+        );
+        assert_eq!(
+            names.untitled_project, "Imported Manuskript project",
+            "short list"
+        );
     }
 }
