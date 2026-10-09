@@ -493,7 +493,23 @@ fn render_paragraph(
         .map_or(start, |i| i + 1);
     let text: String = chars[start..end].iter().collect();
 
-    let (inline, links) = render_inline(&items, &plain, start..end, fidelity);
+    // A code block's line is written verbatim inside a fence, which holds text only: one
+    // carrying a picture or a note's reference is written as a paragraph of code instead,
+    // its objects kept.
+    let fenced = kind == ParagraphKind::CodeBlock
+        && fidelity != Fidelity::PlainText
+        && frame == Frame::Blocks
+        && items.iter().all(|item| matches!(item, Item::Text { .. }));
+    let items = if kind == ParagraphKind::CodeBlock && !fenced && fidelity != Fidelity::PlainText {
+        as_code(items)
+    } else {
+        items
+    };
+    let (inline, links) = if fenced {
+        (String::new(), Vec::new())
+    } else {
+        render_inline(&items, &plain, start..end, fidelity)
+    };
     let line = guard_djot_line_start(&inline);
     let attributes = match fidelity {
         Fidelity::PlainText => None,
@@ -511,6 +527,16 @@ fn render_paragraph(
             list_flattened = flattened;
             format!("{indent}{marker} {line}")
         }
+        (Frame::Blocks, ParagraphKind::InlineHeading { level })
+            if fidelity != Fidelity::PlainText =>
+        {
+            let hashes = "#".repeat(usize::from(level.clamp(1, 6)));
+            match attributes {
+                Some(attributes) => format!("{attributes}\n{hashes} {line}"),
+                None => format!("{hashes} {line}"),
+            }
+        }
+        (Frame::Blocks, ParagraphKind::CodeBlock) if fenced => code_fence(&text),
         (Frame::Blocks, _) => match attributes {
             Some(attributes) => format!("{attributes}\n{line}"),
             None => line,
@@ -530,6 +556,43 @@ fn render_paragraph(
         list_flattened,
         table_as_paragraphs: false,
     }
+}
+
+/// `items` with every stretch of text marked as code: a code block's line that cannot be
+/// fenced, written as a paragraph of inline code.
+fn as_code(items: Vec<Item>) -> Vec<Item> {
+    items
+        .into_iter()
+        .map(|item| match item {
+            Item::Text { text, style, link } => Item::Text {
+                text,
+                style: RunStyle {
+                    code: true,
+                    ..style
+                },
+                link,
+            },
+            other => other,
+        })
+        .collect()
+}
+
+/// A fenced code block holding the one line `text`, its fence one backtick longer than any
+/// run of backticks inside it (and never shorter than three), so nothing in the line can
+/// close it.
+fn code_fence(text: &str) -> String {
+    let mut longest = 0usize;
+    let mut run = 0usize;
+    for c in text.chars() {
+        if c == '`' {
+            run += 1;
+            longest = longest.max(run);
+        } else {
+            run = 0;
+        }
+    }
+    let fence = "`".repeat((longest + 1).max(3));
+    format!("{fence}\n{text}\n{fence}")
 }
 
 /// The indentation a list item at the 0-based `depth` is written with, and whether it had

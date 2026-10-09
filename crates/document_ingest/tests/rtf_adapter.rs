@@ -12,10 +12,13 @@
 
 #![cfg(feature = "rtf")]
 
+use document_ingest::pictures::{PictureRefusal, PlacedPicture};
 use document_ingest::sources::rich::{
     self, Alignment, BlockProps, Direction, ParagraphKind, RichBlock, RichDocument, Run,
 };
-use document_ingest::sources::rtf::{NotCarried, RtfConversion, RtfOptions, to_rich};
+use document_ingest::sources::rtf::{
+    NotCarried, RtfConversion, RtfOptions, SourcedPicture, to_rich,
+};
 use document_ingest::{ImportDiagnostic, SourceBlock, SourceDocument};
 use proptest::prelude::*;
 use std::sync::mpsc;
@@ -366,41 +369,173 @@ fn tables_join_a_cells_paragraphs_and_flatten_a_nested_table() {
 
 // ── pictures ─────────────────────────────────────────────────────────────────
 
+/// A 1×1 PNG, written as RTF writes a picture's data: in hexadecimal.
+const PNG_HEX: &str = "89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c49444154789c63f8ffff3f0005fe02fe0def46b80000000049454e44ae426082";
+
 #[test]
-fn a_picture_is_reported_until_its_bytes_are_stored() {
-    let template = r"{\rtf1 See {\*\shppict{\pict{\*\nisusfilename harbour}\picw400\pich200\picwgoal3000\pichgoal1500\pngblip 89504e47}}{\nonshppict{\pict\wmetafile8 0102}} and {\pict\jpegblip\picw10\pich20 ffd8}.}";
-    let conversion = convert(template);
+fn a_picture_is_brought_in_and_one_that_reads_as_none_is_left_out_with_why() {
+    let template = [
+        r"{\rtf1 See {\*\shppict{\pict{\*\nisusfilename harbour}\picw1\pich1\picwgoal3000\pichgoal1500\pngblip ",
+        PNG_HEX,
+        r"}}{\nonshppict{\pict\wmetafile8 0102}} and {\pict\jpegblip\picw10\pich20 ffd8}.}",
+    ]
+    .concat();
+    let conversion = convert(&template);
     let images: Vec<rich::RunImage> = runs(&conversion.document, 0)
         .iter()
         .filter_map(|r| r.image.clone())
         .collect();
-    assert_eq!(images.len(), 2);
+    assert_eq!(images.len(), 1, "the two bytes named JPEG are no picture");
+    assert!(images[0].src.starts_with("assets/") && images[0].src.ends_with(".png"));
+    assert_eq!(images[0].name, "harbour");
     assert_eq!(
-        (images[0].src.as_str(), images[0].width, images[0].height),
-        ("harbour", 200, 100),
+        (images[0].width, images[0].height),
+        (200, 100),
         "shown at its goal size: fifteen twips to a pixel"
     );
-    assert_eq!((images[1].width, images[1].height), (10, 20));
+    assert_eq!(conversion.pictures.len(), 1, "handed back for the project");
+    assert_eq!(conversion.pictures[0].relative_path(), images[0].src);
     let reported: Vec<&ImportDiagnostic> = conversion
         .diagnostics
         .iter()
         .filter(|d| matches!(d, ImportDiagnostic::ImageNotIngested { .. }))
         .collect();
-    assert_eq!(reported.len(), 2);
+    assert_eq!(reported.len(), 1, "{reported:?}");
 
-    let doc = rtf_reader::parse(&rtf(template)).expect("RTF");
-    let stored = |id: usize, _: &rtf_reader::Picture| Some(format!("assets/picture-{id}.png"));
+    // A caller that keeps pictures itself names them.
+    let doc = rtf_reader::parse(&rtf(&template)).expect("RTF");
+    let stored = |id: usize, _: &rtf_reader::Picture| {
+        Ok(SourcedPicture {
+            placed: PlacedPicture {
+                src: format!("assets/picture-{id}.png"),
+                width: 7,
+                height: 9,
+            },
+            first_frame_only: false,
+        })
+    };
     let options = RtfOptions {
-        origin: ORIGIN,
         picture_source: Some(&stored),
+        ..RtfOptions::new(ORIGIN)
     };
     let stored = to_rich(&doc, &options);
-    let sources: Vec<String> = runs(&stored.document, 0)
+    let images: Vec<(String, u32, u32)> = runs(&stored.document, 0)
         .iter()
-        .filter_map(|r| r.image.as_ref().map(|i| i.src.clone()))
+        .filter_map(|r| r.image.as_ref().map(|i| (i.src.clone(), i.width, i.height)))
         .collect();
-    assert_eq!(sources, ["assets/picture-0.png", "assets/picture-1.png"]);
+    assert_eq!(
+        images,
+        [
+            ("assets/picture-0.png".to_string(), 200, 100),
+            ("assets/picture-1.png".to_string(), 10, 20),
+        ]
+    );
     assert!(stored.diagnostics.is_empty(), "{:?}", stored.diagnostics);
+    assert!(stored.pictures.is_empty());
+}
+
+#[test]
+fn a_picture_past_the_readers_limit_is_left_out_and_the_text_kept() {
+    let mut template = r"{\rtf1 Before {\pict\pngblip ".to_string();
+    template.push_str(&"00".repeat(300));
+    template.push_str(r"} after.}");
+    let options = rtf_reader::Options {
+        limits: rtf_reader::Limits {
+            max_picture_bytes: 256,
+            ..rtf_reader::Limits::default()
+        },
+        ..rtf_reader::Options::default()
+    };
+    let doc = rtf_reader::parse_with(template.as_bytes(), &options).expect("RTF");
+    let conversion = to_rich(&doc, &RtfOptions::new(ORIGIN));
+    assert_eq!(texts(&conversion.document), ["Before  after."]);
+    assert_eq!(
+        conversion.diagnostics,
+        [ImportDiagnostic::ImageNotIngested {
+            path: ORIGIN.into(),
+            target: "picture 1".into(),
+            reason: PictureRefusal::TooLarge,
+        }]
+    );
+}
+
+/// A note's picture stays out, as it does from a Word document: a note keeps its words.
+#[test]
+fn a_picture_in_a_footnote_is_left_out_and_its_words_kept() {
+    let template = [
+        r"{\rtf1 Text{\footnote\pard Note {\pict\pngblip ",
+        PNG_HEX,
+        r"} words.}.}",
+    ]
+    .concat();
+    let conversion = convert(&template);
+    assert_eq!(conversion.document.footnotes.len(), 1);
+    assert!(conversion.pictures.is_empty());
+    assert!(
+        conversion.diagnostics.iter().any(|d| matches!(
+            d,
+            ImportDiagnostic::ImageNotIngested {
+                reason: PictureRefusal::InNote,
+                ..
+            }
+        )),
+        "{:?}",
+        conversion.diagnostics
+    );
+}
+
+#[test]
+fn headings_stay_in_the_prose_and_code_follows_the_callers_fonts_when_asked() {
+    let template = r"{\rtf1{\fonttbl{\f0 Serif;}{\f7 Mono;}}{\stylesheet{\s1 heading 2;}}\pard\s1 A section\par\pard Plain and {\f7 code} here.\par}";
+    let doc = rtf_reader::parse(&rtf(template)).expect("RTF");
+    let options = RtfOptions {
+        headings_in_prose: true,
+        code_fonts: &[7],
+        ..RtfOptions::new(ORIGIN)
+    };
+    let conversion = to_rich(&doc, &options);
+    let kinds: Vec<ParagraphKind> = paragraphs(&conversion.document)
+        .into_iter()
+        .map(|(kind, _, _)| kind)
+        .collect();
+    assert_eq!(
+        kinds,
+        [
+            ParagraphKind::InlineHeading { level: 2 },
+            ParagraphKind::Body
+        ]
+    );
+    let code: Vec<&str> = runs(&conversion.document, 1)
+        .iter()
+        .filter(|r| r.style.code)
+        .map(|r| r.text.as_str())
+        .collect();
+    assert_eq!(code, ["code"]);
+}
+
+#[test]
+fn footnote_labels_come_from_the_caller_when_it_mints_them() {
+    let counter = std::cell::Cell::new(0u32);
+    let mint = || {
+        counter.set(counter.get() + 1);
+        format!("fn{}", counter.get() + 10)
+    };
+    let doc = rtf_reader::parse(&rtf(
+        r"{\rtf1 One{\footnote First.} two{\footnote Second.}.\par}",
+    ))
+    .expect("RTF");
+    let options = RtfOptions {
+        footnote_labels: Some(&mint),
+        ..RtfOptions::new(ORIGIN)
+    };
+    let conversion = to_rich(&doc, &options);
+    let labels: Vec<&str> = conversion
+        .document
+        .footnotes
+        .iter()
+        .map(|f| f.label.as_str())
+        .collect();
+    assert_eq!(labels, ["fn11", "fn12"]);
 }
 
 // ── what the model has no place for ──────────────────────────────────────────
@@ -693,12 +828,14 @@ fn a_pdf_written_into_the_text_is_reported_where_it_stands() {
         .iter()
         .filter_map(|r| r.image.as_ref().map(|i| i.src.clone()))
         .collect();
-    assert_eq!(images, ["Harbour survey"]);
+    assert!(images.is_empty(), "no picture the editor could not show");
+    assert_eq!(texts(&conversion.document), ["See  here."]);
     assert_eq!(
         conversion.diagnostics,
         [ImportDiagnostic::ImageNotIngested {
             path: ORIGIN.into(),
-            target: "Harbour survey".into()
+            target: "Harbour survey".into(),
+            reason: PictureRefusal::Unsupported { format: "PDF" },
         }]
     );
     assert!(

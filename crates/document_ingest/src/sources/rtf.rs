@@ -18,27 +18,31 @@
 //! * Paragraphs, with centred or flush-right alignment, a right-to-left direction and a page
 //!   break before them (`\pagebb`, or a `\page` in the text before them).
 //! * Headings: a paragraph's outline level, else its style's (following `\sbasedon`), else a
-//!   style named `heading N`. Level 0 is heading 1.
+//!   style named `heading N`. Level 0 is heading 1. They open rows, or stay in the prose
+//!   when the caller asks ([`RtfOptions::headings_in_prose`]).
 //! * List items, ordered or not from the list table (`\levelnfc`, macOS's `\levelmarker`),
 //!   Word 95's `\pn`, or the label the writer stored; nested by `\ilvl`. A list level that
 //!   numbers nothing (`\levelnfc255`) is an indent, not a list.
-//! * Quotations and epigraphs from their style's name, as [`rich::styled_as`] reads a DOCX
-//!   or ODT style.
+//! * Quotations, epigraphs and code blocks from their style's name, as [`rich::styled_as`]
+//!   reads a DOCX or ODT style.
 //! * Bold, italic, underline, strike-through, superscript and subscript. A font's family is
-//!   never read as code: Scrivener for Windows declares every font `\fmodern`.
+//!   never read as code: Scrivener for Windows declares every font `\fmodern`. Code is what
+//!   the caller says it is ([`RtfOptions::code_fonts`]).
 //! * Links to web and mail addresses. The text of any other hyperlink is kept, the link not.
 //! * Footnotes and endnotes, both as footnotes; comments with their range
 //!   (`\atrfstart`/`\atrfend`) or on their paragraph, their replies threaded.
-//! * Tables, a cell's paragraphs joined by spaces. Pictures, as image references at the size
-//!   they are shown; see [`RtfOptions::picture_source`].
+//! * Tables, a cell's paragraphs joined by spaces. Pictures, brought in as a Word document's
+//!   are ([`crate::pictures`]) and shown at the size the file shows them; see
+//!   [`RtfOptions::picture_source`].
 //! * Tabs and every other character, kept as the file has them. A line break
 //!   (`\line`, `\column`, U+2028) ends a paragraph and the rest starts a new one of the same
 //!   kind, as the DOCX scanner does, since Djot keeps no line break inside a paragraph.
 //!
 //! ## What is reported
 //!
-//! In the document-import vocabulary, where it has a word: pictures not stored by the caller
-//! ([`ImportDiagnostic::ImageNotIngested`]), fields other than links, shown as their last
+//! In the document-import vocabulary, where it has a word: pictures left out, with why
+//! ([`ImportDiagnostic::ImageNotIngested`]: a format the editor cannot show, one past the
+//! reader's limits, one inside a note or a comment), fields other than links, shown as their last
 //! result ([`ImportDiagnostic::FieldFlattened`]), text boxes and objects with nothing to show
 //! ([`ImportDiagnostic::TextBoxDropped`], [`ImportDiagnostic::EmbeddedObjectDropped`]),
 //! notes with no text or cited from inside another note
@@ -69,22 +73,51 @@ use super::rich::{
     RichAnnotation, RichBlock, RichDocument, RichFootnote, RichReply, Run, RunStyle,
 };
 use crate::diagnostics::ImportDiagnostic;
+use crate::pictures::{DocumentPictures, IngestedPicture, PictureRefusal, PlacedPicture};
 
-/// Where a picture is kept once the caller has stored its bytes: given its index in
-/// [`Document::pictures`] and the picture, the address the Djot names it by.
-pub type PictureSource<'a> = &'a dyn Fn(usize, &Picture) -> Option<String>;
+/// A picture a caller brought in for the prose, and whether only its first frame came.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourcedPicture {
+    pub placed: PlacedPicture,
+    /// It was an animation, and only its first frame was kept: reported
+    /// ([`ImportDiagnostic::PictureFirstFrameOnly`]).
+    pub first_frame_only: bool,
+}
+
+/// How a caller that keeps pictures itself brings one in: given its index in
+/// [`Document::pictures`] and the picture, where the prose names it, or why it stays out.
+///
+/// A caller importing several documents into one project passes one, so that a picture
+/// shown in two documents is one picture there, and one budget bounds them all.
+pub type PictureSource<'a> = &'a dyn Fn(usize, &Picture) -> Result<SourcedPicture, PictureRefusal>;
+
+/// The label each footnote is given, one call per footnote, in the order the text cites
+/// them.
+pub type FootnoteLabels<'a> = &'a dyn Fn() -> String;
 
 /// How to map one document.
 #[derive(Clone, Copy)]
 pub struct RtfOptions<'a> {
     /// The document's origin, named in every diagnostic.
     pub origin: &'a str,
-    /// Where each picture is kept, when the caller stores their bytes.
+    /// Where each picture is kept, when the caller keeps them itself.
     ///
-    /// A picture it gives no address for keeps its place as a reference named after the
-    /// picture, and is reported ([`ImportDiagnostic::ImageNotIngested`]), as the DOCX and ODT
-    /// scanners do until pictures are stored on import.
+    /// With none, the mapping brings each picture in on its own (see [`crate::pictures`]),
+    /// hands them back in [`RtfConversion::pictures`], and names them in the prose by the
+    /// name they will have in a project.
     pub picture_source: Option<PictureSource<'a>>,
+    /// Headings stay in the prose they are written in ([`ParagraphKind::InlineHeading`])
+    /// rather than opening rows: for a caller whose documents are already rows of their
+    /// own, like a Scrivener project's.
+    pub headings_in_prose: bool,
+    /// Fonts whose text is code, by their number in the font table. A font's family never
+    /// says so (see the module documentation); a caller that knows better from elsewhere,
+    /// such as a character style it resolved, says so here.
+    pub code_fonts: &'a [i32],
+    /// The label of each footnote. With none, each document numbers its own
+    /// ([`FOOTNOTE_LABEL_PREFIX`] and a count), which a caller rewrites; a caller that
+    /// owns the whole project mints the final labels here instead.
+    pub footnote_labels: Option<FootnoteLabels<'a>>,
 }
 
 impl<'a> RtfOptions<'a> {
@@ -92,6 +125,9 @@ impl<'a> RtfOptions<'a> {
         RtfOptions {
             origin,
             picture_source: None,
+            headings_in_prose: false,
+            code_fonts: &[],
+            footnote_labels: None,
         }
     }
 }
@@ -104,6 +140,13 @@ pub struct RtfConversion {
     pub diagnostics: Vec<ImportDiagnostic>,
     /// What it cannot, counted.
     pub not_carried: NotCarried,
+    /// The pictures the mapping brought in itself, each once, when the caller gave no
+    /// [`RtfOptions::picture_source`]: what a project holding this prose must store.
+    pub pictures: Vec<IngestedPicture>,
+    /// For each block of [`Self::document`], the index of the block of the RTF body it came
+    /// from: a paragraph's lines each make a block of their own, so a caller that splits
+    /// the text where the RTF's paragraphs are finds its way back here.
+    pub block_origins: Vec<usize>,
 }
 
 /// Formatting and content the rich model has no place for, counted by kind. See the module
@@ -151,6 +194,9 @@ pub struct NotCarried {
     /// Pieces of the file after the document's own group closed, left out: a stray closing
     /// brace ends a document early, and the text after it with it.
     pub after_document: usize,
+    /// Pictures a list label shows (a picture bullet): the label is not kept, and its
+    /// picture goes with it.
+    pub label_pictures: usize,
 }
 
 impl NotCarried {
@@ -162,14 +208,19 @@ impl NotCarried {
 /// Map a document read by `rtf_reader` onto the rich model.
 pub fn to_rich(doc: &Document, options: &RtfOptions<'_>) -> RtfConversion {
     let mut mapper = Mapper::new(doc, options);
-    for block in &doc.body {
+    let mut origins: Vec<usize> = Vec::with_capacity(doc.body.len());
+    for (index, block) in doc.body.iter().enumerate() {
+        let before = mapper.blocks.len();
         match block {
             Block::Paragraph(paragraph) => mapper.paragraph(paragraph),
             Block::Table(table) => mapper.table(table),
         }
+        origins.extend(std::iter::repeat_n(index, mapper.blocks.len() - before));
     }
     let annotations = mapper.annotations();
-    mapper.finish(annotations)
+    let mut conversion = mapper.finish(annotations);
+    conversion.block_origins = origins;
+    conversion
 }
 
 /// A field's result, as a link or not.
@@ -177,7 +228,10 @@ pub fn to_rich(doc: &Document, options: &RtfOptions<'_>) -> RtfConversion {
 enum FieldLink {
     /// A hyperlink to an address a manuscript keeps.
     Web(String),
-    /// Anything else: a link into an application or a bookmark, or not a link at all.
+    /// A link to anything else (a link into an application, a bookmark, a file): its text
+    /// is kept, the link is not.
+    Other,
+    /// Not a link at all.
     Text,
 }
 
@@ -244,6 +298,10 @@ struct Mapper<'d, 'o> {
     range_starts: HashMap<String, Position>,
     range_ends: HashMap<String, Position>,
     pictures_shown: HashSet<usize>,
+    /// Links kept as their words, counted once each.
+    links_counted: HashSet<usize>,
+    /// The pictures brought in when the caller keeps none itself.
+    pictures: DocumentPictures,
     notes_not_carried: usize,
     replies_flattened: usize,
     pending_page_break: bool,
@@ -253,7 +311,7 @@ struct Mapper<'d, 'o> {
 
 impl<'d, 'o> Mapper<'d, 'o> {
     fn new(doc: &'d Document, options: &'o RtfOptions<'o>) -> Self {
-        let mut not_carried = NotCarried::default();
+        let not_carried = NotCarried::default();
         let links = doc
             .fields
             .iter()
@@ -265,10 +323,7 @@ impl<'d, 'o> Mapper<'d, 'o> {
                     Some(fragment) => format!("{target}#{fragment}"),
                     None => target,
                 }),
-                FieldKind::Hyperlink { .. } => {
-                    not_carried.links_kept_as_text += 1;
-                    FieldLink::Text
-                }
+                FieldKind::Hyperlink { .. } => FieldLink::Other,
                 FieldKind::Other { .. } => FieldLink::Text,
             })
             .collect();
@@ -295,6 +350,8 @@ impl<'d, 'o> Mapper<'d, 'o> {
             range_starts: HashMap::new(),
             range_ends: HashMap::new(),
             pictures_shown: HashSet::new(),
+            links_counted: HashSet::new(),
+            pictures: DocumentPictures::new(),
             notes_not_carried: 0,
             replies_flattened: 0,
             pending_page_break: false,
@@ -336,7 +393,13 @@ impl<'d, 'o> Mapper<'d, 'o> {
 
     fn kind_of(&self, paragraph: &Paragraph) -> ParagraphKind {
         if let Some(level) = self.heading_level(paragraph) {
-            return ParagraphKind::Heading { level };
+            return if self.options.headings_in_prose {
+                ParagraphKind::InlineHeading {
+                    level: level.clamp(1, 6),
+                }
+            } else {
+                ParagraphKind::Heading { level }
+            };
         }
         if let Some(item) = self.list_item(paragraph) {
             return item;
@@ -430,7 +493,7 @@ impl<'d, 'o> Mapper<'d, 'o> {
                     pieces.push(Piece::default());
                 }
                 Inline::Picture(id) => {
-                    if let Some(run) = self.picture(*id) {
+                    if let Some(run) = self.picture(*id, context) {
                         push_object(&mut pieces, run);
                     }
                 }
@@ -470,12 +533,23 @@ impl<'d, 'o> Mapper<'d, 'o> {
             italic: run.props.italic,
             underline: run.props.underline,
             strikethrough: run.props.strike,
-            code: false,
+            code: run
+                .props
+                .font
+                .is_some_and(|font| self.options.code_fonts.contains(&font)),
             superscript: run.props.vertical == VerticalPosition::Superscript,
             subscript: run.props.vertical == VerticalPosition::Subscript,
         };
         let link = run.field.and_then(|id| match self.links.get(id) {
             Some(FieldLink::Web(url)) => Some(url.clone()),
+            Some(FieldLink::Other) => {
+                // Counted once per link whose words the text shows, not per field the file
+                // declares: a caller may have turned a field's words into plain text already.
+                if self.links_counted.insert(id) {
+                    self.not_carried.links_kept_as_text += 1;
+                }
+                None
+            }
             _ => None,
         });
         let mut stretch = String::new();
@@ -519,26 +593,68 @@ impl<'d, 'o> Mapper<'d, 'o> {
         }
     }
 
-    fn picture(&mut self, id: usize) -> Option<Run> {
+    /// The picture `id` as an image run where the text shows it, or `None` when it stays out,
+    /// said why ([`ImportDiagnostic::ImageNotIngested`]). A note's or a comment's picture
+    /// stays out, as it does from a Word or an OpenDocument file: those keep their words
+    /// and no picture.
+    fn picture(&mut self, id: usize, context: Context) -> Option<Run> {
         let picture = self.doc.pictures.get(id)?;
         self.pictures_shown.insert(id);
-        let (width, height) = display_size(picture);
-        let source = self
-            .options
-            .picture_source
-            .and_then(|source| source(id, picture));
-        let src = match source {
-            Some(src) => src,
-            None => {
-                let target = picture_name(id, picture);
-                self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
-                    path: self.options.origin.to_string(),
-                    target: target.clone(),
-                });
-                target
+        let name = picture_name(id, picture);
+        let brought = if context == Context::Inner {
+            Err(PictureRefusal::InNote)
+        } else if picture.oversized {
+            Err(PictureRefusal::TooLarge)
+        } else {
+            match self.options.picture_source {
+                Some(source) => source(id, picture),
+                None => self.bring(id, picture, &name),
             }
         };
-        Some(Run::sized_image("", src, width, height))
+        match brought {
+            Ok(sourced) => {
+                if sourced.first_frame_only {
+                    self.diagnostics
+                        .push(ImportDiagnostic::PictureFirstFrameOnly {
+                            path: self.options.origin.to_string(),
+                            target: name.clone(),
+                        });
+                }
+                // The size the file shows it at, else its own.
+                let (width, height) = match display_size(picture) {
+                    (0, _) | (_, 0) => (sourced.placed.width, sourced.placed.height),
+                    shown => shown,
+                };
+                Some(Run::picture("", sourced.placed.src, name, width, height))
+            }
+            Err(reason) => {
+                self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                    path: self.options.origin.to_string(),
+                    target: name,
+                    reason,
+                });
+                None
+            }
+        }
+    }
+
+    /// Bring picture `id` in with this document's own pictures.
+    fn bring(
+        &mut self,
+        id: usize,
+        picture: &Picture,
+        name: &str,
+    ) -> Result<SourcedPicture, PictureRefusal> {
+        if picture.data.is_empty() {
+            return Err(no_bytes(picture));
+        }
+        let brought = self
+            .pictures
+            .bring(&format!("#{id}"), name, || Ok(picture.data.clone()));
+        brought.result.map(|placed| SourcedPicture {
+            placed,
+            first_frame_only: brought.first_frame_only,
+        })
     }
 
     /// The reference to note `id`, its text added to the footnotes. `None` for a note with
@@ -553,7 +669,10 @@ impl<'d, 'o> Mapper<'d, 'o> {
         if note.kind == NoteKind::Endnote {
             self.not_carried.endnotes += 1;
         }
-        let label = format!("{FOOTNOTE_LABEL_PREFIX}{}", self.footnotes.len() + 1);
+        let label = match self.options.footnote_labels {
+            Some(mint) => mint(),
+            None => format!("{FOOTNOTE_LABEL_PREFIX}{}", self.footnotes.len() + 1),
+        };
         self.footnotes.push(RichFootnote {
             label: label.clone(),
             paragraphs: body,
@@ -779,16 +898,11 @@ impl<'d, 'o> Mapper<'d, 'o> {
         let origin = self.options.origin.to_string();
         let diagnostics = &self.doc.diagnostics;
 
-        // Pictures the text never shows (inside a list label, say) are still pictures of the
-        // file the writer may look for.
-        for (id, picture) in self.doc.pictures.iter().enumerate() {
-            if !self.pictures_shown.contains(&id) {
-                self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
-                    path: origin.clone(),
-                    target: picture_name(id, picture),
-                });
-            }
-        }
+        // Pictures the text never shows sit inside a list label (a picture bullet), which is
+        // not kept: counted, as the label's other parts are not.
+        self.not_carried.label_pictures = (0..self.doc.pictures.len())
+            .filter(|id| !self.pictures_shown.contains(id))
+            .count();
         let fields = self
             .doc
             .fields
@@ -879,7 +993,22 @@ impl<'d, 'o> Mapper<'d, 'o> {
             },
             diagnostics: self.diagnostics,
             not_carried: self.not_carried,
+            pictures: self.pictures.into_pictures(),
+            block_origins: Vec::new(),
         }
+    }
+}
+
+/// Why a picture the file names has no bytes to bring in.
+fn no_bytes(picture: &Picture) -> PictureRefusal {
+    match picture.format {
+        // A file beside the RTF in its `.rtfd` package: the RTF holds only its name.
+        PictureFormat::NextAttachment => PictureRefusal::Missing,
+        PictureFormat::Pdf => PictureRefusal::Unsupported { format: "PDF" },
+        PictureFormat::Emf => PictureRefusal::Unsupported { format: "EMF" },
+        PictureFormat::Wmf => PictureRefusal::Unsupported { format: "WMF" },
+        PictureFormat::MacPict => PictureRefusal::Unsupported { format: "PICT" },
+        _ => PictureRefusal::Unreadable,
     }
 }
 

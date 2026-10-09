@@ -981,6 +981,93 @@ fn a_linked_code_span_that_can_read_as_a_definition_keeps_its_words_either_way()
 }
 
 /// Code is written as a verbatim span, its text untouched, fenced past its own backticks.
+/// A heading kept in its prose reads back as a heading at its level, its words and its
+/// alignment kept, and text that looks like markup stays text inside it.
+#[test]
+fn a_heading_in_the_prose_reads_back_at_its_level() {
+    let runs = [plain_run("# Not a marker: 10:30:45")];
+    let body = [plain_run("And the text under it.")];
+    let sources = [
+        Source::Paragraph {
+            kind: ParagraphKind::InlineHeading { level: 2 },
+            runs: &runs,
+            props: centred(),
+        },
+        paragraph(&body, BlockProps::default()),
+    ];
+    let proven = prove(&sources, Frame::Blocks).expect("prove");
+    assert!(proven.members.iter().all(|m| m.exact && !m.reported));
+    assert_eq!(
+        proven.text,
+        "# Not a marker: 10:30:45\nAnd the text under it."
+    );
+    let doc = open(&proven.djot);
+    let blocks = doc.blocks();
+    assert_eq!(blocks[0].block_format().heading_level, Some(2));
+    assert_eq!(
+        blocks[0].block_format().alignment,
+        Some(TdAlignment::Center)
+    );
+    assert_eq!(blocks[1].block_format().heading_level, None);
+}
+
+/// A code block's lines are fenced one each, read back verbatim, and a fence is never closed
+/// by the backticks a line holds.
+#[test]
+fn a_code_block_line_is_fenced_and_reads_back_verbatim() {
+    let first = [plain_run("let x = *y* + `z`;")];
+    let second = [plain_run("```not a fence```")];
+    let sources = [
+        Source::Paragraph {
+            kind: ParagraphKind::CodeBlock,
+            runs: &first,
+            props: BlockProps::default(),
+        },
+        Source::Paragraph {
+            kind: ParagraphKind::CodeBlock,
+            runs: &second,
+            props: BlockProps::default(),
+        },
+    ];
+    let proven = prove(&sources, Frame::Blocks).expect("prove");
+    assert!(
+        proven.members.iter().all(|m| m.exact && !m.reported),
+        "{}",
+        proven.djot
+    );
+    assert_eq!(proven.text, "let x = *y* + `z`;\n```not a fence```");
+    assert!(
+        proven.djot.contains("````\n```not a fence```\n````"),
+        "{}",
+        proven.djot
+    );
+    let doc = open(&proven.djot);
+    assert!(
+        doc.blocks()
+            .iter()
+            .all(|b| b.block_format().is_code_block == Some(true))
+    );
+}
+
+/// A code block's line holding a picture cannot be fenced: it is kept as a paragraph of code,
+/// its picture with it.
+#[test]
+fn a_code_block_line_with_a_picture_is_a_paragraph_of_code() {
+    let runs = [
+        plain_run("see "),
+        Run::sized_image("", "assets/abc.png", 4, 4),
+    ];
+    let sources = [Source::Paragraph {
+        kind: ParagraphKind::CodeBlock,
+        runs: &runs,
+        props: BlockProps::default(),
+    }];
+    let proven = prove(&sources, Frame::Blocks).expect("prove");
+    assert!(proven.members[0].exact, "{}", proven.djot);
+    assert!(proven.djot.starts_with("`see`"), "{}", proven.djot);
+    assert!(proven.djot.contains("assets/abc.png"));
+}
+
 #[test]
 fn a_code_run_is_a_verbatim_span() {
     let code = RunStyle {
@@ -1083,6 +1170,8 @@ fn kind() -> impl Strategy<Value = ParagraphKind> {
         4 => Just(ParagraphKind::Body),
         1 => Just(ParagraphKind::Quote),
         1 => (any::<bool>(), 0u8..3).prop_map(|(ordered, depth)| ParagraphKind::ListItem { ordered, depth }),
+        1 => (1u8..7).prop_map(|level| ParagraphKind::InlineHeading { level }),
+        1 => Just(ParagraphKind::CodeBlock),
     ]
 }
 

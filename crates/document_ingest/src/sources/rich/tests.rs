@@ -831,6 +831,33 @@ fn the_host_applications_own_quote_styles_are_recognised() {
     }
 }
 
+/// Scrivener's block quote under the names its templates ship with in several languages,
+/// and its code block and code span by name.
+#[test]
+fn scriveners_localised_quote_and_code_styles_are_recognised() {
+    for name in [
+        "Block Quote",
+        "Bloquear cita",
+        "Citação",
+        "Citacao",
+        "Citation",
+        "Zitat",
+        "Blockzitat",
+        "Citazione",
+    ] {
+        assert_eq!(styled_as(name), Some(StyledAs::Quote), "{name} is a quote");
+    }
+    assert_eq!(styled_as("Code Block"), Some(StyledAs::CodeBlock));
+    assert_eq!(
+        kind_for_style(StyledAs::CodeBlock),
+        ParagraphKind::CodeBlock
+    );
+    assert!(char_style_is_code("Code Span"));
+    assert!(char_style_is_code("Código em linha"));
+    assert!(!char_style_is_code("Emphasis"));
+    assert!(!char_style_is_code("Code Block"));
+}
+
 /// Everything else is body text. A style whose name merely *contains* one of the
 /// words is not a match: folding is over the whole name, not a substring search, so a
 /// writer's own "Quotebox Caption" stays the caption it is.

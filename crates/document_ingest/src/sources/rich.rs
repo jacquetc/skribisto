@@ -46,7 +46,9 @@
 //! Justified text is not carried (see `emit::attribute_line`). Nor is an underline or a
 //! strike-through on blank space alone, which the editor would drop on its first save; it
 //! is reported instead ([`ImportDiagnostic::StyledSpacesNotCarried`]). Lists become Djot lists,
-//! tables pipe tables, a quotation a blockquote, and an epigraph run one blockquote. A list
+//! tables pipe tables, a quotation a blockquote, and an epigraph run one blockquote. A heading
+//! that stays in its prose ([`ParagraphKind::InlineHeading`]) is a Djot heading, and a code
+//! block's line a fenced block of its own ([`ParagraphKind::CodeBlock`]). A list
 //! item nested deeper than [`MAX_LIST_LEVELS`] is written at that level and reported
 //! ([`ImportDiagnostic::ListNestingFlattened`]).
 //!
@@ -305,6 +307,22 @@ pub enum ParagraphKind {
         ordered: bool,
         depth: u8,
     },
+    /// A heading that stays in the prose it is written in, at `level` (1 to 6): a section
+    /// heading inside a scene or a note, never a row of its own.
+    ///
+    /// Apart from [`ParagraphKind::Heading`] because a source may use headings for two
+    /// things. A Word document's headings are its outline, and each becomes a row. A
+    /// Scrivener document already has its row from the binder, and a heading inside it is
+    /// part of its text: splitting there would invent structure the writer never made.
+    InlineHeading {
+        level: u8,
+    },
+    /// One line of a code block, the source's own named style saying so (`Code Block`).
+    ///
+    /// Written as a fenced block of its own, one per paragraph, so that the proof reads
+    /// back one line for each: a block of several lines would read back as a single
+    /// paragraph holding line breaks, which no offset into it could be proved against.
+    CodeBlock,
 }
 
 /// What a paragraph style says the paragraph *is*, when it says anything at all.
@@ -316,6 +334,8 @@ pub enum ParagraphKind {
 pub enum StyledAs {
     Epigraph,
     Quote,
+    /// A code block: Scrivener's own `Code Block` style.
+    CodeBlock,
 }
 
 /// Read a paragraph style's stable identifier as a claim about the paragraph.
@@ -344,20 +364,41 @@ pub enum StyledAs {
 /// Matching folds case and drops separators, so `Epigraph Attribution`, `epigraph-attribution`
 /// and ODF's own `Epigraph_20_Attribution` escape all answer alike. `_20_` (ODF's escape for a
 /// space) is removed *before* the fold, or it would survive it as a literal `20`.
+///
+/// Scrivener's style names are the one family that *is* localised: a project keeps the names
+/// of the template it was made from, in that template's language. Its block quote is known
+/// here under the names its templates ship with (`Block Quote`, `Bloquear cita`, `Citação`,
+/// `Citation`, `Zitat`, `Citazione`), and its code block by its English name, the only one
+/// measured on real projects.
 pub fn styled_as(identifier: &str) -> Option<StyledAs> {
-    let folded: String = identifier
+    match fold_style_name(identifier).as_str() {
+        "epigraph" | "epigraphattribution" => Some(StyledAs::Epigraph),
+        "quote" | "quotations" | "intensequote" | "blocktext" | "blockquote" | "bloquearcita"
+        | "citação" | "citacao" | "citation" | "zitat" | "blockzitat" | "citazione" => {
+            Some(StyledAs::Quote)
+        }
+        "codeblock" => Some(StyledAs::CodeBlock),
+        _ => None,
+    }
+}
+
+/// Whether a character style's name says its text is code: Scrivener's `Code Span`, in the
+/// two languages its templates were measured in. Folded as [`styled_as`] folds.
+pub fn char_style_is_code(identifier: &str) -> bool {
+    matches!(
+        fold_style_name(identifier).as_str(),
+        "codespan" | "códigoemlinha" | "codigoemlinha"
+    )
+}
+
+/// A style's name with case, separators and ODF's space escape folded away.
+fn fold_style_name(identifier: &str) -> String {
+    identifier
         .replace("_20_", "")
         .chars()
         .filter(|c| c.is_alphanumeric())
         .flat_map(char::to_lowercase)
-        .collect();
-    match folded.as_str() {
-        "epigraph" | "epigraphattribution" => Some(StyledAs::Epigraph),
-        "quote" | "quotations" | "intensequote" | "blocktext" | "blockquote" => {
-            Some(StyledAs::Quote)
-        }
-        _ => None,
-    }
+        .collect()
 }
 
 /// The paragraph kind a resolved style verdict produces.
@@ -368,6 +409,7 @@ pub fn kind_for_style(styled: StyledAs) -> ParagraphKind {
     match styled {
         StyledAs::Epigraph => ParagraphKind::Epigraph,
         StyledAs::Quote => ParagraphKind::Quote,
+        StyledAs::CodeBlock => ParagraphKind::CodeBlock,
     }
 }
 
