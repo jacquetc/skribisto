@@ -15,7 +15,7 @@
 //! across its DTO as JSON (`serde`), and the UI reads them back with the same
 //! derive.
 //!
-//! [`fmt::Display`] is the English wording, for logs, tests and a
+//! [`fmt::Display`](std::fmt::Display) is the English wording, for logs, tests and a
 //! notice the UI cannot decode (one archived by an older build). It is not what
 //! the writer reads in a translated interface.
 

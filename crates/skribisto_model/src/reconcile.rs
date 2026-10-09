@@ -9,7 +9,7 @@
 //! pure function over two ordered lists.
 //!
 //! Store-free and headless on purpose, the way `binder_ordering` and
-//! [`analysis`](crate::analysis) are: the caller reads the binder and the plan, and this
+//! [`analysis`] are: the caller reads the binder and the plan, and this
 //! decides. That keeps the interesting logic — the part that is easy to get subtly wrong and
 //! impossible to eyeball in a UI — testable without a database, a document or a window.
 //!

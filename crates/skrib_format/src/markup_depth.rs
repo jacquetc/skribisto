@@ -68,9 +68,9 @@
 //! # The limits
 //!
 //! Markdown's is the Djot ceiling itself,
-//! [`MAX_MARKDOWN_DEPTH`](crate::markup_depth::MAX_MARKDOWN_DEPTH): nothing deeper
+//! [`MAX_MARKDOWN_DEPTH`]: nothing deeper
 //! could be stored anyway, and nothing at it comes near the reader's or the
-//! writers' limits. HTML's, [`MAX_HTML_DEPTH`](crate::markup_depth::MAX_HTML_DEPTH),
+//! writers' limits. HTML's, [`MAX_HTML_DEPTH`],
 //! is 64 elements, half the depth at which the reader starts dropping text, which
 //! leaves the other half for the elements the tree builder adds on its own. The Qt
 //! rich text Plume, Manuskript and older Skribisto projects store rarely nests ten.

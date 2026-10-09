@@ -22,7 +22,7 @@
 //! # Two defences, and why both
 //!
 //! 1. [`check`](crate::xml_depth::check) reads the bytes before any parser does and refuses a document nested
-//!    past [`MAX_DEPTH`](crate::xml_depth::MAX_DEPTH) with a typed [`XmlTooDeep`](crate::xml_depth::XmlTooDeep). The scan is a loop, never a
+//!    past [`MAX_DEPTH`](crate::xml_depth::MAX_DEPTH) with a typed [`XmlTooDeep`]. The scan is a loop, never a
 //!    recursion, so it cannot overflow on the input it exists to refuse.
 //! 2. [`parse`](crate::xml_depth::parse), [`on_parser_stack`](crate::xml_depth::on_parser_stack) and [`on_parser_stack_reporting`](crate::xml_depth::on_parser_stack_reporting) run the
 //!    parser, and the walks that follow it, on a thread of their own with
@@ -114,7 +114,7 @@
 //! outline as folders, one per level, and the importer recurses once per level of
 //! it just as it would once per element. A folder path inside a zip is text, up to
 //! 64 KiB of it, with no parser in front of the recursion. So the same ceiling
-//! applies, and [`FoldersTooDeep`](crate::xml_depth::FoldersTooDeep) is its
+//! applies, and [`FoldersTooDeep`] is its
 //! refusal, travelling to the writer the same way.
 //!
 //! # Every platform, not only the one the tests ran on

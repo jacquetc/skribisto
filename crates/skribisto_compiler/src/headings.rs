@@ -31,7 +31,7 @@ fn keys(level: Level) -> (&'static str, &'static str) {
 }
 
 /// The structural word for a level in the book's language ("Chapitre"). A language
-/// with no catalogue reads English; see [`crate::manuscript`].
+/// with no catalogue reads English; see the private `manuscript` module.
 pub fn word(lang: &str, level: Level) -> String {
     manuscript::text(lang, keys(level).1, &[])
 }
