@@ -2017,6 +2017,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "generator"
+version = "0.8.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54ade96dc9003043bce7c035c85a9df5a858bfb2039c5a2e6fdf00f324f6c551"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "libc",
+ "log",
+ "rustversion",
+ "windows-link",
+ "windows-result",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3482,6 +3497,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "loom"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "419e0dc8046cb947daa77eb95ae174acfbddb7673b4151f56d1eed8e93fbfaca"
+dependencies = [
+ "cfg-if",
+ "generator",
+ "scoped-tls",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "lzma-rust2"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3509,6 +3537,15 @@ dependencies = [
  "log",
  "tendril",
  "web_atoms",
+]
+
+[[package]]
+name = "matchers"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1525a2a28c7f4fa0fc98bb91ae755d1e2d1505079e05539e35bc876b5d65ae9"
+dependencies = [
+ "regex-automata",
 ]
 
 [[package]]
@@ -3706,6 +3743,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42b8cfee0e339a0337359f3c88165702ac6e600dc01c0cc9579a92d62b08477a"
 dependencies = [
  "bitflags 2.13.1",
+]
+
+[[package]]
+name = "nu-ansi-term"
+version = "0.50.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
+dependencies = [
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3915,6 +3961,7 @@ checksum = "e022c9d066895efa1345f8e33e584b9f958da2fd4cd116792e15e07e4720a807"
 dependencies = [
  "bitflags 2.13.1",
  "dispatch2",
+ "libc",
  "objc2 0.6.4",
  "objc2-core-foundation",
  "objc2-io-surface",
@@ -5526,6 +5573,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sharded-slab"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
+dependencies = [
+ "lazy_static",
+]
+
+[[package]]
 name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6292,7 +6348,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9047a7def92f13a8b60723c72f23697e7193ff06df9cba123e4d56d6da2c5920"
 dependencies = [
  "teksilo-app",
  "teksilo-async",
@@ -6318,7 +6376,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-app"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91df6cc19bf8c63c7db5c64265f333f7f12af20418873e366630d3b1d1f61735"
 dependencies = [
  "base64 0.22.1",
  "png",
@@ -6340,7 +6400,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-async"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51ba5269e3d4cf48a1a10546153b7237136336cdd6acbfcb41404aced8ecdebe"
 dependencies = [
  "async-channel 2.5.0",
  "teksilo-app",
@@ -6350,7 +6412,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-async-std"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "498eb49f90650de6a111f1d7b86acd2826ffce7ae8f227a82b9f6082bb788cfa"
 dependencies = [
  "async-std",
  "teksilo-app",
@@ -6360,7 +6424,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-automation"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d4a00f48cc4cb38eca457a40368b070e2a96df0195fad9dceb8f7f2812a5b75"
 dependencies = [
  "serde",
  "serde_json",
@@ -6371,10 +6437,14 @@ dependencies = [
 
 [[package]]
 name = "teksilo-canvas"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29109abfaf7aa863478bba91699cf70fa4dcfb37ba785b07073c6ecb52fa70d6"
 dependencies = [
  "bytemuck",
  "image-webp",
+ "loom",
+ "parking_lot",
  "png",
  "quick-xml 0.41.0",
  "serde",
@@ -6386,7 +6456,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-charts"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9e5a1b69e2a4db25c726e8ccbb78e45f9a3d7c9920b595ae3d22bab772e84a3"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6397,7 +6469,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-core"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "920dcc193141b7bc8c11014eebccb5aed9a7adb4fead919462220e79cbdeca13"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -6412,7 +6486,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-data"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da596dfcc78769c4fb539f749141749fcab73f0cf79ff55f98107354ce291790"
 dependencies = [
  "slotmap",
  "teksilo-core",
@@ -6420,7 +6496,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-i18n"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba0fba1db8c02adad966da8b4b2ebfd8b4055da818647f491ee12676c5d50826"
 dependencies = [
  "fixed_decimal",
  "fluent-bundle",
@@ -6443,7 +6521,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-i18n-macros"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d69b6cfaa1606194d100449aa48beab0c45b74b06a558bc28024406f5e19a06f"
 dependencies = [
  "fluent-syntax",
  "proc-macro2",
@@ -6453,7 +6533,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-inspector"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "033ebc6f5d1dde09e1b5aa5daa4befe0d2dbe9ab6c16450c499cc043a9474677"
 dependencies = [
  "serde_json",
  "teksilo-app",
@@ -6469,7 +6551,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-macros"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3382f33806153278de87549461a6668fee9c14a7be17144757a57308d7e7b99"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6479,7 +6563,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-parse"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d6ec8305f2ec5e19df393ada26fd0a6029eec205074b47b52da2f12c7409d36"
 dependencies = [
  "proc-macro2",
  "syn 3.0.4",
@@ -6487,15 +6573,20 @@ dependencies = [
 
 [[package]]
 name = "teksilo-platform"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "321ddb476ed3fa43d2aec6a95f332aad31eb0512fd26ca9a4b53fce34870b8fe"
 dependencies = [
  "accesskit",
  "accesskit_winit",
  "arboard",
  "async-std",
+ "dispatch2",
  "libc",
  "objc2 0.6.4",
  "objc2-app-kit 0.3.2",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
  "objc2-foundation 0.3.2",
  "pollster 1.0.1",
  "raw-window-handle",
@@ -6519,7 +6610,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-render"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f97bcff2f8af5866f69da2a7cdd31cc340d019ee57700225c201769ad1e1d97"
 dependencies = [
  "bytemuck",
  "pollster 1.0.1",
@@ -6531,7 +6624,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-resources"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91369a8fb77768dee75db0229a5021cd54c3ef70f0ad5b86e7b478e580751886"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6541,7 +6636,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-settings"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e11993d610f998688b8e79299d75ee21796b3dddfc8730e3559b778ac8a28c12"
 dependencies = [
  "etcetera",
  "fs2",
@@ -6556,7 +6653,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-text"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af2578650b4dafad443384ce9025704bd6eed76818c26356377a160dec5a0fb0"
 dependencies = [
  "teksilo-canvas",
  "teksilo-tokens",
@@ -6566,7 +6665,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-fluent"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab0f91c41309593ffa459669ade34dbbec8d06b1bd80846b1d070d41bde32b09"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6576,7 +6677,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-macos"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68a14eda3416be7548ae33ad2a134e1dcd37a7838e81fbd9a1ef47c2abd3156c"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6586,7 +6689,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-material3"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5c9e16caecdc1b230a6f00ede96921217065a8a728754b29cb65ceeff65dd26"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6596,14 +6701,18 @@ dependencies = [
 
 [[package]]
 name = "teksilo-tokens"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ff5b70616c84bcc70b26f6c84ca4562a6d35b73473261a9d5420b2cbd2422627"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "teksilo-widgets"
-version = "0.15.0"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f143bfd9adaa5cf788dd9cb9acac14524a9b7cad8b496aeaa0d88aa8f1373664"
 dependencies = [
  "jiff",
  "open",
@@ -6701,6 +6810,8 @@ dependencies = [
 [[package]]
 name = "text-document"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2dcb9bd3ec0c9dca5be8013c8f575291f6acfccc08d597847f1cf8fbe1415bf"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6716,6 +6827,8 @@ dependencies = [
 [[package]]
 name = "text-document-common"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf3fcb5da972fe46330e824d613d9d744afdc981423a50d79ac44eefe6675497"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6739,6 +6852,8 @@ dependencies = [
 [[package]]
 name = "text-document-direct-access"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9819ff9af31017a1e744293a7917c1d0ec806e3d47d7bb7005af91832020b710"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6752,6 +6867,8 @@ dependencies = [
 [[package]]
 name = "text-document-editing"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05ad630339278ca67499cff73d0761ef442ba81ff64cdead30e6d477659bfd0d"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6765,6 +6882,8 @@ dependencies = [
 [[package]]
 name = "text-document-formatting"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cb42cb2d8f652a8e5914a12b3bd3806a83d7fcb4efd3969c7827a78e8b8cf1b"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6778,6 +6897,8 @@ dependencies = [
 [[package]]
 name = "text-document-frontend"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ace6683e7bbaed75c73814e29f686a2a9d41b7d227335136daa806c360522e2f"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6796,6 +6917,8 @@ dependencies = [
 [[package]]
 name = "text-document-inspection"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b38a1da0a713eef2eaab3b6da43af986b1018f9a67bbcf866f5a4a85e4811e7d"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6809,6 +6932,8 @@ dependencies = [
 [[package]]
 name = "text-document-io"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22ee6a152cc90169a14393319506fa44ba7ffaebf33b5faa54eba66e994ceee5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6833,6 +6958,8 @@ dependencies = [
 [[package]]
 name = "text-document-macros"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4b2c0c4cd124b5528790e4680bb4384021170c7622340af4f31bff27f1c8468"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -6843,6 +6970,8 @@ dependencies = [
 [[package]]
 name = "text-document-search"
 version = "1.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8bc904973b2fc0760c66664aedad3d9b2cacddb4e1f9d75f64a913c7f8afd47"
 dependencies = [
  "anyhow",
  "caseless",
@@ -6938,6 +7067,15 @@ name = "thousands"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bf63baf9f5039dadc247375c29eb13706706cfde997d0330d05aa63a77d8820"
+
+[[package]]
+name = "thread_local"
+version = "1.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ad99c4c6d32803332c548b1af0540b357b3f5fc0be8f6c6bfe8b2e6ae784070"
+dependencies = [
+ "cfg-if",
+]
 
 [[package]]
 name = "tiff"
@@ -7182,6 +7320,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
 dependencies = [
  "once_cell",
+ "valuable",
+]
+
+[[package]]
+name = "tracing-log"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3"
+dependencies = [
+ "log",
+ "once_cell",
+ "tracing-core",
+]
+
+[[package]]
+name = "tracing-subscriber"
+version = "0.3.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb7f578e5945fb242538965c2d0b04418d38ec25c79d160cd279bf0731c8d319"
+dependencies = [
+ "matchers",
+ "nu-ansi-term",
+ "once_cell",
+ "regex-automata",
+ "sharded-slab",
+ "smallvec",
+ "thread_local",
+ "tracing",
+ "tracing-core",
+ "tracing-log",
 ]
 
 [[package]]
@@ -7837,6 +8005,12 @@ dependencies = [
  "serde_core",
  "wasm-bindgen",
 ]
+
+[[package]]
+name = "valuable"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 
 [[package]]
 name = "value-bag"

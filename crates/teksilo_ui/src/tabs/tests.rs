@@ -4708,6 +4708,65 @@ fn a_chapter_folders_own_page_carries_the_banner_ctrl_f_opens() {
     );
 }
 
+/// **The replace row fits the pane, and names Preserve case wherever it has room.**
+///
+/// The banner is as wide as its widest row, and a banner wider than its pane widens the
+/// whole tab past the pane's edge, prose included, for as long as it stays open. Since
+/// teksilo 0.16 a `Checkbox` in a row measures at its whole label (a `MinSize` inside it
+/// used to propose its 24 px hit box, so the label read "…"), and a `Checkbox` reports
+/// no way to shrink. "Conserver la casse" therefore pushed a 512 px pane's banner 120 px
+/// past its edge, with Close out of reach. The field and the checkbox are `Shrinkable`:
+/// they give way before the row overflows, and the label reads whole where it fits.
+#[test]
+fn the_replace_row_fits_the_pane_and_names_preserve_case_where_it_fits() {
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::Scene,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    let find = tab
+        .active_find()
+        .cloned()
+        .expect("a scene's prose is searchable");
+
+    let mut tree = crate::test_support::tree_with_settings(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    find.open();
+    find.replace_mode_signal().set(true);
+    assert!(
+        find.single_document_signal().get(),
+        "a scene's banner offers the replace row"
+    );
+
+    // 512 px is the pane the overflow was seen in: a 1200 px window with the binder and
+    // the Inspector open. The find row alone fits there, so the replace row has to.
+    for width in [512.0_f32, 1000.0] {
+        tree.layout(teksilo::prelude::SizeProposal::exact(width, 700.0));
+        let banner = first_of_type(&tree, root, "FindBanner").expect("the open banner is mounted");
+        let drawn = tree.bounds(banner).width;
+        assert!(
+            drawn <= width + 0.5,
+            "{width} px pane: the banner is {drawn} px wide and overhangs it"
+        );
+    }
+
+    let checkbox = first_of_type(&tree, root, "Checkbox").expect("Preserve case is on the row");
+    assert!(
+        tree.bounds(checkbox).width > 100.0,
+        "a 1000 px pane has room for the whole label, not only its box: {} px",
+        tree.bounds(checkbox).width
+    );
+    find.close();
+}
+
 /// **An open cell editor holds the keyboard, so Escape cancels and Enter commits.**
 ///
 /// `TreeTableView` never moved focus into the editor a cell delegate swapped in

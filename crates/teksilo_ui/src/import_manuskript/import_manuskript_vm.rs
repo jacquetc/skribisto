@@ -1089,9 +1089,9 @@ mod tests {
             6,
             "every import's list is in the log"
         );
-        // The log merges a re-raised id into its first row, updating the title
-        // and body only, so the title is what shows which state was admitted
-        // last.
+        // The log merges a re-raised id into one row, which takes what the
+        // latest notice said, so the title is what shows which state was
+        // admitted last.
         let progress = tr!(import_manuskript_progress_title()).resolve_now();
         let result = rows
             .iter()

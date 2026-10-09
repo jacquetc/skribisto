@@ -680,6 +680,29 @@ fn typing_in_the_filter_narrows_the_list_without_recreating_the_field() {
     );
 }
 
+/// The table of contents keeps its own width, whatever its rows would like.
+///
+/// `MinSize` used to propose its minimum to its child, so `MinSize::width` read as an
+/// exact width. Since teksilo 0.16 it forwards an unbounded axis unbounded and only
+/// floors the answer, so the column took the filter field's natural width (270 px in
+/// English) and would have taken a long translated topic title's, at the reading
+/// pane's expense. The column is capped at the same width again.
+#[test]
+fn the_table_of_contents_is_nav_width_wide() {
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    let root = tree.add(panel::HelpPanel::new(vm));
+    tree.layout(SizeProposal::exact(940.0, 680.0));
+
+    let row = tree.children(root)[0];
+    let nav = tree.children(row)[0];
+    assert_eq!(
+        tree.bounds(nav).width,
+        panel::NAV_WIDTH,
+        "the table of contents is laid out at its own width"
+    );
+}
+
 /// Opening a topic must not recreate the filter field either.
 ///
 /// Same failure, reached the other way round: type a filter, click a result, and a

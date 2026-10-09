@@ -9,6 +9,16 @@
 
 use super::*;
 
+use teksilo::widgets::Shrinkable;
+
+/// The narrowest the replacement field gets when the replace row runs short of room:
+/// enough to see what is being typed into it.
+const REPLACE_FIELD_MIN_WIDTH: f32 = 120.0;
+
+/// The narrowest the Preserve-case checkbox gets: its box's own 24 px hit area, so
+/// the box itself is never cut and only the label gives way.
+const PRESERVE_CASE_MIN_WIDTH: f32 = 24.0;
+
 /// A highlight format from a background `SurfaceRole` and an optional foreground
 /// `TextRole` — so highlighted text keeps its contrast (a strong current-match
 /// background needs an on-that-surface text colour, or the glyphs disappear into
@@ -211,14 +221,27 @@ impl Widget for FindBanner {
         // The replace row (disclosed when replace mode is on): a capped-width
         // replacement field (Enter = replace the current match), Replace / Replace
         // All actions, and the Preserve-case toggle.
+        //
+        // The field and the checkbox are `Shrinkable` because the banner is as wide
+        // as its widest row, and a banner wider than its pane widens the whole tab
+        // past the pane's edge, the prose with it. A `Checkbox` in a row measures at
+        // its whole label and reports no way to shrink, so in a narrow pane (a
+        // 512 px one between the binder and the Inspector, in French) this row ran
+        // 120 px past the edge. The field gives way twice as fast as the label, so
+        // the label stays readable longer; neither goes below a usable floor.
         let replace_row = HStack::new()
             .spacing(6.0)
             .child(
-                MaxSize::width(FIND_FIELD_MAX_WIDTH).child(
-                    TextInput::new(self.find.replacement_signal())
-                        .placeholder(tr!(find_replace_placeholder()))
-                        .on_submit_fn(move |ctx| rc_submit.replace_current(ctx)),
-                ),
+                Shrinkable::new()
+                    .shrink(2.0)
+                    .min_width(REPLACE_FIELD_MIN_WIDTH)
+                    .child(
+                        MaxSize::width(FIND_FIELD_MAX_WIDTH).child(
+                            TextInput::new(self.find.replacement_signal())
+                                .placeholder(tr!(find_replace_placeholder()))
+                                .on_submit_fn(move |ctx| rc_submit.replace_current(ctx)),
+                        ),
+                    ),
             )
             .child(
                 Button::new(tr!(find_replace()))
@@ -230,7 +253,9 @@ impl Widget for FindBanner {
                     .variant(ButtonVariant::Filled)
                     .on_activate_fn(move |ctx| ra_btn.replace_all(ctx)),
             )
-            .child(Checkbox::new(self.find.preserve_case_signal()).label(tr!(find_preserve_case())))
+            .child(Shrinkable::new().min_width(PRESERVE_CASE_MIN_WIDTH).child(
+                Checkbox::new(self.find.preserve_case_signal()).label(tr!(find_preserve_case())),
+            ))
             .child(Expand::horizontal().child(FixedSize::new().height(1.0)));
 
         // Enter (in the field) navigates / replaces via `on_submit`; the row handles

@@ -31,8 +31,8 @@ use teksilo::text_document::TextDocument;
 use teksilo::widgets::rich_text::RichTextEditor;
 use teksilo::widgets::tooltip::with_tooltip_registry;
 use teksilo::widgets::{
-    Button, ButtonVariant, Divider, Expand, HStack, IconButton, IconWidget, MinSize, Padding,
-    Panel, ScrollArea, SearchField, Spacer, TextWidget, VStack,
+    Button, ButtonVariant, Divider, Expand, HStack, IconButton, IconWidget, MaxSize, MinSize,
+    Padding, Panel, ScrollArea, SearchField, Spacer, TextWidget, VStack,
 };
 
 use super::help_vm::HelpViewModel;
@@ -55,7 +55,7 @@ fn ground(role: SurfaceRole, child: WidgetId) -> impl Widget + 'static {
 
 /// Width of the table of contents. Wide enough for the longest topic title in both
 /// shipped locales without wrapping.
-const NAV_WIDTH: f32 = 240.0;
+pub(super) const NAV_WIDTH: f32 = 240.0;
 
 /// The Help window's content.
 pub struct HelpPanel {
@@ -102,11 +102,14 @@ impl Widget for HelpPanel {
         let nav = ctx.add_boxed(Box::new(nav_widget));
         let content = ctx.add(HelpReadingPane::new(self.vm.clone()));
 
-        // `MinSize::width`, not `FixedSize::width`. `FixedSize` proposes `None` on the
-        // axis it does not bind, so a width-only one hands the column unbounded height:
-        // its `Expand` then has nothing to fill, the topic list collapses to zero, and
-        // the filter field floats in the middle of an empty column. That shipped once
-        // here and is exactly what `welcome_body` already documents.
+        // `MinSize::width` capped by `MaxSize::width`, not `FixedSize::width`.
+        // `FixedSize` proposes `None` on the axis it does not bind, so a width-only one
+        // hands the column unbounded height: its `Expand` then has nothing to fill, the
+        // topic list collapses to zero, and the filter field floats in the middle of an
+        // empty column. That shipped once here and is exactly what `welcome_body`
+        // already documents. The cap is there because a `MinSize` is only a floor: it
+        // forwards an unbounded width unbounded (teksilo 0.16), so on its own the
+        // column took the filter field's natural width, or a long topic title's.
         //
         // Plain builders here, not because of `child_id`: `child_id: id` is an
         // ordinary `teksu!` property and would parse fine. This HStack is a plain
@@ -119,7 +122,10 @@ impl Widget for HelpPanel {
         let root = ctx.add(
             HStack::new()
                 .spacing(0.0)
-                .child(MinSize::width(NAV_WIDTH).child(ground(SurfaceRole::Main, nav)))
+                .child(
+                    MaxSize::width(NAV_WIDTH)
+                        .child(MinSize::width(NAV_WIDTH).child(ground(SurfaceRole::Main, nav))),
+                )
                 .child(Expand::vertical().child(Divider::vertical()))
                 .child(Expand::horizontal().child(ground(SurfaceRole::Content, content))),
         );
