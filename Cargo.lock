@@ -5763,6 +5763,7 @@ dependencies = [
  "roxmltree 0.21.1",
  "skribisto-common",
  "skribisto-model",
+ "skribisto-rtf-reader",
  "skribisto-skrib-format",
  "text-document",
  "text2num",
@@ -5949,6 +5950,14 @@ dependencies = [
  "skribisto-work-management",
  "tempfile",
  "uuid",
+]
+
+[[package]]
+name = "skribisto-rtf-reader"
+version = "3.0.5"
+dependencies = [
+ "encoding_rs",
+ "proptest",
 ]
 
 [[package]]

@@ -133,6 +133,16 @@ ist = "ist"
 tru = "tru"
 paeth = "paeth"
 
+# ── RTF control words, which `rtf_reader` dispatches on by the names the RTF
+#    specification gives them: `\pard` (paragraph defaults), `\rin` (right
+#    indent), `\pich` (picture height), `\headerr` (right-page header), `\falt`
+#    (a font's alternative name). Spelled any other way they name nothing.
+pard = "pard"
+rin = "rin"
+pich = "pich"
+headerr = "headerr"
+falt = "falt"
+
 # ── French and German in fixtures, packaging metadata, the CLA, and the
 #    bilingual UI-automation scripts (which match on both en-US and fr-FR
 #    labels, so their assertions are half French by construction).

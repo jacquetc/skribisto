@@ -2152,13 +2152,7 @@ fn raw_toggle(rpr: roxmltree::Node<'_, '_>, name: &str) -> bool {
         .is_some_and(|n| !matches!(n.attribute((NS_W, "val")), Some("0" | "false" | "off")))
 }
 
-/// What a scanner's placeholder footnote label starts with.
-///
-/// Shared with the ODT scanner so both mint the same shape, and so
-/// `apply_document_import` has one prefix to recognise. The label itself is
-/// never shown to a writer and never stored — see
-/// [`crate::block::SourceFootnote::label`].
-pub const FOOTNOTE_LABEL_PREFIX: &str = "srcfn-";
+pub use super::rich::FOOTNOTE_LABEL_PREFIX;
 
 /// What an endnote's placeholder label starts with: a prefix of its own, so an endnote
 /// and a footnote sharing an id can never share a label. See [`FOOTNOTE_LABEL_PREFIX`].

@@ -47,6 +47,10 @@ odt = ["dep:zip", "dep:roxmltree"]
 # whether `docx-rs` can finish reading it at all, before `docx-rs` does. See
 # `sources::docx::check_as_docx_rs_reads`.
 docx = ["dep:zip", "dep:roxmltree", "dep:docx-rs", "dep:quick-xml"]
+# RTF read by `rtf_reader` and mapped onto the rich model (`sources::rtf::to_rich`). Not a
+# scanner, and off by default: nothing registers `.rtf` yet, and the Scrivener importer,
+# the one caller, turns it on for itself.
+rtf = ["dep:rtf_reader"]
 
 [dependencies]
 # Every imported document's own digest, taken in `scan_bytes` where its bytes are
@@ -131,6 +135,9 @@ quick-xml = { version = "0.41", default-features = false, optional = true }
 # that release before bumping — upstream has now demonstrated it will rename one
 # without saying so, and `portugese` (one `u`) is the shape that demonstrates it.
 text2num = "~2.8"
+# The RTF reader behind the `rtf` feature: a leaf crate that knows RTF and nothing of
+# Skribisto, so this crate holds the one place its model meets the rich one.
+rtf_reader = { workspace = true, optional = true }
 
 [dev-dependencies]
 # `natural_cmp` must be a total order or `sort_by` is entitled to panic, and totality is a

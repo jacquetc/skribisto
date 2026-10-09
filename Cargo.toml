@@ -20,6 +20,7 @@ members = [
     "crates/binder_item_management",
     "crates/binder_ordering",
     "crates/document_ingest",
+    "crates/rtf_reader",
     "crates/handling_app_lifecycle",
     "crates/import_management",
     "crates/plume_import",
@@ -90,6 +91,7 @@ search_management = { package = "skribisto-search-management", version = "3.0.5"
 skribisto_model = { package = "skribisto-model", version = "3.0.5", path = "crates/skribisto_model" }
 skrib_format = { package = "skribisto-skrib-format", version = "3.0.5", path = "crates/skrib_format" }
 document_ingest = { package = "skribisto-document-ingest", version = "3.0.5", path = "crates/document_ingest" }
+rtf_reader = { package = "skribisto-rtf-reader", version = "3.0.5", path = "crates/rtf_reader" }
 plume_import = { package = "skribisto-plume-import", version = "3.0.5", path = "crates/plume_import" }
 manuskript_import = { package = "skribisto-manuskript-import", version = "3.0.5", path = "crates/manuskript_import" }
 spellcheck_engine = { package = "skribisto-spellcheck-engine", version = "3.0.5", path = "crates/spellcheck_engine" }

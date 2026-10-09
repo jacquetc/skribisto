@@ -14,9 +14,14 @@
 //! drop zone's accept list too, rather than offering a format that then reports
 //! itself unsupported.
 //!
-//! [`rich`] is the shared half of the two container formats. It is *not* behind a
-//! feature of its own: it belongs to whichever of `odt` and `docx` is enabled, and
-//! to neither when both are off.
+//! [`rich`] is the shared half of the two container formats and of RTF. It is *not*
+//! behind a feature of its own: it belongs to whichever of `odt`, `docx` and `rtf` is
+//! enabled, and to none when all three are off.
+//!
+//! `rtf`, behind the feature of that name, is not a scanner. It maps what `rtf_reader`
+//! reads onto [`rich`]'s model for a caller that holds RTF (the Scrivener importer, whose
+//! documents are RTF files inside a project), and no file extension is registered for it:
+//! importing a lone `.rtf` file is a later milestone.
 
 /// What a single imported document's zip container may hold, before and while it
 /// inflates (see [`skrib_format::zip_guard`]).
@@ -67,5 +72,7 @@ pub mod markdown;
 pub mod odt;
 #[cfg(feature = "plain")]
 pub mod plain;
-#[cfg(any(feature = "odt", feature = "docx"))]
+#[cfg(any(feature = "odt", feature = "docx", feature = "rtf"))]
 pub mod rich;
+#[cfg(feature = "rtf")]
+pub mod rtf;

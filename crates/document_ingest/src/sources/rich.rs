@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The half `.docx` and `.odt` share: styled runs in, [`SourceBlock`]s out.
+//! The half `.docx`, `.odt` and RTF share: styled runs in, [`SourceBlock`]s out.
 //!
 //! Both formats are a zip of XML describing the same thing — a sequence of
 //! paragraphs, each a list of runs each carrying a bit of character formatting,
@@ -136,6 +136,13 @@ pub struct BlockProps {
     /// before it, ODF's `fo:break-before="page"`.
     pub page_break_before: bool,
 }
+
+/// What a scanner's placeholder footnote label starts with.
+///
+/// Shared by every scanner that feeds this module (DOCX, ODT, RTF) so all mint the same
+/// shape, and so `apply_document_import` has one prefix to recognise. The label itself is
+/// never shown to a writer and never stored: see [`crate::block::SourceFootnote::label`].
+pub const FOOTNOTE_LABEL_PREFIX: &str = "srcfn-";
 
 /// The object-replacement character an inline image occupies in plain text.
 ///
